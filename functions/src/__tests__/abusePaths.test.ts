@@ -16,6 +16,12 @@ import {claimSyncSlot, syncSubscription} from "../syncSubscription";
 
 type Doc = Record<string, unknown>;
 
+const transactionReads = {
+  getAll(this: admin.firestore.Transaction, ...refs: admin.firestore.DocumentReference[]) {
+    return Promise.all(refs.map((ref) => this.get(ref)));
+  },
+};
+
 // No economy config doc: every callable runs on DEFAULT_ECONOMY.
 const realDoc = db.doc.bind(db);
 mock.method(db, "doc", (path: string) =>
@@ -52,6 +58,7 @@ function fakeStore(t: TestContext, seed: Record<string, Doc>, walls: Doc[] = [])
     store.set(path, doc);
   };
   const tx = {
+    getAll: transactionReads.getAll,
     get: async (ref: admin.firestore.DocumentReference | admin.firestore.Query) => {
       if (wrote) throw new Error("Firestore transaction reads must precede writes");
       return typeof (ref as admin.firestore.DocumentReference).path === "string" ?
@@ -90,6 +97,7 @@ function fakeRetriedStore(t: TestContext, first: Record<string, Doc>, retry: Rec
   const transaction = () => {
     let wrote = false;
     return {
+      getAll: transactionReads.getAll,
       get: async (ref: admin.firestore.DocumentReference | admin.firestore.Query) => {
         if (wrote) throw new Error("Firestore transaction reads must precede writes");
         if (typeof (ref as admin.firestore.DocumentReference).path !== "string") return referralLedgerQuery(snapshot);

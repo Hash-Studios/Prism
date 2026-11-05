@@ -16,43 +16,50 @@ class FavouriteCountsRepositoryImpl implements FavouriteCountsRepository {
   Future<Map<String, PrismWallpaperStats>> fetch(Set<String> ids) async {
     final normalized = ids.map(prismStatsId).whereType<String>().toSet().toList();
     final result = <String, PrismWallpaperStats>{};
-    for (var start = 0; start < normalized.length; start += 30) {
-      final batch = normalized.sublist(start, math.min(start + 30, normalized.length));
-      final rows = await _firestore.query(
-        FirestoreQuerySpec(
-          collection: FirebaseCollections.wallpaperStats,
-          sourceTag: 'favourite_counts.grid',
-          cachePolicy: FirestoreCachePolicy.serverOnly,
-          filters: [FirestoreFilter(field: firestoreDocumentIdField, op: FirestoreFilterOp.whereIn, value: batch)],
-        ),
-        (data, id) {
-          final int? rawFavourites = switch (data['favs']) {
-            final num count when count.isFinite => count.toInt(),
-            final String count => int.tryParse(count),
-            _ => null,
-          };
-          final int? rawViews = switch (data['views']) {
-            final num count when count.isFinite => count.toInt(),
-            final String count => int.tryParse(count),
-            null => 0,
-            _ => null,
-          };
-          return MapEntry(
-            id,
-            PrismWallpaperStats(
-              favourites: math.max(0, rawFavourites ?? 0),
-              views: rawViews != null && rawViews >= 0 ? rawViews : null,
-              comments: switch (data['comments']) {
-                final num count when count.isFinite => math.max(0, count.toInt()),
-                _ => 0,
-              },
-            ),
-          );
-        },
-      );
-      result.addAll({for (final id in batch) id: const PrismWallpaperStats(favourites: 0, views: 0)});
-      result.addEntries(rows);
+    var next = 0;
+    Future<void> loadNext() async {
+      while (next < normalized.length) {
+        final start = next;
+        next += 30;
+        final batch = normalized.sublist(start, math.min(start + 30, normalized.length));
+        final rows = await _firestore.query(
+          FirestoreQuerySpec(
+            collection: FirebaseCollections.wallpaperStats,
+            sourceTag: 'favourite_counts.grid',
+            cachePolicy: FirestoreCachePolicy.serverOnly,
+            filters: [FirestoreFilter(field: firestoreDocumentIdField, op: FirestoreFilterOp.whereIn, value: batch)],
+          ),
+          (data, id) {
+            final int? rawFavourites = switch (data['favs']) {
+              final num count when count.isFinite => count.toInt(),
+              final String count => int.tryParse(count),
+              _ => null,
+            };
+            final int? rawViews = switch (data['views']) {
+              final num count when count.isFinite => count.toInt(),
+              final String count => int.tryParse(count),
+              null => 0,
+              _ => null,
+            };
+            return MapEntry(
+              id,
+              PrismWallpaperStats(
+                favourites: math.max(0, rawFavourites ?? 0),
+                views: rawViews != null && rawViews >= 0 ? rawViews : null,
+                comments: switch (data['comments']) {
+                  final num count when count.isFinite => math.max(0, count.toInt()),
+                  _ => 0,
+                },
+              ),
+            );
+          },
+        );
+        result.addAll({for (final id in batch) id: const PrismWallpaperStats(favourites: 0, views: 0)});
+        result.addEntries(rows);
+      }
     }
+
+    await Future.wait(List.generate(math.min(4, (normalized.length / 30).ceil()), (_) => loadNext()));
     return result;
   }
 }

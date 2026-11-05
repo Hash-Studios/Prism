@@ -31,6 +31,12 @@ beforeEach(() => resetEconomyCache());
 
 const NOW = 1_700_000_000_000;
 
+const transactionReads = {
+  getAll(this: admin.firestore.Transaction, ...refs: admin.firestore.DocumentReference[]) {
+    return Promise.all(refs.map((ref) => this.get(ref)));
+  },
+};
+
 function debitFixture(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     userId: "user-1",
@@ -157,6 +163,7 @@ for (const retry of ["duplicate", "cap", "balance"] as const) {
       for (let attempt = 0; attempt < 2; attempt++) {
         let reads = 0;
         await callback({
+          getAll: transactionReads.getAll,
           get: async () => reads++ === 0 ? {
             exists: true,
             data: () => ({coins: attempt === 0 ? 120 : finalBalance,
@@ -221,6 +228,7 @@ test("buyStreakFreeze commits its debit and freeze together and replay cannot de
   t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
     let reads = 0;
     await callback({
+      getAll: transactionReads.getAll,
       get: async () => reads++ === 0 ? {
         exists: true, data: () => ({coins, premium: true, coinState: {streakFreezes: freezes}}),
       } : {exists: ledger != null},
@@ -277,6 +285,7 @@ interface SpendHarness {
 function mockSpendTransactions(t: test.TestContext, harness: SpendHarness): void {
   t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
     await callback({
+      getAll: transactionReads.getAll,
       get: async (ref: admin.firestore.DocumentReference) => {
         if (ref.path === "usersv2/user-1") {
           return {exists: true, data: () => ({coins: harness.coins, premium: harness.premium})};
@@ -381,6 +390,7 @@ test("awardCoins caps reason at 200 characters", async (t) => {
   let ledger: Record<string, unknown> | undefined;
   t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
     await callback({
+      getAll: transactionReads.getAll,
       get: async () => ({exists: true, data: () => ({coins: 0, premium: true, coinState: {}}), id: "x"}),
       update: () => undefined,
       set: (_ref: admin.firestore.DocumentReference, data: Record<string, unknown>) => {
@@ -537,6 +547,7 @@ function mockStore(t: test.TestContext, store: Store, options: {wallEvidence?: b
   t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
     const staged = new Map<string, Record<string, unknown>>();
     await callback({
+      getAll: transactionReads.getAll,
       get: async (r: {path: string}) => ({exists: store.has(r.path), data: () => store.get(r.path)}),
       update: (r: {path: string}, data: Record<string, unknown>) => {
         staged.set(r.path, {...(staged.get(r.path) ?? store.get(r.path)), ...data});
@@ -821,7 +832,7 @@ test("AI refunds forward authenticated cancellation and retry safely after a Fir
     if (abort) {
       abort = false;
       await run(async (tx) => {
-        const shadow = {get: tx.get.bind(tx), set: () => undefined, update: () => undefined};
+        const shadow = {get: tx.get.bind(tx), getAll: tx.getAll.bind(tx), set: () => undefined, update: () => undefined};
         await callback(shadow as unknown as admin.firestore.Transaction);
       });
       throw new Error("Firestore commit aborted");
@@ -999,6 +1010,7 @@ function mockReferral(t: test.TestContext, store: Store, users: Record<string, u
   t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
     const staged = new Map<string, Record<string, unknown>>();
     await callback({
+      getAll: transactionReads.getAll,
       get: async (r: {path?: string}) => r.path == null ?
         {docs: [], size: 0} :
         {exists: store.has(r.path as string), data: () => store.get(r.path as string)},

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/providers/analytics_provider.dart';
 import 'package:Prism/core/analytics/providers/composite_analytics_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,7 +28,30 @@ class _ThrowingProvider implements AnalyticsProvider {
   Future<void> flush() => Future<void>.error(StateError('boom'));
 }
 
+class _PendingProvider extends RecordingAnalyticsProvider {
+  final gate = Completer<void>();
+
+  @override
+  Future<void> logEvent({required String name, Map<String, Object> parameters = const <String, Object>{}}) =>
+      gate.future;
+}
+
 void main() {
+  test('a pending provider does not delay delivery to the other providers', () async {
+    final slow = _PendingProvider();
+    final recording = RecordingAnalyticsProvider();
+    final provider = CompositeAnalyticsProvider(<AnalyticsProvider>[slow, recording]);
+    var completed = false;
+    final pending = provider.logEvent(name: 'wallpaper_viewed').then((_) => completed = true);
+    await Future<void>.delayed(Duration.zero);
+    final delivered = recording.events.map((event) => event.name).toList();
+    final completedBeforeRelease = completed;
+    slow.gate.complete();
+    await pending;
+    expect(delivered, <String>['wallpaper_viewed']);
+    expect(completedBeforeRelease, isFalse);
+  });
+
   test('continues dispatching when a provider throws', () async {
     final RecordingAnalyticsProvider recording = RecordingAnalyticsProvider();
     final CompositeAnalyticsProvider provider = CompositeAnalyticsProvider(<AnalyticsProvider>[
