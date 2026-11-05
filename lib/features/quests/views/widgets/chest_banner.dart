@@ -116,7 +116,7 @@ class _ChestSlot extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SizedBox.square(
     dimension: 88,
-    child: OverflowBox(maxWidth: 120, maxHeight: 120, child: ChestBox(phase: phase, size: 120)),
+    child: OverflowBox(maxWidth: 120, maxHeight: 120, child: ChestBox(phase: phase, size: 120, still: true)),
   );
 }
 

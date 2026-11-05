@@ -723,6 +723,19 @@ void main() {
     expect(tester.widget<TabBar>(find.byType(TabBar)).controller!.index, 3);
   });
 
+  testWidgets('with reduce motion on, a tab tap moves the underline at once', (tester) async {
+    await pumpScreen(tester, disableAnimations: true);
+
+    await tapTab(tester, 'Latest');
+    await tester.pump();
+
+    final TabController tabs = tester.widget<TabBar>(find.byType(TabBar)).controller!;
+    expect(tabs.index, 3);
+    expect(tabs.animationDuration, Duration.zero);
+    expect(tabs.animation!.value, 3);
+    expect(tabs.indexIsChanging, isFalse);
+  });
+
   testWidgets('the For you header has no section title and no tune button', (tester) async {
     var tuned = 0;
     await pumpScreen(tester, onTuneTap: () => tuned++);

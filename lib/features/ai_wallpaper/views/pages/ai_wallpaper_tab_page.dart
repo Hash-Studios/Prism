@@ -1528,7 +1528,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             duration: context.motion(PrismDurations.base),
             reverseDuration: context.motion(PrismDurations.fast),
             switchInCurve: PrismCurves.enter,
-            switchOutCurve: PrismCurves.exit,
+            switchOutCurve: PrismCurves.exitReverse,
             transitionBuilder: (Widget child, Animation<double> animation) => FadeTransition(
               opacity: animation,
               child: ScaleTransition(scale: Tween<double>(begin: 0.96, end: 1).animate(animation), child: child),

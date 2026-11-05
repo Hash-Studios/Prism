@@ -25,7 +25,7 @@ class OnboardingProgressIndicator extends StatelessWidget {
     ];
 
     return SizedBox(
-      width: OnboardingLayout.progressWidth,
+      width: (totalSteps - 1) * OnboardingLayout.progressStepSpacing + OnboardingLayout.progressActiveWidth,
       height: OnboardingLayout.progressHeight,
       child: Stack(
         children: [
@@ -35,7 +35,9 @@ class OnboardingProgressIndicator extends StatelessWidget {
               top: 0,
               child: _Dot(active: false, wide: false, color: color),
             ),
-          Positioned(
+          AnimatedPositioned(
+            duration: context.motion(PrismDurations.base),
+            curve: PrismCurves.move,
             left: activeLeft,
             top: 0,
             child: _Dot(active: true, wide: true, color: color),

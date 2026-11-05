@@ -67,20 +67,51 @@ void main() {
   });
 
   group('rings', () {
-    double turns(WidgetTester tester) => tester
-        .widget<RotationTransition>(
-          find.descendant(of: find.byType(PrismFab), matching: find.byType(RotationTransition)).first,
+    List<double> ringTurns(WidgetTester tester) => tester
+        .widgetList<RotationTransition>(
+          find.descendant(of: find.byType(PrismFab), matching: find.byType(RotationTransition)),
         )
-        .turns
-        .value;
+        .map((ring) => ring.turns.value)
+        .toList();
 
-    testWidgets('turn once every five seconds while motion is allowed', (tester) async {
+    double turns(WidgetTester tester) => ringTurns(tester).first;
+
+    testWidgets('turn once over five seconds while motion is allowed', (tester) async {
       await tester.pumpWidget(_host());
       expect(turns(tester), 0);
 
       await tester.pump(const Duration(seconds: 1));
 
       expect(turns(tester), closeTo(0.2, 0.01));
+    });
+
+    testWidgets('rest after one turn, so the screen stops drawing frames', (tester) async {
+      await tester.pumpWidget(_host());
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(ringTurns(tester), <double>[1, 1]);
+      expect(tester.binding.hasScheduledFrame, isFalse);
+
+      await tester.pumpWidget(_host(reduceMotion: true));
+      await tester.pump(const Duration(seconds: 1));
+      expect(ringTurns(tester), <double>[1, 1]);
+      expect(tester.binding.hasScheduledFrame, isFalse);
+
+      await tester.pumpWidget(_host());
+      await tester.pump(const Duration(seconds: 1));
+      expect(ringTurns(tester), <double>[1, 1]);
+      expect(tester.binding.hasScheduledFrame, isFalse);
+
+      await tester.pumpWidget(_host(tickerEnabled: false));
+      await tester.pump(const Duration(seconds: 1));
+      expect(ringTurns(tester), <double>[1, 1]);
+      expect(tester.binding.hasScheduledFrame, isFalse);
+
+      await tester.pumpWidget(_host());
+      await tester.pump(const Duration(seconds: 1));
+      expect(ringTurns(tester), <double>[1, 1]);
+      expect(tester.binding.hasScheduledFrame, isFalse);
     });
 
     testWidgets('stay still when the system asks for less motion', (tester) async {
@@ -91,18 +122,34 @@ void main() {
       expect(turns(tester), 0);
     });
 
+    testWidgets('pause the turn when reduced motion is enabled, then resume from the same pose', (tester) async {
+      await tester.pumpWidget(_host());
+      await tester.pump(const Duration(seconds: 1));
+      final double beforeReduceMotion = turns(tester);
+      expect(beforeReduceMotion, closeTo(0.2, 0.01));
+
+      await tester.pumpWidget(_host(reduceMotion: true));
+      await tester.pump(const Duration(seconds: 8));
+      expect(turns(tester), beforeReduceMotion);
+
+      await tester.pumpWidget(_host());
+      await tester.pump(const Duration(seconds: 1));
+      expect(turns(tester), greaterThan(beforeReduceMotion));
+      expect(turns(tester), closeTo(0.4, 0.01));
+    });
+
     testWidgets('stop while their tab is hidden and go on when it comes back', (tester) async {
       await tester.pumpWidget(_host());
       await tester.pump(const Duration(seconds: 1));
       final double beforeHide = turns(tester);
 
       await tester.pumpWidget(_host(tickerEnabled: false));
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 8));
       expect(turns(tester), beforeHide);
 
       await tester.pumpWidget(_host());
       await tester.pump(const Duration(seconds: 1));
-      expect(turns(tester), greaterThan(beforeHide + 0.1));
+      expect(turns(tester), closeTo(0.4, 0.01));
     });
   });
 }

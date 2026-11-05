@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/updates/app_update_host.dart';
@@ -73,14 +72,9 @@ class _DashboardPageState extends State<DashboardPage> {
         value: overlayStyle,
         child: AutoTabsRouter(
           routes: const [HomeTabRoute(), SearchTabRoute(), RewardsTabRoute(), CollectionTabRoute()],
-          duration: PrismDurations.fast,
-          transitionBuilder: (context, child, animation) {
-            if (context.reduceMotion) return child;
-            return FadeTransition(
-              opacity: animation.drive(CurveTween(curve: PrismCurves.enter)),
-              child: child,
-            );
-          },
+          // Keep the page body switch immediate; the bar's active circle shows the change.
+          duration: Duration.zero,
+          transitionBuilder: (context, child, animation) => child,
           builder: (context, child) {
             final tabsRouter = AutoTabsRouter.of(context);
             return PopScope(

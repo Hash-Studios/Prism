@@ -22,21 +22,22 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 Future<void> openDropPreview(BuildContext context, {required DropWall wall}) async {
   final DropsBloc bloc = context.read<DropsBloc>();
   if (bloc.state.drop == null) return;
-  final bool still = MediaQuery.disableAnimationsOf(context);
   await Navigator.of(context, rootNavigator: true).push<void>(
     PageRouteBuilder<void>(
       fullscreenDialog: true,
-      transitionDuration: still ? Duration.zero : const Duration(milliseconds: 280),
-      reverseTransitionDuration: still ? Duration.zero : const Duration(milliseconds: 200),
+      transitionDuration: context.motion(PrismDurations.base),
+      reverseTransitionDuration: context.motion(PrismDurations.fast),
       pageBuilder: (_, _, _) => BlocProvider<DropsBloc>.value(
         value: bloc,
         child: DropPreviewPage(wallId: wall.id),
       ),
       transitionsBuilder: (_, animation, _, child) {
-        final Animation<double> eased = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
-        return FadeTransition(
-          opacity: eased,
-          child: ScaleTransition(scale: Tween<double>(begin: 0.96, end: 1).animate(eased), child: child),
+        return PrismEased(
+          animation: animation,
+          builder: (eased) => FadeTransition(
+            opacity: eased,
+            child: ScaleTransition(scale: Tween<double>(begin: 0.96, end: 1).animate(eased), child: child),
+          ),
         );
       },
     ),

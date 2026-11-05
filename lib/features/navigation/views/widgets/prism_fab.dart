@@ -10,7 +10,7 @@ import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
-/// The round create button: four layered rainbow rings, the middle and the top ones turning slowly.
+/// The round create button: four layered rainbow rings. The middle and top rings turn once over five seconds.
 class PrismFab extends StatefulWidget {
   const PrismFab({super.key});
 
@@ -30,10 +30,10 @@ class _PrismFabState extends State<PrismFab> with SingleTickerProviderStateMixin
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Spin only while the tab is visible (TickerMode) and motion is allowed.
+    // Stop the controller so hidden time does not count toward the turn.
     final bool spin = TickerMode.valuesOf(context).enabled && !context.reduceMotion;
-    if (spin && !_rotationController.isAnimating) {
-      _rotationController.repeat();
+    if (spin && !_rotationController.isAnimating && !_rotationController.isCompleted) {
+      _rotationController.forward();
     } else if (!spin && _rotationController.isAnimating) {
       _rotationController.stop();
     }
@@ -81,20 +81,22 @@ class _PrismFabState extends State<PrismFab> with SingleTickerProviderStateMixin
           child: SizedBox(
             width: 56,
             height: 56,
-            child: Stack(
-              fit: StackFit.expand,
-              children: <Widget>[
-                Image.asset('assets/images/button_bottom_layer.webp'),
-                RotationTransition(
-                  turns: _rotationController,
-                  child: Image.asset('assets/images/button_middle_layer.webp'),
-                ),
-                Image.asset('assets/images/button_top_layer.webp'),
-                RotationTransition(
-                  turns: _rotationController,
-                  child: Image.asset('assets/images/button_topmost_layer.webp'),
-                ),
-              ],
+            child: RepaintBoundary(
+              child: Stack(
+                fit: StackFit.expand,
+                children: <Widget>[
+                  Image.asset('assets/images/button_bottom_layer.webp'),
+                  RotationTransition(
+                    turns: _rotationController,
+                    child: Image.asset('assets/images/button_middle_layer.webp'),
+                  ),
+                  Image.asset('assets/images/button_top_layer.webp'),
+                  RotationTransition(
+                    turns: _rotationController,
+                    child: Image.asset('assets/images/button_topmost_layer.webp'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

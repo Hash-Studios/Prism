@@ -1218,8 +1218,8 @@ class _GlassSegments<T> extends StatelessWidget {
   final bool compact;
 
   static const double _inset = 4;
-  static const Curve _slide = Cubic(0.23, 1, 0.32, 1);
-  static const Duration _slideDuration = Duration(milliseconds: 180);
+  static const Curve _slide = PrismCurves.enter;
+  static const Duration _slideDuration = PrismDurations.fast;
 
   @override
   Widget build(BuildContext context) {

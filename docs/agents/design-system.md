@@ -138,13 +138,16 @@ Tokens live in `lib/core/motion/prism_motion.dart`.
   300 ms. Bottom sheets use `PrismDurations.sheet` (360) because the sheet travels the full screen height.
 - Curves: `PrismCurves.enter` (strong ease-out) for things that arrive or leave, `move` for things that change place,
   `sheet` for sheets, `pop` for a small overshoot on a badge or a tick. Never `Curves.easeIn`.
+- `reverseCurve` and `AnimatedSwitcher.switchOutCurve` run from 1 to 0 without a flip. Use `PrismCurves.exitReverse`
+  there, never `enter` or `exit`.
 - Wrap every duration in `context.motion(...)` so reduce motion turns it off.
 - Animate only transform and opacity. Do not animate size, padding or position in a list that is on screen.
 - Never start from scale 0. Start from 0.95 and fade.
 - Press feedback is `PressScale` (0.96). Buttons and chips have it built in.
 - A staged entrance (a page hero, a sheet's content) may stagger its parts by `PrismDurations.stagger`. Grid tiles,
   rows and anything the user sees many times a day do not animate in.
-- Selection changes (tab, chip, toggle) cross-fade or slide in `fast`. They never jump.
+- Selection changes (tab indicator, chip, toggle) cross-fade or slide in `fast`. They never jump. The page body behind
+  a bottom-nav tab swaps at once: tabs switch too often for a fade.
 
 ## Glint
 

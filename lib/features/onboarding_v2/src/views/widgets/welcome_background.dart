@@ -76,9 +76,9 @@ class _WelcomeBackgroundState extends State<WelcomeBackground> with SingleTicker
         duration: context.motion(PrismDurations.base),
         curve: PrismCurves.exit,
         opacity: widget.visible ? 1 : 0,
-        child: AnimatedBuilder(
-          animation: _scale,
-          builder: (context, _) => WelcomeArt(assetPath: OnboardingAssets.wallpaperPrimary, imageScale: _scale.value),
+        child: ScaleTransition(
+          scale: _scale,
+          child: const WelcomeArt(assetPath: OnboardingAssets.wallpaperPrimary),
         ),
       ),
     );

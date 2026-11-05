@@ -88,7 +88,7 @@ class _WallRequestSheetBodyState extends State<WallRequestSheetBody> {
           return AnimatedSwitcher(
             duration: context.motion(PrismDurations.base),
             switchInCurve: PrismCurves.enter,
-            switchOutCurve: PrismCurves.exit,
+            switchOutCurve: PrismCurves.exitReverse,
             transitionBuilder: (Widget child, Animation<double> animation) => FadeTransition(
               opacity: animation,
               child: ScaleTransition(scale: Tween<double>(begin: 0.95, end: 1).animate(animation), child: child),

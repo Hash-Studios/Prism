@@ -163,9 +163,9 @@ class _SplashWidgetState extends State<SplashWidget> {
           content = const _SecondarySplash(key: ValueKey<String>('splash'));
         }
         return AnimatedSwitcher(
-          duration: context.motion(PrismDurations.slow),
+          duration: context.motion(PrismDurations.base),
           switchInCurve: PrismCurves.enter,
-          switchOutCurve: PrismCurves.exit,
+          switchOutCurve: PrismCurves.exitReverse,
           child: content,
         );
       },

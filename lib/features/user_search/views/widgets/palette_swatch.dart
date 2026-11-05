@@ -33,7 +33,8 @@ class PaletteSwatch extends StatelessWidget {
           height: size + 8,
           child: Center(
             child: AnimatedContainer(
-              duration: context.motion(const Duration(milliseconds: 120)),
+              duration: context.motion(PrismDurations.fast),
+              curve: PrismCurves.enter,
               width: selected ? size + 6 : size,
               height: selected ? size + 6 : size,
               padding: const EdgeInsets.all(3),

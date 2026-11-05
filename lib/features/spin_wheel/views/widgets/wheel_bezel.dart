@@ -49,14 +49,13 @@ void paintBulb(Canvas canvas, Offset center, double radius, double lit, WheelGol
   );
 }
 
-/// The static part of the wheel: the soft shadow, the gold bezel with its bulbs and the dark ring inside it. It does
-/// not turn. It repaints when [frame] changes, which is a bulb change, never a layout change.
+/// The static part of the wheel: the soft shadow, the gold bezel and the dark ring inside it. It does not turn and it
+/// does not repaint on bulb frames. [WheelBulbsPainter] paints the bulbs on top.
 class WheelBezelPainter extends CustomPainter {
-  WheelBezelPainter({required this.geometry, required this.palette, required this.frame}) : super(repaint: frame);
+  WheelBezelPainter({required this.geometry, required this.palette});
 
   final WheelGeometry geometry;
   final WheelPalette palette;
-  final ValueListenable<BulbFrame> frame;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -133,18 +132,35 @@ class WheelBezelPainter extends CustomPainter {
           colors: <Color>[Color.lerp(palette.ink, palette.shine, 0.12)!, palette.ink],
         ).createShader(ringBounds),
     );
+  }
 
+  @override
+  bool shouldRepaint(WheelBezelPainter oldDelegate) =>
+      oldDelegate.geometry != geometry || oldDelegate.palette.colorScheme != palette.colorScheme;
+}
+
+/// The bulbs on the bezel. It repaints when [frame] changes, which is a bulb change, never a layout change.
+class WheelBulbsPainter extends CustomPainter {
+  WheelBulbsPainter({required this.geometry, required this.palette, required this.frame}) : super(repaint: frame);
+
+  final WheelGeometry geometry;
+  final WheelPalette palette;
+  final ValueListenable<BulbFrame> frame;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Offset c = size.center(Offset.zero);
     final BulbFrame bulbs = frame.value;
     const double step = 2 * math.pi / wheelBulbCount;
     for (int k = 0; k < wheelBulbCount; k++) {
       final double a = -math.pi / 2 + (k + 0.5) * step;
       final Offset p = c + Offset(math.cos(a), math.sin(a)) * geometry.bulbOrbit;
-      paintBulb(canvas, p, geometry.bulbRadius, bulbs.intensity(k), gold);
+      paintBulb(canvas, p, geometry.bulbRadius, bulbs.intensity(k), palette.gold);
     }
   }
 
   @override
-  bool shouldRepaint(WheelBezelPainter oldDelegate) =>
+  bool shouldRepaint(WheelBulbsPainter oldDelegate) =>
       oldDelegate.geometry != geometry ||
       oldDelegate.palette.colorScheme != palette.colorScheme ||
       oldDelegate.frame != frame;

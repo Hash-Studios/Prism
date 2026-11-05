@@ -64,4 +64,21 @@ void main() {
     expect(find.byIcon(Icons.check_rounded), findsNWidgets(6));
     expect(find.byIcon(Icons.card_giftcard_rounded), findsOneWidget);
   });
+
+  testWidgets('strip is full on the first frame unless animateIn is set', (tester) async {
+    await tester.pumpWidget(_app(kDarkTheme, const StreakCycleStrip(cycleDay: 2, showRewards: false)));
+    expect(find.byIcon(Icons.check_rounded), findsNWidgets(2));
+    final Opacity cell = tester.widget<Opacity>(
+      find.ancestor(of: find.byIcon(Icons.check_rounded).first, matching: find.byType(Opacity)).first,
+    );
+    expect(cell.opacity, 1);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(_app(kDarkTheme, const StreakCycleStrip(cycleDay: 2, showRewards: false, animateIn: true)));
+    await tester.pump(const Duration(milliseconds: 20));
+    final Opacity filling = tester.widget<Opacity>(
+      find.ancestor(of: find.byIcon(Icons.check_rounded).first, matching: find.byType(Opacity)).first,
+    );
+    expect(filling.opacity, lessThan(1));
+  });
 }

@@ -199,7 +199,7 @@ class LivePhotoSheet extends StatelessWidget {
                 AnimatedSwitcher(
                   duration: context.motion(PrismDurations.fast),
                   switchInCurve: PrismCurves.enter,
-                  switchOutCurve: PrismCurves.exit,
+                  switchOutCurve: PrismCurves.exitReverse,
                   child: state.phase == LivePhotoPhase.picking
                       ? _StylePicker(key: const ValueKey<String>('picker'), state: state)
                       : _Progress(key: const ValueKey<String>('progress'), state: state),

@@ -8,8 +8,9 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/daily_chest/domain/chest_phase.dart';
 import 'package:Prism/features/daily_chest/views/pages/daily_chest_page.dart';
 import 'package:Prism/features/daily_chest/views/widgets/chest_box.dart';
-import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,6 +22,37 @@ import '../quests/fake_quests_repository.dart';
 /// 18:48 UTC: the next chest is in 5h 12m.
 final DateTime _now = DateTime.utc(2026, 10, 18, 18, 48);
 const String _today = '2026-10-18';
+
+class _RouteRecorder extends NavigatorObserver {
+  PageRoute<dynamic>? pushed;
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (route is PageRoute<dynamic>) pushed = route;
+  }
+}
+
+class _TrackedAnimation extends Animation<double> {
+  int statusListeners = 0;
+
+  @override
+  double get value => 0.5;
+
+  @override
+  AnimationStatus get status => AnimationStatus.forward;
+
+  @override
+  void addListener(VoidCallback listener) {}
+
+  @override
+  void removeListener(VoidCallback listener) {}
+
+  @override
+  void addStatusListener(AnimationStatusListener listener) => statusListeners++;
+
+  @override
+  void removeStatusListener(AnimationStatusListener listener) => statusListeners--;
+}
 
 QuestState _quests({int claimed = 0, bool bonusDone = false, bool opened = false, String dayKey = _today}) =>
     questState(
@@ -315,6 +347,32 @@ void main() {
       await pumpFor(tester, const Duration(seconds: 1));
       expect(find.byType(DailyChestPage), findsNothing);
       expect(navigator.canPop(), isFalse);
+    });
+
+    testWidgets('rebuilding the chest route transition does not retain status listeners', (tester) async {
+      DailyMomentConfig.enabledOverride = false;
+      addTearDown(() => DailyMomentConfig.enabledOverride = null);
+      final _RouteRecorder recorder = _RouteRecorder();
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorObservers: <NavigatorObserver>[recorder],
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: kLightTheme,
+          home: Builder(
+            builder: (context) => TextButton(onPressed: () => showDailyChest(context), child: const Text('open')),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pump();
+      final PageRoute<dynamic> route = recorder.pushed!;
+      final _TrackedAnimation animation = _TrackedAnimation();
+      final BuildContext context = tester.element(find.text('open'));
+      for (int i = 0; i < 100; i++) {
+        route.buildTransitions(context, animation, animation, const SizedBox());
+      }
+      expect(animation.statusListeners, 0);
     });
   });
 

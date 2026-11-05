@@ -72,7 +72,7 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> {
           ),
           const SizedBox(height: PrismSpace.md),
           TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0, end: status.progress),
+            tween: Tween<double>(end: status.progress),
             duration: context.motion(PrismDurations.slow),
             curve: PrismCurves.enter,
             builder: (BuildContext context, double value, Widget? child) => LinearProgressIndicator(
