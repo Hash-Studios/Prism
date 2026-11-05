@@ -8215,6 +8215,50 @@
   "@wallpaperLiveConfirmPreview": {
     "description": "Instruction to confirm a live wallpaper in Android's system preview."
   },
+  "wallpaperLiveConfirmHome": "Di pratinjau, ketuk Pasang wallpaper, lalu Layar utama.",
+  "@wallpaperLiveConfirmHome": {
+    "description": "Snackbar after Apply when the user picked Home. Tells them which choice to make in Android's live wallpaper preview."
+  },
+  "wallpaperLiveConfirmLock": "Di pratinjau, ketuk Pasang wallpaper, lalu Layar kunci.",
+  "@wallpaperLiveConfirmLock": {
+    "description": "Snackbar after Apply when the user picked Lock. Tells them which choice to make in Android's live wallpaper preview."
+  },
+  "wallpaperLiveConfirmBoth": "Di pratinjau, ketuk Pasang wallpaper, lalu Layar utama dan layar kunci.",
+  "@wallpaperLiveConfirmBoth": {
+    "description": "Snackbar after Apply when the user picked Both. Tells them which choice to make in Android's live wallpaper preview."
+  },
+  "wallpaperLiveSameWallBothScreens": "Konfirmasikan di pratinjau sistem. Ponsel ini menampilkan wallpaper bergerak yang sama di kedua layar.",
+  "@wallpaperLiveSameWallBothScreens": {
+    "description": "Snackbar after Apply on Android 15 or older, where one live wallpaper always covers both screens."
+  },
+  "wallpaperLiveScreensResult": "Layar utama: {home}. Layar kunci: {lock}.",
+  "@wallpaperLiveScreensResult": {
+    "description": "After the user returns from the preview: the live style each screen shows. Each value is a style name, or wallpaperLiveScreenOther, or wallpaperLiveScreenPrismWall.",
+    "placeholders": {
+      "home": {
+        "type": "String"
+      },
+      "lock": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperLiveScreenOther": "wallpaper lain",
+  "@wallpaperLiveScreenOther": {
+    "description": "Value for wallpaperLiveScreensResult when the screen does not show a Prism live wall. Lower case, it sits inside a sentence."
+  },
+  "wallpaperLiveScreenPrismWall": "sebuah wallpaper bergerak Prism",
+  "@wallpaperLiveScreenPrismWall": {
+    "description": "Value for wallpaperLiveScreensResult when the screen shows a Prism live wall whose style is unknown. Lower case."
+  },
+  "wallpaperLivePickForHome": "Pilih wallpaper untuk layar utama",
+  "@wallpaperLivePickForHome": {
+    "description": "Button after the Lock screen got a live wall. Lets the user choose a different wall for the Home screen."
+  },
+  "wallpaperLivePickForLock": "Pilih wallpaper untuk layar kunci",
+  "@wallpaperLivePickForLock": {
+    "description": "Button after the Home screen got a live wall. Lets the user choose a different wall for the Lock screen."
+  },
   "wallpaperLiveDeviceUnavailable": "Tidak tersedia di perangkat ini",
   "@wallpaperLiveDeviceUnavailable": {
     "description": "Title shown when the selected live wallpaper mode is unsupported."

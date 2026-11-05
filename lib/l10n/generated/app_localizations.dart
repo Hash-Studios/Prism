@@ -13915,6 +13915,60 @@ abstract class AppLocalizations {
   /// **'Confirm in the system preview.'**
   String get wallpaperLiveConfirmPreview;
 
+  /// Snackbar after Apply when the user picked Home. Tells them which choice to make in Android's live wallpaper preview.
+  ///
+  /// In en, this message translates to:
+  /// **'In the preview, tap Set wallpaper, then Home screen.'**
+  String get wallpaperLiveConfirmHome;
+
+  /// Snackbar after Apply when the user picked Lock. Tells them which choice to make in Android's live wallpaper preview.
+  ///
+  /// In en, this message translates to:
+  /// **'In the preview, tap Set wallpaper, then Lock screen.'**
+  String get wallpaperLiveConfirmLock;
+
+  /// Snackbar after Apply when the user picked Both. Tells them which choice to make in Android's live wallpaper preview.
+  ///
+  /// In en, this message translates to:
+  /// **'In the preview, tap Set wallpaper, then Home screen and lock screen.'**
+  String get wallpaperLiveConfirmBoth;
+
+  /// Snackbar after Apply on Android 15 or older, where one live wallpaper always covers both screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm in the system preview. This phone shows the same live wall on both screens.'**
+  String get wallpaperLiveSameWallBothScreens;
+
+  /// After the user returns from the preview: the live style each screen shows. Each value is a style name, or wallpaperLiveScreenOther, or wallpaperLiveScreenPrismWall.
+  ///
+  /// In en, this message translates to:
+  /// **'Home screen: {home}. Lock screen: {lock}.'**
+  String wallpaperLiveScreensResult(String home, String lock);
+
+  /// Value for wallpaperLiveScreensResult when the screen does not show a Prism live wall. Lower case, it sits inside a sentence.
+  ///
+  /// In en, this message translates to:
+  /// **'another wallpaper'**
+  String get wallpaperLiveScreenOther;
+
+  /// Value for wallpaperLiveScreensResult when the screen shows a Prism live wall whose style is unknown. Lower case.
+  ///
+  /// In en, this message translates to:
+  /// **'a Prism live wall'**
+  String get wallpaperLiveScreenPrismWall;
+
+  /// Button after the Lock screen got a live wall. Lets the user choose a different wall for the Home screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a wall for the Home screen'**
+  String get wallpaperLivePickForHome;
+
+  /// Button after the Home screen got a live wall. Lets the user choose a different wall for the Lock screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a wall for the Lock screen'**
+  String get wallpaperLivePickForLock;
+
   /// Title shown when the selected live wallpaper mode is unsupported.
   ///
   /// In en, this message translates to:

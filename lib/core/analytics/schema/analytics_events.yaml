@@ -2480,6 +2480,17 @@ events:
       - name: result
         key: result
         type: string
+      - name: target
+        key: target
+        type: enum
+        enum: WallpaperTarget
+        required: false
+      - name: per_screen
+        key: per_screen
+        type: bool
+      - name: fallback
+        key: fallback
+        type: bool
   - id: live_photo_export_started
     fields:
       - name: style

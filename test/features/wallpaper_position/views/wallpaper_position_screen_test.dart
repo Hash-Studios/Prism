@@ -49,6 +49,9 @@ class _Repository implements WallpaperPositionRepository {
 }
 
 class _Client implements WallpaperClient {
+  @override
+  Future<aw.LiveWallpaperScreens> getLiveWallpaperScreens() async => const aw.LiveWallpaperScreens();
+
   aw.WallpaperOperationStatus status = aw.WallpaperOperationStatus.applied;
   final List<aw.StaticWallpaperRequest> requests = <aw.StaticWallpaperRequest>[];
 

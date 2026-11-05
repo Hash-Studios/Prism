@@ -94,6 +94,9 @@ class _ResultClient extends _FakeClient {
 }
 
 class _FakeClient implements WallpaperClient {
+  @override
+  Future<aw.LiveWallpaperScreens> getLiveWallpaperScreens() async => const aw.LiveWallpaperScreens();
+
   _FakeClient(this.results);
 
   final List<aw.WallpaperOperationStatus> results;

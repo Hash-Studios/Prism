@@ -9018,6 +9018,37 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperLiveConfirmPreview => 'सिस्टम प्रीव्यू में पुष्टि करें।';
 
   @override
+  String get wallpaperLiveConfirmHome => 'प्रीव्यू में “वॉलपेपर लगाएँ” पर टैप करें, फिर “होम स्क्रीन” पर।';
+
+  @override
+  String get wallpaperLiveConfirmLock => 'प्रीव्यू में “वॉलपेपर लगाएँ” पर टैप करें, फिर “लॉक स्क्रीन” पर।';
+
+  @override
+  String get wallpaperLiveConfirmBoth =>
+      'प्रीव्यू में “वॉलपेपर लगाएँ” पर टैप करें, फिर “होम स्क्रीन और लॉक स्क्रीन” पर।';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'सिस्टम प्रीव्यू में पुष्टि करें। इस फ़ोन पर दोनों स्क्रीन पर एक ही लाइव वॉलपेपर दिखेगा।';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'होम स्क्रीन: $home। लॉक स्क्रीन: $lock।';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'कोई और वॉलपेपर';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'Prism का एक लाइव वॉलपेपर';
+
+  @override
+  String get wallpaperLivePickForHome => 'होम स्क्रीन के लिए वॉलपेपर चुनें';
+
+  @override
+  String get wallpaperLivePickForLock => 'लॉक स्क्रीन के लिए वॉलपेपर चुनें';
+
+  @override
   String get wallpaperLiveDeviceUnavailable => 'इस डिवाइस पर उपलब्ध नहीं है';
 
   @override
