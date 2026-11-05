@@ -94,7 +94,7 @@ class FolderSavePlanSheet extends StatelessWidget {
       FolderSavePlanFailed(:final target) => PrismSheetBody(
         title: l10n.foldersSaveAllTitle,
         message: l10n.foldersSaveAllPlanFailed,
-        actions: <Widget>[PrismButton(label: l10n.wallpaperTryAgain, expand: true, onPressed: onRetry)],
+        actions: <Widget>[PrismButton(maxLines: null, label: l10n.wallpaperTryAgain, expand: true, onPressed: onRetry)],
         child: Semantics(liveRegion: true, label: target.name, child: const SizedBox.shrink()),
       ),
       _ => PrismSheetBody(
@@ -130,6 +130,7 @@ class FolderSavePlanSheet extends StatelessWidget {
       if (plan.isPro || coins == 0) ...<Widget>[
         if (free > 0)
           PrismButton(
+            maxLines: null,
             key: const ValueKey<String>('folder-save-all'),
             label: l10n.foldersSaveAllCountButton(free),
             icon: Icons.download_rounded,
@@ -139,6 +140,7 @@ class FolderSavePlanSheet extends StatelessWidget {
       ] else ...<Widget>[
         if (affordable > 0)
           PrismButton(
+            maxLines: null,
             key: const ValueKey<String>('folder-save-paid'),
             label: l10n.foldersSaveAllPaidButton(plan.affordableCost),
             icon: Icons.download_rounded,
@@ -147,6 +149,7 @@ class FolderSavePlanSheet extends StatelessWidget {
           ),
         if (free > 0)
           PrismButton(
+            maxLines: null,
             key: const ValueKey<String>('folder-save-free'),
             label: l10n.foldersSaveAllFreeButton(free),
             variant: affordable > 0 ? PrismButtonVariant.tonal : PrismButtonVariant.primary,
@@ -363,6 +366,7 @@ class _Progress extends StatelessWidget {
           Tooltip(
             message: l10n.foldersSaveAllCancelHint,
             child: PrismButton(
+              maxLines: null,
               key: const ValueKey<String>('folder-save-cancel'),
               label: l10n.foldersSaveAllCancel,
               variant: PrismButtonVariant.ghost,
@@ -415,6 +419,7 @@ class _Summary extends StatelessWidget {
                 children: <Widget>[
                   if (run.failed > 0)
                     PrismButton(
+                      maxLines: null,
                       key: const ValueKey<String>('folder-save-retry'),
                       label: l10n.foldersSaveAllRetry,
                       icon: Icons.refresh_rounded,
@@ -422,6 +427,7 @@ class _Summary extends StatelessWidget {
                       onPressed: onRetry,
                     ),
                   PrismButton(
+                    maxLines: null,
                     key: const ValueKey<String>('folder-save-done'),
                     label: l10n.foldersSaveAllDone,
                     variant: PrismButtonVariant.ghost,

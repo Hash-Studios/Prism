@@ -12,6 +12,7 @@ import 'package:Prism/features/folders/views/widgets/folder_save_views.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -331,6 +332,10 @@ void main() {
     expect(find.text('Save the 2 free wallpapers'), findsOneWidget);
     expect(tester.getSize(find.byKey(const ValueKey<String>('folder-save-paid'))).height, greaterThanOrEqualTo(44));
     expect(tester.getSize(find.byKey(const ValueKey<String>('folder-save-free'))).height, greaterThanOrEqualTo(44));
+    for (final String label in <String>['Save all I can (20 coins)', 'Save the 2 free wallpapers']) {
+      final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(find.text(label));
+      expect(paragraph.didExceedMaxLines, isFalse, reason: '"$label" is cut off at large text');
+    }
   });
 
   testWidgets('large text: the summary wraps its buttons without overflow on a phone', (tester) async {
