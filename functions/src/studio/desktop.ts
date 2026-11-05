@@ -40,7 +40,7 @@ export const DESKTOP_COMPOSITION =
   "detail, so desktop icons, a menu bar and a dock stay readable and a 16:9 crop loses nothing important. Crisp, " +
   "clean detail, no clutter.";
 
-const SHARE_ID = /^[A-Za-z0-9_-]{1,200}$/;
+export const SHARE_ID = /^[A-Za-z0-9_-]{1,200}$/;
 
 export type DesktopSkip = "not_approved" | "not_studio" | "duo" | "model" | "prompt" | "exists";
 
@@ -128,7 +128,7 @@ export const desktopObjectName = (shareId: string, sha: string) => `desktop-orig
 export const desktopThumbObject = (shareId: string, sha: string) =>
   `previews/desktop-${createHash("sha256").update(`${shareId}\0${sha}`).digest("hex")}.jpg`;
 
-function desktopThumbUrl(shareId: string, sha: string): string {
+export function desktopThumbUrl(shareId: string, sha: string): string {
   const base = r2Env("R2_PREVIEW_BASE_URL");
   if (!base) throw new PermanentError("desktop_storage", "R2_PREVIEW_BASE_URL is not configured.");
   return `${base.replace(/\/$/, "")}/${desktopThumbObject(shareId, sha)}`;

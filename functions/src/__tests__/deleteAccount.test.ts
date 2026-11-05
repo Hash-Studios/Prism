@@ -201,6 +201,14 @@ test("account deletion covers private metadata, lineage, operation and receipt l
   assert.ok(log.indexOf("barrier:creatorDeletionState/u1") < log.indexOf("delete:wallResubmissionRoots/d1"));
 });
 
+test("account deletion removes the creator's desktop submissions before the profile is anonymized", async (t) => {
+  const log = fake(t);
+  await call();
+  assert.ok(log.includes("query:desktopSubmissions.creatorUid==u1"));
+  assert.ok(log.includes("delete:desktopSubmissions/d1"));
+  assert.ok(log.indexOf("delete:desktopSubmissions/d1") < log.indexOf("anonymize"));
+});
+
 test("a failed delete throws before the profile is anonymized or the auth user removed", async (t) => {
   const log = fake(t, {failDelete: true});
   await assert.rejects(async () => {
