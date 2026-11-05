@@ -1,35 +1,10 @@
-import 'dart:io';
-
-import 'package:flutter_test/flutter_test.dart';
-
-void main() {
-  for (final scenario in <String>[
-    'native-ios',
-    'native-android',
-    'admin',
-    'worker',
-    'path-root',
-    'path-write',
-    'path-build',
-    'redirects',
-    'evidence',
-    'push',
-    'environment',
-  ]) {
-    test('shared folders QA isolates $scenario', () async {
-      final result = await Process.run('node', <String>['-e', _sandbox, Directory.current.path, scenario]);
-      expect(result.exitCode, 0, reason: '${result.stdout}\n${result.stderr}');
-    });
-  }
-}
-
-const _sandbox = r'''
+// Loads tool/shared_folders_qa.cjs against fake I/O for one scenario: node safety_sandbox.cjs <repo> <scenario>.
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
-const repo = process.argv[1];
-const scenario = process.argv[2];
+const repo = process.argv[2];
+const scenario = process.argv[3];
 const filename = path.join(repo, 'tool/shared_folders_qa.cjs');
 const source = fs.readFileSync(filename, 'utf8');
 const backend = fs.readFileSync(path.join(repo, 'tool/weekly_challenge_qa/backend.cjs'), 'utf8');
@@ -267,4 +242,3 @@ async function main() {
   }
 }
 main().catch(error => { console.error(error.stack); process.exitCode = 1; });
-''';
