@@ -3,7 +3,7 @@ import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {db, REGION, str} from "./common";
 import {syncPublicFolder, syncPublicFolderItem} from "./publicFolders";
 import {r2Secrets} from "./r2Storage";
-import {cleanupDeletedFolder, recordFolderActivity} from "./sharedFolders";
+import {cleanupDeletedFolder, forgetFolderActivityItem, recordFolderActivity} from "./sharedFolders";
 
 export const FOLDERS = "folders";
 export const FOLDER_ITEMS = "items";
@@ -43,7 +43,11 @@ export const onFolderItemWritten = onDocumentWritten(
     await syncPublicFolderItem(event.params.folderId, event.params.itemKey);
     const after = event.data?.after;
     if (!event.data?.before?.exists && after?.exists) {
-      await recordFolderActivity(event.params.folderId, event.params.itemKey, after.data() ?? {});
+      if (after.createTime) {
+        await recordFolderActivity(event.params.folderId, event.params.itemKey, after.data() ?? {}, after.createTime);
+      }
+    } else if (event.data?.before?.exists && !after?.exists) {
+      await forgetFolderActivityItem(event.params.folderId, event.params.itemKey, event.data.before.createTime);
     }
   },
 );

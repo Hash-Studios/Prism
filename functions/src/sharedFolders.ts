@@ -63,9 +63,12 @@ export type JoinDecision = "join" | "member" | "owner" | JoinRefusal;
 const folderRef = (folderId: string) => db.collection(FOLDERS).doc(folderId);
 const inviteRef = (code: string) => db.collection(FOLDER_INVITES).doc(code);
 const activityRef = (folderId: string) => db.collection(FOLDER_ACTIVITY).doc(folderId);
+const activityItemRef = (folderId: string, itemKey: string) => activityRef(folderId).collection("items").doc(itemKey);
 const millis = (value: unknown): number => value instanceof admin.firestore.Timestamp ? value.toMillis() : 0;
 const sameTimestamp = (a: unknown, b: unknown): boolean =>
   a instanceof admin.firestore.Timestamp && b instanceof admin.firestore.Timestamp && a.isEqual(b);
+const isBefore = (a: admin.firestore.Timestamp, b: admin.firestore.Timestamp): boolean =>
+  a.seconds < b.seconds || (a.seconds === b.seconds && a.nanoseconds < b.nanoseconds);
 
 /** The editors in a folder doc, oldest first. */
 export function editorsOf(folder: Doc | undefined): FolderMember[] {
@@ -352,32 +355,60 @@ export async function cleanupDeletedFolder(folderId: string): Promise<void> {
   }
 }
 
+/** Removes a receipt after a source item is deleted, unless that item key has already been reused. */
+export async function forgetFolderActivityItem(folderId: string, itemKey: string,
+  itemCreatedAt?: admin.firestore.Timestamp): Promise<void> {
+  await db.runTransaction(async (tx) => {
+    const source = await tx.get(folderRef(folderId).collection(ITEMS).doc(itemKey));
+    const receipt = await tx.get(activityItemRef(folderId, itemKey));
+    if (source.exists || !receipt.exists) return;
+    if (itemCreatedAt && !sameTimestamp(receipt.data()?.createdAt, itemCreatedAt)) return;
+    tx.delete(receipt.ref);
+  });
+}
+
 /**
  * onFolderItemWritten, on a new item in a folder with editors. Pending adds are keyed by item, so a retried trigger
  * records the same add once.
  */
-export async function recordFolderActivity(folderId: string, itemKey: string, item: Doc): Promise<void> {
+export async function recordFolderActivity(folderId: string, itemKey: string, item: Doc,
+  itemCreatedAt: admin.firestore.Timestamp): Promise<void> {
   await db.runTransaction(async (tx) => {
-    const folder = (await tx.get(folderRef(folderId))).data();
+    const folderSnap = await tx.get(folderRef(folderId));
+    const sourceSnap = await tx.get(folderRef(folderId).collection(ITEMS).doc(itemKey));
+    const receiptRef = activityItemRef(folderId, itemKey);
+    const receipt = await tx.get(receiptRef);
+    const folder = folderSnap.data();
     if (!folder || editorsOf(folder).length === 0) return;
+    if (folderSnap.createTime && isBefore(itemCreatedAt, folderSnap.createTime)) return;
+    if (!sourceSnap.exists || !sameTimestamp(sourceSnap.createTime, itemCreatedAt)) return;
     const ownerId = str(folder.ownerId);
     if (str(item.ownerId) !== ownerId) return;
     const adder = str(item.addedBy) || ownerId;
-    const state = (await tx.get(activityRef(folderId))).data();
+    const stateSnap = await tx.get(activityRef(folderId));
+    let state = stateSnap.data();
+    if (state && !sameTimestamp(state.folderCreatedAt, folderSnap.createTime)) state = undefined;
     const pending: Record<string, string> = {...(state?.pending ?? {})};
-    if (pending[itemKey] === adder || (!(itemKey in pending) && Object.keys(pending).length >= MAX_PENDING_ITEMS)) return;
+    const pendingCreatedAt: Record<string, admin.firestore.Timestamp> = {...(state?.pendingCreatedAt ?? {})};
+    if (sameTimestamp(receipt.data()?.createdAt, itemCreatedAt)) return;
+    if (pending[itemKey] === adder && sameTimestamp(pendingCreatedAt[itemKey], itemCreatedAt)) return;
+    if (!(itemKey in pending) && Object.keys(pending).length >= MAX_PENDING_ITEMS) return;
     pending[itemKey] = adder;
+    pendingCreatedAt[itemKey] = itemCreatedAt;
     const nowMs = Date.now();
     const firstMs = millis(state?.firstPendingAt) || nowMs;
     const lastSentMs = millis(state?.lastSentAt);
     const dueMs = Math.max(firstMs + ACTIVITY_SETTLE_MS, lastSentMs ? lastSentMs + ACTIVITY_PUSH_INTERVAL_MS : 0);
     tx.set(activityRef(folderId), {
       folderId,
+      folderCreatedAt: folderSnap.createTime,
       pending,
+      pendingCreatedAt,
       firstPendingAt: admin.firestore.Timestamp.fromMillis(firstMs),
       dueAt: admin.firestore.Timestamp.fromMillis(dueMs),
       lastSentAt: state?.lastSentAt ?? null,
     });
+    tx.set(receiptRef, {createdAt: itemCreatedAt});
   });
 }
 
@@ -447,21 +478,32 @@ function displayName(user: Doc | undefined): string {
 }
 
 /** Claims the pending adds. Returns null when another run took them or they are not due. */
-async function claimActivity(folderId: string, nowMs: number): Promise<{folder: Doc; adds: Record<string, string>} | null> {
+async function claimActivity(folderId: string, nowMs: number): Promise<{
+  folder: Doc;
+  folderCreatedAt: admin.firestore.Timestamp | undefined;
+  adds: Record<string, string>;
+  itemCreatedAt: Record<string, admin.firestore.Timestamp>;
+} | null> {
   return db.runTransaction(async (tx) => {
     const ref = activityRef(folderId);
     const state = await tx.get(ref);
-    const folder = (await tx.get(folderRef(folderId))).data();
+    const folderSnap = await tx.get(folderRef(folderId));
+    const folder = folderSnap.data();
     if (!state.exists) return null;
     if (!folder) {
       tx.delete(ref);
       return null;
     }
+    if (!sameTimestamp(state.data()?.folderCreatedAt, folderSnap.createTime)) {
+      tx.delete(ref);
+      return null;
+    }
     const pending = (state.data()?.pending ?? {}) as Record<string, string>;
     if (millis(state.data()?.dueAt) > nowMs || Object.keys(pending).length === 0) return null;
-    tx.set(ref, {folderId, pending: {}, firstPendingAt: null, dueAt: null,
+    const itemCreatedAt = (state.data()?.pendingCreatedAt ?? {}) as Record<string, admin.firestore.Timestamp>;
+    tx.set(ref, {folderId, folderCreatedAt: folderSnap.createTime, pending: {}, pendingCreatedAt: {}, firstPendingAt: null, dueAt: null,
       lastSentAt: admin.firestore.Timestamp.fromMillis(nowMs)});
-    return {folder, adds: pending};
+    return {folder, folderCreatedAt: folderSnap.createTime, adds: pending, itemCreatedAt};
   });
 }
 
@@ -473,13 +515,20 @@ export async function sendDueFolderActivity(nowMs: number): Promise<number> {
   for (const doc of due.docs) {
     const claim = await claimActivity(doc.id, nowMs);
     if (!claim) continue;
-    const {folder} = claim;
+    const currentFolder = await folderRef(doc.id).get();
+    const folder = currentFolder.data();
+    if (!folder || str(folder.ownerId) !== str(claim.folder.ownerId) ||
+      !sameTimestamp(currentFolder.createTime, claim.folderCreatedAt)) continue;
     const ownerId = str(folder.ownerId);
     const keys = Object.keys(claim.adds);
     const items = await db.getAll(...keys.map((key) => folderRef(doc.id).collection(ITEMS).doc(key)));
     const adds: Record<string, string> = {};
     items.forEach((item, i) => {
-      if (item.exists && str(item.data()?.ownerId) === ownerId) adds[keys[i]] = claim.adds[keys[i]];
+      const itemData = item.data();
+      const adder = str(itemData?.addedBy) || ownerId;
+      const expectedCreatedAt = claim.itemCreatedAt[keys[i]];
+      if (item.exists && str(itemData?.ownerId) === ownerId && adder === claim.adds[keys[i]] &&
+        (!expectedCreatedAt || sameTimestamp(item.createTime, expectedCreatedAt))) adds[keys[i]] = claim.adds[keys[i]];
     });
     const members = membersOf(folder).map((m) => m.uid);
     const people = [...new Set([...members, ...Object.values(adds)])];

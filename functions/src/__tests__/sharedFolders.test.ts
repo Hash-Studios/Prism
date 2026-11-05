@@ -161,6 +161,31 @@ test("joinFolder again as a member returns joined:false and changes nothing", as
   assert.deepEqual(store.get("folders/f1")?.memberIds, ["c"]);
 });
 
+test("joining again as a member is unchanged even if another editor blocked them", async (t) => {
+  const store = setup(t, {
+    ...validInvite(),
+    "folders/f1": folder("a", ["b", "c"]),
+    "usersv2/b/blockedUsers/c": {},
+  });
+  assert.deepEqual(await call(joinFolder, "b", {code: CODE}), {folderId: "f1", joined: false});
+  assert.equal(store.get(`folderInvites/${CODE}`)?.usedBy, null);
+});
+
+test("a deleted existing editor cannot use an invite to rejoin", async (t) => {
+  setup(t, {"folders/f1": folder("a", ["c"]), "usersv2/c": {name: "Cy", deleted: true}, ...validInvite()});
+  await assert.rejects(call(joinFolder, "c", {code: CODE}), {code: "failed-precondition", message: "account"});
+});
+
+test("getFolderInvite does not reveal a folder when either side has blocked the caller", async (t) => {
+  setup(t, {...validInvite(), "usersv2/a/blockedUsers/c": {}});
+  assert.deepEqual(await call(getFolderInvite, "c", {code: CODE}), {status: "not_found"});
+});
+
+test("getFolderInvite does not reveal an invite to a deleted account", async (t) => {
+  setup(t, {...validInvite(), "usersv2/c": {name: "Cy", deleted: true}});
+  assert.deepEqual(await call(getFolderInvite, "c", {code: CODE}), {status: "not_found"});
+});
+
 test("joinFolder by the owner returns joined:false and leaves the invite unused", async (t) => {
   const store = setup(t, validInvite());
   assert.deepEqual(await call(joinFolder, "a", {code: CODE}), {folderId: "f1", joined: false});
@@ -172,6 +197,35 @@ test("an invite spent by one user cannot be used by another", async (t) => {
   setup(t, validInvite());
   await call(joinFolder, "c", {code: CODE});
   await assert.rejects(call(joinFolder, "d", {code: CODE}), {code: "failed-precondition", message: "used"});
+});
+
+test("two callers racing the same single-use invite produce one member", async (t) => {
+  const store = setup(t, validInvite());
+  const results = await Promise.allSettled([
+    call(joinFolder, "c", {code: CODE}),
+    call(joinFolder, "d", {code: CODE}),
+  ]);
+  assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
+  assert.equal(results.filter((result) => result.status === "rejected").length, 1);
+  assert.equal((store.get("folders/f1")?.memberIds as string[]).length, 1);
+  assert.ok(["c", "d"].includes(store.get(`folderInvites/${CODE}`)?.usedBy as string));
+});
+
+test("two different invites racing for the tenth editor slot cannot overfill the folder", async (t) => {
+  const secondCode = "BCDEFGHJKM";
+  const store = setup(t, {
+    "folders/f1": folder("a", TEN_EDITORS.slice(0, 9)),
+    ...validInvite(),
+    [`folderInvites/${secondCode}`]: invite({code: secondCode}),
+  });
+  const results = await Promise.allSettled([
+    call(joinFolder, "c", {code: CODE}),
+    call(joinFolder, "d", {code: secondCode}),
+  ]);
+  assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
+  const refused = results.find((result) => result.status === "rejected");
+  assert.equal((refused as PromiseRejectedResult).reason.message, "full");
+  assert.equal((store.get("folders/f1")?.memberIds as string[]).length, 10);
 });
 
 test("repairFolder counts only the owner's items and keeps the four newest covers", async (t) => {
@@ -244,6 +298,25 @@ test("cleanupDeletedFolder removes the folder's invites and its activity doc onl
   assert.equal(store.has("folderActivity/f2"), true);
 });
 
+test("a delayed delete cleanup does not remove invites or activity for a recreated folder id", async (t) => {
+  const store = setup(t, {
+    "folderInvites/ABCDEFGHJK": invite({folderId: "f1"}),
+    "folderActivity/f1": {folderId: "f1", folderCreatedAt: at(1), pending: {k1: "b"}, firstPendingAt: at(NOW), dueAt: at(NOW + HOUR),
+      lastSentAt: null},
+  });
+
+  // The old folder's delete trigger can run after Firestore has already reused its id.
+  await cleanupDeletedFolder("f1");
+
+  assert.equal(store.has(`folderInvites/${CODE}`), true);
+  assert.equal(store.has("folderActivity/f1"), true);
+});
+
+test("an invite cannot join a same-owner folder recreated with the same id", async (t) => {
+  setup(t, validInvite({folderCreatedAt: at(0)}));
+  await assert.rejects(call(joinFolder, "c", {code: CODE}), {code: "failed-precondition", message: "not_found"});
+});
+
 test("removeFolderMembershipsBetween removes each side only from the other's folders", async (t) => {
   const store = setup(t, {
     "folders/f1": folder("a", ["c"]),
@@ -264,24 +337,61 @@ test("recordFolderActivity keeps one pending add per item and sets dueAt from th
     "folders/f3": folder("a", ["b"]),
     "folders/f4": folder("a", ["b"]),
     "folders/f5": folder("a", ["b"]),
-    "folderActivity/f5": {folderId: "f5", pending: {}, firstPendingAt: null, dueAt: null, lastSentAt: at(lastSentMs)},
+    "folders/f1/items/k1": {ownerId: "a", addedBy: "b"},
+    "folders/f2/items/k1": {ownerId: "a", addedBy: "a"},
+    "folders/f3/items/k9": {ownerId: "x", addedBy: "b"},
+    "folders/f4/items/k1": {ownerId: "a", addedBy: "b"},
+    "folders/f5/items/k1": {ownerId: "a", addedBy: "b"},
+    "folderActivity/f5": {folderId: "f5", folderCreatedAt: at(1), pending: {}, firstPendingAt: null, dueAt: null, lastSentAt: at(lastSentMs)},
   });
-  await recordFolderActivity("f1", "k1", {ownerId: "a", addedBy: "b"});
-  await recordFolderActivity("f1", "k1", {ownerId: "a", addedBy: "b"});
+  await recordFolderActivity("f1", "k1", {ownerId: "a", addedBy: "b"}, at(1));
+  await recordFolderActivity("f1", "k1", {ownerId: "a", addedBy: "b"}, at(1));
   assert.deepEqual(store.get("folderActivity/f1")?.pending, {k1: "b"});
 
-  await recordFolderActivity("f2", "k1", {ownerId: "a", addedBy: "a"});
+  await recordFolderActivity("f2", "k1", {ownerId: "a", addedBy: "a"}, at(1));
   assert.equal(store.has("folderActivity/f2"), false);
 
-  await recordFolderActivity("f3", "k9", {ownerId: "x", addedBy: "b"});
+  await recordFolderActivity("f3", "k9", {ownerId: "x", addedBy: "b"}, at(1));
   assert.equal(store.has("folderActivity/f3"), false);
 
-  await recordFolderActivity("f4", "k1", {ownerId: "a", addedBy: "b"});
+  await recordFolderActivity("f4", "k1", {ownerId: "a", addedBy: "b"}, at(1));
   const fresh = store.get("folderActivity/f4");
   assert.equal(ms(fresh?.dueAt) - ms(fresh?.firstPendingAt), 10 * MINUTE);
 
-  await recordFolderActivity("f5", "k1", {ownerId: "a", addedBy: "b"});
+  await recordFolderActivity("f5", "k1", {ownerId: "a", addedBy: "b"}, at(1));
   assert.equal(ms(store.get("folderActivity/f5")?.dueAt), lastSentMs + HOUR);
+});
+
+test("deleting and re-adding the same item key by the same editor replaces its pending generation", async (t) => {
+  const store = setup(t, {
+    "folders/f1": folder("a", ["b"]),
+    "folders/f1/items/k1": {ownerId: "a", addedBy: "b"},
+  });
+  await recordFolderActivity("f1", "k1", {ownerId: "a", addedBy: "b"}, at(1));
+  store.delete("folders/f1/items/k1");
+  store.set("folders/f1/items/k1", {ownerId: "a", addedBy: "b"});
+  await recordFolderActivity("f1", "k1", {ownerId: "a", addedBy: "b"}, at(2));
+  assert.deepEqual(store.get("folderActivity/f1")?.pendingCreatedAt, {k1: at(2)});
+});
+
+test("a delayed item-created event from the old folder generation is not reported", async (t) => {
+  const store = setup(t, {"folders/f1": folder("a", ["b"]), "folders/f1/items/reused-key": {ownerId: "a", addedBy: "b"}});
+  await recordFolderActivity("f1", "reused-key", {ownerId: "a", addedBy: "b"}, at(0));
+  assert.equal(store.has("folderActivity/f1"), false);
+});
+
+test("a retried item-created event after its burst was claimed is not counted twice", async (t) => {
+  const store = setup(t, {
+    "folders/f1": folder("a", ["b"]),
+    "folders/f1/items/k1": {ownerId: "a", addedBy: "b", thumb: "https://img.prismwalls.com/previews/k1.img"},
+    "folderActivity/f1": {folderId: "f1", folderCreatedAt: at(1), pending: {k1: "b"}, pendingCreatedAt: {k1: at(1)},
+      firstPendingAt: at(NOW - 20 * MINUTE), dueAt: at(NOW - 1000), lastSentAt: null},
+    "folderActivity/f1/items/k1": {createdAt: at(1)},
+  });
+  stubGetAll(t);
+  await sendDueFolderActivity(NOW);
+  await recordFolderActivity("f1", "k1", {ownerId: "a", addedBy: "b"}, at(1));
+  assert.deepEqual(store.get("folderActivity/f1")?.pending, {});
 });
 
 test("planActivityPushes gives each member one push led by the adder with the most walls", () => {
@@ -302,7 +412,7 @@ test("planActivityPushes gives each member one push led by the adder with the mo
 test("sendDueFolderActivity leaves an activity doc alone until it is due", async (t) => {
   const store = setup(t, {
     "folders/f1": folder("a", ["b"]),
-    "folderActivity/f1": {folderId: "f1", pending: {k1: "b"}, firstPendingAt: at(NOW), dueAt: at(NOW + HOUR),
+    "folderActivity/f1": {folderId: "f1", folderCreatedAt: at(1), pending: {k1: "b"}, firstPendingAt: at(NOW), dueAt: at(NOW + HOUR),
       lastSentAt: null},
   });
   stubGetAll(t);
@@ -314,7 +424,7 @@ test("sendDueFolderActivity clears a due burst, and a second run in the same hou
   const store = setup(t, {
     "folders/f1": folder("a", ["b"]),
     "folders/f1/items/k1": {ownerId: "a", addedBy: "b", thumb: "https://img.prismwalls.com/previews/k1.img"},
-    "folderActivity/f1": {folderId: "f1", pending: {k1: "b"}, firstPendingAt: at(NOW - 20 * MINUTE),
+    "folderActivity/f1": {folderId: "f1", folderCreatedAt: at(1), pending: {k1: "b"}, firstPendingAt: at(NOW - 20 * MINUTE),
       dueAt: at(NOW - 1000), lastSentAt: null},
   });
   stubGetAll(t);
@@ -325,6 +435,17 @@ test("sendDueFolderActivity clears a due burst, and a second run in the same hou
   assert.deepEqual(store.get("folderActivity/f1")?.pending, {});
 });
 
+test("a pending burst from a deleted folder generation is discarded", async (t) => {
+  const store = setup(t, {
+    "folders/f1": folder("a", ["b"]),
+    "folderActivity/f1": {folderId: "f1", folderCreatedAt: at(0), pending: {k1: "b"},
+      firstPendingAt: at(NOW - 20 * MINUTE), dueAt: at(NOW - 1000), lastSentAt: null},
+  });
+  stubGetAll(t);
+  await sendDueFolderActivity(NOW);
+  assert.equal(store.has("folderActivity/f1"), false);
+});
+
 test("folderActivityPayload titles a burst by its adder and wall count, and routes to the folder", () => {
   const plan = (wallCount: number, otherAdders: number) => ({uid: "a", adderUid: "b", wallCount, otherAdders});
   assert.equal(folderActivityPayload(plan(3, 0), "f1", "Night", "Ana", NOW).title, "Ana added 3 walls to Night");
@@ -333,84 +454,4 @@ test("folderActivityPayload titles a burst by its adder and wall count, and rout
   assert.equal(crowd.title, "Ana and 2 more added 5 walls to Night");
   assert.equal(crowd.data.route, "folder");
   assert.equal(crowd.data.folder_id, "f1");
-});
-
-test("an invite cannot join a same-owner folder recreated with the same id", async (t) => {
-  setup(t, validInvite({folderCreatedAt: at(0)}));
-  await assert.rejects(call(joinFolder, "c", {code: CODE}), {code: "failed-precondition", message: "not_found"});
-});
-
-
-test("joining again as a member is unchanged even if another editor blocked them", async (t) => {
-  const store = setup(t, {
-    ...validInvite(),
-    "folders/f1": folder("a", ["b", "c"]),
-    "usersv2/b/blockedUsers/c": {},
-  });
-  assert.deepEqual(await call(joinFolder, "b", {code: CODE}), {folderId: "f1", joined: false});
-  assert.equal(store.get(`folderInvites/${CODE}`)?.usedBy, null);
-});
-
-
-test("a deleted existing editor cannot use an invite to rejoin", async (t) => {
-  setup(t, {"folders/f1": folder("a", ["c"]), "usersv2/c": {name: "Cy", deleted: true}, ...validInvite()});
-  await assert.rejects(call(joinFolder, "c", {code: CODE}), {code: "failed-precondition", message: "account"});
-});
-
-
-test("getFolderInvite does not reveal a folder when either side has blocked the caller", async (t) => {
-  setup(t, {...validInvite(), "usersv2/a/blockedUsers/c": {}});
-  assert.deepEqual(await call(getFolderInvite, "c", {code: CODE}), {status: "not_found"});
-});
-
-
-test("getFolderInvite does not reveal an invite to a deleted account", async (t) => {
-  setup(t, {...validInvite(), "usersv2/c": {name: "Cy", deleted: true}});
-  assert.deepEqual(await call(getFolderInvite, "c", {code: CODE}), {status: "not_found"});
-});
-
-
-test("two callers racing the same single-use invite produce one member", async (t) => {
-  const store = setup(t, validInvite());
-  const results = await Promise.allSettled([
-    call(joinFolder, "c", {code: CODE}),
-    call(joinFolder, "d", {code: CODE}),
-  ]);
-  assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
-  assert.equal(results.filter((result) => result.status === "rejected").length, 1);
-  assert.equal((store.get("folders/f1")?.memberIds as string[]).length, 1);
-  assert.ok(["c", "d"].includes(store.get(`folderInvites/${CODE}`)?.usedBy as string));
-});
-
-
-test("two different invites racing for the tenth editor slot cannot overfill the folder", async (t) => {
-  const secondCode = "BCDEFGHJKM";
-  const store = setup(t, {
-    "folders/f1": folder("a", TEN_EDITORS.slice(0, 9)),
-    ...validInvite(),
-    [`folderInvites/${secondCode}`]: invite({code: secondCode}),
-  });
-  const results = await Promise.allSettled([
-    call(joinFolder, "c", {code: CODE}),
-    call(joinFolder, "d", {code: secondCode}),
-  ]);
-  assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
-  const refused = results.find((result) => result.status === "rejected");
-  assert.equal((refused as PromiseRejectedResult).reason.message, "full");
-  assert.equal((store.get("folders/f1")?.memberIds as string[]).length, 10);
-});
-
-
-test("a delayed delete cleanup does not remove invites or activity for a recreated folder id", async (t) => {
-  const store = setup(t, {
-    "folderInvites/ABCDEFGHJK": invite({folderId: "f1"}),
-    "folderActivity/f1": {folderId: "f1", folderCreatedAt: at(1), pending: {k1: "b"}, firstPendingAt: at(NOW), dueAt: at(NOW + HOUR),
-      lastSentAt: null},
-  });
-
-  // The old folder's delete trigger can run after Firestore has already reused its id.
-  await cleanupDeletedFolder("f1");
-
-  assert.equal(store.has(`folderInvites/${CODE}`), true);
-  assert.equal(store.has("folderActivity/f1"), true);
 });
