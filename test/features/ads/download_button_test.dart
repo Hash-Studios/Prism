@@ -19,6 +19,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -41,6 +42,8 @@ class _ThrowingSettings extends SettingsLocalDataSource {
 }
 
 class _MockAdsBloc extends MockBloc<AdsEvent, AdsState> implements AdsBloc {}
+
+class _MockDownloadedWallIndex extends Mock implements DownloadedWallIndex {}
 
 void main() {
   late OfflineAssetFixture offlineFixture;
@@ -444,6 +447,137 @@ void main() {
     downloadFinished.complete();
     await tester.pump(const Duration(milliseconds: 100));
 
+    expect(toastMessages, contains(AppLocalizationsEn().coreWallpaperDownloadedPictures));
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('a download that fails after leaving the page still tells the user', (tester) async {
+    getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
+    app_state.prismUser = profileUser(premium: true);
+    const BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
+      'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
+      PrismMediaHostApi.pigeonChannelCodec,
+    );
+    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    final Completer<void> downloadFinished = Completer<void>();
+    final List<Object?> toastMessages = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, (_) async {
+      await downloadFinished.future;
+      return <Object?>[OperationResult(success: false, errorCode: 'ENQUEUE_FAILED')];
+    });
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
+      if (call.method == 'showToast') toastMessages.add((call.arguments as Map<Object?, Object?>)['msg']);
+      return true;
+    });
+    addTearDown(() async {
+      tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, null);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await getIt.reset();
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: DownloadButton(wallpaperSource: WallpaperSource.wallhaven, link: 'https://example.com/wall.jpg'),
+        ),
+      ),
+    );
+    await tester.tap(find.byType(CircularMenuButton));
+    await flushIo(tester);
+    await tester.pump();
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox(),
+      ),
+    );
+    downloadFinished.complete();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(toastMessages, <Object?>[AppLocalizationsEn().economyAiDownloadFailed]);
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('a free saved copy still downloads when the page closes before the save starts', (tester) async {
+    getIt.registerSingleton<SettingsLocalDataSource>(_ThrowingSettings());
+    app_state.prismUser = profileUser();
+    const String link = 'https://example.com/acquired-wall.jpg';
+    const String id = 'acquired-wall';
+    final File acquired = (await tester.runAsync(() => offlineFixture.createImage('acquired-wall.jpg')))!;
+    final Completer<File?> savedCopy = Completer<File?>();
+    var copyLookups = 0;
+    final _MockDownloadedWallIndex index = _MockDownloadedWallIndex();
+    when(() => index.hasAcquired(link: link, id: id, source: WallpaperSource.wallhaven)).thenReturn(true);
+    // The first lookup is the "already in Downloads" check. The second finds the copy this account already has.
+    when(() => index.localFileFor(link: link, id: id, source: WallpaperSource.wallhaven)).thenAnswer((_) {
+      copyLookups++;
+      return copyLookups == 1 ? Future<File?>.value() : savedCopy.future;
+    });
+    when(
+      () => index.remember(
+        link: link,
+        id: id,
+        source: WallpaperSource.wallhaven,
+        ownerId: any(named: 'ownerId'),
+        original: any(named: 'original'),
+      ),
+    ).thenAnswer((_) async {});
+    getIt.registerSingleton<DownloadedWallIndex>(index);
+    const BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
+      'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
+      PrismMediaHostApi.pigeonChannelCodec,
+    );
+    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    final List<DownloadRequest> requests = <DownloadRequest>[];
+    final List<Object?> toastMessages = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, (message) async {
+      requests.add((message! as List<Object?>).single! as DownloadRequest);
+      return <Object?>[OperationResult(success: true)];
+    });
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
+      if (call.method == 'showToast') toastMessages.add((call.arguments as Map<Object?, Object?>)['msg']);
+      return true;
+    });
+    addTearDown(() async {
+      tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(channel, null);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      await getIt.reset();
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: DownloadButton(wallpaperSource: WallpaperSource.wallhaven, contentId: id, link: link),
+        ),
+      ),
+    );
+    await tester.tap(find.byType(CircularMenuButton));
+    await tester.pump();
+    await tester.pump();
+    expect(copyLookups, 2);
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox(),
+      ),
+    );
+    savedCopy.complete(acquired);
+    for (int i = 0; i < 3; i++) {
+      await flushIo(tester);
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(requests, hasLength(1));
+    expect(requests.single.link, acquired.path);
+    expect(requests.single.isLocalFile, isTrue);
     expect(toastMessages, contains(AppLocalizationsEn().coreWallpaperDownloadedPictures));
     await tester.pump(const Duration(seconds: 1));
   });
