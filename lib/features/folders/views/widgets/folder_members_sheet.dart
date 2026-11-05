@@ -11,8 +11,8 @@ import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_member.dart';
 import 'package:Prism/features/folders/domain/repositories/shared_folders_repository.dart';
 import 'package:Prism/features/folders/views/folder_invite.dart';
-import 'package:Prism/features/folders/views/widgets/public_folder_view.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
+import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -26,6 +26,26 @@ String folderMemberName(PublicProfileEntity? profile, AppLocalizations l10n) {
   final String username = profile?.username.trim() ?? '';
   if (username.isNotEmpty) return '@$username';
   return l10n.foldersUnknownPerson;
+}
+
+/// One member's public profile. [placeholder] shows while it loads, so a fallback name never flashes first.
+class FolderMemberProfile extends StatelessWidget {
+  const FolderMemberProfile({super.key, required this.uid, required this.builder, required this.placeholder});
+
+  final String uid;
+  final Widget Function(BuildContext context, PublicProfileEntity? profile) builder;
+  final Widget placeholder;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!getIt.isRegistered<PublicProfileRepository>()) return builder(context, null);
+    return StreamBuilder<PublicProfileEntity?>(
+      stream: getIt<PublicProfileRepository>().watchProfile(uid),
+      builder: (context, snapshot) => snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData
+          ? placeholder
+          : builder(context, snapshot.data),
+    );
+  }
 }
 
 /// Lists the people in [folder]. The owner can invite and remove editors; an editor can leave.
@@ -107,8 +127,18 @@ Future<bool> showFolderMembersSheet(BuildContext context, FolderEntity folder) a
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             for (final FolderMember member in folder.members)
-              FolderOwnerLink(
-                ownerId: member.uid,
+              FolderMemberProfile(
+                uid: member.uid,
+                placeholder: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: PrismSpace.sm),
+                  child: Row(
+                    children: <Widget>[
+                      PrismBone(width: 40, height: 40, radius: PrismRadius.pill),
+                      SizedBox(width: PrismSpace.sm),
+                      PrismBone(width: 160, height: 16),
+                    ],
+                  ),
+                ),
                 builder: (_, profile) {
                   final String name = folderMemberName(profile, l10n);
                   final bool isYou = member.uid == userId;

@@ -14,7 +14,6 @@ import 'package:Prism/features/folders/domain/entities/folder_invite.dart';
 import 'package:Prism/features/folders/domain/repositories/shared_folders_repository.dart';
 import 'package:Prism/features/folders/views/widgets/folder_cover.dart';
 import 'package:Prism/features/folders/views/widgets/folder_members_sheet.dart';
-import 'package:Prism/features/folders/views/widgets/public_folder_view.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -145,8 +144,9 @@ class _FolderInviteScreenState extends State<FolderInviteScreen> {
           style: PrismTextStyles.sectionTitle(context),
         ),
         const SizedBox(height: PrismSpace.xs),
-        FolderOwnerLink(
-          ownerId: open.ownerId,
+        FolderMemberProfile(
+          uid: open.ownerId,
+          placeholder: const Center(child: PrismBone(width: 220, height: 16)),
           builder: (BuildContext context, PublicProfileEntity? owner) => Text(
             l10n.foldersJoinInvitedBy(folderMemberName(owner, l10n)),
             textAlign: TextAlign.center,

@@ -4,7 +4,6 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/views/folder_invite.dart';
 import 'package:Prism/features/folders/views/widgets/folder_members_sheet.dart';
-import 'package:Prism/features/folders/views/widgets/public_folder_view.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -54,8 +53,9 @@ class FolderMembersRow extends StatelessWidget {
               left: i * _overlap,
               top: 0,
               child: ring(
-                FolderOwnerLink(
-                  ownerId: folder.members[i].uid,
+                FolderMemberProfile(
+                  uid: folder.members[i].uid,
+                  placeholder: const PrismBone(width: _avatarSize, height: _avatarSize, radius: PrismRadius.pill),
                   builder: (_, profile) =>
                       PrismAvatar(url: profile?.profilePhoto, name: folderMemberName(profile, l10n), size: _avatarSize),
                 ),

@@ -11,7 +11,6 @@ import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/shared_folders_repository.dart';
 import 'package:Prism/features/folders/views/widgets/folder_members_sheet.dart';
-import 'package:Prism/features/folders/views/widgets/public_folder_view.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -69,8 +68,9 @@ Widget _addedByLine(Future<Result<String?>> addedBy, String userId) {
       if (uid == null || uid.isEmpty) return const SizedBox.shrink();
       final AppLocalizations l10n = context.l10n;
       if (uid == userId) return _line(context, l10n.foldersAddedByYou);
-      return FolderOwnerLink(
-        ownerId: uid,
+      return FolderMemberProfile(
+        uid: uid,
+        placeholder: const PrismBone(width: 140, height: 16),
         builder: (context, PublicProfileEntity? owner) =>
             _line(context, l10n.foldersAddedBy(folderMemberName(owner, l10n))),
       );

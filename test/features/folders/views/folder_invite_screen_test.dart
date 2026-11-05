@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
@@ -159,6 +161,27 @@ void main() {
     expect(find.text('3 wallpapers · 2 people'), findsOneWidget);
     expect(find.text('Join folder'), findsOneWidget);
     expect(repo.calls, <String>['previewInvite:$_code']);
+  });
+
+  testWidgets('the invited-by line waits for the owner profile instead of showing a fallback name', (tester) async {
+    _signIn();
+    final StreamController<PublicProfileEntity?> owner = StreamController<PublicProfileEntity?>();
+    final _MockPublicProfileRepository profiles = _MockPublicProfileRepository();
+    when(() => profiles.watchProfile('owner')).thenAnswer((_) => owner.stream);
+    await getIt.unregister<PublicProfileRepository>();
+    getIt.registerSingleton<PublicProfileRepository>(profiles);
+    await tester.pumpWidget(host());
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('Join Trip'), findsOneWidget);
+    expect(find.textContaining('Prism user'), findsNothing);
+
+    owner.add(_ana);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Ana invited you to add and remove wallpapers in this folder.'), findsOneWidget);
+    await owner.close();
   });
 
   testWidgets('tapping Join folder joins the code once and opens the folder', (tester) async {
