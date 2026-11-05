@@ -309,7 +309,7 @@ A folder has at most 10 editors, besides the owner.
 |---|---|---|---|
 | `folders/{id}` | Server only | Owner and editors | New fields `members` (map: uid to `addedBy`, `addedAt`) and `memberIds` (sorted editor uids). |
 | `folders/{id}/items/{key}` | Owner and editors | Owner and editors | New field `addedBy`, the uid that added the item. `ownerId` stays the folder owner, also for items an editor adds. An item without `addedBy` was added by the owner. |
-| `folderInvites/{code}` | Server only | Server only | `code`, `folderId`, `createdBy`, `createdAt`, `expiresAt`, `usedBy`, `usedAt`. Nobody reads it from a client. |
+| `folderInvites/{code}` | Server only | Server only | `code`, `folderId`, `folderCreatedAt`, `createdBy`, `createdAt`, `expiresAt`, `usedBy`, `usedAt`. `folderCreatedAt` binds the invite to this folder generation, so a deleted and recreated folder cannot reuse an old invite. Nobody reads it from a client. |
 | `folderActivity/{folderId}` | Server only | Server only | `pending` (item key to adder uid), `firstPendingAt`, `dueAt`, `lastSentAt`. |
 | `folderInviteRateDaily/{uid_day}` | Server only | Server only | Invite count. 30 invites a day. |
 

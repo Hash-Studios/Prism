@@ -51,6 +51,7 @@ export interface FolderInvite {
   createdBy: string;
   createdAt: admin.firestore.Timestamp;
   expiresAt: admin.firestore.Timestamp;
+  folderCreatedAt: admin.firestore.Timestamp;
   usedBy: string | null;
   usedAt: admin.firestore.Timestamp | null;
 }
@@ -63,6 +64,8 @@ const folderRef = (folderId: string) => db.collection(FOLDERS).doc(folderId);
 const inviteRef = (code: string) => db.collection(FOLDER_INVITES).doc(code);
 const activityRef = (folderId: string) => db.collection(FOLDER_ACTIVITY).doc(folderId);
 const millis = (value: unknown): number => value instanceof admin.firestore.Timestamp ? value.toMillis() : 0;
+const sameTimestamp = (a: unknown, b: unknown): boolean =>
+  a instanceof admin.firestore.Timestamp && b instanceof admin.firestore.Timestamp && a.isEqual(b);
 
 /** The editors in a folder doc, oldest first. */
 export function editorsOf(folder: Doc | undefined): FolderMember[] {
@@ -113,6 +116,7 @@ export function inviteCodeFrom(raw: unknown): string {
 export function joinDecision(input: {
   invite: Doc | undefined;
   folder: Doc | undefined;
+  folderCreatedAt?: admin.firestore.Timestamp;
   uid?: string;
   nowMs: number;
   blocked?: boolean;
@@ -120,6 +124,9 @@ export function joinDecision(input: {
 }): JoinDecision {
   const {invite, folder, uid} = input;
   if (!invite || !folder) return "not_found";
+  if (!sameTimestamp(invite.folderCreatedAt, input.folderCreatedAt)) {
+    return "not_found";
+  }
   const ownerId = str(folder.ownerId);
   if (!ownerId || ownerId !== str(invite.createdBy)) return "not_found";
   if (uid && uid === ownerId) return "owner";
@@ -180,7 +187,8 @@ export const createFolderInvite = onCall(
       const code = newInviteCode();
       const now = admin.firestore.Timestamp.now();
       const expiresAt = admin.firestore.Timestamp.fromMillis(now.toMillis() + INVITE_TTL_MS);
-      const invite: FolderInvite = {code, folderId, createdBy: uid, createdAt: now, expiresAt, usedBy: null, usedAt: null};
+      const invite: FolderInvite = {code, folderId, createdBy: uid, createdAt: now, expiresAt,
+        folderCreatedAt: folder.createTime ?? now, usedBy: null, usedAt: null};
       // create() fails the transaction on the near-impossible code collision instead of overwriting an invite.
       tx.create(inviteRef(code), invite);
       tx.set(rateRef, {day: today, count: count + 1}, {merge: true});
@@ -211,10 +219,11 @@ export const getFolderInvite = onCall(
     return db.runTransaction(async (tx) => {
       const invite = (await tx.get(inviteRef(code))).data();
       const folderId = str(invite?.folderId);
-      const folder = folderId ? (await tx.get(folderRef(folderId))).data() : undefined;
+      const folderSnap = folderId ? await tx.get(folderRef(folderId)) : undefined;
+      const folder = folderSnap?.data();
       const others = membersOf(folder).map((m) => m.uid);
       const blocked = uid ? await blockedWithAny(tx, uid, others) : false;
-      const status = joinDecision({invite, folder, uid, nowMs: Date.now(), blocked});
+      const status = joinDecision({invite, folder, folderCreatedAt: folderSnap?.createTime, uid, nowMs: Date.now(), blocked});
       if (status !== "join" && status !== "member" && status !== "owner") return {status};
       return {
         status,
@@ -241,10 +250,12 @@ export const joinFolder = onCall(
       const invite = inviteSnap.data();
       const folderId = str(invite?.folderId);
       const ref = folderRef(folderId || "_");
-      const folder = folderId ? (await tx.get(ref)).data() : undefined;
+      const folderSnap = folderId ? await tx.get(ref) : undefined;
+      const folder = folderSnap?.data();
       const blocked = await blockedWithAny(tx, uid, membersOf(folder).map((m) => m.uid));
       const open = await accountOpen(tx, uid);
-      const decision = joinDecision({invite, folder, uid, nowMs: Date.now(), blocked, accountOpen: open});
+      const decision = joinDecision({invite, folder, folderCreatedAt: folderSnap?.createTime, uid,
+        nowMs: Date.now(), blocked, accountOpen: open});
       if (decision === "member" || decision === "owner") return {folderId, joined: false};
       if (decision !== "join") throw refuse(decision);
       const now = admin.firestore.Timestamp.now();

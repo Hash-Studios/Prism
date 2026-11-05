@@ -58,6 +58,7 @@ function invite(extra: Doc = {}): Doc {
     createdBy: "a",
     createdAt: at(NOW - DAY),
     expiresAt: at(NOW + 6 * DAY),
+    folderCreatedAt: at(1),
     usedBy: null,
     usedAt: null,
     ...extra,
@@ -330,4 +331,9 @@ test("folderActivityPayload titles a burst by its adder and wall count, and rout
   assert.equal(crowd.title, "Ana and 2 more added 5 walls to Night");
   assert.equal(crowd.data.route, "folder");
   assert.equal(crowd.data.folder_id, "f1");
+});
+
+test("an invite cannot join a same-owner folder recreated with the same id", async (t) => {
+  setup(t, validInvite({folderCreatedAt: at(0)}));
+  await assert.rejects(call(joinFolder, "c", {code: CODE}), {code: "failed-precondition", message: "not_found"});
 });
