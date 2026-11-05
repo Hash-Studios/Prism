@@ -15,16 +15,26 @@ import 'package:flutter/material.dart';
 /// Follow or Following on a category or mood page. A guest gets the sign-in prompt first.
 ///
 /// The button sits on every topic page, so it also clears the topic's new-wall dot on Home when the page opens.
-class TopicFollowButton extends StatefulWidget {
+class TopicFollowButton extends StatelessWidget {
   const TopicFollowButton({super.key, required this.topic});
 
   final FollowedTopic topic;
 
   @override
-  State<TopicFollowButton> createState() => _TopicFollowButtonState();
+  Widget build(BuildContext context) =>
+      getIt.isRegistered<FollowedTopicsStore>() ? _FollowButton(topic: topic) : const SizedBox.shrink();
 }
 
-class _TopicFollowButtonState extends State<TopicFollowButton> {
+class _FollowButton extends StatefulWidget {
+  const _FollowButton({required this.topic});
+
+  final FollowedTopic topic;
+
+  @override
+  State<_FollowButton> createState() => _FollowButtonState();
+}
+
+class _FollowButtonState extends State<_FollowButton> {
   final FollowedTopicsStore _store = getIt<FollowedTopicsStore>();
   bool _busy = false;
 

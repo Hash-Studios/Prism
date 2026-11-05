@@ -13,14 +13,24 @@ import 'package:flutter/material.dart';
 
 /// The "Following" row on Home: one chip per followed topic, with a dot when new walls landed since the user last
 /// opened it. Nothing for a guest, with no followed topics, or when the layout setting turns it off.
-class FollowingTopicsRow extends StatefulWidget {
+class FollowingTopicsRow extends StatelessWidget {
   const FollowingTopicsRow({super.key});
 
   @override
-  State<FollowingTopicsRow> createState() => _FollowingTopicsRowState();
+  Widget build(BuildContext context) =>
+      getIt.isRegistered<FollowedTopicsStore>() && getIt.isRegistered<LayoutPrefsStore>()
+      ? const _FollowingRow()
+      : const SizedBox.shrink();
 }
 
-class _FollowingTopicsRowState extends State<FollowingTopicsRow> {
+class _FollowingRow extends StatefulWidget {
+  const _FollowingRow();
+
+  @override
+  State<_FollowingRow> createState() => _FollowingRowState();
+}
+
+class _FollowingRowState extends State<_FollowingRow> {
   final FollowedTopicsStore _store = getIt<FollowedTopicsStore>();
 
   @override

@@ -14,14 +14,22 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
 /// The Settings row "Topics you follow". It opens the list. A guest follows nothing, so a guest sees no row.
-class FollowedTopicsSettingsRow extends StatefulWidget {
+class FollowedTopicsSettingsRow extends StatelessWidget {
   const FollowedTopicsSettingsRow({super.key});
 
   @override
-  State<FollowedTopicsSettingsRow> createState() => _FollowedTopicsSettingsRowState();
+  Widget build(BuildContext context) =>
+      getIt.isRegistered<FollowedTopicsStore>() ? const _SettingsRow() : const SizedBox.shrink();
 }
 
-class _FollowedTopicsSettingsRowState extends State<FollowedTopicsSettingsRow> {
+class _SettingsRow extends StatefulWidget {
+  const _SettingsRow();
+
+  @override
+  State<_SettingsRow> createState() => _SettingsRowState();
+}
+
+class _SettingsRowState extends State<_SettingsRow> {
   final FollowedTopicsStore _store = getIt<FollowedTopicsStore>();
 
   @override
