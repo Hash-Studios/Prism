@@ -56,6 +56,9 @@ Future<void> settleUndoIo(WidgetTester tester) async {
 }
 
 class _Client implements WallpaperClient {
+  @override
+  Future<aw.LiveWallpaperScreens> getLiveWallpaperScreens() async => const aw.LiveWallpaperScreens();
+
   _Client({this.capabilities = const aw.WallpaperCapabilities(), this.status = aw.WallpaperOperationStatus.applied});
 
   final aw.WallpaperCapabilities capabilities;
