@@ -2,6 +2,8 @@
 // action at launch. Android starts with the pair off and auto-rotate on, so the switch shows the mode confirm, then
 // starts the real async_wallpaper daily schedule.
 // Run: fvm flutter run -t test/qa_render/day_night_device_main.dart -d <device>
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -62,9 +64,19 @@ void main() {
   when(() => router.push(any())).thenAnswer((_) async => null);
   final bool android = defaultTargetPlatform == TargetPlatform.android;
   final _QaAutoRotateBloc autoRotate = _QaAutoRotateBloc();
-  when(() => autoRotate.state).thenReturn(
-    AutoRotateState.initial().copyWith(loaded: true, isPro: true, config: AutoRotateConfig(enabled: android)),
+  final AutoRotateState autoRotateOn = AutoRotateState.initial().copyWith(
+    loaded: true,
+    isPro: true,
+    config: AutoRotateConfig(enabled: android),
   );
+  final StreamController<AutoRotateState> autoRotateStates = StreamController<AutoRotateState>.broadcast();
+  whenListen(autoRotate, autoRotateStates.stream, initialState: autoRotateOn);
+  registerFallbackValue(const AutoRotateEvent.toggled(false));
+  when(() => autoRotate.add(any())).thenAnswer((Invocation invocation) {
+    if (invocation.positionalArguments.single == const AutoRotateEvent.toggled(false)) {
+      autoRotateStates.add(autoRotateOn.copyWith(config: autoRotateOn.config.copyWith(enabled: false)));
+    }
+  });
   final DayNightBloc bloc = DayNightBloc(DayNightRepositoryImpl(SettingsLocalDataSource(InMemoryLocalStore())))
     ..add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'qa-user'))
     ..add(const DayNightEvent.wallPicked(DayNightSlot.day, _day))
