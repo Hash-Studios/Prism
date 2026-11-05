@@ -191,12 +191,18 @@ The chip fades in. With reduce motion on, it shows at once (`context.motion`). T
 - The palette keeps the colours that cover 12% of the pixels or more, at most 3, the largest first. When no colour covers 12%, it keeps the top colour.
 - The count runs in `Isolate.run`. The isolate gets only the 48 pixel sample, which is 9 KB or less.
 - No network call is needed for the colours.
+- These bounds apply after the picker returns. They do not bound the picker's peak native memory use. The current
+  Android picker can decode the full bitmap before resizing because its sampling options have no source dimensions.
+  The iOS picker creates a `UIImage` before drawing the smaller copy. Very large photos, including HEIC, can exhaust
+  native memory before `preparePhoto` runs. Fixing this requires native picker changes.
 
 #### Labels
 
 - Only a signed-in user gets labels. A guest's photo never leaves the phone.
 - The app sends the clean copy and a new `requestId` to the `photoSearchLabels` callable (`us-central1`, the region of `appFunctions`).
 - The callable sends the bytes to Cloud Vision label detection in the request body. It uses the same Vision client and the same score floor (0.7) as `categorizeWallpaper`. It returns at most 5 labels and the mapped category.
+- Inline photo calls disable SDK retries and use a 20-second RPC timeout. Each claimed slot starts at most one Vision
+  RPC. URL-based wallpaper categorization keeps its existing retry settings.
 - The callable does not write the image anywhere. It does not use Firebase Storage or R2.
 - App Check is not used. No other callable uses it.
 
@@ -215,6 +221,11 @@ Callable rules:
 | The same `requestId` after it stopped while it ran (over 90 seconds) | A new Vision call that counts again. |
 
 Every Vision call counts, so a user gets 20 Vision calls a day at most.
+
+The claim reads the UTC day inside the transaction. Completion only updates that claim's pending slot, so an older
+attempt cannot change a reclaimed slot or the next day's results. A client timeout after a claim still consumes a
+search. If caching the labels fails, the callable returns them to that caller, but a replay can remain pending until
+the stale window ends.
 
 The callable keeps one doc for each user, `photoSearchRate/{uid}`: `day`, `count`, `results` (the labels and category for each `requestId` of the day) and `expireAt`. The doc has no image data. `expireAt` is two days after the last photo search. A TTL policy on `photoSearchRate.expireAt` (`firestore.indexes.json`) deletes the doc. `deleteAccount` deletes it too. Firestore rules refuse all client reads and writes (the default deny).
 
@@ -240,6 +251,10 @@ The resolution and portrait filters apply to the Prism row. The colour filter is
 
 The service runs the normal search with the top label as the query and the top colour as the colour filter. If that has no results, it runs the colour only (Wallhaven only, because Pexels needs a query). The grid loads the next pages with the query that gave results. A guest has no label, so the search is colour only.
 
+If the label search succeeds with no results and the colour-only fallback fails, the screen keeps the valid empty
+result. Filters changed while labels are loading apply when the photo is ready. Late picker or result responses do
+not replace a newer search or its pagination query.
+
 #### Analytics
 
 | Event | When |
@@ -254,6 +269,8 @@ The service runs the normal search with the top label as the query and the top c
 - The photo is downscaled on the phone to a long side of 512 pixels or less before it leaves the phone.
 - The clean copy is a new image made from the decoded pixels. EXIF, location and all other metadata of the original are not in it. `test/features/user_search/photo_search_service_test.dart` proves this with a photo that has location data.
 - The picker asks for no metadata (`requestFullMetadata: false`).
+- Picker output can still contain metadata. The fresh image made from decoded pixels is the privacy boundary.
+- Photo-search failure logs contain no exception messages, error objects, or stacks that could hold image data.
 - A small copy goes to Google Cloud Vision for a signed-in user only. It is not stored. The app says this in the one-time sheet and in the note under the photo chip.
 - The privacy page (`web/app/privacy/page.tsx`) lists Google Cloud Vision as a third party.
 

@@ -64,6 +64,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
   /// The text query of a photo search page, which the grid uses for the next pages.
   String _photoPageQuery = '';
+  int _photoResultGeneration = 0;
+  int _photoPickGeneration = 0;
+  bool _photoPending = false;
   bool isSubmitted = false;
   late bool _showAi;
 
@@ -71,7 +74,12 @@ class _SearchScreenState extends State<SearchScreen> {
     final bool showAi = AiContentFilter.showsAi(_settingsLocal);
     if (showAi == _showAi) return;
     _showAi = showAi;
-    if (mounted && isSubmitted) _triggerSearch(_submittedQuery, sourceContext: 'search_ai_setting');
+    if (!mounted || !isSubmitted) return;
+    if (_photo case final PhotoQuery photo) {
+      _showPhotoResults(photo, _searchId ?? AnalyticsCorrelation.newId());
+    } else if (!_photoPending) {
+      _triggerSearch(_submittedQuery, sourceContext: 'search_ai_setting');
+    }
   }
 
   int _queryWordCount(String query) {
@@ -101,6 +109,9 @@ class _SearchScreenState extends State<SearchScreen> {
   void _triggerSearch(String query, {String? sourceContext, bool fromSuggestion = false}) {
     final String trimmed = query.trim();
     if (trimmed.isEmpty && !_filters.listsWithoutQuery) return;
+    _photoResultGeneration++;
+    _photoPickGeneration++;
+    _photoPending = false;
     if (_filters.color != null) CoinsService.instance.reportQuestEvent(QuestEvent.colourSearch);
     final String searchId = AnalyticsCorrelation.newId();
     final Future<WallpaperSearchPage> search = getIt<WallpaperSearchService>().search(trimmed, filters: _filters)
@@ -190,6 +201,9 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _backToDiscover() {
+    _photoResultGeneration++;
+    _photoPickGeneration++;
+    _photoPending = false;
     setState(() {
       isSubmitted = false;
       _searchId = null;
@@ -206,6 +220,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final SearchFilters? picked = await showSearchFilterSheet(context, _filters);
     if (picked == null || picked == _filters || !mounted) return;
     setState(() => _filters = picked);
+    if (_photoPending && _photo == null) return;
     if (_photo case final PhotoQuery photo) {
       _showPhotoResults(photo, _searchId ?? AnalyticsCorrelation.newId());
       return;
@@ -219,6 +234,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> _searchByPhoto() async {
+    final int pickGeneration = ++_photoPickGeneration;
     final PhotoSearchService photos = getIt<PhotoSearchService>();
     final bool signedIn = app_state.prismUser.loggedIn;
     if (signedIn && !_settingsLocal.get<bool>(PersistenceKeys.photoSearchPrivacySeen, defaultValue: false)) {
@@ -228,11 +244,19 @@ class _SearchScreenState extends State<SearchScreen> {
         message: context.l10n.searchPhotoPrivacy,
         confirmLabel: context.l10n.searchPhotoChoose,
       );
-      if (!accepted || !mounted) return;
+      if (!accepted || !mounted || pickGeneration != _photoPickGeneration) return;
       await _settingsLocal.set(PersistenceKeys.photoSearchPrivacySeen, true);
     }
-    final Uint8List? original = await photos.pick();
-    if (original == null || !mounted) return;
+    final Uint8List? original;
+    try {
+      original = await photos.pick();
+    } catch (_) {
+      if (mounted && pickGeneration == _photoPickGeneration) {
+        toasts.error(context.l10n.searchPhotoCouldNotOpen);
+      }
+      return;
+    }
+    if (original == null || !mounted || pickGeneration != _photoPickGeneration) return;
     final String searchId = AnalyticsCorrelation.newId();
     analytics.track(PhotoSearchStartedEvent(signedIn: signedIn, searchId: searchId));
     searchController.clear();
@@ -244,6 +268,7 @@ class _SearchScreenState extends State<SearchScreen> {
       _searchId = searchId;
       _search = search;
       _photo = null;
+      _photoPending = true;
       _filters = _filters.copyWith(clearColor: true, depthOnly: false, spatialOnly: false);
     });
   }
@@ -259,6 +284,7 @@ class _SearchScreenState extends State<SearchScreen> {
       photo = await photos.queryFor(original, signedIn: signedIn);
     } catch (_) {
       if (mounted && _searchId == searchId) {
+        _photoPending = false;
         toasts.error(context.l10n.searchPhotoCouldNotOpen);
         _backToDiscover();
       }
@@ -273,6 +299,7 @@ class _SearchScreenState extends State<SearchScreen> {
         break;
     }
     if (!mounted || _searchId != searchId) throw StateError('A newer search replaced this photo search.');
+    _photoPending = false;
     return _photoResults(photo, searchId);
   }
 
@@ -287,9 +314,14 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<WallpaperSearchPage> _photoResults(PhotoQuery photo, String searchId) async {
-    setState(() => _photo = photo);
+    final int resultGeneration = ++_photoResultGeneration;
+    if (mounted && _searchId == searchId && resultGeneration == _photoResultGeneration) {
+      setState(() => _photo = photo);
+    }
     final result = await getIt<WallpaperSearchService>().searchByPhoto(photo, filters: _filters);
-    if (mounted && _searchId == searchId) setState(() => _photoPageQuery = result.query);
+    if (mounted && _searchId == searchId && resultGeneration == _photoResultGeneration) {
+      setState(() => _photoPageQuery = result.query);
+    }
     return result.page;
   }
 

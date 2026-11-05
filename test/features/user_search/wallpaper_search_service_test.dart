@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/color/prism_palette.dart';
@@ -24,6 +25,7 @@ import 'package:Prism/features/prism_feed/data/prism_wall_search.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
+import 'package:Prism/features/user_search/domain/entities/photo_query.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
@@ -33,10 +35,11 @@ import '../../support/fake_user_block_repository.dart';
 import '../../support/in_memory_local_store.dart';
 
 class _FakeWallhavenRepository implements WallhavenWallpaperRepository {
-  _FakeWallhavenRepository(this.result, {this.delay = Duration.zero});
+  _FakeWallhavenRepository(this.result, {this.delay = Duration.zero, this.resultsByCall});
 
   final Result<List<WallhavenWallpaper>> result;
   final Duration delay;
+  final List<Result<List<WallhavenWallpaper>>>? resultsByCall;
   int? lastCategories;
   int? lastPurity;
   bool? lastRefresh;
@@ -72,7 +75,7 @@ class _FakeWallhavenRepository implements WallhavenWallpaperRepository {
     lastMinResolution = minResolution;
     lastSorting = sorting;
     lastPaginationKey = paginationKey;
-    return result;
+    return resultsByCall == null ? result : resultsByCall![calls - 1];
   }
 
   @override
@@ -694,6 +697,61 @@ void main() {
   });
 
   group('colour', () {
+    test('an empty label result remains valid when the colour-only fallback fails', () async {
+      final _FakeWallhavenRepository repository = _FakeWallhavenRepository(
+        Result.success(<WallhavenWallpaper>[]),
+        resultsByCall: <Result<List<WallhavenWallpaper>>>[
+          Result.success(<WallhavenWallpaper>[]),
+          Result.error<List<WallhavenWallpaper>>(const ServerFailure('503')),
+        ],
+      );
+      final WallpaperSearchService service = _service(wallhaven: repository.result, wallhavenRepository: repository);
+      final PhotoQuery photo = PhotoQuery(
+        preview: Uint8List(0),
+        palette: <PaletteShare>[(color: paletteColorById('orange')!, share: 1)],
+        labels: const <String>['Sunset'],
+        labelsStatus: PhotoLabelsStatus.found,
+      );
+
+      final result = await service.searchByPhoto(photo);
+
+      expect(result.query, 'Sunset');
+      expect(result.page.results, isEmpty);
+      expect(result.page.prismResults, isEmpty);
+    });
+
+    test('photo fallback pagination keeps the colour-only query and photo colour', () async {
+      final _FakeWallhavenRepository repository = _FakeWallhavenRepository(
+        Result.success(<WallhavenWallpaper>[]),
+        resultsByCall: <Result<List<WallhavenWallpaper>>>[
+          Result.success(<WallhavenWallpaper>[]),
+          Result.success(<WallhavenWallpaper>[_wallhaven('colour-only')]),
+          Result.success(<WallhavenWallpaper>[_wallhaven('next')]),
+        ],
+      );
+      final WallpaperSearchService service = _service(wallhaven: repository.result, wallhavenRepository: repository);
+      final PhotoQuery photo = PhotoQuery(
+        preview: Uint8List(0),
+        palette: <PaletteShare>[(color: paletteColorById('orange')!, share: 1)],
+        labels: const <String>['Sunset'],
+        labelsStatus: PhotoLabelsStatus.found,
+      );
+
+      final result = await service.searchByPhoto(photo);
+      expect(result.query, '');
+      expect(result.page.results.map((item) => item.id), <String>['colour-only']);
+      await service.fetchPage(
+        result.page.provider,
+        result.query,
+        refresh: false,
+        filters: SearchFilters(color: photo.topColor),
+      );
+
+      expect(repository.lastCategoryName, '');
+      expect(repository.lastColors, 'ff6600');
+      expect(repository.lastPaginationKey, 'search::color:orange');
+    });
+
     test('Wallhaven gets the palette hex, and the page cursor is keyed by colour', () async {
       final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[]));
       final service = _service(wallhaven: repository.result, wallhavenRepository: repository);

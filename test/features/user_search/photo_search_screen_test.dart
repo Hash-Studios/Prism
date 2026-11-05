@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -8,7 +9,9 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -24,6 +27,7 @@ import 'package:Prism/features/user_search/views/widgets/photo_search_chip.dart'
 import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -115,16 +119,26 @@ void main() {
     when(
       () => service.searchByPhoto(any(), filters: any(named: 'filters')),
     ).thenAnswer((_) async => (page: _page(<FeedItemEntity>[_pexels('x1')]), query: 'sunset'));
+    when(
+      () => service.search(any(), filters: any(named: 'filters')),
+    ).thenAnswer((_) async => _page(<FeedItemEntity>[]));
   });
 
   tearDown(() async {
     app_state.prismUser = app_constants.createGuestPrismUser();
     AnalyticsRuntime.reset();
+    toasts.overlayResolver = null;
     await getIt.reset();
   });
 
   /// Bounded settle. The discovery skeleton animates forever, so pumpAndSettle would never return.
   Future<void> settle(WidgetTester tester) async {
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+  }
+
+  Future<void> settleSheet(WidgetTester tester) async {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pump();
@@ -286,5 +300,204 @@ void main() {
     verifyNever(() => photos.queryFor(any(), signedIn: any(named: 'signedIn')));
     expect(find.byType(SearchGrid), findsNothing);
     expect(find.text('Find creators'), findsOneWidget);
+  });
+
+  testWidgets('filters applied while photo labels are loading do not cancel the photo search', (tester) async {
+    final Completer<PhotoQuery> query = Completer<PhotoQuery>();
+    when(() => photos.queryFor(any(), signedIn: false)).thenAnswer((_) => query.future);
+    await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await tester.pump();
+    await tester.tap(find.byTooltip(en.accountFilters));
+    await settleSheet(tester);
+    await tester.tap(find.text('1440p'));
+    await tester.tap(find.text('Apply'));
+    await settleSheet(tester);
+
+    query.complete(_photo());
+    await settle(tester);
+
+    expect(find.byType(PhotoSearchChip), findsOneWidget);
+    verify(() => service.searchByPhoto(any(), filters: const SearchFilters(minResolution: '1440x2560'))).called(1);
+  });
+
+  testWidgets('cancelling a second picker preserves filters for the first photo still being decoded', (tester) async {
+    final Completer<PhotoQuery> query = Completer<PhotoQuery>();
+    var picks = 0;
+    when(() => photos.pick()).thenAnswer((_) async {
+      picks++;
+      return picks == 1 ? Uint8List.fromList(<int>[1, 2, 3]) : null;
+    });
+    when(() => photos.queryFor(any(), signedIn: false)).thenAnswer((_) => query.future);
+    await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await tester.pump();
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await settle(tester);
+    await tester.tap(find.byTooltip(en.accountFilters));
+    await settleSheet(tester);
+    await tester.tap(find.text('1440p'));
+    await tester.tap(find.text('Apply'));
+    await settleSheet(tester);
+    query.complete(_photo());
+    await settle(tester);
+
+    expect(find.byType(PhotoSearchChip), findsOneWidget);
+    verify(() => service.searchByPhoto(any(), filters: const SearchFilters(minResolution: '1440x2560'))).called(1);
+  });
+
+  testWidgets('a filtered photo result query is not overwritten by the older in-flight result', (tester) async {
+    final Completer<({WallpaperSearchPage page, String query})> first =
+        Completer<({WallpaperSearchPage page, String query})>();
+    var calls = 0;
+    when(() => service.searchByPhoto(any(), filters: any(named: 'filters'))).thenAnswer((_) {
+      calls++;
+      if (calls == 1) return first.future;
+      return Future.value((page: _page(<FeedItemEntity>[_pexels('new')]), query: 'filtered-query'));
+    });
+    await pumpScreen(tester);
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await settle(tester);
+    await tester.tap(find.byTooltip(en.accountFilters));
+    await settleSheet(tester);
+    await tester.tap(find.text('1440p'));
+    await tester.tap(find.text('Apply'));
+    await settleSheet(tester);
+
+    first.complete((page: _page(<FeedItemEntity>[_pexels('old')]), query: 'old-query'));
+    await settle(tester);
+
+    expect(tester.widget<SearchGrid>(find.byType(SearchGrid)).query, 'filtered-query');
+  });
+
+  testWidgets('a later text search supersedes photo decoding', (tester) async {
+    final Completer<PhotoQuery> query = Completer<PhotoQuery>();
+    when(() => photos.queryFor(any(), signedIn: false)).thenAnswer((_) => query.future);
+    await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), 'forest');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await settle(tester);
+    query.complete(_photo());
+    await settle(tester);
+
+    expect(find.byType(PhotoSearchChip), findsNothing);
+    verify(() => service.search('forest', filters: any(named: 'filters'))).called(1);
+  });
+
+  testWidgets('a photo picker result arriving after a text search cannot replace it', (tester) async {
+    final Completer<Uint8List?> picked = Completer<Uint8List?>();
+    when(() => photos.pick()).thenAnswer((_) => picked.future);
+    await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField), 'forest');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await settle(tester);
+    picked.complete(Uint8List.fromList(<int>[1, 2, 3]));
+    await settle(tester);
+
+    expect(find.byType(PhotoSearchChip), findsNothing);
+    verifyNever(() => photos.queryFor(any(), signedIn: any(named: 'signedIn')));
+    verify(() => service.search('forest', filters: any(named: 'filters'))).called(1);
+  });
+
+  testWidgets('a feed setting change reruns an active photo search instead of clearing it', (tester) async {
+    await pumpScreen(tester);
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await settle(tester);
+
+    await getIt<SettingsLocalDataSource>().set(AiContentFilter.settingKey, false);
+    personalizedFeedSettingsRevision.value++;
+    await tester.pump();
+
+    expect(find.byType(PhotoSearchChip), findsOneWidget);
+    verify(() => service.searchByPhoto(any(), filters: any(named: 'filters'))).called(2);
+  });
+
+  testWidgets('back while photo labels are loading clears the pending photo search', (tester) async {
+    final Completer<PhotoQuery> query = Completer<PhotoQuery>();
+    when(() => photos.queryFor(any(), signedIn: false)).thenAnswer((_) => query.future);
+    await pumpScreen(tester);
+
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await tester.pump();
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    query.complete(_photo());
+    await settle(tester);
+
+    expect(find.byType(PhotoSearchChip), findsNothing);
+    expect(find.byType(SearchGrid), findsNothing);
+  });
+
+  testWidgets('clearing a photo while external results load returns to Discover', (tester) async {
+    final Completer<({WallpaperSearchPage page, String query})> results =
+        Completer<({WallpaperSearchPage page, String query})>();
+    when(() => service.searchByPhoto(any(), filters: any(named: 'filters'))).thenAnswer((_) => results.future);
+    await pumpScreen(tester);
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await settle(tester);
+
+    expect(find.byType(PhotoSearchChip), findsOneWidget);
+    await tester.tap(find.text(en.searchPhotoClear));
+    await settle(tester);
+    results.complete((page: _page(<FeedItemEntity>[_pexels('late')]), query: 'sunset'));
+    await settle(tester);
+
+    expect(find.byType(PhotoSearchChip), findsNothing);
+    expect(find.byType(SearchGrid), findsNothing);
+    expect(find.text('Find creators'), findsOneWidget);
+  });
+
+  testWidgets('retrying photo results keeps the selected photo without decoding it again', (tester) async {
+    var calls = 0;
+    when(() => service.searchByPhoto(any(), filters: any(named: 'filters'))).thenAnswer((_) {
+      calls++;
+      if (calls == 1) throw const WallpaperSearchException('temporary failure');
+      return Future.value((page: _page(<FeedItemEntity>[_pexels('retry')]), query: 'sunset'));
+    });
+    await pumpScreen(tester);
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await settle(tester);
+
+    expect(find.text(en.accountTryAgain), findsOneWidget);
+    await tester.tap(find.text(en.accountTryAgain));
+    await settle(tester);
+
+    expect(find.byType(PhotoSearchChip), findsOneWidget);
+    expect(find.byType(SearchGrid), findsOneWidget);
+    verify(() => photos.queryFor(any(), signedIn: false)).called(1);
+    expect(calls, 2);
+  });
+
+  testWidgets('photo pagination uses the fallback query and top photo colour', (tester) async {
+    final SearchFilters expectedFilters = SearchFilters(color: paletteColorById('orange'));
+    when(
+      () => service.searchByPhoto(any(), filters: any(named: 'filters')),
+    ).thenAnswer((_) async => (page: _page(<FeedItemEntity>[for (int i = 0; i < 24; i++) _pexels('x$i')]), query: ''));
+    await pumpScreen(tester);
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await settle(tester);
+
+    final SearchGrid grid = tester.widget<SearchGrid>(find.byType(SearchGrid));
+    expect(grid.query, '');
+    expect(grid.filters, expectedFilters);
+  });
+
+  testWidgets('a picker failure shows the existing photo error message', (tester) async {
+    when(() => photos.pick()).thenThrow(StateError('picker failed'));
+    await pumpScreen(tester);
+    toasts.overlayResolver = () => tester.state<OverlayState>(find.byType(Overlay).first);
+
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await settle(tester);
+
+    expect(find.text(en.searchPhotoCouldNotOpen), findsOneWidget);
   });
 }

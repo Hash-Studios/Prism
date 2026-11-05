@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/features/user_search/data/photo_search_service.dart';
 import 'package:Prism/features/user_search/domain/entities/photo_query.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -157,6 +158,23 @@ void main() {
         expect(<String>[for (final entry in query.palette) entry.color.id], <String>['blue']);
       });
     }
+
+    testWidgets('does not log exception details that may contain the image payload', (tester) async {
+      const String privatePayload = 'base64-photo-payload-secret';
+      InMemoryLogSink.instance.clear();
+      when(() => callable.call<Object?>(any())).thenThrow(StateError(privatePayload));
+      final PhotoQuery query = (await tester.runAsync(
+        () => PhotoSearchService(null, (png) async => png, functions).queryFor(original, signedIn: true),
+      ))!;
+      final photoLogs = InMemoryLogSink.instance.records.where((record) => record.message.contains('[PhotoSearch]'));
+
+      expect(query.labelsStatus, PhotoLabelsStatus.unavailable);
+      expect(query.topColor.id, 'blue');
+      expect(photoLogs, hasLength(1));
+      expect(photoLogs.single.message, isNot(contains(privatePayload)));
+      expect(photoLogs.single.error, isNull);
+      expect(photoLogs.single.stackTrace, isNull);
+    });
   });
 
   testWidgets('a file that is not an image throws', (tester) async {

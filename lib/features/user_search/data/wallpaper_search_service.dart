@@ -107,7 +107,7 @@ class WallpaperSearchService {
         if (colourOnly.results.isNotEmpty) (page, query) = (colourOnly, '');
       }
     } on WallpaperSearchException {
-      if ((await prism).isEmpty) rethrow;
+      if (page == null && (await prism).isEmpty) rethrow;
     }
     return (
       page: await _withoutHidden((

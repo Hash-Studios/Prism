@@ -120,8 +120,8 @@ class PhotoSearchService {
         'unauthenticated' => (status: PhotoLabelsStatus.guest, labels: const <String>[], category: null),
         _ => none,
       };
-    } catch (error, stackTrace) {
-      logger.w('[PhotoSearch] labels call failed', error: error, stackTrace: stackTrace);
+    } catch (error) {
+      logger.w('[PhotoSearch] labels call failed (${error.runtimeType})');
       return none;
     }
   }

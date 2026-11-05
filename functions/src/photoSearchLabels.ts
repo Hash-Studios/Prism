@@ -14,6 +14,7 @@ const STALE_PENDING_MS = 90 * 1000;
 const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
 
 export type PhotoLabels = {labels: string[]; category: string | null};
+type Claim = {used: number; day: string; now: number};
 type Slot = {pending: true; at: number} | PhotoLabels;
 
 /** The decoded JPEG or PNG bytes of [raw], a base64 string. Refuses anything else and anything over 512 KiB. */
@@ -45,6 +46,10 @@ function isLabels(slot: Slot | undefined): slot is PhotoLabels {
   return !!slot && Array.isArray((slot as PhotoLabels).labels);
 }
 
+function isPendingClaim(slot: Slot | undefined, claim: Claim): boolean {
+  return !!slot && "pending" in slot && slot.pending && slot.at === claim.now;
+}
+
 /**
  * Labels for a photo the user picked in Search. The image is sent to Cloud Vision in the request body and is never
  * written anywhere. The day's doc keeps only a count and each request's labels, so a retried requestId returns the
@@ -60,15 +65,15 @@ export const photoSearchLabels = onCall({region: CALLABLE_REGIONS, timeoutSecond
   if (!isValidRequestId(requestId)) throw new HttpsError("invalid-argument", "requestId is invalid.");
   const image = parsePhoto(request.data?.image);
 
-  const now = Date.now();
-  const day = utcDateString(new Date(now));
   const ref = db.collection(PHOTO_SEARCH_RATE).doc(uid);
-  const claim = await db.runTransaction(async (tx): Promise<{replay: PhotoLabels; used: number} | {used: number}> => {
+  const claim = await db.runTransaction(async (tx): Promise<Claim & {replay?: PhotoLabels}> => {
     const snap = await tx.get(ref);
+    const now = Date.now();
+    const day = utcDateString(new Date(now));
     const used = readDailyCount(snap, day);
     const slots = slotsOf(snap.data(), day);
     const slot = slots[requestId];
-    if (isLabels(slot)) return {replay: {labels: slot.labels, category: slot.category ?? null}, used};
+    if (isLabels(slot)) return {replay: {labels: slot.labels, category: slot.category ?? null}, used, day, now};
     if (slot && now - slot.at < STALE_PENDING_MS) {
       throw new HttpsError("aborted", "This photo search is still running.");
     }
@@ -81,31 +86,37 @@ export const photoSearchLabels = onCall({region: CALLABLE_REGIONS, timeoutSecond
       results: {...slots, [requestId]: {pending: true, at: now}},
       expireAt: admin.firestore.Timestamp.fromMillis(now + 2 * DAY_MS),
     });
-    return {used: used + 1};
+    return {used: used + 1, day, now};
   });
-  if ("replay" in claim) return {...claim.replay, remaining: Math.max(0, MAX_PHOTO_SEARCHES_PER_DAY - claim.used)};
+  if (claim.replay) return {...claim.replay, remaining: Math.max(0, MAX_PHOTO_SEARCHES_PER_DAY - claim.used)};
 
   let labels: string[];
   try {
     labels = (await detectLabelsInImage(image)).slice(0, MAX_PHOTO_LABELS);
-  } catch (err) {
+  } catch {
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(ref);
-      const slots = slotsOf(snap.data(), day);
-      if (!slots[requestId] || isLabels(slots[requestId])) return;
+      const slots = slotsOf(snap.data(), claim.day);
+      if (!isPendingClaim(slots[requestId], claim)) return;
       delete slots[requestId];
       tx.update(ref, {results: slots});
     });
-    logger.warn("photoSearchLabels: Vision failed.", {uid, error: err instanceof Error ? err.message : "unknown"});
+    // Vision SDK errors can contain request details. Do not log error-derived data for photo requests.
+    logger.warn("photoSearchLabels: Vision failed.", {uid});
     throw new HttpsError("unavailable", "Could not read the photo. Try again.");
   }
   const category = mapLabelsToCategory(labels);
   const result: PhotoLabels = {labels, category: category === DEFAULT_CATEGORY ? null : category};
-  await db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
-    const slots = slotsOf(snap.data(), day);
-    if (!slots[requestId] || isLabels(slots[requestId])) return;
-    tx.update(ref, {results: {...slots, [requestId]: result}});
-  });
+  try {
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const slots = slotsOf(snap.data(), claim.day);
+      if (!isPendingClaim(slots[requestId], claim)) return;
+      tx.update(ref, {results: {...slots, [requestId]: result}});
+    });
+  } catch {
+    // The counted Vision result is still useful to this caller. Do not log error-derived data for photo requests.
+    logger.warn("photoSearchLabels: Result cache failed.", {uid});
+  }
   return {...result, remaining: Math.max(0, MAX_PHOTO_SEARCHES_PER_DAY - claim.used)};
 });
