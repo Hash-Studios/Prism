@@ -540,8 +540,7 @@ void main() {
 
     test('starting a new session clears an apply tag from the previous session', () async {
       repository.capabilities = perScreen;
-      final LiveWallpaperBloc bloc = build(imageUrl: null)
-        ..add(const LiveWallpaperEvent.started(isPro: true));
+      final LiveWallpaperBloc bloc = build(imageUrl: null)..add(const LiveWallpaperEvent.started(isPro: true));
       await settle();
       bloc.add(LiveWallpaperEvent.gradientApplied(palette: palette));
       await settle();
