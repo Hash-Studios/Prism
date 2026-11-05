@@ -11,6 +11,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_member.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
@@ -93,16 +94,37 @@ class _FakeFoldersRepository implements FoldersRepository {
 
 final DateTime _at = DateTime.utc(2026, 10);
 
-FolderEntity _folder(String id, String name, {int itemCount = 0, List<String> covers = const <String>[]}) =>
-    FolderEntity(
-      id: id,
-      ownerId: 'u1',
-      name: name,
-      createdAt: _at,
-      updatedAt: _at,
-      itemCount: itemCount,
-      covers: covers,
-    );
+FolderEntity _folder(
+  String id,
+  String name, {
+  int itemCount = 0,
+  List<String> covers = const <String>[],
+  String ownerId = 'u1',
+  List<FolderMember> editors = const <FolderMember>[],
+}) => FolderEntity(
+  id: id,
+  ownerId: ownerId,
+  name: name,
+  createdAt: _at,
+  updatedAt: _at,
+  itemCount: itemCount,
+  covers: covers,
+  editors: editors,
+);
+
+/// A folder another user owns, with the signed-in user 'me' as an editor.
+FolderEntity _sharedFolder(String id, String name) => FolderEntity(
+  id: id,
+  ownerId: 'owner',
+  name: name,
+  createdAt: _at,
+  updatedAt: _at,
+  itemCount: 0,
+  covers: const <String>[],
+  editors: <FolderMember>[
+    FolderMember(uid: 'me', role: FolderRole.editor, addedBy: 'owner', addedAt: DateTime.utc(2026)),
+  ],
+);
 
 List<String> _urls(int count) => List<String>.generate(count, (i) => 'https://example.com/$i.jpg');
 
@@ -163,10 +185,11 @@ void main() {
     WidgetTester tester,
     _FakeFoldersRepository repo, {
     bool signedIn = true,
+    String userId = 'u1',
     _MockStackRouter? router,
   }) async {
     app_state.prismUser = signedIn
-        ? (app_constants.createGuestPrismUser()..id = 'u1')
+        ? (app_constants.createGuestPrismUser()..id = userId)
         : app_constants.createGuestPrismUser();
     final FoldersBloc bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
@@ -532,6 +555,86 @@ void main() {
 
     expect(find.text('Work'), findsNothing);
     expect(find.byType(PrismBone), findsWidgets);
+  });
+
+  testWidgets('owned folders come first, then shared with you, and the shared card is keyed by its id', (tester) async {
+    await pumpGrid(
+      tester,
+      _FakeFoldersRepository(
+        folders: <FolderEntity>[
+          _folder('mine', 'Mine', ownerId: 'me'),
+          _sharedFolder('trip', 'Trip'),
+        ],
+      ),
+      userId: 'me',
+    );
+
+    final double headerTop = tester.getTopLeft(find.text('Shared with you')).dy;
+    expect(find.text('Shared with you'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('shared:trip')), findsOneWidget);
+    expect(tester.getTopLeft(find.text('Trip')).dy, greaterThan(headerTop));
+    expect(tester.getTopLeft(find.text('Mine')).dy, lessThan(headerTop));
+    expect(find.text('No folders yet'), findsNothing);
+  });
+
+  testWidgets('a shared folder alone shows Shared with you and no empty state', (tester) async {
+    await pumpGrid(
+      tester,
+      _FakeFoldersRepository(folders: <FolderEntity>[_sharedFolder('trip', 'Trip')]),
+      userId: 'me',
+    );
+
+    expect(find.text('Shared with you'), findsOneWidget);
+    expect(find.text('Trip'), findsOneWidget);
+    expect(find.text('No folders yet'), findsNothing);
+  });
+
+  testWidgets('an owned folder with editors shows the shared icon and one without does not', (tester) async {
+    await pumpGrid(
+      tester,
+      _FakeFoldersRepository(
+        folders: <FolderEntity>[
+          _folder(
+            'mine',
+            'Mine',
+            ownerId: 'me',
+            editors: <FolderMember>[FolderMember(uid: 'friend', role: FolderRole.editor, addedBy: 'me', addedAt: _at)],
+          ),
+          _folder('solo', 'Solo', ownerId: 'me'),
+        ],
+      ),
+      userId: 'me',
+    );
+
+    expect(
+      find.descendant(of: find.byKey(const ValueKey<String>('mine')), matching: find.byIcon(Icons.group_rounded)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: find.byKey(const ValueKey<String>('solo')), matching: find.byIcon(Icons.group_rounded)),
+      findsNothing,
+    );
+  });
+
+  testWidgets('owned and shared sections fit at large text on a 375 point phone', (tester) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pumpGrid(
+      tester,
+      _FakeFoldersRepository(
+        folders: <FolderEntity>[
+          _folder('mine', 'Mine', ownerId: 'me', itemCount: 3, covers: _urls(3)),
+          _sharedFolder('trip', 'Trip'),
+        ],
+      ),
+      userId: 'me',
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Shared with you'), findsOneWidget);
   });
 
   testWidgets('folder cards fit their name and count at a large nonlinear text size', (tester) async {

@@ -9,6 +9,7 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_member.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
@@ -19,6 +20,7 @@ class _FakeFoldersRepository implements FoldersRepository {
   Map<String, List<FavouriteWallEntity>> items = <String, List<FavouriteWallEntity>>{};
   final List<String> calls = <String>[];
   final List<int?> fetchItemLimits = <int?>[];
+  final List<String> writers = <String>[];
   bool fail = false;
   bool failItems = false;
   Future<Result<List<FolderEntity>>> Function(String)? fetchFoldersOverride;
@@ -36,7 +38,7 @@ class _FakeFoldersRepository implements FoldersRepository {
   Future<Result<List<FolderEntity>>> fetchFolders(String userId) async {
     if (fetchFoldersOverride case final fetch?) return fetch(userId);
     if (fail) return Result.error<List<FolderEntity>>(const ServerFailure('boom'));
-    return Result.success(folders.where((folder) => folder.ownerId == userId).toList());
+    return Result.success(folders.where((folder) => folder.roleOf(userId) != null).toList());
   }
 
   @override
@@ -87,6 +89,7 @@ class _FakeFoldersRepository implements FoldersRepository {
   @override
   Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId}) async {
     calls.add('addItem:${folder.id}:${folder.itemCount}:${folder.covers.join(',')}');
+    writers.add('addItem:${folder.id}:$userId');
     if (addGate case final gate?) {
       final Result<void> result = await gate.future;
       if (result.isFailure) return result;
@@ -105,6 +108,7 @@ class _FakeFoldersRepository implements FoldersRepository {
   @override
   Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId}) async {
     calls.add('removeItem:${folder.id}:${folder.itemCount}:${folder.covers.join(',')}');
+    writers.add('removeItem:${folder.id}:$userId');
     if (fail) return Result.error<void>(const ServerFailure('boom'));
     _replaceFolder(folder);
     final List<FavouriteWallEntity> existing = items[folder.id] ?? <FavouriteWallEntity>[];
@@ -154,8 +158,22 @@ FolderEntity folder(String id, {int count = 0, List<String> covers = const <Stri
       covers: covers,
     );
 
-FoldersBloc _blocFor(_FakeFoldersRepository repo) {
-  final FoldersBloc bloc = FoldersBloc(repo, _NoPublicFolders());
+/// A folder another user owns, with the signed-in user 'me' as an editor.
+FolderEntity sharedFolder(String id, {int count = 0, List<String> covers = const <String>[]}) => FolderEntity(
+  id: id,
+  ownerId: 'owner',
+  name: 'F-$id',
+  createdAt: DateTime.utc(2026),
+  updatedAt: DateTime.utc(2026),
+  itemCount: count,
+  covers: covers,
+  editors: <FolderMember>[
+    FolderMember(uid: 'me', role: FolderRole.editor, addedBy: 'owner', addedAt: DateTime.utc(2026)),
+  ],
+);
+
+FoldersBloc _blocFor(_FakeFoldersRepository repo, {_NoPublicFolders? publicRepo}) {
+  final FoldersBloc bloc = FoldersBloc(repo, publicRepo ?? _NoPublicFolders());
   addTearDown(repo.writeFailureController.close);
   addTearDown(bloc.close);
   return bloc;
@@ -165,6 +183,8 @@ Future<bool> _started(FoldersBloc bloc, {String userId = 'u1'}) =>
     bloc.run((id) => FoldersEvent.started(userId: userId, operationId: id));
 
 class _NoPublicFolders implements PublicFoldersRepository {
+  final List<String> setPublicCalls = <String>[];
+
   @override
   Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success<PublicFolderEntity?>(null);
 
@@ -186,7 +206,10 @@ class _NoPublicFolders implements PublicFoldersRepository {
   Future<Result<void>> setFollowing(String folderId, {required bool following}) async => Result.success<void>(null);
 
   @override
-  Future<Result<bool>> setPublic(String folderId, {required bool isPublic}) async => Result.success(isPublic);
+  Future<Result<bool>> setPublic(String folderId, {required bool isPublic}) async {
+    setPublicCalls.add(folderId);
+    return Result.success(isPublic);
+  }
 }
 
 void main() {
@@ -820,6 +843,71 @@ void main() {
     expect(bloc.state.itemsStatus.containsKey('a'), isFalse);
     expect(bloc.state.membership[folderItemKey(wall('w1'))], <String>{'b'});
     expect(repo.calls, <String>['deleteFolder:a']);
+  });
+
+  test("an editor's rename, visibility and delete of a shared folder are refused without a write", () async {
+    final _FakeFoldersRepository repo = _FakeFoldersRepository()..folders = <FolderEntity>[sharedFolder('s')];
+    final _NoPublicFolders publicRepo = _NoPublicFolders();
+    final FoldersBloc bloc = _blocFor(repo, publicRepo: publicRepo);
+    await _started(bloc, userId: 'me');
+
+    expect(
+      await bloc.run((id) => FoldersEvent.renameRequested(folderId: 's', name: 'Renamed', operationId: id)),
+      isFalse,
+    );
+    expect(
+      await bloc.run((id) => FoldersEvent.visibilityRequested(folderId: 's', isPublic: true, operationId: id)),
+      isFalse,
+    );
+    expect(await bloc.run((id) => FoldersEvent.deleteRequested(folderId: 's', operationId: id)), isFalse);
+
+    expect(repo.calls.where((call) => call.startsWith('renameFolder:') || call.startsWith('deleteFolder:')), isEmpty);
+    expect(publicRepo.setPublicCalls, isEmpty);
+    expect(bloc.state.folder('s')?.name, 'F-s');
+  });
+
+  test("an editor's save into a shared folder is written as the editor", () async {
+    final _FakeFoldersRepository repo = _FakeFoldersRepository()..folders = <FolderEntity>[sharedFolder('s')];
+    final FoldersBloc bloc = _blocFor(repo);
+    await _started(bloc, userId: 'me');
+
+    expect(
+      await bloc.run((id) => FoldersEvent.saveRequested(wall: wall('w1'), folderIds: <String>{'s'}, operationId: id)),
+      isTrue,
+    );
+
+    expect(repo.writers, <String>['addItem:s:me']);
+    expect(bloc.state.folder('s')?.itemCount, 1);
+  });
+
+  test("an editor's removal from a shared folder is written as the editor", () async {
+    final _FakeFoldersRepository repo = _FakeFoldersRepository()
+      ..folders = <FolderEntity>[
+        sharedFolder('s', count: 1, covers: <String>[thumb('w1')]),
+      ]
+      ..items = <String, List<FavouriteWallEntity>>{
+        's': <FavouriteWallEntity>[wall('w1')],
+      };
+    final FoldersBloc bloc = _blocFor(repo);
+    await _started(bloc, userId: 'me');
+
+    expect(await bloc.run((id) => FoldersEvent.itemRemoved(folderId: 's', wall: wall('w1'), operationId: id)), isTrue);
+
+    expect(repo.writers, <String>['removeItem:s:me']);
+    expect(bloc.state.folder('s')?.itemCount, 0);
+  });
+
+  test("the owner's save is written as the owner", () async {
+    final _FakeFoldersRepository repo = _FakeFoldersRepository()..folders = <FolderEntity>[folder('a')];
+    final FoldersBloc bloc = _blocFor(repo);
+    await _started(bloc);
+
+    expect(
+      await bloc.run((id) => FoldersEvent.saveRequested(wall: wall('w1'), folderIds: <String>{'a'}, operationId: id)),
+      isTrue,
+    );
+
+    expect(repo.writers, <String>['addItem:a:u1']);
   });
 
   test('a Prism wall and a Wallhaven wall with the same id get different membership keys', () async {
