@@ -28,6 +28,13 @@ class FakeFolderSaveGateway implements FolderSaveGateway {
   final Set<String> savedKeys = <String>{};
   final Map<String, FolderWallOutcome> outcomes = <String, FolderWallOutcome>{};
   final Map<String, Completer<FolderWallOutcome>> gates = <String, Completer<FolderWallOutcome>>{};
+  final Map<String, Completer<bool>> savedGates = <String, Completer<bool>>{};
+  final List<String> savedReads = <String>[];
+  final List<String> accessCalls = <String>[];
+  Completer<void>? clearGate;
+  Completer<FolderSaveAccess>? accessGate;
+  bool failAccessWhenNotEmpty = false;
+  final List<List<String>> wallAccessCalls = <List<String>>[];
   final List<String> saveCalls = <String>[];
   final List<int> maxCoinsCalls = <int>[];
   int clears = 0;
@@ -38,15 +45,23 @@ class FakeFolderSaveGateway implements FolderSaveGateway {
   FolderSaveAccount account() => accountValue;
 
   @override
-  Future<Map<String, WallAccess>> wallAccess(List<String> ids) async => <String, WallAccess>{
-    for (final String id in ids) id: WallAccess.open,
-  };
+  Future<Map<String, WallAccess>> wallAccess(List<String> ids) async {
+    wallAccessCalls.add(List<String>.of(ids));
+    if (failAccessWhenNotEmpty && ids.isNotEmpty) throw StateError('offline');
+    return <String, WallAccess>{for (final String id in ids) id: WallAccess.open};
+  }
 
   @override
-  Future<bool> isSaved(FolderSaveWall wall) async => savedKeys.contains(wall.key);
+  Future<bool> isSaved(FolderSaveWall wall) async {
+    savedReads.add(wall.id);
+    return savedGates[wall.id]?.future ?? savedKeys.contains(wall.key);
+  }
 
   @override
-  Future<FolderSaveAccess> requestAccess(String album) async => access;
+  Future<FolderSaveAccess> requestAccess(String album) async {
+    accessCalls.add(album);
+    return accessGate?.future ?? access;
+  }
 
   @override
   Future<FolderWallOutcome> save(FolderSaveItem item, {required String album, required int maxCoins}) async {
@@ -66,6 +81,7 @@ class FakeFolderSaveGateway implements FolderSaveGateway {
   @override
   Future<void> clearTemporaryFiles() async {
     clears++;
+    await clearGate?.future;
   }
 }
 
@@ -113,6 +129,88 @@ void main() {
 
     expect(planned.plan.count(FolderSaveKind.coins), 3);
     expect(planned.plan.totalCost, 30);
+  });
+
+  test('a starter-only plan needs no remote wall lookup when offline', () async {
+    fake.failAccessWhenNotEmpty = true;
+    final Future<FolderSaveState> planned = _next(
+      bloc,
+      (state) => state is FolderSavePlanned || state is FolderSavePlanFailed,
+    );
+    bloc.add(FolderSaveEvent.planRequested(target: _target, walls: <FolderSaveWall>[_prism('starter-sunset')]));
+
+    final FolderSaveState result = await planned;
+
+    expect(result, isA<FolderSavePlanned>());
+    expect((result as FolderSavePlanned).plan.items.single.kind, FolderSaveKind.free);
+    expect(fake.wallAccessCalls, <List<String>>[<String>[]]);
+  });
+
+  test('a dismissed plan cannot publish a late result', () async {
+    final Completer<bool> saved = Completer<bool>();
+    fake.savedGates['p1'] = saved;
+    bloc.add(FolderSaveEvent.planRequested(target: _target, walls: <FolderSaveWall>[_prism('p1')]));
+    await _until(() => fake.savedReads.isNotEmpty);
+    bloc.add(const FolderSaveEvent.dismissed());
+    await _until(() => bloc.state is FolderSaveIdle);
+
+    saved.complete(false);
+    await pumpEventQueue();
+
+    expect(bloc.state, isA<FolderSaveIdle>());
+  });
+
+  test('a dismissed plan stops checking the remaining Downloads', () async {
+    final Completer<bool> saved = Completer<bool>();
+    fake.savedGates['p1'] = saved;
+    bloc.add(
+      FolderSaveEvent.planRequested(target: _target, walls: <FolderSaveWall>[_prism('p1'), _prism('p2'), _prism('p3')]),
+    );
+    await _until(() => fake.savedReads.isNotEmpty);
+    bloc.add(const FolderSaveEvent.dismissed());
+    await _until(() => bloc.state is FolderSaveIdle);
+
+    saved.complete(false);
+    await pumpEventQueue();
+
+    expect(fake.savedReads, <String>['p1']);
+    expect(bloc.state, isA<FolderSaveIdle>());
+  });
+
+  test('a newer plan cannot be overwritten by an older result', () async {
+    final Completer<bool> saved = Completer<bool>();
+    fake.savedGates['old'] = saved;
+    bloc.add(FolderSaveEvent.planRequested(target: _target, walls: <FolderSaveWall>[_prism('old')]));
+    await _until(() => fake.savedReads.isNotEmpty);
+    await _plan(bloc, <FolderSaveWall>[_prism('new')]);
+
+    saved.complete(false);
+    await pumpEventQueue();
+
+    expect((bloc.state as FolderSavePlanned).plan.items.single.wall.id, 'new');
+  });
+
+  test('overlapping start, plan, retry and dismiss events cannot replace a running save', () async {
+    final Completer<FolderWallOutcome> saved = Completer<FolderWallOutcome>();
+    fake.gates['p1'] = saved;
+    await _plan(bloc, <FolderSaveWall>[_prism('p1')]);
+    bloc.add(const FolderSaveEvent.started(choice: FolderSaveChoice.all));
+    await _until(() => fake.saveCalls.isNotEmpty);
+
+    bloc.add(const FolderSaveEvent.started(choice: FolderSaveChoice.all));
+    bloc.add(FolderSaveEvent.planRequested(target: _target, walls: <FolderSaveWall>[_prism('p2')]));
+    bloc.add(const FolderSaveEvent.retryRequested());
+    bloc.add(const FolderSaveEvent.dismissed());
+    await pumpEventQueue();
+
+    expect(bloc.state, isA<FolderSaveRunning>());
+    expect(fake.saveCalls, <String>['p1']);
+    expect(fake.clears, 1);
+    final Future<FolderSaveState> finished = _next(bloc, (state) => state is FolderSaveFinished);
+    saved.complete(const FolderWallOutcome.saved());
+    final FolderSaveFinished done = (await finished) as FolderSaveFinished;
+    expect(done.run.saved, 1);
+    expect(fake.maxInFlight, 1);
   });
 
   test('a run emits progress 1 to 5 and finishes with 5 saved, free and never charged', () async {
@@ -172,6 +270,36 @@ void main() {
     expect(fake.maxInFlight, 3);
   });
 
+  test('paid walls wait until every planned-free wall has finished', () async {
+    fake.accountValue = const FolderSaveAccount(
+      isPro: false,
+      premiumUnlocked: false,
+      balance: 100,
+      graceLeft: 2,
+      price: 10,
+    );
+    final Completer<FolderWallOutcome> first = Completer<FolderWallOutcome>();
+    final Completer<FolderWallOutcome> second = Completer<FolderWallOutcome>();
+    fake.gates['free1'] = first;
+    fake.gates['free2'] = second;
+    await _plan(bloc, <FolderSaveWall>[_prism('free1'), _prism('free2'), _prism('paid')]);
+
+    final Future<FolderSaveState> finished = _next(bloc, (state) => state is FolderSaveFinished);
+    bloc.add(const FolderSaveEvent.started(choice: FolderSaveChoice.all));
+    await _until(() => fake.saveCalls.length >= 2);
+    final List<String> beforeFreeFinished = List<String>.of(fake.saveCalls);
+    first.complete(const FolderWallOutcome.saved());
+    await pumpEventQueue();
+    final List<String> beforeLastFreeFinished = List<String>.of(fake.saveCalls);
+    second.complete(const FolderWallOutcome.saved());
+    final FolderSaveFinished done = (await finished) as FolderSaveFinished;
+
+    expect(beforeFreeFinished, <String>['free1', 'free2']);
+    expect(beforeLastFreeFinished, <String>['free1', 'free2']);
+    expect(fake.saveCalls, <String>['free1', 'free2', 'paid']);
+    expect(done.run.saved, 3);
+  });
+
   test('cancel stops walls that have not started and leaves them uncharged', () async {
     final List<String> ids = <String>['p1', 'p2', 'p3', 'p4', 'p5', 'p6'];
     for (final String id in ids) {
@@ -224,6 +352,34 @@ void main() {
     expect(fake.saveCalls, unorderedEquals(<String>['p1', 'p2', 'p2', 'p3']));
   });
 
+  test('retry preserves the not-started summary of a cancelled run', () async {
+    final List<String> ids = <String>['p1', 'p2', 'p3', 'p4', 'p5', 'p6'];
+    for (final String id in ids.take(3)) {
+      fake.gates[id] = Completer<FolderWallOutcome>();
+    }
+    await _plan(bloc, ids.map(_prism).toList());
+    final Future<FolderSaveState> firstFinished = _next(bloc, (state) => state is FolderSaveFinished);
+    bloc.add(const FolderSaveEvent.started(choice: FolderSaveChoice.all));
+    await _until(() => fake.inFlight == 3);
+    bloc.add(const FolderSaveEvent.cancelRequested());
+    await _until(() => bloc.state is FolderSaveRunning && (bloc.state as FolderSaveRunning).cancelling);
+    fake.gates['p1']!.complete(const FolderWallOutcome.failed(FolderSaveFailure.network));
+    fake.gates['p2']!.complete(const FolderWallOutcome.saved());
+    fake.gates['p3']!.complete(const FolderWallOutcome.saved());
+    await firstFinished;
+    fake.gates.clear();
+
+    final Future<FolderSaveState> retried = _next(bloc, (state) => state is FolderSaveFinished);
+    bloc.add(const FolderSaveEvent.retryRequested());
+    final FolderSaveFinished done = (await retried) as FolderSaveFinished;
+
+    expect(done.run.saved, 3);
+    expect(done.run.failed, 0);
+    expect(done.run.notStarted, 3);
+    expect(done.cancelled, isTrue);
+    expect(fake.saveCalls, <String>['p1', 'p2', 'p3', 'p1']);
+  });
+
   test('a wall already in Downloads is counted as saved at plan time and never saved again', () async {
     fake.savedKeys.add('prism:p1');
     final FolderSavePlanned planned = await _plan(bloc, <FolderSaveWall>[_prism('p1'), _prism('p2'), _prism('p3')]);
@@ -266,8 +422,93 @@ void main() {
     final FolderSaveFinished finished = await _runToEnd(bloc);
 
     expect(fake.saveCalls, isEmpty);
+    expect(fake.accessCalls, isEmpty);
     expect(finished.cancelled, isTrue);
     expect(finished.run.notStarted, 3);
+  });
+
+  test('cancel during the Downloads check does not start a save', () async {
+    await _plan(bloc, <FolderSaveWall>[_prism('p1')]);
+    final Completer<bool> saved = Completer<bool>();
+    fake.savedGates['p1'] = saved;
+    final Future<FolderSaveState> finished = _next(bloc, (state) => state is FolderSaveFinished);
+    bloc.add(const FolderSaveEvent.started(choice: FolderSaveChoice.all));
+    await _until(() => fake.savedReads.length == 2);
+    bloc.add(const FolderSaveEvent.cancelRequested());
+    await _until(() => bloc.state is FolderSaveRunning && (bloc.state as FolderSaveRunning).cancelling);
+    saved.complete(false);
+
+    final FolderSaveFinished done = (await finished) as FolderSaveFinished;
+    expect(fake.saveCalls, isEmpty);
+    expect(done.cancelled, isTrue);
+    expect(done.run.notStarted, 1);
+  });
+
+  test('an account change during the Downloads check does not save for the new account', () async {
+    await _plan(bloc, <FolderSaveWall>[_prism('p1')]);
+    final Completer<bool> saved = Completer<bool>();
+    fake.savedGates['p1'] = saved;
+    final Future<FolderSaveState> finished = _next(bloc, (state) => state is FolderSaveFinished);
+    bloc.add(const FolderSaveEvent.started(choice: FolderSaveChoice.all));
+    await _until(() => fake.savedReads.length == 2);
+    fake.ownerId = 'other';
+    saved.complete(false);
+
+    final FolderSaveFinished done = (await finished) as FolderSaveFinished;
+    expect(fake.saveCalls, isEmpty);
+    expect(done.cancelled, isTrue);
+    expect(done.run.notStarted, 1);
+  });
+
+  test('an account change during startup cleanup does not request access', () async {
+    await _plan(bloc, <FolderSaveWall>[_prism('p1')]);
+    final Completer<void> clear = Completer<void>();
+    fake.clearGate = clear;
+    final Future<FolderSaveState> finished = _next(bloc, (state) => state is FolderSaveFinished);
+    bloc.add(const FolderSaveEvent.started(choice: FolderSaveChoice.all));
+    await _until(() => fake.clears == 1);
+    fake.ownerId = 'other';
+    clear.complete();
+
+    final FolderSaveFinished done = (await finished) as FolderSaveFinished;
+    expect(fake.accessCalls, isEmpty);
+    expect(fake.saveCalls, isEmpty);
+    expect(done.cancelled, isTrue);
+  });
+
+  test('cancel while waiting for permission does not start any wall', () async {
+    await _plan(bloc, <FolderSaveWall>[_prism('p1')]);
+    final Completer<FolderSaveAccess> access = Completer<FolderSaveAccess>();
+    fake.accessGate = access;
+    final Future<FolderSaveState> finished = _next(bloc, (state) => state is FolderSaveFinished);
+    bloc.add(const FolderSaveEvent.started(choice: FolderSaveChoice.all));
+    await _until(() => fake.accessCalls.isNotEmpty);
+    bloc.add(const FolderSaveEvent.cancelRequested());
+    await _until(() => bloc.state is FolderSaveRunning && (bloc.state as FolderSaveRunning).cancelling);
+    access.complete(FolderSaveAccess.granted);
+
+    final FolderSaveFinished done = (await finished) as FolderSaveFinished;
+    expect(fake.saveCalls, isEmpty);
+    expect(done.cancelled, isTrue);
+    expect(done.run.notStarted, 1);
+  });
+
+  test('retry after an account change does not request permission or save', () async {
+    fake.outcomes['p1'] = const FolderWallOutcome.failed(FolderSaveFailure.network);
+    await _plan(bloc, <FolderSaveWall>[_prism('p1')]);
+    await _runToEnd(bloc);
+    fake.accessCalls.clear();
+    fake.saveCalls.clear();
+    fake.ownerId = 'other';
+
+    final Future<FolderSaveState> finished = _next(bloc, (state) => state is FolderSaveFinished);
+    bloc.add(const FolderSaveEvent.retryRequested());
+    final FolderSaveFinished done = (await finished) as FolderSaveFinished;
+
+    expect(fake.accessCalls, isEmpty);
+    expect(fake.saveCalls, isEmpty);
+    expect(done.cancelled, isTrue);
+    expect(done.run.notStarted, 1);
   });
 
   test('the announcer is called once with the finished run when no folder page watches', () async {
@@ -287,7 +528,7 @@ void main() {
 
   test('the announcer is not called when a folder page watches the run', () async {
     final List<FolderSaveRun> announced = <FolderSaveRun>[];
-    bloc.watch();
+    bloc.watch(_target.folderId);
     await _plan(bloc, <FolderSaveWall>[_prism('p1'), _prism('p2'), _prism('p3')]);
 
     await _runToEnd(bloc, announce: (FolderSaveTarget target, FolderSaveRun run) => announced.add(run));

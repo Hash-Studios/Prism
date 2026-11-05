@@ -1,4 +1,5 @@
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/data/offline/bundled_wallpapers.dart';
 
 /// A wall that Save all can save, from a folder of the user or from a public folder the user follows.
 class FolderSaveWall {
@@ -111,6 +112,8 @@ class FolderSavePlan {
         if (seen.add(wall.key))
           if (isSaved(wall))
             FolderSaveItem(wall: wall, kind: FolderSaveKind.saved)
+          else if (BundledWallpapers.isStarterIdentity(wall.id, wall.source))
+            FolderSaveItem(wall: wall, kind: FolderSaveKind.free)
           else if (wall.source != WallpaperSource.prism)
             paid(wall)
           else

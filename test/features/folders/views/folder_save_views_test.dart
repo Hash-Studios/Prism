@@ -97,7 +97,10 @@ Widget _sheetHost(FolderSaveBloc bloc, {double textScale = 1}) => _app(
           onPressed: () => unawaited(
             showPrismSheet<void>(
               context,
-              builder: (_) => BlocProvider<FolderSaveBloc>.value(value: bloc, child: const FolderSavePlanSheet()),
+              builder: (_) => BlocProvider<FolderSaveBloc>.value(
+                value: bloc,
+                child: FolderSavePlanSheet(onRetry: () {}),
+              ),
             ),
           ),
           child: const Text('open'),

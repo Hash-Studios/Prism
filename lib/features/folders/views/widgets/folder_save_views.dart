@@ -64,10 +64,14 @@ Future<void> openFolderSave(
     return;
   }
   PrismHaptics.tap();
-  bloc.add(FolderSaveEvent.planRequested(target: target, walls: walls));
+  void plan() => bloc.add(FolderSaveEvent.planRequested(target: target, walls: walls));
+  plan();
   await showPrismSheet<void>(
     context,
-    builder: (_) => BlocProvider<FolderSaveBloc>.value(value: bloc, child: const FolderSavePlanSheet()),
+    builder: (_) => BlocProvider<FolderSaveBloc>.value(
+      value: bloc,
+      child: FolderSavePlanSheet(onRetry: plan),
+    ),
   );
   final FolderSaveState after = bloc.state;
   if (after is FolderSavePlanning || after is FolderSavePlanned || after is FolderSavePlanFailed) {
@@ -77,7 +81,9 @@ Future<void> openFolderSave(
 
 /// The plan: what Save all will do with each kind of wall, and the buttons to start it.
 class FolderSavePlanSheet extends StatelessWidget {
-  const FolderSavePlanSheet({super.key});
+  const FolderSavePlanSheet({required this.onRetry, super.key});
+
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -88,9 +94,7 @@ class FolderSavePlanSheet extends StatelessWidget {
       FolderSavePlanFailed(:final target) => PrismSheetBody(
         title: l10n.foldersSaveAllTitle,
         message: l10n.foldersSaveAllPlanFailed,
-        actions: <Widget>[
-          PrismButton(label: l10n.wallpaperTryAgain, expand: true, onPressed: () => Navigator.of(context).pop()),
-        ],
+        actions: <Widget>[PrismButton(label: l10n.wallpaperTryAgain, expand: true, onPressed: onRetry)],
         child: Semantics(liveRegion: true, label: target.name, child: const SizedBox.shrink()),
       ),
       _ => PrismSheetBody(
@@ -246,12 +250,20 @@ class _FolderSaveStatusState extends State<_FolderSaveStatusBody> {
   @override
   void initState() {
     super.initState();
-    _bloc.watch();
+    _bloc.watch(widget.folderId);
+  }
+
+  @override
+  void didUpdateWidget(_FolderSaveStatusBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.folderId == widget.folderId) return;
+    _bloc.unwatch(oldWidget.folderId);
+    _bloc.watch(widget.folderId);
   }
 
   @override
   void dispose() {
-    _bloc.unwatch();
+    _bloc.unwatch(widget.folderId);
     super.dispose();
   }
 

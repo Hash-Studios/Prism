@@ -19,8 +19,10 @@ abstract interface class FolderSaveGateway {
   /// Asks for Photos or storage access before anything is charged.
   Future<FolderSaveAccess> requestAccess(String album);
 
-  /// Saves one wall into [album]. Charges at most [maxCoins], and only for a wall that saves. Retries once on a network
-  /// error.
+  /// Saves one wall into [album]. Prism grants enforce [maxCoins] but remain paid after a failed save for retry.
+  /// A Wallhaven or Pexels spend above [maxCoins] stops storage and attempts a refund; there is no atomic price cap.
+  /// Pending recovery blocks another charge for that wall until the refund settles.
+  /// Retries once on a network error.
   Future<FolderWallOutcome> save(FolderSaveItem item, {required String album, required int maxCoins});
 
   /// Deletes the downloads a run left behind, for example after the app was killed.

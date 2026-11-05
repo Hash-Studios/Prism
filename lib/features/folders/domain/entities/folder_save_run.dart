@@ -13,7 +13,7 @@ class FolderSaveTarget {
 
 enum FolderWallStatus { saved, skipped, failed }
 
-/// Why a wall did not save. No coins are taken for any of these.
+/// Why a wall did not save. A failed Prism save may keep its paid original grant for retry.
 enum FolderSaveFailure {
   network,
   notEnoughCoins,

@@ -68,9 +68,9 @@ The coin gate (`lib/features/ads/biz/coin_gate.dart`) has no batch mode. So Save
 
 For a Prism wall, the server callable `resolveOriginalAccess` charges the coins when it grants the original link. Its batch mode takes only 1 or 2 `set` items. So Save all calls it once for each wall. Each call sends `maxCoins`. Its value is the price that the plan showed. If the server asks for more, it charges nothing. The wall then fails with the message "price changed".
 
-Wallhaven and Pexels walls exist only in the owner's private folders. For these walls, the app downloads the file first, with no charge. Then the app spends the coins through the gate. Then the app saves the file. If the save fails, the gate refunds the coins. This is the same as a single download.
+Wallhaven and Pexels walls exist only in the owner's private folders. For these walls, the app downloads the file first, with no charge. Then the app spends the coins through the gate. Then the app saves the file. If the save fails, the gate requests a refund. An unconfirmed refund stays in pending recovery and blocks another charge for the same wall until it settles. This is the same refund flow as a single download.
 
-Charges run one at a time. So the server prices each charge after the one before it.
+Charges run one at a time. So the server prices each charge after the one before it. Planned-free walls finish before any paid wall starts, so a faster paid request cannot take the grace promised to a slower free wall.
 
 A Prism wall that is charged but not saved keeps its grant for 5 minutes. In that time, "Retry failed" does not charge again. This is the same rule as a single download. After 5 minutes, a new save charges again. See Limits.
 
@@ -84,17 +84,17 @@ It saves at most 3 walls at the same time. For each wall, the app downloads the 
 
 Each download tries 2 times when a network or server error occurs.
 
-On iOS, each wall goes to Downloads and to a Photos album with the folder name. The album needs full or limited Photos access. With add-only access, the wall goes to Photos with no album.
+On iOS, each wall goes to Downloads and Photos. With full Photos access, it also goes to an album with the folder name. With limited or add-only access, the wall goes to Photos with no album.
 
 On Android, each wall goes to `Pictures/Prism/<folder name>`. Each character that a path cannot hold becomes a space. The name is at most 60 characters. The Downloads list also shows the files in every `Pictures/Prism/<name>/` folder. "Clear downloads" in Library deletes them too.
 
 A wall that is already in Downloads is skipped. The plan skips it. The save skips it again just before it saves the wall.
 
-The folder page shows a progress row, for example "Saving 12 of 23", with **Cancel**. **Cancel** stops the walls that have not started. Walls that have started finish. Their coins stay spent when the file saves. Otherwise, the coins are refunded. Walls that did not start cost nothing.
+The folder page shows a progress row, for example "Saving 12 of 23", with **Cancel**. **Cancel** stops the walls that have not started. Walls that have started finish. Their coins stay spent when the file saves. A failed Wallhaven or Pexels save uses the gate's refund flow. A failed Prism save keeps its paid grant for 5 minutes for retry, as described above. Walls that did not start cost nothing.
 
 At the end, the row changes to a summary card. The card shows four counts: saved, already in Downloads, failed, and not started after a cancel. **Retry failed** saves the failed walls again. **Done** closes the card.
 
-When no folder page is on screen at the end, the app shows a toast. For example, the toast reads "Saved 20 wallpapers from Night." or "Saved 20 from Night. 1 failed. Open the folder to retry."
+When no page for that folder is on screen at the end, the app shows a toast. For example, the toast reads "Saved 20 wallpapers from Night." or "Saved 20 from Night. 1 failed. Open the folder to retry."
 
 If the app is killed, the save stops. Walls that saved stay in Downloads and in the album. The pending download recovery returns the coins for a Wallhaven or Pexels wall that did not save. It runs 2 minutes after the charge. To finish, tap **Save all** again. The plan skips the walls that are already in Downloads.
 
@@ -262,6 +262,8 @@ Do these steps in this order. No backfill is necessary, because every folder sta
 
 ## Limits
 
+- Wallhaven and Pexels spending has no server-side price cap. If its price changes after planning, a spend above the plan's cap stops the save and attempts a refund. Pending recovery blocks another charge for the same wall until it settles. Preventing that initial debit needs a backend change.
+
 - Prism has no word filter for public user text. Folder names get the length and hidden-character check. Reports and the moderation hide cover the rest.
 - Prism has no suspension state. A disabled Firebase Auth user counts as suspended at the next sync, follow or digest. No event starts a sync when Auth disables a user. A moderator can hide the folders at once with `setFolderHidden`.
 - Wallhaven and Pexels wallpapers do not show in public folders.
@@ -271,7 +273,7 @@ Do these steps in this order. No backfill is necessary, because every folder sta
 - Making a folder private removes its followers. Making it public again starts at 0 followers.
 - A Prism wall that is charged but not saved keeps its grant for 5 minutes. After 5 minutes, a new save charges again.
 - Save all does not save the Drop walls that the user unlocked. Save those walls from their own page.
-- On iOS, the Save all album needs full or limited Photos access.
+- On iOS, the Save all album needs full Photos access. Limited or add-only access saves to Photos with no album.
 
 ## How to test
 

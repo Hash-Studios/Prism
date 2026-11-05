@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/folders/domain/entities/folder_save_plan.dart';
 import 'package:Prism/features/folders/domain/entities/folder_save_run.dart';
 import 'package:Prism/features/folders/domain/repositories/folder_save_gateway.dart';
@@ -32,11 +33,19 @@ class FolderSaveBloc extends Bloc<FolderSaveEvent, FolderSaveState> {
   final FolderSaveGateway _gateway;
   bool _cancelled = false;
   int _planVersion = 0;
-  int _watchers = 0;
+  final Map<String, int> _watchers = <String, int>{};
 
-  /// A folder page that shows the run calls this while it is on screen. With no watcher, the end of a run is announced.
-  void watch() => _watchers++;
-  void unwatch() => _watchers = math.max(0, _watchers - 1);
+  /// A page for this folder shows its run. Other folders do not suppress the completion announcement.
+  void watch(String folderId) => _watchers.update(folderId, (count) => count + 1, ifAbsent: () => 1);
+
+  void unwatch(String folderId) {
+    final int count = (_watchers[folderId] ?? 0) - 1;
+    if (count > 0) {
+      _watchers[folderId] = count;
+    } else {
+      _watchers.remove(folderId);
+    }
+  }
 
   Future<void> _onPlanRequested(_PlanRequested event, Emitter<FolderSaveState> emit) async {
     if (state is FolderSaveRunning) return;
@@ -47,12 +56,15 @@ class FolderSaveBloc extends Bloc<FolderSaveEvent, FolderSaveState> {
     try {
       final List<String> prismIds = <String>{
         for (final FolderSaveWall wall in event.walls)
-          if (wall.source == WallpaperSource.prism) wall.id,
+          if (wall.source == WallpaperSource.prism && !BundledWallpapers.isStarterIdentity(wall.id, wall.source))
+            wall.id,
       }.toList(growable: false);
       final Map<String, WallAccess> access = await _gateway.wallAccess(prismIds);
+      if (!current()) return;
       final Set<String> saved = <String>{};
       for (final FolderSaveWall wall in event.walls) {
         if (await _gateway.isSaved(wall)) saved.add(wall.key);
+        if (!current()) return;
       }
       if (!current()) return;
       final FolderSavePlan plan = FolderSavePlan.build(
@@ -111,8 +123,8 @@ class FolderSaveBloc extends Bloc<FolderSaveEvent, FolderSaveState> {
     emit(const FolderSaveState.idle());
   }
 
-  /// Saves [items] with at most [maxParallel] at a time. A cancel stops walls that have not started. A wall that has
-  /// started runs to its end, so its coins are either kept for a saved file or given back.
+  /// Saves [items] with at most [maxParallel] at a time. A cancel stops walls that have not started. A started wall
+  /// finishes; a failed Prism save keeps its paid original grant for retry rather than refunding it.
   Future<void> _run(
     FolderSaveTarget target,
     FolderSaveRun run,
@@ -122,38 +134,51 @@ class FolderSaveBloc extends Bloc<FolderSaveEvent, FolderSaveState> {
   ) async {
     _cancelled = false;
     FolderSaveRun current = run;
-    emit(FolderSaveState.running(target: target, run: current));
-    await _gateway.clearTemporaryFiles();
-    final FolderSaveAccess access = await _gateway.requestAccess(target.name);
-    if (access != FolderSaveAccess.granted) {
-      emit(FolderSaveState.accessDenied(target: target));
-      return;
-    }
-    int next = 0;
-    Future<void> worker() async {
-      while (!_cancelled && next < items.length) {
-        if (_gateway.ownerId != target.ownerId) {
-          _cancelled = true;
-          break;
-        }
-        final FolderSaveItem item = items[next++];
-        FolderWallOutcome outcome;
-        try {
-          outcome = await _gateway.isSaved(item.wall)
-              ? const FolderWallOutcome.skipped()
-              : await _gateway.save(item, album: target.name, maxCoins: item.cost);
-        } catch (error, stackTrace) {
-          logger.w('A folder wall did not save', error: error, stackTrace: stackTrace);
-          outcome = const FolderWallOutcome.failed(FolderSaveFailure.unknown);
-        }
-        current = current.withOutcome(item.wall, outcome);
-        emit(FolderSaveState.running(target: target, run: current, cancelling: _cancelled));
-      }
+    bool canContinue() {
+      if (_gateway.ownerId != target.ownerId) _cancelled = true;
+      return !_cancelled;
     }
 
-    await Future.wait(<Future<void>>[for (int i = 0; i < math.min(maxParallel, items.length); i++) worker()]);
+    emit(FolderSaveState.running(target: target, run: current));
+    if (canContinue()) {
+      await _gateway.clearTemporaryFiles();
+      if (canContinue()) {
+        final FolderSaveAccess access = await _gateway.requestAccess(target.name);
+        if (canContinue() && access != FolderSaveAccess.granted) {
+          emit(FolderSaveState.accessDenied(target: target));
+          return;
+        }
+      }
+    }
+    Future<void> savePhase(List<FolderSaveItem> phase) async {
+      int next = 0;
+      Future<void> worker() async {
+        while (canContinue() && next < phase.length) {
+          final FolderSaveItem item = phase[next++];
+          FolderWallOutcome outcome;
+          try {
+            final bool saved = await _gateway.isSaved(item.wall);
+            if (!canContinue()) break;
+            outcome = saved
+                ? const FolderWallOutcome.skipped()
+                : await _gateway.save(item, album: target.name, maxCoins: item.cost);
+          } catch (error, stackTrace) {
+            logger.w('A folder wall did not save', error: error, stackTrace: stackTrace);
+            outcome = const FolderWallOutcome.failed(FolderSaveFailure.unknown);
+          }
+          current = current.withOutcome(item.wall, outcome);
+          emit(FolderSaveState.running(target: target, run: current, cancelling: _cancelled));
+        }
+      }
+
+      await Future.wait(<Future<void>>[for (int i = 0; i < math.min(maxParallel, phase.length); i++) worker()]);
+    }
+
+    // Wallhaven and Pexels files download before their charge. Keep paid walls from consuming their planned grace.
+    await savePhase(items.where((item) => item.cost == 0).toList(growable: false));
+    await savePhase(items.where((item) => item.cost > 0).toList(growable: false));
     await _gateway.clearTemporaryFiles();
-    final bool cancelled = _cancelled && current.notStarted > 0;
+    final bool cancelled = current.notStarted > 0;
     _cancelled = false;
     emit(FolderSaveState.finished(target: target, run: current, cancelled: cancelled));
     _track(
@@ -161,7 +186,7 @@ class FolderSaveBloc extends Bloc<FolderSaveEvent, FolderSaveState> {
           ? FolderSaveCancelledEvent(saved: current.saved, notSaved: current.notStarted)
           : FolderSaveFinishedEvent(saved: current.saved, skipped: current.skipped, failed: current.failed),
     );
-    if (_watchers == 0) announce?.call(target, current);
+    if ((_watchers[target.folderId] ?? 0) == 0) announce?.call(target, current);
   }
 
   void _track(AnalyticsEvent event) {

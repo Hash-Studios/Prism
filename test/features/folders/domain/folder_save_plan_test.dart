@@ -45,6 +45,18 @@ void main() {
     expect(plan.items.single.cost, 10);
   });
 
+  test('a bundled starter is free without consuming grace for a regular wall', () {
+    final FolderSavePlan plan = _build(
+      walls: <FolderSaveWall>[_prism('starter-sunset'), _prism('p1')],
+      access: const <String, WallAccess>{'p1': WallAccess.open},
+      account: _account(graceLeft: 1),
+    );
+
+    expect(plan.items.map((item) => item.kind), <FolderSaveKind>[FolderSaveKind.free, FolderSaveKind.free]);
+    expect(plan.totalCost, 0);
+    expect(plan.blockedCount, 0);
+  });
+
   test('a premium Prism wall is pro only for a free user and free for a premium unlock', () {
     const Map<String, WallAccess> access = <String, WallAccess>{'p1': WallAccess.premium};
 
