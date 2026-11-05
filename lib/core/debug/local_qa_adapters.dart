@@ -118,7 +118,21 @@ class LocalQaWallhaven implements WallhavenWallpaperRepository {
     String? minResolution,
     String? sorting,
     String? colors,
-  }) async => Result.success(const <WallhavenWallpaper>[]);
+  }) async => Result.success(<WallhavenWallpaper>[
+    // A colour search gets the colour fixtures that `tool/photo_search_qa.cjs` serves. Other feeds stay empty.
+    if (colors != null && refresh)
+      for (int i = 1; i <= 6; i++)
+        WallhavenWallpaper(
+          core: WallpaperCore(
+            id: 'qa-wh-$colors-$i',
+            source: WallpaperSource.wallhaven,
+            fullUrl: 'https://localhost:19375/wh-$colors-$i.jpg',
+            thumbnailUrl: 'https://localhost:19375/wh-$colors-$i.jpg',
+            authorName: 'qa',
+            resolution: '1080x1920',
+          ),
+        ),
+  ]);
   @override
   Future<Result<List<WallhavenWallpaper>>> fetchToplist({int page = 1}) async =>
       Result.success(const <WallhavenWallpaper>[]);

@@ -13778,4 +13778,62 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'Pixel Watch reads Google Photos. If the image doesn\'t show, back it up to Google Photos first.';
+
+  @override
+  String get searchByPhoto => 'Search by photo';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'Prism reads the photo\'s colours on your phone. To find what\'s in the photo, a small copy goes to Google Cloud Vision. It isn\'t stored.';
+
+  @override
+  String get searchPhotoChoose => 'Choose photo';
+
+  @override
+  String get searchPhotoChipLabel => 'Your photo';
+
+  @override
+  String get searchPhotoClear => 'Clear';
+
+  @override
+  String get searchPhotoClearTooltip => 'Clear photo';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return 'Matches for $labels';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'Matches by colour';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'Main colours: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote => 'A small copy went to Google Cloud Vision to find what\'s in it. It isn\'t stored.';
+
+  @override
+  String get searchPhotoGuestNote => 'Colour matches only. Sign in to match what\'s in the photo too.';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'You\'ve used today\'s $count photo searches. Matching by colour until tomorrow.';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'Couldn\'t read what\'s in the photo. Matching by colour only.';
+
+  @override
+  String get searchPhotoNoMatches => 'No walls match this photo';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'Try a photo with bolder colours.';
+
+  @override
+  String get searchPhotoChooseAnother => 'Choose another photo';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'Couldn\'t open that photo. Try another one.';
 }

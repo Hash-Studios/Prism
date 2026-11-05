@@ -1609,6 +1609,12 @@
   ],
   "fieldOverrides": [
     {
+      "collectionGroup": "photoSearchRate",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
       "collectionGroup": "creatorMemberRateDaily",
       "fieldPath": "expireAt",
       "ttl": true,

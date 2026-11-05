@@ -3761,5 +3761,43 @@
   "watchGuideNoteShareSheet": "Criar mostrador só existe no app Fotos. O Prism não consegue adicioná-lo ao seu próprio menu de compartilhamento.",
   "watchGuideNoteAlbum": "O Prism salva em Recentes, não em um álbum do Prism. Um álbum precisa de acesso total às suas fotos, e o Prism só pede permissão para adicionar fotos.",
   "watchGuideNoteLayout": "Cada mostrador tem seu próprio relógio e layout, por isso pode cobrir parte da imagem.",
-  "watchGuideNoteGooglePhotos": "O Pixel Watch lê o Google Photos. Se a imagem não aparecer, faça primeiro um backup no Google Photos."
+  "watchGuideNoteGooglePhotos": "O Pixel Watch lê o Google Photos. Se a imagem não aparecer, faça primeiro um backup no Google Photos.",
+  "searchByPhoto": "Buscar por foto",
+  "searchPhotoPrivacy": "O Prism lê as cores da foto no seu celular. Para descobrir o que tem na foto, uma pequena cópia é enviada ao Google Cloud Vision. Ela não é armazenada.",
+  "searchPhotoChoose": "Escolher foto",
+  "searchPhotoChipLabel": "Sua foto",
+  "searchPhotoClear": "Remover",
+  "searchPhotoClearTooltip": "Remover foto",
+  "searchPhotoMatchesFor": "Resultados para {labels}",
+  "@searchPhotoMatchesFor": {
+    "placeholders": {
+      "labels": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoColourMatches": "Resultados por cor",
+  "searchPhotoMainColours": "Cores principais: {colours}",
+  "@searchPhotoMainColours": {
+    "placeholders": {
+      "colours": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoSentNote": "Uma pequena cópia foi enviada ao Google Cloud Vision para descobrir o que tem nela. Ela não é armazenada.",
+  "searchPhotoGuestNote": "Apenas resultados por cor. Entre na sua conta para também buscar pelo que tem na foto.",
+  "searchPhotoCappedNote": "Você já usou as {count} buscas por foto de hoje. Até amanhã, só resultados por cor.",
+  "@searchPhotoCappedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchPhotoUnavailableNote": "Não foi possível identificar o que tem na foto. Apenas resultados por cor.",
+  "searchPhotoNoMatches": "Nenhum papel de parede combina com esta foto",
+  "searchPhotoNoMatchesBody": "Tente uma foto com cores mais vivas.",
+  "searchPhotoChooseAnother": "Escolher outra foto",
+  "searchPhotoCouldNotOpen": "Não foi possível abrir essa foto. Tente outra."
 }

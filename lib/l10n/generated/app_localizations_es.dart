@@ -13958,4 +13958,64 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'Pixel Watch lee Google Photos. Si la imagen no aparece, haz primero una copia de seguridad en Google Photos.';
+
+  @override
+  String get searchByPhoto => 'Buscar con una foto';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'Prism lee los colores de la foto en tu teléfono. Para saber qué hay en la foto, se envía una pequeña copia a Google Cloud Vision. No se guarda.';
+
+  @override
+  String get searchPhotoChoose => 'Elegir foto';
+
+  @override
+  String get searchPhotoChipLabel => 'Tu foto';
+
+  @override
+  String get searchPhotoClear => 'Quitar';
+
+  @override
+  String get searchPhotoClearTooltip => 'Quitar foto';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return 'Coincidencias para $labels';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'Coincidencias por color';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'Colores principales: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote =>
+      'Se envió una pequeña copia a Google Cloud Vision para averiguar qué hay en ella. No se guarda.';
+
+  @override
+  String get searchPhotoGuestNote =>
+      'Solo coincidencias de color. Inicia sesión para encontrar también lo que hay en la foto.';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'Has usado las $count búsquedas con foto de hoy. Hasta mañana, solo coincidencias por color.';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'No se pudo leer lo que hay en la foto. Solo coincidencias por color.';
+
+  @override
+  String get searchPhotoNoMatches => 'Ningún fondo de pantalla coincide con esta foto';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'Prueba con una foto de colores más intensos.';
+
+  @override
+  String get searchPhotoChooseAnother => 'Elegir otra foto';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'No se pudo abrir esa foto. Prueba con otra.';
 }

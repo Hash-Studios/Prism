@@ -13926,4 +13926,63 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'Pixel Watch Google Photos पढ़ता है। अगर इमेज नहीं दिखती, तो पहले उसे Google Photos में बैकअप करें।';
+
+  @override
+  String get searchByPhoto => 'फ़ोटो से खोजें';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'Prism आपकी फ़ोटो के रंग आपके फ़ोन पर ही पढ़ता है। फ़ोटो में क्या है, यह पता करने के लिए उसकी एक छोटी कॉपी Google Cloud Vision को भेजी जाती है। वह सेव नहीं होती।';
+
+  @override
+  String get searchPhotoChoose => 'फ़ोटो चुनें';
+
+  @override
+  String get searchPhotoChipLabel => 'आपकी फ़ोटो';
+
+  @override
+  String get searchPhotoClear => 'हटाएं';
+
+  @override
+  String get searchPhotoClearTooltip => 'फ़ोटो हटाएं';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return '$labels से मिलते नतीजे';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'रंग के हिसाब से मिलते नतीजे';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'मुख्य रंग: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote =>
+      'यह पता करने के लिए कि इसमें क्या है, एक छोटी कॉपी Google Cloud Vision को भेजी गई। वह सेव नहीं होती।';
+
+  @override
+  String get searchPhotoGuestNote => 'सिर्फ़ रंग के आधार पर मिलान। फ़ोटो में जो है उससे मिलान के लिए साइन इन करें।';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'आप आज के $count फ़ोटो सर्च इस्तेमाल कर चुके हैं। कल तक सिर्फ़ रंग से मिलान होगा।';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'फ़ोटो में क्या है, यह पढ़ नहीं पाए। सिर्फ़ रंग से मिलान हो रहा है।';
+
+  @override
+  String get searchPhotoNoMatches => 'इस फ़ोटो से मिलता कोई वॉलपेपर नहीं है';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'ज़्यादा चटख रंगों वाली फ़ोटो आज़माएं।';
+
+  @override
+  String get searchPhotoChooseAnother => 'कोई दूसरी फ़ोटो चुनें';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'वह फ़ोटो खोली नहीं जा सकी। कोई और फ़ोटो आज़माएं।';
 }

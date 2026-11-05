@@ -18,6 +18,7 @@ export {onWallSearchTerms} from "./wallSearchTerms";
 export {onWallModerate} from "./wallModeration";
 export {refreshCollections} from "./wallCollections";
 export {categorizeWallpaper} from "./categorizeWallpaper";
+export {photoSearchLabels} from "./photoSearchLabels";
 export {onCampaignNotificationRequested} from "./onCampaignNotificationRequested";
 export {onNotificationCreated} from "./onNotificationCreated";
 export {recordWallpaperView, recordSetupView} from "./viewStats";
