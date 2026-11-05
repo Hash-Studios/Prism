@@ -17,9 +17,11 @@ import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.da
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_save_run.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/folders_access.dart';
+import 'package:Prism/features/folders/views/widgets/folder_save_views.dart';
 import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
 import 'package:Prism/features/folders/views/widgets/public_folder_view.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
@@ -248,6 +250,12 @@ class _FolderScreenState extends State<FolderScreen> {
     }
   }
 
+  Future<void> _saveAll(FolderEntity folder, List<FavouriteWallEntity> walls) => openFolderSave(
+    context,
+    target: FolderSaveTarget(folderId: folder.id, name: folder.name, ownerId: app_state.prismUser.id),
+    walls: folderSaveWallsOfFavourites(context.l10n, walls),
+  );
+
   Widget _body(BuildContext context, FoldersState state, FolderEntity? folder) {
     final AppLocalizations l10n = context.l10n;
     if (app_state.prismUser.id.isEmpty) return SignInPrompt(feature: l10n.foldersSignInFeature);
@@ -357,8 +365,12 @@ class _FolderScreenState extends State<FolderScreen> {
         return PrismPage(
           title: folder?.name ?? context.l10n.foldersTitle,
           maxContentWidth: double.infinity,
-          headerBottom: rotating
-              ? Padding(
+          headerBottom: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              if (rotating)
+                Padding(
                   padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
@@ -376,10 +388,19 @@ class _FolderScreenState extends State<FolderScreen> {
                       ),
                     ),
                   ),
-                )
-              : null,
+                ),
+              FolderSaveStatus(folderId: widget.folderId),
+            ],
+          ),
           actions: <Widget>[
             const OfflineChip(),
+            if (folder != null && (state.items[widget.folderId]?.isNotEmpty ?? false))
+              PrismIconButton(
+                key: const ValueKey<String>('folder-save-open'),
+                icon: Icons.download_rounded,
+                tooltip: context.l10n.foldersSaveAll,
+                onPressed: () => unawaited(_saveAll(folder, state.items[widget.folderId]!)),
+              ),
             if (folder != null)
               PopupMenuButton<_FolderMenuAction>(
                 tooltip: context.l10n.foldersMoreOptions,

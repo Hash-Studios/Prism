@@ -13773,4 +13773,312 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'Pixel Watch liest Google Photos. Wenn das Bild nicht erscheint, sichere es zuerst in Google Photos.';
+
+  @override
+  String get foldersSaveAll => 'Alle speichern';
+
+  @override
+  String get foldersSaveAllTitle => 'Alle Hintergrundbilder speichern';
+
+  @override
+  String get foldersSaveAllChecking => 'Hintergrundbilder werden geprüft…';
+
+  @override
+  String get foldersSaveAllPlanFailed => 'Die Hintergrundbilder konnten nicht geprüft werden. Versuche es erneut.';
+
+  @override
+  String get foldersSaveAllBusy =>
+      'Ein anderer Ordner wird gerade gespeichert. Versuche es erneut, wenn er fertig ist.';
+
+  @override
+  String foldersSaveAllRowFree(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Hintergrundbilder sind kostenlos',
+      one: '1 Hintergrundbild ist kostenlos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowCoins(int count, int price) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Hintergrundbilder kosten je $priceString Münzen',
+      one: '1 Hintergrundbild kostet $priceString Münzen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowPro(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Hintergrundbilder brauchen Pro',
+      one: '1 Hintergrundbild braucht Pro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowSaved(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Hintergrundbilder sind bereits in Downloads',
+      one: '1 Hintergrundbild ist bereits in Downloads',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowBlocked(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Hintergrundbilder können nicht gespeichert werden',
+      one: '1 Hintergrundbild kann nicht gespeichert werden',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllAffordable(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Deine Münzen reichen für $countString kostenpflichtige Hintergrundbilder.',
+      one: 'Deine Münzen reichen für 1 kostenpflichtiges Hintergrundbild.',
+      zero: 'Du hast nicht genug Münzen für ein kostenpflichtiges Hintergrundbild.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPhotosAlbum(String name) {
+    return 'Sie landen im Album „$name“ in Fotos und in Downloads.';
+  }
+
+  @override
+  String foldersSaveAllGalleryAlbum(String name) {
+    return 'Sie landen in Pictures/Prism/$name in deiner Galerie und in Downloads.';
+  }
+
+  @override
+  String get foldersSaveAllLeaveNote =>
+      'Du kannst diese Seite verlassen, während gespeichert wird. Wenn du Prism schließt, tippe erneut auf Alle speichern, um den Vorgang abzuschließen.';
+
+  @override
+  String get foldersSaveAllNothing => 'In diesem Ordner gibt es nichts Neues zum Speichern.';
+
+  @override
+  String foldersSaveAllFreeButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Die $countString kostenlosen Hintergrundbilder speichern',
+      one: 'Das kostenlose Hintergrundbild speichern',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPaidButton(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Alles speichern, was ich kann ($coinsString Münzen)',
+      one: 'Alles speichern, was ich kann (1 Münze)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllCountButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Hintergrundbilder speichern',
+      one: '1 Hintergrundbild speichern',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllProgress(int done, int total) {
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return '$doneString von $totalString werden gespeichert';
+  }
+
+  @override
+  String foldersSaveAllProgressSemantics(int total, int done) {
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$doneString von $totalString Hintergrundbildern werden gespeichert',
+      one: '$doneString von 1 Hintergrundbild wird gespeichert',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllStopping => 'Wird beendet…';
+
+  @override
+  String get foldersSaveAllCancel => 'Abbrechen';
+
+  @override
+  String get foldersSaveAllCancelHint =>
+      'Stoppt die Hintergrundbilder, die noch nicht begonnen haben. Sie kosten nichts.';
+
+  @override
+  String foldersSaveAllSavedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Hintergrundbilder gespeichert',
+      one: '1 Hintergrundbild gespeichert',
+      zero: 'Keine Hintergrundbilder gespeichert',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllStoppedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Beendet. $countString Hintergrundbilder gespeichert',
+      one: 'Beendet. 1 Hintergrundbild gespeichert',
+      zero: 'Beendet. Keine Hintergrundbilder gespeichert',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllSkipped(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString bereits in Downloads',
+      one: '1 bereits in Downloads',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllFailed(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString fehlgeschlagen',
+      one: '1 fehlgeschlagen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllNotStarted(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString nicht gestartet',
+      one: '1 nicht gestartet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllRetry => 'Fehlgeschlagene wiederholen';
+
+  @override
+  String get foldersSaveAllDone => 'Fertig';
+
+  @override
+  String foldersSaveAllToast(int count, String name) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Hintergrundbilder aus $name gespeichert.',
+      one: '1 Hintergrundbild aus $name gespeichert.',
+      zero: 'Keine Hintergrundbilder aus $name gespeichert.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllToastFailed(int failed, int saved, String name) {
+    final intl.NumberFormat failedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String failedString = failedNumberFormat.format(failed);
+    final intl.NumberFormat savedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String savedString = savedNumberFormat.format(saved);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      failed,
+      locale: localeName,
+      other:
+          '$savedString aus $name gespeichert. $failedString fehlgeschlagen. Öffne den Ordner, um es erneut zu versuchen.',
+      one: '$savedString aus $name gespeichert. 1 fehlgeschlagen. Öffne den Ordner, um es erneut zu versuchen.',
+    );
+    return '$_temp0';
+  }
 }
