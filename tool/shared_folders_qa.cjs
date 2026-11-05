@@ -372,8 +372,11 @@ async function seed() {
       ownerId: CREATOR, addedBy: CREATOR, addedAt: stamp(now - (3 - n) * 60000), wallpaperDocumentId: id});
   }
   // Two refused codes the editor can open on a device: one spent by Bo, one past its 7 days.
-  const invite = (code, extra) => db.doc(`folderInvites/${code}`).set({code, folderId: FOLDER, createdBy: CREATOR,
-    createdAt: stamp(now - 8 * 86400000), expiresAt: stamp(now + 86400000), usedBy: null, usedAt: null, ...extra});
+  // An invite binds to the folder generation (its create time), as createFolderInvite does.
+  const folderCreatedAt = (await db.doc(`folders/${FOLDER}`).get()).createTime;
+  const invite = (code, extra) => db.doc(`folderInvites/${code}`).set({code, folderId: FOLDER, folderCreatedAt,
+    createdBy: CREATOR, createdAt: stamp(now - 8 * 86400000), expiresAt: stamp(now + 86400000), usedBy: null,
+    usedAt: null, ...extra});
   await invite(USED_INVITE, {usedBy: BLOCKED, usedAt: stamp(now - 3600000)});
   await invite(EXPIRED_INVITE, {expiresAt: stamp(now - 86400000)});
   write('state.json', {project: PROJECT, proof: 'ADMIN SEEDED shared folder fixtures; not device proof',
