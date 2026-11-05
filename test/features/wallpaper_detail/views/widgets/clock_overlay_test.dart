@@ -73,9 +73,6 @@ class _Client implements WallpaperClient {
   @override
   Future<aw.WallpaperOperationResult> applyOpenGlWallpaper(aw.OpenGlLiveWallpaperRequest request) =>
       throw UnimplementedError();
-
-  @override
-  Future<aw.LiveWallpaperScreens> getLiveWallpaperScreens() async => const aw.LiveWallpaperScreens();
 }
 
 Widget _withMedia(BuildContext context, Widget? child, EdgeInsets safeArea, bool reduceMotion, double textScale) {
