@@ -2898,6 +2898,23 @@
   "coreShareFormatClean": "सादा",
   "coreShareTargetInstagram": "Instagram",
   "coreShareTargetCopyLink": "लिंक कॉपी करें",
+  "coreShareOpenOnComputer": "कंप्यूटर पर खोलें",
+  "@coreShareOpenOnComputer": {
+    "description": "Share sheet target and sheet title. Opens a sheet with a QR code and a short link that opens this wallpaper on a computer."
+  },
+  "coreShareOpenOnComputerBody": "इस लिंक को अपने कंप्यूटर के ब्राउज़र में टाइप करें या कोड स्कैन करें।",
+  "@coreShareOpenOnComputerBody": {
+    "description": "Instruction under the Open on computer title. The link and QR code are shown below it."
+  },
+  "coreShareOpenOnComputerQr": "{link} का QR कोड",
+  "@coreShareOpenOnComputerQr": {
+    "description": "Screen reader label for the QR code image. {link} is the short link shown under it.",
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
   "coreShareTargetSaveImage": "इमेज सेव करें",
   "coreShareTargetMore": "और",
   "coreShareCardBy": "{creator} द्वारा",
@@ -8102,6 +8119,50 @@
   "@wallpaperLiveConfirmPreview": {
     "description": "Instruction to confirm a live wallpaper in Android's system preview."
   },
+  "wallpaperLiveConfirmHome": "प्रीव्यू में “वॉलपेपर लगाएँ” पर टैप करें, फिर “होम स्क्रीन” पर।",
+  "@wallpaperLiveConfirmHome": {
+    "description": "Snackbar after Apply when the user picked Home. Tells them which choice to make in Android's live wallpaper preview."
+  },
+  "wallpaperLiveConfirmLock": "प्रीव्यू में “वॉलपेपर लगाएँ” पर टैप करें, फिर “लॉक स्क्रीन” पर।",
+  "@wallpaperLiveConfirmLock": {
+    "description": "Snackbar after Apply when the user picked Lock. Tells them which choice to make in Android's live wallpaper preview."
+  },
+  "wallpaperLiveConfirmBoth": "प्रीव्यू में “वॉलपेपर लगाएँ” पर टैप करें, फिर “होम स्क्रीन और लॉक स्क्रीन” पर।",
+  "@wallpaperLiveConfirmBoth": {
+    "description": "Snackbar after Apply when the user picked Both. Tells them which choice to make in Android's live wallpaper preview."
+  },
+  "wallpaperLiveSameWallBothScreens": "सिस्टम प्रीव्यू में पुष्टि करें। इस फ़ोन पर दोनों स्क्रीन पर एक ही लाइव वॉलपेपर दिखेगा।",
+  "@wallpaperLiveSameWallBothScreens": {
+    "description": "Snackbar after Apply on Android 15 or older, where one live wallpaper always covers both screens."
+  },
+  "wallpaperLiveScreensResult": "होम स्क्रीन: {home}। लॉक स्क्रीन: {lock}।",
+  "@wallpaperLiveScreensResult": {
+    "description": "After the user returns from the preview: the live style each screen shows. Each value is a style name, or wallpaperLiveScreenOther, or wallpaperLiveScreenPrismWall.",
+    "placeholders": {
+      "home": {
+        "type": "String"
+      },
+      "lock": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperLiveScreenOther": "कोई और वॉलपेपर",
+  "@wallpaperLiveScreenOther": {
+    "description": "Value for wallpaperLiveScreensResult when the screen does not show a Prism live wall. Lower case, it sits inside a sentence."
+  },
+  "wallpaperLiveScreenPrismWall": "Prism का एक लाइव वॉलपेपर",
+  "@wallpaperLiveScreenPrismWall": {
+    "description": "Value for wallpaperLiveScreensResult when the screen shows a Prism live wall whose style is unknown. Lower case."
+  },
+  "wallpaperLivePickForHome": "होम स्क्रीन के लिए वॉलपेपर चुनें",
+  "@wallpaperLivePickForHome": {
+    "description": "Button after the Lock screen got a live wall. Lets the user choose a different wall for the Home screen."
+  },
+  "wallpaperLivePickForLock": "लॉक स्क्रीन के लिए वॉलपेपर चुनें",
+  "@wallpaperLivePickForLock": {
+    "description": "Button after the Home screen got a live wall. Lets the user choose a different wall for the Lock screen."
+  },
   "wallpaperLiveDeviceUnavailable": "इस डिवाइस पर उपलब्ध नहीं है",
   "@wallpaperLiveDeviceUnavailable": {
     "description": "Title shown when the selected live wallpaper mode is unsupported."
@@ -12011,6 +12072,43 @@
   "@dayNightGuideSunBody": {
     "description": "Guide section body. \"Time\", \"Day\" and \"Night\" are names in the Shortcuts app."
   },
+  "dayNightIntroAndroid": "दिन के लिए एक वॉलपेपर और रात के लिए एक वॉलपेपर चुनें। आपके सेट किए समय पर Prism उन्हें बदल देता है।",
+  "@dayNightIntroAndroid": {
+    "description": "Android day and night setup: intro text above the wall pickers."
+  },
+  "dayNightAroundTime": "{time} के आसपास",
+  "@dayNightAroundTime": {
+    "description": "Day and night schedule label. {time} is a formatted time such as 07:00.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNightAndroidTimingNote": "बैटरी बचाने के लिए Android कुछ मिनट देर से बदल सकता है।",
+  "@dayNightAndroidTimingNote": {
+    "description": "Android day and night setup: note that switches can run a few minutes late to save battery."
+  },
+  "dayNightTurnOffAutoRotateTitle": "ऑटो-रोटेशन बंद करें?",
+  "@dayNightTurnOffAutoRotateTitle": {
+    "description": "Dialog title: asks whether to turn off Auto-rotate before Day and night can be used."
+  },
+  "dayNightTurnOffAutoRotateAction": "ऑटो-रोटेशन बंद करें",
+  "@dayNightTurnOffAutoRotateAction": {
+    "description": "Dialog confirm button: turns off Auto-rotate."
+  },
+  "dayNightTurnOffDayNightTitle": "दिन और रात बंद करें?",
+  "@dayNightTurnOffDayNightTitle": {
+    "description": "Dialog title: asks whether to turn off Day and night before Auto-rotate can be used."
+  },
+  "dayNightTurnOffDayNightAction": "दिन और रात बंद करें",
+  "@dayNightTurnOffDayNightAction": {
+    "description": "Dialog confirm button: turns off Day and night."
+  },
+  "dayNightOneModeAtATime": "ऑटो-रोटेशन और दिन और रात, दोनों आपका वॉलपेपर बदलते हैं। एक समय पर सिर्फ़ एक चालू हो सकता है।",
+  "@dayNightOneModeAtATime": {
+    "description": "Dialog body: explains that Auto-rotate and Day and night cannot both be on."
+  },
   "tipAction": "क्रिएटर को टिप दें",
   "@tipAction": {
     "description": "Wall detail: opens the sheet to tip the wall's creator coins"
@@ -13689,6 +13787,89 @@
   "watchGuideNoteGooglePhotos": "Pixel Watch Google Photos पढ़ता है। अगर इमेज नहीं दिखती, तो पहले उसे Google Photos में बैकअप करें।",
   "@watchGuideNoteGooglePhotos": {
     "description": "Note in the Android watch face guide."
+  },
+  "searchByPhoto": "फ़ोटो से खोजें",
+  "@searchByPhoto": {
+    "description": "Tooltip of the camera roll button in the search bar, and title of the photo search privacy sheet."
+  },
+  "searchPhotoPrivacy": "Prism आपकी फ़ोटो के रंग आपके फ़ोन पर ही पढ़ता है। फ़ोटो में क्या है, यह पता करने के लिए उसकी एक छोटी कॉपी Google Cloud Vision को भेजी जाती है। वह सेव नहीं होती।",
+  "@searchPhotoPrivacy": {
+    "description": "Shown once before a signed-in user's first photo search."
+  },
+  "searchPhotoChoose": "फ़ोटो चुनें",
+  "@searchPhotoChoose": {
+    "description": "Button on the photo search privacy sheet. Opens the camera roll."
+  },
+  "searchPhotoChipLabel": "आपकी फ़ोटो",
+  "@searchPhotoChipLabel": {
+    "description": "Screen reader label of the small photo thumbnail above photo search results."
+  },
+  "searchPhotoClear": "हटाएं",
+  "@searchPhotoClear": {
+    "description": "Button next to the photo thumbnail. Ends the photo search."
+  },
+  "searchPhotoClearTooltip": "फ़ोटो हटाएं",
+  "@searchPhotoClearTooltip": {
+    "description": "Tooltip and screen reader label of the Clear button next to the photo thumbnail."
+  },
+  "searchPhotoMatchesFor": "{labels} से मिलते नतीजे",
+  "@searchPhotoMatchesFor": {
+    "description": "Line above photo search results. labels is a comma-separated list of words that describe the photo, in English.",
+    "placeholders": {
+      "labels": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoColourMatches": "रंग के हिसाब से मिलते नतीजे",
+  "@searchPhotoColourMatches": {
+    "description": "Line above photo search results when the photo has no labels."
+  },
+  "searchPhotoMainColours": "मुख्य रंग: {colours}",
+  "@searchPhotoMainColours": {
+    "description": "Screen reader label of the colour dots next to the photo thumbnail.",
+    "placeholders": {
+      "colours": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoSentNote": "यह पता करने के लिए कि इसमें क्या है, एक छोटी कॉपी Google Cloud Vision को भेजी गई। वह सेव नहीं होती।",
+  "@searchPhotoSentNote": {
+    "description": "Note under the photo thumbnail after the photo was sent for labels."
+  },
+  "searchPhotoGuestNote": "सिर्फ़ रंग के आधार पर मिलान। फ़ोटो में जो है उससे मिलान के लिए साइन इन करें।",
+  "@searchPhotoGuestNote": {
+    "description": "Note under the photo thumbnail for a guest. A guest's photo never leaves the phone."
+  },
+  "searchPhotoCappedNote": "आप आज के {count} फ़ोटो सर्च इस्तेमाल कर चुके हैं। कल तक सिर्फ़ रंग से मिलान होगा।",
+  "@searchPhotoCappedNote": {
+    "description": "Note under the photo thumbnail when the daily photo search limit is reached.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchPhotoUnavailableNote": "फ़ोटो में क्या है, यह पढ़ नहीं पाए। सिर्फ़ रंग से मिलान हो रहा है।",
+  "@searchPhotoUnavailableNote": {
+    "description": "Note under the photo thumbnail when the labels call failed."
+  },
+  "searchPhotoNoMatches": "इस फ़ोटो से मिलता कोई वॉलपेपर नहीं है",
+  "@searchPhotoNoMatches": {
+    "description": "Empty state title for a photo search."
+  },
+  "searchPhotoNoMatchesBody": "ज़्यादा चटख रंगों वाली फ़ोटो आज़माएं।",
+  "@searchPhotoNoMatchesBody": {
+    "description": "Empty state body for a photo search."
+  },
+  "searchPhotoChooseAnother": "कोई दूसरी फ़ोटो चुनें",
+  "@searchPhotoChooseAnother": {
+    "description": "Empty state button for a photo search. Opens the camera roll."
+  },
+  "searchPhotoCouldNotOpen": "वह फ़ोटो खोली नहीं जा सकी। कोई और फ़ोटो आज़माएं।",
+  "@searchPhotoCouldNotOpen": {
+    "description": "Toast when the picked photo cannot be decoded."
   },
   "foldersSaveAll": "सभी सहेजें",
   "@foldersSaveAll": {

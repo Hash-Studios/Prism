@@ -9,12 +9,15 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/auto_rotate/data/repositories/auto_rotate_repository_impl.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
+import 'package:Prism/features/day_night/data/repositories/day_night_repository_impl.dart';
+import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
@@ -32,6 +35,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/in_memory_local_store.dart';
+import '../../support/profile_user_fixture.dart';
 
 class _PassRecordGateStore extends InMemoryLocalStore {
   final Completer<void> passRecordWriteStarted = Completer<void>();
@@ -113,6 +117,9 @@ void main() {
   tearDown(() async {
     await getIt.reset();
     debugDefaultTargetPlatformOverride = null;
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
+    DayNightRepositoryImpl.runsOnDeviceOverride = null;
+    DayNightRepositoryImpl.downloadedOriginalOverride = null;
     OfflineAssetStore.testOverride = null;
     messenger.setMockMessageHandler(stopChannel, null);
     messenger.setMockMessageHandler(statusChannel, null);
@@ -126,6 +133,120 @@ void main() {
     );
 
     expect(await repository.stop(), isFalse);
+  });
+
+  group('Android schedule ownership', () {
+    const List<String> urls = <String>['https://images.pexels.com/1.jpg', 'https://images.pexels.com/2.jpg'];
+    const DayNightWall day = DayNightWall(
+      id: 'day',
+      source: WallpaperSource.prism,
+      fullUrl: 'https://example.com/day.jpg',
+      thumbnailUrl: '',
+    );
+    const DayNightWall night = DayNightWall(
+      id: 'night',
+      source: WallpaperSource.prism,
+      fullUrl: 'https://example.com/night.jpg',
+      thumbnailUrl: '',
+    );
+    late DayNightRepositoryImpl dayNight;
+    int starts = 0;
+
+    setUp(() {
+      app_state.prismUser = profileUser(id: 'owner');
+      DayNightRepositoryImpl.runsOnDeviceOverride = true;
+      dayNight = DayNightRepositoryImpl(settings);
+      starts = 0;
+      messenger.setMockDecodedMessageHandler<Object?>(rotationChannel, (_) async {
+        starts++;
+        return <Object?>[true];
+      });
+    });
+
+    test('saved Day and night blocks automatic playlist starts and stale enabled saves', () async {
+      await dayNight.save(
+        DayNightPair(day: day, night: night, enabled: true),
+        ownerId: 'owner',
+      );
+
+      expect(await repository.start(const AutoRotateConfig(enabled: true), urls), isFalse);
+      await repository.saveConfig(const AutoRotateConfig(enabled: true));
+
+      expect(starts, 0);
+      expect(settings.get<bool>(PersistenceKeys.autoRotateEnabled, defaultValue: true), isFalse);
+      expect((await repository.loadConfig()).enabled, isFalse);
+    });
+
+    test('another account’s saved pair does not block the current playlist', () async {
+      await dayNight.save(
+        DayNightPair(day: day, night: night, enabled: true),
+        ownerId: 'other-owner',
+      );
+
+      expect(await repository.start(const AutoRotateConfig(enabled: true), urls), isTrue);
+      await repository.saveConfig(const AutoRotateConfig(enabled: true));
+
+      expect(starts, 1);
+      expect((await repository.loadConfig()).enabled, isTrue);
+    });
+
+    test('Day and night claims ownership before a protected source finishes loading', () async {
+      final Completer<File?> source = Completer<File?>();
+      final Completer<void> sourceEntered = Completer<void>();
+      DayNightRepositoryImpl.downloadedOriginalOverride = (_) {
+        sourceEntered.complete();
+        return source.future;
+      };
+      const BasicMessageChannel<Object?> scheduleChannel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.async_wallpaper.WallpaperApi.startDailySchedule',
+        api.WallpaperApi.pigeonChannelCodec,
+      );
+      messenger.setMockDecodedMessageHandler<Object?>(scheduleChannel, (_) async => <Object?>[true]);
+      addTearDown(() => messenger.setMockDecodedMessageHandler<Object?>(scheduleChannel, null));
+      final Future<void> publishing = dayNight.publish(
+        DayNightPair(
+          day: day,
+          night: const DayNightWall(id: 'protected', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+          enabled: true,
+        ),
+      );
+      await sourceEntered.future;
+
+      expect(await repository.start(const AutoRotateConfig(enabled: true), urls), isFalse);
+      await repository.saveConfig(const AutoRotateConfig(enabled: true));
+      source.complete(File('/downloaded/night.jpg'));
+      await publishing;
+      await repository.saveConfig(const AutoRotateConfig(enabled: true));
+
+      expect(starts, 0);
+      expect(settings.get<bool>(PersistenceKeys.autoRotateEnabled, defaultValue: true), isFalse);
+    });
+
+    test('successful Day and night publication clears a previously enabled playlist', () async {
+      await repository.saveConfig(const AutoRotateConfig(enabled: true));
+      const BasicMessageChannel<Object?> scheduleChannel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.async_wallpaper.WallpaperApi.startDailySchedule',
+        api.WallpaperApi.pigeonChannelCodec,
+      );
+      messenger.setMockDecodedMessageHandler<Object?>(scheduleChannel, (_) async => <Object?>[true]);
+      addTearDown(() => messenger.setMockDecodedMessageHandler<Object?>(scheduleChannel, null));
+
+      await dayNight.publish(DayNightPair(day: day, night: night, enabled: true));
+
+      expect(settings.get<bool>(PersistenceKeys.autoRotateEnabled, defaultValue: true), isFalse);
+    });
+
+    test('iOS playlist settings remain independent of the Shortcuts pair', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      await dayNight.save(
+        DayNightPair(day: day, night: night, enabled: true),
+        ownerId: 'owner',
+      );
+
+      await repository.saveConfig(const AutoRotateConfig(enabled: true));
+
+      expect((await repository.loadConfig()).enabled, isTrue);
+    });
   });
 
   test('preserves native status-channel errors', () async {

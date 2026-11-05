@@ -2979,6 +2979,17 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreShareTargetCopyLink => 'Salin tautan';
 
   @override
+  String get coreShareOpenOnComputer => 'Buka di komputer';
+
+  @override
+  String get coreShareOpenOnComputerBody => 'Ketik tautan ini di browser komputermu, atau pindai kodenya.';
+
+  @override
+  String coreShareOpenOnComputerQr(String link) {
+    return 'Kode QR untuk $link';
+  }
+
+  @override
   String get coreShareTargetSaveImage => 'Simpan gambar';
 
   @override
@@ -8914,6 +8925,36 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperLiveConfirmPreview => 'Konfirmasikan di pratinjau sistem.';
 
   @override
+  String get wallpaperLiveConfirmHome => 'Di pratinjau, ketuk Pasang wallpaper, lalu Layar utama.';
+
+  @override
+  String get wallpaperLiveConfirmLock => 'Di pratinjau, ketuk Pasang wallpaper, lalu Layar kunci.';
+
+  @override
+  String get wallpaperLiveConfirmBoth => 'Di pratinjau, ketuk Pasang wallpaper, lalu Layar utama dan layar kunci.';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'Konfirmasikan di pratinjau sistem. Ponsel ini menampilkan wallpaper bergerak yang sama di kedua layar.';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'Layar utama: $home. Layar kunci: $lock.';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'wallpaper lain';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'sebuah wallpaper bergerak Prism';
+
+  @override
+  String get wallpaperLivePickForHome => 'Pilih wallpaper untuk layar utama';
+
+  @override
+  String get wallpaperLivePickForLock => 'Pilih wallpaper untuk layar kunci';
+
+  @override
   String get wallpaperLiveDeviceUnavailable => 'Tidak tersedia di perangkat ini';
 
   @override
@@ -12348,6 +12389,34 @@ class AppLocalizationsId extends AppLocalizations {
       'Pilih Matahari Terbit atau Matahari Terbenam, bukan waktu. Di \"Dapatkan Wallpaper Prism\", atur Waktu ke Siang untuk matahari terbit dan Malam untuk matahari terbenam.';
 
   @override
+  String get dayNightIntroAndroid =>
+      'Pilih wallpaper untuk siang dan satu untuk malam. Prism akan menggantinya pada waktu yang Anda atur.';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return 'Sekitar $time';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'Android bisa beralih beberapa menit terlambat untuk menghemat baterai.';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => 'Matikan putar otomatis?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'Matikan putar otomatis';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => 'Matikan Siang dan malam?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'Matikan Siang dan malam';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'Putar otomatis dan Siang dan malam sama-sama mengubah wallpaper Anda. Hanya satu yang bisa aktif dalam satu waktu.';
+
+  @override
   String get tipAction => 'Beri tip kreator';
 
   @override
@@ -13762,6 +13831,65 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'Pixel Watch membaca Google Photos. Jika gambar tidak muncul, cadangkan dulu ke Google Photos.';
+
+  @override
+  String get searchByPhoto => 'Cari dengan foto';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'Prism membaca warna foto di ponselmu. Untuk mencari tahu isi fotonya, salinan kecil dikirim ke Google Cloud Vision. Salinan itu tidak disimpan.';
+
+  @override
+  String get searchPhotoChoose => 'Pilih foto';
+
+  @override
+  String get searchPhotoChipLabel => 'Fotomu';
+
+  @override
+  String get searchPhotoClear => 'Hapus';
+
+  @override
+  String get searchPhotoClearTooltip => 'Hapus foto';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return 'Cocok dengan $labels';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'Cocok berdasarkan warna';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'Warna utama: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote =>
+      'Salinan kecil dikirim ke Google Cloud Vision untuk mencari tahu isinya. Salinan itu tidak disimpan.';
+
+  @override
+  String get searchPhotoGuestNote => 'Hanya cocok berdasarkan warna. Masuk untuk juga mencocokkan isi fotomu.';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'Kamu sudah memakai $count pencarian foto hari ini. Sampai besok, pencocokan hanya berdasarkan warna.';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'Isi foto tidak bisa dibaca. Hanya cocok berdasarkan warna.';
+
+  @override
+  String get searchPhotoNoMatches => 'Tidak ada wallpaper yang cocok dengan foto ini';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'Coba foto dengan warna yang lebih cerah.';
+
+  @override
+  String get searchPhotoChooseAnother => 'Pilih foto lain';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'Foto itu tidak bisa dibuka. Coba foto lain.';
 
   @override
   String get foldersSaveAll => 'Simpan semua';

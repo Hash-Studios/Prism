@@ -732,6 +732,20 @@ class AutoRotateBloc extends Bloc<AutoRotateEvent, AutoRotateState> {
         await _stopStaleStart();
         return;
       }
+      final AutoRotateConfig saved = await _repository.loadConfig(ownerId: _userId);
+      if (sessionGeneration != _sessionGeneration) {
+        await _stopStaleStart();
+        return;
+      }
+      if (!saved.enabled) {
+        final AutoRotateStatus latestStatus = await _status();
+        if (sessionGeneration != _sessionGeneration) {
+          await _stopStaleStart();
+          return;
+        }
+        emit(_snapshot(saved, status: latestStatus));
+        return;
+      }
       try {
         _appliedUrls = await _repository.loadAppliedSources() ?? urls;
       } catch (_) {

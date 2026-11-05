@@ -1,11 +1,18 @@
+import 'dart:async';
 import 'dart:io';
+
+import 'package:Prism/auth/user_model.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 
 import 'package:Prism/features/live_wallpaper/data/live_texture_preparer.dart';
 import 'package:Prism/features/live_wallpaper/data/repositories/live_wallpaper_repository_impl.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
+import 'package:Prism/features/live_wallpaper/domain/entities/live_screens.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:async_wallpaper/src/wallpaper_client.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +25,13 @@ class _Client extends Mock implements WallpaperClient {}
 
 class _Texture extends Mock implements LiveTexturePreparer {}
 
+class _SessionRepository extends Mock implements SessionRepository {}
+
+Stream<PrismUsersV2> _watchSessions(Stream<PrismUsersV2> changes) async* {
+  yield profileUser();
+  yield* changes;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late _Client client;
@@ -25,6 +39,7 @@ void main() {
   late LiveWallpaperRepositoryImpl repository;
   late Directory directory;
   final palette = LivePalette.fromAccent(Colors.blue, dark: true);
+  const tag = LiveContentTag(style: MotionStyle.drift, applyId: 'apply-test');
   const pending = aw.WallpaperOperationResult(
     status: aw.WallpaperOperationStatus.awaitingUserConfirmation,
     requestedTarget: aw.WallpaperTarget.both,
@@ -53,14 +68,24 @@ void main() {
 
   test('guest local premium cannot prepare textures or invoke any native live apply', () async {
     app_state.prismUser = profileUser(loggedIn: false, premium: true);
+    repository.nextTarget = WallpaperTarget.lock;
+    expect(repository.nextTarget, isNull);
     final motion = await repository.applyMotion(
       imageUrl: '/local.jpg',
       style: MotionStyle.drift,
       palette: palette,
       screenAspectRatio: 0.5,
       batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
     );
-    final gradient = await repository.applyGradient(style: GradientStyle.aurora, palette: palette, batterySaver: false);
+    final gradient = await repository.applyGradient(
+      style: GradientStyle.aurora,
+      palette: palette,
+      batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
+    );
     final video = await repository.applyVideo('/local.mp4');
 
     expect(<LiveApplyStatus>[motion.status, gradient.status, video.status], everyElement(LiveApplyStatus.cancelled));
@@ -68,8 +93,44 @@ void main() {
     verifyZeroInteractions(client);
   });
 
+  test('a queued screen target is discarded when the session signs out', () {
+    repository.nextTarget = WallpaperTarget.lock;
+    expect(repository.nextTarget, WallpaperTarget.lock);
+
+    app_state.prismUser = profileUser(loggedIn: false);
+
+    expect(repository.nextTarget, isNull);
+  });
+
+  test('a queued screen target is discarded when a new session starts for the same user', () async {
+    final StreamController<PrismUsersV2> sessionChanges = StreamController<PrismUsersV2>.broadcast();
+    addTearDown(sessionChanges.close);
+    final _SessionRepository sessions = _SessionRepository();
+    when(() => sessions.currentUser).thenReturn(profileUser());
+    when(() => sessions.watchCurrentUser()).thenAnswer((_) => _watchSessions(sessionChanges.stream));
+    getIt.registerSingleton<SessionRepository>(sessions);
+    addTearDown(getIt.reset);
+
+    repository.nextTarget = WallpaperTarget.lock;
+    await Future<void>.delayed(Duration.zero);
+    sessionChanges.add(profileUser());
+    await Future<void>.delayed(Duration.zero);
+    expect(repository.nextTarget, WallpaperTarget.lock);
+
+    sessionChanges.add(profileUser(loggedIn: false));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(repository.nextTarget, isNull);
+    repository.nextTarget = WallpaperTarget.lock;
+    await Future<void>.delayed(Duration.zero);
+    sessionChanges.add(profileUser(id: 'u2'));
+    await Future<void>.delayed(Duration.zero);
+    expect(repository.nextTarget, isNull);
+    await getIt.reset();
+  });
+
   test('losing the session during texture preparation cancels before native apply', () async {
-    when(() => texture.prepare('/local.jpg', 0.5)).thenAnswer((_) async {
+    when(() => texture.prepare('/local.jpg', 0.5, uniquePaths: true)).thenAnswer((_) async {
       app_state.prismUser.loggedIn = false;
       return '/prepared.png';
     });
@@ -80,10 +141,47 @@ void main() {
       palette: palette,
       screenAspectRatio: 0.5,
       batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
     );
 
     expect(result.status, LiveApplyStatus.cancelled);
     verifyZeroInteractions(client);
+  });
+
+  test('a sign-out and sign-in during texture preparation cancels the native apply', () async {
+    final StreamController<PrismUsersV2> sessionChanges = StreamController<PrismUsersV2>.broadcast();
+    addTearDown(sessionChanges.close);
+    final _SessionRepository sessions = _SessionRepository();
+    when(() => sessions.currentUser).thenReturn(profileUser());
+    when(() => sessions.watchCurrentUser()).thenAnswer((_) => _watchSessions(sessionChanges.stream));
+    getIt.registerSingleton<SessionRepository>(sessions);
+    addTearDown(getIt.reset);
+
+    final Completer<String> preparation = Completer<String>();
+    final File prepared = File('${directory.path}/session-texture.jpg')..writeAsBytesSync(<int>[1, 2, 3]);
+    when(() => texture.prepare('/local.jpg', 0.5, uniquePaths: true)).thenAnswer((_) => preparation.future);
+    when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) async => pending);
+    final Future<LiveApplyOutcome> applying = repository.applyMotion(
+      imageUrl: '/local.jpg',
+      style: MotionStyle.drift,
+      palette: palette,
+      screenAspectRatio: 0.5,
+      batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
+    );
+    await Future<void>.delayed(Duration.zero);
+    sessionChanges
+      ..add(profileUser(loggedIn: false))
+      ..add(profileUser());
+    await Future<void>.delayed(Duration.zero);
+    preparation.complete(prepared.path);
+
+    expect((await applying).status, LiveApplyStatus.cancelled);
+    expect(await prepared.exists(), isFalse);
+    verifyNever(() => client.applyOpenGlWallpaper(any()));
+    await getIt.reset();
   });
 
   test('capabilities reflect the host and gradient request uses battery saver without textures', () async {
@@ -95,17 +193,42 @@ void main() {
     expect(capabilities.supportsVideo, isFalse);
     expect(capabilities.supportsTilt, isTrue);
     when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) async => applied);
-    final outcome = await repository.applyGradient(style: GradientStyle.aurora, palette: palette, batterySaver: true);
+    final outcome = await repository.applyGradient(
+      style: GradientStyle.aurora,
+      palette: palette,
+      batterySaver: true,
+      target: WallpaperTarget.lock,
+      tag: tag,
+    );
     expect(outcome.status, LiveApplyStatus.applied);
     final request =
         verify(() => client.applyOpenGlWallpaper(captureAny())).captured.single as aw.OpenGlLiveWallpaperRequest;
+    expect(request.target, aw.WallpaperTarget.lock);
+    expect(request.contentTag, tag.encode());
     expect(request.frameRate, 15);
     expect(request.textures, isEmpty);
     expect(request.fragmentShader, contains('void main'));
   });
 
+  test('screen readback ignores a tag when the host says the screen is not Prism', () async {
+    when(() => client.getLiveWallpaperScreens()).thenAnswer(
+      (_) async => const aw.LiveWallpaperScreens(
+        home: aw.LiveScreenState(contentTag: 'prism.live:motion:drift:apply-test'),
+        lock: aw.LiveScreenState(showsThisWallpaper: true, contentTag: 'prism.live:motion:drift:apply-test'),
+      ),
+    );
+
+    final LiveScreens screens = await repository.getScreens();
+
+    expect(screens.home.tag, isNull);
+    expect(screens.home.showsPrism, isFalse);
+    expect(screens.lock.tag, tag);
+  });
+
   test('motion prepares the requested aspect ratio and passes the resulting local texture to the host', () async {
-    when(() => texture.prepare('https://example.test/wall.jpg', 0.5)).thenAnswer((_) async => '/prepared/texture.jpg');
+    when(
+      () => texture.prepare('https://example.test/wall.jpg', 0.5, uniquePaths: true),
+    ).thenAnswer((_) async => '/prepared/texture.jpg');
     when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) async => pending);
     final outcome = await repository.applyMotion(
       imageUrl: 'https://example.test/wall.jpg',
@@ -113,13 +236,68 @@ void main() {
       palette: palette,
       screenAspectRatio: 0.5,
       batterySaver: false,
+      target: WallpaperTarget.lock,
+      tag: tag,
     );
     expect(outcome.status, LiveApplyStatus.confirmInPreview);
-    verify(() => texture.prepare('https://example.test/wall.jpg', 0.5)).called(1);
+    verify(() => texture.prepare('https://example.test/wall.jpg', 0.5, uniquePaths: true)).called(1);
     final request =
         verify(() => client.applyOpenGlWallpaper(captureAny())).captured.single as aw.OpenGlLiveWallpaperRequest;
+    expect(request.target, aw.WallpaperTarget.lock);
+    expect(request.contentTag, tag.encode());
     expect(request.frameRate, 30);
     expect(request.textures.single.filePath, '/prepared/texture.jpg');
+  });
+
+  test('motion uses a unique temporary texture and removes it after native apply returns', () async {
+    final File prepared = File('${directory.path}/unique.jpg')..writeAsBytesSync(<int>[1, 2, 3]);
+    final Completer<aw.WallpaperOperationResult> nativeApply = Completer<aw.WallpaperOperationResult>();
+    when(
+      () => texture.prepare('https://example.test/wall.jpg', 0.5, uniquePaths: any(named: 'uniquePaths')),
+    ).thenAnswer((_) async => prepared.path);
+    when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) => nativeApply.future);
+
+    final Future<LiveApplyOutcome> applying = repository.applyMotion(
+      imageUrl: 'https://example.test/wall.jpg',
+      style: MotionStyle.drift,
+      palette: palette,
+      screenAspectRatio: 0.5,
+      batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
+    );
+
+    await Future<void>.delayed(Duration.zero);
+    expect(await prepared.exists(), isTrue);
+    nativeApply.complete(pending);
+    final LiveApplyOutcome outcome = await applying;
+    expect(outcome.status, LiveApplyStatus.confirmInPreview);
+    expect(await prepared.exists(), isFalse);
+    verify(() => texture.prepare('https://example.test/wall.jpg', 0.5, uniquePaths: true)).called(1);
+  });
+
+  test('a failed native depth apply removes both prepared textures', () async {
+    final File photo = File('${directory.path}/photo.jpg')..writeAsBytesSync(<int>[1]);
+    final File depth = File('${directory.path}/depth.jpg')..writeAsBytesSync(<int>[2]);
+    when(
+      () => texture.prepareWithDepth('/photo.jpg', '/depth.jpg', 0.5, uniquePaths: any(named: 'uniquePaths')),
+    ).thenAnswer((_) async => (photo: photo.path, depth: depth.path));
+    when(() => client.applyOpenGlWallpaper(any())).thenThrow(StateError('native failure'));
+
+    final LiveApplyOutcome outcome = await repository.applyMotion(
+      imageUrl: '/photo.jpg',
+      depthMapUrl: '/depth.jpg',
+      style: MotionStyle.depth,
+      palette: palette,
+      screenAspectRatio: 0.5,
+      batterySaver: false,
+      target: WallpaperTarget.lock,
+      tag: tag,
+    );
+
+    expect(outcome.failure, LiveApplyFailure.setFailed);
+    expect(await photo.exists(), isFalse);
+    expect(await depth.exists(), isFalse);
   });
 
   test('the 3D style without a depth map is unavailable and prepares nothing', () async {
@@ -129,16 +307,23 @@ void main() {
       palette: palette,
       screenAspectRatio: 0.5,
       batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
     );
     expect(outcome.failure, LiveApplyFailure.styleUnavailable);
-    verifyNever(() => texture.prepare(any(), any()));
-    verifyNever(() => texture.prepareWithDepth(any(), any(), any()));
+    verifyNever(() => texture.prepare(any(), any(), uniquePaths: true));
+    verifyNever(() => texture.prepareWithDepth(any(), any(), any(), uniquePaths: true));
     verifyNever(() => client.applyOpenGlWallpaper(any()));
   });
 
   test('the 3D style sends the photo then the depth map as textures at 30 frames per second', () async {
     when(
-      () => texture.prepareWithDepth('https://example.test/wall.jpg', 'https://example.test/map.png', 0.5),
+      () => texture.prepareWithDepth(
+        'https://example.test/wall.jpg',
+        'https://example.test/map.png',
+        0.5,
+        uniquePaths: true,
+      ),
     ).thenAnswer((_) async => (photo: '/p.jpg', depth: '/d.jpg'));
     when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) async => pending);
     final outcome = await repository.applyMotion(
@@ -147,6 +332,8 @@ void main() {
       palette: palette,
       screenAspectRatio: 0.5,
       batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
       depthMapUrl: 'https://example.test/map.png',
     );
     expect(outcome.status, LiveApplyStatus.confirmInPreview);
@@ -159,7 +346,12 @@ void main() {
 
   test('the 3D style with tilt declares u_tilt in the shader', () async {
     when(
-      () => texture.prepareWithDepth('https://example.test/wall.jpg', 'https://example.test/map.png', 0.5),
+      () => texture.prepareWithDepth(
+        'https://example.test/wall.jpg',
+        'https://example.test/map.png',
+        0.5,
+        uniquePaths: true,
+      ),
     ).thenAnswer((_) async => (photo: '/p.jpg', depth: '/d.jpg'));
     when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) async => pending);
     await repository.applyMotion(
@@ -168,6 +360,8 @@ void main() {
       palette: palette,
       screenAspectRatio: 0.5,
       batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
       depthMapUrl: 'https://example.test/map.png',
       tilt: true,
     );
@@ -179,7 +373,12 @@ void main() {
   test('a depth-map download failure is reported and a later apply can retry', () async {
     var prepareCalls = 0;
     when(
-      () => texture.prepareWithDepth('https://example.test/wall.jpg', 'https://example.test/map.png', 0.5),
+      () => texture.prepareWithDepth(
+        'https://example.test/wall.jpg',
+        'https://example.test/map.png',
+        0.5,
+        uniquePaths: true,
+      ),
     ).thenAnswer((_) async {
       prepareCalls++;
       if (prepareCalls == 1) throw const LiveTextureException(LiveApplyFailure.textureDownloadFailed);
@@ -193,6 +392,8 @@ void main() {
       palette: palette,
       screenAspectRatio: 0.5,
       batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
       depthMapUrl: 'https://example.test/map.png',
     );
     expect(first.failure, LiveApplyFailure.textureDownloadFailed);
@@ -204,6 +405,8 @@ void main() {
       palette: palette,
       screenAspectRatio: 0.5,
       batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
       depthMapUrl: 'https://example.test/map.png',
     );
     expect(retry.status, LiveApplyStatus.confirmInPreview);
@@ -214,13 +417,17 @@ void main() {
   });
 
   test('texture preparation failure returns its reason without contacting the host', () async {
-    when(() => texture.prepare('bad', 1)).thenThrow(const LiveTextureException(LiveApplyFailure.textureTooDetailed));
+    when(
+      () => texture.prepare('bad', 1, uniquePaths: true),
+    ).thenThrow(const LiveTextureException(LiveApplyFailure.textureTooDetailed));
     final outcome = await repository.applyMotion(
       imageUrl: 'bad',
       style: MotionStyle.drift,
       palette: palette,
       screenAspectRatio: 1,
       batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
     );
     expect(outcome.failure, LiveApplyFailure.textureTooDetailed);
     verifyNever(() => client.applyOpenGlWallpaper(any()));

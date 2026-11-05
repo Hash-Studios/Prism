@@ -1,3 +1,4 @@
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 
@@ -28,7 +29,11 @@ LiveApplyOutcome liveApplyOutcomeFromResult(aw.WallpaperOperationResult result) 
       return const LiveApplyOutcome(LiveApplyStatus.applied);
     case aw.WallpaperOperationStatus.previewOpened:
     case aw.WallpaperOperationStatus.awaitingUserConfirmation:
-      return const LiveApplyOutcome.confirmInPreview();
+      final WallpaperTarget requested = WallpaperTarget.values.byName(result.requestedTarget.name);
+      return LiveApplyOutcome.confirmInPreview(
+        target: requested,
+        fallback: result.effectiveTarget == aw.WallpaperTarget.both && requested != WallpaperTarget.both,
+      );
     case aw.WallpaperOperationStatus.cancelled:
       return const LiveApplyOutcome(LiveApplyStatus.cancelled);
     case aw.WallpaperOperationStatus.unsupported:

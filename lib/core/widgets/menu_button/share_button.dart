@@ -2,8 +2,9 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/share/open_on_computer.dart';
 import 'package:Prism/core/share/share_card.dart';
 import 'package:Prism/core/share/share_sheet.dart';
 import 'package:Prism/core/share/share_text.dart';
@@ -34,6 +35,9 @@ class ShareButton extends StatefulWidget {
   final Future<String?> Function(String id, WallpaperSource source, String? url, String thumbUrl)? createLink;
   final ShareSheetOpen openSheet;
 
+  /// Tells whether the public web catalogue shows the wall. Tests replace it.
+  final Future<bool> Function(String id) webCatalogueCheck;
+
   /// Shows a caption under the round button.
   final bool labelled;
   final bool duoReveal;
@@ -47,6 +51,7 @@ class ShareButton extends StatefulWidget {
     this.palette = const <Color>[],
     this.createLink,
     this.openSheet = showShareSheet,
+    this.webCatalogueCheck = isOnWebCatalogue,
     this.labelled = false,
     this.duoReveal = false,
     super.key,
@@ -54,6 +59,16 @@ class ShareButton extends StatefulWidget {
 
   @override
   _ShareButtonState createState() => _ShareButtonState();
+}
+
+/// False when the check fails or takes too long: the sheet then hides Open on computer.
+Future<bool> _isOnWebCatalogue(Future<bool> Function(String id) check, String id) async {
+  try {
+    return await check(id).timeout(const Duration(seconds: 6));
+  } catch (error, stackTrace) {
+    logger.w('Web catalogue check failed; hiding Open on computer', error: error, stackTrace: stackTrace);
+    return false;
+  }
 }
 
 class _ShareButtonState extends State<ShareButton> {
@@ -86,10 +101,14 @@ class _ShareButtonState extends State<ShareButton> {
     final String? id = widget.id;
     final WallpaperSource source = widget.source;
     final String? url = widget.url;
+    final Future<bool> Function(String id) webCatalogueCheck = widget.webCatalogueCheck;
     final String originalUrl = url?.trim() ?? '';
     final String rawThumbUrl = widget.thumbUrl.trim();
     final String itemId = id ?? '';
     final bool isBundledStarter = BundledWallpapers.isStarterIdentity(itemId, source);
+    final Future<bool> onWebCatalogue = source == WallpaperSource.prism && !isBundledStarter && itemId.isNotEmpty
+        ? _isOnWebCatalogue(webCatalogueCheck, itemId)
+        : Future<bool>.value(false);
     final bool originalThumbnailFallback =
         !isBundledStarter &&
         originalUrl.isNotEmpty &&
@@ -109,6 +128,7 @@ class _ShareButtonState extends State<ShareButton> {
     final String? contextLine = widget.contextLine;
     final String? creator = shareCreatorMark(widget.creator);
     final List<Color> palette = widget.palette;
+    final bool duoReveal = widget.duoReveal;
     final createLink = widget.createLink;
     final ShareSheetOpen openSheet = widget.openSheet;
 
@@ -161,6 +181,8 @@ class _ShareButtonState extends State<ShareButton> {
         }
       }
       if (!mounted) return;
+      final Uri? computerLink = await onWebCatalogue ? openOnComputerLink(wallId: itemId, shareLink: link) : null;
+      if (!mounted) return;
       setState(() => isLoading = false);
       await openSheet(
         context,
@@ -172,11 +194,12 @@ class _ShareButtonState extends State<ShareButton> {
           creator: creator,
           creatorLine: creator == null ? null : l10n.coreShareCardBy(creator),
           palette: palette,
-          duoReveal: widget.duoReveal,
+          duoReveal: duoReveal,
           contentId: itemId,
           foldedLabel: l10n.duoFolded,
           unfoldedLabel: l10n.duoUnfolded,
           cta: l10n.duoGetOnPrism,
+          computerLink: computerLink,
         ),
         'wallpaper_screen',
       );

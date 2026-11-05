@@ -2774,6 +2774,17 @@
   "coreShareFormatClean": "Schlicht",
   "coreShareTargetInstagram": "Instagram",
   "coreShareTargetCopyLink": "Link kopieren",
+  "coreShareOpenOnComputer": "Am Computer öffnen",
+  "coreShareOpenOnComputerBody": "Gib diesen Link in einem Browser auf deinem Computer ein oder scanne den Code.",
+  "coreShareOpenOnComputerQr": "QR-Code für {link}",
+  "@coreShareOpenOnComputerQr": {
+    "description": "Screen reader label for the QR code image. {link} is the short link shown under it.",
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
   "coreShareTargetSaveImage": "Bild speichern",
   "coreShareTargetMore": "Mehr",
   "coreShareCardBy": "von {creator}",
@@ -7992,6 +8003,50 @@
   "@wallpaperLiveConfirmPreview": {
     "description": "Instruction to confirm a live wallpaper in Android's system preview."
   },
+  "wallpaperLiveConfirmHome": "Tippe in der Vorschau auf „Hintergrundbild festlegen“ und dann auf „Startbildschirm“.",
+  "@wallpaperLiveConfirmHome": {
+    "description": "Snackbar after Apply when the user picked Home. Tells them which choice to make in Android's live wallpaper preview."
+  },
+  "wallpaperLiveConfirmLock": "Tippe in der Vorschau auf „Hintergrundbild festlegen“ und dann auf „Sperrbildschirm“.",
+  "@wallpaperLiveConfirmLock": {
+    "description": "Snackbar after Apply when the user picked Lock. Tells them which choice to make in Android's live wallpaper preview."
+  },
+  "wallpaperLiveConfirmBoth": "Tippe in der Vorschau auf „Hintergrundbild festlegen“ und dann auf „Startbildschirm und Sperrbildschirm“.",
+  "@wallpaperLiveConfirmBoth": {
+    "description": "Snackbar after Apply when the user picked Both. Tells them which choice to make in Android's live wallpaper preview."
+  },
+  "wallpaperLiveSameWallBothScreens": "Bestätige in der Systemvorschau. Dieses Handy zeigt auf beiden Bildschirmen dasselbe Live-Hintergrundbild.",
+  "@wallpaperLiveSameWallBothScreens": {
+    "description": "Snackbar after Apply on Android 15 or older, where one live wallpaper always covers both screens."
+  },
+  "wallpaperLiveScreensResult": "Startbildschirm: {home}. Sperrbildschirm: {lock}.",
+  "@wallpaperLiveScreensResult": {
+    "description": "After the user returns from the preview: the live style each screen shows. Each value is a style name, or wallpaperLiveScreenOther, or wallpaperLiveScreenPrismWall.",
+    "placeholders": {
+      "home": {
+        "type": "String"
+      },
+      "lock": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperLiveScreenOther": "ein anderes Hintergrundbild",
+  "@wallpaperLiveScreenOther": {
+    "description": "Value for wallpaperLiveScreensResult when the screen does not show a Prism live wall. Lower case, it sits inside a sentence."
+  },
+  "wallpaperLiveScreenPrismWall": "ein Prism-Live-Hintergrundbild",
+  "@wallpaperLiveScreenPrismWall": {
+    "description": "Value for wallpaperLiveScreensResult when the screen shows a Prism live wall whose style is unknown. Lower case."
+  },
+  "wallpaperLivePickForHome": "Hintergrundbild für den Startbildschirm wählen",
+  "@wallpaperLivePickForHome": {
+    "description": "Button after the Lock screen got a live wall. Lets the user choose a different wall for the Home screen."
+  },
+  "wallpaperLivePickForLock": "Hintergrundbild für den Sperrbildschirm wählen",
+  "@wallpaperLivePickForLock": {
+    "description": "Button after the Home screen got a live wall. Lets the user choose a different wall for the Lock screen."
+  },
   "wallpaperLiveDeviceUnavailable": "Auf diesem Gerät nicht verfügbar",
   "@wallpaperLiveDeviceUnavailable": {
     "description": "Title shown when the selected live wallpaper mode is unsupported."
@@ -11475,6 +11530,43 @@
   "@dayNightGuideSunBody": {
     "description": "Guide section body. \"Time\", \"Day\" and \"Night\" are names in the Shortcuts app."
   },
+  "dayNightIntroAndroid": "Wähle ein Hintergrundbild für den Tag und eins für die Nacht. Prism wechselt sie zu den Zeiten, die du einstellst.",
+  "@dayNightIntroAndroid": {
+    "description": "Android day and night setup: intro text above the wall pickers."
+  },
+  "dayNightAroundTime": "Gegen {time}",
+  "@dayNightAroundTime": {
+    "description": "Day and night schedule label. {time} is a formatted time such as 07:00.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNightAndroidTimingNote": "Android kann zum Akkusparen einige Minuten später wechseln.",
+  "@dayNightAndroidTimingNote": {
+    "description": "Android day and night setup: note that switches can run a few minutes late to save battery."
+  },
+  "dayNightTurnOffAutoRotateTitle": "Automatischen Wechsel ausschalten?",
+  "@dayNightTurnOffAutoRotateTitle": {
+    "description": "Dialog title: asks whether to turn off Auto-rotate before Day and night can be used."
+  },
+  "dayNightTurnOffAutoRotateAction": "Automatischen Wechsel ausschalten",
+  "@dayNightTurnOffAutoRotateAction": {
+    "description": "Dialog confirm button: turns off Auto-rotate."
+  },
+  "dayNightTurnOffDayNightTitle": "Tag und Nacht ausschalten?",
+  "@dayNightTurnOffDayNightTitle": {
+    "description": "Dialog title: asks whether to turn off Day and night before Auto-rotate can be used."
+  },
+  "dayNightTurnOffDayNightAction": "Tag und Nacht ausschalten",
+  "@dayNightTurnOffDayNightAction": {
+    "description": "Dialog confirm button: turns off Day and night."
+  },
+  "dayNightOneModeAtATime": "Automatischer Wechsel und Tag und Nacht ändern beide dein Hintergrundbild. Es kann immer nur eines davon aktiv sein.",
+  "@dayNightOneModeAtATime": {
+    "description": "Dialog body: explains that Auto-rotate and Day and night cannot both be on."
+  },
   "tipAction": "Trinkgeld geben",
   "@tipAction": {
     "description": "Wall detail: opens the sheet to tip the wall's creator coins"
@@ -12946,6 +13038,89 @@
   "watchGuideNoteGooglePhotos": "Pixel Watch liest Google Photos. Wenn das Bild nicht erscheint, sichere es zuerst in Google Photos.",
   "@watchGuideNoteGooglePhotos": {
     "description": "Note in the Android watch face guide."
+  },
+  "searchByPhoto": "Mit Foto suchen",
+  "@searchByPhoto": {
+    "description": "Tooltip of the camera roll button in the search bar, and title of the photo search privacy sheet."
+  },
+  "searchPhotoPrivacy": "Prism liest die Farben des Fotos auf deinem Handy. Um zu erkennen, was auf dem Foto ist, wird eine kleine Kopie an Google Cloud Vision geschickt. Sie wird nicht gespeichert.",
+  "@searchPhotoPrivacy": {
+    "description": "Shown once before a signed-in user's first photo search."
+  },
+  "searchPhotoChoose": "Foto auswählen",
+  "@searchPhotoChoose": {
+    "description": "Button on the photo search privacy sheet. Opens the camera roll."
+  },
+  "searchPhotoChipLabel": "Dein Foto",
+  "@searchPhotoChipLabel": {
+    "description": "Screen reader label of the small photo thumbnail above photo search results."
+  },
+  "searchPhotoClear": "Entfernen",
+  "@searchPhotoClear": {
+    "description": "Button next to the photo thumbnail. Ends the photo search."
+  },
+  "searchPhotoClearTooltip": "Foto entfernen",
+  "@searchPhotoClearTooltip": {
+    "description": "Tooltip and screen reader label of the Clear button next to the photo thumbnail."
+  },
+  "searchPhotoMatchesFor": "Treffer für {labels}",
+  "@searchPhotoMatchesFor": {
+    "description": "Line above photo search results. labels is a comma-separated list of words that describe the photo, in English.",
+    "placeholders": {
+      "labels": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoColourMatches": "Treffer nach Farbe",
+  "@searchPhotoColourMatches": {
+    "description": "Line above photo search results when the photo has no labels."
+  },
+  "searchPhotoMainColours": "Hauptfarben: {colours}",
+  "@searchPhotoMainColours": {
+    "description": "Screen reader label of the colour dots next to the photo thumbnail.",
+    "placeholders": {
+      "colours": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoSentNote": "Eine kleine Kopie wurde an Google Cloud Vision geschickt, um zu erkennen, was drauf ist. Sie wird nicht gespeichert.",
+  "@searchPhotoSentNote": {
+    "description": "Note under the photo thumbnail after the photo was sent for labels."
+  },
+  "searchPhotoGuestNote": "Nur Farbtreffer. Melde dich an, damit auch passende Motive gefunden werden.",
+  "@searchPhotoGuestNote": {
+    "description": "Note under the photo thumbnail for a guest. A guest's photo never leaves the phone."
+  },
+  "searchPhotoCappedNote": "Du hast die {count} Fotosuchen von heute genutzt. Bis morgen nur nach Farbe suchen.",
+  "@searchPhotoCappedNote": {
+    "description": "Note under the photo thumbnail when the daily photo search limit is reached.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchPhotoUnavailableNote": "Was auf dem Foto zu sehen ist, konnte nicht erkannt werden. Nur Farbtreffer.",
+  "@searchPhotoUnavailableNote": {
+    "description": "Note under the photo thumbnail when the labels call failed."
+  },
+  "searchPhotoNoMatches": "Keine Hintergrundbilder passen zu diesem Foto",
+  "@searchPhotoNoMatches": {
+    "description": "Empty state title for a photo search."
+  },
+  "searchPhotoNoMatchesBody": "Versuch es mit einem Foto mit kräftigeren Farben.",
+  "@searchPhotoNoMatchesBody": {
+    "description": "Empty state body for a photo search."
+  },
+  "searchPhotoChooseAnother": "Anderes Foto auswählen",
+  "@searchPhotoChooseAnother": {
+    "description": "Empty state button for a photo search. Opens the camera roll."
+  },
+  "searchPhotoCouldNotOpen": "Dieses Foto konnte nicht geöffnet werden. Versuch ein anderes.",
+  "@searchPhotoCouldNotOpen": {
+    "description": "Toast when the picked photo cannot be decoded."
   },
   "foldersSaveAll": "Alle speichern",
   "@foldersSaveAll": {

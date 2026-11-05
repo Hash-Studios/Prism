@@ -2974,6 +2974,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreShareTargetCopyLink => 'Copy link';
 
   @override
+  String get coreShareOpenOnComputer => 'Open on computer';
+
+  @override
+  String get coreShareOpenOnComputerBody => 'Type this link in a browser on your computer, or scan the code.';
+
+  @override
+  String coreShareOpenOnComputerQr(String link) {
+    return 'QR code for $link';
+  }
+
+  @override
   String get coreShareTargetSaveImage => 'Save image';
 
   @override
@@ -8887,6 +8898,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperLiveConfirmPreview => 'Confirm in the system preview.';
 
   @override
+  String get wallpaperLiveConfirmHome => 'In the preview, tap Set wallpaper, then Home screen.';
+
+  @override
+  String get wallpaperLiveConfirmLock => 'In the preview, tap Set wallpaper, then Lock screen.';
+
+  @override
+  String get wallpaperLiveConfirmBoth => 'In the preview, tap Set wallpaper, then Home screen and lock screen.';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'Confirm in the system preview. This phone shows the same live wall on both screens.';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'Home screen: $home. Lock screen: $lock.';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'another wallpaper';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'a Prism live wall';
+
+  @override
+  String get wallpaperLivePickForHome => 'Pick a wall for the Home screen';
+
+  @override
+  String get wallpaperLivePickForLock => 'Pick a wall for the Lock screen';
+
+  @override
   String get wallpaperLiveDeviceUnavailable => 'Not available on this device';
 
   @override
@@ -12303,6 +12344,34 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose Sunrise or Sunset instead of a time. In Get Prism Wallpaper, set Time to Day for sunrise and Night for sunset.';
 
   @override
+  String get dayNightIntroAndroid =>
+      'Pick a wall for the day and one for the night. Prism switches them at the times you set.';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return 'Around $time';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'Android can switch a few minutes late to save battery.';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => 'Turn off auto-rotate?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'Turn off auto-rotate';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => 'Turn off Day and night?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'Turn off Day and night';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'Auto-rotate and Day and night both change your wallpaper. Only one can be on at a time.';
+
+  @override
   String get tipAction => 'Tip creator';
 
   @override
@@ -13709,6 +13778,64 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'Pixel Watch reads Google Photos. If the image doesn\'t show, back it up to Google Photos first.';
+
+  @override
+  String get searchByPhoto => 'Search by photo';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'Prism reads the photo\'s colours on your phone. To find what\'s in the photo, a small copy goes to Google Cloud Vision. It isn\'t stored.';
+
+  @override
+  String get searchPhotoChoose => 'Choose photo';
+
+  @override
+  String get searchPhotoChipLabel => 'Your photo';
+
+  @override
+  String get searchPhotoClear => 'Clear';
+
+  @override
+  String get searchPhotoClearTooltip => 'Clear photo';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return 'Matches for $labels';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'Matches by colour';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'Main colours: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote => 'A small copy went to Google Cloud Vision to find what\'s in it. It isn\'t stored.';
+
+  @override
+  String get searchPhotoGuestNote => 'Colour matches only. Sign in to match what\'s in the photo too.';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'You\'ve used today\'s $count photo searches. Matching by colour until tomorrow.';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'Couldn\'t read what\'s in the photo. Matching by colour only.';
+
+  @override
+  String get searchPhotoNoMatches => 'No walls match this photo';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'Try a photo with bolder colours.';
+
+  @override
+  String get searchPhotoChooseAnother => 'Choose another photo';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'Couldn\'t open that photo. Try another one.';
 
   @override
   String get foldersSaveAll => 'Save all';

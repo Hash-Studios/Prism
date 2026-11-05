@@ -13,7 +13,9 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
+import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_mode.dart';
 import 'package:Prism/features/auto_rotate/views/auto_rotate_entitlement.dart';
+import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_mode_confirm.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
@@ -235,7 +237,7 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
                     kind: GlintStateKind.error,
                     text: context.l10n.wallpaperAutoRotateStartError,
                     buttonLabel: context.l10n.wallpaperTryAgain,
-                    onPressed: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.toggled(true)),
+                    onPressed: () => unawaited(_turnOn(context, const AutoRotateEvent.toggled(true))),
                   );
                 }
                 return _Controls(
@@ -243,7 +245,7 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
                   offeredFolder: _offeredFolder,
                   onOfferClosed: () => setState(() => _offeredFolder = null),
                   onChooseFolder: (String? current) => _chooseFolder(context, current),
-                  onRetrySource: () => context.read<AutoRotateBloc>().add(const AutoRotateEvent.toggled(true)),
+                  onRetrySource: () => unawaited(_turnOn(context, const AutoRotateEvent.toggled(true))),
                   onConfirmOffer: (String id, String name) => _confirmOffer(context, id, name),
                 );
               },
@@ -262,8 +264,14 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
       setState(() => _offeredFolder = null);
       return;
     }
-    context.read<AutoRotateBloc>().add(AutoRotateEvent.folderChosen(folderId: id, name: name, enable: true));
+    unawaited(_turnOn(context, AutoRotateEvent.folderChosen(folderId: id, name: name, enable: true)));
   }
+}
+
+/// Sends an event that turns auto-rotate on, after the user agrees to turn Day and night off.
+Future<void> _turnOn(BuildContext context, AutoRotateEvent event) async {
+  if (!await confirmAutoRotateMode(context, AutoRotateMode.playlist) || !context.mounted) return;
+  context.read<AutoRotateBloc>().add(event);
 }
 
 class _Message extends StatelessWidget {
@@ -477,7 +485,11 @@ class _Controls extends StatelessWidget {
                   ? context.l10n.wallpaperAutoRotateMixCapped(state.sourceCount, _sourceNoun(context.l10n, config))
                   : context.l10n.wallpaperAutoRotateMix(state.sourceCount, _sourceNoun(context.l10n, config)),
               value: config.enabled || state.starting,
-              onChanged: canToggle ? (value) => bloc.add(AutoRotateEvent.toggled(value)) : null,
+              onChanged: canToggle
+                  ? (value) => value
+                        ? unawaited(_turnOn(context, const AutoRotateEvent.toggled(true)))
+                        : bloc.add(const AutoRotateEvent.toggled(false))
+                  : null,
             ),
           ],
         ),

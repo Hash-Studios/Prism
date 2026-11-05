@@ -45,6 +45,9 @@ import '../../../../support/offline_asset_fixture.dart';
 final String _previewPath = File('assets/images/prism.webp').absolute.path;
 
 class _Client implements WallpaperClient {
+  @override
+  Future<aw.LiveWallpaperScreens> getLiveWallpaperScreens() async => const aw.LiveWallpaperScreens();
+
   _Client({this.capabilities = const aw.WallpaperCapabilities()});
 
   final aw.WallpaperCapabilities capabilities;

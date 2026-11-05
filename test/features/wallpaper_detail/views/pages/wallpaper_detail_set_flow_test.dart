@@ -50,6 +50,9 @@ class _MockThemeBloc extends MockBloc<ThemeEvent, ThemeState> implements ThemeBl
 class _MockRecordAction extends Mock implements RecordWallpaperActionUseCase {}
 
 class _Client implements WallpaperClient {
+  @override
+  Future<aw.LiveWallpaperScreens> getLiveWallpaperScreens() async => const aw.LiveWallpaperScreens();
+
   _Client({this.live = false});
 
   final bool live;

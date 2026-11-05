@@ -5175,6 +5175,24 @@ abstract class AppLocalizations {
   /// **'Copy link'**
   String get coreShareTargetCopyLink;
 
+  /// Share sheet target and sheet title. Opens a sheet with a QR code and a short link that opens this wallpaper on a computer.
+  ///
+  /// In en, this message translates to:
+  /// **'Open on computer'**
+  String get coreShareOpenOnComputer;
+
+  /// Instruction under the Open on computer title. The link and QR code are shown below it.
+  ///
+  /// In en, this message translates to:
+  /// **'Type this link in a browser on your computer, or scan the code.'**
+  String get coreShareOpenOnComputerBody;
+
+  /// Screen reader label for the QR code image. {link} is the short link shown under it.
+  ///
+  /// In en, this message translates to:
+  /// **'QR code for {link}'**
+  String coreShareOpenOnComputerQr(String link);
+
   /// No description provided for @coreShareTargetSaveImage.
   ///
   /// In en, this message translates to:
@@ -13915,6 +13933,60 @@ abstract class AppLocalizations {
   /// **'Confirm in the system preview.'**
   String get wallpaperLiveConfirmPreview;
 
+  /// Snackbar after Apply when the user picked Home. Tells them which choice to make in Android's live wallpaper preview.
+  ///
+  /// In en, this message translates to:
+  /// **'In the preview, tap Set wallpaper, then Home screen.'**
+  String get wallpaperLiveConfirmHome;
+
+  /// Snackbar after Apply when the user picked Lock. Tells them which choice to make in Android's live wallpaper preview.
+  ///
+  /// In en, this message translates to:
+  /// **'In the preview, tap Set wallpaper, then Lock screen.'**
+  String get wallpaperLiveConfirmLock;
+
+  /// Snackbar after Apply when the user picked Both. Tells them which choice to make in Android's live wallpaper preview.
+  ///
+  /// In en, this message translates to:
+  /// **'In the preview, tap Set wallpaper, then Home screen and lock screen.'**
+  String get wallpaperLiveConfirmBoth;
+
+  /// Snackbar after Apply on Android 15 or older, where one live wallpaper always covers both screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm in the system preview. This phone shows the same live wall on both screens.'**
+  String get wallpaperLiveSameWallBothScreens;
+
+  /// After the user returns from the preview: the live style each screen shows. Each value is a style name, or wallpaperLiveScreenOther, or wallpaperLiveScreenPrismWall.
+  ///
+  /// In en, this message translates to:
+  /// **'Home screen: {home}. Lock screen: {lock}.'**
+  String wallpaperLiveScreensResult(String home, String lock);
+
+  /// Value for wallpaperLiveScreensResult when the screen does not show a Prism live wall. Lower case, it sits inside a sentence.
+  ///
+  /// In en, this message translates to:
+  /// **'another wallpaper'**
+  String get wallpaperLiveScreenOther;
+
+  /// Value for wallpaperLiveScreensResult when the screen shows a Prism live wall whose style is unknown. Lower case.
+  ///
+  /// In en, this message translates to:
+  /// **'a Prism live wall'**
+  String get wallpaperLiveScreenPrismWall;
+
+  /// Button after the Lock screen got a live wall. Lets the user choose a different wall for the Home screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a wall for the Home screen'**
+  String get wallpaperLivePickForHome;
+
+  /// Button after the Home screen got a live wall. Lets the user choose a different wall for the Lock screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a wall for the Lock screen'**
+  String get wallpaperLivePickForLock;
+
   /// Title shown when the selected live wallpaper mode is unsupported.
   ///
   /// In en, this message translates to:
@@ -19933,6 +20005,54 @@ abstract class AppLocalizations {
   /// **'Choose Sunrise or Sunset instead of a time. In Get Prism Wallpaper, set Time to Day for sunrise and Night for sunset.'**
   String get dayNightGuideSunBody;
 
+  /// Android day and night setup: intro text above the wall pickers.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a wall for the day and one for the night. Prism switches them at the times you set.'**
+  String get dayNightIntroAndroid;
+
+  /// Day and night schedule label. {time} is a formatted time such as 07:00.
+  ///
+  /// In en, this message translates to:
+  /// **'Around {time}'**
+  String dayNightAroundTime(String time);
+
+  /// Android day and night setup: note that switches can run a few minutes late to save battery.
+  ///
+  /// In en, this message translates to:
+  /// **'Android can switch a few minutes late to save battery.'**
+  String get dayNightAndroidTimingNote;
+
+  /// Dialog title: asks whether to turn off Auto-rotate before Day and night can be used.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off auto-rotate?'**
+  String get dayNightTurnOffAutoRotateTitle;
+
+  /// Dialog confirm button: turns off Auto-rotate.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off auto-rotate'**
+  String get dayNightTurnOffAutoRotateAction;
+
+  /// Dialog title: asks whether to turn off Day and night before Auto-rotate can be used.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off Day and night?'**
+  String get dayNightTurnOffDayNightTitle;
+
+  /// Dialog confirm button: turns off Day and night.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off Day and night'**
+  String get dayNightTurnOffDayNightAction;
+
+  /// Dialog body: explains that Auto-rotate and Day and night cannot both be on.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-rotate and Day and night both change your wallpaper. Only one can be on at a time.'**
+  String get dayNightOneModeAtATime;
+
   /// Wall detail: opens the sheet to tip the wall's creator coins
   ///
   /// In en, this message translates to:
@@ -22212,6 +22332,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pixel Watch reads Google Photos. If the image doesn\'t show, back it up to Google Photos first.'**
   String get watchGuideNoteGooglePhotos;
+
+  /// Tooltip of the camera roll button in the search bar, and title of the photo search privacy sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by photo'**
+  String get searchByPhoto;
+
+  /// Shown once before a signed-in user's first photo search.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism reads the photo\'s colours on your phone. To find what\'s in the photo, a small copy goes to Google Cloud Vision. It isn\'t stored.'**
+  String get searchPhotoPrivacy;
+
+  /// Button on the photo search privacy sheet. Opens the camera roll.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose photo'**
+  String get searchPhotoChoose;
+
+  /// Screen reader label of the small photo thumbnail above photo search results.
+  ///
+  /// In en, this message translates to:
+  /// **'Your photo'**
+  String get searchPhotoChipLabel;
+
+  /// Button next to the photo thumbnail. Ends the photo search.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get searchPhotoClear;
+
+  /// Tooltip and screen reader label of the Clear button next to the photo thumbnail.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear photo'**
+  String get searchPhotoClearTooltip;
+
+  /// Line above photo search results. labels is a comma-separated list of words that describe the photo, in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches for {labels}'**
+  String searchPhotoMatchesFor(String labels);
+
+  /// Line above photo search results when the photo has no labels.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches by colour'**
+  String get searchPhotoColourMatches;
+
+  /// Screen reader label of the colour dots next to the photo thumbnail.
+  ///
+  /// In en, this message translates to:
+  /// **'Main colours: {colours}'**
+  String searchPhotoMainColours(String colours);
+
+  /// Note under the photo thumbnail after the photo was sent for labels.
+  ///
+  /// In en, this message translates to:
+  /// **'A small copy went to Google Cloud Vision to find what\'s in it. It isn\'t stored.'**
+  String get searchPhotoSentNote;
+
+  /// Note under the photo thumbnail for a guest. A guest's photo never leaves the phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour matches only. Sign in to match what\'s in the photo too.'**
+  String get searchPhotoGuestNote;
+
+  /// Note under the photo thumbnail when the daily photo search limit is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve used today\'s {count} photo searches. Matching by colour until tomorrow.'**
+  String searchPhotoCappedNote(int count);
+
+  /// Note under the photo thumbnail when the labels call failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read what\'s in the photo. Matching by colour only.'**
+  String get searchPhotoUnavailableNote;
+
+  /// Empty state title for a photo search.
+  ///
+  /// In en, this message translates to:
+  /// **'No walls match this photo'**
+  String get searchPhotoNoMatches;
+
+  /// Empty state body for a photo search.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a photo with bolder colours.'**
+  String get searchPhotoNoMatchesBody;
+
+  /// Empty state button for a photo search. Opens the camera roll.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another photo'**
+  String get searchPhotoChooseAnother;
+
+  /// Toast when the picked photo cannot be decoded.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open that photo. Try another one.'**
+  String get searchPhotoCouldNotOpen;
 
   /// Button label that starts saving all wallpapers in a folder.
   ///

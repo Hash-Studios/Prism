@@ -3004,6 +3004,18 @@ class AppLocalizationsDe extends AppLocalizations {
   String get coreShareTargetCopyLink => 'Link kopieren';
 
   @override
+  String get coreShareOpenOnComputer => 'Am Computer öffnen';
+
+  @override
+  String get coreShareOpenOnComputerBody =>
+      'Gib diesen Link in einem Browser auf deinem Computer ein oder scanne den Code.';
+
+  @override
+  String coreShareOpenOnComputerQr(String link) {
+    return 'QR-Code für $link';
+  }
+
+  @override
   String get coreShareTargetSaveImage => 'Bild speichern';
 
   @override
@@ -9007,6 +9019,39 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperLiveConfirmPreview => 'Bestätige in der Systemvorschau.';
 
   @override
+  String get wallpaperLiveConfirmHome =>
+      'Tippe in der Vorschau auf „Hintergrundbild festlegen“ und dann auf „Startbildschirm“.';
+
+  @override
+  String get wallpaperLiveConfirmLock =>
+      'Tippe in der Vorschau auf „Hintergrundbild festlegen“ und dann auf „Sperrbildschirm“.';
+
+  @override
+  String get wallpaperLiveConfirmBoth =>
+      'Tippe in der Vorschau auf „Hintergrundbild festlegen“ und dann auf „Startbildschirm und Sperrbildschirm“.';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'Bestätige in der Systemvorschau. Dieses Handy zeigt auf beiden Bildschirmen dasselbe Live-Hintergrundbild.';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'Startbildschirm: $home. Sperrbildschirm: $lock.';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'ein anderes Hintergrundbild';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'ein Prism-Live-Hintergrundbild';
+
+  @override
+  String get wallpaperLivePickForHome => 'Hintergrundbild für den Startbildschirm wählen';
+
+  @override
+  String get wallpaperLivePickForLock => 'Hintergrundbild für den Sperrbildschirm wählen';
+
+  @override
   String get wallpaperLiveDeviceUnavailable => 'Auf diesem Gerät nicht verfügbar';
 
   @override
@@ -12489,6 +12534,34 @@ class AppLocalizationsDe extends AppLocalizations {
       'Wähle Sonnenaufgang oder Sonnenuntergang statt einer Uhrzeit. Setze bei „Prism-Hintergrundbild abrufen“ „Zeit“ auf „Tag“ für Sonnenaufgang und auf „Nacht“ für Sonnenuntergang.';
 
   @override
+  String get dayNightIntroAndroid =>
+      'Wähle ein Hintergrundbild für den Tag und eins für die Nacht. Prism wechselt sie zu den Zeiten, die du einstellst.';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return 'Gegen $time';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'Android kann zum Akkusparen einige Minuten später wechseln.';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => 'Automatischen Wechsel ausschalten?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'Automatischen Wechsel ausschalten';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => 'Tag und Nacht ausschalten?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'Tag und Nacht ausschalten';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'Automatischer Wechsel und Tag und Nacht ändern beide dein Hintergrundbild. Es kann immer nur eines davon aktiv sein.';
+
+  @override
   String get tipAction => 'Trinkgeld geben';
 
   @override
@@ -13919,6 +13992,66 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'Pixel Watch liest Google Photos. Wenn das Bild nicht erscheint, sichere es zuerst in Google Photos.';
+
+  @override
+  String get searchByPhoto => 'Mit Foto suchen';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'Prism liest die Farben des Fotos auf deinem Handy. Um zu erkennen, was auf dem Foto ist, wird eine kleine Kopie an Google Cloud Vision geschickt. Sie wird nicht gespeichert.';
+
+  @override
+  String get searchPhotoChoose => 'Foto auswählen';
+
+  @override
+  String get searchPhotoChipLabel => 'Dein Foto';
+
+  @override
+  String get searchPhotoClear => 'Entfernen';
+
+  @override
+  String get searchPhotoClearTooltip => 'Foto entfernen';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return 'Treffer für $labels';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'Treffer nach Farbe';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'Hauptfarben: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote =>
+      'Eine kleine Kopie wurde an Google Cloud Vision geschickt, um zu erkennen, was drauf ist. Sie wird nicht gespeichert.';
+
+  @override
+  String get searchPhotoGuestNote => 'Nur Farbtreffer. Melde dich an, damit auch passende Motive gefunden werden.';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'Du hast die $count Fotosuchen von heute genutzt. Bis morgen nur nach Farbe suchen.';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote =>
+      'Was auf dem Foto zu sehen ist, konnte nicht erkannt werden. Nur Farbtreffer.';
+
+  @override
+  String get searchPhotoNoMatches => 'Keine Hintergrundbilder passen zu diesem Foto';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'Versuch es mit einem Foto mit kräftigeren Farben.';
+
+  @override
+  String get searchPhotoChooseAnother => 'Anderes Foto auswählen';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'Dieses Foto konnte nicht geöffnet werden. Versuch ein anderes.';
 
   @override
   String get foldersSaveAll => 'Alle speichern';

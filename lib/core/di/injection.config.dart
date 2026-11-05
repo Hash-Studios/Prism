@@ -238,6 +238,7 @@ import '../../features/user_blocks/domain/repositories/user_block_repository.dar
 import '../../features/user_search/biz/bloc/search_discovery_bloc.j.dart'
     as _i39;
 import '../../features/user_search/biz/bloc/user_search_bloc.j.dart' as _i733;
+import '../../features/user_search/data/photo_search_service.dart' as _i93;
 import '../../features/user_search/data/repositories/user_search_repository_impl.dart'
     as _i352;
 import '../../features/user_search/data/wallpaper_search_service.dart' as _i577;
@@ -370,6 +371,7 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i1003.LiveTexturePreparer>(
     () => const _i1003.LiveTexturePreparer(),
   );
+  gh.lazySingleton<_i93.PhotoSearchService>(() => _i93.PhotoSearchService());
   gh.lazySingleton<_i307.WallpaperPositionRepository>(
     () => _i536.WallpaperPositionRepositoryImpl(),
   );

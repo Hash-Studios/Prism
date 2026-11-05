@@ -3028,6 +3028,17 @@ class AppLocalizationsPt extends AppLocalizations {
   String get coreShareTargetCopyLink => 'Copiar link';
 
   @override
+  String get coreShareOpenOnComputer => 'Abrir no computador';
+
+  @override
+  String get coreShareOpenOnComputerBody => 'Digite este link em um navegador no seu computador ou escaneie o código.';
+
+  @override
+  String coreShareOpenOnComputerQr(String link) {
+    return 'Código QR de $link';
+  }
+
+  @override
   String get coreShareTargetSaveImage => 'Salvar imagem';
 
   @override
@@ -9181,6 +9192,38 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperLiveConfirmPreview => 'Confirme na visualização do sistema.';
 
   @override
+  String get wallpaperLiveConfirmHome => 'Na visualização, toque em Definir papel de parede e depois em Tela inicial.';
+
+  @override
+  String get wallpaperLiveConfirmLock =>
+      'Na visualização, toque em Definir papel de parede e depois em Tela de bloqueio.';
+
+  @override
+  String get wallpaperLiveConfirmBoth =>
+      'Na visualização, toque em Definir papel de parede e depois em Tela inicial e de bloqueio.';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'Confirme na visualização do sistema. Este celular mostra o mesmo papel de parede animado nas duas telas.';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'Tela inicial: $home. Tela de bloqueio: $lock.';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'outro papel de parede';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'um papel de parede animado do Prism';
+
+  @override
+  String get wallpaperLivePickForHome => 'Escolher um papel de parede para a tela inicial';
+
+  @override
+  String get wallpaperLivePickForLock => 'Escolher um papel de parede para a tela de bloqueio';
+
+  @override
   String get wallpaperLiveDeviceUnavailable => 'Não disponível neste dispositivo';
 
   @override
@@ -12649,6 +12692,34 @@ class AppLocalizationsPt extends AppLocalizations {
       'Escolha Nascer do Sol ou Pôr do Sol em vez de um horário. Em \"Obter papel de parede do Prism\", defina Horário como Dia para o nascer do sol e Noite para o pôr do sol.';
 
   @override
+  String get dayNightIntroAndroid =>
+      'Escolha um papel de parede para o dia e outro para a noite. O Prism troca os dois nos horários que você definir.';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return 'Por volta das $time';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'O Android pode trocar com alguns minutos de atraso para economizar bateria.';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => 'Desativar rotação automática?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'Desativar rotação automática';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => 'Desativar Dia e noite?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'Desativar Dia e noite';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'Rotação automática e Dia e noite alteram seu papel de parede. Apenas um pode estar ativo por vez.';
+
+  @override
   String get tipAction => 'Dar gorjeta ao criador';
 
   @override
@@ -14071,6 +14142,66 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'O Pixel Watch lê o Google Photos. Se a imagem não aparecer, faça primeiro um backup no Google Photos.';
+
+  @override
+  String get searchByPhoto => 'Buscar por foto';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'O Prism lê as cores da foto no seu celular. Para descobrir o que tem na foto, uma pequena cópia é enviada ao Google Cloud Vision. Ela não é armazenada.';
+
+  @override
+  String get searchPhotoChoose => 'Escolher foto';
+
+  @override
+  String get searchPhotoChipLabel => 'Sua foto';
+
+  @override
+  String get searchPhotoClear => 'Remover';
+
+  @override
+  String get searchPhotoClearTooltip => 'Remover foto';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return 'Resultados para $labels';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'Resultados por cor';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'Cores principais: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote =>
+      'Uma pequena cópia foi enviada ao Google Cloud Vision para descobrir o que tem nela. Ela não é armazenada.';
+
+  @override
+  String get searchPhotoGuestNote =>
+      'Apenas resultados por cor. Entre na sua conta para também buscar pelo que tem na foto.';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'Você já usou as $count buscas por foto de hoje. Até amanhã, só resultados por cor.';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'Não foi possível identificar o que tem na foto. Apenas resultados por cor.';
+
+  @override
+  String get searchPhotoNoMatches => 'Nenhum papel de parede combina com esta foto';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'Tente uma foto com cores mais vivas.';
+
+  @override
+  String get searchPhotoChooseAnother => 'Escolher outra foto';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'Não foi possível abrir essa foto. Tente outra.';
 
   @override
   String get foldersSaveAll => 'Salvar tudo';
@@ -17396,6 +17527,17 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get coreShareTargetCopyLink => 'Copiar link';
 
   @override
+  String get coreShareOpenOnComputer => 'Abrir no computador';
+
+  @override
+  String get coreShareOpenOnComputerBody => 'Digite este link em um navegador no seu computador ou escaneie o código.';
+
+  @override
+  String coreShareOpenOnComputerQr(String link) {
+    return 'Código QR de $link';
+  }
+
+  @override
   String get coreShareTargetSaveImage => 'Salvar imagem';
 
   @override
@@ -23549,6 +23691,38 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallpaperLiveConfirmPreview => 'Confirme na visualização do sistema.';
 
   @override
+  String get wallpaperLiveConfirmHome => 'Na visualização, toque em Definir papel de parede e depois em Tela inicial.';
+
+  @override
+  String get wallpaperLiveConfirmLock =>
+      'Na visualização, toque em Definir papel de parede e depois em Tela de bloqueio.';
+
+  @override
+  String get wallpaperLiveConfirmBoth =>
+      'Na visualização, toque em Definir papel de parede e depois em Tela inicial e de bloqueio.';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'Confirme na visualização do sistema. Este celular mostra o mesmo papel de parede animado nas duas telas.';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'Tela inicial: $home. Tela de bloqueio: $lock.';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'outro papel de parede';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'um papel de parede animado do Prism';
+
+  @override
+  String get wallpaperLivePickForHome => 'Escolher um papel de parede para a tela inicial';
+
+  @override
+  String get wallpaperLivePickForLock => 'Escolher um papel de parede para a tela de bloqueio';
+
+  @override
   String get wallpaperLiveDeviceUnavailable => 'Não disponível neste dispositivo';
 
   @override
@@ -27017,6 +27191,34 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Escolha Nascer do Sol ou Pôr do Sol em vez de um horário. Em \"Obter papel de parede do Prism\", defina Horário como Dia para o nascer do sol e Noite para o pôr do sol.';
 
   @override
+  String get dayNightIntroAndroid =>
+      'Escolha um papel de parede para o dia e outro para a noite. O Prism troca os dois nos horários que você definir.';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return 'Por volta das $time';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'O Android pode trocar com alguns minutos de atraso para economizar bateria.';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => 'Desativar rotação automática?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'Desativar rotação automática';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => 'Desativar Dia e noite?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'Desativar Dia e noite';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'Rotação automática e Dia e noite alteram seu papel de parede. Apenas um pode estar ativo por vez.';
+
+  @override
   String get tipAction => 'Dar gorjeta ao criador';
 
   @override
@@ -28439,6 +28641,66 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get watchGuideNoteGooglePhotos =>
       'O Pixel Watch lê o Google Photos. Se a imagem não aparecer, faça primeiro um backup no Google Photos.';
+
+  @override
+  String get searchByPhoto => 'Buscar por foto';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'O Prism lê as cores da foto no seu celular. Para descobrir o que tem na foto, uma pequena cópia é enviada ao Google Cloud Vision. Ela não é armazenada.';
+
+  @override
+  String get searchPhotoChoose => 'Escolher foto';
+
+  @override
+  String get searchPhotoChipLabel => 'Sua foto';
+
+  @override
+  String get searchPhotoClear => 'Remover';
+
+  @override
+  String get searchPhotoClearTooltip => 'Remover foto';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return 'Resultados para $labels';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'Resultados por cor';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'Cores principais: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote =>
+      'Uma pequena cópia foi enviada ao Google Cloud Vision para descobrir o que tem nela. Ela não é armazenada.';
+
+  @override
+  String get searchPhotoGuestNote =>
+      'Apenas resultados por cor. Entre na sua conta para também buscar pelo que tem na foto.';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'Você já usou as $count buscas por foto de hoje. Até amanhã, só resultados por cor.';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'Não foi possível identificar o que tem na foto. Apenas resultados por cor.';
+
+  @override
+  String get searchPhotoNoMatches => 'Nenhum papel de parede combina com esta foto';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'Tente uma foto com cores mais vivas.';
+
+  @override
+  String get searchPhotoChooseAnother => 'Escolher outra foto';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'Não foi possível abrir essa foto. Tente outra.';
 
   @override
   String get foldersSaveAll => 'Salvar tudo';

@@ -65,6 +65,7 @@ void main() {
     when(() => repository.save(any(), ownerId: any(named: 'ownerId'))).thenAnswer((_) async {});
     when(() => repository.publish(any())).thenAnswer((_) async {});
     when(() => repository.unpublish()).thenAnswer((_) async {});
+    when(() => repository.runsOnDevice).thenReturn(false);
   });
 
   tearDown(() async {
@@ -576,4 +577,251 @@ void main() {
       DayNightState(pair: DayNightPair(), loaded: true, userId: 'u2'),
     ],
   );
+
+  blocTest<DayNightBloc, DayNightState>(
+    'turning off after an account switch during save does not emit for the old owner',
+    setUp: () {
+      operationStarted = Completer<void>();
+      operationGate = Completer<DayNightPair>();
+      when(() => repository.save(any(), ownerId: 'u1')).thenAnswer((_) async {
+        operationStarted.complete();
+        await operationGate.future;
+      });
+    },
+    build: () => DayNightBloc(repository),
+    seed: () => DayNightState(pair: _complete(enabled: true), loaded: true, isPro: true, userId: 'u1'),
+    act: (bloc) async {
+      bloc.add(const DayNightEvent.toggled(false));
+      await operationStarted.future;
+      app_state.prismUser = profileUser(id: 'u2');
+      await app_state.persistPrismUser();
+      operationGate.complete(DayNightPair());
+    },
+    expect: () => <DayNightState>[],
+    verify: (_) {
+      verify(() => repository.save(_complete(), ownerId: 'u1')).called(1);
+      expect(analytics.events, isEmpty);
+    },
+  );
+
+  group('Android device schedule', () {
+    setUp(() {
+      when(() => repository.runsOnDevice).thenReturn(true);
+      when(() => repository.applyOnOpen()).thenAnswer((_) async => (running: true, switched: null));
+    });
+
+    blocTest<DayNightBloc, DayNightState>(
+      'initial session with an enabled Pro pair resumes the schedule without unpublishing',
+      setUp: () {
+        when(() => repository.load(ownerId: 'u1')).thenAnswer((_) async => _complete(enabled: true));
+        when(() => repository.applyOnOpen()).thenAnswer(
+          (_) async => (running: true, switched: (slot: DayNightSlot.night, source: DayNightSwitchSource.appOpen)),
+        );
+      },
+      build: () => DayNightBloc(repository),
+      act: (bloc) => bloc.add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'u1')),
+      expect: () => <DayNightState>[
+        DayNightState(pair: _complete(enabled: true), loaded: true, isPro: true, userId: 'u1'),
+      ],
+      verify: (_) {
+        verify(() => repository.applyOnOpen()).called(1);
+        verifyNever(() => repository.unpublish());
+        verifyNever(() => repository.publish(any()));
+        expect(
+          analytics.events.single,
+          isA<DayNightSwitchedEvent>()
+              .having((e) => e.slot, 'slot', 'night')
+              .having((e) => e.source, 'source', 'app_open'),
+        );
+      },
+    );
+
+    blocTest<DayNightBloc, DayNightState>(
+      'an alarm switch to the day wall is tracked with slot day and source alarm',
+      setUp: () {
+        when(() => repository.load(ownerId: 'u1')).thenAnswer((_) async => _complete(enabled: true));
+        when(() => repository.applyOnOpen()).thenAnswer(
+          (_) async => (running: true, switched: (slot: DayNightSlot.day, source: DayNightSwitchSource.alarm)),
+        );
+      },
+      build: () => DayNightBloc(repository),
+      act: (bloc) => bloc.add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'u1')),
+      expect: () => <DayNightState>[
+        DayNightState(pair: _complete(enabled: true), loaded: true, isPro: true, userId: 'u1'),
+      ],
+      verify: (_) {
+        verifyNever(() => repository.publish(any()));
+        expect(
+          analytics.events.single,
+          isA<DayNightSwitchedEvent>().having((e) => e.slot, 'slot', 'day').having((e) => e.source, 'source', 'alarm'),
+        );
+      },
+    );
+
+    blocTest<DayNightBloc, DayNightState>(
+      'a schedule that is not running is published again with the stored pair and tracks no switch',
+      setUp: () {
+        when(() => repository.load(ownerId: 'u1')).thenAnswer((_) async => _complete(enabled: true));
+        when(() => repository.applyOnOpen()).thenAnswer((_) async => (running: false, switched: null));
+      },
+      build: () => DayNightBloc(repository),
+      act: (bloc) => bloc.add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'u1')),
+      expect: () => <DayNightState>[
+        DayNightState(pair: _complete(enabled: true), loaded: true, isPro: true, userId: 'u1'),
+      ],
+      verify: (_) {
+        verify(() => repository.publish(_complete(enabled: true))).called(1);
+        expect(analytics.events, isEmpty);
+      },
+    );
+
+    blocTest<DayNightBloc, DayNightState>(
+      'a throwing applyOnOpen counts as not running and publishes the stored pair again',
+      setUp: () {
+        when(() => repository.load(ownerId: 'u1')).thenAnswer((_) async => _complete(enabled: true));
+        when(() => repository.applyOnOpen()).thenThrow(StateError('apply failed'));
+      },
+      build: () => DayNightBloc(repository),
+      act: (bloc) => bloc.add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'u1')),
+      expect: () => <DayNightState>[
+        DayNightState(pair: _complete(enabled: true), loaded: true, isPro: true, userId: 'u1'),
+      ],
+      verify: (_) {
+        verify(() => repository.publish(_complete(enabled: true))).called(1);
+        expect(analytics.events, isEmpty);
+      },
+    );
+
+    blocTest<DayNightBloc, DayNightState>(
+      'a failed republish after the schedule stops turns the pair off with the offline copy issue',
+      setUp: () {
+        when(() => repository.load(ownerId: 'u1')).thenAnswer((_) async => _complete(enabled: true));
+        when(() => repository.applyOnOpen()).thenAnswer((_) async => (running: false, switched: null));
+        when(
+          () => repository.publish(any()),
+        ).thenThrow(const DayNightPrepareException(DayNightPrepareFailure.offlineCopyFailed));
+      },
+      build: () => DayNightBloc(repository),
+      act: (bloc) => bloc.add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'u1')),
+      expect: () => <DayNightState>[
+        DayNightState(pair: _complete(enabled: true), loaded: true, isPro: true, userId: 'u1'),
+        DayNightState(
+          pair: _complete(),
+          loaded: true,
+          isPro: true,
+          userId: 'u1',
+          issue: DayNightIssue.offlineCopyFailed,
+        ),
+      ],
+      verify: (_) {
+        verify(() => repository.save(_complete(), ownerId: 'u1')).called(1);
+        verify(() => repository.unpublish()).called(1);
+        expect(analytics.events.single, isA<DayNightDisabledEvent>());
+      },
+    );
+
+    blocTest<DayNightBloc, DayNightState>(
+      'Pro lapse at app start unpublishes once, never resumes, and sets proLapsed',
+      setUp: () {
+        when(() => repository.load(ownerId: 'u1')).thenAnswer((_) async => _complete(enabled: true));
+      },
+      build: () => DayNightBloc(repository),
+      act: (bloc) => bloc.add(const DayNightEvent.entitlementChanged(isPro: false, userId: 'u1')),
+      expect: () => <DayNightState>[
+        DayNightState(pair: _complete(enabled: true), loaded: true, userId: 'u1'),
+        DayNightState(pair: _complete(), loaded: true, userId: 'u1', proLapsed: true),
+      ],
+      verify: (_) {
+        verify(() => repository.unpublish()).called(1);
+        verifyNever(() => repository.applyOnOpen());
+        expect(analytics.events.single, isA<DayNightDisabledEvent>());
+      },
+    );
+
+    blocTest<DayNightBloc, DayNightState>(
+      'a stored pair that is off unpublishes once and never resumes',
+      setUp: () {
+        when(() => repository.load(ownerId: 'u1')).thenAnswer((_) async => _complete());
+      },
+      build: () => DayNightBloc(repository),
+      act: (bloc) => bloc.add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'u1')),
+      expect: () => <DayNightState>[DayNightState(pair: _complete(), loaded: true, isPro: true, userId: 'u1')],
+      verify: (_) {
+        verify(() => repository.unpublish()).called(1);
+        verifyNever(() => repository.applyOnOpen());
+        verifyNever(() => repository.publish(any()));
+      },
+    );
+
+    blocTest<DayNightBloc, DayNightState>(
+      'a second entitlement event for the same Pro user resumes the schedule again',
+      setUp: () {
+        when(() => repository.load(ownerId: 'u1')).thenAnswer((_) async => _complete(enabled: true));
+      },
+      build: () => DayNightBloc(repository),
+      act: (bloc) {
+        bloc.add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'u1'));
+        bloc.add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'u1'));
+      },
+      expect: () => <DayNightState>[
+        DayNightState(pair: _complete(enabled: true), loaded: true, isPro: true, userId: 'u1'),
+      ],
+      verify: (_) {
+        verify(() => repository.applyOnOpen()).called(2);
+        verifyNever(() => repository.publish(any()));
+      },
+    );
+
+    blocTest<DayNightBloc, DayNightState>(
+      'an account switch replaces the old device schedule with the new enabled pair',
+      setUp: () {
+        when(() => repository.load(ownerId: 'u2')).thenAnswer((_) async => _complete(enabled: true));
+        when(() => repository.applyOnOpen()).thenAnswer((_) async => (running: true, switched: null));
+      },
+      build: () => DayNightBloc(repository),
+      seed: () => DayNightState(pair: _complete(enabled: true), loaded: true, isPro: true, userId: 'u1'),
+      act: (bloc) async {
+        app_state.prismUser = profileUser(id: 'u2');
+        await app_state.persistPrismUser();
+        bloc.add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'u2'));
+      },
+      expect: () => <DayNightState>[
+        DayNightState(pair: _complete(enabled: true), loaded: true, isPro: true, userId: 'u2'),
+      ],
+      verify: (_) {
+        verify(() => repository.unpublish()).called(1);
+        verify(() => repository.publish(_complete(enabled: true))).called(1);
+        verifyNever(() => repository.applyOnOpen());
+      },
+    );
+
+    blocTest<DayNightBloc, DayNightState>(
+      'a same-user resume does not restart a pair cleared by another schedule mode',
+      setUp: () {
+        when(() => repository.load(ownerId: 'u1')).thenAnswer((_) async => _complete());
+      },
+      build: () => DayNightBloc(repository),
+      seed: () => DayNightState(pair: _complete(enabled: true), loaded: true, isPro: true, userId: 'u1'),
+      act: (bloc) => bloc.add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'u1')),
+      expect: () => <DayNightState>[DayNightState(pair: _complete(), loaded: true, isPro: true, userId: 'u1')],
+      verify: (_) {
+        verify(() => repository.load(ownerId: 'u1')).called(1);
+        verifyNever(() => repository.applyOnOpen());
+        verifyNever(() => repository.publish(any()));
+      },
+    );
+
+    blocTest<DayNightBloc, DayNightState>(
+      'turning off on Android unpublishes the device schedule and disables the pair',
+      build: () => DayNightBloc(repository),
+      seed: () => DayNightState(pair: _complete(enabled: true), loaded: true, isPro: true, userId: 'u1'),
+      act: (bloc) => bloc.add(const DayNightEvent.toggled(false)),
+      expect: () => <DayNightState>[DayNightState(pair: _complete(), loaded: true, isPro: true, userId: 'u1')],
+      verify: (_) {
+        verify(() => repository.unpublish()).called(1);
+        verifyNever(() => repository.applyOnOpen());
+        expect(analytics.events.single, isA<DayNightDisabledEvent>());
+      },
+    );
+  });
 }

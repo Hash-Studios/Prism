@@ -1283,6 +1283,77 @@ class SearchResultOpenedEvent extends AnalyticsEvent {
   }
 }
 
+class PhotoSearchStartedEvent extends AnalyticsEvent {
+  const PhotoSearchStartedEvent({required this.signedIn, required this.searchId});
+
+  final bool signedIn;
+  final String searchId;
+
+  @override
+  String get eventName => 'photo_search_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'signed_in': signedIn ? 1 : 0, 'search_id': searchId};
+  }
+}
+
+class PhotoSearchLabelsReturnedEvent extends AnalyticsEvent {
+  const PhotoSearchLabelsReturnedEvent({required this.labelCount, required this.searchId});
+
+  final int labelCount;
+  final String searchId;
+
+  @override
+  String get eventName => 'photo_search_labels_returned';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'label_count': labelCount, 'search_id': searchId};
+  }
+}
+
+class PhotoSearchLabelsCappedEvent extends AnalyticsEvent {
+  const PhotoSearchLabelsCappedEvent({required this.searchId});
+
+  final String searchId;
+
+  @override
+  String get eventName => 'photo_search_labels_capped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'search_id': searchId};
+  }
+}
+
+class PhotoSearchResultOpenedEvent extends AnalyticsEvent {
+  const PhotoSearchResultOpenedEvent({
+    required this.provider,
+    required this.itemId,
+    required this.index,
+    this.searchId,
+  });
+
+  final SearchProviderValue provider;
+  final String itemId;
+  final int index;
+  final String? searchId;
+
+  @override
+  String get eventName => 'photo_search_result_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'provider': provider.wireValue,
+      'item_id': itemId,
+      'index': index,
+      if (searchId != null) 'search_id': searchId!,
+    };
+  }
+}
+
 class SearchPaginationRequestedEvent extends AnalyticsEvent {
   const SearchPaginationRequestedEvent({
     required this.provider,
@@ -1612,6 +1683,21 @@ class DayNightDisabledEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return const <String, Object?>{};
+  }
+}
+
+class DayNightSwitchedEvent extends AnalyticsEvent {
+  const DayNightSwitchedEvent({required this.slot, required this.source});
+
+  final String slot;
+  final String source;
+
+  @override
+  String get eventName => 'day_night_switched';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'slot': slot, 'source': source};
   }
 }
 
@@ -1961,6 +2047,35 @@ class InviteShareResultEvent extends AnalyticsEvent {
       if (format != null) 'format': format!.wireValue,
       if (target != null) 'target': target!.wireValue,
     };
+  }
+}
+
+class OpenOnComputerShownEvent extends AnalyticsEvent {
+  const OpenOnComputerShownEvent({required this.sourceContext});
+
+  final String sourceContext;
+
+  @override
+  String get eventName => 'open_on_computer_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source_context': sourceContext};
+  }
+}
+
+class OpenOnComputerLinkCopiedEvent extends AnalyticsEvent {
+  const OpenOnComputerLinkCopiedEvent({required this.sourceContext, required this.result});
+
+  final String sourceContext;
+  final EventResultValue result;
+
+  @override
+  String get eventName => 'open_on_computer_link_copied';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source_context': sourceContext, 'result': result.wireValue};
   }
 }
 
@@ -3427,17 +3542,32 @@ class AccentMatchedFromWallEvent extends AnalyticsEvent {
 }
 
 class LiveWallpaperAppliedEvent extends AnalyticsEvent {
-  const LiveWallpaperAppliedEvent({required this.style, required this.result});
+  const LiveWallpaperAppliedEvent({
+    required this.style,
+    required this.result,
+    this.target,
+    required this.perScreen,
+    required this.fallback,
+  });
 
   final LiveWallpaperStyleValue style;
   final String result;
+  final WallpaperTarget? target;
+  final bool perScreen;
+  final bool fallback;
 
   @override
   String get eventName => 'live_wallpaper_applied';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'style': style.wireValue, 'result': result};
+    return <String, Object?>{
+      'style': style.wireValue,
+      'result': result,
+      if (target != null) 'target': target!.wireValue,
+      'per_screen': perScreen ? 1 : 0,
+      'fallback': fallback ? 1 : 0,
+    };
   }
 }
 

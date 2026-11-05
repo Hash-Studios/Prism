@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import {PHOTO_SEARCH_RATE} from "./photoSearchLabels";
 import {removeChallengeVotesForAccount} from "./weeklyChallenges";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
@@ -127,6 +128,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   await db.recursiveDelete(userRef.collection("wallActionReceipts"));
   await db.recursiveDelete(userRef.collection(FOLLOWED_FOLDERS));
   await db.recursiveDelete(db.collection(WRAPPED_COLLECTION).doc(callerUid));
+  await db.recursiveDelete(db.collection(PHOTO_SEARCH_RATE).doc(callerUid));
   // Items are found by owner, not through their folder, so items whose folder is already gone are deleted too.
   // The owner filter keeps another owner's items in a reused folder id. Items go before their folders.
   const items = (await db.collectionGroup(FOLDER_ITEMS).where("ownerId", "==", callerUid).get())

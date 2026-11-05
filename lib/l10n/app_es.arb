@@ -1049,6 +1049,9 @@
   "coreShareFormatClean": "Minimalista",
   "coreShareTargetInstagram": "Instagram",
   "coreShareTargetCopyLink": "Copiar enlace",
+  "coreShareOpenOnComputer": "Abrir en el ordenador",
+  "coreShareOpenOnComputerBody": "Escribe este enlace en un navegador de tu ordenador o escanea el código.",
+  "coreShareOpenOnComputerQr": "Código QR de {link}",
   "coreShareTargetSaveImage": "Guardar imagen",
   "coreShareTargetMore": "Más",
   "coreShareCardBy": "por {creator}",
@@ -2496,6 +2499,25 @@
   "wallpaperLiveChooseAnotherVideo": "Elegir otro video",
   "wallpaperLiveChooseVideo": "Elegir un video",
   "wallpaperLiveConfirmPreview": "Confirma la selección en la vista previa del sistema.",
+  "wallpaperLiveConfirmHome": "En la vista previa, toca Aplicar fondo de pantalla y luego Pantalla de inicio.",
+  "wallpaperLiveConfirmLock": "En la vista previa, toca Aplicar fondo de pantalla y luego Pantalla de bloqueo.",
+  "wallpaperLiveConfirmBoth": "En la vista previa, toca Aplicar fondo de pantalla y luego Pantalla de inicio y de bloqueo.",
+  "wallpaperLiveSameWallBothScreens": "Confirma en la vista previa del sistema. Este teléfono muestra el mismo fondo animado en las dos pantallas.",
+  "wallpaperLiveScreensResult": "Pantalla de inicio: {home}. Pantalla de bloqueo: {lock}.",
+  "@wallpaperLiveScreensResult": {
+    "placeholders": {
+      "home": {
+        "type": "String"
+      },
+      "lock": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperLiveScreenOther": "otro fondo de pantalla",
+  "wallpaperLiveScreenPrismWall": "un fondo animado de Prism",
+  "wallpaperLivePickForHome": "Elige un fondo para la pantalla de inicio",
+  "wallpaperLivePickForLock": "Elige un fondo para la pantalla de bloqueo",
   "wallpaperLiveDeviceUnavailable": "No está disponible en este dispositivo",
   "wallpaperLiveErrorGeneric": "No se pudo aplicar el fondo animado. Inténtalo de nuevo.",
   "wallpaperLiveErrorImageTooLarge": "La imagen es demasiado grande para usarla como fondo animado.",
@@ -3432,6 +3454,14 @@
   "dayNightGuideStepRepeat": "Crea una segunda automatización de la misma forma para {time}.",
   "dayNightGuideSunTitle": "Amanecer y atardecer",
   "dayNightGuideSunBody": "Elige Amanecer o Atardecer en lugar de una hora. En “Obtener fondo de pantalla de Prism”, define Hora como “Día” para el amanecer y como “Noche” para el atardecer.",
+  "dayNightIntroAndroid": "Elige un fondo de pantalla para el día y otro para la noche. Prism los cambia a las horas que definas.",
+  "dayNightAroundTime": "Alrededor de {time}",
+  "dayNightAndroidTimingNote": "Android puede cambiar con unos minutos de retraso para ahorrar batería.",
+  "dayNightTurnOffAutoRotateTitle": "¿Desactivar rotación automática?",
+  "dayNightTurnOffAutoRotateAction": "Desactivar rotación automática",
+  "dayNightTurnOffDayNightTitle": "¿Desactivar Día y noche?",
+  "dayNightTurnOffDayNightAction": "Desactivar Día y noche",
+  "dayNightOneModeAtATime": "Rotación automática y Día y noche cambian tu fondo de pantalla. Solo puede estar activada una a la vez.",
   "tipAction": "Dar propina",
   "tipMenuItem": "Enviar una propina",
   "tipTitle": "Propina para {name}",
@@ -3876,6 +3906,44 @@
   "watchGuideNoteAlbum": "Prism guarda en Recientes, no en un álbum de Prism. Un álbum necesita acceso total a tus fotos, y Prism solo pide permiso para añadir fotos.",
   "watchGuideNoteLayout": "Cada esfera tiene su propio reloj y diseño, así que puede tapar parte de la imagen.",
   "watchGuideNoteGooglePhotos": "Pixel Watch lee Google Photos. Si la imagen no aparece, haz primero una copia de seguridad en Google Photos.",
+  "searchByPhoto": "Buscar con una foto",
+  "searchPhotoPrivacy": "Prism lee los colores de la foto en tu teléfono. Para saber qué hay en la foto, se envía una pequeña copia a Google Cloud Vision. No se guarda.",
+  "searchPhotoChoose": "Elegir foto",
+  "searchPhotoChipLabel": "Tu foto",
+  "searchPhotoClear": "Quitar",
+  "searchPhotoClearTooltip": "Quitar foto",
+  "searchPhotoMatchesFor": "Coincidencias para {labels}",
+  "@searchPhotoMatchesFor": {
+    "placeholders": {
+      "labels": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoColourMatches": "Coincidencias por color",
+  "searchPhotoMainColours": "Colores principales: {colours}",
+  "@searchPhotoMainColours": {
+    "placeholders": {
+      "colours": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoSentNote": "Se envió una pequeña copia a Google Cloud Vision para averiguar qué hay en ella. No se guarda.",
+  "searchPhotoGuestNote": "Solo coincidencias de color. Inicia sesión para encontrar también lo que hay en la foto.",
+  "searchPhotoCappedNote": "Has usado las {count} búsquedas con foto de hoy. Hasta mañana, solo coincidencias por color.",
+  "@searchPhotoCappedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchPhotoUnavailableNote": "No se pudo leer lo que hay en la foto. Solo coincidencias por color.",
+  "searchPhotoNoMatches": "Ningún fondo de pantalla coincide con esta foto",
+  "searchPhotoNoMatchesBody": "Prueba con una foto de colores más intensos.",
+  "searchPhotoChooseAnother": "Elegir otra foto",
+  "searchPhotoCouldNotOpen": "No se pudo abrir esa foto. Prueba con otra.",
   "foldersSaveAll": "Guardar todo",
   "foldersSaveAllTitle": "Guardar todos los fondos de pantalla",
   "foldersSaveAllChecking": "Revisando los fondos de pantalla…",

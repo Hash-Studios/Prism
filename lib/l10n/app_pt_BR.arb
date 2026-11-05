@@ -854,6 +854,9 @@
   "coreShareFormatClean": "Minimalista",
   "coreShareTargetInstagram": "Instagram",
   "coreShareTargetCopyLink": "Copiar link",
+  "coreShareOpenOnComputer": "Abrir no computador",
+  "coreShareOpenOnComputerBody": "Digite este link em um navegador no seu computador ou escaneie o código.",
+  "coreShareOpenOnComputerQr": "Código QR de {link}",
   "coreShareTargetSaveImage": "Salvar imagem",
   "coreShareTargetMore": "Mais",
   "coreShareCardBy": "por {creator}",
@@ -2306,6 +2309,25 @@
   "wallpaperLiveChooseAnotherVideo": "Escolha outro vídeo",
   "wallpaperLiveChooseVideo": "Escolha um vídeo",
   "wallpaperLiveConfirmPreview": "Confirme na visualização do sistema.",
+  "wallpaperLiveConfirmHome": "Na visualização, toque em Definir papel de parede e depois em Tela inicial.",
+  "wallpaperLiveConfirmLock": "Na visualização, toque em Definir papel de parede e depois em Tela de bloqueio.",
+  "wallpaperLiveConfirmBoth": "Na visualização, toque em Definir papel de parede e depois em Tela inicial e de bloqueio.",
+  "wallpaperLiveSameWallBothScreens": "Confirme na visualização do sistema. Este celular mostra o mesmo papel de parede animado nas duas telas.",
+  "wallpaperLiveScreensResult": "Tela inicial: {home}. Tela de bloqueio: {lock}.",
+  "@wallpaperLiveScreensResult": {
+    "placeholders": {
+      "home": {
+        "type": "String"
+      },
+      "lock": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperLiveScreenOther": "outro papel de parede",
+  "wallpaperLiveScreenPrismWall": "um papel de parede animado do Prism",
+  "wallpaperLivePickForHome": "Escolher um papel de parede para a tela inicial",
+  "wallpaperLivePickForLock": "Escolher um papel de parede para a tela de bloqueio",
   "wallpaperLiveDeviceUnavailable": "Não disponível neste dispositivo",
   "wallpaperLiveErrorGeneric": "Não foi possível definir o papel de parede animado. Tente novamente.",
   "wallpaperLiveErrorImageTooLarge": "Essa imagem é muito grande para um papel de parede animado.",
@@ -3312,6 +3334,14 @@
   "dayNightGuideStepRepeat": "Crie a segunda automação do mesmo jeito para {time}.",
   "dayNightGuideSunTitle": "Nascer e pôr do sol",
   "dayNightGuideSunBody": "Escolha Nascer do Sol ou Pôr do Sol em vez de um horário. Em \"Obter papel de parede do Prism\", defina Horário como Dia para o nascer do sol e Noite para o pôr do sol.",
+  "dayNightIntroAndroid": "Escolha um papel de parede para o dia e outro para a noite. O Prism troca os dois nos horários que você definir.",
+  "dayNightAroundTime": "Por volta das {time}",
+  "dayNightAndroidTimingNote": "O Android pode trocar com alguns minutos de atraso para economizar bateria.",
+  "dayNightTurnOffAutoRotateTitle": "Desativar rotação automática?",
+  "dayNightTurnOffAutoRotateAction": "Desativar rotação automática",
+  "dayNightTurnOffDayNightTitle": "Desativar Dia e noite?",
+  "dayNightTurnOffDayNightAction": "Desativar Dia e noite",
+  "dayNightOneModeAtATime": "Rotação automática e Dia e noite alteram seu papel de parede. Apenas um pode estar ativo por vez.",
   "tipAction": "Dar gorjeta ao criador",
   "tipMenuItem": "Enviar uma gorjeta",
   "tipTitle": "Gorjeta para {name}",
@@ -3732,6 +3762,44 @@
   "watchGuideNoteAlbum": "O Prism salva em Recentes, não em um álbum do Prism. Um álbum precisa de acesso total às suas fotos, e o Prism só pede permissão para adicionar fotos.",
   "watchGuideNoteLayout": "Cada mostrador tem seu próprio relógio e layout, por isso pode cobrir parte da imagem.",
   "watchGuideNoteGooglePhotos": "O Pixel Watch lê o Google Photos. Se a imagem não aparecer, faça primeiro um backup no Google Photos.",
+  "searchByPhoto": "Buscar por foto",
+  "searchPhotoPrivacy": "O Prism lê as cores da foto no seu celular. Para descobrir o que tem na foto, uma pequena cópia é enviada ao Google Cloud Vision. Ela não é armazenada.",
+  "searchPhotoChoose": "Escolher foto",
+  "searchPhotoChipLabel": "Sua foto",
+  "searchPhotoClear": "Remover",
+  "searchPhotoClearTooltip": "Remover foto",
+  "searchPhotoMatchesFor": "Resultados para {labels}",
+  "@searchPhotoMatchesFor": {
+    "placeholders": {
+      "labels": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoColourMatches": "Resultados por cor",
+  "searchPhotoMainColours": "Cores principais: {colours}",
+  "@searchPhotoMainColours": {
+    "placeholders": {
+      "colours": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoSentNote": "Uma pequena cópia foi enviada ao Google Cloud Vision para descobrir o que tem nela. Ela não é armazenada.",
+  "searchPhotoGuestNote": "Apenas resultados por cor. Entre na sua conta para também buscar pelo que tem na foto.",
+  "searchPhotoCappedNote": "Você já usou as {count} buscas por foto de hoje. Até amanhã, só resultados por cor.",
+  "@searchPhotoCappedNote": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchPhotoUnavailableNote": "Não foi possível identificar o que tem na foto. Apenas resultados por cor.",
+  "searchPhotoNoMatches": "Nenhum papel de parede combina com esta foto",
+  "searchPhotoNoMatchesBody": "Tente uma foto com cores mais vivas.",
+  "searchPhotoChooseAnother": "Escolher outra foto",
+  "searchPhotoCouldNotOpen": "Não foi possível abrir essa foto. Tente outra.",
   "foldersSaveAll": "Salvar tudo",
   "foldersSaveAllTitle": "Salvar todos os papéis de parede",
   "foldersSaveAllChecking": "Verificando os papéis de parede…",

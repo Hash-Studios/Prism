@@ -3000,6 +3000,17 @@
   "coreShareFormatClean": "Polos",
   "coreShareTargetInstagram": "Instagram",
   "coreShareTargetCopyLink": "Salin tautan",
+  "coreShareOpenOnComputer": "Buka di komputer",
+  "coreShareOpenOnComputerBody": "Ketik tautan ini di browser komputermu, atau pindai kodenya.",
+  "coreShareOpenOnComputerQr": "Kode QR untuk {link}",
+  "@coreShareOpenOnComputerQr": {
+    "description": "Screen reader label for the QR code image. {link} is the short link shown under it.",
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
   "coreShareTargetSaveImage": "Simpan gambar",
   "coreShareTargetMore": "Lainnya",
   "coreShareCardBy": "oleh {creator}",
@@ -8215,6 +8226,50 @@
   "@wallpaperLiveConfirmPreview": {
     "description": "Instruction to confirm a live wallpaper in Android's system preview."
   },
+  "wallpaperLiveConfirmHome": "Di pratinjau, ketuk Pasang wallpaper, lalu Layar utama.",
+  "@wallpaperLiveConfirmHome": {
+    "description": "Snackbar after Apply when the user picked Home. Tells them which choice to make in Android's live wallpaper preview."
+  },
+  "wallpaperLiveConfirmLock": "Di pratinjau, ketuk Pasang wallpaper, lalu Layar kunci.",
+  "@wallpaperLiveConfirmLock": {
+    "description": "Snackbar after Apply when the user picked Lock. Tells them which choice to make in Android's live wallpaper preview."
+  },
+  "wallpaperLiveConfirmBoth": "Di pratinjau, ketuk Pasang wallpaper, lalu Layar utama dan layar kunci.",
+  "@wallpaperLiveConfirmBoth": {
+    "description": "Snackbar after Apply when the user picked Both. Tells them which choice to make in Android's live wallpaper preview."
+  },
+  "wallpaperLiveSameWallBothScreens": "Konfirmasikan di pratinjau sistem. Ponsel ini menampilkan wallpaper bergerak yang sama di kedua layar.",
+  "@wallpaperLiveSameWallBothScreens": {
+    "description": "Snackbar after Apply on Android 15 or older, where one live wallpaper always covers both screens."
+  },
+  "wallpaperLiveScreensResult": "Layar utama: {home}. Layar kunci: {lock}.",
+  "@wallpaperLiveScreensResult": {
+    "description": "After the user returns from the preview: the live style each screen shows. Each value is a style name, or wallpaperLiveScreenOther, or wallpaperLiveScreenPrismWall.",
+    "placeholders": {
+      "home": {
+        "type": "String"
+      },
+      "lock": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperLiveScreenOther": "wallpaper lain",
+  "@wallpaperLiveScreenOther": {
+    "description": "Value for wallpaperLiveScreensResult when the screen does not show a Prism live wall. Lower case, it sits inside a sentence."
+  },
+  "wallpaperLiveScreenPrismWall": "sebuah wallpaper bergerak Prism",
+  "@wallpaperLiveScreenPrismWall": {
+    "description": "Value for wallpaperLiveScreensResult when the screen shows a Prism live wall whose style is unknown. Lower case."
+  },
+  "wallpaperLivePickForHome": "Pilih wallpaper untuk layar utama",
+  "@wallpaperLivePickForHome": {
+    "description": "Button after the Lock screen got a live wall. Lets the user choose a different wall for the Home screen."
+  },
+  "wallpaperLivePickForLock": "Pilih wallpaper untuk layar kunci",
+  "@wallpaperLivePickForLock": {
+    "description": "Button after the Home screen got a live wall. Lets the user choose a different wall for the Lock screen."
+  },
   "wallpaperLiveDeviceUnavailable": "Tidak tersedia di perangkat ini",
   "@wallpaperLiveDeviceUnavailable": {
     "description": "Title shown when the selected live wallpaper mode is unsupported."
@@ -11507,6 +11562,43 @@
   "@dayNightGuideSunBody": {
     "description": "Guide section body. \"Time\", \"Day\" and \"Night\" are names in the Shortcuts app."
   },
+  "dayNightIntroAndroid": "Pilih wallpaper untuk siang dan satu untuk malam. Prism akan menggantinya pada waktu yang Anda atur.",
+  "@dayNightIntroAndroid": {
+    "description": "Android day and night setup: intro text above the wall pickers."
+  },
+  "dayNightAroundTime": "Sekitar {time}",
+  "@dayNightAroundTime": {
+    "description": "Day and night schedule label. {time} is a formatted time such as 07:00.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNightAndroidTimingNote": "Android bisa beralih beberapa menit terlambat untuk menghemat baterai.",
+  "@dayNightAndroidTimingNote": {
+    "description": "Android day and night setup: note that switches can run a few minutes late to save battery."
+  },
+  "dayNightTurnOffAutoRotateTitle": "Matikan putar otomatis?",
+  "@dayNightTurnOffAutoRotateTitle": {
+    "description": "Dialog title: asks whether to turn off Auto-rotate before Day and night can be used."
+  },
+  "dayNightTurnOffAutoRotateAction": "Matikan putar otomatis",
+  "@dayNightTurnOffAutoRotateAction": {
+    "description": "Dialog confirm button: turns off Auto-rotate."
+  },
+  "dayNightTurnOffDayNightTitle": "Matikan Siang dan malam?",
+  "@dayNightTurnOffDayNightTitle": {
+    "description": "Dialog title: asks whether to turn off Day and night before Auto-rotate can be used."
+  },
+  "dayNightTurnOffDayNightAction": "Matikan Siang dan malam",
+  "@dayNightTurnOffDayNightAction": {
+    "description": "Dialog confirm button: turns off Day and night."
+  },
+  "dayNightOneModeAtATime": "Putar otomatis dan Siang dan malam sama-sama mengubah wallpaper Anda. Hanya satu yang bisa aktif dalam satu waktu.",
+  "@dayNightOneModeAtATime": {
+    "description": "Dialog body: explains that Auto-rotate and Day and night cannot both be on."
+  },
   "tipAction": "Beri tip kreator",
   "@tipAction": {
     "description": "Wall detail: opens the sheet to tip the wall's creator coins"
@@ -13074,6 +13166,89 @@
   "watchGuideNoteGooglePhotos": "Pixel Watch membaca Google Photos. Jika gambar tidak muncul, cadangkan dulu ke Google Photos.",
   "@watchGuideNoteGooglePhotos": {
     "description": "Note in the Android watch face guide."
+  },
+  "searchByPhoto": "Cari dengan foto",
+  "@searchByPhoto": {
+    "description": "Tooltip of the camera roll button in the search bar, and title of the photo search privacy sheet."
+  },
+  "searchPhotoPrivacy": "Prism membaca warna foto di ponselmu. Untuk mencari tahu isi fotonya, salinan kecil dikirim ke Google Cloud Vision. Salinan itu tidak disimpan.",
+  "@searchPhotoPrivacy": {
+    "description": "Shown once before a signed-in user's first photo search."
+  },
+  "searchPhotoChoose": "Pilih foto",
+  "@searchPhotoChoose": {
+    "description": "Button on the photo search privacy sheet. Opens the camera roll."
+  },
+  "searchPhotoChipLabel": "Fotomu",
+  "@searchPhotoChipLabel": {
+    "description": "Screen reader label of the small photo thumbnail above photo search results."
+  },
+  "searchPhotoClear": "Hapus",
+  "@searchPhotoClear": {
+    "description": "Button next to the photo thumbnail. Ends the photo search."
+  },
+  "searchPhotoClearTooltip": "Hapus foto",
+  "@searchPhotoClearTooltip": {
+    "description": "Tooltip and screen reader label of the Clear button next to the photo thumbnail."
+  },
+  "searchPhotoMatchesFor": "Cocok dengan {labels}",
+  "@searchPhotoMatchesFor": {
+    "description": "Line above photo search results. labels is a comma-separated list of words that describe the photo, in English.",
+    "placeholders": {
+      "labels": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoColourMatches": "Cocok berdasarkan warna",
+  "@searchPhotoColourMatches": {
+    "description": "Line above photo search results when the photo has no labels."
+  },
+  "searchPhotoMainColours": "Warna utama: {colours}",
+  "@searchPhotoMainColours": {
+    "description": "Screen reader label of the colour dots next to the photo thumbnail.",
+    "placeholders": {
+      "colours": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoSentNote": "Salinan kecil dikirim ke Google Cloud Vision untuk mencari tahu isinya. Salinan itu tidak disimpan.",
+  "@searchPhotoSentNote": {
+    "description": "Note under the photo thumbnail after the photo was sent for labels."
+  },
+  "searchPhotoGuestNote": "Hanya cocok berdasarkan warna. Masuk untuk juga mencocokkan isi fotomu.",
+  "@searchPhotoGuestNote": {
+    "description": "Note under the photo thumbnail for a guest. A guest's photo never leaves the phone."
+  },
+  "searchPhotoCappedNote": "Kamu sudah memakai {count} pencarian foto hari ini. Sampai besok, pencocokan hanya berdasarkan warna.",
+  "@searchPhotoCappedNote": {
+    "description": "Note under the photo thumbnail when the daily photo search limit is reached.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchPhotoUnavailableNote": "Isi foto tidak bisa dibaca. Hanya cocok berdasarkan warna.",
+  "@searchPhotoUnavailableNote": {
+    "description": "Note under the photo thumbnail when the labels call failed."
+  },
+  "searchPhotoNoMatches": "Tidak ada wallpaper yang cocok dengan foto ini",
+  "@searchPhotoNoMatches": {
+    "description": "Empty state title for a photo search."
+  },
+  "searchPhotoNoMatchesBody": "Coba foto dengan warna yang lebih cerah.",
+  "@searchPhotoNoMatchesBody": {
+    "description": "Empty state body for a photo search."
+  },
+  "searchPhotoChooseAnother": "Pilih foto lain",
+  "@searchPhotoChooseAnother": {
+    "description": "Empty state button for a photo search. Opens the camera roll."
+  },
+  "searchPhotoCouldNotOpen": "Foto itu tidak bisa dibuka. Coba foto lain.",
+  "@searchPhotoCouldNotOpen": {
+    "description": "Toast when the picked photo cannot be decoded."
   },
   "foldersSaveAll": "Simpan semua",
   "@foldersSaveAll": {

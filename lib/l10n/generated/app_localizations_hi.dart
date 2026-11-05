@@ -2993,6 +2993,17 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreShareTargetCopyLink => 'लिंक कॉपी करें';
 
   @override
+  String get coreShareOpenOnComputer => 'कंप्यूटर पर खोलें';
+
+  @override
+  String get coreShareOpenOnComputerBody => 'इस लिंक को अपने कंप्यूटर के ब्राउज़र में टाइप करें या कोड स्कैन करें।';
+
+  @override
+  String coreShareOpenOnComputerQr(String link) {
+    return '$link का QR कोड';
+  }
+
+  @override
   String get coreShareTargetSaveImage => 'इमेज सेव करें';
 
   @override
@@ -9018,6 +9029,37 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperLiveConfirmPreview => 'सिस्टम प्रीव्यू में पुष्टि करें।';
 
   @override
+  String get wallpaperLiveConfirmHome => 'प्रीव्यू में “वॉलपेपर लगाएँ” पर टैप करें, फिर “होम स्क्रीन” पर।';
+
+  @override
+  String get wallpaperLiveConfirmLock => 'प्रीव्यू में “वॉलपेपर लगाएँ” पर टैप करें, फिर “लॉक स्क्रीन” पर।';
+
+  @override
+  String get wallpaperLiveConfirmBoth =>
+      'प्रीव्यू में “वॉलपेपर लगाएँ” पर टैप करें, फिर “होम स्क्रीन और लॉक स्क्रीन” पर।';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'सिस्टम प्रीव्यू में पुष्टि करें। इस फ़ोन पर दोनों स्क्रीन पर एक ही लाइव वॉलपेपर दिखेगा।';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'होम स्क्रीन: $home। लॉक स्क्रीन: $lock।';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'कोई और वॉलपेपर';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'Prism का एक लाइव वॉलपेपर';
+
+  @override
+  String get wallpaperLivePickForHome => 'होम स्क्रीन के लिए वॉलपेपर चुनें';
+
+  @override
+  String get wallpaperLivePickForLock => 'लॉक स्क्रीन के लिए वॉलपेपर चुनें';
+
+  @override
   String get wallpaperLiveDeviceUnavailable => 'इस डिवाइस पर उपलब्ध नहीं है';
 
   @override
@@ -12447,6 +12489,34 @@ class AppLocalizationsHi extends AppLocalizations {
       'समय की जगह सूर्योदय या सूर्यास्त चुनें। \"Prism वॉलपेपर पाएँ\" में समय को सूर्योदय के लिए \"दिन\" और सूर्यास्त के लिए \"रात\" पर सेट करें।';
 
   @override
+  String get dayNightIntroAndroid =>
+      'दिन के लिए एक वॉलपेपर और रात के लिए एक वॉलपेपर चुनें। आपके सेट किए समय पर Prism उन्हें बदल देता है।';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return '$time के आसपास';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'बैटरी बचाने के लिए Android कुछ मिनट देर से बदल सकता है।';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => 'ऑटो-रोटेशन बंद करें?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'ऑटो-रोटेशन बंद करें';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => 'दिन और रात बंद करें?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'दिन और रात बंद करें';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'ऑटो-रोटेशन और दिन और रात, दोनों आपका वॉलपेपर बदलते हैं। एक समय पर सिर्फ़ एक चालू हो सकता है।';
+
+  @override
   String get tipAction => 'क्रिएटर को टिप दें';
 
   @override
@@ -13856,6 +13926,65 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'Pixel Watch Google Photos पढ़ता है। अगर इमेज नहीं दिखती, तो पहले उसे Google Photos में बैकअप करें।';
+
+  @override
+  String get searchByPhoto => 'फ़ोटो से खोजें';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'Prism आपकी फ़ोटो के रंग आपके फ़ोन पर ही पढ़ता है। फ़ोटो में क्या है, यह पता करने के लिए उसकी एक छोटी कॉपी Google Cloud Vision को भेजी जाती है। वह सेव नहीं होती।';
+
+  @override
+  String get searchPhotoChoose => 'फ़ोटो चुनें';
+
+  @override
+  String get searchPhotoChipLabel => 'आपकी फ़ोटो';
+
+  @override
+  String get searchPhotoClear => 'हटाएं';
+
+  @override
+  String get searchPhotoClearTooltip => 'फ़ोटो हटाएं';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return '$labels से मिलते नतीजे';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'रंग के हिसाब से मिलते नतीजे';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'मुख्य रंग: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote =>
+      'यह पता करने के लिए कि इसमें क्या है, एक छोटी कॉपी Google Cloud Vision को भेजी गई। वह सेव नहीं होती।';
+
+  @override
+  String get searchPhotoGuestNote => 'सिर्फ़ रंग के आधार पर मिलान। फ़ोटो में जो है उससे मिलान के लिए साइन इन करें।';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'आप आज के $count फ़ोटो सर्च इस्तेमाल कर चुके हैं। कल तक सिर्फ़ रंग से मिलान होगा।';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'फ़ोटो में क्या है, यह पढ़ नहीं पाए। सिर्फ़ रंग से मिलान हो रहा है।';
+
+  @override
+  String get searchPhotoNoMatches => 'इस फ़ोटो से मिलता कोई वॉलपेपर नहीं है';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'ज़्यादा चटख रंगों वाली फ़ोटो आज़माएं।';
+
+  @override
+  String get searchPhotoChooseAnother => 'कोई दूसरी फ़ोटो चुनें';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'वह फ़ोटो खोली नहीं जा सकी। कोई और फ़ोटो आज़माएं।';
 
   @override
   String get foldersSaveAll => 'सभी सहेजें';

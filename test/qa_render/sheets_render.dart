@@ -33,6 +33,9 @@ final String _setScreenWall = File('assets/images/prism.webp').absolute.path;
 /// Reports every target as supported, so the Set screen shows Home, Lock, Both, More and Adjust.
 class _AllTargetsClient implements WallpaperClient {
   @override
+  Future<aw.LiveWallpaperScreens> getLiveWallpaperScreens() async => const aw.LiveWallpaperScreens();
+
+  @override
   Future<aw.WallpaperCapabilities> getCapabilities() async => const aw.WallpaperCapabilities(
     supportsStaticWallpaper: true,
     supportsHomeWallpaper: true,
