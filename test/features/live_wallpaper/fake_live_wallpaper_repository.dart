@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_capabilities.dart';
@@ -11,6 +13,8 @@ class FakeLiveWallpaperRepository implements LiveWallpaperRepository {
   Object? capabilitiesError;
   LiveApplyOutcome outcome = const LiveApplyOutcome.confirmInPreview();
   LiveApplyFailure? videoProblem;
+  Completer<LiveApplyOutcome>? applyResult;
+  Completer<LiveScreens>? screensResult;
 
   /// What each screen shows, returned by [getScreens].
   LiveScreens screens = LiveScreens.unknown;
@@ -58,7 +62,7 @@ class FakeLiveWallpaperRepository implements LiveWallpaperRepository {
     tiltValues.add(tilt);
     lastTarget = target;
     lastTag = tag;
-    return outcome;
+    return applyResult?.future ?? outcome;
   }
 
   @override
@@ -74,13 +78,13 @@ class FakeLiveWallpaperRepository implements LiveWallpaperRepository {
     batterySaverValues.add(batterySaver);
     lastTarget = target;
     lastTag = tag;
-    return outcome;
+    return applyResult?.future ?? outcome;
   }
 
   @override
   Future<LiveScreens> getScreens() async {
     getScreensCalls++;
-    return screens;
+    return screensResult?.future ?? screens;
   }
 
   @override

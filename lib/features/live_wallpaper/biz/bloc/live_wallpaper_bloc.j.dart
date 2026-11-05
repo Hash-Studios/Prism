@@ -1,12 +1,17 @@
+import 'dart:async';
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_capabilities.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_screens.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/features/live_wallpaper/domain/repositories/live_wallpaper_repository.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -40,16 +45,45 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
       ),
       transformer: (events, mapper) => events.asyncExpand(mapper),
     );
+    if (getIt.isRegistered<SessionRepository>()) {
+      String? previousOwner = _currentOwner;
+      _session = getIt<SessionRepository>().watchCurrentUser().listen((user) {
+        final String? owner = user.loggedIn ? user.id : null;
+        if (owner != previousOwner) {
+          _sessionRevision++;
+          previousOwner = owner;
+        }
+      });
+    }
   }
 
   final LiveWallpaperRepository _repository;
+  StreamSubscription<Object?>? _session;
+  int _sessionRevision = 0;
+  int? _pendingSessionRevision;
+  String? _pendingOwner;
   final String? imageUrl;
 
   /// The wall's depth map. Without it the 3D style is not offered.
   final String? depthMapUrl;
 
+  @override
+  Future<void> close() async {
+    await _session?.cancel();
+    await super.close();
+  }
+
   Future<void> _onStarted(_Started event, Emitter<LiveWallpaperState> emit) async {
-    emit(state.copyWith(isPro: event.isPro, unlockedStyles: event.unlockedStyles, status: LiveWallpaperStatus.loading));
+    _pendingOwner = null;
+    emit(
+      state.copyWith(
+        isPro: event.isPro,
+        unlockedStyles: event.unlockedStyles,
+        status: LiveWallpaperStatus.loading,
+        outcome: null,
+        pendingTag: null,
+      ),
+    );
     LiveCapabilities capabilities;
     try {
       capabilities = await _repository.getCapabilities();
@@ -73,20 +107,36 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
   LiveContentTag _newTag(Enum style) =>
       LiveContentTag(style: style, applyId: DateTime.now().microsecondsSinceEpoch.toRadixString(36));
 
+  String? get _currentOwner => app_state.prismUser.loggedIn ? app_state.prismUser.id : null;
+
   /// Remembers a per-screen apply until the user is back from the preview and the screens can be read.
-  LiveContentTag? _pendingFor(LiveApplyOutcome outcome, LiveContentTag tag) =>
-      state.capabilities.supportsPerScreen && outcome.status == LiveApplyStatus.confirmInPreview ? tag : null;
+  LiveContentTag? _pendingFor(LiveApplyOutcome outcome, LiveContentTag tag, String? owner) {
+    final bool pending =
+        owner != null && state.capabilities.supportsPerScreen && outcome.status == LiveApplyStatus.confirmInPreview;
+    _pendingOwner = pending ? owner : null;
+    _pendingSessionRevision = pending ? _sessionRevision : null;
+    return pending ? tag : null;
+  }
 
   Future<void> _onScreensChecked(Emitter<LiveWallpaperState> emit) async {
     final LiveContentTag? tag = state.pendingTag;
     if (tag == null) return;
+    final String? owner = _pendingOwner;
+    if (owner == null || owner != _currentOwner || _pendingSessionRevision != _sessionRevision) {
+      _pendingOwner = null;
+      emit(state.copyWith(pendingTag: null, outcome: null));
+      return;
+    }
     LiveScreens screens;
     try {
       screens = await _repository.getScreens();
     } catch (_) {
       screens = LiveScreens.unknown;
     }
-    final WallpaperTarget? landed = screens.screensShowing(tag);
+    final WallpaperTarget? landed = owner == _currentOwner && _pendingSessionRevision == _sessionRevision
+        ? screens.screensShowing(tag)
+        : null;
+    _pendingOwner = null;
     emit(
       state.copyWith(
         pendingTag: null,
@@ -102,6 +152,9 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
       emit(state.copyWith(outcome: const LiveApplyOutcome.proRequired()));
       return;
     }
+    final String? owner = _currentOwner;
+    final int sessionRevision = _sessionRevision;
+    _pendingOwner = null;
     emit(state.copyWith(applying: true, pendingTag: null));
     final LiveContentTag tag = _newTag(state.motionStyle);
     final WallpaperTarget target = _applyTarget;
@@ -116,8 +169,12 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
       depthMapUrl: depthMapUrl,
       tilt: state.capabilities.supportsTilt,
     );
+    if (owner != _currentOwner || sessionRevision != _sessionRevision) {
+      emit(state.copyWith(applying: false, outcome: null, pendingTag: null));
+      return;
+    }
     _trackApplied(_motionAnalytics(state.motionStyle), outcome, target: target);
-    emit(state.copyWith(applying: false, outcome: outcome, pendingTag: _pendingFor(outcome, tag)));
+    emit(state.copyWith(applying: false, outcome: outcome, pendingTag: _pendingFor(outcome, tag, owner)));
   }
 
   void _trackApplied(LiveWallpaperStyleValue style, LiveApplyOutcome outcome, {WallpaperTarget? target}) {
@@ -154,6 +211,9 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
       emit(state.copyWith(outcome: const LiveApplyOutcome.proRequired()));
       return;
     }
+    final String? owner = _currentOwner;
+    final int sessionRevision = _sessionRevision;
+    _pendingOwner = null;
     emit(state.copyWith(applying: true, pendingTag: null));
     final LiveContentTag tag = _newTag(state.gradientStyle);
     final WallpaperTarget target = _applyTarget;
@@ -164,8 +224,12 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
       target: target,
       tag: tag,
     );
+    if (owner != _currentOwner || sessionRevision != _sessionRevision) {
+      emit(state.copyWith(applying: false, outcome: null, pendingTag: null));
+      return;
+    }
     _trackApplied(_gradientAnalytics(state.gradientStyle), outcome, target: target);
-    emit(state.copyWith(applying: false, outcome: outcome, pendingTag: _pendingFor(outcome, tag)));
+    emit(state.copyWith(applying: false, outcome: outcome, pendingTag: _pendingFor(outcome, tag, owner)));
   }
 
   Future<void> _onVideoPicked(_VideoPicked event, Emitter<LiveWallpaperState> emit) async {

@@ -1,20 +1,30 @@
+import 'dart:async';
+
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/live_wallpaper/biz/bloc/live_wallpaper_bloc.j.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_capabilities.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_screens.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 import 'fake_live_wallpaper_repository.dart';
 
 final DateTime later = DateTime.now().add(const Duration(days: 3));
+
+class _MockSessionRepository extends Mock implements SessionRepository {}
 
 void main() {
   final LivePalette palette = LivePalette.fromAccent(const Color(0xFFE57697), dark: true);
@@ -28,11 +38,18 @@ void main() {
   late FakeAppAnalytics analytics;
 
   setUp(() {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'owner'
+      ..loggedIn = true;
     repository = FakeLiveWallpaperRepository();
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
   });
-  tearDown(AnalyticsRuntime.reset);
+  tearDown(() async {
+    AnalyticsRuntime.reset();
+    await getIt.reset();
+    app_state.prismUser = app_constants.createGuestPrismUser();
+  });
 
   group('started', () {
     test('becomes ready when the device supports live wallpapers', () async {
@@ -463,6 +480,194 @@ void main() {
         expect(bloc.state.pendingTag, repository.lastTag);
       },
     );
+
+    test('starting a new session clears an apply tag from the previous session', () async {
+      repository.capabilities = perScreen;
+      final LiveWallpaperBloc bloc = build(imageUrl: null)
+        ..add(const LiveWallpaperEvent.started(isPro: true));
+      await settle();
+      bloc.add(LiveWallpaperEvent.gradientApplied(palette: palette));
+      await settle();
+      expect(bloc.state.pendingTag, isNotNull);
+
+      bloc.add(const LiveWallpaperEvent.started(isPro: false));
+      await settle();
+
+      expect(bloc.state.pendingTag, isNull);
+      expect(bloc.state.outcome, isNull);
+      await bloc.close();
+    });
+
+    for (final bool signOut in <bool>[true, false]) {
+      final String identityChange = signOut ? 'signout' : 'account switch';
+
+      void changeAccount() {
+        app_state.prismUser = app_constants.createGuestPrismUser();
+        if (!signOut) {
+          app_state.prismUser
+            ..id = 'another-owner'
+            ..loggedIn = true;
+        }
+      }
+
+      test('$identityChange discards a pending preview before reading the screens', () async {
+        repository.capabilities = perScreen;
+        final LiveWallpaperBloc bloc = build(imageUrl: null)
+          ..add(const LiveWallpaperEvent.started(isPro: true))
+          ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+        addTearDown(bloc.close);
+        await settle();
+        expect(bloc.state.pendingTag, isNotNull);
+        repository.screens = LiveScreens(
+          home: LiveScreenContent(showsPrism: true, tag: repository.lastTag),
+          lock: LiveScreenContent.other,
+        );
+
+        changeAccount();
+        bloc.add(const LiveWallpaperEvent.screensChecked());
+        await settle();
+
+        expect(bloc.state.outcome, isNull);
+        expect(bloc.state.pendingTag, isNull);
+        expect(repository.getScreensCalls, 0);
+      });
+
+      test('$identityChange discards a screen response already in flight', () async {
+        repository.capabilities = perScreen;
+        final LiveWallpaperBloc bloc = build(imageUrl: null)
+          ..add(const LiveWallpaperEvent.started(isPro: true))
+          ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+        addTearDown(bloc.close);
+        await settle();
+        repository.screensResult = Completer<LiveScreens>();
+        bloc.add(const LiveWallpaperEvent.screensChecked());
+        await settle();
+        expect(repository.getScreensCalls, 1);
+
+        changeAccount();
+        repository.screensResult!.complete(
+          LiveScreens(
+            home: LiveScreenContent(showsPrism: true, tag: repository.lastTag),
+            lock: LiveScreenContent.other,
+          ),
+        );
+        await settle();
+
+        expect(bloc.state.outcome, isNull);
+        expect(bloc.state.pendingTag, isNull);
+      });
+
+      for (final bool motion in <bool>[true, false]) {
+        test('$identityChange discards an in-flight ${motion ? 'motion' : 'gradient'} apply result', () async {
+          repository.capabilities = perScreen;
+          repository.applyResult = Completer<LiveApplyOutcome>();
+          final LiveWallpaperBloc bloc = build()
+            ..add(const LiveWallpaperEvent.started(isPro: true))
+            ..add(
+              motion
+                  ? LiveWallpaperEvent.motionApplied(palette: palette, screenAspectRatio: 0.45)
+                  : LiveWallpaperEvent.gradientApplied(palette: palette),
+            );
+          addTearDown(bloc.close);
+          await settle();
+          expect(bloc.state.applying, isTrue);
+          expect(repository.lastTag, isNotNull);
+
+          changeAccount();
+          repository.applyResult!.complete(const LiveApplyOutcome.confirmInPreview(target: WallpaperTarget.home));
+          await settle();
+
+          expect(bloc.state.pendingTag, isNull);
+          expect(bloc.state.outcome, isNull);
+          expect(bloc.state.applying, isFalse);
+        });
+      }
+    }
+
+    for (final String phase in <String>['pending preview', 'screen response', 'motion apply', 'gradient apply']) {
+      test('signing back into the same account discards an old session $phase', () async {
+        repository.capabilities = perScreen;
+        PrismUsersV2 currentUser = app_state.prismUser;
+        final session = _MockSessionRepository();
+        final users = StreamController<PrismUsersV2>.broadcast(sync: true);
+        addTearDown(users.close);
+        when(() => session.currentUser).thenAnswer((_) => currentUser);
+        when(() => session.watchCurrentUser()).thenAnswer((_) => users.stream);
+        getIt.registerSingleton<SessionRepository>(session);
+        if (phase.endsWith('apply')) repository.applyResult = Completer<LiveApplyOutcome>();
+        final LiveWallpaperBloc bloc = build()
+          ..add(const LiveWallpaperEvent.started(isPro: true))
+          ..add(
+            phase == 'motion apply'
+                ? LiveWallpaperEvent.motionApplied(palette: palette, screenAspectRatio: 0.45)
+                : LiveWallpaperEvent.gradientApplied(palette: palette),
+          );
+        addTearDown(bloc.close);
+        await settle();
+        final screens = LiveScreens(
+          home: LiveScreenContent(showsPrism: true, tag: repository.lastTag),
+          lock: LiveScreenContent.other,
+        );
+        if (phase == 'screen response') {
+          repository.screensResult = Completer<LiveScreens>();
+          bloc.add(const LiveWallpaperEvent.screensChecked());
+          await settle();
+          expect(repository.getScreensCalls, 1);
+        }
+
+        final PrismUsersV2 previousUser = currentUser;
+        currentUser = app_constants.createGuestPrismUser();
+        users.add(currentUser);
+        currentUser = previousUser;
+        users.add(currentUser);
+        if (phase == 'pending preview') {
+          repository.screens = screens;
+          bloc.add(const LiveWallpaperEvent.screensChecked());
+        } else if (phase == 'screen response') {
+          repository.screensResult!.complete(screens);
+        } else {
+          repository.applyResult!.complete(const LiveApplyOutcome.confirmInPreview(target: WallpaperTarget.home));
+        }
+        await settle();
+
+        expect(bloc.state.outcome, isNull);
+        expect(bloc.state.pendingTag, isNull);
+        if (phase == 'pending preview') expect(repository.getScreensCalls, 0);
+      });
+    }
+
+    test('same-account profile updates keep the pending preview and close releases the session listener', () async {
+      repository.capabilities = perScreen;
+      PrismUsersV2 currentUser = app_state.prismUser;
+      final session = _MockSessionRepository();
+      final users = StreamController<PrismUsersV2>.broadcast(sync: true);
+      addTearDown(users.close);
+      when(() => session.currentUser).thenAnswer((_) => currentUser);
+      when(() => session.watchCurrentUser()).thenAnswer((_) => users.stream);
+      getIt.registerSingleton<SessionRepository>(session);
+      final LiveWallpaperBloc bloc = build(imageUrl: null)
+        ..add(const LiveWallpaperEvent.started(isPro: true))
+        ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+      addTearDown(bloc.close);
+      await settle();
+      expect(users.hasListener, isTrue);
+
+      currentUser = app_constants.createGuestPrismUser()
+        ..id = 'owner'
+        ..loggedIn = true
+        ..premium = true;
+      users.add(currentUser);
+      repository.screens = LiveScreens(
+        home: LiveScreenContent(showsPrism: true, tag: repository.lastTag),
+        lock: LiveScreenContent.other,
+      );
+      bloc.add(const LiveWallpaperEvent.screensChecked());
+      await settle();
+
+      expect(bloc.state.outcome?.status, LiveApplyStatus.applied);
+      await bloc.close();
+      expect(users.hasListener, isFalse);
+    });
 
     blocTest<LiveWallpaperBloc, LiveWallpaperState>(
       'a confirm-in-preview apply without per-screen support has no pending tag',
