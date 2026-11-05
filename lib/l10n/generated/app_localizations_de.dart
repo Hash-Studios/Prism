@@ -11166,6 +11166,148 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get topicFollow => 'Folgen';
+
+  @override
+  String get topicFollowing => 'Gefolgt';
+
+  @override
+  String topicFollowHint(String topic) {
+    return '$topic folgen';
+  }
+
+  @override
+  String topicUnfollowHint(String topic) {
+    return '$topic nicht mehr folgen';
+  }
+
+  @override
+  String topicFollowedToast(String topic) {
+    return 'Du folgst $topic. Du bekommst einmal am Tag eine Benachrichtigung, wenn hier neue Hintergrundbilder erscheinen.';
+  }
+
+  @override
+  String topicFollowLimit(int max) {
+    return 'Du kannst bis zu $max Themen folgen. Entferne zuerst eines in den Einstellungen.';
+  }
+
+  @override
+  String get topicFollowFailed =>
+      'Die Auswahl konnte nicht geändert werden. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
+  String get topicUnfollow => 'Nicht mehr folgen';
+
+  @override
+  String get topicKindCategory => 'Kategorie';
+
+  @override
+  String get topicKindMood => 'Stimmung';
+
+  @override
+  String get followingRowTitle => 'Gefolgt';
+
+  @override
+  String get followingRowLabel => 'Kategorien und Stimmungen, denen du folgst';
+
+  @override
+  String topicNewWallpapers(String topic) {
+    return '$topic, neue Hintergrundbilder';
+  }
+
+  @override
+  String get followedTopicsTitle => 'Themen, denen du folgst';
+
+  @override
+  String followedTopicsCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Themen',
+      one: '1 Thema',
+      zero: 'Noch keine',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get followedTopicsEmptyTitle => 'Noch keine Themen';
+
+  @override
+  String get followedTopicsEmptyBody =>
+      'Öffne eine Kategorie oder eine Stimmung und tippe auf Folgen. Du bekommst einmal am Tag eine Benachrichtigung, wenn dort neue Hintergrundbilder erscheinen.';
+
+  @override
+  String get notifSettingTopics => 'Themen, denen du folgst';
+
+  @override
+  String get notifSettingTopicsDescription =>
+      'Neue Hintergrundbilder in Kategorien und Stimmungen, denen du folgst, einmal am Tag';
+
+  @override
+  String get layoutHomeHeader => 'Start';
+
+  @override
+  String get layoutFollowingRow => 'Gefolgte Themen anzeigen';
+
+  @override
+  String get layoutFollowingRowFootnote =>
+      'Eine Reihe oben bei Für dich. Ein Punkt markiert ein Thema mit neuen Hintergrundbildern.';
+
+  @override
+  String notifPushTopicDigestTitleOne(String topic) {
+    return 'Ein neues Hintergrundbild in $topic';
+  }
+
+  @override
+  String notifPushTopicDigestTitleSolo(int count, String topic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString neue Hintergrundbilder in $topic',
+      one: 'Ein neues Hintergrundbild in $topic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitlePair(int count, String topic, String secondTopic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString neue Hintergrundbilder in $topic und $secondTopic',
+      one: 'Ein neues Hintergrundbild in $topic und $secondTopic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitleGroup(int count, String topic, int others) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString neue Hintergrundbilder in $topic und $others weiteren Themen',
+      one: 'Ein neues Hintergrundbild in $topic und $others weiteren Themen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushTopicDigestBodyUntitled => 'Tippe, um zu sehen, was neu ist.';
+
+  @override
   String get historySetAndDownloaded => 'Gesetzt und heruntergeladen';
 
   @override

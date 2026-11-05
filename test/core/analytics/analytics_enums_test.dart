@@ -168,6 +168,7 @@ void main() {
         'recommendations',
         'streak_reminders',
         'folders',
+        'topics',
       ],
       'DeepLinkSourceValue': <String>['app_links', 'push', 'in_app'],
       'ShareTypeValue': <String>['wallpaper', 'user', 'refer'],

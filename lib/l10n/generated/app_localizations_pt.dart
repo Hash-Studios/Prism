@@ -11338,6 +11338,147 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get topicFollow => 'Seguir';
+
+  @override
+  String get topicFollowing => 'Seguindo';
+
+  @override
+  String topicFollowHint(String topic) {
+    return 'Seguir $topic';
+  }
+
+  @override
+  String topicUnfollowHint(String topic) {
+    return 'Deixar de seguir $topic';
+  }
+
+  @override
+  String topicFollowedToast(String topic) {
+    return 'Você está seguindo $topic. Você recebe uma notificação por dia quando há papéis de parede novos aqui.';
+  }
+
+  @override
+  String topicFollowLimit(int max) {
+    return 'Você pode seguir até $max temas. Deixe de seguir um em Configurações primeiro.';
+  }
+
+  @override
+  String get topicFollowFailed => 'Não foi possível atualizar o seguimento. Verifique sua conexão e tente de novo.';
+
+  @override
+  String get topicUnfollow => 'Deixar de seguir';
+
+  @override
+  String get topicKindCategory => 'Categoria';
+
+  @override
+  String get topicKindMood => 'Clima';
+
+  @override
+  String get followingRowTitle => 'Seguindo';
+
+  @override
+  String get followingRowLabel => 'Categorias e climas que você segue';
+
+  @override
+  String topicNewWallpapers(String topic) {
+    return '$topic, papéis de parede novos';
+  }
+
+  @override
+  String get followedTopicsTitle => 'Temas que você segue';
+
+  @override
+  String followedTopicsCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString temas',
+      one: '1 tema',
+      zero: 'Nenhum ainda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get followedTopicsEmptyTitle => 'Nenhum tema ainda';
+
+  @override
+  String get followedTopicsEmptyBody =>
+      'Abra uma categoria ou um clima e toque em Seguir. Você recebe uma notificação por dia quando há papéis de parede novos ali.';
+
+  @override
+  String get notifSettingTopics => 'Temas que você segue';
+
+  @override
+  String get notifSettingTopicsDescription =>
+      'Papéis de parede novos em categorias e climas que você segue, uma vez por dia';
+
+  @override
+  String get layoutHomeHeader => 'Início';
+
+  @override
+  String get layoutFollowingRow => 'Mostrar temas que você segue';
+
+  @override
+  String get layoutFollowingRowFootnote =>
+      'Uma linha no topo de Para você. Um ponto marca um tema com papéis de parede novos.';
+
+  @override
+  String notifPushTopicDigestTitleOne(String topic) {
+    return 'Um papel de parede novo em $topic';
+  }
+
+  @override
+  String notifPushTopicDigestTitleSolo(int count, String topic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede novos em $topic',
+      one: 'Um papel de parede novo em $topic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitlePair(int count, String topic, String secondTopic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede novos em $topic e $secondTopic',
+      one: 'Um papel de parede novo em $topic e $secondTopic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitleGroup(int count, String topic, int others) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede novos em $topic e mais $others temas',
+      one: 'Um papel de parede novo em $topic e mais $others temas',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushTopicDigestBodyUntitled => 'Toque para ver o que há de novo.';
+
+  @override
   String get historySetAndDownloaded => 'Definido e baixado';
 
   @override
@@ -25474,6 +25615,147 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String notifPushFolderDigestTitleMore(String folderName, int count) {
     return 'Novidades em $folderName e mais $count';
   }
+
+  @override
+  String get topicFollow => 'Seguir';
+
+  @override
+  String get topicFollowing => 'Seguindo';
+
+  @override
+  String topicFollowHint(String topic) {
+    return 'Seguir $topic';
+  }
+
+  @override
+  String topicUnfollowHint(String topic) {
+    return 'Deixar de seguir $topic';
+  }
+
+  @override
+  String topicFollowedToast(String topic) {
+    return 'Você está seguindo $topic. Você recebe uma notificação por dia quando há papéis de parede novos aqui.';
+  }
+
+  @override
+  String topicFollowLimit(int max) {
+    return 'Você pode seguir até $max temas. Deixe de seguir um em Configurações primeiro.';
+  }
+
+  @override
+  String get topicFollowFailed => 'Não foi possível atualizar o seguimento. Verifique sua conexão e tente de novo.';
+
+  @override
+  String get topicUnfollow => 'Deixar de seguir';
+
+  @override
+  String get topicKindCategory => 'Categoria';
+
+  @override
+  String get topicKindMood => 'Clima';
+
+  @override
+  String get followingRowTitle => 'Seguindo';
+
+  @override
+  String get followingRowLabel => 'Categorias e climas que você segue';
+
+  @override
+  String topicNewWallpapers(String topic) {
+    return '$topic, papéis de parede novos';
+  }
+
+  @override
+  String get followedTopicsTitle => 'Temas que você segue';
+
+  @override
+  String followedTopicsCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString temas',
+      one: '1 tema',
+      zero: 'Nenhum ainda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get followedTopicsEmptyTitle => 'Nenhum tema ainda';
+
+  @override
+  String get followedTopicsEmptyBody =>
+      'Abra uma categoria ou um clima e toque em Seguir. Você recebe uma notificação por dia quando há papéis de parede novos ali.';
+
+  @override
+  String get notifSettingTopics => 'Temas que você segue';
+
+  @override
+  String get notifSettingTopicsDescription =>
+      'Papéis de parede novos em categorias e climas que você segue, uma vez por dia';
+
+  @override
+  String get layoutHomeHeader => 'Início';
+
+  @override
+  String get layoutFollowingRow => 'Mostrar temas que você segue';
+
+  @override
+  String get layoutFollowingRowFootnote =>
+      'Uma linha no topo de Para você. Um ponto marca um tema com papéis de parede novos.';
+
+  @override
+  String notifPushTopicDigestTitleOne(String topic) {
+    return 'Um papel de parede novo em $topic';
+  }
+
+  @override
+  String notifPushTopicDigestTitleSolo(int count, String topic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede novos em $topic',
+      one: 'Um papel de parede novo em $topic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitlePair(int count, String topic, String secondTopic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede novos em $topic e $secondTopic',
+      one: 'Um papel de parede novo em $topic e $secondTopic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitleGroup(int count, String topic, int others) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede novos em $topic e mais $others temas',
+      one: 'Um papel de parede novo em $topic e mais $others temas',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushTopicDigestBodyUntitled => 'Toque para ver o que há de novo.';
 
   @override
   String get historySetAndDownloaded => 'Definido e baixado';

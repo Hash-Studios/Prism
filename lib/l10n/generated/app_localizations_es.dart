@@ -11143,6 +11143,145 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get topicFollow => 'Seguir';
+
+  @override
+  String get topicFollowing => 'Siguiendo';
+
+  @override
+  String topicFollowHint(String topic) {
+    return 'Seguir $topic';
+  }
+
+  @override
+  String topicUnfollowHint(String topic) {
+    return 'Dejar de seguir $topic';
+  }
+
+  @override
+  String topicFollowedToast(String topic) {
+    return 'Ahora sigues $topic. Recibirás una notificación al día cuando haya fondos nuevos aquí.';
+  }
+
+  @override
+  String topicFollowLimit(int max) {
+    return 'Puedes seguir hasta $max temas. Primero deja de seguir uno en Ajustes.';
+  }
+
+  @override
+  String get topicFollowFailed => 'No se pudo actualizar el seguimiento. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get topicUnfollow => 'Dejar de seguir';
+
+  @override
+  String get topicKindCategory => 'Categoría';
+
+  @override
+  String get topicKindMood => 'Ambiente';
+
+  @override
+  String get followingRowTitle => 'Siguiendo';
+
+  @override
+  String get followingRowLabel => 'Categorías y ambientes que sigues';
+
+  @override
+  String topicNewWallpapers(String topic) {
+    return '$topic, fondos nuevos';
+  }
+
+  @override
+  String get followedTopicsTitle => 'Temas que sigues';
+
+  @override
+  String followedTopicsCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString temas',
+      one: '1 tema',
+      zero: 'Ninguno todavía',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get followedTopicsEmptyTitle => 'Aún no hay temas';
+
+  @override
+  String get followedTopicsEmptyBody =>
+      'Abre una categoría o un ambiente y toca Seguir. Recibirás una notificación al día cuando haya fondos nuevos ahí.';
+
+  @override
+  String get notifSettingTopics => 'Temas que sigues';
+
+  @override
+  String get notifSettingTopicsDescription => 'Fondos nuevos en categorías y ambientes que sigues, una vez al día';
+
+  @override
+  String get layoutHomeHeader => 'Inicio';
+
+  @override
+  String get layoutFollowingRow => 'Mostrar temas que sigues';
+
+  @override
+  String get layoutFollowingRowFootnote => 'Una fila arriba en Para ti. Un punto marca un tema con fondos nuevos.';
+
+  @override
+  String notifPushTopicDigestTitleOne(String topic) {
+    return 'Un fondo nuevo en $topic';
+  }
+
+  @override
+  String notifPushTopicDigestTitleSolo(int count, String topic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString fondos nuevos en $topic',
+      one: 'Un fondo nuevo en $topic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitlePair(int count, String topic, String secondTopic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString fondos nuevos en $topic y $secondTopic',
+      one: 'Un fondo nuevo en $topic y $secondTopic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitleGroup(int count, String topic, int others) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString fondos nuevos en $topic y $others temas más',
+      one: 'Un fondo nuevo en $topic y $others temas más',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushTopicDigestBodyUntitled => 'Toca para ver lo nuevo.';
+
+  @override
   String get historySetAndDownloaded => 'Puesto y descargado';
 
   @override

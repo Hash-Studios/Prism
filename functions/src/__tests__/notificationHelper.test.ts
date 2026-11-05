@@ -12,6 +12,7 @@ import {
   type NotificationCopy,
 } from "../notificationCatalog";
 import type {PushGallery} from "../pushGallery";
+import {TOPICS, topicDigestPayload, type Topic} from "../topicDigest";
 
 import {
   emailToTopic,
@@ -22,6 +23,7 @@ import {
   sendToUser,
   sendToUserByEmail,
   userIdToTopic,
+  userPushTokens,
 } from "../notificationHelper";
 
 beforeEach((t) => {
@@ -1547,5 +1549,49 @@ test("oversized follow digest payloads keep the gallery route and fit below the 
     }
     const androidTitleArgs = message.android?.notification?.titleLocArgs;
     if (androidTitleArgs) assert.ok(Buffer.byteLength(androidTitleArgs[0] ?? "", "utf8") <= 80);
+  }
+});
+
+const topicSession = (fields: Record<string, unknown>) => ({
+  "usersv2/u1/private/session": {fcmTokenBindingVersion: 1, ...fields},
+});
+
+test("userPushTokens returns the topic token only while the session has that exact opt-in", async (t) => {
+  installFakeDb(t, topicSession({fcmToken: "T", fcmTokenBindingToken: "T", topicAlerts: false, topicAlertsToken: "T"}));
+  assert.deepEqual(await userPushTokens("u1", undefined, undefined, undefined, "T"), []);
+
+  installFakeDb(t, topicSession({fcmToken: "T", fcmTokenBindingToken: "T", topicAlerts: true, topicAlertsToken: "OLD"}));
+  assert.deepEqual(await userPushTokens("u1", undefined, undefined, undefined, "T"), []);
+
+  installFakeDb(t, topicSession({fcmToken: "T2", fcmTokenBindingToken: "T2", topicAlerts: true, topicAlertsToken: "T"}));
+  assert.deepEqual(await userPushTokens("u1", undefined, undefined, undefined, "T"), []);
+
+  installFakeDb(t, topicSession({fcmToken: "T", fcmTokenBindingToken: "T", topicAlerts: true, topicAlertsToken: "T"}));
+  assert.deepEqual((await userPushTokens("u1", undefined, undefined, undefined, "T")).map((row) => row.token), ["T"]);
+});
+
+test("sendToUser with a topic token writes no inbox doc and sends no FCM after the session stops matching", async (t) => {
+  const topic = TOPICS.get("category:Pastel") as Topic;
+  const payload = topicDigestPayload({
+    topics: [{topic, count: 2}],
+    walls: [
+      {id: "p1", thumb: "https://img.prismwalls.com/previews/p1.img", tags: []},
+      {id: "p2", thumb: "https://img.prismwalls.com/previews/p2.img", tags: []},
+    ],
+  }, "u1", "2026-11-05", null);
+  const recipient = {uid: "u1", email: "u1@x.com", topicAlertsToken: "T"};
+  const base = topicSession({fcmToken: "T", fcmTokenBindingToken: "T", topicAlerts: true, topicAlertsToken: "T"});
+
+  for (const session of [
+    {...base["usersv2/u1/private/session"], fcmToken: "T2", fcmTokenBindingToken: "T2", topicAlertsToken: "T2"},
+    {...base["usersv2/u1/private/session"], topicAlerts: false},
+  ]) {
+    const store = installFakeDb(t, {...base, "usersv2/u1": {email: "u1@x.com", loggedIn: true}});
+    store.set("usersv2/u1/private/session", session);
+    const send = t.mock.method(admin.messaging(), "send", async () => "id");
+
+    assert.equal(await sendToUser({...payload, modifier: "u1@x.com"}, recipient), true);
+    assert.equal([...store.keys()].some((path) => path.startsWith("notifications/")), false);
+    assert.equal(send.mock.callCount(), 0);
   }
 });

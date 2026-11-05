@@ -113,6 +113,8 @@ const seed = () => Promise.all([
   req('PATCH', 'usersv2/duplicates', { followers: arr(['b@x.com', 'b@x.com', 'v1@x.com', 'v1@x.com']) }, 'owner'),
   req('PATCH', 'usersv2/b/images/legacy-alias', { id: { stringValue: 'target' }, provider: { stringValue: 'Unknown' } }, 'owner'),
   req('PATCH', 'usersv2/target', { followers: arr(['a@x.com']), name: { stringValue: 't' } }, 'owner'),
+  req('PATCH', 'usersv2/u1', { id: str('u1') }, 'owner'),
+  req('PATCH', 'topicNews/current', { latest: { mapValue: { fields: {} } } }, 'owner'),
   req('PATCH', 'admin_users/admin@x.com', { ok: { booleanValue: true } }, 'owner'),
   req('PATCH', 'usersv2/b', { id: { stringValue: 'b' }, coins: { integerValue: '10' }, premium: { booleanValue: false } }, 'owner'),
   req('PATCH', 'usersv2/history-owner', { id: str('history-owner'), coins: { integerValue: '0' }, premium: { booleanValue: false } }, HistoryOwner),
@@ -206,6 +208,22 @@ const layoutFields = {
   changedAt: { integerValue: '1793000000000' },
 };
 const layoutMap = (fields) => ({ layoutPrefs: { mapValue: { fields } } });
+const U2 = tok('u2', 'u2@x.com');
+// The 27 keys in validTopicSession (firestore.rules), in the same order.
+const topicKeys = [
+  'category:Nature', 'category:Architecture', 'category:Cars', 'category:Anime', 'category:Gaming',
+  'category:Space', 'category:Ocean', 'category:Flowers', 'category:Neon', 'category:Dark',
+  'category:Abstract', 'category:3D Render', 'category:Minimal', 'category:Gradient', 'category:AI Art',
+  'category:Cyberpunk', 'category:Vintage', 'category:Landscape', 'category:Galaxy', 'category:Pastel',
+  'mood:duo_reveal', 'mood:dreamy', 'mood:dark_quiet', 'mood:bright_bold', 'mood:minimal',
+  'mood:spatial_ready', 'mood:depth_ready',
+];
+const topicFields = {
+  followedTopics: arr(['category:Pastel', 'mood:dreamy']), followedTopicsOffset: { integerValue: '330' },
+  topicAlerts: { booleanValue: true }, topicAlertsToken: str('t1'),
+};
+const topicSession = (fields) => req('PATCH', 'usersv2/u1/private/session', fields, U1);
+const withTopics = (followedTopics) => ({ ...topicFields, followedTopics: arr(followedTopics) });
 const cases = [
   ['new wall accepts valid challenge and resubmission links together', () => req('PATCH', 'walls/linked-challenge', {
     email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('2026-11-02'), resubmitOf: str('wall_old.png'),
@@ -1001,6 +1019,23 @@ const cases = [
   ['comment rate docs cannot be read by clients', () => req('GET', 'commentRate/u1', null, U1), 403],
   ['comment push gate cannot be created by clients', () => req('PATCH', 'commentPush/cw1', { day: str('2026-11-02') }, Bu), 403],
   ['comment push gate cannot be read by clients', () => req('GET', 'commentPush/cw1', null, Bu), 403],
+  ['u1 writes own topic session', () => topicSession(topicFields), 200],
+  ['u2 writes u1 topic session', () => req('PATCH', 'usersv2/u1/private/session', topicFields, U2), 403],
+  ['guest reads u1 topic session', () => req('GET', 'usersv2/u1/private/session', null, null), 403],
+  ['u1 topic session with 20 distinct keys', () => topicSession(withTopics(topicKeys.slice(0, 20))), 200],
+  ['u1 topic session with 21 distinct keys', () => topicSession(withTopics(topicKeys.slice(0, 21))), 403],
+  ['u1 topic session with AMOLED key', () => topicSession(withTopics(['category:AMOLED'])), 403],
+  ['u1 topic session with bare Pastel key', () => topicSession(withTopics(['Pastel'])), 403],
+  ['u1 topic session with lower-case category key', () => topicSession(withTopics(['category:pastel'])), 403],
+  ['u1 topic session with a repeated key', () => topicSession(withTopics(['mood:dreamy', 'mood:dreamy'])), 403],
+  ['u1 topic session with offset 331', () => topicSession({ ...topicFields, followedTopicsOffset: { integerValue: '331' } }), 403],
+  ['u1 topic session with offset 900', () => topicSession({ ...topicFields, followedTopicsOffset: { integerValue: '900' } }), 403],
+  ['u1 topic session with string topicAlerts', () => topicSession({ ...topicFields, topicAlerts: str('yes') }), 403],
+  ['u1 session write with only fcmToken', () => topicSession({ fcmToken: str('t1') }), 200],
+  ['guest reads topicNews', () => req('GET', 'topicNews/current', null, null), 200],
+  ['u1 writes topicNews', () => req('PATCH', 'topicNews/current', { latest: { mapValue: { fields: {} } } }, U1), 403],
+  ['owner writes layoutPrefs with followingRow false', () => req('PATCH', 'usersv2/u1', layoutMap({ ...layoutFields, followingRow: { booleanValue: false } }), U1, ['layoutPrefs']), 200],
+  ['owner writes layoutPrefs with followingRow as a string', () => req('PATCH', 'usersv2/u1', layoutMap({ ...layoutFields, followingRow: str('no') }), U1, ['layoutPrefs']), 403],
 ];
 await seed();
 let bad = 0;

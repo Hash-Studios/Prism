@@ -13,6 +13,8 @@ import 'package:Prism/features/category_feed/views/widgets/collections_view_grid
 import 'package:Prism/features/category_feed/views/widgets/pexels_grid.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallhaven_grid.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_grid.dart';
+import 'package:Prism/features/followed_topics/domain/entities/followed_topic.dart';
+import 'package:Prism/features/followed_topics/views/widgets/topic_follow_button.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -84,9 +86,11 @@ class _CollectionViewScreenState extends State<CollectionViewScreen> {
     final title = _isCategoryView
         ? categoryDisplayName(_decodedCategoryName, context.l10n)
         : widget.collectionName.inCaps;
+    final FollowedTopic? topic = _isCategoryView ? FollowedTopic.category(_decodedCategoryName) : null;
     return PrismPage(
       maxContentWidth: double.infinity,
       title: title,
+      actions: <Widget>[if (topic != null) TopicFollowButton(topic: topic)],
       body: _isCategoryView
           ? _CategoryFeedContent(categoryName: _decodedCategoryName, onRetry: _selectCategory)
           : _buildCollectionContent(),

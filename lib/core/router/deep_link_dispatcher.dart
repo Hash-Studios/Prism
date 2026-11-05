@@ -109,6 +109,9 @@ class DeepLinkDispatcher {
     if (data['notification_kind']?.toString() == 'folder_digest') {
       _record(FolderPushOpenedEvent(folderCount: int.tryParse(data['folder_count']?.toString() ?? '') ?? 1));
     }
+    if (data['notification_kind']?.toString() == 'topic_digest') {
+      _record(TopicPushOpenedEvent(topicCount: int.tryParse(data['topic_count']?.toString() ?? '') ?? 1));
+    }
     if (data['notification_kind']?.toString() == 'tip_received') {
       _record(const TipReceivedPushOpenedEvent());
     }

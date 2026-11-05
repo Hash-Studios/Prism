@@ -10250,6 +10250,183 @@
       }
     }
   },
+  "topicFollow": "Folgen",
+  "@topicFollow": {
+    "description": "Button on a category or mood page. Follows it for a daily push about new wallpapers."
+  },
+  "topicFollowing": "Gefolgt",
+  "@topicFollowing": {
+    "description": "Button label when the user follows this category or mood. A tap stops following."
+  },
+  "topicFollowHint": "{topic} folgen",
+  "@topicFollowHint": {
+    "description": "Screen reader label of the Follow button. topic is a category or mood name.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicUnfollowHint": "{topic} nicht mehr folgen",
+  "@topicUnfollowHint": {
+    "description": "Screen reader label of a button that stops following a category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicFollowedToast": "Du folgst {topic}. Du bekommst einmal am Tag eine Benachrichtigung, wenn hier neue Hintergrundbilder erscheinen.",
+  "@topicFollowedToast": {
+    "description": "Toast after the user follows a category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicFollowLimit": "Du kannst bis zu {max} Themen folgen. Entferne zuerst eines in den Einstellungen.",
+  "@topicFollowLimit": {
+    "description": "Toast when the user already follows the most topics allowed.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "topicFollowFailed": "Die Auswahl konnte nicht geändert werden. Prüfe deine Verbindung und versuche es erneut.",
+  "@topicFollowFailed": {
+    "description": "Toast when follow or unfollow of a category or mood fails."
+  },
+  "topicUnfollow": "Nicht mehr folgen",
+  "@topicUnfollow": {
+    "description": "Button in the list of followed topics. Stops following that topic."
+  },
+  "topicKindCategory": "Kategorie",
+  "@topicKindCategory": {
+    "description": "Small label under a followed topic that is a category."
+  },
+  "topicKindMood": "Stimmung",
+  "@topicKindMood": {
+    "description": "Small label under a followed topic that is a Home mood, such as Dreamy."
+  },
+  "followingRowTitle": "Gefolgt",
+  "@followingRowTitle": {
+    "description": "Header of the Home row of the categories and moods the user follows."
+  },
+  "followingRowLabel": "Kategorien und Stimmungen, denen du folgst",
+  "@followingRowLabel": {
+    "description": "Screen reader label of the Home row of followed topics."
+  },
+  "topicNewWallpapers": "{topic}, neue Hintergrundbilder",
+  "@topicNewWallpapers": {
+    "description": "Screen reader label of a followed topic that has new wallpapers.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "followedTopicsTitle": "Themen, denen du folgst",
+  "@followedTopicsTitle": {
+    "description": "Settings row and sheet title: the categories and moods the user follows."
+  },
+  "followedTopicsCount": "{count, plural, =0{Noch keine} =1{1 Thema} other{{count} Themen}}",
+  "@followedTopicsCount": {
+    "description": "Settings row subtitle: how many categories and moods the user follows.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "followedTopicsEmptyTitle": "Noch keine Themen",
+  "@followedTopicsEmptyTitle": {
+    "description": "Empty state title of the followed topics sheet."
+  },
+  "followedTopicsEmptyBody": "Öffne eine Kategorie oder eine Stimmung und tippe auf Folgen. Du bekommst einmal am Tag eine Benachrichtigung, wenn dort neue Hintergrundbilder erscheinen.",
+  "@followedTopicsEmptyBody": {
+    "description": "Empty state body of the followed topics sheet."
+  },
+  "notifSettingTopics": "Themen, denen du folgst",
+  "@notifSettingTopics": {
+    "description": "Notification setting for new wallpapers in followed categories and moods."
+  },
+  "notifSettingTopicsDescription": "Neue Hintergrundbilder in Kategorien und Stimmungen, denen du folgst, einmal am Tag",
+  "@notifSettingTopicsDescription": {
+    "description": "Description of the followed topics notification setting."
+  },
+  "layoutHomeHeader": "Start",
+  "@layoutHomeHeader": {
+    "description": "Layout settings section header for the Home page."
+  },
+  "layoutFollowingRow": "Gefolgte Themen anzeigen",
+  "@layoutFollowingRow": {
+    "description": "Layout setting switch. When on, Home shows a row of followed categories and moods."
+  },
+  "layoutFollowingRowFootnote": "Eine Reihe oben bei Für dich. Ein Punkt markiert ein Thema mit neuen Hintergrundbildern.",
+  "@layoutFollowingRowFootnote": {
+    "description": "Footnote under the layout setting for the followed topics row."
+  },
+  "notifPushTopicDigestTitleOne": "Ein neues Hintergrundbild in {topic}",
+  "@notifPushTopicDigestTitleOne": {
+    "description": "Daily push title: one new wallpaper in a followed category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitleSolo": "{count, plural, =1{Ein neues Hintergrundbild in {topic}} other{{count} neue Hintergrundbilder in {topic}}}",
+  "@notifPushTopicDigestTitleSolo": {
+    "description": "Daily push title: new wallpapers in one followed category or mood.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitlePair": "{count, plural, =1{Ein neues Hintergrundbild in {topic} und {secondTopic}} other{{count} neue Hintergrundbilder in {topic} und {secondTopic}}}",
+  "@notifPushTopicDigestTitlePair": {
+    "description": "Daily push title: new wallpapers in two followed categories or moods.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      },
+      "secondTopic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitleGroup": "{count, plural, =1{Ein neues Hintergrundbild in {topic} und {others} weiteren Themen} other{{count} neue Hintergrundbilder in {topic} und {others} weiteren Themen}}",
+  "@notifPushTopicDigestTitleGroup": {
+    "description": "Daily push title: new wallpapers in three or more followed topics. others is always 2 or more.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      },
+      "others": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushTopicDigestBodyUntitled": "Tippe, um zu sehen, was neu ist.",
+  "@notifPushTopicDigestBodyUntitled": {
+    "description": "Daily push body when the new wallpapers have no tags."
+  },
   "historySetAndDownloaded": "Gesetzt und heruntergeladen",
   "@historySetAndDownloaded": {
     "description": "History tab segment on Android: walls the user set as wallpaper or downloaded."

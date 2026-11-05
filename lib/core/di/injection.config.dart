@@ -114,6 +114,8 @@ import '../../features/folders/domain/repositories/folders_repository.dart'
     as _i847;
 import '../../features/folders/domain/repositories/public_folders_repository.dart'
     as _i279;
+import '../../features/followed_topics/data/followed_topics_store.dart'
+    as _i407;
 import '../../features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart'
     as _i584;
 import '../../features/in_app_notifications/data/repositories/notifications_repository_impl.dart'
@@ -459,6 +461,12 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i685.GetCreatorStats>(
     () => _i685.GetCreatorStats(gh<_i330.CreatorStatsRepository>()),
+  );
+  gh.lazySingleton<_i407.FollowedTopicsStore>(
+    () => _i407.FollowedTopicsStore(
+      gh<_i1073.SettingsLocalDataSource>(),
+      gh<_i349.FirestoreClient>(),
+    ),
   );
   gh.lazySingleton<_i633.LayoutPrefsStore>(
     () => _i633.LayoutPrefsStore(

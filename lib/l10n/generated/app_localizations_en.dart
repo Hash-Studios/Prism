@@ -11000,6 +11000,145 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get topicFollow => 'Follow';
+
+  @override
+  String get topicFollowing => 'Following';
+
+  @override
+  String topicFollowHint(String topic) {
+    return 'Follow $topic';
+  }
+
+  @override
+  String topicUnfollowHint(String topic) {
+    return 'Unfollow $topic';
+  }
+
+  @override
+  String topicFollowedToast(String topic) {
+    return 'Following $topic. You get one push a day when new wallpapers land here.';
+  }
+
+  @override
+  String topicFollowLimit(int max) {
+    return 'You can follow up to $max topics. Unfollow one in Settings first.';
+  }
+
+  @override
+  String get topicFollowFailed => 'Could not update the follow. Check your connection and try again.';
+
+  @override
+  String get topicUnfollow => 'Unfollow';
+
+  @override
+  String get topicKindCategory => 'Category';
+
+  @override
+  String get topicKindMood => 'Mood';
+
+  @override
+  String get followingRowTitle => 'Following';
+
+  @override
+  String get followingRowLabel => 'Categories and moods you follow';
+
+  @override
+  String topicNewWallpapers(String topic) {
+    return '$topic, new wallpapers';
+  }
+
+  @override
+  String get followedTopicsTitle => 'Topics you follow';
+
+  @override
+  String followedTopicsCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString topics',
+      one: '1 topic',
+      zero: 'None yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get followedTopicsEmptyTitle => 'No topics yet';
+
+  @override
+  String get followedTopicsEmptyBody =>
+      'Open a category or a mood and tap Follow. You get one push a day when new wallpapers land there.';
+
+  @override
+  String get notifSettingTopics => 'Topics you follow';
+
+  @override
+  String get notifSettingTopicsDescription => 'New wallpapers in categories and moods you follow, once a day';
+
+  @override
+  String get layoutHomeHeader => 'Home';
+
+  @override
+  String get layoutFollowingRow => 'Show topics you follow';
+
+  @override
+  String get layoutFollowingRowFootnote => 'A row at the top of For you. A dot marks a topic with new wallpapers.';
+
+  @override
+  String notifPushTopicDigestTitleOne(String topic) {
+    return 'A new wall in $topic';
+  }
+
+  @override
+  String notifPushTopicDigestTitleSolo(int count, String topic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString new walls in $topic',
+      one: 'A new wall in $topic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitlePair(int count, String topic, String secondTopic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString new walls in $topic and $secondTopic',
+      one: 'A new wall in $topic and $secondTopic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitleGroup(int count, String topic, int others) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString new walls in $topic and $others other topics',
+      one: 'A new wall in $topic and $others other topics',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushTopicDigestBodyUntitled => 'Tap to see what\'s new.';
+
+  @override
   String get historySetAndDownloaded => 'Set and downloaded';
 
   @override

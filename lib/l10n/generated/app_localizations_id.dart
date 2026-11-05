@@ -11057,6 +11057,146 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get topicFollow => 'Ikuti';
+
+  @override
+  String get topicFollowing => 'Diikuti';
+
+  @override
+  String topicFollowHint(String topic) {
+    return 'Ikuti $topic';
+  }
+
+  @override
+  String topicUnfollowHint(String topic) {
+    return 'Berhenti mengikuti $topic';
+  }
+
+  @override
+  String topicFollowedToast(String topic) {
+    return 'Anda mengikuti $topic. Anda mendapat satu notifikasi per hari saat wallpaper baru hadir di sini.';
+  }
+
+  @override
+  String topicFollowLimit(int max) {
+    return 'Anda dapat mengikuti hingga $max topik. Berhenti mengikuti salah satu di Pengaturan terlebih dahulu.';
+  }
+
+  @override
+  String get topicFollowFailed => 'Tidak dapat memperbarui status ikuti. Periksa koneksi Anda dan coba lagi.';
+
+  @override
+  String get topicUnfollow => 'Berhenti ikuti';
+
+  @override
+  String get topicKindCategory => 'Kategori';
+
+  @override
+  String get topicKindMood => 'Suasana';
+
+  @override
+  String get followingRowTitle => 'Diikuti';
+
+  @override
+  String get followingRowLabel => 'Kategori dan suasana yang Anda ikuti';
+
+  @override
+  String topicNewWallpapers(String topic) {
+    return '$topic, wallpaper baru';
+  }
+
+  @override
+  String get followedTopicsTitle => 'Topik yang Anda ikuti';
+
+  @override
+  String followedTopicsCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString topik',
+      one: '1 topik',
+      zero: 'Belum ada',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get followedTopicsEmptyTitle => 'Belum ada topik';
+
+  @override
+  String get followedTopicsEmptyBody =>
+      'Buka kategori atau suasana, lalu ketuk Ikuti. Anda mendapat satu notifikasi per hari saat wallpaper baru hadir di sana.';
+
+  @override
+  String get notifSettingTopics => 'Topik yang Anda ikuti';
+
+  @override
+  String get notifSettingTopicsDescription => 'Wallpaper baru di kategori dan suasana yang Anda ikuti, sekali sehari';
+
+  @override
+  String get layoutHomeHeader => 'Beranda';
+
+  @override
+  String get layoutFollowingRow => 'Tampilkan topik yang Anda ikuti';
+
+  @override
+  String get layoutFollowingRowFootnote =>
+      'Baris di bagian atas Untuk Anda. Titik menandai topik dengan wallpaper baru.';
+
+  @override
+  String notifPushTopicDigestTitleOne(String topic) {
+    return 'Wallpaper baru di $topic';
+  }
+
+  @override
+  String notifPushTopicDigestTitleSolo(int count, String topic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper baru di $topic',
+      one: 'Wallpaper baru di $topic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitlePair(int count, String topic, String secondTopic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper baru di $topic dan $secondTopic',
+      one: 'Wallpaper baru di $topic dan $secondTopic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitleGroup(int count, String topic, int others) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper baru di $topic dan $others topik lainnya',
+      one: 'Wallpaper baru di $topic dan $others topik lainnya',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushTopicDigestBodyUntitled => 'Ketuk untuk melihat yang baru.';
+
+  @override
   String get historySetAndDownloaded => 'Dipasang dan diunduh';
 
   @override

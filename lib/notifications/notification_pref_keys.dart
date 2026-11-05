@@ -6,4 +6,5 @@ abstract final class NotificationPrefKeys {
   static const String drops = 'dropsSubscriber';
   static const String streakReminders = 'streakReminderSubscriber';
   static const String folders = 'foldersSubscriber';
+  static const String topics = 'topicsSubscriber';
 }

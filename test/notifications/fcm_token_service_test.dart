@@ -211,7 +211,7 @@ void main() {
     expect(client.writes, hasLength(1));
     expect(client.writes.single.data?['notificationLocalizationVersion'], 2);
     expect(client.writes.single.data?['notificationLocalizationToken'], 'same-token');
-    expect(settings.get<String>('fcmTokenSynced'), 'uid1|same-token|digest_v2|posts:true|folders:true');
+    expect(settings.get<String>('fcmTokenSynced'), 'uid1|same-token|digest_v2|posts:true|folders:true|topics:true');
   });
 
   test('writes localization version two with the current token', () async {
@@ -386,6 +386,8 @@ void main() {
       'postAlertsToken': 'refreshed-token',
       'folderAlerts': true,
       'folderAlertsToken': 'refreshed-token',
+      'topicAlerts': true,
+      'topicAlertsToken': 'refreshed-token',
     });
   });
 
@@ -398,6 +400,36 @@ void main() {
     expect((write.collection, write.id), ('usersv2/uid1/private', 'session'));
     expect(client.merged, isTrue);
     expect(write.data, <String, dynamic>{'postAlerts': false});
+  });
+
+  test('the Topics switch is stored where the topic digest reads it', () async {
+    final client = _MergeRecordingClient();
+
+    await FcmTokenService.instance.saveTopicAlerts(userId: 'uid1', enabled: false, client: client);
+
+    final write = client.writes.single;
+    expect((write.collection, write.id), ('usersv2/uid1/private', 'session'));
+    expect(client.merged, isTrue);
+    expect(write.data, <String, dynamic>{'topicAlerts': false});
+  });
+
+  test('token sync writes the Topics switch off with the token when the switch is off', () async {
+    await getIt.reset();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set('topicsSubscriber', false);
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    addTearDown(getIt.reset);
+    final client = FakeFirestoreClient();
+
+    await FcmTokenService.instance.syncToken(
+      userId: 'uid1',
+      messaging: FakeFirebaseMessaging()..getTokenHandler = () async => 'tok',
+      client: client,
+    );
+
+    final write = client.writes.firstWhere((w) => w.data?['fcmToken'] == 'tok');
+    expect(write.data?['topicAlerts'], isFalse);
+    expect(write.data?['topicAlertsToken'], 'tok');
   });
 
   test('token sync opts this build into the digest, off when Followers is off, bound to the token', () async {

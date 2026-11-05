@@ -31,6 +31,9 @@ const CATEGORY_RULES: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["Pastel", ["pastel"]],
 ];
 
+/** Every name the classifier can write to `walls.category`, in rule order. */
+export const CATEGORY_NAMES: readonly string[] = [...new Set(CATEGORY_RULES.map(([name]) => name))];
+
 const wordsOf = (text: string): string[] => text.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 0);
 
 /** True when the keyword's words come in order in the label, each one as is or with a plural "s" or "es". */

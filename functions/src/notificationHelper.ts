@@ -380,6 +380,8 @@ export interface PushRecipient {
   postAlertsToken?: string;
   /** When set, deliver only if this exact folder-alert token is still enabled in the private session. */
   folderAlertsToken?: string;
+  /** When set, deliver only if this exact topic-alert token is still enabled in the private session. */
+  topicAlertsToken?: string;
   /** Deprecated legacy token input. Kept for caller compatibility; never used for delivery. */
   legacyToken?: unknown;
 }
@@ -406,6 +408,7 @@ export async function userPushTokens(
   legacyToken: unknown,
   expectedPostAlertsToken?: string,
   expectedFolderAlertsToken?: string,
+  expectedTopicAlertsToken?: string,
 ): Promise<UserPushToken[]> {
   let session: Record<string, unknown> | undefined;
   try {
@@ -414,7 +417,7 @@ export async function userPushTokens(
     ).data();
   } catch (err) {
     logger.warn("Could not read the session FCM token.", {uid, err});
-    if (expectedPostAlertsToken || expectedFolderAlertsToken) throw err;
+    if (expectedPostAlertsToken || expectedFolderAlertsToken || expectedTopicAlertsToken) throw err;
   }
   const sessionToken = pickFcmToken(session?.fcmToken, legacyToken);
   if (expectedPostAlertsToken && (session?.postAlerts !== true ||
@@ -423,6 +426,8 @@ export async function userPushTokens(
     session?.notificationLocalizationToken !== expectedPostAlertsToken)) return [];
   if (expectedFolderAlertsToken && (session?.folderAlerts !== true ||
     session?.folderAlertsToken !== expectedFolderAlertsToken || sessionToken !== expectedFolderAlertsToken)) return [];
+  if (expectedTopicAlertsToken && (session?.topicAlerts !== true ||
+    session?.topicAlertsToken !== expectedTopicAlertsToken || sessionToken !== expectedTopicAlertsToken)) return [];
   if (sessionToken) {
     if (
       session?.fcmTokenBindingVersion !== FCM_TOKEN_BINDING_VERSION ||
@@ -478,11 +483,13 @@ export async function sendToUser(
   pushEnabled = true,
 ): Promise<boolean> {
   const inboxPayload = {...payload, fcmTarget: undefined};
-  if (recipient.folderAlertsToken) {
+  const alertsToken = recipient.folderAlertsToken || recipient.topicAlertsToken;
+  if (alertsToken) {
     if (!recipient.uid || !pushEnabled || recipient.loggedOut) return true;
     const [open, tokens] = await Promise.all([
       userCanReceivePersonalPush(recipient.uid, true, true),
-      userPushTokens(recipient.uid, recipient.legacyToken, recipient.postAlertsToken, recipient.folderAlertsToken),
+      userPushTokens(recipient.uid, recipient.legacyToken, recipient.postAlertsToken, recipient.folderAlertsToken,
+        recipient.topicAlertsToken),
     ]);
     if (!open || tokens.length === 0) return true;
   }
@@ -509,15 +516,16 @@ export async function sendToUser(
     });
     return true;
   }
-  if (!(await userCanReceivePersonalPush(recipient.uid, Boolean(recipient.postAlertsToken || recipient.folderAlertsToken),
-    Boolean(recipient.folderAlertsToken)))) return true;
+  if (!(await userCanReceivePersonalPush(recipient.uid, Boolean(recipient.postAlertsToken || alertsToken),
+    Boolean(alertsToken)))) return true;
   const collapseKey = payload.collapseKey ?? personalCollapseKey(payload);
   const targets: Array<{
     fcmTarget: NonNullable<NotificationPayload["fcmTarget"]>;
     nativeLocalization?: boolean;
     nativeLocalizationVersion?: 1 | 2;
   }> = [
-    ...(await userPushTokens(recipient.uid, recipient.legacyToken, recipient.postAlertsToken, recipient.folderAlertsToken)).map(
+    ...(await userPushTokens(recipient.uid, recipient.legacyToken, recipient.postAlertsToken, recipient.folderAlertsToken,
+      recipient.topicAlertsToken)).map(
       ({token, nativeLocalization, nativeLocalizationVersion}) => ({
         fcmTarget: {token},
         nativeLocalization,
@@ -538,7 +546,7 @@ export async function sendToUser(
     ),
   );
   if (targets.length === 0) {
-    return recipient.postAlertsToken || recipient.folderAlertsToken ? true : sendInboxNudge(recipient.uid, payload.data.route);
+    return recipient.postAlertsToken || alertsToken ? true : sendInboxNudge(recipient.uid, payload.data.route);
   }
   return results.some(Boolean);
 }

@@ -49,6 +49,7 @@ export {onFolderItemWritten, onFolderWritten} from "./folders";
 export {onWallPublicGateChanged, setFolderFollow, setFolderHidden, setFolderPublic} from "./publicFolders";
 export {buildWebCatalog, onWallWebCatalog} from "./webCatalog";
 export {sendFolderDigests} from "./folderDigest";
+export {sendTopicDigests} from "./topicDigest";
 export {syncSubscription, reconcileSubscriptions} from "./syncSubscription";
 export {resolveOriginalAccess} from "./originalAccess";
 

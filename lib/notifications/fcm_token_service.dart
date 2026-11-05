@@ -142,6 +142,24 @@ class FcmTokenService {
     }
   }
 
+  /// Stores the "Topics you follow" switch where the topic digest reads it.
+  Future<void> saveTopicAlerts({required String userId, required bool enabled, FirestoreClient? client}) async {
+    if (userId.trim().isEmpty) return;
+    try {
+      await _trackWrite(
+        () => (client ?? firestoreClient).setDoc(
+          '${FirebaseCollections.usersV2}/$userId/private',
+          'session',
+          <String, dynamic>{'topicAlerts': enabled},
+          merge: true,
+          sourceTag: 'fcm_token.topic_alerts',
+        ),
+      );
+    } catch (e, st) {
+      logger.w('FcmTokenService: failed to save topic alerts.', error: e, stackTrace: st);
+    }
+  }
+
   /// Stores the Recommendations switch where the win-back and campaign pushes read it.
   Future<void> saveMarketingPushes({required String userId, required bool enabled, FirestoreClient? client}) async {
     if (userId.trim().isEmpty) return;
@@ -327,7 +345,9 @@ class FcmTokenService {
             settings.get<bool>(NotificationPrefKeys.followers, defaultValue: true);
     final bool folderAlerts =
         settings?.isOpen != true || settings!.get<bool>(NotificationPrefKeys.folders, defaultValue: true);
-    final String marker = '$userId|$token|digest_v2|posts:$postAlerts|folders:$folderAlerts';
+    final bool topicAlerts =
+        settings?.isOpen != true || settings!.get<bool>(NotificationPrefKeys.topics, defaultValue: true);
+    final String marker = '$userId|$token|digest_v2|posts:$postAlerts|folders:$folderAlerts|topics:$topicAlerts';
     final bool track = settings != null && settings.isOpen;
     if (track && settings.get<String>(_syncedTokenKey, defaultValue: '') == marker) return;
     await (client ?? firestoreClient).setDoc(
@@ -346,6 +366,9 @@ class FcmTokenService {
         // The folder digest goes only to a device whose token carries the switch, like the follow digest.
         'folderAlerts': folderAlerts,
         'folderAlertsToken': token,
+        // The topic digest goes only to a device whose token carries the switch.
+        'topicAlerts': topicAlerts,
+        'topicAlertsToken': token,
       },
       merge: true,
       sourceTag: 'fcm_token.sync',

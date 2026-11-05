@@ -11142,6 +11142,147 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get topicFollow => 'फ़ॉलो करें';
+
+  @override
+  String get topicFollowing => 'फ़ॉलो कर रहे हैं';
+
+  @override
+  String topicFollowHint(String topic) {
+    return '$topic को फ़ॉलो करें';
+  }
+
+  @override
+  String topicUnfollowHint(String topic) {
+    return '$topic को अनफ़ॉलो करें';
+  }
+
+  @override
+  String topicFollowedToast(String topic) {
+    return 'अब आप $topic को फ़ॉलो कर रहे हैं। जब यहाँ नए वॉलपेपर आएँगे, तो हर दिन आपको एक सूचना मिलेगी।';
+  }
+
+  @override
+  String topicFollowLimit(int max) {
+    return 'आप अधिकतम $max विषयों को फ़ॉलो कर सकते हैं। पहले सेटिंग्स में से कोई एक अनफ़ॉलो करें।';
+  }
+
+  @override
+  String get topicFollowFailed => 'फ़ॉलो बदला नहीं जा सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String get topicUnfollow => 'अनफ़ॉलो करें';
+
+  @override
+  String get topicKindCategory => 'श्रेणी';
+
+  @override
+  String get topicKindMood => 'मूड';
+
+  @override
+  String get followingRowTitle => 'फ़ॉलो किए गए';
+
+  @override
+  String get followingRowLabel => 'वे श्रेणियाँ और मूड जिन्हें आप फ़ॉलो करते हैं';
+
+  @override
+  String topicNewWallpapers(String topic) {
+    return '$topic, नए वॉलपेपर';
+  }
+
+  @override
+  String get followedTopicsTitle => 'आप जिन विषयों को फ़ॉलो करते हैं';
+
+  @override
+  String followedTopicsCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString विषय',
+      one: '1 विषय',
+      zero: 'अभी कोई नहीं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get followedTopicsEmptyTitle => 'अभी कोई विषय नहीं';
+
+  @override
+  String get followedTopicsEmptyBody =>
+      'कोई श्रेणी या मूड खोलें और फ़ॉलो करें दबाएँ। जब वहाँ नए वॉलपेपर आएँगे, तो हर दिन आपको एक सूचना मिलेगी।';
+
+  @override
+  String get notifSettingTopics => 'आप जिन विषयों को फ़ॉलो करते हैं';
+
+  @override
+  String get notifSettingTopicsDescription =>
+      'आप जिन श्रेणियों और मूड को फ़ॉलो करते हैं, उनमें नए वॉलपेपर, दिन में एक बार';
+
+  @override
+  String get layoutHomeHeader => 'होम';
+
+  @override
+  String get layoutFollowingRow => 'फ़ॉलो किए गए विषय दिखाएँ';
+
+  @override
+  String get layoutFollowingRowFootnote =>
+      'आपके लिए टैब के ऊपर एक पंक्ति। बिंदु उस विषय को दिखाता है जिसमें नए वॉलपेपर हैं।';
+
+  @override
+  String notifPushTopicDigestTitleOne(String topic) {
+    return '$topic में एक नया वॉलपेपर';
+  }
+
+  @override
+  String notifPushTopicDigestTitleSolo(int count, String topic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$topic में $countString नए वॉलपेपर',
+      one: '$topic में एक नया वॉलपेपर',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitlePair(int count, String topic, String secondTopic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$topic और $secondTopic में $countString नए वॉलपेपर',
+      one: '$topic और $secondTopic में एक नया वॉलपेपर',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitleGroup(int count, String topic, int others) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$topic और $others अन्य विषयों में $countString नए वॉलपेपर',
+      one: '$topic और $others अन्य विषयों में एक नया वॉलपेपर',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushTopicDigestBodyUntitled => 'देखने के लिए टैप करें कि क्या नया है।';
+
+  @override
   String get historySetAndDownloaded => 'सेट और डाउनलोड किए गए';
 
   @override
