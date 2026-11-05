@@ -101,7 +101,7 @@ class PersonalizedFeedScreen extends StatefulWidget {
 }
 
 class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
-    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
+    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   static const int _carouselPreviewCount = PrismFeedLayout.carouselPreviewCount;
 
   late final PersonalizedFeedBloc _bloc;
@@ -110,7 +110,10 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   RecentlyViewedStore? _viewedHistory;
   SyncedHistoryStore? _syncedHistory;
   late final TrendingBloc _trending;
-  late final TabController _tabs;
+  // Built in didChangeDependencies, so a tab tap (TabBar animates with the controller's own duration) follows reduce
+  // motion. Rebuilt when that setting changes.
+  TabController? _tabsOrNull;
+  TabController get _tabs => _tabsOrNull!;
   final ScrollController _scrollController = ScrollController();
   LatestFeedBloc? _latest;
   FollowingFeedBloc? _following;
@@ -136,12 +139,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     _trending = getIt<TrendingBloc>()..add(const TrendingEvent.started());
     _moods = getIt<MoodsCubit>();
     unawaited(_loadHomeMoods());
-    _tabs = TabController(
-      length: HomeFeedChip.values.length,
-      vsync: this,
-      initialIndex: _bloc.state.chip.index,
-      animationDuration: PrismDurations.fast,
-    );
     personalizedFeedSettingsRevision.addListener(_onFeedSettingsChanged);
     if (getIt.isRegistered<RecentlyViewedStore>()) {
       _viewedHistory = getIt<RecentlyViewedStore>()..addListener(_onHistoryChanged);
@@ -150,6 +147,22 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       _syncedHistory = getIt<SyncedHistoryStore>()..addListener(_onHistoryChanged);
     }
     _bloc.add(const PersonalizedFeedEvent.started());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final Duration duration = context.motion(PrismDurations.fast);
+    final TabController? old = _tabsOrNull;
+    if (old != null && old.animationDuration == duration) return;
+    _tabsOrNull = TabController(
+      length: HomeFeedChip.values.length,
+      vsync: this,
+      initialIndex: old?.index ?? _bloc.state.chip.index,
+      animationDuration: duration,
+    );
+    // The TabBar still listens to the old controller until this frame rebuilds it.
+    if (old != null) WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
   }
 
   void _onHistoryChanged() {
