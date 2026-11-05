@@ -903,8 +903,36 @@ void main() {
 
     final Finder label = find.text('Open on computer');
     expect(label, findsOneWidget);
-    expect(tester.renderObject<RenderParagraph>(label).didExceedMaxLines, isFalse);
+    final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(label);
+    expect(paragraph.didExceedMaxLines, isFalse);
     expect(tester.takeException(), isNull);
+
+    const String text = 'Open on computer';
+    final TextPainter painter = TextPainter(
+      text: paragraph.text,
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+      textScaler: paragraph.textScaler,
+    )..layout(maxWidth: paragraph.constraints.maxWidth);
+    final List<String> lines = <String>[];
+    int offset = 0;
+    while (offset < text.length) {
+      final TextRange line = painter.getLineBoundary(TextPosition(offset: offset));
+      lines.add(text.substring(line.start, line.end).trim());
+      offset = line.end <= offset ? offset + 1 : line.end;
+      while (offset < text.length && text[offset] == ' ') {
+        offset++;
+      }
+    }
+    painter.dispose();
+    expect(lines.length, greaterThan(1), reason: 'the label wraps at 3x in a 320 px sheet');
+    for (final String line in lines) {
+      expect(
+        line.split(' ').every(<String>['Open', 'on', 'computer'].contains),
+        isTrue,
+        reason: 'line "$line" cut a word',
+      );
+    }
   });
 
   testWidgets('without a computer link the Open on computer target is absent and Copy link stays', (tester) async {

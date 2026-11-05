@@ -647,10 +647,16 @@ class _ShareTarget extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: PrismSpace.xs),
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: PrismTextStyles.caption(context).copyWith(color: cs.onSurface),
+                LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    final TextStyle style = PrismTextStyles.caption(context).copyWith(color: cs.onSurface);
+                    return Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: style,
+                      textScaler: _wordsFit(context, style, constraints.maxWidth),
+                    );
+                  },
                 ),
               ],
             ),
@@ -658,5 +664,36 @@ class _ShareTarget extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// The text scale, lowered only as far as needed so that no word of the label breaks across lines.
+  TextScaler _wordsFit(BuildContext context, TextStyle ownStyle, double maxWidth) {
+    final TextStyle style = DefaultTextStyle.of(context).style.merge(ownStyle);
+    final TextDirection direction = Directionality.of(context);
+    TextScaler scaler = MediaQuery.textScalerOf(context);
+    if (!maxWidth.isFinite) return scaler;
+    final double fontSize = style.fontSize ?? 14;
+    // Letter spacing does not scale with the text, so measure again after each step.
+    for (int step = 0; step < 4; step++) {
+      final double widest = _widestWord(style, scaler, direction);
+      if (widest <= maxWidth) break;
+      scaler = TextScaler.linear(scaler.scale(fontSize) / fontSize * maxWidth / widest * 0.98);
+    }
+    return scaler;
+  }
+
+  double _widestWord(TextStyle style, TextScaler scaler, TextDirection direction) {
+    double widest = 0;
+    for (final String word in label.split(RegExp(r'\s+'))) {
+      final TextPainter painter = TextPainter(
+        text: TextSpan(text: word, style: style),
+        textDirection: direction,
+        textScaler: scaler,
+        maxLines: 1,
+      )..layout();
+      if (painter.width > widest) widest = painter.width;
+      painter.dispose();
+    }
+    return widest;
   }
 }
