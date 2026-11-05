@@ -211,7 +211,10 @@ Callable rules:
 | 20 labelled searches today (UTC) | `resource-exhausted`. The app shows the capped note and matches by colour. |
 | The same `requestId` again on the same day | The same labels. No new count and no new Vision call. |
 | The same `requestId` while the first call runs (90 seconds or less) | `aborted` |
-| Cloud Vision fails | `unavailable`. The count goes back down. The app shows the unavailable note. |
+| Cloud Vision fails | `unavailable`. The search still counts. The app shows the unavailable note. |
+| The same `requestId` after it stopped while it ran (over 90 seconds) | A new Vision call that counts again. |
+
+Every Vision call counts, so a user gets 20 Vision calls a day at most.
 
 The callable keeps one doc for each user, `photoSearchRate/{uid}`: `day`, `count`, `results` (the labels and category for each `requestId` of the day) and `expireAt`. The doc has no image data. `expireAt` is two days after the last photo search. A TTL policy on `photoSearchRate.expireAt` (`firestore.indexes.json`) deletes the doc. `deleteAccount` deletes it too. Firestore rules refuse all client reads and writes (the default deny).
 

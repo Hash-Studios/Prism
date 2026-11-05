@@ -48,7 +48,8 @@ function isLabels(slot: Slot | undefined): slot is PhotoLabels {
 /**
  * Labels for a photo the user picked in Search. The image is sent to Cloud Vision in the request body and is never
  * written anywhere. The day's doc keeps only a count and each request's labels, so a retried requestId returns the
- * same labels without a second Vision call or a second count.
+ * same labels without a second Vision call or a second count. Every Vision call counts, including a failed one and a
+ * retry of a request that stopped while it was running, so a user never gets more than 20 Vision calls a day.
  */
 export const photoSearchLabels = onCall({region: CALLABLE_REGIONS, timeoutSeconds: 60}, async (request) => {
   const uid = request.auth?.uid;
@@ -71,17 +72,16 @@ export const photoSearchLabels = onCall({region: CALLABLE_REGIONS, timeoutSecond
     if (slot && now - slot.at < STALE_PENDING_MS) {
       throw new HttpsError("aborted", "This photo search is still running.");
     }
-    const count = slot ? used : used + 1;
-    if (!slot && used >= MAX_PHOTO_SEARCHES_PER_DAY) {
+    if (used >= MAX_PHOTO_SEARCHES_PER_DAY) {
       throw new HttpsError("resource-exhausted", "Daily photo search limit reached.");
     }
     tx.set(ref, {
       day,
-      count,
+      count: used + 1,
       results: {...slots, [requestId]: {pending: true, at: now}},
       expireAt: admin.firestore.Timestamp.fromMillis(now + 2 * DAY_MS),
     });
-    return {used: count};
+    return {used: used + 1};
   });
   if ("replay" in claim) return {...claim.replay, remaining: Math.max(0, MAX_PHOTO_SEARCHES_PER_DAY - claim.used)};
 
@@ -94,10 +94,9 @@ export const photoSearchLabels = onCall({region: CALLABLE_REGIONS, timeoutSecond
       const slots = slotsOf(snap.data(), day);
       if (!slots[requestId] || isLabels(slots[requestId])) return;
       delete slots[requestId];
-      tx.set(ref, {day, count: Math.max(0, readDailyCount(snap, day) - 1), results: slots,
-        expireAt: snap.data()?.expireAt ?? admin.firestore.Timestamp.fromMillis(now + 2 * DAY_MS)});
+      tx.update(ref, {results: slots});
     });
-    logger.warn("photoSearchLabels: Vision failed; the count was given back.", {uid, err});
+    logger.warn("photoSearchLabels: Vision failed.", {uid, error: err instanceof Error ? err.message : "unknown"});
     throw new HttpsError("unavailable", "Could not read the photo. Try again.");
   }
   const category = mapLabelsToCategory(labels);

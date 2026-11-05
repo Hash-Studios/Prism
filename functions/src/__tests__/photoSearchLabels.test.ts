@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import * as admin from "firebase-admin";
+import {logger} from "firebase-functions/v2";
 import * as wallCategory from "../wallCategory";
 import {MAX_PHOTO_BYTES, MAX_PHOTO_SEARCHES_PER_DAY, PHOTO_SEARCH_RATE, parsePhoto, photoSearchLabels} from "../photoSearchLabels";
 import {installFakeDb} from "./fakeDb";
@@ -108,14 +109,55 @@ test("yesterday's count does not block today", async (t) => {
   assert.equal(store.get(RATE_DOC)?.count, 1);
 });
 
-test("a Vision failure gives the count back", async (t) => {
+test("a Vision failure still counts and frees the request", async (t) => {
   const store = installFakeDb(t);
   t.mock.method(wallCategory, "detectLabelsInImage", async () => {
     throw new Error("boom");
   });
   await assert.rejects(() => call({image, requestId: "req-00000001"}), {code: "unavailable"});
-  assert.equal(store.get(RATE_DOC)?.count, 0);
+  assert.equal(store.get(RATE_DOC)?.count, 1);
   assert.equal("req-00000001" in (store.get(RATE_DOC)?.results as Record<string, unknown>), false);
+});
+
+test("Vision failures cannot be used to get more than 20 Vision calls", async (t) => {
+  installFakeDb(t);
+  const mock = t.mock.method(wallCategory, "detectLabelsInImage", async () => {
+    throw new Error("boom");
+  });
+  for (let i = 1; i <= MAX_PHOTO_SEARCHES_PER_DAY; i++) {
+    await assert.rejects(() => call({image, requestId: `req-fail-${String(i).padStart(4, "0")}`}), {code: "unavailable"});
+  }
+  await assert.rejects(() => call({image, requestId: "req-fail-0021"}), {code: "resource-exhausted"});
+  assert.equal(mock.mock.callCount(), MAX_PHOTO_SEARCHES_PER_DAY);
+});
+
+test("a stale running request counts again when it is retried", async (t) => {
+  const store = installFakeDb(t, {[RATE_DOC]: {day: today(), count: 1,
+    results: {"req-00000001": {pending: true, at: Date.now() - 120_000}}}});
+  const mock = t.mock.method(wallCategory, "detectLabelsInImage", async () => ["Sky"]);
+  const result = await call({image, requestId: "req-00000001"});
+  assert.deepEqual(result, {labels: ["Sky"], category: "Nature", remaining: 18});
+  assert.equal(store.get(RATE_DOC)?.count, 2);
+  assert.equal(mock.mock.callCount(), 1);
+});
+
+test("a stale running request is refused at the cap", async (t) => {
+  installFakeDb(t, {[RATE_DOC]: {day: today(), count: MAX_PHOTO_SEARCHES_PER_DAY,
+    results: {"req-00000001": {pending: true, at: Date.now() - 120_000}}}});
+  const mock = t.mock.method(wallCategory, "detectLabelsInImage", async () => ["Sky"]);
+  await assert.rejects(() => call({image, requestId: "req-00000001"}), {code: "resource-exhausted"});
+  assert.equal(mock.mock.callCount(), 0);
+});
+
+test("a Vision failure logs no image data", async (t) => {
+  installFakeDb(t);
+  t.mock.method(wallCategory, "detectLabelsInImage", async () => {
+    throw Object.assign(new Error("boom"), {request: {image: {content: image}}});
+  });
+  const warn = t.mock.method(logger, "warn", () => undefined);
+  await assert.rejects(() => call({image, requestId: "req-00000001"}), {code: "unavailable"});
+  assert.equal(warn.mock.callCount(), 1);
+  assert.equal(JSON.stringify(warn.mock.calls[0].arguments).includes(image), false);
 });
 
 test("a request still running is refused", async (t) => {
