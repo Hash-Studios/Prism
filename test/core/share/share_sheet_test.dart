@@ -871,7 +871,15 @@ void main() {
     await _settle(tester);
 
     expect(
-      tester.widget<SelectableText>(find.byKey(const ValueKey<String>('open-on-computer-link'))).data,
+      tester
+          .widgetList<Text>(
+            find.descendant(
+              of: find.byKey(const ValueKey<String>('open-on-computer-link')),
+              matching: find.byType(Text),
+            ),
+          )
+          .map((Text text) => text.data)
+          .join(),
       'prismwalls.com/l/Ab3dEf7h?d=1',
     );
   });

@@ -39,7 +39,6 @@ class _CatalogueFirestore extends FakeFirestoreClient {
       (items: items, isFromCache: cacheOnly),
     ]);
   }
-
 }
 
 const String _link = 'https://prismwalls.com/l/Ab3dEf7h?d=1';
@@ -196,6 +195,12 @@ void main() {
 
     test('the display string has no scheme and keeps the query', () {
       expect(openOnComputerDisplay(Uri.parse(_link)), _display);
+      expect(openOnComputerDisplayParts(Uri.parse(_link)), <String>['prismwalls.com', '/l/Ab3dEf7h', '?d=1']);
+      expect(openOnComputerDisplayParts(Uri.parse('https://prismwalls.com/wallpaper/WBN0?view=desktop')), <String>[
+        'prismwalls.com',
+        '/wallpaper/WBN0',
+        '?view=desktop',
+      ]);
     });
   });
 
@@ -211,7 +216,8 @@ void main() {
       await tester.pump();
 
       expect(find.text('Open on computer'), findsOneWidget);
-      expect(tester.widget<SelectableText>(find.byKey(const ValueKey<String>('open-on-computer-link'))).data, _display);
+      expect(_shownLinkParts(tester), <String>['prismwalls.com', '/l/Ab3dEf7h', '?d=1']);
+      expect(find.bySemanticsLabel(_display), findsOneWidget);
       expect(find.bySemanticsLabel('QR code for $_display'), findsOneWidget);
       final List<OpenOnComputerShownEvent> shown = analytics.events.whereType<OpenOnComputerShownEvent>().toList();
       expect(shown, hasLength(1));
@@ -276,10 +282,22 @@ void main() {
         await tester.pump();
 
         expect(tester.takeException(), isNull);
-        expect(
-          tester.widget<SelectableText>(find.byKey(const ValueKey<String>('open-on-computer-link'))).data,
-          _display,
+        expect(_shownLinkParts(tester), <String>['prismwalls.com', '/l/Ab3dEf7h', '?d=1']);
+        for (final Text part in _shownLinkTexts(tester)) {
+          expect(part.softWrap, isFalse, reason: 'a link part never breaks inside itself');
+        }
+        final RenderBox sheet = tester.renderObject<RenderBox>(
+          find.byKey(const ValueKey<String>('open-on-computer-link')),
         );
+        for (final Element part
+            in find
+                .descendant(
+                  of: find.byKey(const ValueKey<String>('open-on-computer-link')),
+                  matching: find.byType(FittedBox),
+                )
+                .evaluate()) {
+          expect((part.renderObject! as RenderBox).size.width, lessThanOrEqualTo(sheet.size.width));
+        }
 
         final Finder copy = find.byKey(const ValueKey<String>('open-on-computer-copy'));
         await tester.ensureVisible(copy);
@@ -376,9 +394,11 @@ void main() {
       final int quietPixels = (quietZone * cell * pixelRatio - 0.5).ceil();
       const double cornerRadius = 32;
       for (int offset = 0; offset < quietPixels; offset++) {
-        for (int position = (cornerRadius * pixelRatio).round();
-            position < (side - cornerRadius) * pixelRatio;
-            position++) {
+        for (
+          int position = (cornerRadius * pixelRatio).round();
+          position < (side - cornerRadius) * pixelRatio;
+          position++
+        ) {
           final double edge = (offset + 0.5) / pixelRatio;
           final double along = (position + 0.5) / pixelRatio;
           expect(pixelAt(edge, along), everyElement(greaterThan(215)));
@@ -390,3 +410,11 @@ void main() {
     });
   });
 }
+
+List<Text> _shownLinkTexts(WidgetTester tester) => tester
+    .widgetList<Text>(
+      find.descendant(of: find.byKey(const ValueKey<String>('open-on-computer-link')), matching: find.byType(Text)),
+    )
+    .toList();
+
+List<String?> _shownLinkParts(WidgetTester tester) => _shownLinkTexts(tester).map((Text text) => text.data).toList();

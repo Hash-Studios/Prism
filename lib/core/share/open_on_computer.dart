@@ -31,7 +31,14 @@ Uri? openOnComputerLink({required String wallId, required String shareLink}) {
 }
 
 /// The link as people type it: no scheme.
-String openOnComputerDisplay(Uri link) => '${link.host}${link.path}${link.hasQuery ? '?${link.query}' : ''}';
+String openOnComputerDisplay(Uri link) => openOnComputerDisplayParts(link).join();
+
+/// The link split where a line may break, so no line ever cuts the host or the short code.
+List<String> openOnComputerDisplayParts(Uri link) => <String>[
+  link.host,
+  link.path,
+  if (link.hasQuery) '?${link.query}',
+];
 
 /// True when the public web catalogue shows this wall with its image
 /// (`webWalls/<id>.state` is `live` and it has a thumb).
@@ -125,15 +132,28 @@ class _OpenOnComputerSheetState extends State<OpenOnComputerSheet> {
             child: QrTile(key: const ValueKey<String>('open-on-computer-qr'), data: widget.link.toString()),
           ),
           const SizedBox(height: PrismSpace.lg),
-          SelectableText(
-            display,
-            key: const ValueKey<String>('open-on-computer-link'),
-            textAlign: TextAlign.center,
-            style: PrismTextStyles.sheetHeadline(context).copyWith(
-              fontSize: 24,
-              height: 1.3,
-              letterSpacing: 0.4,
-              fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+          Semantics(
+            label: display,
+            excludeSemantics: true,
+            child: Wrap(
+              key: const ValueKey<String>('open-on-computer-link'),
+              alignment: WrapAlignment.center,
+              children: <Widget>[
+                for (final String part in openOnComputerDisplayParts(widget.link))
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      part,
+                      softWrap: false,
+                      style: PrismTextStyles.sheetHeadline(context).copyWith(
+                        fontSize: 24,
+                        height: 1.3,
+                        letterSpacing: 0.4,
+                        fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(height: PrismSpace.xl),
@@ -192,10 +212,7 @@ class _QrPainter extends CustomPainter {
     for (int row = 0; row < image.moduleCount; row++) {
       for (int col = 0; col < image.moduleCount; col++) {
         if (!image.isDark(row, col)) continue;
-        canvas.drawRect(
-          Rect.fromLTWH((col + quietZone) * cell, (row + quietZone) * cell, cell, cell),
-          paint,
-        );
+        canvas.drawRect(Rect.fromLTWH((col + quietZone) * cell, (row + quietZone) * cell, cell, cell), paint);
       }
     }
   }

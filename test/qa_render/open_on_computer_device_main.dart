@@ -7,6 +7,7 @@ import 'package:Prism/core/share/share_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 
 import '../support/fake_app_analytics.dart';
@@ -17,6 +18,8 @@ const String _shortLink = 'https://prismwalls.com/l/cPefbCBh';
 
 class _QaAnalytics extends FakeAppAnalytics {}
 
+final GlobalKey<NavigatorState> _navigator = GlobalKey<NavigatorState>();
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   AnalyticsRuntime.instance = _QaAnalytics();
@@ -24,6 +27,7 @@ void main() {
     ..id = 'qa-user'
     ..name = 'Mira'
     ..loggedIn = true;
+  toasts.overlayResolver = () => _navigator.currentState?.overlay;
   runApp(const _QaApp());
 }
 
@@ -41,6 +45,7 @@ class _QaAppState extends State<_QaApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigator,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       debugShowCheckedModeBanner: false,
