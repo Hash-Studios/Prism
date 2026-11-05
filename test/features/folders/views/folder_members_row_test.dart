@@ -126,4 +126,19 @@ void main() {
     expect(find.text('Invite'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('at 2x text the People sheet puts Remove under the editor name, not beside it', (tester) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(_host(_folder(), 'owner', textScale: 2));
+    await _settle(tester);
+
+    await tester.tap(find.text('2 people'));
+    await _settle(tester);
+
+    expect(tester.getTopLeft(find.text('Remove')).dy, greaterThan(tester.getBottomLeft(find.text('Prism user')).dy));
+    expect(tester.takeException(), isNull);
+  });
 }

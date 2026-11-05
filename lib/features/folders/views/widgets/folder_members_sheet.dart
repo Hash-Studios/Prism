@@ -152,6 +152,7 @@ Future<bool> showFolderMembersSheet(BuildContext context, FolderEntity folder) a
                       Navigator.of(sheetContext).pop();
                       unawaited(router.push(ProfileRoute(profileIdentifier: member.uid)));
                     },
+                    trailingBelow: MediaQuery.textScalerOf(context).scale(1) > 1.3,
                     trailing: canRemove
                         ? PrismButton(
                             maxLines: null,
