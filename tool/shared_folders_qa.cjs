@@ -73,8 +73,25 @@ const session = (uid) => (uid === BLOCKED ? {postAlerts: false} :
   {postAlerts: false, folderAlerts: true, folderAlertsToken: tokenFor(uid), fcmToken: tokenFor(uid),
     fcmTokenBindingVersion: 1, fcmTokenBindingToken: tokenFor(uid)});
 
-function write(name, value) { fs.writeFileSync(path.join(runtime, name), typeof value === 'string' ? value : JSON.stringify(value, null, 2) + '\n'); }
-function read(name) { return JSON.parse(fs.readFileSync(path.join(runtime, name))); }
+function checkedPath(file, root) {
+  const relative = path.relative(root, file);
+  assert.ok(relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative), 'Refusing outside path');
+  for (let current = file; current !== root; current = path.dirname(current)) {
+    try {
+      assert.ok(!fs.lstatSync(current).isSymbolicLink(), `Refusing symlink path: ${current}`);
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+  }
+  return file;
+}
+function runtimeFile(name) {
+  assert.ok(!fs.lstatSync(runtime).isSymbolicLink(), 'Refusing symlink runtime');
+  assert.equal(fs.realpathSync(runtime), path.join(fs.realpathSync('/tmp'), path.basename(runtime)), 'Wrong runtime path');
+  return checkedPath(path.resolve(runtime, name), runtime);
+}
+function write(name, value) { fs.writeFileSync(runtimeFile(name), typeof value === 'string' ? value : JSON.stringify(value, null, 2) + '\n'); }
+function read(name) { return JSON.parse(fs.readFileSync(runtimeFile(name))); }
 function sha256(file) { return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex'); }
 function run(binary, argv, options = {}) {
   const result = cp.spawnSync(binary, argv, {stdio: 'inherit', ...options});
@@ -129,7 +146,7 @@ async function preflight() {
 
 async function prepare() {
   await preflight();
-  fs.mkdirSync(runtime, {recursive: false}); // refuse stale or peer-owned directories
+  fs.mkdirSync(runtime, {recursive: false, mode: 0o700}); // refuse stale or peer-owned directories
   fs.mkdirSync(path.join(runtime, 'fixtures'));
   const covers = coverNames();
   for (const name of covers) {
@@ -189,7 +206,7 @@ Path(sys.argv[2]).write_bytes(plistlib.dumps(p))`, path.join(repo, 'ios/Runner/I
 async function emulators() {
   guardEnvironment();
   assert.equal(read('manifest.json').project, PROJECT);
-  const config = path.join(runtime, 'cli-config');
+  const config = runtimeFile('cli-config');
   fs.mkdirSync(config, {recursive: true});
   const child = cp.spawn('firebase', ['emulators:start', '--project', PROJECT, '--config', 'firebase.json', '--only', 'auth,firestore,functions'], {
     cwd: runtime,
@@ -223,7 +240,8 @@ function withBuildInputs(pairs, build) {
   const errors = [];
   try {
     for (const {source, destination, check} of pairs) {
-      const target = path.join(repo, destination);
+      const target = checkedPath(path.resolve(repo, destination), repo);
+      if (source.startsWith(`${runtime}${path.sep}`)) runtimeFile(path.relative(runtime, source));
       const original = fs.existsSync(target) ? fs.readFileSync(target) : null;
       if (original && check) check(original);
       const replacement = fs.readFileSync(source);
@@ -238,6 +256,7 @@ function withBuildInputs(pairs, build) {
   const buildFailed = errors.length > 0;
   for (const {target, original, replacement} of originals.reverse()) {
     try {
+      checkedPath(target, repo);
       if (!fs.readFileSync(target).equals(replacement)) throw Error('Build input changed concurrently; refusing overwrite: ' + target);
       if (original) fs.writeFileSync(target, original);
       else fs.unlinkSync(target);

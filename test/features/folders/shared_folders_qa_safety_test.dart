@@ -8,6 +8,9 @@ void main() {
     'native-android',
     'admin',
     'worker',
+    'path-root',
+    'path-write',
+    'path-build',
     'environment',
   ]) {
     test('shared folders QA isolates $scenario', () async {
@@ -79,6 +82,7 @@ function sandbox({env = {}, apps = [], links = []} = {}) {
     if (name === 'node:child_process') return {spawnSync: () => ({status: 0})};
     if (name === './weekly_challenge_qa/backend.cjs' || name === '../backend.cjs') return guard;
     if (name === 'firebase-admin' || name.endsWith('/node_modules/firebase-admin')) return admin;
+    if (name === path.join(root, 'functions/lib/sharedFolders.js')) return {sendDueFolderActivity: async () => 0};
     if (name.startsWith('./lib/')) return {};
     if (name.startsWith('node:')) return require(name);
     throw Error('Unexpected require: ' + name);
@@ -157,13 +161,25 @@ async function main() {
     assert.equal(s.fakeProcess.env.FIRESTORE_EMULATOR_HOST, '127.0.0.1:19372');
     assert.equal(s.fakeProcess.env.FIREBASE_AUTH_EMULATOR_HOST, '127.0.0.1:19371');
   }
-  if (scenario === 'paths') {
+  if (scenario === 'path-root') {
     const rootLink = sandbox({links: [root]});
     rootLink.files.set(path.join(root, 'manifest.json'), JSON.stringify({project: 'demo-prism', runtime: '/outside-runtime'}));
     assert.throws(() => rootLink.run('loadBackend()'), /symlink|runtime|Runtime/);
+  }
+  if (scenario === 'path-write') {
     const targetLink = sandbox({links: [path.join(root, 'state.json')]});
     assert.throws(() => targetLink.run('write("state.json", {test: true})'), /symlink|runtime|Runtime/);
     assert.equal(targetLink.writes.length, 0);
+  }
+  if (scenario === 'path-build') {
+    const destination = 'android/app/src/debug/AndroidManifest.xml';
+    const s = sandbox({links: [path.join(repo, destination)]});
+    s.files.set(path.join(repo, destination), 'external file contents');
+    s.files.set(path.join(root, 'replacement.xml'), 'synthetic manifest');
+    s.context.pairs = [{source: path.join(root, 'replacement.xml'), destination}];
+    assert.throws(() => s.run('withBuildInputs(pairs, () => { globalThis.buildRan = true; })'), /symlink|outside|path/);
+    assert.equal(s.writes.length, 0);
+    assert.notEqual(s.context.buildRan, true);
   }
   if (scenario === 'redirects') {
     const s = sandbox();
@@ -177,6 +193,48 @@ async function main() {
     await s.run('callable("qa-creator-a", "createFolderInvite", {folderId: "qa-trip"})');
     assert.equal(requests.length, 2);
     assert.match(requests[1].url, /^http:\/\/127\.0\.0\.1:19373\/demo-prism\//);
+  }
+  if (scenario === 'evidence') {
+    const s = sandbox();
+    let joined = false;
+    let invitations = 0;
+    const calls = [];
+    s.files.set(path.join(root, 'state.json'), JSON.stringify({proof: 'ADMIN SEEDED'}));
+    s.context.db = {doc: p => ({get: async () => ({data: () => p.startsWith('folderInvites/')
+      ? {usedBy: null} : {ownerId: 'qa-creator-a', name: 'Trip', itemCount: 2,
+        memberIds: joined ? ['qa-viewer'] : [], members: {'qa-viewer': {addedBy: 'qa-creator-a'}}}})})};
+    s.context.localCallable = async (uid, name, data) => {
+      calls.push({uid, name, data});
+      if (name === 'createFolderInvite') return {status: 200,
+        body: {result: {code: ++invitations === 1 ? '23456789AB' : '23456789AC'}}};
+      if (name === 'getFolderInvite') return {status: 200, body: {result: data.code === 'UsedXyzABC'
+        ? {status: 'used'} : {status: 'join', name: 'Trip', itemCount: 2}}};
+      if (uid === 'qa-blocked') return {status: 400, body: {error: {message: 'blocked'}}};
+      joined = true;
+      return {status: 200, body: {result: {folderId: 'qa-trip', joined: true}}};
+    };
+    s.run('loadBackend = () => ({db}); callable = (...args) => localCallable(...args)');
+    await s.run('evidence()');
+    const used = calls.findIndex(call => call.name === 'getFolderInvite' && call.data.code === 'UsedXyzABC');
+    const join = calls.findIndex(call => call.uid === 'qa-viewer' && call.name === 'joinFolder');
+    assert.ok(used >= 0 && used < join, 'Prove used status before the viewer becomes a member');
+    assert.equal(JSON.parse(s.files.get(path.join(root, 'evidence.json'))).passed, true);
+  }
+  if (scenario === 'push') {
+    for (const hasExpectedInbox of [false, true]) {
+      const s = sandbox();
+      const docs = hasExpectedInbox ? [{id: 'folder_activity_qa-creator-a_qa-trip_1', data: () => ({
+        notification: {title: 'Riya QA added a wall to Trip'},
+        data: {route: 'folder', folder_id: 'qa-trip', notification_kind: 'folder_activity'},
+      })}] : [];
+      s.context.db = {
+        doc: () => ({get: async () => ({exists: true, data: () => ({memberIds: ['qa-viewer']})})}),
+        collection: () => ({where: () => ({get: async () => ({size: docs.length, docs})})}),
+      };
+      s.run(`loadBackend = () => ({admin: {}, db, base: '${root}/functions'})`);
+      if (hasExpectedInbox) await s.run('push()');
+      else await assert.rejects(s.run('push()'), /inbox|notification/i);
+    }
   }
   if (scenario === 'environment') {
     for (const env of [

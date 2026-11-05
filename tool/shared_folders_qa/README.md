@@ -113,6 +113,6 @@ Deep link forms:
 - Project `demo-prism` only. Emulator hosts are `127.0.0.1` only.
 - Refuses real or mixed native Firebase config. Android must match the generated synthetic fields. iOS must match the generated synthetic plist exactly, including whitespace. Use a fresh `prepare` runtime to regenerate these inputs.
 - The 7-day certificate is disposable. The app pins it only for `localhost:19375`.
-- The runtime root must be under `/tmp` and start with `prism-shared-folders-qa`.
+- The runtime root must be a real directory directly under `/tmp`, named `prism-shared-folders-qa*`. Runtime JSON paths and native build destinations refuse symlinks.
 - `build-apk` and `build-ios` swap in synthetic native inputs and restore the originals afterwards.
 - The Android debug manifest and the CLI network guard come from `tool/weekly_challenge_qa/`. The `backend.cjs` helper provides the project guard.
