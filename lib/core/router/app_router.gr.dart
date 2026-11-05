@@ -1277,6 +1277,57 @@ class FirestoreTelemetryRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [FolderInviteScreen]
+class FolderInviteRoute extends PageRouteInfo<FolderInviteRouteArgs> {
+  FolderInviteRoute({
+    Key? key,
+    required String code,
+    List<PageRouteInfo>? children,
+  }) : super(
+         FolderInviteRoute.name,
+         args: FolderInviteRouteArgs(key: key, code: code),
+         rawPathParams: {'code': code},
+         initialChildren: children,
+       );
+
+  static const String name = 'FolderInviteRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final pathParams = data.inheritedPathParams;
+      final args = data.argsAs<FolderInviteRouteArgs>(
+        orElse: () => FolderInviteRouteArgs(code: pathParams.getString('code')),
+      );
+      return FolderInviteScreen(key: args.key, code: args.code);
+    },
+  );
+}
+
+class FolderInviteRouteArgs {
+  const FolderInviteRouteArgs({this.key, required this.code});
+
+  final Key? key;
+
+  final String code;
+
+  @override
+  String toString() {
+    return 'FolderInviteRouteArgs{key: $key, code: $code}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! FolderInviteRouteArgs) return false;
+    return key == other.key && code == other.code;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ code.hashCode;
+}
+
+/// generated route for
 /// [FolderScreen]
 class FolderRoute extends PageRouteInfo<FolderRouteArgs> {
   FolderRoute({

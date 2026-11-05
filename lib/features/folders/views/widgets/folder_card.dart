@@ -13,6 +13,7 @@ class FolderCard extends StatelessWidget {
     required this.coverSize,
     required this.onTap,
     this.markPublic = false,
+    this.markShared = false,
   });
 
   final String name;
@@ -24,11 +25,15 @@ class FolderCard extends StatelessWidget {
   /// Shows the owner that others can see this folder.
   final bool markPublic;
 
+  /// Shows the owner that others can edit this folder. Shared with the user shows it too.
+  final bool markShared;
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
     final String count = l10n.foldersItemCount(itemCount);
     final TextStyle caption = PrismTextStyles.caption(context);
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return PressScale(
       child: Semantics(
         button: true,
@@ -49,6 +54,13 @@ class FolderCard extends StatelessWidget {
                 children: <Widget>[
                   if (markPublic) ...<Widget>[
                     Icon(Icons.public_rounded, size: 13, color: caption.color),
+                    const SizedBox(width: PrismSpace.xxs),
+                  ],
+                  if (markShared) ...<Widget>[
+                    Semantics(
+                      label: l10n.foldersSharedLabel,
+                      child: Icon(Icons.group_rounded, size: 14, color: cs.onSurfaceVariant),
+                    ),
                     const SizedBox(width: PrismSpace.xxs),
                   ],
                   Flexible(

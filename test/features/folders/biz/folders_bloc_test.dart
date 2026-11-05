@@ -85,7 +85,7 @@ class _FakeFoldersRepository implements FoldersRepository {
   }
 
   @override
-  Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall) async {
+  Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId}) async {
     calls.add('addItem:${folder.id}:${folder.itemCount}:${folder.covers.join(',')}');
     if (addGate case final gate?) {
       final Result<void> result = await gate.future;
@@ -103,7 +103,7 @@ class _FakeFoldersRepository implements FoldersRepository {
   }
 
   @override
-  Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall) async {
+  Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId}) async {
     calls.add('removeItem:${folder.id}:${folder.itemCount}:${folder.covers.join(',')}');
     if (fail) return Result.error<void>(const ServerFailure('boom'));
     _replaceFolder(folder);

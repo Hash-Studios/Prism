@@ -14321,5 +14321,276 @@
         "type": "String"
       }
     }
+  },
+  "foldersInvite": "Invite",
+  "@foldersInvite": {
+    "description": "Button that makes an invite link for a shared folder."
+  },
+  "foldersInviteShareText": "Add wallpapers with me in {name} on Prism: {link}",
+  "@foldersInviteShareText": {
+    "description": "Text shared with a folder invite link.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersInvitePreviewTitle": "Join {name} on Prism",
+  "@foldersInvitePreviewTitle": {
+    "description": "Title of the link preview for a folder invite.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersInvitePreviewDescription": "Add and remove wallpapers in this folder together.",
+  "@foldersInvitePreviewDescription": {
+    "description": "Description of the link preview for a folder invite."
+  },
+  "foldersInviteFailed": "Could not make an invite link. Try again.",
+  "@foldersInviteFailed": {
+    "description": "Error when the invite link cannot be made."
+  },
+  "foldersInviteFull": "This folder is full. Remove someone to invite more people.",
+  "@foldersInviteFull": {
+    "description": "Error when the owner invites into a folder that has the most editors."
+  },
+  "foldersInviteLimit": "You made too many invites today. Try again tomorrow.",
+  "@foldersInviteLimit": {
+    "description": "Error when the owner hits the daily invite limit."
+  },
+  "foldersPeople": "People",
+  "@foldersPeople": {
+    "description": "Title of the sheet that lists the people in a shared folder."
+  },
+  "foldersPeopleHintOwner": "Invite up to {count} people to add and remove wallpapers. Only you can rename, share or delete this folder.",
+  "@foldersPeopleHintOwner": {
+    "description": "Hint for the owner in the people sheet.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersPeopleHintEditor": "You can add and remove wallpapers. Only the owner can rename, share or delete this folder.",
+  "@foldersPeopleHintEditor": {
+    "description": "Hint for an editor in the people sheet."
+  },
+  "foldersPeopleCount": "{count, plural, =1{1 person} other{{count} people}}",
+  "@foldersPeopleCount": {
+    "description": "Number of people in a shared folder, with the owner.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersPeopleButtonLabel": "{count, plural, =1{1 person in this folder. Show people} other{{count} people in this folder. Show people}}",
+  "@foldersPeopleButtonLabel": {
+    "description": "Screen reader label for the member avatars on a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersRoleOwner": "Owner",
+  "@foldersRoleOwner": {
+    "description": "Role of the folder owner."
+  },
+  "foldersRoleEditor": "Can add and remove",
+  "@foldersRoleEditor": {
+    "description": "Role of a person the owner invited."
+  },
+  "foldersPersonYou": "{name} (you)",
+  "@foldersPersonYou": {
+    "description": "A member row for the current user.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersUnknownPerson": "Prism user",
+  "@foldersUnknownPerson": {
+    "description": "Name shown when a member's profile cannot be read."
+  },
+  "foldersRemovePerson": "Remove",
+  "@foldersRemovePerson": {
+    "description": "Button that removes a person from a shared folder."
+  },
+  "foldersRemovePersonTitle": "Remove {name}?",
+  "@foldersRemovePersonTitle": {
+    "description": "Title of the confirm before the owner removes a person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersRemovePersonMessage": "They can no longer add or remove wallpapers here. The wallpapers they added stay.",
+  "@foldersRemovePersonMessage": {
+    "description": "Message of the confirm before the owner removes a person."
+  },
+  "foldersRemovePersonConfirm": "Remove person",
+  "@foldersRemovePersonConfirm": {
+    "description": "Confirm button that removes a person from a shared folder."
+  },
+  "foldersPersonRemoved": "Removed {name}.",
+  "@foldersPersonRemoved": {
+    "description": "Toast after the owner removes a person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersLeave": "Leave folder",
+  "@foldersLeave": {
+    "description": "Button for an editor to leave a shared folder."
+  },
+  "foldersLeaveTitle": "Leave {name}?",
+  "@foldersLeaveTitle": {
+    "description": "Title of the confirm before an editor leaves.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersLeaveMessage": "You can no longer add or remove wallpapers here. The wallpapers you added stay.",
+  "@foldersLeaveMessage": {
+    "description": "Message of the confirm before an editor leaves."
+  },
+  "foldersLeft": "You left the folder.",
+  "@foldersLeft": {
+    "description": "Toast after an editor leaves a folder."
+  },
+  "foldersPeopleFailed": "Could not update the people in this folder. Try again.",
+  "@foldersPeopleFailed": {
+    "description": "Error when a remove or leave fails."
+  },
+  "foldersSharedWithYou": "Shared with you",
+  "@foldersSharedWithYou": {
+    "description": "Library section of folders other people invited the user to."
+  },
+  "foldersSharedLabel": "Shared",
+  "@foldersSharedLabel": {
+    "description": "Screen reader label for the shared icon on a folder card."
+  },
+  "foldersAddedBy": "Added by {name}",
+  "@foldersAddedBy": {
+    "description": "Who added a wallpaper to a shared folder.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersAddedByYou": "Added by you",
+  "@foldersAddedByYou": {
+    "description": "The current user added this wallpaper to a shared folder."
+  },
+  "foldersRemoveFromFolder": "Remove from folder",
+  "@foldersRemoveFromFolder": {
+    "description": "Button that removes a wallpaper from a folder."
+  },
+  "foldersDeleteSharedMessage": "The people you invited lose it too. The wallpapers stay in your favourites.",
+  "@foldersDeleteSharedMessage": {
+    "description": "Message of the delete confirm for a folder with editors."
+  },
+  "foldersJoinTitle": "Folder invite",
+  "@foldersJoinTitle": {
+    "description": "Title of the page that opens a folder invite link."
+  },
+  "foldersJoinHeadline": "Join {name}",
+  "@foldersJoinHeadline": {
+    "description": "Headline on the folder invite page.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersJoinInvitedBy": "{name} invited you to add and remove wallpapers in this folder.",
+  "@foldersJoinInvitedBy": {
+    "description": "Body on the folder invite page.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersJoin": "Join folder",
+  "@foldersJoin": {
+    "description": "Button that joins a shared folder."
+  },
+  "foldersJoinSignIn": "Sign in to join",
+  "@foldersJoinSignIn": {
+    "description": "Button on the invite page for a guest."
+  },
+  "foldersJoinOpen": "Open folder",
+  "@foldersJoinOpen": {
+    "description": "Button on the invite page when the user is already in the folder."
+  },
+  "foldersJoinAlreadyIn": "You are already in this folder.",
+  "@foldersJoinAlreadyIn": {
+    "description": "Note on the invite page when the user is already a member."
+  },
+  "foldersJoined": "You joined {name}.",
+  "@foldersJoined": {
+    "description": "Toast after the user joins a folder.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersJoinFailed": "Could not join this folder. Try again.",
+  "@foldersJoinFailed": {
+    "description": "Error when a join fails for a network or server reason."
+  },
+  "foldersJoinLoadFailed": "Could not load this invite.",
+  "@foldersJoinLoadFailed": {
+    "description": "Error when the invite page cannot load."
+  },
+  "foldersJoinExpiredTitle": "This invite expired",
+  "@foldersJoinExpiredTitle": {
+    "description": "Title when an invite is older than 7 days."
+  },
+  "foldersJoinExpiredBody": "Invites work for 7 days. Ask the owner for a new link.",
+  "@foldersJoinExpiredBody": {
+    "description": "Body when an invite expired."
+  },
+  "foldersJoinUsedTitle": "This invite was already used",
+  "@foldersJoinUsedTitle": {
+    "description": "Title when someone already used the invite."
+  },
+  "foldersJoinUsedBody": "Each invite works once. Ask the owner for a new link.",
+  "@foldersJoinUsedBody": {
+    "description": "Body when an invite was used."
+  },
+  "foldersJoinFullTitle": "This folder is full",
+  "@foldersJoinFullTitle": {
+    "description": "Title when the folder has the most people it can have."
+  },
+  "foldersJoinFullBody": "Ask the owner to remove someone, then open the link again.",
+  "@foldersJoinFullBody": {
+    "description": "Body when the folder is full."
+  },
+  "foldersJoinUnavailableTitle": "This invite is not available",
+  "@foldersJoinUnavailableTitle": {
+    "description": "Title for a missing folder, a block or a closed account. It does not say which."
+  },
+  "foldersJoinUnavailableBody": "The folder may have been deleted, or you cannot join it.",
+  "@foldersJoinUnavailableBody": {
+    "description": "Body for an unavailable invite."
   }
 }

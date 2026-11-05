@@ -73,10 +73,12 @@ class _FakeFoldersRepository implements FoldersRepository {
       Result.success<void>(null);
 
   @override
-  Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall) async => Result.success<void>(null);
+  Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId}) async =>
+      Result.success<void>(null);
 
   @override
-  Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall) async => Result.success<void>(null);
+  Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId}) async =>
+      Result.success<void>(null);
 }
 
 class _FakePublicFoldersRepository implements PublicFoldersRepository {

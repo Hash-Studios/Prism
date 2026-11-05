@@ -93,13 +93,13 @@ class _FakeFoldersRepository implements FoldersRepository {
   }
 
   @override
-  Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall) async {
+  Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId}) async {
     calls.add('addItem:${folder.id}');
     return Result.success<void>(null);
   }
 
   @override
-  Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall) async {
+  Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId}) async {
     calls.add('removeItem:${folder.id}');
     return Result.success<void>(null);
   }

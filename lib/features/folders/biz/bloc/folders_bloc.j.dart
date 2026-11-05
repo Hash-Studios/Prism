@@ -307,7 +307,7 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
   Future<void> _onRenameRequested(_RenameRequested event, Emitter<FoldersState> emit, _FolderSession session) async {
     final String? name = normalizeFolderName(event.name);
     final FolderEntity? folder = state.folder(event.folderId);
-    if (name == null || folder == null) {
+    if (name == null || folder == null || !folder.isOwnedBy(state.userId)) {
       _finish(emit, event.operationId, failure: const ValidationFailure('Cannot rename this folder.'));
       return;
     }
@@ -323,7 +323,7 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
     _FolderSession session,
   ) async {
     final FolderEntity? folder = state.folder(event.folderId);
-    if (folder == null) {
+    if (folder == null || !folder.isOwnedBy(state.userId)) {
       _finish(emit, event.operationId, failure: const ValidationFailure('Cannot change this folder.'));
       return;
     }
@@ -337,6 +337,10 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
 
   Future<void> _onDeleteRequested(_DeleteRequested event, Emitter<FoldersState> emit, _FolderSession session) async {
     final String id = event.folderId;
+    if (state.folder(id) case final FolderEntity folder when !folder.isOwnedBy(state.userId)) {
+      _finish(emit, event.operationId, failure: const ValidationFailure('Only the owner can delete this folder.'));
+      return;
+    }
     final Result<void> result = await session.wait(
       _repository.deleteFolder(id, userId: state.userId, isCancelled: () => session.cancelled.isCompleted),
     );
@@ -364,7 +368,7 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
     if (folder == null) return const ValidationFailure('This folder is gone.');
     final String key = folderItemKey(wall);
     final FolderEntity next = folder.withItemAdded(wall.thumbnailUrl, DateTime.now().toUtc());
-    final Result<void> result = await session.wait(_repository.addItem(next, wall));
+    final Result<void> result = await session.wait(_repository.addItem(next, wall, userId: state.userId));
     if (result.failure case final Failure failure) return failure;
     final List<FavouriteWallEntity>? loaded = state.items[folderId];
     emit(
@@ -419,7 +423,7 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
         .map((item) => item.thumbnailUrl)
         .toList();
     final FolderEntity next = folder.withItemRemoved(covers, DateTime.now().toUtc());
-    final Result<void> result = await session.wait(_repository.removeItem(next, wall));
+    final Result<void> result = await session.wait(_repository.removeItem(next, wall, userId: state.userId));
     if (result.failure case final Failure failure) return failure;
     emit(
       state.copyWith(

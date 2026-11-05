@@ -14285,4 +14285,198 @@ class AppLocalizationsHi extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get foldersInvite => 'आमंत्रित करें';
+
+  @override
+  String foldersInviteShareText(String name, String link) {
+    return 'Prism पर $name में मेरे साथ वॉलपेपर जोड़ें: $link';
+  }
+
+  @override
+  String foldersInvitePreviewTitle(String name) {
+    return 'Prism पर $name से जुड़ें';
+  }
+
+  @override
+  String get foldersInvitePreviewDescription => 'इस फ़ोल्डर के वॉलपेपर साथ मिलकर जोड़ें और हटाएँ।';
+
+  @override
+  String get foldersInviteFailed => 'आमंत्रण लिंक नहीं बन सका। फिर से कोशिश करें।';
+
+  @override
+  String get foldersInviteFull => 'यह फ़ोल्डर भर गया है। और लोगों को आमंत्रित करने के लिए किसी को हटाएँ।';
+
+  @override
+  String get foldersInviteLimit => 'आपने आज बहुत ज़्यादा आमंत्रण भेज दिए हैं। कल फिर से कोशिश करें।';
+
+  @override
+  String get foldersPeople => 'लोग';
+
+  @override
+  String foldersPeopleHintOwner(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'वॉलपेपर जोड़ने और हटाने के लिए अधिकतम $countString लोगों को आमंत्रित करें। इस फ़ोल्डर का नाम बदलना, इसे साझा करना या हटाना सिर्फ़ आप कर सकते हैं।';
+  }
+
+  @override
+  String get foldersPeopleHintEditor =>
+      'आप वॉलपेपर जोड़ और हटा सकते हैं। इस फ़ोल्डर का नाम बदलना, इसे साझा करना या हटाना सिर्फ़ मालिक कर सकता है।';
+
+  @override
+  String foldersPeopleCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString लोग', one: '1 व्यक्ति');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersPeopleButtonLabel(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'इस फ़ोल्डर में $countString लोग। लोग दिखाएँ',
+      one: 'इस फ़ोल्डर में 1 व्यक्ति। लोग दिखाएँ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersRoleOwner => 'मालिक';
+
+  @override
+  String get foldersRoleEditor => 'जोड़ और हटा सकते हैं';
+
+  @override
+  String foldersPersonYou(String name) {
+    return '$name (आप)';
+  }
+
+  @override
+  String get foldersUnknownPerson => 'Prism उपयोगकर्ता';
+
+  @override
+  String get foldersRemovePerson => 'हटाएँ';
+
+  @override
+  String foldersRemovePersonTitle(String name) {
+    return '$name को हटाएँ?';
+  }
+
+  @override
+  String get foldersRemovePersonMessage =>
+      'ये लोग यहाँ अब वॉलपेपर नहीं जोड़ या हटा सकेंगे। इनके जोड़े गए वॉलपेपर बने रहेंगे।';
+
+  @override
+  String get foldersRemovePersonConfirm => 'व्यक्ति को हटाएँ';
+
+  @override
+  String foldersPersonRemoved(String name) {
+    return '$name को हटा दिया गया।';
+  }
+
+  @override
+  String get foldersLeave => 'फ़ोल्डर छोड़ें';
+
+  @override
+  String foldersLeaveTitle(String name) {
+    return '$name छोड़ें?';
+  }
+
+  @override
+  String get foldersLeaveMessage => 'आप यहाँ अब वॉलपेपर नहीं जोड़ या हटा सकेंगे। आपके जोड़े गए वॉलपेपर बने रहेंगे।';
+
+  @override
+  String get foldersLeft => 'आपने फ़ोल्डर छोड़ दिया।';
+
+  @override
+  String get foldersPeopleFailed => 'इस फ़ोल्डर के लोगों को अपडेट नहीं किया जा सका। फिर से कोशिश करें।';
+
+  @override
+  String get foldersSharedWithYou => 'आपके साथ साझा किए गए';
+
+  @override
+  String get foldersSharedLabel => 'साझा किया गया';
+
+  @override
+  String foldersAddedBy(String name) {
+    return '$name ने जोड़ा';
+  }
+
+  @override
+  String get foldersAddedByYou => 'आपने जोड़ा';
+
+  @override
+  String get foldersRemoveFromFolder => 'फ़ोल्डर से हटाएँ';
+
+  @override
+  String get foldersDeleteSharedMessage => 'आपके आमंत्रित लोग भी इसे खो देंगे। वॉलपेपर आपके पसंदीदा में रहेंगे।';
+
+  @override
+  String get foldersJoinTitle => 'फ़ोल्डर का आमंत्रण';
+
+  @override
+  String foldersJoinHeadline(String name) {
+    return '$name से जुड़ें';
+  }
+
+  @override
+  String foldersJoinInvitedBy(String name) {
+    return '$name ने आपको इस फ़ोल्डर में वॉलपेपर जोड़ने और हटाने के लिए आमंत्रित किया है।';
+  }
+
+  @override
+  String get foldersJoin => 'फ़ोल्डर से जुड़ें';
+
+  @override
+  String get foldersJoinSignIn => 'जुड़ने के लिए साइन इन करें';
+
+  @override
+  String get foldersJoinOpen => 'फ़ोल्डर खोलें';
+
+  @override
+  String get foldersJoinAlreadyIn => 'आप पहले से इस फ़ोल्डर में हैं।';
+
+  @override
+  String foldersJoined(String name) {
+    return 'आप $name से जुड़ गए।';
+  }
+
+  @override
+  String get foldersJoinFailed => 'इस फ़ोल्डर से जुड़ा नहीं जा सका। फिर से कोशिश करें।';
+
+  @override
+  String get foldersJoinLoadFailed => 'यह आमंत्रण लोड नहीं हो सका।';
+
+  @override
+  String get foldersJoinExpiredTitle => 'यह आमंत्रण समाप्त हो गया है';
+
+  @override
+  String get foldersJoinExpiredBody => 'आमंत्रण 7 दिनों तक काम करते हैं। मालिक से नया लिंक माँगें।';
+
+  @override
+  String get foldersJoinUsedTitle => 'यह आमंत्रण पहले ही इस्तेमाल हो चुका है';
+
+  @override
+  String get foldersJoinUsedBody => 'हर आमंत्रण एक बार ही काम करता है। मालिक से नया लिंक माँगें।';
+
+  @override
+  String get foldersJoinFullTitle => 'यह फ़ोल्डर भर गया है';
+
+  @override
+  String get foldersJoinFullBody => 'मालिक से किसी को हटाने को कहें, फिर लिंक दोबारा खोलें।';
+
+  @override
+  String get foldersJoinUnavailableTitle => 'यह आमंत्रण उपलब्ध नहीं है';
+
+  @override
+  String get foldersJoinUnavailableBody => 'हो सकता है यह फ़ोल्डर हटा दिया गया हो, या आप इससे जुड़ नहीं सकते।';
 }

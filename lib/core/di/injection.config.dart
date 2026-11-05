@@ -113,12 +113,16 @@ import '../../features/folders/data/repositories/folders_repository_impl.dart'
     as _i342;
 import '../../features/folders/data/repositories/public_folders_repository_impl.dart'
     as _i994;
+import '../../features/folders/data/repositories/shared_folders_repository_impl.dart'
+    as _i347;
 import '../../features/folders/domain/repositories/folder_save_gateway.dart'
     as _i507;
 import '../../features/folders/domain/repositories/folders_repository.dart'
     as _i847;
 import '../../features/folders/domain/repositories/public_folders_repository.dart'
     as _i279;
+import '../../features/folders/domain/repositories/shared_folders_repository.dart'
+    as _i249;
 import '../../features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart'
     as _i584;
 import '../../features/in_app_notifications/data/repositories/notifications_repository_impl.dart'
@@ -543,6 +547,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i738.SessionRepository>(
     () => _i1021.SessionRepositoryImpl(gh<_i704.SessionLocalDataSource>()),
+  );
+  gh.lazySingleton<_i249.SharedFoldersRepository>(
+    () => _i347.SharedFoldersRepositoryImpl(gh<_i349.FirestoreClient>()),
   );
   gh.lazySingleton<_i847.FoldersRepository>(
     () => _i342.FoldersRepositoryImpl(gh<_i349.FirestoreClient>()),
