@@ -214,6 +214,27 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
   });
 
+  testWidgets('a second save whose share copy fails drops the first share copy', (tester) async {
+    await getIt<SettingsLocalDataSource>().set(watchFormatSettingsKey, 'apple_46');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), (_) async => true);
+    addTearDown(() => messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), null));
+    final Directory directory = await _openLoadedSheet(tester);
+    final File original = File('${directory.path}/preview.png');
+    final DownloadButton button = tester.widget<DownloadButton>(find.byType(DownloadButton));
+    button.set!.onSaved!(desktopSaved: false, files: <String, String>{'watch-apple_46': original.path});
+    await tester.pump();
+    final File first = directory.listSync().whereType<File>().singleWhere((file) => file.path.contains('/share_'));
+
+    button.set!.onSaved!(desktopSaved: false, files: <String, String>{'watch-apple_46': '${directory.path}/gone.png'});
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+
+    expect(first.existsSync(), isFalse);
+    expect(directory.listSync().whereType<File>().where((file) => file.path.contains('/share_')), isEmpty);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
   testWidgets('closing the saved guide deletes its share copy but leaves the saved source alone', (tester) async {
     await getIt<SettingsLocalDataSource>().set(watchFormatSettingsKey, 'apple_46');
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;

@@ -232,11 +232,12 @@ class _WatchSetSheetState extends State<WatchSetSheet> {
       toasts.success(l10n.watchSetSaved);
     }
     if (!mounted) return;
+    final String? previous = _shareCopy;
+    _shareCopy = null;
+    if (previous != null) unawaited(deleteWatchImage(previous));
     try {
       final String copy = '${File(watchFile).parent.path}/share_${DateTime.now().microsecondsSinceEpoch}.png';
       File(watchFile).copySync(copy);
-      final String? previous = _shareCopy;
-      if (previous != null) unawaited(deleteWatchImage(previous));
       _shareCopy = copy;
     } catch (error, stackTrace) {
       logger.w('Could not keep the watch image to share', error: error, stackTrace: stackTrace);
