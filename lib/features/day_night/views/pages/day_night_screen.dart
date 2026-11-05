@@ -5,11 +5,14 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_mode.dart';
+import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_mode_confirm.dart';
 import 'package:Prism/features/day_night/biz/bloc/day_night_bloc.j.dart';
 import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/features/day_night/views/widgets/day_night_guide_sheet.dart';
 import 'package:Prism/features/day_night/views/widgets/day_night_phone_preview.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -32,13 +35,14 @@ class DayNightScreen extends StatelessWidget {
     final String dayTime = dayNightTimeLabel(context, times.dayStart);
     final String nightTime = dayNightTimeLabel(context, times.nightStart);
     final bool canSwitch = !state.preparing && pair.isComplete;
+    final bool android = defaultTargetPlatform == TargetPlatform.android;
 
     return PrismPage(
       title: l10n.dayNightTitle,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxl),
         children: <Widget>[
-          Text(l10n.dayNightIntro, style: PrismTextStyles.body(context)),
+          Text(android ? l10n.dayNightIntroAndroid : l10n.dayNightIntro, style: PrismTextStyles.body(context)),
           const SizedBox(height: PrismSpace.md),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,17 +72,24 @@ class DayNightScreen extends StatelessWidget {
               PrismRow(
                 icon: Icons.light_mode_outlined,
                 title: l10n.dayNightDayStarts,
-                value: dayTime,
+                subtitle: android ? l10n.dayNightAroundTime(dayTime) : null,
+                value: android ? null : dayTime,
                 onTap: () => unawaited(_pickStart(context, bloc, times, DayNightSlot.day)),
               ),
               PrismRow(
                 icon: Icons.dark_mode_outlined,
                 title: l10n.dayNightNightStarts,
-                value: nightTime,
+                subtitle: android ? l10n.dayNightAroundTime(nightTime) : null,
+                value: android ? null : nightTime,
                 onTap: () => unawaited(_pickStart(context, bloc, times, DayNightSlot.night)),
               ),
             ],
           ),
+          if (android)
+            Padding(
+              padding: const EdgeInsets.only(top: PrismSpace.xs),
+              child: Text(l10n.dayNightAndroidTimingNote, style: PrismTextStyles.caption(context)),
+            ),
           if (state.issue == DayNightIssue.timesEqual)
             Padding(
               padding: const EdgeInsets.only(top: PrismSpace.xs),
@@ -121,7 +132,11 @@ class DayNightScreen extends StatelessWidget {
           PrismSwitchRow(
             title: l10n.dayNightSwitch,
             value: pair.enabled,
-            onChanged: canSwitch ? (bool enabled) => bloc.add(DayNightEvent.toggled(enabled)) : null,
+            onChanged: canSwitch
+                ? (bool enabled) => enabled
+                      ? unawaited(_turnOn(context, bloc, const DayNightEvent.toggled(true)))
+                      : bloc.add(const DayNightEvent.toggled(false))
+                : null,
           ),
         ],
       ),
@@ -152,17 +167,25 @@ class DayNightScreen extends StatelessWidget {
           label: l10n.dayNightTryAgain,
           variant: PrismButtonVariant.tonal,
           size: PrismButtonSize.compact,
-          onPressed: () => bloc.add(const DayNightEvent.retryPressed()),
+          onPressed: () => unawaited(_turnOn(context, bloc, const DayNightEvent.retryPressed())),
         ),
       ],
-      const SizedBox(height: PrismSpace.md),
-      PrismButton(
-        label: l10n.dayNightSetUpAction,
-        icon: Icons.auto_awesome_rounded,
-        expand: true,
-        onPressed: pair.enabled ? () => unawaited(showDayNightGuideSheet(context, pair: pair)) : null,
-      ),
+      if (defaultTargetPlatform == TargetPlatform.iOS) ...<Widget>[
+        const SizedBox(height: PrismSpace.md),
+        PrismButton(
+          label: l10n.dayNightSetUpAction,
+          icon: Icons.auto_awesome_rounded,
+          expand: true,
+          onPressed: pair.enabled ? () => unawaited(showDayNightGuideSheet(context, pair: pair)) : null,
+        ),
+      ],
     ];
+  }
+
+  /// Turns Day and night on, after the user agrees to turn auto-rotate off.
+  Future<void> _turnOn(BuildContext context, DayNightBloc bloc, DayNightEvent event) async {
+    if (!await confirmAutoRotateMode(context, AutoRotateMode.dayNight) || !context.mounted) return;
+    bloc.add(event);
   }
 
   Future<void> _pickStart(BuildContext context, DayNightBloc bloc, DayNightTimes times, DayNightSlot slot) async {

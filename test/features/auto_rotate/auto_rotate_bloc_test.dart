@@ -20,6 +20,8 @@ class _FakeAutoRotateRepository implements AutoRotateRepository {
   bool startResult = true;
   bool stopResult = true;
   bool rotateNowResult = true;
+  bool normalizeEnabled = false;
+  bool normalizedStatusReady = false;
   Object? startError;
   Object? stopError;
   Object? statusError;
@@ -28,6 +30,8 @@ class _FakeAutoRotateRepository implements AutoRotateRepository {
   Completer<void>? startGate;
   Completer<void>? startEntered;
   Completer<void>? stopGate;
+  Completer<void>? normalizedStatusGate;
+  Completer<void>? normalizedStatusEntered;
   int _activeMutations = 0;
   int maxActiveMutations = 0;
   final List<(AutoRotateConfig, List<String>)> starts = <(AutoRotateConfig, List<String>)>[];
@@ -39,7 +43,11 @@ class _FakeAutoRotateRepository implements AutoRotateRepository {
   Future<AutoRotateConfig> loadConfig({String? ownerId}) async => config;
 
   @override
-  Future<void> saveConfig(AutoRotateConfig config, {String? ownerId}) async => this.config = config;
+  Future<void> saveConfig(AutoRotateConfig config, {String? ownerId}) async {
+    this.config = normalizeEnabled ? config.copyWith(enabled: false) : config;
+    if (normalizeEnabled && starts.isNotEmpty) normalizedStatusReady = true;
+    if (normalizeEnabled) running = false;
+  }
 
   @override
   Future<bool> start(AutoRotateConfig config, List<String> imageUrls) async {
@@ -75,6 +83,10 @@ class _FakeAutoRotateRepository implements AutoRotateRepository {
 
   @override
   Future<AutoRotateStatus> status() async {
+    if (normalizedStatusReady && normalizedStatusGate != null) {
+      if (normalizedStatusEntered case final Completer<void> entered when !entered.isCompleted) entered.complete();
+      await normalizedStatusGate?.future;
+    }
     if (statusError case final Object error) throw error;
     return AutoRotateStatus(isRunning: running, nextRunEpochMs: running ? 1000 : 0, lastError: statusLastError);
   }
@@ -123,6 +135,68 @@ void main() {
   tearDown(AnalyticsRuntime.reset);
 
   AutoRotateBloc build() => AutoRotateBloc(repo);
+
+  blocTest<AutoRotateBloc, AutoRotateState>(
+    'a competing Day and night claim keeps the playlist disabled after a stale start saves',
+    build: build,
+    act: (bloc) async {
+      bloc.add(const AutoRotateEvent.started(favouriteUrls: urls, isPro: true));
+      await Future<void>.delayed(Duration.zero);
+      repo.normalizeEnabled = true;
+      bloc.add(const AutoRotateEvent.toggled(true));
+    },
+    verify: (bloc) {
+      expect(repo.starts, hasLength(1));
+      expect(bloc.state.config.enabled, isFalse);
+      expect(bloc.state.status.isRunning, isFalse);
+      expect(recordingAnalytics.events.whereType<AutoRotateEnabledEvent>(), isEmpty);
+    },
+  );
+
+  blocTest<AutoRotateBloc, AutoRotateState>(
+    'a session change during normalized-off status does not emit the stale saved config',
+    setUp: () {
+      repo
+        ..config = const AutoRotateConfig(enabled: true)
+        ..running = true
+        ..applied = urls;
+    },
+    build: build,
+    act: (bloc) async {
+      final List<AutoRotateState> staleEmissions = <AutoRotateState>[];
+      bool accountSwitchRequested = false;
+      final StreamSubscription<AutoRotateState> subscription = bloc.stream.listen((state) {
+        if (accountSwitchRequested && state.isPro && !state.config.enabled && state.config.intervalMinutes == 60) {
+          staleEmissions.add(state);
+        }
+      });
+      final Future<AutoRotateState> ready = bloc.stream.firstWhere(
+        (state) => state.loaded && state.isPro && state.favouriteCount == urls.length,
+      );
+      bloc
+        ..add(const AutoRotateEvent.entitlementChanged(isPro: true, userId: 'u1'))
+        ..add(const AutoRotateEvent.started(favouriteUrls: urls, isPro: true));
+      await ready;
+      repo
+        ..normalizeEnabled = true
+        ..normalizedStatusGate = Completer<void>()
+        ..normalizedStatusEntered = Completer<void>();
+      bloc.add(const AutoRotateEvent.intervalChanged(60));
+      await repo.normalizedStatusEntered!.future;
+
+      final Future<AutoRotateState> switched = bloc.stream.firstWhere((state) => !state.isPro);
+      accountSwitchRequested = true;
+      bloc.add(const AutoRotateEvent.entitlementChanged(isPro: false, userId: 'u2'));
+      repo.normalizedStatusGate!.complete();
+      await switched;
+      await subscription.cancel();
+      expect(staleEmissions, isEmpty);
+    },
+    verify: (bloc) {
+      expect(repo.stops, 1);
+      expect(bloc.state.isPro, isFalse);
+    },
+  );
 
   blocTest<AutoRotateBloc, AutoRotateState>(
     'enabling starts rotation with the favourite urls and config',

@@ -12072,6 +12072,43 @@
   "@dayNightGuideSunBody": {
     "description": "Guide section body. \"Time\", \"Day\" and \"Night\" are names in the Shortcuts app."
   },
+  "dayNightIntroAndroid": "Pick a wall for the day and one for the night. Prism switches them at the times you set.",
+  "@dayNightIntroAndroid": {
+    "description": "Android day and night setup: intro text above the wall pickers."
+  },
+  "dayNightAroundTime": "Around {time}",
+  "@dayNightAroundTime": {
+    "description": "Day and night schedule label. {time} is a formatted time such as 07:00.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNightAndroidTimingNote": "Android can switch a few minutes late to save battery.",
+  "@dayNightAndroidTimingNote": {
+    "description": "Android day and night setup: note that switches can run a few minutes late to save battery."
+  },
+  "dayNightTurnOffAutoRotateTitle": "Turn off auto-rotate?",
+  "@dayNightTurnOffAutoRotateTitle": {
+    "description": "Dialog title: asks whether to turn off Auto-rotate before Day and night can be used."
+  },
+  "dayNightTurnOffAutoRotateAction": "Turn off auto-rotate",
+  "@dayNightTurnOffAutoRotateAction": {
+    "description": "Dialog confirm button: turns off Auto-rotate."
+  },
+  "dayNightTurnOffDayNightTitle": "Turn off Day and night?",
+  "@dayNightTurnOffDayNightTitle": {
+    "description": "Dialog title: asks whether to turn off Day and night before Auto-rotate can be used."
+  },
+  "dayNightTurnOffDayNightAction": "Turn off Day and night",
+  "@dayNightTurnOffDayNightAction": {
+    "description": "Dialog confirm button: turns off Day and night."
+  },
+  "dayNightOneModeAtATime": "Auto-rotate and Day and night both change your wallpaper. Only one can be on at a time.",
+  "@dayNightOneModeAtATime": {
+    "description": "Dialog body: explains that Auto-rotate and Day and night cannot both be on."
+  },
   "tipAction": "Tip creator",
   "@tipAction": {
     "description": "Wall detail: opens the sheet to tip the wall's creator coins"
