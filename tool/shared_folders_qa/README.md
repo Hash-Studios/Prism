@@ -27,6 +27,7 @@ Run B: device proof. Stop `emulators` with Ctrl-C in terminal 2, then start it a
 node tool/shared_folders_qa.cjs emulators    # terminal 2, fresh state
 node tool/shared_folders_qa.cjs seed
 node tool/shared_folders_qa.cjs invite       # prints the link for Riya
+bash tool/write_firebase_options_stub.sh                     # the build needs lib/firebase_options.dart; never use the production file
 node tool/shared_folders_qa.cjs build-ios --user creator    # Ana, on an authorized Mac with Xcode
 node tool/shared_folders_qa.cjs build-apk --user viewer     # Riya, Android emulator
 adb -s emulator-5580 reverse tcp:19371 tcp:19371
