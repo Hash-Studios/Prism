@@ -453,6 +453,12 @@ async function evidence() {
       assert.deepEqual(folder.memberIds ?? [], [], 'Riya already joined. Restart the emulators, then seed again.');
       return {name: folder.name, itemCount: folder.itemCount};
     });
+    await step('viewer previews the seeded used invite before joining', async () => {
+      const res = await callable(VIEWER, 'getFolderInvite', {code: USED_INVITE});
+      expectOk(res);
+      assert.equal(res.body.result.status, 'used');
+      return {status: res.body.result.status};
+    });
     await step('creator creates invite 1', async () => {
       const res = await callable(CREATOR, 'createFolderInvite', {folderId: FOLDER});
       expectOk(res);
@@ -494,10 +500,10 @@ async function evidence() {
       assert.equal(invite.usedBy, null);
       return {status: res.status, reason: 'blocked'};
     });
-    await step('blocked Bo is refused with invite 1 (used)', async () => {
+    await step('blocked Bo is refused with invite 1 (blocked, even though used)', async () => {
       const res = await callable(BLOCKED, 'joinFolder', {code: codes.first});
-      refused(res, 'used');
-      return {status: res.status, reason: 'used'};
+      refused(res, 'blocked');
+      return {status: res.status, reason: 'blocked'};
     });
     await step('folder unchanged by the refusals', async () => {
       const folder = await folderNow();

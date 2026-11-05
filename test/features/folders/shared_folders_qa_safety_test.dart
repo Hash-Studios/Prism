@@ -12,6 +12,7 @@ void main() {
     'path-write',
     'path-build',
     'redirects',
+    'evidence',
     'environment',
   ]) {
     test('shared folders QA isolates $scenario', () async {

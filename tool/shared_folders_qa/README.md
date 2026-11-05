@@ -59,12 +59,13 @@ node tool/shared_folders_qa.cjs push         # after Riya joins on the device
 | Step | What it proves |
 |---|---|
 | `seed` | Users, walls, Riya's favourites and the Trip folder exist as the app stores them. |
-| `assert` 1 | Ana creates invite 1 with `createFolderInvite`. |
-| `assert` 2 | Riya previews invite 1 with `getFolderInvite` and sees `join`, the name Trip and two items. |
-| `assert` 3 | Riya joins with `joinFolder`. The folder gets Riya as the only editor, added by Ana. |
-| `assert` 4 | Ana creates invite 2. It is a fresh code for the refused join. |
-| `assert` 5 | Bo is refused on invite 2 with `blocked`. Invite 2 stays unused and the folder does not change. |
-| `assert` 6 | Bo is refused on invite 1 with `used`. |
+| `assert` 1 | Before joining, Riya previews `UsedXyzABC` with `getFolderInvite` and sees `used`. |
+| `assert` 2 | Ana creates invite 1 with `createFolderInvite`. |
+| `assert` 3 | Riya previews invite 1 with `getFolderInvite` and sees `join`, the name Trip and two items. |
+| `assert` 4 | Riya joins with `joinFolder`. The folder gets Riya as the only editor, added by Ana. |
+| `assert` 5 | Ana creates invite 2. It is a fresh code for the refused join. |
+| `assert` 6 | Bo is refused on invite 2 with `blocked`. Invite 2 stays unused and the folder does not change. |
+| `assert` 7 | Bo is refused on invite 1 with `blocked`. The block takes priority over the used code. |
 | `push` | Riya's add of wall 3 queues an activity through the real `onFolderItemWritten` trigger. `sendDueFolderActivity(now + 2 h)` runs. Ana's inbox gets "Riya QA added a wall to Trip". |
 
 `push` writes the editor add itself, with Admin SDK, marked as a Riya add. If wall 3 is already in Trip, `push` skips the add and sends whatever is due. The reported send count can be 0 in the emulator. FCM is not reachable there, so the inbox doc is the evidence.
