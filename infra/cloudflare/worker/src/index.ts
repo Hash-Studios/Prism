@@ -1,6 +1,7 @@
 import { AiQuotaCoordinator, type AiEnvBindings, bumpRateLimit, handleAiApiRequest } from './ai';
 import { maybeHandleAssociationRequest } from './association_files';
 import { handleCatalogRequest } from './catalog';
+import { handleLegacyThumbRequest } from './legacy_thumbs';
 import { formatCount, type OgCard, type OgChip, type OgStat, renderOgCardHtml } from './og_card';
 import { buildAndroidIntentUrl, detectPlatform, escapeAttribute, escapeHtml, iosUniversalLinkUrl, screenshotCard } from './page_kit';
 
@@ -187,6 +188,11 @@ export default {
     const associationResponse = maybeHandleAssociationRequest(request, url.pathname);
     if (associationResponse != null) {
       return associationResponse;
+    }
+
+    const legacyThumbResponse = await handleLegacyThumbRequest(request, url, env, ctx);
+    if (legacyThumbResponse != null) {
+      return legacyThumbResponse;
     }
 
     const aiResponse = await handleAiApiRequest(request, url, env);

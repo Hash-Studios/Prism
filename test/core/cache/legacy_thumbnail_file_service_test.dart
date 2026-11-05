@@ -58,11 +58,14 @@ void main() {
       raw.replaceFirst('/walls/', '/other/'),
       raw.replaceFirst('https:', 'http:'),
       raw.replaceFirst('.com/', '.com:8443/'),
+      raw.replaceFirst('.com/', '.com:443/'),
       raw.replaceFirst('raw.githubusercontent.com', 'raw.githubusercontent.com.evil.test'),
       raw.replaceFirst('https://', 'https://user@'),
       '$raw?token=secret',
       '$raw#fragment',
       raw.replaceFirst('/master/', '/master//'),
+      raw.replaceFirst('/master/', '/master/../'),
+      raw.replaceFirst('/master/', '/master/%2e%2e/'),
       raw.replaceFirst('/master/', '/master/%2f/'),
       raw.replaceFirst('/master/', '/master/%5c/'),
       raw.replaceFirst('/master/', '/master/%00/'),
@@ -88,6 +91,25 @@ void main() {
     await service.get(raw);
   });
 
+  test('rewritten requests drop source credentials and validators', () async {
+    final requests = <http.Request>[];
+    final service = LegacyThumbnailFileService(
+      owner: 'owner',
+      repo: 'walls',
+      httpClient: MockClient((request) async {
+        requests.add(request);
+        return http.Response('', 200);
+      }),
+    );
+    const headers = <String, String>{'authorization': 'Bearer source-token', 'if-none-match': 'old-github-etag'};
+    await service.get(raw, headers: headers);
+    expect(requests.last.headers, isNot(contains('authorization')));
+    expect(requests.last.headers, isNot(contains('if-none-match')));
+    await service.get('https://images.pexels.com/photos/1/preview.jpg', headers: headers);
+    expect(requests.last.headers['authorization'], 'Bearer source-token');
+    expect(requests.last.headers['if-none-match'], 'old-github-etag');
+  });
+
   test('cache hits and retry eviction still use the stored raw URL', () async {
     final directory = await Directory.systemTemp.createTemp('legacy-thumb-cache-');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -105,15 +127,20 @@ void main() {
           httpClient: MockClient((request) async {
             expect(request.url.toString(), proxy);
             requests++;
-            return http.Response.bytes(<int>[1, 2, 3], 200, headers: <String, String>{
-              'content-type': 'image/jpeg',
-              'cache-control': 'public, max-age=86400',
-            });
+            return http.Response.bytes(
+              <int>[1, 2, 3],
+              200,
+              headers: <String, String>{'content-type': 'image/jpeg', 'cache-control': 'public, max-age=86400'},
+            );
           }),
         ),
       ),
     );
     try {
+      await cache.putFile(raw, Uint8List.fromList(<int>[9]), maxAge: const Duration(days: 1));
+      expect(await (await cache.getSingleFile(raw)).readAsBytes(), <int>[9]);
+      expect(requests, 0);
+      await cache.removeFile(raw);
       await cache.getSingleFile(raw);
       expect(await cache.getFileFromCache(raw), isNotNull);
       expect(await cache.getFileFromCache(proxy), isNull);
