@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:Prism/features/wallpaper_detail/domain/entities/crop_spec.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_filters.dart';
 import 'package:flutter/painting.dart';
@@ -217,6 +218,83 @@ void main() {
         expect(px[2], inInclusiveRange(0, 2));
       } finally {
         image.dispose();
+      }
+    });
+  });
+
+  testWidgets('outputSize scales the kept source region through every quarter turn', (tester) async {
+    await tester.runAsync(() async {
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      Canvas(recorder)
+        ..drawRect(const Rect.fromLTWH(0, 0, 20, 10), Paint()..color = const Color(0xFFFF0000))
+        ..drawRect(const Rect.fromLTWH(20, 0, 20, 10), Paint()..color = const Color(0xFF0000FF))
+        ..drawRect(const Rect.fromLTWH(0, 10, 20, 10), Paint()..color = const Color(0xFF00FF00))
+        ..drawRect(const Rect.fromLTWH(20, 10, 20, 10), Paint()..color = const Color(0xFFFFFF00));
+      final ui.Image source = await rasterizePicture(recorder.endRecording(), 40, 20);
+      try {
+        for (int turns = 0; turns < 4; turns++) {
+          CropSpec crop = CropSpec.initial(
+            sourceWidth: 40,
+            sourceHeight: 20,
+            phoneAspect: 0.5,
+          ).withPreset(CropPreset.free).resized(CropCorner.topLeft, 10, 4).resized(CropCorner.bottomRight, -5, -3);
+          for (int i = 0; i < turns; i++) {
+            crop = crop.rotated();
+          }
+          final size = turns.isOdd ? (width: 78, height: 150) : (width: 150, height: 78);
+          final Uint8List png = await renderEditedPng(
+            source,
+            const [],
+            WallpaperAdjustments.none,
+            crop: crop,
+            outputSize: size,
+          );
+          final ui.Codec codec = await ui.instantiateImageCodec(png);
+          final ui.Image output = (await codec.getNextFrame()).image;
+          try {
+            expect((output.width, output.height), (size.width, size.height));
+            final ByteData rgba = (await output.toByteData())!;
+            final List<(double, double, List<int>)> regions = switch (turns) {
+              0 => [
+                (0.2, 0.2, [255, 0, 0, 255]),
+                (0.8, 0.2, [0, 0, 255, 255]),
+                (0.2, 0.8, [0, 255, 0, 255]),
+                (0.8, 0.8, [255, 255, 0, 255]),
+                (0.49, 0.2, [0, 0, 255, 255]),
+              ],
+              1 => [
+                (0.8, 0.2, [255, 0, 0, 255]),
+                (0.8, 0.8, [0, 0, 255, 255]),
+                (0.2, 0.2, [0, 255, 0, 255]),
+                (0.2, 0.8, [255, 255, 0, 255]),
+                (0.8, 0.49, [0, 0, 255, 255]),
+              ],
+              2 => [
+                (0.8, 0.8, [255, 0, 0, 255]),
+                (0.2, 0.8, [0, 0, 255, 255]),
+                (0.8, 0.2, [0, 255, 0, 255]),
+                (0.2, 0.2, [255, 255, 0, 255]),
+                (0.51, 0.8, [0, 0, 255, 255]),
+              ],
+              _ => [
+                (0.2, 0.8, [255, 0, 0, 255]),
+                (0.2, 0.2, [0, 0, 255, 255]),
+                (0.8, 0.8, [0, 255, 0, 255]),
+                (0.8, 0.2, [255, 255, 0, 255]),
+                (0.2, 0.51, [0, 0, 255, 255]),
+              ],
+            };
+            for (final (double x, double y, List<int> color) in regions) {
+              final int pixel = ((output.height * y).floor() * output.width + (output.width * x).floor()) * 4;
+              expect([for (int i = 0; i < 4; i++) rgba.getUint8(pixel + i)], color, reason: 'turns=$turns at ($x, $y)');
+            }
+          } finally {
+            output.dispose();
+            codec.dispose();
+          }
+        }
+      } finally {
+        source.dispose();
       }
     });
   });

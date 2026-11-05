@@ -13563,4 +13563,214 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get livePhotoGuideNoteVersion => 'Die Bewegung auf dem Sperrbildschirm braucht iOS 17 oder neuer.';
+
+  @override
+  String get watchSetCropPreset => 'Uhr';
+
+  @override
+  String get watchSetRowTitle => 'Watch-Set';
+
+  @override
+  String get watchSetRowSubtitle => 'Telefon und Uhr, einmal speichern';
+
+  @override
+  String get watchSetRowSubtitleDesktop => 'Telefon, Uhr und Desktop, einmal speichern';
+
+  @override
+  String get watchSetSheetTitle => 'Watch-Set';
+
+  @override
+  String get watchSetSheetMessage =>
+      'Speichere dieses Hintergrundbild für dein Telefon und einen Zuschnitt, der auf deine Uhr passt.';
+
+  @override
+  String get watchSetSheetMessageDesktop =>
+      'Speichere dieses Hintergrundbild für dein Telefon, einen Zuschnitt für deine Uhr und die Desktop-Version.';
+
+  @override
+  String get watchSetItemPhone => 'Telefon';
+
+  @override
+  String get watchSetItemWatch => 'Uhr';
+
+  @override
+  String get watchSetItemDesktop => 'Desktop';
+
+  @override
+  String get watchSetItemFullSize => 'Volle Größe';
+
+  @override
+  String get watchSetPhonePreviewSemantic => 'Vorschau des Telefon-Hintergrundbilds';
+
+  @override
+  String watchSetWatchPreviewSemantic(String watch) {
+    return 'Vorschau des Uhrbilds für $watch';
+  }
+
+  @override
+  String get watchSetDesktopPreviewSemantic => 'Vorschau der Desktop-Version';
+
+  @override
+  String get watchSetSave => 'Set speichern';
+
+  @override
+  String get watchSetAdjustCrop => 'Uhr-Zuschnitt anpassen';
+
+  @override
+  String get watchSetChangeWatch => 'Uhr ändern';
+
+  @override
+  String get watchSetHowTo => 'So nutzt du es auf deiner Uhr';
+
+  @override
+  String get watchSetSaved => 'Watch-Set gespeichert';
+
+  @override
+  String get watchSetDesktopNotSaved =>
+      'Bilder für Telefon und Uhr gespeichert. Die Desktop-Version wurde nicht gespeichert. Versuche es in ein paar Minuten noch einmal.';
+
+  @override
+  String get watchSetPreviewFailed =>
+      'Das Hintergrundbild konnte nicht geladen werden. Prüfe deine Verbindung und versuche es noch einmal.';
+
+  @override
+  String get watchSetPickerTitle => 'Welche Uhr hast du?';
+
+  @override
+  String get watchSetPickerMessage =>
+      'Prism speichert das Uhrbild in der Größe deines Bildschirms. Du kannst es später ändern.';
+
+  @override
+  String get watchSetPlatformApple => 'Apple Watch';
+
+  @override
+  String get watchSetPlatformWearOs => 'Wear OS';
+
+  @override
+  String get watchSetPickerHintApple =>
+      'Um dein Modell zu finden, öffne die Watch-App auf deinem iPhone, tippe auf Allgemein und dann auf Info.';
+
+  @override
+  String get watchSetPickerHintWearOs =>
+      'Um dein Modell zu finden, öffne Einstellungen auf deiner Uhr, tippe auf System und dann auf Info.';
+
+  @override
+  String get watchFormatApple40 => 'Series 4 bis 6 und SE, 40 mm';
+
+  @override
+  String get watchFormatApple44 => 'Series 4 bis 6 und SE, 44 mm';
+
+  @override
+  String get watchFormatApple41 => 'Series 7 bis 9, 41 mm';
+
+  @override
+  String get watchFormatApple45 => 'Series 7 bis 9, 45 mm';
+
+  @override
+  String get watchFormatApple42 => 'Series 10 bis 12, 42 mm';
+
+  @override
+  String get watchFormatApple46 => 'Series 10 bis 12, 46 mm';
+
+  @override
+  String get watchFormatAppleUltra => 'Ultra und Ultra 2';
+
+  @override
+  String get watchFormatAppleUltra3 => 'Ultra 3 und Ultra 4';
+
+  @override
+  String get watchFormatPixelWatch => 'Pixel Watch';
+
+  @override
+  String get watchFormatGalaxySmall => 'Galaxy Watch, 40 mm oder Classic';
+
+  @override
+  String get watchFormatGalaxyLarge => 'Galaxy Watch, 44 mm oder Ultra';
+
+  @override
+  String get watchCropTitle => 'Uhr-Zuschnitt';
+
+  @override
+  String get watchCropHint =>
+      'Ziehe, um den Rahmen zu verschieben. Ziehe eine Ecke, um die Größe zu ändern, oder ziehe mit zwei Fingern zusammen.';
+
+  @override
+  String get watchCropReset => 'Zurücksetzen';
+
+  @override
+  String get watchCropDone => 'Diesen Zuschnitt verwenden';
+
+  @override
+  String get watchGuideTitle => 'So kommt es auf deine Uhr';
+
+  @override
+  String get watchGuideBodyIos =>
+      'Das Set findest du in Fotos unter Zuletzt. Erstelle aus dem Uhrbild ein Fotos-Zifferblatt.';
+
+  @override
+  String get watchGuideBodyAndroid =>
+      'Das Set findest du in der Galerie unter Bilder, Prism, Downloads. Füge das Uhrbild einem Foto-Zifferblatt hinzu.';
+
+  @override
+  String get watchGuideShare => 'Uhrbild teilen';
+
+  @override
+  String get watchGuideIosStep1 => 'Öffne Fotos und tippe auf das Uhrbild.';
+
+  @override
+  String get watchGuideIosStep2 => 'Tippe auf Teilen, wische nach oben und tippe dann auf Zifferblatt erstellen.';
+
+  @override
+  String get watchGuideIosStep3 => 'Tippe auf Fotos-Zifferblatt und dann auf Hinzufügen.';
+
+  @override
+  String get watchGuideIosAlternative =>
+      'Du kannst auch die Watch-App auf deinem iPhone öffnen. Tippe auf Zifferblattgalerie, dann auf Fotos und dann auf Fotos auswählen.';
+
+  @override
+  String get watchGuidePixelTitle => 'Pixel Watch';
+
+  @override
+  String get watchGuidePixelStep1 => 'Öffne die Pixel Watch-App. Tippe auf Zifferblätter und dann auf Neu hinzufügen.';
+
+  @override
+  String get watchGuidePixelStep2 => 'Tippe auf Fotos und wähle dann das Uhrbild in Google Photos aus.';
+
+  @override
+  String get watchGuidePixelStep3 => 'Tippe auf Hinzufügen und dann auf Speichern.';
+
+  @override
+  String get watchGuideGalaxyTitle => 'Galaxy Watch';
+
+  @override
+  String get watchGuideGalaxyStep1 => 'Öffne die App Galaxy Wearable und tippe auf Zifferblätter.';
+
+  @override
+  String get watchGuideGalaxyStep2 => 'Tippe auf My Photo+ und dann auf Anpassen.';
+
+  @override
+  String get watchGuideGalaxyStep3 => 'Wähle das Uhrbild aus der Galerie und tippe dann auf Speichern.';
+
+  @override
+  String get watchGuideNotesTitle => 'Was Prism nicht kann';
+
+  @override
+  String get watchGuideNoteNoTransfer =>
+      'Prism kann das Bild nicht auf deine Uhr übertragen. Das macht die App deiner Uhr.';
+
+  @override
+  String get watchGuideNoteShareSheet =>
+      'Zifferblatt erstellen gibt es nur in der App Fotos. Prism kann es nicht in sein eigenes Teilen-Menü aufnehmen.';
+
+  @override
+  String get watchGuideNoteAlbum =>
+      'Prism speichert unter Zuletzt, nicht in einem Prism-Album. Ein Album braucht vollen Zugriff auf deine Fotos, und Prism fragt nur nach dem Hinzufügen von Fotos.';
+
+  @override
+  String get watchGuideNoteLayout =>
+      'Jedes Zifferblatt hat eine eigene Uhr und ein eigenes Layout, daher kann es einen Teil des Bildes verdecken.';
+
+  @override
+  String get watchGuideNoteGooglePhotos =>
+      'Pixel Watch liest Google Photos. Wenn das Bild nicht erscheint, sichere es zuerst in Google Photos.';
 }

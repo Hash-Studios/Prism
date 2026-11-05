@@ -170,6 +170,12 @@ UNCHANGED_ENGLISH_ALLOWLIST = {
     'wallpaperAutoRotateNounCategory': '{category}',
     'wallpaperAutoRotateNounFolder': '{folder}',
     'wallpaperUploadDetailsOptional': 'Details (optional)',
+    'watchFormatPixelWatch': 'Pixel Watch',
+    'watchGuideGalaxyTitle': 'Galaxy Watch',
+    'watchGuidePixelTitle': 'Pixel Watch',
+    'watchSetItemDesktop': 'Desktop',
+    'watchSetPlatformApple': 'Apple Watch',
+    'watchSetPlatformWearOs': 'Wear OS',
 }
 
 

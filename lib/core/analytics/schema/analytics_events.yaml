@@ -30,6 +30,7 @@ enums:
       - square
       - landscape
       - original
+      - watch
   - name: taste_quiz_source
     dart_type: TasteQuizSource
     import: package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart
@@ -42,6 +43,26 @@ enums:
     values:
       - left
       - right
+  - name: watch_format
+    dart_type: WatchFormat
+    import: package:Prism/features/watch_set/domain/entities/watch_format.dart
+    values:
+      - apple_40
+      - apple_44
+      - apple_41
+      - apple_45
+      - apple_42
+      - apple_46
+      - apple_ultra
+      - apple_ultra_3
+      - pixel_watch
+      - galaxy_small
+      - galaxy_large
+  - name: watch_guide_source
+    dart_type: WatchGuideSourceValue
+    values:
+      - after_save
+      - sheet
   - name: comment_role
     dart_type: CommentRoleValue
     values:
@@ -3237,3 +3258,28 @@ events:
         key: source
         type: enum
         enum: ApkLinkSourceValue
+  - id: watch_set_saved
+    fields:
+      - name: watch_type
+        key: watch_type
+        type: enum
+        enum: WatchFormat
+      - name: with_desktop
+        key: with_desktop
+        type: bool
+  - id: watch_guide_opened
+    fields:
+      - name: watch_type
+        key: watch_type
+        type: enum
+        enum: WatchFormat
+      - name: source
+        key: source
+        type: enum
+        enum: WatchGuideSourceValue
+  - id: watch_crop_adjusted
+    fields:
+      - name: watch_type
+        key: watch_type
+        type: enum
+        enum: WatchFormat

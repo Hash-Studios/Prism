@@ -97,6 +97,11 @@ UNCHANGED_ENGLISH = {
     'wallpaperPremium': 'Premium',
     'wallpaperProviderWallhaven': 'Wallhaven',
     'wallpaperSpatialPreviewLabel': '3D',
+    'watchFormatPixelWatch': 'Pixel Watch',
+    'watchGuideGalaxyTitle': 'Galaxy Watch',
+    'watchGuidePixelTitle': 'Pixel Watch',
+    'watchSetPlatformApple': 'Apple Watch',
+    'watchSetPlatformWearOs': 'Wear OS',
 }
 
 UNTRANSLATED_UI_TOKENS = (

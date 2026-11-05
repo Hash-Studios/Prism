@@ -5,6 +5,18 @@ CropSpec spec(int w, int h, {double phone = 0.5}) =>
     CropSpec.initial(sourceWidth: w, sourceHeight: h, phoneAspect: phone);
 
 void main() {
+  test('scaledTo keeps a rounded preview of an original crop whole through every turn', () {
+    for (int turns = 0; turns < 4; turns++) {
+      CropSpec preview = spec(1201, 1600);
+      for (int i = 0; i < turns; i++) {
+        preview = preview.rotated();
+      }
+      final CropSpec full = preview.scaledTo(sourceWidth: 3001, sourceHeight: 4000);
+      expect(full.sourceRect, const PixelRect(0, 0, 3001, 4000), reason: 'turns=$turns');
+      expect(full.rect, turns.isOdd ? const PixelRect(0, 0, 4000, 3001) : const PixelRect(0, 0, 3001, 4000));
+    }
+  });
+
   group('presets on a portrait source', () {
     test('initial frame is the whole image with original preset', () {
       final CropSpec s = spec(1080, 1920);
