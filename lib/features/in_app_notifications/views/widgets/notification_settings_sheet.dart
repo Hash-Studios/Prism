@@ -141,20 +141,28 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
     final ColorScheme cs = Theme.of(context).colorScheme;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: cs.error.withValues(alpha: 0.12),
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(PrismRadius.md),
+        border: Border.all(color: cs.error.withValues(alpha: 0.5)),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(PrismSpace.sm, PrismSpace.xs, PrismSpace.xs, PrismSpace.xs),
-        child: Row(
+        padding: const EdgeInsets.all(PrismSpace.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Icon(Icons.notifications_off_outlined, color: cs.onSurface),
-            const SizedBox(width: PrismSpace.sm),
-            Expanded(child: Text(context.l10n.notifPermissionOffForApp, style: PrismTextStyles.body(context))),
+            Row(
+              children: <Widget>[
+                Icon(Icons.notifications_off_rounded, color: cs.error),
+                const SizedBox(width: PrismSpace.sm),
+                Expanded(child: Text(context.l10n.notifPermissionOffForApp, style: PrismTextStyles.rowTitle(context))),
+              ],
+            ),
+            const SizedBox(height: PrismSpace.sm),
             PrismButton(
               label: context.l10n.notifOpenSettings,
-              variant: PrismButtonVariant.ghost,
+              variant: PrismButtonVariant.tonal,
               size: PrismButtonSize.compact,
+              expand: true,
               onPressed: () => widget.permissions.openSystemSettings(),
             ),
           ],

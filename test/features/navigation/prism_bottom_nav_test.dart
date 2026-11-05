@@ -10,7 +10,6 @@ import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -155,16 +154,16 @@ void main() {
     IconData iconOf(String label) =>
         tester.widget<Icon>(find.descendant(of: find.byTooltip(label), matching: find.byType(Icon))).icon!;
 
-    expect(iconOf('Home'), JamIcons.home_f);
-    expect(iconOf('Search'), JamIcons.search);
-    expect(iconOf('Rewards'), JamIcons.gift_f);
-    expect(iconOf('Collections'), JamIcons.grid_f);
+    expect(iconOf('Home'), Icons.home_rounded);
+    expect(iconOf('Search'), Icons.search_rounded);
+    expect(iconOf('Rewards'), Icons.card_giftcard_rounded);
+    expect(iconOf('Collections'), Icons.grid_view_rounded);
 
     router.setActiveIndex(1);
     await tester.pumpAndSettle();
 
-    expect(iconOf('Home'), JamIcons.home_f);
-    expect(iconOf('Search'), JamIcons.search);
+    expect(iconOf('Home'), Icons.home_rounded);
+    expect(iconOf('Search'), Icons.search_rounded);
   });
 
   testWidgets('tapping a tab switches to it and tapping the active tab does nothing', (tester) async {
@@ -227,14 +226,14 @@ void main() {
       return (container.decoration! as BoxDecoration).color;
     }
 
-    expect(circleBehind(JamIcons.home_f), isNot(Colors.transparent));
-    expect(circleBehind(JamIcons.search), Colors.transparent);
+    expect(circleBehind(Icons.home_rounded), isNot(Colors.transparent));
+    expect(circleBehind(Icons.search_rounded), Colors.transparent);
 
     router.setActiveIndex(1);
     await tester.pumpAndSettle();
 
-    expect(circleBehind(JamIcons.home_f), Colors.transparent);
-    expect(circleBehind(JamIcons.search), isNot(Colors.transparent));
+    expect(circleBehind(Icons.home_rounded), Colors.transparent);
+    expect(circleBehind(Icons.search_rounded), isNot(Colors.transparent));
   });
 
   testWidgets('scrolling down hides the bar and shows a scroll to top button that scrolls up', (tester) async {
@@ -263,7 +262,7 @@ void main() {
     expect(controller.offset, greaterThan(0));
     expect(toTop, findsOneWidget);
 
-    await tester.tap(find.byIcon(JamIcons.arrow_up));
+    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
     await tester.pumpAndSettle();
     expect(controller.offset, 0);
     handle.dispose();
@@ -339,7 +338,7 @@ void main() {
     await tester.pump();
     expect(_scrollToTopExcluded(tester), isFalse);
 
-    await tester.tap(find.byIcon(JamIcons.arrow_up));
+    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 800));
     expect(tester.takeException(), isNull);
@@ -375,7 +374,7 @@ void main() {
     await _dragList(tester, const Offset(0, -600));
     expect(_scrollToTopExcluded(tester), isFalse);
 
-    await tester.tap(find.byIcon(JamIcons.arrow_up));
+    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
     await tester.pump();
     await pumpBody(showList: false);
     await tester.pump(const Duration(milliseconds: 800));

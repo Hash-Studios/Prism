@@ -91,28 +91,12 @@ String resetCaption(AppLocalizations l10n, DateTime now) {
 }
 
 class _ScoreCaption extends StatelessWidget {
-  const _ScoreCaption(this.tab);
-
-  final LeaderboardTab tab;
+  const _ScoreCaption();
 
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.page, PrismSpace.xs),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(context.l10n.economyLeaderboardRankedByXp, style: PrismTextStyles.body(context)),
-        const SizedBox(height: PrismSpace.xxs),
-        Text(resetCaption(context.l10n, DateTime.now()), style: PrismTextStyles.caption(context)),
-        const SizedBox(height: PrismSpace.xs),
-        Text(
-          tab == LeaderboardTab.friends
-              ? context.l10n.economyLeaderboardFriendsCaption
-              : context.l10n.economyLeaderboardGlobalCaption,
-          style: PrismTextStyles.caption(context),
-        ),
-      ],
-    ),
+    child: Text(resetCaption(context.l10n, DateTime.now()), style: PrismTextStyles.caption(context)),
   );
 }
 
@@ -126,6 +110,8 @@ class _ScoringSheet extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
+        Text(context.l10n.economyLeaderboardRankedByXp, style: PrismTextStyles.rowTitle(context)),
+        const SizedBox(height: PrismSpace.xs),
         Text(context.l10n.economyLeaderboardScoringIntro, style: PrismTextStyles.body(context)),
         const SizedBox(height: PrismSpace.lg),
         Text(context.l10n.economyLeaderboardFollowing, style: PrismTextStyles.rowTitle(context)),
@@ -162,7 +148,7 @@ class _Content extends StatelessWidget {
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: <Widget>[
-          SliverToBoxAdapter(child: _ScoreCaption(state.tab)),
+          const SliverToBoxAdapter(child: _ScoreCaption()),
           SliverLayoutBuilder(
             builder: (context, constraints) => SliverToBoxAdapter(
               child: SizedBox(height: constraints.remainingPaintExtent.clamp(300, double.infinity), child: child),
@@ -191,22 +177,28 @@ class _Content extends StatelessWidget {
         ),
       );
     }
-    final bool onlyMe = state.tab == LeaderboardTab.friends && entries.length == 1 && entries.single.isMe;
+    final bool fewRows = state.tab == LeaderboardTab.friends && entries.length < 5;
     return RefreshIndicator(
       color: cs.primary,
       backgroundColor: cs.surfaceContainerHigh,
       onRefresh: onRefresh,
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(PrismSpace.xs, 0, PrismSpace.xs, PrismSpace.bottomBarClearance),
-        itemCount: entries.length + 1 + (onlyMe ? 1 : 0),
+        padding: const EdgeInsets.only(bottom: PrismSpace.bottomBarClearance),
+        itemCount: entries.length + 1 + (fewRows ? 1 : 0),
         itemBuilder: (context, index) {
-          if (index == 0) return _ScoreCaption(state.tab);
+          if (index == 0) return const _ScoreCaption();
           final int entryIndex = index - 1;
           if (entryIndex == entries.length) {
-            return Padding(
-              padding: const EdgeInsets.all(PrismSpace.page),
-              child: Text(context.l10n.economyLeaderboardFollowTip, style: PrismTextStyles.body(context)),
+            return SizedBox(
+              height: 150 + MediaQuery.textScalerOf(context).scale(250),
+              child: GlintState(
+                kind: GlintStateKind.empty,
+                title: context.l10n.economyLeaderboardFollowTip,
+                actionLabel: context.l10n.accountFindCreators,
+                actionVariant: PrismButtonVariant.tonal,
+                onAction: () => unawaited(context.router.push(CreatorsRoute(source: 'leaderboard'))),
+              ),
             );
           }
           return _EntryRow(entry: entries[entryIndex], position: entryIndex + 1);
@@ -236,69 +228,75 @@ class _EntryRow extends StatelessWidget {
       style: PrismTextStyles.rowTitle(context),
     );
     final Widget rankLabel = PrismTag(label: rank, tone: entry.isMe ? PrismTone.accent : PrismTone.neutral);
-    return Semantics(
-      container: true,
-      button: tappable,
-      label: context.l10n.economyLeaderboardEntrySemantics(
-        position,
-        name,
-        entry.isMe ? 'true' : 'false',
-        entry.xp,
-        rank.isEmpty ? 'false' : 'true',
-        rank,
-      ),
-      child: ExcludeSemantics(
-        child: Material(
-          color: entry.isMe ? cs.primary.withValues(alpha: 0.08) : Colors.transparent,
-          borderRadius: BorderRadius.circular(PrismRadius.md),
-          child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),
+      child: Semantics(
+        container: true,
+        button: tappable,
+        label: context.l10n.economyLeaderboardEntrySemantics(
+          position,
+          name,
+          entry.isMe ? 'true' : 'false',
+          entry.xp,
+          rank.isEmpty ? 'false' : 'true',
+          rank,
+        ),
+        child: ExcludeSemantics(
+          child: Material(
+            color: entry.isMe ? cs.primary.withValues(alpha: 0.08) : Colors.transparent,
             borderRadius: BorderRadius.circular(PrismRadius.md),
-            onTap: tappable ? () => context.router.push(ProfileRoute(profileIdentifier: entry.username)) : null,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: PrismSpace.sm),
-              child: Row(
-                children: <Widget>[
-                  SizedBox(
-                    width: 32,
-                    child: Text(
-                      formatLocalizedNumber(position, context.l10n),
-                      style: PrismTextStyles.numeral(context, 18),
-                      textAlign: TextAlign.center,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(PrismRadius.md),
+              onTap: tappable ? () => context.router.push(ProfileRoute(profileIdentifier: entry.username)) : null,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: PrismSpace.sm),
+                child: Row(
+                  children: <Widget>[
+                    SizedBox(
+                      width: 32,
+                      child: Text(
+                        formatLocalizedNumber(position, context.l10n),
+                        style: PrismTextStyles.rowTitle(context).copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: PrismSpace.sm),
-                  PrismAvatar(url: entry.photo, name: name, size: 40, frameId: entry.frameId, premium: entry.premium),
-                  const SizedBox(width: PrismSpace.sm),
-                  Expanded(
-                    child: largeText
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              nameLabel,
-                              const SizedBox(height: PrismSpace.xs),
-                              Wrap(
-                                spacing: PrismSpace.xs,
-                                runSpacing: PrismSpace.xs,
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                children: <Widget>[
-                                  if (rank.isNotEmpty) rankLabel,
-                                  Text(context.l10n.economyXp(entry.xp), style: PrismTextStyles.rowTitle(context)),
-                                ],
-                              ),
-                            ],
-                          )
-                        : Row(
-                            children: <Widget>[
-                              Flexible(child: nameLabel),
-                              if (rank.isNotEmpty) ...<Widget>[const SizedBox(width: PrismSpace.xs), rankLabel],
-                            ],
-                          ),
-                  ),
-                  if (!largeText) ...<Widget>[
                     const SizedBox(width: PrismSpace.sm),
-                    Text(context.l10n.economyXp(entry.xp), style: PrismTextStyles.rowTitle(context)),
+                    PrismAvatar(url: entry.photo, name: name, size: 40, frameId: entry.frameId, premium: entry.premium),
+                    const SizedBox(width: PrismSpace.sm),
+                    Expanded(
+                      child: largeText
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                nameLabel,
+                                const SizedBox(height: PrismSpace.xs),
+                                Wrap(
+                                  spacing: PrismSpace.xs,
+                                  runSpacing: PrismSpace.xs,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: <Widget>[
+                                    if (rank.isNotEmpty) rankLabel,
+                                    Text(context.l10n.economyXp(entry.xp), style: PrismTextStyles.rowTitle(context)),
+                                  ],
+                                ),
+                              ],
+                            )
+                          : Row(
+                              children: <Widget>[
+                                Flexible(child: nameLabel),
+                                if (rank.isNotEmpty) ...<Widget>[const SizedBox(width: PrismSpace.xs), rankLabel],
+                              ],
+                            ),
+                    ),
+                    if (!largeText) ...<Widget>[
+                      const SizedBox(width: PrismSpace.sm),
+                      Text(context.l10n.economyXp(entry.xp), style: PrismTextStyles.rowTitle(context)),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),

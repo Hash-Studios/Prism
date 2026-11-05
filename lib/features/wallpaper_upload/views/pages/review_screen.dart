@@ -26,12 +26,9 @@ class ReviewScreen extends StatelessWidget {
     return PrismPage(
       title: context.l10n.wallpaperUploadYourUploads,
       onBack: () => Navigator.maybePop(context),
+      actions: const <Widget>[StatsEntryButton(source: 'uploads')],
       body: Column(
         children: [
-          const Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: StatsEntryButton(source: 'uploads'),
-          ),
           if (DailyMomentConfig.enabled && earnedCoins > 0 && earnedCoinsOwnerId == app_state.prismUser.id)
             Padding(
               padding: const EdgeInsets.all(PrismSpace.md),

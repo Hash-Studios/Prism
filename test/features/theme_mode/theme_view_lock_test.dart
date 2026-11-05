@@ -59,7 +59,7 @@ void main() {
   }
 
   Finder lockedIn(String label) => find.descendant(
-    of: find.ancestor(of: find.text(label), matching: find.byType(MaterialButton)),
+    of: find.ancestor(of: find.text(label), matching: find.byType(Column)).first,
     matching: find.text('Locked'),
   );
 

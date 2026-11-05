@@ -171,6 +171,7 @@ class _TabBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
     final WallRequestsCubit cubit = context.read<WallRequestsCubit>();
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return BlocSelector<WallRequestsCubit, WallRequestsState, WallRequestsTabState>(
       selector: (WallRequestsState state) => state.tab(tab),
       builder: (BuildContext context, WallRequestsTabState state) {
@@ -180,6 +181,7 @@ class _TabBody extends StatelessWidget {
             kind: GlintStateKind.error,
             title: l10n.wallRequestsLoadFailed,
             actionLabel: l10n.wallRequestsRetry,
+            actionVariant: PrismButtonVariant.tonal,
             onAction: () => unawaited(cubit.load(tab)),
           ),
           WallRequestsTabLoaded(:final List<WallRequest> requests) when requests.isEmpty => switch (tab) {
@@ -193,6 +195,7 @@ class _TabBody extends StatelessWidget {
               title: l10n.wallRequestsEmptyTopTitle,
               body: l10n.wallRequestsEmptyTopBody,
               actionLabel: l10n.wallRequestsAsk,
+              actionVariant: PrismButtonVariant.tonal,
               onAction: onAsk,
             ),
           },
@@ -202,7 +205,8 @@ class _TabBody extends StatelessWidget {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xl),
               itemCount: requests.length,
-              separatorBuilder: (_, _) => const SizedBox(height: PrismSpace.sm),
+              separatorBuilder: (BuildContext context, _) =>
+                  Divider(height: 1, thickness: 1, color: cs.onSurface.withValues(alpha: 0.08)),
               itemBuilder: (BuildContext context, int index) {
                 final WallRequest request = requests[index];
                 return WallRequestRow(

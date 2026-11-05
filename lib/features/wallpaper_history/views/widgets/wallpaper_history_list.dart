@@ -185,7 +185,7 @@ class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
     return Column(
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(PrismWallGrid.margin, PrismSpace.sm, PrismWallGrid.margin, 0),
+          padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.page, 0),
           child: PrismSegmented<HistorySegment>(
             values: HistorySegment.values,
             selected: _segment,
@@ -260,12 +260,7 @@ class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
     }
 
     final Widget header = Padding(
-      padding: const EdgeInsets.fromLTRB(
-        PrismWallGrid.margin + PrismSpace.xxs,
-        PrismSpace.xs,
-        PrismWallGrid.margin - PrismSpace.xs,
-        0,
-      ),
+      padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.sm, 0),
       child: Row(
         children: <Widget>[
           Expanded(child: note == null ? const SizedBox.shrink() : Text(note, style: PrismTextStyles.caption(context))),

@@ -169,6 +169,34 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('the keyboard fades the pill and the create button out and they stop taking taps', (tester) async {
+    await pumpBar(tester);
+    expect(find.byType(PrismBottomNav).hitTestable(), findsOneWidget);
+
+    await pumpBar(tester, keyboard: 300);
+    expect(find.byType(PrismBottomNav).hitTestable(), findsNothing);
+    expect(find.byType(PrismFab).hitTestable(), findsNothing);
+    final AnimatedOpacity fade = tester.widget<AnimatedOpacity>(
+      find.ancestor(of: find.byType(PrismBottomNav), matching: find.byType(AnimatedOpacity)).first,
+    );
+    expect(fade.opacity, 0);
+  });
+
+  testWidgets('a fade to the page colour sits under the row and lets taps through', (tester) async {
+    await pumpBar(tester);
+    final Finder fade = find.byWidgetPredicate(
+      (widget) =>
+          widget is DecoratedBox &&
+          widget.decoration is BoxDecoration &&
+          (widget.decoration as BoxDecoration).gradient is LinearGradient,
+    );
+    expect(fade, findsOneWidget);
+    expect(tester.getSize(fade).height, 34 + 90);
+    final List<Color> colors = ((tester.widget<DecoratedBox>(fade).decoration as BoxDecoration).gradient!).colors;
+    expect(colors.last, kDarkTheme.colorScheme.surface.withValues(alpha: 0.85));
+    expect(find.ancestor(of: fade, matching: find.byType(IgnorePointer)), findsWidgets);
+  });
+
   testWidgets('a hidden pill leaves feedback above the scroll-to-top action', (tester) async {
     final semantics = tester.ensureSemantics();
     final controller = ScrollController();
@@ -182,6 +210,7 @@ void main() {
 
     expect(cardRect(tester).bottom, lessThan(tester.getRect(scrollToTop).top));
     expect(scrollToTop.hitTestable(), findsOneWidget);
+    expect(tester.getSize(scrollToTop).width, greaterThanOrEqualTo(44));
     expect(controller.offset, greaterThan(0));
     await tester.tap(scrollToTop);
     await tester.pumpAndSettle();

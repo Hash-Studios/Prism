@@ -46,8 +46,15 @@ class PaletteSwatch extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: color.color,
-                  border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
+                  border: Border.all(color: scheme.onSurface.withValues(alpha: 0.2)),
                 ),
+                child: selected
+                    ? Icon(
+                        Icons.check_rounded,
+                        size: 20,
+                        color: color.color.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+                      )
+                    : null,
               ),
             ),
           ),

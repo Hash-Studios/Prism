@@ -245,6 +245,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
           ..._buildStartingPoints(context),
           const SizedBox(height: PrismSpace.xl),
           ..._buildDiscovery(context),
+          const SizedBox(height: PrismSpace.xxxl),
         ],
       ),
     );

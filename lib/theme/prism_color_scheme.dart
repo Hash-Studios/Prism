@@ -64,13 +64,16 @@ ColorScheme prismColorScheme({
     onErrorContainer: foreground,
     surface: background,
     onSurface: foreground,
-    onSurfaceVariant: _readableMix(foreground, highestSurface, 0.66),
+    // Light themes start stronger: 0.66 read too faint on white.
+    onSurfaceVariant: _readableMix(foreground, highestSurface, dark ? 0.66 : 0.72),
     surfaceDim: background,
     surfaceBright: _mix(foreground, 0.12, background),
     surfaceContainerLowest: background,
     surfaceContainerLow: _mix(foreground, 0.035, background),
-    surfaceContainer: _mix(foreground, 0.055, background),
-    surfaceContainerHigh: _mix(foreground, 0.08, background),
+    // Keep the container levels in order in light: low 0.035 < container 0.04 < high 0.045.
+    surfaceContainer: _mix(foreground, dark ? 0.055 : 0.04, background),
+    // Light cards stay a soft grey so they read on the white sheets and on the page.
+    surfaceContainerHigh: _mix(foreground, dark ? 0.08 : 0.045, background),
     surfaceContainerHighest: _mix(foreground, 0.12, background),
     outline: _mix(foreground, 0.28, background),
     outlineVariant: _mix(foreground, 0.1, background),

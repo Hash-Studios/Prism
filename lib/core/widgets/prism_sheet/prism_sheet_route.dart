@@ -309,7 +309,9 @@ class _PrismSheetSurfaceState extends State<_PrismSheetSurface> {
 
   @override
   Widget build(BuildContext context) {
-    final Color surface = Theme.of(context).colorScheme.surfaceContainerLow;
+    // The theme sets the fill: `surface` on light Prism themes, `surfaceContainerLow` elsewhere.
+    final ThemeData theme = Theme.of(context);
+    final Color surface = theme.bottomSheetTheme.modalBackgroundColor ?? theme.colorScheme.surfaceContainerLow;
     const Radius top = Radius.circular(PrismBottomSheet.topRadius);
     return AnimatedBuilder(
       animation: _repaint,

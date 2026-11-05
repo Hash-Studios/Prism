@@ -3,21 +3,18 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/wall_credit.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Who made a wall and where the credit opens, right-aligned in the info panel.
+/// Who made a wall and where the credit opens, at the start of the info panel.
 class WallCreditRow extends StatelessWidget {
   const WallCreditRow({super.key, required this.credit});
 
   final WallCredit credit;
 
-  static const double _avatarRadius = 13;
-  static const double _secondaryAlpha = 0.85;
+  static const double _avatarSize = 26;
 
   @override
   Widget build(BuildContext context) {
@@ -25,22 +22,21 @@ class WallCreditRow extends StatelessWidget {
     final bool tappable = credit.profileUid != null || credit.externalUrl != null;
     final Widget content = Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (_primaryLine(context) case final String primary)
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (_showsAvatar) ...[_avatar(context), const SizedBox(width: PrismSpace.xs)],
               Flexible(
                 child: Text(
                   primary,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.end,
-                  style: PrismTextStyles.body(context).copyWith(color: cs.secondary),
+                  style: PrismTextStyles.rowTitle(context).copyWith(color: cs.onSurface),
                 ),
               ),
-              if (_showsAvatar) ...[const SizedBox(width: 10), _avatar(context)],
             ],
           ),
         if (_secondaryLine(context) case (final IconData icon, final String text))
@@ -49,17 +45,14 @@ class WallCreditRow extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 16, color: cs.secondary.withValues(alpha: _secondaryAlpha)),
+                Icon(icon, size: 16, color: cs.onSurfaceVariant),
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
                     text,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.end,
-                    style: PrismTextStyles.caption(
-                      context,
-                    ).copyWith(color: cs.secondary.withValues(alpha: _secondaryAlpha)),
+                    style: PrismTextStyles.caption(context),
                   ),
                 ),
               ],
@@ -78,7 +71,7 @@ class WallCreditRow extends StatelessWidget {
           onTap: () => _open(context),
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 44),
-            child: Align(alignment: AlignmentDirectional.centerEnd, child: content),
+            child: Align(alignment: AlignmentDirectional.centerStart, child: content),
           ),
         ),
       ),
@@ -101,33 +94,15 @@ class WallCreditRow extends StatelessWidget {
     final AppLocalizations l10n = context.l10n;
     if (credit.provenance.isPrismExclusive) return (Icons.verified_rounded, l10n.wallCreditPrismExclusive);
     return switch (credit.provenance) {
-      WallProvenance.pexels => (JamIcons.database, l10n.wallCreditOnPexels),
-      WallProvenance.wallhaven => (JamIcons.database, l10n.wallCreditOnWallhaven),
+      WallProvenance.pexels => (Icons.storage_rounded, l10n.wallCreditOnPexels),
+      WallProvenance.wallhaven => (Icons.storage_rounded, l10n.wallCreditOnWallhaven),
       WallProvenance.creator || WallProvenance.studio => null,
     };
   }
 
   Widget _avatar(BuildContext context) {
-    final Color secondary = Theme.of(context).colorScheme.secondary;
     final String? name = credit.name ?? (credit.provenance == WallProvenance.studio ? WallCredit.studioName : null);
-    final String initial = name == null ? '?' : name.characters.first.toUpperCase();
-    final TextStyle initialStyle = TextStyle(color: secondary, fontWeight: FontWeight.w600, fontSize: 11);
-    final String? photoUrl = credit.photoUrl;
-    return CircleAvatar(
-      radius: _avatarRadius,
-      backgroundColor: secondary.withValues(alpha: 0.15),
-      child: photoUrl == null
-          ? Text(initial, style: initialStyle)
-          : ClipOval(
-              child: CachedNetworkImage(
-                imageUrl: photoUrl,
-                width: _avatarRadius * 2,
-                height: _avatarRadius * 2,
-                fit: BoxFit.cover,
-                errorWidget: (context, url, error) => Text(initial, style: initialStyle),
-              ),
-            ),
-    );
+    return PrismAvatar(url: credit.photoUrl, name: name, size: _avatarSize);
   }
 
   Future<void> _open(BuildContext context) async {

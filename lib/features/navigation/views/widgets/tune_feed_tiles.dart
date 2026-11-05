@@ -29,7 +29,7 @@ class LearnedPill extends StatelessWidget {
           padding: PrismBottomSheet.learnedPillPadding,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               Text(label, style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14)),
               const SizedBox(height: PrismSpace.xs),

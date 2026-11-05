@@ -196,7 +196,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(_host(const RewardsEarnSection(), Brightness.light));
     expect(find.text(AppLocalizationsEn().economyWatchAdForCoins(CoinsService.instance.adsRewardNow)), findsOneWidget);
-    expect(find.text(AppLocalizationsEn().economyCoinsEarned(CoinsService.instance.adsRewardNow)), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyCoinReward(CoinsService.instance.adsRewardNow)), findsOneWidget);
   });
 
   testWidgets('earn ad row refreshes after background settlement and disables at the daily limit', (tester) async {

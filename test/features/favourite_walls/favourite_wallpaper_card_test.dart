@@ -225,15 +225,12 @@ void main() {
     await tester.runAsync(cubit.close);
   });
 
-  testWidgets('unknown views stay hidden, known zero renders, and chart is not an action', (tester) async {
+  testWidgets('zero views and zero favourites show no numbers', (tester) async {
     counts.values['WALL'] = const PrismWallpaperStats(favourites: 0, views: 0);
     await pump(tester, _item(WallpaperSource.prism));
-    expect(find.byIcon(Icons.bar_chart_rounded), findsOneWidget);
-    expect(find.text('0'), findsNWidgets(2));
-    expect(find.bySemanticsLabel('0 views'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.bar_chart_rounded));
-    await tester.pump();
-    expect(repository.toggles, 0);
+    expect(find.byIcon(Icons.bar_chart_rounded), findsNothing);
+    expect(find.text('0'), findsNothing);
+    expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
     counts.values['WALL'] = const PrismWallpaperStats(favourites: 0);
     await cubit.close();
     cubit = FavouriteCountsCubit(counts);
@@ -409,7 +406,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('unknown is omitted, known zero is visible, large text fits a narrow card', (tester) async {
+  testWidgets('unknown is omitted, known zero shows the heart alone, large text fits a narrow card', (tester) async {
     counts.unavailable = true;
     await pump(tester, _item(WallpaperSource.prism));
     expect(find.text('0'), findsNothing);
@@ -422,7 +419,8 @@ void main() {
     expect(counts.fetches, failedFetchCount + 1);
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));
     await tester.pump(const Duration(milliseconds: 1));
-    expect(find.text('0'), findsOneWidget);
+    expect(find.text('0'), findsNothing);
+    expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
     await pump(
       tester,
       _item(WallpaperSource.wallhaven, count: 123456789, views: 987654321),

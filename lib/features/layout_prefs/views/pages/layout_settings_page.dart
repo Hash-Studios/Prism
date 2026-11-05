@@ -204,7 +204,7 @@ class _Section extends StatelessWidget {
       ),
       child,
       Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.xs, PrismSpace.xs, PrismSpace.xs, 0),
+        padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.xs, 6, PrismSpace.xs, 0),
         child: Text(footnote, style: PrismTextStyles.caption(context)),
       ),
     ],
@@ -321,7 +321,10 @@ class _TabRow extends StatelessWidget {
             children: <Widget>[
               Semantics(
                 label: context.l10n.layoutShowTab(label),
-                child: Switch(value: visible, onChanged: canToggle ? toggle : null),
+                child: Opacity(
+                  opacity: canToggle ? 1 : 0.5,
+                  child: Switch(value: visible, onChanged: canToggle ? toggle : null),
+                ),
               ),
               ReorderableDragStartListener(
                 index: index,

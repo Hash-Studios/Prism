@@ -766,32 +766,31 @@ class _ClockOverlayState extends State<ClockOverlay> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            AnimatedSwitcher(
-                              duration: fade,
-                              child: lock || styles.length < 2
-                                  ? const SizedBox.shrink()
-                                  : Padding(
-                                      padding: const EdgeInsets.only(bottom: PrismSpace.xs),
-                                      child: _GlassSegments<PreviewIconStyle>(
+                            _EnterFromBelow(
+                              child: _ControlCard(
+                                maxHeight: _duo ? duoControlsHeight : null,
+                                children: <Widget>[
+                                  // Home icon styles sit on the card, above the screen choice, so nothing floats over
+                                  // the wallpaper. The card grows upwards, so Lock and Home never move.
+                                  if (!lock && styles.length > 1) ...<Widget>[
+                                    Semantics(
+                                      container: true,
+                                      label: l10n.wallpaperPreviewIconStyle,
+                                      child: PrismSegmented<PreviewIconStyle>(
                                         values: styles,
                                         selected: _iconStyle,
-                                        label: (style) => switch (style) {
+                                        labelOf: (style) => switch (style) {
                                           PreviewIconStyle.standard => l10n.wallpaperPreviewIconDefault,
                                           PreviewIconStyle.dark => l10n.wallpaperPreviewIconDark,
                                           PreviewIconStyle.clear => l10n.wallpaperPreviewIconClear,
                                           PreviewIconStyle.tinted => l10n.wallpaperPreviewIconTinted,
                                           PreviewIconStyle.themed => l10n.wallpaperPreviewIconThemed,
                                         },
-                                        groupLabel: l10n.wallpaperPreviewIconStyle,
                                         onChanged: _pickIconStyle,
-                                        compact: true,
                                       ),
                                     ),
-                            ),
-                            _EnterFromBelow(
-                              child: _ControlCard(
-                                maxHeight: _duo ? duoControlsHeight : null,
-                                children: <Widget>[
+                                    const SizedBox(height: PrismSpace.xs),
+                                  ],
                                   if (widget.allowDuo || widget.duoReveal || _wideObserved) ...<Widget>[
                                     PrismSegmented<bool>(
                                       values: const <bool>[false, true],
@@ -1190,162 +1189,6 @@ class _NoteChips extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-/// Choices as a glass pill. The selected segment is marked by a solid light indicator that slides across.
-/// Every segment is as wide as the widest label, never under the minimum, so large text grows the pill.
-class _GlassSegments<T> extends StatelessWidget {
-  const _GlassSegments({
-    required this.values,
-    required this.selected,
-    required this.label,
-    required this.onChanged,
-    this.groupLabel,
-    this.compact = false,
-  });
-
-  final List<T> values;
-  final T selected;
-  final String Function(T value) label;
-  final ValueChanged<T> onChanged;
-
-  /// Read by screen readers before the choices.
-  final String? groupLabel;
-
-  /// A smaller, quieter pill for a secondary choice.
-  final bool compact;
-
-  static const double _inset = 4;
-  static const Curve _slide = PrismCurves.enter;
-  static const Duration _slideDuration = PrismDurations.fast;
-
-  @override
-  Widget build(BuildContext context) {
-    final Duration duration = context.motion(_slideDuration);
-    const double height = 48;
-    final int index = values.indexOf(selected);
-    final Widget pill = MediaQuery.withClampedTextScaling(
-      maxScaleFactor: 1.5,
-      child: PrismGlass(
-        borderRadius: height / 2,
-        thickness: 16,
-        glassColor: Theme.of(context).colorScheme.scrim.withValues(alpha: compact ? 0.45 : 0.6),
-        child: SizedBox(
-          height: height,
-          child: Stack(
-            children: <Widget>[
-              Positioned.fill(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final double segment = constraints.maxWidth / values.length;
-                    return Stack(
-                      children: <Widget>[
-                        AnimatedPositionedDirectional(
-                          duration: duration,
-                          curve: _slide,
-                          start: segment * index + _inset,
-                          top: _inset,
-                          bottom: _inset,
-                          width: segment - 2 * _inset,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: PrismColors.onPrimary.withValues(alpha: 0.92),
-                              borderRadius: BorderRadius.circular(height / 2 - _inset),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-              IntrinsicWidth(
-                child: Row(
-                  children: <Widget>[
-                    for (final T value in values)
-                      Expanded(
-                        child: _Segment(
-                          label: label(value),
-                          selected: value == selected,
-                          duration: duration,
-                          curve: _slide,
-                          minWidth: compact ? 64 : 84,
-                          style: compact ? PrismTextStyles.caption(context) : PrismTextStyles.rowTitle(context),
-                          onTap: () => onChanged(value),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    final double screenWidth = MediaQuery.sizeOf(context).width;
-    final Widget constrainedPill = ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: screenWidth > 32 ? screenWidth - 32 : double.infinity),
-      child: pill,
-    );
-    if (groupLabel == null) return constrainedPill;
-    return Semantics(container: true, label: groupLabel, child: constrainedPill);
-  }
-}
-
-class _Segment extends StatelessWidget {
-  const _Segment({
-    required this.label,
-    required this.selected,
-    required this.duration,
-    required this.curve,
-    required this.minWidth,
-    required this.style,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final Duration duration;
-  final Curve curve;
-  final double minWidth;
-  final TextStyle style;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      container: true,
-      excludeSemantics: true,
-      inMutuallyExclusiveGroup: true,
-      selected: selected,
-      label: label,
-      onTap: onTap,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minWidth: minWidth),
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: PressScale(
-                child: AnimatedDefaultTextStyle(
-                  duration: duration,
-                  curve: curve,
-                  style: style.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: selected ? Colors.black87 : PrismColors.onPrimary.withValues(alpha: 0.88),
-                  ),
-                  child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, softWrap: false)),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

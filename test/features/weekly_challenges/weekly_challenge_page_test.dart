@@ -7,6 +7,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/weekly_challenges/biz/weekly_challenges_cubit.dart';
 import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
 import 'package:Prism/features/weekly_challenges/views/pages/weekly_challenge_page.dart';
@@ -97,9 +98,9 @@ void main() {
         );
         when(() => cubit.load(any(), sort: any(named: 'sort'))).thenAnswer((_) async {});
         await tester.pumpWidget(app(WeeklyChallengePage(challengeId: '2026-10-26', cubit: cubit)));
-        final button = find.widgetWithText(FilledButton, 'Upload an entry');
+        final button = find.widgetWithText(PrismButton, 'Upload an entry');
         if (count == 3) {
-          expect(tester.widget<FilledButton>(button).onPressed, isNull);
+          expect(tester.widget<PrismButton>(button).onPressed, isNull);
         } else {
           await tester.tap(button);
           await tester.pump();

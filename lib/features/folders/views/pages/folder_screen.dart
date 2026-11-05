@@ -357,27 +357,32 @@ class _FolderScreenState extends State<FolderScreen> {
         return PrismPage(
           title: folder?.name ?? context.l10n.foldersTitle,
           maxContentWidth: double.infinity,
-          headerBottom: rotating
-              ? Padding(
+          headerBottom: folder == null
+              ? null
+              : Padding(
                   padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
-                  child: Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: Tooltip(
-                      message: context.l10n.foldersRotatingDescription,
-                      excludeFromSemantics: true,
-                      child: Semantics(
-                        label: context.l10n.foldersRotatingDescription,
-                        excludeSemantics: true,
-                        child: PrismTag(
-                          label: context.l10n.foldersRotating,
-                          icon: Icons.autorenew_rounded,
-                          tone: PrismTone.accent,
+                  child: Row(
+                    children: <Widget>[
+                      Text(context.l10n.foldersItemCount(folder.itemCount), style: PrismTextStyles.caption(context)),
+                      if (rotating) ...<Widget>[
+                        const SizedBox(width: PrismSpace.sm),
+                        Tooltip(
+                          message: context.l10n.foldersRotatingDescription,
+                          excludeFromSemantics: true,
+                          child: Semantics(
+                            label: context.l10n.foldersRotatingDescription,
+                            excludeSemantics: true,
+                            child: PrismTag(
+                              label: context.l10n.foldersRotating,
+                              icon: Icons.autorenew_rounded,
+                              tone: PrismTone.accent,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      ],
+                    ],
                   ),
-                )
-              : null,
+                ),
           actions: <Widget>[
             const OfflineChip(),
             if (folder != null)

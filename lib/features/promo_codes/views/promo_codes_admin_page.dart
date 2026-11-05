@@ -248,6 +248,7 @@ class _PromoCodesAdminPageState extends State<PromoCodesAdminPage> {
           kind: GlintStateKind.error,
           title: l10n.promoAdminLoadFailed,
           actionLabel: l10n.adminTryAgain,
+          actionVariant: PrismButtonVariant.tonal,
           onAction: _retry,
         );
       }

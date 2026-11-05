@@ -85,7 +85,7 @@ void main() {
         ),
       ),
     );
-    expect(find.text('Stats'), findsOneWidget);
+    expect(find.byTooltip('Stats'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

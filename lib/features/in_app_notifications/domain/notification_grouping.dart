@@ -99,22 +99,14 @@ String wallOfTheDayRowDayLabel(
   };
 }
 
-/// Time stamp on a notification row: `3:05 PM`, `Yesterday, 3:05 PM`, `Mar 4` or `Mar 4, 2024`.
+/// Time stamp on a notification row, like `3:05 PM`. Rows sit under a day header, so the day is not repeated.
+/// [l10n] and [now] stay so callers do not change.
 String notificationTimeLabel(
   DateTime createdAt, {
   required AppLocalizations l10n,
   required Locale locale,
   DateTime? now,
-}) {
-  final DateTime local = createdAt.toLocal();
-  final String time = DateFormat.jm(locale.toString()).format(local);
-  return switch (_relativeDay(local, (now ?? DateTime.now()).toLocal())) {
-    _RelativeDay.today => time,
-    _RelativeDay.yesterday => l10n.notifYesterdayAt(time),
-    _RelativeDay.thisYear => DateFormat.MMMd(locale.toString()).format(local),
-    _RelativeDay.earlier => DateFormat.yMMMd(locale.toString()).format(local),
-  };
-}
+}) => DateFormat.jm(locale.toString()).format(createdAt.toLocal());
 
 /// Parses `"Name is now following you."` → display name; null if pattern unknown.
 String? followerDisplayNameFromBody(String body) {
@@ -178,7 +170,7 @@ String collapsedGroupSummaryLine(InAppNotificationTitleGroup group, AppLocalizat
     return l10n.notifGroupSummaryCount(n);
   }
   if (notificationGroupHasUniformBody(group)) {
-    return l10n.notifGroupSameMessage(n);
+    return firstBody;
   }
   final String short = firstBody.length > 52 ? '${firstBody.substring(0, 49)}…' : firstBody;
   if (n == 2) {

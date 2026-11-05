@@ -240,10 +240,11 @@ abstract final class PrismFeedLayout {
   /// Minimal spacer appended when the feed still has more pages to load.
   static const double endOfPageSpacerHeight = 22;
 
-  /// Gap between tiles of the home grid, on both axes. The side margin is the same, so the gutters are even.
-  static const double gridSpacing = 4.0;
+  /// Gap between tiles of the home grid, on both axes. The same as the `PrismWallGrid` spacing.
+  static const double gridSpacing = 8.0;
 
-  static const EdgeInsets gridPadding = EdgeInsets.symmetric(horizontal: gridSpacing);
+  /// Side margin of the home grid. The same as the `PrismWallGrid` margin, so every grid lines up.
+  static const EdgeInsets gridPadding = EdgeInsets.symmetric(horizontal: 12);
 }
 
 /// Visual parameters for the `PersonalizedFeedEditorialNote` pattern.
@@ -317,7 +318,7 @@ abstract final class PrismBottomSheet {
   static const double interestCheckIconSize = 14;
 
   static const int learnedTermCount = 6;
-  static const EdgeInsets learnedPillPadding = EdgeInsets.fromLTRB(14, 8, 14, 10);
+  static const EdgeInsets learnedPillPadding = EdgeInsets.symmetric(horizontal: 14, vertical: 10);
 
   /// Fixed track width so strengths compare across pills.
   static const double learnedBarWidth = 48;

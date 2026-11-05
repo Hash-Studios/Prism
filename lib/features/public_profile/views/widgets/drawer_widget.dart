@@ -6,6 +6,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
@@ -70,6 +71,15 @@ class ProfileDrawer extends StatelessWidget {
     }
   }
 
+  Future<void> _openPro(BuildContext context) async {
+    PrismHaptics.tap();
+    await PaywallOrchestrator.instance.presentOrRequireSignIn(
+      context,
+      placement: PaywallPlacement.mainUpsell,
+      source: 'profile_drawer_pro_card',
+    );
+  }
+
   Future<void> _logOut(BuildContext context) async {
     final AppLocalizations l10n = context.l10n;
     _trackDrawerAction(AnalyticsActionValue.drawerLogoutTapped, sourceContext: 'profile_drawer_logout');
@@ -108,6 +118,8 @@ class ProfileDrawer extends StatelessWidget {
         ),
         children: <Widget>[
           PrismCard(
+            // Members who are not Pro yet can open the offer from here. Pro members only see their benefits.
+            onTap: premium ? null : () => unawaited(_openPro(context)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -123,6 +135,20 @@ class ProfileDrawer extends StatelessWidget {
                   premium ? context.l10n.accountPremiumBenefitsActive : context.l10n.accountPremiumBenefitsInactive,
                   style: PrismTextStyles.body(context),
                 ),
+                if (!premium) ...<Widget>[
+                  const SizedBox(height: PrismSpace.sm),
+                  Row(
+                    children: <Widget>[
+                      Flexible(
+                        child: Text(
+                          context.l10n.wallpaperSeePrismPro,
+                          style: PrismTextStyles.rowTitle(context).copyWith(color: cs.primary),
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded, size: 20, color: cs.primary),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -130,7 +156,7 @@ class ProfileDrawer extends StatelessWidget {
           PrismGroup(
             children: <Widget>[
               PrismRow(
-                icon: Icons.photo_library_outlined,
+                icon: Icons.photo_library_rounded,
                 title: context.l10n.accountLibrary,
                 onTap: () {
                   _trackDrawerAction(AnalyticsActionValue.drawerLibraryTapped, sourceContext: 'profile_drawer_library');
@@ -155,7 +181,7 @@ class ProfileDrawer extends StatelessWidget {
                 },
               ),
               PrismRow(
-                icon: Icons.settings_outlined,
+                icon: Icons.settings_rounded,
                 title: context.l10n.accountSettings,
                 onTap: () {
                   _trackDrawerAction(
@@ -181,6 +207,7 @@ class ProfileDrawer extends StatelessWidget {
               PrismRow(
                 icon: Icons.logout_rounded,
                 title: context.l10n.accountLogOut,
+                destructive: true,
                 showChevron: false,
                 onTap: () => unawaited(_logOut(context)),
               ),

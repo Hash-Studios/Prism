@@ -696,7 +696,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get accountSpatialSceneSemanticLabel => 'Espacial, fondos con profundidad 3D clara';
 
   @override
-  String get accountDownloadApk => 'DESCARGAR APK';
+  String get accountDownloadApk => 'Descargar APK';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -740,7 +740,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get accountFavouritesCleared => 'Se borraron todos los fondos favoritos.';
 
   @override
-  String get accountFeedback => 'COMENTARIOS';
+  String get accountFeedback => 'Comentarios';
 
   @override
   String get accountFeedbackSubject => 'Comentarios sobre Prism';
@@ -1215,7 +1215,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get accountQuickTiles => 'Accesos rápidos';
 
   @override
-  String get accountRateApp => 'VALORAR';
+  String get accountRateApp => 'Valorar';
 
   @override
   String get accountRecentSearches => 'Búsquedas recientes';
@@ -1283,11 +1283,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get accountRestoringPurchases => 'Restaurando compras…';
-
-  @override
-  String accountResultsForQuery(String query) {
-    return 'Resultados para $query';
-  }
 
   @override
   String get accountRetry => 'Reintentar';
@@ -3995,6 +3990,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get deepLinkInputLiveTitle => 'Fondo de pantalla animado';
 
   @override
+  String get deepLinkInputLiveDescription =>
+      'Elige una foto de tu galería para convertirla en un fondo de pantalla animado.';
+
+  @override
   String get deepLinkInputPhotoPreviewTitle => 'Vista previa de la foto';
 
   @override
@@ -4904,6 +4903,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString monedas', one: '1 moneda');
     return '+$_temp0';
+  }
+
+  @override
+  String economyCoinReward(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '+$countString';
   }
 
   @override
@@ -7823,6 +7830,27 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get premiumPageViewPlans => 'Ver planes';
+
+  @override
+  String get premiumPageHeadline => 'Toda la galería, desbloqueada';
+
+  @override
+  String get premiumBenefitWalls => 'Todas las colecciones y fondos premium';
+
+  @override
+  String get premiumBenefitFree => 'Descargas gratis y sin anuncios';
+
+  @override
+  String get premiumBenefitSpin => 'Un giro gratis cada día';
+
+  @override
+  String get premiumBenefitAutomation => 'Rotación automática y modo día y noche';
+
+  @override
+  String get premiumBenefitLiveStyles => 'Todos los estilos de fondos animados';
+
+  @override
+  String get premiumBenefitAiClean => 'Fondos con IA sin marca de agua, por menos monedas';
 
   @override
   String get premiumGuestStorePurchaseActive =>
@@ -12675,6 +12703,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get creatorsToFollow => 'Creadores para seguir';
+
+  @override
+  String get accountBrowseCreators => 'Explorar creadores';
 
   @override
   String get creatorsSeeAll => 'Ver todo';

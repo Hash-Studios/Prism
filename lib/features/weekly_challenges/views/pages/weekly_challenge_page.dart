@@ -148,154 +148,156 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
     ChallengeError.missing => context.l10n.challengeMissing,
     _ => context.l10n.challengeVoteError,
   };
+  void _share(WeeklyChallenge challenge, ChallengeDetail detail) => showShareSheet(
+    context,
+    ShareCardContent(
+      imageUrl: challenge.winner?.thumbUrl ?? detail.entries.firstOrNull?.thumbUrl ?? '',
+      link: 'https://prismwalls.com/challenges/${challenge.id}',
+      brandName: 'Prism',
+      contextLine: challenge.theme,
+    ),
+    'weekly_challenge',
+    onShared: () => analytics.track(ChallengeSharedEvent(challengeId: challenge.id)),
+  );
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(context.l10n.challengeTitle)),
-    body: BlocConsumer<WeeklyChallengesCubit, WeeklyChallengesState>(
-      bloc: _cubit,
-      listener: (context, state) {
-        if (state.error != null && !state.failed) toasts.error(_error(state.error));
-        final challenge = state.detail?.challenge;
-        _closeTimer?.cancel();
-        if (challenge != null && challenge.isOpenAt(DateTime.now().toUtc())) {
-          _closeTimer = Timer(challenge.closesAt.difference(DateTime.now().toUtc()), () {
-            if (mounted) unawaited(_cubit.load(widget.challengeId));
-          });
-        }
-        if (challenge?.winner != null && _winnerViewed != challenge!.id) {
-          _winnerViewed = challenge.id;
-          analytics.track(ChallengeWinnerViewedEvent(challengeId: challenge.id));
-        }
-      },
-      builder: (context, state) {
-        if (state.loading) return const Center(child: CircularProgressIndicator());
-        final detail = state.detail;
-        if (state.failed || detail == null) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Glint(),
-                  Text(
-                    state.error == ChallengeError.missing ? context.l10n.challengeMissing : context.l10n.challengeError,
-                  ),
-                  TextButton(
-                    onPressed: () => _cubit.load(widget.challengeId),
-                    child: Text(context.l10n.challengeRetry),
-                  ),
-                ],
-              ),
+  Widget build(BuildContext context) => BlocConsumer<WeeklyChallengesCubit, WeeklyChallengesState>(
+    bloc: _cubit,
+    listener: (context, state) {
+      if (state.error != null && !state.failed) toasts.error(_error(state.error));
+      final challenge = state.detail?.challenge;
+      _closeTimer?.cancel();
+      if (challenge != null && challenge.isOpenAt(DateTime.now().toUtc())) {
+        _closeTimer = Timer(challenge.closesAt.difference(DateTime.now().toUtc()), () {
+          if (mounted) unawaited(_cubit.load(widget.challengeId));
+        });
+      }
+      if (challenge?.winner != null && _winnerViewed != challenge!.id) {
+        _winnerViewed = challenge.id;
+        analytics.track(ChallengeWinnerViewedEvent(challengeId: challenge.id));
+      }
+    },
+    builder: (context, state) {
+      final detail = state.detail;
+      final bool ready = !state.loading && !state.failed && detail != null;
+      return PrismPage(
+        title: context.l10n.challengeTitle,
+        actions: [
+          if (ready)
+            PrismIconButton(
+              icon: Icons.ios_share_rounded,
+              tooltip: context.l10n.challengeShare,
+              onPressed: () => _share(detail.challenge, detail),
             ),
-          );
-        }
-        final challenge = detail.challenge;
-        final open = challenge.isOpenAt(DateTime.now().toUtc());
-        final l10n = context.l10n;
-        return RefreshIndicator(
-          onRefresh: () => _cubit.load(widget.challengeId),
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            children: [
-              Text(challenge.theme, style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 12),
-              Text(l10n.challengeRules),
-              Text(l10n.challengeVotingRules(DateFormat.yMMMd(l10n.localeName).add_Hm().format(challenge.closesAt))),
-              const SizedBox(height: 16),
-              if (open) ...[
-                if (detail.myEntryCount >= _maxChallengeEntries) Text(l10n.challengeLimit),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    FilledButton(
-                      onPressed: detail.myEntryCount >= _maxChallengeEntries
-                          ? null
-                          : () => _upload(challenge, detail.myEntryCount),
-                      child: Text(l10n.challengeUpload),
+        ],
+        body: Builder(
+          builder: (context) {
+            if (state.loading) return PrismSkeleton.cards();
+            if (state.failed || detail == null) {
+              return GlintState(
+                kind: GlintStateKind.error,
+                title: state.error == ChallengeError.missing
+                    ? context.l10n.challengeMissing
+                    : context.l10n.challengeError,
+                actionLabel: context.l10n.challengeRetry,
+                actionVariant: PrismButtonVariant.tonal,
+                onAction: () => _cubit.load(widget.challengeId),
+              );
+            }
+            final challenge = detail.challenge;
+            final open = challenge.isOpenAt(DateTime.now().toUtc());
+            final l10n = context.l10n;
+            return RefreshIndicator(
+              onRefresh: () => _cubit.load(widget.challengeId),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Text(challenge.theme, style: PrismTextStyles.sectionTitle(context)),
+                  const SizedBox(height: 12),
+                  Text(l10n.challengeRules),
+                  Text(
+                    l10n.challengeVotingRules(
+                      DateFormat.MMMEd(l10n.localeName).add_jm().format(challenge.closesAt.toLocal()),
                     ),
-                    OutlinedButton(
-                      onPressed: detail.myEntryCount >= _maxChallengeEntries
-                          ? null
-                          : () async {
-                              if (!_signedIn()) return;
-                              await context.router.push(AiTabRoute(challengeSeed: challenge.seed));
-                              if (mounted) unawaited(_cubit.load(widget.challengeId));
-                            },
-                      child: Text(l10n.challengeAi),
+                  ),
+                  const SizedBox(height: 16),
+                  if (open) ...[
+                    if (detail.myEntryCount >= _maxChallengeEntries) Text(l10n.challengeLimit),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 8,
+                      children: [
+                        PrismButton(
+                          label: l10n.challengeUpload,
+                          onPressed: detail.myEntryCount >= _maxChallengeEntries
+                              ? null
+                              : () => _upload(challenge, detail.myEntryCount),
+                        ),
+                        PrismButton(
+                          label: l10n.challengeAi,
+                          variant: PrismButtonVariant.tonal,
+                          onPressed: detail.myEntryCount >= _maxChallengeEntries
+                              ? null
+                              : () async {
+                                  if (!_signedIn()) return;
+                                  await context.router.push(AiTabRoute(challengeSeed: challenge.seed));
+                                  if (mounted) unawaited(_cubit.load(widget.challengeId));
+                                },
+                        ),
+                      ],
+                    ),
+                  ] else
+                    Text(switch (challenge.state) {
+                      ChallengeState.votingClosed || ChallengeState.open => l10n.challengeWaiting,
+                      ChallengeState.scheduled => l10n.challengeScheduled,
+                      _ => challenge.noWinner ? l10n.challengeNoWinner : l10n.challengeClosed,
+                    }),
+                  if (challenge.winner case final winner?) ...[
+                    Text(l10n.challengeWinner(winner.creatorName), style: PrismTextStyles.rowTitle(context)),
+                    _entry(winner, [winner], 0, false),
+                  ],
+                  const SizedBox(height: 12),
+                  PrismSegmented<ChallengeSort>(
+                    values: const [ChallengeSort.top, ChallengeSort.newest],
+                    selected: state.sort,
+                    labelOf: (sort) => sort == ChallengeSort.top ? l10n.challengeTop : l10n.challengeNew,
+                    onChanged: (sort) => _cubit.load(widget.challengeId, sort: sort),
+                  ),
+                  const SizedBox(height: 16),
+                  if (detail.entries.isEmpty)
+                    SizedBox(
+                      height: 240,
+                      child: GlintState(kind: GlintStateKind.empty, title: l10n.challengeEmpty),
+                    ),
+                  for (final (i, entry) in detail.entries.indexed) _entry(entry, detail.entries, i, open),
+                  if (state.past.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    PrismSectionHeader(title: l10n.challengePast, padding: const EdgeInsets.only(bottom: 12)),
+                    PrismGroup(
+                      children: [
+                        for (final past in state.past)
+                          PrismRow(
+                            title: past.theme,
+                            subtitle: past.winner == null
+                                ? past.noWinner
+                                      ? l10n.challengeNoWinner
+                                      : past.state == ChallengeState.votingClosed
+                                      ? l10n.challengeWaiting
+                                      : l10n.challengeClosed
+                                : l10n.challengeWinner(past.winner!.creatorName),
+                            onTap: () => context.router.push(WeeklyChallengeRoute(challengeId: past.id)),
+                          ),
+                      ],
                     ),
                   ],
-                ),
-              ] else
-                Text(switch (challenge.state) {
-                  ChallengeState.votingClosed || ChallengeState.open => l10n.challengeWaiting,
-                  ChallengeState.scheduled => l10n.challengeScheduled,
-                  _ => challenge.noWinner ? l10n.challengeNoWinner : l10n.challengeClosed,
-                }),
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: TextButton.icon(
-                  icon: const Icon(Icons.share_outlined),
-                  label: Text(l10n.challengeShare),
-                  onPressed: () => showShareSheet(
-                    context,
-                    ShareCardContent(
-                      imageUrl: challenge.winner?.thumbUrl ?? detail.entries.firstOrNull?.thumbUrl ?? '',
-                      link: 'https://prismwalls.com/challenges/${challenge.id}',
-                      brandName: 'Prism',
-                      contextLine: challenge.theme,
-                    ),
-                    'weekly_challenge',
-                    onShared: () => analytics.track(ChallengeSharedEvent(challengeId: challenge.id)),
-                  ),
-                ),
-              ),
-              if (challenge.winner case final winner?) ...[
-                Text(l10n.challengeWinner(winner.creatorName), style: PrismTextStyles.rowTitle(context)),
-                _entry(winner, [winner], 0, false),
-              ],
-              const SizedBox(height: 12),
-              SegmentedButton<ChallengeSort>(
-                segments: [
-                  ButtonSegment(value: ChallengeSort.top, label: Text(l10n.challengeTop)),
-                  ButtonSegment(value: ChallengeSort.newest, label: Text(l10n.challengeNew)),
                 ],
-                selected: {state.sort},
-                onSelectionChanged: (sort) => _cubit.load(widget.challengeId, sort: sort.single),
               ),
-              const SizedBox(height: 16),
-              if (detail.entries.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Column(children: [const Glint(), Text(l10n.challengeEmpty)]),
-                ),
-              for (final (i, entry) in detail.entries.indexed) _entry(entry, detail.entries, i, open),
-              if (state.past.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                Text(l10n.challengePast, style: PrismTextStyles.rowTitle(context)),
-                for (final past in state.past)
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(past.theme),
-                    subtitle: Text(
-                      past.winner == null
-                          ? past.noWinner
-                                ? l10n.challengeNoWinner
-                                : past.state == ChallengeState.votingClosed
-                                ? l10n.challengeWaiting
-                                : l10n.challengeClosed
-                          : l10n.challengeWinner(past.winner!.creatorName),
-                    ),
-                    onTap: () => context.router.push(WeeklyChallengeRoute(challengeId: past.id)),
-                  ),
-              ],
-            ],
-          ),
-        );
-      },
-    ),
+            );
+          },
+        ),
+      );
+    },
   );
   Widget _entry(ChallengeEntry entry, List<ChallengeEntry> entries, int index, bool open) {
     final l10n = context.l10n;
@@ -315,11 +317,11 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
                 ),
               ),
             ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
+          PrismRow(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             onTap: () => _open(entries, index),
-            title: Text(entry.title.isEmpty ? entry.creatorName : entry.title),
-            subtitle: Text(entry.creatorName),
+            title: entry.title.isEmpty ? entry.creatorName : entry.title,
+            subtitle: entry.creatorName,
           ),
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
@@ -327,9 +329,11 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
             children: [
               Text(l10n.challengeVotes(entry.voteCount)),
               if (open && !entry.mine)
-                OutlinedButton.icon(
-                  icon: Icon(entry.voted ? Icons.favorite : Icons.favorite_border),
-                  label: Text(entry.voted ? l10n.challengeUnvote : l10n.challengeVote),
+                PrismButton(
+                  icon: entry.voted ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  label: entry.voted ? l10n.challengeUnvote : l10n.challengeVote,
+                  variant: PrismButtonVariant.tonal,
+                  size: PrismButtonSize.compact,
                   onPressed: () {
                     if (_signedIn()) unawaited(_cubit.toggleVote(entry));
                   },

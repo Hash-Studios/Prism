@@ -1,7 +1,10 @@
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+/// Favourites and views under a wallpaper tile. A zero count is noise: views hide at 0, and the heart shows without a
+/// number until someone favourites the wall. Screen readers still hear the favourite count.
 class WallpaperStatsRow extends StatelessWidget {
   const WallpaperStatsRow({
     super.key,
@@ -27,15 +30,18 @@ class WallpaperStatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int? safeFavourites = favourites != null && favourites! >= 0 ? favourites : null;
-    final int? safeViews = views != null && views! >= 0 ? views : null;
+    final int? safeViews = views != null && views! > 0 ? views : null;
     if (safeFavourites == null && safeViews == null && onFavouriteTap == null) return const SizedBox.shrink();
 
     final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
-    final style = Theme.of(context).textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant);
+    final TextStyle style = PrismTextStyles.caption(context).copyWith(fontSize: 13, fontWeight: FontWeight.w600);
     final formatter = NumberFormat.compact(locale: l10n.localeName)..maximumFractionDigits = 1;
     final favouriteLabel = safeFavourites == null ? null : l10n.wallpaperFavouriteCount(safeFavourites);
     final viewLabel = safeViews == null ? null : l10n.wallpaperViewCount(safeViews);
+    final String? favouriteCount = safeFavourites == null || safeFavourites == 0
+        ? null
+        : formatter.format(safeFavourites);
     final Widget favourite = onFavouriteTap == null
         ? Semantics(
             container: true,
@@ -43,7 +49,7 @@ class WallpaperStatsRow extends StatelessWidget {
             child: ExcludeSemantics(
               child: _Stat(
                 icon: favouriteIcon ?? Icons.favorite_rounded,
-                count: safeFavourites == null ? null : formatter.format(safeFavourites),
+                count: favouriteCount,
                 iconColor: scheme.onSurfaceVariant,
                 style: style,
               ),
@@ -69,9 +75,8 @@ class WallpaperStatsRow extends StatelessWidget {
                       child: Center(
                         child: _Stat(
                           icon: favouriteIcon ?? Icons.favorite_rounded,
-                          count: safeFavourites == null ? null : formatter.format(safeFavourites),
+                          count: favouriteCount,
                           iconColor: favouriteIconColor ?? scheme.onSurfaceVariant,
-                          iconSize: 18,
                           gap: 5,
                           style: style,
                         ),
@@ -108,27 +113,19 @@ class WallpaperStatsRow extends StatelessWidget {
 }
 
 class _Stat extends StatelessWidget {
-  const _Stat({
-    required this.icon,
-    required this.count,
-    required this.iconColor,
-    required this.style,
-    this.iconSize = 16,
-    this.gap = 4,
-  });
+  const _Stat({required this.icon, required this.count, required this.iconColor, required this.style, this.gap = 4});
 
   final IconData? icon;
   final String? count;
   final Color iconColor;
-  final TextStyle? style;
-  final double iconSize;
+  final TextStyle style;
   final double gap;
 
   @override
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      if (icon != null) ...[Icon(icon, size: iconSize, color: iconColor), if (count != null) SizedBox(width: gap)],
+      if (icon != null) ...[Icon(icon, size: 17, color: iconColor), if (count != null) SizedBox(width: gap)],
       if (count != null)
         Flexible(
           child: Text(count!, maxLines: 1, overflow: TextOverflow.ellipsis, style: style),

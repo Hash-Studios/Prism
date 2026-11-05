@@ -7,7 +7,7 @@ import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/features/public_profile/domain/usecases/public_profile_usecases.dart';
@@ -83,6 +83,7 @@ void main() {
 
     expect(find.text('No wallpapers yet'), findsOneWidget);
     expect(find.text('Upload your first wallpaper to start your gallery.'), findsNothing);
+    expect(find.text('Upload wallpaper'), findsNothing);
     expect(find.byType(LoadingCards), findsNothing);
     expect(find.byType(SliverGrid), findsNothing);
   });
@@ -92,6 +93,7 @@ void main() {
 
     expect(find.text('No wallpapers yet'), findsOneWidget);
     expect(find.text('Upload your first wallpaper to start your gallery.'), findsOneWidget);
+    expect(find.widgetWithText(PrismButton, 'Upload wallpaper'), findsOneWidget);
   });
 
   testWidgets('shows an error with a retry that refreshes when the first load failed', (tester) async {

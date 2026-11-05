@@ -193,12 +193,15 @@ class _RedeemCodeBodyState extends State<RedeemCodeBody> {
       actions: <Widget>[
         Semantics(
           label: busy ? l10n.promoRedeeming : null,
-          child: PrismButton(
-            label: l10n.promoRedeemAction,
-            loading: busy,
-            expand: true,
-            maxLines: 2,
-            onPressed: _redeem,
+          child: ListenableBuilder(
+            listenable: _code,
+            builder: (context, _) => PrismButton(
+              label: l10n.promoRedeemAction,
+              loading: busy,
+              expand: true,
+              maxLines: 2,
+              onPressed: _code.text.trim().isEmpty ? null : _redeem,
+            ),
           ),
         ),
       ],

@@ -6,6 +6,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_row.dart';
 import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
@@ -68,6 +69,7 @@ void main() {
     expect(find.byTooltip('Back'), findsOneWidget);
     expect(find.byType(Glint), findsOneWidget);
     expect(find.text('Search creators by name'), findsOneWidget);
+    expect(find.widgetWithText(PrismButton, 'Creators to follow'), findsOneWidget);
   });
 
   testWidgets('submitting asks the bloc to search and clearing resets it', (tester) async {
@@ -116,6 +118,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.widgetWithText(GlintState, 'No creators found'), findsOneWidget);
+    expect(find.widgetWithText(PrismButton, 'Browse creators'), findsOneWidget);
   });
 
   testWidgets('a failed search shows an error and retries the same query', (tester) async {

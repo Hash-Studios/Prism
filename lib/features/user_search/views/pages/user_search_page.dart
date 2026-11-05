@@ -124,6 +124,8 @@ class _UserSearchLoader extends StatelessWidget {
             kind: GlintStateKind.empty,
             title: context.l10n.accountNoCreatorsFound,
             body: context.l10n.accountCreatorSearchEmptyBody,
+            actionLabel: context.l10n.accountBrowseCreators,
+            onAction: () => _openCreators(context),
           );
         }
         return _CreatorList(users: state.users, queryLength: state.query.trim().length, searchId: searchId);
@@ -132,19 +134,38 @@ class _UserSearchLoader extends StatelessWidget {
   }
 }
 
+/// Opens the creator directory, so an empty search still leads somewhere.
+void _openCreators(BuildContext context) {
+  context.router.push(CreatorsRoute(source: 'user_search'));
+}
+
 class _SearchHint extends StatelessWidget {
   const _SearchHint();
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    // Above the centre, where the eye lands first, and clear of the keyboard.
+    return Align(
+      alignment: const Alignment(0, -0.35),
       child: SingleChildScrollView(
+        padding: const EdgeInsets.all(PrismSpace.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             const Glint(mood: GlintMood.curious),
             const SizedBox(height: PrismSpace.md),
-            Text(context.l10n.accountSearchCreatorsByName, style: PrismTextStyles.body(context)),
+            Text(
+              context.l10n.accountSearchCreatorsByName,
+              textAlign: TextAlign.center,
+              style: PrismTextStyles.body(context),
+            ),
+            const SizedBox(height: PrismSpace.lg),
+            PrismButton(
+              label: context.l10n.creatorsToFollow,
+              variant: PrismButtonVariant.tonal,
+              size: PrismButtonSize.compact,
+              onPressed: () => _openCreators(context),
+            ),
           ],
         ),
       ),

@@ -452,7 +452,10 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                       },
                     ),
             )
-          : Text(l10n.wallpaperFavouriteCount(state.items.length), style: PrismTextStyles.caption(context)),
+          : Padding(
+              padding: const EdgeInsetsDirectional.only(start: PrismSpace.page - PrismWallGrid.margin),
+              child: Text(l10n.wallpaperFavouriteCount(state.items.length), style: PrismTextStyles.caption(context)),
+            ),
       actions: <Widget>[
         Badge(
           isLabelVisible: viewChanged,

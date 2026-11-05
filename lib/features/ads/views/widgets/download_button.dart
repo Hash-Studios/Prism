@@ -22,6 +22,7 @@ import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_desktop.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/prepare_source.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
@@ -34,7 +35,6 @@ import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart'
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -308,11 +308,12 @@ class _DownloadButtonState extends State<DownloadButton> {
         caption: widget.labelled ? context.l10n.economyDownload : null,
         onTap: _handleTap,
         isLoading: isLoading,
-        child: const Icon(JamIcons.download),
+        child: const Icon(Icons.download_rounded),
       );
     }
     final String text;
     final String semantics;
+    int? cost;
     if (label == null) {
       text = context.l10n.economyDownload;
       semantics = context.l10n.economyDownload;
@@ -342,8 +343,9 @@ class _DownloadButtonState extends State<DownloadButton> {
           ? context.l10n.economyDownloadFreeWithPassSemantics(label)
           : context.l10n.economyDownloadFreeDownloadsLeftSemantics(label, left);
     } else {
-      final int cost = _downloadSpendAction.cost() * (widget.set?.paidItems ?? 1);
-      text = context.l10n.economyDownloadCost(label, cost);
+      // The price shows after the label as a coin and a number.
+      cost = _downloadSpendAction.cost() * (widget.set?.paidItems ?? 1);
+      text = label;
       semantics = context.l10n.economyDownloadCostSemantics(label, cost);
     }
     if (widget.primary) {
@@ -358,6 +360,16 @@ class _DownloadButtonState extends State<DownloadButton> {
           expand: widget.expand,
           maxLines: widget.expand ? 3 : 1,
           loading: isLoading,
+          trailing: cost == null
+              ? null
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    const PrismCoinIcon(size: 14),
+                    const SizedBox(width: PrismSpace.xxs),
+                    Text('$cost', style: const TextStyle(fontFeatures: <FontFeature>[FontFeature.tabularFigures()])),
+                  ],
+                ),
           onPressed: () => _handleTap(playTapHaptic: false),
         ),
       );
@@ -365,7 +377,7 @@ class _DownloadButtonState extends State<DownloadButton> {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _handleTap,
-      child: PrimaryActionPill(label: text, semanticLabel: semantics, isLoading: isLoading),
+      child: PrimaryActionPill(label: text, semanticLabel: semantics, isLoading: isLoading, cost: cost),
     );
   }
 

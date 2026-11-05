@@ -102,6 +102,7 @@ void main() {
     final earn = find.byType(RewardsEarnSection);
     final spend = find.byType(RewardsSpendSection);
     final more = find.byKey(const ValueKey<String>('rewards-more'));
+    final moreRows = find.text(AppLocalizationsEn().economySpinTheWheel);
     expect(today, findsOneWidget);
     expect(earn, findsOneWidget);
     expect(spend, findsOneWidget);
@@ -112,9 +113,7 @@ void main() {
     expect(find.byType(RewardsHero), findsNothing);
     expect(find.byType(BalanceCard), findsNothing);
     expect(find.byType(CoinBalancePill), findsNothing);
-    await tester.tap(more);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    expect(moreRows, findsOneWidget);
     expect(find.byType(TodayCard), findsOneWidget);
     expect(find.text(AppLocalizationsEn().economyDailyStreak), findsOneWidget);
     expect(find.text(AppLocalizationsEn().economySpinTheWheel), findsOneWidget);

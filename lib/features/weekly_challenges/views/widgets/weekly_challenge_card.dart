@@ -46,13 +46,23 @@ class _WeeklyChallengeCardState extends State<WeeklyChallengeCard> with WidgetsB
       final challenge = state.current;
       if (challenge == null) return const SizedBox.shrink();
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Card(
-          child: ListTile(
-            title: Text(context.l10n.challengeTitle, style: PrismTextStyles.rowTitle(context)),
-            subtitle: Text(challenge.theme),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.router.push(WeeklyChallengeRoute(challengeId: challenge.id)),
+        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: PrismSpace.xs),
+        child: PrismCard(
+          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: PrismSpace.sm),
+          onTap: () => context.router.push(WeeklyChallengeRoute(challengeId: challenge.id)),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(context.l10n.challengeTitle, style: PrismTextStyles.rowTitle(context)),
+                    Text(challenge.theme, style: PrismTextStyles.body(context)),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ],
           ),
         ),
       );

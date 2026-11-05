@@ -594,15 +594,6 @@ class _SearchScreenState extends State<SearchScreen> {
                         padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
                         child: Row(
                           children: <Widget>[
-                            if (_submittedQuery.isNotEmpty)
-                              Expanded(
-                                child: Text(
-                                  context.l10n.accountResultsForQuery(_submittedQuery),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: PrismTextStyles.caption(context),
-                                ),
-                              ),
                             if (_filters.color != null)
                               Tooltip(
                                 message: context.l10n.accountClearColour,

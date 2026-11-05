@@ -6,6 +6,14 @@ import 'reference_filters.dart';
 
 void main() {
   group('colorPresets', () {
+    test('labels split camelCase ids into words and keep the ids', () {
+      final ColorPreset blue = colorPresets.firstWhere((p) => p.name == 'AddictiveBlue');
+      expect(blue.label, 'Addictive Blue');
+      expect(colorPresets.firstWhere((p) => p.name == 'X-Pro II').label, 'X-Pro II');
+      expect(colorPresets.firstWhere((p) => p.name == '1977').label, '1977');
+      expect(colorPresets.where((p) => RegExp('[a-z][A-Z]').hasMatch(p.label)), isEmpty);
+    });
+
     test('names are unique', () {
       final List<String> names = colorPresets.map((p) => p.name).toList();
       expect(names.toSet().length, names.length);

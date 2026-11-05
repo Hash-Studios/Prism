@@ -146,7 +146,8 @@ class PrismAvatar extends StatelessWidget {
   }
 }
 
-/// A row of two to four exclusive choices with a thumb that slides to the selected one.
+/// A row of two to four exclusive choices with a thumb that slides to the selected one. The thumb is a raised
+/// neutral surface, as on iOS, so it never competes with the accent. It is 44 points high (48 on Android).
 class PrismSegmented<T> extends StatelessWidget {
   const PrismSegmented({
     super.key,
@@ -163,14 +164,18 @@ class PrismSegmented<T> extends StatelessWidget {
   final ValueChanged<T>? onChanged;
   final IconData? Function(T)? iconOf;
 
+  static const double _inset = 3;
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final int index = values.indexOf(selected).clamp(0, values.length - 1);
     final double x = values.length == 1 ? 0 : -1 + 2 * index / (values.length - 1);
+    final Color thumb = cs.brightness == Brightness.dark ? cs.surfaceContainerHighest : cs.surface;
+    // 44 points as on iOS; Android keeps Material's 48 dp touch target.
+    final double minHeight = Theme.of(context).platform == TargetPlatform.android ? 48 : 44;
     return Container(
-      constraints: const BoxConstraints(minHeight: 54),
-      padding: const EdgeInsets.all(3),
+      constraints: BoxConstraints(minHeight: minHeight),
       decoration: BoxDecoration(
         color: cs.onSurface.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(PrismRadius.pill),
@@ -178,68 +183,83 @@ class PrismSegmented<T> extends StatelessWidget {
       child: Stack(
         children: <Widget>[
           Positioned.fill(
-            child: AnimatedAlign(
-              alignment: Alignment(x, 0),
-              duration: context.motion(PrismDurations.fast),
-              curve: PrismCurves.move,
-              child: FractionallySizedBox(
-                widthFactor: 1 / values.length,
-                heightFactor: 1,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(color: cs.onSurface, borderRadius: BorderRadius.circular(PrismRadius.pill)),
+            child: Padding(
+              padding: const EdgeInsets.all(_inset),
+              child: AnimatedAlign(
+                alignment: Alignment(x, 0),
+                duration: context.motion(PrismDurations.fast),
+                curve: PrismCurves.move,
+                child: FractionallySizedBox(
+                  widthFactor: 1 / values.length,
+                  heightFactor: 1,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: thumb,
+                      borderRadius: BorderRadius.circular(PrismRadius.pill),
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(color: cs.shadow.withValues(alpha: 0.12), blurRadius: 4, offset: const Offset(0, 1)),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
-          Row(
-            children: <Widget>[
-              for (final T value in values)
-                Expanded(
-                  child: Semantics(
-                    container: true,
-                    button: true,
-                    selected: value == selected,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: onChanged == null || value == selected
-                          ? null
-                          : () {
-                              PrismHaptics.selection();
-                              onChanged!(value);
-                            },
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              if (iconOf?.call(value) != null) ...<Widget>[
-                                TweenAnimationBuilder<Color?>(
-                                  tween: ColorTween(end: value == selected ? cs.surface : cs.onSurface),
-                                  duration: context.motion(PrismDurations.fast),
-                                  curve: PrismCurves.enter,
-                                  builder: (_, c, _) => Icon(iconOf!(value), size: 16, color: c),
+          // The segments take the full height, so the tap target is the whole control and not only the thumb.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: _inset),
+            child: Row(
+              children: <Widget>[
+                for (final T value in values)
+                  Expanded(
+                    child: Semantics(
+                      container: true,
+                      button: true,
+                      selected: value == selected,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: onChanged == null || value == selected
+                            ? null
+                            : () {
+                                PrismHaptics.selection();
+                                onChanged!(value);
+                              },
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minWidth: 44, minHeight: minHeight),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: <Widget>[
+                                if (iconOf?.call(value) != null) ...<Widget>[
+                                  TweenAnimationBuilder<Color?>(
+                                    tween: ColorTween(end: value == selected ? cs.onSurface : cs.onSurfaceVariant),
+                                    duration: context.motion(PrismDurations.fast),
+                                    curve: PrismCurves.enter,
+                                    builder: (_, c, _) => Icon(iconOf!(value), size: 16, color: c),
+                                  ),
+                                  const SizedBox(width: 6),
+                                ],
+                                Flexible(
+                                  child: AnimatedDefaultTextStyle(
+                                    duration: context.motion(PrismDurations.fast),
+                                    style: PrismTextStyles.rowTitle(context).copyWith(
+                                      fontSize: 14,
+                                      fontWeight: value == selected ? FontWeight.w700 : FontWeight.w600,
+                                      color: value == selected ? cs.onSurface : cs.onSurfaceVariant,
+                                    ),
+                                    child: _SegmentLabel(labelOf(value)),
+                                  ),
                                 ),
-                                const SizedBox(width: 6),
                               ],
-                              Flexible(
-                                child: AnimatedDefaultTextStyle(
-                                  duration: context.motion(PrismDurations.fast),
-                                  style: PrismTextStyles.rowTitle(
-                                    context,
-                                  ).copyWith(fontSize: 14, color: value == selected ? cs.surface : cs.onSurface),
-                                  child: _SegmentLabel(labelOf(value)),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

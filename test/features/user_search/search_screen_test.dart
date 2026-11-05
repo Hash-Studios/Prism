@@ -172,7 +172,6 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text(AppLocalizationsEn().accountResultsForQuery('anime')), findsOneWidget);
     expect(find.byType(PrismWallTile), findsNWidgets(4));
     expect(find.text('Find creators'), findsNothing);
     expect(analytics.events.whereType<SearchSubmittedEvent>(), hasLength(1));
@@ -245,7 +244,6 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text(AppLocalizationsEn().accountResultsForQuery('Nature')), findsOneWidget);
     verify(() => service.search('Nature', filters: any(named: 'filters'))).called(1);
   });
 

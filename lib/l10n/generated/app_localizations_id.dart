@@ -681,7 +681,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountSpatialSceneSemanticLabel => 'Spasial, wallpaper dengan kedalaman 3D yang jelas';
 
   @override
-  String get accountDownloadApk => 'UNDUH APK';
+  String get accountDownloadApk => 'Unduh APK';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -725,7 +725,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountFavouritesCleared => 'Semua wallpaper favorit dihapus.';
 
   @override
-  String get accountFeedback => 'MASUKAN';
+  String get accountFeedback => 'Masukan';
 
   @override
   String get accountFeedbackSubject => 'Masukan Prism';
@@ -1198,7 +1198,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountQuickTiles => 'Tile Cepat';
 
   @override
-  String get accountRateApp => 'NILAI';
+  String get accountRateApp => 'Nilai';
 
   @override
   String get accountRecentSearches => 'Pencarian terbaru';
@@ -1265,11 +1265,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get accountRestoringPurchases => 'Memulihkan pembelian…';
-
-  @override
-  String accountResultsForQuery(String query) {
-    return 'Hasil untuk $query';
-  }
 
   @override
   String get accountRetry => 'Coba lagi';
@@ -3967,6 +3962,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get deepLinkInputLiveTitle => 'Wallpaper bergerak';
 
   @override
+  String get deepLinkInputLiveDescription => 'Pilih foto dari galeri untuk dijadikan wallpaper bergerak.';
+
+  @override
   String get deepLinkInputPhotoPreviewTitle => 'Pratinjau foto';
 
   @override
@@ -4873,6 +4871,14 @@ class AppLocalizationsId extends AppLocalizations {
 
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString koin', one: '1 koin');
     return '+$_temp0';
+  }
+
+  @override
+  String economyCoinReward(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '+$countString';
   }
 
   @override
@@ -7760,6 +7766,27 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get premiumPageViewPlans => 'Lihat paket';
+
+  @override
+  String get premiumPageHeadline => 'Seluruh galeri, terbuka';
+
+  @override
+  String get premiumBenefitWalls => 'Semua koleksi dan wallpaper premium';
+
+  @override
+  String get premiumBenefitFree => 'Unduhan gratis tanpa iklan';
+
+  @override
+  String get premiumBenefitSpin => 'Satu putaran gratis setiap hari';
+
+  @override
+  String get premiumBenefitAutomation => 'Putar otomatis dan mode siang-malam';
+
+  @override
+  String get premiumBenefitLiveStyles => 'Semua gaya wallpaper bergerak';
+
+  @override
+  String get premiumBenefitAiClean => 'Wallpaper AI tanpa tanda air, dengan koin lebih sedikit';
 
   @override
   String get premiumGuestStorePurchaseActive =>
@@ -12556,6 +12583,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get creatorsToFollow => 'Kreator untuk diikuti';
+
+  @override
+  String get accountBrowseCreators => 'Jelajahi kreator';
 
   @override
   String get creatorsSeeAll => 'Lihat semua';

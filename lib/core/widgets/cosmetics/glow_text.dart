@@ -1,6 +1,18 @@
 import 'package:Prism/features/shop/domain/cosmetic_styles.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
+import 'package:Prism/theme/contrast.dart';
 import 'package:flutter/material.dart';
+
+/// [color] moved towards [ink] in small steps until it reaches 4.5:1 on [surface], so a light gold stays readable on a
+/// white page. A colour that already reads is kept as it is.
+@visibleForTesting
+Color readableGlowStop(Color color, Color ink, Color surface) {
+  for (double t = 0; t < 1; t += 0.04) {
+    final Color candidate = Color.lerp(color, ink, t)!;
+    if (contrastRatio(candidate, surface) >= 4.5) return candidate;
+  }
+  return ink;
+}
 
 /// Text with the equipped name glow: a gradient fill and a soft shadow. Plain text when [glowId] is null or unknown.
 class GlowText extends StatelessWidget {
@@ -20,7 +32,10 @@ class GlowText extends StatelessWidget {
     if (id == null || item == null || item.kind != ShopItemKind.nameGlow) {
       return Text(text, style: style, maxLines: maxLines, overflow: overflow, textAlign: textAlign);
     }
-    final List<Color> colors = glowStyle(id).colors;
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final List<Color> colors = <Color>[
+      for (final Color c in glowStyle(id).colors) readableGlowStop(c, cs.onSurface, cs.surface),
+    ];
     final TextStyle base = style ?? DefaultTextStyle.of(context).style;
     return ShaderMask(
       blendMode: BlendMode.srcIn,

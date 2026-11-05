@@ -14,6 +14,7 @@ import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
+import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -162,6 +163,8 @@ class _UserProfileGridState extends State<UserProfileGrid> {
           body: context.l10n.accountConnectionTryAgain,
           actionLabel: context.l10n.accountTryAgain,
           onAction: () => bloc.add(const PublicProfileEvent.refreshRequested()),
+          // The profile header above owns the screen's primary action (Follow, or Complete profile).
+          actionVariant: PrismButtonVariant.tonal,
         );
         if (walls.isNotEmpty || !hideAi) _emptyPagesLoaded = 0;
         final bool morePagesToTry = hideAi && state.hasMoreWalls && !failed && _emptyPagesLoaded < _maxEmptyPages;
@@ -213,6 +216,11 @@ class _UserProfileGridState extends State<UserProfileGrid> {
                       kind: GlintStateKind.empty,
                       title: context.l10n.accountNoWallpapersYet,
                       body: ownProfile ? context.l10n.accountUploadFirstWallpaper : null,
+                      actionLabel: ownProfile ? context.l10n.wallpaperUploadTitle : null,
+                      onAction: ownProfile
+                          ? () => showPrismSheet<void>(context, builder: (_) => const UploadBottomPanel())
+                          : null,
+                      actionVariant: PrismButtonVariant.tonal,
                     ),
             ),
           );

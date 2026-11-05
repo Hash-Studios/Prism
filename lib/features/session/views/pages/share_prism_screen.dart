@@ -124,9 +124,9 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
         loading: _loading,
         onPressed: _share,
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page, vertical: PrismSpace.xl),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxl, PrismSpace.page, PrismSpace.xl),
+        child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: Column(

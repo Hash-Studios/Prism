@@ -49,6 +49,8 @@ String? _compactLineForGroupedChild(
   }
 }
 
+enum _InboxAction { markAllRead, clear }
+
 @RoutePage()
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
@@ -141,21 +143,25 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
         return PrismPage(
           title: l10n.notifTitle,
           actions: <Widget>[
-            if (state.unreadCount > 0)
-              PrismIconButton(
-                icon: Icons.done_all_rounded,
-                tooltip: l10n.notifMarkAllRead,
-                onPressed: () {
-                  PrismHaptics.tap();
-                  context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.markAllReadRequested());
-                },
-              ),
             PrismIconButton(icon: Icons.tune_rounded, tooltip: l10n.notifPreferences, onPressed: _openPreferences),
             if (!initialLoading && notifications.isNotEmpty)
-              PrismIconButton(
-                icon: Icons.delete_sweep_rounded,
-                tooltip: l10n.notifClearInboxAction,
-                onPressed: () => unawaited(_clearInbox(notifications.length)),
+              PopupMenuButton<_InboxAction>(
+                tooltip: l10n.accountMoreOptions,
+                icon: const Icon(Icons.more_vert_rounded),
+                onSelected: (_InboxAction action) {
+                  switch (action) {
+                    case _InboxAction.markAllRead:
+                      PrismHaptics.tap();
+                      context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.markAllReadRequested());
+                    case _InboxAction.clear:
+                      unawaited(_clearInbox(notifications.length));
+                  }
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<_InboxAction>>[
+                  if (state.unreadCount > 0)
+                    PopupMenuItem<_InboxAction>(value: _InboxAction.markAllRead, child: Text(l10n.notifMarkAllRead)),
+                  PopupMenuItem<_InboxAction>(value: _InboxAction.clear, child: Text(l10n.notifClearInboxAction)),
+                ],
               ),
           ],
           body: Stack(

@@ -25,8 +25,9 @@ Use `Theme.of(context).colorScheme`. Every role follows the active theme variant
 | Need | Use | Do not use |
 |---|---|---|
 | Page background | `cs.surface` | `theme.primaryColor`, `Colors.black` |
-| Card or raised fill | `cs.surfaceContainerHigh` | `theme.hintColor` |
-| Sheet and dialog fill | theme default (`surfaceContainerLow`) | hard-coded colours |
+| Card or raised fill | `cs.surfaceContainerHigh` (4.5% ink on light themes, 8% on dark) | `theme.hintColor` |
+| Sheet fill | theme default: `surface` on light Prism themes, `surfaceContainerLow` on dark and Material You | hard-coded colours |
+| Dialog fill | theme default (`surfaceContainerLow`) | hard-coded colours |
 | Text and icons | `cs.onSurface` | `cs.secondary`, `Colors.white` |
 | Secondary text | `cs.onSurfaceVariant` or `PrismTextStyles.body` | `cs.secondary.withValues(alpha: .5)` |
 | Hairline border | `cs.onSurface.withValues(alpha: 0.08)` | `Colors.grey` |
@@ -70,6 +71,9 @@ Text on a wallpaper: copy the style and set `color: Colors.white`.
 - `PrismSpace`: `xxs 4`, `xs 8`, `sm 12`, `md 16`, `lg 20`, `xl 24`, `xxl 32`, `xxxl 40`. Page margin is
   `PrismSpace.page` (20). The gap between groups is at least twice the gap inside a group.
 - A tab page ends with `SizedBox(height: PrismSpace.bottomBarClearance)` so the last item clears the bottom bar.
+- The floating bottom row has a fade to `cs.surface` (0 to 85%) under it, `viewPadding.bottom + 90` high, that lets
+  taps through. While the keyboard is up, the row fades out and takes no taps. Its scroll-to-top button is 44 points.
+- A `PrismPage` bottom bar has a hairline on top.
 - `PrismRadius`: `xs 8`, `sm 12`, `md 16`, `lg 20` (cards), `xl 28` (dialogs), `pill`. A nested surface takes the
   next step down. Bottom sheets use `PrismBottomSheet.topRadius` (32) and the screen's own corner radius at the bottom. Wallpaper tiles in a grid use `PrismRadius.sm`.
 - Tap targets are 44 points or more.
@@ -91,13 +95,14 @@ Text on a wallpaper: copy the style and set `color: Colors.white`.
 | `showPrismSheet(context, builder:, detents:)` + `PrismSheetBody(title:, message:, mood:, child:, actions:, trailingAction:, childScrolls:)` | Every bottom sheet. See "Bottom sheets" below. |
 | `showPrismConfirm(context, title:, message:, confirmLabel:, destructive:)` | Every confirm. It replaces `AlertDialog`. The confirm label names the action. |
 | `PrismSkeleton`, `PrismSkeleton.rows()`, `PrismSkeleton.cards()`, `PrismBone` | Loading lists and cards. `LoadingCards` for wallpaper grids. |
-| `GlintState(kind:, title:, body:, actionLabel:, onAction:)` | Empty, error, offline, loading and nothing-new states. |
+| `GlintState(kind:, title:, body:, actionLabel:, onAction:, actionVariant:)` | Empty, error, offline, loading and nothing-new states. The action is `primary` by default. Pass `actionVariant: PrismButtonVariant.tonal` when the page already shows a primary action or a bottom bar. On an area 480 points or taller the state sits above the centre (`Alignment(0, -0.35)`). |
 | `showGlintToast(context, mood:)` | A success moment: wallpaper set, upload sent, purchase done. |
 | `toasts.success(msg)` / `toasts.error(msg)` | Short feedback. It is themed and sits above the bottom bar. |
-| `PrismWallGrid.delegate(context)`, `PrismWallGrid.padding`, `PrismWallTile(url:, heroTag:, onTap:, onLongPress:, overlay:)` | Every grid of wallpapers. One spacing (8), margin (12) and radius (12) app-wide. `LoadingCards()` is its skeleton. |
+| `PrismWallGrid.delegate(context)`, `PrismWallGrid.padding`, `PrismWallTile(url:, heroTag:, onTap:, onLongPress:, overlay:)` | Every grid of wallpapers. One spacing (8), margin (12) and radius (12) app-wide. The home feed grid uses the same values (`PrismFeedLayout.gridSpacing`, `gridPadding`). `LoadingCards()` is its skeleton. |
 | `PrismTag(label:, tone:)` | A status label: Pending, Approved, Pro, New. |
 | `PrismAvatar(url:, name:, size:)` | Every profile picture. |
-| `PrismSegmented(values:, selected:, labelOf:, onChanged:)` | Two to four exclusive choices. |
+| `PrismSegmented(values:, selected:, labelOf:, onChanged:)` | Two to four exclusive choices. iOS look: a raised neutral thumb (`surface` on light, `surfaceContainerHighest` on dark) with a soft shadow, never ink or accent. The selected label is `onSurface` w700, the others `onSurfaceVariant` w600. 44 points high (48 dp on Android). |
+| `PrismThemePreview(theme:)` | A theme shown as a small app (page colour, ink title bar, two wallpaper tiles, accent pill). Theme pickers and shop theme tiles. Label it with the theme name below. |
 | `PressScale(child:)` | Press feedback on custom tappable surfaces (tiles, cards). |
 
 Rules:

@@ -1268,11 +1268,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountRestoringPurchases => 'खरीदारियाँ वापस पाई जा रही हैं…';
 
   @override
-  String accountResultsForQuery(String query) {
-    return '$query के नतीजे';
-  }
-
-  @override
   String get accountRetry => 'फिर कोशिश करें';
 
   @override
@@ -3982,6 +3977,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get deepLinkInputLiveTitle => 'लाइव वॉलपेपर';
 
   @override
+  String get deepLinkInputLiveDescription => 'लाइव वॉलपेपर बनाने के लिए अपनी गैलरी से एक तस्वीर चुनें।';
+
+  @override
   String get deepLinkInputPhotoPreviewTitle => 'तस्वीर का प्रीव्यू';
 
   @override
@@ -4906,6 +4904,14 @@ class AppLocalizationsHi extends AppLocalizations {
       one: '$countString कॉइन',
     );
     return '+$_temp0';
+  }
+
+  @override
+  String economyCoinReward(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '+$countString';
   }
 
   @override
@@ -7864,6 +7870,27 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get premiumPageViewPlans => 'प्लान देखें';
+
+  @override
+  String get premiumPageHeadline => 'पूरी गैलरी, अनलॉक';
+
+  @override
+  String get premiumBenefitWalls => 'सभी प्रीमियम कलेक्शन और वॉलपेपर';
+
+  @override
+  String get premiumBenefitFree => 'मुफ़्त डाउनलोड और कोई विज्ञापन नहीं';
+
+  @override
+  String get premiumBenefitSpin => 'हर दिन एक मुफ़्त स्पिन';
+
+  @override
+  String get premiumBenefitAutomation => 'ऑटो-रोटेशन और दिन-रात मोड';
+
+  @override
+  String get premiumBenefitLiveStyles => 'लाइव वॉलपेपर की सभी स्टाइल';
+
+  @override
+  String get premiumBenefitAiClean => 'बिना वॉटरमार्क वाले AI वॉलपेपर, कम कॉइन्स में';
 
   @override
   String get premiumGuestStorePurchaseActive =>
@@ -12656,6 +12683,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get creatorsToFollow => 'फ़ॉलो करने लायक क्रिएटर';
+
+  @override
+  String get accountBrowseCreators => 'क्रिएटर देखें';
 
   @override
   String get creatorsSeeAll => 'सभी देखें';

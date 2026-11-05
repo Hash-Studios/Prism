@@ -331,7 +331,7 @@ class _Step extends StatelessWidget {
                   ),
                 if (note case final String text) ...<Widget>[
                   const SizedBox(height: PrismSpace.xs),
-                  Text(text, style: PrismTextStyles.caption(context)),
+                  Text(text, style: PrismTextStyles.body(context)),
                 ],
                 if (action case final Widget button) ...<Widget>[const SizedBox(height: PrismSpace.sm), button],
               ],

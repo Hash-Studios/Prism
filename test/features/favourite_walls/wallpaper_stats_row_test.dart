@@ -39,15 +39,17 @@ void main() {
     expect(find.text('1.2 हज़ार'), findsOneWidget);
   });
 
-  testWidgets('unknown views are omitted and known zero remains accessible', (tester) async {
+  testWidgets('zero counts are hidden, the heart and its label stay', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: Center(child: WallpaperStatsRow(favourites: 0)),
+        home: Center(child: WallpaperStatsRow(favourites: 0, views: 0)),
       ),
     );
     expect(find.byIcon(Icons.bar_chart_rounded), findsNothing);
+    expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
+    expect(find.text('0'), findsNothing);
     expect(find.bySemanticsLabel('No favourites'), findsOneWidget);
 
     await tester.pumpWidget(
@@ -57,7 +59,25 @@ void main() {
         home: Center(child: WallpaperStatsRow(views: 0)),
       ),
     );
-    expect(find.text('0'), findsOneWidget);
-    expect(find.bySemanticsLabel('0 views'), findsOneWidget);
+    expect(find.byType(Icon), findsNothing);
+    expect(find.text('0'), findsNothing);
+  });
+
+  testWidgets('counts use a 13 w600 caption and 17 pt icons', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Center(child: WallpaperStatsRow(favourites: 3, views: 12)),
+      ),
+    );
+    for (final String count in <String>['3', '12']) {
+      final TextStyle style = tester.widget<Text>(find.text(count)).style!;
+      expect(style.fontSize, 13);
+      expect(style.fontWeight, FontWeight.w600);
+    }
+    for (final Icon icon in tester.widgetList<Icon>(find.byType(Icon))) {
+      expect(icon.size, 17);
+    }
   });
 }

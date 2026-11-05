@@ -397,7 +397,7 @@ class _FromPrismRow extends StatelessWidget {
         PrismSectionHeader(
           title: context.l10n.accountFromPrism,
           small: true,
-          padding: EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xs),
+          padding: EdgeInsets.fromLTRB(PrismWallGrid.margin, PrismSpace.xs, PrismWallGrid.margin, PrismSpace.xs),
         ),
         SizedBox(
           height: 176 + favouriteFooterHeight,

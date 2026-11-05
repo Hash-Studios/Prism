@@ -47,8 +47,8 @@ class _CreatorStatsPageState extends State<CreatorStatsPage> {
   Widget build(BuildContext context) => BlocSelector<SessionBloc, SessionState, String?>(
     selector: (state) => state.session.loggedIn ? state.session.userId : null,
     builder: (context, owner) => owner == null
-        ? Scaffold(
-            appBar: AppBar(title: Text(context.l10n.statsTitle)),
+        ? PrismPage(
+            title: context.l10n.statsTitle,
             body: SignInPrompt(feature: context.l10n.statsTitle),
           )
         : BlocProvider(
@@ -63,114 +63,104 @@ class CreatorStatsView extends StatelessWidget {
   const CreatorStatsView({super.key, required this.ownerUid});
   final String ownerUid;
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(context.l10n.statsTitle)),
-    body: SafeArea(
-      child: BlocBuilder<CreatorStatsBloc, CreatorStatsState>(
-        builder: (context, state) {
-          if (state.loading) return Center(child: CircularProgressIndicator(semanticsLabel: context.l10n.statsLoading));
-          if (state.failed) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(context.l10n.statsError),
-                    TextButton(
-                      onPressed: () => context.read<CreatorStatsBloc>().add(const CreatorStatsEvent.load()),
-                      child: Text(context.l10n.statsRetry),
-                    ),
-                  ],
+  Widget build(BuildContext context) => PrismPage(
+    title: context.l10n.statsTitle,
+    body: BlocBuilder<CreatorStatsBloc, CreatorStatsState>(
+      builder: (context, state) {
+        if (state.loading) {
+          return Semantics(label: context.l10n.statsLoading, child: PrismSkeleton.cards());
+        }
+        if (state.failed) {
+          return GlintState(
+            kind: GlintStateKind.error,
+            title: context.l10n.statsError,
+            actionLabel: context.l10n.statsRetry,
+            onAction: () => context.read<CreatorStatsBloc>().add(const CreatorStatsEvent.load()),
+          );
+        }
+        final data = state.data;
+        if (data == null) return const SizedBox.shrink();
+        if (data.approvedWallCount == 0) {
+          // GlintState does not scroll: at large text it overflows a short page, so the page scrolls instead.
+          return LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              child: SizedBox(
+                height: constraints.maxHeight * math.max(1, MediaQuery.textScalerOf(context).scale(1)),
+                child: GlintState(
+                  kind: GlintStateKind.empty,
+                  title: context.l10n.statsEmptyTitle,
+                  body: context.l10n.statsEmptyBody,
+                  actionLabel: context.l10n.statsUpload,
+                  onAction: () => context.router.push(DeepLinkInputRoute(workflow: DeepLinkInputWorkflow.uploadWall)),
                 ),
               ),
-            );
-          }
-          final data = state.data;
-          if (data == null) return const SizedBox.shrink();
-          if (data.approvedWallCount == 0) {
-            return ListView(
-              padding: const EdgeInsets.all(24),
-              children: [
-                const Center(child: Glint()),
-                const SizedBox(height: PrismSpace.md),
-                Text(context.l10n.statsEmptyTitle, style: PrismTextStyles.screenTitle(context)),
-                Text(context.l10n.statsEmptyBody),
-                TextButton(
-                  onPressed: () => context.router.push(DeepLinkInputRoute(workflow: DeepLinkInputWorkflow.uploadWall)),
-                  child: Text(context.l10n.statsUpload),
-                ),
-              ],
-            );
-          }
-          return ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              Text(context.l10n.statsWeekNote, style: PrismTextStyles.caption(context)),
-              for (final metric in StatsMetric.values)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: _MetricSummary(metric: metric, weeks: data.weeks, total: data.totals[metric]),
-                ),
+            ),
+          );
+        }
+        return ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            Text(context.l10n.statsWeekNote, style: PrismTextStyles.caption(context)),
+            for (final metric in StatsMetric.values)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                child: _TipsSummary(tips: data.tips, walls: data.walls),
+                child: _MetricSummary(metric: metric, weeks: data.weeks, total: data.totals[metric]),
               ),
-              const SizedBox(height: 24),
-              _Selector(
-                metric: state.metric,
-                onSelected: (metric) {
-                  context.read<CreatorStatsBloc>().add(CreatorStatsEvent.select(metric));
-                  analytics.track(CreatorStatsMetricSwitchedEvent(metric: metric.name));
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: _TipsSummary(tips: data.tips, walls: data.walls),
+            ),
+            const SizedBox(height: 24),
+            _Selector(
+              metric: state.metric,
+              onSelected: (metric) {
+                context.read<CreatorStatsBloc>().add(CreatorStatsEvent.select(metric));
+                analytics.track(CreatorStatsMetricSwitchedEvent(metric: metric.name));
+              },
+            ),
+            StatsChart(weeks: data.weeks, metric: state.metric),
+            Text(context.l10n.statsHistoryNote, style: PrismTextStyles.caption(context)),
+            const SizedBox(height: 24),
+            Text(context.l10n.statsTopWalls, style: PrismTextStyles.sectionTitle(context)),
+            for (final wall in data.ranked(state.metric))
+              PrismRow(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                leading: wall.thumbnailUrl.isEmpty
+                    ? null
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          wall.thumbnailUrl,
+                          width: 48,
+                          height: 64,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, error, stack) => const SizedBox(width: 48),
+                        ),
+                      ),
+                title: wall.title.isEmpty ? context.l10n.statsUntitled : wall.title,
+                subtitle: context.l10n.statsWallValue(
+                  statsLabel(context, state.metric),
+                  statsNumber(context, wall.weeks.last.metrics[state.metric]),
+                ),
+                onTap: () {
+                  analytics.track(CreatorWallStatsOpenedEvent(wallId: wall.wallId));
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => WallStatsPage(ownerUid: ownerUid, wall: wall, initialMetric: state.metric),
+                    ),
+                  );
                 },
               ),
-              StatsChart(weeks: data.weeks, metric: state.metric),
-              Text(context.l10n.statsHistoryNote, style: PrismTextStyles.caption(context)),
-              const SizedBox(height: 24),
-              Text(context.l10n.statsTopWalls, style: PrismTextStyles.sectionTitle(context)),
-              for (final wall in data.ranked(state.metric))
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: wall.thumbnailUrl.isEmpty
-                      ? null
-                      : ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            wall.thumbnailUrl,
-                            width: 48,
-                            height: 64,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, error, stack) => const SizedBox(width: 48),
-                          ),
-                        ),
-                  title: Text(wall.title.isEmpty ? context.l10n.statsUntitled : wall.title),
-                  subtitle: Text(
-                    context.l10n.statsWallValue(
-                      statsLabel(context, state.metric),
-                      statsNumber(context, wall.weeks.last.metrics[state.metric]),
-                    ),
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    analytics.track(CreatorWallStatsOpenedEvent(wallId: wall.wallId));
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => WallStatsPage(ownerUid: ownerUid, wall: wall, initialMetric: state.metric),
-                      ),
-                    );
-                  },
-                ),
-              Text(context.l10n.statsCountingNote, style: PrismTextStyles.caption(context)),
-              Text(
-                context.l10n.statsUpdated(
-                  DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag()).add_Hm().format(data.asOf),
-                ),
-                style: PrismTextStyles.caption(context),
+            Text(context.l10n.statsCountingNote, style: PrismTextStyles.caption(context)),
+            Text(
+              context.l10n.statsUpdated(
+                DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag()).add_Hm().format(data.asOf),
               ),
-            ],
-          );
-        },
-      ),
+              style: PrismTextStyles.caption(context),
+            ),
+          ],
+        );
+      },
     ),
   );
 }
@@ -236,10 +226,10 @@ class _MetricSummary extends StatelessWidget {
             children: [
               Icon(
                 delta > 0
-                    ? Icons.north_east
+                    ? Icons.north_east_rounded
                     : delta < 0
-                    ? Icons.south_east
-                    : Icons.east,
+                    ? Icons.south_east_rounded
+                    : Icons.east_rounded,
                 size: 16,
                 color: Theme.of(context).colorScheme.primary,
               ),
@@ -267,11 +257,7 @@ class _Selector extends StatelessWidget {
     runSpacing: 4,
     children: [
       for (final value in StatsMetric.values)
-        ChoiceChip(
-          label: Text(statsLabel(context, value)),
-          selected: value == metric,
-          onSelected: (_) => onSelected(value),
-        ),
+        PrismChip(label: statsLabel(context, value), selected: value == metric, onTap: () => onSelected(value)),
     ],
   );
 }
@@ -291,29 +277,27 @@ class _WallStatsPageState extends State<WallStatsPage> {
   Widget build(BuildContext context) => BlocSelector<SessionBloc, SessionState, String?>(
     selector: (state) => state.session.loggedIn ? state.session.userId : null,
     builder: (context, owner) => owner != widget.ownerUid
-        ? Scaffold(
-            appBar: AppBar(title: Text(context.l10n.statsTitle)),
+        ? PrismPage(
+            title: context.l10n.statsTitle,
             body: Center(child: Text(context.l10n.statsUnavailable)),
           )
-        : Scaffold(
-            appBar: AppBar(title: Text(widget.wall.title.isEmpty ? context.l10n.statsUntitled : widget.wall.title)),
-            body: SafeArea(
-              child: ListView(
-                padding: const EdgeInsets.all(20),
-                children: [
-                  _Selector(
-                    metric: metric,
-                    onSelected: (value) {
-                      setState(() => metric = value);
-                      analytics.track(CreatorStatsMetricSwitchedEvent(metric: value.name));
-                    },
-                  ),
-                  _MetricSummary(metric: metric, weeks: widget.wall.weeks, total: widget.wall.totals[metric]),
-                  StatsChart(weeks: widget.wall.weeks, metric: metric),
-                  Text(context.l10n.statsHistoryNote),
-                  Text(context.l10n.statsCountingNote),
-                ],
-              ),
+        : PrismPage(
+            title: widget.wall.title.isEmpty ? context.l10n.statsUntitled : widget.wall.title,
+            body: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                _Selector(
+                  metric: metric,
+                  onSelected: (value) {
+                    setState(() => metric = value);
+                    analytics.track(CreatorStatsMetricSwitchedEvent(metric: value.name));
+                  },
+                ),
+                _MetricSummary(metric: metric, weeks: widget.wall.weeks, total: widget.wall.totals[metric]),
+                StatsChart(weeks: widget.wall.weeks, metric: metric),
+                Text(context.l10n.statsHistoryNote),
+                Text(context.l10n.statsCountingNote),
+              ],
             ),
           ),
   );

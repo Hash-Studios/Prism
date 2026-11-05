@@ -20,7 +20,6 @@ import 'package:Prism/core/widgets/cosmetics/glow_text.dart';
 import 'package:Prism/core/widgets/cosmetics/profile_frame.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
-import 'package:Prism/features/badges/domain/badge_catalog.dart';
 import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
 import 'package:Prism/features/creator_directory/views/widgets/followed_by_line.dart';
 import 'package:Prism/features/creator_stats/views/widgets/stats_entry_button.dart';
@@ -45,7 +44,6 @@ import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:Prism/features/user_blocks/views/blocked_user_profile_shell.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -350,7 +348,6 @@ class _ProfileChildState extends State<_ProfileChild> {
   }
 
   void _toggleFollow({required bool following}) {
-    PrismHaptics.tap();
     _trackAction(
       following ? AnalyticsActionValue.unfollowTapped : AnalyticsActionValue.followTapped,
       sourceContext: 'profile_screen_follow_action',
@@ -491,24 +488,22 @@ class _ProfileChildState extends State<_ProfileChild> {
     final List<String> linkKeys = _profile.links.keys.toList(growable: false);
     final double headerWidth = math.min(screen.width, PrismLayout.readableWidth);
     final double coverHeight = screen.height * 0.19;
-    final int badgeCount = _profile.badges.toSet().where((String id) => badgeInfo(id) != null).length;
-    final int badgesPerRow = math.max(1, ((screen.width - 24 + 8) / 40).floor());
-    final int badgeRows = (badgeCount / badgesPerRow).ceil();
-    final double badgeHeight = badgeRows == 0 ? 0 : 10 + badgeRows * 32 + (badgeRows - 1) * 8;
-    final double minimumInfoHeight =
-        (linkKeys.isEmpty ? screen.height * 0.21 : screen.height * 0.27) - 37 + badgeHeight;
+    final double topInset = MediaQuery.paddingOf(context).top;
+    final String displayName = creatorLabel(
+      name: _profile.name,
+      username: _profile.username,
+      fallback: context.l10n.accountCreatorFallback,
+    );
     // Own profile is pushed from the home avatar now, so it needs a way back like any other profile.
     final bool showBack = !ownProfile || Navigator.canPop(context);
-    final Widget editButton = Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: _HeaderButton(
-        tooltip: context.l10n.accountEditProfile,
-        icon: JamIcons.pencil,
-        onPressed: () {
-          PrismHaptics.tap();
-          unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit'));
-        },
-      ),
+    final Widget editButton = PrismIconButton(
+      tooltip: context.l10n.accountEditProfile,
+      icon: Icons.edit_rounded,
+      onImage: true,
+      onPressed: () {
+        PrismHaptics.tap();
+        unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit'));
+      },
     );
     final ProfileCompletenessStatus profileCompletenessStatus = ProfileCompletenessEvaluator.evaluate(
       app_state.prismUser,
@@ -520,7 +515,7 @@ class _ProfileChildState extends State<_ProfileChild> {
       height: 78,
       child: ColoredBox(
         color: cs.surface,
-        child: Icon(JamIcons.user, color: cs.primary, size: 30),
+        child: Icon(Icons.person_rounded, color: cs.primary, size: 30),
       ),
     );
     final Widget photo = ClipOval(
@@ -541,102 +536,110 @@ class _ProfileChildState extends State<_ProfileChild> {
       endDrawer: ownProfile ? const ProfileDrawer() : null,
       body: RefreshIndicator(
         onRefresh: _refresh,
-        edgeOffset: MediaQuery.paddingOf(context).top + PrismSpace.xxxl,
+        edgeOffset: topInset + kToolbarHeight,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: <Widget>[
             SliverAppBar(
-              toolbarHeight: MediaQuery.paddingOf(context).top + kToolbarHeight + 32,
-              primary: false,
-              floating: true,
+              // Pinned: the back button and the name stay on screen while the gallery scrolls.
+              pinned: true,
               elevation: 0,
-              leading: showBack
-                  ? Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: _HeaderButton(
-                        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                        icon: JamIcons.chevron_left,
-                        onPressed: () {
-                          _trackAction(AnalyticsActionValue.backTapped, sourceContext: 'profile_screen_header_back');
-                          Navigator.pop(context);
-                        },
+              scrolledUnderElevation: 0,
+              surfaceTintColor: Colors.transparent,
+              centerTitle: true,
+              title: Builder(
+                builder: (BuildContext context) {
+                  final double opacity = _collapsedTitleOpacity(context);
+                  if (opacity == 0) return const SizedBox.shrink();
+                  // The name is already read out in the header below, so this copy is visual only.
+                  return ExcludeSemantics(
+                    child: Opacity(
+                      opacity: opacity,
+                      child: Text(
+                        displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: PrismTextStyles.cardTitle(context).copyWith(fontSize: 17),
                       ),
-                    )
-                  : editButton,
-              actions: <Widget>[
-                StatsEntryButton(source: 'profile', visible: ownProfile),
-                if (!ownProfile)
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        _HeaderButton(
-                          tooltip: context.l10n.accountGiftPassTooltip,
-                          icon: JamIcons.gift,
-                          onPressed: _openGiftSheet,
-                        ),
-                        BlocConsumer<PublicProfileBloc, PublicProfileState>(
-                          listenWhen: (prev, curr) =>
-                              curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
-                          listener: (context, state) => showFollowOutcomeToast(context, state.followOutcome!),
-                          buildWhen: (prev, curr) => prev.followOverrides != curr.followOverrides,
-                          builder: (context, state) {
-                            final bool following = _isFollowing(state);
-                            return _HeaderButton(
-                              tooltip: following ? context.l10n.accountUnfollow : context.l10n.accountFollow,
-                              icon: following ? JamIcons.user_remove : JamIcons.user_plus,
-                              alignment: AlignmentDirectional.centerEnd,
-                              onPressed: () => _toggleFollow(following: following),
-                            );
+                    ),
+                  );
+                },
+              ),
+              leadingWidth: PrismSpace.sm + 44,
+              leading: Padding(
+                padding: const EdgeInsetsDirectional.only(start: PrismSpace.sm),
+                child: Center(
+                  child: showBack
+                      ? PrismIconButton(
+                          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                          icon: Icons.arrow_back_rounded,
+                          onImage: true,
+                          onPressed: () {
+                            _trackAction(AnalyticsActionValue.backTapped, sourceContext: 'profile_screen_header_back');
+                            Navigator.pop(context);
                           },
-                        ),
-                        PopupMenuButton<_ProfileMenuAction>(
-                          tooltip: context.l10n.accountMoreOptions,
-                          icon: const _CircleIcon(icon: JamIcons.more_vertical),
-                          onSelected: _onMenuSelected,
-                          itemBuilder: (BuildContext context) => <PopupMenuEntry<_ProfileMenuAction>>[
-                            if (app_state.prismUser.loggedIn &&
-                                context.read<PublicProfileBloc>().state.walls.isNotEmpty)
-                              PopupMenuItem<_ProfileMenuAction>(
-                                value: _ProfileMenuAction.tip,
-                                child: Text(context.l10n.tipMenuItem),
-                              ),
-                            PopupMenuItem<_ProfileMenuAction>(
-                              value: _ProfileMenuAction.report,
-                              child: Text(context.l10n.accountReportUser),
-                            ),
-                            PopupMenuItem<_ProfileMenuAction>(
-                              value: _ProfileMenuAction.block,
-                              child: Text(context.l10n.accountBlockUser),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                        )
+                      : editButton,
+                ),
+              ),
+              actions: <Widget>[
+                if (ownProfile) ...<Widget>[
+                  const StatsEntryButton(source: 'profile', onImage: true),
+                  if (showBack) ...<Widget>[const SizedBox(width: PrismSpace.xxs), editButton],
+                  const SizedBox(width: PrismSpace.xxs),
+                  PrismIconButton(
+                    tooltip: context.l10n.accountMenu,
+                    icon: Icons.menu_rounded,
+                    onImage: true,
+                    onPressed: () {
+                      _trackAction(AnalyticsActionValue.openDrawerTapped, sourceContext: 'profile_screen_header_menu');
+                      _scaffoldKey.currentState?.openEndDrawer();
+                    },
                   ),
-                if (ownProfile && showBack) editButton,
-                if (ownProfile)
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: _HeaderButton(
-                      tooltip: context.l10n.accountMenu,
-                      icon: JamIcons.menu,
-                      alignment: AlignmentDirectional.centerEnd,
-                      onPressed: () {
-                        _trackAction(
-                          AnalyticsActionValue.openDrawerTapped,
-                          sourceContext: 'profile_screen_header_menu',
-                        );
-                        _scaffoldKey.currentState?.openEndDrawer();
-                      },
-                    ),
+                ] else ...<Widget>[
+                  PrismIconButton(
+                    tooltip: context.l10n.accountGiftPassTooltip,
+                    icon: Icons.card_giftcard_rounded,
+                    onImage: true,
+                    onPressed: _openGiftSheet,
                   ),
+                  const SizedBox(width: PrismSpace.xxs),
+                  PopupMenuButton<_ProfileMenuAction>(
+                    tooltip: context.l10n.accountMoreOptions,
+                    icon: const Icon(Icons.more_vert_rounded, size: 22),
+                    iconColor: Colors.white,
+                    padding: EdgeInsets.zero,
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black.withValues(alpha: 0.38),
+                      minimumSize: const Size.square(44),
+                      fixedSize: const Size.square(44),
+                      padding: EdgeInsets.zero,
+                      shape: const CircleBorder(),
+                    ),
+                    onSelected: _onMenuSelected,
+                    itemBuilder: (BuildContext context) => <PopupMenuEntry<_ProfileMenuAction>>[
+                      if (app_state.prismUser.loggedIn && context.read<PublicProfileBloc>().state.walls.isNotEmpty)
+                        PopupMenuItem<_ProfileMenuAction>(
+                          value: _ProfileMenuAction.tip,
+                          child: Text(context.l10n.tipMenuItem),
+                        ),
+                      PopupMenuItem<_ProfileMenuAction>(
+                        value: _ProfileMenuAction.report,
+                        child: Text(context.l10n.accountReportUser),
+                      ),
+                      PopupMenuItem<_ProfileMenuAction>(
+                        value: _ProfileMenuAction.block,
+                        child: Text(context.l10n.accountBlockUser),
+                      ),
+                    ],
+                  ),
+                ],
               ],
               backgroundColor: cs.surface,
               automaticallyImplyLeading: false,
-              actionsPadding: EdgeInsets.only(right: sideSafeColumnWidth(context)),
-              expandedHeight: coverHeight + 37,
+              actionsPadding: EdgeInsetsDirectional.only(end: sideSafeColumnWidth(context) + PrismSpace.sm),
+              // The status bar is added on top of this, so the full header stays cover + 37 tall.
+              expandedHeight: math.max(kToolbarHeight, coverHeight + 37 - topInset),
               flexibleSpace: Stack(
                 children: <Widget>[
                   FlexibleSpaceBar(
@@ -679,179 +682,199 @@ class _ProfileChildState extends State<_ProfileChild> {
                       ],
                     ),
                   ),
-                  Container(
-                    width: double.maxFinite,
-                    height: MediaQuery.paddingOf(context).top,
-                    color: cs.surface.withValues(alpha: 0.5),
+                  Container(width: double.maxFinite, height: topInset, color: cs.surface.withValues(alpha: 0.5)),
+                  // A hairline under the pinned bar once the cover has scrolled away, as on every other page.
+                  PositionedDirectional(
+                    start: 0,
+                    end: 0,
+                    bottom: 0,
+                    child: Builder(
+                      builder: (BuildContext context) => Opacity(
+                        opacity: _collapsedTitleOpacity(context),
+                        child: Divider(height: 1, thickness: 1, color: cs.onSurface.withValues(alpha: 0.08)),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
             SliverToBoxAdapter(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: minimumInfoHeight),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      SizedBox(
-                        width: headerWidth * 0.7,
-                        child: GlowText(
-                          creatorLabel(
-                            name: _profile.name,
-                            username: _profile.username,
-                            fallback: context.l10n.accountCreatorFallback,
-                          ),
-                          glowId: cosmetics.glow,
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: PrismFonts.proximaNova,
-                            color: cs.onSurface,
-                            fontSize: 22,
-                            // w600 gives the name more presence over the muted username below.
-                            fontWeight: FontWeight.w600,
-                          ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, PrismSpace.md),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    SizedBox(
+                      width: headerWidth * 0.7,
+                      child: GlowText(
+                        displayName,
+                        glowId: cosmetics.glow,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: PrismFonts.proximaNova,
+                          color: cs.onSurface,
+                          fontSize: 22,
+                          // w600 gives the name more presence over the muted username below.
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 3),
+                    ),
+                    const SizedBox(height: 3),
+                    SizedBox(
+                      width: headerWidth * 0.7,
+                      child: Text(
+                        '@${_profile.username}',
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: PrismFonts.proximaNova,
+                          color: cs.onSurface.withValues(alpha: 0.55),
+                          fontSize: 14,
+                          fontWeight: FontWeight.normal,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (_profile.bio.isNotEmpty) ...<Widget>[
                       SizedBox(
-                        width: headerWidth * 0.7,
-                        child: Text(
-                          '@${_profile.username}',
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        width: headerWidth * 0.72,
+                        child: ProfileBioText(
+                          bio: _profile.bio,
                           style: TextStyle(
                             fontFamily: PrismFonts.proximaNova,
-                            color: cs.onSurface.withValues(alpha: 0.55),
-                            fontSize: 14,
+                            color: cs.onSurface.withValues(alpha: 0.65),
+                            fontSize: 13,
                             fontWeight: FontWeight.normal,
-                            letterSpacing: 0.2,
+                            height: 1.45,
                           ),
+                          onOpenLink: _openBioLink,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      if (_profile.bio.isNotEmpty) ...<Widget>[
-                        SizedBox(
-                          width: headerWidth * 0.72,
-                          child: ProfileBioText(
-                            bio: _profile.bio,
-                            style: TextStyle(
-                              fontFamily: PrismFonts.proximaNova,
-                              color: cs.onSurface.withValues(alpha: 0.65),
-                              fontSize: 13,
-                              fontWeight: FontWeight.normal,
-                              height: 1.45,
-                            ),
-                            onOpenLink: _openBioLink,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                      ],
-                      if (_profile.proBadge)
-                        const Padding(padding: EdgeInsets.only(bottom: 6), child: ProProfileBadge()),
-                      ProfileBadgeRow(badgeIds: _profile.badges),
-                      if (!ownProfile) FollowedByLine(creatorUid: _profile.id),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: headerWidth * 0.9,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            Flexible(
-                              child: Semantics(
-                                excludeSemantics: true,
-                                label: context.l10n.accountFollowingCountLabel(
-                                  _compactCount(context, _profile.followingCount),
-                                ),
-                                button: ownProfile,
+                      const SizedBox(height: 2),
+                    ],
+                    if (_profile.proBadge) const Padding(padding: EdgeInsets.only(bottom: 6), child: ProProfileBadge()),
+                    ProfileBadgeRow(badgeIds: _profile.badges),
+                    if (!ownProfile) FollowedByLine(creatorUid: _profile.id),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: headerWidth * 0.9,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Flexible(
+                            child: Semantics(
+                              excludeSemantics: true,
+                              label: context.l10n.accountFollowingCountLabel(
+                                _compactCount(context, _profile.followingCount),
+                              ),
+                              button: ownProfile,
+                              onTap: ownProfile ? _openFollowingList : null,
+                              child: GestureDetector(
+                                excludeFromSemantics: true,
                                 onTap: ownProfile ? _openFollowingList : null,
-                                child: GestureDetector(
-                                  excludeFromSemantics: true,
-                                  onTap: ownProfile ? _openFollowingList : null,
-                                  child: _StatPill(
-                                    count: _profile.followingCount,
-                                    label: context.l10n.accountFollowing,
-                                  ),
-                                ),
+                                child: _StatPill(count: _profile.followingCount, label: context.l10n.accountFollowing),
                               ),
                             ),
+                          ),
+                          Container(
+                            width: 1,
+                            height: 16,
+                            margin: const EdgeInsets.symmetric(horizontal: 16),
+                            color: cs.onSurface.withValues(alpha: 0.2),
+                          ),
+                          Flexible(
+                            child: Semantics(
+                              excludeSemantics: true,
+                              label: context.l10n.accountFollowersCountLabel(
+                                _compactCount(context, _profile.followerCount),
+                              ),
+                              button: true,
+                              onTap: _openFollowersList,
+                              child: GestureDetector(
+                                excludeFromSemantics: true,
+                                onTap: _openFollowersList,
+                                child: _StatPill(count: _profile.followerCount, label: context.l10n.accountFollowers),
+                              ),
+                            ),
+                          ),
+                          if (!ownProfile) ...<Widget>[
                             Container(
                               width: 1,
                               height: 16,
-                              margin: const EdgeInsets.symmetric(horizontal: 16),
+                              margin: const EdgeInsets.symmetric(horizontal: 8),
                               color: cs.onSurface.withValues(alpha: 0.2),
                             ),
-                            Flexible(
-                              child: Semantics(
-                                excludeSemantics: true,
-                                label: context.l10n.accountFollowersCountLabel(
-                                  _compactCount(context, _profile.followerCount),
-                                ),
-                                button: true,
-                                onTap: _openFollowersList,
-                                child: GestureDetector(
-                                  excludeFromSemantics: true,
-                                  onTap: _openFollowersList,
-                                  child: _StatPill(count: _profile.followerCount, label: context.l10n.accountFollowers),
-                                ),
-                              ),
+                            Flexible(child: RankInfoChip(xp: cosmetics.xp)),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (!ownProfile) ...<Widget>[
+                      const SizedBox(height: PrismSpace.md),
+                      BlocConsumer<PublicProfileBloc, PublicProfileState>(
+                        listenWhen: (prev, curr) =>
+                            curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
+                        listener: (context, state) => showFollowOutcomeToast(context, state.followOutcome!),
+                        buildWhen: (prev, curr) => prev.followOverrides != curr.followOverrides,
+                        builder: (context, state) {
+                          final bool following = _isFollowing(state);
+                          return SizedBox(
+                            width: math.min(headerWidth - 2 * PrismSpace.page, 240),
+                            child: PrismButton(
+                              label: following ? context.l10n.accountFollowing : context.l10n.accountFollow,
+                              icon: following ? Icons.check_rounded : Icons.person_add_alt_1_rounded,
+                              variant: following ? PrismButtonVariant.tonal : PrismButtonVariant.primary,
+                              size: PrismButtonSize.compact,
+                              expand: true,
+                              onPressed: () => _toggleFollow(following: following),
                             ),
-                            if (!ownProfile) ...<Widget>[
-                              Container(
-                                width: 1,
-                                height: 16,
-                                margin: const EdgeInsets.symmetric(horizontal: 8),
-                                color: cs.onSurface.withValues(alpha: 0.2),
+                          );
+                        },
+                      ),
+                    ],
+                    if (linkKeys.isNotEmpty) ...<Widget>[
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: screen.width,
+                        height: 48,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            for (final String key in linkKeys.take(3))
+                              _LinkButton(
+                                tooltip: key,
+                                icon: profileLinkIcon(key),
+                                onPressed: () => _openLink(key, _profile.links[key].toString()),
                               ),
-                              Flexible(child: RankInfoChip(xp: cosmetics.xp)),
-                            ],
+                            if (linkKeys.length > 3)
+                              _LinkButton(
+                                tooltip: context.l10n.accountMoreLinks,
+                                icon: Icons.more_horiz_rounded,
+                                onPressed: _showMoreLinks,
+                              ),
                           ],
                         ),
                       ),
-                      if (linkKeys.isNotEmpty) ...<Widget>[
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: screen.width,
-                          height: 48,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              for (final String key in linkKeys.take(3))
-                                _LinkButton(
-                                  tooltip: key,
-                                  icon: profileLinkIcon(key),
-                                  onPressed: () => _openLink(key, _profile.links[key].toString()),
-                                ),
-                              if (linkKeys.length > 3)
-                                _LinkButton(
-                                  tooltip: context.l10n.accountMoreLinks,
-                                  icon: JamIcons.more_horizontal,
-                                  onPressed: _showMoreLinks,
-                                ),
-                            ],
-                          ),
-                        ),
-                      ],
                     ],
-                  ),
+                  ],
                 ),
               ),
             ),
             if (ownProfile)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+                  padding: const EdgeInsets.fromLTRB(PrismSpace.page, 8, PrismSpace.page, 6),
                   child: RankProgressCard(onOpenShop: () => context.router.root.push(const ShopRoute())),
                 ),
               ),
             if (showProfileCompletenessCard)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+                  padding: const EdgeInsets.fromLTRB(PrismSpace.page, 8, PrismSpace.page, 6),
                   child: ProfileCompletenessCard(
                     status: profileCompletenessStatus,
                     onCompleteNow: () async {
@@ -868,42 +891,6 @@ class _ProfileChildState extends State<_ProfileChild> {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Translucent circular icon used by the profile header buttons. It sits on the cover, so it is white on a scrim.
-class _CircleIcon extends StatelessWidget {
-  const _CircleIcon({required this.icon});
-
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(6.0),
-      decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.black.withValues(alpha: 0.38)),
-      child: Icon(icon, color: Colors.white),
-    );
-  }
-}
-
-class _HeaderButton extends StatelessWidget {
-  const _HeaderButton({required this.icon, required this.onPressed, this.tooltip, this.alignment = Alignment.center});
-
-  final IconData icon;
-  final VoidCallback onPressed;
-  final String? tooltip;
-  final AlignmentGeometry alignment;
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      tooltip: tooltip,
-      alignment: alignment,
-      padding: const EdgeInsets.all(2),
-      icon: _CircleIcon(icon: icon),
-      onPressed: onPressed,
     );
   }
 }
@@ -973,6 +960,17 @@ class _StatPill extends StatelessWidget {
       ),
     );
   }
+}
+
+/// How far the pinned header has collapsed, as the opacity of what shows only when it is collapsed: 0 while the
+/// cover shows, rising to 1 over the last quarter of the collapse. Reads the enclosing app bar's settings.
+double _collapsedTitleOpacity(BuildContext context) {
+  final FlexibleSpaceBarSettings? settings = context.dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
+  if (settings == null) return 0;
+  final double range = settings.maxExtent - settings.minExtent;
+  if (range <= 0) return 1;
+  final double expanded = ((settings.currentExtent - settings.minExtent) / range).clamp(0.0, 1.0);
+  return (1 - expanded / 0.25).clamp(0.0, 1.0);
 }
 
 String _compactCount(BuildContext context, int count) =>

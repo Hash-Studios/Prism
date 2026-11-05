@@ -63,6 +63,31 @@ void main() {
     expect(analytics.events.whereType<PaywallImpressionEvent>(), isEmpty);
   });
 
+  testWidgets('Premium lists what Pro unlocks and offers to restore purchases', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: PremiumPage(),
+      ),
+    );
+    await tester.pump();
+
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(find.text(l10n.premiumPageHeadline), findsOneWidget);
+    for (final String benefit in <String>[
+      l10n.premiumBenefitWalls,
+      l10n.premiumBenefitFree,
+      l10n.premiumBenefitSpin,
+      l10n.premiumBenefitAutomation,
+      l10n.premiumBenefitLiveStyles,
+      l10n.premiumBenefitAiClean,
+    ]) {
+      expect(find.text(benefit), findsOneWidget);
+    }
+    expect(find.text(l10n.accountRestorePurchases), findsOneWidget);
+  });
+
   testWidgets('unavailable native plans leave a persistent retry action', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(

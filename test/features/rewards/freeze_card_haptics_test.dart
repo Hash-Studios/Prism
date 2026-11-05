@@ -94,7 +94,9 @@ void main() {
 
         home: Builder(
           builder: (BuildContext context) => Scaffold(
-            body: RewardsSpendSection(onStreakFreeze: () => buyStreakFreezeFlow(context, onEarnCoins: _ignore)),
+            body: SingleChildScrollView(
+              child: RewardsSpendSection(onStreakFreeze: () => buyStreakFreezeFlow(context, onEarnCoins: _ignore)),
+            ),
           ),
         ),
       ),

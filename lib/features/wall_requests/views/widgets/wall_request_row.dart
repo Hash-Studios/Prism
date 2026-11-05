@@ -81,8 +81,8 @@ class WallRequestRow extends StatelessWidget {
           child: Text(r.hidden ? l10n.wallRequestUnhide : l10n.wallRequestHide),
         ),
     ];
-    return PrismCard(
-      padding: const EdgeInsets.all(PrismSpace.md),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: PrismSpace.sm),
       child: Row(
         children: <Widget>[
           if (r.isFilled) ...<Widget>[
@@ -107,7 +107,12 @@ class WallRequestRow extends StatelessWidget {
                   ),
                 ],
                 const SizedBox(height: PrismSpace.xxs),
-                Text(meta.join(' · '), style: PrismTextStyles.caption(context).copyWith(fontSize: 13, color: soft)),
+                Text(
+                  meta.join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: PrismTextStyles.caption(context).copyWith(fontSize: 13, color: soft),
+                ),
                 if (r.filledBy == WallRequestFiller.studio) ...<Widget>[
                   const SizedBox(height: PrismSpace.xxs),
                   Text(l10n.wallRequestFilledByStudio, style: PrismTextStyles.caption(context).copyWith(color: soft)),
@@ -115,9 +120,10 @@ class WallRequestRow extends StatelessWidget {
               ],
             ),
           ),
-          if (r.canVote && !r.isFilled)
-            _VoteButton(voted: r.voted, count: r.voteCount, onPressed: onVote)
-          else if (r.mine)
+          if (r.canVote && !r.isFilled) ...<Widget>[
+            const SizedBox(width: PrismSpace.xs),
+            _VoteButton(voted: r.voted, count: r.voteCount, onPressed: onVote),
+          ] else if (r.mine)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
               child: Text(l10n.wallRequestMine, style: PrismTextStyles.caption(context).copyWith(color: soft)),
@@ -165,7 +171,7 @@ class _VoteButton extends StatelessWidget {
             child: AnimatedContainer(
               duration: context.motion(PrismDurations.fast),
               curve: PrismCurves.enter,
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
               padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm),
               decoration: BoxDecoration(
                 color: voted ? cs.primary : cs.onSurface.withValues(alpha: 0.06),

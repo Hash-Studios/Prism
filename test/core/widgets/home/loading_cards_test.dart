@@ -40,17 +40,17 @@ void main() {
     expect(grid(tester).physics, isA<NeverScrollableScrollPhysics>());
   });
 
-  testWidgets('the home skeleton has a 4 px side margin, 4 px gaps and rounded bones', (tester) async {
+  testWidgets('the home skeleton has a 12 px side margin, 8 px gaps and rounded bones', (tester) async {
     await pumpAt600(tester, const LoadingCards(useFeedLayout: true));
 
     final delegate = grid(tester).gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
     expect(delegate.crossAxisCount, 3);
     expect(delegate.childAspectRatio, PrismFeedLayout.gridTileAspectRatio);
-    expect(delegate.mainAxisSpacing, 4);
-    expect(delegate.crossAxisSpacing, 4);
-    expect(grid(tester).padding, const EdgeInsets.symmetric(horizontal: 4));
+    expect(delegate.mainAxisSpacing, 8);
+    expect(delegate.crossAxisSpacing, 8);
+    expect(grid(tester).padding, const EdgeInsets.symmetric(horizontal: 12));
     expect(firstBoneRadius(tester), BorderRadius.circular(12));
     expect(tester.getTopLeft(find.byType(GridView)).dx, 0);
-    expect(tester.getTopLeft(find.byType(PulseFill).first).dx, 4);
+    expect(tester.getTopLeft(find.byType(PulseFill).first).dx, 12);
   });
 }

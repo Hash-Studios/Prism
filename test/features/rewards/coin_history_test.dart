@@ -9,6 +9,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/rewards/data/coin_history_repository.dart';
 import 'package:Prism/features/rewards/views/pages/coin_history_page.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
@@ -253,7 +254,7 @@ void main() {
       firestore.onQuery = (_) => ledger;
       await pumpPage(tester);
       final state = tester.state(find.byType(CoinHistoryPage));
-      await tester.tap(find.widgetWithText(FilterChip, 'Spent'));
+      await tester.tap(find.widgetWithText(PrismChip, 'Spent'));
       final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
       unawaited(navigator.push<void>(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('Wheel')))));
       await tester.pumpAndSettle();
@@ -279,7 +280,7 @@ void main() {
       expect(find.text('Balance 9'), findsOneWidget);
       expect(find.text('-2'), findsOneWidget);
       expect(find.text('+5'), findsNothing);
-      expect(tester.widget<FilterChip>(find.widgetWithText(FilterChip, 'Spent')).selected, isTrue);
+      expect(tester.widget<PrismChip>(find.widgetWithText(PrismChip, 'Spent')).selected, isTrue);
     });
 
     testWidgets('refresh resets pagination and a late older page cannot append or hide a newer refresh', (
@@ -326,7 +327,7 @@ void main() {
       final delayed = _DelayedFirestore();
       firestore = delayed;
       await pumpPage(tester);
-      await tester.tap(find.widgetWithText(FilterChip, 'Spent'));
+      await tester.tap(find.widgetWithText(PrismChip, 'Spent'));
       delayed.pending[0].complete(<FakeDocRow>[for (int i = 0; i < 40; i++) _row(i, delta: 8)]);
       await tester.pump();
       await tester.pump();
@@ -349,7 +350,7 @@ void main() {
       expect(find.text('-9'), findsOneWidget);
       expect(find.text('-7'), findsNothing);
       expect(find.text('+8'), findsNothing);
-      expect(tester.widget<FilterChip>(find.widgetWithText(FilterChip, 'Spent')).selected, isTrue);
+      expect(tester.widget<PrismChip>(find.widgetWithText(PrismChip, 'Spent')).selected, isTrue);
       expect(find.text('Try again'), findsNothing);
       expect(find.text('Show more'), findsNothing);
     });
@@ -597,7 +598,7 @@ void main() {
         ];
 
         await pumpPage(tester);
-        await tester.tap(find.widgetWithText(FilterChip, 'Spent'));
+        await tester.tap(find.widgetWithText(PrismChip, 'Spent'));
         await tester.pump();
 
         expect(find.text(sample.label), findsNWidgets(2));
@@ -646,27 +647,36 @@ void main() {
         _row(2, action: 'refund', delta: 10),
       ];
       await pumpPage(tester);
+      expect(tester.widget<PrismChip>(find.widgetWithText(PrismChip, 'All')).selected, isTrue);
 
-      await tester.tap(find.widgetWithText(FilterChip, 'Earned'));
+      await tester.tap(find.widgetWithText(PrismChip, 'Earned'));
       await tester.pump();
+      expect(tester.widget<PrismChip>(find.widgetWithText(PrismChip, 'All')).selected, isFalse);
       expect(find.text('+8'), findsOneWidget);
       expect(find.text('+10'), findsNothing);
       expect(find.text('-5'), findsNothing);
 
-      await tester.tap(find.widgetWithText(FilterChip, 'Spent'));
+      await tester.tap(find.widgetWithText(PrismChip, 'Spent'));
       await tester.pump();
       expect(find.text('-5'), findsOneWidget);
       expect(find.text('+8'), findsNothing);
 
-      await tester.tap(find.widgetWithText(FilterChip, 'Refunds'));
+      await tester.tap(find.widgetWithText(PrismChip, 'Refunds'));
       await tester.pump();
       expect(find.text('+10'), findsOneWidget);
       expect(find.text('-5'), findsNothing);
 
-      await tester.tap(find.widgetWithText(FilterChip, 'Refunds'));
+      await tester.tap(find.widgetWithText(PrismChip, 'Refunds'));
       await tester.pump();
       expect(find.text('+8'), findsOneWidget);
       expect(find.text('-5'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(PrismChip, 'Spent'));
+      await tester.pump();
+      await tester.tap(find.widgetWithText(PrismChip, 'All'));
+      await tester.pump();
+      expect(find.text('+8'), findsOneWidget);
+      expect(find.text('+10'), findsOneWidget);
     });
 
     testWidgets('Show more loads the next page after the last row', (tester) async {

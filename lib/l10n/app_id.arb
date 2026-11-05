@@ -933,7 +933,7 @@
   "@accountSpatialSceneSemanticLabel": {
     "description": "Spatial Scene text: accountSpatialSceneSemanticLabel."
   },
-  "accountDownloadApk": "UNDUH APK",
+  "accountDownloadApk": "Unduh APK",
   "@accountDownloadApk": {
     "description": "About page action that opens the APK download page. Shown only on installs that did not come from Google Play."
   },
@@ -981,7 +981,7 @@
   "@accountFavouritesCleared": {
     "description": "Success message after clearing favourite wallpapers."
   },
-  "accountFeedback": "MASUKAN",
+  "accountFeedback": "Masukan",
   "@accountFeedback": {
     "description": "About page action to send feedback."
   },
@@ -1632,7 +1632,7 @@
   "@accountQuickTiles": {
     "description": "Settings item for Quick Settings tiles."
   },
-  "accountRateApp": "NILAI",
+  "accountRateApp": "Nilai",
   "@accountRateApp": {
     "description": "About page action to rate Prism."
   },
@@ -1724,15 +1724,6 @@
   "accountRestoringPurchases": "Memulihkan pembelian…",
   "@accountRestoringPurchases": {
     "description": "Progress toast while restoring purchases."
-  },
-  "accountResultsForQuery": "Hasil untuk {query}",
-  "@accountResultsForQuery": {
-    "description": "Label above wallpaper search results.",
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
   },
   "accountRetry": "Coba lagi",
   "@accountRetry": {
@@ -3532,6 +3523,10 @@
   "@deepLinkInputLiveTitle": {
     "description": "Page title while choosing an image for a live wallpaper."
   },
+  "deepLinkInputLiveDescription": "Pilih foto dari galeri untuk dijadikan wallpaper bergerak.",
+  "@deepLinkInputLiveDescription": {
+    "description": "Instructions on the image chooser page when the user makes a live wallpaper."
+  },
   "deepLinkInputPhotoPreviewTitle": "Pratinjau foto",
   "@deepLinkInputPhotoPreviewTitle": {
     "description": "Page title while choosing an image for photo preview."
@@ -4237,6 +4232,15 @@
   "economyCoinsAreYoursToSpend": "Koin dapat Anda gunakan",
   "economyCoinsEarned": "+{count, plural, one{1 koin} other{{count} koin}}",
   "@economyCoinsEarned": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "economyCoinReward": "+{count}",
+  "@economyCoinReward": {
     "placeholders": {
       "count": {
         "type": "int",
@@ -6744,6 +6748,34 @@
   "premiumPageViewPlans": "Lihat paket",
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
+  },
+  "premiumPageHeadline": "Seluruh galeri, terbuka",
+  "@premiumPageHeadline": {
+    "description": "Large headline at the top of the Prism Premium page."
+  },
+  "premiumBenefitWalls": "Semua koleksi dan wallpaper premium",
+  "@premiumBenefitWalls": {
+    "description": "Premium benefit row: premium collections and walls open without coins or a pass."
+  },
+  "premiumBenefitFree": "Unduhan gratis tanpa iklan",
+  "@premiumBenefitFree": {
+    "description": "Premium benefit row: downloads cost no coins and inline and full-screen ads are off."
+  },
+  "premiumBenefitSpin": "Satu putaran gratis setiap hari",
+  "@premiumBenefitSpin": {
+    "description": "Premium benefit row: one free spin of the coin wheel each day."
+  },
+  "premiumBenefitAutomation": "Putar otomatis dan mode siang-malam",
+  "@premiumBenefitAutomation": {
+    "description": "Premium benefit row: auto-rotate and day and night wallpaper switching."
+  },
+  "premiumBenefitLiveStyles": "Semua gaya wallpaper bergerak",
+  "@premiumBenefitLiveStyles": {
+    "description": "Premium benefit row: every live wallpaper style without coins."
+  },
+  "premiumBenefitAiClean": "Wallpaper AI tanpa tanda air, dengan koin lebih sedikit",
+  "@premiumBenefitAiClean": {
+    "description": "Premium benefit row: AI wallpapers without the watermark, at a lower coin price."
   },
   "premiumGuestStorePurchaseActive": "Pembelian toko Anda aktif di perangkat ini. Masuk untuk menggunakan fitur Pro berbasis akun.",
   "premiumPurchasePending": "Pembelian Anda tersimpan. Pro mungkin perlu waktu satu menit untuk aktif.",
@@ -11826,6 +11858,10 @@
   "creatorsToFollow": "Kreator untuk diikuti",
   "@creatorsToFollow": {
     "description": "Title of the row of suggested creators on Home and Search."
+  },
+  "accountBrowseCreators": "Jelajahi kreator",
+  "@accountBrowseCreators": {
+    "description": "Action on the empty creator search, opens the creator directory."
   },
   "creatorsSeeAll": "Lihat semua",
   "@creatorsSeeAll": {

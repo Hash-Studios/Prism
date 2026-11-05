@@ -1,15 +1,13 @@
 import 'dart:io';
 
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_cover.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 const double _coverHeight = 140;
 const double _avatarSize = 84;
 const double _avatarRing = 3;
-const double _coverScrimHeight = 52;
 
 /// The cover preview and avatar of the profile editor. Both open the image picker.
 /// A "Remove photo" button sits next to the avatar while [onRemovePhoto] is set.
@@ -156,39 +154,35 @@ class EditProfileHeader extends StatelessWidget {
   }
 }
 
-/// The "Edit cover" hint along the bottom of the cover: a black fade, a camera and a white label, always legible over
-/// any cover image. It does not take taps; the whole cover is the tap target.
+/// The "Edit cover" hint at the bottom end of the cover: a camera and a white label on a dark pill, legible over any
+/// cover image. It does not take taps; the whole cover is the tap target.
 class _EditCoverHint extends StatelessWidget {
   const _EditCoverHint();
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
+    return PositionedDirectional(
+      bottom: PrismSpace.xs,
+      end: PrismSpace.xs,
       child: IgnorePointer(
-        child: Container(
-          height: _coverScrimHeight,
+        child: DecoratedBox(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: <Color>[Colors.transparent, Colors.black.withValues(alpha: 0.5)],
-            ),
+            color: Colors.black.withValues(alpha: 0.38),
+            borderRadius: BorderRadius.circular(PrismRadius.pill),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Icon(JamIcons.camera, color: Colors.white.withValues(alpha: 0.85), size: 15),
-              const SizedBox(width: 6),
-              Text(
-                context.l10n.accountEditCover,
-                style: PrismTextStyles.caption(
-                  context,
-                ).copyWith(color: Colors.white.withValues(alpha: 0.85), fontWeight: FontWeight.w600),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const Icon(Icons.photo_camera_rounded, color: Colors.white, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  context.l10n.accountEditCover,
+                  style: PrismTextStyles.caption(context).copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
           ),
         ),
       ),

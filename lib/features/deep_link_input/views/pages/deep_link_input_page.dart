@@ -52,35 +52,32 @@ class _DeepLinkInputPageState extends State<DeepLinkInputPage> {
     };
     return PrismPage(
       title: title,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: PrismSpace.pageInsets,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Icon(Icons.photo_library_outlined, size: 64, color: Theme.of(context).colorScheme.primary),
-              const SizedBox(height: PrismSpace.lg),
-              Text(
-                l10n.deepLinkInputChooseImageDescription,
-                textAlign: TextAlign.center,
-                style: PrismTextStyles.body(context),
-              ),
-              if (_error != null) ...<Widget>[
-                const SizedBox(height: PrismSpace.md),
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    _error!,
-                    textAlign: TextAlign.center,
-                    style: PrismTextStyles.body(context).copyWith(color: Theme.of(context).colorScheme.error),
-                  ),
-                ),
-              ],
-              const SizedBox(height: PrismSpace.xl),
-              PrismButton(label: l10n.deepLinkInputChooseImage, onPressed: _chooseImage, loading: _choosing),
-            ],
+      body: Column(
+        children: <Widget>[
+          Expanded(
+            child: GlintState(
+              kind: GlintStateKind.empty,
+              title: title,
+              body: widget.workflow == DeepLinkInputWorkflow.liveWallpaper
+                  ? l10n.deepLinkInputLiveDescription
+                  : l10n.deepLinkInputChooseImageDescription,
+              actionLabel: l10n.deepLinkInputChooseImage,
+              onAction: _chooseImage,
+            ),
           ),
-        ),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xl),
+              child: Semantics(
+                liveRegion: true,
+                child: Text(
+                  _error!,
+                  textAlign: TextAlign.center,
+                  style: PrismTextStyles.body(context).copyWith(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

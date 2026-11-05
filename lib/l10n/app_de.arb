@@ -707,7 +707,7 @@
   "@accountSpatialSceneSemanticLabel": {
     "description": "Spatial Scene text: accountSpatialSceneSemanticLabel."
   },
-  "accountDownloadApk": "APK HERUNTERLADEN",
+  "accountDownloadApk": "APK herunterladen",
   "@accountDownloadApk": {
     "description": "About page action that opens the APK download page. Shown only on installs that did not come from Google Play."
   },
@@ -755,7 +755,7 @@
   "@accountFavouritesCleared": {
     "description": "Success message after clearing favourite wallpapers."
   },
-  "accountFeedback": "FEEDBACK",
+  "accountFeedback": "Feedback",
   "@accountFeedback": {
     "description": "About page action to send feedback."
   },
@@ -1406,7 +1406,7 @@
   "@accountQuickTiles": {
     "description": "Settings item for Quick Settings tiles."
   },
-  "accountRateApp": "BEWERTEN",
+  "accountRateApp": "Bewerten",
   "@accountRateApp": {
     "description": "About page action to rate Prism."
   },
@@ -1498,15 +1498,6 @@
   "accountRestoringPurchases": "Käufe werden wiederhergestellt…",
   "@accountRestoringPurchases": {
     "description": "Progress toast while restoring purchases."
-  },
-  "accountResultsForQuery": "Ergebnisse für {query}",
-  "@accountResultsForQuery": {
-    "description": "Label above wallpaper search results.",
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
   },
   "accountRetry": "Erneut versuchen",
   "@accountRetry": {
@@ -3306,6 +3297,10 @@
   "@deepLinkInputLiveTitle": {
     "description": "Page title while choosing an image for a live wallpaper."
   },
+  "deepLinkInputLiveDescription": "Wähle ein Foto aus deiner Galerie, um daraus ein Live-Hintergrundbild zu machen.",
+  "@deepLinkInputLiveDescription": {
+    "description": "Instructions on the image chooser page when the user makes a live wallpaper."
+  },
   "deepLinkInputPhotoPreviewTitle": "Fotovorschau",
   "@deepLinkInputPhotoPreviewTitle": {
     "description": "Page title while choosing an image for photo preview."
@@ -4011,6 +4006,15 @@
   "economyCoinsAreYoursToSpend": "Du kannst deine Coins ausgeben",
   "economyCoinsEarned": "+{count, plural, one{1 Coin} other{{count} Coins}}",
   "@economyCoinsEarned": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "economyCoinReward": "+{count}",
+  "@economyCoinReward": {
     "placeholders": {
       "count": {
         "type": "int",
@@ -6518,6 +6522,34 @@
   "premiumPageViewPlans": "Abos ansehen",
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
+  },
+  "premiumPageHeadline": "Die ganze Galerie, freigeschaltet",
+  "@premiumPageHeadline": {
+    "description": "Large headline at the top of the Prism Premium page."
+  },
+  "premiumBenefitWalls": "Alle Premium-Sammlungen und -Hintergrundbilder",
+  "@premiumBenefitWalls": {
+    "description": "Premium benefit row: premium collections and walls open without coins or a pass."
+  },
+  "premiumBenefitFree": "Kostenlose Downloads und keine Werbung",
+  "@premiumBenefitFree": {
+    "description": "Premium benefit row: downloads cost no coins and inline and full-screen ads are off."
+  },
+  "premiumBenefitSpin": "Jeden Tag ein Gratisdreh",
+  "@premiumBenefitSpin": {
+    "description": "Premium benefit row: one free spin of the coin wheel each day."
+  },
+  "premiumBenefitAutomation": "Automatischer Wechsel und Tag-und-Nacht-Modus",
+  "@premiumBenefitAutomation": {
+    "description": "Premium benefit row: auto-rotate and day and night wallpaper switching."
+  },
+  "premiumBenefitLiveStyles": "Alle Stile für Live-Hintergrundbilder",
+  "@premiumBenefitLiveStyles": {
+    "description": "Premium benefit row: every live wallpaper style without coins."
+  },
+  "premiumBenefitAiClean": "KI-Hintergrundbilder ohne Wasserzeichen, für weniger Coins",
+  "@premiumBenefitAiClean": {
+    "description": "Premium benefit row: AI wallpapers without the watermark, at a lower coin price."
   },
   "premiumGuestStorePurchaseActive": "Dein Store-Kauf ist auf diesem Gerät aktiv. Melde dich an, um kontobasierte Pro-Funktionen zu nutzen.",
   "@premiumGuestStorePurchaseActive": {
@@ -11794,6 +11826,10 @@
   "creatorsToFollow": "Kreative zum Folgen",
   "@creatorsToFollow": {
     "description": "Title of the row of suggested creators on Home and Search."
+  },
+  "accountBrowseCreators": "Kreative entdecken",
+  "@accountBrowseCreators": {
+    "description": "Action on the empty creator search, opens the creator directory."
   },
   "creatorsSeeAll": "Alle ansehen",
   "@creatorsSeeAll": {

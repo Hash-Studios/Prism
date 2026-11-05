@@ -6,9 +6,8 @@ import 'package:Prism/features/wallpaper_detail/domain/entities/crop_spec.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_filters.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
 /// The bottom half of the wallpaper editor: a Filters tab with a strip of filter thumbnails, an Adjust tab with five
 /// sliders and a Crop tab with frame shapes. It holds no state: the editor owns the tabs, the filters, the adjustments
@@ -179,7 +178,7 @@ class FilterEditorPanel extends StatelessWidget {
         _buildTile(
           context,
           cs,
-          name: preset.name,
+          name: preset.label,
           selected: stack.contains(preset),
           order: stack.indexOf(preset) + 1,
           onTap: () => onToggle(preset),
@@ -196,7 +195,7 @@ class FilterEditorPanel extends StatelessWidget {
               'High Pass' => context.l10n.wallpaperFilterEffectHighPass,
               'Edge' => context.l10n.wallpaperFilterEffectEdge,
               'Emboss' => context.l10n.wallpaperFilterEffectEmboss,
-              _ => effect.name,
+              _ => effect.label,
             },
             selected: stack.contains(effect),
             order: stack.indexOf(effect) + 1,
@@ -300,73 +299,77 @@ class FilterEditorPanel extends StatelessWidget {
     final NumberFormat numberFormat = NumberFormat.decimalPattern(context.l10n.localeName);
     String localizedNumber(double value) => numberFormat.format(value.round());
     String signed(double value) => value.round() > 0 ? '+${localizedNumber(value)}' : localizedNumber(value);
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
-      children: [
-        if (!effectsAvailable)
-          Text(context.l10n.wallpaperFilterLightnessUnavailable, style: PrismTextStyles.caption(context)),
-        _adjustRow(
-          context,
-          cs,
-          icon: Icons.blur_on_rounded,
-          label: context.l10n.wallpaperFilterBlur,
-          value: a.blur * 100,
-          min: 0,
-          max: 100,
-          text: localizedNumber(a.blur * 100),
-          onChanged: (v) => onAdjust((current) => current.copyWith(blur: v / 100)),
-          onReset: () => onAdjust((current) => current.copyWith(blur: 0)),
-        ),
-        _adjustRow(
-          context,
-          cs,
-          icon: Icons.palette_outlined,
-          label: context.l10n.wallpaperFilterHue,
-          value: a.hue,
-          min: -180,
-          max: 180,
-          text: '${localizedNumber(a.hue)}°',
-          onChanged: (v) => onAdjust((current) => current.copyWith(hue: v)),
-          onReset: () => onAdjust((current) => current.copyWith(hue: 0)),
-        ),
-        _adjustRow(
-          context,
-          cs,
-          icon: JamIcons.water_drop,
-          label: context.l10n.wallpaperFilterSaturation,
-          value: a.saturation * 100,
-          min: -100,
-          max: 100,
-          text: signed(a.saturation * 100),
-          onChanged: (v) => onAdjust((current) => current.copyWith(saturation: v / 100)),
-          onReset: () => onAdjust((current) => current.copyWith(saturation: 0)),
-        ),
-        _adjustRow(
-          context,
-          cs,
-          icon: Icons.light_mode_outlined,
-          label: context.l10n.wallpaperFilterLightness,
-          value: a.lightness * 100,
-          min: -100,
-          max: 100,
-          text: signed(a.lightness * 100),
-          enabled: effectsAvailable,
-          onChanged: (v) => onAdjust((current) => current.copyWith(lightness: v / 100)),
-          onReset: () => onAdjust((current) => current.copyWith(lightness: 0)),
-        ),
-        _adjustRow(
-          context,
-          cs,
-          icon: JamIcons.brightness,
-          label: context.l10n.wallpaperFilterBrightness,
-          value: a.brightness * 100,
-          min: -100,
-          max: 100,
-          text: signed(a.brightness * 100),
-          onChanged: (v) => onAdjust((current) => current.copyWith(brightness: v / 100)),
-          onReset: () => onAdjust((current) => current.copyWith(brightness: 0)),
-        ),
-      ],
+    // Every track starts at the same x, and a thumb at either end sits flush with it.
+    return SliderTheme(
+      data: SliderTheme.of(context).copyWith(trackShape: const _FlushTrackShape()),
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
+        children: [
+          if (!effectsAvailable)
+            Text(context.l10n.wallpaperFilterLightnessUnavailable, style: PrismTextStyles.caption(context)),
+          _adjustRow(
+            context,
+            cs,
+            icon: Icons.blur_on_rounded,
+            label: context.l10n.wallpaperFilterBlur,
+            value: a.blur * 100,
+            min: 0,
+            max: 100,
+            text: localizedNumber(a.blur * 100),
+            onChanged: (v) => onAdjust((current) => current.copyWith(blur: v / 100)),
+            onReset: () => onAdjust((current) => current.copyWith(blur: 0)),
+          ),
+          _adjustRow(
+            context,
+            cs,
+            icon: Icons.palette_outlined,
+            label: context.l10n.wallpaperFilterHue,
+            value: a.hue,
+            min: -180,
+            max: 180,
+            text: '${localizedNumber(a.hue)}°',
+            onChanged: (v) => onAdjust((current) => current.copyWith(hue: v)),
+            onReset: () => onAdjust((current) => current.copyWith(hue: 0)),
+          ),
+          _adjustRow(
+            context,
+            cs,
+            icon: Icons.water_drop_outlined,
+            label: context.l10n.wallpaperFilterSaturation,
+            value: a.saturation * 100,
+            min: -100,
+            max: 100,
+            text: signed(a.saturation * 100),
+            onChanged: (v) => onAdjust((current) => current.copyWith(saturation: v / 100)),
+            onReset: () => onAdjust((current) => current.copyWith(saturation: 0)),
+          ),
+          _adjustRow(
+            context,
+            cs,
+            icon: Icons.light_mode_outlined,
+            label: context.l10n.wallpaperFilterLightness,
+            value: a.lightness * 100,
+            min: -100,
+            max: 100,
+            text: signed(a.lightness * 100),
+            enabled: effectsAvailable,
+            onChanged: (v) => onAdjust((current) => current.copyWith(lightness: v / 100)),
+            onReset: () => onAdjust((current) => current.copyWith(lightness: 0)),
+          ),
+          _adjustRow(
+            context,
+            cs,
+            icon: Icons.brightness_6_outlined,
+            label: context.l10n.wallpaperFilterBrightness,
+            value: a.brightness * 100,
+            min: -100,
+            max: 100,
+            text: signed(a.brightness * 100),
+            onChanged: (v) => onAdjust((current) => current.copyWith(brightness: v / 100)),
+            onReset: () => onAdjust((current) => current.copyWith(brightness: 0)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -420,5 +423,52 @@ class FilterEditorPanel extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+/// A track that runs a thumb radius past each end of the thumb's travel, as on iOS. A thumb at the start sits flush
+/// with the track start instead of hanging over it, so a slider at 0 lines up with the sliders above and below.
+class _FlushTrackShape extends RoundedRectSliderTrackShape {
+  const _FlushTrackShape();
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset offset, {
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required Animation<double> enableAnimation,
+    required TextDirection textDirection,
+    required Offset thumbCenter,
+    Offset? secondaryOffset,
+    bool isDiscrete = false,
+    bool isEnabled = false,
+    double additionalActiveTrackHeight = 2,
+  }) {
+    if ((sliderTheme.trackHeight ?? 0) <= 0) return;
+    final Rect travel = getPreferredRect(
+      parentBox: parentBox,
+      offset: offset,
+      sliderTheme: sliderTheme,
+      isEnabled: isEnabled,
+      isDiscrete: isDiscrete,
+    );
+    final double reach = sliderTheme.thumbShape!.getPreferredSize(isEnabled, isDiscrete).width / 2;
+    final Rect track = Rect.fromLTRB(travel.left - reach, travel.top, travel.right + reach, travel.bottom);
+    final Radius radius = Radius.circular(track.height / 2);
+    final Color active = ColorTween(
+      begin: sliderTheme.disabledActiveTrackColor,
+      end: sliderTheme.activeTrackColor,
+    ).evaluate(enableAnimation)!;
+    final Color inactive = ColorTween(
+      begin: sliderTheme.disabledInactiveTrackColor,
+      end: sliderTheme.inactiveTrackColor,
+    ).evaluate(enableAnimation)!;
+    final Rect filled = textDirection == TextDirection.ltr
+        ? Rect.fromLTRB(track.left, track.top, thumbCenter.dx, track.bottom)
+        : Rect.fromLTRB(thumbCenter.dx, track.top, track.right, track.bottom);
+    context.canvas
+      ..drawRRect(RRect.fromRectAndRadius(track, radius), Paint()..color = inactive)
+      ..drawRRect(RRect.fromRectAndRadius(filled, radius), Paint()..color = active);
   }
 }

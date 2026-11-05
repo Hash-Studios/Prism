@@ -116,7 +116,7 @@ void main() {
     await tester.tap(find.text('Try again'));
     await _waitForReady(tester);
     expect(find.text("Couldn't open this wallpaper"), findsNothing);
-    await tester.tap(find.text('AddictiveBlue'));
+    await tester.tap(find.text('Addictive Blue'));
     await tester.pump();
     final preview = find.descendant(of: find.byType(AspectRatio).first, matching: find.byType(Image)).first;
     final gesture = await tester.startGesture(tester.getCenter(preview));
@@ -382,7 +382,7 @@ void main() {
 
     await tester.pumpWidget(_screenHost(source.path));
     await _waitForReady(tester);
-    await tester.tap(find.text('AddictiveBlue'));
+    await tester.tap(find.text('Addictive Blue'));
     await tester.pump();
     await tester.tap(find.byTooltip('Set as wallpaper'));
     await waitForRealIo(

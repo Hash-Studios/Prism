@@ -265,7 +265,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         PrismGroup(children: rows),
         if (footnote != null)
           Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.xs, PrismSpace.xs, PrismSpace.xs, 0),
+            padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.xs, 6, PrismSpace.xs, 0),
             child: Text(footnote, style: PrismTextStyles.caption(context)),
           ),
       ],

@@ -1623,15 +1623,6 @@
   "@accountRestoringPurchases": {
     "description": "Progress toast while restoring purchases."
   },
-  "accountResultsForQuery": "{query} के नतीजे",
-  "@accountResultsForQuery": {
-    "description": "Label above wallpaper search results.",
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
   "accountRetry": "फिर कोशिश करें",
   "@accountRetry": {
     "description": "Retry action label."
@@ -3436,6 +3427,10 @@
   "@deepLinkInputLiveTitle": {
     "description": "Page title while choosing an image for a live wallpaper."
   },
+  "deepLinkInputLiveDescription": "लाइव वॉलपेपर बनाने के लिए अपनी गैलरी से एक तस्वीर चुनें।",
+  "@deepLinkInputLiveDescription": {
+    "description": "Instructions on the image chooser page when the user makes a live wallpaper."
+  },
   "deepLinkInputPhotoPreviewTitle": "तस्वीर का प्रीव्यू",
   "@deepLinkInputPhotoPreviewTitle": {
     "description": "Page title while choosing an image for photo preview."
@@ -4121,6 +4116,15 @@
   "economyCoinsAreYoursToSpend": "कॉइन खर्च करने के लिए आपके हैं",
   "economyCoinsEarned": "+{count, plural, one{{count} कॉइन} other{{count} कॉइन}}",
   "@economyCoinsEarned": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "economyCoinReward": "+{count}",
+  "@economyCoinReward": {
     "placeholders": {
       "count": {
         "type": "int",
@@ -6628,6 +6632,34 @@
   "premiumPageViewPlans": "प्लान देखें",
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
+  },
+  "premiumPageHeadline": "पूरी गैलरी, अनलॉक",
+  "@premiumPageHeadline": {
+    "description": "Large headline at the top of the Prism Premium page."
+  },
+  "premiumBenefitWalls": "सभी प्रीमियम कलेक्शन और वॉलपेपर",
+  "@premiumBenefitWalls": {
+    "description": "Premium benefit row: premium collections and walls open without coins or a pass."
+  },
+  "premiumBenefitFree": "मुफ़्त डाउनलोड और कोई विज्ञापन नहीं",
+  "@premiumBenefitFree": {
+    "description": "Premium benefit row: downloads cost no coins and inline and full-screen ads are off."
+  },
+  "premiumBenefitSpin": "हर दिन एक मुफ़्त स्पिन",
+  "@premiumBenefitSpin": {
+    "description": "Premium benefit row: one free spin of the coin wheel each day."
+  },
+  "premiumBenefitAutomation": "ऑटो-रोटेशन और दिन-रात मोड",
+  "@premiumBenefitAutomation": {
+    "description": "Premium benefit row: auto-rotate and day and night wallpaper switching."
+  },
+  "premiumBenefitLiveStyles": "लाइव वॉलपेपर की सभी स्टाइल",
+  "@premiumBenefitLiveStyles": {
+    "description": "Premium benefit row: every live wallpaper style without coins."
+  },
+  "premiumBenefitAiClean": "बिना वॉटरमार्क वाले AI वॉलपेपर, कम कॉइन्स में",
+  "@premiumBenefitAiClean": {
+    "description": "Premium benefit row: AI wallpapers without the watermark, at a lower coin price."
   },
   "premiumGuestStorePurchaseActive": "स्टोर से की गई आपकी खरीद इस डिवाइस पर सक्रिय है। खाते से जुड़ी Pro सुविधाओं का उपयोग करने के लिए साइन इन करें।",
   "@premiumGuestStorePurchaseActive": {
@@ -12336,6 +12368,10 @@
   "creatorsToFollow": "फ़ॉलो करने लायक क्रिएटर",
   "@creatorsToFollow": {
     "description": "Title of the row of suggested creators on Home and Search."
+  },
+  "accountBrowseCreators": "क्रिएटर देखें",
+  "@accountBrowseCreators": {
+    "description": "Action on the empty creator search, opens the creator directory."
   },
   "creatorsSeeAll": "सभी देखें",
   "@creatorsSeeAll": {

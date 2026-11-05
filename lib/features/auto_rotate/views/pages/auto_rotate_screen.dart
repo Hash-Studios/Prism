@@ -189,12 +189,31 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
     return PrismPage(
       title: context.l10n.wallpaperAutoRotateTitle,
       body: !_isAndroid
-          ? GlintState(
-              kind: GlintStateKind.empty,
-              title: context.l10n.autoRotateIosTitle,
-              body: context.l10n.autoRotateIosBody,
-              actionLabel: context.l10n.autoRotateIosAction,
-              onAction: () => context.router.replace(IosShortcutsGuideRoute(source: 'auto_rotate')),
+          ? Column(
+              children: <Widget>[
+                Expanded(
+                  child: GlintState(
+                    kind: GlintStateKind.empty,
+                    title: context.l10n.autoRotateIosTitle,
+                    body: context.l10n.autoRotateIosBody,
+                    actionLabel: context.l10n.autoRotateIosAction,
+                    onAction: () => context.router.replace(IosShortcutsGuideRoute(source: 'auto_rotate')),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xl),
+                  child: PrismGroup(
+                    children: <Widget>[
+                      for (final (int i, String step) in <String>[
+                        context.l10n.shortcutsStepAddTitle,
+                        context.l10n.shortcutsStepAutomationTitle,
+                        context.l10n.shortcutsStepTestTitle,
+                      ].indexed)
+                        PrismRow(leading: _StepNumber(i + 1), title: step, showChevron: false),
+                    ],
+                  ),
+                ),
+              ],
             )
           : BlocBuilder<AutoRotateBloc, AutoRotateState>(
               builder: (context, state) {
@@ -739,6 +758,27 @@ class _ProgressRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(PrismRadius.pill),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StepNumber extends StatelessWidget {
+  const _StepNumber(this.number);
+
+  final int number;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return ExcludeSemantics(
+      child: CircleAvatar(
+        radius: 14,
+        backgroundColor: cs.primary.withValues(alpha: 0.14),
+        child: Text(
+          '$number',
+          style: PrismTextStyles.caption(context).copyWith(color: cs.primary, fontWeight: FontWeight.w700),
+        ),
       ),
     );
   }

@@ -520,7 +520,7 @@ void main() {
       ),
     );
     await _waitForFilterReady(tester);
-    await tester.tap(find.text('AddictiveBlue'));
+    await tester.tap(find.text('Addictive Blue'));
     await tester.pump();
     await tester.tap(find.byTooltip('Download'));
     // The sign-in sheet mascot loops an animation, so pump a fixed time instead of settling.

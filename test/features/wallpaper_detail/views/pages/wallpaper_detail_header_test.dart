@@ -224,8 +224,9 @@ void main() {
       expect(find.bySemanticsLabel('7 favourites'), findsOneWidget);
       expect(find.bySemanticsLabel(RegExp(r'^7$')), findsNothing);
       semantics.dispose();
-      expect(find.byIcon(Icons.bar_chart_rounded), findsOneWidget);
-      expect(find.text('0'), findsOneWidget);
+      // Zero views stay out of the details grid.
+      expect(find.text('Views'), findsNothing);
+      expect(find.text('0'), findsNothing);
     });
 
     testWidgets('unknown views are omitted without an inline spinner or duplicate label', (tester) async {
@@ -262,7 +263,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.text('1.2K'), findsOneWidget);
-      expect(find.byIcon(Icons.bar_chart_rounded), findsOneWidget);
+      expect(find.text('Views'), findsOneWidget);
       expect(find.text('0 views'), findsNothing);
     });
 
@@ -281,7 +282,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.text('45'), findsOneWidget);
-      expect(find.byIcon(Icons.bar_chart_rounded), findsOneWidget);
+      expect(find.text('Views'), findsOneWidget);
       expect(find.bySemanticsLabel('7 favourites'), findsNothing);
     });
 
@@ -301,7 +302,7 @@ void main() {
 
       expect(find.text('24'), findsOneWidget);
       expect(find.text('1.2K'), findsOneWidget);
-      expect(find.byIcon(Icons.bar_chart_rounded), findsOneWidget);
+      expect(find.text('Views'), findsOneWidget);
       expect(find.textContaining('views'), findsNothing);
     });
 
@@ -377,11 +378,11 @@ void main() {
         entity: entity,
       );
 
-      expect(find.text('Misty pines'), findsNWidgets(2)); // Summary and expanded metadata.
+      expect(find.text('Misty pines'), findsOneWidget); // The summary only. The details do not repeat it.
       expect(find.text('PRISM-1'), findsNothing);
     });
 
-    testWidgets('falls back to Wallpaper by the creator name', (tester) async {
+    testWidgets('does not repeat the creator as a Wallpaper by title', (tester) async {
       final FeedItemEntity entity = _prism();
       await pump(
         tester,
@@ -393,7 +394,8 @@ void main() {
         entity: entity,
       );
 
-      expect(find.text('Wallpaper by Akshay'), findsNWidgets(2));
+      expect(find.text('Wallpaper by Akshay'), findsNothing);
+      expect(find.text('Akshay'), findsOneWidget);
     });
 
     testWidgets('never shows an email as the creator', (tester) async {
@@ -408,7 +410,7 @@ void main() {
         entity: entity,
       );
 
-      expect(find.text('Wallpaper by Prism creator'), findsNWidgets(2));
+      expect(find.text('Wallpaper by Prism creator'), findsOneWidget);
       expect(find.text('Wallpaper by creator@example.com'), findsNothing);
     });
 

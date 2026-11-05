@@ -103,9 +103,10 @@ void main() {
     expect(find.text('Leaderboard'), findsOneWidget);
     expect(find.text('Following'), findsOneWidget);
     expect(find.text('Friends'), findsNothing);
-    expect(find.text('Ranked by XP earned this week'), findsOneWidget);
+    expect(find.text('Ranked by XP earned this week'), findsNothing);
     expect(find.textContaining('Resets Monday 00:00 UTC · '), findsOneWidget);
-    expect(find.text('Top 50 · updated about every 3 hours'), findsOneWidget);
+    expect(find.text('Top 50 · updated about every 3 hours'), findsNothing);
+    expect(find.textContaining('pull to refresh'), findsNothing);
     expect(find.text('Ana'), findsOneWidget);
     expect(find.text(AppLocalizationsEn().economyXp(1200)), findsOneWidget);
     expect(find.text('Silver'), findsOneWidget);
@@ -153,8 +154,28 @@ void main() {
 
     expect(find.text('40 XP'), findsOneWidget);
     expect(find.text('Your score is included. Follow creators to compare weekly XP.'), findsOneWidget);
-    expect(find.text('You and people you follow · pull to refresh'), findsOneWidget);
+    expect(find.text('Find creators'), findsOneWidget);
     expect(find.text('No rankings yet'), findsNothing);
+  });
+
+  testWidgets('Find creators opens the creators page', (tester) async {
+    await pumpPage(tester, loaded(tab: LeaderboardTab.friends, friends: const <LeaderboardEntry>[_me]));
+
+    await tester.tap(find.text('Find creators'));
+
+    final PageRouteInfo<dynamic> route = verify(() => router.push(captureAny())).captured.single as PageRouteInfo;
+    expect(route, isA<CreatorsRoute>());
+  });
+
+  testWidgets('five or more following rows show no find-creators prompt', (tester) async {
+    final List<LeaderboardEntry> five = <LeaderboardEntry>[
+      _me,
+      for (int i = 0; i < 4; i++)
+        LeaderboardEntry(uid: 'u$i', name: 'User $i', username: 'u$i', photo: '', xp: 10 + i, rank: 'bronze'),
+    ];
+    await pumpPage(tester, loaded(tab: LeaderboardTab.friends, friends: five));
+
+    expect(find.text('Find creators'), findsNothing);
   });
 
   testWidgets('scoring explanation separates weekly positions, lifetime ranks and tab rules', (tester) async {
@@ -162,6 +183,7 @@ void main() {
     await tester.tap(find.byTooltip('How leaderboard scoring works'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Ranked by XP earned this week'), findsOneWidget);
     expect(find.textContaining('Rank labels, such as Silver, use lifetime XP.'), findsOneWidget);
     expect(find.textContaining('Weekly XP resets Monday at 00:00 UTC; lifetime XP and rank stay.'), findsOneWidget);
     expect(find.textContaining('first 90 accounts you follow'), findsOneWidget);
@@ -193,7 +215,7 @@ void main() {
 
     expect(find.text(AppLocalizationsEn().economyXp(1200)), findsOneWidget);
     expect(find.text('40 XP'), findsNothing);
-    expect(find.text('Top 50 · updated about every 3 hours'), findsOneWidget);
+    expect(find.text('Find creators'), findsNothing);
     expect(find.text('Your score is included. Follow creators to compare weekly XP.'), findsNothing);
 
     await tester.tap(find.text('Following'));
@@ -201,7 +223,7 @@ void main() {
     states.add(loaded(tab: LeaderboardTab.friends, friends: const <LeaderboardEntry>[_me]));
     await tester.pump();
     expect(find.text('40 XP'), findsOneWidget);
-    expect(find.text('You and people you follow · pull to refresh'), findsOneWidget);
+    expect(find.text('Find creators'), findsOneWidget);
   });
 
   testWidgets('scoring copy remains reachable on a small phone with large text', (tester) async {
@@ -214,10 +236,13 @@ void main() {
     expect(tester.takeException(), isNull);
 
     await tester.tap(find.byTooltip('How leaderboard scoring works'));
-    await tester.pumpAndSettle();
+    // Glint loops, so pump a bounded time instead of settling.
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
     expect(tester.takeException(), isNull);
     await tester.ensureVisible(find.text('If you are offline, saved scores may be shown.'));
-    await tester.pumpAndSettle();
+    // Glint loops, so pump a bounded time instead of settling.
+    await tester.pump(const Duration(milliseconds: 600));
     expect(find.text('If you are offline, saved scores may be shown.').hitTestable(), findsOneWidget);
   });
 
@@ -244,7 +269,7 @@ void main() {
   for (final LoadStatus status in <LoadStatus>[LoadStatus.initial, LoadStatus.loading]) {
     testWidgets('pulling the ${status.name} skeleton does not start an overlapping refresh', (tester) async {
       await pumpPage(tester, loaded(global: const <LeaderboardEntry>[]).copyWith(globalStatus: status));
-      await tester.drag(find.text('Ranked by XP earned this week'), const Offset(0, 500));
+      await tester.drag(find.textContaining('Resets Monday'), const Offset(0, 500));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
@@ -261,7 +286,7 @@ void main() {
       await pumpPage(tester, initial, states: states.stream);
       await tester.pump(const Duration(milliseconds: 400));
 
-      await tester.drag(find.text('Ranked by XP earned this week'), const Offset(0, 500));
+      await tester.drag(find.textContaining('Resets Monday'), const Offset(0, 500));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
       verify(() => bloc.add(const LeaderboardEvent.refreshed())).called(1);

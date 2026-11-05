@@ -1,5 +1,6 @@
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
@@ -48,6 +49,50 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text('Retry'));
     expect(calls, 1);
+  });
+
+  testWidgets('the action is primary by default and tonal on request', (tester) async {
+    await tester.pumpWidget(
+      host(GlintState(kind: GlintStateKind.empty, title: 'T', actionLabel: 'Go', onAction: () {})),
+    );
+    expect(tester.widget<PrismButton>(find.byType(PrismButton)).variant, PrismButtonVariant.primary);
+
+    await tester.pumpWidget(
+      host(
+        GlintState(
+          kind: GlintStateKind.empty,
+          title: 'T',
+          actionLabel: 'Go',
+          onAction: () {},
+          actionVariant: PrismButtonVariant.tonal,
+        ),
+      ),
+    );
+    expect(tester.widget<PrismButton>(find.byType(PrismButton)).variant, PrismButtonVariant.tonal);
+  });
+
+  testWidgets('sits above the centre on a tall area and in the centre on a short one', (tester) async {
+    await tester.pumpWidget(
+      host(
+        const GlintState(kind: GlintStateKind.empty, title: 'T'),
+        size: const Size(360, 600),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    final Rect tall = tester.getRect(find.byType(GlintState));
+    final double tallMiddle = (tester.getTopLeft(find.byType(Glint)).dy + tester.getBottomLeft(find.text('T')).dy) / 2;
+    expect(tallMiddle, lessThan(tall.center.dy - 60), reason: 'biased towards the top');
+
+    await tester.pumpWidget(
+      host(
+        const GlintState(kind: GlintStateKind.empty, title: 'T'),
+        size: const Size(360, 400),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    final Rect short = tester.getRect(find.byType(GlintState));
+    final double shortMiddle = (tester.getTopLeft(find.byType(Glint)).dy + tester.getBottomLeft(find.text('T')).dy) / 2;
+    expect(shortMiddle, closeTo(short.center.dy, 1));
   });
 
   testWidgets('does not overflow at 320x200', (tester) async {

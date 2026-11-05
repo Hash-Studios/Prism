@@ -9,7 +9,6 @@ import 'package:Prism/features/public_profile/domain/repositories/public_profile
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -102,7 +101,7 @@ void main() {
 
   testWidgets('unfollow request emits one tap haptic, not a success outcome', (tester) async {
     await pumpProfile(tester, following: true);
-    await tester.tap(find.byIcon(JamIcons.user_remove));
+    await tester.tap(find.text('Following'));
     await tester.pump();
 
     expect(haptics, <String>['tap']);
@@ -111,7 +110,7 @@ void main() {
 
   testWidgets('follow request emits one tap haptic, not a success outcome', (tester) async {
     await pumpProfile(tester, following: false);
-    await tester.tap(find.byIcon(JamIcons.user_plus));
+    await tester.tap(find.text('Follow'));
     await tester.pump();
 
     expect(haptics, <String>['tap']);

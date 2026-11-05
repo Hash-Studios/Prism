@@ -22,7 +22,6 @@ import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
@@ -191,8 +190,8 @@ void main() {
     expect(find.textContaining('Following', findRichText: true), findsOneWidget);
     expect(find.textContaining('Followers', findRichText: true), findsOneWidget);
     expect(tester.getCenter(find.text('Me Myself')).dx, 400);
-    expect(find.byIcon(JamIcons.pencil), findsOneWidget);
-    expect(find.byIcon(JamIcons.menu), findsOneWidget);
+    expect(find.byIcon(Icons.edit_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
     expect(find.byTooltip('Edit profile'), findsOneWidget);
     expect(find.byTooltip('Menu'), findsOneWidget);
     // Nothing from the redesign header.
@@ -205,6 +204,40 @@ void main() {
     expect(find.text('No wallpapers yet'), findsOneWidget);
     expect(find.text('Upload your first wallpaper to start your gallery.'), findsOneWidget);
     expect(repository.watchedIdentifiers, <String>['me']);
+  });
+
+  testWidgets('own profile: the XP card follows the header with no empty gap', (tester) async {
+    await pumpScreen(tester);
+
+    final double statsBottom = tester.getRect(find.textContaining('Followers', findRichText: true)).bottom;
+    expect(tester.getRect(find.byType(RankProgressCard)).top - statsBottom, lessThan(48));
+  });
+
+  testWidgets('scrolled profile pins the header: back stays and the name shows as the title', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const ProfileScreen(profileIdentifier: 'u2'),
+        builder: favouriteTestBuilder,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    repository.profiles.add(_ana);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Ana Rivera'), findsOneWidget);
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -600));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byTooltip('Back'), findsOneWidget);
+    expect(tester.getRect(find.byTooltip('Back')).top, greaterThanOrEqualTo(0));
+    final Finder title = find.descendant(of: find.byType(AppBar), matching: find.text('Ana Rivera'));
+    expect(title, findsOneWidget);
+    expect(tester.widget<Opacity>(find.ancestor(of: title, matching: find.byType(Opacity)).first).opacity, 1);
   });
 
   testWidgets('own profile keeps private header data and uses UID public graph counts', (tester) async {
@@ -474,8 +507,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('Ana Rivera'), findsOneWidget);
-    expect(find.byIcon(JamIcons.user_plus), findsOneWidget);
-    expect(find.byTooltip('Follow'), findsOneWidget);
+    expect(find.byIcon(Icons.person_add_alt_1_rounded), findsOneWidget);
+    expect(find.widgetWithText(PrismButton, 'Follow'), findsOneWidget);
+    expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Follow')).variant, PrismButtonVariant.primary);
     expect(find.byTooltip('More options'), findsOneWidget);
     expect(find.byTooltip('Edit profile'), findsNothing);
     expect(find.text('Upload your first wallpaper to start your gallery.'), findsNothing);
@@ -486,7 +520,7 @@ void main() {
     repository.profiles.add(_ana);
     await tester.pump(const Duration(milliseconds: 400));
 
-    await tester.tap(find.byTooltip('Follow'));
+    await tester.tap(find.widgetWithText(PrismButton, 'Follow'));
     verify(
       () => bloc.add(
         const PublicProfileEvent.followChangeRequested(
@@ -514,8 +548,9 @@ void main() {
     repository.profiles.add(_ana);
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.byTooltip('Unfollow'), findsOneWidget);
-    expect(find.byIcon(JamIcons.user_remove), findsOneWidget);
+    expect(find.widgetWithText(PrismButton, 'Following'), findsOneWidget);
+    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+    expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Following')).variant, PrismButtonVariant.tonal);
   });
 
   testWidgets('the first three links show as buttons and the rest open from a More links button', (tester) async {

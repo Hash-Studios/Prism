@@ -93,7 +93,7 @@ class _PicksGrid extends StatelessWidget {
           ),
         ),
         SliverPadding(
-          padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xxs, bottom: PrismSpace.bottomBarClearance),
+          padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xs, bottom: PrismSpace.bottomBarClearance),
           sliver: SliverGrid(
             gridDelegate: PrismWallGrid.delegate(
               context,
@@ -142,6 +142,17 @@ class _PickTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.only(bottom: PrismSpace.xs),
+          child: ExcludeSemantics(
+            child: Text(
+              dateLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: PrismTextStyles.rowTitle(context),
+            ),
+          ),
+        ),
         Expanded(
           child: FavouriteWallpaperCard(
             item: PrismFeedItem(id: pick.wallpaper.id, wallpaper: pick.wallpaper),
@@ -159,17 +170,6 @@ class _PickTile extends StatelessWidget {
                 spatialTagFor(pick.wallpaper.spatial?.tier),
               ]),
               onTap: () => _open(context, heroTag),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: PrismSpace.xs),
-          child: ExcludeSemantics(
-            child: Text(
-              dateLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: PrismTextStyles.rowTitle(context),
             ),
           ),
         ),

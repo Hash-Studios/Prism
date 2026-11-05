@@ -27,6 +27,10 @@ enum GlintStateKind {
 }
 
 /// One widget for empty, error, offline, loading and "nothing new" states, with Glint.
+///
+/// On a tall area (480 and up) the state sits above the centre, where the eye lands first. The action is the
+/// screen's primary action by default. A page that already shows a primary action (or a bottom bar) passes
+/// [PrismButtonVariant.tonal] as [actionVariant].
 class GlintState extends StatelessWidget {
   const GlintState({
     super.key,
@@ -35,6 +39,7 @@ class GlintState extends StatelessWidget {
     this.body,
     this.actionLabel,
     this.onAction,
+    this.actionVariant = PrismButtonVariant.primary,
     this.glintSize = 96,
     this.padding = const EdgeInsets.all(24),
   });
@@ -44,6 +49,7 @@ class GlintState extends StatelessWidget {
   final String? body;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final PrismButtonVariant actionVariant;
   final double glintSize;
   final EdgeInsetsGeometry padding;
 
@@ -55,6 +61,7 @@ class GlintState extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final bool tight = constraints.maxHeight < 260;
+        final bool tall = constraints.maxHeight >= 480;
         final Widget content = ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 320),
           child: Column(
@@ -65,14 +72,17 @@ class GlintState extends StatelessWidget {
               Text(title, textAlign: TextAlign.center, style: PrismTextStyles.cardTitle(context)),
               if (bodyText != null) ...[
                 const SizedBox(height: 6),
-                Text(bodyText, textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 300),
+                  child: Text(bodyText, textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
+                ),
               ],
               if (hasAction) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 PrismButton(
                   label: actionLabel!,
                   onPressed: onAction,
-                  variant: PrismButtonVariant.tonal,
+                  variant: actionVariant,
                   size: PrismButtonSize.compact,
                 ),
               ],
@@ -95,7 +105,9 @@ class GlintState extends StatelessWidget {
                 ),
                 child: body,
               );
-        final Widget centered = Center(child: animated);
+        final Widget centered = tall
+            ? Align(alignment: const Alignment(0, -0.35), child: animated)
+            : Center(child: animated);
         if (kind == GlintStateKind.error || kind == GlintStateKind.offline) {
           return Semantics(liveRegion: true, container: true, child: centered);
         }

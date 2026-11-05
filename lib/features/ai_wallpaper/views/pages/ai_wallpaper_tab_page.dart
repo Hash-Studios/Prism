@@ -1354,12 +1354,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                     AiRemixChip(seed: _remixLink!, onDrop: busy ? null : _dropRemixLink),
                     const SizedBox(height: PrismSpace.sm),
                   ],
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(context.l10n.duoAiFormatLabel, style: PrismTextStyles.rowTitle(context)),
-                    value: _duoReveal,
-                    onChanged: busy ? null : (value) => setState(() => _duoReveal = value),
-                  ),
                   if (_duoReveal)
                     AiDuoFields(folded: _foldedController, revealed: _revealedController, enabled: !busy)
                   else
@@ -1371,6 +1365,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                       onShuffle: _shufflePrompt,
                       onSceneIdea: _useSceneIdea,
                     ),
+                  PrismSwitchRow(
+                    title: context.l10n.duoAiFormatLabel,
+                    value: _duoReveal,
+                    onChanged: busy ? null : (value) => setState(() => _duoReveal = value),
+                  ),
                 ],
               ),
             ),

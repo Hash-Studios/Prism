@@ -34,6 +34,13 @@ class RewardsSpendSection extends StatelessWidget {
         : graceLeft == CoinPolicy.graceDownloads
         ? context.l10n.economyFirstDownloadsFree(graceLeft)
         : context.l10n.economyFreeDownloadsLeft(graceLeft);
+    final String boostInfo = context.l10n.economyBoostInfo(CoinPolicy.boostWall);
+    final String giftInfo = context.l10n.economyGiftPassInfo(CoinPolicy.giftPremiumPass);
+    final String downloadsInfo = context.l10n.economyDownloadsInfo(
+      CoinPolicy.wallpaperDownload,
+      CoinPolicy.graceDownloads,
+      (graceNote != null).toString(),
+    );
     final List<_SpendTile> tiles = <_SpendTile>[
       _SpendTile(
         icon: Icons.auto_awesome_rounded,
@@ -50,7 +57,7 @@ class RewardsSpendSection extends StatelessWidget {
         onTap: () => context.router.root.push(const DropsRoute()),
       ),
       _SpendTile(
-        icon: Icons.storefront_outlined,
+        icon: Icons.storefront_rounded,
         label: context.l10n.economyShopTitle,
         price: context.l10n.economyPriceFrom(shopFrom),
         spokenPrice: context.l10n.economyPriceFromCoins(shopFrom),
@@ -65,28 +72,20 @@ class RewardsSpendSection extends StatelessWidget {
             context.router.root.navigate(const DashboardRoute(children: <PageRouteInfo>[CollectionTabRoute()])),
       ),
       _SpendTile(
-        icon: Icons.rocket_launch_outlined,
+        icon: Icons.rocket_launch_rounded,
         label: context.l10n.economyBoost,
         price: '${CoinPolicy.boostWall}',
         spokenPrice: context.l10n.economyPriceCoins(CoinPolicy.boostWall),
-        onTap: () => _showInfo(
-          context,
-          title: context.l10n.economyBoost,
-          body: context.l10n.economyBoostInfo(CoinPolicy.boostWall),
-          showPro: false,
-        ),
+        caption: boostInfo,
+        onTap: () => _showInfo(context, title: context.l10n.economyBoost, body: boostInfo, showPro: false),
       ),
       _SpendTile(
         icon: Icons.card_giftcard_rounded,
         label: context.l10n.economyGiftPass,
         price: '${CoinPolicy.giftPremiumPass}',
         spokenPrice: context.l10n.economyPriceCoins(CoinPolicy.giftPremiumPass),
-        onTap: () => _showInfo(
-          context,
-          title: context.l10n.economyGiftPass,
-          body: context.l10n.economyGiftPassInfo(CoinPolicy.giftPremiumPass),
-          showPro: false,
-        ),
+        caption: giftInfo,
+        onTap: () => _showInfo(context, title: context.l10n.economyGiftPass, body: giftInfo, showPro: false),
       ),
       _SpendTile(
         icon: Icons.ac_unit_rounded,
@@ -106,15 +105,8 @@ class RewardsSpendSection extends StatelessWidget {
           (graceNote != null).toString(),
           graceNote ?? '',
         ),
-        onTap: () => _showInfo(
-          context,
-          title: context.l10n.economyDownloads,
-          body: context.l10n.economyDownloadsInfo(
-            CoinPolicy.wallpaperDownload,
-            CoinPolicy.graceDownloads,
-            (graceNote != null).toString(),
-          ),
-        ),
+        caption: downloadsInfo,
+        onTap: () => _showInfo(context, title: context.l10n.economyDownloads, body: downloadsInfo),
       ),
     ];
     return Column(
@@ -181,6 +173,7 @@ class _SpendTile extends StatelessWidget {
     required this.spokenPrice,
     required this.onTap,
     this.note,
+    this.caption,
     this.haptic = true,
   });
 
@@ -192,6 +185,9 @@ class _SpendTile extends StatelessWidget {
 
   /// A second caption line under the price, for example "first 3 free".
   final String? note;
+
+  /// The info body, clipped to two lines under the price.
+  final String? caption;
   final bool haptic;
 
   @override
@@ -229,15 +225,14 @@ class _SpendTile extends StatelessWidget {
                   const PrismCoinIcon(size: 14),
                   const SizedBox(width: 6),
                   Expanded(
-                    child: Text(
-                      price,
-                      style: PrismTextStyles.caption(
-                        context,
-                      ).copyWith(color: cs.onSurface.withValues(alpha: 0.85), fontWeight: FontWeight.w600),
-                    ),
+                    child: Text(price, style: PrismTextStyles.rowTitle(context).copyWith(color: cs.onSurface)),
                   ),
                 ],
               ),
+              if (caption != null) ...<Widget>[
+                const SizedBox(height: PrismSpace.xxs),
+                Text(caption!, maxLines: 2, overflow: TextOverflow.ellipsis, style: PrismTextStyles.caption(context)),
+              ],
               if (note != null) Text(note!, style: PrismTextStyles.caption(context)),
             ],
           ),

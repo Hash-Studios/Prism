@@ -114,10 +114,13 @@ class XpProgressCard extends StatelessWidget {
             Text(context.l10n.economyLifetimeXpNeverResets, style: PrismTextStyles.caption(context)),
           ],
           if (onUseReward != null && ownedReward != null) ...<Widget>[
-            const SizedBox(height: PrismSpace.xs),
-            TextButton(
+            const SizedBox(height: PrismSpace.md),
+            PrismButton(
+              label: context.l10n.economyUseReward(ownedReward.name(context.l10n)),
+              variant: PrismButtonVariant.tonal,
+              size: PrismButtonSize.compact,
+              maxLines: 2,
               onPressed: () => onUseReward!(ownedReward.item),
-              child: Text(context.l10n.economyUseReward(ownedReward.name(context.l10n))),
             ),
           ],
         ],

@@ -46,7 +46,7 @@ void main() {
     await pump(tester, InAppNotificationsState.initial().copyWith(status: LoadStatus.loading));
 
     expect(find.bySemanticsLabel('Loading'), findsOneWidget);
-    expect(find.byTooltip('Clear inbox'), findsNothing);
+    expect(find.byTooltip('More options'), findsNothing);
     expect(find.byTooltip('Notification preferences'), findsOneWidget);
   });
 
@@ -80,7 +80,7 @@ void main() {
     expect(find.text('Wall approved ✅'), findsNothing);
     expect(find.text('Your wall is live.'), findsOneWidget);
     expect(find.byType(UnreadDot), findsOneWidget);
-    expect(find.byTooltip('Clear inbox'), findsOneWidget);
+    expect(find.byTooltip('More options'), findsOneWidget);
     expect(find.byType(FloatingActionButton), findsNothing);
   });
 

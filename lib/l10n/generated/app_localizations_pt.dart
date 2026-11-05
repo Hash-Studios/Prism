@@ -700,7 +700,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountSpatialSceneSemanticLabel => 'Espacial, walls com profundidade 3D nítida';
 
   @override
-  String get accountDownloadApk => 'BAIXAR APK';
+  String get accountDownloadApk => 'Baixar APK';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -744,7 +744,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountFavouritesCleared => 'Todos os papéis de parede favoritos foram excluídos.';
 
   @override
-  String get accountFeedback => 'OPINIÃO';
+  String get accountFeedback => 'Opinião';
 
   @override
   String get accountFeedbackSubject => 'Opinião sobre o Prism';
@@ -1217,7 +1217,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountQuickTiles => 'Blocos rápidos';
 
   @override
-  String get accountRateApp => 'AVALIAR';
+  String get accountRateApp => 'Avaliar';
 
   @override
   String get accountRecentSearches => 'Buscas recentes';
@@ -1285,11 +1285,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get accountRestoringPurchases => 'Restaurando compras…';
-
-  @override
-  String accountResultsForQuery(String query) {
-    return 'Resultados para $query';
-  }
 
   @override
   String get accountRetry => 'Tentar novamente';
@@ -4024,6 +4019,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get deepLinkInputLiveTitle => 'Papel de parede animado';
 
   @override
+  String get deepLinkInputLiveDescription =>
+      'Escolha uma foto da sua galeria para transformá-la em papel de parede animado.';
+
+  @override
   String get deepLinkInputPhotoPreviewTitle => 'Prévia da foto';
 
   @override
@@ -4961,6 +4960,14 @@ class AppLocalizationsPt extends AppLocalizations {
       zero: '$countString moedas',
     );
     return '+$_temp0';
+  }
+
+  @override
+  String economyCoinReward(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '+$countString';
   }
 
   @override
@@ -7998,6 +8005,27 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get premiumPageViewPlans => 'Ver planos';
+
+  @override
+  String get premiumPageHeadline => 'A galeria inteira, liberada';
+
+  @override
+  String get premiumBenefitWalls => 'Todas as coleções e papéis de parede premium';
+
+  @override
+  String get premiumBenefitFree => 'Downloads grátis e sem anúncios';
+
+  @override
+  String get premiumBenefitSpin => 'Um giro grátis por dia';
+
+  @override
+  String get premiumBenefitAutomation => 'Rotação automática e modo dia e noite';
+
+  @override
+  String get premiumBenefitLiveStyles => 'Todos os estilos de papel de parede animado';
+
+  @override
+  String get premiumBenefitAiClean => 'Papéis de parede com IA sem marca-d\'água, por menos moedas';
 
   @override
   String get premiumGuestStorePurchaseActive =>
@@ -12860,6 +12888,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get creatorsToFollow => 'Criadores para seguir';
+
+  @override
+  String get accountBrowseCreators => 'Explorar criadores';
 
   @override
   String get creatorsSeeAll => 'Ver tudo';
@@ -14898,7 +14929,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get accountSpatialSceneSemanticLabel => 'Espacial, walls com profundidade 3D nítida';
 
   @override
-  String get accountDownloadApk => 'BAIXAR APK';
+  String get accountDownloadApk => 'Baixar APK';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -14942,7 +14973,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get accountFavouritesCleared => 'Todos os papéis de parede favoritos foram excluídos.';
 
   @override
-  String get accountFeedback => 'OPINIÃO';
+  String get accountFeedback => 'Opinião';
 
   @override
   String get accountFeedbackSubject => 'Opinião sobre o Prism';
@@ -15415,7 +15446,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get accountQuickTiles => 'Blocos rápidos';
 
   @override
-  String get accountRateApp => 'AVALIAR';
+  String get accountRateApp => 'Avaliar';
 
   @override
   String get accountRecentSearches => 'Buscas recentes';
@@ -15483,11 +15514,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get accountRestoringPurchases => 'Restaurando compras…';
-
-  @override
-  String accountResultsForQuery(String query) {
-    return 'Resultados para $query';
-  }
 
   @override
   String get accountRetry => 'Tentar novamente';
@@ -18222,6 +18248,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get deepLinkInputLiveTitle => 'Papel de parede animado';
 
   @override
+  String get deepLinkInputLiveDescription =>
+      'Escolha uma foto da sua galeria para transformá-la em papel de parede animado.';
+
+  @override
   String get deepLinkInputPhotoPreviewTitle => 'Prévia da foto';
 
   @override
@@ -19159,6 +19189,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       zero: '$countString moedas',
     );
     return '+$_temp0';
+  }
+
+  @override
+  String economyCoinReward(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '+$countString';
   }
 
   @override
@@ -22196,6 +22234,27 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get premiumPageViewPlans => 'Ver planos';
+
+  @override
+  String get premiumPageHeadline => 'A galeria inteira, liberada';
+
+  @override
+  String get premiumBenefitWalls => 'Todas as coleções e papéis de parede premium';
+
+  @override
+  String get premiumBenefitFree => 'Downloads grátis e sem anúncios';
+
+  @override
+  String get premiumBenefitSpin => 'Um giro grátis por dia';
+
+  @override
+  String get premiumBenefitAutomation => 'Rotação automática e modo dia e noite';
+
+  @override
+  String get premiumBenefitLiveStyles => 'Todos os estilos de papel de parede animado';
+
+  @override
+  String get premiumBenefitAiClean => 'Papéis de parede com IA sem marca-d\'água, por menos moedas';
 
   @override
   String get premiumGuestStorePurchaseActive =>
@@ -27058,6 +27117,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get creatorsToFollow => 'Criadores para seguir';
+
+  @override
+  String get accountBrowseCreators => 'Explorar criadores';
 
   @override
   String get creatorsSeeAll => 'Ver tudo';

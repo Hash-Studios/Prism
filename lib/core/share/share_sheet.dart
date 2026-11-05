@@ -423,12 +423,14 @@ class _ShareSheetState extends State<ShareSheet> {
               itemBuilder: (BuildContext context, int index) {
                 final ShareCardFormat format = _formats[index];
                 final bool selected = format == _format;
+                // The peeking neighbours render too, so the card at the edge is never a grey placeholder.
+                final bool near = (index - _formats.indexOf(_format)).abs() <= 1;
                 return _FormatPreview(
                   key: ValueKey<ShareCardFormat>(format),
                   format: format,
                   label: _formatLabel(l10n, format),
                   selected: selected,
-                  render: _ownerSessionValid && (selected || _renders.containsKey(format)) ? _render(format) : null,
+                  render: _ownerSessionValid && (near || _renders.containsKey(format)) ? _render(format) : null,
                   onTap: selected
                       ? null
                       : () => _pages.animateOrJumpToPage(

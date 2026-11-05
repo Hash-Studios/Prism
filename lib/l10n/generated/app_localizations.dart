@@ -1212,7 +1212,7 @@ abstract class AppLocalizations {
   /// About page action that opens the APK download page. Shown only on installs that did not come from Google Play.
   ///
   /// In en, this message translates to:
-  /// **'DOWNLOAD APK'**
+  /// **'Download APK'**
   String get accountDownloadApk;
 
   /// Subtitle describing downloaded files and retained offline copies.
@@ -1266,7 +1266,7 @@ abstract class AppLocalizations {
   /// About page action to send feedback.
   ///
   /// In en, this message translates to:
-  /// **'FEEDBACK'**
+  /// **'Feedback'**
   String get accountFeedback;
 
   /// Email subject for feedback sent from the About page.
@@ -2076,7 +2076,7 @@ abstract class AppLocalizations {
   /// About page action to rate Prism.
   ///
   /// In en, this message translates to:
-  /// **'RATE'**
+  /// **'Rate'**
   String get accountRateApp;
 
   /// Search history section heading.
@@ -2204,12 +2204,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Restoring purchases…'**
   String get accountRestoringPurchases;
-
-  /// Label above wallpaper search results.
-  ///
-  /// In en, this message translates to:
-  /// **'Results for {query}'**
-  String accountResultsForQuery(String query);
 
   /// Retry action label.
   ///
@@ -6993,6 +6987,12 @@ abstract class AppLocalizations {
   /// **'Live wallpaper'**
   String get deepLinkInputLiveTitle;
 
+  /// Instructions on the image chooser page when the user makes a live wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a photo from your gallery to make it a live wallpaper.'**
+  String get deepLinkInputLiveDescription;
+
   /// Page title while choosing an image for photo preview.
   ///
   /// In en, this message translates to:
@@ -8308,6 +8308,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'+{count, plural, one{1 coin} other{{count} coins}}'**
   String economyCoinsEarned(int count);
+
+  /// No description provided for @economyCoinReward.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count}'**
+  String economyCoinReward(int count);
 
   /// No description provided for @economyCoinsRange.
   ///
@@ -12030,6 +12036,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View plans'**
   String get premiumPageViewPlans;
+
+  /// Large headline at the top of the Prism Premium page.
+  ///
+  /// In en, this message translates to:
+  /// **'The whole gallery, unlocked'**
+  String get premiumPageHeadline;
+
+  /// Premium benefit row: premium collections and walls open without coins or a pass.
+  ///
+  /// In en, this message translates to:
+  /// **'Every premium collection and wallpaper'**
+  String get premiumBenefitWalls;
+
+  /// Premium benefit row: downloads cost no coins and inline and full-screen ads are off.
+  ///
+  /// In en, this message translates to:
+  /// **'Free downloads and no ads'**
+  String get premiumBenefitFree;
+
+  /// Premium benefit row: one free spin of the coin wheel each day.
+  ///
+  /// In en, this message translates to:
+  /// **'A free spin every day'**
+  String get premiumBenefitSpin;
+
+  /// Premium benefit row: auto-rotate and day and night wallpaper switching.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-rotate and day and night mode'**
+  String get premiumBenefitAutomation;
+
+  /// Premium benefit row: every live wallpaper style without coins.
+  ///
+  /// In en, this message translates to:
+  /// **'Every live wallpaper style'**
+  String get premiumBenefitLiveStyles;
+
+  /// Premium benefit row: AI wallpapers without the watermark, at a lower coin price.
+  ///
+  /// In en, this message translates to:
+  /// **'AI wallpapers with no watermark, for fewer coins'**
+  String get premiumBenefitAiClean;
 
   /// A guest purchase or restore has active store entitlement locally, but account-based features require sign-in and server confirmation.
   ///
@@ -20256,6 +20304,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Creators to follow'**
   String get creatorsToFollow;
+
+  /// Action on the empty creator search, opens the creator directory.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse creators'**
+  String get accountBrowseCreators;
 
   /// Opens the full list of creators.
   ///

@@ -3,6 +3,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
+import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -42,6 +43,8 @@ void _mockInstaller(String? installerStore) {
 
 Contributor _contributor(String? login, {int commits = 5}) =>
     Contributor(login: login, htmlUrl: login == null ? null : 'https://github.com/$login', contributions: commits);
+
+final AppLocalizationsEn _en = AppLocalizationsEn();
 
 void main() {
   test('the feedback link is a mailto with the version and platform prefilled', () {
@@ -162,7 +165,7 @@ void main() {
       _mockUrlLauncher(opens: false);
       await pumpAbout(tester);
 
-      await tester.tap(find.text('GITHUB'));
+      await tester.tap(find.text(_en.accountSocialGithub));
       await tester.pump();
       await tester.pump();
 
@@ -194,7 +197,7 @@ void main() {
       );
       await pumpAbout(tester);
 
-      await tester.tap(find.text('FEEDBACK'));
+      await tester.tap(find.text(_en.accountFeedback));
       // Glint loops, so pump a bounded time instead of settling.
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
@@ -209,7 +212,7 @@ void main() {
       contributorsLoader = () async => <Contributor>[];
       await pumpAbout(tester);
 
-      await tester.tap(find.text("WHAT'S NEW"));
+      await tester.tap(find.text(_en.accountWhatsNewAction));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
@@ -226,22 +229,22 @@ void main() {
       await pumpAbout(tester);
 
       expect(find.byType(PrismPage), findsOneWidget);
-      expect(find.byType(PrismChip), findsNWidgets(9));
-      expect(find.byType(PrismGroup), findsNWidgets(2));
+      expect(find.byType(ActionButton), findsNWidgets(9));
+      expect(find.byType(PrismGroup), findsNWidgets(4)); // two link groups, other contributors, sources
       expect(find.byType(PrismAvatar), findsNWidgets(4));
       expect(find.byType(PrismSectionHeader), findsNWidgets(2));
-      for (final String chip in <String>[
-        'GITHUB',
-        'RATE',
-        'FEEDBACK',
-        "WHAT'S NEW",
-        'PRIVACY',
-        'TERMS',
-        'TWITTER',
-        'INSTAGRAM',
-        'TELEGRAM',
+      for (final String row in <String>[
+        _en.accountSocialGithub,
+        _en.accountRateApp,
+        _en.accountFeedback,
+        _en.accountWhatsNewAction,
+        _en.accountPrivacyAction,
+        _en.accountTermsAction,
+        _en.accountSocialTwitter,
+        _en.accountSocialInstagram,
+        _en.accountSocialTelegram,
       ]) {
-        expect(find.text(chip), findsOneWidget, reason: chip);
+        expect(find.text(row), findsOneWidget, reason: row);
       }
 
       double top(Finder finder) => tester.getTopLeft(finder.first).dy;
@@ -251,7 +254,7 @@ void main() {
         top(find.text('Prism Wallpapers')),
         top(find.textContaining('Version ')),
         top(find.text('A feature-rich wallpaper manager.')),
-        top(find.text('GITHUB')),
+        top(find.text(_en.accountRateApp)),
         top(find.text('The Team')),
         top(find.text('ada')),
         top(find.text('Other Contributors')),
@@ -264,16 +267,24 @@ void main() {
       expect(find.text('7 commits'), findsOneWidget);
     });
 
-    testWidgets('the podium puts the top contributor in the middle and largest', (tester) async {
+    testWidgets('the podium puts the top contributor in the middle, all one size', (tester) async {
       contributorsLoader = () async => <Contributor>[_contributor('ada'), _contributor('grace'), _contributor('linus')];
       await pumpAbout(tester);
 
       expect(tester.getCenter(find.text('grace')).dx, lessThan(tester.getCenter(find.text('ada')).dx));
       expect(tester.getCenter(find.text('ada')).dx, lessThan(tester.getCenter(find.text('linus')).dx));
-      // The avatars sit in rank order 2, 1, 3 from left to right.
+      // The avatars sit in rank order 2, 1, 3 from left to right, all 72.
       final Size middle = tester.getSize(find.byType(PrismAvatar).at(1));
-      expect(middle.width, greaterThan(tester.getSize(find.byType(PrismAvatar).at(0)).width));
-      expect(middle.width, greaterThan(tester.getSize(find.byType(PrismAvatar).at(2)).width));
+      expect(middle.width, tester.getSize(find.byType(PrismAvatar).at(0)).width);
+      expect(middle.width, tester.getSize(find.byType(PrismAvatar).at(2)).width);
+    });
+
+    testWidgets('bot accounts are not listed as contributors', (tester) async {
+      contributorsLoader = () async => <Contributor>[_contributor('ada'), _contributor('dependabot[bot]')];
+      await pumpAbout(tester);
+
+      expect(find.text('ada'), findsOneWidget);
+      expect(find.text('dependabot[bot]'), findsNothing);
     });
 
     testWidgets('tapping a podium member opens the contributor sheet', (tester) async {
@@ -390,9 +401,9 @@ void main() {
       _mockInstaller(null);
       await pumpAbout(tester);
 
-      expect(find.text('DOWNLOAD APK'), findsOneWidget);
-      await tester.ensureVisible(find.text('DOWNLOAD APK'));
-      await tester.tap(find.text('DOWNLOAD APK'));
+      expect(find.text(_en.accountDownloadApk), findsOneWidget);
+      await tester.ensureVisible(find.text(_en.accountDownloadApk));
+      await tester.tap(find.text(_en.accountDownloadApk));
       await tester.pump();
       await tester.pump();
 
@@ -409,16 +420,16 @@ void main() {
       expect(tapped, <Object?>['about']);
     });
 
-    testWidgets('a Play install shows no APK chip', (tester) async {
+    testWidgets('a Play install shows no APK row', (tester) async {
       contributorsLoader = () async => <Contributor>[];
       final analytics = FakeAppAnalytics();
       AnalyticsRuntime.instance = analytics;
       _mockInstaller('com.android.vending');
       await pumpAbout(tester);
 
-      expect(find.text('DOWNLOAD APK'), findsNothing);
+      expect(find.text(_en.accountDownloadApk), findsNothing);
       expect(analytics.events.where((event) => event.eventName == 'apk_link_shown'), isEmpty);
-      expect(find.text('RATE'), findsOneWidget);
+      expect(find.text(_en.accountRateApp), findsOneWidget);
     });
   });
 }

@@ -309,10 +309,17 @@ void main() {
         routerConfig: router.config(),
         builder: (context, child) => favouriteTestBuilder(
           context,
-          Column(
-            children: <Widget>[
-              const CreatorProgressCard(),
-              Expanded(child: child!),
+          // The card sits above the router's Navigator, so its tooltips need their own Overlay.
+          Overlay(
+            initialEntries: <OverlayEntry>[
+              OverlayEntry(
+                builder: (_) => Column(
+                  children: <Widget>[
+                    const CreatorProgressCard(),
+                    Expanded(child: child!),
+                  ],
+                ),
+              ),
             ],
           ),
         ),

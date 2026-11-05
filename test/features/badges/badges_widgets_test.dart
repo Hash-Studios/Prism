@@ -95,6 +95,32 @@ void main() {
     expect(find.byType(Tooltip), findsNothing);
   });
 
+  testWidgets('profile row shows four badges and a +N pill that lists every badge by name', (tester) async {
+    final List<String> ids = badgeCatalog.take(7).map((BadgeInfo info) => info.id).toList();
+    await tester.pumpWidget(_app(Center(child: ProfileBadgeRow(badgeIds: ids))));
+
+    expect(find.byType(Tooltip), findsNWidgets(4));
+    expect(find.text('+3'), findsOneWidget);
+    expect(tester.getSize(find.bySemanticsLabel('Badges')).height, greaterThanOrEqualTo(44));
+
+    await tester.tap(find.text('+3'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    final AppLocalizations l10n = AppLocalizations.of(tester.element(find.text('+3')));
+    expect(find.text(l10n.economyBadges), findsOneWidget);
+    for (final BadgeInfo info in badgeCatalog.take(7)) {
+      expect(find.text(info.name(l10n)), findsOneWidget);
+    }
+  });
+
+  testWidgets('profile row shows five badges without a pill', (tester) async {
+    final List<String> ids = badgeCatalog.take(5).map((BadgeInfo info) => info.id).toList();
+    await tester.pumpWidget(_app(Center(child: ProfileBadgeRow(badgeIds: ids))));
+
+    expect(find.byType(Tooltip), findsNWidgets(5));
+    expect(find.textContaining('+'), findsNothing);
+  });
+
   testWidgets('celebrate sheet shows the badge and its coins, and hides coins at zero', (tester) async {
     Future<void> open(EarnedBadge badge) async {
       await tester.pumpWidget(

@@ -1,6 +1,7 @@
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_grid.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -68,6 +69,7 @@ class _UserProfileLoaderState extends State<UserProfileLoader> {
               kind: GlintStateKind.error,
               title: context.l10n.accountCouldNotLoadWallpapers,
               actionLabel: context.l10n.accountTryAgain,
+              actionVariant: PrismButtonVariant.tonal,
               onAction: () => context.read<PublicProfileBloc>().add(const PublicProfileEvent.refreshRequested()),
             ),
           );

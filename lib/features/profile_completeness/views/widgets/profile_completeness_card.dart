@@ -52,7 +52,9 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> {
                 excludeSemantics: true,
                 child: Text(
                   '${formatLocalizedNumber(status.percent, context.l10n)}%',
-                  style: PrismTextStyles.numeral(context, 22),
+                  style: PrismTextStyles.cardTitle(
+                    context,
+                  ).copyWith(fontFeatures: const <FontFeature>[FontFeature.tabularFigures()]),
                 ),
               ),
             ],
@@ -103,7 +105,6 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> {
           const SizedBox(height: PrismSpace.xs),
           PrismButton(
             label: context.l10n.accountCompleteProfile,
-            variant: PrismButtonVariant.tonal,
             size: PrismButtonSize.compact,
             loading: _isLoading,
             onPressed: () => unawaited(_handleComplete()),

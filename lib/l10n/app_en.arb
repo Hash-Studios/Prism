@@ -817,7 +817,7 @@
   "@accountSpatialSceneSemanticLabel": {
     "description": "Spatial Scene text: accountSpatialSceneSemanticLabel."
   },
-  "accountDownloadApk": "DOWNLOAD APK",
+  "accountDownloadApk": "Download APK",
   "@accountDownloadApk": {
     "description": "About page action that opens the APK download page. Shown only on installs that did not come from Google Play."
   },
@@ -865,7 +865,7 @@
   "@accountFavouritesCleared": {
     "description": "Success message after clearing favourite wallpapers."
   },
-  "accountFeedback": "FEEDBACK",
+  "accountFeedback": "Feedback",
   "@accountFeedback": {
     "description": "About page action to send feedback."
   },
@@ -1516,7 +1516,7 @@
   "@accountQuickTiles": {
     "description": "Settings item for Quick Settings tiles."
   },
-  "accountRateApp": "RATE",
+  "accountRateApp": "Rate",
   "@accountRateApp": {
     "description": "About page action to rate Prism."
   },
@@ -1608,15 +1608,6 @@
   "accountRestoringPurchases": "Restoring purchases…",
   "@accountRestoringPurchases": {
     "description": "Progress toast while restoring purchases."
-  },
-  "accountResultsForQuery": "Results for {query}",
-  "@accountResultsForQuery": {
-    "description": "Label above wallpaper search results.",
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
   },
   "accountRetry": "Retry",
   "@accountRetry": {
@@ -3422,6 +3413,10 @@
   "@deepLinkInputLiveTitle": {
     "description": "Page title while choosing an image for a live wallpaper."
   },
+  "deepLinkInputLiveDescription": "Choose a photo from your gallery to make it a live wallpaper.",
+  "@deepLinkInputLiveDescription": {
+    "description": "Instructions on the image chooser page when the user makes a live wallpaper."
+  },
   "deepLinkInputPhotoPreviewTitle": "Photo preview",
   "@deepLinkInputPhotoPreviewTitle": {
     "description": "Page title while choosing an image for photo preview."
@@ -4133,6 +4128,15 @@
   "economyCoinsAreYoursToSpend": "Coins are yours to spend",
   "economyCoinsEarned": "+{count, plural, one{1 coin} other{{count} coins}}",
   "@economyCoinsEarned": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "economyCoinReward": "+{count}",
+  "@economyCoinReward": {
     "placeholders": {
       "count": {
         "type": "int",
@@ -6640,6 +6644,34 @@
   "premiumPageViewPlans": "View plans",
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
+  },
+  "premiumPageHeadline": "The whole gallery, unlocked",
+  "@premiumPageHeadline": {
+    "description": "Large headline at the top of the Prism Premium page."
+  },
+  "premiumBenefitWalls": "Every premium collection and wallpaper",
+  "@premiumBenefitWalls": {
+    "description": "Premium benefit row: premium collections and walls open without coins or a pass."
+  },
+  "premiumBenefitFree": "Free downloads and no ads",
+  "@premiumBenefitFree": {
+    "description": "Premium benefit row: downloads cost no coins and inline and full-screen ads are off."
+  },
+  "premiumBenefitSpin": "A free spin every day",
+  "@premiumBenefitSpin": {
+    "description": "Premium benefit row: one free spin of the coin wheel each day."
+  },
+  "premiumBenefitAutomation": "Auto-rotate and day and night mode",
+  "@premiumBenefitAutomation": {
+    "description": "Premium benefit row: auto-rotate and day and night wallpaper switching."
+  },
+  "premiumBenefitLiveStyles": "Every live wallpaper style",
+  "@premiumBenefitLiveStyles": {
+    "description": "Premium benefit row: every live wallpaper style without coins."
+  },
+  "premiumBenefitAiClean": "AI wallpapers with no watermark, for fewer coins",
+  "@premiumBenefitAiClean": {
+    "description": "Premium benefit row: AI wallpapers without the watermark, at a lower coin price."
   },
   "premiumGuestStorePurchaseActive": "Your store purchase is active on this device. Sign in to use account-based Pro features.",
   "@premiumGuestStorePurchaseActive": {
@@ -12336,6 +12368,10 @@
   "creatorsToFollow": "Creators to follow",
   "@creatorsToFollow": {
     "description": "Title of the row of suggested creators on Home and Search."
+  },
+  "accountBrowseCreators": "Browse creators",
+  "@accountBrowseCreators": {
+    "description": "Action on the empty creator search, opens the creator directory."
   },
   "creatorsSeeAll": "See all",
   "@creatorsSeeAll": {

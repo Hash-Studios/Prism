@@ -60,29 +60,33 @@ class _WotdWidgetCardState extends State<WotdWidgetCard> {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final l10n = context.l10n;
     return PrismCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.md, PrismSpace.sm, PrismSpace.xxs, PrismSpace.sm),
+      child: Row(
         children: <Widget>[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Icon(Icons.widgets_rounded, color: cs.primary),
-              const SizedBox(width: PrismSpace.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(l10n.widgetsCardTitle, style: PrismTextStyles.rowTitle(context)),
-                    const SizedBox(height: PrismSpace.xxs),
-                    Text(l10n.widgetsCardBody, style: PrismTextStyles.body(context)),
-                  ],
+          Icon(Icons.widgets_rounded, color: cs.primary),
+          const SizedBox(width: PrismSpace.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(l10n.widgetsCardTitle, maxLines: 2, style: PrismTextStyles.rowTitle(context)),
+                Text(
+                  l10n.widgetsCardBody,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: PrismTextStyles.caption(context),
                 ),
-              ),
-              PrismIconButton(icon: Icons.close_rounded, tooltip: l10n.widgetsCardDismiss, onPressed: _dismiss),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: PrismSpace.sm),
-          PrismButton(label: l10n.widgetsCardAction, onPressed: _showGuide),
+          const SizedBox(width: PrismSpace.xs),
+          PrismButton(
+            label: l10n.widgetsCardAction,
+            variant: PrismButtonVariant.tonal,
+            size: PrismButtonSize.compact,
+            onPressed: _showGuide,
+          ),
+          PrismIconButton(icon: Icons.close_rounded, tooltip: l10n.widgetsCardDismiss, onPressed: _dismiss),
         ],
       ),
     );

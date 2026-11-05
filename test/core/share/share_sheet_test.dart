@@ -297,16 +297,18 @@ void main() {
         cta: 'Get it on Prism',
       ),
     );
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.duoReveal]);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.duoReveal, ShareCardFormat.story]);
     expect(analytics.events.whereType<DuoShareCardMadeEvent>(), hasLength(1));
     await tester.tap(_target(ShareTargetValue.saveImage));
     await _settle(tester);
     expect(fake.saved.single.path, fake.cards[ShareCardFormat.duoReveal]!.path);
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.duoReveal]);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.duoReveal, ShareCardFormat.story]);
     expect(analytics.events.whereType<DuoShareCardMadeEvent>(), hasLength(1));
   });
 
-  testWidgets('opening the sheet shows the three formats, the three targets, and renders Story once', (tester) async {
+  testWidgets('opening the sheet shows the three formats, the three targets, and renders Story and the peeking Post', (
+    tester,
+  ) async {
     tester.view
       ..devicePixelRatio = 1
       ..physicalSize = const Size(400, 900);
@@ -322,11 +324,11 @@ void main() {
     expect(_target(ShareTargetValue.saveImage), findsOneWidget);
     expect(_target(ShareTargetValue.more), findsOneWidget);
     expect(_target(ShareTargetValue.instagramStories), findsNothing);
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story]);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post]);
     expect(find.byKey(const ValueKey<String>('share-preview-story')), findsOneWidget);
   });
 
-  testWidgets('swiping renders each format once, and only after it is reached', (tester) async {
+  testWidgets('swiping renders each format once, once it or its neighbour is reached', (tester) async {
     tester.view
       ..devicePixelRatio = 1
       ..physicalSize = const Size(400, 900);
@@ -337,19 +339,19 @@ void main() {
 
     await tester.drag(_pages(), const Offset(-300, 0));
     await _settle(tester);
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post]);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post, ShareCardFormat.clean]);
 
     await tester.drag(_pages(), const Offset(300, 0));
     await _settle(tester);
-    expect(fake.renders, hasLength(2));
+    expect(fake.renders, hasLength(3));
 
     await tester.drag(_pages(), const Offset(-300, 0));
     await _settle(tester);
-    expect(fake.renders, hasLength(2));
+    expect(fake.renders, hasLength(3));
 
     await tester.drag(_pages(), const Offset(-300, 0));
     await _settle(tester);
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post, ShareCardFormat.clean]);
+    expect(fake.renders, hasLength(3));
     expect(find.byKey(const ValueKey<String>('share-preview-clean')), findsOneWidget);
   });
 
@@ -567,7 +569,7 @@ void main() {
 
     await tester.drag(_pages(), const Offset(-300, 0));
     await _settle(tester);
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post]);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post, ShareCardFormat.clean]);
 
     await tester.tap(_target(ShareTargetValue.copyLink));
     await _settle(tester);
@@ -729,7 +731,7 @@ void main() {
     expect(fake.sharedTexts, hasLength(1));
     expect(fake.sharedTexts.single, contains(_link));
     expect(_target(ShareTargetValue.more), findsNothing);
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post]);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post, ShareCardFormat.clean]);
   });
 
   testWidgets('Save image retries a failed preview render after the image becomes available', (tester) async {
@@ -776,7 +778,7 @@ void main() {
     await tester.tap(_target(ShareTargetValue.more));
     await _settle(tester);
     expect(analytics.events.whereType<InviteShareResultEvent>().last.result, EventResultValue.success);
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story]);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post]);
   });
 
   testWidgets('a busy save blocks double taps and other targets and retains its original format', (tester) async {
@@ -897,7 +899,7 @@ void main() {
 
     expect(tester.widget<Semantics>(_formatSemantics('Post')).properties.selected, isTrue);
     expect(find.byKey(const ValueKey<String>('share-preview-post')), findsNothing);
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post]);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post, ShareCardFormat.clean]);
   });
   testWidgets('Open on computer target shows with a computer link and opens the link sheet', (tester) async {
     tester.view
