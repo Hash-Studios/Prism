@@ -1,6 +1,6 @@
 # Desktop companions
 
-A desktop companion is a wide version of an approved Prism Studio wall. The server makes it from the same prompt and the same model as the wall. The web catalogue and the app both offer it. The app calls it **Desktop version**.
+A desktop companion is a wide version of an approved wall. The server makes it for a Prism Studio wall, from the same prompt and the same model as the wall. A creator can upload one for their own approved wall. An admin reviews the upload first. See [Creator desktop versions](#creator-desktop-versions). The web catalogue and the app both offer it. The app calls it **Desktop version**.
 
 The server code is in `functions/src/studio/desktop.ts`. The backfill script is in `functions/src/scripts/backfillDesktopCompanions.ts`. The web pages are in `infra/cloudflare/worker/src/catalog.ts`.
 
@@ -15,7 +15,7 @@ A companion has two files.
 
 The web downloads are smaller versions of these two files. See [web-catalogue.md](web-catalogue.md).
 
-Only approved Prism Studio walls get a companion. Duo reveal walls are skipped. Creators cannot upload a desktop version yet. That is a later change.
+The server makes a companion only for approved Prism Studio walls. Duo reveal walls are skipped. Creators upload their own companion. Both kinds have the same files and the same `desktopVariant` shape, so every reader works the same way.
 
 ## How it is made
 
@@ -29,7 +29,7 @@ The server then does these steps.
 4. Cloud Vision checks safe search, text and logos. A flagged image is rejected.
 5. The server stores the two files and the thumbnail, then links the companion to the wall.
 
-Known limit. No human reviews a companion. The automatic checks decide. A companion appears on the wall when the checks pass.
+Known limit. No human reviews a Studio companion. The automatic checks decide. A Studio companion appears on the wall when the checks pass.
 
 ## Storage and data
 
@@ -92,10 +92,101 @@ In the app, the wall detail shows a **Desktop version** chip when the wall has a
 
 ## Limits
 
-- Studio walls only. Duo reveal walls are skipped.
-- No human review. The automatic checks decide.
-- Creators cannot upload a desktop version yet.
+- The server makes companions only for Studio walls. Duo reveal walls are skipped.
+- No human reviews a Studio companion. The automatic checks decide.
+- A creator upload 1920 px wide is enlarged to 2560 px. It can look less sharp than a 2560 px upload.
 - The GPT Image 2.5 companion is a sibling of the wall, not a pixel match.
+
+## Creator desktop versions
+
+A creator can add a desktop version to their own approved wall. An admin reviews it. After approval, it shows everywhere a Studio companion shows: the **Desktop version** chip, the web catalogue, watch sets and **Send to my computer**. These readers did not change.
+
+The server code is in `functions/src/desktopSubmissions.ts`.
+
+### The upload
+
+1. On their own approved wall, the creator taps **Add a desktop version**. When the wall has a desktop version, the button is **Replace desktop version**. When an upload waits for review, the button is **Desktop version in review** and is disabled.
+2. The creator picks an image. The app checks it before upload:
+   - The image is landscape.
+   - The aspect ratio is 16:10 or 16:9, within 2%.
+   - The image is at least 1920 px wide.
+3. The app shows the phone wall and the wide image side by side. The creator taps **Submit for review**.
+4. The callable `submitDesktopVersion` receives the file. It does the same checks again. It never trusts the app.
+
+`submitDesktopVersion` does these steps:
+
+1. It reads the owner from the wall (`creatorUid`, or the verified email). The request does not name the owner. Another user's wall is refused (`desktop-not-owner`).
+2. It refuses a wall that is not approved (`desktop-wall-not-approved`).
+3. It counts the upload against the daily upload limit (`reserveUploadSlot`, 30 a day), the same as a wall upload.
+4. It reads the upright size (EXIF orientation applies) and checks the size and the aspect ratio. A file over 15 MB is refused.
+5. It makes the companion files with `sharp`: a 2560 x 1600 original and a 2560 x 1440 wide file, each a cover fit of the upload, and the 960 x 600 thumbnail. A 16:9 upload keeps its full width in the wide file.
+6. In a transaction, it refuses a second submission while one is pending (`desktop-pending-exists`). It writes the submission with the state `uploading`.
+7. It stores the three files with the same R2 layout as a Studio companion. Then it sets the state to `pending`.
+
+If storage fails, the server deletes the stored files and the submission. A submission that stays `uploading` for more than 10 minutes is from a crashed run. The next submission for that wall deletes it and its files.
+
+The server does not write `desktopVariant` before an admin approves.
+
+### Review
+
+The admin review screen has a **Desktop** tab. Each card shows the phone wall next to the wide image, the upload size, and a note when the upload replaces a desktop version. The admin taps **Approve**, or **Reject** with the existing reject reasons.
+
+The callable `reviewDesktopSubmission` accepts only admins.
+
+- **Approve.** In one transaction, the server checks that the wall is still approved and has the same owner. It replaces the `desktopCompanions/{shareId}` manifest (`source: "creator"`) and writes `desktopVariant` on the wall. The value of `v` comes from the new original's SHA-256, so a cache never serves the old file. The files of the old companion are listed in `pendingObjects`. The server deletes them after the transaction, then clears the list.
+- **Reject.** The server saves the reason and deletes the files of the upload. The old companion stays on the wall. A file that the live companion also uses (an identical upload) is kept.
+
+A second approve or reject of the same submission does nothing. It does not send a second push.
+
+### Pushes
+
+The creator gets a push and an inbox entry from `notificationCatalog`:
+
+| Kind | Title | Body |
+|---|---|---|
+| `desktopVersionApproved` | Your desktop version is live | "{title}" now has a desktop version. |
+| `desktopVersionRejected` | Desktop version not approved | Reason: {reason} |
+
+Installed builds do not have native resources for these kinds. So the system banner uses English, and the in-app inbox uses the app language.
+
+### Data
+
+| Document | Access | Contents |
+|---|---|---|
+| `desktopSubmissions/{id}` | The creator reads their own. Admins read all. Only the server writes. | `wallDocId`, `shareId`, `creatorUid`, `state`, `reason`, `reasonCode`, `original`, `wide`, `thumb`, `source` (upload size and aspect), `wallThumb`, `wallTitle`, `creatorName`, `replaces`, `createdAt` |
+
+| State | Meaning |
+|---|---|
+| `uploading` | The server stores the files. The app and the admin queue do not show it. |
+| `pending` | It waits for an admin. |
+| `approved` | It is the live companion of the wall, or it was replaced later. |
+| `rejected` | An admin rejected it. Its files are deleted. |
+| `withdrawn` | The wall or the account was deleted while it waited. The server deletes it. |
+
+The admin queue reads `state == "pending"`, newest first. This needs the composite index `desktopSubmissions (state, createdAt desc)`.
+
+### Delete
+
+- When a wall is deleted, `onStudioWallDesktop` deletes the companion files and the manifest, and `onDesktopSubmissionWallDeleted` deletes every submission of the wall and the files of the ones that were not approved.
+- `deleteAccount` deletes every submission of the account. It deletes the files of a pending upload. An approved desktop version stays on the wall, because the wall stays with the name "Deleted Account".
+
+### Analytics
+
+| Event | Fields | Sent by |
+|---|---|---|
+| `desktop_upload_started` | `wall_id`, `replace` | The creator taps the button. |
+| `desktop_upload_submitted` | `wall_id`, `aspect`, `replace` | The server accepted the upload. |
+| `desktop_upload_approved` | `wall_id` | The admin approved it. |
+| `desktop_upload_rejected` | `wall_id`, `reason` (a reject reason name, or `other`) | The admin rejected it. |
+
+### Deploy order for creator desktop versions
+
+Do not deploy without the owner's OK. Deploy in this order, before a store build that has the new screens:
+
+1. Indexes: `firebase deploy --only firestore:indexes`. Wait until the `desktopSubmissions` index is built.
+2. Rules: `firebase deploy --only firestore:rules`. This adds read access to `desktopSubmissions`. No client write changes.
+3. Functions: `submitDesktopVersion`, `reviewDesktopSubmission`, `onDesktopSubmissionWallDeleted` and `deleteAccount`. Use `make functions-deploy`.
+4. The store build.
 
 ## Deploy order
 

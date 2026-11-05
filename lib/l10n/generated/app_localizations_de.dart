@@ -2156,6 +2156,37 @@ class AppLocalizationsDe extends AppLocalizations {
   String get adminWalls => 'Hintergrundbilder';
 
   @override
+  String get adminDesktop => 'Desktop';
+
+  @override
+  String get adminDesktopEmptyTitle => 'Keine Desktop-Versionen zu prüfen';
+
+  @override
+  String get adminDesktopEmptyBody => 'Desktop-Versionen, die Creator einreichen, erscheinen hier.';
+
+  @override
+  String get adminDesktopLoadError => 'Desktop-Versionen konnten nicht geladen werden';
+
+  @override
+  String get adminDesktopReplaces => 'Ersetzt die aktuelle Desktop-Version';
+
+  @override
+  String get adminDesktopUploadSize => 'Upload-Größe';
+
+  @override
+  String get adminDesktopApproved => 'Desktop-Version genehmigt';
+
+  @override
+  String get adminDesktopRejected => 'Desktop-Version abgelehnt';
+
+  @override
+  String get adminDesktopRejectTitle => 'Desktop-Version ablehnen';
+
+  @override
+  String get adminDesktopWallUnavailable =>
+      'Dieses Hintergrundbild ist nicht mehr genehmigt. Lehne diese Desktop-Version ab.';
+
+  @override
   String adminWriteCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7438,6 +7469,25 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get notifPushWallApprovedArtistTitle => 'Dein Hintergrundbild ist online! 🎉';
+
+  @override
+  String get notifPushDesktopVersionApprovedTitle => 'Deine Desktop-Version ist online';
+
+  @override
+  String notifPushDesktopVersionApprovedBody(String wallTitle) {
+    return '„$wallTitle“ hat jetzt eine Desktop-Version.';
+  }
+
+  @override
+  String get notifPushDesktopVersionApprovedBodyUntitled => 'Dein Hintergrundbild hat jetzt eine Desktop-Version.';
+
+  @override
+  String get notifPushDesktopVersionRejectedTitle => 'Desktop-Version nicht genehmigt';
+
+  @override
+  String notifPushDesktopVersionRejectedBody(String reason) {
+    return 'Grund: $reason';
+  }
 
   @override
   String notifPushWallLiveFollowersBody(String wallTitle) {
@@ -13015,6 +13065,94 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get desktopVersionSetOnTablet => 'Desktop-Version festlegen';
+
+  @override
+  String get desktopUploadAdd => 'Desktop-Version hinzufügen';
+
+  @override
+  String get desktopUploadReplace => 'Desktop-Version ersetzen';
+
+  @override
+  String get desktopUploadInReview => 'Desktop-Version wird geprüft';
+
+  @override
+  String get desktopUploadTitle => 'Desktop-Version hinzufügen';
+
+  @override
+  String get desktopUploadReplaceTitle => 'Desktop-Version ersetzen';
+
+  @override
+  String get desktopUploadIntro =>
+      'Füge eine breite Version dieses Hintergrundbilds für Computer hinzu. Sie ist nach der Prüfung online.';
+
+  @override
+  String get desktopUploadReplaceNote => 'Die aktuelle Desktop-Version bleibt online, bis die neue genehmigt ist.';
+
+  @override
+  String get desktopUploadRequirements =>
+      'Verwende ein Querformatbild im Format 16:10 oder 16:9 mit mindestens 1920 px Breite.';
+
+  @override
+  String get desktopUploadPhoneLabel => 'Handy';
+
+  @override
+  String get desktopUploadDesktopLabel => 'Desktop';
+
+  @override
+  String get desktopUploadPhoneSemantic => 'Hintergrundbild für das Handy';
+
+  @override
+  String desktopUploadDesktopSemantic(int width, int height) {
+    return 'Desktop-Version, $width × $height';
+  }
+
+  @override
+  String desktopUploadSize(int width, int height, String ratio) {
+    return '$width × $height, $ratio';
+  }
+
+  @override
+  String get desktopUploadChooseImage => 'Bild auswählen';
+
+  @override
+  String get desktopUploadChooseAnother => 'Anderes Bild auswählen';
+
+  @override
+  String get desktopUploadSubmit => 'Zur Prüfung einreichen';
+
+  @override
+  String get desktopUploadSubmitted => 'Desktop-Version zur Prüfung gesendet';
+
+  @override
+  String get desktopUploadErrorPortrait => 'Wähle ein Querformatbild. Dieses Bild ist höher als breit.';
+
+  @override
+  String get desktopUploadErrorAspect =>
+      'Wähle ein Bild im Format 16:10 oder 16:9. Schneide es auf deinem Computer zu und versuche es dann erneut.';
+
+  @override
+  String desktopUploadErrorTooSmall(int width) {
+    return 'Wähle ein Bild mit mindestens 1920 px Breite. Dieses ist $width px breit.';
+  }
+
+  @override
+  String get desktopUploadErrorUnreadable => 'Dieses Bild kann nicht geöffnet werden. Wähle ein anderes.';
+
+  @override
+  String get desktopUploadErrorTooLarge => 'Diese Datei ist zu groß. Wähle ein Bild mit weniger als 15 MB.';
+
+  @override
+  String get desktopUploadErrorPending => 'Eine Desktop-Version dieses Hintergrundbilds wird bereits geprüft.';
+
+  @override
+  String get desktopUploadErrorNotAllowed =>
+      'Du kannst nur deinen eigenen genehmigten Hintergrundbildern eine Desktop-Version hinzufügen.';
+
+  @override
+  String get desktopUploadErrorLimit => 'Das tägliche Upload-Limit ist erreicht. Versuche es morgen erneut.';
+
+  @override
+  String get desktopUploadErrorFailed => 'Senden nicht möglich. Prüfe deine Verbindung und versuche es erneut.';
 
   @override
   String get desktopVersionSaveOnTablet => 'Desktop-Version in Fotos speichern';

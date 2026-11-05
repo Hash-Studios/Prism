@@ -28,6 +28,8 @@ import 'package:Prism/features/daily_flow/views/daily_moment_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
 import 'package:Prism/features/deep_link_input/views/pages/deep_link_input_page.dart';
+import 'package:Prism/features/desktop_submission/data/desktop_submission_repository.dart';
+import 'package:Prism/features/desktop_submission/views/pages/desktop_upload_screen.dart';
 import 'package:Prism/features/draw/draw.dart';
 import 'package:Prism/features/drops/biz/bloc/drops_bloc.j.dart';
 import 'package:Prism/features/drops/views/pages/drop_detail_page.dart';
@@ -205,6 +207,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/library', page: LibraryRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/folder/:folderId', page: FolderRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/upload-wall', page: UploadWallRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/desktop-upload', page: DesktopUploadRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/edit-wall', page: EditWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/creator-stats', page: CreatorStatsRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/review', page: ReviewRoute.page, guards: [_signedInGuard]),

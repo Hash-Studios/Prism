@@ -7,6 +7,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/bloc/review_batch_bloc.dart';
 import 'package:Prism/features/admin_review/biz/depth_override.dart';
 import 'package:Prism/features/admin_review/biz/drop_reserve.dart';
+import 'package:Prism/features/admin_review/biz/reject_reasons.dart';
 import 'package:Prism/features/admin_review/biz/wall_moderation.dart';
 import 'package:Prism/features/admin_review/views/widgets/depth_tier_pill.dart';
 import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view.dart';
@@ -124,7 +125,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   /// A left swipe asks for a reason first. Cancelling snaps the card back.
   Future<void> _askRejectReason() async {
     String? reason;
-    await showRejectReasonSheet(context, onSubmit: (String picked) async => reason = picked);
+    await showRejectReasonSheet(context, onSubmit: (String picked, RejectReason? _) async => reason = picked);
     if (!mounted) return;
     if (reason == null) {
       _startSnapBackAnimation();

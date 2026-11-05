@@ -68,10 +68,15 @@ class AdminReviewRoute extends PageRouteInfo<AdminReviewRouteArgs> {
   AdminReviewRoute({
     Key? key,
     AdminModerationRepository? repository,
+    DesktopSubmissionRepository? desktopRepository,
     List<PageRouteInfo>? children,
   }) : super(
          AdminReviewRoute.name,
-         args: AdminReviewRouteArgs(key: key, repository: repository),
+         args: AdminReviewRouteArgs(
+           key: key,
+           repository: repository,
+           desktopRepository: desktopRepository,
+         ),
          initialChildren: children,
        );
 
@@ -83,32 +88,45 @@ class AdminReviewRoute extends PageRouteInfo<AdminReviewRouteArgs> {
       final args = data.argsAs<AdminReviewRouteArgs>(
         orElse: () => const AdminReviewRouteArgs(),
       );
-      return AdminReviewScreen(key: args.key, repository: args.repository);
+      return AdminReviewScreen(
+        key: args.key,
+        repository: args.repository,
+        desktopRepository: args.desktopRepository,
+      );
     },
   );
 }
 
 class AdminReviewRouteArgs {
-  const AdminReviewRouteArgs({this.key, this.repository});
+  const AdminReviewRouteArgs({
+    this.key,
+    this.repository,
+    this.desktopRepository,
+  });
 
   final Key? key;
 
   final AdminModerationRepository? repository;
 
+  final DesktopSubmissionRepository? desktopRepository;
+
   @override
   String toString() {
-    return 'AdminReviewRouteArgs{key: $key, repository: $repository}';
+    return 'AdminReviewRouteArgs{key: $key, repository: $repository, desktopRepository: $desktopRepository}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! AdminReviewRouteArgs) return false;
-    return key == other.key && repository == other.repository;
+    return key == other.key &&
+        repository == other.repository &&
+        desktopRepository == other.desktopRepository;
   }
 
   @override
-  int get hashCode => key.hashCode ^ repository.hashCode;
+  int get hashCode =>
+      key.hashCode ^ repository.hashCode ^ desktopRepository.hashCode;
 }
 
 /// generated route for
@@ -882,6 +900,117 @@ class DeepLinkInputRouteArgs {
 
   @override
   int get hashCode => key.hashCode ^ workflow.hashCode;
+}
+
+/// generated route for
+/// [DesktopUploadScreen]
+class DesktopUploadRoute extends PageRouteInfo<DesktopUploadRouteArgs> {
+  DesktopUploadRoute({
+    required String wallDocId,
+    required String wallId,
+    required String phoneThumbUrl,
+    required String wallTitle,
+    required bool replace,
+    DesktopSubmissionRepository? repository,
+    Future<Uint8List?> Function()? pickImage,
+    Future<Size?> Function(Uint8List)? measure,
+    Key? key,
+    List<PageRouteInfo>? children,
+  }) : super(
+         DesktopUploadRoute.name,
+         args: DesktopUploadRouteArgs(
+           wallDocId: wallDocId,
+           wallId: wallId,
+           phoneThumbUrl: phoneThumbUrl,
+           wallTitle: wallTitle,
+           replace: replace,
+           repository: repository,
+           pickImage: pickImage,
+           measure: measure,
+           key: key,
+         ),
+         initialChildren: children,
+       );
+
+  static const String name = 'DesktopUploadRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<DesktopUploadRouteArgs>();
+      return DesktopUploadScreen(
+        wallDocId: args.wallDocId,
+        wallId: args.wallId,
+        phoneThumbUrl: args.phoneThumbUrl,
+        wallTitle: args.wallTitle,
+        replace: args.replace,
+        repository: args.repository,
+        pickImage: args.pickImage,
+        measure: args.measure,
+        key: args.key,
+      );
+    },
+  );
+}
+
+class DesktopUploadRouteArgs {
+  const DesktopUploadRouteArgs({
+    required this.wallDocId,
+    required this.wallId,
+    required this.phoneThumbUrl,
+    required this.wallTitle,
+    required this.replace,
+    this.repository,
+    this.pickImage,
+    this.measure,
+    this.key,
+  });
+
+  final String wallDocId;
+
+  final String wallId;
+
+  final String phoneThumbUrl;
+
+  final String wallTitle;
+
+  final bool replace;
+
+  final DesktopSubmissionRepository? repository;
+
+  final Future<Uint8List?> Function()? pickImage;
+
+  final Future<Size?> Function(Uint8List)? measure;
+
+  final Key? key;
+
+  @override
+  String toString() {
+    return 'DesktopUploadRouteArgs{wallDocId: $wallDocId, wallId: $wallId, phoneThumbUrl: $phoneThumbUrl, wallTitle: $wallTitle, replace: $replace, repository: $repository, pickImage: $pickImage, measure: $measure, key: $key}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! DesktopUploadRouteArgs) return false;
+    return wallDocId == other.wallDocId &&
+        wallId == other.wallId &&
+        phoneThumbUrl == other.phoneThumbUrl &&
+        wallTitle == other.wallTitle &&
+        replace == other.replace &&
+        repository == other.repository &&
+        key == other.key;
+  }
+
+  @override
+  int get hashCode =>
+      wallDocId.hashCode ^
+      wallId.hashCode ^
+      phoneThumbUrl.hashCode ^
+      wallTitle.hashCode ^
+      replace.hashCode ^
+      repository.hashCode ^
+      key.hashCode;
 }
 
 /// generated route for

@@ -71,6 +71,8 @@ import '../../features/day_night/data/repositories/day_night_repository_impl.dar
     as _i665;
 import '../../features/day_night/domain/repositories/day_night_repository.dart'
     as _i400;
+import '../../features/desktop_submission/data/desktop_submission_repository.dart'
+    as _i520;
 import '../../features/draw/biz/bloc/draw_bloc.j.dart' as _i269;
 import '../../features/draw/data/repositories/draw_repository_impl.dart'
     as _i342;
@@ -583,6 +585,9 @@ _i174.GetIt initGetIt(
   );
   gh.lazySingleton<_i25.AdminModerationRepository>(
     () => _i25.AdminModerationRepository(gh<_i349.FirestoreClient>()),
+  );
+  gh.lazySingleton<_i520.DesktopSubmissionRepository>(
+    () => _i520.DesktopSubmissionRepository(gh<_i349.FirestoreClient>()),
   );
   gh.lazySingleton<_i375.WallCommentsRepository>(
     () => _i375.WallCommentsRepository(gh<_i349.FirestoreClient>()),

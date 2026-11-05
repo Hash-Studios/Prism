@@ -112,6 +112,14 @@ Deploy rules, indexes, and functions, in that order, before a store build that u
 
 Pending client text checks are feedback, not a new rules boundary. Existing pending-write rules remain broader than a four-field allowlist. Approved direct owner edits remain denied. Withdrawal keeps the existing files-before-document workflow. It does not make storage cleanup atomic with concurrent approval.
 
+### Add a desktop version
+
+The owner of an approved wall can add a wide version for computers. The button **Add a desktop version** is in wallpaper details. It shows **Replace desktop version** when the wall has one, and **Desktop version in review** while an upload waits.
+
+The image must be landscape, 16:10 or 16:9, and at least 1920 px wide. The app checks this before upload and shows the phone wall next to the wide image. The server checks again. An admin reviews it in the **Desktop** tab of the review screen. The creator gets a push when it is approved or rejected.
+
+The upload counts against the daily upload limit. It does not use the weekly wall quota. See [desktop-companions.md](desktop-companions.md#creator-desktop-versions).
+
 ### AI original image
 
 The wall record no longer holds `aiOriginalImageUrl` (the image without the watermark). Nothing in the app or the functions read the field.

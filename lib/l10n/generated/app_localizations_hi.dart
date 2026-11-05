@@ -2131,6 +2131,36 @@ class AppLocalizationsHi extends AppLocalizations {
   String get adminWalls => 'वॉलपेपर';
 
   @override
+  String get adminDesktop => 'डेस्कटॉप';
+
+  @override
+  String get adminDesktopEmptyTitle => 'समीक्षा के लिए कोई डेस्कटॉप वर्शन नहीं है';
+
+  @override
+  String get adminDesktopEmptyBody => 'क्रिएटर जो डेस्कटॉप वर्शन भेजते हैं, वे यहाँ दिखेंगे।';
+
+  @override
+  String get adminDesktopLoadError => 'डेस्कटॉप वर्शन लोड नहीं हो सके';
+
+  @override
+  String get adminDesktopReplaces => 'मौजूदा डेस्कटॉप वर्शन की जगह लेगा';
+
+  @override
+  String get adminDesktopUploadSize => 'अपलोड का आकार';
+
+  @override
+  String get adminDesktopApproved => 'डेस्कटॉप वर्शन मंज़ूर किया गया';
+
+  @override
+  String get adminDesktopRejected => 'डेस्कटॉप वर्शन अस्वीकार किया गया';
+
+  @override
+  String get adminDesktopRejectTitle => 'डेस्कटॉप वर्शन अस्वीकार करें';
+
+  @override
+  String get adminDesktopWallUnavailable => 'यह वॉलपेपर अब मंज़ूर नहीं है। इस डेस्कटॉप वर्शन को अस्वीकार करें।';
+
+  @override
   String adminWriteCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7490,6 +7520,25 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notifPushWallApprovedArtistTitle => 'आपका वॉलपेपर लाइव है! 🎉';
+
+  @override
+  String get notifPushDesktopVersionApprovedTitle => 'आपका डेस्कटॉप वर्शन लाइव है';
+
+  @override
+  String notifPushDesktopVersionApprovedBody(String wallTitle) {
+    return '\"$wallTitle\" अब एक डेस्कटॉप वर्शन के साथ उपलब्ध है।';
+  }
+
+  @override
+  String get notifPushDesktopVersionApprovedBodyUntitled => 'आपके वॉलपेपर का अब एक डेस्कटॉप वर्शन है।';
+
+  @override
+  String get notifPushDesktopVersionRejectedTitle => 'डेस्कटॉप वर्शन मंज़ूर नहीं हुआ';
+
+  @override
+  String notifPushDesktopVersionRejectedBody(String reason) {
+    return 'कारण: $reason';
+  }
 
   @override
   String notifPushWallLiveFollowersBody(String wallTitle) {
@@ -12970,6 +13019,91 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get desktopVersionSetOnTablet => 'डेस्कटॉप वर्शन लगाएँ';
+
+  @override
+  String get desktopUploadAdd => 'डेस्कटॉप वर्शन जोड़ें';
+
+  @override
+  String get desktopUploadReplace => 'डेस्कटॉप वर्शन बदलें';
+
+  @override
+  String get desktopUploadInReview => 'डेस्कटॉप वर्शन समीक्षा में है';
+
+  @override
+  String get desktopUploadTitle => 'डेस्कटॉप वर्शन जोड़ें';
+
+  @override
+  String get desktopUploadReplaceTitle => 'डेस्कटॉप वर्शन बदलें';
+
+  @override
+  String get desktopUploadIntro => 'इस वॉलपेपर का कंप्यूटर के लिए चौड़ा वर्शन जोड़ें। समीक्षा के बाद यह लाइव होगा।';
+
+  @override
+  String get desktopUploadReplaceNote => 'नया वर्शन मंज़ूर होने तक मौजूदा डेस्कटॉप वर्शन लाइव रहेगा।';
+
+  @override
+  String get desktopUploadRequirements => '16:10 या 16:9 अनुपात की लैंडस्केप इमेज लें, जो कम से कम 1920 px चौड़ी हो।';
+
+  @override
+  String get desktopUploadPhoneLabel => 'फ़ोन';
+
+  @override
+  String get desktopUploadDesktopLabel => 'डेस्कटॉप';
+
+  @override
+  String get desktopUploadPhoneSemantic => 'फ़ोन वॉलपेपर';
+
+  @override
+  String desktopUploadDesktopSemantic(int width, int height) {
+    return 'डेस्कटॉप वर्शन, $width × $height';
+  }
+
+  @override
+  String desktopUploadSize(int width, int height, String ratio) {
+    return '$width × $height, $ratio';
+  }
+
+  @override
+  String get desktopUploadChooseImage => 'इमेज चुनें';
+
+  @override
+  String get desktopUploadChooseAnother => 'दूसरी इमेज चुनें';
+
+  @override
+  String get desktopUploadSubmit => 'समीक्षा के लिए भेजें';
+
+  @override
+  String get desktopUploadSubmitted => 'डेस्कटॉप वर्शन समीक्षा के लिए भेजा गया';
+
+  @override
+  String get desktopUploadErrorPortrait => 'लैंडस्केप इमेज चुनें। यह चौड़ाई से ज़्यादा ऊँची है।';
+
+  @override
+  String get desktopUploadErrorAspect =>
+      '16:10 या 16:9 अनुपात की इमेज चुनें। इसे अपने कंप्यूटर पर क्रॉप करके फिर से कोशिश करें।';
+
+  @override
+  String desktopUploadErrorTooSmall(int width) {
+    return 'कम से कम 1920 px चौड़ी इमेज चुनें। यह $width px चौड़ी है।';
+  }
+
+  @override
+  String get desktopUploadErrorUnreadable => 'यह इमेज नहीं खुल सकी। कोई दूसरी इमेज चुनें।';
+
+  @override
+  String get desktopUploadErrorTooLarge => 'यह फ़ाइल बहुत बड़ी है। 15 MB से छोटी इमेज चुनें।';
+
+  @override
+  String get desktopUploadErrorPending => 'इस वॉलपेपर का डेस्कटॉप वर्शन पहले से समीक्षा में है।';
+
+  @override
+  String get desktopUploadErrorNotAllowed => 'आप केवल अपने मंज़ूर किए गए वॉलपेपर के लिए डेस्कटॉप वर्शन जोड़ सकते हैं।';
+
+  @override
+  String get desktopUploadErrorLimit => 'रोज़ की अपलोड सीमा पूरी हो गई है। कल फिर से कोशिश करें।';
+
+  @override
+  String get desktopUploadErrorFailed => 'भेजा नहीं जा सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
 
   @override
   String get desktopVersionSaveOnTablet => 'डेस्कटॉप वर्शन फ़ोटो में सेव करें';

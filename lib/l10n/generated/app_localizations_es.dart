@@ -2147,6 +2147,37 @@ class AppLocalizationsEs extends AppLocalizations {
   String get adminWalls => 'Fondos';
 
   @override
+  String get adminDesktop => 'Escritorio';
+
+  @override
+  String get adminDesktopEmptyTitle => 'No hay versiones para escritorio por revisar';
+
+  @override
+  String get adminDesktopEmptyBody => 'Aquí aparecen las versiones para escritorio que envían los creadores.';
+
+  @override
+  String get adminDesktopLoadError => 'No se pudieron cargar las versiones para escritorio';
+
+  @override
+  String get adminDesktopReplaces => 'Reemplaza la versión para escritorio actual';
+
+  @override
+  String get adminDesktopUploadSize => 'Tamaño de la subida';
+
+  @override
+  String get adminDesktopApproved => 'Versión para escritorio aprobada';
+
+  @override
+  String get adminDesktopRejected => 'Versión para escritorio rechazada';
+
+  @override
+  String get adminDesktopRejectTitle => 'Rechazar versión para escritorio';
+
+  @override
+  String get adminDesktopWallUnavailable =>
+      'Este fondo de pantalla ya no está aprobado. Rechaza esta versión para escritorio.';
+
+  @override
   String adminWriteCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7443,6 +7474,26 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get notifPushWallApprovedArtistTitle => '¡Tu fondo de pantalla ya está publicado! 🎉';
+
+  @override
+  String get notifPushDesktopVersionApprovedTitle => 'Tu versión para escritorio ya está publicada';
+
+  @override
+  String notifPushDesktopVersionApprovedBody(String wallTitle) {
+    return '«$wallTitle» ahora tiene una versión para escritorio.';
+  }
+
+  @override
+  String get notifPushDesktopVersionApprovedBodyUntitled =>
+      'Tu fondo de pantalla ahora tiene una versión para escritorio.';
+
+  @override
+  String get notifPushDesktopVersionRejectedTitle => 'Versión para escritorio no aprobada';
+
+  @override
+  String notifPushDesktopVersionRejectedBody(String reason) {
+    return 'Motivo: $reason';
+  }
 
   @override
   String notifPushWallLiveFollowersBody(String wallTitle) {
@@ -12990,6 +13041,94 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get desktopVersionSetOnTablet => 'Configurar versión para escritorio';
+
+  @override
+  String get desktopUploadAdd => 'Añadir versión para escritorio';
+
+  @override
+  String get desktopUploadReplace => 'Reemplazar versión para escritorio';
+
+  @override
+  String get desktopUploadInReview => 'Versión para escritorio en revisión';
+
+  @override
+  String get desktopUploadTitle => 'Añadir versión para escritorio';
+
+  @override
+  String get desktopUploadReplaceTitle => 'Reemplazar versión para escritorio';
+
+  @override
+  String get desktopUploadIntro =>
+      'Añade una versión ancha de este fondo de pantalla para ordenadores. Se publicará tras la revisión.';
+
+  @override
+  String get desktopUploadReplaceNote =>
+      'La versión para escritorio actual seguirá publicada hasta que se apruebe la nueva.';
+
+  @override
+  String get desktopUploadRequirements => 'Usa una imagen horizontal en 16:10 o 16:9, de al menos 1920 px de ancho.';
+
+  @override
+  String get desktopUploadPhoneLabel => 'Teléfono';
+
+  @override
+  String get desktopUploadDesktopLabel => 'Escritorio';
+
+  @override
+  String get desktopUploadPhoneSemantic => 'Fondo de pantalla del teléfono';
+
+  @override
+  String desktopUploadDesktopSemantic(int width, int height) {
+    return 'Versión para escritorio, $width × $height';
+  }
+
+  @override
+  String desktopUploadSize(int width, int height, String ratio) {
+    return '$width × $height, $ratio';
+  }
+
+  @override
+  String get desktopUploadChooseImage => 'Elegir imagen';
+
+  @override
+  String get desktopUploadChooseAnother => 'Elegir otra imagen';
+
+  @override
+  String get desktopUploadSubmit => 'Enviar a revisión';
+
+  @override
+  String get desktopUploadSubmitted => 'Versión para escritorio enviada a revisión';
+
+  @override
+  String get desktopUploadErrorPortrait => 'Elige una imagen horizontal. Esta es más alta que ancha.';
+
+  @override
+  String get desktopUploadErrorAspect =>
+      'Elige una imagen en 16:10 o 16:9. Recórtala en tu ordenador e inténtalo de nuevo.';
+
+  @override
+  String desktopUploadErrorTooSmall(int width) {
+    return 'Elige una imagen de al menos 1920 px de ancho. Esta mide $width px de ancho.';
+  }
+
+  @override
+  String get desktopUploadErrorUnreadable => 'No se puede abrir esta imagen. Elige otra.';
+
+  @override
+  String get desktopUploadErrorTooLarge => 'Este archivo es demasiado grande. Elige una imagen de menos de 15 MB.';
+
+  @override
+  String get desktopUploadErrorPending => 'Ya hay una versión para escritorio de este fondo de pantalla en revisión.';
+
+  @override
+  String get desktopUploadErrorNotAllowed =>
+      'Solo puedes añadir una versión para escritorio a tus propios fondos aprobados.';
+
+  @override
+  String get desktopUploadErrorLimit => 'Se alcanzó el límite diario de subidas. Inténtalo mañana.';
+
+  @override
+  String get desktopUploadErrorFailed => 'No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.';
 
   @override
   String get desktopVersionSaveOnTablet => 'Guardar versión para escritorio en Fotos';

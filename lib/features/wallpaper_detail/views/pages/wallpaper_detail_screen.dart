@@ -63,6 +63,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/creator_tips/views/widgets/tip_sheet.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
+import 'package:Prism/features/desktop_submission/desktop_submission.dart';
 import 'package:Prism/features/editors_choice/biz/editors_choice_cubit.dart';
 import 'package:Prism/features/editors_choice/domain/editors_choice_repository.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
@@ -1157,6 +1158,23 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             thumbnailUrl: WallpaperDisplaySource.of(state.entity).thumbnail,
             title: wall.title,
           ),
+        ),
+      ),
+    );
+  }
+
+  void _openDesktopUpload(BuildContext context, WallpaperDetailLoaded state, PrismWallpaper wall, bool replace) {
+    final String? docId = wall.firestoreDocumentId;
+    if (docId == null) return;
+    unawaited(analytics.track(DesktopUploadStartedEvent(wallId: wall.id, replace: replace)));
+    unawaited(
+      context.router.push(
+        DesktopUploadRoute(
+          wallDocId: docId,
+          wallId: wall.id,
+          phoneThumbUrl: WallpaperDisplaySource.of(state.entity).thumbnail,
+          wallTitle: wall.title ?? '',
+          replace: replace,
         ),
       ),
     );
@@ -2800,6 +2818,18 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
               icon: Icons.add_photo_alternate_outlined,
               variant: PrismButtonVariant.tonal,
               onPressed: () => _addVariant(context, state, wallpaper),
+            ),
+          ),
+        ),
+      if (entity case PrismFeedItem(:final wallpaper) when _canEditMetadata(wallpaper))
+        padded(
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: DesktopVersionAction(
+              wallDocId: wallpaper.firestoreDocumentId!,
+              uid: app_state.prismUser.id,
+              hasDesktop: wallpaper.desktop != null,
+              onOpen: (bool replace) => _openDesktopUpload(context, state, wallpaper, replace),
             ),
           ),
         ),

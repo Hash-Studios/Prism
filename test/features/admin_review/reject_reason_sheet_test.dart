@@ -8,7 +8,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  Future<void> openSheet(WidgetTester tester, Future<void> Function(String reason) onSubmit) async {
+  Future<void> openSheet(
+    WidgetTester tester,
+    Future<void> Function(String reason, RejectReason? picked) onSubmit,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -49,7 +52,7 @@ void main() {
       ('Duplicate', 'This wallpaper is a duplicate of one that is already on Prism.'),
       ('Not a wallpaper', 'This image does not work as a phone wallpaper. Use a portrait image that fills the screen.'),
     ];
-    await openSheet(tester, (_) async {});
+    await openSheet(tester, (_, _) async {});
 
     final TextField field = tester.widget<TextField>(find.byType(TextField));
     for (final (String label, String copy) in presets) {
@@ -68,7 +71,7 @@ void main() {
 
   testWidgets('the sheet submits the picked reason, which is how a swipe reject reads it', (tester) async {
     String? result;
-    await openSheet(tester, (reason) async => result = reason);
+    await openSheet(tester, (reason, _) async => result = reason);
 
     await tester.tap(find.text('Duplicate'));
     await tester.pump();
@@ -91,7 +94,7 @@ void main() {
     });
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(haptics, null));
     String? submittedReason;
-    await openSheet(tester, (reason) async => submittedReason = reason);
+    await openSheet(tester, (reason, _) async => submittedReason = reason);
 
     await tester.tap(find.text('Duplicate'));
     await tester.pump();
@@ -103,9 +106,29 @@ void main() {
     expect(played, <Object?>['tap']);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
+  testWidgets('the sheet passes the picked reason, or null when the text was typed', (tester) async {
+    final List<(String, RejectReason?)> submitted = <(String, RejectReason?)>[];
+    await openSheet(tester, (reason, picked) async => submitted.add((reason, picked)));
+
+    await tester.tap(find.text('Blurry'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(PrismButton, 'Reject wallpaper'));
+    await tester.pumpAndSettle();
+
+    expect(submitted.single.$2, RejectReason.blurry);
+
+    await openSheet(tester, (reason, picked) async => submitted.add((reason, picked)));
+    await tester.enterText(find.byType(TextField), 'Crops the subject');
+    await tester.pump();
+    await tester.tap(find.widgetWithText(PrismButton, 'Reject wallpaper'));
+    await tester.pumpAndSettle();
+
+    expect(submitted.last, ('Crops the subject', null));
+  });
+
   testWidgets('the sheet asks for a reason and submits nothing on cancel', (tester) async {
     String? result = 'unset';
-    await openSheet(tester, (reason) async => result = reason);
+    await openSheet(tester, (reason, _) async => result = reason);
 
     await tester.tap(find.widgetWithText(PrismButton, 'Reject wallpaper'));
     await tester.pump();

@@ -59,6 +59,18 @@ String _followDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
         ? l10n.notifPushWallApprovedArtistBodyUntitled
         : l10n.notifPushWallApprovedArtistBody(_stringArg(args, 'wallTitle')),
   ),
+  'desktopVersionApproved' => (
+    title: l10n.notifPushDesktopVersionApprovedTitle,
+    body: _stringArg(args, 'wallTitle').trim().isEmpty
+        ? l10n.notifPushDesktopVersionApprovedBodyUntitled
+        : l10n.notifPushDesktopVersionApprovedBody(_stringArg(args, 'wallTitle')),
+  ),
+  'desktopVersionRejected' => (
+    title: l10n.notifPushDesktopVersionRejectedTitle,
+    body: _stringArg(args, 'reason').trim().isEmpty
+        ? fallbackBody
+        : l10n.notifPushDesktopVersionRejectedBody(_stringArg(args, 'reason')),
+  ),
   'wallLiveForFollowers' => (
     title: l10n.notifPushWallLiveFollowersTitle(_stringArg(args, 'artistName')),
     body: l10n.notifPushWallLiveFollowersBody(_stringArg(args, 'wallTitle')),
