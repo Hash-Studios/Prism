@@ -409,7 +409,7 @@ const idTokens = new Map();
 async function idToken(uid) {
   if (!idTokens.has(uid)) {
     const response = await fetch(`${AUTH_URL}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake`, {
-      method: 'POST', headers: {'content-type': 'application/json'}, signal: AbortSignal.timeout(30000),
+      method: 'POST', redirect: 'error', headers: {'content-type': 'application/json'}, signal: AbortSignal.timeout(30000),
       body: JSON.stringify({email: `${uid}@example.test`, password: PASSWORD, returnSecureToken: true})});
     const identity = await response.json();
     assert.equal(identity.localId, uid, `Auth emulator sign-in failed for ${uid}: ${identity.error?.message ?? response.status}`);
@@ -420,7 +420,7 @@ async function idToken(uid) {
 async function callable(uid, name, data) {
   const token = await idToken(uid);
   const response = await fetch(`${FUNCTIONS_URL}/${PROJECT}/us-central1/${name}`, {
-    method: 'POST', headers: {'content-type': 'application/json', authorization: `Bearer ${token}`},
+    method: 'POST', redirect: 'error', headers: {'content-type': 'application/json', authorization: `Bearer ${token}`},
     signal: AbortSignal.timeout(30000), body: JSON.stringify({data})});
   return {status: response.status, body: await response.json().catch(() => ({}))};
 }
