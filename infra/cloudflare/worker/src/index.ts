@@ -419,7 +419,24 @@ async function resolveShortLink(pathname: string, request: Request, env: Env): P
     return html(renderCrawlerPreviewHtml(code, record, env));
   }
 
+  if (new URL(request.url).searchParams.get('d') === '1') {
+    const location = desktopWallPath(record);
+    if (location != null) {
+      return new Response(null, { status: 302, headers: { location, 'cache-control': 'no-store' } });
+    }
+  }
+
   return html(renderHumanLandingHtml(`https://${DOMAIN}/l/${code}`, record, request, env));
+}
+
+/** The desktop-mode wall page for a Prism wall share, or null for any other link. */
+function desktopWallPath(record: LinkRecord): string | null {
+  if (record.type !== 'share') return null;
+  const canonical = new URL(record.canonical_url);
+  const id = canonical.searchParams.get('id') ?? '';
+  const source = (canonical.searchParams.get('source') || canonical.searchParams.get('provider') || 'prism').toLowerCase();
+  if (source !== 'prism' || !/^[A-Za-z0-9_-]{1,200}$/.test(id)) return null;
+  return `/wallpaper/${encodeURIComponent(id)}?view=desktop`;
 }
 
 async function getOgImage(pathname: string, method: string, env: Env): Promise<Response> {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -13,7 +14,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:share_plus/share_plus.dart';
@@ -137,16 +138,43 @@ Future<void> _openSheet(
   ShareCardContent content = _content,
   VoidCallback? onShared,
   bool disableAnimations = false,
+  Locale locale = const Locale('en'),
+  double? textScale,
+  bool boldText = false,
+  TextDirection? direction,
+  double? letterSpacing,
 }) async {
+  if (boldText) {
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(boldText: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+  }
   if (disableAnimations) {
     tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
   }
   await tester.pumpWidget(
     MaterialApp(
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       theme: prismLightThemes.first.theme,
+      builder: (BuildContext context, Widget? child) {
+        final MediaQueryData media = MediaQuery.of(context);
+        final Widget scaledChild = textScale == null && letterSpacing == null
+            ? child!
+            : MediaQuery(
+                data: media
+                    .applyTextStyleOverrides(
+                      lineHeightScaleFactorOverride: media.lineHeightScaleFactorOverride,
+                      letterSpacingOverride: letterSpacing ?? media.letterSpacingOverride,
+                      wordSpacingOverride: media.wordSpacingOverride,
+                      paragraphSpacingOverride: media.paragraphSpacingOverride,
+                    )
+                    .copyWith(textScaler: textScale == null ? media.textScaler : TextScaler.linear(textScale)),
+                child: child!,
+              );
+        return direction == null ? scaledChild : Directionality(textDirection: direction, child: scaledChild);
+      },
       home: Builder(
         builder: (BuildContext context) => Scaffold(
           body: Center(
@@ -161,6 +189,31 @@ Future<void> _openSheet(
   );
   await tester.tap(find.text('open'));
   await _settle(tester);
+}
+
+Future<void> _loadShareTargetFonts(WidgetTester tester) async {
+  final FontLoader loader = FontLoader('Proxima Nova')
+    ..addFont(rootBundle.load('assets/fonts/ProximaNova-Regular.otf'))
+    ..addFont(rootBundle.load('assets/fonts/Proxima Nova Extrabold.otf'));
+  await tester.runAsync(loader.load);
+}
+
+void _expectWholeWords(RenderParagraph paragraph, {required String reason}) {
+  final String text = paragraph.text.toPlainText();
+  expect(paragraph.didExceedMaxLines, isFalse, reason: reason);
+  for (final RegExpMatch word in RegExp(r'\S+').allMatches(text)) {
+    final List<TextBox> boxes = paragraph.getBoxesForSelection(
+      TextSelection(baseOffset: word.start, extentOffset: word.end),
+      boxHeightStyle: ui.BoxHeightStyle.max,
+    );
+    expect(boxes, isNotEmpty, reason: '$reason missing geometry for "${word.group(0)}"');
+    expect(boxes.map((TextBox box) => box.top).toSet(), hasLength(1), reason: '$reason split word "${word.group(0)}"');
+    expect(
+      boxes.every((TextBox box) => box.left >= -0.01 && box.right <= paragraph.size.width + 0.01),
+      isTrue,
+      reason: '$reason word "${word.group(0)}" exceeds paragraph bounds',
+    );
+  }
 }
 
 // The skeleton on unrendered pages animates forever, so pumpAndSettle would never return.
@@ -845,6 +898,278 @@ void main() {
     expect(tester.widget<Semantics>(_formatSemantics('Post')).properties.selected, isTrue);
     expect(find.byKey(const ValueKey<String>('share-preview-post')), findsNothing);
     expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post]);
+  });
+  testWidgets('Open on computer target shows with a computer link and opens the link sheet', (tester) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(400, 900);
+    addTearDown(tester.view.reset);
+    _mockChannels(tester);
+    final FakeAppAnalytics analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    final _Fake fake = _Fake(await _writeCards(tester));
+    final ShareCardContent content = ShareCardContent(
+      imageUrl: 'https://img.test/full.jpg',
+      link: _link,
+      brandName: 'Prism',
+      computerLink: Uri.parse('https://prismwalls.com/l/Ab3dEf7h?d=1'),
+    );
+    await _openSheet(tester, fake.services, content: content);
+
+    final Finder target = _target(ShareTargetValue.openOnComputer);
+    expect(target, findsOneWidget);
+    expect(find.descendant(of: target, matching: find.text('Open on computer')), findsOneWidget);
+
+    await tester.tap(target);
+    await _settle(tester);
+
+    expect(
+      tester
+          .widgetList<Text>(
+            find.descendant(
+              of: find.byKey(const ValueKey<String>('open-on-computer-link')),
+              matching: find.byType(Text),
+            ),
+          )
+          .map((Text text) => text.data)
+          .join(),
+      'prismwalls.com/l/Ab3dEf7h?d=1',
+    );
+  });
+
+  testWidgets('Open on computer target label stays readable at large text in a narrow sheet', (tester) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(320, 720);
+    tester.platformDispatcher.textScaleFactorTestValue = 3;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    _mockChannels(tester);
+    final _Fake fake = _Fake(await _writeCards(tester));
+    final ShareCardContent content = ShareCardContent(
+      imageUrl: 'https://img.test/full.jpg',
+      link: _link,
+      brandName: 'Prism',
+      computerLink: Uri.parse('https://prismwalls.com/l/Ab3dEf7h?d=1'),
+    );
+    await _openSheet(tester, fake.services, content: content);
+
+    final Finder label = find.text('Open on computer');
+    expect(label, findsOneWidget);
+    final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(label);
+    expect(paragraph.didExceedMaxLines, isFalse);
+    expect(tester.takeException(), isNull);
+
+    const String text = 'Open on computer';
+    final TextPainter painter = TextPainter(
+      text: paragraph.text,
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+      textScaler: paragraph.textScaler,
+    )..layout(maxWidth: paragraph.constraints.maxWidth);
+    final List<String> lines = <String>[];
+    int offset = 0;
+    while (offset < text.length) {
+      final TextRange line = painter.getLineBoundary(TextPosition(offset: offset));
+      lines.add(text.substring(line.start, line.end).trim());
+      offset = line.end <= offset ? offset + 1 : line.end;
+      while (offset < text.length && text[offset] == ' ') {
+        offset++;
+      }
+    }
+    painter.dispose();
+    expect(lines.length, greaterThan(1), reason: 'the label wraps at 3x in a 320 px sheet');
+    for (final String line in lines) {
+      expect(
+        line.split(' ').every(<String>['Open', 'on', 'computer'].contains),
+        isTrue,
+        reason: 'line "$line" cut a word',
+      );
+    }
+  });
+
+  testWidgets('without a computer link the Open on computer target is absent and Copy link stays', (tester) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(400, 900);
+    addTearDown(tester.view.reset);
+    _mockChannels(tester);
+    final _Fake fake = _Fake(await _writeCards(tester));
+
+    await _openSheet(tester, fake.services);
+
+    expect(_target(ShareTargetValue.openOnComputer), findsNothing);
+    expect(_target(ShareTargetValue.copyLink), findsOneWidget);
+  });
+
+  testWidgets('all share target labels stay whole across locales, directions, widths, and text scales', (tester) async {
+    await _loadShareTargetFonts(tester);
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    addTearDown(tester.view.reset);
+    _mockChannels(tester);
+    final _Fake fake = _Fake(await _writeCards(tester))
+      ..instagram = true
+      ..pendingRender = Completer<File>().future;
+    const List<Locale> locales = <Locale>[
+      Locale('de'),
+      Locale('es'),
+      Locale('hi'),
+      Locale('id'),
+      Locale('pt'),
+      Locale('pt', 'BR'),
+      Locale('en'),
+    ];
+    const List<double> scales = <double>[1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3];
+    const List<ShareTargetValue> targets = <ShareTargetValue>[
+      ShareTargetValue.instagramStories,
+      ShareTargetValue.copyLink,
+      ShareTargetValue.openOnComputer,
+      ShareTargetValue.saveImage,
+      ShareTargetValue.more,
+    ];
+    final Set<String> oneXShrinks = <String>{};
+    for (final Locale locale in locales) {
+      final AppLocalizations l10n = await loadAppLocalizations(locale);
+      final List<String> labels = <String>[
+        l10n.coreShareTargetInstagram,
+        l10n.coreShareTargetCopyLink,
+        l10n.coreShareOpenOnComputer,
+        l10n.coreShareTargetSaveImage,
+        l10n.coreShareTargetMore,
+      ];
+      for (final TextDirection direction in TextDirection.values) {
+        for (final double width in <double>[320, 400]) {
+          tester.view
+            ..devicePixelRatio = 1
+            ..physicalSize = Size(width, 900);
+          for (final double scale in scales) {
+            await _openSheet(
+              tester,
+              fake.services,
+              locale: locale,
+              textScale: scale,
+              direction: direction,
+              content: ShareCardContent(
+                imageUrl: 'https://img.test/full.jpg',
+                link: _link,
+                brandName: 'Prism',
+                computerLink: Uri.parse(_link),
+              ),
+            );
+            for (var i = 0; i < targets.length; i++) {
+              final Finder target = _target(targets[i]);
+              expect(target, findsOneWidget, reason: '${locale.toLanguageTag()} width=$width scale=$scale');
+              expect(find.bySemanticsLabel(labels[i]), findsOneWidget);
+              final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(
+                find.descendant(of: target, matching: find.byType(Text)),
+              );
+              final String text = paragraph.text.toPlainText();
+              expect(text, labels[i], reason: 'unmodified label for ${targets[i]} / ${locale.toLanguageTag()}');
+              expect(paragraph.textDirection, direction);
+              _expectWholeWords(
+                paragraph,
+                reason: '${targets[i]} / ${locale.toLanguageTag()} width=$width scale=$scale direction=$direction',
+              );
+              expect(paragraph.textScaler.scale(12), lessThanOrEqualTo(scale * 12 + 0.01));
+              if (width == 400 && scale == 1 && paragraph.textScaler.scale(12) != 12) {
+                oneXShrinks.add('${locale.toLanguageTag()}/${targets[i].name}');
+              }
+            }
+            await _closeSheet(tester);
+          }
+        }
+      }
+    }
+    expect(oneXShrinks, <String>{'pt/openOnComputer', 'pt-BR/openOnComputer'});
+    semantics.dispose();
+  });
+
+  for (final ({String name, bool boldText, double? letterSpacing}) accessibilityCase
+      in <({String name, bool boldText, double? letterSpacing})>[
+        (name: 'bold text', boldText: true, letterSpacing: null),
+        (name: 'increased letter spacing', boldText: false, letterSpacing: 2),
+      ]) {
+    testWidgets('${accessibilityCase.name} does not split German target words', (tester) async {
+      await _loadShareTargetFonts(tester);
+      tester.view
+        ..devicePixelRatio = 1
+        ..physicalSize = const Size(320, 900);
+      addTearDown(tester.view.reset);
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      _mockChannels(tester);
+      final _Fake fake = _Fake(await _writeCards(tester))
+        ..instagram = true
+        ..pendingRender = Completer<File>().future;
+      await _openSheet(
+        tester,
+        fake.services,
+        locale: const Locale('de'),
+        textScale: 3,
+        boldText: accessibilityCase.boldText,
+        letterSpacing: accessibilityCase.letterSpacing,
+        content: ShareCardContent(imageUrl: '', link: _link, brandName: 'Prism', computerLink: Uri.parse(_link)),
+      );
+      final AppLocalizations l10n = await loadAppLocalizations(const Locale('de'));
+      for (final ShareTargetValue target in <ShareTargetValue>[
+        ShareTargetValue.instagramStories,
+        ShareTargetValue.copyLink,
+        ShareTargetValue.openOnComputer,
+        ShareTargetValue.saveImage,
+        ShareTargetValue.more,
+      ]) {
+        final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(
+          find.descendant(of: _target(target), matching: find.byType(Text)),
+        );
+        expect(paragraph.textScaler.scale(12), lessThanOrEqualTo(36.01));
+        _expectWholeWords(paragraph, reason: '$target / bold=${accessibilityCase.boldText}');
+      }
+      expect(find.bySemanticsLabel(l10n.coreShareOpenOnComputer), findsOneWidget);
+      semantics.dispose();
+    });
+  }
+
+  testWidgets('open-on-computer label remains whole with unbounded width at 3x', (tester) async {
+    await _loadShareTargetFonts(tester);
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(400, 900);
+    addTearDown(tester.view.reset);
+    _mockChannels(tester);
+    final _Fake fake = _Fake(await _writeCards(tester))..pendingRender = Completer<File>().future;
+    await _openSheet(
+      tester,
+      fake.services,
+      textScale: 3,
+      content: ShareCardContent(imageUrl: '', link: _link, brandName: 'Prism', computerLink: Uri.parse(_link)),
+    );
+    final LayoutBuilder builder = tester.widget<LayoutBuilder>(
+      find.descendant(of: _target(ShareTargetValue.openOnComputer), matching: find.byType(LayoutBuilder)),
+    );
+    await _closeSheet(tester);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(3)),
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: UnconstrainedBox(child: builder),
+          ),
+        ),
+      ),
+    );
+    final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(find.text('Open on computer'));
+    expect(paragraph.constraints.maxWidth, double.infinity);
+    expect(paragraph.textScaler.scale(12), 36);
+    _expectWholeWords(paragraph, reason: 'unbounded 3x Open on computer');
+    expect(tester.takeException(), isNull);
+    expect(
+      paragraph
+          .getBoxesForSelection(TextSelection(baseOffset: 0, extentOffset: paragraph.text.toPlainText().length))
+          .map((TextBox box) => box.top)
+          .toSet(),
+      hasLength(1),
+    );
   });
 }
 

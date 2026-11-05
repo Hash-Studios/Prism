@@ -299,7 +299,8 @@ enum ShareTargetValue {
   instagramStories,
   copyLink,
   saveImage,
-  more;
+  more,
+  openOnComputer;
 
   String get wireValue => _snakeCase(name);
 }

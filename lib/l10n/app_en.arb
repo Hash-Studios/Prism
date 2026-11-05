@@ -2884,6 +2884,23 @@
   "coreShareFormatClean": "Clean",
   "coreShareTargetInstagram": "Instagram",
   "coreShareTargetCopyLink": "Copy link",
+  "coreShareOpenOnComputer": "Open on computer",
+  "@coreShareOpenOnComputer": {
+    "description": "Share sheet target and sheet title. Opens a sheet with a QR code and a short link that opens this wallpaper on a computer."
+  },
+  "coreShareOpenOnComputerBody": "Type this link in a browser on your computer, or scan the code.",
+  "@coreShareOpenOnComputerBody": {
+    "description": "Instruction under the Open on computer title. The link and QR code are shown below it."
+  },
+  "coreShareOpenOnComputerQr": "QR code for {link}",
+  "@coreShareOpenOnComputerQr": {
+    "description": "Screen reader label for the QR code image. {link} is the short link shown under it.",
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
   "coreShareTargetSaveImage": "Save image",
   "coreShareTargetMore": "More",
   "coreShareCardBy": "by {creator}",

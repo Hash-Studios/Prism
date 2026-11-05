@@ -2774,6 +2774,17 @@
   "coreShareFormatClean": "Schlicht",
   "coreShareTargetInstagram": "Instagram",
   "coreShareTargetCopyLink": "Link kopieren",
+  "coreShareOpenOnComputer": "Am Computer öffnen",
+  "coreShareOpenOnComputerBody": "Gib diesen Link in einem Browser auf deinem Computer ein oder scanne den Code.",
+  "coreShareOpenOnComputerQr": "QR-Code für {link}",
+  "@coreShareOpenOnComputerQr": {
+    "description": "Screen reader label for the QR code image. {link} is the short link shown under it.",
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
   "coreShareTargetSaveImage": "Bild speichern",
   "coreShareTargetMore": "Mehr",
   "coreShareCardBy": "von {creator}",

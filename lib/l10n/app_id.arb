@@ -3000,6 +3000,17 @@
   "coreShareFormatClean": "Polos",
   "coreShareTargetInstagram": "Instagram",
   "coreShareTargetCopyLink": "Salin tautan",
+  "coreShareOpenOnComputer": "Buka di komputer",
+  "coreShareOpenOnComputerBody": "Ketik tautan ini di browser komputermu, atau pindai kodenya.",
+  "coreShareOpenOnComputerQr": "Kode QR untuk {link}",
+  "@coreShareOpenOnComputerQr": {
+    "description": "Screen reader label for the QR code image. {link} is the short link shown under it.",
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
   "coreShareTargetSaveImage": "Simpan gambar",
   "coreShareTargetMore": "Lainnya",
   "coreShareCardBy": "oleh {creator}",

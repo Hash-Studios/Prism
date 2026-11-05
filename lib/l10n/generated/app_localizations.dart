@@ -5175,6 +5175,24 @@ abstract class AppLocalizations {
   /// **'Copy link'**
   String get coreShareTargetCopyLink;
 
+  /// Share sheet target and sheet title. Opens a sheet with a QR code and a short link that opens this wallpaper on a computer.
+  ///
+  /// In en, this message translates to:
+  /// **'Open on computer'**
+  String get coreShareOpenOnComputer;
+
+  /// Instruction under the Open on computer title. The link and QR code are shown below it.
+  ///
+  /// In en, this message translates to:
+  /// **'Type this link in a browser on your computer, or scan the code.'**
+  String get coreShareOpenOnComputerBody;
+
+  /// Screen reader label for the QR code image. {link} is the short link shown under it.
+  ///
+  /// In en, this message translates to:
+  /// **'QR code for {link}'**
+  String coreShareOpenOnComputerQr(String link);
+
   /// No description provided for @coreShareTargetSaveImage.
   ///
   /// In en, this message translates to:

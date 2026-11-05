@@ -2979,6 +2979,17 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreShareTargetCopyLink => 'Salin tautan';
 
   @override
+  String get coreShareOpenOnComputer => 'Buka di komputer';
+
+  @override
+  String get coreShareOpenOnComputerBody => 'Ketik tautan ini di browser komputermu, atau pindai kodenya.';
+
+  @override
+  String coreShareOpenOnComputerQr(String link) {
+    return 'Kode QR untuk $link';
+  }
+
+  @override
   String get coreShareTargetSaveImage => 'Simpan gambar';
 
   @override

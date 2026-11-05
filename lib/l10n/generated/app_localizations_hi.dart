@@ -2993,6 +2993,17 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreShareTargetCopyLink => 'लिंक कॉपी करें';
 
   @override
+  String get coreShareOpenOnComputer => 'कंप्यूटर पर खोलें';
+
+  @override
+  String get coreShareOpenOnComputerBody => 'इस लिंक को अपने कंप्यूटर के ब्राउज़र में टाइप करें या कोड स्कैन करें।';
+
+  @override
+  String coreShareOpenOnComputerQr(String link) {
+    return '$link का QR कोड';
+  }
+
+  @override
   String get coreShareTargetSaveImage => 'इमेज सेव करें';
 
   @override

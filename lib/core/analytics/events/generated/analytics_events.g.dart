@@ -1979,6 +1979,35 @@ class InviteShareResultEvent extends AnalyticsEvent {
   }
 }
 
+class OpenOnComputerShownEvent extends AnalyticsEvent {
+  const OpenOnComputerShownEvent({required this.sourceContext});
+
+  final String sourceContext;
+
+  @override
+  String get eventName => 'open_on_computer_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source_context': sourceContext};
+  }
+}
+
+class OpenOnComputerLinkCopiedEvent extends AnalyticsEvent {
+  const OpenOnComputerLinkCopiedEvent({required this.sourceContext, required this.result});
+
+  final String sourceContext;
+  final EventResultValue result;
+
+  @override
+  String get eventName => 'open_on_computer_link_copied';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source_context': sourceContext, 'result': result.wireValue};
+  }
+}
+
 class DynamicLinkCreateResultEvent extends AnalyticsEvent {
   const DynamicLinkCreateResultEvent({required this.shareType, required this.result, this.reason});
 

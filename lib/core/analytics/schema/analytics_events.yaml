@@ -298,6 +298,7 @@ enums:
       - copy_link
       - save_image
       - more
+      - open_on_computer
   - name: dismiss_mode
     dart_type: DismissModeValue
     values:
@@ -1741,6 +1742,20 @@ events:
         type: enum
         enum: ShareTargetValue
         required: false
+  - id: open_on_computer_shown
+    fields:
+      - name: source_context
+        key: source_context
+        type: string
+  - id: open_on_computer_link_copied
+    fields:
+      - name: source_context
+        key: source_context
+        type: string
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
   - id: dynamic_link_create_result
     fields:
       - name: share_type

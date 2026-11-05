@@ -97,6 +97,8 @@ A network failure during short-code resolution can defer the request until conne
 
 Short links with `type: "page"` accept only catalogued app paths and preserve validated query parameters. Canonical paths with invalid queries cannot fall through to permissive legacy aliases.
 
+A short link can end in `?d=1`. Only Prism wall shares add it. The website uses it to open desktop mode. See [web-catalogue.md](web-catalogue.md#desktop-mode). The app ignores the `d` key, so on a phone with Prism the app opens the wall as before.
+
 ## Website and release checks
 
 The website keeps `/`, `/privacy`, and `/terms` under Next.js. Cloudflare receives app paths, short links, association files, and API paths. App page landings show an **Open in Prism** link on mobile and the matching store links. They do not redirect visitors automatically.
