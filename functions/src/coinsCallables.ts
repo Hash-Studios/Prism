@@ -452,15 +452,20 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
 
   await db.runTransaction(async (tx) => {
     response = {...initialResponse};
-    const snap = await tx.get(userRef);
-    if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
-    const adRateSnap = action === "rewardedAd" ? await tx.get(adRateRef) : null;
-    const adDeletionBarrier = action === "rewardedAd" ?
-      await tx.get(db.collection("creatorDeletionState").doc(callerUid)) : null;
-    const adAwardSnap = adAwardRef ? await tx.get(adAwardRef) : null;
-    const privateSnap = action !== "refund" ? await tx.get(privateRef) : null;
-    const debitSnap = debitRef ? await tx.get(debitRef) : null;
-    const refundDailySnap = debitRef ? await tx.get(refundDailyRef) : null;
+    const refs = [
+      userRef,
+      action === "rewardedAd" ? adRateRef : null,
+      action === "rewardedAd" ? db.collection("creatorDeletionState").doc(callerUid) : null,
+      adAwardRef,
+      action !== "refund" ? privateRef : null,
+      debitRef,
+      debitRef ? refundDailyRef : null,
+    ];
+    const snapshots = await tx.getAll(...refs.filter((ref) => ref !== null));
+    let readIndex = 0;
+    const [snap, adRateSnap, adDeletionBarrier, adAwardSnap, privateSnap, debitSnap, refundDailySnap] =
+      refs.map((ref) => ref === null ? null : snapshots[readIndex++]);
+    if (!snap?.exists) throw new HttpsError("not-found", "User profile was not found.");
 
     const data = snap.data() ?? {};
     if (action === "rewardedAd" && (data.deleted === true || adDeletionBarrier?.exists)) {
@@ -627,10 +632,8 @@ export const claimProSpin = onCall(CALLABLE_OPTIONS, async (request: CallableReq
 
   await db.runTransaction(async (tx) => {
     response = {...empty};
-    const snap = await tx.get(userRef);
+    const [snap, txSnap, privateSnap] = await tx.getAll(userRef, txRef, privateRef);
     if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
-    const txSnap = await tx.get(txRef);
-    const privateSnap = await tx.get(privateRef);
     const data = snap.data() ?? {};
     response = {...response, ...xpReceipt(data, nowMs)};
     const previous = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
@@ -812,7 +815,7 @@ export const spinWheel = onCall(
     const today = utcDateString(new Date(nowMs));
 
     return db.runTransaction<SpinWheelReply>(async (tx) => {
-      const [snap, txSnap, privateSnap] = await Promise.all([tx.get(userRef), tx.get(txRef), tx.get(privateRef)]);
+      const [snap, txSnap, privateSnap] = await tx.getAll(userRef, txRef, privateRef);
       if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
       const data = snap.data() ?? {};
       const privateData = privateSnap.data() ?? {};
@@ -970,11 +973,7 @@ export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
 
   await db.runTransaction(async (tx) => {
     response = {...initialResponse};
-    const [snap, spendTxSnap, privateSnap] = await Promise.all([
-      tx.get(userRef),
-      spendTxRef ? tx.get(spendTxRef) : null,
-      tx.get(privateRef),
-    ]);
+    const [snap, privateSnap, spendTxSnap] = await tx.getAll(userRef, privateRef, ...(spendTxRef ? [spendTxRef] : []));
     if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
     const data = snap.data() ?? {};
     const privateData = privateSnap.data() ?? {};
@@ -1134,9 +1133,7 @@ export const processReferral = onCall(CALLABLE_OPTIONS, async (request: Callable
   const initialResult = {...result};
   await db.runTransaction(async (tx) => {
     result = {...initialResult};
-    const callerSnap = await tx.get(callerRef);
-    const inviterSnap = await tx.get(inviterRef);
-    const statsSnap = await tx.get(statsRef);
+    const [callerSnap, inviterSnap, statsSnap] = await tx.getAll(callerRef, inviterRef, statsRef);
     if (!callerSnap.exists || !inviterSnap.exists) throw new HttpsError("not-found", "Referral user was not found.");
     const callerData = callerSnap.data() ?? {};
     result = {...result, ...xpReceipt(callerData, nowMs)};
@@ -1226,9 +1223,8 @@ export const unlockPremiumPreview = onCall(CALLABLE_OPTIONS, async (request: Cal
 
   await db.runTransaction(async (tx) => {
     response = {...empty};
-    const snap = await tx.get(userRef);
+    const [snap, privateSnap] = await tx.getAll(userRef, privateRef);
     if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
-    const privateSnap = await tx.get(privateRef);
     const data = snap.data() ?? {};
     const previous = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
     const state = coinState(data.coinState);
@@ -1321,9 +1317,8 @@ export const buyStreakFreeze = onCall(CALLABLE_OPTIONS, async (request: Callable
 
   await db.runTransaction(async (tx) => {
     response = {...emptyResponse};
-    const snap = await tx.get(userRef);
+    const [snap, txSnap] = await tx.getAll(userRef, txRef);
     if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
-    const txSnap = await tx.get(txRef);
     const data = snap.data() ?? {};
     const previous = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
     const rawFreezes = Number(coinState(data.coinState).streakFreezes);
@@ -1416,9 +1411,8 @@ export const restoreStreak = onCall(CALLABLE_OPTIONS, async (request: CallableRe
 
   await db.runTransaction(async (tx) => {
     response = {...emptyResponse};
-    const snap = await tx.get(userRef);
+    const [snap, txSnap] = await tx.getAll(userRef, txRef);
     if (!snap.exists) throw new HttpsError("not-found", "User profile was not found.");
-    const txSnap = await tx.get(txRef);
     const data = snap.data() ?? {};
     const previous = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
     const state = coinState(data.coinState);

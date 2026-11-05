@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/features/favourite_walls/data/repositories/favourite_counts_repository_impl.dart';
@@ -9,6 +11,7 @@ class _Firestore extends Mock implements FirestoreClient {
   final batches = <List<String>>[];
   final docs = <String, Map<String, dynamic>>{};
   bool fail = false;
+  Future<void>? gate;
 
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
@@ -19,6 +22,7 @@ class _Firestore extends Mock implements FirestoreClient {
     expect(spec.filters.single.op, FirestoreFilterOp.whereIn);
     final ids = spec.filters.single.value! as List<String>;
     batches.add(ids);
+    await gate;
     if (fail) throw StateError('offline');
     return [
       for (final id in ids)
@@ -28,6 +32,19 @@ class _Firestore extends Mock implements FirestoreClient {
 }
 
 void main() {
+  test('loads independent chunks together with at most four requests in flight', () async {
+    final gate = Completer<void>();
+    final firestore = _Firestore()..gate = gate.future;
+    final pending = FavouriteCountsRepositoryImpl(firestore).fetch({for (var i = 0; i < 150; i++) 'wall-$i'});
+    await Future<void>.delayed(Duration.zero);
+    final started = firestore.batches.length;
+    gate.complete();
+    final counts = await pending;
+    expect(started, 4);
+    expect(counts, hasLength(150));
+    expect(firestore.batches.map((batch) => batch.length), [30, 30, 30, 30, 30]);
+  });
+
   test('normalizes, dedupes, validates IDs and chunks at 30', () async {
     final firestore = _Firestore();
     final repository = FavouriteCountsRepositoryImpl(firestore);

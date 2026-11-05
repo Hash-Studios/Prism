@@ -516,6 +516,49 @@ void main() {
   });
 
   group('fetchUserSummariesPage', () {
+    test('search overlaps following batches with a bounded number of reads', () async {
+      app_state.prismUser = profileUser(id: 'viewer');
+      final gate = Completer<void>();
+      client.delayedQuery = (spec) async {
+        if (spec.sourceTag == 'public_profile.following_ids') await gate.future;
+        return const <FakeDocRow>[];
+      };
+      final pending = repo.searchUsersByUsername(
+        query: 'an',
+        scopeUserIds: List<String>.generate(150, (i) => 'uid-$i'),
+      );
+      await pumpEventQueue();
+      final inFlight = client.querySpecs.where((spec) => spec.sourceTag == 'public_profile.following_ids').length;
+      gate.complete();
+      final result = await pending;
+      expect(result.isSuccess, isTrue);
+      expect(inFlight, 4);
+      expect(client.querySpecs.where((spec) => spec.sourceTag == 'public_profile.following_ids'), hasLength(5));
+    });
+
+    for (final search in <bool>[false, true]) {
+      test('${search ? 'search' : 'summaries'} overlaps profile and following reads', () async {
+        app_state.prismUser = profileUser(id: 'viewer');
+        final gate = Completer<void>();
+        client.delayedQuery = (spec) async {
+          await gate.future;
+          return spec.collection == 'profiles'
+              ? <FakeDocRow>[_user('uid-a', name: 'Ana', username: 'ana')]
+              : <FakeDocRow>[(id: 'uid-a', data: <String, dynamic>{})];
+        };
+        final pending = search
+            ? repo.searchUsersByUsername(query: 'an', scopeUserIds: <String>['uid-a'])
+            : repo.fetchUserSummariesPage(userIds: <String>['uid-a'], page: 0);
+        await Future<void>.delayed(Duration.zero);
+        final started = client.querySpecs.map((spec) => spec.sourceTag).toList();
+        gate.complete();
+        final result = await pending;
+        expect(result.isSuccess, isTrue);
+        expect(started, contains('public_profile.following_ids'));
+        expect(started, contains(search ? 'public_profile.search_by_username' : 'public_profile.fetch_user_summaries'));
+      });
+    }
+
     test('queries profile document IDs and restores safe snapshots offline', () async {
       app_state.prismUser = profileUser(id: 'summary-owner');
       const ids = <String>['uid-a', 'uid-b'];

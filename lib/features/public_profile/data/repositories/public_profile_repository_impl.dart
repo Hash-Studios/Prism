@@ -518,22 +518,29 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     final String currentUserId = app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '';
     if (currentUserId.isEmpty || ids.isEmpty) return <String>{};
     final List<String> found = <String>[];
-    for (int i = 0; i < ids.length; i += 30) {
-      final List<String> chunk = ids.sublist(i, math.min(i + 30, ids.length));
-      found.addAll(
-        await _firestoreClient.query<String>(
-          FirestoreQuerySpec(
-            collection: FirebaseCollections.profileFollowing(currentUserId),
-            sourceTag: 'public_profile.following_ids',
-            filters: <FirestoreFilter>[
-              FirestoreFilter(field: firestoreDocumentIdField, op: FirestoreFilterOp.whereIn, value: chunk),
-            ],
-            limit: chunk.length,
+    int next = 0;
+    Future<void> loadNext() async {
+      while (next < ids.length) {
+        final int start = next;
+        next += 30;
+        final List<String> chunk = ids.sublist(start, math.min(start + 30, ids.length));
+        found.addAll(
+          await _firestoreClient.query<String>(
+            FirestoreQuerySpec(
+              collection: FirebaseCollections.profileFollowing(currentUserId),
+              sourceTag: 'public_profile.following_ids',
+              filters: <FirestoreFilter>[
+                FirestoreFilter(field: firestoreDocumentIdField, op: FirestoreFilterOp.whereIn, value: chunk),
+              ],
+              limit: chunk.length,
+            ),
+            (_, docId) => docId,
           ),
-          (_, docId) => docId,
-        ),
-      );
+        );
+      }
     }
+
+    await Future.wait(List.generate(math.min(4, (ids.length / 30).ceil()), (_) => loadNext()));
     return found.toSet();
   }
 
@@ -563,6 +570,8 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
       final String pageIdentity = sha256.convert(utf8.encode(pageUserIds.join(','))).toString();
       final String cacheKey = 'v3::$owner::summaries:$page:$pageIdentity';
 
+      final followingFuture = _followingIds(pageUserIds);
+      followingFuture.ignore();
       final chunkedResults = await Future.wait(<Future<List<_UserRow>>>[
         for (int i = 0; i < pageUserIds.length; i += 30)
           _firestoreClient.query<_UserRow>(
@@ -584,7 +593,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
           ),
       ]);
 
-      final Set<String> followingSet = await _followingIds(pageUserIds);
+      final Set<String> followingSet = await followingFuture;
       final Map<String, _UserRow> byId = <String, _UserRow>{
         for (final row in chunkedResults.expand((rows) => rows)) row.docId: row,
       };
@@ -636,6 +645,8 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
 
     try {
       final List<String> ids = _uniqueUserIds(scopeUserIds);
+      final followingFuture = _followingIds(ids);
+      followingFuture.ignore();
       final List<List<_UserRow>> results = await Future.wait(<Future<List<_UserRow>>>[
         for (int i = 0; i < ids.length; i += _searchChunkSize)
           _firestoreClient.query<_UserRow>(
@@ -653,7 +664,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
             (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
           ),
       ]);
-      final Set<String> followingSet = await _followingIds(ids);
+      final Set<String> followingSet = await followingFuture;
       final Map<String, _UserRow> byId = <String, _UserRow>{
         for (final row in results.expand((rows) => rows)) row.docId: row,
       };

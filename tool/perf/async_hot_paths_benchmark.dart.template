@@ -1,0 +1,214 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:Prism/core/analytics/providers/analytics_provider.dart';
+import 'package:Prism/core/analytics/providers/composite_analytics_provider.dart' as after_analytics;
+import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/features/favourite_walls/data/repositories/favourite_counts_repository_impl.dart'
+    as after_favourites;
+import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/features/user_search/data/repositories/user_search_repository_impl.dart' as after_search;
+import 'package:flutter_test/flutter_test.dart';
+
+import 'analytics_before.dart' as before_analytics;
+import 'favourites_before.dart' as before_favourites;
+import 'search_before.dart' as before_search;
+
+class Boundary {
+  Boundary(this.sample);
+  final int sample;
+  int calls = 0;
+  int inFlight = 0;
+  int peak = 0;
+  int scheduledMs = 0;
+
+  Future<void> read(int key) async {
+    final ms = 8 + (sample * 7 + key * 3) % 13;
+    calls++;
+    scheduledMs += ms;
+    inFlight++;
+    if (inFlight > peak) peak = inFlight;
+    await Future<void>.delayed(Duration(milliseconds: ms));
+    inFlight--;
+  }
+}
+
+class Provider extends Fake implements AnalyticsProvider {
+  Provider(this.io, this.key);
+  final Boundary io;
+  final int key;
+
+  @override
+  Future<void> logEvent({required String name, Map<String, Object> parameters = const <String, Object>{}}) =>
+      io.read(key);
+}
+
+class Store extends Fake implements FirestoreClient {
+  Store(this.io);
+  final Boundary io;
+
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
+    if (spec.sourceTag == 'favourite_counts.grid') {
+      final ids = spec.filters.single.value! as List<String>;
+      await io.read(int.parse(ids.first.substring(5)) ~/ 30);
+      return <T>[
+        for (final id in ids) map(<String, dynamic>{'favs': 7, 'views': 11}, id),
+      ];
+    }
+    final registry = spec.collection == 'usernames';
+    await io.read(
+      registry
+          ? 2
+          : spec.sourceTag.endsWith('_name')
+          ? 0
+          : 1,
+    );
+    return <T>[
+      if (registry)
+        for (int i = 0; i < 8; i++) map(<String, dynamic>{'uid': 'uid-$i'}, 'user$i'),
+    ];
+  }
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic>, String) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async {
+    await io.read(4 + int.parse(id.substring(4)));
+    return map(<String, dynamic>{'name': id, 'username': 'user$id', 'followerCount': 3}, id);
+  }
+}
+
+class Blocks extends Fake implements UserBlockRepository {
+  Blocks(this.io);
+  final Boundary io;
+
+  @override
+  Future<Result<List<BlockedUserListRow>>> fetchBlockedUsersList() async {
+    await io.read(3);
+    return Result.success(const <BlockedUserListRow>[]);
+  }
+}
+
+typedef Scenario = Future<void> Function(bool after, Boundary io);
+
+double percentile(List<double> values, double fraction) {
+  final sorted = values.toList()..sort();
+  return sorted[(fraction * sorted.length).ceil() - 1];
+}
+
+// Linux clock ticks provide coarse CPU evidence without tracing timed samples.
+int cpuTicks() {
+  final fields = File('/proc/self/stat').readAsStringSync().split(') ').last.split(' ');
+  return int.parse(fields[11]) + int.parse(fields[12]);
+}
+
+void main() {
+  test('paired repository latency benchmark with simulated I/O', () async {
+    final scenarios = <String, Scenario>{
+      'Analytics dispatch (3 providers)': (after, io) async {
+        final providers = <AnalyticsProvider>[for (int i = 0; i < 3; i++) Provider(io, i)];
+        if (after) {
+          await after_analytics.CompositeAnalyticsProvider(providers).logEvent(name: 'benchmark');
+        } else {
+          await before_analytics.CompositeAnalyticsProvider(providers).logEvent(name: 'benchmark');
+        }
+        expect(io.calls, 3);
+      },
+      'Favourite counts (150 walls)': (after, io) async {
+        final store = Store(io);
+        final ids = <String>{for (int i = 0; i < 150; i++) 'WALL-$i'};
+        final result = after
+            ? await after_favourites.FavouriteCountsRepositoryImpl(store).fetch(ids)
+            : await before_favourites.FavouriteCountsRepositoryImpl(store).fetch(ids);
+        expect(result.keys.toSet(), ids);
+        expect(result.values.every((value) => value.favourites == 7 && value.views == 11), isTrue);
+        expect(io.calls, 5);
+        expect(io.peak, lessThanOrEqualTo(4));
+      },
+      'User search (8 registry profiles)': (after, io) async {
+        final store = Store(io);
+        final blocks = Blocks(io);
+        final result = after
+            ? await after_search.UserSearchRepositoryImpl(store, blocks).searchUsers('user')
+            : await before_search.UserSearchRepositoryImpl(store, blocks).searchUsers('user');
+        expect(result.isSuccess, isTrue);
+        expect(result.data!.map((user) => user.id), <String>[for (int i = 0; i < 8; i++) 'uid-$i']);
+        expect(result.data!.every((user) => user.followerCount == 3), isTrue);
+        expect(io.calls, 12);
+        expect(io.peak, lessThanOrEqualTo(4));
+      },
+    };
+    final results = <Map<String, Object?>>[];
+    for (final entry in scenarios.entries) {
+      // Unreported warmup and CPU profile, separate from reported samples.
+      final profile = <String, Object?>{};
+      for (final after in <bool>[false, true]) {
+        final cpu = cpuTicks();
+        final watch = Stopwatch()..start();
+        for (int i = 0; i < 5; i++) {
+          await entry.value(after, Boundary(i));
+        }
+        profile[after ? 'after' : 'before'] = <String, Object?>{
+          'wallMs': watch.elapsedMicroseconds / 1000,
+          'cpuTicks': cpuTicks() - cpu,
+        };
+      }
+      final samples = <String, List<double>>{'before': <double>[], 'after': <double>[]};
+      final runs = <Map<String, Object?>>[];
+      final peaks = <String, Set<int>>{'before': <int>{}, 'after': <int>{}};
+      for (int run = 0; run < 5; run++) {
+        final current = <String, List<double>>{'before': <double>[], 'after': <double>[]};
+        for (int i = 0; i < 20; i++) {
+          final sample = run * 20 + i;
+          final order = sample.isEven ? <bool>[false, true] : <bool>[true, false];
+          for (final after in order) {
+            final side = after ? 'after' : 'before';
+            final io = Boundary(sample);
+            final watch = Stopwatch()..start();
+            await entry.value(after, io);
+            watch.stop();
+            expect(io.inFlight, 0);
+            current[side]!.add(watch.elapsedMicroseconds / 1000);
+            peaks[side]!.add(io.peak);
+          }
+        }
+        runs.add(<String, Object?>{
+          for (final side in samples.keys)
+            side: <String, Object?>{'p50': percentile(current[side]!, 0.5), 'p90': percentile(current[side]!, 0.9)},
+        });
+        for (final side in samples.keys) {
+          samples[side]!.addAll(current[side]!);
+        }
+        print('${entry.key}: run ${run + 1}/5 complete');
+      }
+      results.add(<String, Object?>{
+        'path': entry.key,
+        'profile': profile,
+        'runs': runs,
+        'samplesMs': samples,
+        'peakConcurrency': <String, Object?>{for (final side in peaks.keys) side: peaks[side]!.toList()..sort()},
+        for (final side in samples.keys)
+          side: <String, Object?>{'p50': percentile(samples[side]!, 0.5), 'p90': percentile(samples[side]!, 0.9)},
+      });
+    }
+    File(const String.fromEnvironment('BENCH_OUTPUT')).writeAsStringSync(
+      jsonEncode(<String, Object?>{
+        'kind': 'controlled local repository benchmark; simulated I/O, not production latency',
+        'unit': 'ms',
+        'runsPerSide': 5,
+        'samplesPerRun': 20,
+        'simulatedIoMs': <int>[8, 20],
+        'failures': 0,
+        'clockTicksPerSecond': 100,
+        'results': results,
+      }),
+    );
+  }, timeout: const Timeout(Duration(minutes: 10)));
+}

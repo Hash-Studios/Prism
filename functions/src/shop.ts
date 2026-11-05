@@ -86,10 +86,8 @@ export const purchaseShopItem = onCall(
 
     await db.runTransaction(async (tx) => {
       response = {...emptyResponse};
-      const userSnap = await tx.get(userRef);
+      const [userSnap, privateSnap, txSnap] = await tx.getAll(userRef, privateRef, txRef);
       if (!userSnap.exists) throw new HttpsError("not-found", "User profile was not found.");
-      const privateSnap = await tx.get(privateRef);
-      const txSnap = await tx.get(txRef);
       const data = userSnap.data() ?? {};
       const privateData = privateSnap.data() ?? {};
       const owned = inventoryOwned(privateData);
@@ -190,9 +188,8 @@ export const equipCosmetic = onCall(
     };
 
     await db.runTransaction(async (tx) => {
-      const userSnap = await tx.get(userRef);
+      const [userSnap, privateSnap] = await tx.getAll(userRef, privateRef);
       if (!userSnap.exists) throw new HttpsError("not-found", "User profile was not found.");
-      const privateSnap = await tx.get(privateRef);
       const data = userSnap.data() ?? {};
       const equipped = equippedOf(data);
       const privateData = privateSnap.data() ?? {};

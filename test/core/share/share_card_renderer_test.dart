@@ -16,6 +16,32 @@ const ShareCardContent _content = ShareCardContent(
 );
 
 void main() {
+  testWidgets('starts logo resolution while wallpaper is pending and cleans up on failure', (tester) async {
+    await tester.runAsync(() async {
+      final ui.Image logo = await createTestImage(width: 10, height: 10);
+      final gate = Completer<ui.Image>();
+      var started = 0;
+      final pending = renderShareCardFile(
+        ShareCardFormat.story,
+        _content,
+        wallpaperProvider: const AssetImage('provided-wallpaper'),
+        resolveImage: (provider) {
+          started++;
+          return provider is ResizeImage ? gate.future : Future.value(logo);
+        },
+      );
+      final expectation = expectLater(pending, throwsStateError);
+      await pumpEventQueue();
+      final overlapped = started == 2;
+      gate.completeError(StateError('wallpaper unavailable'));
+      await expectation;
+      final disposed = logo.debugDisposed;
+      if (!disposed) logo.dispose();
+      expect(overlapped, isTrue);
+      expect(disposed, isTrue);
+    });
+  });
+
   testWidgets('decodes panorama within bounds and disposes both resolved images', (tester) async {
     await tester.runAsync(() async {
       final Directory tempDir = await Directory.systemTemp.createTemp('prism_render_test_');
@@ -39,7 +65,7 @@ void main() {
         },
       );
 
-      expect((decoded.first.width, decoded.first.height), (1080, 360));
+      expect(decoded.map((image) => (image.width, image.height)), contains((1080, 360)));
       expect(decoded.every((ui.Image image) => image.debugDisposed), isTrue);
       await file.delete();
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
