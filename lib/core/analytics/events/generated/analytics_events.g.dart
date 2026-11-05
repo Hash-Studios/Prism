@@ -12,6 +12,7 @@ import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/crop_spec.dart';
+import 'package:Prism/features/watch_set/domain/entities/watch_format.dart';
 import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
 
 Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
@@ -21,6 +22,8 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'crop_preset': CropPreset.values.map((value) => value.wireValue).toList(),
   'taste_quiz_source': TasteQuizSource.values.map((value) => value.wireValue).toList(),
   'quiz_side': QuizSide.values.map((value) => value.wireValue).toList(),
+  'watch_format': WatchFormat.values.map((value) => value.wireValue).toList(),
+  'watch_guide_source': WatchGuideSourceValue.values.map((value) => value.wireValue).toList(),
   'comment_role': CommentRoleValue.values.map((value) => value.wireValue).toList(),
   'binary_result': BinaryResultValue.values.map((value) => value.wireValue).toList(),
   'ai_apply_from': AiApplyFromValue.values.map((value) => value.wireValue).toList(),
@@ -5044,5 +5047,49 @@ class ApkLinkTappedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'source': source.wireValue};
+  }
+}
+
+class WatchSetSavedEvent extends AnalyticsEvent {
+  const WatchSetSavedEvent({required this.watchType, required this.withDesktop});
+
+  final WatchFormat watchType;
+  final bool withDesktop;
+
+  @override
+  String get eventName => 'watch_set_saved';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'watch_type': watchType.wireValue, 'with_desktop': withDesktop ? 1 : 0};
+  }
+}
+
+class WatchGuideOpenedEvent extends AnalyticsEvent {
+  const WatchGuideOpenedEvent({required this.watchType, required this.source});
+
+  final WatchFormat watchType;
+  final WatchGuideSourceValue source;
+
+  @override
+  String get eventName => 'watch_guide_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'watch_type': watchType.wireValue, 'source': source.wireValue};
+  }
+}
+
+class WatchCropAdjustedEvent extends AnalyticsEvent {
+  const WatchCropAdjustedEvent({required this.watchType});
+
+  final WatchFormat watchType;
+
+  @override
+  String get eventName => 'watch_crop_adjusted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'watch_type': watchType.wireValue};
   }
 }

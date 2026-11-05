@@ -100,6 +100,11 @@ UNCHANGED_ENGLISH = {
     'dayNightGuideScreensHome': 'Home Screen',
     'dayNightGuideScreensLock': 'Lock Screen',
     'dayNightGuideScreensBoth': 'Lock Screen and Home Screen',
+    'watchFormatPixelWatch': 'Pixel Watch',
+    'watchGuideGalaxyTitle': 'Galaxy Watch',
+    'watchGuidePixelTitle': 'Pixel Watch',
+    'watchSetPlatformApple': 'Apple Watch',
+    'watchSetPlatformWearOs': 'Wear OS',
 }
 
 UNTRANSLATED_UI_TOKENS = (

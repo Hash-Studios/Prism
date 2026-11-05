@@ -13506,4 +13506,207 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get livePhotoGuideNoteVersion => 'Lock Screen motion needs iOS 17 or later.';
+
+  @override
+  String get watchSetCropPreset => 'Watch';
+
+  @override
+  String get watchSetRowTitle => 'Watch set';
+
+  @override
+  String get watchSetRowSubtitle => 'Phone and watch, one save';
+
+  @override
+  String get watchSetRowSubtitleDesktop => 'Phone, watch and desktop, one save';
+
+  @override
+  String get watchSetSheetTitle => 'Watch set';
+
+  @override
+  String get watchSetSheetMessage => 'Save this wall for your phone and a crop that fits your watch.';
+
+  @override
+  String get watchSetSheetMessageDesktop =>
+      'Save this wall for your phone, a crop that fits your watch, and the desktop version.';
+
+  @override
+  String get watchSetItemPhone => 'Phone';
+
+  @override
+  String get watchSetItemWatch => 'Watch';
+
+  @override
+  String get watchSetItemDesktop => 'Desktop';
+
+  @override
+  String get watchSetItemFullSize => 'Full size';
+
+  @override
+  String get watchSetPhonePreviewSemantic => 'Phone wallpaper preview';
+
+  @override
+  String watchSetWatchPreviewSemantic(String watch) {
+    return 'Watch image preview for $watch';
+  }
+
+  @override
+  String get watchSetDesktopPreviewSemantic => 'Desktop version preview';
+
+  @override
+  String get watchSetSave => 'Save set';
+
+  @override
+  String get watchSetAdjustCrop => 'Adjust watch crop';
+
+  @override
+  String get watchSetChangeWatch => 'Change watch';
+
+  @override
+  String get watchSetHowTo => 'How to use it on your watch';
+
+  @override
+  String get watchSetSaved => 'Watch set saved';
+
+  @override
+  String get watchSetDesktopNotSaved =>
+      'Phone and watch images saved. The desktop version did not save. Try again in a few minutes.';
+
+  @override
+  String get watchSetPreviewFailed => 'Could not load the wall. Check your connection and try again.';
+
+  @override
+  String get watchSetPickerTitle => 'Which watch do you have?';
+
+  @override
+  String get watchSetPickerMessage => 'Prism saves the watch image at your screen size. You can change it later.';
+
+  @override
+  String get watchSetPlatformApple => 'Apple Watch';
+
+  @override
+  String get watchSetPlatformWearOs => 'Wear OS';
+
+  @override
+  String get watchSetPickerHintApple =>
+      'To find your model, open the Watch app on your iPhone, then tap General, then About.';
+
+  @override
+  String get watchSetPickerHintWearOs =>
+      'To find your model, open Settings on your watch, then tap System, then About.';
+
+  @override
+  String get watchFormatApple40 => 'Series 4 to 6 and SE, 40 mm';
+
+  @override
+  String get watchFormatApple44 => 'Series 4 to 6 and SE, 44 mm';
+
+  @override
+  String get watchFormatApple41 => 'Series 7 to 9, 41 mm';
+
+  @override
+  String get watchFormatApple45 => 'Series 7 to 9, 45 mm';
+
+  @override
+  String get watchFormatApple42 => 'Series 10 to 12, 42 mm';
+
+  @override
+  String get watchFormatApple46 => 'Series 10 to 12, 46 mm';
+
+  @override
+  String get watchFormatAppleUltra => 'Ultra and Ultra 2';
+
+  @override
+  String get watchFormatAppleUltra3 => 'Ultra 3 and Ultra 4';
+
+  @override
+  String get watchFormatPixelWatch => 'Pixel Watch';
+
+  @override
+  String get watchFormatGalaxySmall => 'Galaxy Watch, 40 mm or Classic';
+
+  @override
+  String get watchFormatGalaxyLarge => 'Galaxy Watch, 44 mm or Ultra';
+
+  @override
+  String get watchCropTitle => 'Watch crop';
+
+  @override
+  String get watchCropHint => 'Drag to move the frame. Pinch or drag a corner to resize it.';
+
+  @override
+  String get watchCropReset => 'Reset';
+
+  @override
+  String get watchCropDone => 'Use this crop';
+
+  @override
+  String get watchGuideTitle => 'Put it on your watch';
+
+  @override
+  String get watchGuideBodyIos => 'The set is in Photos, in Recents. Make a Photos watch face from the watch image.';
+
+  @override
+  String get watchGuideBodyAndroid =>
+      'The set is in Gallery, in Pictures, Prism, Downloads. Add the watch image to a photo watch face.';
+
+  @override
+  String get watchGuideShare => 'Share watch image';
+
+  @override
+  String get watchGuideIosStep1 => 'Open Photos and tap the watch image.';
+
+  @override
+  String get watchGuideIosStep2 => 'Tap Share, swipe up, then tap Create Watch Face.';
+
+  @override
+  String get watchGuideIosStep3 => 'Tap Photos Watch Face, then tap Add.';
+
+  @override
+  String get watchGuideIosAlternative =>
+      'You can also open the Watch app on your iPhone. Tap Face Gallery, tap Photos, then tap Choose Photos.';
+
+  @override
+  String get watchGuidePixelTitle => 'Pixel Watch';
+
+  @override
+  String get watchGuidePixelStep1 => 'Open the Pixel Watch app. Tap Watch faces, then tap Add new.';
+
+  @override
+  String get watchGuidePixelStep2 => 'Tap Photos, then pick the watch image in Google Photos.';
+
+  @override
+  String get watchGuidePixelStep3 => 'Tap Add, then tap Save.';
+
+  @override
+  String get watchGuideGalaxyTitle => 'Galaxy Watch';
+
+  @override
+  String get watchGuideGalaxyStep1 => 'Open the Galaxy Wearable app and tap Watch faces.';
+
+  @override
+  String get watchGuideGalaxyStep2 => 'Tap My Photo+, then tap Customize.';
+
+  @override
+  String get watchGuideGalaxyStep3 => 'Pick the watch image from Gallery, then tap Save.';
+
+  @override
+  String get watchGuideNotesTitle => 'What Prism can\'t do';
+
+  @override
+  String get watchGuideNoteNoTransfer => 'Prism can\'t put the image on your watch. Your watch app does that.';
+
+  @override
+  String get watchGuideNoteShareSheet =>
+      'Create Watch Face is only in the Photos app. Prism can\'t add it to its own share sheet.';
+
+  @override
+  String get watchGuideNoteAlbum =>
+      'Prism saves to Recents, not to a Prism album. An album needs full access to your photos, and Prism only asks to add photos.';
+
+  @override
+  String get watchGuideNoteLayout => 'Each watch face has its own clock and layout, so it can cover part of the image.';
+
+  @override
+  String get watchGuideNoteGooglePhotos =>
+      'Pixel Watch reads Google Photos. If the image doesn\'t show, back it up to Google Photos first.';
 }

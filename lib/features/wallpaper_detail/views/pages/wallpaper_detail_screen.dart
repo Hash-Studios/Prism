@@ -111,6 +111,7 @@ import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:Prism/features/wallpaper_upload/biz/variant_seed.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/wall_metadata_editor.dart';
+import 'package:Prism/features/watch_set/views/watch_set_row.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -2867,6 +2868,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             canSendToComputer: !isPremiumFeedItem(entity, app_state.premiumCollections) && !wallpaper.isStreakExclusive,
           ),
         ),
+      if (showsWatchSet(entity)) padded(WatchSetRow(entity: entity)),
       if (!hideSetWallpaperUi && (entity.fullUrl.trim().isNotEmpty || entity.source == WallpaperSource.prism))
         padded(
           Align(

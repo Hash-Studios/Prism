@@ -12813,5 +12813,266 @@
   "livePhotoGuideNoteWake": "Gerakan diputar di Layar Terkunci saat Anda membangunkan iPhone. Layar Utama menampilkan foto diam.",
   "livePhotoGuideNoteLowPower": "Mode Daya Rendah mematikan gerakan di Layar Terkunci.",
   "livePhotoGuideNoteNotAvailable": "Jika iOS mengatakan Gerakan tidak tersedia, gunakan sebagai wallpaper diam atau coba gaya lain.",
-  "livePhotoGuideNoteVersion": "Gerakan di Layar Terkunci memerlukan iOS 17 atau lebih baru."
+  "livePhotoGuideNoteVersion": "Gerakan di Layar Terkunci memerlukan iOS 17 atau lebih baru.",
+  "watchSetCropPreset": "Jam",
+  "@watchSetCropPreset": {
+    "description": "Crop preset chip for a watch screen. Not shown in the editor."
+  },
+  "watchSetRowTitle": "Set jam",
+  "@watchSetRowTitle": {
+    "description": "Row on the wallpaper detail screen. Opens the watch set sheet."
+  },
+  "watchSetRowSubtitle": "Ponsel dan jam, sekali simpan",
+  "@watchSetRowSubtitle": {
+    "description": "Subtitle of the Watch set row when the wall has no desktop version."
+  },
+  "watchSetRowSubtitleDesktop": "Ponsel, jam dan desktop, sekali simpan",
+  "@watchSetRowSubtitleDesktop": {
+    "description": "Subtitle of the Watch set row when the wall has a desktop version."
+  },
+  "watchSetSheetTitle": "Set jam",
+  "@watchSetSheetTitle": {
+    "description": "Title of the watch set sheet."
+  },
+  "watchSetSheetMessage": "Simpan wallpaper ini untuk ponsel dan potongan yang pas di jam Anda.",
+  "@watchSetSheetMessage": {
+    "description": "Body of the watch set sheet when the wall has no desktop version."
+  },
+  "watchSetSheetMessageDesktop": "Simpan wallpaper ini untuk ponsel, potongan yang pas di jam Anda, dan versi desktop.",
+  "@watchSetSheetMessageDesktop": {
+    "description": "Body of the watch set sheet when the wall has a desktop version."
+  },
+  "watchSetItemPhone": "Ponsel",
+  "@watchSetItemPhone": {
+    "description": "Label under the phone preview in the watch set sheet."
+  },
+  "watchSetItemWatch": "Jam",
+  "@watchSetItemWatch": {
+    "description": "Label under the watch preview in the watch set sheet."
+  },
+  "watchSetItemDesktop": "Desktop",
+  "@watchSetItemDesktop": {
+    "description": "Label under the desktop preview in the watch set sheet."
+  },
+  "watchSetItemFullSize": "Ukuran penuh",
+  "@watchSetItemFullSize": {
+    "description": "Size line under the phone preview when the pixel size is not known."
+  },
+  "watchSetPhonePreviewSemantic": "Pratinjau wallpaper ponsel",
+  "@watchSetPhonePreviewSemantic": {
+    "description": "Screen reader label of the phone preview."
+  },
+  "watchSetWatchPreviewSemantic": "Pratinjau gambar jam untuk {watch}",
+  "@watchSetWatchPreviewSemantic": {
+    "description": "Screen reader label of the watch preview. {watch} is the watch type.",
+    "placeholders": {
+      "watch": {
+        "type": "String"
+      }
+    }
+  },
+  "watchSetDesktopPreviewSemantic": "Pratinjau versi desktop",
+  "@watchSetDesktopPreviewSemantic": {
+    "description": "Screen reader label of the desktop preview."
+  },
+  "watchSetSave": "Simpan set",
+  "@watchSetSave": {
+    "description": "Label of the button that saves the whole watch set. The price is added after it."
+  },
+  "watchSetAdjustCrop": "Atur potongan jam",
+  "@watchSetAdjustCrop": {
+    "description": "Button in the watch set sheet. Opens the crop screen."
+  },
+  "watchSetChangeWatch": "Ganti jam",
+  "@watchSetChangeWatch": {
+    "description": "Subtitle of the row that shows the picked watch in the watch set sheet. Tapping the row opens the watch list."
+  },
+  "watchSetHowTo": "Cara memakainya di jam Anda",
+  "@watchSetHowTo": {
+    "description": "Button in the watch set sheet. Opens the watch face guide."
+  },
+  "watchSetSaved": "Set jam disimpan",
+  "@watchSetSaved": {
+    "description": "Toast after the watch set is saved."
+  },
+  "watchSetDesktopNotSaved": "Gambar ponsel dan jam disimpan. Versi desktop tidak tersimpan. Coba lagi beberapa menit lagi.",
+  "@watchSetDesktopNotSaved": {
+    "description": "Toast when the desktop version of a set did not save."
+  },
+  "watchSetPreviewFailed": "Wallpaper tidak bisa dimuat. Periksa koneksi Anda dan coba lagi.",
+  "@watchSetPreviewFailed": {
+    "description": "Shown in the watch set sheet when the preview image does not load."
+  },
+  "watchSetPickerTitle": "Jam apa yang Anda punya?",
+  "@watchSetPickerTitle": {
+    "description": "Title of the watch type list."
+  },
+  "watchSetPickerMessage": "Prism menyimpan gambar jam sesuai ukuran layar Anda. Anda bisa mengubahnya nanti.",
+  "@watchSetPickerMessage": {
+    "description": "Body of the watch type list."
+  },
+  "watchSetPlatformApple": "Apple Watch",
+  "@watchSetPlatformApple": {
+    "description": "Section header in the watch type list."
+  },
+  "watchSetPlatformWearOs": "Wear OS",
+  "@watchSetPlatformWearOs": {
+    "description": "Section header in the watch type list."
+  },
+  "watchSetPickerHintApple": "Untuk mencari model Anda, buka app Watch di iPhone, ketuk Umum, lalu ketuk Informasi.",
+  "@watchSetPickerHintApple": {
+    "description": "Hint under the Apple Watch list."
+  },
+  "watchSetPickerHintWearOs": "Untuk mencari model Anda, buka Pengaturan di jam, ketuk Sistem, lalu ketuk Tentang.",
+  "@watchSetPickerHintWearOs": {
+    "description": "Hint under the Wear OS list."
+  },
+  "watchFormatApple40": "Series 4 sampai 6 dan SE, 40 mm",
+  "@watchFormatApple40": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple44": "Series 4 sampai 6 dan SE, 44 mm",
+  "@watchFormatApple44": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple41": "Series 7 sampai 9, 41 mm",
+  "@watchFormatApple41": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple45": "Series 7 sampai 9, 45 mm",
+  "@watchFormatApple45": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple42": "Series 10 sampai 12, 42 mm",
+  "@watchFormatApple42": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple46": "Series 10 sampai 12, 46 mm",
+  "@watchFormatApple46": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatAppleUltra": "Ultra dan Ultra 2",
+  "@watchFormatAppleUltra": {
+    "description": "Apple Watch model group. Keep the model names in English."
+  },
+  "watchFormatAppleUltra3": "Ultra 3 dan Ultra 4",
+  "@watchFormatAppleUltra3": {
+    "description": "Apple Watch model group. Keep the model names in English."
+  },
+  "watchFormatPixelWatch": "Pixel Watch",
+  "@watchFormatPixelWatch": {
+    "description": "Wear OS watch group. Keep the model name in English."
+  },
+  "watchFormatGalaxySmall": "Galaxy Watch, 40 mm atau Classic",
+  "@watchFormatGalaxySmall": {
+    "description": "Wear OS watch group and case size. Keep the model names in English."
+  },
+  "watchFormatGalaxyLarge": "Galaxy Watch, 44 mm atau Ultra",
+  "@watchFormatGalaxyLarge": {
+    "description": "Wear OS watch group and case size. Keep the model names in English."
+  },
+  "watchCropTitle": "Potongan jam",
+  "@watchCropTitle": {
+    "description": "Title of the watch crop screen."
+  },
+  "watchCropHint": "Seret untuk memindahkan bingkai. Cubit atau seret sudut untuk mengubah ukurannya.",
+  "@watchCropHint": {
+    "description": "Hint under the watch crop frame."
+  },
+  "watchCropReset": "Atur ulang",
+  "@watchCropReset": {
+    "description": "Header action on the watch crop screen. Goes back to the first crop."
+  },
+  "watchCropDone": "Pakai potongan ini",
+  "@watchCropDone": {
+    "description": "Button on the watch crop screen. Keeps the crop and goes back."
+  },
+  "watchGuideTitle": "Pasang di jam Anda",
+  "@watchGuideTitle": {
+    "description": "Title of the watch face guide."
+  },
+  "watchGuideBodyIos": "Set ada di Foto, di Baru-baru ini. Buat watch face Foto dari gambar jam.",
+  "@watchGuideBodyIos": {
+    "description": "Body of the watch face guide on iPhone."
+  },
+  "watchGuideBodyAndroid": "Set ada di Galeri, di Gambar, Prism, Unduhan. Tambahkan gambar jam ke watch face foto.",
+  "@watchGuideBodyAndroid": {
+    "description": "Body of the watch face guide on Android."
+  },
+  "watchGuideShare": "Bagikan gambar jam",
+  "@watchGuideShare": {
+    "description": "Button in the watch face guide on iPhone. Opens the share sheet with the watch image."
+  },
+  "watchGuideIosStep1": "Buka Foto dan ketuk gambar jam.",
+  "@watchGuideIosStep1": {
+    "description": "Step 1 of the iPhone watch face guide."
+  },
+  "watchGuideIosStep2": "Ketuk Bagikan, geser ke atas, lalu ketuk Buat Watch Face.",
+  "@watchGuideIosStep2": {
+    "description": "Step 2 of the iPhone watch face guide. Use the iOS label for Create Watch Face."
+  },
+  "watchGuideIosStep3": "Ketuk Watch Face Foto, lalu ketuk Tambah.",
+  "@watchGuideIosStep3": {
+    "description": "Step 3 of the iPhone watch face guide. Use the iOS labels."
+  },
+  "watchGuideIosAlternative": "Anda juga bisa membuka app Watch di iPhone. Ketuk Galeri Wajah, ketuk Foto, lalu ketuk Pilih Foto.",
+  "@watchGuideIosAlternative": {
+    "description": "Other way to make the face on iPhone."
+  },
+  "watchGuidePixelTitle": "Pixel Watch",
+  "@watchGuidePixelTitle": {
+    "description": "Heading in the Android watch face guide."
+  },
+  "watchGuidePixelStep1": "Buka app Pixel Watch. Ketuk Watch face, lalu ketuk Tambah baru.",
+  "@watchGuidePixelStep1": {
+    "description": "Step 1 for Pixel Watch. Use the app's labels."
+  },
+  "watchGuidePixelStep2": "Ketuk Foto, lalu pilih gambar jam di Google Photos.",
+  "@watchGuidePixelStep2": {
+    "description": "Step 2 for Pixel Watch."
+  },
+  "watchGuidePixelStep3": "Ketuk Tambah, lalu ketuk Simpan.",
+  "@watchGuidePixelStep3": {
+    "description": "Step 3 for Pixel Watch."
+  },
+  "watchGuideGalaxyTitle": "Galaxy Watch",
+  "@watchGuideGalaxyTitle": {
+    "description": "Heading in the Android watch face guide."
+  },
+  "watchGuideGalaxyStep1": "Buka app Galaxy Wearable dan ketuk Watch face.",
+  "@watchGuideGalaxyStep1": {
+    "description": "Step 1 for Galaxy Watch. Use the app's labels."
+  },
+  "watchGuideGalaxyStep2": "Ketuk My Photo+, lalu ketuk Sesuaikan.",
+  "@watchGuideGalaxyStep2": {
+    "description": "Step 2 for Galaxy Watch. Keep My Photo+ as it is."
+  },
+  "watchGuideGalaxyStep3": "Pilih gambar jam dari Galeri, lalu ketuk Simpan.",
+  "@watchGuideGalaxyStep3": {
+    "description": "Step 3 for Galaxy Watch."
+  },
+  "watchGuideNotesTitle": "Yang tidak bisa dilakukan Prism",
+  "@watchGuideNotesTitle": {
+    "description": "Heading above the honest notes in the watch face guide."
+  },
+  "watchGuideNoteNoTransfer": "Prism tidak bisa memasang gambar ke jam Anda. App jam Anda yang melakukannya.",
+  "@watchGuideNoteNoTransfer": {
+    "description": "Note in the watch face guide."
+  },
+  "watchGuideNoteShareSheet": "Buat Watch Face hanya ada di app Foto. Prism tidak bisa menambahkannya ke menu bagikan sendiri.",
+  "@watchGuideNoteShareSheet": {
+    "description": "Note in the iPhone watch face guide."
+  },
+  "watchGuideNoteAlbum": "Prism menyimpan ke Baru-baru ini, bukan ke album Prism. Album memerlukan akses penuh ke foto Anda, dan Prism hanya meminta izin untuk menambah foto.",
+  "@watchGuideNoteAlbum": {
+    "description": "Note in the iPhone watch face guide."
+  },
+  "watchGuideNoteLayout": "Setiap watch face punya jam dan tata letak sendiri, jadi bisa menutupi sebagian gambar.",
+  "@watchGuideNoteLayout": {
+    "description": "Note in the watch face guide."
+  },
+  "watchGuideNoteGooglePhotos": "Pixel Watch membaca Google Photos. Jika gambar tidak muncul, cadangkan dulu ke Google Photos.",
+  "@watchGuideNoteGooglePhotos": {
+    "description": "Note in the Android watch face guide."
+  }
 }

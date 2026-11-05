@@ -13611,5 +13611,266 @@
   "livePhotoGuideNoteVersion": "Lock Screen motion needs iOS 17 or later.",
   "@livePhotoGuideNoteVersion": {
     "description": "Guide note about the minimum iOS version."
+  },
+  "watchSetCropPreset": "Watch",
+  "@watchSetCropPreset": {
+    "description": "Crop preset chip for a watch screen. Not shown in the editor."
+  },
+  "watchSetRowTitle": "Watch set",
+  "@watchSetRowTitle": {
+    "description": "Row on the wallpaper detail screen. Opens the watch set sheet."
+  },
+  "watchSetRowSubtitle": "Phone and watch, one save",
+  "@watchSetRowSubtitle": {
+    "description": "Subtitle of the Watch set row when the wall has no desktop version."
+  },
+  "watchSetRowSubtitleDesktop": "Phone, watch and desktop, one save",
+  "@watchSetRowSubtitleDesktop": {
+    "description": "Subtitle of the Watch set row when the wall has a desktop version."
+  },
+  "watchSetSheetTitle": "Watch set",
+  "@watchSetSheetTitle": {
+    "description": "Title of the watch set sheet."
+  },
+  "watchSetSheetMessage": "Save this wall for your phone and a crop that fits your watch.",
+  "@watchSetSheetMessage": {
+    "description": "Body of the watch set sheet when the wall has no desktop version."
+  },
+  "watchSetSheetMessageDesktop": "Save this wall for your phone, a crop that fits your watch, and the desktop version.",
+  "@watchSetSheetMessageDesktop": {
+    "description": "Body of the watch set sheet when the wall has a desktop version."
+  },
+  "watchSetItemPhone": "Phone",
+  "@watchSetItemPhone": {
+    "description": "Label under the phone preview in the watch set sheet."
+  },
+  "watchSetItemWatch": "Watch",
+  "@watchSetItemWatch": {
+    "description": "Label under the watch preview in the watch set sheet."
+  },
+  "watchSetItemDesktop": "Desktop",
+  "@watchSetItemDesktop": {
+    "description": "Label under the desktop preview in the watch set sheet."
+  },
+  "watchSetItemFullSize": "Full size",
+  "@watchSetItemFullSize": {
+    "description": "Size line under the phone preview when the pixel size is not known."
+  },
+  "watchSetPhonePreviewSemantic": "Phone wallpaper preview",
+  "@watchSetPhonePreviewSemantic": {
+    "description": "Screen reader label of the phone preview."
+  },
+  "watchSetWatchPreviewSemantic": "Watch image preview for {watch}",
+  "@watchSetWatchPreviewSemantic": {
+    "description": "Screen reader label of the watch preview. {watch} is the watch type.",
+    "placeholders": {
+      "watch": {
+        "type": "String"
+      }
+    }
+  },
+  "watchSetDesktopPreviewSemantic": "Desktop version preview",
+  "@watchSetDesktopPreviewSemantic": {
+    "description": "Screen reader label of the desktop preview."
+  },
+  "watchSetSave": "Save set",
+  "@watchSetSave": {
+    "description": "Label of the button that saves the whole watch set. The price is added after it."
+  },
+  "watchSetAdjustCrop": "Adjust watch crop",
+  "@watchSetAdjustCrop": {
+    "description": "Button in the watch set sheet. Opens the crop screen."
+  },
+  "watchSetChangeWatch": "Change watch",
+  "@watchSetChangeWatch": {
+    "description": "Subtitle of the row that shows the picked watch in the watch set sheet. Tapping the row opens the watch list."
+  },
+  "watchSetHowTo": "How to use it on your watch",
+  "@watchSetHowTo": {
+    "description": "Button in the watch set sheet. Opens the watch face guide."
+  },
+  "watchSetSaved": "Watch set saved",
+  "@watchSetSaved": {
+    "description": "Toast after the watch set is saved."
+  },
+  "watchSetDesktopNotSaved": "Phone and watch images saved. The desktop version did not save. Try again in a few minutes.",
+  "@watchSetDesktopNotSaved": {
+    "description": "Toast when the desktop version of a set did not save."
+  },
+  "watchSetPreviewFailed": "Could not load the wall. Check your connection and try again.",
+  "@watchSetPreviewFailed": {
+    "description": "Shown in the watch set sheet when the preview image does not load."
+  },
+  "watchSetPickerTitle": "Which watch do you have?",
+  "@watchSetPickerTitle": {
+    "description": "Title of the watch type list."
+  },
+  "watchSetPickerMessage": "Prism saves the watch image at your screen size. You can change it later.",
+  "@watchSetPickerMessage": {
+    "description": "Body of the watch type list."
+  },
+  "watchSetPlatformApple": "Apple Watch",
+  "@watchSetPlatformApple": {
+    "description": "Section header in the watch type list."
+  },
+  "watchSetPlatformWearOs": "Wear OS",
+  "@watchSetPlatformWearOs": {
+    "description": "Section header in the watch type list."
+  },
+  "watchSetPickerHintApple": "To find your model, open the Watch app on your iPhone, then tap General, then About.",
+  "@watchSetPickerHintApple": {
+    "description": "Hint under the Apple Watch list."
+  },
+  "watchSetPickerHintWearOs": "To find your model, open Settings on your watch, then tap System, then About.",
+  "@watchSetPickerHintWearOs": {
+    "description": "Hint under the Wear OS list."
+  },
+  "watchFormatApple40": "Series 4 to 6 and SE, 40 mm",
+  "@watchFormatApple40": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple44": "Series 4 to 6 and SE, 44 mm",
+  "@watchFormatApple44": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple41": "Series 7 to 9, 41 mm",
+  "@watchFormatApple41": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple45": "Series 7 to 9, 45 mm",
+  "@watchFormatApple45": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple42": "Series 10 to 12, 42 mm",
+  "@watchFormatApple42": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatApple46": "Series 10 to 12, 46 mm",
+  "@watchFormatApple46": {
+    "description": "Apple Watch model group and case size. Keep the model names in English."
+  },
+  "watchFormatAppleUltra": "Ultra and Ultra 2",
+  "@watchFormatAppleUltra": {
+    "description": "Apple Watch model group. Keep the model names in English."
+  },
+  "watchFormatAppleUltra3": "Ultra 3 and Ultra 4",
+  "@watchFormatAppleUltra3": {
+    "description": "Apple Watch model group. Keep the model names in English."
+  },
+  "watchFormatPixelWatch": "Pixel Watch",
+  "@watchFormatPixelWatch": {
+    "description": "Wear OS watch group. Keep the model name in English."
+  },
+  "watchFormatGalaxySmall": "Galaxy Watch, 40 mm or Classic",
+  "@watchFormatGalaxySmall": {
+    "description": "Wear OS watch group and case size. Keep the model names in English."
+  },
+  "watchFormatGalaxyLarge": "Galaxy Watch, 44 mm or Ultra",
+  "@watchFormatGalaxyLarge": {
+    "description": "Wear OS watch group and case size. Keep the model names in English."
+  },
+  "watchCropTitle": "Watch crop",
+  "@watchCropTitle": {
+    "description": "Title of the watch crop screen."
+  },
+  "watchCropHint": "Drag to move the frame. Pinch or drag a corner to resize it.",
+  "@watchCropHint": {
+    "description": "Hint under the watch crop frame."
+  },
+  "watchCropReset": "Reset",
+  "@watchCropReset": {
+    "description": "Header action on the watch crop screen. Goes back to the first crop."
+  },
+  "watchCropDone": "Use this crop",
+  "@watchCropDone": {
+    "description": "Button on the watch crop screen. Keeps the crop and goes back."
+  },
+  "watchGuideTitle": "Put it on your watch",
+  "@watchGuideTitle": {
+    "description": "Title of the watch face guide."
+  },
+  "watchGuideBodyIos": "The set is in Photos, in Recents. Make a Photos watch face from the watch image.",
+  "@watchGuideBodyIos": {
+    "description": "Body of the watch face guide on iPhone."
+  },
+  "watchGuideBodyAndroid": "The set is in Gallery, in Pictures, Prism, Downloads. Add the watch image to a photo watch face.",
+  "@watchGuideBodyAndroid": {
+    "description": "Body of the watch face guide on Android."
+  },
+  "watchGuideShare": "Share watch image",
+  "@watchGuideShare": {
+    "description": "Button in the watch face guide on iPhone. Opens the share sheet with the watch image."
+  },
+  "watchGuideIosStep1": "Open Photos and tap the watch image.",
+  "@watchGuideIosStep1": {
+    "description": "Step 1 of the iPhone watch face guide."
+  },
+  "watchGuideIosStep2": "Tap Share, swipe up, then tap Create Watch Face.",
+  "@watchGuideIosStep2": {
+    "description": "Step 2 of the iPhone watch face guide. Use the iOS label for Create Watch Face."
+  },
+  "watchGuideIosStep3": "Tap Photos Watch Face, then tap Add.",
+  "@watchGuideIosStep3": {
+    "description": "Step 3 of the iPhone watch face guide. Use the iOS labels."
+  },
+  "watchGuideIosAlternative": "You can also open the Watch app on your iPhone. Tap Face Gallery, tap Photos, then tap Choose Photos.",
+  "@watchGuideIosAlternative": {
+    "description": "Other way to make the face on iPhone."
+  },
+  "watchGuidePixelTitle": "Pixel Watch",
+  "@watchGuidePixelTitle": {
+    "description": "Heading in the Android watch face guide."
+  },
+  "watchGuidePixelStep1": "Open the Pixel Watch app. Tap Watch faces, then tap Add new.",
+  "@watchGuidePixelStep1": {
+    "description": "Step 1 for Pixel Watch. Use the app's labels."
+  },
+  "watchGuidePixelStep2": "Tap Photos, then pick the watch image in Google Photos.",
+  "@watchGuidePixelStep2": {
+    "description": "Step 2 for Pixel Watch."
+  },
+  "watchGuidePixelStep3": "Tap Add, then tap Save.",
+  "@watchGuidePixelStep3": {
+    "description": "Step 3 for Pixel Watch."
+  },
+  "watchGuideGalaxyTitle": "Galaxy Watch",
+  "@watchGuideGalaxyTitle": {
+    "description": "Heading in the Android watch face guide."
+  },
+  "watchGuideGalaxyStep1": "Open the Galaxy Wearable app and tap Watch faces.",
+  "@watchGuideGalaxyStep1": {
+    "description": "Step 1 for Galaxy Watch. Use the app's labels."
+  },
+  "watchGuideGalaxyStep2": "Tap My Photo+, then tap Customize.",
+  "@watchGuideGalaxyStep2": {
+    "description": "Step 2 for Galaxy Watch. Keep My Photo+ as it is."
+  },
+  "watchGuideGalaxyStep3": "Pick the watch image from Gallery, then tap Save.",
+  "@watchGuideGalaxyStep3": {
+    "description": "Step 3 for Galaxy Watch."
+  },
+  "watchGuideNotesTitle": "What Prism can't do",
+  "@watchGuideNotesTitle": {
+    "description": "Heading above the honest notes in the watch face guide."
+  },
+  "watchGuideNoteNoTransfer": "Prism can't put the image on your watch. Your watch app does that.",
+  "@watchGuideNoteNoTransfer": {
+    "description": "Note in the watch face guide."
+  },
+  "watchGuideNoteShareSheet": "Create Watch Face is only in the Photos app. Prism can't add it to its own share sheet.",
+  "@watchGuideNoteShareSheet": {
+    "description": "Note in the iPhone watch face guide."
+  },
+  "watchGuideNoteAlbum": "Prism saves to Recents, not to a Prism album. An album needs full access to your photos, and Prism only asks to add photos.",
+  "@watchGuideNoteAlbum": {
+    "description": "Note in the iPhone watch face guide."
+  },
+  "watchGuideNoteLayout": "Each watch face has its own clock and layout, so it can cover part of the image.",
+  "@watchGuideNoteLayout": {
+    "description": "Note in the watch face guide."
+  },
+  "watchGuideNoteGooglePhotos": "Pixel Watch reads Google Photos. If the image doesn't show, back it up to Google Photos first.",
+  "@watchGuideNoteGooglePhotos": {
+    "description": "Note in the Android watch face guide."
   }
 }

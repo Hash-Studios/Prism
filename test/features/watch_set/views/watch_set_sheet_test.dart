@@ -1,0 +1,402 @@
+import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
+import 'package:Prism/features/watch_set/data/watch_type_store.dart';
+import 'package:Prism/features/watch_set/domain/entities/watch_format.dart';
+import 'package:Prism/features/watch_set/views/watch_guide.dart';
+import 'package:Prism/features/watch_set/views/watch_set_sheet.dart';
+import 'package:Prism/features/watch_set/views/widgets/watch_previews.dart';
+import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/prism_theme_options.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import '../../../support/coins_test_backend.dart';
+import '../../../support/fake_app_analytics.dart';
+import '../../../support/in_memory_local_store.dart';
+
+final PrismThemeOption _frost = prismLightThemes.first;
+final ThemeData _theme = withPrismAccent(_frost.theme, _frost.defaultAccentValue);
+
+const WatchSetWall _wall = WatchSetWall(
+  id: 'w1',
+  source: WallpaperSource.prism,
+  link: 'https://example.com/w1.jpg',
+  previewUrl: '/nonexistent/preview.jpg',
+  isPremium: false,
+);
+
+Widget _host(void Function(BuildContext context) open, {TextScaler? textScaler}) => MaterialApp(
+  theme: _theme,
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  builder: textScaler == null
+      ? null
+      : (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+          child: child!,
+        ),
+  home: Scaffold(
+    body: Builder(
+      builder: (context) => TextButton(onPressed: () => open(context), child: const Text('open')),
+    ),
+  ),
+);
+
+void Function(BuildContext context) _sheet() =>
+    (context) => showWatchSetSheet(context, _wall);
+
+void Function(BuildContext context) _guideOf(WatchFormat format, {VoidCallback? onShare}) =>
+    (context) => showPrismSheet<void>(
+      context,
+      builder: (_) => WatchGuide(format: format, onShare: onShare),
+    );
+
+Future<void> _openSheet(WidgetTester tester) async {
+  await tester.tap(find.text('open'));
+  for (int i = 0; i < 4; i++) {
+    await tester.pump(const Duration(milliseconds: 400));
+  }
+}
+
+Future<Directory> _openLoadedSheet(WidgetTester tester) async {
+  final Directory directory = Directory.systemTemp.createTempSync('watch_set_sheet');
+  addTearDown(() => directory.deleteSync(recursive: true));
+  final File preview = File('${directory.path}/preview.png');
+  await tester.runAsync(() async {
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    Canvas(recorder).drawRect(const Rect.fromLTWH(0, 0, 90, 160), Paint()..color = const Color(0xFF336699));
+    final ui.Image image = await recorder.endRecording().toImage(90, 160);
+    final ByteData? png = await image.toByteData(format: ui.ImageByteFormat.png);
+    image.dispose();
+    await preview.writeAsBytes(png!.buffer.asUint8List());
+  });
+  final WatchSetWall wall = WatchSetWall(
+    id: 'w1',
+    source: WallpaperSource.wallhaven,
+    link: preview.path,
+    previewUrl: preview.path,
+    isPremium: false,
+  );
+  await tester.pumpWidget(_host((context) => showWatchSetSheet(context, wall)));
+  await tester.tap(find.text('open'));
+  for (int i = 0; i < 20 && find.byType(WatchFacePreview).evaluate().isEmpty; i++) {
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 25)));
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  expect(find.byType(WatchFacePreview), findsOneWidget);
+  await tester.pump(const Duration(milliseconds: 400));
+  return directory;
+}
+
+void main() {
+  setUp(() {
+    getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+  });
+
+  tearDown(() {
+    if (getIt.isRegistered<SettingsLocalDataSource>()) getIt.unregister<SettingsLocalDataSource>();
+    AnalyticsRuntime.reset();
+  });
+
+  testWidgets('the first open asks which watch the user has, and a pick is remembered', (tester) async {
+    await tester.pumpWidget(_host(_sheet()));
+    await _openSheet(tester);
+
+    expect(find.text('Which watch do you have?'), findsOneWidget);
+
+    final Finder apple46 = find.byKey(const ValueKey<String>('watch-format-apple_46'));
+    await tester.ensureVisible(apple46);
+    await tester.tap(apple46);
+    for (int i = 0; i < 4; i++) {
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    expect(getIt<SettingsLocalDataSource>().get<String?>(watchFormatSettingsKey, hasDefault: true), 'apple_46');
+    expect(find.text('Watch set'), findsOneWidget);
+  });
+
+  testWidgets('a remembered watch type skips the picker on the next open', (tester) async {
+    await getIt<SettingsLocalDataSource>().set(watchFormatSettingsKey, 'galaxy_large');
+    await tester.pumpWidget(_host(_sheet()));
+    await _openSheet(tester);
+
+    expect(find.text('Which watch do you have?'), findsNothing);
+    expect(find.text('Watch set'), findsWidgets);
+  });
+
+  testWidgets('the picker lists Wear OS first on Android and Apple Watch first on iOS', (tester) async {
+    await tester.pumpWidget(_host(_sheet()));
+    await _openSheet(tester);
+
+    expect(tester.getTopLeft(find.text('Wear OS')).dy < tester.getTopLeft(find.text('Apple Watch')).dy, isTrue);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    await tester.pumpWidget(_host(_sheet()));
+    await _openSheet(tester);
+
+    expect(tester.getTopLeft(find.text('Apple Watch')).dy < tester.getTopLeft(find.text('Wear OS')).dy, isTrue);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('Change watch goes back to the picker', (tester) async {
+    await getIt<SettingsLocalDataSource>().set(watchFormatSettingsKey, 'apple_46');
+    await tester.pumpWidget(_host(_sheet()));
+    await _openSheet(tester);
+
+    await tester.tap(find.text('Change watch'));
+    await tester.pump();
+
+    expect(find.text('Which watch do you have?'), findsOneWidget);
+  });
+
+  testWidgets('a pending save keeps its watch, crop and guide controls until the tap ends', (tester) async {
+    final CoinsTestBackend backend = CoinsTestBackend();
+    await backend.install();
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    await getIt<SettingsLocalDataSource>().set(watchFormatSettingsKey, 'apple_46');
+    final Completer<Object?> listed = Completer<Object?>();
+    const BasicMessageChannel<Object?> listChannel = BasicMessageChannel<Object?>(
+      'dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads',
+      PrismMediaHostApi.pigeonChannelCodec,
+    );
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockDecodedMessageHandler<Object?>(listChannel, (_) => listed.future);
+    messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), (_) async => true);
+    addTearDown(() {
+      messenger.setMockDecodedMessageHandler<Object?>(listChannel, null);
+      messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), null);
+    });
+    await _openLoadedSheet(tester);
+    await tester.ensureVisible(find.byType(DownloadButton));
+    await tester.tap(find.byType(DownloadButton));
+    await tester.pump();
+
+    await tester.ensureVisible(find.text('Change watch'));
+    await tester.tap(find.text('Change watch'));
+    await tester.pump();
+    expect(find.text('Which watch do you have?'), findsNothing);
+    expect(find.text('Series 10 to 12, 46 mm'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Adjust watch crop'));
+    await tester.tap(find.text('Adjust watch crop'));
+    await tester.pump();
+    expect(find.byKey(const ValueKey<String>('watch-crop-done')), findsNothing);
+    await tester.ensureVisible(find.text('How to use it on your watch'));
+    await tester.tap(find.text('How to use it on your watch'));
+    await tester.pump();
+    expect(find.text('Put it on your watch'), findsNothing);
+
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    listed.complete(<Object?>[DownloadItemsResult(success: true, items: <String>[])]);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.ensureVisible(find.text('Change watch'));
+    await tester.tap(find.text('Change watch'));
+    await tester.pump();
+    expect(find.text('Which watch do you have?'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('a second save whose share copy fails drops the first share copy', (tester) async {
+    await getIt<SettingsLocalDataSource>().set(watchFormatSettingsKey, 'apple_46');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), (_) async => true);
+    addTearDown(() => messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), null));
+    final Directory directory = await _openLoadedSheet(tester);
+    final File original = File('${directory.path}/preview.png');
+    final DownloadButton button = tester.widget<DownloadButton>(find.byType(DownloadButton));
+    button.set!.onSaved!(desktopSaved: false, files: <String, String>{'watch-apple_46': original.path});
+    await tester.pump();
+    final File first = directory.listSync().whereType<File>().singleWhere((file) => file.path.contains('/share_'));
+
+    button.set!.onSaved!(desktopSaved: false, files: <String, String>{'watch-apple_46': '${directory.path}/gone.png'});
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+
+    expect(first.existsSync(), isFalse);
+    expect(directory.listSync().whereType<File>().where((file) => file.path.contains('/share_')), isEmpty);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('closing the saved guide deletes its share copy but leaves the saved source alone', (tester) async {
+    await getIt<SettingsLocalDataSource>().set(watchFormatSettingsKey, 'apple_46');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), (_) async => true);
+    addTearDown(() => messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), null));
+    final Directory directory = await _openLoadedSheet(tester);
+    final File original = File('${directory.path}/preview.png');
+    final DownloadButton button = tester.widget<DownloadButton>(find.byType(DownloadButton));
+    button.set!.onSaved!(desktopSaved: false, files: <String, String>{'watch-apple_46': original.path});
+    await tester.pump();
+
+    final File copy = directory.listSync().whereType<File>().singleWhere((file) => file.path.contains('/share_'));
+    expect(copy.readAsBytesSync(), original.readAsBytesSync());
+    expect(find.text('Put it on your watch'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Done'));
+    await tester.tap(find.text('Done'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    });
+
+    expect(copy.existsSync(), isFalse);
+    expect(original.existsSync(), isTrue);
+    expect(find.text('open'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('the Apple guide shows the three iPhone steps and the Apple notes', (tester) async {
+    await tester.pumpWidget(_host(_guideOf(WatchFormat.apple46)));
+    await _openSheet(tester);
+
+    expect(find.text('Open Photos and tap the watch image.'), findsOneWidget);
+    expect(find.text('Tap Share, swipe up, then tap Create Watch Face.'), findsOneWidget);
+    expect(find.text('Tap Photos Watch Face, then tap Add.'), findsOneWidget);
+    expect(find.text("Prism can't put the image on your watch. Your watch app does that."), findsOneWidget);
+    expect(
+      find.text("Create Watch Face is only in the Photos app. Prism can't add it to its own share sheet."),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey<String>('watch-guide-share')), findsNothing);
+  });
+
+  testWidgets('the Apple guide shows the share button when a share handler is given', (tester) async {
+    await tester.pumpWidget(_host(_guideOf(WatchFormat.apple46, onShare: () {})));
+    await _openSheet(tester);
+
+    expect(find.byKey(const ValueKey<String>('watch-guide-share')), findsOneWidget);
+    expect(find.text('Share watch image'), findsOneWidget);
+  });
+
+  testWidgets('the Wear OS guide shows its headings and the Google Photos note', (tester) async {
+    await tester.pumpWidget(_host(_guideOf(WatchFormat.pixelWatch)));
+    await _openSheet(tester);
+
+    expect(find.text('Pixel Watch'), findsOneWidget);
+    expect(find.text('Galaxy Watch'), findsOneWidget);
+    expect(find.text('Tap My Photo+, then tap Customize.'), findsOneWidget);
+    expect(
+      find.text("Pixel Watch reads Google Photos. If the image doesn't show, back it up to Google Photos first."),
+      findsOneWidget,
+    );
+    expect(
+      find.text("Create Watch Face is only in the Photos app. Prism can't add it to its own share sheet."),
+      findsNothing,
+    );
+  });
+
+  testWidgets('the picker lays out at large text on a phone-sized surface', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(_host(_sheet(), textScaler: const TextScaler.linear(2.0)));
+    await _openSheet(tester);
+
+    expect(find.text('Which watch do you have?'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the set step lays out at large text on a phone-sized surface', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await getIt<SettingsLocalDataSource>().set(watchFormatSettingsKey, 'apple_46');
+
+    await tester.pumpWidget(_host(_sheet(), textScaler: const TextScaler.linear(2.0)));
+    await _openSheet(tester);
+
+    expect(find.text('Change watch'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the Apple guide lays out at large text with its share button', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _host(_guideOf(WatchFormat.apple46, onShare: () {}), textScaler: const TextScaler.linear(2.0)),
+    );
+    await _openSheet(tester);
+
+    final Finder share = find.byKey(const ValueKey<String>('watch-guide-share'));
+    await tester.ensureVisible(share);
+    expect(share, findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the Wear OS guide lays out at large text', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(_host(_guideOf(WatchFormat.galaxySmall), textScaler: const TextScaler.linear(2.0)));
+    await _openSheet(tester);
+
+    expect(find.text('Galaxy Watch'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a loaded wall shows the watch crop, and How to use opens the guide and counts it', (tester) async {
+    final FakeAppAnalytics analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    await getIt<SettingsLocalDataSource>().set(watchFormatSettingsKey, 'galaxy_large');
+    final Directory dir = Directory.systemTemp.createTempSync('watch_set_sheet');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final File preview = File('${dir.path}/preview.png');
+    await tester.runAsync(() async {
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      Canvas(recorder).drawRect(const Rect.fromLTWH(0, 0, 90, 160), Paint()..color = const Color(0xFF336699));
+      final ui.Image image = await recorder.endRecording().toImage(90, 160);
+      final ByteData? png = await image.toByteData(format: ui.ImageByteFormat.png);
+      image.dispose();
+      await preview.writeAsBytes(png!.buffer.asUint8List());
+    });
+    final WatchSetWall wall = WatchSetWall(
+      id: 'w1',
+      source: WallpaperSource.wallhaven,
+      link: 'https://example.com/w1.jpg',
+      previewUrl: preview.path,
+      isPremium: false,
+    );
+
+    await tester.pumpWidget(_host((context) => showWatchSetSheet(context, wall)));
+    await tester.tap(find.text('open'));
+    for (int i = 0; i < 10 && find.byType(WatchFacePreview).evaluate().isEmpty; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(find.byType(WatchFacePreview), findsOneWidget);
+    expect(find.text('480 × 480 px'), findsOneWidget);
+    expect(find.text('Galaxy Watch, 44 mm or Ultra'), findsOneWidget);
+    await tester.ensureVisible(find.text('How to use it on your watch'));
+    await tester.tap(find.text('How to use it on your watch'));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Put it on your watch'), findsOneWidget);
+    final WatchGuideOpenedEvent opened = analytics.events.whereType<WatchGuideOpenedEvent>().single;
+    expect(opened.watchType, WatchFormat.galaxyLarge);
+    expect(opened.source, WatchGuideSourceValue.sheet);
+  });
+}

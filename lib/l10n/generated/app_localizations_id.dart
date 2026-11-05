@@ -13556,4 +13556,210 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get livePhotoGuideNoteVersion => 'Gerakan di Layar Terkunci memerlukan iOS 17 atau lebih baru.';
+
+  @override
+  String get watchSetCropPreset => 'Jam';
+
+  @override
+  String get watchSetRowTitle => 'Set jam';
+
+  @override
+  String get watchSetRowSubtitle => 'Ponsel dan jam, sekali simpan';
+
+  @override
+  String get watchSetRowSubtitleDesktop => 'Ponsel, jam dan desktop, sekali simpan';
+
+  @override
+  String get watchSetSheetTitle => 'Set jam';
+
+  @override
+  String get watchSetSheetMessage => 'Simpan wallpaper ini untuk ponsel dan potongan yang pas di jam Anda.';
+
+  @override
+  String get watchSetSheetMessageDesktop =>
+      'Simpan wallpaper ini untuk ponsel, potongan yang pas di jam Anda, dan versi desktop.';
+
+  @override
+  String get watchSetItemPhone => 'Ponsel';
+
+  @override
+  String get watchSetItemWatch => 'Jam';
+
+  @override
+  String get watchSetItemDesktop => 'Desktop';
+
+  @override
+  String get watchSetItemFullSize => 'Ukuran penuh';
+
+  @override
+  String get watchSetPhonePreviewSemantic => 'Pratinjau wallpaper ponsel';
+
+  @override
+  String watchSetWatchPreviewSemantic(String watch) {
+    return 'Pratinjau gambar jam untuk $watch';
+  }
+
+  @override
+  String get watchSetDesktopPreviewSemantic => 'Pratinjau versi desktop';
+
+  @override
+  String get watchSetSave => 'Simpan set';
+
+  @override
+  String get watchSetAdjustCrop => 'Atur potongan jam';
+
+  @override
+  String get watchSetChangeWatch => 'Ganti jam';
+
+  @override
+  String get watchSetHowTo => 'Cara memakainya di jam Anda';
+
+  @override
+  String get watchSetSaved => 'Set jam disimpan';
+
+  @override
+  String get watchSetDesktopNotSaved =>
+      'Gambar ponsel dan jam disimpan. Versi desktop tidak tersimpan. Coba lagi beberapa menit lagi.';
+
+  @override
+  String get watchSetPreviewFailed => 'Wallpaper tidak bisa dimuat. Periksa koneksi Anda dan coba lagi.';
+
+  @override
+  String get watchSetPickerTitle => 'Jam apa yang Anda punya?';
+
+  @override
+  String get watchSetPickerMessage =>
+      'Prism menyimpan gambar jam sesuai ukuran layar Anda. Anda bisa mengubahnya nanti.';
+
+  @override
+  String get watchSetPlatformApple => 'Apple Watch';
+
+  @override
+  String get watchSetPlatformWearOs => 'Wear OS';
+
+  @override
+  String get watchSetPickerHintApple =>
+      'Untuk mencari model Anda, buka app Watch di iPhone, ketuk Umum, lalu ketuk Informasi.';
+
+  @override
+  String get watchSetPickerHintWearOs =>
+      'Untuk mencari model Anda, buka Pengaturan di jam, ketuk Sistem, lalu ketuk Tentang.';
+
+  @override
+  String get watchFormatApple40 => 'Series 4 sampai 6 dan SE, 40 mm';
+
+  @override
+  String get watchFormatApple44 => 'Series 4 sampai 6 dan SE, 44 mm';
+
+  @override
+  String get watchFormatApple41 => 'Series 7 sampai 9, 41 mm';
+
+  @override
+  String get watchFormatApple45 => 'Series 7 sampai 9, 45 mm';
+
+  @override
+  String get watchFormatApple42 => 'Series 10 sampai 12, 42 mm';
+
+  @override
+  String get watchFormatApple46 => 'Series 10 sampai 12, 46 mm';
+
+  @override
+  String get watchFormatAppleUltra => 'Ultra dan Ultra 2';
+
+  @override
+  String get watchFormatAppleUltra3 => 'Ultra 3 dan Ultra 4';
+
+  @override
+  String get watchFormatPixelWatch => 'Pixel Watch';
+
+  @override
+  String get watchFormatGalaxySmall => 'Galaxy Watch, 40 mm atau Classic';
+
+  @override
+  String get watchFormatGalaxyLarge => 'Galaxy Watch, 44 mm atau Ultra';
+
+  @override
+  String get watchCropTitle => 'Potongan jam';
+
+  @override
+  String get watchCropHint => 'Seret untuk memindahkan bingkai. Cubit atau seret sudut untuk mengubah ukurannya.';
+
+  @override
+  String get watchCropReset => 'Atur ulang';
+
+  @override
+  String get watchCropDone => 'Pakai potongan ini';
+
+  @override
+  String get watchGuideTitle => 'Pasang di jam Anda';
+
+  @override
+  String get watchGuideBodyIos => 'Set ada di Foto, di Baru-baru ini. Buat watch face Foto dari gambar jam.';
+
+  @override
+  String get watchGuideBodyAndroid =>
+      'Set ada di Galeri, di Gambar, Prism, Unduhan. Tambahkan gambar jam ke watch face foto.';
+
+  @override
+  String get watchGuideShare => 'Bagikan gambar jam';
+
+  @override
+  String get watchGuideIosStep1 => 'Buka Foto dan ketuk gambar jam.';
+
+  @override
+  String get watchGuideIosStep2 => 'Ketuk Bagikan, geser ke atas, lalu ketuk Buat Watch Face.';
+
+  @override
+  String get watchGuideIosStep3 => 'Ketuk Watch Face Foto, lalu ketuk Tambah.';
+
+  @override
+  String get watchGuideIosAlternative =>
+      'Anda juga bisa membuka app Watch di iPhone. Ketuk Galeri Wajah, ketuk Foto, lalu ketuk Pilih Foto.';
+
+  @override
+  String get watchGuidePixelTitle => 'Pixel Watch';
+
+  @override
+  String get watchGuidePixelStep1 => 'Buka app Pixel Watch. Ketuk Watch face, lalu ketuk Tambah baru.';
+
+  @override
+  String get watchGuidePixelStep2 => 'Ketuk Foto, lalu pilih gambar jam di Google Photos.';
+
+  @override
+  String get watchGuidePixelStep3 => 'Ketuk Tambah, lalu ketuk Simpan.';
+
+  @override
+  String get watchGuideGalaxyTitle => 'Galaxy Watch';
+
+  @override
+  String get watchGuideGalaxyStep1 => 'Buka app Galaxy Wearable dan ketuk Watch face.';
+
+  @override
+  String get watchGuideGalaxyStep2 => 'Ketuk My Photo+, lalu ketuk Sesuaikan.';
+
+  @override
+  String get watchGuideGalaxyStep3 => 'Pilih gambar jam dari Galeri, lalu ketuk Simpan.';
+
+  @override
+  String get watchGuideNotesTitle => 'Yang tidak bisa dilakukan Prism';
+
+  @override
+  String get watchGuideNoteNoTransfer =>
+      'Prism tidak bisa memasang gambar ke jam Anda. App jam Anda yang melakukannya.';
+
+  @override
+  String get watchGuideNoteShareSheet =>
+      'Buat Watch Face hanya ada di app Foto. Prism tidak bisa menambahkannya ke menu bagikan sendiri.';
+
+  @override
+  String get watchGuideNoteAlbum =>
+      'Prism menyimpan ke Baru-baru ini, bukan ke album Prism. Album memerlukan akses penuh ke foto Anda, dan Prism hanya meminta izin untuk menambah foto.';
+
+  @override
+  String get watchGuideNoteLayout =>
+      'Setiap watch face punya jam dan tata letak sendiri, jadi bisa menutupi sebagian gambar.';
+
+  @override
+  String get watchGuideNoteGooglePhotos =>
+      'Pixel Watch membaca Google Photos. Jika gambar tidak muncul, cadangkan dulu ke Google Photos.';
 }
