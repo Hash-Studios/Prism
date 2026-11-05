@@ -190,6 +190,16 @@ Verified on the API 36 emulator: a cool shader on Lock and a warm shader on Home
 - The Pro and coin gates are unchanged. Every apply goes through them, whatever screen is picked.
 - Analytics: `live_wallpaper_applied` adds `target` (null for video), `per_screen`, and `fallback`.
 
+### Release order
+
+The Prism change needs `async_wallpaper` 3.7.0. Do these steps in this order:
+
+1. Merge the plugin PR: https://github.com/codenameakshay/async_wallpaper/pull/89.
+2. Publish `async_wallpaper` 3.7.0 to pub.dev. The plugin owner must approve this step.
+3. Run `fvm flutter pub get` in Prism to update `pubspec.lock` to 3.7.0. Then merge the Prism PR: https://github.com/Hash-Studios/Prism/pull/818.
+
+Until step 2 is done, `pub get` fails in Prism CI, because pub.dev does not have 3.7.0.
+
 ### Older Android
 
 On Android 15 (API 35) and lower, all live wallpaper engines share the last content Prism applied. The plugin reports `effectiveTarget: both`, and Prism tells the user that both screens use the same live wall.
