@@ -436,10 +436,10 @@ void main() {
     await tester.tap(find.byIcon(Icons.more_vert_rounded));
     await settle(tester);
 
-    for (final String label in <String>['Invite', 'People', 'Make public', 'Rename', 'Delete']) {
+    for (final String label in <String>['Rotate this folder', 'Invite', 'People', 'Make public', 'Rename', 'Delete']) {
       expect(_menuItem(label), findsOneWidget, reason: label);
     }
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('an editor sees People in the menu and no owner actions or Invite button', (tester) async {
     await pumpTeamFolder(

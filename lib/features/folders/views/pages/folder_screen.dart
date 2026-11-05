@@ -445,7 +445,7 @@ class _FolderScreenState extends State<FolderScreen> {
                 icon: const Icon(Icons.more_vert_rounded),
                 onSelected: (action) => unawaited(_onMenu(action, folder)),
                 itemBuilder: (context) => <PopupMenuEntry<_FolderMenuAction>>[
-                  if (android)
+                  if (android && owner)
                     PopupMenuItem<_FolderMenuAction>(
                       value: _FolderMenuAction.rotate,
                       child: Text(context.l10n.foldersRotateThisFolder),
