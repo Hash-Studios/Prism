@@ -19,6 +19,7 @@ import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/core/widgets/prism/prism_field.dart';
+import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
@@ -374,6 +375,13 @@ void main() {
         final Size tile = tester.getSize(find.byKey(ValueKey<String>(id)));
         expect(tile.height, closeTo(tile.width / PrismFeedLayout.gridTileAspectRatio, 0.5), reason: id);
       }
+    });
+
+    testWidgets('a loaded grid runs no pulse ticker', (tester) async {
+      createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada'), pexelsFav('b', author: 'Grace')]);
+      await pumpLoaded(tester);
+
+      expect(find.byType(PulsePlaceholder), findsNothing);
     });
 
     testWidgets('every icon button in the toolbar has a tooltip', (tester) async {

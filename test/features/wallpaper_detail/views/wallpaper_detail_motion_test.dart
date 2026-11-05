@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
@@ -210,6 +212,26 @@ void main() {
       expect(shownFilter(tester), isNull);
     });
 
+    testWidgets('the picture is not remounted when the hue starts or goes away', (tester) async {
+      final states = await pumpUntinted(tester, reduceMotion: false);
+      final Element before = tester.element(find.byType(ProgressiveWallpaperImage));
+
+      states.add(tinted);
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(shownFilter(tester), isNotNull);
+      expect(tester.element(find.byType(ProgressiveWallpaperImage)), same(before));
+
+      await tester.pump(const Duration(milliseconds: 250));
+      states.add(tinted.copyWith(colorChanged: false));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(shownFilter(tester), isNull);
+      expect(tester.element(find.byType(ProgressiveWallpaperImage)), same(before));
+    });
+
     testWidgets('moving from one colour to another turns the hue round instead of fading through grey', (tester) async {
       final Color red = const HSLColor.fromAHSL(1, 0, 1, 0.5).toColor();
       final Color green = const HSLColor.fromAHSL(1, 160, 1, 0.5).toColor();
@@ -223,9 +245,9 @@ void main() {
       states.add(picked(green));
       await tester.pump();
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 110));
+      await tester.pump(const Duration(milliseconds: 120));
 
-      final double eased = Curves.easeOutCubic.transform(0.5);
+      final double eased = PrismCurves.enter.transform(0.5);
       expect(shownFilter(tester), ColorFilter.mode(lerpHueTint(red, green, eased)!, BlendMode.hue));
       expect(shownFilter(tester), isNot(ColorFilter.mode(Color.lerp(red, green, eased)!, BlendMode.hue)));
       await tester.pump(const Duration(milliseconds: 300));

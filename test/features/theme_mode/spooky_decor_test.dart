@@ -199,5 +199,145 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    final AnimationController bob =
+        tester
+                .widget<AnimatedBuilder>(
+                  find.descendant(of: find.byType(SpookySpider), matching: find.byType(AnimatedBuilder)),
+                )
+                .animation
+            as AnimationController;
+    expect(bob.value, 0);
+  });
+
+  testWidgets('Spooky spider bobs twice, then hangs at rest', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: kDarkTheme9,
+        home: const Scaffold(body: Stack(children: <Widget>[SpookySpider()])),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.binding.transientCallbackCount, greaterThan(0));
+
+    await tester.pump(const Duration(milliseconds: 2500));
+    final AnimationController bob =
+        tester
+                .widget<AnimatedBuilder>(
+                  find.descendant(of: find.byType(SpookySpider), matching: find.byType(AnimatedBuilder)),
+                )
+                .animation
+            as AnimationController;
+    expect(bob.value, closeTo(0.25, 0.02));
+    expect(_spiderOffsetY(tester), closeTo(-14, 0.1));
+    await tester.pump(const Duration(milliseconds: 2600));
+    await tester.pump(const Duration(milliseconds: 1));
+    expect(bob.value, closeTo(0.5, 0.02));
+    expect(_spiderOffsetY(tester), closeTo(0, 0.001));
+    await tester.pump(const Duration(milliseconds: 2600));
+    expect(bob.value, closeTo(0.75, 0.02));
+    expect(_spiderOffsetY(tester), closeTo(-14, 0.1));
+    await tester.pump(const Duration(milliseconds: 2600));
+    await tester.pump();
+    await tester.pump();
+
+    expect(tester.binding.transientCallbackCount, 0);
+    expect(tester.binding.hasScheduledFrame, isFalse);
+    final Transform transform = tester.widget<Transform>(
+      find.descendant(of: find.byType(SpookySpider), matching: find.byType(Transform)),
+    );
+    expect(transform.transform.getTranslation().y, 0);
+  });
+
+  testWidgets('reduced motion settles the spider until Spooky is toggled off and on', (tester) async {
+    ThemeData theme = kDarkTheme9;
+    bool reduceMotion = false;
+    Widget app() => MaterialApp(
+      theme: theme,
+      themeAnimationDuration: Duration.zero,
+      home: MediaQuery(
+        data: MediaQueryData(disableAnimations: reduceMotion),
+        child: const Scaffold(body: SpookySpider()),
+      ),
+    );
+
+    await tester.pumpWidget(app());
+    await tester.pump(const Duration(milliseconds: 500));
+    reduceMotion = true;
+    await tester.pumpWidget(app());
+    final AnimationController bob =
+        tester
+                .widget<AnimatedBuilder>(
+                  find.descendant(of: find.byType(SpookySpider), matching: find.byType(AnimatedBuilder)),
+                )
+                .animation
+            as AnimationController;
+    expect(bob.value, 0);
+    reduceMotion = false;
+    await tester.pumpWidget(app());
+    await tester.pump(const Duration(seconds: 2));
+    expect(tester.binding.transientCallbackCount, 0);
+
+    theme = kDarkTheme;
+    await tester.pumpWidget(app());
+    theme = kDarkTheme9;
+    await tester.pumpWidget(app());
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.binding.transientCallbackCount, greaterThan(0));
+  });
+
+  testWidgets('hidden spider resumes its remaining bob time and stays settled after hide/show', (tester) async {
+    bool tickerEnabled = true;
+    StateSetter? rebuild;
+    Widget app() => MaterialApp(
+      theme: kDarkTheme9,
+      home: StatefulBuilder(
+        builder: (context, setState) {
+          rebuild = setState;
+          return Scaffold(
+            body: TickerMode(enabled: tickerEnabled, child: const SpookySpider()),
+          );
+        },
+      ),
+    );
+
+    await tester.pumpWidget(app());
+    await tester.pump(const Duration(seconds: 2));
+    final AnimationController bob =
+        tester
+                .widget<AnimatedBuilder>(
+                  find.descendant(of: find.byType(SpookySpider), matching: find.byType(AnimatedBuilder)),
+                )
+                .animation
+            as AnimationController;
+    final double pausedValue = bob.value;
+    expect(pausedValue, closeTo(2 / 10.4, 0.02));
+    rebuild!(() => tickerEnabled = false);
+    await tester.pump();
+    expect(tester.binding.transientCallbackCount, 0);
+    await tester.pump(const Duration(seconds: 20));
+    expect(bob.value, pausedValue);
+
+    rebuild!(() => tickerEnabled = true);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(bob.value, greaterThan(pausedValue));
+    await tester.pump(Duration(milliseconds: ((1 - bob.value) * 10400).ceil() + 100));
+    await tester.pump();
+    expect(tester.binding.transientCallbackCount, 0);
+    expect(_spiderOffsetY(tester), closeTo(0, 0.001));
+
+    rebuild!(() => tickerEnabled = false);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 20));
+    rebuild!(() => tickerEnabled = true);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.binding.transientCallbackCount, 0);
   });
 }
+
+double _spiderOffsetY(WidgetTester tester) => tester
+    .widget<Transform>(find.descendant(of: find.byType(SpookySpider), matching: find.byType(Transform)))
+    .transform
+    .getTranslation()
+    .y;

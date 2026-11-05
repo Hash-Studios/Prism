@@ -6,8 +6,8 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/spin_wheel/views/pages/spin_wheel_page.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,6 +20,37 @@ const SpinWheelStatus _paid = SpinWheelStatus(freeSpinAvailable: false, paidSpin
 const SpinWheelStatus _capped = SpinWheelStatus(freeSpinAvailable: false, paidSpinsLeft: 0, price: 10);
 
 const int _startBalance = 340;
+
+class _RouteRecorder extends NavigatorObserver {
+  PageRoute<dynamic>? pushed;
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (route is PageRoute<dynamic>) pushed = route;
+  }
+}
+
+class _TrackedAnimation extends Animation<double> {
+  int statusListeners = 0;
+
+  @override
+  double get value => 0.5;
+
+  @override
+  AnimationStatus get status => AnimationStatus.forward;
+
+  @override
+  void addListener(VoidCallback listener) {}
+
+  @override
+  void removeListener(VoidCallback listener) {}
+
+  @override
+  void addStatusListener(AnimationStatusListener listener) => statusListeners++;
+
+  @override
+  void removeStatusListener(AnimationStatusListener listener) => statusListeners--;
+}
 
 /// A landed spin. [balance] defaults to the start balance less the price plus the coins won.
 SpinWon _won(
@@ -579,6 +610,16 @@ void main() {
       expect(replies, isEmpty);
     });
 
+    testWidgets('rebuilding the result switch transition does not retain status listeners', (tester) async {
+      await pumpPage(tester);
+      final AnimatedSwitcher switcher = tester.widget<AnimatedSwitcher>(find.byType(AnimatedSwitcher).first);
+      final _TrackedAnimation animation = _TrackedAnimation();
+      for (int i = 0; i < 100; i++) {
+        switcher.transitionBuilder(const SizedBox(), animation);
+      }
+      expect(animation.statusListeners, 0);
+    });
+
     testWidgets('has a close button with a tooltip that leaves the route', (tester) async {
       DailyMomentConfig.enabledOverride = false;
       addTearDown(() => DailyMomentConfig.enabledOverride = null);
@@ -606,6 +647,32 @@ void main() {
       await pumpFor(tester, const Duration(milliseconds: 600));
       expect(find.text('Spin the wheel'), findsNothing);
       expect(find.text('open'), findsOneWidget);
+    });
+
+    testWidgets('rebuilding the wheel route transition does not retain status listeners', (tester) async {
+      DailyMomentConfig.enabledOverride = false;
+      addTearDown(() => DailyMomentConfig.enabledOverride = null);
+      final _RouteRecorder recorder = _RouteRecorder();
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorObservers: <NavigatorObserver>[recorder],
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          theme: kLightTheme,
+          home: Builder(
+            builder: (context) => TextButton(onPressed: () => showSpinWheel(context), child: const Text('open')),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pump();
+      final PageRoute<dynamic> route = recorder.pushed!;
+      final _TrackedAnimation animation = _TrackedAnimation();
+      final BuildContext context = tester.element(find.text('open'));
+      for (int i = 0; i < 100; i++) {
+        route.buildTransitions(context, animation, animation, const SizedBox());
+      }
+      expect(animation.statusListeners, 0);
     });
 
     testWidgets('the odds sheet lists every slice with its odds', (tester) async {

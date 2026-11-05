@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/features/shop/domain/cosmetic_styles.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -126,8 +127,8 @@ class _Sheen extends StatelessWidget {
     return IgnorePointer(
       child: TweenAnimationBuilder<double>(
         tween: Tween<double>(begin: -3, end: 3),
-        duration: const Duration(milliseconds: 900),
-        curve: Curves.easeInOut,
+        duration: context.motion(PrismDurations.slow * 2),
+        curve: PrismCurves.move,
         builder: (BuildContext context, double dx, Widget? _) => DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(

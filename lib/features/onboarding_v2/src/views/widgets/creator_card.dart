@@ -22,12 +22,12 @@ class CreatorCard extends StatelessWidget {
 
     return PressScale(
       child: AnimatedContainer(
-        duration: OnboardingMotion.short,
-        curve: OnboardingMotion.emphasized,
+        duration: context.motion(PrismDurations.fast),
+        curve: PrismCurves.enter,
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.35),
           borderRadius: cardRadius,
-          border: isSelected ? Border.all(color: accent, width: 2) : null,
+          border: Border.all(color: isSelected ? accent : OnboardingColors.transparent, width: 2),
         ),
         child: Material(
           color: OnboardingColors.transparent,
@@ -39,7 +39,7 @@ class CreatorCard extends StatelessWidget {
             },
             borderRadius: cardRadius,
             child: ClipRRect(
-              borderRadius: isSelected ? innerRadius : cardRadius,
+              borderRadius: innerRadius,
               child: _CardContent(creator: creator, isSelected: isSelected, accent: accent),
             ),
           ),
@@ -150,8 +150,8 @@ class _FollowButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: context.motion(const Duration(milliseconds: 180)),
-      curve: Curves.easeOut,
+      duration: context.motion(PrismDurations.fast),
+      curve: PrismCurves.enter,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
         color: isSelected ? accent : Colors.white.withValues(alpha: 0.15),

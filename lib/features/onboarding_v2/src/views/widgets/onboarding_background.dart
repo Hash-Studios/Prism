@@ -66,7 +66,7 @@ class OnboardingBackground extends StatelessWidget {
   }
 }
 
-/// Step-aware animated background: a scale reveal on mount, a blur that changes per step, and a
+/// Step-aware animated background: a blur that changes per step, and a
 /// cross-fade to the personalised wallpaper on the first wallpaper step.
 class OnboardingStepBackground extends StatefulWidget {
   const OnboardingStepBackground({super.key, required this.step, this.wallpaperUrl});
@@ -78,11 +78,7 @@ class OnboardingStepBackground extends StatefulWidget {
   State<OnboardingStepBackground> createState() => _OnboardingStepBackgroundState();
 }
 
-class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> with TickerProviderStateMixin {
-  // Scale-reveal — fires once on initial mount.
-  late final AnimationController _revealCtrl;
-  late final Animation<double> _revealAnim;
-
+class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> with SingleTickerProviderStateMixin {
   // Blur sigma — animated on every step change.
   late final AnimationController _blurCtrl;
   late Animation<double> _blurAnim;
@@ -94,32 +90,16 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
   void initState() {
     super.initState();
 
-    _revealCtrl = AnimationController(duration: OnboardingMotion.backgroundReveal, vsync: this);
-    _revealAnim = Tween<double>(
-      begin: 1.18,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _revealCtrl, curve: OnboardingMotion.reveal));
-
-    _blurCtrl = AnimationController(duration: OnboardingMotion.long, vsync: this);
+    _blurCtrl = AnimationController(duration: PrismDurations.base, vsync: this);
     _blurAnim = Tween<double>(begin: 0, end: 0).animate(_blurCtrl);
 
     _applyStep(widget.step, animate: false);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (context.reduceMotion) {
-        _revealCtrl.value = 1;
-      } else {
-        _revealCtrl.forward(from: 0);
-      }
-    });
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (context.reduceMotion) {
-      _revealCtrl.value = 1;
       _blurCtrl.value = 1;
     }
   }
@@ -137,13 +117,15 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
     if (showFinal != _showFinal) setState(() => _showFinal = showFinal);
 
     if (target != _blurTarget) {
-      final from = animate ? _blurAnim.value : target;
+      // Only ease between two blurred states; the 0 <-> blur jumps are hidden by other fades.
+      final from = _blurAnim.value;
+      final ease = animate && from > 0 && target > 0;
       _blurTarget = target;
       _blurAnim = Tween<double>(
-        begin: from,
+        begin: ease ? from : target,
         end: target,
-      ).animate(CurvedAnimation(parent: _blurCtrl, curve: OnboardingMotion.emphasized));
-      if (animate) {
+      ).animate(_blurCtrl.drive(CurveTween(curve: PrismCurves.enter)));
+      if (ease) {
         _blurCtrl.forward(from: 0);
       } else {
         _blurCtrl.value = 1;
@@ -162,7 +144,6 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
 
   @override
   void dispose() {
-    _revealCtrl.dispose();
     _blurCtrl.dispose();
     super.dispose();
   }
@@ -170,10 +151,9 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([_revealAnim, _blurAnim]),
+      animation: _blurAnim,
       child: OnboardingBackground(assetPath: OnboardingAssets.wallpaperPrimary, networkUrl: widget.wallpaperUrl),
       builder: (context, child) {
-        final revealScale = _revealAnim.value;
         final sigma = _blurAnim.value;
         return Stack(
           fit: StackFit.expand,
@@ -184,7 +164,7 @@ class _OnboardingStepBackgroundState extends State<OnboardingStepBackground> wit
               child: OnboardingBackground(
                 assetPath: OnboardingAssets.wallpaperPrimary,
                 blurSigma: sigma,
-                imageScale: revealScale * (sigma > 0 ? 1.04 : 1.0),
+                imageScale: sigma > 0 ? 1.04 : 1.0,
               ),
             ),
             AnimatedOpacity(

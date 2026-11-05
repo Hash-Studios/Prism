@@ -20,10 +20,12 @@ Widget _app({required bool reduceMotion, required Widget child}) => MaterialApp(
 );
 
 double _scaleOf(WidgetTester tester) {
-  final transform = tester.widget<Transform>(
-    find.descendant(of: find.byType(WelcomeArt).first, matching: find.byType(Transform)).first,
-  );
-  return transform.transform.getMaxScaleOnAxis();
+  return tester
+      .widget<ScaleTransition>(
+        find.descendant(of: find.byType(WelcomeBackground), matching: find.byType(ScaleTransition)).first,
+      )
+      .scale
+      .value;
 }
 
 void main() {

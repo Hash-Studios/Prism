@@ -18,7 +18,6 @@ import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
-import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/core/widgets/selection_action_bar.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
@@ -724,17 +723,15 @@ class _FavouriteGridState extends State<FavouriteGrid> {
         );
         return false;
       },
-      child: PulsePlaceholder(
-        builder: (context, _) => GridView.builder(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: PrismWallGrid.padding.copyWith(
-            top: PrismSpace.xxs,
-            bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md,
-          ),
-          itemCount: walls.length,
-          gridDelegate: PrismWallGrid.delegate(context),
-          itemBuilder: (context, index) => _tile(context, walls, index),
+      child: GridView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: PrismWallGrid.padding.copyWith(
+          top: PrismSpace.xxs,
+          bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md,
         ),
+        itemCount: walls.length,
+        gridDelegate: PrismWallGrid.delegate(context),
+        itemBuilder: (context, index) => _tile(context, walls, index),
       ),
     );
   }

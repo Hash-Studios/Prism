@@ -56,25 +56,30 @@ class PrismChip extends StatelessWidget {
                 color: selected ? cs.onSurface : cs.onSurface.withValues(alpha: compact ? 0.08 : 0.06),
                 borderRadius: BorderRadius.circular(PrismRadius.pill),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  if (leading != null) ...<Widget>[leading!, const SizedBox(width: 6)],
-                  if (leading == null && icon != null) ...<Widget>[
-                    Icon(icon, size: 16, color: fg),
-                    const SizedBox(width: 6),
-                  ],
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: PrismTextStyles.rowTitle(
-                        context,
-                      ).copyWith(fontSize: compact ? 13 : 14, height: compact ? kTextHeightNone : null, color: fg),
+              child: TweenAnimationBuilder<Color?>(
+                tween: ColorTween(end: fg),
+                duration: context.motion(PrismDurations.fast),
+                curve: PrismCurves.enter,
+                builder: (_, c, _) => Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    if (leading != null) ...<Widget>[leading!, const SizedBox(width: 6)],
+                    if (leading == null && icon != null) ...<Widget>[
+                      Icon(icon, size: 16, color: c),
+                      const SizedBox(width: 6),
+                    ],
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: PrismTextStyles.rowTitle(
+                          context,
+                        ).copyWith(fontSize: compact ? 13 : 14, height: compact ? kTextHeightNone : null, color: c),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

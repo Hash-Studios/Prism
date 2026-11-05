@@ -44,10 +44,12 @@ Future<void> showDailyChest(BuildContext context) {
           const DailyChestPage(),
       transitionsBuilder:
           (BuildContext context, Animation<double> animation, Animation<double> secondary, Widget child) {
-            final Animation<double> curved = CurvedAnimation(parent: animation, curve: PrismCurves.enter);
-            return FadeTransition(
-              opacity: curved,
-              child: ScaleTransition(scale: Tween<double>(begin: 0.96, end: 1).animate(curved), child: child),
+            return PrismEased(
+              animation: animation,
+              builder: (curved) => FadeTransition(
+                opacity: curved,
+                child: ScaleTransition(scale: Tween<double>(begin: 0.96, end: 1).animate(curved), child: child),
+              ),
             );
           },
     ),

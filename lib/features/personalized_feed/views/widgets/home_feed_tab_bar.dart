@@ -64,16 +64,6 @@ class _HomeFeedTabBarState extends State<HomeFeedTabBar> {
     return false;
   }
 
-  Shader _fade(Rect bounds, {required bool fadeEnd}) {
-    if (!fadeEnd) {
-      return const LinearGradient(colors: <Color>[Colors.white, Colors.white]).createShader(bounds);
-    }
-    return LinearGradient(
-      colors: const <Color>[Colors.white, Colors.white, Colors.transparent],
-      stops: <double>[0, 1 - HomeFeedTabBar._fadeWidth / bounds.width, 1],
-    ).createShader(bounds);
-  }
-
   void _handleTap(int index) {
     final HomeFeedChip chip = HomeFeedChip.values[index];
     if (chip != widget.selected) {
@@ -105,37 +95,46 @@ class _HomeFeedTabBarState extends State<HomeFeedTabBar> {
           ),
           NotificationListener<Notification>(
             onNotification: _onScrollMetrics,
-            child: ShaderMask(
-              blendMode: BlendMode.dstIn,
-              // A new closure each build, so the mask repaints when the fade turns on or off.
-              shaderCallback: (Rect bounds) => _fade(bounds, fadeEnd: _moreToTheRight),
-              child: MediaQuery.withClampedTextScaling(
-                maxScaleFactor: 1.5,
-                child: TabBar(
-                  controller: widget.controller,
-                  isScrollable: true,
-                  tabAlignment: TabAlignment.start,
-                  padding: const EdgeInsetsDirectional.only(start: HomeFeedTabBar._startInset),
-                  labelPadding: const EdgeInsets.symmetric(horizontal: HomeFeedTabBar._labelPadding),
-                  labelStyle: labelStyle,
-                  unselectedLabelStyle: labelStyle,
-                  indicator: UnderlineTabIndicator(
-                    borderSide: BorderSide(width: 4, color: cs.primary),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                  indicatorSize: TabBarIndicatorSize.label,
-                  dividerColor: Colors.transparent,
-                  splashFactory: NoSplash.splashFactory,
-                  overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
-                  onTap: _handleTap,
-                  tabs: <Widget>[
-                    for (final HomeFeedChip chip in HomeFeedChip.values)
-                      Tab(height: HomeFeedTabBar.height, child: _label(context, cs, chip)),
-                  ],
+            child: MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.5,
+              child: TabBar(
+                controller: widget.controller,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
+                padding: const EdgeInsetsDirectional.only(start: HomeFeedTabBar._startInset),
+                labelPadding: const EdgeInsets.symmetric(horizontal: HomeFeedTabBar._labelPadding),
+                labelStyle: labelStyle,
+                unselectedLabelStyle: labelStyle,
+                indicator: UnderlineTabIndicator(
+                  borderSide: BorderSide(width: 4, color: cs.primary),
+                  borderRadius: BorderRadius.circular(2),
                 ),
+                indicatorSize: TabBarIndicatorSize.label,
+                dividerColor: Colors.transparent,
+                splashFactory: NoSplash.splashFactory,
+                overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+                onTap: _handleTap,
+                tabs: <Widget>[
+                  for (final HomeFeedChip chip in HomeFeedChip.values)
+                    Tab(height: HomeFeedTabBar.height, child: _label(context, cs, chip)),
+                ],
               ),
             ),
           ),
+          if (_moreToTheRight)
+            Positioned(
+              top: 0,
+              bottom: 1,
+              right: 0,
+              width: HomeFeedTabBar._fadeWidth,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: <Color>[cs.surface.withValues(alpha: 0), cs.surface]),
+                  ),
+                ),
+              ),
+            ),
           if (widget.isRefreshing)
             Positioned(
               left: 0,

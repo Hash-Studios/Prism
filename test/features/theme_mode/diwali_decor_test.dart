@@ -106,6 +106,65 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('fireworks play twice, then rest on the still pose', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: kDarkTheme10,
+        themeAnimationDuration: Duration.zero,
+        home: const Scaffold(body: Stack(children: <Widget>[DiwaliFireworks()])),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.binding.transientCallbackCount, greaterThan(0));
+
+    await tester.pump(const Duration(milliseconds: 4200));
+    await tester.pump(const Duration(milliseconds: 4200));
+    await tester.pump();
+    await tester.pump();
+
+    expect(tester.binding.transientCallbackCount, 0);
+    expect(tester.binding.hasScheduledFrame, isFalse);
+    expect(find.byType(SvgPicture), findsNWidgets(3));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('reduced motion settles fireworks until Diwali is toggled off and on', (tester) async {
+    ThemeData theme = kDarkTheme10;
+    bool reduceMotion = false;
+    Widget app() => MaterialApp(
+      theme: theme,
+      themeAnimationDuration: Duration.zero,
+      home: MediaQuery(
+        data: MediaQueryData(disableAnimations: reduceMotion),
+        child: const Scaffold(body: DiwaliFireworks()),
+      ),
+    );
+
+    await tester.pumpWidget(app());
+    await tester.pump(const Duration(milliseconds: 500));
+    reduceMotion = true;
+    await tester.pumpWidget(app());
+    final AnimationController bloom =
+        tester
+                .widget<AnimatedBuilder>(
+                  find.descendant(of: find.byType(DiwaliFireworks), matching: find.byType(AnimatedBuilder)),
+                )
+                .animation
+            as AnimationController;
+    expect(bloom.value, 0);
+    reduceMotion = false;
+    await tester.pumpWidget(app());
+    await tester.pump(const Duration(seconds: 2));
+    expect(tester.binding.transientCallbackCount, 0);
+
+    theme = kDarkTheme;
+    await tester.pumpWidget(app());
+    theme = kDarkTheme10;
+    await tester.pumpWidget(app());
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.binding.transientCallbackCount, greaterThan(0));
+  });
+
   testWidgets('diya and fireworks stop while their ticker mode is disabled', (tester) async {
     bool tickerEnabled = true;
     StateSetter? rebuild;
@@ -146,17 +205,35 @@ void main() {
     expect(tester.binding.transientCallbackCount, greaterThan(0));
     expect(diyaController().isAnimating, isTrue);
     expect(fireworksController().isAnimating, isTrue);
+    final double pausedValue = fireworksController().value;
 
     rebuild!(() => tickerEnabled = false);
     await tester.pump();
     expect(tester.binding.transientCallbackCount, 0);
-    expect(<bool>[diyaController().isAnimating, fireworksController().isAnimating], <bool>[false, false]);
+    expect(diyaController().isAnimating, isFalse);
+    expect(fireworksController().value, pausedValue);
+    await tester.pump(const Duration(seconds: 20));
+    expect(fireworksController().value, pausedValue);
 
     rebuild!(() => tickerEnabled = true);
+    await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 100));
     expect(tester.binding.transientCallbackCount, greaterThan(0));
     expect(diyaController().isAnimating, isTrue);
     expect(fireworksController().isAnimating, isTrue);
+    expect(fireworksController().value, greaterThan(pausedValue));
+    await tester.pump(Duration(milliseconds: ((1 - fireworksController().value) * 8400).ceil() + 100));
+    await tester.pump();
+    expect(fireworksController().isAnimating, isFalse);
+    expect(fireworksController().value, 1);
+
+    rebuild!(() => tickerEnabled = false);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 20));
+    rebuild!(() => tickerEnabled = true);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(fireworksController().isAnimating, isFalse);
     expect(tester.takeException(), isNull);
   });
 

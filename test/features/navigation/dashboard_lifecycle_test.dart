@@ -10,6 +10,7 @@ import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart'
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/navigation/views/pages/dashboard_page.dart';
 import 'package:Prism/features/navigation/views/pages/home_tab_page.dart';
+import 'package:Prism/features/navigation/views/widgets/prism_fab.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -81,12 +82,10 @@ void main() {
       ..id = 'test-user'
       ..loggedIn = true;
     final router = _Router();
-    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox());
       router.dispose();
       unseen.dispose();
-      tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
       await getIt.reset();
       app_state.prismUser = constants.createGuestPrismUser();
     });
@@ -107,16 +106,66 @@ void main() {
     verify(() => categories.add(const CategoryFeedEvent.started())).called(1);
 
     final tabs = AutoTabsRouter.of(tester.element(find.text('Page HomeTabRoute')));
+    final Animation<double> fabTurns = tester
+        .widget<RotationTransition>(
+          find.descendant(of: find.byType(PrismFab), matching: find.byType(RotationTransition)).first,
+        )
+        .turns;
+    expect(fabTurns.status, AnimationStatus.completed);
     expect(TickerMode.valuesOf(tester.element(find.text('Page HomeTabRoute'))).enabled, isTrue);
     tabs.setActiveIndex(1);
-    await tester.pumpAndSettle();
+    await tester.pump();
     expect(find.text('Page SearchTabRoute'), findsOneWidget);
+    void expectPageFullyOpaque(String routeName) {
+      final Finder fades = find.ancestor(of: find.text('Page $routeName'), matching: find.byType(FadeTransition));
+      for (final Element fade in fades.evaluate()) {
+        expect(tester.widget<FadeTransition>(find.byWidget(fade.widget)).opacity.value, 1);
+      }
+    }
+
+    expectPageFullyOpaque(SearchTabRoute.name);
+    expect(
+      tester
+          .widget<RotationTransition>(
+            find.descendant(of: find.byType(PrismFab), matching: find.byType(RotationTransition)).first,
+          )
+          .turns,
+      same(fabTurns),
+    );
+    expect(fabTurns.status, AnimationStatus.completed);
     final homeFinder = find.text('Page HomeTabRoute', skipOffstage: false);
     expect(TickerMode.valuesOf(tester.element(homeFinder)).enabled, isFalse);
+    tabs.setActiveIndex(2);
+    await tester.pump();
+    expect(find.text('Page RewardsTabRoute'), findsOneWidget);
+    expectPageFullyOpaque(RewardsTabRoute.name);
+    tabs.setActiveIndex(3);
+    await tester.pump();
+    expect(find.text('Page CollectionTabRoute'), findsOneWidget);
+    expectPageFullyOpaque(CollectionTabRoute.name);
+    expect(
+      tester
+          .widget<RotationTransition>(
+            find.descendant(of: find.byType(PrismFab), matching: find.byType(RotationTransition)).first,
+          )
+          .turns,
+      same(fabTurns),
+    );
+    expect(fabTurns.status, AnimationStatus.completed);
     await tester.binding.handlePopRoute();
-    await tester.pumpAndSettle();
+    await tester.pump();
     expect(tabs.activeIndex, 0);
     expect(find.text('Page HomeTabRoute'), findsOneWidget);
+    expectPageFullyOpaque(HomeTabRoute.name);
+    expect(
+      tester
+          .widget<RotationTransition>(
+            find.descendant(of: find.byType(PrismFab), matching: find.byType(RotationTransition)).first,
+          )
+          .turns,
+      same(fabTurns),
+    );
+    expect(fabTurns.status, AnimationStatus.completed);
     expect(TickerMode.valuesOf(tester.element(find.text('Page HomeTabRoute'))).enabled, isTrue);
     verifyNever(() => categories.add(const CategoryFeedEvent.started()));
     verifyNever(() => notifications.add(const InAppNotificationsEvent.started()));
