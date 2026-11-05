@@ -856,7 +856,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.auto_awesome_outlined,
       title: context.l10n.accountClearLearnedTaste,
       subtitle: context.l10n.accountForgetFeedLearned,
-      showChevron: false,
+      showChevron: true,
       onTap: _clearLearnedTaste,
     ),
     PrismRow(

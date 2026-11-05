@@ -1136,7 +1136,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountPrismPro => 'Prism Pro';
 
   @override
-  String get accountPrivacyAction => 'PRIVACY';
+  String get accountPrivacyAction => 'Privacy policy';
 
   @override
   String get accountPrivacyAndData => 'Privacy and data';
@@ -1395,16 +1395,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountSignInToPrism => 'Sign in to Prism';
 
   @override
-  String get accountSocialGithub => 'GITHUB';
+  String get accountSocialGithub => 'GitHub';
 
   @override
-  String get accountSocialInstagram => 'INSTAGRAM';
+  String get accountSocialInstagram => 'Instagram';
 
   @override
-  String get accountSocialTelegram => 'TELEGRAM';
+  String get accountSocialTelegram => 'Telegram';
 
   @override
-  String get accountSocialTwitter => 'TWITTER';
+  String get accountSocialTwitter => 'Twitter';
 
   @override
   String get accountSomethingWentWrongTryAgain => 'Something went wrong. Try again.';
@@ -1445,7 +1445,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountTerms => 'Terms';
 
   @override
-  String get accountTermsAction => 'TERMS';
+  String get accountTermsAction => 'Terms of use';
 
   @override
   String accountTermsAgreementSemanticLabel(String terms, String privacy) {
@@ -1559,7 +1559,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountWhatsNew => 'What\'s new';
 
   @override
-  String get accountWhatsNewAction => 'WHAT\'S NEW';
+  String get accountWhatsNewAction => 'What\'s new';
 
   @override
   String get accountWriteBio => 'Write bio';
@@ -5963,7 +5963,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
     String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '${daysString}d', one: '1d');
     String _temp1 = intl.Intl.pluralLogic(hours, locale: localeName, other: '${hoursString}h', one: '1h');
-    return 'Resets Monday 00:00 UTC · $_temp0 $_temp1 left';
+    return 'Resets in $_temp0 $_temp1';
   }
 
   @override
@@ -6857,7 +6857,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get economyWeekComplete => 'Week complete!';
 
   @override
-  String get economyWeekly => 'WEEKLY';
+  String get economyWeekly => 'Weekly';
 
   @override
   String get economyWeeklyDraw => 'Weekly draw';
@@ -6867,7 +6867,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String economyWeeklyEndsIn(String time) {
-    return 'WEEKLY · $time';
+    return 'Weekly · $time';
   }
 
   @override
@@ -7105,20 +7105,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifGenericTitle => 'Notification';
-
-  @override
-  String notifGroupAndMore(String message, int otherCount) {
-    final intl.NumberFormat otherCountNumberFormat = intl.NumberFormat.decimalPattern(localeName);
-    final String otherCountString = otherCountNumberFormat.format(otherCount);
-
-    String _temp0 = intl.Intl.pluralLogic(
-      otherCount,
-      locale: localeName,
-      other: '$otherCountString more.',
-      one: '1 more.',
-    );
-    return '$message and $_temp0';
-  }
 
   @override
   String notifGroupApprovals(int count) {
@@ -7536,7 +7522,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingCategoriesUnavailable => 'we could not load categories, you can skip this step';
 
   @override
-  String get onboardingContinue => 'continue';
+  String get onboardingContinue => 'Continue';
 
   @override
   String get onboardingContinueApple => 'Continue with Apple';
@@ -7549,7 +7535,7 @@ class AppLocalizationsEn extends AppLocalizations {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
-    return 'continue ($countString selected)';
+    return 'Continue ($countString selected)';
   }
 
   @override
@@ -7617,7 +7603,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingGenerateSuccess => 'looking good! opening your wallpaper';
 
   @override
-  String get onboardingGenerateWallpaper => 'generate my wallpaper';
+  String get onboardingGenerateWallpaper => 'Generate my wallpaper';
 
   @override
   String get onboardingHeadlineCreators => 'Find your people';
@@ -7682,36 +7668,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingRecoverySignIn => 'Sign in again';
 
   @override
-  String get onboardingReloadLower => 'reload';
+  String get onboardingReloadLower => 'Reload';
 
   @override
-  String get onboardingSavePhotos => 'save to photos';
+  String get onboardingSavePhotos => 'Save to photos';
 
   @override
   String onboardingSelectInterestMinimum(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
-    return 'select at least $countString categories to personalize your feed';
+    return 'Select at least $countString categories to personalize your feed';
   }
 
   @override
-  String get onboardingSetWallpaper => 'set as wallpaper';
+  String get onboardingSetWallpaper => 'Set as wallpaper';
 
   @override
-  String get onboardingSignInAgainLower => 'sign in again';
+  String get onboardingSignInAgainLower => 'Sign in again';
 
   @override
   String get onboardingSkip => 'Skip';
 
   @override
-  String get onboardingSkipLower => 'skip';
+  String get onboardingSkipLower => 'Skip';
 
   @override
   String get onboardingTermsRequired => 'Please agree to the Terms and Privacy policy first.';
 
   @override
-  String get onboardingTryAgainLower => 'try again';
+  String get onboardingTryAgainLower => 'Try again';
 
   @override
   String onboardingWallpaperForInterest(String category) {
@@ -9534,10 +9520,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperStartupFailed => 'Prism could not start';
 
   @override
-  String get wallpaperThemeDarkAccent => 'Dark Accent Color';
+  String get wallpaperThemeDarkAccent => 'Dark accent colour';
 
   @override
-  String get wallpaperThemeDarkThemes => 'Dark Themes';
+  String get wallpaperThemeDarkThemes => 'Dark themes';
 
   @override
   String get wallpaperUseAsAppAccent => 'Use as app accent';
@@ -9546,10 +9532,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperAppAccentUpdated => 'App accent updated';
 
   @override
-  String get wallpaperThemeLightAccent => 'Light Accent Color';
+  String get wallpaperThemeLightAccent => 'Light accent colour';
 
   @override
-  String get wallpaperThemeLightThemes => 'Light Themes';
+  String get wallpaperThemeLightThemes => 'Light themes';
 
   @override
   String get wallpaperThemeModeDark => 'Dark';
@@ -9558,7 +9544,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperThemeModeLight => 'Light';
 
   @override
-  String get wallpaperThemeModeSystem => 'System (Light/Dark)';
+  String get wallpaperThemeModeSystem => 'System';
 
   @override
   String get wallpaperThemePreference => 'Theme Preference';
@@ -11820,7 +11806,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String challengeVotingRules(String date) {
-    return 'Vote for other creators until $date UTC.';
+    return 'Vote for other creators until $date.';
   }
 
   @override
@@ -13866,4 +13852,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchPhotoCouldNotOpen => 'Couldn\'t open that photo. Try another one.';
+
+  @override
+  String get searchMoreWallpapers => 'More wallpapers';
+
+  @override
+  String get wallpaperPreviewNoEvents => 'No events today';
 }

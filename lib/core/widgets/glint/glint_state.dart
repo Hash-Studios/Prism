@@ -31,6 +31,9 @@ enum GlintStateKind {
 /// On a tall area (480 and up) the state sits above the centre, where the eye lands first. The action is the
 /// screen's primary action by default. A page that already shows a primary action (or a bottom bar) passes
 /// [PrismButtonVariant.tonal] as [actionVariant].
+///
+/// When large text makes the state taller than its area, it scrolls instead of overflowing. Below 260 points it scales
+/// down to fit.
 class GlintState extends StatelessWidget {
   const GlintState({
     super.key,
@@ -105,13 +108,18 @@ class GlintState extends StatelessWidget {
                 ),
                 child: body,
               );
-        final Widget centered = tall
-            ? Align(alignment: const Alignment(0, -0.35), child: animated)
-            : Center(child: animated);
+        Widget centered = tall ? Align(alignment: const Alignment(0, -0.35), child: animated) : Center(child: animated);
         if (kind == GlintStateKind.error || kind == GlintStateKind.offline) {
-          return Semantics(liveRegion: true, container: true, child: centered);
+          centered = Semantics(liveRegion: true, container: true, child: centered);
         }
-        return centered;
+        if (tight || !constraints.hasBoundedHeight) return centered;
+        return SingleChildScrollView(
+          primary: false,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: centered,
+          ),
+        );
       },
     );
   }

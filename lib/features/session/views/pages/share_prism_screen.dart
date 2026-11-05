@@ -118,14 +118,13 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
   Widget build(BuildContext context) {
     return PrismPage(
       title: context.l10n.accountInviteFriends,
-      bottomBar: PrismButton(
-        label: context.l10n.accountShareInvite,
-        expand: true,
-        loading: _loading,
-        onPressed: _share,
-      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxl, PrismSpace.page, PrismSpace.xl),
+        padding: EdgeInsets.fromLTRB(
+          PrismSpace.page,
+          PrismSpace.xxl,
+          PrismSpace.page,
+          PrismSpace.xl + MediaQuery.paddingOf(context).bottom,
+        ),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
@@ -134,10 +133,13 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
               children: <Widget>[
                 const Glint(mood: GlintMood.happy, size: 120),
                 const SizedBox(height: PrismSpace.lg),
-                Text(
-                  context.l10n.accountInviteRewardHeadline(CoinPolicy.referral),
-                  textAlign: TextAlign.center,
-                  style: PrismTextStyles.display(context),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 300),
+                  child: Text(
+                    context.l10n.accountInviteRewardHeadline(CoinPolicy.referral),
+                    textAlign: TextAlign.center,
+                    style: PrismTextStyles.display(context),
+                  ),
                 ),
                 const SizedBox(height: PrismSpace.xs),
                 Text(
@@ -154,6 +156,9 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                   onCopy: () => unawaited(_copy()),
                   onRetry: () => unawaited(_loadLink()),
                 ),
+                // The page is short, so the action follows the link instead of sitting in a bottom bar.
+                const SizedBox(height: PrismSpace.xl),
+                PrismButton(label: context.l10n.accountShareInvite, expand: true, loading: _loading, onPressed: _share),
               ],
             ),
           ),

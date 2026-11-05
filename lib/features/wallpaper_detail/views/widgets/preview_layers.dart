@@ -505,7 +505,7 @@ class HomePreviewLayer extends StatelessWidget {
   }
 }
 
-/// The 2x2 widget at the top of the iOS home screen: the weekday and the date. No placeholder events.
+/// The 2x2 widget at the top of the iOS home screen: the weekday, the date and "No events today" as iOS shows it.
 class _CalendarWidget extends StatelessWidget {
   const _CalendarWidget({required this.size, required this.style, required this.scheme, required this.now});
 
@@ -556,6 +556,18 @@ class _CalendarWidget extends StatelessWidget {
                 fontSize: 46 * unit,
                 fontWeight: FontWeight.w300,
                 height: 1.05,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              context.l10n.wallpaperPreviewNoEvents,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: text.withValues(alpha: 0.6),
+                fontFamily: 'CupertinoSystemText',
+                fontSize: 13 * unit,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],

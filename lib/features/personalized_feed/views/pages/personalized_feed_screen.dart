@@ -46,6 +46,7 @@ import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
 import 'package:Prism/features/wallpaper_history/views/widgets/pick_up_row.dart';
+import 'package:Prism/features/weekly_challenges/biz/weekly_challenges_cubit.dart';
 import 'package:Prism/features/weekly_challenges/views/widgets/weekly_challenge_card.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -123,6 +124,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   WallpaperImpressionSession _impressions = WallpaperImpressionSession();
   int _refreshVersion = 0;
   int _moodRowsRevision = 0;
+  final WeeklyChallengesCubit _challenge = getIt<WeeklyChallengesCubit>();
   int _moodLoadVersion = 0;
   bool _moodsReady = false;
 
@@ -186,6 +188,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       if (resetImpressions) _impressions = WallpaperImpressionSession();
       _moodRowsRevision++;
     });
+    unawaited(_challenge.loadOpen());
   }
 
   Future<bool> _loadHomeMoods() async {
@@ -205,6 +208,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     _tabs.dispose();
     unawaited(_bloc.close());
     unawaited(_trending.close());
+    unawaited(_challenge.close());
     unawaited(_latest?.close());
     unawaited(_following?.close());
     unawaited(_popular?.close());
@@ -608,8 +612,18 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
           ),
         ),
         if (!loadingFirstPage)
-          SliverToBoxAdapter(child: WeeklyChallengeCard(key: ValueKey('challenge-$_moodRowsRevision'))),
-        if (!loadingFirstPage) SliverToBoxAdapter(child: MoodChipRow(moods: moods)),
+          SliverToBoxAdapter(
+            // The challenge chip leads the mood row. With no open challenge and no moods the row stays out.
+            child: BlocBuilder<WeeklyChallengesCubit, WeeklyChallengesState>(
+              bloc: _challenge,
+              builder: (context, challenge) => MoodChipRow(
+                moods: moods,
+                leading: challenge.current == null
+                    ? null
+                    : WeeklyChallengeCard(key: ValueKey('challenge-$_moodRowsRevision'), cubit: _challenge),
+              ),
+            ),
+          ),
         ..._forYouGridSlivers(context, visibleState, visibleItems, moods, crossAxisCount, tileMemCacheHeight),
       ],
     );

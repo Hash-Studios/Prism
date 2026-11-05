@@ -266,7 +266,7 @@ void main() {
     final Rect pill = tester.getRect(find.byType(PrismBottomNav));
     final Rect create = tester.getRect(find.byType(PrismFab));
     final Rect account = tester.getRect(find.byTooltip('Profile and notifications'));
-    expect(pill.size, Size(PrismBottomNav.maxLength, 56));
+    expect(pill.size, Size(PrismBottomNav.maxLength(labels: false), 56));
     expect(create.size, const Size(56, 56));
     expect(account.size, const Size(44, 44));
     expect(account.center.dx, create.center.dx);
@@ -282,7 +282,7 @@ void main() {
     expect(find.byTooltip('Notifications'), findsNothing);
     final Rect pill = tester.getRect(find.byType(PrismBottomNav));
     final Rect account = tester.getRect(find.byTooltip('Profile and notifications'));
-    expect(pill.size, Size(PrismBottomNav.maxLength, 56));
+    expect(pill.size, Size(PrismBottomNav.maxLength(labels: false), 56));
     expect(account.size, const Size(44, 44));
     expect(account.right, lessThanOrEqualTo(pill.left));
     expect(account.center.dy, pill.center.dy);
@@ -332,7 +332,7 @@ void main() {
     await _pump(tester, width: 390, bloc: _bloc(0), prefs: _prefs(tester, oneHanded: true), textScale: 2);
 
     expect(tester.takeException(), isNull);
-    expect(tester.getSize(find.byType(PrismBottomNav)).width, PrismBottomNav.maxLength);
+    expect(tester.getSize(find.byType(PrismBottomNav)).width, PrismBottomNav.maxLength(labels: false));
   });
 
   for (final direction in TextDirection.values) {
@@ -362,7 +362,9 @@ void main() {
           expect(tester.takeException(), isNull);
           final Rect pill = tester.getRect(find.byType(PrismBottomNav));
           final Rect create = tester.getRect(find.byType(PrismFab));
-          expect(pill.size, const Size(200, 56));
+          // Labels widen the pill to 264. They show only where the avatar, the bell and the labelled pill all fit.
+          final bool labelled = width - left - right - 20 >= 116 + 264 + 4 + 44;
+          expect(pill.size, Size(labelled ? 264 : 200, 56));
           expect(create.size, const Size(56, 56));
           expect(find.bySemanticsLabel('Upload').hitTestable(), findsOneWidget);
           final bool stacked = width - left - right < 336;

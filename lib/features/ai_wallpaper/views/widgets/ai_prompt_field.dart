@@ -40,30 +40,34 @@ class AiPromptField extends StatelessWidget {
           maxLength: maxChars,
         ),
         const SizedBox(height: PrismSpace.xs),
-        Wrap(
-          spacing: PrismSpace.xs,
-          children: <Widget>[
-            Tooltip(
-              message: l10n.economyAiShuffleMessage,
-              child: PrismButton(
-                label: l10n.economyAiShuffle,
-                icon: Icons.shuffle_rounded,
-                variant: PrismButtonVariant.ghost,
-                size: PrismButtonSize.compact,
-                onPressed: enabled ? onShuffle : null,
+        // Ghost buttons pad their label by 16, so shift the row back to put the labels on the field's edge.
+        Transform.translate(
+          offset: Offset(Directionality.of(context) == TextDirection.rtl ? PrismSpace.md : -PrismSpace.md, 0),
+          child: Wrap(
+            spacing: PrismSpace.xs,
+            children: <Widget>[
+              Tooltip(
+                message: l10n.economyAiShuffleMessage,
+                child: PrismButton(
+                  label: l10n.economyAiShuffle,
+                  icon: Icons.shuffle_rounded,
+                  variant: PrismButtonVariant.ghost,
+                  size: PrismButtonSize.compact,
+                  onPressed: enabled ? onShuffle : null,
+                ),
               ),
-            ),
-            Tooltip(
-              message: l10n.economyAiSceneIdeaMessage,
-              child: PrismButton(
-                label: l10n.economyAiSceneIdea,
-                icon: Icons.lightbulb_outline_rounded,
-                variant: PrismButtonVariant.ghost,
-                size: PrismButtonSize.compact,
-                onPressed: enabled ? onSceneIdea : null,
+              Tooltip(
+                message: l10n.economyAiSceneIdeaMessage,
+                child: PrismButton(
+                  label: l10n.economyAiSceneIdea,
+                  icon: Icons.lightbulb_outline_rounded,
+                  variant: PrismButtonVariant.ghost,
+                  size: PrismButtonSize.compact,
+                  onPressed: enabled ? onSceneIdea : null,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );

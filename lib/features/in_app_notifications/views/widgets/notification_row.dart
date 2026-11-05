@@ -169,7 +169,7 @@ class NotificationRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     localizedNotificationCopy(notification, context.l10n).body,
-                    maxLines: 3,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: PrismTextStyles.body(context),
                   ),
@@ -234,15 +234,27 @@ class NotificationTitleLine extends StatelessWidget {
           ),
         ),
         const SizedBox(width: PrismSpace.xs),
+        // With a chevron, the dot sits before the time so the 24 point end column holds one thing.
+        if (unread && trailing != null) ...<Widget>[
+          const Padding(padding: EdgeInsets.only(top: 7), child: UnreadDot()),
+          const SizedBox(width: PrismSpace.xs),
+        ],
         Padding(
           padding: const EdgeInsets.only(top: 2),
           child: Text(time, style: PrismTextStyles.caption(context)),
         ),
-        if (unread) ...<Widget>[
-          const SizedBox(width: PrismSpace.xs),
-          const Padding(padding: EdgeInsets.only(top: 7), child: UnreadDot()),
-        ],
-        ?trailing,
+        // A fixed end column keeps the time at the same place in every row.
+        SizedBox(
+          width: 24,
+          child:
+              trailing ??
+              (unread
+                  ? const Padding(
+                      padding: EdgeInsets.only(top: 7),
+                      child: Center(child: UnreadDot()),
+                    )
+                  : null),
+        ),
       ],
     );
   }

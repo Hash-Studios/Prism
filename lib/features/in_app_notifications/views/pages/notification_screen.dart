@@ -361,17 +361,14 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                                 title: title,
                                 time: notificationTimeLabel(first.createdAt, l10n: l10n, locale: locale),
                                 unread: group.unreadCount > 0,
-                                trailing: Padding(
-                                  padding: const EdgeInsets.only(left: PrismSpace.xxs),
-                                  child: AnimatedRotation(
-                                    turns: expanded ? 0.5 : 0,
-                                    duration: context.motion(PrismDurations.fast),
-                                    curve: PrismCurves.move,
-                                    child: Icon(
-                                      Icons.expand_more_rounded,
-                                      size: 20,
-                                      color: cs.onSurface.withValues(alpha: 0.6),
-                                    ),
+                                trailing: AnimatedRotation(
+                                  turns: expanded ? 0.5 : 0,
+                                  duration: context.motion(PrismDurations.fast),
+                                  curve: PrismCurves.move,
+                                  child: Icon(
+                                    Icons.expand_more_rounded,
+                                    size: 20,
+                                    color: cs.onSurface.withValues(alpha: 0.6),
                                   ),
                                 ),
                               ),
@@ -384,7 +381,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                                 const SizedBox(height: PrismSpace.xxs),
                                 Text(
                                   collapsedGroupSummaryLine(group, l10n),
-                                  maxLines: 3,
+                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: PrismTextStyles.body(context),
                                 ),

@@ -283,10 +283,10 @@ class _Step extends StatelessWidget {
           ExcludeSemantics(
             child: CircleAvatar(
               radius: 14,
-              backgroundColor: cs.primary.withValues(alpha: 0.14),
+              backgroundColor: cs.primary,
               child: Text(
                 '$number',
-                style: PrismTextStyles.caption(context).copyWith(color: cs.primary, fontWeight: FontWeight.w700),
+                style: PrismTextStyles.caption(context).copyWith(color: cs.onPrimary, fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -330,8 +330,11 @@ class _Step extends StatelessWidget {
                     ),
                   ),
                 if (note case final String text) ...<Widget>[
-                  const SizedBox(height: PrismSpace.xs),
-                  Text(text, style: PrismTextStyles.body(context)),
+                  const SizedBox(height: PrismSpace.sm),
+                  PrismCard(
+                    padding: const EdgeInsets.all(PrismSpace.sm),
+                    child: Text(text, style: PrismTextStyles.body(context)),
+                  ),
                 ],
                 if (action case final Widget button) ...<Widget>[const SizedBox(height: PrismSpace.sm), button],
               ],

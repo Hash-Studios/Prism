@@ -1130,7 +1130,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountPrismPro => 'Prism Pro';
 
   @override
-  String get accountPrivacyAction => 'गोपनीयता';
+  String get accountPrivacyAction => 'गोपनीयता नीति';
 
   @override
   String get accountPrivacyAndData => 'गोपनीयता और डेटा';
@@ -1390,16 +1390,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountSignInToPrism => 'Prism में साइन इन करें';
 
   @override
-  String get accountSocialGithub => 'GITHUB';
+  String get accountSocialGithub => 'GitHub';
 
   @override
-  String get accountSocialInstagram => 'INSTAGRAM';
+  String get accountSocialInstagram => 'Instagram';
 
   @override
-  String get accountSocialTelegram => 'TELEGRAM';
+  String get accountSocialTelegram => 'Telegram';
 
   @override
-  String get accountSocialTwitter => 'TWITTER';
+  String get accountSocialTwitter => 'Twitter';
 
   @override
   String get accountSomethingWentWrongTryAgain => 'कुछ गड़बड़ हुई। फिर कोशिश करें।';
@@ -1440,7 +1440,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountTerms => 'शर्तें';
 
   @override
-  String get accountTermsAction => 'शर्तें';
+  String get accountTermsAction => 'उपयोग की शर्तें';
 
   @override
   String accountTermsAgreementSemanticLabel(String terms, String privacy) {
@@ -6060,7 +6060,7 @@ class AppLocalizationsHi extends AppLocalizations {
       other: '$hoursString घंटे',
       one: '$hoursString घंटा',
     );
-    return 'सोमवार 00:00 UTC पर रीसेट · $_temp0 $_temp1 बाकी';
+    return '$_temp0 $_temp1 में रीसेट';
   }
 
   @override
@@ -7222,20 +7222,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notifGenericTitle => 'सूचना';
-
-  @override
-  String notifGroupAndMore(String message, int otherCount) {
-    final intl.NumberFormat otherCountNumberFormat = intl.NumberFormat.decimalPattern(localeName);
-    final String otherCountString = otherCountNumberFormat.format(otherCount);
-
-    String _temp0 = intl.Intl.pluralLogic(
-      otherCount,
-      locale: localeName,
-      other: '$otherCountString और।',
-      one: '$otherCountString और।',
-    );
-    return '$message और $_temp0';
-  }
 
   @override
   String notifGroupApprovals(int count) {
@@ -9694,7 +9680,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperThemeModeLight => 'हल्का';
 
   @override
-  String get wallpaperThemeModeSystem => 'सिस्टम (हल्का/गहरा)';
+  String get wallpaperThemeModeSystem => 'सिस्टम';
 
   @override
   String get wallpaperThemePreference => 'थीम की पसंद';
@@ -11964,7 +11950,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String challengeVotingRules(String date) {
-    return 'अन्य रचनाकारों के लिए $date UTC तक वोट दें।';
+    return 'अन्य रचनाकारों के लिए $date तक वोट दें।';
   }
 
   @override
@@ -14015,4 +14001,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get searchPhotoCouldNotOpen => 'वह फ़ोटो खोली नहीं जा सकी। कोई और फ़ोटो आज़माएं।';
+
+  @override
+  String get searchMoreWallpapers => 'और वॉलपेपर';
+
+  @override
+  String get wallpaperPreviewNoEvents => 'आज कोई इवेंट नहीं';
 }

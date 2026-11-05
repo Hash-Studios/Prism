@@ -16,9 +16,9 @@ String appliedTargetLabel(AppLocalizations l10n, String target) => switch (targe
   _ => target,
 };
 
-/// Room under a tile for the screen and the time, at the current text size.
+/// Room under a tile for one caption line, the screen and the time, at the current text size.
 double appliedWallpaperFooterHeight(BuildContext context) =>
-    MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.5).scale(36) + PrismSpace.xs;
+    MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.5).scale(18) + PrismSpace.xs;
 
 /// One wallpaper in history: the image, what happened to it and when. A tap opens it; the button on the image, when
 /// given, sets it again. A recently viewed tile shows only the time.
@@ -143,14 +143,12 @@ class AppliedWallpaperTile extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    if (!viewed)
-                      Text(
-                        target,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 13),
-                      ),
-                    Text(time, maxLines: 1, overflow: TextOverflow.ellipsis, style: PrismTextStyles.caption(context)),
+                    Text(
+                      viewed ? time : '$target · $time',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: PrismTextStyles.caption(context),
+                    ),
                   ],
                 ),
               ),

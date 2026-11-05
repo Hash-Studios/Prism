@@ -67,6 +67,9 @@ void main() {
     expect(find.text('Give 100, get 100'), findsOneWidget);
     expect(find.text('Your friend gets 100 coins when they join. You get 100 too.'), findsOneWidget);
     expect(find.text('Share invite'), findsOneWidget);
+    // A short page: the action follows the link card instead of a pinned bottom bar.
+    expect(tester.widget<Scaffold>(find.byType(Scaffold)).bottomNavigationBar, isNull);
+    expect(tester.getSize(find.text('Give 100, get 100')).width, lessThanOrEqualTo(300));
   });
 
   testWidgets('without an account the link card says to sign in and sharing prompts for sign-in', (tester) async {

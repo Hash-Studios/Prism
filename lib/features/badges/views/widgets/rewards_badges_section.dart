@@ -27,7 +27,13 @@ class _BadgesBody extends StatelessWidget {
     return BlocBuilder<BadgesBloc, BadgesState>(
       builder: (context, state) {
         final Set<String> earned = state.earnedIds.toSet();
-        final int count = badgeCatalog.where((BadgeInfo b) => earned.contains(b.id)).length;
+        final List<BadgeInfo> earnedBadges = badgeCatalog.where((BadgeInfo b) => earned.contains(b.id)).toList();
+        final int count = earnedBadges.length;
+        // Earned first, each half in catalog order.
+        final List<BadgeInfo> badges = <BadgeInfo>[
+          ...earnedBadges,
+          ...badgeCatalog.where((BadgeInfo b) => !earned.contains(b.id)),
+        ];
         return Padding(
           padding: const EdgeInsets.only(top: 32),
           child: Column(
@@ -38,12 +44,9 @@ class _BadgesBody extends StatelessWidget {
                 child: Text(context.l10n.economyBadges, style: PrismTextStyles.sectionTitle(context)),
               ),
               const SizedBox(height: 4),
-              Text(
-                context.l10n.economyBadgeEarnedCount(count, badgeCatalog.length),
-                style: PrismTextStyles.caption(context),
-              ),
+              Text(context.l10n.economyBadgeEarnedCount(count, badges.length), style: PrismTextStyles.caption(context)),
               const SizedBox(height: 12),
-              for (int i = 0; i < badgeCatalog.length; i += 2) ...<Widget>[
+              for (int i = 0; i < badges.length; i += 2) ...<Widget>[
                 if (i > 0) const SizedBox(height: 12),
                 // Both tiles in a row take the taller one's height.
                 IntrinsicHeight(
@@ -51,12 +54,12 @@ class _BadgesBody extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       Expanded(
-                        child: _BadgeTile(info: badgeCatalog[i], earned: earned.contains(badgeCatalog[i].id)),
+                        child: _BadgeTile(info: badges[i], earned: earned.contains(badges[i].id)),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: i + 1 < badgeCatalog.length
-                            ? _BadgeTile(info: badgeCatalog[i + 1], earned: earned.contains(badgeCatalog[i + 1].id))
+                        child: i + 1 < badges.length
+                            ? _BadgeTile(info: badges[i + 1], earned: earned.contains(badges[i + 1].id))
                             : const SizedBox.shrink(),
                       ),
                     ],
@@ -91,7 +94,7 @@ class _BadgeTile extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: cs.onSurface.withValues(alpha: 0.1)),
+          border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,15 +109,13 @@ class _BadgeTile extends StatelessWidget {
               child: Icon(
                 earned ? info.icon : Icons.lock_outline_rounded,
                 size: 22,
-                color: earned ? cs.onPrimary : cs.onSurface.withValues(alpha: 0.4),
+                color: earned ? cs.onPrimary : cs.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 10),
             Text(
               info.name(context.l10n),
-              style: PrismTextStyles.rowTitle(
-                context,
-              ).copyWith(color: earned ? null : cs.onSurface.withValues(alpha: 0.55)),
+              style: PrismTextStyles.rowTitle(context).copyWith(color: earned ? null : cs.onSurfaceVariant),
             ),
             const SizedBox(height: 2),
             Text(info.description(context.l10n), style: PrismTextStyles.caption(context)),

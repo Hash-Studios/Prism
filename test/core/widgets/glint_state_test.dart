@@ -112,6 +112,31 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('at 2x text a state taller than its area scrolls instead of overflowing', (tester) async {
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+        child: host(
+          GlintState(
+            kind: GlintStateKind.error,
+            title: 'Could not load your folders',
+            body: 'Check your connection and try again. Your folders are safe and will come back.',
+            actionLabel: 'Try again',
+            onAction: () {},
+          ),
+          size: const Size(320, 300),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.takeException(), isNull);
+    expect(find.byType(FittedBox), findsNothing, reason: 'not tight, so no scale-down');
+    final ScrollableState scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+    expect(scrollable.position.maxScrollExtent, greaterThan(0));
+    await tester.scrollUntilVisible(find.text('Try again'), 50, scrollable: find.byType(Scrollable));
+    expect(find.text('Try again').hitTestable(), findsOneWidget);
+  });
+
   testWidgets('title and body remain visible in light and dark themes', (tester) async {
     for (final ThemeData theme in <ThemeData>[kLightTheme3, kDarkTheme8]) {
       await tester.pumpWidget(

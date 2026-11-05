@@ -1310,7 +1310,7 @@
   "@accountPrismPro": {
     "description": "Prism Pro drawer heading."
   },
-  "accountPrivacyAction": "DATENSCHUTZ",
+  "accountPrivacyAction": "Datenschutzerklärung",
   "@accountPrivacyAction": {
     "description": "About page action to view the privacy policy."
   },
@@ -1662,19 +1662,19 @@
   "@accountSignInToPrism": {
     "description": "Heading for the signed-out settings account card."
   },
-  "accountSocialGithub": "GITHUB",
+  "accountSocialGithub": "GitHub",
   "@accountSocialGithub": {
     "description": "About page social link label for GitHub."
   },
-  "accountSocialInstagram": "INSTAGRAM",
+  "accountSocialInstagram": "Instagram",
   "@accountSocialInstagram": {
     "description": "About page social link label for Instagram."
   },
-  "accountSocialTelegram": "TELEGRAM",
+  "accountSocialTelegram": "Telegram",
   "@accountSocialTelegram": {
     "description": "About page social link label for Telegram."
   },
-  "accountSocialTwitter": "TWITTER",
+  "accountSocialTwitter": "Twitter",
   "@accountSocialTwitter": {
     "description": "About page social link label for Twitter."
   },
@@ -1738,7 +1738,7 @@
   "@accountTerms": {
     "description": "Terms of use link label."
   },
-  "accountTermsAction": "BEDINGUNGEN",
+  "accountTermsAction": "Nutzungsbedingungen",
   "@accountTermsAction": {
     "description": "About page action to view the terms of use."
   },
@@ -1907,7 +1907,7 @@
   "@accountWhatsNew": {
     "description": "Menu item for the release changelog."
   },
-  "accountWhatsNewAction": "NEUIGKEITEN",
+  "accountWhatsNewAction": "Neuigkeiten",
   "@accountWhatsNewAction": {
     "description": "About page action to view changes."
   },
@@ -5061,7 +5061,7 @@
   "economyLeaderboardNoRankings": "Noch keine Rangliste",
   "economyLeaderboardOffline": "Wenn du offline bist, werden möglicherweise gespeicherte Ergebnisse angezeigt.",
   "economyLeaderboardRankedByXp": "Sortiert nach den diese Woche verdienten XP",
-  "economyLeaderboardReset": "Wird Montag um 00:00 UTC zurückgesetzt · noch {days, plural, one{1 T.} other{{days} T.}} {hours, plural, one{1 Std.} other{{hours} Std.}}",
+  "economyLeaderboardReset": "Wird in {days, plural, one{1 T.} other{{days} T.}} {hours, plural, one{1 Std.} other{{hours} Std.}} zurückgesetzt",
   "@economyLeaderboardReset": {
     "placeholders": {
       "days": {
@@ -5836,10 +5836,10 @@
     }
   },
   "economyWeekComplete": "Woche abgeschlossen!",
-  "economyWeekly": "WÖCHENTLICH",
+  "economyWeekly": "Wöchentlich",
   "economyWeeklyDraw": "Wöchentliche Verlosung",
   "economyWeeklyDrop": "Wöchentlicher Drop",
-  "economyWeeklyEndsIn": "WÖCHENTLICH · {time}",
+  "economyWeeklyEndsIn": "Wöchentlich · {time}",
   "@economyWeeklyEndsIn": {
     "placeholders": {
       "time": {
@@ -6019,18 +6019,6 @@
   "notifEmptyTitle": "Keine Benachrichtigungen",
   "notifExpanded": "Ausgeklappt",
   "notifGenericTitle": "Benachrichtigung",
-  "notifGroupAndMore": "{message} und {otherCount, plural, one{1 weitere.} other{{otherCount} weitere.}}",
-  "@notifGroupAndMore": {
-    "placeholders": {
-      "message": {
-        "type": "String"
-      },
-      "otherCount": {
-        "type": "int",
-        "format": "decimalPattern"
-      }
-    }
-  },
   "notifGroupApprovals": "{count, plural, one{Freigabe} other{Freigaben}}",
   "@notifGroupApprovals": {
     "placeholders": {
@@ -6475,7 +6463,7 @@
   "onboardingRecoverySetupFailed": "Einrichtung nicht abgeschlossen. Versuche es erneut.",
   "onboardingRecoverySetupFailedHelper": "Einrichtung nicht abgeschlossen. Prüfe deine Verbindung und versuche es erneut.",
   "onboardingRecoverySignIn": "Erneut anmelden",
-  "onboardingReloadLower": "neu laden",
+  "onboardingReloadLower": "Neu laden",
   "onboardingSavePhotos": "In Fotos speichern",
   "onboardingSelectInterestMinimum": "Wähle mindestens {count} Kategorien aus, damit wir deinen Feed personalisieren können",
   "@onboardingSelectInterestMinimum": {
@@ -6487,11 +6475,11 @@
     }
   },
   "onboardingSetWallpaper": "Als Hintergrundbild festlegen",
-  "onboardingSignInAgainLower": "erneut anmelden",
+  "onboardingSignInAgainLower": "Erneut anmelden",
   "onboardingSkip": "Überspringen",
-  "onboardingSkipLower": "überspringen",
+  "onboardingSkipLower": "Überspringen",
   "onboardingTermsRequired": "Bitte stimme zuerst den Nutzungsbedingungen und der Datenschutzerklärung zu.",
-  "onboardingTryAgainLower": "erneut versuchen",
+  "onboardingTryAgainLower": "Erneut versuchen",
   "onboardingWallpaperForInterest": "Wir haben dieses Hintergrundbild passend zu deinem Interesse an {category} ausgewählt.",
   "@onboardingWallpaperForInterest": {
     "placeholders": {
@@ -8902,7 +8890,7 @@
   "@wallpaperThemeModeLight": {
     "description": "Light app theme mode option."
   },
-  "wallpaperThemeModeSystem": "System (hell/dunkel)",
+  "wallpaperThemeModeSystem": "System",
   "@wallpaperThemeModeSystem": {
     "description": "App theme mode option that follows the system light or dark appearance."
   },
@@ -11091,7 +11079,7 @@
   "dailyMomentStreakLeft": "Tägliche Serie verfügbar",
   "challengeTitle": "Wochen-Challenge",
   "challengeRules": "Bis zu 3 Beiträge, die vor der Anzeige geprüft werden.",
-  "challengeVotingRules": "Stimme bis {date} UTC für andere ab.",
+  "challengeVotingRules": "Stimme bis {date} für andere ab.",
   "@challengeVotingRules": {
     "placeholders": {
       "date": {
@@ -13157,5 +13145,9 @@
   "searchPhotoCouldNotOpen": "Dieses Foto konnte nicht geöffnet werden. Versuch ein anderes.",
   "@searchPhotoCouldNotOpen": {
     "description": "Toast when the picked photo cannot be decoded."
-  }
+  },
+  "searchMoreWallpapers": "Weitere Hintergrundbilder",
+  "@searchMoreWallpapers": {"description": "Section header for extra wallpaper results in search."},
+  "wallpaperPreviewNoEvents": "Heute keine Termine",
+  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."}
 }

@@ -108,13 +108,15 @@ void main() {
       ['2026-10-26'],
     );
   });
-  test('home refresh clears stale cards and does not restore them after failure', () async {
+  test('home refresh keeps the open card while loading and clears it after failure', () async {
     await cubit.loadOpen(clock: () => DateTime.utc(2026));
     expect(cubit.state.current?.id, '2026-10-26');
     final pending = Completer<List<WeeklyChallenge>>();
     repo.pendingList = pending.future;
     final refresh = cubit.loadOpen(clock: () => DateTime.utc(2026));
-    expect(cubit.state.current, isNull);
+    // The Home chip reloads when it mounts. Clearing here unmounted it and looped the list call.
+    expect(cubit.state.current?.id, '2026-10-26');
+    expect(cubit.state.loading, isTrue);
     pending.completeError(Exception('offline'));
     await refresh;
     expect(cubit.state.current, isNull);

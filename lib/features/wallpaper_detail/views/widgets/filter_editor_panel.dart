@@ -185,7 +185,7 @@ class FilterEditorPanel extends StatelessWidget {
           thumb: ColorFiltered(colorFilter: ColorFilter.matrix(preset.matrix), child: _thumb()),
         ),
       if (effectsAvailable) ...[
-        Center(child: Container(width: 1, height: 72, color: cs.onSurface.withValues(alpha: 0.12))),
+        Center(child: Container(width: 1, height: 112, color: cs.onSurface.withValues(alpha: 0.12))),
         for (final KernelEffect effect in kernelEffects)
           _buildTile(
             context,
@@ -237,7 +237,7 @@ class FilterEditorPanel extends StatelessWidget {
         child: GestureDetector(
           onTap: onTap,
           child: SizedBox(
-            width: 84,
+            width: 104,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -246,8 +246,8 @@ class FilterEditorPanel extends StatelessWidget {
                     AnimatedContainer(
                       duration: context.motion(PrismDurations.fast),
                       curve: PrismCurves.enter,
-                      width: 64,
-                      height: 92,
+                      width: 96,
+                      height: 140,
                       foregroundDecoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(PrismRadius.sm),
                         border: Border.all(color: selected ? cs.primary : Colors.transparent, width: 2),
@@ -284,7 +284,11 @@ class FilterEditorPanel extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
-                  style: PrismTextStyles.caption(context),
+                  style: PrismTextStyles.caption(context).copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: selected ? cs.onSurface : cs.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -303,7 +307,8 @@ class FilterEditorPanel extends StatelessWidget {
     return SliderTheme(
       data: SliderTheme.of(context).copyWith(trackShape: const _FlushTrackShape()),
       child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
+        // The values end on the page margin, not tight to the screen edge.
+        padding: const EdgeInsetsDirectional.only(start: PrismSpace.md, end: PrismSpace.page),
         children: [
           if (!effectsAvailable)
             Text(context.l10n.wallpaperFilterLightnessUnavailable, style: PrismTextStyles.caption(context)),
@@ -419,7 +424,11 @@ class FilterEditorPanel extends StatelessWidget {
         ),
         SizedBox(
           width: 44,
-          child: Text(text, textAlign: TextAlign.end, style: PrismTextStyles.body(context)),
+          child: Text(
+            text,
+            textAlign: TextAlign.end,
+            style: PrismTextStyles.body(context).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+          ),
         ),
       ],
     );

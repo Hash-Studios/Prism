@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/wallpaper_detail_route.dart';
+import 'package:Prism/core/widgets/prism_sheet/prism_sheet_route.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -210,5 +211,26 @@ void main() {
         expect(tester.getRect(find.byKey(_detailKey)), before);
       }, variant: TargetPlatformVariant({platform}));
     }
+
+    testWidgets('$platform Sheet does not animate the detail behind it', (tester) async {
+      final router = await _pumpRouter(tester);
+      final detail = await _openDetail(tester, router);
+      final before = tester.getRect(find.byKey(_detailKey));
+      unawaited(
+        showPrismSheet<void>(
+          tester.element(find.byKey(_detailKey)),
+          builder: (_) => const SizedBox(height: 200, child: Text('Sheet')),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(find.text('Sheet'), findsOneWidget);
+      expect(detail.secondaryAnimation!.value, 0);
+      expect(tester.getRect(find.byKey(_detailKey, skipOffstage: false)), before);
+      await tester.pumpAndSettle();
+      expect(detail.secondaryAnimation!.value, 0);
+      expect(tester.getRect(find.byKey(_detailKey)), before);
+    }, variant: TargetPlatformVariant({platform}));
   }
 }

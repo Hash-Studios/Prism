@@ -78,7 +78,7 @@ class EditProfileHeader extends StatelessWidget {
                         child: PrismIconButton(
                           icon: Icons.delete_outline_rounded,
                           tooltip: context.l10n.accountRemoveCoverPhoto,
-                          onImage: true,
+                          glass: true,
                           onPressed: onRemoveCover,
                         ),
                       ),
@@ -154,32 +154,34 @@ class EditProfileHeader extends StatelessWidget {
   }
 }
 
-/// The "Edit cover" hint at the bottom end of the cover: a camera and a white label on a dark pill, legible over any
-/// cover image. It does not take taps; the whole cover is the tap target.
+/// The "Edit cover" hint at the bottom end of the cover: a camera and an ink label on a glass pill (near-opaque page
+/// colour, soft shadow), legible over any cover image. It does not take taps; the whole cover is the tap target.
 class _EditCoverHint extends StatelessWidget {
   const _EditCoverHint();
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return PositionedDirectional(
       bottom: PrismSpace.xs,
       end: PrismSpace.xs,
       child: IgnorePointer(
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.38),
+            color: cs.surface.withValues(alpha: 0.92),
             borderRadius: BorderRadius.circular(PrismRadius.pill),
+            boxShadow: const <BoxShadow>[BoxShadow(color: Color(0x1F000000), blurRadius: 6, offset: Offset(0, 1))],
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: 6),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                const Icon(Icons.photo_camera_rounded, color: Colors.white, size: 16),
+                Icon(Icons.photo_camera_rounded, color: cs.onSurface, size: 16),
                 const SizedBox(width: 6),
                 Text(
                   context.l10n.accountEditCover,
-                  style: PrismTextStyles.caption(context).copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                  style: PrismTextStyles.caption(context).copyWith(color: cs.onSurface, fontWeight: FontWeight.w600),
                 ),
               ],
             ),

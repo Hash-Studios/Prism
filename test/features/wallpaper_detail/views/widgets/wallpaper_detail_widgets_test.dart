@@ -263,9 +263,10 @@ void main() {
       await pumpRecommendations(tester, RecommendationState(items: [item], status: RecommendationStatus.exhausted));
       expect(find.byType(FavouriteWallpaperCard), findsOneWidget);
       expect(find.byType(FavouriteWallpaperFooter), findsOneWidget);
-      expect(find.text('24'), findsOneWidget);
-      expect(find.text('1.2K'), findsOneWidget);
-      expect(find.bySemanticsLabel(AppLocalizationsEn().wallpaperViewCount(1234)), findsOneWidget);
+      // Tiles show the heart only. Counts live on the detail screen.
+      expect(find.text('24'), findsNothing);
+      expect(find.text('1.2K'), findsNothing);
+      expect(find.bySemanticsLabel(AppLocalizationsEn().wallpaperViewCount(1234)), findsNothing);
       final image = tester.getRect(find.byType(PrismWallTile));
       final footer = tester.getRect(find.byType(FavouriteWallpaperFooter));
       expect(footer.top, image.bottom);

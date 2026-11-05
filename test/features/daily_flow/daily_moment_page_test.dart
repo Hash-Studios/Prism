@@ -148,6 +148,8 @@ void main() {
         expect(paragraph.maxLines, isNull);
         expect(tester.takeException(), isNull);
         if (index < labels.length - 1) {
+          // The action sits in the content, so at 3x text it can be below the fold.
+          await tester.ensureVisible(label);
           await tester.tap(label);
           await tester.pump();
           await tester.pump(const Duration(seconds: 1));

@@ -1536,7 +1536,7 @@
   "@accountPrismPro": {
     "description": "Prism Pro drawer heading."
   },
-  "accountPrivacyAction": "PRIVASI",
+  "accountPrivacyAction": "Kebijakan privasi",
   "@accountPrivacyAction": {
     "description": "About page action to view the privacy policy."
   },
@@ -1888,19 +1888,19 @@
   "@accountSignInToPrism": {
     "description": "Heading for the signed-out settings account card."
   },
-  "accountSocialGithub": "GITHUB",
+  "accountSocialGithub": "GitHub",
   "@accountSocialGithub": {
     "description": "About page social link label for GitHub."
   },
-  "accountSocialInstagram": "INSTAGRAM",
+  "accountSocialInstagram": "Instagram",
   "@accountSocialInstagram": {
     "description": "About page social link label for Instagram."
   },
-  "accountSocialTelegram": "TELEGRAM",
+  "accountSocialTelegram": "Telegram",
   "@accountSocialTelegram": {
     "description": "About page social link label for Telegram."
   },
-  "accountSocialTwitter": "TWITTER",
+  "accountSocialTwitter": "Twitter",
   "@accountSocialTwitter": {
     "description": "About page social link label for Twitter."
   },
@@ -1964,7 +1964,7 @@
   "@accountTerms": {
     "description": "Terms of use link label."
   },
-  "accountTermsAction": "KETENTUAN",
+  "accountTermsAction": "Ketentuan penggunaan",
   "@accountTermsAction": {
     "description": "About page action to view the terms of use."
   },
@@ -2133,7 +2133,7 @@
   "@accountWhatsNew": {
     "description": "Menu item for the release changelog."
   },
-  "accountWhatsNewAction": "YANG BARU",
+  "accountWhatsNewAction": "Yang baru",
   "@accountWhatsNewAction": {
     "description": "About page action to view changes."
   },
@@ -5287,7 +5287,7 @@
   "economyLeaderboardNoRankings": "Belum ada peringkat",
   "economyLeaderboardOffline": "Jika Anda offline, skor tersimpan mungkin ditampilkan.",
   "economyLeaderboardRankedByXp": "Diurutkan berdasarkan XP yang diperoleh minggu ini",
-  "economyLeaderboardReset": "Direset Senin pukul 00.00 UTC · tersisa {days, plural, one{1h} other{{days}h}} {hours, plural, one{1j} other{{hours}j}}",
+  "economyLeaderboardReset": "Direset dalam {days, plural, one{1h} other{{days}h}} {hours, plural, one{1j} other{{hours}j}}",
   "@economyLeaderboardReset": {
     "placeholders": {
       "days": {
@@ -6062,10 +6062,10 @@
     }
   },
   "economyWeekComplete": "Minggu selesai!",
-  "economyWeekly": "MINGGUAN",
+  "economyWeekly": "Mingguan",
   "economyWeeklyDraw": "Draw mingguan",
   "economyWeeklyDrop": "Drop mingguan",
-  "economyWeeklyEndsIn": "MINGGUAN · {time}",
+  "economyWeeklyEndsIn": "Mingguan · {time}",
   "@economyWeeklyEndsIn": {
     "placeholders": {
       "time": {
@@ -6245,18 +6245,6 @@
   "notifEmptyTitle": "Tidak ada notifikasi",
   "notifExpanded": "Diperluas",
   "notifGenericTitle": "Notifikasi",
-  "notifGroupAndMore": "{message} dan {otherCount, plural, one{1 lainnya.} other{{otherCount} lainnya.}}",
-  "@notifGroupAndMore": {
-    "placeholders": {
-      "message": {
-        "type": "String"
-      },
-      "otherCount": {
-        "type": "int",
-        "format": "decimalPattern"
-      }
-    }
-  },
   "notifGroupApprovals": "{count, plural, one{persetujuan} other{persetujuan}}",
   "@notifGroupApprovals": {
     "placeholders": {
@@ -6701,8 +6689,8 @@
   "onboardingRecoverySetupFailed": "Penyiapan tidak selesai. Coba lagi.",
   "onboardingRecoverySetupFailedHelper": "Penyiapan tidak selesai. Periksa koneksi, lalu coba lagi.",
   "onboardingRecoverySignIn": "Masuk lagi",
-  "onboardingReloadLower": "muat ulang",
-  "onboardingSavePhotos": "simpan ke Foto",
+  "onboardingReloadLower": "Muat ulang",
+  "onboardingSavePhotos": "Simpan ke Foto",
   "onboardingSelectInterestMinimum": "Pilih setidaknya {count} kategori agar beranda Anda sesuai minat.",
   "@onboardingSelectInterestMinimum": {
     "placeholders": {
@@ -6712,12 +6700,12 @@
       }
     }
   },
-  "onboardingSetWallpaper": "pasang sebagai wallpaper",
-  "onboardingSignInAgainLower": "masuk lagi",
+  "onboardingSetWallpaper": "Pasang sebagai wallpaper",
+  "onboardingSignInAgainLower": "Masuk lagi",
   "onboardingSkip": "Lewati",
-  "onboardingSkipLower": "lewati",
+  "onboardingSkipLower": "Lewati",
   "onboardingTermsRequired": "Setujui Ketentuan dan Kebijakan Privasi terlebih dahulu.",
-  "onboardingTryAgainLower": "coba lagi",
+  "onboardingTryAgainLower": "Coba lagi",
   "onboardingWallpaperForInterest": "Wallpaper ini dipilih berdasarkan minat Anda pada {category}",
   "@onboardingWallpaperForInterest": {
     "placeholders": {
@@ -9093,11 +9081,11 @@
   "@wallpaperStartupFailed": {
     "description": "Title shown when app startup fails."
   },
-  "wallpaperThemeDarkAccent": "Warna Aksen Gelap",
+  "wallpaperThemeDarkAccent": "Warna aksen gelap",
   "@wallpaperThemeDarkAccent": {
     "description": "Section title for choosing the dark theme accent colour."
   },
-  "wallpaperThemeDarkThemes": "Tema Gelap",
+  "wallpaperThemeDarkThemes": "Tema gelap",
   "@wallpaperThemeDarkThemes": {
     "description": "Section title for dark theme choices."
   },
@@ -9109,11 +9097,11 @@
   "@wallpaperAppAccentUpdated": {
     "description": "Snackbar message shown after the app accent changes from a wallpaper."
   },
-  "wallpaperThemeLightAccent": "Warna Aksen Terang",
+  "wallpaperThemeLightAccent": "Warna aksen terang",
   "@wallpaperThemeLightAccent": {
     "description": "Section title for choosing the light theme accent colour."
   },
-  "wallpaperThemeLightThemes": "Tema Terang",
+  "wallpaperThemeLightThemes": "Tema terang",
   "@wallpaperThemeLightThemes": {
     "description": "Section title for light theme choices."
   },
@@ -9125,7 +9113,7 @@
   "@wallpaperThemeModeLight": {
     "description": "Light app theme mode option."
   },
-  "wallpaperThemeModeSystem": "Sistem (terang/gelap)",
+  "wallpaperThemeModeSystem": "Sistem",
   "@wallpaperThemeModeSystem": {
     "description": "App theme mode option that follows the system light or dark appearance."
   },
@@ -11078,7 +11066,7 @@
   },
   "challengeTitle": "Tantangan mingguan",
   "challengeRules": "Maksimal 3 karya, ditinjau sebelum ditampilkan.",
-  "challengeVotingRules": "Pilih karya kreator lain hingga {date} UTC.",
+  "challengeVotingRules": "Pilih karya kreator lain hingga {date}.",
   "@challengeVotingRules": {
     "placeholders": {
       "date": {
@@ -13285,5 +13273,9 @@
   "searchPhotoCouldNotOpen": "Foto itu tidak bisa dibuka. Coba foto lain.",
   "@searchPhotoCouldNotOpen": {
     "description": "Toast when the picked photo cannot be decoded."
-  }
+  },
+  "searchMoreWallpapers": "Wallpaper lainnya",
+  "@searchMoreWallpapers": {"description": "Section header for extra wallpaper results in search."},
+  "wallpaperPreviewNoEvents": "Tidak ada acara hari ini",
+  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."}
 }

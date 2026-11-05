@@ -52,22 +52,49 @@ class _DeepLinkInputPageState extends State<DeepLinkInputPage> {
     };
     return PrismPage(
       title: title,
-      body: Column(
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.md, PrismSpace.page, PrismSpace.xl),
         children: <Widget>[
-          Expanded(
-            child: GlintState(
-              kind: GlintStateKind.empty,
-              title: title,
-              body: widget.workflow == DeepLinkInputWorkflow.liveWallpaper
-                  ? l10n.deepLinkInputLiveDescription
-                  : l10n.deepLinkInputChooseImageDescription,
-              actionLabel: l10n.deepLinkInputChooseImage,
-              onAction: _chooseImage,
+          Center(
+            child: ExcludeSemantics(
+              child: SizedBox(
+                height: 260,
+                child: AspectRatio(
+                  aspectRatio: 9 / 16,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(PrismRadius.md),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: <Widget>[
+                        Image.asset('assets/images/wallpaper.jpg', fit: BoxFit.cover, cacheHeight: 780),
+                        if (widget.workflow == DeepLinkInputWorkflow.liveWallpaper)
+                          PositionedDirectional(
+                            top: PrismSpace.xs,
+                            start: PrismSpace.xs,
+                            child: PrismTag(label: l10n.wallpaperLive),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
+          const SizedBox(height: PrismSpace.lg),
+          Text(title, textAlign: TextAlign.center, style: PrismTextStyles.sectionTitle(context)),
+          const SizedBox(height: PrismSpace.xs),
+          Text(
+            widget.workflow == DeepLinkInputWorkflow.liveWallpaper
+                ? l10n.deepLinkInputLiveDescription
+                : l10n.deepLinkInputChooseImageDescription,
+            textAlign: TextAlign.center,
+            style: PrismTextStyles.body(context),
+          ),
+          const SizedBox(height: PrismSpace.xl),
+          PrismButton(label: l10n.deepLinkInputChooseImage, expand: true, onPressed: _chooseImage),
           if (_error != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xl),
+              padding: const EdgeInsets.only(top: PrismSpace.md),
               child: Semantics(
                 liveRegion: true,
                 child: Text(

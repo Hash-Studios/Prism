@@ -201,7 +201,7 @@ class _ThemeViewState extends State<ThemeView> {
   }
 }
 
-/// Three columns of themes, each shown as a small app in its own colours with its name below.
+/// A row of themes that scrolls sideways, each shown as a small app in its own colours with its name below.
 class _ThemeGrid extends StatelessWidget {
   const _ThemeGrid({
     super.key,
@@ -222,8 +222,13 @@ class _ThemeGrid extends StatelessWidget {
   final Set<String> legacyThemes;
   final ValueChanged<PrismThemeOption> onSelect;
 
-  static const int _columns = 3;
-  static const double _gap = PrismSpace.sm;
+  static const double _cardWidth = 104;
+  static const double _gap = PrismSpace.md;
+
+  /// A 104 point card: the preview with its ring (170 with the gap under it), then the name and the Locked tag, which
+  /// grow with the text size.
+  static const double _fixedHeight = 170;
+  static const double _textHeight = 66;
 
   /// A shop theme the user neither bought nor already uses. The selected theme is never locked.
   bool _locked(PrismThemeOption option, Inventory inventory) {
@@ -238,34 +243,35 @@ class _ThemeGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<Inventory>(
       valueListenable: CoinsService.instance.inventoryNotifier,
-      builder: (context, inventory, _) => LayoutBuilder(
-        builder: (context, constraints) {
-          final double width = (constraints.maxWidth - _gap * (_columns - 1)) / _columns;
-          return Wrap(
-            spacing: _gap,
-            runSpacing: PrismSpace.md,
-            children: <Widget>[
-              for (final PrismThemeOption option in themes)
-                SizedBox(
-                  width: width,
-                  child: _ThemeTile(
-                    option: option,
-                    accent: accent,
-                    selected: option.id == selectedId,
-                    locked: _locked(option, inventory),
-                    onTap: () {
-                      PrismHaptics.selection();
-                      if (_locked(option, inventory)) {
-                        showShopItemSheet(context, shopItem(option.shopItemId!)!);
-                      } else {
-                        onSelect(option);
-                      }
-                    },
-                  ),
-                ),
-            ],
-          );
-        },
+      builder: (context, inventory, _) => SizedBox(
+        height: _fixedHeight + MediaQuery.textScalerOf(context).scale(_textHeight),
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          // The row starts at the page margin and scrolls out to the screen edge.
+          clipBehavior: Clip.none,
+          itemCount: themes.length,
+          separatorBuilder: (_, _) => const SizedBox(width: _gap),
+          itemBuilder: (context, index) {
+            final PrismThemeOption option = themes[index];
+            return SizedBox(
+              width: _cardWidth,
+              child: _ThemeTile(
+                option: option,
+                accent: accent,
+                selected: option.id == selectedId,
+                locked: _locked(option, inventory),
+                onTap: () {
+                  PrismHaptics.selection();
+                  if (_locked(option, inventory)) {
+                    showShopItemSheet(context, shopItem(option.shopItemId!)!);
+                  } else {
+                    onSelect(option);
+                  }
+                },
+              ),
+            );
+          },
+        ),
       ),
     );
   }

@@ -101,11 +101,49 @@ void main() {
   });
 
   group('GlowText', () {
-    test('a light stop is darkened until it reads on white, a dark stop is kept', () {
+    test('a light stop is darkened until it reads 6:1 on white, a dark stop is kept', () {
       const Color gold = Color(0xFFFFD86B);
       final Color readable = readableGlowStop(gold, Colors.black, Colors.white);
-      expect(contrastRatio(readable, Colors.white), greaterThanOrEqualTo(4.5));
+      expect(contrastRatio(readable, Colors.white), greaterThanOrEqualTo(6.0));
       expect(readableGlowStop(const Color(0xFF1A1A1A), Colors.black, Colors.white), const Color(0xFF1A1A1A));
+    });
+  });
+
+  group('PrismIconButton glass', () {
+    testWidgets('a page-colour circle with an ink icon and a soft shadow', (tester) async {
+      await tester.pumpWidget(
+        _host(PrismIconButton(icon: Icons.share_rounded, tooltip: 'Share', glass: true, onPressed: () {})),
+      );
+      final ColorScheme cs = kLightTheme.colorScheme;
+      final IconButton button = tester.widget<IconButton>(find.byType(IconButton));
+      expect(button.color, cs.onSurface);
+      expect(button.style!.backgroundColor!.resolve(<WidgetState>{}), cs.surface.withValues(alpha: 0.92));
+      final Finder shadowBox = find.descendant(
+        of: find.byType(PrismIconButton),
+        matching: find.byWidgetPredicate(
+          (w) => w is DecoratedBox && (w.decoration as BoxDecoration?)?.boxShadow != null,
+        ),
+      );
+      final BoxDecoration shadow = tester.widget<DecoratedBox>(shadowBox).decoration as BoxDecoration;
+      expect(shadow.shape, BoxShape.circle);
+      expect(shadow.boxShadow!.single.color, const Color(0x1F000000));
+      expect(tester.getSize(shadowBox), const Size.square(44), reason: 'the shadow matches the circle, not the target');
+    });
+  });
+
+  group('PrismTextField', () {
+    testWidgets('the label lines up with the text inside the field, the hint is secondary text', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          const SizedBox(
+            width: 300,
+            child: PrismTextField(label: 'Name', hint: 'Ana'),
+          ),
+        ),
+      );
+      final double fieldLeft = tester.getTopLeft(find.byType(TextField)).dx;
+      expect(tester.getTopLeft(find.text('Name')).dx - fieldLeft, PrismSpace.md);
+      expect(kLightTheme.inputDecorationTheme.hintStyle!.color, kLightTheme.colorScheme.onSurfaceVariant);
     });
   });
 

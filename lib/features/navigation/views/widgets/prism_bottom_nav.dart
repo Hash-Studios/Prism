@@ -11,15 +11,21 @@ import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
-/// The floating pill with the visible tab destinations, in the user's order, and a More entry for hidden tabs. A filled circle sits behind the active one. [axis] is vertical in
-/// the side rail.
+/// The floating pill with the visible tab destinations, in the user's order, and a More entry for hidden tabs. Each tab
+/// shows its icon over a short label, and a filled pill sits behind the active one. [axis] is vertical in the side rail.
+/// The rail, and a row without [labels], shows icons only, with a filled circle behind the active one.
 class PrismBottomNav extends StatefulWidget {
-  const PrismBottomNav({this.axis = Axis.horizontal, super.key});
+  const PrismBottomNav({this.axis = Axis.horizontal, this.labels = true, super.key});
 
   final Axis axis;
 
+  /// Shows a label under each icon. The bottom row turns it off where the wider pill does not fit. The rail is always
+  /// icons only.
+  final bool labels;
+
   /// The pill length with every tab in it, the most it can hold.
-  static double get maxLength => NavTab.values.length * _PrismBottomNavState._slot + 8;
+  static double maxLength({required bool labels}) =>
+      NavTab.values.length * (labels ? _PrismBottomNavState._slotWidth : _PrismBottomNavState._slot) + 8;
 
   @override
   State<PrismBottomNav> createState() => _PrismBottomNavState();
@@ -27,6 +33,9 @@ class PrismBottomNav extends StatefulWidget {
 
 class _PrismBottomNavState extends State<PrismBottomNav> {
   static const double _slot = 48;
+
+  /// A horizontal slot is wider than it is high, so the label under the icon fits.
+  static const double _slotWidth = 64;
 
   TabsRouter? _tabsRouter;
 
@@ -106,6 +115,7 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
     final List<NavTab> hidden = prefs.hiddenInOrder;
 
     final bool vertical = widget.axis == Axis.vertical;
+    final bool iconOnly = vertical || !widget.labels;
     return Container(
       padding: const EdgeInsets.all(4),
       width: vertical ? 56 : null,
@@ -126,6 +136,7 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
               icon: tab.icon,
               label: tab.label(context),
               isActive: active == tab,
+              iconOnly: iconOnly,
               onPressed: () => _switchTab(tab),
             ),
           if (hidden.isNotEmpty)
@@ -133,6 +144,7 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
               icon: JamIcons.more_horizontal_f,
               label: context.l10n.navMore,
               isActive: hidden.contains(active),
+              iconOnly: iconOnly,
               onPressed: () => _openMore(hidden),
             ),
         ],
@@ -142,11 +154,18 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
 }
 
 class _TabButton extends StatelessWidget {
-  const _TabButton({required this.icon, required this.label, required this.isActive, required this.onPressed});
+  const _TabButton({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.iconOnly,
+    required this.onPressed,
+  });
 
   final IconData icon;
   final String label;
   final bool isActive;
+  final bool iconOnly;
   final VoidCallback onPressed;
 
   @override
@@ -155,7 +174,7 @@ class _TabButton extends StatelessWidget {
     final Color secondary = theme.colorScheme.secondary;
     final Duration duration = context.motion(PrismDurations.fast);
     return SizedBox(
-      width: _PrismBottomNavState._slot,
+      width: iconOnly ? _PrismBottomNavState._slot : _PrismBottomNavState._slotWidth,
       height: _PrismBottomNavState._slot,
       child: Semantics(
         button: true,
@@ -178,13 +197,38 @@ class _TabButton extends StatelessWidget {
                   color: isActive
                       ? Color.alphaBlend(secondary.withValues(alpha: 0.15), theme.primaryColor)
                       : Colors.transparent,
-                  shape: BoxShape.circle,
+                  shape: iconOnly ? BoxShape.circle : BoxShape.rectangle,
+                  borderRadius: iconOnly ? null : BorderRadius.circular(PrismRadius.pill),
                 ),
                 child: TweenAnimationBuilder<Color?>(
                   tween: ColorTween(end: isActive ? secondary : secondary.withValues(alpha: 0.6)),
                   duration: duration,
                   curve: PrismCurves.enter,
-                  builder: (BuildContext context, Color? color, Widget? _) => Icon(icon, size: 19, color: color),
+                  builder: (BuildContext context, Color? color, Widget? _) {
+                    if (iconOnly) return Icon(icon, size: 19, color: color);
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(icon, size: 20, color: color),
+                        const SizedBox(height: 2),
+                        MediaQuery.withClampedTextScaling(
+                          maxScaleFactor: 1.2,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: Text(
+                              label,
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.ellipsis,
+                              style: PrismTextStyles.caption(
+                                context,
+                              ).copyWith(fontSize: 10.5, fontWeight: FontWeight.w600, height: 1.2, color: color),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),

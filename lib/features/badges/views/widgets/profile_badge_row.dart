@@ -3,12 +3,16 @@ import 'package:Prism/features/badges/domain/badge_catalog.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
-/// Earned badges as small icons under the bio. Empty when the user has none this app version knows.
-/// More than [_maxShown] badges show the first [_maxShown - 1] and a "+N" pill that lists all of them by name.
+/// Earned badges as small icons under the bio. Empty when the user has none this app version knows and there is no
+/// [leading] item. More than [_maxShown] badges show the first [_maxShown - 1] and a "+N" pill that lists all of them
+/// by name.
 class ProfileBadgeRow extends StatelessWidget {
-  const ProfileBadgeRow({super.key, required this.badgeIds});
+  const ProfileBadgeRow({super.key, required this.badgeIds, this.leading});
 
   final List<String> badgeIds;
+
+  /// Shown first in the same row, for example the Pro pill, so the profile has one meta row.
+  final Widget? leading;
 
   static const int _maxShown = 5;
 
@@ -37,7 +41,7 @@ class ProfileBadgeRow extends StatelessWidget {
       for (final String id in badgeIds.toSet())
         if (badgeInfo(id) case final BadgeInfo info) info,
     ];
-    if (badges.isEmpty) return const SizedBox.shrink();
+    if (badges.isEmpty && leading == null) return const SizedBox.shrink();
     final ColorScheme cs = Theme.of(context).colorScheme;
     final bool overflow = badges.length > _maxShown;
     final List<BadgeInfo> shown = overflow ? badges.take(_maxShown - 1).toList(growable: false) : badges;
@@ -49,6 +53,7 @@ class ProfileBadgeRow extends StatelessWidget {
         spacing: 8,
         runSpacing: 8,
         children: <Widget>[
+          ?leading,
           for (final BadgeInfo info in shown)
             Tooltip(
               message: info.name(context.l10n),
@@ -73,17 +78,20 @@ class ProfileBadgeRow extends StatelessWidget {
                   // 44 point tap target around the 32 point pill.
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6),
+                    // No Container alignment: in a Wrap it would stretch the pill to the full row width.
                     child: Container(
                       constraints: const BoxConstraints(minWidth: 44, minHeight: 32),
                       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm),
-                      alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: cs.primary.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(PrismRadius.pill),
                       ),
-                      child: Text(
-                        '+${badges.length - shown.length}',
-                        style: PrismTextStyles.rowTitle(context).copyWith(color: cs.primary),
+                      child: Center(
+                        widthFactor: 1,
+                        child: Text(
+                          '+${badges.length - shown.length}',
+                          style: PrismTextStyles.rowTitle(context).copyWith(color: cs.primary),
+                        ),
                       ),
                     ),
                   ),

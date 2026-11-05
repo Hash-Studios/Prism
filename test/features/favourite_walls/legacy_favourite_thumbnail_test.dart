@@ -52,6 +52,6 @@ void main() {
     expect(result.isSuccess, isTrue);
     final wall = result.data!.single;
     expect(wall, isA<LegacyFavouriteWall>());
-    expect(wall.thumbnailUrl, 'https://th.wallhaven.cc/lg/21/wall.jpg');
+    expect(wall.thumbnailUrl, 'https://th.wallhaven.cc/orig/21/wall.jpg');
   });
 }

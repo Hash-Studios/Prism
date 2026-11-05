@@ -547,7 +547,7 @@ void main() {
       await synced.record(syncedWall('w1', DateTime(2026, 10, 28, 14)));
       await pumpList(tester);
 
-      expect(find.text('Downloaded'), findsOneWidget);
+      expect(find.textContaining('Downloaded · '), findsOneWidget);
       expect(find.byTooltip('Set again'), findsNothing);
     });
 

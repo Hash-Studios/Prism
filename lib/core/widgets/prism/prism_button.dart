@@ -130,6 +130,7 @@ class PrismIconButton extends StatelessWidget {
     required this.onPressed,
     this.filled = false,
     this.onImage = false,
+    this.glass = false,
     this.size = 44,
     this.iconSize = 22,
     this.color,
@@ -144,6 +145,10 @@ class PrismIconButton extends StatelessWidget {
 
   /// For buttons that sit on a wallpaper: a dark translucent circle and a white icon on every theme.
   final bool onImage;
+
+  /// For header buttons over a cover that may be light or dark: a near-opaque page-colour circle with a soft shadow
+  /// and an ink icon, readable on any image and in every theme.
+  final bool glass;
   final double size;
   final double iconSize;
   final Color? color;
@@ -151,28 +156,48 @@ class PrismIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    final Color fg = color ?? (onImage ? Colors.white : cs.onSurface);
-    final Color? bg = onImage
+    final Color fg = color ?? (onImage && !glass ? Colors.white : cs.onSurface);
+    final Color? bg = glass
+        ? cs.surface.withValues(alpha: 0.92)
+        : onImage
         ? Colors.black.withValues(alpha: 0.38)
         : filled
         ? cs.onSurface.withValues(alpha: 0.08)
         : null;
+    final Widget button = IconButton(
+      tooltip: tooltip,
+      onPressed: onPressed,
+      icon: Icon(icon, size: iconSize),
+      color: fg,
+      disabledColor: fg.withValues(alpha: 0.38),
+      style: IconButton.styleFrom(
+        backgroundColor: bg,
+        minimumSize: Size.square(size),
+        fixedSize: Size.square(size),
+        padding: EdgeInsets.zero,
+        shape: const CircleBorder(),
+      ),
+    );
     return PressScale(
       enabled: onPressed != null,
-      child: IconButton(
-        tooltip: tooltip,
-        onPressed: onPressed,
-        icon: Icon(icon, size: iconSize),
-        color: fg,
-        disabledColor: fg.withValues(alpha: 0.38),
-        style: IconButton.styleFrom(
-          backgroundColor: bg,
-          minimumSize: Size.square(size),
-          fixedSize: Size.square(size),
-          padding: EdgeInsets.zero,
-          shape: const CircleBorder(),
-        ),
-      ),
+      // The shadow sits under the circle, not the button: on Android the button pads its tap target to 48.
+      child: glass
+          ? Stack(
+              alignment: Alignment.center,
+              children: <Widget>[
+                SizedBox.square(
+                  dimension: size,
+                  child: const DecoratedBox(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: <BoxShadow>[BoxShadow(color: Color(0x1F000000), blurRadius: 6, offset: Offset(0, 1))],
+                    ),
+                  ),
+                ),
+                button,
+              ],
+            )
+          : button,
     );
   }
 }

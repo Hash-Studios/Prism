@@ -149,8 +149,10 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
   @override
   bool get opaque => _page.opaque;
 
+  /// Only an opaque, ordinary page slides the detail away. Sheets are non-opaque page routes and dialogs cover it.
   @override
-  bool canTransitionTo(TransitionRoute<dynamic> nextRoute) => nextRoute is PageRoute && !nextRoute.fullscreenDialog;
+  bool canTransitionTo(TransitionRoute<dynamic> nextRoute) =>
+      nextRoute is PageRoute && nextRoute.opaque && !nextRoute.fullscreenDialog;
 
   /// Whether the opening finished. A back before that reverses the fade instead of sliding.
   bool _hasEntered = false;

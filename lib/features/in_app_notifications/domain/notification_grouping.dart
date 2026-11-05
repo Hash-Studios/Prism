@@ -169,14 +169,7 @@ String collapsedGroupSummaryLine(InAppNotificationTitleGroup group, AppLocalizat
   if (firstBody.isEmpty) {
     return l10n.notifGroupSummaryCount(n);
   }
-  if (notificationGroupHasUniformBody(group)) {
-    return firstBody;
-  }
-  final String short = firstBody.length > 52 ? '${firstBody.substring(0, 49)}…' : firstBody;
-  if (n == 2) {
-    return l10n.notifGroupAndMore(short, n - 1);
-  }
-  return l10n.notifGroupAndMore(short, n - 1);
+  return firstBody;
 }
 
 /// Expects [sortedNewestFirst] (e.g. from repository). Returns groups sorted by

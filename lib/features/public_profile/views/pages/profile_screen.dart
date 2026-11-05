@@ -22,7 +22,6 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
 import 'package:Prism/features/creator_directory/views/widgets/followed_by_line.dart';
-import 'package:Prism/features/creator_stats/views/widgets/stats_entry_button.dart';
 import 'package:Prism/features/creator_tips/views/widgets/tip_sheet.dart';
 import 'package:Prism/features/folders/views/widgets/profile_folders_row.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
@@ -499,12 +498,42 @@ class _ProfileChildState extends State<_ProfileChild> {
     final Widget editButton = PrismIconButton(
       tooltip: context.l10n.accountEditProfile,
       icon: Icons.edit_rounded,
-      onImage: true,
+      glass: true,
       onPressed: () {
         PrismHaptics.tap();
         unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit'));
       },
     );
+    final Widget? linkButtons = linkKeys.isEmpty
+        ? null
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: PrismSpace.xxs,
+            children: <Widget>[
+              for (final String key in linkKeys.take(3))
+                PrismIconButton(
+                  tooltip: key,
+                  icon: profileLinkIcon(key),
+                  iconSize: 20,
+                  filled: true,
+                  onPressed: () {
+                    PrismHaptics.tap();
+                    unawaited(_openLink(key, _profile.links[key].toString()));
+                  },
+                ),
+              if (linkKeys.length > 3)
+                PrismIconButton(
+                  tooltip: context.l10n.accountMoreLinks,
+                  icon: Icons.more_horiz_rounded,
+                  iconSize: 20,
+                  filled: true,
+                  onPressed: () {
+                    PrismHaptics.tap();
+                    _showMoreLinks();
+                  },
+                ),
+            ],
+          );
     final ProfileCompletenessStatus profileCompletenessStatus = ProfileCompletenessEvaluator.evaluate(
       app_state.prismUser,
       defaultProfilePhotoUrl: app_state.defaultProfilePhotoUrl,
@@ -573,7 +602,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                       ? PrismIconButton(
                           tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                           icon: Icons.arrow_back_rounded,
-                          onImage: true,
+                          glass: true,
                           onPressed: () {
                             _trackAction(AnalyticsActionValue.backTapped, sourceContext: 'profile_screen_header_back');
                             Navigator.pop(context);
@@ -584,13 +613,19 @@ class _ProfileChildState extends State<_ProfileChild> {
               ),
               actions: <Widget>[
                 if (ownProfile) ...<Widget>[
-                  const StatsEntryButton(source: 'profile', onImage: true),
+                  // StatsEntryButton has no glass look, so the header builds the same button here.
+                  PrismIconButton(
+                    icon: Icons.bar_chart_rounded,
+                    tooltip: context.l10n.statsEntry,
+                    glass: true,
+                    onPressed: () => context.router.push(CreatorStatsRoute(source: 'profile')),
+                  ),
                   if (showBack) ...<Widget>[const SizedBox(width: PrismSpace.xxs), editButton],
                   const SizedBox(width: PrismSpace.xxs),
                   PrismIconButton(
                     tooltip: context.l10n.accountMenu,
                     icon: Icons.menu_rounded,
-                    onImage: true,
+                    glass: true,
                     onPressed: () {
                       _trackAction(AnalyticsActionValue.openDrawerTapped, sourceContext: 'profile_screen_header_menu');
                       _scaffoldKey.currentState?.openEndDrawer();
@@ -600,36 +635,53 @@ class _ProfileChildState extends State<_ProfileChild> {
                   PrismIconButton(
                     tooltip: context.l10n.accountGiftPassTooltip,
                     icon: Icons.card_giftcard_rounded,
-                    onImage: true,
+                    glass: true,
                     onPressed: _openGiftSheet,
                   ),
                   const SizedBox(width: PrismSpace.xxs),
-                  PopupMenuButton<_ProfileMenuAction>(
-                    tooltip: context.l10n.accountMoreOptions,
-                    icon: const Icon(Icons.more_vert_rounded, size: 22),
-                    iconColor: Colors.white,
-                    padding: EdgeInsets.zero,
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.black.withValues(alpha: 0.38),
-                      minimumSize: const Size.square(44),
-                      fixedSize: const Size.square(44),
-                      padding: EdgeInsets.zero,
-                      shape: const CircleBorder(),
-                    ),
-                    onSelected: _onMenuSelected,
-                    itemBuilder: (BuildContext context) => <PopupMenuEntry<_ProfileMenuAction>>[
-                      if (app_state.prismUser.loggedIn && context.read<PublicProfileBloc>().state.walls.isNotEmpty)
-                        PopupMenuItem<_ProfileMenuAction>(
-                          value: _ProfileMenuAction.tip,
-                          child: Text(context.l10n.tipMenuItem),
+                  // The same glass look as PrismIconButton(glass: true): the shadow sits under the 44 point circle.
+                  Stack(
+                    alignment: Alignment.center,
+                    children: <Widget>[
+                      const SizedBox.square(
+                        dimension: 44,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: <BoxShadow>[
+                              BoxShadow(color: Color(0x1F000000), blurRadius: 6, offset: Offset(0, 1)),
+                            ],
+                          ),
                         ),
-                      PopupMenuItem<_ProfileMenuAction>(
-                        value: _ProfileMenuAction.report,
-                        child: Text(context.l10n.accountReportUser),
                       ),
-                      PopupMenuItem<_ProfileMenuAction>(
-                        value: _ProfileMenuAction.block,
-                        child: Text(context.l10n.accountBlockUser),
+                      PopupMenuButton<_ProfileMenuAction>(
+                        tooltip: context.l10n.accountMoreOptions,
+                        icon: const Icon(Icons.more_vert_rounded, size: 22),
+                        iconColor: cs.onSurface,
+                        padding: EdgeInsets.zero,
+                        style: IconButton.styleFrom(
+                          backgroundColor: cs.surface.withValues(alpha: 0.92),
+                          minimumSize: const Size.square(44),
+                          fixedSize: const Size.square(44),
+                          padding: EdgeInsets.zero,
+                          shape: const CircleBorder(),
+                        ),
+                        onSelected: _onMenuSelected,
+                        itemBuilder: (BuildContext context) => <PopupMenuEntry<_ProfileMenuAction>>[
+                          if (app_state.prismUser.loggedIn && context.read<PublicProfileBloc>().state.walls.isNotEmpty)
+                            PopupMenuItem<_ProfileMenuAction>(
+                              value: _ProfileMenuAction.tip,
+                              child: Text(context.l10n.tipMenuItem),
+                            ),
+                          PopupMenuItem<_ProfileMenuAction>(
+                            value: _ProfileMenuAction.report,
+                            child: Text(context.l10n.accountReportUser),
+                          ),
+                          PopupMenuItem<_ProfileMenuAction>(
+                            value: _ProfileMenuAction.block,
+                            child: Text(context.l10n.accountBlockUser),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -731,22 +783,22 @@ class _ProfileChildState extends State<_ProfileChild> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: PrismFonts.proximaNova,
-                          color: cs.onSurface.withValues(alpha: 0.55),
+                          color: cs.onSurfaceVariant,
                           fontSize: 14,
                           fontWeight: FontWeight.normal,
                           letterSpacing: 0.2,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
                     if (_profile.bio.isNotEmpty) ...<Widget>[
+                      const SizedBox(height: 8),
                       SizedBox(
                         width: headerWidth * 0.72,
                         child: ProfileBioText(
                           bio: _profile.bio,
                           style: TextStyle(
                             fontFamily: PrismFonts.proximaNova,
-                            color: cs.onSurface.withValues(alpha: 0.65),
+                            color: cs.onSurfaceVariant,
                             fontSize: 13,
                             fontWeight: FontWeight.normal,
                             height: 1.45,
@@ -754,12 +806,13 @@ class _ProfileChildState extends State<_ProfileChild> {
                           onOpenLink: _openBioLink,
                         ),
                       ),
-                      const SizedBox(height: 2),
                     ],
-                    if (_profile.proBadge) const Padding(padding: EdgeInsets.only(bottom: 6), child: ProProfileBadge()),
-                    ProfileBadgeRow(badgeIds: _profile.badges),
-                    if (!ownProfile) FollowedByLine(creatorUid: _profile.id),
-                    const SizedBox(height: 8),
+                    // One meta row: the Pro pill, then the badges.
+                    ProfileBadgeRow(
+                      badgeIds: _profile.badges,
+                      leading: _profile.proBadge ? const ProProfileBadge() : null,
+                    ),
+                    const SizedBox(height: 12),
                     SizedBox(
                       width: headerWidth * 0.9,
                       child: Row(
@@ -814,6 +867,8 @@ class _ProfileChildState extends State<_ProfileChild> {
                       ),
                     ),
                     if (!ownProfile) ...<Widget>[
+                      // Shrink-wrapped so the line is centred like the rest of the header.
+                      IntrinsicWidth(child: FollowedByLine(creatorUid: _profile.id)),
                       const SizedBox(height: PrismSpace.md),
                       BlocConsumer<PublicProfileBloc, PublicProfileState>(
                         listenWhen: (prev, curr) =>
@@ -822,44 +877,30 @@ class _ProfileChildState extends State<_ProfileChild> {
                         buildWhen: (prev, curr) => prev.followOverrides != curr.followOverrides,
                         builder: (context, state) {
                           final bool following = _isFollowing(state);
-                          return SizedBox(
-                            width: math.min(headerWidth - 2 * PrismSpace.page, 240),
-                            child: PrismButton(
-                              label: following ? context.l10n.accountFollowing : context.l10n.accountFollow,
-                              icon: following ? Icons.check_rounded : Icons.person_add_alt_1_rounded,
-                              variant: following ? PrismButtonVariant.tonal : PrismButtonVariant.primary,
-                              size: PrismButtonSize.compact,
-                              expand: true,
-                              onPressed: () => _toggleFollow(following: following),
-                            ),
+                          // Follow and the links share one row; the links wrap under Follow when they do not fit.
+                          return Wrap(
+                            alignment: WrapAlignment.center,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: PrismSpace.xs,
+                            runSpacing: PrismSpace.xs,
+                            children: <Widget>[
+                              SizedBox(
+                                width: 200,
+                                child: PrismButton(
+                                  label: following ? context.l10n.accountFollowing : context.l10n.accountFollow,
+                                  icon: following ? Icons.check_rounded : Icons.person_add_alt_1_rounded,
+                                  variant: following ? PrismButtonVariant.tonal : PrismButtonVariant.primary,
+                                  size: PrismButtonSize.compact,
+                                  expand: true,
+                                  onPressed: () => _toggleFollow(following: following),
+                                ),
+                              ),
+                              ?linkButtons,
+                            ],
                           );
                         },
                       ),
-                    ],
-                    if (linkKeys.isNotEmpty) ...<Widget>[
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: screen.width,
-                        height: 48,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            for (final String key in linkKeys.take(3))
-                              _LinkButton(
-                                tooltip: key,
-                                icon: profileLinkIcon(key),
-                                onPressed: () => _openLink(key, _profile.links[key].toString()),
-                              ),
-                            if (linkKeys.length > 3)
-                              _LinkButton(
-                                tooltip: context.l10n.accountMoreLinks,
-                                icon: Icons.more_horiz_rounded,
-                                onPressed: _showMoreLinks,
-                              ),
-                          ],
-                        ),
-                      ),
-                    ],
+                    ] else if (linkButtons != null) ...<Widget>[const SizedBox(height: PrismSpace.sm), linkButtons],
                   ],
                 ),
               ),
@@ -895,37 +936,6 @@ class _ProfileChildState extends State<_ProfileChild> {
   }
 }
 
-/// Outlined circular icon button for one profile link.
-class _LinkButton extends StatelessWidget {
-  const _LinkButton({required this.icon, required this.onPressed, this.tooltip});
-
-  final IconData icon;
-  final VoidCallback onPressed;
-  final String? tooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    final Color ink = Theme.of(context).colorScheme.onSurface;
-    return IconButton(
-      tooltip: tooltip,
-      padding: const EdgeInsets.all(4),
-      icon: Container(
-        padding: const EdgeInsets.all(7.0),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: ink.withValues(alpha: 0.1),
-          border: Border.all(color: ink.withValues(alpha: 0.12)),
-        ),
-        child: Icon(icon, size: 18, color: ink.withValues(alpha: 0.85)),
-      ),
-      onPressed: () {
-        PrismHaptics.tap();
-        onPressed();
-      },
-    );
-  }
-}
-
 /// Compact stat display used in the profile header (e.g. "9182 Followers").
 ///
 /// Separates the bold count from the muted label using clear weight and color
@@ -938,20 +948,25 @@ class _StatPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color ink = Theme.of(context).colorScheme.onSurface;
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return RichText(
       textAlign: TextAlign.center,
       textScaler: MediaQuery.textScalerOf(context),
       text: TextSpan(
         // Bold count — larger optical weight draws the eye first.
         text: _compactCount(context, count),
-        style: TextStyle(fontFamily: PrismFonts.proximaNova, color: ink, fontSize: 16, fontWeight: FontWeight.w700),
+        style: TextStyle(
+          fontFamily: PrismFonts.proximaNova,
+          color: cs.onSurface,
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+        ),
         children: <TextSpan>[
           TextSpan(
             text: ' $label',
             style: TextStyle(
               fontFamily: PrismFonts.proximaNova,
-              color: ink.withValues(alpha: 0.55),
+              color: cs.onSurfaceVariant,
               fontSize: 13,
               fontWeight: FontWeight.normal,
             ),

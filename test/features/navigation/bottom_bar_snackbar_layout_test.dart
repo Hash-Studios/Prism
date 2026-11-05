@@ -205,6 +205,9 @@ void main() {
     await tester.drag(find.byType(ListView), const Offset(0, -600));
     await tester.pumpAndSettle();
     final Finder scrollToTop = find.bySemanticsLabel('Scroll to top');
+    expect(scrollToTop, findsNothing, reason: 'less than two screens down');
+    await tester.drag(find.byType(ListView), const Offset(0, -1400));
+    await tester.pumpAndSettle();
     expect(scrollToTop, findsOneWidget);
     await showMessage(tester);
 

@@ -853,6 +853,9 @@ class _ClockOverlayState extends State<ClockOverlay> {
                                       if (primary != null) ...<Widget>[
                                         const SizedBox(width: PrismSpace.xs),
                                         Expanded(child: Center(child: primary)),
+                                        // Balances Close, so the action sits in the true centre of the panel.
+                                        if (widget.spatialMapUrl == null || _duo)
+                                          const SizedBox(width: 48 + PrismSpace.xs),
                                       ],
                                     ],
                                   ),

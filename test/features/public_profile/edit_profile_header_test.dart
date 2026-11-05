@@ -43,7 +43,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
   }
 
-  testWidgets('"Edit cover" is a dark on-image pill at the bottom end of the cover, with no grey fade', (tester) async {
+  testWidgets('"Edit cover" is a glass pill at the bottom end of the cover, with no grey fade', (tester) async {
     await pumpHeader(tester);
 
     final Finder hint = find.ancestor(of: find.text('Edit cover'), matching: find.byType(IgnorePointer)).first;
@@ -58,9 +58,11 @@ void main() {
         tester.widget<DecoratedBox>(find.descendant(of: hint, matching: find.byType(DecoratedBox)).first).decoration
             as BoxDecoration;
     expect(fill.gradient, isNull);
-    expect(fill.color, Colors.black.withValues(alpha: 0.38));
+    final ColorScheme cs = Theme.of(tester.element(hint)).colorScheme;
+    expect(fill.color, cs.surface.withValues(alpha: 0.92));
+    expect(fill.boxShadow, isNotEmpty);
     expect(fill.borderRadius, BorderRadius.circular(PrismRadius.pill));
-    expect(tester.widget<Text>(find.text('Edit cover')).style!.color, Colors.white);
+    expect(tester.widget<Text>(find.text('Edit cover')).style!.color, cs.onSurface);
   });
 
   testWidgets('the whole cover is the tap target and is a labelled button', (tester) async {

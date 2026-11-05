@@ -703,6 +703,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   /// iOS only: builds Save to Photos for the phone preview.
   Widget Function(String label)? _saveAction;
+
+  /// iOS only: builds the compact Save for the solid header.
+  Widget Function()? _headerSave;
   static const double _sheetHPad = PrismSpace.md;
 
   /// The wallpaper is a card just under the status bar: a small side gap and large corners.
@@ -1288,8 +1291,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   /// Back and, once the wallpaper is ready, the clock. Both stay in the top corners of the card while the page
   /// scrolls under them, on a dark scrim that reads over any wallpaper. Once the card scrolls away ([header]), back
-  /// becomes a plain button in the solid header and the clock hides, so neither sits on the actions.
-  List<Widget> _pinnedChrome(WallpaperDetailState state, Size card, {VoidCallback? onClock, bool header = false}) {
+  /// becomes a plain button in the solid header and the clock hides, so neither sits on the actions. [headerAction]
+  /// takes the clock's corner in the header.
+  List<Widget> _pinnedChrome(
+    WallpaperDetailState state,
+    Size card, {
+    VoidCallback? onClock,
+    Widget? headerAction,
+    bool header = false,
+  }) {
     final EdgeInsets padding = MediaQuery.paddingOf(context);
     final double top = _statusInset(context) + _chromePad;
     // A narrowed card is centred, so its corners sit in from the side insets.
@@ -1352,11 +1362,30 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                   curve: PrismCurves.enter,
                   child: _chromeButton(
                     icon: Icons.smartphone_rounded,
+                    iconSize: 18,
+                    label: context.l10n.accountPreview,
                     tooltip: context.l10n.wallpaperPreviewOnScreen,
                     onPressed: onClock,
                   ),
                 ),
               ),
+            ),
+          ),
+        ),
+      if (headerAction != null)
+        PositionedDirectional(
+          end: padding.right + _cardInset + centring + _chromePad,
+          top: top,
+          height: _chromeSize,
+          // Built only under the header, so the page never holds two primary actions.
+          child: _hiddenWhenImmersive(
+            AnimatedSwitcher(
+              duration: context.motion(PrismDurations.fast),
+              switchInCurve: PrismCurves.enter,
+              switchOutCurve: PrismCurves.exitReverse,
+              child: header
+                  ? Center(key: const ValueKey<String>('detail-header-action'), child: headerAction)
+                  : const SizedBox.shrink(),
             ),
           ),
         ),
@@ -1368,7 +1397,37 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     required String tooltip,
     required VoidCallback onPressed,
     double iconSize = 22,
+    String? label,
   }) {
+    final Color scrim = Theme.of(context).colorScheme.scrim.withValues(alpha: 0.55);
+    const OutlinedBorder shape = RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(14)));
+    if (label != null) {
+      // A labelled pill says what it does. The tooltip keeps the longer name for a long press; a screen reader hears
+      // it once, as the label.
+      return PressScale(
+        child: Tooltip(
+          message: tooltip,
+          excludeFromSemantics: true,
+          child: MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.5,
+            child: TextButton.icon(
+              onPressed: onPressed,
+              icon: Icon(icon, size: iconSize),
+              label: Text(label, semanticsLabel: tooltip, maxLines: 1),
+              style: TextButton.styleFrom(
+                backgroundColor: scrim,
+                foregroundColor: PrismColors.onPrimary,
+                textStyle: PrismTextStyles.rowTitle(context),
+                minimumSize: const Size.square(_chromeSize),
+                padding: const EdgeInsetsDirectional.only(start: PrismSpace.sm, end: PrismSpace.md),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: shape,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return PressScale(
       child: IconButton(
         tooltip: tooltip,
@@ -1376,12 +1435,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         icon: Icon(icon, size: iconSize),
         color: PrismColors.onPrimary,
         style: IconButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.55),
+          backgroundColor: scrim,
           minimumSize: const Size.square(_chromeSize),
           fixedSize: const Size.square(_chromeSize),
           padding: EdgeInsets.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
+          shape: shape,
         ),
       ),
     );
@@ -1580,11 +1639,26 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                                       ),
                                     ),
                                   ),
+                                // Under the solid header its primary action moves up there, so the bar fades. It stays
+                                // in the tree: the header's Set opens the Set screen through this bar's button.
                                 SliverToBoxAdapter(
                                   child: SafeArea(
                                     top: false,
                                     bottom: false,
-                                    child: _panelColumn(_buildActionBar(context, state)),
+                                    child: AnimatedBuilder(
+                                      animation: _shapeMorph,
+                                      child: _panelColumn(_buildActionBar(context, state)),
+                                      builder: (context, bar) => IgnorePointer(
+                                        ignoring: _headerOver(),
+                                        child: AnimatedOpacity(
+                                          key: const ValueKey<String>('detail-action-bar'),
+                                          opacity: _headerOver() ? 0 : 1,
+                                          duration: context.motion(PrismDurations.fast),
+                                          curve: PrismCurves.enter,
+                                          child: bar,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 SliverToBoxAdapter(
@@ -1679,6 +1753,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                   state,
                   _cardShown,
                   header: _headerOver(),
+                  headerAction: canonicalLoading
+                      ? null
+                      : _headerSave?.call() ??
+                            PrismButton(
+                              label: context.l10n.wallpaperSet,
+                              size: PrismButtonSize.compact,
+                              onPressed: () =>
+                                  unawaited(_setButtonKey.currentState?.openSetScreen(entryPoint: 'detail_header')),
+                            ),
                   onClock: canonicalLoading
                       ? null
                       : () async {
@@ -2391,10 +2474,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       final String? savedKey = _savedTintKeyOf(localFile.path);
       if (savedKey != null) variant = DownloadVariant(key: savedKey, prepare: () async => localFile.path);
     }
-    // The round icon buttons press-scale themselves. Only the labelled pill needs the wrapper.
-    Widget downloadButton({String? label}) {
+    // The round icon buttons and the compact button press-scale themselves. Only the labelled pill needs the wrapper.
+    Widget downloadButton({String? label, bool compact = false}) {
       final Widget button = DownloadButton(
         label: label,
+        primary: compact,
         link: source,
         variant: variant,
         desktop: desktop,
@@ -2426,7 +2510,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           unawaited(_recordDownload(entity));
         },
       );
-      return label == null ? button : PressScale(child: button);
+      return label == null || compact ? button : PressScale(child: button);
     }
 
     Widget setButton({required String label}) => Column(
@@ -2464,6 +2548,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       ],
     );
     _saveAction = hideSetWallpaperUi ? (label) => downloadButton(label: label) : null;
+    _headerSave = hideSetWallpaperUi ? () => downloadButton(label: context.l10n.wallpaperSave, compact: true) : null;
     final primary = hideSetWallpaperUi
         ? WallpaperBarAction(
             label: context.l10n.wallpaperSaveToPhotos,

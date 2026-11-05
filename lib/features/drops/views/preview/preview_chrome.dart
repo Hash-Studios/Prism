@@ -49,7 +49,9 @@ class PreviewHeader extends StatelessWidget {
                           detail,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: PrismTextStyles.caption(context),
+                          style: PrismTextStyles.caption(
+                            context,
+                          ).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                       ),
                       if (owned) ...<Widget>[

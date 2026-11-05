@@ -180,36 +180,24 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1));
   }
 
-  test('provider semantics preserve published totals and distinguish unknown from zero', () {
-    expect(displayedFavouriteCount(WallpaperSource.prism, published: 8, saved: true), 8);
-    expect(displayedFavouriteCount(WallpaperSource.wallhaven, published: 9, saved: false), 9);
-    expect(displayedFavouriteCount(WallpaperSource.wallhaven, published: 9, saved: true), 9);
-    expect(displayedFavouriteCount(WallpaperSource.prism, saved: true), isNull);
-    expect(displayedFavouriteCount(WallpaperSource.prism, published: 0, saved: false), 0);
-    expect(displayedFavouriteCount(WallpaperSource.pexels, saved: false), isNull);
-    expect(displayedFavouriteCount(WallpaperSource.pexels, saved: true), 1);
-    expect(displayedFavouriteCount(WallpaperSource.pexels, published: 12, saved: false), 12);
-  });
-
-  testWidgets('heart is below image, toggles without opening image, and keeps authoritative total', (tester) async {
+  testWidgets('heart is below image at its leading edge, toggles without opening image, and shows no counts', (
+    tester,
+  ) async {
     var opened = 0;
     await pump(tester, _item(WallpaperSource.prism), onImageTap: () => opened++);
-    expect(find.text('8'), findsOneWidget);
-    expect(find.byIcon(Icons.bar_chart_rounded), findsOneWidget);
-    expect(find.text('1.2K'), findsOneWidget);
-    expect(find.bySemanticsLabel(RegExp('8 favourites')), findsOneWidget);
-    expect(find.bySemanticsLabel('1,234 views'), findsOneWidget);
-    final favouriteSemantics = tester.getSemantics(find.bySemanticsLabel(RegExp('8 favourites'))).getSemanticsData();
-    final viewsSemantics = tester.getSemantics(find.bySemanticsLabel('1,234 views')).getSemanticsData();
+    expect(find.text('8'), findsNothing);
+    expect(find.byIcon(Icons.bar_chart_rounded), findsNothing);
+    expect(counts.fetches, 0, reason: 'tiles do not fetch counts; the detail screen does');
+    final favouriteSemantics = tester.getSemantics(find.bySemanticsLabel('Favourite')).getSemanticsData();
     expect(favouriteSemantics.hasAction(SemanticsAction.tap), isTrue);
-    expect(favouriteSemantics.label, isNot(contains('1,234 views')));
-    expect(viewsSemantics.hasAction(SemanticsAction.tap), isFalse);
-    expect(viewsSemantics.flagsCollection.isButton, isFalse);
+    expect(favouriteSemantics.flagsCollection.isButton, isTrue);
     final heart = find.byIcon(Icons.favorite_border_rounded);
+    expect(tester.getSize(heart), const Size.square(20));
     final likeTarget = find.ancestor(of: heart, matching: find.byType(InkWell));
-    expect(tester.getSize(likeTarget).width, greaterThanOrEqualTo(44));
-    expect(tester.getSize(likeTarget).height, greaterThanOrEqualTo(44));
-    expect(tester.getTopLeft(heart).dy, greaterThan(tester.getBottomLeft(find.byKey(const ValueKey('image'))).dy));
+    expect(tester.getSize(likeTarget), const Size.square(44));
+    final image = find.byKey(const ValueKey('image'));
+    expect(tester.getTopLeft(heart).dx, tester.getTopLeft(image).dx);
+    expect(tester.getTopLeft(heart).dy, greaterThan(tester.getBottomLeft(image).dy));
     expect(find.text('depth badge'), findsOneWidget);
     await tester.tap(heart);
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));
@@ -218,43 +206,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1));
     expect(opened, 0);
     expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
-    expect(find.text('8'), findsOneWidget);
+    expect(find.text('8'), findsNothing);
     await tester.tap(find.byKey(const ValueKey('image')));
     expect(opened, 1);
     await tester.pumpWidget(const SizedBox());
     await tester.runAsync(cubit.close);
   });
 
-  testWidgets('zero views and zero favourites show no numbers', (tester) async {
-    counts.values['WALL'] = const PrismWallpaperStats(favourites: 0, views: 0);
-    await pump(tester, _item(WallpaperSource.prism));
-    expect(find.byIcon(Icons.bar_chart_rounded), findsNothing);
-    expect(find.text('0'), findsNothing);
-    expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
-    counts.values['WALL'] = const PrismWallpaperStats(favourites: 0);
-    await cubit.close();
-    cubit = FavouriteCountsCubit(counts);
-    getIt.unregister<FavouriteCountsCubit>();
-    getIt.registerSingleton<FavouriteCountsCubit>(cubit);
-    await pump(tester, _item(WallpaperSource.prism));
-    expect(find.byIcon(Icons.bar_chart_rounded), findsNothing);
-    expect(find.text('0'), findsNothing);
-  });
-
-  testWidgets('tapping the likes number toggles the same heart control', (tester) async {
-    await pump(tester, _item(WallpaperSource.prism));
-    await tester.tap(find.text('8'));
-    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
-    await tester.pump(const Duration(milliseconds: 1));
-    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
-    await tester.pump(const Duration(milliseconds: 1));
-    await tester.pump(const Duration(seconds: 10));
-    expect(repository.toggles, 1);
-    expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
-  });
-
   testWidgets('detail view totals override cached totals and render without fetched favourites', (tester) async {
-    await pump(tester, _item(WallpaperSource.prism));
     await tester.pumpWidget(
       const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -262,6 +221,8 @@ void main() {
         home: Scaffold(body: PrismFavouriteCount(id: 'wall', views: 42)),
       ),
     );
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pump(const Duration(milliseconds: 1));
     expect(find.bySemanticsLabel('8 favourites'), findsOneWidget);
     expect(find.bySemanticsLabel('42 views'), findsOneWidget);
 
@@ -337,7 +298,6 @@ void main() {
     bloc.add(FavouriteWallsEvent.synced(userId: 'user', items: [FavouriteWallEntity.fromFeedItem(item)]));
     await pump(tester, item);
     expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
-    expect(find.text('8'), findsOneWidget);
     bloc.add(
       FavouriteWallsEvent.synced(
         userId: 'user',
@@ -354,7 +314,7 @@ void main() {
     expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
   });
 
-  testWidgets('Pexels shows no count then one then no count', (tester) async {
+  testWidgets('a Pexels heart toggles on and off and never shows a count', (tester) async {
     await pump(tester, _item(WallpaperSource.pexels));
     expect(find.text('1'), findsNothing);
     await tester.tap(find.byIcon(Icons.favorite_border_rounded));
@@ -362,7 +322,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1));
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));
     await tester.pump(const Duration(milliseconds: 1));
-    expect(find.text('1'), findsOneWidget);
+    expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
+    expect(find.text('1'), findsNothing);
     await tester.tap(find.byIcon(Icons.favorite_rounded));
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));
     await tester.pump(const Duration(milliseconds: 1));
@@ -380,10 +341,9 @@ void main() {
     expect(bloc.state.status, LoadStatus.failure);
     await pump(tester, _item(WallpaperSource.pexels));
     expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
-    expect(find.text('1'), findsOneWidget);
   });
 
-  testWidgets('failed and repeated pending taps cannot change membership or total', (tester) async {
+  testWidgets('failed and repeated pending taps cannot change membership', (tester) async {
     repository.fail = true;
     repository.pending = Completer<void>();
     await pump(tester, _item(WallpaperSource.wallhaven, count: 123));
@@ -401,36 +361,23 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));
     await tester.pump(const Duration(milliseconds: 1));
     expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
-    expect(find.text('123'), findsOneWidget);
+    expect(find.text('123'), findsNothing);
     expect(tester.takeException(), isNull);
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('unknown is omitted, known zero shows the heart alone, large text fits a narrow card', (tester) async {
-    counts.unavailable = true;
-    await pump(tester, _item(WallpaperSource.prism));
-    expect(find.text('0'), findsNothing);
-    final failedFetchCount = counts.fetches;
-    counts.unavailable = false;
-    counts.values['WALL'] = const PrismWallpaperStats(favourites: 0);
-    cubit.request('wall', force: true);
-    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
-    await tester.pump(const Duration(milliseconds: 1));
-    expect(counts.fetches, failedFetchCount + 1);
-    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
-    await tester.pump(const Duration(milliseconds: 1));
-    expect(find.text('0'), findsNothing);
-    expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
+  testWidgets('large text right to left keeps a 44 point heart at the leading edge of a narrow card', (tester) async {
     await pump(
       tester,
       _item(WallpaperSource.wallhaven, count: 123456789, views: 987654321),
       scale: 2,
       direction: TextDirection.rtl,
     );
-    expect(find.text('987.7M'), findsOneWidget);
-    final likeTarget = find.ancestor(of: find.byIcon(Icons.favorite_border_rounded), matching: find.byType(InkWell));
-    expect(tester.getSize(likeTarget).width, greaterThanOrEqualTo(44));
-    expect(tester.getSize(likeTarget).height, greaterThanOrEqualTo(44));
+    expect(find.text('987.7M'), findsNothing);
+    final heart = find.byIcon(Icons.favorite_border_rounded);
+    final likeTarget = find.ancestor(of: heart, matching: find.byType(InkWell));
+    expect(tester.getSize(likeTarget), const Size.square(44));
+    expect(tester.getTopRight(heart).dx, tester.getTopRight(find.byKey(const ValueKey('image'))).dx);
     expect(tester.takeException(), isNull);
   });
 

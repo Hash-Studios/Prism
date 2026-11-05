@@ -111,7 +111,7 @@ class InterestTile extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      stops: const <double>[0.4, 1],
+                      stops: const <double>[0.3, 1],
                       colors: <Color>[
                         Colors.black.withValues(alpha: 0),
                         Colors.black.withValues(alpha: PrismBottomSheet.interestTileScrimAlpha),

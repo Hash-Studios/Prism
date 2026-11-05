@@ -9,6 +9,7 @@ import 'package:Prism/features/navigation/views/widgets/prism_bottom_nav.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:auto_route/auto_route.dart';
@@ -18,10 +19,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
 
+/// True while the scroll-to-top button is not offered: hidden behind the bar, or not built at all because the list is
+/// less than two screens down.
 bool _scrollToTopExcluded(WidgetTester tester) {
   final Finder label = find.byWidgetPredicate(
     (Widget widget) => widget is Semantics && widget.properties.label == AppLocalizationsEn().navigationScrollToTop,
   );
+  if (label.evaluate().isEmpty) return true;
   return tester
       .widget<ExcludeSemantics>(find.ancestor(of: label, matching: find.byType(ExcludeSemantics)).first)
       .excluding;
@@ -215,7 +219,49 @@ void main() {
     expect(tester.getSize(find.byTooltip('Home')).shortestSide, greaterThanOrEqualTo(48));
   });
 
-  testWidgets('a filled circle sits behind the active tab only and follows the selection', (tester) async {
+  testWidgets('the row shows a label under each icon on a pill, the rail and a narrow row show icons only', (
+    tester,
+  ) async {
+    final router = _FakeTabsRouter();
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(3)),
+        child: _host(router, const Center(child: PrismBottomNav())),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    expect(tester.getSize(find.byType(PrismBottomNav)), Size(PrismBottomNav.maxLength(labels: true), 56));
+    expect(tester.getSize(find.byTooltip('Home')), const Size(64, 48));
+    final Text home = tester.widget<Text>(find.text('Home'));
+    expect(home.style!.fontSize, 10.5);
+    expect(home.maxLines, 1);
+    expect(
+      MediaQuery.textScalerOf(tester.element(find.text('Home'))).scale(10),
+      12,
+      reason: 'text scale capped at 1.2',
+    );
+    expect(
+      tester.getTopLeft(find.text('Home')).dy,
+      greaterThan(tester.getBottomLeft(find.byIcon(Icons.home_rounded)).dy),
+    );
+    final BoxDecoration active =
+        tester
+                .widget<AnimatedContainer>(
+                  find.ancestor(of: find.text('Home'), matching: find.byType(AnimatedContainer)),
+                )
+                .decoration!
+            as BoxDecoration;
+    expect(active.shape, BoxShape.rectangle);
+    expect(active.borderRadius, BorderRadius.circular(PrismRadius.pill));
+
+    for (final Widget nav in const <Widget>[PrismBottomNav(axis: Axis.vertical), PrismBottomNav(labels: false)]) {
+      await tester.pumpWidget(_host(router, Center(child: nav)));
+      expect(find.text('Home'), findsNothing);
+      expect(tester.getSize(find.byTooltip('Home')), const Size(48, 48));
+    }
+  });
+
+  testWidgets('a filled shape sits behind the active tab only and follows the selection', (tester) async {
     final router = _FakeTabsRouter();
     await tester.pumpWidget(_host(router, const Center(child: PrismBottomNav())));
 
@@ -260,6 +306,11 @@ void main() {
     await tester.drag(find.byType(ListView), const Offset(0, -600));
     await tester.pumpAndSettle();
     expect(controller.offset, greaterThan(0));
+    expect(toTop, findsNothing, reason: 'the bar hides at once, the button waits for two screens');
+
+    await tester.drag(find.byType(ListView), const Offset(0, -1000));
+    await tester.pumpAndSettle();
+    expect(controller.offset, greaterThan(1200));
     expect(toTop, findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
@@ -286,12 +337,12 @@ void main() {
       ),
     );
 
-    await _dragList(tester, const Offset(0, -600));
+    await _dragList(tester, const Offset(0, -1500));
     expect(controller.offset, greaterThan(0));
     // Issue #543: hiding on the way down must not stick after the user scrolls back.
     expect(_scrollToTopExcluded(tester), isFalse);
 
-    await _dragList(tester, const Offset(0, 600));
+    await _dragList(tester, const Offset(0, 1500));
     expect(controller.offset, lessThan(100));
     expect(_scrollToTopExcluded(tester), isTrue);
     handle.dispose();
@@ -330,7 +381,7 @@ void main() {
     }
 
     await pumpAt(1);
-    await _dragList(tester, const Offset(0, -600));
+    await _dragList(tester, const Offset(0, -1500));
     expect(controller.offset, greaterThan(0));
     expect(_scrollToTopExcluded(tester), isFalse);
 
@@ -371,7 +422,7 @@ void main() {
     }
 
     await pumpBody(showList: true);
-    await _dragList(tester, const Offset(0, -600));
+    await _dragList(tester, const Offset(0, -1500));
     expect(_scrollToTopExcluded(tester), isFalse);
 
     await tester.tap(find.byIcon(Icons.arrow_upward_rounded));

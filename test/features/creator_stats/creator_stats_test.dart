@@ -352,7 +352,7 @@ void main() {
       expect(glint.bottom, lessThan(tester.getRect(title).top));
       expect(title.hitTestable(), findsOneWidget);
       await tester.pump(const Duration(milliseconds: 500));
-      await tester.scrollUntilVisible(upload, 150);
+      await tester.scrollUntilVisible(upload, 150, scrollable: find.byType(Scrollable).first);
       expect(upload.hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
     });

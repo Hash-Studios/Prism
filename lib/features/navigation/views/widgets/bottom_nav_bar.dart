@@ -31,16 +31,29 @@ const double _scrollTopSize = 44;
 double _oneHandedRowSpace(BuildContext context) =>
     MediaQuery.sizeOf(context).width - MediaQuery.paddingOf(context).horizontal - 2 * _barInset;
 
+/// The one-handed row keeps tab labels only where they fit next to both the avatar and the bell.
+bool _oneHandedLabelsFit(BuildContext context) =>
+    _oneHandedRowSpace(context) >= _compactRow + PrismBottomNav.maxLength(labels: true) + PrismSpace.xxs + _controlSize;
+
+double _oneHandedPill(BuildContext context) => PrismBottomNav.maxLength(labels: _oneHandedLabelsFit(context));
+
+/// Tab labels make the pill wider. They show only where the whole bottom row still fits with them. Else the tabs are
+/// icons only, at the size they had before labels.
+bool navLabelsFit(BuildContext context) => LayoutPrefsScope.oneHandedOf(context)
+    ? _oneHandedLabelsFit(context)
+    : _oneHandedRowSpace(context) >= PrismBottomNav.maxLength(labels: true) + _createGap + _createSize;
+
 /// With one-handed controls on, the bottom row has room for both the avatar and the bell. Else the avatar alone holds
 /// both, in a sheet.
 bool oneHandedRowHasRoom(BuildContext context) =>
-    _oneHandedRowSpace(context) >= _compactRow + PrismBottomNav.maxLength + PrismSpace.xxs + _controlSize;
+    _oneHandedRowSpace(context) >= _compactRow + _oneHandedPill(context) + PrismSpace.xxs + _controlSize;
 
 /// Too narrow for the avatar in the row: it stands above the create button instead.
-bool oneHandedAvatarAbove(BuildContext context) => _oneHandedRowSpace(context) < _compactRow + PrismBottomNav.maxLength;
+bool oneHandedAvatarAbove(BuildContext context) => _oneHandedRowSpace(context) < _compactRow + _oneHandedPill(context);
 
 /// Hosts the tab content with the floating pill and create button above it. The bar hides while the user scrolls
-/// down; the package's scroll-to-top button takes its place.
+/// down. The package's scroll-to-top button takes its place only after the user is more than two screens down and the
+/// keyboard is not up.
 ///
 /// Where iOS keeps a safe column on the right of a portrait screen (the iPhone Duo outer screen puts the status bar
 /// there), the pill and the create button stand in that column instead, always visible.
@@ -49,12 +62,29 @@ bool oneHandedAvatarAbove(BuildContext context) => _oneHandedRowSpace(context) <
 ///
 /// A fade to the page colour sits under the row, so content that scrolls under it does not fight the pill. While the
 /// keyboard is up, the row fades out and stops taking taps.
-class BottomBar extends StatelessWidget {
+class BottomBar extends StatefulWidget {
   final Widget? child;
   const BottomBar({this.child, super.key});
 
   @override
+  State<BottomBar> createState() => _BottomBarState();
+}
+
+class _BottomBarState extends State<BottomBar> {
+  /// More than two screens down the active vertical scroll view. Only then is scroll-to-top worth a button.
+  bool _deep = false;
+
+  bool _onScroll(ScrollNotification notification) {
+    final ScrollMetrics metrics = notification.metrics;
+    if (metrics.axis != Axis.vertical) return false;
+    final bool deep = metrics.pixels > 2 * metrics.viewportDimension;
+    if (deep != _deep) setState(() => _deep = deep);
+    return false;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final Widget? child = widget.child;
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;
     final bool keyboardUp = MediaQuery.viewInsetsOf(context).bottom > 0;
@@ -119,19 +149,31 @@ class BottomBar extends StatelessWidget {
       ),
       theme: floating.BottomBarThemeData(
         barDecoration: BoxDecoration(color: Colors.transparent, borderRadius: BorderRadius.circular(500)),
-        iconDecoration: BoxDecoration(
-          color: cs.surface,
-          shape: BoxShape.circle,
-          border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
-          boxShadow: <BoxShadow>[
-            BoxShadow(color: cs.shadow.withValues(alpha: 0.12), blurRadius: 8, offset: const Offset(0, 2)),
-          ],
-        ),
+        // The circle is drawn by [icon], so it can fade and scale in. The package clips the icon to an oval, so a
+        // shadow would be cut off.
+        iconDecoration: const BoxDecoration(),
         iconWidth: _scrollTopSize,
         iconHeight: _scrollTopSize,
       ),
+      showIcon: _deep && !keyboardUp,
       iconTooltip: context.l10n.navigationScrollToTop,
-      icon: (width, height) => Icon(Icons.arrow_upward_rounded, color: cs.onSurface, size: 20),
+      icon: (width, height) => TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0, end: 1),
+        duration: context.motion(PrismDurations.fast),
+        curve: PrismCurves.enter,
+        builder: (context, t, child) => Opacity(
+          opacity: t,
+          child: Transform.scale(scale: 0.95 + 0.05 * t, child: child),
+        ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: cs.surface,
+            shape: BoxShape.circle,
+            border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
+          ),
+          child: Center(child: Icon(Icons.arrow_upward_rounded, color: cs.onSurface, size: 20)),
+        ),
+      ),
       // The tab Scaffolds do not know about the pill, so lift their floating snackbars above it.
       body: Theme(
         data: theme.copyWith(
@@ -143,7 +185,12 @@ class BottomBar extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            Positioned.fill(child: child ?? const SizedBox.shrink()),
+            Positioned.fill(
+              child: NotificationListener<ScrollNotification>(
+                onNotification: _onScroll,
+                child: child ?? const SizedBox.shrink(),
+              ),
+            ),
             Positioned(
               left: 0,
               right: 0,
@@ -173,12 +220,12 @@ class BottomBar extends StatelessWidget {
             heightFactor: 1.0,
             child: oneHanded
                 ? _OneHandedRow(avatarAbove: avatarAbove, roomy: oneHandedRowHasRoom(context))
-                : const Row(
+                : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      IntrinsicWidth(child: PrismBottomNav()),
-                      SizedBox(width: _createGap),
-                      PrismFab(),
+                      IntrinsicWidth(child: PrismBottomNav(labels: navLabelsFit(context))),
+                      const SizedBox(width: _createGap),
+                      const PrismFab(),
                     ],
                   ),
           ),
@@ -198,24 +245,24 @@ class _OneHandedRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Widget tabsAndCreate = Row(
+    final Widget tabsAndCreate = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IntrinsicWidth(child: PrismBottomNav()),
-        SizedBox(width: _createGap),
-        PrismFab(),
+        IntrinsicWidth(child: PrismBottomNav(labels: _oneHandedLabelsFit(context))),
+        const SizedBox(width: _createGap),
+        const PrismFab(),
       ],
     );
     if (avatarAbove) {
-      return const Column(
+      return Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Padding(
+          const Padding(
             padding: EdgeInsetsDirectional.only(end: (_createSize - _controlSize) / 2),
             child: AccountButton(),
           ),
-          SizedBox(height: PrismSpace.xs),
+          const SizedBox(height: PrismSpace.xs),
           tabsAndCreate,
         ],
       );

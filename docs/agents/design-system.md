@@ -39,7 +39,8 @@ Use `Theme.of(context).colorScheme`. Every role follows the active theme variant
 
 On top of a wallpaper (detail screen, tiles, carousels) the theme does not apply. Use white text and icons on a
 black scrim (`Colors.black.withValues(alpha: 0.38)` circles, or a bottom gradient). `PrismIconButton(onImage: true)`
-does this.
+does this. Header buttons over a cover that can be light or dark (profiles, collections) use
+`PrismIconButton(glass: true)`: a `cs.surface` circle at 92% with a soft shadow and an `onSurface` icon.
 
 Status colours that are not the accent: success `Color(0xFF2FBF71)`, warning `Color(0xFFFFB454)`. Use them only
 for status, with an icon or a label next to them.
@@ -72,8 +73,14 @@ Text on a wallpaper: copy the style and set `color: Colors.white`.
   `PrismSpace.page` (20). The gap between groups is at least twice the gap inside a group.
 - A tab page ends with `SizedBox(height: PrismSpace.bottomBarClearance)` so the last item clears the bottom bar.
 - The floating bottom row has a fade to `cs.surface` (0 to 85%) under it, `viewPadding.bottom + 90` high, that lets
-  taps through. While the keyboard is up, the row fades out and takes no taps. Its scroll-to-top button is 44 points.
-- A `PrismPage` bottom bar has a hairline on top.
+  taps through. While the keyboard is up, the row fades out and takes no taps. Its scroll-to-top button is 44 points
+  and shows only while the row is hidden, the list is more than two screens down and the keyboard is down.
+- Bottom-nav tabs show a 10.5 w600 label under a 20 point icon (64 wide slots, text scale capped at 1.2), with a pill
+  behind the active tab. Where the labelled pill does not fit the row, the tabs fall back to icons only. The side rail
+  is always icons only.
+- A `PrismPage` bottom bar has a hairline on top. Use `bottomBar` only when the body is taller than the screen. On a
+  short page, put the action in the content flow, `PrismSpace.xl` below the content, so it does not float far from
+  what it acts on.
 - `PrismRadius`: `xs 8`, `sm 12`, `md 16`, `lg 20` (cards), `xl 28` (dialogs), `pill`. A nested surface takes the
   next step down. Bottom sheets use `PrismBottomSheet.topRadius` (32) and the screen's own corner radius at the bottom. Wallpaper tiles in a grid use `PrismRadius.sm`.
 - Tap targets are 44 points or more.
@@ -89,16 +96,16 @@ Text on a wallpaper: copy the style and set `color: Colors.white`.
 | `PrismRow(icon:, title:, subtitle:, value:, trailing:, onTap:, destructive:)` | Any list row. |
 | `PrismSectionHeader(title:, actionLabel:, onAction:, small:)` | Heading above a group. |
 | `PrismButton(label:, onPressed:, variant:, size:, icon:, loading:, expand:)` | Every button. `primary` once per screen, then `tonal`, `ghost`, `danger`. |
-| `PrismIconButton(icon:, tooltip:, onPressed:, filled:, onImage:)` | Every icon-only button. The tooltip is required. |
+| `PrismIconButton(icon:, tooltip:, onPressed:, filled:, onImage:, glass:)` | Every icon-only button. The tooltip is required. |
 | `PrismChip(label:, selected:, onTap:)` | Filters and choices. |
-| `PrismTextField(label:, hint:, error:)` | Text input. |
+| `PrismTextField(label:, hint:, error:)` | Text input. The label sits above the field, inset `PrismSpace.md` so it lines up with the text inside. Hints use `onSurfaceVariant`. |
 | `showPrismSheet(context, builder:, detents:)` + `PrismSheetBody(title:, message:, mood:, child:, actions:, trailingAction:, childScrolls:)` | Every bottom sheet. See "Bottom sheets" below. |
 | `showPrismConfirm(context, title:, message:, confirmLabel:, destructive:)` | Every confirm. It replaces `AlertDialog`. The confirm label names the action. |
 | `PrismSkeleton`, `PrismSkeleton.rows()`, `PrismSkeleton.cards()`, `PrismBone` | Loading lists and cards. `LoadingCards` for wallpaper grids. |
-| `GlintState(kind:, title:, body:, actionLabel:, onAction:, actionVariant:)` | Empty, error, offline, loading and nothing-new states. The action is `primary` by default. Pass `actionVariant: PrismButtonVariant.tonal` when the page already shows a primary action or a bottom bar. On an area 480 points or taller the state sits above the centre (`Alignment(0, -0.35)`). |
+| `GlintState(kind:, title:, body:, actionLabel:, onAction:, actionVariant:)` | Empty, error, offline, loading and nothing-new states. The action is `primary` by default. Pass `actionVariant: PrismButtonVariant.tonal` when the page already shows a primary action or a bottom bar. On an area 480 points or taller the state sits above the centre (`Alignment(0, -0.35)`). With large text it scrolls instead of overflowing. |
 | `showGlintToast(context, mood:)` | A success moment: wallpaper set, upload sent, purchase done. |
 | `toasts.success(msg)` / `toasts.error(msg)` | Short feedback. It is themed and sits above the bottom bar. |
-| `PrismWallGrid.delegate(context)`, `PrismWallGrid.padding`, `PrismWallTile(url:, heroTag:, onTap:, onLongPress:, overlay:)` | Every grid of wallpapers. One spacing (8), margin (12) and radius (12) app-wide. The home feed grid uses the same values (`PrismFeedLayout.gridSpacing`, `gridPadding`). `LoadingCards()` is its skeleton. |
+| `PrismWallGrid.delegate(context)`, `PrismWallGrid.padding`, `PrismWallTile(url:, heroTag:, onTap:, onLongPress:, overlay:)` | Every grid of wallpapers. One spacing (8), margin (12) and radius (12) app-wide. The home feed grid uses the same values (`PrismFeedLayout.gridSpacing`, `gridPadding`). `LoadingCards()` is its skeleton. The footer under a tile (`FavouriteWallpaperFooter`) is a heart toggle only: a 20 point glyph on the tile's leading edge in a 44 point target. No counts on tiles; counts live on the detail screen. |
 | `PrismTag(label:, tone:)` | A status label: Pending, Approved, Pro, New. |
 | `PrismAvatar(url:, name:, size:)` | Every profile picture. |
 | `PrismSegmented(values:, selected:, labelOf:, onChanged:)` | Two to four exclusive choices. iOS look: a raised neutral thumb (`surface` on light, `surfaceContainerHighest` on dark) with a soft shadow, never ink or accent. The selected label is `onSurface` w700, the others `onSurfaceVariant` w600. 44 points high (48 dp on Android). |

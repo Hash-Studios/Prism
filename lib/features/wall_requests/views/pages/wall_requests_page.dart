@@ -204,10 +204,21 @@ class _TabBody extends StatelessWidget {
             child: ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xl),
-              itemCount: requests.length,
+              // A short list ends with a caption, so the page does not look finished early.
+              itemCount: requests.length + (requests.length < 3 ? 1 : 0),
               separatorBuilder: (BuildContext context, _) =>
                   Divider(height: 1, thickness: 1, color: cs.onSurface.withValues(alpha: 0.08)),
               itemBuilder: (BuildContext context, int index) {
+                if (index == requests.length) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: PrismSpace.xl),
+                    child: Text(
+                      l10n.wallRequestsEmptyTopBody,
+                      textAlign: TextAlign.center,
+                      style: PrismTextStyles.caption(context).copyWith(color: cs.onSurfaceVariant),
+                    ),
+                  );
+                }
                 final WallRequest request = requests[index];
                 return WallRequestRow(
                   request: request,

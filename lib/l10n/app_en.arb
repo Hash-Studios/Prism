@@ -1420,7 +1420,7 @@
   "@accountPrismPro": {
     "description": "Prism Pro drawer heading."
   },
-  "accountPrivacyAction": "PRIVACY",
+  "accountPrivacyAction": "Privacy policy",
   "@accountPrivacyAction": {
     "description": "About page action to view the privacy policy."
   },
@@ -1772,19 +1772,19 @@
   "@accountSignInToPrism": {
     "description": "Heading for the signed-out settings account card."
   },
-  "accountSocialGithub": "GITHUB",
+  "accountSocialGithub": "GitHub",
   "@accountSocialGithub": {
     "description": "About page social link label for GitHub."
   },
-  "accountSocialInstagram": "INSTAGRAM",
+  "accountSocialInstagram": "Instagram",
   "@accountSocialInstagram": {
     "description": "About page social link label for Instagram."
   },
-  "accountSocialTelegram": "TELEGRAM",
+  "accountSocialTelegram": "Telegram",
   "@accountSocialTelegram": {
     "description": "About page social link label for Telegram."
   },
-  "accountSocialTwitter": "TWITTER",
+  "accountSocialTwitter": "Twitter",
   "@accountSocialTwitter": {
     "description": "About page social link label for Twitter."
   },
@@ -1848,7 +1848,7 @@
   "@accountTerms": {
     "description": "Terms of use link label."
   },
-  "accountTermsAction": "TERMS",
+  "accountTermsAction": "Terms of use",
   "@accountTermsAction": {
     "description": "About page action to view the terms of use."
   },
@@ -2017,7 +2017,7 @@
   "@accountWhatsNew": {
     "description": "Menu item for the release changelog."
   },
-  "accountWhatsNewAction": "WHAT'S NEW",
+  "accountWhatsNewAction": "What's new",
   "@accountWhatsNewAction": {
     "description": "About page action to view changes."
   },
@@ -5183,7 +5183,7 @@
   "economyLeaderboardNoRankings": "No rankings yet",
   "economyLeaderboardOffline": "If you are offline, saved scores may be shown.",
   "economyLeaderboardRankedByXp": "Ranked by XP earned this week",
-  "economyLeaderboardReset": "Resets Monday 00:00 UTC · {days, plural, one{1d} other{{days}d}} {hours, plural, one{1h} other{{hours}h}} left",
+  "economyLeaderboardReset": "Resets in {days, plural, one{1d} other{{days}d}} {hours, plural, one{1h} other{{hours}h}}",
   "@economyLeaderboardReset": {
     "placeholders": {
       "days": {
@@ -5958,10 +5958,10 @@
     }
   },
   "economyWeekComplete": "Week complete!",
-  "economyWeekly": "WEEKLY",
+  "economyWeekly": "Weekly",
   "economyWeeklyDraw": "Weekly draw",
   "economyWeeklyDrop": "Weekly Drop",
-  "economyWeeklyEndsIn": "WEEKLY · {time}",
+  "economyWeeklyEndsIn": "Weekly · {time}",
   "@economyWeeklyEndsIn": {
     "placeholders": {
       "time": {
@@ -6141,18 +6141,6 @@
   "notifEmptyTitle": "No notifications",
   "notifExpanded": "Expanded",
   "notifGenericTitle": "Notification",
-  "notifGroupAndMore": "{message} and {otherCount, plural, one{1 more.} other{{otherCount} more.}}",
-  "@notifGroupAndMore": {
-    "placeholders": {
-      "message": {
-        "type": "String"
-      },
-      "otherCount": {
-        "type": "int",
-        "format": "decimalPattern"
-      }
-    }
-  },
   "notifGroupApprovals": "{count, plural, one{approval} other{approvals}}",
   "@notifGroupApprovals": {
     "placeholders": {
@@ -6532,10 +6520,10 @@
   "onboardingAiGenerating": "crafting your wallpaper…",
   "onboardingBrowseGuest": "Browse without an account",
   "onboardingCategoriesUnavailable": "we could not load categories, you can skip this step",
-  "onboardingContinue": "continue",
+  "onboardingContinue": "Continue",
   "onboardingContinueApple": "Continue with Apple",
   "onboardingContinueGoogle": "Continue with Google",
-  "onboardingContinueSelected": "continue ({count} selected)",
+  "onboardingContinueSelected": "Continue ({count} selected)",
   "@onboardingContinueSelected": {
     "placeholders": {
       "count": {
@@ -6576,7 +6564,7 @@
   "onboardingFollowing": "following",
   "onboardingGenerateFailure": "something went wrong — tap generate to try again",
   "onboardingGenerateSuccess": "looking good! opening your wallpaper",
-  "onboardingGenerateWallpaper": "generate my wallpaper",
+  "onboardingGenerateWallpaper": "Generate my wallpaper",
   "onboardingHeadlineCreators": "Find your people",
   "onboardingHeadlineCustomize": "Make it yours",
   "onboardingHeadlineGenerate": "Create your\nfirst wallpaper",
@@ -6597,9 +6585,9 @@
   "onboardingRecoverySetupFailed": "Couldn't finish setup. Try again.",
   "onboardingRecoverySetupFailedHelper": "couldn't finish setup. check your connection and try again",
   "onboardingRecoverySignIn": "Sign in again",
-  "onboardingReloadLower": "reload",
-  "onboardingSavePhotos": "save to photos",
-  "onboardingSelectInterestMinimum": "select at least {count} categories to personalize your feed",
+  "onboardingReloadLower": "Reload",
+  "onboardingSavePhotos": "Save to photos",
+  "onboardingSelectInterestMinimum": "Select at least {count} categories to personalize your feed",
   "@onboardingSelectInterestMinimum": {
     "placeholders": {
       "count": {
@@ -6608,12 +6596,12 @@
       }
     }
   },
-  "onboardingSetWallpaper": "set as wallpaper",
-  "onboardingSignInAgainLower": "sign in again",
+  "onboardingSetWallpaper": "Set as wallpaper",
+  "onboardingSignInAgainLower": "Sign in again",
   "onboardingSkip": "Skip",
-  "onboardingSkipLower": "skip",
+  "onboardingSkipLower": "Skip",
   "onboardingTermsRequired": "Please agree to the Terms and Privacy policy first.",
-  "onboardingTryAgainLower": "try again",
+  "onboardingTryAgainLower": "Try again",
   "onboardingWallpaperForInterest": "we picked this wallpaper based on your interest in {category}",
   "@onboardingWallpaperForInterest": {
     "placeholders": {
@@ -8998,11 +8986,11 @@
   "@wallpaperStartupFailed": {
     "description": "Title shown when app startup fails."
   },
-  "wallpaperThemeDarkAccent": "Dark Accent Color",
+  "wallpaperThemeDarkAccent": "Dark accent colour",
   "@wallpaperThemeDarkAccent": {
     "description": "Section title for choosing the dark theme accent colour."
   },
-  "wallpaperThemeDarkThemes": "Dark Themes",
+  "wallpaperThemeDarkThemes": "Dark themes",
   "@wallpaperThemeDarkThemes": {
     "description": "Section title for dark theme choices."
   },
@@ -9014,11 +9002,11 @@
   "@wallpaperAppAccentUpdated": {
     "description": "Snackbar message shown after the app accent changes from a wallpaper."
   },
-  "wallpaperThemeLightAccent": "Light Accent Color",
+  "wallpaperThemeLightAccent": "Light accent colour",
   "@wallpaperThemeLightAccent": {
     "description": "Section title for choosing the light theme accent colour."
   },
-  "wallpaperThemeLightThemes": "Light Themes",
+  "wallpaperThemeLightThemes": "Light themes",
   "@wallpaperThemeLightThemes": {
     "description": "Section title for light theme choices."
   },
@@ -9030,7 +9018,7 @@
   "@wallpaperThemeModeLight": {
     "description": "Light app theme mode option."
   },
-  "wallpaperThemeModeSystem": "System (Light/Dark)",
+  "wallpaperThemeModeSystem": "System",
   "@wallpaperThemeModeSystem": {
     "description": "App theme mode option that follows the system light or dark appearance."
   },
@@ -11392,7 +11380,7 @@
   },
   "challengeTitle": "Weekly challenge",
   "challengeRules": "Up to 3 entries, each reviewed before appearing.",
-  "challengeVotingRules": "Vote for other creators until {date} UTC.",
+  "challengeVotingRules": "Vote for other creators until {date}.",
   "@challengeVotingRules": {
     "placeholders": {
       "date": {
@@ -14089,5 +14077,9 @@
   "searchPhotoCouldNotOpen": "Couldn't open that photo. Try another one.",
   "@searchPhotoCouldNotOpen": {
     "description": "Toast when the picked photo cannot be decoded."
-  }
+  },
+  "searchMoreWallpapers": "More wallpapers",
+  "@searchMoreWallpapers": {"description": "Section header for extra wallpaper results in search."},
+  "wallpaperPreviewNoEvents": "No events today",
+  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."}
 }

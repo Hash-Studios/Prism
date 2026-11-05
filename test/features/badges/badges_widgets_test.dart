@@ -113,6 +113,37 @@ void main() {
     }
   });
 
+  testWidgets('the +N pill hugs its label instead of filling the row', (tester) async {
+    final List<String> ids = badgeCatalog.take(7).map((BadgeInfo info) => info.id).toList();
+    await tester.pumpWidget(_app(SizedBox(width: 390, child: ProfileBadgeRow(badgeIds: ids))));
+
+    expect(tester.getSize(find.bySemanticsLabel('Badges')).width, lessThan(100));
+  });
+
+  testWidgets('profile row puts the leading item first in the same row, even with no badges', (tester) async {
+    const Key leading = ValueKey<String>('leading');
+    await tester.pumpWidget(
+      _app(
+        ProfileBadgeRow(
+          badgeIds: <String>[badgeCatalog.first.id],
+          leading: const SizedBox(key: leading, width: 40, height: 24),
+        ),
+      ),
+    );
+    expect(tester.getCenter(find.byKey(leading)).dy, tester.getCenter(find.byType(Tooltip)).dy);
+    expect(tester.getCenter(find.byKey(leading)).dx, lessThan(tester.getCenter(find.byType(Tooltip)).dx));
+
+    await tester.pumpWidget(
+      _app(
+        const ProfileBadgeRow(
+          badgeIds: <String>[],
+          leading: SizedBox(key: leading, width: 40, height: 24),
+        ),
+      ),
+    );
+    expect(find.byKey(leading), findsOneWidget);
+  });
+
   testWidgets('profile row shows five badges without a pill', (tester) async {
     final List<String> ids = badgeCatalog.take(5).map((BadgeInfo info) => info.id).toList();
     await tester.pumpWidget(_app(Center(child: ProfileBadgeRow(badgeIds: ids))));

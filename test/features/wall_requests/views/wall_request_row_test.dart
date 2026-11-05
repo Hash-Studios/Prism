@@ -49,7 +49,7 @@ void main() {
 
     expect(find.byTooltip('Upvote'), findsOneWidget);
     expect(find.byTooltip('Remove upvote'), findsNothing);
-    expect(find.text('dark minimal mountains'), findsOneWidget);
+    expect(find.text('Dark minimal mountains'), findsOneWidget);
   });
 
   testWidgets('a voted request shows Remove upvote', (tester) async {

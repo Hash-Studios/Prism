@@ -69,22 +69,25 @@ class _WotdWidgetCardState extends State<WotdWidgetCard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(l10n.widgetsCardTitle, maxLines: 2, style: PrismTextStyles.rowTitle(context)),
+                Text(l10n.widgetsCardTitle, maxLines: 2, style: PrismTextStyles.cardTitle(context)),
                 Text(
                   l10n.widgetsCardBody,
-                  maxLines: 2,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: PrismTextStyles.caption(context),
                 ),
+                const SizedBox(height: PrismSpace.xs),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: PrismButton(
+                    label: l10n.widgetsCardAction,
+                    variant: PrismButtonVariant.ghost,
+                    size: PrismButtonSize.compact,
+                    onPressed: _showGuide,
+                  ),
+                ),
               ],
             ),
-          ),
-          const SizedBox(width: PrismSpace.xs),
-          PrismButton(
-            label: l10n.widgetsCardAction,
-            variant: PrismButtonVariant.tonal,
-            size: PrismButtonSize.compact,
-            onPressed: _showGuide,
           ),
           PrismIconButton(icon: Icons.close_rounded, tooltip: l10n.widgetsCardDismiss, onPressed: _dismiss),
         ],

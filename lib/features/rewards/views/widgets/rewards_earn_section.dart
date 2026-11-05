@@ -233,11 +233,11 @@ class _RewardPill extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const PrismCoinIcon(size: 14),
-            const SizedBox(width: 5),
             Flexible(
               child: Text(reward, style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w700)),
             ),
+            const SizedBox(width: PrismSpace.xxs),
+            const PrismCoinIcon(size: 14),
           ],
         ),
       ),

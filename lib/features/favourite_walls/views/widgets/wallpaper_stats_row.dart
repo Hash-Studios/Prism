@@ -3,8 +3,11 @@ import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// Favourites and views under a wallpaper tile. A zero count is noise: views hide at 0, and the heart shows without a
-/// number until someone favourites the wall. Screen readers still hear the favourite count.
+/// Favourites and views for a wallpaper. A zero count is noise: views hide at 0, and the heart shows without a number
+/// until someone favourites the wall. Screen readers still hear the favourite count.
+///
+/// With [onFavouriteTap] the heart is a 44 point toggle whose 20 point glyph sits on the leading edge, so it lines up
+/// with the tile above it.
 class WallpaperStatsRow extends StatelessWidget {
   const WallpaperStatsRow({
     super.key,
@@ -70,16 +73,17 @@ class WallpaperStatsRow extends StatelessWidget {
                   onTap: favouriteEnabled ? onFavouriteTap : null,
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Center(
-                        child: _Stat(
-                          icon: favouriteIcon ?? Icons.favorite_rounded,
-                          count: favouriteCount,
-                          iconColor: favouriteIconColor ?? scheme.onSurfaceVariant,
-                          gap: 5,
-                          style: style,
-                        ),
+                    child: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      widthFactor: 1,
+                      heightFactor: 1,
+                      child: _Stat(
+                        icon: favouriteIcon ?? Icons.favorite_rounded,
+                        count: favouriteCount,
+                        iconColor: favouriteIconColor ?? scheme.onSurfaceVariant,
+                        iconSize: 20,
+                        gap: 5,
+                        style: style,
                       ),
                     ),
                   ),
@@ -113,19 +117,27 @@ class WallpaperStatsRow extends StatelessWidget {
 }
 
 class _Stat extends StatelessWidget {
-  const _Stat({required this.icon, required this.count, required this.iconColor, required this.style, this.gap = 4});
+  const _Stat({
+    required this.icon,
+    required this.count,
+    required this.iconColor,
+    required this.style,
+    this.iconSize = 17,
+    this.gap = 4,
+  });
 
   final IconData? icon;
   final String? count;
   final Color iconColor;
   final TextStyle style;
+  final double iconSize;
   final double gap;
 
   @override
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      if (icon != null) ...[Icon(icon, size: 17, color: iconColor), if (count != null) SizedBox(width: gap)],
+      if (icon != null) ...[Icon(icon, size: iconSize, color: iconColor), if (count != null) SizedBox(width: gap)],
       if (count != null)
         Flexible(
           child: Text(count!, maxLines: 1, overflow: TextOverflow.ellipsis, style: style),

@@ -3,13 +3,13 @@ import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:flutter/material.dart';
 
-/// [color] moved towards [ink] in small steps until it reaches 4.5:1 on [surface], so a light gold stays readable on a
-/// white page. A colour that already reads is kept as it is.
+/// [color] moved towards [ink] in small steps until it reaches 6:1 on [surface], so a light gold stays readable on a
+/// white page, also at the edge of the gradient. A colour that already reads is kept as it is.
 @visibleForTesting
 Color readableGlowStop(Color color, Color ink, Color surface) {
   for (double t = 0; t < 1; t += 0.04) {
     final Color candidate = Color.lerp(color, ink, t)!;
-    if (contrastRatio(candidate, surface) >= 4.5) return candidate;
+    if (contrastRatio(candidate, surface) >= 6.0) return candidate;
   }
   return ink;
 }
@@ -48,7 +48,7 @@ class GlowText extends StatelessWidget {
         // The mask replaces the colour; the text only has to be opaque.
         style: base.copyWith(
           color: Colors.white,
-          shadows: <Shadow>[Shadow(color: colors.first.withValues(alpha: 0.55), blurRadius: 10)],
+          shadows: <Shadow>[Shadow(color: colors.first.withValues(alpha: 0.3), blurRadius: 6)],
         ),
       ),
     );

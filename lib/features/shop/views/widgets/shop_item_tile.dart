@@ -54,30 +54,37 @@ class ShopItemTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Expanded(
-            child: item.kind == ShopItemKind.appIcon
-                ? LayoutBuilder(
-                    builder: (BuildContext context, BoxConstraints box) => Center(
-                      child: ShopItemPreview(item: item, size: math.min(box.maxWidth, box.maxHeight)),
-                    ),
-                  )
-                : Center(child: ShopItemPreview(item: item, size: 80)),
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints box) => Center(
+                child: ShopItemPreview(item: item, size: math.min(box.maxWidth, box.maxHeight)),
+              ),
+            ),
           ),
           const SizedBox(height: PrismSpace.xs),
           Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: PrismTextStyles.rowTitle(context)),
           const SizedBox(height: PrismSpace.xxs),
-          Row(
-            children: <Widget>[
-              if (showPrice) ...<Widget>[
-                const PrismCoinIcon(size: 16),
-                const SizedBox(width: 4),
-                Text(formatLocalizedNumber(price, context.l10n), style: PrismTextStyles.body(context)),
-                const SizedBox(width: PrismSpace.xs),
+          // One fixed height, so tiles with a price, a tag or both line up across the grid.
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 24),
+            child: Row(
+              children: <Widget>[
+                if (showPrice) ...<Widget>[
+                  const PrismCoinIcon(size: 16),
+                  const SizedBox(width: 4),
+                  Text(
+                    formatLocalizedNumber(price, context.l10n),
+                    style: PrismTextStyles.rowTitle(
+                      context,
+                    ).copyWith(fontFeatures: const <FontFeature>[FontFeature.tabularFigures()]),
+                  ),
+                  const SizedBox(width: PrismSpace.xs),
+                ],
+                if (tag != null)
+                  Flexible(
+                    child: PrismTag(label: tag.$1, tone: tag.$2),
+                  ),
               ],
-              if (tag != null)
-                Flexible(
-                  child: PrismTag(label: tag.$1, tone: tag.$2),
-                ),
-            ],
+            ),
           ),
         ],
       ),

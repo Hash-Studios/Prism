@@ -590,6 +590,35 @@ void main() {
       await tester.pump(const Duration(seconds: 10));
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
+    testWidgets('Set in the solid header opens the Set screen as detail_header', (tester) async {
+      final List<SetScreenRequest> opened = <SetScreenRequest>[];
+      stubSetScreen(opened, choice: const SetWallpaperChoice(WallpaperTarget.home));
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: _prism(),
+          paletteLoading: false,
+        ),
+        // A short window, so the details scroll the card under the header.
+        surfaceSize: const Size(360, 300),
+      );
+      final ScrollController scroll = tester.widget<CustomScrollView>(find.byType(CustomScrollView)).controller!;
+      scroll.jumpTo(scroll.position.maxScrollExtent);
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.descendant(of: find.byKey(const ValueKey<String>('detail-header-action')), matching: find.text('Set')),
+      );
+      await tester.pump();
+      await waitUntil(tester, () => analytics.events.whereType<SetWallEvent>().isNotEmpty);
+
+      expect(opened, hasLength(1));
+      expect(opened.single.url, _prism().fullUrl);
+      expect(analytics.events.whereType<SetWallEvent>().single.entryPoint, 'detail_header');
+      await tester.pump(const Duration(seconds: 10));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
     testWidgets('on iOS Preview on your screen opens the preview with Save to Photos, not the Set screen', (
       tester,
     ) async {

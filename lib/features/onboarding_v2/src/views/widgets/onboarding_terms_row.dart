@@ -82,16 +82,25 @@ class OnboardingTermsRow extends StatelessWidget {
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: toggle,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 44),
-            child: Row(
-              children: <Widget>[
-                _Check(accepted: accepted),
-                const SizedBox(width: PrismSpace.sm),
-                Expanded(
-                  child: Text.rich(TextSpan(style: text, children: agreementSpans)),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(PrismRadius.sm),
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: PrismSpace.xs),
+                child: Row(
+                  children: <Widget>[
+                    _Check(accepted: accepted),
+                    const SizedBox(width: PrismSpace.sm),
+                    Expanded(
+                      child: Text.rich(TextSpan(style: text, children: agreementSpans)),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

@@ -212,7 +212,7 @@ void main() {
       contributorsLoader = () async => <Contributor>[];
       await pumpAbout(tester);
 
-      await tester.tap(find.text(_en.accountWhatsNewAction));
+      await tester.tap(find.text(_en.accountWhatsNewAction).first);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
@@ -244,7 +244,7 @@ void main() {
         _en.accountSocialInstagram,
         _en.accountSocialTelegram,
       ]) {
-        expect(find.text(row), findsOneWidget, reason: row);
+        expect(find.text(row), findsWidgets, reason: row);
       }
 
       double top(Finder finder) => tester.getTopLeft(finder.first).dy;

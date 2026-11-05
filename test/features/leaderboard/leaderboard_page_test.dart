@@ -104,7 +104,7 @@ void main() {
     expect(find.text('Following'), findsOneWidget);
     expect(find.text('Friends'), findsNothing);
     expect(find.text('Ranked by XP earned this week'), findsNothing);
-    expect(find.textContaining('Resets Monday 00:00 UTC · '), findsOneWidget);
+    expect(find.textContaining('Resets in '), findsOneWidget);
     expect(find.text('Top 50 · updated about every 3 hours'), findsNothing);
     expect(find.textContaining('pull to refresh'), findsNothing);
     expect(find.text('Ana'), findsOneWidget);
@@ -155,6 +155,7 @@ void main() {
     expect(find.text('40 XP'), findsOneWidget);
     expect(find.text('Your score is included. Follow creators to compare weekly XP.'), findsOneWidget);
     expect(find.text('Find creators'), findsOneWidget);
+    expect(find.byType(PrismInlineState), findsOneWidget);
     expect(find.text('No rankings yet'), findsNothing);
   });
 
@@ -269,7 +270,7 @@ void main() {
   for (final LoadStatus status in <LoadStatus>[LoadStatus.initial, LoadStatus.loading]) {
     testWidgets('pulling the ${status.name} skeleton does not start an overlapping refresh', (tester) async {
       await pumpPage(tester, loaded(global: const <LeaderboardEntry>[]).copyWith(globalStatus: status));
-      await tester.drag(find.textContaining('Resets Monday'), const Offset(0, 500));
+      await tester.drag(find.textContaining('Resets in'), const Offset(0, 500));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
@@ -286,7 +287,7 @@ void main() {
       await pumpPage(tester, initial, states: states.stream);
       await tester.pump(const Duration(milliseconds: 400));
 
-      await tester.drag(find.textContaining('Resets Monday'), const Offset(0, 500));
+      await tester.drag(find.textContaining('Resets in'), const Offset(0, 500));
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
       verify(() => bloc.add(const LeaderboardEvent.refreshed())).called(1);
@@ -303,6 +304,6 @@ void main() {
   }
 
   test('resetCaption counts down to Monday 00:00 UTC', () {
-    expect(resetCaption(AppLocalizationsEn(), DateTime.utc(2026, 10, 17, 20)), 'Resets Monday 00:00 UTC · 1d 4h left');
+    expect(resetCaption(AppLocalizationsEn(), DateTime.utc(2026, 10, 17, 20)), 'Resets in 1d 4h');
   });
 }

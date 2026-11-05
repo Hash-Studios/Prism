@@ -56,19 +56,19 @@ void main() {
   testWidgets('system mode shows the light and the dark pickers', (tester) async {
     await pumpPage(tester, ThemeMode.system);
 
-    expect(find.text('Light Themes'), findsOneWidget);
-    expect(find.text('Dark Themes'), findsOneWidget);
-    expect(find.text('Light Accent Color'), findsOneWidget);
-    expect(find.text('Dark Accent Color'), findsOneWidget);
-    expect(find.text('System (Light/Dark)'), findsOneWidget);
+    expect(find.text('Light themes'), findsOneWidget);
+    expect(find.text('Dark themes'), findsOneWidget);
+    expect(find.text('Light accent colour'), findsOneWidget);
+    expect(find.text('Dark accent colour'), findsOneWidget);
+    expect(find.text('System'), findsOneWidget);
   });
 
   testWidgets('light mode hides the dark pickers', (tester) async {
     await pumpPage(tester, ThemeMode.light);
 
-    expect(find.text('Light Themes'), findsOneWidget);
-    expect(find.text('Dark Themes'), findsNothing);
-    expect(find.text('Dark Accent Color'), findsNothing);
+    expect(find.text('Light themes'), findsOneWidget);
+    expect(find.text('Dark themes'), findsNothing);
+    expect(find.text('Dark accent colour'), findsNothing);
   });
 
   testWidgets('every light and dark theme shows as a preview in its own colours', (tester) async {
@@ -85,17 +85,23 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       final Finder gridFinder = find.byKey(ValueKey<String>(grid.key));
-      final List<PrismThemePreview> previews = tester
-          .widgetList<PrismThemePreview>(find.descendant(of: gridFinder, matching: find.byType(PrismThemePreview)))
-          .toList();
-      expect(previews, hasLength(grid.value.length));
-      for (int i = 0; i < grid.value.length; i++) {
-        final PrismThemeOption option = grid.value[i];
-        expect(previews[i].theme.colorScheme.surface, option.theme.colorScheme.surface);
-        expect(
-          find.descendant(of: gridFinder, matching: find.text(prismThemeDisplayName(option, AppLocalizationsEn()))),
-          findsOneWidget,
+      // The row scrolls sideways and builds only the cards near the screen, so check each theme as it comes into view.
+      for (final PrismThemeOption option in grid.value) {
+        final Finder name = find.descendant(
+          of: gridFinder,
+          matching: find.text(prismThemeDisplayName(option, AppLocalizationsEn())),
         );
+        await tester.scrollUntilVisible(
+          name,
+          200,
+          scrollable: find.descendant(of: gridFinder, matching: find.byType(Scrollable)),
+        );
+        expect(name, findsOneWidget);
+        final Finder card = find.ancestor(of: name, matching: find.byType(SizedBox)).first;
+        final PrismThemePreview preview = tester.widget<PrismThemePreview>(
+          find.descendant(of: card, matching: find.byType(PrismThemePreview)),
+        );
+        expect(preview.theme.colorScheme.surface, option.theme.colorScheme.surface);
       }
     }
     expect(tester.takeException(), isNull);
@@ -356,7 +362,7 @@ void main() {
         ),
       );
 
-      expect(find.text('Light Accent Color'), findsNothing);
+      expect(find.text('Light accent colour'), findsNothing);
       expect(find.text('Material You takes its colours from your wallpaper.'), findsOneWidget);
       expect(find.byType(PrismSwitchRow), findsNothing);
     });
@@ -370,7 +376,7 @@ void main() {
         ),
       );
 
-      expect(find.text('Light Accent Color'), findsOneWidget);
+      expect(find.text('Light accent colour'), findsOneWidget);
       expect(find.text('Material You takes its colours from your wallpaper.'), findsNothing);
     });
 
@@ -385,8 +391,8 @@ void main() {
         ),
       );
 
-      expect(find.text('Light Accent Color'), findsNothing);
-      expect(find.text('Dark Accent Color'), findsOneWidget);
+      expect(find.text('Light accent colour'), findsNothing);
+      expect(find.text('Dark accent colour'), findsOneWidget);
       expect(find.text('Material You takes its colours from your wallpaper.'), findsOneWidget);
     });
 

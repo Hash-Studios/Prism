@@ -65,13 +65,15 @@ class DropWallGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int price = drop.wallPrice(isPro: app_state.prismUser.premium);
+    // The favourite footer only shows under unlocked walls. With none, the grid drops the empty band.
+    final double footerHeight = unlocked.isEmpty ? 0 : favouriteFooterHeight;
     return SliverPadding(
       padding: PrismWallGrid.padding,
       sliver: SliverGrid.builder(
         gridDelegate: PrismWallGrid.delegate(
           context,
           columns: largeTileGridColumns(MediaQuery.sizeOf(context).width),
-          footerHeight: favouriteFooterHeight,
+          footerHeight: footerHeight,
         ),
         itemCount: drop.walls.length,
         itemBuilder: (context, index) {
@@ -101,7 +103,7 @@ class DropWallGrid extends StatelessWidget {
               if (unlock != null)
                 FavouriteWallpaperFooter(item: dropWallFeedItem(wall, unlock))
               else
-                const SizedBox(height: favouriteFooterHeight),
+                SizedBox(height: footerHeight),
             ],
           );
         },

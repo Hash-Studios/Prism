@@ -5,7 +5,6 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
@@ -49,12 +48,7 @@ class FavouriteWallpaperCard extends StatelessWidget {
 
 const double favouriteFooterHeight = 44;
 
-int? displayedFavouriteCount(WallpaperSource source, {int? published, required bool saved}) => switch (source) {
-  WallpaperSource.pexels => published ?? (saved ? 1 : null),
-  WallpaperSource.prism || WallpaperSource.wallhaven => published,
-  _ => null,
-};
-
+/// The heart under a wallpaper tile: a favourite toggle only. Counts belong on the detail screen, not on every tile.
 class FavouriteWallpaperFooter extends StatefulWidget {
   const FavouriteWallpaperFooter({super.key, required this.item});
 
@@ -66,22 +60,6 @@ class FavouriteWallpaperFooter extends StatefulWidget {
 
 class _FavouriteWallpaperFooterState extends State<FavouriteWallpaperFooter> {
   bool _pending = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _request();
-  }
-
-  @override
-  void didUpdateWidget(FavouriteWallpaperFooter oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.item.id != widget.item.id || oldWidget.item.source != widget.item.source) _request();
-  }
-
-  void _request() {
-    if (widget.item.source == WallpaperSource.prism) getIt<FavouriteCountsCubit>().request(widget.item.id);
-  }
 
   Future<void> _toggle(bool saved) async {
     if (_pending) return;
@@ -107,23 +85,11 @@ class _FavouriteWallpaperFooterState extends State<FavouriteWallpaperFooter> {
       final saved = loaded
           ? state.items.any((wall) => wall.id == widget.item.id && wall.source == widget.item.source)
           : getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, widget.item.id);
-      if (widget.item.source == WallpaperSource.prism) {
-        return BlocSelector<FavouriteCountsCubit, Map<String, PrismWallpaperStats>, PrismWallpaperStats?>(
-          bloc: getIt<FavouriteCountsCubit>(),
-          selector: (counts) => counts[prismStatsId(widget.item.id)],
-          builder: (context, stats) => _row(saved, stats?.favourites, stats?.views),
-        );
-      }
-      final views = widget.item is WallhavenFeedItem ? (widget.item as WallhavenFeedItem).wallpaper.views : null;
-      final favourites = widget.item is WallhavenFeedItem
-          ? (widget.item as WallhavenFeedItem).wallpaper.favorites ?? widget.item.wallpaperCore.favourites
-          : widget.item.wallpaperCore.favourites;
-      return _row(saved, favourites, views);
+      return _row(saved);
     },
   );
 
-  Widget _row(bool saved, int? published, int? views) {
-    final count = displayedFavouriteCount(widget.item.source, published: published, saved: saved);
+  Widget _row(bool saved) {
     final scheme = Theme.of(context).colorScheme;
     final label = saved ? context.l10n.wallpaperUnfavourite : context.l10n.wallpaperFavourite;
     return SizedBox(
@@ -131,8 +97,6 @@ class _FavouriteWallpaperFooterState extends State<FavouriteWallpaperFooter> {
       child: Align(
         alignment: AlignmentDirectional.centerStart,
         child: WallpaperStatsRow(
-          favourites: count,
-          views: views,
           favouriteActionLabel: label,
           favouriteSaved: saved,
           favouriteIcon: saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,

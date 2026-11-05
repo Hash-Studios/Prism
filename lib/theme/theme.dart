@@ -356,7 +356,7 @@ extension PrismThemeData on ThemeData {
           filled: true,
           fillColor: cs.surfaceContainerHigh,
           contentPadding: const EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: 15),
-          hintStyle: body.copyWith(fontSize: 15, color: cs.onSurface.withValues(alpha: 0.45)),
+          hintStyle: body.copyWith(fontSize: 15, color: cs.onSurfaceVariant),
           labelStyle: body.copyWith(fontSize: 15),
           helperStyle: body.copyWith(fontSize: 12),
           errorStyle: body.copyWith(fontSize: 12, color: cs.error),

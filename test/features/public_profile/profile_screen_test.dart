@@ -10,6 +10,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/cosmetics/profile_frame.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
@@ -285,6 +286,8 @@ void main() {
     repository.profiles.add(graph(proBadge: true));
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.byType(ProProfileBadge), findsOneWidget);
+    // The Pro pill leads the badge row, so the header has one meta row.
+    expect(find.descendant(of: find.byType(ProfileBadgeRow), matching: find.byType(ProProfileBadge)), findsOneWidget);
 
     repository.profiles.add(graph(proBadge: false));
     await tester.pump(const Duration(milliseconds: 400));
@@ -513,6 +516,10 @@ void main() {
     expect(find.byTooltip('More options'), findsOneWidget);
     expect(find.byTooltip('Edit profile'), findsNothing);
     expect(find.text('Upload your first wallpaper to start your gallery.'), findsNothing);
+    // Header buttons over the cover use the glass look, readable on a light cover.
+    for (final IconData icon in <IconData>[Icons.arrow_back_rounded, Icons.card_giftcard_rounded]) {
+      expect(tester.widget<PrismIconButton>(find.widgetWithIcon(PrismIconButton, icon)).glass, isTrue);
+    }
   });
 
   testWidgets('the Follow button asks the bloc to follow, and shows Unfollow when already followed', (tester) async {

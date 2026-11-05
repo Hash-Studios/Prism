@@ -116,4 +116,17 @@ void main() {
     expect(find.text('Saved progress. Refresh is unavailable.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('offers Refresh only for saved or unavailable progress', (tester) async {
+    final String refresh = AppLocalizationsEn().economyCreatorRefresh;
+    await pump(tester, CreatorProgressState(progress: creatorFixture(), status: CreatorProgressStatus.loaded));
+    expect(find.text(refresh), findsNothing);
+    expect(find.text(AppLocalizationsEn().economyCreatorMilestones), findsOneWidget);
+    await pump(tester, const CreatorProgressState(status: CreatorProgressStatus.loading));
+    expect(find.text(refresh), findsNothing);
+    await pump(tester, CreatorProgressState(progress: creatorFixture(), status: CreatorProgressStatus.cached));
+    expect(find.text(refresh), findsOneWidget);
+    await pump(tester, const CreatorProgressState(status: CreatorProgressStatus.unavailable));
+    expect(find.text(refresh), findsOneWidget);
+  });
 }

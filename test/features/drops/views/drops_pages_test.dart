@@ -11,6 +11,7 @@ import 'package:Prism/features/drops/views/widgets/drop_actions.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
 import 'package:Prism/features/drops/views/widgets/drop_wall_tiles.dart';
 import 'package:Prism/features/drops/views/widgets/unlock_sheet.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart' show favouriteFooterHeight;
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -163,6 +164,36 @@ void main() {
       await tester.pump();
       expect(locked, findsNothing);
       expect(find.descendant(of: tile, matching: find.text('Owned')), findsOneWidget);
+    });
+
+    testWidgets('with no wall unlocked the grid has no empty footer band', (tester) async {
+      tester.view.physicalSize = const Size(393, 852);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final unlocked = ValueNotifier<Map<String, DropUnlock>>({});
+      addTearDown(unlocked.dispose);
+      final drop = dropWithin(const Duration(days: 3));
+      await pump(
+        tester,
+        at(drop),
+        Scaffold(
+          body: ValueListenableBuilder<Map<String, DropUnlock>>(
+            valueListenable: unlocked,
+            builder: (context, owned, _) => CustomScrollView(
+              slivers: [DropWallGrid(drop: drop, unlocked: owned, canBuy: true, onLockedTap: (_) {})],
+            ),
+          ),
+        ),
+      );
+      double rowGap() =>
+          tester.getTopLeft(find.byType(PrismWallTile).at(2)).dy -
+          tester.getBottomLeft(find.byType(PrismWallTile).at(0)).dy;
+      final double bare = rowGap();
+
+      unlocked.value = {'A': ownedA};
+      await tester.pump();
+
+      expect(rowGap() - bare, moreOrLessEquals(favouriteFooterHeight, epsilon: 0.01));
     });
 
     testWidgets('starts the bloc and shows a skeleton while loading', (tester) async {

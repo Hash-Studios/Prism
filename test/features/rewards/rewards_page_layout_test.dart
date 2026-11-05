@@ -7,6 +7,7 @@ import 'package:Prism/core/widgets/coins/coin_pill.dart';
 import 'package:Prism/features/ads/data/ad_experiment_config.dart';
 import 'package:Prism/features/ads/views/widgets/experimental_inline_ad.dart';
 import 'package:Prism/features/badges/biz/bloc/badges_bloc.dart';
+import 'package:Prism/features/badges/domain/badge_catalog.dart';
 import 'package:Prism/features/badges/views/widgets/rewards_badges_section.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/daily_flow/views/daily_moment_today_card.dart';
@@ -95,6 +96,32 @@ void main() {
     );
     await tester.pump();
   }
+
+  testWidgets('badges list the earned ones first', (tester) async {
+    final BadgeInfo last = badgeCatalog.last;
+    await getIt.unregister<BadgesBloc>();
+    getIt.registerFactory<BadgesBloc>(() {
+      final bloc = _BadgesBloc();
+      whenListen(bloc, const Stream<BadgesState>.empty(), initialState: BadgesState(earnedIds: <String>[last.id]));
+      return bloc;
+    });
+    tester.view.physicalSize = const Size(400, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: SingleChildScrollView(child: RewardsBadgesSection())),
+      ),
+    );
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    final Offset earned = tester.getTopLeft(find.text(last.name(l10n)));
+    final Offset firstLocked = tester.getTopLeft(find.text(badgeCatalog.first.name(l10n)));
+    // The earned badge takes the first slot; the first catalog badge moves beside it.
+    expect(earned.dy, moreOrLessEquals(firstLocked.dy));
+    expect(earned.dx, lessThan(firstLocked.dx));
+  });
 
   testWidgets('daily moment places Today, Earn, Spend and More in order', (tester) async {
     await pumpPage(tester, enabled: true);

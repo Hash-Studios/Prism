@@ -319,13 +319,22 @@ class _TabRow extends StatelessWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Semantics(
-                label: context.l10n.layoutShowTab(label),
-                child: Opacity(
-                  opacity: canToggle ? 1 : 0.5,
-                  child: Switch(value: visible, onChanged: canToggle ? toggle : null),
+              if (tab == NavTab.home)
+                // Home never hides. A lock says so, where a dead switch only looks broken.
+                SizedBox(
+                  width: 52,
+                  child: ExcludeSemantics(
+                    child: Icon(Icons.lock_rounded, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
+                )
+              else
+                Semantics(
+                  label: context.l10n.layoutShowTab(label),
+                  child: Opacity(
+                    opacity: canToggle ? 1 : 0.5,
+                    child: Switch(value: visible, onChanged: canToggle ? toggle : null),
+                  ),
                 ),
-              ),
               ReorderableDragStartListener(
                 index: index,
                 child: Tooltip(

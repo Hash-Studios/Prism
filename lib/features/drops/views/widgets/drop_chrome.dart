@@ -29,7 +29,7 @@ class DropTimeTag extends StatelessWidget {
   }
 }
 
-/// A small dark pill for the corner of a wall image: a lock and the price, "Owned" or "Missed".
+/// A small light pill for the corner of a wall image: a lock and the price, "Owned" or "Missed".
 class DropTileBadge extends StatelessWidget {
   const DropTileBadge({super.key, required this.icon, required this.label, this.coin = false});
 
@@ -41,22 +41,25 @@ class DropTileBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    // A light pill reads on dark and light walls alike; a dark one vanished on dark walls.
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.55),
+        color: cs.surface.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(PrismRadius.pill),
+        boxShadow: const <BoxShadow>[BoxShadow(color: Color(0x1F000000), blurRadius: 6, offset: Offset(0, 1))],
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(icon, size: 12, color: Colors.white),
+            Icon(icon, size: 12, color: cs.onSurface),
             const SizedBox(width: 4),
             Text(
               label,
               style: PrismTextStyles.caption(context).copyWith(
-                color: Colors.white,
+                color: cs.onSurface,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],

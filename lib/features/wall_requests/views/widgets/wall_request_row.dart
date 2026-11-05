@@ -4,6 +4,7 @@ import 'package:Prism/features/moods/views/mood_copy.dart';
 import 'package:Prism/features/wall_requests/domain/entities/wall_request.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 /// The copy for a failed request action. The page toast and the sheet both use it.
 String wallRequestErrorText(BuildContext context, WallRequestError error) {
@@ -84,6 +85,7 @@ class WallRequestRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: PrismSpace.sm),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           if (r.isFilled) ...<Widget>[
             _Thumb(url: r.filledWallThumb, onTap: onOpenWall),
@@ -94,7 +96,12 @@ class WallRequestRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Text(r.text, maxLines: 3, overflow: TextOverflow.ellipsis, style: PrismTextStyles.rowTitle(context)),
+                Text(
+                  toBeginningOfSentenceCase(r.text),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: PrismTextStyles.rowTitle(context),
+                ),
                 if (r.tags.isNotEmpty || r.hidden) ...<Widget>[
                   const SizedBox(height: PrismSpace.xs),
                   Wrap(

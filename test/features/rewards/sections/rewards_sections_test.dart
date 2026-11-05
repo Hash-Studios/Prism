@@ -12,6 +12,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_row.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
@@ -197,6 +198,13 @@ void main() {
     await tester.pumpWidget(_host(const RewardsEarnSection(), Brightness.light));
     expect(find.text(AppLocalizationsEn().economyWatchAdForCoins(CoinsService.instance.adsRewardNow)), findsOneWidget);
     expect(find.text(AppLocalizationsEn().economyCoinReward(CoinsService.instance.adsRewardNow)), findsOneWidget);
+    // The coin follows the amount, as in "+20 (coin)".
+    final Finder amount = find.text(AppLocalizationsEn().economyCoinReward(CoinsService.instance.adsRewardNow));
+    final Finder coin = find.descendant(
+      of: find.ancestor(of: amount, matching: find.byType(Row)).first,
+      matching: find.byType(PrismCoinIcon),
+    );
+    expect(tester.getTopLeft(coin).dx, greaterThan(tester.getTopRight(amount).dx));
   });
 
   testWidgets('earn ad row refreshes after background settlement and disables at the daily limit', (tester) async {

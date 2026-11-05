@@ -119,8 +119,8 @@ void main() {
 
     verify(() => cubit.load(WallRequestTab.top)).called(1);
     expect(find.byType(WallRequestRow), findsNWidgets(2));
-    expect(find.text('dark minimal mountains'), findsOneWidget);
-    expect(find.text('neon city rain'), findsOneWidget);
+    expect(find.text('Dark minimal mountains'), findsOneWidget);
+    expect(find.text('Neon city rain'), findsOneWidget);
   });
 
   testWidgets('switching to Filled loads it and shows the filled wall thumbnail', (tester) async {
@@ -147,7 +147,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     verify(() => cubit.load(WallRequestTab.filled)).called(1);
-    expect(find.text('forest cabin'), findsOneWidget);
+    expect(find.text('Forest cabin'), findsOneWidget);
     expect(find.bySemanticsLabel('Open the wall'), findsOneWidget);
     semantics.dispose();
   });

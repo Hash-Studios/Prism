@@ -190,13 +190,12 @@ class _Content extends StatelessWidget {
           if (index == 0) return const _ScoreCaption();
           final int entryIndex = index - 1;
           if (entryIndex == entries.length) {
-            return SizedBox(
-              height: 150 + MediaQuery.textScalerOf(context).scale(250),
-              child: GlintState(
-                kind: GlintStateKind.empty,
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, 0),
+              child: PrismInlineState(
+                icon: Icons.group_add_rounded,
                 title: context.l10n.economyLeaderboardFollowTip,
                 actionLabel: context.l10n.accountFindCreators,
-                actionVariant: PrismButtonVariant.tonal,
                 onAction: () => unawaited(context.router.push(CreatorsRoute(source: 'leaderboard'))),
               ),
             );

@@ -211,7 +211,7 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
               onRefresh: () => _cubit.load(widget.challengeId),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xl),
                 children: [
                   Text(challenge.theme, style: PrismTextStyles.sectionTitle(context)),
                   const SizedBox(height: 12),

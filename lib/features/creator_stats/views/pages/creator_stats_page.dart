@@ -81,20 +81,12 @@ class CreatorStatsView extends StatelessWidget {
         final data = state.data;
         if (data == null) return const SizedBox.shrink();
         if (data.approvedWallCount == 0) {
-          // GlintState does not scroll: at large text it overflows a short page, so the page scrolls instead.
-          return LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              child: SizedBox(
-                height: constraints.maxHeight * math.max(1, MediaQuery.textScalerOf(context).scale(1)),
-                child: GlintState(
-                  kind: GlintStateKind.empty,
-                  title: context.l10n.statsEmptyTitle,
-                  body: context.l10n.statsEmptyBody,
-                  actionLabel: context.l10n.statsUpload,
-                  onAction: () => context.router.push(DeepLinkInputRoute(workflow: DeepLinkInputWorkflow.uploadWall)),
-                ),
-              ),
-            ),
+          return GlintState(
+            kind: GlintStateKind.empty,
+            title: context.l10n.statsEmptyTitle,
+            body: context.l10n.statsEmptyBody,
+            actionLabel: context.l10n.statsUpload,
+            onAction: () => context.router.push(DeepLinkInputRoute(workflow: DeepLinkInputWorkflow.uploadWall)),
           );
         }
         return ListView(

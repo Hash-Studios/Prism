@@ -141,7 +141,15 @@ void main() {
     final back = tester.getRect(find.byTooltip('Back'));
     final clock = tester.getRect(find.byTooltip('Preview on your screen'));
     expect(back, Rect.fromLTWH(card.left + 4, card.top + 4, 44, 44));
-    expect(clock, Rect.fromLTWH(card.right - 4 - 44, card.top + 4, 44, 44));
+    // The clock is a labelled Preview pill: as tall as Back, its end on the same inset.
+    expect(clock.right, card.right - 4);
+    expect(clock.top, card.top + 4);
+    expect(clock.height, 44);
+    expect(clock.width, greaterThan(44));
+    expect(
+      find.descendant(of: find.byTooltip('Preview on your screen'), matching: find.text('Preview')),
+      findsOneWidget,
+    );
 
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -1200));
     await tester.pumpAndSettle();
@@ -186,19 +194,59 @@ void main() {
     expect(clockButton.hitTestable(), findsOneWidget);
   });
 
+  for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS]) {
+    testWidgets('$platform: under the header the action bar fades and the primary action moves into the header', (
+      tester,
+    ) async {
+      await pump(tester);
+      final scroll = tester.widget<CustomScrollView>(find.byType(CustomScrollView)).controller!;
+      final cardHeight = tester.getRect(find.byType(ShakeOnce)).height;
+      final Finder bar = find.byKey(const ValueKey<String>('detail-action-bar'));
+      final Finder headerAction = find.byKey(const ValueKey<String>('detail-header-action'));
+      final String label = platform == TargetPlatform.iOS ? 'Save' : 'Set';
+      double barOpacity() => tester.widget<AnimatedOpacity>(bar).opacity;
+      expect(barOpacity(), 1);
+      expect(headerAction, findsNothing);
+
+      scroll.jumpTo(cardHeight - 48 + 1);
+      await tester.pumpAndSettle();
+      expect(barOpacity(), 0);
+      // The faded bar stays in the tree, so the header's Set can reach its button, but it takes no taps.
+      expect(find.byType(WallpaperActionBar), findsOneWidget);
+      expect(find.descendant(of: bar, matching: find.byType(WallpaperActionBar)).hitTestable(), findsNothing);
+      expect(find.descendant(of: headerAction, matching: find.textContaining(label)).hitTestable(), findsOneWidget);
+      final Rect action = tester.getRect(headerAction);
+      final Rect back = tester.getRect(find.byTooltip('Back'));
+      expect(action.center.dy, closeTo(back.center.dy, 0.5));
+
+      scroll.jumpTo(0);
+      await tester.pumpAndSettle();
+      expect(barOpacity(), 1);
+      expect(headerAction, findsNothing);
+    }, variant: TargetPlatformVariant.only(platform));
+  }
+
   testWidgets('Back and the clock sit on the theme scrim with the light on-scrim ink', (tester) async {
     const Color scrim = Color(0xFF102030);
     await pump(
       tester,
       theme: ThemeData(colorScheme: const ColorScheme.light(scrim: scrim)),
     );
-    for (final String tooltip in <String>['Back', 'Preview on your screen']) {
-      final IconButton button = tester.widget<IconButton>(
-        find.ancestor(of: find.byTooltip(tooltip), matching: find.byType(IconButton)),
-      );
-      expect(button.style!.backgroundColor!.resolve(<WidgetState>{}), scrim.withValues(alpha: 0.55), reason: tooltip);
-      expect(button.color, PrismColors.onPrimary, reason: tooltip);
-    }
+    final IconButton back = tester.widget<IconButton>(
+      find.ancestor(of: find.byTooltip('Back'), matching: find.byType(IconButton)),
+    );
+    expect(back.style!.backgroundColor!.resolve(<WidgetState>{}), scrim.withValues(alpha: 0.55));
+    expect(back.color, PrismColors.onPrimary);
+    final ButtonStyle preview = tester
+        .widget<ButtonStyleButton>(
+          find.descendant(
+            of: find.byTooltip('Preview on your screen'),
+            matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
+          ),
+        )
+        .style!;
+    expect(preview.backgroundColor!.resolve(<WidgetState>{}), scrim.withValues(alpha: 0.55));
+    expect(preview.foregroundColor!.resolve(<WidgetState>{}), PrismColors.onPrimary);
   });
 
   for (final brightness in Brightness.values) {

@@ -114,6 +114,7 @@ class PrismSwitchRow extends StatelessWidget {
     required this.onChanged,
     this.icon,
     this.subtitle,
+    this.padding = const EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: PrismSpace.sm),
   });
 
   final String title;
@@ -121,6 +122,7 @@ class PrismSwitchRow extends StatelessWidget {
   final ValueChanged<bool>? onChanged;
   final IconData? icon;
   final String? subtitle;
+  final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context) {
@@ -134,6 +136,7 @@ class PrismSwitchRow extends StatelessWidget {
         title: title,
         icon: icon,
         subtitle: subtitle,
+        padding: padding,
         onTap: onChanged == null ? null : () => toggle(!value),
         trailing: Switch(value: value, onChanged: onChanged == null ? null : toggle),
       ),

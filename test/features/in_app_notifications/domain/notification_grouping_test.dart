@@ -109,7 +109,7 @@ void main() {
       notification('a', title: 'News', body: 'Short line one'),
       notification('b', title: 'News', body: 'Line two'),
     ]);
-    expect(collapsedGroupSummaryLine(generic, l10n), 'Short line one and 1 more.');
+    expect(collapsedGroupSummaryLine(generic, l10n), 'Short line one');
   });
 
   test('wallLiveCreatorNameFromBody parses quoted title pattern', () {

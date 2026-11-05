@@ -327,6 +327,19 @@ class _SearchGridState extends State<SearchGrid> {
                   session: _impressions,
                 ),
               ),
+            if (prismResults.isNotEmpty && results.isNotEmpty)
+              SliverToBoxAdapter(
+                child: PrismSectionHeader(
+                  title: context.l10n.searchMoreWallpapers,
+                  small: true,
+                  padding: const EdgeInsets.fromLTRB(
+                    PrismWallGrid.margin,
+                    PrismSpace.md,
+                    PrismWallGrid.margin,
+                    PrismSpace.xs,
+                  ),
+                ),
+              ),
             SliverPadding(
               padding: PrismWallGrid.padding.copyWith(
                 top: PrismSpace.xxs,
