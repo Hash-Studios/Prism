@@ -337,6 +337,9 @@ async function seed() {
       lastLoginAt: new Date(now).toISOString(), premium: false, subscriptionTier: 'free', links: {},
       profilePhoto: image(index), coverPhoto: image(index), bio: 'Local QA fixture', badges: [], subPrisms: [],
       coins: 0, transactions: [], interestCategories: ['Nature'], onboardingV2: {completed: true}});
+    // The app reads names and photos from the public profile projection (functions/src/profiles.ts).
+    await db.doc(`profiles/${uid}`).set({name, username, profilePhoto: image(index), bio: 'Local QA fixture',
+      coverPhoto: image(index), followerCount: 0, followingCount: 0});
     await db.doc(`usersv2/${uid}/private/session`).set(session(uid));
     await db.doc(`usernames/${username.toLowerCase()}`).set({uid});
   }
