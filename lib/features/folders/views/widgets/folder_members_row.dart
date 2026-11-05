@@ -86,6 +86,7 @@ class FolderMembersRow extends StatelessWidget {
       button: true,
       label: l10n.foldersPeopleButtonLabel(count),
       excludeSemantics: true,
+      onTap: () => unawaited(_openMembers(context)),
       child: PressScale(
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,

@@ -1,8 +1,11 @@
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_member.dart';
 import 'package:Prism/features/folders/views/widgets/folder_members_row.dart';
+import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
+import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -13,6 +16,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockFoldersBloc extends MockBloc<FoldersEvent, FoldersState> implements FoldersBloc {}
+
+class _MockPublicProfileRepository extends Mock implements PublicProfileRepository {}
 
 final DateTime _at = DateTime.utc(2026, 10);
 
@@ -56,6 +61,28 @@ Future<void> _settle(WidgetTester tester) async {
 }
 
 void main() {
+  setUp(() {
+    final repository = _MockPublicProfileRepository();
+    when(() => repository.watchProfile(any())).thenAnswer((invocation) {
+      final uid = invocation.positionalArguments.single as String;
+      return Stream.value(
+        PublicProfileEntity(
+          id: uid,
+          name: uid == 'owner' ? 'Ananya Ramanathan' : 'Christopher Alexander Montgomery $uid',
+          email: '',
+          username: uid,
+          profilePhoto: '',
+          bio: '',
+          links: const <String, String>{},
+          coverPhoto: '',
+        ),
+      );
+    });
+    getIt.registerSingleton<PublicProfileRepository>(repository);
+  });
+
+  tearDown(() => getIt.reset());
+
   testWidgets('the owner sees the people count and an Invite button', (tester) async {
     await tester.pumpWidget(_host(_folder(), 'owner'));
     await _settle(tester);
@@ -79,6 +106,9 @@ void main() {
 
     final SemanticsNode node = tester.getSemantics(find.bySemanticsLabel('2 people in this folder. Show people'));
     expect(node.flagsCollection.isButton, isTrue);
+    expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+    expect(node.rect.width, greaterThanOrEqualTo(44));
+    expect(node.rect.height, greaterThanOrEqualTo(44));
     handle.dispose();
   });
 
@@ -89,6 +119,25 @@ void main() {
     expect(find.text('6 people'), findsOneWidget);
     expect(find.byType(PrismAvatar), findsNWidgets(4));
     expect(find.text('+2'), findsOneWidget);
+  });
+
+  testWidgets('a screen reader can activate Show people', (tester) async {
+    final handle = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(_host(_folder(), 'owner'));
+      await _settle(tester);
+
+      final node = tester.getSemantics(find.bySemanticsLabel('2 people in this folder. Show people'));
+      expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+      tester.binding.performSemanticsAction(
+        SemanticsActionEvent(type: SemanticsAction.tap, viewId: tester.view.viewId, nodeId: node.id),
+      );
+      await _settle(tester);
+
+      expect(find.text('People'), findsOneWidget);
+    } finally {
+      handle.dispose();
+    }
   });
 
   testWidgets('the owner opens the People sheet and can remove an editor', (tester) async {
@@ -120,12 +169,45 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(_host(_folder(editorCount: 5), 'owner', textScale: 2));
+    await tester.pumpWidget(_host(_folder(editorCount: 10), 'owner', textScale: 2));
     await _settle(tester);
 
     expect(find.text('Invite'), findsOneWidget);
+    expect(find.text('11 people'), findsOneWidget);
+    expect(find.text('+7'), findsOneWidget);
+    expect(find.byType(PrismAvatar), findsNWidgets(4));
     expect(tester.takeException(), isNull);
   });
+
+  for (final double textScale in <double>[1, 2]) {
+    testWidgets('row actions have 44 point semantic targets at ${textScale}x text', (tester) async {
+      final handle = tester.ensureSemantics();
+      try {
+        tester.view.physicalSize = const Size(375, 812);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(_host(_folder(editorCount: 10), 'owner', textScale: textScale));
+        await _settle(tester);
+
+        for (final Finder target in <Finder>[
+          find.bySemanticsLabel('11 people in this folder. Show people'),
+          find.widgetWithText(FilledButton, 'Invite'),
+        ]) {
+          final node = tester.getSemantics(target);
+          expect(node.flagsCollection.isButton, isTrue);
+          expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+          expect(node.rect.width, greaterThanOrEqualTo(44));
+          expect(node.rect.height, greaterThanOrEqualTo(44));
+        }
+        await tester.tap(find.bySemanticsLabel('11 people in this folder. Show people'));
+        await _settle(tester);
+        expect(find.text('People'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        handle.dispose();
+      }
+    });
+  }
 
   testWidgets('at 2x text the People sheet puts Remove under the editor name, not beside it', (tester) async {
     tester.view.physicalSize = const Size(375, 812);
@@ -138,7 +220,10 @@ void main() {
     await tester.tap(find.text('2 people'));
     await _settle(tester);
 
-    expect(tester.getTopLeft(find.text('Remove')).dy, greaterThan(tester.getBottomLeft(find.text('Prism user')).dy));
+    expect(
+      tester.getTopLeft(find.text('Remove')).dy,
+      greaterThan(tester.getBottomLeft(find.text('Christopher Alexander Montgomery e1')).dy),
+    );
     expect(tester.takeException(), isNull);
   });
 }
