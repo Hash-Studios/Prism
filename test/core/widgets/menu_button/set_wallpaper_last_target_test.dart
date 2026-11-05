@@ -52,6 +52,9 @@ class _Client implements WallpaperClient {
   @override
   Future<aw.WallpaperOperationResult> applyOpenGlWallpaper(aw.OpenGlLiveWallpaperRequest request) =>
       throw UnimplementedError();
+
+  @override
+  Future<aw.LiveWallpaperScreens> getLiveWallpaperScreens() async => const aw.LiveWallpaperScreens();
 }
 
 /// Fails every save, the way a full disk would.
