@@ -375,7 +375,7 @@ void main() {
     expect(repo.calls.where((call) => call.startsWith('removeItem:')), isEmpty);
   });
 
-  Future<({ _FakeFoldersRepository repo, _MockSharedFoldersRepository shared })> pumpTeamFolder(
+  Future<({_FakeFoldersRepository repo, _MockSharedFoldersRepository shared})> pumpTeamFolder(
     WidgetTester tester, {
     required String userId,
     required FolderEntity folder,
@@ -482,7 +482,7 @@ void main() {
     await settle(tester);
 
     verify(() => shared.removeMember('work', 'friend')).called(1);
-    expect(repo.calls.where((call) => call == 'fetchItems:work').length, greaterThan(1));
+    expect(repo.calls.where((call) => call == 'fetchItems:work'), hasLength(2));
     expect(find.text('2 people'), findsOneWidget);
     expect(wallTile, findsOneWidget);
   });
