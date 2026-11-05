@@ -338,7 +338,7 @@ class FcmTokenService {
   }
 
   /// Captures any persisted binding before the caller drains local token state.
-  Future<void> clearSyncedToken() async {
+  Future<void> captureSyncedBinding() async {
     if (!getIt.isRegistered<SettingsLocalDataSource>()) return;
     final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
     if (settings.isOpen && _syncedBinding == null) {

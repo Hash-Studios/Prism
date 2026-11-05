@@ -51,8 +51,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../support/fake_app_analytics.dart';
+import '../features/followed_topics/support/transaction_firestore_client.dart';
 import '../support/fake_feed_cache_local_data_source.dart';
-import '../support/fake_firestore_client.dart';
 import '../support/fake_user_block_repository.dart';
 import '../support/in_memory_local_store.dart';
 
@@ -185,8 +185,8 @@ Future<void> main() async {
   final int now = DateTime.now().millisecondsSinceEpoch;
   final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
   // Dreamy was followed on another device and seen an hour ago; a Dreamy wall landed after that, so it has a dot.
-  await settings.set('followed_topics.seen.mood:dreamy', now - 3600000);
-  final FakeFirestoreClient firestore = FakeFirestoreClient(
+  await settings.set('followed_topics.seen.qa-user.mood:dreamy', now - 3600000);
+  final TransactionFirestoreClient firestore = TransactionFirestoreClient(
     docs: <String, Map<String, Map<String, dynamic>>>{
       'usersv2/qa-user/private': <String, Map<String, dynamic>>{
         'session': <String, dynamic>{

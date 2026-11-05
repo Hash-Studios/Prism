@@ -445,7 +445,7 @@ void main() {
     final _SessionTransactionClient client = _SessionTransactionClient();
     final FcmTokenService service = FcmTokenService.instance;
     await service.cancelAndWait();
-    await service.clearSyncedToken();
+    await service.captureSyncedBinding();
     await settings.set('fcmTokenSynced', 'uid1|old-token|digest_v2');
     local.failSyncedMarker = true;
 
@@ -455,7 +455,7 @@ void main() {
       client: client,
     );
     await service.cancelAndWait();
-    await service.clearSyncedToken();
+    await service.captureSyncedBinding();
     await expectLater(
       service.invalidateTokenForSignOut(
         userId: 'uid1',
@@ -656,7 +656,7 @@ void main() {
       await sync('uid1', 'tok');
 
       await FcmTokenService.instance.cancelAndWait();
-      await FcmTokenService.instance.clearSyncedToken();
+      await FcmTokenService.instance.captureSyncedBinding();
 
       await FcmTokenService.instance.invalidateTokenForSignOut(
         userId: 'uid1',
@@ -677,7 +677,7 @@ void main() {
       };
 
       await FcmTokenService.instance.cancelAndWait();
-      await FcmTokenService.instance.clearSyncedToken();
+      await FcmTokenService.instance.captureSyncedBinding();
       await getIt<SettingsLocalDataSource>().delete('fcmTokenSynced');
 
       await FcmTokenService.instance.invalidateTokenForSignOut(
@@ -721,7 +721,7 @@ void main() {
 
     test('after the synced token is cleared the same token writes again', () async {
       await sync('uid1', 'tok');
-      await FcmTokenService.instance.clearSyncedToken();
+      await FcmTokenService.instance.captureSyncedBinding();
       await sync('uid1', 'tok');
 
       expect(tokenWrites(), 2);

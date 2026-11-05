@@ -3,6 +3,8 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import '../../../support/fake_firestore_client.dart';
 
 class TransactionFirestoreClient extends FakeFirestoreClient {
+  TransactionFirestoreClient({super.docs});
+
   @override
   Future<T> runTransaction<T>(
     Future<T> Function(FirestoreTransaction transaction) action, {
