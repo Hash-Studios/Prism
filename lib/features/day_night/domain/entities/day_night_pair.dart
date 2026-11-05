@@ -156,6 +156,7 @@ final class DayNightPair {
     this.target = WallpaperTarget.both,
     this.enabled = false,
     this.fromVariants = false,
+    this.passUntil,
   }) : times = times ?? DayNightTimes.standard;
 
   final DayNightWall? day;
@@ -166,6 +167,10 @@ final class DayNightPair {
 
   /// True while both walls came from the one-tap variant pick.
   final bool fromVariants;
+
+  /// When the auto-rotate pass that allows the mode ends. Null for Pro and without a pass. Kept so a launch whose
+  /// passes have not loaded yet does not turn the mode off.
+  final DateTime? passUntil;
 
   bool get isComplete => day != null && night != null;
 
@@ -180,6 +185,7 @@ final class DayNightPair {
     times: times,
     target: target,
     enabled: enabled,
+    passUntil: passUntil,
   );
 
   DayNightPair copyWith({
@@ -189,6 +195,7 @@ final class DayNightPair {
     WallpaperTarget? target,
     bool? enabled,
     bool? fromVariants,
+    DateTime? Function()? passUntil,
   }) => DayNightPair(
     day: day ?? this.day,
     night: night ?? this.night,
@@ -196,6 +203,7 @@ final class DayNightPair {
     target: target ?? this.target,
     enabled: enabled ?? this.enabled,
     fromVariants: fromVariants ?? this.fromVariants,
+    passUntil: passUntil == null ? this.passUntil : passUntil(),
   );
 
   @override
@@ -206,8 +214,9 @@ final class DayNightPair {
       other.times == times &&
       other.target == target &&
       other.enabled == enabled &&
-      other.fromVariants == fromVariants;
+      other.fromVariants == fromVariants &&
+      other.passUntil == passUntil;
 
   @override
-  int get hashCode => Object.hash(day, night, times, target, enabled, fromVariants);
+  int get hashCode => Object.hash(day, night, times, target, enabled, fromVariants, passUntil);
 }

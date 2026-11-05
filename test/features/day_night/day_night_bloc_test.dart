@@ -217,6 +217,98 @@ void main() {
     },
   );
 
+  group('auto-rotate pass', () {
+    final DateTime now = DateTime(2026, 11, 5, 12);
+    final DateTime passEnd = DateTime(2026, 11, 8, 12);
+    DayNightPair passPair({required DateTime until}) =>
+        DayNightPair(day: _day, night: _night, enabled: true, passUntil: until);
+    DayNightBloc build() => DayNightBloc(repository)..clock = () => now;
+
+    blocTest<DayNightBloc, DayNightState>(
+      'a stored pass keeps the mode on at launch before the passes load',
+      setUp: () {
+        when(() => repository.load(ownerId: 'u1')).thenAnswer((_) async => passPair(until: passEnd));
+      },
+      build: build,
+      act: (bloc) => bloc.add(const DayNightEvent.entitlementChanged(isPro: false, userId: 'u1')),
+      expect: () => <DayNightState>[
+        DayNightState(
+          pair: passPair(until: passEnd),
+          loaded: true,
+          isPro: true,
+          userId: 'u1',
+        ),
+      ],
+      verify: (_) {
+        verify(() => repository.publish(passPair(until: passEnd))).called(1);
+        verifyNever(() => repository.save(any(), ownerId: any(named: 'ownerId')));
+        expect(analytics.events, isEmpty);
+      },
+    );
+
+    blocTest<DayNightBloc, DayNightState>(
+      'a stored pass that ended turns the mode off with the notice',
+      setUp: () {
+        when(() => repository.load(ownerId: 'u1')).thenAnswer((_) async => passPair(until: DateTime(2026, 11, 5, 11)));
+      },
+      build: build,
+      act: (bloc) => bloc.add(const DayNightEvent.entitlementChanged(isPro: false, userId: 'u1')),
+      expect: () => <DayNightState>[
+        DayNightState(
+          pair: passPair(until: DateTime(2026, 11, 5, 11)),
+          loaded: true,
+          userId: 'u1',
+        ),
+        DayNightState(pair: _complete(), loaded: true, userId: 'u1', proLapsed: true),
+      ],
+      verify: (_) {
+        verify(() => repository.save(_complete(), ownerId: 'u1')).called(1);
+      },
+    );
+
+    blocTest<DayNightBloc, DayNightState>(
+      'a live pass stores its end with the pair',
+      setUp: () {
+        when(() => repository.load(ownerId: 'u1')).thenAnswer((_) async => _complete(enabled: true));
+      },
+      build: build,
+      act: (bloc) => bloc.add(DayNightEvent.entitlementChanged(isPro: true, userId: 'u1', passUntil: passEnd)),
+      expect: () => <DayNightState>[
+        DayNightState(
+          pair: passPair(until: passEnd),
+          loaded: true,
+          isPro: true,
+          userId: 'u1',
+        ),
+      ],
+      verify: (_) {
+        verify(() => repository.save(passPair(until: passEnd), ownerId: 'u1')).called(1);
+      },
+    );
+
+    blocTest<DayNightBloc, DayNightState>(
+      'another account does not inherit a stored pass',
+      setUp: () {
+        when(() => repository.load(ownerId: 'u2')).thenAnswer((_) async => passPair(until: passEnd));
+      },
+      build: build,
+      seed: () => DayNightState(pair: _complete(), loaded: true, isPro: true, userId: 'u1'),
+      act: (bloc) async {
+        app_state.prismUser = profileUser(id: 'u2');
+        await app_state.persistPrismUser();
+        bloc.add(const DayNightEvent.entitlementChanged(isPro: false, userId: 'u2'));
+      },
+      expect: () => <DayNightState>[
+        DayNightState(
+          pair: passPair(until: passEnd),
+          loaded: true,
+          userId: 'u2',
+        ),
+        DayNightState(pair: _complete(), loaded: true, userId: 'u2'),
+      ],
+    );
+  });
+
   blocTest<DayNightBloc, DayNightState>(
     'a loaded enabled pair is disabled with a retry issue when its snapshot cannot be restored',
     setUp: () {

@@ -227,6 +227,7 @@ Day and night uses the same gate as auto-rotate: Prism Pro or an active 7-day au
 - Any signed-in user can pick the walls.
 - A free user sees "Day and night is a Prism Pro feature." and "See Prism Pro" in place of the switch.
 - When Pro or the pass ends, the same lapse rule as auto-rotate applies. `DayNightSessionListener` sends the session to `DayNightBloc` when the app starts, on resume, and when the session or the passes change. If the mode was on, the bloc turns it off, removes the Shortcuts snapshot and shows one toast: "Day and night is off because your Prism Pro plan or pass ended." Signing out or switching account turns it off with no toast.
+- Prism stores the end of an auto-rotate pass with the pair. At launch the passes can load after the session. Until then, a stored pass that has not ended keeps the mode on. Another account never uses a stored pass.
 
 ### iOS: how it works
 

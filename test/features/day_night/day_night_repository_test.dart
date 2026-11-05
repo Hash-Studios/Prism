@@ -112,6 +112,7 @@ void main() {
       target: WallpaperTarget.lock,
       enabled: true,
       fromVariants: true,
+      passUntil: DateTime.fromMillisecondsSinceEpoch(1793000000000),
     );
 
     await repository.save(pair, ownerId: 'u1');

@@ -142,6 +142,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
     'target': pair.target.name,
     'enabled': pair.enabled,
     'fromVariants': pair.fromVariants,
+    if (pair.passUntil case final DateTime until) 'passUntilMs': until.millisecondsSinceEpoch,
   };
 
   static DayNightPair _pairFromJson(Map<String, Object?> json) {
@@ -157,6 +158,10 @@ class DayNightRepositoryImpl implements DayNightRepository {
       target: WallpaperTarget.values.asNameMap()[json['target']] ?? WallpaperTarget.both,
       enabled: json['enabled'] == true,
       fromVariants: json['fromVariants'] == true,
+      passUntil: switch (json['passUntilMs']) {
+        final int ms => DateTime.fromMillisecondsSinceEpoch(ms),
+        _ => null,
+      },
     );
   }
 }

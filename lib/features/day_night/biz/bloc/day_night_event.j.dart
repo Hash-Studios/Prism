@@ -2,7 +2,9 @@ part of 'day_night_bloc.j.dart';
 
 @freezed
 abstract class DayNightEvent with _$DayNightEvent {
-  const factory DayNightEvent.entitlementChanged({required bool isPro, required String userId}) = _EntitlementChanged;
+  /// [isPro] is true for Pro and for an active auto-rotate pass. [passUntil] is the pass end, null for Pro.
+  const factory DayNightEvent.entitlementChanged({required bool isPro, required String userId, DateTime? passUntil}) =
+      _EntitlementChanged;
   const factory DayNightEvent.wallPicked(DayNightSlot slot, DayNightWall wall) = _WallPicked;
   const factory DayNightEvent.variantsPicked({required DayNightWall day, required DayNightWall night}) =
       _VariantsPicked;

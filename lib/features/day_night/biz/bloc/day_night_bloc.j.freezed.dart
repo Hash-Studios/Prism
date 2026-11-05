@@ -12,11 +12,17 @@ part of 'day_night_bloc.j.dart';
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
-mixin _$DayNightEvent {
+mixin _$DayNightEvent implements DiagnosticableTreeMixin {
 
 
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'DayNightEvent'))
+    ;
+}
 
 @override
 bool operator ==(Object other) {
@@ -28,7 +34,7 @@ bool operator ==(Object other) {
 int get hashCode => runtimeType.hashCode;
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'DayNightEvent()';
 }
 
@@ -140,10 +146,10 @@ return proLapseAcknowledged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isPro,  String userId)?  entitlementChanged,TResult Function( DayNightSlot slot,  DayNightWall wall)?  wallPicked,TResult Function( DayNightWall day,  DayNightWall night)?  variantsPicked,TResult Function( DayTime dayStart,  DayTime nightStart)?  timesChanged,TResult Function( WallpaperTarget target)?  targetChanged,TResult Function( bool enabled)?  toggled,TResult Function()?  retryPressed,TResult Function()?  proLapseAcknowledged,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isPro,  String userId,  DateTime? passUntil)?  entitlementChanged,TResult Function( DayNightSlot slot,  DayNightWall wall)?  wallPicked,TResult Function( DayNightWall day,  DayNightWall night)?  variantsPicked,TResult Function( DayTime dayStart,  DayTime nightStart)?  timesChanged,TResult Function( WallpaperTarget target)?  targetChanged,TResult Function( bool enabled)?  toggled,TResult Function()?  retryPressed,TResult Function()?  proLapseAcknowledged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _EntitlementChanged() when entitlementChanged != null:
-return entitlementChanged(_that.isPro,_that.userId);case _WallPicked() when wallPicked != null:
+return entitlementChanged(_that.isPro,_that.userId,_that.passUntil);case _WallPicked() when wallPicked != null:
 return wallPicked(_that.slot,_that.wall);case _VariantsPicked() when variantsPicked != null:
 return variantsPicked(_that.day,_that.night);case _TimesChanged() when timesChanged != null:
 return timesChanged(_that.dayStart,_that.nightStart);case _TargetChanged() when targetChanged != null:
@@ -168,10 +174,10 @@ return proLapseAcknowledged();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isPro,  String userId)  entitlementChanged,required TResult Function( DayNightSlot slot,  DayNightWall wall)  wallPicked,required TResult Function( DayNightWall day,  DayNightWall night)  variantsPicked,required TResult Function( DayTime dayStart,  DayTime nightStart)  timesChanged,required TResult Function( WallpaperTarget target)  targetChanged,required TResult Function( bool enabled)  toggled,required TResult Function()  retryPressed,required TResult Function()  proLapseAcknowledged,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isPro,  String userId,  DateTime? passUntil)  entitlementChanged,required TResult Function( DayNightSlot slot,  DayNightWall wall)  wallPicked,required TResult Function( DayNightWall day,  DayNightWall night)  variantsPicked,required TResult Function( DayTime dayStart,  DayTime nightStart)  timesChanged,required TResult Function( WallpaperTarget target)  targetChanged,required TResult Function( bool enabled)  toggled,required TResult Function()  retryPressed,required TResult Function()  proLapseAcknowledged,}) {final _that = this;
 switch (_that) {
 case _EntitlementChanged():
-return entitlementChanged(_that.isPro,_that.userId);case _WallPicked():
+return entitlementChanged(_that.isPro,_that.userId,_that.passUntil);case _WallPicked():
 return wallPicked(_that.slot,_that.wall);case _VariantsPicked():
 return variantsPicked(_that.day,_that.night);case _TimesChanged():
 return timesChanged(_that.dayStart,_that.nightStart);case _TargetChanged():
@@ -195,10 +201,10 @@ return proLapseAcknowledged();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isPro,  String userId)?  entitlementChanged,TResult? Function( DayNightSlot slot,  DayNightWall wall)?  wallPicked,TResult? Function( DayNightWall day,  DayNightWall night)?  variantsPicked,TResult? Function( DayTime dayStart,  DayTime nightStart)?  timesChanged,TResult? Function( WallpaperTarget target)?  targetChanged,TResult? Function( bool enabled)?  toggled,TResult? Function()?  retryPressed,TResult? Function()?  proLapseAcknowledged,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isPro,  String userId,  DateTime? passUntil)?  entitlementChanged,TResult? Function( DayNightSlot slot,  DayNightWall wall)?  wallPicked,TResult? Function( DayNightWall day,  DayNightWall night)?  variantsPicked,TResult? Function( DayTime dayStart,  DayTime nightStart)?  timesChanged,TResult? Function( WallpaperTarget target)?  targetChanged,TResult? Function( bool enabled)?  toggled,TResult? Function()?  retryPressed,TResult? Function()?  proLapseAcknowledged,}) {final _that = this;
 switch (_that) {
 case _EntitlementChanged() when entitlementChanged != null:
-return entitlementChanged(_that.isPro,_that.userId);case _WallPicked() when wallPicked != null:
+return entitlementChanged(_that.isPro,_that.userId,_that.passUntil);case _WallPicked() when wallPicked != null:
 return wallPicked(_that.slot,_that.wall);case _VariantsPicked() when variantsPicked != null:
 return variantsPicked(_that.day,_that.night);case _TimesChanged() when timesChanged != null:
 return timesChanged(_that.dayStart,_that.nightStart);case _TargetChanged() when targetChanged != null:
@@ -216,12 +222,13 @@ return proLapseAcknowledged();case _:
 /// @nodoc
 
 
-class _EntitlementChanged implements DayNightEvent {
-  const _EntitlementChanged({required this.isPro, required this.userId});
+class _EntitlementChanged with DiagnosticableTreeMixin implements DayNightEvent {
+  const _EntitlementChanged({required this.isPro, required this.userId, this.passUntil});
   
 
  final  bool isPro;
  final  String userId;
+ final  DateTime? passUntil;
 
 /// Create a copy of DayNightEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -230,19 +237,25 @@ class _EntitlementChanged implements DayNightEvent {
 _$EntitlementChangedCopyWith<_EntitlementChanged> get copyWith => __$EntitlementChangedCopyWithImpl<_EntitlementChanged>(this, _$identity);
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'DayNightEvent.entitlementChanged'))
+    ..add(DiagnosticsProperty('isPro', isPro))..add(DiagnosticsProperty('userId', userId))..add(DiagnosticsProperty('passUntil', passUntil));
+}
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EntitlementChanged&&(identical(other.isPro, isPro) || other.isPro == isPro)&&(identical(other.userId, userId) || other.userId == userId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EntitlementChanged&&(identical(other.isPro, isPro) || other.isPro == isPro)&&(identical(other.userId, userId) || other.userId == userId)&&(identical(other.passUntil, passUntil) || other.passUntil == passUntil));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,isPro,userId);
+int get hashCode => Object.hash(runtimeType,isPro,userId,passUntil);
 
 @override
-String toString() {
-  return 'DayNightEvent.entitlementChanged(isPro: $isPro, userId: $userId)';
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+  return 'DayNightEvent.entitlementChanged(isPro: $isPro, userId: $userId, passUntil: $passUntil)';
 }
 
 
@@ -253,7 +266,7 @@ abstract mixin class _$EntitlementChangedCopyWith<$Res> implements $DayNightEven
   factory _$EntitlementChangedCopyWith(_EntitlementChanged value, $Res Function(_EntitlementChanged) _then) = __$EntitlementChangedCopyWithImpl;
 @useResult
 $Res call({
- bool isPro, String userId
+ bool isPro, String userId, DateTime? passUntil
 });
 
 
@@ -270,11 +283,12 @@ class __$EntitlementChangedCopyWithImpl<$Res>
 
 /// Create a copy of DayNightEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? isPro = null,Object? userId = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? isPro = null,Object? userId = null,Object? passUntil = freezed,}) {
   return _then(_EntitlementChanged(
 isPro: null == isPro ? _self.isPro : isPro // ignore: cast_nullable_to_non_nullable
 as bool,userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
-as String,
+as String,passUntil: freezed == passUntil ? _self.passUntil : passUntil // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 
@@ -284,7 +298,7 @@ as String,
 /// @nodoc
 
 
-class _WallPicked implements DayNightEvent {
+class _WallPicked with DiagnosticableTreeMixin implements DayNightEvent {
   const _WallPicked(this.slot, this.wall);
   
 
@@ -298,6 +312,12 @@ class _WallPicked implements DayNightEvent {
 _$WallPickedCopyWith<_WallPicked> get copyWith => __$WallPickedCopyWithImpl<_WallPicked>(this, _$identity);
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'DayNightEvent.wallPicked'))
+    ..add(DiagnosticsProperty('slot', slot))..add(DiagnosticsProperty('wall', wall));
+}
 
 @override
 bool operator ==(Object other) {
@@ -309,7 +329,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,slot,wall);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'DayNightEvent.wallPicked(slot: $slot, wall: $wall)';
 }
 
@@ -352,7 +372,7 @@ as DayNightWall,
 /// @nodoc
 
 
-class _VariantsPicked implements DayNightEvent {
+class _VariantsPicked with DiagnosticableTreeMixin implements DayNightEvent {
   const _VariantsPicked({required this.day, required this.night});
   
 
@@ -366,6 +386,12 @@ class _VariantsPicked implements DayNightEvent {
 _$VariantsPickedCopyWith<_VariantsPicked> get copyWith => __$VariantsPickedCopyWithImpl<_VariantsPicked>(this, _$identity);
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'DayNightEvent.variantsPicked'))
+    ..add(DiagnosticsProperty('day', day))..add(DiagnosticsProperty('night', night));
+}
 
 @override
 bool operator ==(Object other) {
@@ -377,7 +403,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,day,night);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'DayNightEvent.variantsPicked(day: $day, night: $night)';
 }
 
@@ -420,7 +446,7 @@ as DayNightWall,
 /// @nodoc
 
 
-class _TimesChanged implements DayNightEvent {
+class _TimesChanged with DiagnosticableTreeMixin implements DayNightEvent {
   const _TimesChanged({required this.dayStart, required this.nightStart});
   
 
@@ -434,6 +460,12 @@ class _TimesChanged implements DayNightEvent {
 _$TimesChangedCopyWith<_TimesChanged> get copyWith => __$TimesChangedCopyWithImpl<_TimesChanged>(this, _$identity);
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'DayNightEvent.timesChanged'))
+    ..add(DiagnosticsProperty('dayStart', dayStart))..add(DiagnosticsProperty('nightStart', nightStart));
+}
 
 @override
 bool operator ==(Object other) {
@@ -445,7 +477,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,dayStart,nightStart);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'DayNightEvent.timesChanged(dayStart: $dayStart, nightStart: $nightStart)';
 }
 
@@ -488,7 +520,7 @@ as DayTime,
 /// @nodoc
 
 
-class _TargetChanged implements DayNightEvent {
+class _TargetChanged with DiagnosticableTreeMixin implements DayNightEvent {
   const _TargetChanged(this.target);
   
 
@@ -501,6 +533,12 @@ class _TargetChanged implements DayNightEvent {
 _$TargetChangedCopyWith<_TargetChanged> get copyWith => __$TargetChangedCopyWithImpl<_TargetChanged>(this, _$identity);
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'DayNightEvent.targetChanged'))
+    ..add(DiagnosticsProperty('target', target));
+}
 
 @override
 bool operator ==(Object other) {
@@ -512,7 +550,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,target);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'DayNightEvent.targetChanged(target: $target)';
 }
 
@@ -554,7 +592,7 @@ as WallpaperTarget,
 /// @nodoc
 
 
-class _Toggled implements DayNightEvent {
+class _Toggled with DiagnosticableTreeMixin implements DayNightEvent {
   const _Toggled(this.enabled);
   
 
@@ -567,6 +605,12 @@ class _Toggled implements DayNightEvent {
 _$ToggledCopyWith<_Toggled> get copyWith => __$ToggledCopyWithImpl<_Toggled>(this, _$identity);
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'DayNightEvent.toggled'))
+    ..add(DiagnosticsProperty('enabled', enabled));
+}
 
 @override
 bool operator ==(Object other) {
@@ -578,7 +622,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,enabled);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'DayNightEvent.toggled(enabled: $enabled)';
 }
 
@@ -620,7 +664,7 @@ as bool,
 /// @nodoc
 
 
-class _RetryPressed implements DayNightEvent {
+class _RetryPressed with DiagnosticableTreeMixin implements DayNightEvent {
   const _RetryPressed();
   
 
@@ -628,6 +672,12 @@ class _RetryPressed implements DayNightEvent {
 
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'DayNightEvent.retryPressed'))
+    ;
+}
 
 @override
 bool operator ==(Object other) {
@@ -639,7 +689,7 @@ bool operator ==(Object other) {
 int get hashCode => runtimeType.hashCode;
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'DayNightEvent.retryPressed()';
 }
 
@@ -652,7 +702,7 @@ String toString() {
 /// @nodoc
 
 
-class _ProLapseAcknowledged implements DayNightEvent {
+class _ProLapseAcknowledged with DiagnosticableTreeMixin implements DayNightEvent {
   const _ProLapseAcknowledged();
   
 
@@ -660,6 +710,12 @@ class _ProLapseAcknowledged implements DayNightEvent {
 
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'DayNightEvent.proLapseAcknowledged'))
+    ;
+}
 
 @override
 bool operator ==(Object other) {
@@ -671,7 +727,7 @@ bool operator ==(Object other) {
 int get hashCode => runtimeType.hashCode;
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'DayNightEvent.proLapseAcknowledged()';
 }
 
@@ -682,7 +738,7 @@ String toString() {
 
 
 /// @nodoc
-mixin _$DayNightState {
+mixin _$DayNightState implements DiagnosticableTreeMixin {
 
  DayNightPair get pair; bool get loaded; bool get isPro; String get userId; bool get preparing; DayNightIssue? get issue; bool get proLapsed;
 /// Create a copy of DayNightState
@@ -692,6 +748,12 @@ mixin _$DayNightState {
 $DayNightStateCopyWith<DayNightState> get copyWith => _$DayNightStateCopyWithImpl<DayNightState>(this as DayNightState, _$identity);
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'DayNightState'))
+    ..add(DiagnosticsProperty('pair', pair))..add(DiagnosticsProperty('loaded', loaded))..add(DiagnosticsProperty('isPro', isPro))..add(DiagnosticsProperty('userId', userId))..add(DiagnosticsProperty('preparing', preparing))..add(DiagnosticsProperty('issue', issue))..add(DiagnosticsProperty('proLapsed', proLapsed));
+}
 
 @override
 bool operator ==(Object other) {
@@ -703,7 +765,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,pair,loaded,isPro,userId,preparing,issue,proLapsed);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'DayNightState(pair: $pair, loaded: $loaded, isPro: $isPro, userId: $userId, preparing: $preparing, issue: $issue, proLapsed: $proLapsed)';
 }
 
@@ -881,7 +943,7 @@ return $default(_that.pair,_that.loaded,_that.isPro,_that.userId,_that.preparing
 /// @nodoc
 
 
-class _DayNightState implements DayNightState {
+class _DayNightState with DiagnosticableTreeMixin implements DayNightState {
   const _DayNightState({required this.pair, this.loaded = false, this.isPro = false, this.userId = '', this.preparing = false, this.issue, this.proLapsed = false});
   
 
@@ -900,6 +962,12 @@ class _DayNightState implements DayNightState {
 _$DayNightStateCopyWith<_DayNightState> get copyWith => __$DayNightStateCopyWithImpl<_DayNightState>(this, _$identity);
 
 
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'DayNightState'))
+    ..add(DiagnosticsProperty('pair', pair))..add(DiagnosticsProperty('loaded', loaded))..add(DiagnosticsProperty('isPro', isPro))..add(DiagnosticsProperty('userId', userId))..add(DiagnosticsProperty('preparing', preparing))..add(DiagnosticsProperty('issue', issue))..add(DiagnosticsProperty('proLapsed', proLapsed));
+}
 
 @override
 bool operator ==(Object other) {
@@ -911,7 +979,7 @@ bool operator ==(Object other) {
 int get hashCode => Object.hash(runtimeType,pair,loaded,isPro,userId,preparing,issue,proLapsed);
 
 @override
-String toString() {
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
   return 'DayNightState(pair: $pair, loaded: $loaded, isPro: $isPro, userId: $userId, preparing: $preparing, issue: $issue, proLapsed: $proLapsed)';
 }
 

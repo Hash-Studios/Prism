@@ -103,7 +103,11 @@ class _DayNightSessionListenerState extends State<DayNightSessionListener> with 
     final bool isPro =
         state.session.loggedIn && (state.session.premium || ownsPasses && autoRotateEntitled(state.session));
     context.read<DayNightBloc>().add(
-      DayNightEvent.entitlementChanged(isPro: isPro, userId: state.session.loggedIn ? state.session.userId : ''),
+      DayNightEvent.entitlementChanged(
+        isPro: isPro,
+        userId: state.session.loggedIn ? state.session.userId : '',
+        passUntil: ownsPasses ? autoRotatePassEnd(state.session) : null,
+      ),
     );
   }
 }

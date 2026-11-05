@@ -8,6 +8,7 @@ import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/features/day_night/domain/repositories/day_night_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:bloc/bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
 
@@ -36,36 +37,45 @@ class DayNightBloc extends Bloc<DayNightEvent, DayNightState> {
 
   final DayNightRepository _repository;
 
+  @visibleForTesting
+  DateTime Function() clock = DateTime.now;
+
   Future<void> _onEntitlementChanged(_EntitlementChanged event, Emitter<DayNightState> emit) async {
     final String userId = event.userId.trim();
     if (userId.isEmpty ? app_state.prismUser.loggedIn : !_ownsCurrentUser(userId)) return;
     if (userId == state.userId) {
       if (!state.loaded && userId.isEmpty) await _unpublishQuietly();
       if (userId.isNotEmpty && !_ownsCurrentUser(userId)) return;
-      if (state.pair.enabled && !event.isPro) {
+      final (bool entitled, DateTime? until) = _entitlement(event, state.pair, trustStored: userId.isNotEmpty);
+      if (state.pair.enabled && !entitled) {
         await _lapse(emit, notice: true);
       } else {
-        emit(state.copyWith(isPro: event.isPro, loaded: true));
+        final DayNightPair pair = await _keepPass(state.pair, until, userId);
+        if (userId.isNotEmpty && !_ownsCurrentUser(userId)) return;
+        emit(state.copyWith(pair: pair, isPro: entitled, loaded: true));
       }
       return;
     }
     final bool isInitialSession = !state.loaded;
     await _unpublishQuietly();
     if (!_eventOwnerIsCurrent(userId)) return;
-    final DayNightPair pair = userId.isEmpty ? DayNightPair() : await _repository.load(ownerId: userId);
+    final DayNightPair stored = userId.isEmpty ? DayNightPair() : await _repository.load(ownerId: userId);
+    if (!_eventOwnerIsCurrent(userId)) return;
+    final (bool entitled, DateTime? until) = _entitlement(event, stored, trustStored: isInitialSession);
+    final DayNightPair pair = entitled ? await _keepPass(stored, until, userId) : stored;
     if (!_eventOwnerIsCurrent(userId)) return;
     emit(
       state.copyWith(
         pair: pair,
         loaded: true,
-        isPro: event.isPro,
+        isPro: entitled,
         userId: userId,
         preparing: false,
         issue: null,
         proLapsed: false,
       ),
     );
-    if (pair.enabled && !event.isPro) {
+    if (pair.enabled && !entitled) {
       await _lapse(emit, notice: isInitialSession, unpublish: false);
     } else if (pair.enabled) {
       final DayNightIssue? issue = await _publish(pair, ownerId: userId);
@@ -74,6 +84,22 @@ class DayNightBloc extends Bloc<DayNightEvent, DayNightState> {
         await _saveDisabledAfterPublishFailure(pair, userId, issue, emit);
       }
     }
+  }
+
+  /// Whether the mode may run, and the pass end to keep. A stored pass that has not ended still counts while the live
+  /// passes read empty, as before they load at launch, but only when [trustStored] says the pair is this user's.
+  (bool, DateTime?) _entitlement(_EntitlementChanged event, DayNightPair stored, {required bool trustStored}) {
+    final DateTime now = clock();
+    final DateTime? until = event.isPro ? event.passUntil : (trustStored ? stored.passUntil : null);
+    final bool entitled = event.isPro ? until == null || until.isAfter(now) : until?.isAfter(now) ?? false;
+    return (entitled, entitled ? until : null);
+  }
+
+  Future<DayNightPair> _keepPass(DayNightPair pair, DateTime? until, String owner) async {
+    if (pair.passUntil == until || owner.isEmpty) return pair;
+    final DayNightPair next = pair.copyWith(passUntil: () => until);
+    await _repository.save(next, ownerId: owner);
+    return next;
   }
 
   Future<void> _onTimesChanged(_TimesChanged event, Emitter<DayNightState> emit) async {
@@ -187,7 +213,7 @@ class DayNightBloc extends Bloc<DayNightEvent, DayNightState> {
     if (!_ownsCurrentUser(state.userId)) return;
     if (unpublish) await _unpublishQuietly();
     if (!_ownsCurrentUser(state.userId)) return;
-    final DayNightPair off = state.pair.copyWith(enabled: false);
+    final DayNightPair off = state.pair.copyWith(enabled: false, passUntil: () => null);
     await _repository.save(off, ownerId: state.userId);
     if (!_ownsCurrentUser(state.userId)) return;
     emit(state.copyWith(pair: off, isPro: false, proLapsed: notice));
