@@ -77,6 +77,28 @@ const hasIndex = (collectionGroup: string, fields: Array<[string, string]>, quer
     i.queryScope === queryScope &&
     JSON.stringify(i.fields.map((f) => [f.fieldPath, f.order])) === JSON.stringify(fields));
 
+for (const protectedAssets of [false, true]) {
+  const prefix: Array<[string, string]> = protectedAssets ?
+    ["originalProtected", "wallpaper_url", "wallpaper_path", "wallpaper_sha", "thumb_path", "thumb_sha"]
+      .map((field): [string, string] => [field, "ASCENDING"]) : [];
+  const variant = protectedAssets ? "protected" : "legacy";
+
+  test(`category bootstrap has the ${variant} desktop index`, () => {
+    const fields: Array<[string, string]> = [...prefix, ["review", "ASCENDING"], ["desktopVariant.v", "ASCENDING"]];
+    assert.ok(hasIndex("walls", fields) || hasIndex("walls", [...fields, ["__name__", "ASCENDING"]]));
+  });
+
+  test(`category bootstrap has the ${variant} Prism-first category index`, () => {
+    assert.ok(hasIndex("walls", [...prefix, ["category", "ASCENDING"], ["review", "ASCENDING"],
+      ["createdAt", "DESCENDING"], ["__name__", "DESCENDING"]]));
+  });
+
+  test(`category bootstrap has the ${variant} Prism-source feed index`, () => {
+    assert.ok(hasIndex("walls", [...prefix, ["review", "ASCENDING"],
+      ["createdAt", "DESCENDING"], ["__name__", "DESCENDING"]]));
+  });
+}
+
 test("economy v2 indexes: weekly xp leaderboard, drop reservation queue, active boosts", () => {
   assert.ok(hasIndex("usersv2", [["xpWeek.weekKey", "ASCENDING"], ["xpWeek.xp", "DESCENDING"]]));
   assert.ok(hasIndex("walls", [["dropReserved", "ASCENDING"], ["review", "ASCENDING"], ["createdAt", "ASCENDING"]]));
