@@ -1,0 +1,120 @@
+{
+  "now": "2026-11-05T15:40:31.052Z",
+  "offset": 15,
+  "firstRunSent": 1,
+  "secondRunSent": 0,
+  "marker": {
+    "day": "2026-11-05",
+    "atMs": 1793893231052,
+    "at": {
+      "_seconds": 1793893233,
+      "_nanoseconds": 917000000
+    }
+  },
+  "topicNews": {
+    "category:Pastel": 1793893171052,
+    "mood:dreamy": 1793893171052
+  },
+  "inbox": [
+    {
+      "id": "topic_digest_qa-user_2026-11-05",
+      "notification": {
+        "title": "2 new walls in Pastel and Dreamy",
+        "body": "Dreamy · Pastel · Flower"
+      },
+      "message": {
+        "kind": "topicDigest",
+        "args": {
+          "topicKey": "category:Pastel",
+          "topicName": "Pastel",
+          "secondTopicKey": "mood:dreamy",
+          "secondTopicName": "Dreamy",
+          "topicCount": 2,
+          "wallCount": 2,
+          "tags": "Dreamy · Pastel · Flower"
+        }
+      },
+      "data": {
+        "route": "topic",
+        "imageUrl": "https://img.prismwalls.com/previews/4f2935aee606c4a151ce2a5cd20570e729bfbf38b0b40fbeea65bb1b193c1730.img",
+        "url": "https://prismwalls.com/category/Pastel",
+        "pageName": "",
+        "arguments": [],
+        "topic_kind": "category",
+        "topic_id": "Pastel",
+        "topic_count": "2",
+        "notification_kind": "topic_digest",
+        "push_kind": "post"
+      },
+      "modifier": "qa@prismwalls.com",
+      "pushHandled": true,
+      "createdAt": {
+        "_seconds": 1793893235,
+        "_nanoseconds": 87000000
+      }
+    }
+  ],
+  "messages": [
+    {
+      "data": {
+        "route": "topic",
+        "topic_kind": "category",
+        "topic_id": "Pastel",
+        "topic_count": "2",
+        "url": "https://prismwalls.com/category/Pastel",
+        "notification_kind": "topic_digest",
+        "push_kind": "post",
+        "notification_copy_kind": "topicDigest",
+        "notification_args": "{\"topicKey\":\"category:Pastel\",\"topicName\":\"Pastel\",\"secondTopicKey\":\"mood:dreamy\",\"secondTopicName\":\"Dreamy\",\"topicCount\":2,\"wallCount\":2,\"tags\":\"Dreamy · Pastel · Flower\"}",
+        "channel_id": "posts",
+        "gallery": "1",
+        "gallery_url": "https://img.prismwalls.com/push-gallery/v1/896a2e61126db2aa49219de838edf9447d66a10f9cceefd225e5e3437f968bce.jpg",
+        "gallery_count": "2",
+        "gallery_thumb_index": "0"
+      },
+      "android": {
+        "notification": {
+          "channelId": "posts",
+          "clickAction": "FLUTTER_NOTIFICATION_CLICK",
+          "imageUrl": "https://img.prismwalls.com/previews/4f2935aee606c4a151ce2a5cd20570e729bfbf38b0b40fbeea65bb1b193c1730.img",
+          "tag": "topic_digest_2026-11-05",
+          "titleLocKey": "notif_push_topic_digest_title_pair",
+          "titleLocArgs": [
+            "Pastel",
+            "Dreamy",
+            "2"
+          ],
+          "bodyLocKey": "notif_push_topic_digest_body",
+          "bodyLocArgs": [
+            "Dreamy · Pastel · Flower"
+          ]
+        },
+        "priority": "high"
+      },
+      "apns": {
+        "headers": {
+          "apns-collapse-id": "topic_digest_2026-11-05"
+        },
+        "payload": {
+          "aps": {
+            "sound": "default",
+            "mutableContent": true,
+            "alert": {
+              "titleLocKey": "notif_push_topic_digest_title_pair",
+              "titleLocArgs": [
+                "Pastel",
+                "Dreamy",
+                "2"
+              ],
+              "locKey": "notif_push_topic_digest_body",
+              "locArgs": [
+                "Dreamy · Pastel · Flower"
+              ]
+            }
+          }
+        }
+      },
+      "token": "QA_TOKEN"
+    }
+  ]
+}
