@@ -1168,13 +1168,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     if (docId == null) return;
     unawaited(analytics.track(DesktopUploadStartedEvent(wallId: wall.id, replace: replace)));
     unawaited(
-      context.router.push(
-        DesktopUploadRoute(
-          wallDocId: docId,
-          wallId: wall.id,
-          phoneThumbUrl: WallpaperDisplaySource.of(state.entity).thumbnail,
-          wallTitle: wall.title ?? '',
-          replace: replace,
+      Navigator.of(context).push(
+        MaterialPageRoute<bool>(
+          builder: (_) => DesktopUploadScreen(
+            wallDocId: docId,
+            wallId: wall.id,
+            phoneThumbUrl: WallpaperDisplaySource.of(state.entity).thumbnail,
+            wallTitle: wall.title ?? '',
+            replace: replace,
+          ),
         ),
       ),
     );

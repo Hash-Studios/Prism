@@ -13,7 +13,6 @@ import 'package:Prism/features/desktop_submission/views/widgets/desktop_side_pre
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -47,7 +46,6 @@ Future<Size?> _measureImage(Uint8List bytes) async {
 }
 
 /// Lets the creator pick a wide image for their approved wall, check it, see it beside the phone wallpaper, and send it.
-@RoutePage()
 class DesktopUploadScreen extends StatefulWidget {
   const DesktopUploadScreen({
     required this.wallDocId,
