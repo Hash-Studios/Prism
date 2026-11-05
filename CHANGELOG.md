@@ -1,5 +1,14 @@
 ## Changelog
 
+### v3.21.0
+- Save a watch set: the phone wall, a crop sized for your watch and the desktop version in one tap
+- On iPhone, pick a day wall and a night wall and let Shortcuts switch them
+- Smoother, quicker motion across the app
+- Downloads and Set recover better when something goes wrong
+- Restoring Pro is more reliable
+- Older wallpaper thumbnails load faster
+- Security and stability fixes
+
 ### v3.20.0
 - Crop a wallpaper in the editor: drag the frame or pick a shape like This phone, 1:1 or 16:9
 - Share an edited wallpaper straight from the editor
