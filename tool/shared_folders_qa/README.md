@@ -1,8 +1,8 @@
 # Shared folders local QA
 
-This harness runs the real app against a disposable `demo-prism` emulator backend. It seeds one private folder, three users and eight walls. It then runs the real invite, join and refusal callables, the real `onFolderItemWritten` trigger and the real `sendDueFolderActivity` push job. It never touches production. All fixture data is written by Admin code and is marked `ADMIN SEEDED`.
+This harness runs the real app against a disposable `demo-prism` emulator backend. It seeds one private folder, three users and eight walls. It then runs the real invite, join and refusal callables, the real `onFolderItemWritten` trigger and the real `sendDueFolderActivity` push job. It refuses non-demo Firebase configuration. Fixtures use Admin writes and fixed QA identities. Wall docs are marked `ADMIN SEEDED`.
 
-It proves backend behavior and the app wiring. It does not prove store builds, production data, real push delivery or a real-device sign-in.
+Backend commands produce emulator evidence when run. Device steps need separate screenshots. Neither proves store builds, production data, real push delivery or real-device sign-in.
 
 ## Order of commands
 
@@ -68,7 +68,7 @@ node tool/shared_folders_qa.cjs push         # after Riya joins on the device
 | `assert` 7 | Bo is refused on invite 1 with `blocked`. The block takes priority over the used code. |
 | `push` | Riya's add of wall 3 queues an activity through the real `onFolderItemWritten` trigger. `sendDueFolderActivity(now + 2 h)` runs. Ana's inbox gets "Riya QA added a wall to Trip". |
 
-`push` writes the editor add itself, with Admin SDK, marked as a Riya add. If wall 3 is already in Trip, `push` skips the add and sends whatever is due. The reported send count can be 0 in the emulator. FCM is not reachable there, so the inbox doc is the evidence.
+`push` writes the editor add itself, with Admin SDK, marked as a Riya add. If wall 3 is already in Trip, `push` skips the add and sends whatever is due. The reported send count can be 0 in the emulator. FCM is not reachable there, so the inbox doc is the evidence. The command fails unless Ana's inbox has the expected title, folder route, folder id and activity kind.
 
 ## Device steps
 

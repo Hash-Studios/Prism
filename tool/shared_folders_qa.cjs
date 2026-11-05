@@ -569,6 +569,11 @@ async function push() {
   const sent = await sharedFolders.sendDueFolderActivity(Date.now() + PUSH_HORIZON_MS);
   console.log(`sendDueFolderActivity(now + 2 h): ${sent} push(es) sent. FCM is not reachable in the emulator, so the inbox doc is the evidence.`);
   const inbox = await db.collection('notifications').where('modifier', '==', `${CREATOR}@example.test`).get();
+  assert.ok(inbox.docs.some((doc) => {
+    const data = doc.data();
+    return data.notification?.title === 'Riya QA added a wall to Trip' && data.data?.route === 'folder' &&
+      data.data?.folder_id === FOLDER && data.data?.notification_kind === 'folder_activity';
+  }), 'Expected Ana inbox notification for Riya adding a wall to Trip');
   console.log(`Inbox docs for ${CREATOR}: ${inbox.size}`);
   for (const doc of inbox.docs) console.log(`  ${doc.id}: ${doc.data().notification?.title}`);
 }

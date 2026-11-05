@@ -13,6 +13,7 @@ void main() {
     'path-build',
     'redirects',
     'evidence',
+    'push',
     'environment',
   ]) {
     test('shared folders QA isolates $scenario', () async {
@@ -215,26 +216,38 @@ async function main() {
       joined = true;
       return {status: 200, body: {result: {folderId: 'qa-trip', joined: true}}};
     };
-    s.run('loadBackend = () => ({db}); callable = (...args) => localCallable(...args)');
-    await s.run('evidence()');
+    s.run(`loadBackend = () => ({db: {doc: name => ({get: async () => {
+      const snapshot = await db.doc(name).get();
+      return {data: () => JSON.parse(JSON.stringify(snapshot.data()))};
+    }})}}); callable = async (...args) => JSON.parse(JSON.stringify(await localCallable(...args)))`);
+    try {
+      await s.run('evidence()');
+    } catch (error) {
+      throw Error(error.message + '\n' + s.files.get(path.join(root, 'evidence.json')));
+    }
     const used = calls.findIndex(call => call.name === 'getFolderInvite' && call.data.code === 'UsedXyzABC');
     const join = calls.findIndex(call => call.uid === 'qa-viewer' && call.name === 'joinFolder');
     assert.ok(used >= 0 && used < join, 'Prove used status before the viewer becomes a member');
     assert.equal(JSON.parse(s.files.get(path.join(root, 'evidence.json'))).passed, true);
   }
   if (scenario === 'push') {
-    for (const hasExpectedInbox of [false, true]) {
+    for (const [title, route, valid] of [
+      [null, null, false],
+      ['Unrelated notification', 'folder', false],
+      ['Riya QA added a wall to Trip', 'announcement', false],
+      ['Riya QA added a wall to Trip', 'folder', true],
+    ]) {
       const s = sandbox();
-      const docs = hasExpectedInbox ? [{id: 'folder_activity_qa-creator-a_qa-trip_1', data: () => ({
-        notification: {title: 'Riya QA added a wall to Trip'},
-        data: {route: 'folder', folder_id: 'qa-trip', notification_kind: 'folder_activity'},
+      const docs = title ? [{id: 'folder_activity_qa-creator-a_qa-trip_1', data: () => ({
+        notification: {title},
+        data: {route, folder_id: 'qa-trip', notification_kind: 'folder_activity'},
       })}] : [];
       s.context.db = {
         doc: () => ({get: async () => ({exists: true, data: () => ({memberIds: ['qa-viewer']})})}),
         collection: () => ({where: () => ({get: async () => ({size: docs.length, docs})})}),
       };
       s.run(`loadBackend = () => ({admin: {}, db, base: '${root}/functions'})`);
-      if (hasExpectedInbox) await s.run('push()');
+      if (valid) await s.run('push()');
       else await assert.rejects(s.run('push()'), /inbox|notification/i);
     }
   }
