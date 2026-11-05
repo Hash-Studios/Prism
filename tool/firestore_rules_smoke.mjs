@@ -86,6 +86,8 @@ const requestFields = (owner, extra = {}) => ({
 const fieldEquals = (field, value) => ({ fieldFilter: { field: { fieldPath: field }, op: 'EQUAL', value } });
 const historyFields = (id = 'abc', provider = 'wallhaven', extra = {}) => ({ id: str(id), provider: str(provider), thumb: str('https://th.wallhaven.cc/small/ab/abc.jpg'), action: str('set'), at: ts(), ...extra });
 const ownerFilter = (uid) => ({ fieldFilter: { field: { fieldPath: 'ownerId' }, op: 'EQUAL', value: { stringValue: uid } } });
+const arrayContainsFilter = (field, value) => ({ fieldFilter: { field: { fieldPath: field }, op: 'ARRAY_CONTAINS', value: { stringValue: value } } });
+const sharedMembers = { mapValue: { fields: { e: { mapValue: { fields: { addedBy: { stringValue: 'a' } } } } } } };
 const newestFirst = (field, limit) => ({ orderBy: [{ field: { fieldPath: field }, direction: 'DESCENDING' }], ...(limit ? { limit } : {}) });
 const commitDocs = async (auth, docs) => {
   const r = await fetch(`${B}:commit`, {
@@ -189,12 +191,17 @@ const seed = () => Promise.all([
   req('PATCH', 'walls/cw1/comments/v1', { state: str('visible'), authorUid: str('u1'), text: str('hi'), createdAt: ts() }, 'owner'),
   req('PATCH', 'walls/cw1/comments/h1', { state: str('hidden'), authorUid: str('u1'), text: str('spam'), createdAt: ts() }, 'owner'),
   req('PATCH', 'walls/cw2/comments/v2', { state: str('visible'), authorUid: str('u1'), text: str('hi'), createdAt: ts() }, 'owner'),
+  req('PATCH', 'folders/shared1', folderFields('a', 'Trip', { memberIds: arr(['e']), members: sharedMembers }), 'owner'),
+  req('PATCH', 'folders/shared1/items/wallhaven_seed', itemFields('a', 'seed'), 'owner'),
+  req('PATCH', 'folders/shared1/items/wallhaven_seed2', itemFields('a', 'seed2'), 'owner'),
+  req('PATCH', 'folderInvites/code1', { folderId: str('shared1'), createdBy: str('a') }, 'owner'),
 ]);
 const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), HistoryOwner = tok('history-owner', 'history-owner@x.com'), ADM = tok('adm', 'admin@x.com');
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
 const C = tok('c', 'c@x.com');
 const U1 = tok('u1', 'u1@x.com');
 const D = tok('dblock', 'dblock@x.com');
+const Ed = tok('e', 'e@x.com'), Out = tok('x', 'x@x.com');
 const themeFields = {
   mode: str('dark'), lightThemeId: str('kLFrost White'), lightAccent: { integerValue: '4293228183' },
   darkThemeId: str('kDOlive'), darkAccent: { integerValue: '4278190080' }, changedAt: { integerValue: '1793000000000' },
@@ -817,6 +824,32 @@ const cases = [
   ['deleting account cannot delete history after recursive cleanup', () => req('DELETE', 'usersv2/b/history/wallhaven_barrierupdate', null, Bu), 403],
   ['deleting account can still remove its items', () => req('DELETE', 'folders/fb/items/wallhaven_abc', null, Bu), 200],
   ['deleting account can still remove its folders', () => req('DELETE', 'folders/atomic', null, Bu), 200],
+  ['editor reads shared folder', () => req('GET', 'folders/shared1', null, Ed), 200],
+  ['editor lists shared folder items by owner newest first', () => runQuery(Ed, [ownerFilter('a')], 'items', 'folders/shared1', newestFirst('addedAt')), 200],
+  ['editor lists folders shared with them newest first', () => runQuery(Ed, [arrayContainsFilter('memberIds', 'e')], 'folders', '', newestFirst('updatedAt')), 200],
+  ['editor adds an item with owner ownerId and own addedBy', () => req('PATCH', 'folders/shared1/items/wallhaven_ed1', { ...itemFields('a', 'ed1'), addedBy: str('e') }, Ed), 200],
+  ['editor cannot add an item owned by the editor', () => req('PATCH', 'folders/shared1/items/wallhaven_ed2', { ...itemFields('e', 'ed2'), addedBy: str('e') }, Ed), 403],
+  ['editor cannot spoof owner addedBy on an item', () => req('PATCH', 'folders/shared1/items/wallhaven_ed3', { ...itemFields('a', 'ed3'), addedBy: str('a') }, Ed), 403],
+  ['editor cannot add an item without addedBy', () => req('PATCH', 'folders/shared1/items/wallhaven_ed4', itemFields('a', 'ed4'), Ed), 403],
+  ['editor removes an owner item from a shared folder', () => req('DELETE', 'folders/shared1/items/wallhaven_seed2', null, Ed), 200],
+  ['editor cannot rename a shared folder', () => req('PATCH', 'folders/shared1', { name: str('Mine'), updatedAt: ts() }, Ed, ['name', 'updatedAt']), 403],
+  ['editor cannot make a shared folder public', () => req('PATCH', 'folders/shared1', { public: { booleanValue: true } }, Ed, ['public']), 403],
+  ['editor cannot change shared folder memberIds', () => req('PATCH', 'folders/shared1', { memberIds: arr(['e', 'x']) }, Ed, ['memberIds']), 403],
+  ['owner cannot set shared folder memberIds', () => req('PATCH', 'folders/shared1', { memberIds: arr(['e', 'x']) }, A, ['memberIds']), 403],
+  ['owner cannot set shared folder members', () => req('PATCH', 'folders/shared1', { members: { mapValue: { fields: { x: { mapValue: { fields: { addedBy: str('a') } } } } } } }, A, ['members']), 403],
+  ['owner cannot create a folder with memberIds', () => req('PATCH', 'folders/shared2', folderFields('a', 'New', { memberIds: arr(['e']) }), A), 403],
+  ['editor cannot delete a shared folder', () => req('DELETE', 'folders/shared1', null, Ed), 403],
+  ['outsider cannot read a shared folder', () => req('GET', 'folders/shared1', null, Out), 403],
+  ['outsider cannot list shared folder items', () => runQuery(Out, [ownerFilter('a')], 'items', 'folders/shared1', newestFirst('addedAt')), 403],
+  ['outsider cannot read a shared folder item', () => req('GET', 'folders/shared1/items/wallhaven_seed', null, Out), 403],
+  ['outsider cannot add an item to a shared folder', () => req('PATCH', 'folders/shared1/items/wallhaven_out1', { ...itemFields('a', 'out1'), addedBy: str('x') }, Out), 403],
+  ['outsider cannot read folder invites', () => req('GET', 'folderInvites/code1', null, Out), 403],
+  ['editor cannot write folder invites', () => req('PATCH', 'folderInvites/new', { folderId: str('shared1'), createdBy: str('e') }, Ed), 403],
+  ['owner cannot read folder invites', () => req('GET', 'folderInvites/code1', null, A), 403],
+  ['owner cannot write folder activity', () => req('PATCH', 'folderActivity/shared1', { updatedAt: ts() }, A), 403],
+  ['editor cannot write folder activity', () => req('PATCH', 'folderActivity/shared1', { updatedAt: ts() }, Ed), 403],
+  ['owner adds an item without addedBy', () => req('PATCH', 'folders/shared1/items/wallhaven_own1', itemFields('a', 'own1'), A), 200],
+  ['owner adds an item with own addedBy', () => req('PATCH', 'folders/shared1/items/wallhaven_own2', { ...itemFields('a', 'own2'), addedBy: str('a') }, A), 200],
   ['guest cannot read a wall request directly', () => req('GET', 'wallRequests/open', null), 403],
   ['stranger cannot read a visible wall request directly', () => req('GET', 'wallRequests/open', null, C), 403],
   ['requester reads own visible wall request', () => req('GET', 'wallRequests/open', null, Bu), 200],

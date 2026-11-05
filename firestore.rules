@@ -402,8 +402,13 @@ service cloud.firestore {
       }
     }
 
-    // Private folders of saved walls. Only the owner reads or writes them; deleteAccount removes them.
+    // Folders of saved walls. The owner and the editors read them and add or remove items. Only the owner renames,
+    // deletes or changes them. Only the server writes members, memberIds and invites (functions/src/sharedFolders.ts).
     match /folders/{folderId} {
+      function canEdit(folder) {
+        return folder.ownerId == request.auth.uid || request.auth.uid in folder.get('memberIds', []);
+      }
+
       function folderWritesOpen() {
         return !exists(/databases/$(database)/documents/creatorDeletionState/$(request.auth.uid))
             || get(/databases/$(database)/documents/creatorDeletionState/$(request.auth.uid)).data.get('closed', false) != true;
@@ -421,12 +426,13 @@ service cloud.firestore {
       }
 
       // A folder item is a favourite doc plus ownerId and addedAt. Its id is "<provider lowercased>_<wall id>".
-      function validFolderItem(itemKey) {
+      // ownerId is the folder owner. addedBy is the writer; an item without it was added by the owner.
+      function validFolderItem(itemKey, folderOwner) {
         let data = request.resource.data;
         return data.keys().hasOnly([
               'id', 'url', 'thumb', 'provider', 'category', 'views', 'resolution', 'fav', 'size',
               'photographer', 'collections', 'depth', 'spatial', 'createdAt', 'favouritedAt', 'ownerId', 'addedAt',
-              'wallpaperDocumentId'
+              'wallpaperDocumentId', 'addedBy'
             ])
             && data.id is string && data.id.size() > 0
             && data.provider is string
@@ -436,11 +442,14 @@ service cloud.firestore {
                 || (data.wallpaperDocumentId is string && data.wallpaperDocumentId.size() > 0))
             // The favourite mapper copies a Spatial Scene wall's {tier, map}.
             && (!('spatial' in data) || data.spatial is map)
-            && data.ownerId == request.auth.uid
+            && data.ownerId == folderOwner
+            && (('addedBy' in data && data.addedBy == request.auth.uid)
+                || (!('addedBy' in data) && request.auth.uid == folderOwner))
             && data.addedAt is timestamp;
       }
 
-      allow read, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow read: if isSignedIn() && canEdit(resource.data);
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
       allow create: if isSignedIn()
           && folderWritesOpen()
           && request.resource.data.keys().hasOnly(['ownerId', 'name', 'createdAt', 'updatedAt', 'itemCount', 'covers'])
@@ -455,27 +464,39 @@ service cloud.firestore {
 
       // getAfter lets one batch create a folder with its first item.
       match /items/{itemKey} {
-        function ownsFolder() {
-          return get(/databases/$(database)/documents/folders/$(folderId)).data.ownerId == request.auth.uid;
+        function folder() {
+          return get(/databases/$(database)/documents/folders/$(folderId)).data;
+        }
+
+        function folderAfter() {
+          return getAfter(/databases/$(database)/documents/folders/$(folderId)).data;
+        }
+
+        function folderExists() {
+          return exists(/databases/$(database)/documents/folders/$(folderId));
         }
 
         // A deleted folder can leave items behind. Reusing its id must not expose the old owner's items.
         // Missing gets still support the Save sheet's membership check.
-        allow get: if isSignedIn() && ownsFolder()
+        allow get: if isSignedIn() && canEdit(folder())
             && (!exists(/databases/$(database)/documents/folders/$(folderId)/items/$(itemKey))
-                || resource.data.ownerId == request.auth.uid);
-        allow list: if isSignedIn() && ownsFolder() && resource.data.ownerId == request.auth.uid;
-        allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid
-            && (!exists(/databases/$(database)/documents/folders/$(folderId)) || ownsFolder());
+                || resource.data.ownerId == folder().ownerId);
+        allow list: if isSignedIn() && canEdit(folder()) && resource.data.ownerId == folder().ownerId;
+        // The owner can also clear items whose folder is gone.
+        allow delete: if isSignedIn() && (
+            (resource.data.ownerId == request.auth.uid
+                && (!folderExists() || folder().ownerId == request.auth.uid))
+            || (folderExists() && folderWritesOpen() && request.auth.uid in folder().get('memberIds', [])
+                && resource.data.ownerId == folder().ownerId));
         allow create: if isSignedIn()
             && folderWritesOpen()
-            && getAfter(/databases/$(database)/documents/folders/$(folderId)).data.ownerId == request.auth.uid
-            && validFolderItem(itemKey);
+            && canEdit(folderAfter())
+            && validFolderItem(itemKey, folderAfter().ownerId);
         allow update: if isSignedIn()
             && folderWritesOpen()
-            && resource.data.ownerId == request.auth.uid
-            && getAfter(/databases/$(database)/documents/folders/$(folderId)).data.ownerId == request.auth.uid
-            && validFolderItem(itemKey);
+            && canEdit(folderAfter())
+            && resource.data.ownerId == folderAfter().ownerId
+            && validFolderItem(itemKey, folderAfter().ownerId);
       }
     }
 
@@ -644,6 +665,11 @@ service cloud.firestore {
     match /userBlockRateByTarget/{docId} {
       allow read, write: if false;
     }
+
+    // Shared folder invites and pending activity pushes (Cloud Functions only).
+    match /folderInvites/{code} { allow read, write: if false; }
+    match /folderActivity/{folderId} { allow read, write: if false; }
+    match /folderInviteRateDaily/{docId} { allow read, write: if false; }
 
     // Public folder rate limits (Cloud Functions only).
     match /folderVisibilityRateDaily/{docId} {

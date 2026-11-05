@@ -1305,6 +1305,20 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "memberIds",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "folders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "ownerId",
           "order": "ASCENDING"
         },
