@@ -5,13 +5,13 @@ import UniformTypeIdentifiers
 @MainActor
 final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
   private let files: PrismMediaFiles
-  private let savePhoto: @MainActor (PrismImageFile) async throws -> Void
+  private let savePhoto: @MainActor (PrismImageFile, String?) async throws -> Void
   private var downloadsTail: Task<Void, Never>?
   private var downloadQueueGeneration: UInt64 = 0
 
   init(
     files: PrismMediaFiles = PrismMediaFiles(),
-    savePhoto: @escaping @MainActor (PrismImageFile) async throws -> Void = PrismMediaHostApiImpl.saveToPhotoLibrary
+    savePhoto: @escaping @MainActor (PrismImageFile, String?) async throws -> Void = PrismMediaHostApiImpl.saveToPhotoLibrary
   ) {
     self.files = files
     self.savePhoto = savePhoto
@@ -22,7 +22,7 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
       do {
         let image = try await files.resolve(link: request.link, isLocalFile: request.isLocalFile)
         do {
-          try await savePhoto(image)
+          try await savePhoto(image, nil)
           await files.removeTemporarySource(image)
           completion(.success(OperationResult(success: true)))
         } catch {
@@ -53,7 +53,7 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
             url: staged, fileExtension: image.fileExtension,
             uniformTypeIdentifier: image.uniformTypeIdentifier,
             originalFilename: "\(request.filenameWithoutExtension).\(image.fileExtension)", isTemporary: false
-          ))
+          ), request.album)
           let destination = try await files.commit(staged: staged, filename: request.filenameWithoutExtension)
           completion(.success(OperationResult(success: true, message: destination.path)))
         } catch {
@@ -62,6 +62,33 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
         }
       } catch {
         completion(.success(failure(error)))
+      }
+    }
+  }
+
+  func prepareAlbumSave(album: String, completion: @escaping (Result<OperationResult, Error>) -> Void) {
+    Task {
+      var readWrite = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+      if readWrite == .notDetermined {
+        readWrite = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+      }
+      if readWrite == .authorized || readWrite == .limited {
+        completion(.success(OperationResult(success: true)))
+        return
+      }
+      var addOnly = PHPhotoLibrary.authorizationStatus(for: .addOnly)
+      if addOnly == .notDetermined {
+        addOnly = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+      }
+      switch addOnly {
+      case .authorized, .limited:
+        completion(.success(OperationResult(success: true)))
+      case .denied:
+        completion(.success(OperationResult(success: false, errorCode: "PHOTO_PERMISSION_DENIED")))
+      case .restricted:
+        completion(.success(OperationResult(success: false, errorCode: "PHOTO_PERMISSION_RESTRICTED")))
+      default:
+        completion(.success(OperationResult(success: false, errorCode: "PHOTO_PERMISSION_UNKNOWN")))
       }
     }
   }
@@ -127,7 +154,55 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
     )
   }
 
-  private static func saveToPhotoLibrary(image: PrismImageFile) async throws {
+  private static func saveToPhotoLibrary(image: PrismImageFile, album: String?) async throws {
+    guard let album, !album.trimmingCharacters(in: .whitespaces).isEmpty else {
+      try await addToPhotoLibrary(image: image)
+      return
+    }
+    var status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+    if status == .notDetermined {
+      status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+    }
+    guard status == .authorized || status == .limited else {
+      try await addToPhotoLibrary(image: image)
+      return
+    }
+    let existingAlbumIdentifier = albumIdentifier(titled: album)
+    do {
+      try await PHPhotoLibrary.shared().performChanges { @Sendable in
+        let options = PHAssetResourceCreationOptions()
+        options.originalFilename = image.originalFilename
+        if #available(iOS 26, *) {
+          options.contentType = UTType(image.uniformTypeIdentifier)
+        } else {
+          options.uniformTypeIdentifier = image.uniformTypeIdentifier
+        }
+        let creation = PHAssetCreationRequest.forAsset()
+        creation.addResource(with: .photo, fileURL: image.url, options: options)
+        guard let placeholder = creation.placeholderForCreatedAsset else { return }
+        if let identifier = existingAlbumIdentifier,
+           let existing = PHAssetCollection.fetchAssetCollections(
+             withLocalIdentifiers: [identifier], options: nil
+           ).firstObject {
+          PHAssetCollectionChangeRequest(for: existing)?.addAssets([placeholder] as NSArray)
+        } else {
+          PHAssetCollectionChangeRequest.creationRequestForAssetCollection(withTitle: album)
+            .addAssets([placeholder] as NSArray)
+        }
+      }
+    } catch {
+      throw PrismMediaError.photoWriteFailed(error.localizedDescription)
+    }
+  }
+
+  private static func albumIdentifier(titled title: String) -> String? {
+    let options = PHFetchOptions()
+    options.predicate = NSPredicate(format: "title = %@", title)
+    return PHAssetCollection.fetchAssetCollections(with: .album, subtype: .albumRegular, options: options)
+      .firstObject?.localIdentifier
+  }
+
+  private static func addToPhotoLibrary(image: PrismImageFile) async throws {
     var status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
     if status == .notDetermined {
       status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)

@@ -139,7 +139,7 @@ class SaveMediaRequest {
 }
 
 class DownloadRequest {
-  DownloadRequest({required this.link, required this.filenameWithoutExtension, required this.isLocalFile});
+  DownloadRequest({required this.link, required this.filenameWithoutExtension, required this.isLocalFile, this.album});
 
   String link;
 
@@ -147,8 +147,10 @@ class DownloadRequest {
 
   bool isLocalFile;
 
+  String? album;
+
   List<Object?> _toList() {
-    return <Object?>[link, filenameWithoutExtension, isLocalFile];
+    return <Object?>[link, filenameWithoutExtension, isLocalFile, album];
   }
 
   Object encode() {
@@ -161,6 +163,7 @@ class DownloadRequest {
       link: result[0]! as String,
       filenameWithoutExtension: result[1]! as String,
       isLocalFile: result[2]! as bool,
+      album: result[3] as String?,
     );
   }
 
@@ -175,7 +178,8 @@ class DownloadRequest {
     }
     return _deepEquals(link, other.link) &&
         _deepEquals(filenameWithoutExtension, other.filenameWithoutExtension) &&
-        _deepEquals(isLocalFile, other.isLocalFile);
+        _deepEquals(isLocalFile, other.isLocalFile) &&
+        _deepEquals(album, other.album);
   }
 
   @override
@@ -184,7 +188,7 @@ class DownloadRequest {
 
   @override
   String toString() {
-    return 'DownloadRequest(link: $link, filenameWithoutExtension: $filenameWithoutExtension, isLocalFile: $isLocalFile)';
+    return 'DownloadRequest(link: $link, filenameWithoutExtension: $filenameWithoutExtension, isLocalFile: $isLocalFile, album: $album)';
   }
 }
 
@@ -375,6 +379,25 @@ class PrismMediaHostApi {
       binaryMessenger: pigeonVar_binaryMessenger,
     );
     final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[request]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as OperationResult;
+  }
+
+  Future<OperationResult> prepareAlbumSave(String album) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.prepareAlbumSave$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[album]);
     final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
 
     final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(

@@ -239,6 +239,7 @@ struct DownloadRequest: Hashable, CustomStringConvertible {
   var link: String
   var filenameWithoutExtension: String
   var isLocalFile: Bool
+  var album: String? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
@@ -246,11 +247,13 @@ struct DownloadRequest: Hashable, CustomStringConvertible {
     let link = pigeonVar_list[0] as! String
     let filenameWithoutExtension = pigeonVar_list[1] as! String
     let isLocalFile = pigeonVar_list[2] as! Bool
+    let album: String? = nilOrValue(pigeonVar_list[3])
 
     return DownloadRequest(
       link: link,
       filenameWithoutExtension: filenameWithoutExtension,
-      isLocalFile: isLocalFile
+      isLocalFile: isLocalFile,
+      album: album
     )
   }
   func toList() -> [Any?] {
@@ -258,13 +261,14 @@ struct DownloadRequest: Hashable, CustomStringConvertible {
       link,
       filenameWithoutExtension,
       isLocalFile,
+      album,
     ]
   }
   static func == (lhs: DownloadRequest, rhs: DownloadRequest) -> Bool {
     if Swift.type(of: lhs) != Swift.type(of: rhs) {
       return false
     }
-    return PrismMediaApiPigeonInternal.deepEquals(lhs.link, rhs.link) && PrismMediaApiPigeonInternal.deepEquals(lhs.filenameWithoutExtension, rhs.filenameWithoutExtension) && PrismMediaApiPigeonInternal.deepEquals(lhs.isLocalFile, rhs.isLocalFile)
+    return PrismMediaApiPigeonInternal.deepEquals(lhs.link, rhs.link) && PrismMediaApiPigeonInternal.deepEquals(lhs.filenameWithoutExtension, rhs.filenameWithoutExtension) && PrismMediaApiPigeonInternal.deepEquals(lhs.isLocalFile, rhs.isLocalFile) && PrismMediaApiPigeonInternal.deepEquals(lhs.album, rhs.album)
   }
 
   func hash(into hasher: inout Hasher) {
@@ -272,10 +276,11 @@ struct DownloadRequest: Hashable, CustomStringConvertible {
     PrismMediaApiPigeonInternal.deepHash(value: link, hasher: &hasher)
     PrismMediaApiPigeonInternal.deepHash(value: filenameWithoutExtension, hasher: &hasher)
     PrismMediaApiPigeonInternal.deepHash(value: isLocalFile, hasher: &hasher)
+    PrismMediaApiPigeonInternal.deepHash(value: album, hasher: &hasher)
   }
 
   public var description: String {
-    return "DownloadRequest(link: \(String(describing: link)), filenameWithoutExtension: \(String(describing: filenameWithoutExtension)), isLocalFile: \(String(describing: isLocalFile)))"
+    return "DownloadRequest(link: \(String(describing: link)), filenameWithoutExtension: \(String(describing: filenameWithoutExtension)), isLocalFile: \(String(describing: isLocalFile)), album: \(String(describing: album)))"
   }
 }
 
@@ -439,6 +444,7 @@ class PrismMediaApiPigeonCodec: FlutterStandardMessageCodec, @unchecked Sendable
 protocol PrismMediaHostApi {
   func saveMedia(request: SaveMediaRequest, completion: @escaping (Result<OperationResult, Error>) -> Void)
   func enqueueDownload(request: DownloadRequest, completion: @escaping (Result<OperationResult, Error>) -> Void)
+  func prepareAlbumSave(album: String, completion: @escaping (Result<OperationResult, Error>) -> Void)
   func listDownloads(completion: @escaping (Result<DownloadItemsResult, Error>) -> Void)
   func clearDownloads(completion: @escaping (Result<OperationResult, Error>) -> Void)
   func deleteDownload(path: String, completion: @escaping (Result<OperationResult, Error>) -> Void)
@@ -483,6 +489,23 @@ class PrismMediaHostApiSetup {
       }
     } else {
       enqueueDownloadChannel.setMessageHandler(nil)
+    }
+    let prepareAlbumSaveChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.Prism.PrismMediaHostApi.prepareAlbumSave\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      prepareAlbumSaveChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let albumArg = args[0] as! String
+        api.prepareAlbumSave(album: albumArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      prepareAlbumSaveChannel.setMessageHandler(nil)
     }
     let listDownloadsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.Prism.PrismMediaHostApi.listDownloads\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {

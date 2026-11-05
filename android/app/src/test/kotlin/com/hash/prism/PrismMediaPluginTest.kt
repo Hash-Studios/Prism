@@ -57,6 +57,7 @@ internal class PrismMediaPluginTest {
         var closes = 0
         override fun saveMedia(request: SaveMediaRequest, callback: (Result<OperationResult>) -> Unit) { pending.add(callback) }
         override fun enqueueDownload(request: DownloadRequest, callback: (Result<OperationResult>) -> Unit) { pending.add(callback) }
+        override fun prepareAlbumSave(album: String, callback: (Result<OperationResult>) -> Unit) { pending.add(callback) }
         override fun listDownloads(callback: (Result<DownloadItemsResult>) -> Unit) {
             callback(Result.success(DownloadItemsResult(true, listOf("a.jpg"))))
         }
