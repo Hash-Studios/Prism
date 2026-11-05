@@ -2898,6 +2898,17 @@
   "coreShareFormatClean": "सादा",
   "coreShareTargetInstagram": "Instagram",
   "coreShareTargetCopyLink": "लिंक कॉपी करें",
+  "coreShareOpenOnComputer": "कंप्यूटर पर खोलें",
+  "coreShareOpenOnComputerBody": "इस लिंक को अपने कंप्यूटर के ब्राउज़र में टाइप करें या कोड स्कैन करें।",
+  "coreShareOpenOnComputerQr": "{link} का QR कोड",
+  "@coreShareOpenOnComputerQr": {
+    "description": "Screen reader label for the QR code image. {link} is the short link shown under it.",
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
   "coreShareTargetSaveImage": "इमेज सेव करें",
   "coreShareTargetMore": "और",
   "coreShareCardBy": "{creator} द्वारा",

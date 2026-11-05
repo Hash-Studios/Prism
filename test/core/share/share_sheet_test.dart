@@ -846,6 +846,49 @@ void main() {
     expect(find.byKey(const ValueKey<String>('share-preview-post')), findsNothing);
     expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post]);
   });
+  testWidgets('Open on computer target shows with a computer link and opens the link sheet', (tester) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(400, 900);
+    addTearDown(tester.view.reset);
+    _mockChannels(tester);
+    final FakeAppAnalytics analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
+    final _Fake fake = _Fake(await _writeCards(tester));
+    final ShareCardContent content = ShareCardContent(
+      imageUrl: 'https://img.test/full.jpg',
+      link: _link,
+      brandName: 'Prism',
+      computerLink: Uri.parse('https://prismwalls.com/l/Ab3dEf7h?d=1'),
+    );
+    await _openSheet(tester, fake.services, content: content);
+
+    final Finder target = _target(ShareTargetValue.openOnComputer);
+    expect(target, findsOneWidget);
+    expect(find.descendant(of: target, matching: find.text('Open on computer')), findsOneWidget);
+
+    await tester.tap(target);
+    await _settle(tester);
+
+    expect(
+      tester.widget<SelectableText>(find.byKey(const ValueKey<String>('open-on-computer-link'))).data,
+      'prismwalls.com/l/Ab3dEf7h?d=1',
+    );
+  });
+
+  testWidgets('without a computer link the Open on computer target is absent and Copy link stays', (tester) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(400, 900);
+    addTearDown(tester.view.reset);
+    _mockChannels(tester);
+    final _Fake fake = _Fake(await _writeCards(tester));
+
+    await _openSheet(tester, fake.services);
+
+    expect(_target(ShareTargetValue.openOnComputer), findsNothing);
+    expect(_target(ShareTargetValue.copyLink), findsOneWidget);
+  });
 }
 
 Finder _formatSemantics(String label) =>

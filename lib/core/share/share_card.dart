@@ -32,6 +32,7 @@ class ShareCardContent {
     this.foldedLabel,
     this.unfoldedLabel,
     this.cta,
+    this.computerLink,
   });
 
   /// A display derivative or a local file. Never the original.
@@ -53,6 +54,9 @@ class ShareCardContent {
   final String? foldedLabel;
   final String? unfoldedLabel;
   final String? cta;
+
+  /// The link the Open on computer target shows. Null hides the target.
+  final Uri? computerLink;
 }
 
 /// Fixed colours and sizes for the share card. The card is an image that leaves the app, so it does not follow the

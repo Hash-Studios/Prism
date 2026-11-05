@@ -36,6 +36,7 @@ Future<ShareCardContent> _shareContent(
 
       home: Scaffold(
         body: ShareButton(
+          webCatalogueCheck: (_) async => false,
           id: 'wall-1',
           source: WallpaperSource.prism,
           url: 'https://img.test/full.jpg',
@@ -86,6 +87,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: ShareButton(
+            webCatalogueCheck: (_) async => false,
             id: 'wall-1',
             source: WallpaperSource.prism,
             url: 'https://private.test/original.jpg?token=secret',
@@ -122,6 +124,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: ShareButton(
+            webCatalogueCheck: (_) async => false,
             id: wallpaper.core.id,
             source: wallpaper.core.source,
             url: wallpaper.core.fullUrl,
@@ -174,6 +177,7 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: ShareButton(
+              webCatalogueCheck: (_) async => false,
               id: 'provider-101',
               source: source,
               url: original,
@@ -209,6 +213,7 @@ void main() {
           body: Column(
             children: <Widget>[
               ShareButton(
+                webCatalogueCheck: (_) async => false,
                 id: 'wh-whitespace',
                 source: WallpaperSource.wallhaven,
                 url: ' https://wallhaven.test/original.jpg ',
@@ -220,6 +225,7 @@ void main() {
                 openSheet: (context, content, sourceContext) async => imageUrls.add(content.imageUrl),
               ),
               ShareButton(
+                webCatalogueCheck: (_) async => false,
                 id: 'pexels-derivative',
                 source: WallpaperSource.pexels,
                 url: 'https://pexels.test/original.jpg',
@@ -263,6 +269,7 @@ void main() {
 
         home: Scaffold(
           body: ShareButton(
+            webCatalogueCheck: (_) async => false,
             id: 'wall-1',
             source: WallpaperSource.prism,
             url: 'https://img.test/full.jpg',
@@ -302,6 +309,7 @@ void main() {
 
         home: Scaffold(
           body: ShareButton(
+            webCatalogueCheck: (_) async => false,
             id: 'wall-1',
             source: WallpaperSource.prism,
             url: 'https://img.test/full.jpg',
@@ -357,6 +365,7 @@ void main() {
             final List<String?> currentCalls = calls;
             return Scaffold(
               body: ShareButton(
+                webCatalogueCheck: (_) async => false,
                 key: buttonKey,
                 id: id,
                 source: WallpaperSource.prism,
@@ -410,6 +419,7 @@ void main() {
 
         home: Scaffold(
           body: ShareButton(
+            webCatalogueCheck: (_) async => false,
             id: 'wall-1',
             source: WallpaperSource.prism,
             url: 'https://private.test/premium-original.jpg',
@@ -442,6 +452,7 @@ void main() {
 
         home: Scaffold(
           body: ShareButton(
+            webCatalogueCheck: (_) async => false,
             id: 'wall-1',
             source: WallpaperSource.prism,
             url: 'https://img.test/full.jpg',
@@ -475,6 +486,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: ShareButton(
+            webCatalogueCheck: (_) async => false,
             id: 'EY3F',
             source: WallpaperSource.prism,
             url: null,
@@ -511,6 +523,7 @@ void main() {
 
         home: Scaffold(
           body: ShareButton(
+            webCatalogueCheck: (_) async => false,
             id: 'wall-1',
             source: WallpaperSource.prism,
             url: 'https://img.test/full.jpg',
@@ -549,6 +562,7 @@ void main() {
 
         home: Scaffold(
           body: ShareButton(
+            webCatalogueCheck: (_) async => false,
             id: 'starter-sunset',
             source: WallpaperSource.prism,
             url: '/tmp/untrusted-starter-path.jpg',
@@ -596,4 +610,124 @@ void main() {
 
     expect(content.palette, palette);
   });
+
+  testWidgets('a Prism wall on the web catalogue gets the desktop computer link', (tester) async {
+    final List<String> calls = <String>[];
+    final List<ShareCardContent> opened = await _pumpShare(
+      tester,
+      id: 'wall-1',
+      source: WallpaperSource.prism,
+      createLink: (id, source, url, thumbUrl) async => 'https://prismwalls.com/l/Ab3dEf7h',
+      webCatalogueCheck: (id) async {
+        calls.add(id);
+        return true;
+      },
+    );
+
+    expect(opened, hasLength(1));
+    expect(opened.single.computerLink.toString(), 'https://prismwalls.com/l/Ab3dEf7h?d=1');
+    expect(calls, <String>['wall-1']);
+  });
+
+  testWidgets('a Prism wall that is not on the web catalogue has no computer link', (tester) async {
+    final List<String> calls = <String>[];
+    final List<ShareCardContent> opened = await _pumpShare(
+      tester,
+      id: 'wall-1',
+      source: WallpaperSource.prism,
+      createLink: (id, source, url, thumbUrl) async => 'https://prismwalls.com/l/Ab3dEf7h',
+      webCatalogueCheck: (id) async {
+        calls.add(id);
+        return false;
+      },
+    );
+
+    expect(opened, hasLength(1));
+    expect(opened.single.computerLink, isNull);
+    expect(calls, <String>['wall-1']);
+  });
+
+  testWidgets('a failing web catalogue check hides the computer link and the sheet still opens', (tester) async {
+    final List<ShareCardContent> opened = await _pumpShare(
+      tester,
+      id: 'wall-1',
+      source: WallpaperSource.prism,
+      createLink: (id, source, url, thumbUrl) async => 'https://prismwalls.com/l/Ab3dEf7h',
+      webCatalogueCheck: (id) => Future<bool>.error(StateError('catalogue unavailable')),
+    );
+
+    expect(opened, hasLength(1));
+    expect(opened.single.computerLink, isNull);
+  });
+
+  for (final (WallpaperSource source, String id) in <(WallpaperSource, String)>[
+    (WallpaperSource.wallhaven, 'wh-101'),
+    (WallpaperSource.pexels, 'px-101'),
+  ]) {
+    testWidgets('${source.name} walls never check the web catalogue or get a computer link', (tester) async {
+      final List<String> calls = <String>[];
+      final List<ShareCardContent> opened = await _pumpShare(
+        tester,
+        id: id,
+        source: source,
+        createLink: (id, source, url, thumbUrl) async => 'https://prismwalls.com/l/Ab3dEf7h',
+        webCatalogueCheck: (id) async {
+          calls.add(id);
+          return true;
+        },
+      );
+
+      expect(opened, hasLength(1));
+      expect(opened.single.computerLink, isNull);
+      expect(calls, isEmpty);
+    });
+  }
+
+  testWidgets('a failed short link still gives the desktop wall page as the computer link', (tester) async {
+    final List<ShareCardContent> opened = await _pumpShare(
+      tester,
+      id: 'wall-1',
+      source: WallpaperSource.prism,
+      createLink: (id, source, url, thumbUrl) async => null,
+      webCatalogueCheck: (id) async => true,
+    );
+
+    expect(opened, hasLength(1));
+    expect(opened.single.computerLink.toString(), 'https://prismwalls.com/wallpaper/wall-1?view=desktop');
+  });
+}
+
+/// Taps Share once and returns every ShareCardContent the fake sheet received.
+Future<List<ShareCardContent>> _pumpShare(
+  WidgetTester tester, {
+  required String id,
+  required WallpaperSource source,
+  required Future<String?> Function(String id, WallpaperSource source, String? url, String thumbUrl) createLink,
+  required Future<bool> Function(String id) webCatalogueCheck,
+}) async {
+  final List<ShareCardContent> opened = <ShareCardContent>[];
+  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
+  addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+  await tester.pumpWidget(
+    MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: ShareButton(
+          webCatalogueCheck: webCatalogueCheck,
+          id: id,
+          source: source,
+          url: 'https://img.test/full.jpg',
+          thumbUrl: 'https://img.test/thumb.jpg',
+          createLink: createLink,
+          openSheet: (BuildContext context, ShareCardContent content, String sourceContext) async {
+            opened.add(content);
+          },
+        ),
+      ),
+    ),
+  );
+  await tester.tap(find.bySemanticsLabel('Share'));
+  await tester.pumpAndSettle();
+  return opened;
 }

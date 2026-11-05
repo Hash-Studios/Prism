@@ -3000,6 +3000,17 @@ class AppLocalizationsEs extends AppLocalizations {
   String get coreShareTargetCopyLink => 'Copiar enlace';
 
   @override
+  String get coreShareOpenOnComputer => 'Abrir en el ordenador';
+
+  @override
+  String get coreShareOpenOnComputerBody => 'Escribe este enlace en un navegador de tu ordenador o escanea el código.';
+
+  @override
+  String coreShareOpenOnComputerQr(String link) {
+    return 'Código QR de $link';
+  }
+
+  @override
   String get coreShareTargetSaveImage => 'Guardar imagen';
 
   @override

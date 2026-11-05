@@ -3028,6 +3028,17 @@ class AppLocalizationsPt extends AppLocalizations {
   String get coreShareTargetCopyLink => 'Copiar link';
 
   @override
+  String get coreShareOpenOnComputer => 'Abrir no computador';
+
+  @override
+  String get coreShareOpenOnComputerBody => 'Digite este link em um navegador no seu computador ou escaneie o código.';
+
+  @override
+  String coreShareOpenOnComputerQr(String link) {
+    return 'Código QR de $link';
+  }
+
+  @override
   String get coreShareTargetSaveImage => 'Salvar imagem';
 
   @override
@@ -16949,6 +16960,17 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get coreShareTargetCopyLink => 'Copiar link';
+
+  @override
+  String get coreShareOpenOnComputer => 'Abrir no computador';
+
+  @override
+  String get coreShareOpenOnComputerBody => 'Digite este link em um navegador no seu computador ou escaneie o código.';
+
+  @override
+  String coreShareOpenOnComputerQr(String link) {
+    return 'Código QR de $link';
+  }
 
   @override
   String get coreShareTargetSaveImage => 'Salvar imagem';
