@@ -90,7 +90,7 @@ void main() {
           child: Scaffold(
             body: Builder(
               builder: (context) => TextButton(
-                onPressed: () => showRejectReasonSheet(context, onSubmit: (_) async => submitted = true),
+                onPressed: () => showRejectReasonSheet(context, onSubmit: (_, _) async => submitted = true),
                 child: const Text('Open reject sheet'),
               ),
             ),
