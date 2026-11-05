@@ -91,7 +91,7 @@ class _DeepLinkInputPageState extends State<DeepLinkInputPage> {
             style: PrismTextStyles.body(context),
           ),
           const SizedBox(height: PrismSpace.xl),
-          PrismButton(label: l10n.deepLinkInputChooseImage, expand: true, onPressed: _chooseImage),
+          PrismButton(label: l10n.deepLinkInputChooseImage, expand: true, loading: _choosing, onPressed: _chooseImage),
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(top: PrismSpace.md),

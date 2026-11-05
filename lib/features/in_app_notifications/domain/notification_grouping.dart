@@ -99,14 +99,24 @@ String wallOfTheDayRowDayLabel(
   };
 }
 
-/// Time stamp on a notification row, like `3:05 PM`. Rows sit under a day header, so the day is not repeated.
-/// [l10n] and [now] stay so callers do not change.
+/// Group children can span days even when their group sits under a single day header.
 String notificationTimeLabel(
   DateTime createdAt, {
   required AppLocalizations l10n,
   required Locale locale,
   DateTime? now,
-}) => DateFormat.jm(locale.toString()).format(createdAt.toLocal());
+  bool includeDate = false,
+}) {
+  final DateTime local = createdAt.toLocal();
+  final String time = DateFormat.jm(locale.toString()).format(local);
+  if (!includeDate) return time;
+  return switch (_relativeDay(local, (now ?? DateTime.now()).toLocal())) {
+    _RelativeDay.today => time,
+    _RelativeDay.yesterday => l10n.notifYesterdayAt(time),
+    _RelativeDay.thisYear => DateFormat.MMMd(locale.toString()).format(local),
+    _RelativeDay.earlier => DateFormat.yMMMd(locale.toString()).format(local),
+  };
+}
 
 /// Parses `"Name is now following you."` → display name; null if pattern unknown.
 String? followerDisplayNameFromBody(String body) {

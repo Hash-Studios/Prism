@@ -122,6 +122,28 @@ void main() {
     expect(cubit.state.current, isNull);
     expect(cubit.state.failed, isTrue);
   });
+  testWidgets('an open challenge expires while its refresh is pending', (tester) async {
+    final now = DateTime.utc(2026);
+    final open = WeeklyChallenge(
+      id: 'closing',
+      theme: 'Ocean',
+      state: ChallengeState.open,
+      opensAt: now.subtract(const Duration(days: 1)),
+      closesAt: now.add(const Duration(seconds: 1)),
+    );
+    repo.pendingList = Future.value([open]);
+    await cubit.loadOpen(clock: () => now);
+    final pending = Completer<List<WeeklyChallenge>>();
+    repo.pendingList = pending.future;
+    final refresh = cubit.loadOpen(clock: () => now);
+    expect(cubit.state.current, open);
+    await tester.pump(const Duration(seconds: 2));
+    expect(cubit.state.current, isNull);
+    expect(cubit.state.loading, isTrue);
+    pending.complete([]);
+    await refresh;
+  });
+
   test('home loader ignores an older response after a newer refresh', () async {
     final pending = Completer<List<WeeklyChallenge>>();
     repo.pendingList = pending.future;

@@ -367,7 +367,14 @@ class _DownloadButtonState extends State<DownloadButton> {
                   children: <Widget>[
                     const PrismCoinIcon(size: 14),
                     const SizedBox(width: PrismSpace.xxs),
-                    Text('$cost', style: const TextStyle(fontFeatures: <FontFeature>[FontFeature.tabularFigures()])),
+                    Builder(
+                      builder: (context) => Text(
+                        '$cost',
+                        style: DefaultTextStyle.of(
+                          context,
+                        ).style.copyWith(fontFeatures: const <FontFeature>[FontFeature.tabularFigures()]),
+                      ),
+                    ),
                   ],
                 ),
           onPressed: () => _handleTap(playTapHaptic: false),

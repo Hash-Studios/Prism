@@ -7,6 +7,7 @@ import 'package:Prism/features/navigation/views/widgets/prism_bottom_nav.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_fab.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart' as floating;
 
@@ -73,6 +74,7 @@ class BottomBar extends StatefulWidget {
 class _BottomBarState extends State<BottomBar> {
   /// More than two screens down the active vertical scroll view. Only then is scroll-to-top worth a button.
   bool _deep = false;
+  int? _activeTabIndex;
 
   bool _onScroll(ScrollNotification notification) {
     final ScrollMetrics metrics = notification.metrics;
@@ -84,6 +86,11 @@ class _BottomBarState extends State<BottomBar> {
 
   @override
   Widget build(BuildContext context) {
+    final int activeTabIndex = AutoTabsRouter.of(context, watch: true).activeIndex;
+    if (_activeTabIndex != activeTabIndex) {
+      _activeTabIndex = activeTabIndex;
+      _deep = false;
+    }
     final Widget? child = widget.child;
     final ThemeData theme = Theme.of(context);
     final ColorScheme cs = theme.colorScheme;

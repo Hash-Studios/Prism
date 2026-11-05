@@ -162,6 +162,17 @@ void main() {
       }
     });
 
+    test('group children include dates relative to the current day', () {
+      for (final (date, expected) in <(DateTime, String)>[
+        (DateTime(2024, 6, 15, 9, 5), '9:05\u202fAM'),
+        (DateTime(2024, 6, 14, 9, 5), 'Yesterday, 9:05\u202fAM'),
+        (DateTime(2024, 5, 15, 9, 5), 'May 15'),
+        (DateTime(2023, 6, 15, 9, 5), 'Jun 15, 2023'),
+      ]) {
+        expect(notificationTimeLabel(date, l10n: l10n, locale: locale, now: now, includeDate: true), expected);
+      }
+    });
+
     test('day headers stay relative', () {
       expect(wallOfTheDayRowDayLabel(DateTime(2024, 6, 15, 9), l10n: l10n, locale: locale, now: now), 'Today');
       expect(wallOfTheDayRowDayLabel(DateTime(2024, 6, 14, 9), l10n: l10n, locale: locale, now: now), 'Yesterday');

@@ -41,23 +41,28 @@ class WeeklyChallengesCubit extends Cubit<WeeklyChallengesState> {
 
   Future<void> loadOpen({DateTime Function()? clock}) async {
     final version = ++_load;
-    _closeTimer?.cancel();
     // Keep the open challenge while it reloads. Clearing it unmounts the Home chip, and the chip reloads on mount,
     // so a clear here loops the list call.
     emit(WeeklyChallengesState(current: state.current));
     try {
       final rows = await _repository.list(past: false);
       if (isClosed || version != _load) return;
+      _closeTimer?.cancel();
       final now = (clock?.call() ?? DateTime.now()).toUtc();
       final current = rows.where((row) => row.isOpenAt(now)).firstOrNull;
       emit(WeeklyChallengesState(current: current, loading: false));
       if (current != null) {
         _closeTimer = Timer(current.closesAt.difference(now), () {
-          if (!isClosed && version == _load) emit(const WeeklyChallengesState(loading: false));
+          if (!isClosed && identical(state.current, current)) {
+            emit(WeeklyChallengesState(loading: state.loading));
+          }
         });
       }
     } catch (_) {
-      if (!isClosed && version == _load) emit(const WeeklyChallengesState(loading: false, failed: true));
+      if (!isClosed && version == _load) {
+        _closeTimer?.cancel();
+        emit(const WeeklyChallengesState(loading: false, failed: true));
+      }
     }
   }
 

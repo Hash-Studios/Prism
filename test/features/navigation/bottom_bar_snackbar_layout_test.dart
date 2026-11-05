@@ -14,7 +14,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _FakeTabsRouter extends ChangeNotifier implements TabsRouter {
   @override
-  int get activeIndex => 0;
+  int get activeIndex => _activeIndex;
+
+  int _activeIndex = 0;
+
+  @override
+  void setActiveIndex(int index, {bool notify = true}) {
+    _activeIndex = index;
+    if (notify) notifyListeners();
+  }
 
   @override
   StackRouter? stackRouterOfIndex(int index) => null;
@@ -67,6 +75,7 @@ void main() {
       tabContext = context;
       return Scaffold(
         body: ListView.builder(
+          key: ValueKey(tabs.activeIndex),
           controller: scrollController,
           itemCount: 100,
           itemBuilder: (_, index) => SizedBox(height: 80, child: Text('row $index')),
@@ -218,6 +227,25 @@ void main() {
     await tester.tap(scrollToTop);
     await tester.pumpAndSettle();
     expect(controller.offset, 0);
+    expect(tester.takeException(), isNull);
+    semantics.dispose();
+  });
+
+  testWidgets('a programmatic tab switch clears the previous tab scroll-to-top action', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final deepController = ScrollController();
+    final shallowController = ScrollController();
+    addTearDown(deepController.dispose);
+    addTearDown(shallowController.dispose);
+    await pumpBar(tester, scrollController: deepController);
+    await tester.drag(find.byType(ListView), const Offset(0, -2200));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Scroll to top'), findsOneWidget);
+
+    tabs.setActiveIndex(1);
+    await pumpBar(tester, scrollController: shallowController);
+    expect(shallowController.offset, 0);
+    expect(find.bySemanticsLabel('Scroll to top'), findsNothing);
     expect(tester.takeException(), isNull);
     semantics.dispose();
   });

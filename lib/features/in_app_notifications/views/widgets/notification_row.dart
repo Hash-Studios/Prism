@@ -97,7 +97,12 @@ class NotificationRow extends StatelessWidget {
     final AppLocalizations l10n = context.l10n;
     final Locale locale = Localizations.localeOf(context);
     final localized = localizedNotificationCopy(notification, l10n);
-    final String timeStr = notificationTimeLabel(notification.createdAt, l10n: l10n, locale: locale);
+    final String timeStr = notificationTimeLabel(
+      notification.createdAt,
+      l10n: l10n,
+      locale: locale,
+      includeDate: compactInGroup,
+    );
     final String title = cleanNotificationTitle(localized.title);
     final String body = localized.body;
     final String semanticLine = compactInGroup ? (body.trim().isNotEmpty ? body.trim() : title) : '$title. $body';
@@ -135,7 +140,9 @@ class NotificationRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: PrismSpace.sm),
-          Text(timeStr, style: PrismTextStyles.caption(context)),
+          Flexible(
+            child: Text(timeStr, textAlign: TextAlign.end, style: PrismTextStyles.caption(context)),
+          ),
           if (!notification.read) ...<Widget>[
             const SizedBox(width: PrismSpace.xs),
             const Padding(padding: EdgeInsets.only(top: 5), child: UnreadDot()),

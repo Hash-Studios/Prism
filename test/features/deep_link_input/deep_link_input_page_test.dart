@@ -159,6 +159,19 @@ void main() {
     });
   }
 
+  testWidgets('pending chooser shows progress until selection is cancelled', (tester) async {
+    final pending = Completer<XFile?>();
+    picker.choose = () => pending.future;
+    await showChooser(tester, DeepLinkInputWorkflow.liveWallpaper);
+    await tester.tap(find.text('Choose image'));
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    pending.complete(null);
+    await settle(tester);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('Choose image'), findsOneWidget);
+  });
+
   testWidgets('cancel stays on the chooser and allows another selection', (tester) async {
     picker.choose = () async => null;
     await showChooser(tester, DeepLinkInputWorkflow.wallpaperFilter);
@@ -210,7 +223,7 @@ void main() {
     await tester.tap(find.text('Choose image'));
     await tester.pump();
     expect(picker.calls, 1);
-    await tester.tap(find.text('Choose image'));
+    await tester.tap(find.byType(CircularProgressIndicator));
     await tester.pump();
     expect(picker.calls, 1);
 
