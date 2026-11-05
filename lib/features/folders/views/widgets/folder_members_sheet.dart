@@ -29,7 +29,7 @@ String folderMemberName(PublicProfileEntity? profile, AppLocalizations l10n) {
 }
 
 /// One member's public profile. [placeholder] shows while it loads, so a fallback name never flashes first.
-class FolderMemberProfile extends StatelessWidget {
+class FolderMemberProfile extends StatefulWidget {
   const FolderMemberProfile({super.key, required this.uid, required this.builder, required this.placeholder});
 
   final String uid;
@@ -37,13 +37,38 @@ class FolderMemberProfile extends StatelessWidget {
   final Widget placeholder;
 
   @override
+  State<FolderMemberProfile> createState() => _FolderMemberProfileState();
+}
+
+class _FolderMemberProfileState extends State<FolderMemberProfile> {
+  Stream<PublicProfileEntity?>? _profileStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _watchProfile();
+  }
+
+  @override
+  void didUpdateWidget(covariant FolderMemberProfile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.uid != widget.uid) _watchProfile();
+  }
+
+  void _watchProfile() {
+    _profileStream = getIt.isRegistered<PublicProfileRepository>()
+        ? getIt<PublicProfileRepository>().watchProfile(widget.uid)
+        : null;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (!getIt.isRegistered<PublicProfileRepository>()) return builder(context, null);
+    if (_profileStream == null) return widget.builder(context, null);
     return StreamBuilder<PublicProfileEntity?>(
-      stream: getIt<PublicProfileRepository>().watchProfile(uid),
+      stream: _profileStream,
       builder: (context, snapshot) => snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData
-          ? placeholder
-          : builder(context, snapshot.data),
+          ? widget.placeholder
+          : widget.builder(context, snapshot.data),
     );
   }
 }
