@@ -88,6 +88,7 @@ Future<bool> showFolderMembersSheet(BuildContext context, FolderEntity folder) a
         actions: <Widget>[
           if (owner)
             PrismButton(
+              maxLines: null,
               label: l10n.foldersInvite,
               expand: true,
               onPressed: folder.editors.length >= folderMaxEditors
@@ -96,6 +97,7 @@ Future<bool> showFolderMembersSheet(BuildContext context, FolderEntity folder) a
             )
           else
             PrismButton(
+              maxLines: null,
               label: l10n.foldersLeave,
               variant: PrismButtonVariant.danger,
               expand: true,
@@ -123,6 +125,7 @@ Future<bool> showFolderMembersSheet(BuildContext context, FolderEntity folder) a
                   },
                   trailing: canRemove
                       ? PrismButton(
+                          maxLines: null,
                           label: l10n.foldersRemovePerson,
                           variant: PrismButtonVariant.ghost,
                           size: PrismButtonSize.compact,

@@ -113,6 +113,7 @@ class FolderMembersRow extends StatelessWidget {
         people,
         if (folder.isOwnedBy(userId))
           PrismButton(
+            maxLines: null,
             label: l10n.foldersInvite,
             variant: PrismButtonVariant.tonal,
             size: PrismButtonSize.compact,

@@ -167,16 +167,23 @@ class _FolderInviteScreenState extends State<FolderInviteScreen> {
           const SizedBox(height: PrismSpace.sm),
         ],
         if (isGuest)
-          PrismButton(label: l10n.foldersJoinSignIn, expand: true, loading: _joining, onPressed: _signIn)
+          PrismButton(
+            maxLines: null,
+            label: l10n.foldersJoinSignIn,
+            expand: true,
+            loading: _joining,
+            onPressed: _signIn,
+          )
         else if (open.isMember)
           PrismButton(
+            maxLines: null,
             label: l10n.foldersJoinOpen,
             expand: true,
             loading: _joining,
             onPressed: () => unawaited(context.router.replace(FolderRoute(folderId: open.folderId))),
           )
         else
-          PrismButton(label: l10n.foldersJoin, expand: true, loading: _joining, onPressed: _join),
+          PrismButton(maxLines: null, label: l10n.foldersJoin, expand: true, loading: _joining, onPressed: _join),
       ],
     );
   }

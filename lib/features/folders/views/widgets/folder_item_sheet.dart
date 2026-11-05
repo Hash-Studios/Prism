@@ -30,6 +30,7 @@ Future<void> showFolderItemSheet(BuildContext context, FolderEntity folder, Favo
     builder: (sheetContext) => PrismSheetBody(
       actions: <Widget>[
         PrismButton(
+          maxLines: null,
           label: sheetContext.l10n.foldersRemoveFromFolder,
           variant: PrismButtonVariant.danger,
           expand: true,
