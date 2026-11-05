@@ -219,9 +219,10 @@ export default function PrivacyPage() {
                   <strong className="text-black">Search by photo</strong> - the app reads the
                   colours of a photo you pick on your device. If you are signed in, a small copy
                   without location or other metadata goes to Google Cloud Vision to find what is in
-                  it. The photo is not stored. Prism keeps only a daily count of your photo
-                  searches and the words Cloud Vision returned, for about two days after your last
-                  photo search, so a retry does not count twice
+                  it. The photo is not stored. For about two days after your last photo search, Prism
+                  keeps a daily count of your photo searches and, for each search, a random request
+                  ID, the words Cloud Vision returned, the matching wallpaper category and the time
+                  a search started. This lets a retry return the same words without counting twice
                 </li>
               </ul>
             </SubSection>

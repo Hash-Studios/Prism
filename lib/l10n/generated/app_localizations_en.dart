@@ -13784,7 +13784,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get searchPhotoPrivacy =>
-      'Prism reads the colours on your phone. To find what\'s in the photo, a small copy goes to Google Cloud Vision. It isn\'t stored.';
+      'Prism reads the photo\'s colours on your phone. To find what\'s in the photo, a small copy goes to Google Cloud Vision. It isn\'t stored.';
 
   @override
   String get searchPhotoChoose => 'Choose photo';

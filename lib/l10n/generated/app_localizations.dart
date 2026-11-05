@@ -22342,7 +22342,7 @@ abstract class AppLocalizations {
   /// Shown once before a signed-in user's first photo search.
   ///
   /// In en, this message translates to:
-  /// **'Prism reads the colours on your phone. To find what\'s in the photo, a small copy goes to Google Cloud Vision. It isn\'t stored.'**
+  /// **'Prism reads the photo\'s colours on your phone. To find what\'s in the photo, a small copy goes to Google Cloud Vision. It isn\'t stored.'**
   String get searchPhotoPrivacy;
 
   /// Button on the photo search privacy sheet. Opens the camera roll.

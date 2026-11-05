@@ -13171,7 +13171,7 @@
   "@searchByPhoto": {
     "description": "Tooltip of the camera roll button in the search bar, and title of the photo search privacy sheet."
   },
-  "searchPhotoPrivacy": "Prism membaca warna di ponselmu. Untuk mencari tahu isi fotonya, salinan kecil dikirim ke Google Cloud Vision. Salinan itu tidak disimpan.",
+  "searchPhotoPrivacy": "Prism membaca warna foto di ponselmu. Untuk mencari tahu isi fotonya, salinan kecil dikirim ke Google Cloud Vision. Salinan itu tidak disimpan.",
   "@searchPhotoPrivacy": {
     "description": "Shown once before a signed-in user's first photo search."
   },

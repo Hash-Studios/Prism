@@ -13837,7 +13837,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get searchPhotoPrivacy =>
-      'Prism membaca warna di ponselmu. Untuk mencari tahu isi fotonya, salinan kecil dikirim ke Google Cloud Vision. Salinan itu tidak disimpan.';
+      'Prism membaca warna foto di ponselmu. Untuk mencari tahu isi fotonya, salinan kecil dikirim ke Google Cloud Vision. Salinan itu tidak disimpan.';
 
   @override
   String get searchPhotoChoose => 'Pilih foto';

@@ -3907,7 +3907,7 @@
   "watchGuideNoteLayout": "Cada esfera tiene su propio reloj y diseño, así que puede tapar parte de la imagen.",
   "watchGuideNoteGooglePhotos": "Pixel Watch lee Google Photos. Si la imagen no aparece, haz primero una copia de seguridad en Google Photos.",
   "searchByPhoto": "Buscar con una foto",
-  "searchPhotoPrivacy": "Prism lee los colores de tu teléfono. Para saber qué hay en la foto, se envía una pequeña copia a Google Cloud Vision. No se guarda.",
+  "searchPhotoPrivacy": "Prism lee los colores de la foto en tu teléfono. Para saber qué hay en la foto, se envía una pequeña copia a Google Cloud Vision. No se guarda.",
   "searchPhotoChoose": "Elegir foto",
   "searchPhotoChipLabel": "Tu foto",
   "searchPhotoClear": "Quitar",

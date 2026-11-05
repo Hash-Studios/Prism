@@ -3763,7 +3763,7 @@
   "watchGuideNoteLayout": "Cada mostrador tem seu próprio relógio e layout, por isso pode cobrir parte da imagem.",
   "watchGuideNoteGooglePhotos": "O Pixel Watch lê o Google Photos. Se a imagem não aparecer, faça primeiro um backup no Google Photos.",
   "searchByPhoto": "Buscar por foto",
-  "searchPhotoPrivacy": "O Prism lê as cores do seu celular. Para descobrir o que tem na foto, uma pequena cópia é enviada ao Google Cloud Vision. Ela não é armazenada.",
+  "searchPhotoPrivacy": "O Prism lê as cores da foto no seu celular. Para descobrir o que tem na foto, uma pequena cópia é enviada ao Google Cloud Vision. Ela não é armazenada.",
   "searchPhotoChoose": "Escolher foto",
   "searchPhotoChipLabel": "Sua foto",
   "searchPhotoClear": "Remover",

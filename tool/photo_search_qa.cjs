@@ -84,6 +84,11 @@ async function serve() {
   const files = new Set(fs.readdirSync(runtime).filter((name) => name.endsWith('.jpg')).map((name) => `/${name}`));
   https.createServer({key: fs.readFileSync(path.join(runtime, 'key.pem')), cert: fs.readFileSync(path.join(runtime, 'cert.pem'))},
     (req, res) => {
+      if (req.method === 'GET' && req.url === '/health') {
+        res.setHeader('content-type', 'application/json');
+        res.end(JSON.stringify(manifest));
+        return;
+      }
       if (req.method !== 'GET' || !files.has(req.url)) { res.writeHead(404); res.end(); return; }
       res.setHeader('content-type', 'image/jpeg');
       res.end(fs.readFileSync(path.join(runtime, req.url.slice(1))));

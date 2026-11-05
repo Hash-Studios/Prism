@@ -14148,7 +14148,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get searchPhotoPrivacy =>
-      'O Prism lê as cores do seu celular. Para descobrir o que tem na foto, uma pequena cópia é enviada ao Google Cloud Vision. Ela não é armazenada.';
+      'O Prism lê as cores da foto no seu celular. Para descobrir o que tem na foto, uma pequena cópia é enviada ao Google Cloud Vision. Ela não é armazenada.';
 
   @override
   String get searchPhotoChoose => 'Escolher foto';
@@ -28346,7 +28346,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get searchPhotoPrivacy =>
-      'O Prism lê as cores do seu celular. Para descobrir o que tem na foto, uma pequena cópia é enviada ao Google Cloud Vision. Ela não é armazenada.';
+      'O Prism lê as cores da foto no seu celular. Para descobrir o que tem na foto, uma pequena cópia é enviada ao Google Cloud Vision. Ela não é armazenada.';
 
   @override
   String get searchPhotoChoose => 'Escolher foto';

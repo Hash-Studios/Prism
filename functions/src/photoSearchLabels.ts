@@ -94,13 +94,18 @@ export const photoSearchLabels = onCall({region: CALLABLE_REGIONS, timeoutSecond
   try {
     labels = (await detectLabelsInImage(image)).slice(0, MAX_PHOTO_LABELS);
   } catch {
-    await db.runTransaction(async (tx) => {
-      const snap = await tx.get(ref);
-      const slots = slotsOf(snap.data(), claim.day);
-      if (!isPendingClaim(slots[requestId], claim)) return;
-      delete slots[requestId];
-      tx.update(ref, {results: slots});
-    });
+    try {
+      await db.runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        const slots = slotsOf(snap.data(), claim.day);
+        if (!isPendingClaim(slots[requestId], claim)) return;
+        delete slots[requestId];
+        tx.update(ref, {results: slots});
+      });
+    } catch {
+      // The slot stays pending until it goes stale. Do not log error-derived data for photo requests.
+      logger.warn("photoSearchLabels: Claim release failed.", {uid});
+    }
     // Vision SDK errors can contain request details. Do not log error-derived data for photo requests.
     logger.warn("photoSearchLabels: Vision failed.", {uid});
     throw new HttpsError("unavailable", "Could not read the photo. Try again.");

@@ -5,6 +5,7 @@ import {ImageAnnotatorClient} from "@google-cloud/vision";
 import {logger} from "firebase-functions/v2";
 import * as wallCategory from "../wallCategory";
 import {MAX_PHOTO_BYTES, MAX_PHOTO_SEARCHES_PER_DAY, PHOTO_SEARCH_RATE, parsePhoto, photoSearchLabels} from "../photoSearchLabels";
+import {db} from "../common";
 import {installFakeDb} from "./fakeDb";
 
 const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46, 0x49, 0x46, 0, 1]);
@@ -365,4 +366,23 @@ test("parsePhoto accepts PNG and JPEG", () => {
   assert.equal(png[0], 0x89);
   const jpeg = parsePhoto(image);
   assert.equal(jpeg[0], 0xff);
+});
+
+test("a failed slot release after a Vision failure still answers unavailable", async (t) => {
+  const store = installFakeDb(t);
+  t.mock.method(wallCategory, "detectLabelsInImage", async () => {
+    throw new Error("boom");
+  });
+  const original = db.runTransaction.bind(db);
+  let calls = 0;
+  t.mock.method(db, "runTransaction", ((fn: Parameters<typeof db.runTransaction>[0]) => {
+    calls += 1;
+    if (calls === 2) return Promise.reject(new Error("aborted"));
+    return original(fn);
+  }) as typeof db.runTransaction);
+  const warn = t.mock.method(logger, "warn", () => undefined);
+  await assert.rejects(() => call({image, requestId: "req-00000001"}), {code: "unavailable"});
+  assert.equal(store.get(RATE_DOC)?.count, 1);
+  assert.deepEqual(warn.mock.calls.map((c) => c.arguments[0]),
+    ["photoSearchLabels: Claim release failed.", "photoSearchLabels: Vision failed."]);
 });

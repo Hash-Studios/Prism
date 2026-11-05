@@ -13975,7 +13975,7 @@
   "@searchByPhoto": {
     "description": "Tooltip of the camera roll button in the search bar, and title of the photo search privacy sheet."
   },
-  "searchPhotoPrivacy": "Prism reads the colours on your phone. To find what's in the photo, a small copy goes to Google Cloud Vision. It isn't stored.",
+  "searchPhotoPrivacy": "Prism reads the photo's colours on your phone. To find what's in the photo, a small copy goes to Google Cloud Vision. It isn't stored.",
   "@searchPhotoPrivacy": {
     "description": "Shown once before a signed-in user's first photo search."
   },
