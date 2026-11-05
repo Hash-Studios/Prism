@@ -21,6 +21,17 @@ const PublicProfileEntity _ana = PublicProfileEntity(
   coverPhoto: '',
 );
 
+const PublicProfileEntity _bea = PublicProfileEntity(
+  id: 'bea',
+  name: 'Bea',
+  email: '',
+  username: 'bea',
+  profilePhoto: '',
+  bio: '',
+  links: <String, String>{},
+  coverPhoto: '',
+);
+
 Widget _host({String uid = 'ana'}) => MaterialApp(
   home: FolderMemberProfile(
     uid: uid,
@@ -64,6 +75,36 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
     expect(cancellations, 1);
+  });
+
+  testWidgets('changing uid clears the old profile until the new profile arrives', (tester) async {
+    int oldCancellations = 0;
+    when(() => profiles.watchProfile('ana')).thenAnswer(
+      (_) => Stream<PublicProfileEntity?>.multi((controller) {
+        controller.add(_ana);
+        controller.onCancel = () => oldCancellations++;
+      }),
+    );
+    final StreamController<PublicProfileEntity?> next = StreamController<PublicProfileEntity?>();
+    addTearDown(next.close);
+    when(() => profiles.watchProfile('bea')).thenAnswer((_) => next.stream);
+
+    await tester.pumpWidget(_host());
+    await tester.pump();
+    expect(find.text('Ana'), findsOneWidget);
+
+    await tester.pumpWidget(_host(uid: 'bea'));
+
+    expect(find.text('Ana'), findsNothing);
+    expect(find.text('Loading profile'), findsOneWidget);
+    expect(oldCancellations, 1);
+    next.add(_bea);
+    await tester.pump();
+    expect(find.text('Bea'), findsOneWidget);
+    expect(find.text('Loading profile'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(next.hasListener, isFalse);
   });
 
   testWidgets('a missing profile leaves the placeholder and renders the fallback', (tester) async {

@@ -65,6 +65,7 @@ class _FolderMemberProfileState extends State<FolderMemberProfile> {
   Widget build(BuildContext context) {
     if (_profileStream == null) return widget.builder(context, null);
     return StreamBuilder<PublicProfileEntity?>(
+      key: ValueKey<String>(widget.uid),
       stream: _profileStream,
       builder: (context, snapshot) => snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData
           ? widget.placeholder
