@@ -99,6 +99,9 @@ class PurchasesService {
   String _configuredUserId = '';
   int _identityRevision = 0;
 
+  /// Prevents an earlier background read from overwriting a restore or purchase-check result.
+  int _forcedApplies = 0;
+
   /// Skip redundant Firestore subscription updates when state unchanged (co-ordinate with coin sync / reduce usersv2 writes).
   static const Duration _subscriptionPersistThrottle = Duration(minutes: 5);
   static const Duration _subscriptionResyncAfter = Duration(hours: 24);
@@ -155,6 +158,7 @@ class PurchasesService {
     _addCustomerInfoListener((CustomerInfo info) {
       final String eventUserId = _configuredUserId;
       final int eventIdentityRevision = _identityRevision;
+      final int eventForcedApplies = _forcedApplies;
       if (_identityTransitionInProgress || eventUserId != app_state.prismUser.id.trim()) return;
       unawaited(
         Future<void>(() async {
@@ -168,6 +172,7 @@ class PurchasesService {
             info,
             userId: eventUserId,
             identityRevision: eventIdentityRevision,
+            forcedAppliesAtRead: eventForcedApplies,
             loggedIn: app_state.prismUser.loggedIn,
           );
         }).catchError((Object error, StackTrace stackTrace) {
@@ -393,6 +398,7 @@ class PurchasesService {
         return _cachedEntitlementStatus(forceSync);
       }
       final int requestedIdentityRevision = _identityRevision;
+      final int requestedForcedApplies = _forcedApplies;
       final bool requestedLoggedIn = app_state.prismUser.loggedIn;
       final CustomerInfo info = await _getCustomerInfo().timeout(_customerInfoTimeout);
       if (requestedIdentityRevision != _identityRevision ||
@@ -406,6 +412,7 @@ class PurchasesService {
         forceSync: forceSync,
         userId: requestedUserId,
         identityRevision: requestedIdentityRevision,
+        forcedAppliesAtRead: requestedForcedApplies,
         loggedIn: requestedLoggedIn,
       );
     } on PlatformException catch (e) {
@@ -436,11 +443,17 @@ class PurchasesService {
     bool forceSync = false,
     required String userId,
     required int identityRevision,
+    required int forcedAppliesAtRead,
     required bool loggedIn,
   }) async {
     final SubscriptionTier tier = tierFromCustomerInfo(info);
     final bool isPremium = tier.isPaid;
     if (!_matchesSubscriptionIdentity(userId, identityRevision, loggedIn)) {
+      return _cachedEntitlementStatus(forceSync);
+    }
+    if (forceSync) {
+      _forcedApplies++;
+    } else if (forcedAppliesAtRead != _forcedApplies) {
       return _cachedEntitlementStatus(forceSync);
     }
 
@@ -513,6 +526,7 @@ class PurchasesService {
         return PurchaseEntitlementStatus.none;
       }
       final int requestedIdentityRevision = _identityRevision;
+      final int requestedForcedApplies = _forcedApplies;
       final bool requestedLoggedIn = app_state.prismUser.loggedIn;
       final CustomerInfo info = await Purchases.restorePurchases();
       if (!_matchesSubscriptionIdentity(requestedUserId, requestedIdentityRevision, requestedLoggedIn)) {
@@ -526,6 +540,7 @@ class PurchasesService {
         forceSync: true,
         userId: requestedUserId,
         identityRevision: requestedIdentityRevision,
+        forcedAppliesAtRead: requestedForcedApplies,
         loggedIn: requestedLoggedIn,
       );
     } catch (error, stackTrace) {
