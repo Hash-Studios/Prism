@@ -350,7 +350,7 @@ async function seed() {
     const thumb = image(n - 1);
     await db.doc(`walls/${id}`).set({id, creatorUid: CREATOR, email: `${CREATOR}@example.test`, by: CREATOR, uploadedBy: CREATOR,
       userPhoto: image(0), title: `Shared wall ${n}`, desc: 'ADMIN SEEDED shared folder fixture',
-      wallpaper_thumb: thumb, wallpaper_url: thumb, wallpaper_path: '', wallpaper_sha: '', thumb_path: '', thumb_sha: '',
+      wallpaper_thumb: thumb, wallpaper_url: '', wallpaper_path: '', wallpaper_sha: '', thumb_path: '', thumb_sha: '',
       wallpaper_provider: 'Prism', originalProtected: true, originalObjectId: `qa-object-${id}`, collections: ['community'],
       category: 'Nature', tags: ['nature'], colors: [], review: true, rejected: false, resolution: '250x500', size: 'Local fixture',
       createdAt: stamp(now - (WALL_COUNT - n + 1) * 60000), qaFixture: 'ADMIN SEEDED'});

@@ -106,7 +106,7 @@ Deep link forms:
 - A refused join on a device. The app has no sign-in for `qa-blocked`. `build-apk` and `build-ios` accept only `viewer` and `creator`. Invite 2 is for the backend proof, and it is the code a blocked device would open once that identity exists.
 - The `used` refusal on a device. Riya is already a member after her join, so the app shows "member", not "used".
 - Real push delivery. FCM is blocked in the emulator.
-- Wall full-size images. Wall docs keep `wallpaper_path`, `wallpaper_sha` and the thumb fields empty, as in creator directory QA. `wallpaper_url` is set to the local image, so Add from feed stores a usable URL.
+- Wall full-size images. Wall docs keep `wallpaper_url`, `wallpaper_path`, `wallpaper_sha` and the thumb fields empty, as in creator directory QA. The app hides a wall whose original URL is set.
 
 ## Safety
 
