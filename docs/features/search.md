@@ -201,7 +201,7 @@ The chip fades in. With reduce motion on, it shows at once (`context.motion`). T
 - Only a signed-in user gets labels. A guest's photo never leaves the phone.
 - The app sends the clean copy and a new `requestId` to the `photoSearchLabels` callable (`us-central1`, the region of `appFunctions`).
 - The callable sends the bytes to Cloud Vision label detection in the request body. It uses the same Vision client and the same score floor (0.7) as `categorizeWallpaper`. It returns at most 5 labels and the mapped category.
-- Inline photo calls disable SDK retries and use a 20-second RPC timeout. Each claimed slot starts at most one Vision
+- Inline photo calls disable SDK retries and use a 20-second RPC timeout. The app waits 30 seconds for the callable (`photoLabelsTimeout`), so a search the server counts is not dropped by the app. Each claimed slot starts at most one Vision
   RPC. URL-based wallpaper categorization keeps its existing retry settings.
 - The callable does not write the image anywhere. It does not use Firebase Storage or R2.
 - App Check is not used. No other callable uses it.

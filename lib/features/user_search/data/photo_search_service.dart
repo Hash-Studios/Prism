@@ -19,6 +19,10 @@ const int photoUploadSize = 512;
 /// `functions/src/photoSearchLabels.ts`.
 const int photoSearchDailyCap = 20;
 
+/// How long the app waits for labels. It covers the callable's 20 second Vision limit, its two Firestore
+/// transactions and a cold start, so a search the server counts is not dropped by the app.
+const Duration photoLabelsTimeout = Duration(seconds: 30);
+
 /// A photo decoded on the phone: a PNG with a long side of at most [photoUploadSize], and RGBA pixels with a long side
 /// of at most [photoPaletteSampleSize] for the palette.
 typedef PreparedPhoto = ({Uint8List png, Uint8List sample});
@@ -102,7 +106,7 @@ class PhotoSearchService {
     const PhotoLabels none = (status: PhotoLabelsStatus.unavailable, labels: <String>[], category: null);
     try {
       final HttpsCallableResult<Object?> result = await (_functions ?? appFunctions)
-          .httpsCallable('photoSearchLabels', options: HttpsCallableOptions(timeout: const Duration(seconds: 20)))
+          .httpsCallable('photoSearchLabels', options: HttpsCallableOptions(timeout: photoLabelsTimeout))
           .call<Object?>(<String, Object>{'image': base64Encode(jpeg), 'requestId': AnalyticsCorrelation.newId()});
       final Object? data = result.data;
       if (data is! Map) return none;

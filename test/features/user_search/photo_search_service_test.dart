@@ -136,6 +136,12 @@ void main() {
       final Map<String, Object> sent =
           verify(() => callable.call<Object?>(captureAny())).captured.single as Map<String, Object>;
       expect(sent.keys.toSet(), <String>{'image', 'requestId'});
+      final HttpsCallableOptions options =
+          verify(
+                () => functions.httpsCallable('photoSearchLabels', options: captureAny(named: 'options')),
+              ).captured.single
+              as HttpsCallableOptions;
+      expect(options.timeout, const Duration(seconds: 30));
       expect(sent['requestId'], matches(RegExp(r'^[A-Za-z0-9_-]{8,64}$')));
       final Uint8List image = base64Decode(sent['image']! as String);
       expect(image, query.preview);
