@@ -375,7 +375,7 @@ void main() {
     expect(repo.calls.where((call) => call.startsWith('removeItem:')), isEmpty);
   });
 
-  Future<void> pumpTeamFolder(
+  Future<({ _FakeFoldersRepository repo, _MockSharedFoldersRepository shared })> pumpTeamFolder(
     WidgetTester tester, {
     required String userId,
     required FolderEntity folder,
@@ -386,6 +386,7 @@ void main() {
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     final _MockSharedFoldersRepository shared = _MockSharedFoldersRepository();
     when(() => shared.addedBy(any(), any())).thenAnswer((_) async => Result.success<String?>(addedByUid));
+    when(() => shared.removeMember(any(), any())).thenAnswer((_) async => Result.success<void>(null));
     final _MockPublicProfileRepository profiles = _MockPublicProfileRepository();
     when(() => profiles.watchProfile(any())).thenAnswer(
       (invocation) =>
@@ -419,6 +420,7 @@ void main() {
       ),
     );
     await settle(tester);
+    return (repo: repo, shared: shared);
   }
 
   testWidgets('the owner of a folder with an editor sees Invite in the header and the owner actions in the menu', (
@@ -455,9 +457,34 @@ void main() {
     await settle(tester);
 
     expect(_menuItem('People'), findsOneWidget);
-    for (final String label in <String>['Invite', 'Make public', 'Rename', 'Delete']) {
+    for (final String label in <String>['Rotate this folder', 'Invite', 'Make public', 'Rename', 'Delete']) {
       expect(_menuItem(label), findsNothing, reason: label);
     }
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('removing an editor reloads the open folder items', (tester) async {
+    final result = await pumpTeamFolder(
+      tester,
+      userId: 'me',
+      folder: _teamFolder(ownerId: 'me', editors: <FolderMember>[_editor('friend', 'me')]),
+      walls: <FavouriteWallEntity>[_wall('wall-1')],
+    );
+    final _FakeFoldersRepository repo = result.repo;
+    final _MockSharedFoldersRepository shared = result.shared;
+    final Finder wallTile = find.byType(PrismWallTile);
+    expect(wallTile, findsOneWidget);
+
+    await tester.tap(find.text('2 people'));
+    await settle(tester);
+    await tester.tap(find.text('Remove').first);
+    await settle(tester);
+    await tester.tap(find.text('Remove person'));
+    await settle(tester);
+
+    verify(() => shared.removeMember('work', 'friend')).called(1);
+    expect(repo.calls.where((call) => call == 'fetchItems:work').length, greaterThan(1));
+    expect(find.text('2 people'), findsOneWidget);
+    expect(wallTile, findsOneWidget);
   });
 
   testWidgets('an editor long-press on a wall names the editor who added it', (tester) async {

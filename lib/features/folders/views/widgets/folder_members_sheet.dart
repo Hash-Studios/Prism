@@ -56,7 +56,9 @@ Future<bool> showFolderMembersSheet(BuildContext context, FolderEntity folder) a
         }
         unawaited(analytics.track(FolderMemberRemovedEvent(memberCount: folder.members.length - 1)));
         toasts.success(l10n.foldersPersonRemoved(name));
-        bloc.add(FoldersEvent.started(userId: userId));
+        if (await bloc.run((id) => FoldersEvent.started(userId: userId, operationId: id))) {
+          await bloc.run((id) => FoldersEvent.folderOpened(folderId: folder.id, operationId: id));
+        }
         if (sheetContext.mounted) Navigator.of(sheetContext).pop();
       }
 
