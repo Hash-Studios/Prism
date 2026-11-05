@@ -6,6 +6,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/desktop_submission/biz/desktop_upload_cubit.dart';
 import 'package:Prism/features/desktop_submission/data/desktop_submission_repository.dart';
 import 'package:Prism/features/desktop_submission/domain/desktop_image_check.dart';
 import 'package:Prism/features/desktop_submission/domain/desktop_submit_failure.dart';
@@ -14,6 +15,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 
 const int _maxUploadBytes = 15 * 1024 * 1024;
@@ -77,7 +79,7 @@ class DesktopUploadScreen extends StatefulWidget {
 }
 
 class _DesktopUploadScreenState extends State<DesktopUploadScreen> {
-  late final DesktopSubmissionRepository _repository;
+  late final DesktopUploadCubit _upload;
 
   Uint8List? _bytes;
   Size? _size;
@@ -88,20 +90,22 @@ class _DesktopUploadScreenState extends State<DesktopUploadScreen> {
   /// Set only when the picked image passes every check.
   DesktopImageOk? _ok;
 
-  /// The server's answer to the last submit. Cleared on the next submit or pick.
-  DesktopSubmitFailure? _sendFailure;
-
   bool _choosing = false;
-  bool _sending = false;
 
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ?? getIt<DesktopSubmissionRepository>();
+    _upload = DesktopUploadCubit(widget.repository ?? getIt<DesktopSubmissionRepository>());
+  }
+
+  @override
+  void dispose() {
+    unawaited(_upload.close());
+    super.dispose();
   }
 
   Future<void> _choose() async {
-    if (_choosing || _sending) return;
+    if (_choosing || _upload.state.sending) return;
     setState(() => _choosing = true);
     final l10n = context.l10n;
     Uint8List? bytes;
@@ -121,11 +125,11 @@ class _DesktopUploadScreenState extends State<DesktopUploadScreen> {
     final DesktopImageCheck? check = size == null
         ? null
         : DesktopImageCheck.of(size.width.round(), size.height.round());
+    _upload.clearFailure();
     setState(() {
       _choosing = false;
       _bytes = bytes;
       _size = size;
-      _sendFailure = null;
       _ok = null;
       _pickFailure = bytes!.lengthInBytes > _maxUploadBytes
           ? DesktopSubmitFailure.tooLarge
@@ -143,22 +147,9 @@ class _DesktopUploadScreenState extends State<DesktopUploadScreen> {
   Future<void> _submit() async {
     final Uint8List? bytes = _bytes;
     final DesktopImageOk? ok = _ok;
-    if (_sending || bytes == null || ok == null) return;
-    setState(() {
-      _sending = true;
-      _sendFailure = null;
-    });
-    try {
-      await _repository.submit(wallDocId: widget.wallDocId, bytes: bytes);
-    } on DesktopSubmitException catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _sending = false;
-        _sendFailure = error.failure;
-      });
-      return;
-    }
-    if (!mounted) return;
+    if (_upload.state.sending || bytes == null || ok == null) return;
+    await _upload.submit(wallDocId: widget.wallDocId, bytes: bytes);
+    if (!mounted || !_upload.state.sent) return;
     unawaited(
       analytics.track(
         DesktopUploadSubmittedEvent(wallId: widget.wallId, aspect: ok.aspect.label, replace: widget.replace),
@@ -188,77 +179,83 @@ class _DesktopUploadScreenState extends State<DesktopUploadScreen> {
     final l10n = context.l10n;
     final ColorScheme cs = Theme.of(context).colorScheme;
     final Uint8List? bytes = _bytes;
-    final DesktopSubmitFailure? error = _sendFailure ?? _pickFailure;
     final Size? size = _size;
 
-    final Widget? errorText = error == null
-        ? null
-        : Semantics(
-            liveRegion: true,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return BlocBuilder<DesktopUploadCubit, DesktopUploadState>(
+      bloc: _upload,
+      builder: (BuildContext context, DesktopUploadState upload) {
+        final DesktopSubmitFailure? error = upload.failure ?? _pickFailure;
+
+        final Widget? errorText = error == null
+            ? null
+            : Semantics(
+                liveRegion: true,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Icon(Icons.error_outline_rounded, size: 18, color: cs.error),
+                    const SizedBox(width: PrismSpace.xs),
+                    Expanded(
+                      child: Text(
+                        _messageFor(context, error),
+                        style: PrismTextStyles.body(context).copyWith(color: cs.error),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+        return PrismPage(
+          title: widget.replace ? l10n.desktopUploadReplaceTitle : l10n.desktopUploadTitle,
+          bottomBar: Padding(
+            padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.page, PrismSpace.md),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Icon(Icons.error_outline_rounded, size: 18, color: cs.error),
-                const SizedBox(width: PrismSpace.xs),
-                Expanded(
-                  child: Text(
-                    _messageFor(context, error),
-                    style: PrismTextStyles.body(context).copyWith(color: cs.error),
-                  ),
+                if (errorText != null) ...<Widget>[errorText, const SizedBox(height: PrismSpace.sm)],
+                PrismButton(
+                  maxLines: 2,
+                  label: bytes == null ? l10n.desktopUploadChooseImage : l10n.desktopUploadChooseAnother,
+                  variant: PrismButtonVariant.tonal,
+                  expand: true,
+                  onPressed: _choosing || upload.sending ? null : _choose,
+                ),
+                const SizedBox(height: PrismSpace.sm),
+                PrismButton(
+                  maxLines: 2,
+                  label: l10n.desktopUploadSubmit,
+                  expand: true,
+                  loading: upload.sending,
+                  onPressed: _ok == null || upload.sending ? null : _submit,
                 ),
               ],
             ),
-          );
-
-    return PrismPage(
-      title: widget.replace ? l10n.desktopUploadReplaceTitle : l10n.desktopUploadTitle,
-      bottomBar: Padding(
-        padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.page, PrismSpace.md),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            if (errorText != null) ...<Widget>[errorText, const SizedBox(height: PrismSpace.sm)],
-            PrismButton(
-              maxLines: 2,
-              label: bytes == null ? l10n.desktopUploadChooseImage : l10n.desktopUploadChooseAnother,
-              variant: PrismButtonVariant.tonal,
-              expand: true,
-              onPressed: _choosing || _sending ? null : _choose,
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xl),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(l10n.desktopUploadIntro, style: PrismTextStyles.body(context)),
+                if (widget.replace) ...<Widget>[
+                  const SizedBox(height: PrismSpace.xs),
+                  Text(l10n.desktopUploadReplaceNote, style: PrismTextStyles.body(context)),
+                ],
+                const SizedBox(height: PrismSpace.xl),
+                DesktopSidePreview(
+                  phoneThumbUrl: widget.phoneThumbUrl,
+                  desktopImage: bytes == null ? null : MemoryImage(bytes),
+                  desktopWidth: size?.width.round(),
+                  desktopHeight: size?.height.round(),
+                  aspectLabel: _ok?.aspect.label,
+                ),
+                const SizedBox(height: PrismSpace.lg),
+                if (bytes == null) Text(l10n.desktopUploadRequirements, style: PrismTextStyles.body(context)),
+              ],
             ),
-            const SizedBox(height: PrismSpace.sm),
-            PrismButton(
-              maxLines: 2,
-              label: l10n.desktopUploadSubmit,
-              expand: true,
-              loading: _sending,
-              onPressed: _ok == null || _sending ? null : _submit,
-            ),
-          ],
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xl),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(l10n.desktopUploadIntro, style: PrismTextStyles.body(context)),
-            if (widget.replace) ...<Widget>[
-              const SizedBox(height: PrismSpace.xs),
-              Text(l10n.desktopUploadReplaceNote, style: PrismTextStyles.body(context)),
-            ],
-            const SizedBox(height: PrismSpace.xl),
-            DesktopSidePreview(
-              phoneThumbUrl: widget.phoneThumbUrl,
-              desktopImage: bytes == null ? null : MemoryImage(bytes),
-              desktopWidth: size?.width.round(),
-              desktopHeight: size?.height.round(),
-              aspectLabel: _ok?.aspect.label,
-            ),
-            const SizedBox(height: PrismSpace.lg),
-            if (bytes == null) Text(l10n.desktopUploadRequirements, style: PrismTextStyles.body(context)),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/desktop_submission/biz/desktop_pending_cubit.dart';
 import 'package:Prism/features/desktop_submission/data/desktop_submission_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 enum DesktopMenuState { add, replace, inReview }
 
@@ -38,12 +42,12 @@ class DesktopVersionAction extends StatefulWidget {
 }
 
 class _DesktopVersionActionState extends State<DesktopVersionAction> {
-  late Stream<bool> _pending;
+  late DesktopPendingCubit _pending;
 
   @override
   void initState() {
     super.initState();
-    _pending = _watch();
+    _pending = _createPending();
   }
 
   @override
@@ -52,26 +56,31 @@ class _DesktopVersionActionState extends State<DesktopVersionAction> {
     if (oldWidget.wallDocId != widget.wallDocId ||
         oldWidget.uid != widget.uid ||
         oldWidget.repository != widget.repository) {
-      _pending = _watch();
+      unawaited(_pending.close());
+      _pending = _createPending();
     }
   }
 
-  Stream<bool> _watch() {
+  @override
+  void dispose() {
+    unawaited(_pending.close());
+    super.dispose();
+  }
+
+  DesktopPendingCubit _createPending() {
     // Pages built without the repository registered (some detail page tests) show the entry as not pending.
     final DesktopSubmissionRepository? repository =
         widget.repository ??
         (getIt.isRegistered<DesktopSubmissionRepository>() ? getIt<DesktopSubmissionRepository>() : null);
-    return repository?.watchPendingForWall(wallDocId: widget.wallDocId, uid: widget.uid) ?? Stream<bool>.value(false);
+    return DesktopPendingCubit(repository, wallDocId: widget.wallDocId, uid: widget.uid);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return StreamBuilder<bool>(
-      stream: _pending,
-      builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
-        // A failed watch counts as "not pending": the creator can still open the upload screen.
-        final bool pending = !snapshot.hasError && (snapshot.data ?? false);
+    return BlocBuilder<DesktopPendingCubit, bool>(
+      bloc: _pending,
+      builder: (BuildContext context, bool pending) {
         final DesktopMenuState state = desktopMenuState(hasDesktop: widget.hasDesktop, pending: pending);
         final bool inReview = state == DesktopMenuState.inReview;
         final String label = switch (state) {

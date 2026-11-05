@@ -9,9 +9,9 @@ import 'package:Prism/features/admin_review/views/widgets/desktop_submission_car
 import 'package:Prism/features/admin_review/views/widgets/reject_reason_sheet.dart';
 import 'package:Prism/features/desktop_submission/desktop_submission.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// The Desktop tab: pending desktop versions, each approved or rejected from its card.
 class DesktopSubmissionQueue extends StatefulWidget {
@@ -24,33 +24,36 @@ class DesktopSubmissionQueue extends StatefulWidget {
 }
 
 class _DesktopSubmissionQueueState extends State<DesktopSubmissionQueue> {
-  late Stream<List<DesktopSubmission>> _queueStream;
+  late final DesktopReviewQueueCubit _queue;
 
   @override
   void initState() {
     super.initState();
-    _queueStream = widget.repository.watchReviewQueue();
+    _queue = DesktopReviewQueueCubit(widget.repository)..start();
+  }
+
+  @override
+  void dispose() {
+    unawaited(_queue.close());
+    super.dispose();
   }
 
   void _retry() {
     PrismHaptics.tap();
-    setState(() => _queueStream = widget.repository.watchReviewQueue());
+    _queue.retry();
   }
 
   Future<void> _approve(DesktopSubmission submission) async {
     final AppLocalizations l10n = context.l10n;
-    try {
-      await widget.repository.review(submissionId: submission.id, approve: true);
-    } on DesktopReviewWallUnavailable {
-      toasts.error(l10n.adminDesktopWallUnavailable);
-      return;
-    } catch (error, stackTrace) {
-      logger.e('Desktop version approve failed', tag: 'AdminReview', error: error, stackTrace: stackTrace);
-      toasts.error(l10n.coreSomethingWentWrong);
-      return;
+    switch (await _queue.approve(submission)) {
+      case DesktopReviewOutcome.done:
+        unawaited(analytics.track(DesktopUploadApprovedEvent(wallId: submission.shareId)));
+        toasts.success(l10n.adminDesktopApproved);
+      case DesktopReviewOutcome.wallUnavailable:
+        toasts.error(l10n.adminDesktopWallUnavailable);
+      case DesktopReviewOutcome.failed:
+        toasts.error(l10n.coreSomethingWentWrong);
     }
-    unawaited(analytics.track(DesktopUploadApprovedEvent(wallId: submission.shareId)));
-    toasts.success(l10n.adminDesktopApproved);
   }
 
   Future<void> _reject(DesktopSubmission submission) {
@@ -61,12 +64,7 @@ class _DesktopSubmissionQueueState extends State<DesktopSubmissionQueue> {
       confirmLabel: l10n.adminDesktopRejectTitle,
       onSubmit: (String reason, RejectReason? picked) async {
         final String reasonCode = picked?.name ?? 'other';
-        await widget.repository.review(
-          submissionId: submission.id,
-          approve: false,
-          reason: reason,
-          reasonCode: reasonCode,
-        );
+        await _queue.reject(submission, reason: reason, reasonCode: reasonCode);
         unawaited(analytics.track(DesktopUploadRejectedEvent(wallId: submission.shareId, reason: reasonCode)));
         toasts.success(l10n.adminDesktopRejected);
       },
@@ -75,10 +73,10 @@ class _DesktopSubmissionQueueState extends State<DesktopSubmissionQueue> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<DesktopSubmission>>(
-      stream: _queueStream,
-      builder: (BuildContext context, AsyncSnapshot<List<DesktopSubmission>> snapshot) {
-        if (snapshot.hasError) {
+    return BlocBuilder<DesktopReviewQueueCubit, DesktopReviewQueueState>(
+      bloc: _queue,
+      builder: (BuildContext context, DesktopReviewQueueState queue) {
+        if (queue.error) {
           return GlintState(
             kind: GlintStateKind.error,
             title: context.l10n.adminDesktopLoadError,
@@ -87,11 +85,11 @@ class _DesktopSubmissionQueueState extends State<DesktopSubmissionQueue> {
             onAction: _retry,
           );
         }
-        if (!snapshot.hasData) {
+        final List<DesktopSubmission>? loaded = queue.submissions;
+        if (loaded == null) {
           return PrismSkeleton.cards(height: 240);
         }
-        final List<DesktopSubmission> submissions = snapshot.data!;
-        if (submissions.isEmpty) {
+        if (loaded.isEmpty) {
           return GlintState(
             kind: GlintStateKind.nothingNew,
             title: context.l10n.adminDesktopEmptyTitle,
@@ -100,16 +98,16 @@ class _DesktopSubmissionQueueState extends State<DesktopSubmissionQueue> {
         }
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxl),
-          itemCount: submissions.length,
+          itemCount: loaded.length,
           separatorBuilder: (_, _) => const SizedBox(height: PrismSpace.sm),
           findItemIndexCallback: (Key key) {
-            final int index = submissions.indexWhere(
+            final int index = loaded.indexWhere(
               (DesktopSubmission s) => 'desktop-${s.id}' == (key as ValueKey<String>).value,
             );
             return index < 0 ? null : index;
           },
           itemBuilder: (BuildContext context, int index) {
-            final DesktopSubmission submission = submissions[index];
+            final DesktopSubmission submission = loaded[index];
             return KeyedSubtree(
               key: ValueKey<String>('desktop-${submission.id}'),
               child: DesktopSubmissionCard(
