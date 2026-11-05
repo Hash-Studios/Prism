@@ -34,9 +34,14 @@ String _liveModeLabel(AppLocalizations l10n, _LiveMode mode) => switch (mode) {
   _LiveMode.video => l10n.wallpaperLiveModeVideo,
 };
 
-String _liveOutcomeMessage(AppLocalizations l10n, LiveApplyOutcome outcome) => switch (outcome.status) {
+String _liveOutcomeMessage(
+  AppLocalizations l10n,
+  LiveApplyOutcome outcome, {
+  required bool supportsPerScreen,
+}) => switch (outcome.status) {
   LiveApplyStatus.applied => l10n.wallpaperLiveApplied,
   LiveApplyStatus.confirmInPreview when outcome.fallback => l10n.wallpaperLiveSameWallBothScreens,
+  LiveApplyStatus.confirmInPreview when !supportsPerScreen => l10n.wallpaperLiveConfirmPreview,
   LiveApplyStatus.confirmInPreview => switch (outcome.target) {
     WallpaperTarget.home => l10n.wallpaperLiveConfirmHome,
     WallpaperTarget.lock => l10n.wallpaperLiveConfirmLock,
@@ -198,7 +203,7 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
           ..showSnackBar(
             SnackBar(
               content: Text(
-                _liveOutcomeMessage(context.l10n, outcome),
+                _liveOutcomeMessage(context.l10n, outcome, supportsPerScreen: bloc.state.capabilities.supportsPerScreen),
                 style: TextStyle(color: outcome.isError ? scheme.onError : null),
               ),
               backgroundColor: outcome.isError ? scheme.error : null,

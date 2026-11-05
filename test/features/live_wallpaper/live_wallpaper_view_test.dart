@@ -482,6 +482,20 @@ void main() {
       );
     });
 
+    testWidgets('without per-screen capability the preview message stays the master message', (tester) async {
+      const LiveCapabilities capabilities = LiveCapabilities(supportsShaders: true, supportsVideo: true);
+      const LiveApplyOutcome outcome = LiveApplyOutcome.confirmInPreview(target: WallpaperTarget.home);
+      await _pumpScreen(
+        tester,
+        state: _readyState(capabilities: capabilities),
+        states: Stream<LiveWallpaperState>.value(_readyState(capabilities: capabilities, outcome: outcome)),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.widgetWithText(SnackBar, 'Confirm in the system preview.'), findsOneWidget);
+      expect(find.text('In the preview, tap Set wallpaper, then Home screen.'), findsNothing);
+    });
+
     testWidgets('per-screen hint names the picked screen', (tester) async {
       const LiveApplyOutcome outcome = LiveApplyOutcome.confirmInPreview(target: WallpaperTarget.lock);
       await _pumpScreen(
