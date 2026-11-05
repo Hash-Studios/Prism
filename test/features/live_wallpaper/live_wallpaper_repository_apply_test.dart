@@ -130,7 +130,7 @@ void main() {
   });
 
   test('losing the session during texture preparation cancels before native apply', () async {
-    when(() => texture.prepare('/local.jpg', 0.5)).thenAnswer((_) async {
+    when(() => texture.prepare('/local.jpg', 0.5, uniquePaths: true)).thenAnswer((_) async {
       app_state.prismUser.loggedIn = false;
       return '/prepared.png';
     });
@@ -191,7 +191,9 @@ void main() {
   });
 
   test('motion prepares the requested aspect ratio and passes the resulting local texture to the host', () async {
-    when(() => texture.prepare('https://example.test/wall.jpg', 0.5)).thenAnswer((_) async => '/prepared/texture.jpg');
+    when(
+      () => texture.prepare('https://example.test/wall.jpg', 0.5, uniquePaths: true),
+    ).thenAnswer((_) async => '/prepared/texture.jpg');
     when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) async => pending);
     final outcome = await repository.applyMotion(
       imageUrl: 'https://example.test/wall.jpg',
@@ -203,13 +205,64 @@ void main() {
       tag: tag,
     );
     expect(outcome.status, LiveApplyStatus.confirmInPreview);
-    verify(() => texture.prepare('https://example.test/wall.jpg', 0.5)).called(1);
+    verify(() => texture.prepare('https://example.test/wall.jpg', 0.5, uniquePaths: true)).called(1);
     final request =
         verify(() => client.applyOpenGlWallpaper(captureAny())).captured.single as aw.OpenGlLiveWallpaperRequest;
     expect(request.target, aw.WallpaperTarget.lock);
     expect(request.contentTag, tag.encode());
     expect(request.frameRate, 30);
     expect(request.textures.single.filePath, '/prepared/texture.jpg');
+  });
+
+  test('motion uses a unique temporary texture and removes it after native apply returns', () async {
+    final File prepared = File('${directory.path}/unique.jpg')..writeAsBytesSync(<int>[1, 2, 3]);
+    final Completer<aw.WallpaperOperationResult> nativeApply = Completer<aw.WallpaperOperationResult>();
+    when(
+      () => texture.prepare('https://example.test/wall.jpg', 0.5, uniquePaths: any(named: 'uniquePaths')),
+    ).thenAnswer((_) async => prepared.path);
+    when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) => nativeApply.future);
+
+    final Future<LiveApplyOutcome> applying = repository.applyMotion(
+      imageUrl: 'https://example.test/wall.jpg',
+      style: MotionStyle.drift,
+      palette: palette,
+      screenAspectRatio: 0.5,
+      batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
+    );
+
+    await Future<void>.delayed(Duration.zero);
+    expect(await prepared.exists(), isTrue);
+    nativeApply.complete(pending);
+    final LiveApplyOutcome outcome = await applying;
+    expect(outcome.status, LiveApplyStatus.confirmInPreview);
+    expect(await prepared.exists(), isFalse);
+    verify(() => texture.prepare('https://example.test/wall.jpg', 0.5, uniquePaths: true)).called(1);
+  });
+
+  test('a failed native depth apply removes both prepared textures', () async {
+    final File photo = File('${directory.path}/photo.jpg')..writeAsBytesSync(<int>[1]);
+    final File depth = File('${directory.path}/depth.jpg')..writeAsBytesSync(<int>[2]);
+    when(
+      () => texture.prepareWithDepth('/photo.jpg', '/depth.jpg', 0.5, uniquePaths: any(named: 'uniquePaths')),
+    ).thenAnswer((_) async => (photo: photo.path, depth: depth.path));
+    when(() => client.applyOpenGlWallpaper(any())).thenThrow(StateError('native failure'));
+
+    final LiveApplyOutcome outcome = await repository.applyMotion(
+      imageUrl: '/photo.jpg',
+      depthMapUrl: '/depth.jpg',
+      style: MotionStyle.depth,
+      palette: palette,
+      screenAspectRatio: 0.5,
+      batterySaver: false,
+      target: WallpaperTarget.lock,
+      tag: tag,
+    );
+
+    expect(outcome.failure, LiveApplyFailure.setFailed);
+    expect(await photo.exists(), isFalse);
+    expect(await depth.exists(), isFalse);
   });
 
   test('the 3D style without a depth map is unavailable and prepares nothing', () async {
@@ -223,14 +276,19 @@ void main() {
       tag: tag,
     );
     expect(outcome.failure, LiveApplyFailure.styleUnavailable);
-    verifyNever(() => texture.prepare(any(), any()));
-    verifyNever(() => texture.prepareWithDepth(any(), any(), any()));
+    verifyNever(() => texture.prepare(any(), any(), uniquePaths: true));
+    verifyNever(() => texture.prepareWithDepth(any(), any(), any(), uniquePaths: true));
     verifyNever(() => client.applyOpenGlWallpaper(any()));
   });
 
   test('the 3D style sends the photo then the depth map as textures at 30 frames per second', () async {
     when(
-      () => texture.prepareWithDepth('https://example.test/wall.jpg', 'https://example.test/map.png', 0.5),
+      () => texture.prepareWithDepth(
+        'https://example.test/wall.jpg',
+        'https://example.test/map.png',
+        0.5,
+        uniquePaths: true,
+      ),
     ).thenAnswer((_) async => (photo: '/p.jpg', depth: '/d.jpg'));
     when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) async => pending);
     final outcome = await repository.applyMotion(
@@ -253,7 +311,12 @@ void main() {
 
   test('the 3D style with tilt declares u_tilt in the shader', () async {
     when(
-      () => texture.prepareWithDepth('https://example.test/wall.jpg', 'https://example.test/map.png', 0.5),
+      () => texture.prepareWithDepth(
+        'https://example.test/wall.jpg',
+        'https://example.test/map.png',
+        0.5,
+        uniquePaths: true,
+      ),
     ).thenAnswer((_) async => (photo: '/p.jpg', depth: '/d.jpg'));
     when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) async => pending);
     await repository.applyMotion(
@@ -275,7 +338,12 @@ void main() {
   test('a depth-map download failure is reported and a later apply can retry', () async {
     var prepareCalls = 0;
     when(
-      () => texture.prepareWithDepth('https://example.test/wall.jpg', 'https://example.test/map.png', 0.5),
+      () => texture.prepareWithDepth(
+        'https://example.test/wall.jpg',
+        'https://example.test/map.png',
+        0.5,
+        uniquePaths: true,
+      ),
     ).thenAnswer((_) async {
       prepareCalls++;
       if (prepareCalls == 1) throw const LiveTextureException(LiveApplyFailure.textureDownloadFailed);
@@ -314,7 +382,9 @@ void main() {
   });
 
   test('texture preparation failure returns its reason without contacting the host', () async {
-    when(() => texture.prepare('bad', 1)).thenThrow(const LiveTextureException(LiveApplyFailure.textureTooDetailed));
+    when(
+      () => texture.prepare('bad', 1, uniquePaths: true),
+    ).thenThrow(const LiveTextureException(LiveApplyFailure.textureTooDetailed));
     final outcome = await repository.applyMotion(
       imageUrl: 'bad',
       style: MotionStyle.drift,

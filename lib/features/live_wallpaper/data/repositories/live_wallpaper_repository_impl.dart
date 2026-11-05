@@ -93,31 +93,38 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
     if (style.needsDepthMap && depthMapUrl == null) {
       return const LiveApplyOutcome.failed(LiveApplyFailure.styleUnavailable);
     }
-    final List<String> texturePaths;
+    final List<String> texturePaths = <String>[];
     try {
       if (style.needsDepthMap) {
         final ({String photo, String depth}) textures = await _texturePreparer.prepareWithDepth(
           imageUrl,
           depthMapUrl!,
           screenAspectRatio,
+          uniquePaths: true,
         );
-        texturePaths = <String>[textures.photo, textures.depth];
+        texturePaths.addAll(<String>[textures.photo, textures.depth]);
       } else {
-        texturePaths = <String>[await _texturePreparer.prepare(imageUrl, screenAspectRatio)];
+        texturePaths.add(await _texturePreparer.prepare(imageUrl, screenAspectRatio, uniquePaths: true));
       }
+      if (!app_state.prismUser.loggedIn || owner != app_state.prismUser.id) {
+        return const LiveApplyOutcome(LiveApplyStatus.cancelled);
+      }
+      return await _applyShader(
+        LiveShaderSources.motion(style, palette, tilt: tilt),
+        <aw.WallpaperSource>[for (final String path in texturePaths) aw.WallpaperSource.filePath(path)],
+        batterySaver,
+        target,
+        tag,
+      );
     } on LiveTextureException catch (error) {
       return LiveApplyOutcome.failed(error.failure);
+    } finally {
+      for (final String path in texturePaths) {
+        try {
+          await File(path).delete();
+        } on FileSystemException catch (_) {}
+      }
     }
-    if (!app_state.prismUser.loggedIn || owner != app_state.prismUser.id) {
-      return const LiveApplyOutcome(LiveApplyStatus.cancelled);
-    }
-    return _applyShader(
-      LiveShaderSources.motion(style, palette, tilt: tilt),
-      <aw.WallpaperSource>[for (final String path in texturePaths) aw.WallpaperSource.filePath(path)],
-      batterySaver,
-      target,
-      tag,
-    );
   }
 
   @override
