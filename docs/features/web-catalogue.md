@@ -243,5 +243,5 @@ npx tsc -p . && node --test lib/__tests__/webCatalog.test.js
 Run this in `web`:
 
 ```bash
-cd web && npx playwright test test/e2e/desktop-mode.spec.ts
+npx playwright test test/e2e/desktop-mode.spec.ts
 ```
