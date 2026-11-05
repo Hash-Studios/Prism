@@ -12314,6 +12314,150 @@ class AppLocalizationsHi extends AppLocalizations {
       'iOS 16 में \"तुरंत चलाएँ\" नहीं है। इसके बजाय \"चलाने से पहले पूछें\" बंद करें।';
 
   @override
+  String get dayNightTitle => 'दिन और रात';
+
+  @override
+  String get dayNightSettingsSubtitle => 'दिन के लिए एक वॉलपेपर, रात के लिए एक';
+
+  @override
+  String get dayNightIntro =>
+      'दिन के लिए एक और रात के लिए एक वॉलपेपर चुनें। आपके तय किए समय पर Shortcuts उन्हें बदल देगा।';
+
+  @override
+  String get dayNightUseAsDay => 'दिन के वॉलपेपर के रूप में उपयोग करें';
+
+  @override
+  String get dayNightUseAsNight => 'रात के वॉलपेपर के रूप में उपयोग करें';
+
+  @override
+  String get dayNightUseVariants => 'सबसे हल्का और सबसे गहरा वेरिएंट उपयोग करें';
+
+  @override
+  String get dayNightDaySetToast => 'दिन का वॉलपेपर सेट हो गया।';
+
+  @override
+  String get dayNightNightSetToast => 'रात का वॉलपेपर सेट हो गया।';
+
+  @override
+  String get dayNightPairSetToast => 'दिन और रात के वॉलपेपर सेट हो गए।';
+
+  @override
+  String get dayNightOpenAction => 'खोलें';
+
+  @override
+  String get dayNightDayLabel => 'दिन';
+
+  @override
+  String get dayNightNightLabel => 'रात';
+
+  @override
+  String get dayNightEmptyDay => 'कोई भी वॉलपेपर दबाकर रखें, फिर \"दिन के वॉलपेपर के रूप में उपयोग करें\" पर टैप करें।';
+
+  @override
+  String get dayNightEmptyNight =>
+      'कोई भी वॉलपेपर दबाकर रखें, फिर \"रात के वॉलपेपर के रूप में उपयोग करें\" पर टैप करें।';
+
+  @override
+  String get dayNightDayStarts => 'दिन शुरू';
+
+  @override
+  String get dayNightNightStarts => 'रात शुरू';
+
+  @override
+  String dayNightFrom(String time) {
+    return '$time से';
+  }
+
+  @override
+  String dayNightPreviewLabel(String slot, String time) {
+    return '$slot वॉलपेपर, $time से';
+  }
+
+  @override
+  String get dayNightTimesEqual => 'दो अलग-अलग समय चुनें।';
+
+  @override
+  String get dayNightSwitch => 'इन समयों पर वॉलपेपर बदलें';
+
+  @override
+  String get dayNightNeedsBoth => 'पहले दिन का और रात का वॉलपेपर चुनें।';
+
+  @override
+  String get dayNightNeedsDownload => 'पहले इस वॉलपेपर को Prism में डाउनलोड करें।';
+
+  @override
+  String get dayNightOpenWall => 'वॉलपेपर खोलें';
+
+  @override
+  String get dayNightPreparing => 'दोनों वॉलपेपर ऑफ़लाइन उपयोग के लिए सेव हो रहे हैं';
+
+  @override
+  String get dayNightPrepareFailed => 'वॉलपेपर ऑफ़लाइन उपयोग के लिए सेव नहीं हो सके। अपना कनेक्शन जाँचें।';
+
+  @override
+  String get dayNightTryAgain => 'फिर से कोशिश करें';
+
+  @override
+  String get dayNightProTitle => 'दिन और रात Prism Pro की सुविधा है।';
+
+  @override
+  String get dayNightOffEnded => 'आपका Prism Pro प्लान या पास खत्म होने के कारण दिन और रात बंद है।';
+
+  @override
+  String get dayNightSetUpAction => 'Shortcuts में सेट करें';
+
+  @override
+  String get dayNightGuideTitle => 'Shortcuts से वॉलपेपर बदलें';
+
+  @override
+  String dayNightGuideBody(String dayTime, String nightTime) {
+    return 'Shortcuts में 2 ऑटोमेशन बनाएँ, एक $dayTime के लिए और एक $nightTime के लिए। हर एक अपने समय से मेल खाता वॉलपेपर सेट करेगा।';
+  }
+
+  @override
+  String get dayNightGuideStepAutomation => 'Shortcuts में ऑटोमेशन पर टैप करें, फिर + पर टैप करें।';
+
+  @override
+  String dayNightGuideStepTime(String time) {
+    return 'दिन का समय पर टैप करें। $time चुनें, फिर प्रतिदिन चुनें।';
+  }
+
+  @override
+  String get dayNightGuideStepRun => 'तुरंत चलाएँ चुनें, फिर अगला पर टैप करें।';
+
+  @override
+  String get dayNightGuideStepBlank => 'नया खाली ऑटोमेशन पर टैप करें।';
+
+  @override
+  String get dayNightGuideStepGet => '\"Prism वॉलपेपर पाएँ\" जोड़ें। स्रोत को \"दिन और रात\" पर सेट करें।';
+
+  @override
+  String dayNightGuideStepSet(String screens) {
+    return '\"Set Wallpaper Photo\" जोड़ें। उसके तीर को दबाएँ, $screens चुनें, फिर \"Show Preview\" बंद करें।';
+  }
+
+  @override
+  String get dayNightGuideScreensHome => 'Home Screen';
+
+  @override
+  String get dayNightGuideScreensLock => 'Lock Screen';
+
+  @override
+  String get dayNightGuideScreensBoth => 'Lock Screen and Home Screen';
+
+  @override
+  String dayNightGuideStepRepeat(String time) {
+    return 'उसी तरह $time के लिए दूसरा ऑटोमेशन बनाएँ।';
+  }
+
+  @override
+  String get dayNightGuideSunTitle => 'सूर्योदय और सूर्यास्त';
+
+  @override
+  String get dayNightGuideSunBody =>
+      'समय की जगह सूर्योदय या सूर्यास्त चुनें। \"Prism वॉलपेपर पाएँ\" में समय को सूर्योदय के लिए \"दिन\" और सूर्यास्त के लिए \"रात\" पर सेट करें।';
+
+  @override
   String get tipAction => 'क्रिएटर को टिप दें';
 
   @override

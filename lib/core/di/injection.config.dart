@@ -66,6 +66,11 @@ import '../../features/creator_stats/data/creator_stats_repository_impl.dart'
     as _i899;
 import '../../features/creator_stats/domain/creator_stats.dart' as _i330;
 import '../../features/creator_stats/domain/get_creator_stats.dart' as _i685;
+import '../../features/day_night/biz/bloc/day_night_bloc.j.dart' as _i136;
+import '../../features/day_night/data/repositories/day_night_repository_impl.dart'
+    as _i665;
+import '../../features/day_night/domain/repositories/day_night_repository.dart'
+    as _i400;
 import '../../features/draw/biz/bloc/draw_bloc.j.dart' as _i269;
 import '../../features/draw/data/repositories/draw_repository_impl.dart'
     as _i342;
@@ -503,6 +508,9 @@ _i174.GetIt initGetIt(
       gh<_i954.FeedCacheLocalDataSource>(),
     ),
   );
+  gh.lazySingleton<_i400.DayNightRepository>(
+    () => _i665.DayNightRepositoryImpl(gh<_i1073.SettingsLocalDataSource>()),
+  );
   gh.factory<_i693.ShopBloc>(
     () => _i693.ShopBloc(gh<_i1073.SettingsLocalDataSource>()),
   );
@@ -538,11 +546,11 @@ _i174.GetIt initGetIt(
       gh<_i321.ShowRewardedAdUseCase>(),
     ),
   );
-  gh.lazySingleton<_i676.CodePushUpdater>(
-    () => appModule.codePushUpdater(gh<_i1073.SettingsLocalDataSource>()),
-  );
   gh.lazySingleton<_i655.WrappedRepository>(
     () => _i1035.WrappedRepositoryImpl(gh<_i349.FirestoreClient>()),
+  );
+  gh.lazySingleton<_i676.CodePushUpdater>(
+    () => appModule.codePushUpdater(gh<_i1073.SettingsLocalDataSource>()),
   );
   gh.lazySingleton<_i96.DropsRepository>(
     () => _i591.DropsRepositoryImpl(gh<_i349.FirestoreClient>()),
@@ -672,6 +680,9 @@ _i174.GetIt initGetIt(
       gh<_i112.UserBlockRepository>(),
       gh<_i1073.SettingsLocalDataSource>(),
     ),
+  );
+  gh.factory<_i136.DayNightBloc>(
+    () => _i136.DayNightBloc(gh<_i400.DayNightRepository>()),
   );
   gh.lazySingleton<_i727.PrismWallpaperRepository>(
     () => _i759.PrismWallpaperRepositoryImpl(

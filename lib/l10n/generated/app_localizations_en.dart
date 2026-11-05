@@ -12171,6 +12171,149 @@ class AppLocalizationsEn extends AppLocalizations {
   String get shortcutsAutomationIos16 => 'On iOS 16 there is no Run Immediately. Turn off Ask Before Running instead.';
 
   @override
+  String get dayNightTitle => 'Day and night';
+
+  @override
+  String get dayNightSettingsSubtitle => 'One wall for the day, one for the night';
+
+  @override
+  String get dayNightIntro =>
+      'Pick a wall for the day and one for the night. Shortcuts switches them at the times you set.';
+
+  @override
+  String get dayNightUseAsDay => 'Use as day wall';
+
+  @override
+  String get dayNightUseAsNight => 'Use as night wall';
+
+  @override
+  String get dayNightUseVariants => 'Use the lightest and darkest variant';
+
+  @override
+  String get dayNightDaySetToast => 'Day wall set.';
+
+  @override
+  String get dayNightNightSetToast => 'Night wall set.';
+
+  @override
+  String get dayNightPairSetToast => 'Day and night walls set.';
+
+  @override
+  String get dayNightOpenAction => 'Open';
+
+  @override
+  String get dayNightDayLabel => 'Day';
+
+  @override
+  String get dayNightNightLabel => 'Night';
+
+  @override
+  String get dayNightEmptyDay => 'Hold any wallpaper, then tap Use as day wall.';
+
+  @override
+  String get dayNightEmptyNight => 'Hold any wallpaper, then tap Use as night wall.';
+
+  @override
+  String get dayNightDayStarts => 'Day starts';
+
+  @override
+  String get dayNightNightStarts => 'Night starts';
+
+  @override
+  String dayNightFrom(String time) {
+    return 'From $time';
+  }
+
+  @override
+  String dayNightPreviewLabel(String slot, String time) {
+    return '$slot wall, from $time';
+  }
+
+  @override
+  String get dayNightTimesEqual => 'Pick two different times.';
+
+  @override
+  String get dayNightSwitch => 'Switch walls at these times';
+
+  @override
+  String get dayNightNeedsBoth => 'Pick a day wall and a night wall first.';
+
+  @override
+  String get dayNightNeedsDownload => 'Download this wall in Prism first.';
+
+  @override
+  String get dayNightOpenWall => 'Open wall';
+
+  @override
+  String get dayNightPreparing => 'Saving both walls for offline use';
+
+  @override
+  String get dayNightPrepareFailed => 'Could not save the walls for offline use. Check your connection.';
+
+  @override
+  String get dayNightTryAgain => 'Try again';
+
+  @override
+  String get dayNightProTitle => 'Day and night is a Prism Pro feature.';
+
+  @override
+  String get dayNightOffEnded => 'Day and night is off because your Prism Pro plan or pass ended.';
+
+  @override
+  String get dayNightSetUpAction => 'Set up in Shortcuts';
+
+  @override
+  String get dayNightGuideTitle => 'Switch walls with Shortcuts';
+
+  @override
+  String dayNightGuideBody(String dayTime, String nightTime) {
+    return 'Make 2 automations in Shortcuts, one for $dayTime and one for $nightTime. Each sets the wall that matches its time.';
+  }
+
+  @override
+  String get dayNightGuideStepAutomation => 'In Shortcuts, tap Automation, then tap +.';
+
+  @override
+  String dayNightGuideStepTime(String time) {
+    return 'Tap Time of Day. Choose $time, then Daily.';
+  }
+
+  @override
+  String get dayNightGuideStepRun => 'Choose Run Immediately, then tap Next.';
+
+  @override
+  String get dayNightGuideStepBlank => 'Tap New Blank Automation.';
+
+  @override
+  String get dayNightGuideStepGet => 'Add \"Get Prism Wallpaper\". Set Source to Day and night.';
+
+  @override
+  String dayNightGuideStepSet(String screens) {
+    return 'Add \"Set Wallpaper Photo\". Tap the arrow on it, choose $screens, then turn off Show Preview.';
+  }
+
+  @override
+  String get dayNightGuideScreensHome => 'Home Screen';
+
+  @override
+  String get dayNightGuideScreensLock => 'Lock Screen';
+
+  @override
+  String get dayNightGuideScreensBoth => 'Lock Screen and Home Screen';
+
+  @override
+  String dayNightGuideStepRepeat(String time) {
+    return 'Make a second automation the same way for $time.';
+  }
+
+  @override
+  String get dayNightGuideSunTitle => 'Sunrise and sunset';
+
+  @override
+  String get dayNightGuideSunBody =>
+      'Choose Sunrise or Sunset instead of a time. In Get Prism Wallpaper, set Time to Day for sunrise and Night for sunset.';
+
+  @override
   String get tipAction => 'Tip creator';
 
   @override

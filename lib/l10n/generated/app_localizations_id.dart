@@ -12216,6 +12216,149 @@ class AppLocalizationsId extends AppLocalizations {
       'Di iOS 16 tidak ada \"Jalankan Segera\". Matikan \"Tanya Sebelum Menjalankan\" sebagai gantinya.';
 
   @override
+  String get dayNightTitle => 'Siang dan malam';
+
+  @override
+  String get dayNightSettingsSubtitle => 'Satu wallpaper untuk siang, satu untuk malam';
+
+  @override
+  String get dayNightIntro =>
+      'Pilih wallpaper untuk siang dan satu untuk malam. Pintasan akan menggantinya pada waktu yang Anda atur.';
+
+  @override
+  String get dayNightUseAsDay => 'Gunakan sebagai wallpaper siang';
+
+  @override
+  String get dayNightUseAsNight => 'Gunakan sebagai wallpaper malam';
+
+  @override
+  String get dayNightUseVariants => 'Gunakan varian paling terang dan paling gelap';
+
+  @override
+  String get dayNightDaySetToast => 'Wallpaper siang diatur.';
+
+  @override
+  String get dayNightNightSetToast => 'Wallpaper malam diatur.';
+
+  @override
+  String get dayNightPairSetToast => 'Wallpaper siang dan malam diatur.';
+
+  @override
+  String get dayNightOpenAction => 'Buka';
+
+  @override
+  String get dayNightDayLabel => 'Siang';
+
+  @override
+  String get dayNightNightLabel => 'Malam';
+
+  @override
+  String get dayNightEmptyDay => 'Tahan wallpaper apa saja, lalu ketuk \"Gunakan sebagai wallpaper siang\".';
+
+  @override
+  String get dayNightEmptyNight => 'Tahan wallpaper apa saja, lalu ketuk \"Gunakan sebagai wallpaper malam\".';
+
+  @override
+  String get dayNightDayStarts => 'Siang mulai';
+
+  @override
+  String get dayNightNightStarts => 'Malam mulai';
+
+  @override
+  String dayNightFrom(String time) {
+    return 'Mulai $time';
+  }
+
+  @override
+  String dayNightPreviewLabel(String slot, String time) {
+    return 'Wallpaper $slot, mulai $time';
+  }
+
+  @override
+  String get dayNightTimesEqual => 'Pilih dua waktu yang berbeda.';
+
+  @override
+  String get dayNightSwitch => 'Ganti wallpaper pada waktu ini';
+
+  @override
+  String get dayNightNeedsBoth => 'Pilih wallpaper siang dan malam dulu.';
+
+  @override
+  String get dayNightNeedsDownload => 'Unduh wallpaper ini di Prism dulu.';
+
+  @override
+  String get dayNightOpenWall => 'Buka wallpaper';
+
+  @override
+  String get dayNightPreparing => 'Menyimpan kedua wallpaper untuk dipakai offline';
+
+  @override
+  String get dayNightPrepareFailed => 'Wallpaper tidak bisa disimpan untuk dipakai offline. Periksa koneksi Anda.';
+
+  @override
+  String get dayNightTryAgain => 'Coba lagi';
+
+  @override
+  String get dayNightProTitle => 'Siang dan malam adalah fitur Prism Pro.';
+
+  @override
+  String get dayNightOffEnded => 'Siang dan malam nonaktif karena paket atau akses Prism Pro Anda telah berakhir.';
+
+  @override
+  String get dayNightSetUpAction => 'Atur di Pintasan';
+
+  @override
+  String get dayNightGuideTitle => 'Ganti wallpaper dengan Pintasan';
+
+  @override
+  String dayNightGuideBody(String dayTime, String nightTime) {
+    return 'Buat 2 otomatisasi di Pintasan, satu untuk $dayTime dan satu untuk $nightTime. Masing-masing mengatur wallpaper yang sesuai dengan waktunya.';
+  }
+
+  @override
+  String get dayNightGuideStepAutomation => 'Di Pintasan, ketuk Otomatisasi, lalu ketuk +.';
+
+  @override
+  String dayNightGuideStepTime(String time) {
+    return 'Ketuk Waktu Hari. Pilih $time, lalu pilih Harian.';
+  }
+
+  @override
+  String get dayNightGuideStepRun => 'Pilih Jalankan Segera, lalu ketuk Berikutnya.';
+
+  @override
+  String get dayNightGuideStepBlank => 'Ketuk Otomatisasi Kosong Baru.';
+
+  @override
+  String get dayNightGuideStepGet => 'Tambahkan \"Dapatkan Wallpaper Prism\". Atur Sumber ke \"Siang dan malam\".';
+
+  @override
+  String dayNightGuideStepSet(String screens) {
+    return 'Tambahkan \"Atur Foto Wallpaper\". Ketuk panah di sebelahnya, pilih $screens, lalu nonaktifkan Tampilkan Pratinjau.';
+  }
+
+  @override
+  String get dayNightGuideScreensHome => 'Layar Utama';
+
+  @override
+  String get dayNightGuideScreensLock => 'Layar Terkunci';
+
+  @override
+  String get dayNightGuideScreensBoth => 'Layar Terkunci dan Layar Utama';
+
+  @override
+  String dayNightGuideStepRepeat(String time) {
+    return 'Buat otomatisasi kedua dengan cara yang sama untuk $time.';
+  }
+
+  @override
+  String get dayNightGuideSunTitle => 'Matahari terbit dan terbenam';
+
+  @override
+  String get dayNightGuideSunBody =>
+      'Pilih Matahari Terbit atau Matahari Terbenam, bukan waktu. Di \"Dapatkan Wallpaper Prism\", atur Waktu ke Siang untuk matahari terbit dan Malam untuk matahari terbenam.';
+
+  @override
   String get tipAction => 'Beri tip kreator';
 
   @override

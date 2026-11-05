@@ -12355,6 +12355,152 @@ class AppLocalizationsDe extends AppLocalizations {
       'Unter iOS 16 gibt es „Sofort ausführen“ nicht. Schalte stattdessen „Vor Ausführen bestätigen“ aus.';
 
   @override
+  String get dayNightTitle => 'Tag und Nacht';
+
+  @override
+  String get dayNightSettingsSubtitle => 'Ein Hintergrund für den Tag, einer für die Nacht';
+
+  @override
+  String get dayNightIntro =>
+      'Wähle einen Hintergrund für den Tag und einen für die Nacht. Kurzbefehle wechselt sie zu den Zeiten, die du einstellst.';
+
+  @override
+  String get dayNightUseAsDay => 'Als Tag-Hintergrund verwenden';
+
+  @override
+  String get dayNightUseAsNight => 'Als Nacht-Hintergrund verwenden';
+
+  @override
+  String get dayNightUseVariants => 'Hellste und dunkelste Variante verwenden';
+
+  @override
+  String get dayNightDaySetToast => 'Tag-Hintergrund festgelegt.';
+
+  @override
+  String get dayNightNightSetToast => 'Nacht-Hintergrund festgelegt.';
+
+  @override
+  String get dayNightPairSetToast => 'Tag- und Nacht-Hintergründe festgelegt.';
+
+  @override
+  String get dayNightOpenAction => 'Öffnen';
+
+  @override
+  String get dayNightDayLabel => 'Tag';
+
+  @override
+  String get dayNightNightLabel => 'Nacht';
+
+  @override
+  String get dayNightEmptyDay =>
+      'Halte einen beliebigen Hintergrund gedrückt und tippe dann auf „Als Tag-Hintergrund verwenden“.';
+
+  @override
+  String get dayNightEmptyNight =>
+      'Halte einen beliebigen Hintergrund gedrückt und tippe dann auf „Als Nacht-Hintergrund verwenden“.';
+
+  @override
+  String get dayNightDayStarts => 'Tag beginnt';
+
+  @override
+  String get dayNightNightStarts => 'Nacht beginnt';
+
+  @override
+  String dayNightFrom(String time) {
+    return 'Ab $time';
+  }
+
+  @override
+  String dayNightPreviewLabel(String slot, String time) {
+    return '$slot-Hintergrund, ab $time';
+  }
+
+  @override
+  String get dayNightTimesEqual => 'Wähle zwei verschiedene Uhrzeiten.';
+
+  @override
+  String get dayNightSwitch => 'Hintergründe zu diesen Zeiten wechseln';
+
+  @override
+  String get dayNightNeedsBoth => 'Wähle zuerst einen Tag- und einen Nacht-Hintergrund.';
+
+  @override
+  String get dayNightNeedsDownload => 'Lade diesen Hintergrund zuerst in Prism herunter.';
+
+  @override
+  String get dayNightOpenWall => 'Hintergrund öffnen';
+
+  @override
+  String get dayNightPreparing => 'Beide Hintergründe werden für die Offline-Nutzung gespeichert';
+
+  @override
+  String get dayNightPrepareFailed =>
+      'Die Hintergründe konnten nicht für die Offline-Nutzung gespeichert werden. Prüfe deine Verbindung.';
+
+  @override
+  String get dayNightTryAgain => 'Erneut versuchen';
+
+  @override
+  String get dayNightProTitle => 'Tag und Nacht ist eine Prism-Pro-Funktion.';
+
+  @override
+  String get dayNightOffEnded => 'Tag und Nacht ist aus, weil dein Prism-Pro-Abo oder Pass abgelaufen ist.';
+
+  @override
+  String get dayNightSetUpAction => 'In Kurzbefehle einrichten';
+
+  @override
+  String get dayNightGuideTitle => 'Hintergründe mit Kurzbefehle wechseln';
+
+  @override
+  String dayNightGuideBody(String dayTime, String nightTime) {
+    return 'Erstelle 2 Automationen in Kurzbefehle, eine für $dayTime und eine für $nightTime. Jede setzt den Hintergrund, der zu ihrer Zeit passt.';
+  }
+
+  @override
+  String get dayNightGuideStepAutomation => 'Tippe in Kurzbefehle auf Automation, dann auf +.';
+
+  @override
+  String dayNightGuideStepTime(String time) {
+    return 'Tippe auf Tageszeit. Wähle $time und dann Täglich.';
+  }
+
+  @override
+  String get dayNightGuideStepRun => 'Wähle Sofort ausführen und tippe dann auf Weiter.';
+
+  @override
+  String get dayNightGuideStepBlank => 'Tippe auf Neue leere Automation.';
+
+  @override
+  String get dayNightGuideStepGet => 'Füge „Prism-Hintergrundbild abrufen“ hinzu. Setze Quelle auf „Tag und Nacht“.';
+
+  @override
+  String dayNightGuideStepSet(String screens) {
+    return 'Füge „Hintergrundbild festlegen“ hinzu. Tippe auf den Pfeil daneben, wähle $screens und deaktiviere dann Vorschau zeigen.';
+  }
+
+  @override
+  String get dayNightGuideScreensHome => 'Home-Bildschirm';
+
+  @override
+  String get dayNightGuideScreensLock => 'Sperrbildschirm';
+
+  @override
+  String get dayNightGuideScreensBoth => 'Sperrbildschirm und Home-Bildschirm';
+
+  @override
+  String dayNightGuideStepRepeat(String time) {
+    return 'Erstelle auf dieselbe Weise eine zweite Automation für $time.';
+  }
+
+  @override
+  String get dayNightGuideSunTitle => 'Sonnenaufgang und Sonnenuntergang';
+
+  @override
+  String get dayNightGuideSunBody =>
+      'Wähle Sonnenaufgang oder Sonnenuntergang statt einer Uhrzeit. Setze bei „Prism-Hintergrundbild abrufen“ „Zeit“ auf „Tag“ für Sonnenaufgang und auf „Nacht“ für Sonnenuntergang.';
+
+  @override
   String get tipAction => 'Trinkgeld geben';
 
   @override

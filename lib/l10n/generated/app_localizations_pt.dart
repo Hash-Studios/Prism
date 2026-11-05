@@ -12516,6 +12516,150 @@ class AppLocalizationsPt extends AppLocalizations {
       'No iOS 16 não existe \"Executar Imediatamente\". Desative \"Perguntar Antes de Executar\".';
 
   @override
+  String get dayNightTitle => 'Dia e noite';
+
+  @override
+  String get dayNightSettingsSubtitle => 'Um papel de parede para o dia e outro para a noite';
+
+  @override
+  String get dayNightIntro =>
+      'Escolha um papel de parede para o dia e outro para a noite. O Atalhos troca os dois nos horários que você definir.';
+
+  @override
+  String get dayNightUseAsDay => 'Usar como papel de parede do dia';
+
+  @override
+  String get dayNightUseAsNight => 'Usar como papel de parede da noite';
+
+  @override
+  String get dayNightUseVariants => 'Usar a variante mais clara e a mais escura';
+
+  @override
+  String get dayNightDaySetToast => 'Papel de parede do dia definido.';
+
+  @override
+  String get dayNightNightSetToast => 'Papel de parede da noite definido.';
+
+  @override
+  String get dayNightPairSetToast => 'Papéis de parede do dia e da noite definidos.';
+
+  @override
+  String get dayNightOpenAction => 'Abrir';
+
+  @override
+  String get dayNightDayLabel => 'Dia';
+
+  @override
+  String get dayNightNightLabel => 'Noite';
+
+  @override
+  String get dayNightEmptyDay => 'Segure qualquer papel de parede e toque em \"Usar como papel de parede do dia\".';
+
+  @override
+  String get dayNightEmptyNight => 'Segure qualquer papel de parede e toque em \"Usar como papel de parede da noite\".';
+
+  @override
+  String get dayNightDayStarts => 'Dia começa';
+
+  @override
+  String get dayNightNightStarts => 'Noite começa';
+
+  @override
+  String dayNightFrom(String time) {
+    return 'A partir de $time';
+  }
+
+  @override
+  String dayNightPreviewLabel(String slot, String time) {
+    return 'Papel de parede de $slot, a partir de $time';
+  }
+
+  @override
+  String get dayNightTimesEqual => 'Escolha dois horários diferentes.';
+
+  @override
+  String get dayNightSwitch => 'Trocar os papéis de parede nestes horários';
+
+  @override
+  String get dayNightNeedsBoth => 'Primeiro escolha um papel de parede do dia e um da noite.';
+
+  @override
+  String get dayNightNeedsDownload => 'Baixe este papel de parede no Prism primeiro.';
+
+  @override
+  String get dayNightOpenWall => 'Abrir papel de parede';
+
+  @override
+  String get dayNightPreparing => 'Salvando os dois papéis de parede para uso offline';
+
+  @override
+  String get dayNightPrepareFailed =>
+      'Não foi possível salvar os papéis de parede para uso offline. Verifique sua conexão.';
+
+  @override
+  String get dayNightTryAgain => 'Tentar novamente';
+
+  @override
+  String get dayNightProTitle => 'Dia e noite é um recurso do Prism Pro.';
+
+  @override
+  String get dayNightOffEnded => 'Dia e noite está desativado porque seu plano ou passe do Prism Pro terminou.';
+
+  @override
+  String get dayNightSetUpAction => 'Configurar no Atalhos';
+
+  @override
+  String get dayNightGuideTitle => 'Troque os papéis de parede com o Atalhos';
+
+  @override
+  String dayNightGuideBody(String dayTime, String nightTime) {
+    return 'Crie 2 automações no Atalhos, uma para $dayTime e outra para $nightTime. Cada uma define o papel de parede do seu horário.';
+  }
+
+  @override
+  String get dayNightGuideStepAutomation => 'Nos Atalhos, toque em Automação e depois em +.';
+
+  @override
+  String dayNightGuideStepTime(String time) {
+    return 'Toque em Hora do Dia. Escolha $time e depois Diariamente.';
+  }
+
+  @override
+  String get dayNightGuideStepRun => 'Escolha Executar Imediatamente e depois toque em Avançar.';
+
+  @override
+  String get dayNightGuideStepBlank => 'Toque em Nova Automação em Branco.';
+
+  @override
+  String get dayNightGuideStepGet => 'Adicione \"Obter papel de parede do Prism\". Defina Origem como \"Dia e noite\".';
+
+  @override
+  String dayNightGuideStepSet(String screens) {
+    return 'Adicione \"Definir Foto de Fundo\". Toque na seta nela, escolha $screens e depois desative Mostrar Pré-Visualização.';
+  }
+
+  @override
+  String get dayNightGuideScreensHome => 'Tela de Início';
+
+  @override
+  String get dayNightGuideScreensLock => 'Tela Bloqueada';
+
+  @override
+  String get dayNightGuideScreensBoth => 'Tela Bloqueada e Tela de Início';
+
+  @override
+  String dayNightGuideStepRepeat(String time) {
+    return 'Crie a segunda automação do mesmo jeito para $time.';
+  }
+
+  @override
+  String get dayNightGuideSunTitle => 'Nascer e pôr do sol';
+
+  @override
+  String get dayNightGuideSunBody =>
+      'Escolha Nascer do Sol ou Pôr do Sol em vez de um horário. Em \"Obter papel de parede do Prism\", defina Horário como Dia para o nascer do sol e Noite para o pôr do sol.';
+
+  @override
   String get tipAction => 'Dar gorjeta ao criador';
 
   @override
@@ -26448,6 +26592,150 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get shortcutsAutomationIos16 =>
       'No iOS 16 não existe \"Executar Imediatamente\". Desative \"Perguntar Antes de Executar\".';
+
+  @override
+  String get dayNightTitle => 'Dia e noite';
+
+  @override
+  String get dayNightSettingsSubtitle => 'Um papel de parede para o dia e outro para a noite';
+
+  @override
+  String get dayNightIntro =>
+      'Escolha um papel de parede para o dia e outro para a noite. O Atalhos troca os dois nos horários que você definir.';
+
+  @override
+  String get dayNightUseAsDay => 'Usar como papel de parede do dia';
+
+  @override
+  String get dayNightUseAsNight => 'Usar como papel de parede da noite';
+
+  @override
+  String get dayNightUseVariants => 'Usar a variante mais clara e a mais escura';
+
+  @override
+  String get dayNightDaySetToast => 'Papel de parede do dia definido.';
+
+  @override
+  String get dayNightNightSetToast => 'Papel de parede da noite definido.';
+
+  @override
+  String get dayNightPairSetToast => 'Papéis de parede do dia e da noite definidos.';
+
+  @override
+  String get dayNightOpenAction => 'Abrir';
+
+  @override
+  String get dayNightDayLabel => 'Dia';
+
+  @override
+  String get dayNightNightLabel => 'Noite';
+
+  @override
+  String get dayNightEmptyDay => 'Segure qualquer papel de parede e toque em \"Usar como papel de parede do dia\".';
+
+  @override
+  String get dayNightEmptyNight => 'Segure qualquer papel de parede e toque em \"Usar como papel de parede da noite\".';
+
+  @override
+  String get dayNightDayStarts => 'Dia começa';
+
+  @override
+  String get dayNightNightStarts => 'Noite começa';
+
+  @override
+  String dayNightFrom(String time) {
+    return 'A partir de $time';
+  }
+
+  @override
+  String dayNightPreviewLabel(String slot, String time) {
+    return 'Papel de parede de $slot, a partir de $time';
+  }
+
+  @override
+  String get dayNightTimesEqual => 'Escolha dois horários diferentes.';
+
+  @override
+  String get dayNightSwitch => 'Trocar os papéis de parede nestes horários';
+
+  @override
+  String get dayNightNeedsBoth => 'Primeiro escolha um papel de parede do dia e um da noite.';
+
+  @override
+  String get dayNightNeedsDownload => 'Baixe este papel de parede no Prism primeiro.';
+
+  @override
+  String get dayNightOpenWall => 'Abrir papel de parede';
+
+  @override
+  String get dayNightPreparing => 'Salvando os dois papéis de parede para uso offline';
+
+  @override
+  String get dayNightPrepareFailed =>
+      'Não foi possível salvar os papéis de parede para uso offline. Verifique sua conexão.';
+
+  @override
+  String get dayNightTryAgain => 'Tentar novamente';
+
+  @override
+  String get dayNightProTitle => 'Dia e noite é um recurso do Prism Pro.';
+
+  @override
+  String get dayNightOffEnded => 'Dia e noite está desativado porque seu plano ou passe do Prism Pro terminou.';
+
+  @override
+  String get dayNightSetUpAction => 'Configurar no Atalhos';
+
+  @override
+  String get dayNightGuideTitle => 'Troque os papéis de parede com o Atalhos';
+
+  @override
+  String dayNightGuideBody(String dayTime, String nightTime) {
+    return 'Crie 2 automações no Atalhos, uma para $dayTime e outra para $nightTime. Cada uma define o papel de parede do seu horário.';
+  }
+
+  @override
+  String get dayNightGuideStepAutomation => 'Nos Atalhos, toque em Automação e depois em +.';
+
+  @override
+  String dayNightGuideStepTime(String time) {
+    return 'Toque em Hora do Dia. Escolha $time e depois Diariamente.';
+  }
+
+  @override
+  String get dayNightGuideStepRun => 'Escolha Executar Imediatamente e depois toque em Avançar.';
+
+  @override
+  String get dayNightGuideStepBlank => 'Toque em Nova Automação em Branco.';
+
+  @override
+  String get dayNightGuideStepGet => 'Adicione \"Obter papel de parede do Prism\". Defina Origem como \"Dia e noite\".';
+
+  @override
+  String dayNightGuideStepSet(String screens) {
+    return 'Adicione \"Definir Foto de Fundo\". Toque na seta nela, escolha $screens e depois desative Mostrar Pré-Visualização.';
+  }
+
+  @override
+  String get dayNightGuideScreensHome => 'Tela de Início';
+
+  @override
+  String get dayNightGuideScreensLock => 'Tela Bloqueada';
+
+  @override
+  String get dayNightGuideScreensBoth => 'Tela Bloqueada e Tela de Início';
+
+  @override
+  String dayNightGuideStepRepeat(String time) {
+    return 'Crie a segunda automação do mesmo jeito para $time.';
+  }
+
+  @override
+  String get dayNightGuideSunTitle => 'Nascer e pôr do sol';
+
+  @override
+  String get dayNightGuideSunBody =>
+      'Escolha Nascer do Sol ou Pôr do Sol em vez de um horário. Em \"Obter papel de parede do Prism\", defina Horário como Dia para o nascer do sol e Noite para o pôr do sol.';
 
   @override
   String get tipAction => 'Dar gorjeta ao criador';

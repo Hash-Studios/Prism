@@ -41,6 +41,7 @@
 		A11A00152F00000100A1A1A1 /* MediaFilesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11A00162F00000100A1A1A1 /* MediaFilesTests.swift */; };
 		A22B00012F00000200B2B2B2 /* PrismShortcutFavourites.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B00022F00000200B2B2B2 /* PrismShortcutFavourites.swift */; };
 		D8F0A1B12F10000100C0FFEE /* PrismShortcutFolders.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8F0A1B22F10000100C0FFEE /* PrismShortcutFolders.swift */; };
+		E1DA00012F10000100C0FFEE /* PrismDayNight.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DA00022F10000100C0FFEE /* PrismDayNight.swift */; };
 		A22B00032F00000200B2B2B2 /* PrismShortcutImageKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B00042F00000200B2B2B2 /* PrismShortcutImageKind.swift */; };
 		A22B00052F00000200B2B2B2 /* PrismFirestoreREST.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B00062F00000200B2B2B2 /* PrismFirestoreREST.swift */; };
 		A22B00072F00000200B2B2B2 /* PrismShortcutWallpaperLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B00082F00000200B2B2B2 /* PrismShortcutWallpaperLoader.swift */; };
@@ -48,6 +49,7 @@
 		A22B000B2F00000200B2B2B2 /* PrismShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B000C2F00000200B2B2B2 /* PrismShortcuts.swift */; };
 		A22B000D2F00000200B2B2B2 /* PrismShortcutsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B000E2F00000200B2B2B2 /* PrismShortcutsTests.swift */; };
 		D8F0A1B32F10000100C0FFEE /* PrismShortcutFoldersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8F0A1B42F10000100C0FFEE /* PrismShortcutFoldersTests.swift */; };
+		E1DA00032F10000100C0FFEE /* PrismDayNightTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DA00042F10000100C0FFEE /* PrismDayNightTests.swift */; };
 		A22B00112F00000200B2B2B2 /* PrismShortcutLocalFileResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B00122F00000200B2B2B2 /* PrismShortcutLocalFileResolver.swift */; };
 		A22B00132F00000200B2B2B2 /* PrismShortcutWallpaperFallback.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B00142F00000200B2B2B2 /* PrismShortcutWallpaperFallback.swift */; };
 		A33C00012F00000300C3C3C3 /* PrismAppIconApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = A33C00032F00000300C3C3C3 /* PrismAppIconApi.swift */; };
@@ -183,6 +185,7 @@
 		A11A00162F00000100A1A1A1 /* MediaFilesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaFilesTests.swift; sourceTree = "<group>"; };
 		A22B00022F00000200B2B2B2 /* PrismShortcutFavourites.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcutFavourites.swift; sourceTree = "<group>"; };
 		D8F0A1B22F10000100C0FFEE /* PrismShortcutFolders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcutFolders.swift; sourceTree = "<group>"; };
+		E1DA00022F10000100C0FFEE /* PrismDayNight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismDayNight.swift; sourceTree = "<group>"; };
 		A22B00042F00000200B2B2B2 /* PrismShortcutImageKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcutImageKind.swift; sourceTree = "<group>"; };
 		A22B00062F00000200B2B2B2 /* PrismFirestoreREST.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismFirestoreREST.swift; sourceTree = "<group>"; };
 		A22B00082F00000200B2B2B2 /* PrismShortcutWallpaperLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcutWallpaperLoader.swift; sourceTree = "<group>"; };
@@ -190,6 +193,7 @@
 		A22B000C2F00000200B2B2B2 /* PrismShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcuts.swift; sourceTree = "<group>"; };
 		A22B000E2F00000200B2B2B2 /* PrismShortcutsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcutsTests.swift; sourceTree = "<group>"; };
 		D8F0A1B42F10000100C0FFEE /* PrismShortcutFoldersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcutFoldersTests.swift; sourceTree = "<group>"; };
+		E1DA00042F10000100C0FFEE /* PrismDayNightTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismDayNightTests.swift; sourceTree = "<group>"; };
 		A22B00122F00000200B2B2B2 /* PrismShortcutLocalFileResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcutLocalFileResolver.swift; sourceTree = "<group>"; };
 		A22B00142F00000200B2B2B2 /* PrismShortcutWallpaperFallback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismShortcutWallpaperFallback.swift; sourceTree = "<group>"; };
 		A33C00032F00000300C3C3C3 /* PrismAppIconApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismAppIconApi.swift; sourceTree = "<group>"; };
@@ -301,6 +305,7 @@
 				A11A00162F00000100A1A1A1 /* MediaFilesTests.swift */,
 				A22B000E2F00000200B2B2B2 /* PrismShortcutsTests.swift */,
 				D8F0A1B42F10000100C0FFEE /* PrismShortcutFoldersTests.swift */,
+				E1DA00042F10000100C0FFEE /* PrismDayNightTests.swift */,
 				D78DB29DC77CCF28588E2FCB /* PrismWidgetCoreTests.swift */,
 			);
 			path = RunnerTests;
@@ -428,6 +433,7 @@
 			children = (
 				A22B00022F00000200B2B2B2 /* PrismShortcutFavourites.swift */,
 				D8F0A1B22F10000100C0FFEE /* PrismShortcutFolders.swift */,
+				E1DA00022F10000100C0FFEE /* PrismDayNight.swift */,
 				A22B00042F00000200B2B2B2 /* PrismShortcutImageKind.swift */,
 				A22B00122F00000200B2B2B2 /* PrismShortcutLocalFileResolver.swift */,
 				A22B00142F00000200B2B2B2 /* PrismShortcutWallpaperFallback.swift */,
@@ -782,6 +788,7 @@
 				A11A00152F00000100A1A1A1 /* MediaFilesTests.swift in Sources */,
 				A22B000D2F00000200B2B2B2 /* PrismShortcutsTests.swift in Sources */,
 				D8F0A1B32F10000100C0FFEE /* PrismShortcutFoldersTests.swift in Sources */,
+				E1DA00032F10000100C0FFEE /* PrismDayNightTests.swift in Sources */,
 				B4368DB205ADE53330950D72 /* PrismWidgetCoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -812,6 +819,7 @@
 				A77E00032F00000700E7E7E7 /* PrismLivePhotoHostApiImpl.swift in Sources */,
 				A22B00012F00000200B2B2B2 /* PrismShortcutFavourites.swift in Sources */,
 				D8F0A1B12F10000100C0FFEE /* PrismShortcutFolders.swift in Sources */,
+				E1DA00012F10000100C0FFEE /* PrismDayNight.swift in Sources */,
 				A22B00032F00000200B2B2B2 /* PrismShortcutImageKind.swift in Sources */,
 				A22B00112F00000200B2B2B2 /* PrismShortcutLocalFileResolver.swift in Sources */,
 				A22B00132F00000200B2B2B2 /* PrismShortcutWallpaperFallback.swift in Sources */,

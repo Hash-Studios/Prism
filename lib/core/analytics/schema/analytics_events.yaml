@@ -1523,6 +1523,17 @@ events:
         type: string
         required: false
   - id: auto_rotate_disabled
+  - id: day_night_enabled
+    fields:
+      - name: target
+        key: target
+        type: enum
+        enum: WallpaperTarget
+      - name: from_variants
+        key: from_variants
+        type: bool
+  - id: day_night_disabled
+  - id: day_night_ios_guide_opened
   - id: auto_rotate_folder_set
     fields:
       - name: item_count_bucket

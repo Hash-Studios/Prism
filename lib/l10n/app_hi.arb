@@ -11814,6 +11814,214 @@
   "@shortcutsAutomationIos16": {
     "description": "Note under the Step 2 automation lines for iOS 16, which has no Run Immediately option. Use the Shortcuts labels in this language."
   },
+  "dayNightTitle": "दिन और रात",
+  "@dayNightTitle": {
+    "description": "Title of the Day and night screen and its Settings row."
+  },
+  "dayNightSettingsSubtitle": "दिन के लिए एक वॉलपेपर, रात के लिए एक",
+  "@dayNightSettingsSubtitle": {
+    "description": "Subtitle of the Settings row."
+  },
+  "dayNightIntro": "दिन के लिए एक और रात के लिए एक वॉलपेपर चुनें। आपके तय किए समय पर Shortcuts उन्हें बदल देगा।",
+  "@dayNightIntro": {
+    "description": "Intro text at the top of the screen."
+  },
+  "dayNightUseAsDay": "दिन के वॉलपेपर के रूप में उपयोग करें",
+  "@dayNightUseAsDay": {
+    "description": "Wall hold menu item."
+  },
+  "dayNightUseAsNight": "रात के वॉलपेपर के रूप में उपयोग करें",
+  "@dayNightUseAsNight": {
+    "description": "Wall hold menu item."
+  },
+  "dayNightUseVariants": "सबसे हल्का और सबसे गहरा वेरिएंट उपयोग करें",
+  "@dayNightUseVariants": {
+    "description": "Wall hold menu item for a wall with colour variants. Sets the lightest as day wall and the darkest as night wall."
+  },
+  "dayNightDaySetToast": "दिन का वॉलपेपर सेट हो गया।",
+  "@dayNightDaySetToast": {
+    "description": "Toast after Use as day wall."
+  },
+  "dayNightNightSetToast": "रात का वॉलपेपर सेट हो गया।",
+  "@dayNightNightSetToast": {
+    "description": "Toast after Use as night wall."
+  },
+  "dayNightPairSetToast": "दिन और रात के वॉलपेपर सेट हो गए।",
+  "@dayNightPairSetToast": {
+    "description": "Toast after the variant one-tap pair."
+  },
+  "dayNightOpenAction": "खोलें",
+  "@dayNightOpenAction": {
+    "description": "Toast action that opens the Day and night screen."
+  },
+  "dayNightDayLabel": "दिन",
+  "@dayNightDayLabel": {
+    "description": "Label of the day wall card."
+  },
+  "dayNightNightLabel": "रात",
+  "@dayNightNightLabel": {
+    "description": "Label of the night wall card."
+  },
+  "dayNightEmptyDay": "कोई भी वॉलपेपर दबाकर रखें, फिर \"दिन के वॉलपेपर के रूप में उपयोग करें\" पर टैप करें।",
+  "@dayNightEmptyDay": {
+    "description": "Empty day card."
+  },
+  "dayNightEmptyNight": "कोई भी वॉलपेपर दबाकर रखें, फिर \"रात के वॉलपेपर के रूप में उपयोग करें\" पर टैप करें।",
+  "@dayNightEmptyNight": {
+    "description": "Empty night card."
+  },
+  "dayNightDayStarts": "दिन शुरू",
+  "@dayNightDayStarts": {
+    "description": "Time row label."
+  },
+  "dayNightNightStarts": "रात शुरू",
+  "@dayNightNightStarts": {
+    "description": "Time row label."
+  },
+  "dayNightFrom": "{time} से",
+  "@dayNightFrom": {
+    "description": "Caption under a phone preview. {time} is a formatted time such as 07:00.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNightPreviewLabel": "{slot} वॉलपेपर, {time} से",
+  "@dayNightPreviewLabel": {
+    "description": "Screen reader label of a phone preview. {slot} is Day or Night.",
+    "placeholders": {
+      "slot": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNightTimesEqual": "दो अलग-अलग समय चुनें।",
+  "@dayNightTimesEqual": {
+    "description": "Error when day and night start at the same time."
+  },
+  "dayNightSwitch": "इन समयों पर वॉलपेपर बदलें",
+  "@dayNightSwitch": {
+    "description": "Main switch. Describes the on state."
+  },
+  "dayNightNeedsBoth": "पहले दिन का और रात का वॉलपेपर चुनें।",
+  "@dayNightNeedsBoth": {
+    "description": "Hint under the disabled switch."
+  },
+  "dayNightNeedsDownload": "पहले इस वॉलपेपर को Prism में डाउनलोड करें।",
+  "@dayNightNeedsDownload": {
+    "description": "Error on a wall card when a protected wall has no downloaded original."
+  },
+  "dayNightOpenWall": "वॉलपेपर खोलें",
+  "@dayNightOpenWall": {
+    "description": "Button next to dayNightNeedsDownload. Opens the wall."
+  },
+  "dayNightPreparing": "दोनों वॉलपेपर ऑफ़लाइन उपयोग के लिए सेव हो रहे हैं",
+  "@dayNightPreparing": {
+    "description": "Progress text while walls are copied for offline use."
+  },
+  "dayNightPrepareFailed": "वॉलपेपर ऑफ़लाइन उपयोग के लिए सेव नहीं हो सके। अपना कनेक्शन जाँचें।",
+  "@dayNightPrepareFailed": {
+    "description": "Error after the offline copy fails."
+  },
+  "dayNightTryAgain": "फिर से कोशिश करें",
+  "@dayNightTryAgain": {
+    "description": "Button after dayNightPrepareFailed."
+  },
+  "dayNightProTitle": "दिन और रात Prism Pro की सुविधा है।",
+  "@dayNightProTitle": {
+    "description": "Pro card title for a free user."
+  },
+  "dayNightOffEnded": "आपका Prism Pro प्लान या पास खत्म होने के कारण दिन और रात बंद है।",
+  "@dayNightOffEnded": {
+    "description": "One toast when Pro or the pass ends."
+  },
+  "dayNightSetUpAction": "Shortcuts में सेट करें",
+  "@dayNightSetUpAction": {
+    "description": "Button that opens the guide sheet."
+  },
+  "dayNightGuideTitle": "Shortcuts से वॉलपेपर बदलें",
+  "@dayNightGuideTitle": {
+    "description": "Guide sheet title."
+  },
+  "dayNightGuideBody": "Shortcuts में 2 ऑटोमेशन बनाएँ, एक {dayTime} के लिए और एक {nightTime} के लिए। हर एक अपने समय से मेल खाता वॉलपेपर सेट करेगा।",
+  "@dayNightGuideBody": {
+    "description": "Guide sheet intro.",
+    "placeholders": {
+      "dayTime": {
+        "type": "String"
+      },
+      "nightTime": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNightGuideStepAutomation": "Shortcuts में ऑटोमेशन पर टैप करें, फिर + पर टैप करें।",
+  "@dayNightGuideStepAutomation": {
+    "description": "Guide step."
+  },
+  "dayNightGuideStepTime": "दिन का समय पर टैप करें। {time} चुनें, फिर प्रतिदिन चुनें।",
+  "@dayNightGuideStepTime": {
+    "description": "Guide step. {time} is the day or night start.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNightGuideStepRun": "तुरंत चलाएँ चुनें, फिर अगला पर टैप करें।",
+  "@dayNightGuideStepRun": {
+    "description": "Guide step."
+  },
+  "dayNightGuideStepBlank": "नया खाली ऑटोमेशन पर टैप करें।",
+  "@dayNightGuideStepBlank": {
+    "description": "Guide step."
+  },
+  "dayNightGuideStepGet": "\"Prism वॉलपेपर पाएँ\" जोड़ें। स्रोत को \"दिन और रात\" पर सेट करें।",
+  "@dayNightGuideStepGet": {
+    "description": "Guide step. \"Get Prism Wallpaper\" and \"Day and night\" are names in the Shortcuts app."
+  },
+  "dayNightGuideStepSet": "\"Set Wallpaper Photo\" जोड़ें। उसके तीर को दबाएँ, {screens} चुनें, फिर \"Show Preview\" बंद करें।",
+  "@dayNightGuideStepSet": {
+    "description": "Guide step. {screens} is one of the 3 screen names below.",
+    "placeholders": {
+      "screens": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNightGuideScreensHome": "Home Screen",
+  "@dayNightGuideScreensHome": {
+    "description": "Name of the option in Apple's Set Wallpaper Photo action."
+  },
+  "dayNightGuideScreensLock": "Lock Screen",
+  "@dayNightGuideScreensLock": {
+    "description": "Name of the option in Apple's Set Wallpaper Photo action."
+  },
+  "dayNightGuideScreensBoth": "Lock Screen and Home Screen",
+  "@dayNightGuideScreensBoth": {
+    "description": "Both options in Apple's Set Wallpaper Photo action."
+  },
+  "dayNightGuideStepRepeat": "उसी तरह {time} के लिए दूसरा ऑटोमेशन बनाएँ।",
+  "@dayNightGuideStepRepeat": {
+    "description": "Last guide step. {time} is the night start.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "dayNightGuideSunTitle": "सूर्योदय और सूर्यास्त",
+  "@dayNightGuideSunTitle": {
+    "description": "Guide section title."
+  },
+  "dayNightGuideSunBody": "समय की जगह सूर्योदय या सूर्यास्त चुनें। \"Prism वॉलपेपर पाएँ\" में समय को सूर्योदय के लिए \"दिन\" और सूर्यास्त के लिए \"रात\" पर सेट करें।",
+  "@dayNightGuideSunBody": {
+    "description": "Guide section body. \"Time\", \"Day\" and \"Night\" are names in the Shortcuts app."
+  },
   "tipAction": "क्रिएटर को टिप दें",
   "@tipAction": {
     "description": "Wall detail: opens the sheet to tip the wall's creator coins"

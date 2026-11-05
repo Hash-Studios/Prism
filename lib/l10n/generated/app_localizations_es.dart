@@ -12331,6 +12331,150 @@ class AppLocalizationsEs extends AppLocalizations {
       'En iOS 16 no existe “Ejecutar inmediatamente”. Desactiva “Preguntar antes de ejecutar”.';
 
   @override
+  String get dayNightTitle => 'Día y noche';
+
+  @override
+  String get dayNightSettingsSubtitle => 'Un fondo para el día y otro para la noche';
+
+  @override
+  String get dayNightIntro =>
+      'Elige un fondo para el día y otro para la noche. Atajos los cambia a las horas que definas.';
+
+  @override
+  String get dayNightUseAsDay => 'Usar como fondo de día';
+
+  @override
+  String get dayNightUseAsNight => 'Usar como fondo de noche';
+
+  @override
+  String get dayNightUseVariants => 'Usar la variante más clara y la más oscura';
+
+  @override
+  String get dayNightDaySetToast => 'Fondo de día definido.';
+
+  @override
+  String get dayNightNightSetToast => 'Fondo de noche definido.';
+
+  @override
+  String get dayNightPairSetToast => 'Fondos de día y de noche definidos.';
+
+  @override
+  String get dayNightOpenAction => 'Abrir';
+
+  @override
+  String get dayNightDayLabel => 'Día';
+
+  @override
+  String get dayNightNightLabel => 'Noche';
+
+  @override
+  String get dayNightEmptyDay => 'Mantén pulsado cualquier fondo y luego toca “Usar como fondo de día”.';
+
+  @override
+  String get dayNightEmptyNight => 'Mantén pulsado cualquier fondo y luego toca “Usar como fondo de noche”.';
+
+  @override
+  String get dayNightDayStarts => 'El día empieza';
+
+  @override
+  String get dayNightNightStarts => 'La noche empieza';
+
+  @override
+  String dayNightFrom(String time) {
+    return 'Desde las $time';
+  }
+
+  @override
+  String dayNightPreviewLabel(String slot, String time) {
+    return 'Fondo de $slot, desde las $time';
+  }
+
+  @override
+  String get dayNightTimesEqual => 'Elige dos horas diferentes.';
+
+  @override
+  String get dayNightSwitch => 'Cambiar los fondos a estas horas';
+
+  @override
+  String get dayNightNeedsBoth => 'Primero elige un fondo de día y uno de noche.';
+
+  @override
+  String get dayNightNeedsDownload => 'Descarga primero este fondo en Prism.';
+
+  @override
+  String get dayNightOpenWall => 'Abrir fondo';
+
+  @override
+  String get dayNightPreparing => 'Guardando ambos fondos para usarlos sin conexión';
+
+  @override
+  String get dayNightPrepareFailed =>
+      'No se pudieron guardar los fondos para usarlos sin conexión. Revisa tu conexión.';
+
+  @override
+  String get dayNightTryAgain => 'Intentar de nuevo';
+
+  @override
+  String get dayNightProTitle => 'Día y noche es una función de Prism Pro.';
+
+  @override
+  String get dayNightOffEnded => 'Día y noche está desactivado porque terminó tu plan o pase de Prism Pro.';
+
+  @override
+  String get dayNightSetUpAction => 'Configurar en Atajos';
+
+  @override
+  String get dayNightGuideTitle => 'Cambia los fondos con Atajos';
+
+  @override
+  String dayNightGuideBody(String dayTime, String nightTime) {
+    return 'Crea 2 automatizaciones en Atajos, una para $dayTime y otra para $nightTime. Cada una define el fondo que corresponde a su hora.';
+  }
+
+  @override
+  String get dayNightGuideStepAutomation => 'En Atajos, toca Automatización y luego +.';
+
+  @override
+  String dayNightGuideStepTime(String time) {
+    return 'Toca Hora del día. Elige $time y luego Diariamente.';
+  }
+
+  @override
+  String get dayNightGuideStepRun => 'Elige Ejecutar inmediatamente y luego toca Siguiente.';
+
+  @override
+  String get dayNightGuideStepBlank => 'Toca Nueva automatización vacía.';
+
+  @override
+  String get dayNightGuideStepGet => 'Añade “Obtener fondo de pantalla de Prism”. Define Origen como “Día y noche”.';
+
+  @override
+  String dayNightGuideStepSet(String screens) {
+    return 'Añade “Establecer foto de fondo de pantalla”. Toca la flecha, elige $screens y luego desactiva Mostrar vista previa.';
+  }
+
+  @override
+  String get dayNightGuideScreensHome => 'Pantalla de inicio';
+
+  @override
+  String get dayNightGuideScreensLock => 'Pantalla bloqueada';
+
+  @override
+  String get dayNightGuideScreensBoth => 'Pantalla bloqueada y pantalla de inicio';
+
+  @override
+  String dayNightGuideStepRepeat(String time) {
+    return 'Crea una segunda automatización de la misma forma para $time.';
+  }
+
+  @override
+  String get dayNightGuideSunTitle => 'Amanecer y atardecer';
+
+  @override
+  String get dayNightGuideSunBody =>
+      'Elige Amanecer o Atardecer en lugar de una hora. En “Obtener fondo de pantalla de Prism”, define Hora como “Día” para el amanecer y como “Noche” para el atardecer.';
+
+  @override
   String get tipAction => 'Dar propina';
 
   @override
