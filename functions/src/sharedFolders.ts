@@ -337,7 +337,19 @@ export async function removeFolderMembershipsBetween(a: string, b: string): Prom
 /** onFolderWritten, after a delete: the folder's invites and pending push go too. */
 export async function cleanupDeletedFolder(folderId: string): Promise<void> {
   const invites = await db.collection(FOLDER_INVITES).where("folderId", "==", folderId).get();
-  await Promise.all([...invites.docs.map((invite) => invite.ref.delete()), activityRef(folderId).delete()]);
+  const receipts = await activityRef(folderId).collection("items").get();
+  const refs = [...invites.docs.map((invite) => invite.ref), ...receipts.docs.map((receipt) => receipt.ref),
+    activityRef(folderId)];
+  for (let offset = 0; offset < refs.length; offset += 400) {
+    const cleaned = await db.runTransaction(async (tx) => {
+      const folder = await tx.get(folderRef(folderId));
+      if (folder.exists) return false;
+      const snapshots = await Promise.all(refs.slice(offset, offset + 400).map((ref) => tx.get(ref)));
+      snapshots.filter((snapshot) => snapshot.exists).forEach((snapshot) => tx.delete(snapshot.ref));
+      return true;
+    });
+    if (!cleaned) return;
+  }
 }
 
 /**

@@ -232,10 +232,11 @@ test("cleanupDeletedFolder removes the folder's invites and its activity doc onl
   const store = setup(t, {
     "folderInvites/ABCDEFGHJK": invite({folderId: "f1"}),
     "folderInvites/BCDEFGHJKM": invite({code: "BCDEFGHJKM", folderId: "f2"}),
-    "folderActivity/f1": {folderId: "f1", pending: {k1: "b"}, firstPendingAt: at(NOW), dueAt: at(NOW + HOUR),
+    "folderActivity/f1": {folderId: "f1", folderCreatedAt: at(1), pending: {k1: "b"}, firstPendingAt: at(NOW), dueAt: at(NOW + HOUR),
       lastSentAt: null},
-    "folderActivity/f2": {folderId: "f2", pending: {}, firstPendingAt: null, dueAt: null, lastSentAt: null},
+    "folderActivity/f2": {folderId: "f2", folderCreatedAt: at(1), pending: {}, firstPendingAt: null, dueAt: null, lastSentAt: null},
   });
+  store.delete("folders/f1");
   await cleanupDeletedFolder("f1");
   assert.equal(store.has("folderInvites/ABCDEFGHJK"), false);
   assert.equal(store.has("folderActivity/f1"), false);
@@ -397,4 +398,19 @@ test("two different invites racing for the tenth editor slot cannot overfill the
   const refused = results.find((result) => result.status === "rejected");
   assert.equal((refused as PromiseRejectedResult).reason.message, "full");
   assert.equal((store.get("folders/f1")?.memberIds as string[]).length, 10);
+});
+
+
+test("a delayed delete cleanup does not remove invites or activity for a recreated folder id", async (t) => {
+  const store = setup(t, {
+    "folderInvites/ABCDEFGHJK": invite({folderId: "f1"}),
+    "folderActivity/f1": {folderId: "f1", folderCreatedAt: at(1), pending: {k1: "b"}, firstPendingAt: at(NOW), dueAt: at(NOW + HOUR),
+      lastSentAt: null},
+  });
+
+  // The old folder's delete trigger can run after Firestore has already reused its id.
+  await cleanupDeletedFolder("f1");
+
+  assert.equal(store.has(`folderInvites/${CODE}`), true);
+  assert.equal(store.has("folderActivity/f1"), true);
 });
