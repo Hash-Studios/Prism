@@ -1,3 +1,4 @@
+import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/utils/localized_relative_time.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view.dart';
@@ -149,6 +150,7 @@ class _DesktopSubmissionCardState extends State<DesktopSubmissionCard> {
       child: url.isEmpty
           ? missing()
           : CachedNetworkImage(
+              cacheManager: PrismImageCache.instance,
               imageUrl: url,
               fit: BoxFit.cover,
               placeholder: (_, _) => ColoredBox(color: cs.surfaceContainerHighest),

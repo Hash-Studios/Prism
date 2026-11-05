@@ -90,7 +90,7 @@ class DesktopSidePreview extends StatelessWidget {
       );
     }
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Expanded(flex: 2, child: phoneColumn),
         const SizedBox(width: PrismSpace.md),

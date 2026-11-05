@@ -217,7 +217,9 @@ class _DesktopUploadScreenState extends State<DesktopUploadScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
+            if (errorText != null) ...<Widget>[errorText, const SizedBox(height: PrismSpace.sm)],
             PrismButton(
+              maxLines: 2,
               label: bytes == null ? l10n.desktopUploadChooseImage : l10n.desktopUploadChooseAnother,
               variant: PrismButtonVariant.tonal,
               expand: true,
@@ -225,6 +227,7 @@ class _DesktopUploadScreenState extends State<DesktopUploadScreen> {
             ),
             const SizedBox(height: PrismSpace.sm),
             PrismButton(
+              maxLines: 2,
               label: l10n.desktopUploadSubmit,
               expand: true,
               loading: _sending,
@@ -252,10 +255,7 @@ class _DesktopUploadScreenState extends State<DesktopUploadScreen> {
               aspectLabel: _ok?.aspect.label,
             ),
             const SizedBox(height: PrismSpace.lg),
-            if (bytes == null)
-              Text(l10n.desktopUploadRequirements, style: PrismTextStyles.body(context))
-            else if (errorText != null)
-              errorText,
+            if (bytes == null) Text(l10n.desktopUploadRequirements, style: PrismTextStyles.body(context)),
           ],
         ),
       ),

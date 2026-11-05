@@ -80,6 +80,7 @@ class _DesktopVersionActionState extends State<DesktopVersionAction> {
           DesktopMenuState.inReview => l10n.desktopUploadInReview,
         };
         return PrismButton(
+          maxLines: 2,
           label: label,
           icon: inReview ? Icons.hourglass_top_rounded : Icons.desktop_windows_outlined,
           variant: PrismButtonVariant.tonal,
