@@ -4,7 +4,7 @@
 // notification with the job's gallery image. A tap resolves it through NotificationRouteMapper and routeForPageLink,
 // the code a real push tap uses, and opens the page.
 // Run: fvm flutter run -t test/qa_render/followed_topics_device_main.dart -d <device>
-// Options: --dart-define=QA_DARK=true, --dart-define=QA_TEXT_SCALE=2
+// Options: --dart-define=QA_DARK=true, --dart-define=QA_LARGE_TEXT=true
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -57,7 +57,7 @@ import '../support/fake_user_block_repository.dart';
 import '../support/in_memory_local_store.dart';
 
 const bool _dark = bool.fromEnvironment('QA_DARK');
-const String _textScale = String.fromEnvironment('QA_TEXT_SCALE', defaultValue: '1');
+const bool _largeText = bool.fromEnvironment('QA_LARGE_TEXT');
 
 /// The `data` of the FCM message that sendTopicDigests sent on the emulator (tool/qa_topic_digest.mjs, 2026-11-05).
 const Map<String, String> _jobPushData = <String, String>{
@@ -276,7 +276,7 @@ Future<void> main() async {
           darkTheme: kDarkTheme,
           themeMode: _dark ? ThemeMode.dark : ThemeMode.light,
           builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(double.parse(_textScale))),
+            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(_largeText ? 2 : 1)),
             child: child!,
           ),
           home: const _QaHome(),
