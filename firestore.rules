@@ -409,9 +409,9 @@ service cloud.firestore {
         return folder.ownerId == request.auth.uid || request.auth.uid in folder.get('memberIds', []);
       }
 
-      function folderWritesOpen() {
-        return !exists(/databases/$(database)/documents/creatorDeletionState/$(request.auth.uid))
-            || get(/databases/$(database)/documents/creatorDeletionState/$(request.auth.uid)).data.get('closed', false) != true;
+      function folderWritesOpen(uid) {
+        return !exists(/databases/$(database)/documents/creatorDeletionState/$(uid))
+            || get(/databases/$(database)/documents/creatorDeletionState/$(uid)).data.get('closed', false) != true;
       }
 
       function validFolderName(name) {
@@ -451,12 +451,12 @@ service cloud.firestore {
       allow read: if isSignedIn() && canEdit(resource.data);
       allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
       allow create: if isSignedIn()
-          && folderWritesOpen()
+          && folderWritesOpen(request.auth.uid)
           && request.resource.data.keys().hasOnly(['ownerId', 'name', 'createdAt', 'updatedAt', 'itemCount', 'covers'])
           && request.resource.data.ownerId == request.auth.uid
           && validFolderFields(request.resource.data);
       allow update: if isSignedIn()
-          && folderWritesOpen()
+          && folderWritesOpen(request.auth.uid)
           && resource.data.ownerId == request.auth.uid
           && request.resource.data.ownerId == resource.data.ownerId
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'updatedAt', 'itemCount', 'covers'])
@@ -486,14 +486,16 @@ service cloud.firestore {
         allow delete: if isSignedIn() && (
             (resource.data.ownerId == request.auth.uid
                 && (!folderExists() || folder().ownerId == request.auth.uid))
-            || (folderExists() && folderWritesOpen() && request.auth.uid in folder().get('memberIds', [])
+            || (folderExists() && folderWritesOpen(request.auth.uid) && request.auth.uid in folder().get('memberIds', [])
                 && resource.data.ownerId == folder().ownerId));
         allow create: if isSignedIn()
-            && folderWritesOpen()
+            && folderWritesOpen(request.auth.uid)
+            && folderWritesOpen(folderAfter().ownerId)
             && canEdit(folderAfter())
             && validFolderItem(itemKey, folderAfter().ownerId);
         allow update: if isSignedIn()
-            && folderWritesOpen()
+            && folderWritesOpen(request.auth.uid)
+            && folderWritesOpen(folderAfter().ownerId)
             && canEdit(folderAfter())
             && resource.data.ownerId == folderAfter().ownerId
             && validFolderItem(itemKey, folderAfter().ownerId);
