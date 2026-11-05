@@ -110,6 +110,65 @@ void main() {
     verifyNever(() => dayNightBloc.add(any()));
     await tester.pumpWidget(const SizedBox.shrink());
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('an Android pass expiry sends a fresh unentitled session event', (tester) async {
+    final _MockDayNightBloc dayNightBloc = _MockDayNightBloc();
+    final _MockSessionBloc sessionBloc = _MockSessionBloc();
+    final StreamController<DayNightState> states = StreamController<DayNightState>();
+    final DateTime passUntil = DateTime.now().add(const Duration(minutes: 1));
+    const SessionState session = SessionState(
+      status: LoadStatus.success,
+      session: SessionEntity(userId: 'account-a', loggedIn: true, premium: false, subscriptionTier: 'free'),
+    );
+    CoinsService.instance.setPassesForTest(Passes(autoRotatePassUntil: passUntil));
+    when(() => dayNightBloc.state).thenReturn(DayNightState.initial());
+    whenListen(dayNightBloc, states.stream, initialState: DayNightState.initial());
+    whenListen(sessionBloc, const Stream<SessionState>.empty(), initialState: session);
+    addTearDown(() => states.close());
+
+    await tester.pumpWidget(_listenerTree(dayNightBloc, sessionBloc));
+    await tester.pump();
+    verify(() => dayNightBloc.add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'account-a'))).called(2);
+
+    await tester.pump(const Duration(minutes: 1));
+    verify(() => dayNightBloc.add(const DayNightEvent.entitlementChanged(isPro: false, userId: 'account-a'))).called(1);
+    await tester.pumpWidget(const SizedBox.shrink());
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('an old account pass timer cannot lapse the replacement account', (tester) async {
+    final _MockDayNightBloc dayNightBloc = _MockDayNightBloc();
+    final _MockSessionBloc sessionBloc = _MockSessionBloc();
+    final StreamController<DayNightState> states = StreamController<DayNightState>();
+    final StreamController<SessionState> sessions = StreamController<SessionState>();
+    final DateTime passUntil = DateTime.now().add(const Duration(minutes: 1));
+    const SessionState accountA = SessionState(
+      status: LoadStatus.success,
+      session: SessionEntity(userId: 'account-a', loggedIn: true, premium: false, subscriptionTier: 'free'),
+    );
+    const SessionState accountB = SessionState(
+      status: LoadStatus.success,
+      session: SessionEntity(userId: 'account-b', loggedIn: true, premium: false, subscriptionTier: 'free'),
+    );
+    CoinsService.instance.setPassesForTest(Passes(autoRotatePassUntil: passUntil));
+    when(() => dayNightBloc.state).thenReturn(DayNightState.initial());
+    whenListen(dayNightBloc, states.stream, initialState: DayNightState.initial());
+    whenListen(sessionBloc, sessions.stream, initialState: accountA);
+    addTearDown(() async {
+      await states.close();
+      await sessions.close();
+    });
+
+    await tester.pumpWidget(_listenerTree(dayNightBloc, sessionBloc));
+    await tester.pump();
+    app_state.prismUser = profileUser(id: 'account-b');
+    sessions.add(accountB);
+    await tester.pump();
+    await tester.pump(const Duration(minutes: 1));
+
+    verifyNever(() => dayNightBloc.add(const DayNightEvent.entitlementChanged(isPro: false, userId: 'account-a')));
+    verify(() => dayNightBloc.add(const DayNightEvent.entitlementChanged(isPro: false, userId: 'account-b'))).called(1);
+    await tester.pumpWidget(const SizedBox.shrink());
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }
 
 Widget _listenerTree(DayNightBloc dayNightBloc, SessionBloc sessionBloc) {

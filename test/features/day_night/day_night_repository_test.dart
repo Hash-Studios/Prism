@@ -409,6 +409,25 @@ void main() {
       expect(request.entries?.last?.source?.source, original.path);
     });
 
+    test('publish does not restore lastSlot when a newer unpublish finishes first', () async {
+      final Completer<void> startEntered = Completer<void>();
+      final Completer<ByteData?> finishStart = Completer<ByteData?>();
+      _mockHostMethod('startDailySchedule', (ByteData? message) {
+        startEntered.complete();
+        return finishStart.future;
+      });
+      _mockHostMethod('stopDailySchedule', (ByteData? message) async => _codec.encodeMessage(<Object?>[true]));
+
+      final Future<void> publishing = repository.publish(DayNightPair(day: _httpsDay, night: _httpsNight));
+      await startEntered.future;
+      final Future<void> stopping = repository.unpublish();
+      await Future<void>.delayed(Duration.zero);
+      finishStart.complete(_codec.encodeMessage(<Object?>[true]));
+      await Future.wait(<Future<void>>[publishing, stopping]);
+
+      expect(SettingsLocalDataSource(store).get<String>('dayNight.lastSlot', defaultValue: ''), isEmpty);
+    });
+
     test('unpublish sends stopDailySchedule', () async {
       _mockHostMethod('stopDailySchedule', (ByteData? message) async {
         hostCalls.add('stopDailySchedule');
@@ -445,6 +464,55 @@ void main() {
       mockApply(pigeon.DailyScheduleApplyOutcomeData.alreadyCurrent, 0);
 
       expect(await repository.applyOnOpen(), (running: true, switched: null));
+    });
+
+    test('applyOnOpen does not restore lastSlot after a newer unpublish', () async {
+      final Completer<void> applyEntered = Completer<void>();
+      final Completer<ByteData?> finishApply = Completer<ByteData?>();
+      _mockHostMethod('applyCurrentScheduleEntry', (ByteData? message) {
+        applyEntered.complete();
+        return finishApply.future;
+      });
+      _mockHostMethod('stopDailySchedule', (ByteData? message) async => _codec.encodeMessage(<Object?>[true]));
+
+      final Future<DayNightOpenResult> applying = repository.applyOnOpen();
+      await applyEntered.future;
+      final Future<void> stopping = repository.unpublish();
+      await Future<void>.delayed(Duration.zero);
+      finishApply.complete(
+        _codec.encodeMessage(<Object?>[
+          pigeon.DailyScheduleApplyResultData(
+            outcome: pigeon.DailyScheduleApplyOutcomeData.alreadyCurrent,
+            entryIndex: 0,
+          ),
+        ]),
+      );
+      await applying;
+      await stopping;
+
+      expect(SettingsLocalDataSource(store).get<String>('dayNight.lastSlot', defaultValue: ''), isEmpty);
+    });
+
+    test('a queued applyOnOpen does not call the host after the account changes', () async {
+      final Completer<void> startEntered = Completer<void>();
+      final Completer<ByteData?> finishStart = Completer<ByteData?>();
+      _mockHostMethod('startDailySchedule', (ByteData? message) {
+        startEntered.complete();
+        return finishStart.future;
+      });
+      mockApply(pigeon.DailyScheduleApplyOutcomeData.applied, 0);
+
+      final Future<void> publishing = repository.publish(DayNightPair(day: _httpsDay, night: _httpsNight));
+      await startEntered.future;
+      final Future<DayNightOpenResult> applying = repository.applyOnOpen();
+      await Future<void>.delayed(Duration.zero);
+      app_state.prismUser = profileUser(id: 'owner-b');
+      finishStart.complete(_codec.encodeMessage(<Object?>[true]));
+      await publishing;
+      await applying;
+
+      expect(hostCalls, isEmpty);
+      expect(SettingsLocalDataSource(store).get<String>('dayNight.lastSlot', defaultValue: ''), isEmpty);
     });
 
     test('applyOnOpen reports not running when the device schedule is gone', () async {

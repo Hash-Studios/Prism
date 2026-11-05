@@ -27,9 +27,24 @@ Future<bool> confirmAutoRotateMode(BuildContext context, AutoRotateMode mode) as
   if (!confirmed || !context.mounted) return false;
   switch (mode) {
     case AutoRotateMode.dayNight:
-      context.read<AutoRotateBloc>().add(const AutoRotateEvent.toggled(false));
+      final AutoRotateBloc bloc = context.read<AutoRotateBloc>();
+      if (!bloc.state.config.enabled && !bloc.state.status.isRunning) return true;
+      final Future<AutoRotateState> stopped = bloc.stream.firstWhere(
+        (AutoRotateState state) => !state.config.enabled && !state.starting,
+      );
+      bloc.add(const AutoRotateEvent.toggled(false));
+      final AutoRotateState state = await stopped;
+      if (state.status.isRunning) return false;
     case AutoRotateMode.playlist:
-      context.read<DayNightBloc>().add(const DayNightEvent.toggled(false));
+      final DayNightBloc bloc = context.read<DayNightBloc>();
+      if (!bloc.state.pair.enabled && !bloc.state.preparing) return true;
+      final Future<DayNightState> stopped = bloc.stream.firstWhere(
+        (DayNightState state) => !state.preparing && (!state.pair.enabled || state.issue != null),
+      );
+      bloc.add(const DayNightEvent.toggled(false));
+      final DayNightState state = await stopped;
+      if (state.pair.enabled) return false;
   }
+  if (!context.mounted) return false;
   return true;
 }

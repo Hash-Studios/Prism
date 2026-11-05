@@ -229,6 +229,7 @@ Day and night uses the same gate as auto-rotate: Prism Pro or an active 7-day au
 - A free user sees "Day and night is a Prism Pro feature." and "See Prism Pro" in place of the switch.
 - When Pro or the pass ends, the same lapse rule as auto-rotate applies. `DayNightSessionListener` sends the session to `DayNightBloc` when the app starts, on resume, and when the session or the passes change. If the mode was on, the bloc turns it off, removes the Shortcuts snapshot and shows one toast: "Day and night is off because your Prism Pro plan or pass ended." Signing out or switching account turns it off with no toast.
 - Prism stores the end of an auto-rotate pass with the pair. At launch the passes can load after the session. Until then, a stored pass that has not ended keeps the mode on. Another account never uses a stored pass.
+- On Android, the listener also sets a timer for the active pass end. It checks the current account before sending the lapse event, and cancels the old timer when the account or pass changes. This timer runs only while the app process is alive; resume checks cover a pass that ended while the process was stopped.
 
 ### iOS: how it works
 
@@ -292,7 +293,7 @@ Android can deliver the alarm some minutes late. The screen shows the times as "
 
 The plugin applies the current wall again after a reboot, a clock change, a time zone change or an app update.
 
-On app open and on each resume, the bloc calls `applyOnOpen`. That call runs `AsyncWallpaper.applyCurrentScheduleEntry`. If the plugin schedule is missing or has failed, for example because a cache is missing, the bloc starts it again. If that start fails, Day and night turns off and shows the error.
+On app open and on each resume, the bloc reloads the current account's saved pair. If it is still enabled, the bloc calls `applyOnOpen`. That call runs `AsyncWallpaper.applyCurrentScheduleEntry`. If the plugin schedule is missing or has failed, for example because a cache is missing, the bloc starts it again. If that start fails, Day and night turns off and shows the error. An account switch stops the old schedule before publishing the new account's enabled pair.
 
 The code is in `DayNightRepositoryImpl` (`_startSchedule`, `applyOnOpen`, `_stopSchedule`) and `DayNightBloc` (`_onEntitlementChanged`, `_resume`).
 
@@ -302,7 +303,7 @@ Day and night is one of the two `AutoRotateMode` values. The other value is `pla
 
 Before one mode turns on while the other is on, a sheet asks the user. The sheet title is "Turn off auto-rotate?" when the user turns on Day and night. The title is "Turn off Day and night?" when the user turns on auto-rotate. When the user confirms, the other mode turns off. Then the new mode turns on. When the user cancels, the new mode stays off.
 
-The plugin also enforces this rule. Starting a daily schedule stops rotation. Starting rotation stops the daily schedule.
+The plugin also enforces this rule. Starting a daily schedule stops rotation. Starting rotation stops the daily schedule. Prism shares an Android schedule coordinator between the repositories so a playlist cannot start while Day and night is preparing or remains enabled in the saved pair. Starting or reconciling Day and night clears the saved playlist-enabled flag. A resume reloads the saved pair so it does not restart Day and night after the user chose playlist mode.
 
 The Pro gate and the Pro lapse rule are the same as for auto-rotate. A lapse turns the pair off and stops the plugin schedule. Turning off Day and night also stops the plugin schedule. Signing out and switching account also stop it.
 
@@ -312,7 +313,8 @@ The Pro gate and the Pro lapse rule are the same as for auto-rotate. A lapse tur
 - `day_night_disabled` has no fields.
 - `day_night_ios_guide_opened` has no fields.
 - `day_night_switched` has the fields `slot` and `source`. The field `slot` is `day` or `night`. The field `source` is `alarm` or `app_open`.
-- Prism sends this event on Android only, from the app open apply. The source is `app_open` when that apply changes the wall now. The source is `alarm` when the plugin alarm changed the wall since Prism last saw it. Prism stores the last slot it saw in `dayNight.lastSlot`.
+- Prism sends this event on Android only, from the app open apply. The source is `app_open` when that apply changes the wall now. The source is `alarm` when the plugin already changed to a different slot since Prism last saw it. This includes background applies after an alarm, reboot, clock or time zone change, or app update. Prism stores the last slot it saw in `dayNight.lastSlot`.
+- This reconciles the current slot; it is not a switch history. If the plugin returns to the same slot before Prism opens, no event records the intervening switches. Republishing a missing schedule also sends no switch event.
 - iOS sends no switch event. Shortcuts sets the wallpaper on iOS, and Prism does not see it.
 
 ### How to test

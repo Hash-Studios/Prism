@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
@@ -68,7 +70,12 @@ void main() {
 
   testWidgets('playlist mode with Day and night on asks, and confirm turns it off and returns true', (tester) async {
     final List<bool> results = <bool>[];
-    whenListen(dayNightBloc, const Stream<DayNightState>.empty(), initialState: DayNightState(pair: _enabledPair));
+    final StreamController<DayNightState> states = StreamController<DayNightState>();
+    addTearDown(states.close);
+    whenListen(dayNightBloc, states.stream, initialState: DayNightState(pair: _enabledPair));
+    when(() => dayNightBloc.add(const DayNightEvent.toggled(false))).thenAnswer((_) {
+      states.add(DayNightState(pair: _enabledPair.copyWith(enabled: false)));
+    });
     await pumpHarness(tester, mode: AutoRotateMode.playlist, results: results);
 
     await tapGo(tester);
@@ -86,6 +93,27 @@ void main() {
     verify(() => dayNightBloc.add(const DayNightEvent.toggled(false))).called(1);
   });
 
+  testWidgets('playlist mode waits for Day and night to stop before allowing the new mode', (tester) async {
+    final List<bool> results = <bool>[];
+    final StreamController<DayNightState> states = StreamController<DayNightState>();
+    addTearDown(states.close);
+    whenListen(dayNightBloc, states.stream, initialState: DayNightState(pair: _enabledPair));
+    when(() => dayNightBloc.add(const DayNightEvent.toggled(false))).thenAnswer((_) {});
+    await pumpHarness(tester, mode: AutoRotateMode.playlist, results: results);
+
+    await tapGo(tester);
+    await tester.tap(find.text('Turn off Day and night'));
+    await tester.pump();
+
+    verify(() => dayNightBloc.add(const DayNightEvent.toggled(false))).called(1);
+    expect(results, isEmpty);
+
+    states.add(DayNightState(pair: _enabledPair.copyWith(enabled: false)));
+    await tester.pumpAndSettle();
+
+    expect(results, <bool>[true]);
+  });
+
   testWidgets('playlist mode with Day and night on, cancel returns false and adds no event', (tester) async {
     final List<bool> results = <bool>[];
     whenListen(dayNightBloc, const Stream<DayNightState>.empty(), initialState: DayNightState(pair: _enabledPair));
@@ -99,13 +127,79 @@ void main() {
     verifyNever(() => dayNightBloc.add(const DayNightEvent.toggled(false)));
   });
 
-  testWidgets('dayNight mode asks when auto-rotate is running even if config is off', (tester) async {
+  testWidgets('confirm accepts a playlist that stopped while the sheet was open', (tester) async {
     final List<bool> results = <bool>[];
+    final StreamController<AutoRotateState> states = StreamController<AutoRotateState>();
+    addTearDown(states.close);
     whenListen(
       autoRotateBloc,
-      const Stream<AutoRotateState>.empty(),
+      states.stream,
+      initialState: AutoRotateState.initial().copyWith(config: const AutoRotateConfig(enabled: true)),
+    );
+    await pumpHarness(tester, mode: AutoRotateMode.dayNight, results: results);
+    await tapGo(tester);
+    states.add(AutoRotateState.initial());
+    await tester.pump();
+
+    await tester.tap(find.text('Turn off auto-rotate'));
+    await tester.pumpAndSettle();
+
+    expect(results, <bool>[true]);
+    verifyNever(() => autoRotateBloc.add(const AutoRotateEvent.toggled(false)));
+  });
+
+  testWidgets('failed playlist stop refuses the new mode instead of waiting forever', (tester) async {
+    final List<bool> results = <bool>[];
+    final StreamController<AutoRotateState> states = StreamController<AutoRotateState>();
+    addTearDown(states.close);
+    whenListen(
+      autoRotateBloc,
+      states.stream,
+      initialState: AutoRotateState.initial().copyWith(config: const AutoRotateConfig(enabled: true)),
+    );
+    when(() => autoRotateBloc.add(const AutoRotateEvent.toggled(false))).thenAnswer((_) {
+      states.add(
+        AutoRotateState.initial().copyWith(status: const AutoRotateStatus(isRunning: true, lastError: 'Stop failed')),
+      );
+    });
+    await pumpHarness(tester, mode: AutoRotateMode.dayNight, results: results);
+    await tapGo(tester);
+
+    await tester.tap(find.text('Turn off auto-rotate'));
+    await tester.pumpAndSettle();
+
+    expect(results, <bool>[false]);
+  });
+
+  testWidgets('failed Day and night stop refuses the new mode', (tester) async {
+    final List<bool> results = <bool>[];
+    final StreamController<DayNightState> states = StreamController<DayNightState>();
+    addTearDown(states.close);
+    whenListen(dayNightBloc, states.stream, initialState: DayNightState(pair: _enabledPair));
+    when(() => dayNightBloc.add(const DayNightEvent.toggled(false))).thenAnswer((_) {
+      states.add(DayNightState(pair: _enabledPair, issue: DayNightIssue.offlineCopyFailed));
+    });
+    await pumpHarness(tester, mode: AutoRotateMode.playlist, results: results);
+    await tapGo(tester);
+
+    await tester.tap(find.text('Turn off Day and night'));
+    await tester.pumpAndSettle();
+
+    expect(results, <bool>[false]);
+  });
+
+  testWidgets('dayNight mode asks when auto-rotate is running even if config is off', (tester) async {
+    final List<bool> results = <bool>[];
+    final StreamController<AutoRotateState> states = StreamController<AutoRotateState>();
+    addTearDown(states.close);
+    whenListen(
+      autoRotateBloc,
+      states.stream,
       initialState: AutoRotateState.initial().copyWith(status: const AutoRotateStatus(isRunning: true)),
     );
+    when(() => autoRotateBloc.add(const AutoRotateEvent.toggled(false))).thenAnswer((_) {
+      states.add(AutoRotateState.initial());
+    });
     await pumpHarness(tester, mode: AutoRotateMode.dayNight, results: results);
 
     await tapGo(tester);

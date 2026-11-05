@@ -578,6 +578,32 @@ void main() {
     ],
   );
 
+  blocTest<DayNightBloc, DayNightState>(
+    'turning off after an account switch during save does not emit for the old owner',
+    setUp: () {
+      operationStarted = Completer<void>();
+      operationGate = Completer<DayNightPair>();
+      when(() => repository.save(any(), ownerId: 'u1')).thenAnswer((_) async {
+        operationStarted.complete();
+        await operationGate.future;
+      });
+    },
+    build: () => DayNightBloc(repository),
+    seed: () => DayNightState(pair: _complete(enabled: true), loaded: true, isPro: true, userId: 'u1'),
+    act: (bloc) async {
+      bloc.add(const DayNightEvent.toggled(false));
+      await operationStarted.future;
+      app_state.prismUser = profileUser(id: 'u2');
+      await app_state.persistPrismUser();
+      operationGate.complete(DayNightPair());
+    },
+    expect: () => <DayNightState>[],
+    verify: (_) {
+      verify(() => repository.save(_complete(), ownerId: 'u1')).called(1);
+      expect(analytics.events, isEmpty);
+    },
+  );
+
   group('Android device schedule', () {
     setUp(() {
       when(() => repository.runsOnDevice).thenReturn(true);
@@ -742,6 +768,45 @@ void main() {
       ],
       verify: (_) {
         verify(() => repository.applyOnOpen()).called(2);
+        verifyNever(() => repository.publish(any()));
+      },
+    );
+
+    blocTest<DayNightBloc, DayNightState>(
+      'an account switch replaces the old device schedule with the new enabled pair',
+      setUp: () {
+        when(() => repository.load(ownerId: 'u2')).thenAnswer((_) async => _complete(enabled: true));
+        when(() => repository.applyOnOpen()).thenAnswer((_) async => (running: true, switched: null));
+      },
+      build: () => DayNightBloc(repository),
+      seed: () => DayNightState(pair: _complete(enabled: true), loaded: true, isPro: true, userId: 'u1'),
+      act: (bloc) async {
+        app_state.prismUser = profileUser(id: 'u2');
+        await app_state.persistPrismUser();
+        bloc.add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'u2'));
+      },
+      expect: () => <DayNightState>[
+        DayNightState(pair: _complete(enabled: true), loaded: true, isPro: true, userId: 'u2'),
+      ],
+      verify: (_) {
+        verify(() => repository.unpublish()).called(1);
+        verify(() => repository.publish(_complete(enabled: true))).called(1);
+        verifyNever(() => repository.applyOnOpen());
+      },
+    );
+
+    blocTest<DayNightBloc, DayNightState>(
+      'a same-user resume does not restart a pair cleared by another schedule mode',
+      setUp: () {
+        when(() => repository.load(ownerId: 'u1')).thenAnswer((_) async => _complete());
+      },
+      build: () => DayNightBloc(repository),
+      seed: () => DayNightState(pair: _complete(enabled: true), loaded: true, isPro: true, userId: 'u1'),
+      act: (bloc) => bloc.add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'u1')),
+      expect: () => <DayNightState>[DayNightState(pair: _complete(), loaded: true, isPro: true, userId: 'u1')],
+      verify: (_) {
+        verify(() => repository.load(ownerId: 'u1')).called(1);
+        verifyNever(() => repository.applyOnOpen());
         verifyNever(() => repository.publish(any()));
       },
     );

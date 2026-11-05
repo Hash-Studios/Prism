@@ -183,7 +183,15 @@ void main() {
   testWidgets('Android with auto-rotate on asks first, then turns auto-rotate off and Day and night on', (
     tester,
   ) async {
-    await pumpScreen(tester, DayNightState(pair: _completePair, isPro: true, loaded: true), autoRotate: autoRotateOn);
+    final StreamController<AutoRotateState> states = StreamController<AutoRotateState>();
+    addTearDown(states.close);
+    whenListen(
+      bloc,
+      const Stream<DayNightState>.empty(),
+      initialState: DayNightState(pair: _completePair, isPro: true, loaded: true),
+    );
+    whenListen(autoRotateBloc, states.stream, initialState: autoRotateOn);
+    await _pump(tester, bloc, autoRotateBloc);
 
     await tester.ensureVisible(find.byType(Switch));
     await tester.tap(find.byType(Switch));
@@ -196,6 +204,11 @@ void main() {
     await tester.pumpAndSettle();
 
     verify(() => autoRotateBloc.add(const AutoRotateEvent.toggled(false))).called(1);
+    verifyNever(() => bloc.add(const DayNightEvent.toggled(true)));
+
+    states.add(AutoRotateState.initial());
+    await tester.pumpAndSettle();
+
     verify(() => bloc.add(const DayNightEvent.toggled(true))).called(1);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 

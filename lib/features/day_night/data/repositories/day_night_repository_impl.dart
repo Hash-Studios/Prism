@@ -4,8 +4,10 @@ import 'dart:io';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/auto_rotate/data/android_schedule_coordinator.dart';
 import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/features/day_night/domain/repositories/day_night_repository.dart';
 import 'package:Prism/features/ios_shortcuts/data/native_asset_paths_store.dart';
@@ -116,22 +118,38 @@ class DayNightRepositoryImpl implements DayNightRepository {
   }
 
   @override
-  Future<DayNightOpenResult> applyOnOpen() async {
-    final aw.DailyScheduleApplyResult result = await aw.AsyncWallpaper.applyCurrentScheduleEntry();
-    final DayNightSlot? slot = switch (result.entryIndex) {
-      0 => DayNightSlot.day,
-      1 => DayNightSlot.night,
-      _ => null,
-    };
-    final bool applied = result.outcome == aw.DailyScheduleApplyOutcome.applied;
-    if (slot == null || !applied && result.outcome != aw.DailyScheduleApplyOutcome.alreadyCurrent) {
-      return (running: false, switched: null);
-    }
-    final String lastSeen = _settings.get<String>(_lastSlotKey, defaultValue: '');
-    await _settings.set(_lastSlotKey, slot.name);
-    if (applied) return (running: true, switched: (slot: slot, source: DayNightSwitchSource.appOpen));
-    if (lastSeen.isEmpty || lastSeen == slot.name) return (running: true, switched: null);
-    return (running: true, switched: (slot: slot, source: DayNightSwitchSource.alarm));
+  Future<DayNightOpenResult> applyOnOpen() {
+    final int generation = _publishGeneration;
+    final String owner = app_state.prismUser.id.trim();
+    final bool loggedIn = app_state.prismUser.loggedIn;
+    return AndroidScheduleCoordinator.forSettings(_settings).run(() async {
+      if (generation != _publishGeneration ||
+          app_state.prismUser.id.trim() != owner ||
+          app_state.prismUser.loggedIn != loggedIn) {
+        return (running: true, switched: null);
+      }
+      final aw.DailyScheduleApplyResult result = await aw.AsyncWallpaper.applyCurrentScheduleEntry();
+      final DayNightSlot? slot = switch (result.entryIndex) {
+        0 => DayNightSlot.day,
+        1 => DayNightSlot.night,
+        _ => null,
+      };
+      final bool applied = result.outcome == aw.DailyScheduleApplyOutcome.applied;
+      if (slot == null || !applied && result.outcome != aw.DailyScheduleApplyOutcome.alreadyCurrent) {
+        return (running: false, switched: null);
+      }
+      if (generation != _publishGeneration ||
+          app_state.prismUser.id.trim() != owner ||
+          app_state.prismUser.loggedIn != loggedIn) {
+        return (running: true, switched: null);
+      }
+      final String lastSeen = _settings.get<String>(_lastSlotKey, defaultValue: '');
+      await _settings.set(PersistenceKeys.autoRotateEnabled, false);
+      await _settings.set(_lastSlotKey, slot.name);
+      if (applied) return (running: true, switched: (slot: slot, source: DayNightSwitchSource.appOpen));
+      if (lastSeen.isEmpty || lastSeen == slot.name) return (running: true, switched: null);
+      return (running: true, switched: (slot: slot, source: DayNightSwitchSource.alarm));
+    });
   }
 
   /// Starts the Android schedule. Entry 0 is the day wall and entry 1 the night wall.
@@ -144,29 +162,58 @@ class DayNightRepositoryImpl implements DayNightRepository {
     if (!pair.isComplete || day == null || night == null) {
       throw StateError('Day and night needs a day wall and a night wall.');
     }
-    final aw.WallpaperRotationSource daySource = await _scheduleSource(DayNightSlot.day, day);
-    final aw.WallpaperRotationSource nightSource = await _scheduleSource(DayNightSlot.night, night);
-    if (generation != _publishGeneration || !app_state.prismUser.loggedIn || app_state.prismUser.id.trim() != owner) {
-      return;
+    final AndroidScheduleCoordinator coordinator = AndroidScheduleCoordinator.forSettings(_settings);
+    final int claim = coordinator.claimDayNight();
+    bool started = false;
+    try {
+      final aw.WallpaperRotationSource daySource = await _scheduleSource(DayNightSlot.day, day);
+      final aw.WallpaperRotationSource nightSource = await _scheduleSource(DayNightSlot.night, night);
+      if (generation != _publishGeneration || !app_state.prismUser.loggedIn || app_state.prismUser.id.trim() != owner) {
+        return;
+      }
+      await coordinator.run(() async {
+        if (generation != _publishGeneration ||
+            !app_state.prismUser.loggedIn ||
+            app_state.prismUser.id.trim() != owner) {
+          return;
+        }
+        final aw.WallpaperResult result = await aw.AsyncWallpaper.startDailySchedule(
+          aw.DailyScheduleRequest(
+            entries: <aw.DailyScheduleEntry>[
+              aw.DailyScheduleEntry(minuteOfDay: pair.times.dayStart.minutes, source: daySource),
+              aw.DailyScheduleEntry(minuteOfDay: pair.times.nightStart.minutes, source: nightSource),
+            ],
+            target: aw.WallpaperTarget.values.byName(pair.target.name),
+          ),
+        );
+        if (!result.isSuccess) throw const DayNightPrepareException(DayNightPrepareFailure.offlineCopyFailed);
+        if (generation != _publishGeneration ||
+            !app_state.prismUser.loggedIn ||
+            app_state.prismUser.id.trim() != owner) {
+          return;
+        }
+        await _settings.set(PersistenceKeys.autoRotateEnabled, false);
+        await _settings.set(_lastSlotKey, pair.times.slotNow().name);
+        started = true;
+      });
+    } finally {
+      if (!started) coordinator.releaseDayNight(claim);
     }
-    final aw.WallpaperResult result = await aw.AsyncWallpaper.startDailySchedule(
-      aw.DailyScheduleRequest(
-        entries: <aw.DailyScheduleEntry>[
-          aw.DailyScheduleEntry(minuteOfDay: pair.times.dayStart.minutes, source: daySource),
-          aw.DailyScheduleEntry(minuteOfDay: pair.times.nightStart.minutes, source: nightSource),
-        ],
-        target: aw.WallpaperTarget.values.byName(pair.target.name),
-      ),
-    );
-    if (!result.isSuccess) throw const DayNightPrepareException(DayNightPrepareFailure.offlineCopyFailed);
-    await _settings.set(_lastSlotKey, pair.times.slotNow().name);
   }
 
   Future<void> _stopSchedule() async {
     ++_publishGeneration;
-    final aw.WallpaperResult result = await aw.AsyncWallpaper.stopDailySchedule();
-    if (!result.isSuccess) throw StateError('Day and night could not stop the device schedule');
-    await _settings.delete(_lastSlotKey);
+    final AndroidScheduleCoordinator coordinator = AndroidScheduleCoordinator.forSettings(_settings);
+    final int claim = coordinator.claim;
+    await coordinator.run(() async {
+      try {
+        final aw.WallpaperResult result = await aw.AsyncWallpaper.stopDailySchedule();
+        if (!result.isSuccess) throw StateError('Day and night could not stop the device schedule');
+        await _settings.delete(_lastSlotKey);
+      } finally {
+        coordinator.releaseDayNight(claim);
+      }
+    });
   }
 
   /// A public wall loads from its https URL. A protected wall needs its downloaded original.
