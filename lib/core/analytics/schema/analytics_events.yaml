@@ -1532,6 +1532,14 @@ events:
         key: from_variants
         type: bool
   - id: day_night_disabled
+  - id: day_night_switched
+    fields:
+      - name: slot
+        key: slot
+        type: string
+      - name: source
+        key: source
+        type: string
   - id: day_night_ios_guide_opened
   - id: auto_rotate_folder_set
     fields:

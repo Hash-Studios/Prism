@@ -102,6 +102,9 @@ class _PreviewWallpaperClient implements WallpaperClient {
   @override
   Future<aw.WallpaperOperationResult> applyOpenGlWallpaper(aw.OpenGlLiveWallpaperRequest request) =>
       throw UnimplementedError();
+
+  @override
+  Future<aw.LiveWallpaperScreens> getLiveWallpaperScreens() async => const aw.LiveWallpaperScreens();
 }
 
 void main() {

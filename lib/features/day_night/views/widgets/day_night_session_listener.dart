@@ -9,6 +9,7 @@ import 'package:Prism/features/day_night/day_night_support.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -23,6 +24,10 @@ class DayNightSessionListener extends StatefulWidget {
 }
 
 class _DayNightSessionListenerState extends State<DayNightSessionListener> with WidgetsBindingObserver {
+  Timer? _passTimer;
+  String? _passTimerUserId;
+  int _passTimerGeneration = 0;
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +45,8 @@ class _DayNightSessionListenerState extends State<DayNightSessionListener> with 
 
   @override
   void dispose() {
+    _passTimerGeneration++;
+    _passTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     CoinsService.instance.passesNotifier.removeListener(_onPassesChanged);
     super.dispose();
@@ -96,12 +103,41 @@ class _DayNightSessionListenerState extends State<DayNightSessionListener> with 
 
   void _syncSession(BuildContext context, SessionState state) {
     if (!dayNightSupportedNow || state.status != LoadStatus.success) return;
+    final int timerGeneration = ++_passTimerGeneration;
+    _passTimer?.cancel();
+    _passTimer = null;
+    _passTimerUserId = null;
     final bool ownsPasses =
         state.session.loggedIn &&
         app_state.prismUser.loggedIn &&
         app_state.prismUser.id.trim() == state.session.userId.trim();
     final bool isPro =
         state.session.loggedIn && (state.session.premium || ownsPasses && autoRotateEntitled(state.session));
+    if (defaultTargetPlatform == TargetPlatform.android && ownsPasses && !state.session.premium) {
+      final DateTime? passEnd = autoRotatePassEnd(state.session);
+      if (passEnd != null) {
+        final String userId = state.session.userId.trim();
+        _passTimerUserId = userId;
+        _passTimer = Timer(passEnd.difference(DateTime.now()), () {
+          _passTimer = null;
+          if (!mounted) return;
+          final SessionState current = context.read<SessionBloc>().state;
+          if (_passTimerGeneration != timerGeneration ||
+              _passTimerUserId != userId ||
+              current.status != LoadStatus.success ||
+              !current.session.loggedIn ||
+              current.session.userId.trim() != userId ||
+              !app_state.prismUser.loggedIn ||
+              app_state.prismUser.id.trim() != userId) {
+            return;
+          }
+          _passTimerUserId = null;
+          context.read<DayNightBloc>().add(
+            DayNightEvent.entitlementChanged(isPro: current.session.premium, userId: userId),
+          );
+        });
+      }
+    }
     context.read<DayNightBloc>().add(
       DayNightEvent.entitlementChanged(
         isPro: isPro,

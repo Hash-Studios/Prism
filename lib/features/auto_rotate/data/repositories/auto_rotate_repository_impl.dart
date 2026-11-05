@@ -8,6 +8,7 @@ import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart' show isWallpaperTargetSupported;
+import 'package:Prism/features/auto_rotate/data/android_schedule_coordinator.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/auto_rotate/domain/repositories/auto_rotate_repository.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
@@ -76,7 +77,10 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
         ? storedUntilMs
         : 0;
     return AutoRotateConfig(
-      enabled: enabled && (source != AutoRotateSource.folder || validFolder),
+      enabled:
+          enabled &&
+          !AndroidScheduleCoordinator.forSettings(_settings).dayNightEnabled &&
+          (source != AutoRotateSource.folder || validFolder),
       intervalMinutes: AutoRotateConfig.intervalOptions.contains(interval) ? interval : defaults.intervalMinutes,
       target: WallpaperTarget.values.asNameMap()[targetName] ?? defaults.target,
       shuffle: _settings.get<bool>(PersistenceKeys.autoRotateShuffle, defaultValue: defaults.shuffle),
@@ -94,7 +98,12 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
   @override
   Future<void> saveConfig(AutoRotateConfig config, {String? ownerId}) async {
     final int passRecordGeneration = ownerId == null ? 0 : _passRecordGenerations[ownerId] ?? 0;
-    await _settings.set(PersistenceKeys.autoRotateEnabled, config.enabled);
+    await AndroidScheduleCoordinator.forSettings(_settings).run(() async {
+      await _settings.set(
+        PersistenceKeys.autoRotateEnabled,
+        config.enabled && !AndroidScheduleCoordinator.forSettings(_settings).dayNightEnabled,
+      );
+    });
     await _settings.set(PersistenceKeys.autoRotateIntervalMinutes, config.intervalMinutes);
     await _settings.set(PersistenceKeys.autoRotateTarget, config.target.name);
     await _settings.set(PersistenceKeys.autoRotateShuffle, config.shuffle);
@@ -175,28 +184,34 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
           ),
         )
         .toList(growable: false);
-    final aw.WallpaperResult result = await aw.AsyncWallpaper.startWallpaperRotation(
-      aw.WallpaperRotationRequest(
-        sources: sources,
-        target: aw.WallpaperTarget.values.byName(config.target.name),
-        intervalMinutes: config.intervalMinutes,
-        order: config.shuffle ? aw.WallpaperRotationOrder.shuffle : aw.WallpaperRotationOrder.sequential,
-        triggers: triggersFor(config),
-      ),
-    );
-    if (result.isSuccess) await _settings.set(_appliedSourcesKey, jsonEncode(safe));
-    return result.isSuccess;
+    return AndroidScheduleCoordinator.forSettings(_settings).run(() async {
+      if (AndroidScheduleCoordinator.forSettings(_settings).dayNightEnabled) {
+        await _settings.set(PersistenceKeys.autoRotateEnabled, false);
+        return false;
+      }
+      final aw.WallpaperResult result = await aw.AsyncWallpaper.startWallpaperRotation(
+        aw.WallpaperRotationRequest(
+          sources: sources,
+          target: aw.WallpaperTarget.values.byName(config.target.name),
+          intervalMinutes: config.intervalMinutes,
+          order: config.shuffle ? aw.WallpaperRotationOrder.shuffle : aw.WallpaperRotationOrder.sequential,
+          triggers: triggersFor(config),
+        ),
+      );
+      if (result.isSuccess) await _settings.set(_appliedSourcesKey, jsonEncode(safe));
+      return result.isSuccess;
+    });
   }
 
   @override
   Future<List<String>> resolveSources(List<String> imageUrls) => _safeSources(imageUrls);
 
   @override
-  Future<bool> stop() async {
+  Future<bool> stop() => AndroidScheduleCoordinator.forSettings(_settings).run(() async {
     final aw.WallpaperResult result = await aw.AsyncWallpaper.stopWallpaperRotation();
     if (result.isSuccess) await _settings.delete(_appliedSourcesKey);
     return result.isSuccess;
-  }
+  });
 
   @override
   Future<AutoRotateStatus> status() async {

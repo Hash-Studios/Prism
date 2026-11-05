@@ -12478,6 +12478,34 @@ class AppLocalizationsHi extends AppLocalizations {
       'समय की जगह सूर्योदय या सूर्यास्त चुनें। \"Prism वॉलपेपर पाएँ\" में समय को सूर्योदय के लिए \"दिन\" और सूर्यास्त के लिए \"रात\" पर सेट करें।';
 
   @override
+  String get dayNightIntroAndroid =>
+      'दिन के लिए एक वॉलपेपर और रात के लिए एक वॉलपेपर चुनें। आपके सेट किए समय पर Prism उन्हें बदल देता है।';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return '$time के आसपास';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'बैटरी बचाने के लिए Android कुछ मिनट देर से बदल सकता है।';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => 'ऑटो-रोटेशन बंद करें?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'ऑटो-रोटेशन बंद करें';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => 'दिन और रात बंद करें?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'दिन और रात बंद करें';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'ऑटो-रोटेशन और दिन और रात, दोनों आपका वॉलपेपर बदलते हैं। एक समय पर सिर्फ़ एक चालू हो सकता है।';
+
+  @override
   String get tipAction => 'क्रिएटर को टिप दें';
 
   @override
