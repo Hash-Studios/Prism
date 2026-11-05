@@ -570,6 +570,24 @@ void main() {
     );
 
     blocTest<LiveWallpaperBloc, LiveWallpaperState>(
+      'picking a screen in settings does not leave a next-wall target behind',
+      build: () {
+        repository.capabilities = perScreen;
+        return build(imageUrl: null);
+      },
+      act: (bloc) async {
+        bloc
+          ..add(const LiveWallpaperEvent.started(isPro: true))
+          ..add(const LiveWallpaperEvent.otherScreenPicked(WallpaperTarget.lock));
+        await settle();
+      },
+      verify: (bloc) {
+        expect(bloc.state.target, WallpaperTarget.lock);
+        expect(repository.nextTarget, isNull);
+      },
+    );
+
+    blocTest<LiveWallpaperBloc, LiveWallpaperState>(
       'a per-screen gradient apply is tracked with its target, per_screen on and no fallback',
       build: () {
         repository.capabilities = perScreen;

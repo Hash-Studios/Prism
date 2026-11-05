@@ -29,7 +29,7 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
         targetSelected: (event) async => emit(state.copyWith(target: event.target)),
         screensChecked: (event) => _onScreensChecked(emit),
         otherScreenPicked: (event) async {
-          _repository.nextTarget = event.screen;
+          if (imageUrl != null) _repository.nextTarget = event.screen;
           emit(state.copyWith(target: event.screen));
         },
         motionApplied: (event) => _onMotionApplied(event, emit),
