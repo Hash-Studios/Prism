@@ -147,7 +147,8 @@ async function prepare() {
   write('functions/index.cjs', `'use strict';\nif (process.env.FUNCTIONS_EMULATOR !== 'true') throw Error('Emulator only');\n` +
     `const {guardEnvironment} = require('../backend.cjs');\nguardEnvironment();\n` +
     `const fs = require('node:fs');\nconst admin = require('firebase-admin');\n` +
-    `if (!admin.apps.length) admin.initializeApp({projectId: '${PROJECT}', credential: admin.credential.cert({projectId: '${PROJECT}', ` +
+    `if (admin.apps.length) throw Error('Refusing preinitialized Admin apps');\n` +
+    `admin.initializeApp({projectId: '${PROJECT}', credential: admin.credential.cert({projectId: '${PROJECT}', ` +
     `clientEmail: 'local-qa@${PROJECT}.iam.gserviceaccount.com', privateKey: fs.readFileSync(require('node:path').join(__dirname, '../key.pem'), 'utf8')})});\n` +
     exportLines.join('\n') + '\n');
   write('firebase.json', {functions: [{source: 'functions', codebase: 'local-qa'}],
@@ -302,7 +303,8 @@ function loadBackend() {
   assert.equal(manifest.runtime, fs.realpathSync(runtime), 'Wrong QA runtime manifest');
   const base = path.join(runtime, 'functions');
   const admin = require(path.join(base, 'node_modules/firebase-admin'));
-  if (!admin.apps.length) admin.initializeApp({projectId: PROJECT, credential: admin.credential.cert({
+  assert.equal(admin.apps.length, 0, 'Refusing preinitialized Admin apps');
+  admin.initializeApp({projectId: PROJECT, credential: admin.credential.cert({
     projectId: PROJECT,
     clientEmail: `local-qa@${PROJECT}.iam.gserviceaccount.com`,
     privateKey: fs.readFileSync(path.join(runtime, 'key.pem'), 'utf8'),

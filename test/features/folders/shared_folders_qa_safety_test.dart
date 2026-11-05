@@ -6,6 +6,8 @@ void main() {
   for (final scenario in <String>[
     'native-ios',
     'native-android',
+    'admin',
+    'worker',
     'environment',
   ]) {
     test('shared folders QA isolates $scenario', () async {
