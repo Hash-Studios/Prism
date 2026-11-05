@@ -12857,7 +12857,7 @@
   "@desktopUploadSubmitted": {
     "description": "Toast after a successful submit."
   },
-  "desktopUploadErrorPortrait": "Choose a landscape image. This one is taller than it is wide.",
+  "desktopUploadErrorPortrait": "Choose a landscape image. It must be wider than it is tall.",
   "@desktopUploadErrorPortrait": {
     "description": "Error when the picked image is portrait or square."
   },

@@ -13100,7 +13100,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get desktopUploadSubmitted => 'Versión para escritorio enviada a revisión';
 
   @override
-  String get desktopUploadErrorPortrait => 'Elige una imagen horizontal. Esta es más alta que ancha.';
+  String get desktopUploadErrorPortrait => 'Elige una imagen horizontal. Debe ser más ancha que alta.';
 
   @override
   String get desktopUploadErrorAspect =>

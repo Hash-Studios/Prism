@@ -65,7 +65,7 @@ async function withStorageLease<T>(shareId: string, callback: () => Promise<T>):
   } finally {
     await db.runTransaction(async (tx) => {
       if ((await tx.get(ref)).data()?.token === token) tx.delete(ref);
-    });
+    }).catch((err) => logger.warn("desktop: could not release the storage lease.", {shareId, err}));
   }
 }
 

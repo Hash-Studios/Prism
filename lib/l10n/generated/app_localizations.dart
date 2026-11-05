@@ -20992,7 +20992,7 @@ abstract class AppLocalizations {
   /// Error when the picked image is portrait or square.
   ///
   /// In en, this message translates to:
-  /// **'Choose a landscape image. This one is taller than it is wide.'**
+  /// **'Choose a landscape image. It must be wider than it is tall.'**
   String get desktopUploadErrorPortrait;
 
   /// Error when the aspect ratio is not 16:10 or 16:9.

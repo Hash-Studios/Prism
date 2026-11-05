@@ -13076,7 +13076,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get desktopUploadSubmitted => 'डेस्कटॉप वर्शन समीक्षा के लिए भेजा गया';
 
   @override
-  String get desktopUploadErrorPortrait => 'लैंडस्केप इमेज चुनें। यह चौड़ाई से ज़्यादा ऊँची है।';
+  String get desktopUploadErrorPortrait => 'लैंडस्केप इमेज चुनें। इमेज की चौड़ाई उसकी ऊंचाई से ज़्यादा होनी चाहिए।';
 
   @override
   String get desktopUploadErrorAspect =>

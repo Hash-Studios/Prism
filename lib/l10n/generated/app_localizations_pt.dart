@@ -13283,7 +13283,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get desktopUploadSubmitted => 'Versão para computador enviada para análise';
 
   @override
-  String get desktopUploadErrorPortrait => 'Escolha uma imagem na horizontal. Esta é mais alta do que larga.';
+  String get desktopUploadErrorPortrait => 'Escolha uma imagem na horizontal. Ela precisa ser mais larga do que alta.';
 
   @override
   String get desktopUploadErrorAspect =>
@@ -27549,7 +27549,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get desktopUploadSubmitted => 'Versão para computador enviada para análise';
 
   @override
-  String get desktopUploadErrorPortrait => 'Escolha uma imagem na horizontal. Esta é mais alta do que larga.';
+  String get desktopUploadErrorPortrait => 'Escolha uma imagem na horizontal. Ela precisa ser mais larga do que alta.';
 
   @override
   String get desktopUploadErrorAspect =>

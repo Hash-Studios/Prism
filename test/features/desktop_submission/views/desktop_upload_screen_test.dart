@@ -80,7 +80,7 @@ void main() {
     await pumpScreen(tester, repo: _FakeRepo(), measured: const Size(1080, 1920));
     await pick(tester);
 
-    expect(find.text('Choose a landscape image. This one is taller than it is wide.'), findsOneWidget);
+    expect(find.text('Choose a landscape image. It must be wider than it is tall.'), findsOneWidget);
     expect(submitButton(tester).onPressed, isNull);
   });
 

@@ -3578,7 +3578,7 @@
   "desktopUploadChooseAnother": "Escolher outra imagem",
   "desktopUploadSubmit": "Enviar para análise",
   "desktopUploadSubmitted": "Versão para computador enviada para análise",
-  "desktopUploadErrorPortrait": "Escolha uma imagem na horizontal. Esta é mais alta do que larga.",
+  "desktopUploadErrorPortrait": "Escolha uma imagem na horizontal. Ela precisa ser mais larga do que alta.",
   "desktopUploadErrorAspect": "Escolha uma imagem em 16:10 ou 16:9. Recorte no seu computador e tente novamente.",
   "desktopUploadErrorTooSmall": "Escolha uma imagem com pelo menos 1920 px de largura. Esta tem {width} px de largura.",
   "desktopUploadErrorUnreadable": "Não foi possível abrir esta imagem. Escolha outra.",

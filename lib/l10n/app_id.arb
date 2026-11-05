@@ -12433,7 +12433,7 @@
   "@desktopUploadSubmitted": {
     "description": "Toast after a successful submit."
   },
-  "desktopUploadErrorPortrait": "Pilih gambar lanskap. Gambar ini lebih tinggi daripada lebarnya.",
+  "desktopUploadErrorPortrait": "Pilih gambar lanskap. Lebarnya harus lebih besar dari tingginya.",
   "@desktopUploadErrorPortrait": {
     "description": "Error when the picked image is portrait or square."
   },

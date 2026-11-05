@@ -12401,7 +12401,7 @@
   "@desktopUploadSubmitted": {
     "description": "Toast after a successful submit."
   },
-  "desktopUploadErrorPortrait": "Wähle ein Querformatbild. Dieses Bild ist höher als breit.",
+  "desktopUploadErrorPortrait": "Wähle ein Bild im Querformat. Es muss breiter als hoch sein.",
   "@desktopUploadErrorPortrait": {
     "description": "Error when the picked image is portrait or square."
   },

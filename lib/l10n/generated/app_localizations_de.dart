@@ -13124,7 +13124,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get desktopUploadSubmitted => 'Desktop-Version zur Prüfung gesendet';
 
   @override
-  String get desktopUploadErrorPortrait => 'Wähle ein Querformatbild. Dieses Bild ist höher als breit.';
+  String get desktopUploadErrorPortrait => 'Wähle ein Bild im Querformat. Es muss breiter als hoch sein.';
 
   @override
   String get desktopUploadErrorAspect =>

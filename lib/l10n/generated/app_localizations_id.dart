@@ -12977,7 +12977,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopUploadSubmitted => 'Versi desktop dikirim untuk ditinjau';
 
   @override
-  String get desktopUploadErrorPortrait => 'Pilih gambar lanskap. Gambar ini lebih tinggi daripada lebarnya.';
+  String get desktopUploadErrorPortrait => 'Pilih gambar lanskap. Lebarnya harus lebih besar dari tingginya.';
 
   @override
   String get desktopUploadErrorAspect =>

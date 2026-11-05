@@ -12929,7 +12929,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desktopUploadSubmitted => 'Desktop version sent for review';
 
   @override
-  String get desktopUploadErrorPortrait => 'Choose a landscape image. This one is taller than it is wide.';
+  String get desktopUploadErrorPortrait => 'Choose a landscape image. It must be wider than it is tall.';
 
   @override
   String get desktopUploadErrorAspect => 'Choose an image in 16:10 or 16:9. Crop it on your computer, then try again.';
