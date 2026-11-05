@@ -128,7 +128,9 @@ void main() {
 
     await tester.pumpWidget(_listenerTree(dayNightBloc, sessionBloc));
     await tester.pump();
-    verify(() => dayNightBloc.add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'account-a'))).called(2);
+    verify(
+      () => dayNightBloc.add(DayNightEvent.entitlementChanged(isPro: true, userId: 'account-a', passUntil: passUntil)),
+    ).called(2);
 
     await tester.pump(const Duration(minutes: 1));
     verify(() => dayNightBloc.add(const DayNightEvent.entitlementChanged(isPro: false, userId: 'account-a'))).called(1);
