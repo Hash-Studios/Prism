@@ -34,7 +34,7 @@ const String defaultOnboardingStarterPack = '[]';
 
 const String categoriesRemoteConfigKey = 'categories_v1';
 const String personalizedInterestsRemoteConfigKey = 'personalized_interests_v1';
-const String personalizedInterestsLocalCacheKey = 'personalized_interests_catalog_v1';
+const String personalizedInterestsLocalCacheKey = 'personalized_interests_catalog_v2';
 const String personalizedFeedMixLocalKey = 'personalized_feed_mix';
 const String defaultPersonalizedInterestsJson = '''
 [
