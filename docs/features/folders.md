@@ -267,9 +267,12 @@ An owner can invite editors. An editor adds and removes wallpapers in the folder
 | Invite people | Yes | No |
 | Remove people | Yes | No |
 | Delete the folder | Yes | No |
+| Auto-rotate and iOS Shortcuts rotation | Yes | No |
 | Leave the folder | No | Yes |
 
 A folder has at most 10 editors, besides the owner.
+
+The app reads the folder again each time a member opens it, so a join, a leave or a removal on another device shows at once. Offline, a folder the app already has keeps its last copy.
 
 ### Where to find it
 
