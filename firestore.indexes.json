@@ -671,6 +671,48 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "review",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "desktopVariant.v",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "walls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_sha",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "category",
           "order": "ASCENDING"
         },
