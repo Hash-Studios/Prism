@@ -62,8 +62,9 @@ Future<void> _settle(WidgetTester tester) async {
 
 void _expectTapTarget(WidgetTester tester, Finder finder, {required String label}) {
   final SemanticsNode node = tester.getSemantics(finder);
-  expect(node.getSemanticsData().label, contains(label));
-  expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+  final SemanticsData data = node.getSemanticsData();
+  expect('${data.label} ${data.tooltip}', contains(label));
+  expect(data.hasAction(SemanticsAction.tap), isTrue);
   expect(node.rect.width, greaterThanOrEqualTo(44));
   expect(node.rect.height, greaterThanOrEqualTo(44));
   final Size size = tester.getSize(finder);
@@ -238,5 +239,33 @@ void main() {
     await _settle(tester);
     expect(find.text('Prism user'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('silent profile streams leave a semantic close escape from loading placeholders', (tester) async {
+    final owner = StreamController<PublicProfileEntity?>();
+    final editor = StreamController<PublicProfileEntity?>();
+    addTearDown(owner.close);
+    addTearDown(editor.close);
+    when(() => profiles.watchProfile('owner')).thenAnswer((_) => owner.stream);
+    when(() => profiles.watchProfile('e1')).thenAnswer((_) => editor.stream);
+    final handle = tester.ensureSemantics();
+    try {
+      await openSheet(tester, editorCount: 1);
+
+      expect(find.byType(PrismBone), findsNWidgets(4));
+      expect(find.text('People'), findsOneWidget);
+      final close = find.widgetWithIcon(IconButton, Icons.close_rounded);
+      _expectTapTarget(tester, close, label: 'Close');
+      final Rect target = tester.getRect(close);
+      await tester.tapAt(Offset(target.center.dx, target.bottom - 1));
+      await _settle(tester);
+
+      expect(find.text('People'), findsNothing);
+      expect(owner.hasListener, isFalse);
+      expect(editor.hasListener, isFalse);
+      expect(tester.takeException(), isNull);
+    } finally {
+      handle.dispose();
+    }
   });
 }
