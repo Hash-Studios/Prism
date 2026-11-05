@@ -5,16 +5,19 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/pending_download.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/ads/biz/coin_gate.dart';
 import 'package:Prism/features/ads/biz/coin_gate_port.dart';
 import 'package:Prism/features/folders/domain/entities/folder_save_plan.dart';
@@ -66,6 +69,9 @@ class _QuietCoinGatePort extends AppCoinGatePort {
   Future<void> presentLowBalancePaywall({required String source}) async {}
 
   @override
+  Future<bool> adsAllowed() async => false;
+
+  @override
   void showError(String message) {}
 
   @override
@@ -83,8 +89,7 @@ class _HttpStatusException implements Exception {
   bool get retryable => statusCode >= 500 || statusCode == 408 || statusCode == 429;
 }
 
-/// One at a time, so the server prices each charge after the one before it: free downloads go to the walls the plan
-/// showed as free.
+/// One at a time, so the server prices each charge after the one before it.
 class _SerialLock {
   Future<void> _tail = Future<void>.value();
 
@@ -97,7 +102,8 @@ class _SerialLock {
 
 @LazySingleton(as: FolderSaveGateway)
 class FolderSaveGatewayImpl implements FolderSaveGateway {
-  FolderSaveGatewayImpl(this._firestore, this._index);
+  FolderSaveGatewayImpl(this._firestore, this._index, {@ignoreParam IOSink Function(File)? openDownloadSink})
+    : _openDownloadSink = openDownloadSink ?? ((file) => file.openWrite());
 
   static const int _whereInLimit = 30;
   static const String _sourceTag = 'folder_save';
@@ -109,6 +115,7 @@ class FolderSaveGatewayImpl implements FolderSaveGateway {
 
   final FirestoreClient _firestore;
   final DownloadedWallIndex _index;
+  final IOSink Function(File) _openDownloadSink;
   final PrismMediaHostApi _media = PrismMediaHostApi();
   final CoinGate _gate = CoinGate(_QuietCoinGatePort());
   final _SerialLock _chargeLock = _SerialLock();
@@ -216,15 +223,21 @@ class FolderSaveGatewayImpl implements FolderSaveGateway {
         premiumBypass: false,
         refundOnFailure: false,
         spend: (_) => _chargeLock.run(() async {
+          if (ownerId != owner) return _paymentUnavailable();
           final int before = CoinsService.instance.balanceNotifier.value;
           try {
-            granted = await OriginalAccessService.instance.resolve(
-              url: wall.link,
-              wallpaperId: wall.id,
-              wallpaperSource: WallpaperSource.prism,
-              action: OriginalAccessAction.download,
-              maxCoins: maxCoins,
-            );
+            if (BundledWallpapers.isStarterIdentity(wall.id, wall.source)) {
+              granted = (await BundledWallpapers.localFileForStarter(wall.id, wall.source))?.path;
+              if (granted == null) throw StateError('Bundled original unavailable');
+            } else {
+              granted = await OriginalAccessService.instance.resolve(
+                url: wall.link,
+                wallpaperId: wall.id,
+                wallpaperSource: WallpaperSource.prism,
+                action: OriginalAccessAction.download,
+                maxCoins: maxCoins,
+              );
+            }
           } on OriginalAccessInsufficientBalance catch (error) {
             failure = error.requiredCoins > maxCoins
                 ? FolderSaveFailure.priceChanged
@@ -253,7 +266,17 @@ class FolderSaveGatewayImpl implements FolderSaveGateway {
           );
         }),
         perform: () async {
-          failure = await _download(granted!, file);
+          final String source = granted!;
+          final Uri? uri = Uri.tryParse(source);
+          if (p.isAbsolute(source) || uri?.scheme == 'file') {
+            try {
+              await (uri?.scheme == 'file' ? File.fromUri(uri!) : File(source)).copy(file.path);
+            } on FileSystemException catch (_) {
+              failure = FolderSaveFailure.storage;
+            }
+          } else {
+            failure = await _download(source, file);
+          }
           if (failure != null) return false;
           failure = await _store(wall, file, album: album, owner: owner);
           if (failure != null) return false;
@@ -293,6 +316,7 @@ class FolderSaveGatewayImpl implements FolderSaveGateway {
         spend: pro
             ? null
             : (tag) => _chargeLock.run(() async {
+                if (ownerId != owner || _hasPendingPayment(owner, wall.identity)) return _paymentUnavailable();
                 final int balance = CoinsService.instance.balanceNotifier.value;
                 final bool free = CoinsService.instance.graceDownloadsLeft > 0;
                 if (!free && CoinSpendAction.wallpaperDownload.cost() > maxCoins) {
@@ -314,18 +338,38 @@ class FolderSaveGatewayImpl implements FolderSaveGateway {
                   pendingDownloadLink: wall.identity,
                 );
                 if (spent.insufficientBalance) failure = FolderSaveFailure.notEnoughCoins;
+                if (spent.success && -spent.delta > maxCoins) failure = FolderSaveFailure.priceChanged;
                 return spent;
               }),
         perform: () async {
-          failure = await _store(wall, file, album: album, owner: owner);
+          if (failure == FolderSaveFailure.priceChanged) return false;
+          failure = await _store(wall, file, album: album, owner: owner, paidTxId: paidTxId);
           if (failure != null) return false;
-          final String? txId = paidTxId;
-          if (txId != null) await CoinsService.instance.markPendingDownloadSaved(txId);
           return true;
         },
       ),
     );
     return _outcome(result, failure);
+  }
+
+  CoinMutationResult _paymentUnavailable() => CoinMutationResult.noChange(
+    balance: CoinsService.instance.balanceNotifier.value,
+    success: false,
+    reason: 'folder_payment_unavailable',
+  );
+
+  /// An earlier failed save must settle its refund before a retry can create another debit.
+  bool _hasPendingPayment(String owner, String link) {
+    try {
+      final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+      if (!settings.isOpen) return true;
+      return PendingDownload.decodeList(
+        settings.get<String>('pendingDownloads_v2', defaultValue: ''),
+      ).any((entry) => entry.userId == owner && entry.link == link && !entry.saved);
+    } catch (error, stackTrace) {
+      logger.w('Could not check a pending folder payment', error: error, stackTrace: stackTrace);
+      return true;
+    }
   }
 
   CoinGateSpec _spec(
@@ -368,6 +412,7 @@ class FolderSaveGatewayImpl implements FolderSaveGateway {
     File file, {
     required String album,
     required String owner,
+    String? paidTxId,
   }) async {
     if (ownerId != owner) return FolderSaveFailure.unknown;
     final OperationResult result;
@@ -385,6 +430,7 @@ class FolderSaveGatewayImpl implements FolderSaveGateway {
       return FolderSaveFailure.storage;
     }
     if (!result.success) return FolderSaveFailure.storage;
+    if (paidTxId != null) await CoinsService.instance.markPendingDownloadSaved(paidTxId);
     await _index.remember(link: wall.identity, id: wall.id, source: wall.source, ownerId: owner);
     try {
       unawaited(
@@ -404,10 +450,12 @@ class FolderSaveGatewayImpl implements FolderSaveGateway {
     }
     if (wall.source == WallpaperSource.prism && getIt.isRegistered<RecordWallpaperActionUseCase>()) {
       unawaited(
-        getIt<RecordWallpaperActionUseCase>()(wall.id, WallpaperAction.download).catchError((Object error) {
-          logger.w('Folder save action record failed', error: error);
-          throw error;
-        }),
+        getIt<RecordWallpaperActionUseCase>()(wall.id, WallpaperAction.download).then<void>(
+          (_) {},
+          onError: (Object error, StackTrace stackTrace) {
+            logger.w('Folder save action record failed', error: error, stackTrace: stackTrace);
+          },
+        ),
       );
     }
     return null;
@@ -425,10 +473,20 @@ class FolderSaveGatewayImpl implements FolderSaveGateway {
         final HttpClientRequest request = await client.getUrl(uri);
         final HttpClientResponse response = await request.close().timeout(const Duration(seconds: 30));
         if (response.statusCode != HttpStatus.ok) {
-          await response.drain<void>();
           throw _HttpStatusException(response.statusCode);
         }
-        await response.timeout(const Duration(seconds: 30)).pipe(file.openWrite());
+        final IOSink sink = _openDownloadSink(file);
+        bool streamed = false;
+        try {
+          await sink.addStream(response.timeout(const Duration(seconds: 30)));
+          streamed = true;
+        } finally {
+          try {
+            await sink.close();
+          } catch (_) {
+            if (streamed) rethrow;
+          }
+        }
         return null;
       } on _HttpStatusException catch (error) {
         if (!error.retryable) return FolderSaveFailure.unavailable;
