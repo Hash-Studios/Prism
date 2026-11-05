@@ -1,11 +1,15 @@
-// Device QA entry point for Day and night: a fake signed-in Pro user, a real pair published for the Shortcuts action.
-// Run: fvm flutter run -t test/qa_render/day_night_device_main.dart -d <simulator>
+// Device QA entry point for Day and night: a fake signed-in Pro user and a real pair. iOS publishes it for the Shortcuts
+// action at launch. Android starts with the pair off and auto-rotate on, so the switch shows the mode confirm, then
+// starts the real async_wallpaper daily schedule.
+// Run: fvm flutter run -t test/qa_render/day_night_device_main.dart -d <device>
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
+import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/day_night/biz/bloc/day_night_bloc.j.dart';
 import 'package:Prism/features/day_night/data/repositories/day_night_repository_impl.dart';
 import 'package:Prism/features/day_night/day_night_support.dart';
@@ -14,6 +18,8 @@ import 'package:Prism/features/day_night/views/pages/day_night_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mocktail/mocktail.dart';
@@ -38,6 +44,8 @@ const DayNightWall _night = DayNightWall(
 
 class _QaRouter extends Mock implements StackRouter {}
 
+class _QaAutoRotateBloc extends MockBloc<AutoRotateEvent, AutoRotateState> implements AutoRotateBloc {}
+
 class _QaAnalytics extends FakeAppAnalytics {}
 
 void main() {
@@ -52,17 +60,25 @@ void main() {
   final _QaRouter router = _QaRouter();
   registerFallbackValue(AutoRotateRoute());
   when(() => router.push(any())).thenAnswer((_) async => null);
+  final bool android = defaultTargetPlatform == TargetPlatform.android;
+  final _QaAutoRotateBloc autoRotate = _QaAutoRotateBloc();
+  when(() => autoRotate.state).thenReturn(
+    AutoRotateState.initial().copyWith(loaded: true, isPro: true, config: AutoRotateConfig(enabled: android)),
+  );
   final DayNightBloc bloc = DayNightBloc(DayNightRepositoryImpl(SettingsLocalDataSource(InMemoryLocalStore())))
     ..add(const DayNightEvent.entitlementChanged(isPro: true, userId: 'qa-user'))
     ..add(const DayNightEvent.wallPicked(DayNightSlot.day, _day))
-    ..add(const DayNightEvent.wallPicked(DayNightSlot.night, _night))
-    ..add(const DayNightEvent.toggled(true));
+    ..add(const DayNightEvent.wallPicked(DayNightSlot.night, _night));
+  if (!android) bloc.add(const DayNightEvent.toggled(true));
   runApp(
     StackRouterScope(
       controller: router,
       stateHash: 0,
-      child: BlocProvider<DayNightBloc>.value(
-        value: bloc,
+      child: MultiBlocProvider(
+        providers: <BlocProvider<dynamic>>[
+          BlocProvider<AutoRotateBloc>.value(value: autoRotate),
+          BlocProvider<DayNightBloc>.value(value: bloc),
+        ],
         child: MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,

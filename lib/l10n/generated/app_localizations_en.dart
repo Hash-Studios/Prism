@@ -12303,6 +12303,34 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose Sunrise or Sunset instead of a time. In Get Prism Wallpaper, set Time to Day for sunrise and Night for sunset.';
 
   @override
+  String get dayNightIntroAndroid =>
+      'Pick a wall for the day and one for the night. Prism switches them at the times you set.';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return 'Around $time';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'Android can switch a few minutes late to save battery.';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => 'Turn off auto-rotate?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'Turn off auto-rotate';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => 'Turn off Day and night?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'Turn off Day and night';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'Auto-rotate and Day and night both change your wallpaper. Only one can be on at a time.';
+
+  @override
   String get tipAction => 'Tip creator';
 
   @override

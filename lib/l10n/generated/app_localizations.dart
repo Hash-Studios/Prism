@@ -19933,6 +19933,54 @@ abstract class AppLocalizations {
   /// **'Choose Sunrise or Sunset instead of a time. In Get Prism Wallpaper, set Time to Day for sunrise and Night for sunset.'**
   String get dayNightGuideSunBody;
 
+  /// Android day and night setup: intro text above the wall pickers.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a wall for the day and one for the night. Prism switches them at the times you set.'**
+  String get dayNightIntroAndroid;
+
+  /// Day and night schedule label. {time} is a formatted time such as 07:00.
+  ///
+  /// In en, this message translates to:
+  /// **'Around {time}'**
+  String dayNightAroundTime(String time);
+
+  /// Android day and night setup: note that switches can run a few minutes late to save battery.
+  ///
+  /// In en, this message translates to:
+  /// **'Android can switch a few minutes late to save battery.'**
+  String get dayNightAndroidTimingNote;
+
+  /// Dialog title: asks whether to turn off Auto-rotate before Day and night can be used.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off auto-rotate?'**
+  String get dayNightTurnOffAutoRotateTitle;
+
+  /// Dialog confirm button: turns off Auto-rotate.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off auto-rotate'**
+  String get dayNightTurnOffAutoRotateAction;
+
+  /// Dialog title: asks whether to turn off Day and night before Auto-rotate can be used.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off Day and night?'**
+  String get dayNightTurnOffDayNightTitle;
+
+  /// Dialog confirm button: turns off Day and night.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off Day and night'**
+  String get dayNightTurnOffDayNightAction;
+
+  /// Dialog body: explains that Auto-rotate and Day and night cannot both be on.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-rotate and Day and night both change your wallpaper. Only one can be on at a time.'**
+  String get dayNightOneModeAtATime;
+
   /// Wall detail: opens the sheet to tip the wall's creator coins
   ///
   /// In en, this message translates to:

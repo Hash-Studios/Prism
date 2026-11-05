@@ -12649,6 +12649,34 @@ class AppLocalizationsPt extends AppLocalizations {
       'Escolha Nascer do Sol ou Pôr do Sol em vez de um horário. Em \"Obter papel de parede do Prism\", defina Horário como Dia para o nascer do sol e Noite para o pôr do sol.';
 
   @override
+  String get dayNightIntroAndroid =>
+      'Escolha um papel de parede para o dia e outro para a noite. O Prism troca os dois nos horários que você definir.';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return 'Por volta das $time';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'O Android pode trocar com alguns minutos de atraso para economizar bateria.';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => 'Desativar rotação automática?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'Desativar rotação automática';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => 'Desativar Dia e noite?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'Desativar Dia e noite';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'Rotação automática e Dia e noite alteram seu papel de parede. Apenas um pode estar ativo por vez.';
+
+  @override
   String get tipAction => 'Dar gorjeta ao criador';
 
   @override
@@ -26714,6 +26742,34 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get dayNightGuideSunBody =>
       'Escolha Nascer do Sol ou Pôr do Sol em vez de um horário. Em \"Obter papel de parede do Prism\", defina Horário como Dia para o nascer do sol e Noite para o pôr do sol.';
+
+  @override
+  String get dayNightIntroAndroid =>
+      'Escolha um papel de parede para o dia e outro para a noite. O Prism troca os dois nos horários que você definir.';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return 'Por volta das $time';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'O Android pode trocar com alguns minutos de atraso para economizar bateria.';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => 'Desativar rotação automática?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'Desativar rotação automática';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => 'Desativar Dia e noite?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'Desativar Dia e noite';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'Rotação automática e Dia e noite alteram seu papel de parede. Apenas um pode estar ativo por vez.';
 
   @override
   String get tipAction => 'Dar gorjeta ao criador';

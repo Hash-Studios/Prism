@@ -12464,6 +12464,34 @@ class AppLocalizationsEs extends AppLocalizations {
       'Elige Amanecer o Atardecer en lugar de una hora. En “Obtener fondo de pantalla de Prism”, define Hora como “Día” para el amanecer y como “Noche” para el atardecer.';
 
   @override
+  String get dayNightIntroAndroid =>
+      'Elige un fondo de pantalla para el día y otro para la noche. Prism los cambia a las horas que definas.';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return 'Alrededor de $time';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'Android puede cambiar con unos minutos de retraso para ahorrar batería.';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => '¿Desactivar rotación automática?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'Desactivar rotación automática';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => '¿Desactivar Día y noche?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'Desactivar Día y noche';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'Rotación automática y Día y noche cambian tu fondo de pantalla. Solo puede estar activada una a la vez.';
+
+  @override
   String get tipAction => 'Dar propina';
 
   @override

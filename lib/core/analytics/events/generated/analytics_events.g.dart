@@ -1615,6 +1615,21 @@ class DayNightDisabledEvent extends AnalyticsEvent {
   }
 }
 
+class DayNightSwitchedEvent extends AnalyticsEvent {
+  const DayNightSwitchedEvent({required this.slot, required this.source});
+
+  final String slot;
+  final String source;
+
+  @override
+  String get eventName => 'day_night_switched';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'slot': slot, 'source': source};
+  }
+}
+
 class DayNightIosGuideOpenedEvent extends AnalyticsEvent {
   const DayNightIosGuideOpenedEvent();
 

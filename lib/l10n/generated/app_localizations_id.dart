@@ -12348,6 +12348,34 @@ class AppLocalizationsId extends AppLocalizations {
       'Pilih Matahari Terbit atau Matahari Terbenam, bukan waktu. Di \"Dapatkan Wallpaper Prism\", atur Waktu ke Siang untuk matahari terbit dan Malam untuk matahari terbenam.';
 
   @override
+  String get dayNightIntroAndroid =>
+      'Pilih wallpaper untuk siang dan satu untuk malam. Prism akan menggantinya pada waktu yang Anda atur.';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return 'Sekitar $time';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'Android bisa beralih beberapa menit terlambat untuk menghemat baterai.';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => 'Matikan putar otomatis?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'Matikan putar otomatis';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => 'Matikan Siang dan malam?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'Matikan Siang dan malam';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'Putar otomatis dan Siang dan malam sama-sama mengubah wallpaper Anda. Hanya satu yang bisa aktif dalam satu waktu.';
+
+  @override
   String get tipAction => 'Beri tip kreator';
 
   @override

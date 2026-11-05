@@ -10,7 +10,8 @@ import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/features/day_night/domain/repositories/day_night_repository.dart';
 import 'package:Prism/features/ios_shortcuts/data/native_asset_paths_store.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
-import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:async_wallpaper/async_wallpaper.dart' as aw;
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb, visibleForTesting;
 import 'package:injectable/injectable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,12 +22,19 @@ class DayNightRepositoryImpl implements DayNightRepository {
   static const String _pairKey = 'dayNight.pair';
   static const String _snapshotKey = 'shortcuts.day_night';
   static const String _group = 'daynight';
+  static const String _lastSlotKey = 'dayNight.lastSlot';
   static int _publishGeneration = 0;
 
   @visibleForTesting
   static Future<File?> Function(DayNightWall wall)? downloadedOriginalOverride;
 
+  @visibleForTesting
+  static bool? runsOnDeviceOverride;
+
   final SettingsLocalDataSource _settings;
+
+  @override
+  bool get runsOnDevice => runsOnDeviceOverride ?? (!kIsWeb && defaultTargetPlatform == TargetPlatform.android);
 
   @override
   Future<DayNightPair> load({required String ownerId}) async {
@@ -50,6 +58,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
 
   @override
   Future<void> publish(DayNightPair pair) async {
+    if (runsOnDevice) return _startSchedule(pair);
     final int generation = ++_publishGeneration;
     final String owner = app_state.prismUser.id.trim();
     final bool loggedIn = app_state.prismUser.loggedIn;
@@ -90,6 +99,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
 
   @override
   Future<void> unpublish() async {
+    if (runsOnDevice) return _stopSchedule();
     final int generation = ++_publishGeneration;
     await NativeAssetPathsStore.replaceGroup(
       _group,
@@ -103,6 +113,70 @@ class DayNightRepositoryImpl implements DayNightRepository {
         }
       },
     );
+  }
+
+  @override
+  Future<DayNightOpenResult> applyOnOpen() async {
+    final aw.DailyScheduleApplyResult result = await aw.AsyncWallpaper.applyCurrentScheduleEntry();
+    final DayNightSlot? slot = switch (result.entryIndex) {
+      0 => DayNightSlot.day,
+      1 => DayNightSlot.night,
+      _ => null,
+    };
+    final bool applied = result.outcome == aw.DailyScheduleApplyOutcome.applied;
+    if (slot == null || !applied && result.outcome != aw.DailyScheduleApplyOutcome.alreadyCurrent) {
+      return (running: false, switched: null);
+    }
+    final String lastSeen = _settings.get<String>(_lastSlotKey, defaultValue: '');
+    await _settings.set(_lastSlotKey, slot.name);
+    if (applied) return (running: true, switched: (slot: slot, source: DayNightSwitchSource.appOpen));
+    if (lastSeen.isEmpty || lastSeen == slot.name) return (running: true, switched: null);
+    return (running: true, switched: (slot: slot, source: DayNightSwitchSource.alarm));
+  }
+
+  /// Starts the Android schedule. Entry 0 is the day wall and entry 1 the night wall.
+  Future<void> _startSchedule(DayNightPair pair) async {
+    final int generation = ++_publishGeneration;
+    final String owner = app_state.prismUser.id.trim();
+    if (!app_state.prismUser.loggedIn || owner.isEmpty) return;
+    final DayNightWall? day = pair.day;
+    final DayNightWall? night = pair.night;
+    if (!pair.isComplete || day == null || night == null) {
+      throw StateError('Day and night needs a day wall and a night wall.');
+    }
+    final aw.WallpaperRotationSource daySource = await _scheduleSource(DayNightSlot.day, day);
+    final aw.WallpaperRotationSource nightSource = await _scheduleSource(DayNightSlot.night, night);
+    if (generation != _publishGeneration || !app_state.prismUser.loggedIn || app_state.prismUser.id.trim() != owner) {
+      return;
+    }
+    final aw.WallpaperResult result = await aw.AsyncWallpaper.startDailySchedule(
+      aw.DailyScheduleRequest(
+        entries: <aw.DailyScheduleEntry>[
+          aw.DailyScheduleEntry(minuteOfDay: pair.times.dayStart.minutes, source: daySource),
+          aw.DailyScheduleEntry(minuteOfDay: pair.times.nightStart.minutes, source: nightSource),
+        ],
+        target: aw.WallpaperTarget.values.byName(pair.target.name),
+      ),
+    );
+    if (!result.isSuccess) throw const DayNightPrepareException(DayNightPrepareFailure.offlineCopyFailed);
+    await _settings.set(_lastSlotKey, pair.times.slotNow().name);
+  }
+
+  Future<void> _stopSchedule() async {
+    ++_publishGeneration;
+    final aw.WallpaperResult result = await aw.AsyncWallpaper.stopDailySchedule();
+    if (!result.isSuccess) throw StateError('Day and night could not stop the device schedule');
+    await _settings.delete(_lastSlotKey);
+  }
+
+  /// A public wall loads from its https URL. A protected wall needs its downloaded original.
+  Future<aw.WallpaperRotationSource> _scheduleSource(DayNightSlot slot, DayNightWall wall) async {
+    if (wall.hasPublicImage) {
+      return aw.WallpaperRotationSource(sourceType: aw.WallpaperSourceType.url, source: wall.fullUrl.trim());
+    }
+    final File? original = await _downloadedOriginal(wall);
+    if (original == null) throw DayNightPrepareException(DayNightPrepareFailure.needsDownload, slot: slot);
+    return aw.WallpaperRotationSource(sourceType: aw.WallpaperSourceType.file, source: original.path);
   }
 
   Future<Map<String, Object?>> _snapshotItem(DayNightSlot slot, DayNightWall wall, Map<String, String> paths) async {

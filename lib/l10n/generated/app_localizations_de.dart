@@ -12489,6 +12489,34 @@ class AppLocalizationsDe extends AppLocalizations {
       'Wähle Sonnenaufgang oder Sonnenuntergang statt einer Uhrzeit. Setze bei „Prism-Hintergrundbild abrufen“ „Zeit“ auf „Tag“ für Sonnenaufgang und auf „Nacht“ für Sonnenuntergang.';
 
   @override
+  String get dayNightIntroAndroid =>
+      'Wähle ein Hintergrundbild für den Tag und eins für die Nacht. Prism wechselt sie zu den Zeiten, die du einstellst.';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return 'Gegen $time';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'Android kann zum Akkusparen einige Minuten später wechseln.';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => 'Automatischen Wechsel ausschalten?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'Automatischen Wechsel ausschalten';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => 'Tag und Nacht ausschalten?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'Tag und Nacht ausschalten';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'Automatischer Wechsel und Tag und Nacht ändern beide dein Hintergrundbild. Es kann immer nur eines davon aktiv sein.';
+
+  @override
   String get tipAction => 'Trinkgeld geben';
 
   @override
