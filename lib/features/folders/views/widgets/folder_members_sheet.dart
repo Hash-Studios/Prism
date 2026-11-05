@@ -84,7 +84,6 @@ Future<bool> showFolderMembersSheet(BuildContext context, FolderEntity folder) a
       return PrismSheetBody(
         title: l10n.foldersPeople,
         message: owner ? l10n.foldersPeopleHintOwner(folderMaxEditors) : l10n.foldersPeopleHintEditor,
-        childScrolls: true,
         actions: <Widget>[
           if (owner)
             PrismButton(
@@ -104,38 +103,38 @@ Future<bool> showFolderMembersSheet(BuildContext context, FolderEntity folder) a
               onPressed: () => unawaited(leaveFolder()),
             ),
         ],
-        child: ListView.builder(
-          itemCount: folder.members.length,
-          itemBuilder: (_, index) {
-            final FolderMember member = folder.members[index];
-            return FolderOwnerLink(
-              ownerId: member.uid,
-              builder: (_, profile) {
-                final String name = folderMemberName(profile, l10n);
-                final bool isYou = member.uid == userId;
-                final bool canRemove = owner && member.role == FolderRole.editor;
-                return PrismRow(
-                  leading: PrismAvatar(url: profile?.profilePhoto, name: name, size: 40),
-                  title: isYou ? l10n.foldersPersonYou(name) : name,
-                  subtitle: member.role == FolderRole.owner ? l10n.foldersRoleOwner : l10n.foldersRoleEditor,
-                  onTap: () {
-                    final StackRouter router = context.router;
-                    Navigator.of(sheetContext).pop();
-                    unawaited(router.push(ProfileRoute(profileIdentifier: member.uid)));
-                  },
-                  trailing: canRemove
-                      ? PrismButton(
-                          maxLines: null,
-                          label: l10n.foldersRemovePerson,
-                          variant: PrismButtonVariant.ghost,
-                          size: PrismButtonSize.compact,
-                          onPressed: () => unawaited(removeEditor(member.uid, name)),
-                        )
-                      : null,
-                );
-              },
-            );
-          },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            for (final FolderMember member in folder.members)
+              FolderOwnerLink(
+                ownerId: member.uid,
+                builder: (_, profile) {
+                  final String name = folderMemberName(profile, l10n);
+                  final bool isYou = member.uid == userId;
+                  final bool canRemove = owner && member.role == FolderRole.editor;
+                  return PrismRow(
+                    leading: PrismAvatar(url: profile?.profilePhoto, name: name, size: 40),
+                    title: isYou ? l10n.foldersPersonYou(name) : name,
+                    subtitle: member.role == FolderRole.owner ? l10n.foldersRoleOwner : l10n.foldersRoleEditor,
+                    onTap: () {
+                      final StackRouter router = context.router;
+                      Navigator.of(sheetContext).pop();
+                      unawaited(router.push(ProfileRoute(profileIdentifier: member.uid)));
+                    },
+                    trailing: canRemove
+                        ? PrismButton(
+                            maxLines: null,
+                            label: l10n.foldersRemovePerson,
+                            variant: PrismButtonVariant.ghost,
+                            size: PrismButtonSize.compact,
+                            onPressed: () => unawaited(removeEditor(member.uid, name)),
+                          )
+                        : null,
+                  );
+                },
+              ),
+          ],
         ),
       );
     },
