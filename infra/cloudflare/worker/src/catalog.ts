@@ -230,13 +230,13 @@ async function cached(key: string, ctx: ExecutionContext, render: () => Promise<
   const cache = edgeCache();
   const cacheKey = new Request(`${SITE}/__catalog/v1/${key}`);
   const hit = cache ? await cache.match(cacheKey) : undefined;
+  const age = hit ? (Date.now() - Number(hit.headers.get(STORED_AT) ?? 0)) / 1000 : -1;
   const store = async (response: Response) => {
     if (cache && [200, 301, 302, 404, 410].includes(response.status)) {
       await cache.put(cacheKey, storable(response.clone()));
     }
   };
   if (hit) {
-    const age = (Date.now() - Number(hit.headers.get(STORED_AT) ?? 0)) / 1000;
     const fresh = hit.status === 200 ? FRESH_SECONDS : MISS_SECONDS;
     if (age <= fresh) return forClient(hit);
     if (hit.status === 200 && age <= FRESH_SECONDS + STALE_SECONDS) {
@@ -265,7 +265,7 @@ async function cached(key: string, ctx: ExecutionContext, render: () => Promise<
     ctx.waitUntil(store(response));
     return forClient(response);
   } catch (error) {
-    if (hit && error instanceof FirestoreUnavailable) return forClient(hit);
+    if (hit && age <= FRESH_SECONDS + STALE_SECONDS && error instanceof FirestoreUnavailable) return forClient(hit);
     throw error;
   }
 }
@@ -279,10 +279,16 @@ function storable(response: Response): Response {
 
 function forClient(response: Response): Response {
   const headers = new Headers(response.headers);
+  const storedAt = Number(headers.get(STORED_AT));
+  const age = Number.isFinite(storedAt) && storedAt > 0 ? Math.max(0, Math.floor((Date.now() - storedAt) / 1000)) : 0;
   headers.delete(STORED_AT);
-  headers.set('cache-control', response.status === 200
-    ? `public, max-age=${FRESH_SECONDS}, stale-while-revalidate=${STALE_SECONDS}`
-    : `public, max-age=${MISS_SECONDS}`);
+  if (response.status === 200) {
+    const fresh = Math.max(0, FRESH_SECONDS - age);
+    const stale = Math.max(0, FRESH_SECONDS + STALE_SECONDS - age - fresh);
+    headers.set('cache-control', `public, max-age=${fresh}, stale-while-revalidate=${stale}`);
+  } else {
+    headers.set('cache-control', `public, max-age=${Math.max(0, MISS_SECONDS - age)}`);
+  }
   return new Response(response.body, { status: response.status, headers });
 }
 

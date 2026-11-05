@@ -13,7 +13,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:share_plus/share_plus.dart';
@@ -874,6 +874,29 @@ void main() {
       tester.widget<SelectableText>(find.byKey(const ValueKey<String>('open-on-computer-link'))).data,
       'prismwalls.com/l/Ab3dEf7h?d=1',
     );
+  });
+
+  testWidgets('Open on computer target label stays readable at large text in a narrow sheet', (tester) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(320, 720);
+    tester.platformDispatcher.textScaleFactorTestValue = 3;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    _mockChannels(tester);
+    final _Fake fake = _Fake(await _writeCards(tester));
+    final ShareCardContent content = ShareCardContent(
+      imageUrl: 'https://img.test/full.jpg',
+      link: _link,
+      brandName: 'Prism',
+      computerLink: Uri.parse('https://prismwalls.com/l/Ab3dEf7h?d=1'),
+    );
+    await _openSheet(tester, fake.services, content: content);
+
+    final Finder label = find.text('Open on computer');
+    expect(label, findsOneWidget);
+    expect(tester.renderObject<RenderParagraph>(label).didExceedMaxLines, isFalse);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('without a computer link the Open on computer target is absent and Copy link stays', (tester) async {

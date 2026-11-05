@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/share/open_on_computer.dart';
 import 'package:Prism/core/share/share_card.dart';
 import 'package:Prism/core/share/share_sheet.dart';
@@ -128,6 +128,7 @@ class _ShareButtonState extends State<ShareButton> {
     final String? contextLine = widget.contextLine;
     final String? creator = shareCreatorMark(widget.creator);
     final List<Color> palette = widget.palette;
+    final bool duoReveal = widget.duoReveal;
     final createLink = widget.createLink;
     final ShareSheetOpen openSheet = widget.openSheet;
 
@@ -193,7 +194,7 @@ class _ShareButtonState extends State<ShareButton> {
           creator: creator,
           creatorLine: creator == null ? null : l10n.coreShareCardBy(creator),
           palette: palette,
-          duoReveal: widget.duoReveal,
+          duoReveal: duoReveal,
           contentId: itemId,
           foldedLabel: l10n.duoFolded,
           unfoldedLabel: l10n.duoUnfolded,

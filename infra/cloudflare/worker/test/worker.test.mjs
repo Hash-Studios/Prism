@@ -3955,6 +3955,61 @@ test('a Prism wall short link with d=1 redirects desktop browsers to the desktop
   assert.equal(fetches, 0);
 });
 
+test('desktop short-link redirects require a safe Prism wall id and do not write KV', async () => {
+  const cases = [
+    { code: 'AbCdEfGm', type: 'share', path: '/share?id=wall-1_x&source=prism', expected: '/wallpaper/wall-1_x?view=desktop' },
+    { code: 'AbCdEfGn', type: 'share', path: '/share?id=wall%2Fone&source=prism', expected: null },
+    { code: 'AbCdEfGo', type: 'share', path: '/share?id=abc123&source=wallhaven', expected: null },
+    { code: 'AbCdEfGp', type: 'user', path: '/user/maya', expected: null },
+  ];
+  const links = new MemoryKv(cases.map(({ code, type, path }) => storedLink(code, type, path, {
+    title: `${code} - Prism`, description: 'Desktop test', image_source_url: '', provider: 'Prism', wall_id: 'W1',
+  })));
+  let writes = 0;
+  const put = links.put.bind(links);
+  links.put = async (...args) => { writes += 1; return put(...args); };
+  const env = workerEnv({
+    LINKS_KV: links,
+    PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+    APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
+  });
+  const realFetch = globalThis.fetch;
+  let fetches = 0;
+  globalThis.fetch = async () => {
+    fetches += 1;
+    throw new Error('short-link desktop routing must not fetch');
+  };
+  try {
+    for (const { code, expected } of cases) {
+      const response = await getShare(DESKTOP_UA, `/l/${code}?d=1`, env);
+      if (expected != null) {
+        assert.equal(response.status, 302, code);
+        assert.equal(response.headers.get('location'), expected, code);
+        assert.equal(response.headers.get('cache-control'), 'no-store', code);
+      } else {
+        assert.equal(response.status, 200, code);
+        assert.equal(response.headers.get('location'), null, code);
+        assert.match(response.headers.get('content-type'), /text\/html/, code);
+      }
+    }
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+  assert.equal(fetches, 0);
+  assert.equal(writes, 0);
+});
+
+test('the legacy /l?code alias keeps rejecting non-UTM query keys such as d=1', async () => {
+  const links = new MemoryKv([storedLink('AbCdEfGl', 'share', '/share?id=W1&source=prism', {
+    title: 'W1 - Prism', description: 'Desktop test', image_source_url: '', provider: 'Prism', wall_id: 'W1',
+  })]);
+  const env = workerEnv({ LINKS_KV: links, PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism', APP_STORE_URL: 'https://apps.apple.com/app/id6670200846' });
+  const response = await getShare(DESKTOP_UA, '/l?code=AbCdEfGl&d=1', env);
+  assert.equal(response.status, 400);
+  assert.equal(response.headers.get('location'), null);
+  assert.match(response.headers.get('content-type'), /text\/html/);
+});
+
 test('a Prism wall short link without d=1 keeps the landing page', async () => {
   const links = new MemoryKv([storedLink('AbCdEfGi', 'share', '/share?id=W1&source=prism&provider=Prism', {
     title: 'W1 - Prism', description: 'Desktop test', image_source_url: '', provider: 'Prism', wall_id: 'W1',

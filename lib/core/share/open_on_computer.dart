@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/firestore/firestore_server_read.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -35,14 +36,18 @@ String openOnComputerDisplay(Uri link) => '${link.host}${link.path}${link.hasQue
 /// True when the public web catalogue shows this wall with its image
 /// (`webWalls/<id>.state` is `live` and it has a thumb).
 Future<bool> isOnWebCatalogue(String wallId) async {
-  final Map<String, dynamic>? data = await firestoreClient.getById<Map<String, dynamic>>(
-    FirebaseCollections.webWalls,
-    wallId,
-    (Map<String, dynamic> data, String _) => data,
-    sourceTag: 'share.open_on_computer.web_wall',
-  );
-  final Object? thumb = data?['thumb'];
-  return data != null && data['state'] == 'live' && thumb is String && thumb.isNotEmpty;
+  try {
+    final Map<String, dynamic>? data = await firestoreClient.getFromServer<Map<String, dynamic>>(
+      FirebaseCollections.webWalls,
+      wallId,
+      (Map<String, dynamic> data, String _) => data,
+      sourceTag: 'share.open_on_computer.web_wall',
+    );
+    final Object? thumb = data?['thumb'];
+    return data != null && data['state'] == 'live' && thumb is String && thumb.isNotEmpty;
+  } on Object {
+    return false;
+  }
 }
 
 Future<void> _copyToClipboard(String text) => Clipboard.setData(ClipboardData(text: text));
@@ -188,7 +193,7 @@ class _QrPainter extends CustomPainter {
       for (int col = 0; col < image.moduleCount; col++) {
         if (!image.isDark(row, col)) continue;
         canvas.drawRect(
-          Rect.fromLTWH((col + quietZone) * cell, (row + quietZone) * cell, cell + 0.5, cell + 0.5),
+          Rect.fromLTWH((col + quietZone) * cell, (row + quietZone) * cell, cell, cell),
           paint,
         );
       }

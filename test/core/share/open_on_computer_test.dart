@@ -2,6 +2,10 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/share/open_on_computer.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
@@ -12,6 +16,31 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qr/qr.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/fake_firestore_client.dart';
+
+class _CatalogueFirestore extends FakeFirestoreClient {
+  _CatalogueFirestore({super.docs});
+
+  (String, String, String)? lastRead;
+  Object? readError;
+  bool cacheOnly = false;
+
+  @override
+  Stream<({List<T> items, bool isFromCache})> watchQueryWithMetadata<T>(
+    FirestoreQuerySpec spec,
+    T Function(Map<String, dynamic> data, String docId) map,
+  ) {
+    lastRead = (spec.collection, spec.filters.single.value! as String, spec.sourceTag);
+    if (readError case final Object error) return Stream<({List<T> items, bool isFromCache})>.error(error);
+    final String id = spec.filters.single.value! as String;
+    final Map<String, dynamic>? data = docs[spec.collection]?[id];
+    final List<T> items = data == null ? <T>[] : <T>[map(data, id)];
+    return Stream<({List<T> items, bool isFromCache})>.fromIterable(<({List<T> items, bool isFromCache})>[
+      (items: items, isFromCache: cacheOnly),
+    ]);
+  }
+
+}
 
 const String _link = 'https://prismwalls.com/l/Ab3dEf7h?d=1';
 const String _display = 'prismwalls.com/l/Ab3dEf7h?d=1';
@@ -79,6 +108,61 @@ void main() {
   });
   tearDown(() {
     AnalyticsRuntime.reset();
+  });
+
+  group('isOnWebCatalogue', () {
+    late _CatalogueFirestore firestore;
+
+    setUp(() {
+      firestore = _CatalogueFirestore(
+        docs: <String, Map<String, Map<String, dynamic>>>{
+          FirebaseCollections.webWalls: <String, Map<String, dynamic>>{
+            'live': <String, dynamic>{'state': 'live', 'thumb': 'https://preview.example/thumb.jpg'},
+            'premium': <String, dynamic>{'state': 'gated', 'thumb': 'https://preview.example/thumb.jpg'},
+            'streak': <String, dynamic>{'state': 'gated', 'thumb': 'https://preview.example/thumb.jpg'},
+            'drop': <String, dynamic>{'state': 'gated', 'thumb': 'https://preview.example/thumb.jpg'},
+            'unprotected': <String, dynamic>{'state': 'gated', 'thumb': 'https://preview.example/thumb.jpg'},
+            'hidden': <String, dynamic>{'state': 'hidden', 'thumb': 'https://preview.example/thumb.jpg'},
+            'deleted': <String, dynamic>{'state': 'gone'},
+            'missing-thumb': <String, dynamic>{'state': 'live'},
+            'empty-thumb': <String, dynamic>{'state': 'live', 'thumb': ''},
+          },
+        },
+      );
+      getIt.registerSingleton<FirestoreClient>(firestore);
+      addTearDown(() => getIt.unregister<FirestoreClient>());
+    });
+
+    test('allows only live projected walls with a thumbnail', () async {
+      for (final String id in <String>[
+        'premium',
+        'streak',
+        'drop',
+        'unprotected',
+        'hidden',
+        'deleted',
+        'missing-thumb',
+        'empty-thumb',
+      ]) {
+        expect(await isOnWebCatalogue(id), isFalse, reason: '$id must not be offered as a desktop link');
+      }
+      expect(await isOnWebCatalogue('live'), isTrue);
+    });
+
+    test('reads only webWalls and tags the document read', () async {
+      await isOnWebCatalogue('live');
+      expect(firestore.lastRead, ('webWalls', 'live', 'share.open_on_computer.web_wall'));
+    });
+
+    test('a failed catalogue read returns false', () async {
+      firestore.readError = StateError('offline');
+      expect(await isOnWebCatalogue('live'), isFalse);
+    });
+
+    test('a cached live document is not enough to pass the gate', () async {
+      firestore.cacheOnly = true;
+      expect(await isOnWebCatalogue('live'), isFalse);
+    });
   });
 
   group('openOnComputerLink', () {
@@ -253,20 +337,21 @@ void main() {
 
       final RenderRepaintBoundary boundary = tester.renderObject<RenderRepaintBoundary>(find.byKey(boundaryKey));
       final ({int width, Uint8List pixels})? captured = await tester.runAsync(() async {
-        final ui.Image img = await boundary.toImage();
+        final ui.Image img = await boundary.toImage(pixelRatio: 2);
         final ByteData? bytes = await img.toByteData();
         return (width: img.width, pixels: bytes!.buffer.asUint8List());
       });
       expect(captured, isNotNull);
       final int width = captured!.width;
-      expect(width, 264);
+      expect(width, 528);
 
       const int quietZone = 4;
+      const int pixelRatio = 2;
       final int cells = modules + quietZone * 2;
       const double side = 260;
       final double cell = side / cells;
       List<int> pixelAt(double x, double y) {
-        final int offset = (y.floor() * width + x.floor()) * 4;
+        final int offset = ((y * pixelRatio).floor() * width + (x * pixelRatio).floor()) * 4;
         return captured.pixels.sublist(offset, offset + 3);
       }
 
@@ -287,6 +372,20 @@ void main() {
       final double far = (cells - 1.5) * cell;
       for (final (double x, double y) in <(double, double)>[(near, near), (far, near), (near, far), (far, far)]) {
         expect(pixelAt(x, y), everyElement(greaterThan(215)), reason: 'quiet zone at ($x, $y) must be white');
+      }
+      final int quietPixels = (quietZone * cell * pixelRatio - 0.5).ceil();
+      const double cornerRadius = 32;
+      for (int offset = 0; offset < quietPixels; offset++) {
+        for (int position = (cornerRadius * pixelRatio).round();
+            position < (side - cornerRadius) * pixelRatio;
+            position++) {
+          final double edge = (offset + 0.5) / pixelRatio;
+          final double along = (position + 0.5) / pixelRatio;
+          expect(pixelAt(edge, along), everyElement(greaterThan(215)));
+          expect(pixelAt(side - edge, along), everyElement(greaterThan(215)));
+          expect(pixelAt(along, edge), everyElement(greaterThan(215)));
+          expect(pixelAt(along, side - edge), everyElement(greaterThan(215)));
+        }
       }
     });
   });

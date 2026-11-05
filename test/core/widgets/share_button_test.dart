@@ -343,14 +343,19 @@ void main() {
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
     addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
     final Completer<String> link = Completer<String>();
+    final Completer<bool> catalogueGate = Completer<bool>();
     final FakeAppAnalytics analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
     final List<String?> firstShare = <String?>[];
     final List<String?> secondShare = <String?>[];
+    final List<bool> firstDuoReveal = <bool>[];
+    final List<String> checkedWallIds = <String>[];
+    final List<ShareCardContent> opened = <ShareCardContent>[];
     final Key buttonKey = UniqueKey();
     var id = 'wall-1';
     var image = 'https://img.test/one.jpg';
     var contextLine = 'by One';
+    var duoReveal = false;
     var calls = firstShare;
     late void Function(void Function()) update;
 
@@ -365,16 +370,22 @@ void main() {
             final List<String?> currentCalls = calls;
             return Scaffold(
               body: ShareButton(
-                webCatalogueCheck: (_) async => false,
+                webCatalogueCheck: (checkedId) {
+                  checkedWallIds.add(checkedId);
+                  return catalogueGate.future;
+                },
                 key: buttonKey,
                 id: id,
                 source: WallpaperSource.prism,
                 url: image,
                 thumbUrl: '$image-thumb',
                 contextLine: contextLine,
+                duoReveal: duoReveal,
                 createLink: (id, source, url, thumbUrl) => link.future,
                 openSheet: (BuildContext context, ShareCardContent content, String sourceContext) {
                   currentCalls.addAll(<String?>[content.imageUrl, content.link, content.contextLine]);
+                  firstDuoReveal.add(content.duoReveal);
+                  opened.add(content);
                   return Future<void>.value();
                 },
               ),
@@ -390,14 +401,20 @@ void main() {
       id = 'wall-2';
       image = 'https://img.test/two.jpg';
       contextLine = 'by Two';
+      duoReveal = true;
       calls = secondShare;
     });
     await tester.pump();
     link.complete('https://prismwalls.com/share?id=wall-1');
+    catalogueGate.complete(true);
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
     await tester.pumpAndSettle();
 
     expect(secondShare, isEmpty);
+    expect(checkedWallIds, <String>['wall-1']);
+    expect(firstDuoReveal, <bool>[false]);
+    expect(opened.single.contentId, 'wall-1');
+    expect(opened.single.computerLink, Uri.parse('https://prismwalls.com/wallpaper/wall-1?view=desktop'));
     expect(firstShare, <String?>[
       'https://us-central1-123.cloudfunctions.net/wallpaperPreview?id=wall-1&thumb=https%3A%2F%2Fimg.test%2Fone.jpg-thumb',
       'https://prismwalls.com/share?id=wall-1',

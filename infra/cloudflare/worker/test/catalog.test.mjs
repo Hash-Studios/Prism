@@ -628,6 +628,38 @@ test('stale entries are served once while a background refresh runs, then a gone
   assert.equal(gone.status, 410);
 });
 
+test('wall and desktop cache entries expire after the stale window when Firestore is unavailable', async (t) => {
+  const clock = stubClock(t);
+  const h = setup(t);
+  const paths = ['/wallpaper/W1', '/wallpaper/DW1?view=desktop'];
+  for (const path of paths) {
+    const first = await h.get(path);
+    assert.equal(first.status, 200, path);
+    await first.text();
+  }
+  await h.flush();
+
+  h.state.firestoreStatus = 503;
+  clock.advance(600 + 86400 - 1);
+  for (const path of paths) {
+    const lastStaleSecond = await h.get(path);
+    await lastStaleSecond.text();
+    assert.equal(lastStaleSecond.headers.get('cache-control'), 'public, max-age=0, stale-while-revalidate=1', path);
+  }
+  await h.flush();
+
+  clock.advance(2);
+  for (const [path, oldTitle, expectedStatus] of [
+    ['/wallpaper/W1', 'Sunset Ridge', 200], ['/wallpaper/DW1?view=desktop', 'Desk Dawn', 302],
+  ]) {
+    const expired = await h.get(path);
+    const body = await expired.text();
+    assert.equal(expired.status, expectedStatus, path);
+    assert.ok(!body.includes(oldTitle), `${path} must not serve the expired cached page`);
+  }
+  await h.flush();
+});
+
 test('concurrent stale hits share one background refresh per cache key', async (t) => {
   const clock = stubClock(t);
   const h = setup(t);

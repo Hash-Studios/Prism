@@ -649,7 +649,6 @@ class _ShareTarget extends StatelessWidget {
                 const SizedBox(height: PrismSpace.xs),
                 Text(
                   label,
-                  maxLines: 2,
                   textAlign: TextAlign.center,
                   style: PrismTextStyles.caption(context).copyWith(color: cs.onSurface),
                 ),
