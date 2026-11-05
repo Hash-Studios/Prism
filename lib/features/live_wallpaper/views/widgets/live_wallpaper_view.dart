@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
@@ -11,6 +12,7 @@ import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/live_wallpaper/biz/bloc/live_wallpaper_bloc.j.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
+import 'package:Prism/features/live_wallpaper/domain/entities/live_screens.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_picker.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_preview.dart';
@@ -34,7 +36,13 @@ String _liveModeLabel(AppLocalizations l10n, _LiveMode mode) => switch (mode) {
 
 String _liveOutcomeMessage(AppLocalizations l10n, LiveApplyOutcome outcome) => switch (outcome.status) {
   LiveApplyStatus.applied => l10n.wallpaperLiveApplied,
-  LiveApplyStatus.confirmInPreview => l10n.wallpaperLiveConfirmPreview,
+  LiveApplyStatus.confirmInPreview when outcome.fallback => l10n.wallpaperLiveSameWallBothScreens,
+  LiveApplyStatus.confirmInPreview => switch (outcome.target) {
+    WallpaperTarget.home => l10n.wallpaperLiveConfirmHome,
+    WallpaperTarget.lock => l10n.wallpaperLiveConfirmLock,
+    WallpaperTarget.both => l10n.wallpaperLiveConfirmBoth,
+    null => l10n.wallpaperLiveConfirmPreview,
+  },
   LiveApplyStatus.cancelled => '',
   LiveApplyStatus.unsupported => l10n.wallpaperLiveUnsupported,
   LiveApplyStatus.proRequired => l10n.wallpaperLiveProStyleRequired,
@@ -83,6 +91,19 @@ String _gradientStyleDescription(AppLocalizations l10n, GradientStyle style) => 
   GradientStyle.starfield => l10n.wallpaperLiveStyleStarfieldDescription,
 };
 
+String _liveTargetLabel(AppLocalizations l10n, WallpaperTarget target) => switch (target) {
+  WallpaperTarget.home => l10n.setScreenTargetHome,
+  WallpaperTarget.lock => l10n.setScreenTargetLock,
+  WallpaperTarget.both => l10n.setScreenTargetBoth,
+};
+
+/// The style on a screen, as the user knows it: its name, or what kind of wallpaper it is.
+String _liveScreenLabel(AppLocalizations l10n, LiveScreenContent screen) => switch (screen.tag?.style) {
+  final MotionStyle style => liveMotionStyleLabel(l10n, style),
+  final GradientStyle style => _gradientStyleLabel(l10n, style),
+  _ => screen.showsPrism ? l10n.wallpaperLiveScreenPrismWall : l10n.wallpaperLiveScreenOther,
+};
+
 /// The paid styles the signed-in user unlocked with coins, each with the end of its unlock.
 typedef VideoPicker = Future<String?> Function();
 
@@ -117,6 +138,9 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
   late _LiveMode _mode = widget.imageUrl == null ? _LiveMode.gradients : _LiveMode.photo;
   int _seedIndex = 0;
 
+  /// The last per-screen apply the user confirmed. It stays until the next apply.
+  LiveApplyOutcome? _screensSet;
+
   @override
   void initState() {
     super.initState();
@@ -135,7 +159,8 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
     if (state != AppLifecycleState.resumed) return;
     context.read<LiveWallpaperBloc>()
       ..add(LiveWallpaperEvent.proChanged(app_state.prismUser.premium))
-      ..add(LiveWallpaperEvent.unlockedStylesChanged(liveStyleUnlocks()));
+      ..add(LiveWallpaperEvent.unlockedStylesChanged(liveStyleUnlocks()))
+      ..add(const LiveWallpaperEvent.screensChecked());
   }
 
   List<_LiveMode> get _modes => <_LiveMode>[
@@ -153,6 +178,10 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
 
   Future<void> _onOutcome(BuildContext context, LiveApplyOutcome outcome) async {
     final LiveWallpaperBloc bloc = context.read<LiveWallpaperBloc>()..add(const LiveWallpaperEvent.outcomeHandled());
+    if (outcome.screens != null) {
+      setState(() => _screensSet = outcome);
+      return;
+    }
     switch (outcome.status) {
       case LiveApplyStatus.cancelled:
         return;
@@ -214,6 +243,7 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
     if (!await requireSignedInAction(context) || !context.mounted) return;
     final LiveWallpaperBloc bloc = context.read<LiveWallpaperBloc>();
     PrismHaptics.tap();
+    setState(() => _screensSet = null);
     switch (_mode) {
       case _LiveMode.photo:
         final Size size = MediaQuery.sizeOf(context);
@@ -313,15 +343,28 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
                   },
                 ),
         ),
+        if (_screensSet case final LiveApplyOutcome set?)
+          _ScreensSetCard(outcome: set, onPickOther: (screen) => _pickOtherScreen(context, screen)),
         if (!(shadersOff || videoOff))
           _ApplyBar(
             label: _applyLabel(state),
             busy: state.applying,
             enabled: _mode != _LiveMode.video || state.videoPath != null,
             onPressed: () => _apply(context),
+            target: state.capabilities.supportsPerScreen && _mode != _LiveMode.video ? state.target : null,
+            onTargetChanged: (target) =>
+                context.read<LiveWallpaperBloc>().add(LiveWallpaperEvent.targetSelected(target)),
           ),
       ],
     );
+  }
+
+  /// From a wall, go back so the user can open another one; the next Live screen opens on [screen].
+  /// From Settings there is no wall to change, so stay and let them pick another style.
+  void _pickOtherScreen(BuildContext context, WallpaperTarget screen) {
+    context.read<LiveWallpaperBloc>().add(LiveWallpaperEvent.otherScreenPicked(screen));
+    setState(() => _screensSet = null);
+    if (widget.imageUrl != null) Navigator.of(context).maybePop();
   }
 
   String _applyLabel(LiveWallpaperState state) {
@@ -557,13 +600,77 @@ class _BatterySaver extends StatelessWidget {
   }
 }
 
+class _ScreensSetCard extends StatelessWidget {
+  const _ScreensSetCard({required this.outcome, required this.onPickOther});
+
+  final LiveApplyOutcome outcome;
+  final ValueChanged<WallpaperTarget> onPickOther;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
+    final ThemeData theme = Theme.of(context);
+    final LiveScreens screens = outcome.screens!;
+    final WallpaperTarget? other = switch (outcome.target) {
+      WallpaperTarget.home => WallpaperTarget.lock,
+      WallpaperTarget.lock => WallpaperTarget.home,
+      _ => null,
+    };
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: PrismCard(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  l10n.wallpaperLiveScreensResult(
+                    _liveScreenLabel(l10n, screens.home),
+                    _liveScreenLabel(l10n, screens.lock),
+                  ),
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+              if (other != null) ...[
+                const SizedBox(height: 12),
+                PrismButton(
+                  label: other == WallpaperTarget.home ? l10n.wallpaperLivePickForHome : l10n.wallpaperLivePickForLock,
+                  variant: PrismButtonVariant.tonal,
+                  expand: true,
+                  maxLines: 2,
+                  onPressed: () => onPickOther(other),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ApplyBar extends StatelessWidget {
-  const _ApplyBar({required this.label, required this.busy, required this.enabled, required this.onPressed});
+  const _ApplyBar({
+    required this.label,
+    required this.busy,
+    required this.enabled,
+    required this.onPressed,
+    required this.target,
+    required this.onTargetChanged,
+  });
 
   final String label;
   final bool busy;
   final bool enabled;
   final VoidCallback onPressed;
+
+  /// Null hides the screen choice: the device shows one live wall on both screens.
+  final WallpaperTarget? target;
+  final ValueChanged<WallpaperTarget> onTargetChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -575,6 +682,19 @@ class _ApplyBar extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (target case final WallpaperTarget selected?) ...[
+              Semantics(
+                container: true,
+                label: context.l10n.setScreenTargetGroup,
+                child: PrismSegmented<WallpaperTarget>(
+                  values: WallpaperTarget.values,
+                  selected: selected,
+                  labelOf: (value) => _liveTargetLabel(context.l10n, value),
+                  onChanged: busy ? null : onTargetChanged,
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
             SizedBox(
               width: double.infinity,
               child: FilledButton(

@@ -1,6 +1,8 @@
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_capabilities.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
+import 'package:Prism/features/live_wallpaper/domain/entities/live_screens.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/features/live_wallpaper/domain/repositories/live_wallpaper_repository.dart';
 
@@ -9,6 +11,18 @@ class FakeLiveWallpaperRepository implements LiveWallpaperRepository {
   Object? capabilitiesError;
   LiveApplyOutcome outcome = const LiveApplyOutcome.confirmInPreview();
   LiveApplyFailure? videoProblem;
+
+  /// What each screen shows, returned by [getScreens].
+  LiveScreens screens = LiveScreens.unknown;
+
+  @override
+  WallpaperTarget? nextTarget;
+
+  /// The target and tag of the last [applyMotion] or [applyGradient] call.
+  WallpaperTarget? lastTarget;
+  LiveContentTag? lastTag;
+
+  int getScreensCalls = 0;
 
   final List<MotionStyle> motionApplies = <MotionStyle>[];
   final List<GradientStyle> gradientApplies = <GradientStyle>[];
@@ -32,6 +46,8 @@ class FakeLiveWallpaperRepository implements LiveWallpaperRepository {
     required LivePalette palette,
     required double screenAspectRatio,
     required bool batterySaver,
+    required WallpaperTarget target,
+    required LiveContentTag tag,
     String? depthMapUrl,
     bool tilt = false,
   }) async {
@@ -40,6 +56,8 @@ class FakeLiveWallpaperRepository implements LiveWallpaperRepository {
     batterySaverValues.add(batterySaver);
     depthMapUrls.add(depthMapUrl);
     tiltValues.add(tilt);
+    lastTarget = target;
+    lastTag = tag;
     return outcome;
   }
 
@@ -48,11 +66,21 @@ class FakeLiveWallpaperRepository implements LiveWallpaperRepository {
     required GradientStyle style,
     required LivePalette palette,
     required bool batterySaver,
+    required WallpaperTarget target,
+    required LiveContentTag tag,
   }) async {
     gradientApplies.add(style);
     gradientPalettes.add(palette);
     batterySaverValues.add(batterySaver);
+    lastTarget = target;
+    lastTag = tag;
     return outcome;
+  }
+
+  @override
+  Future<LiveScreens> getScreens() async {
+    getScreensCalls++;
+    return screens;
   }
 
   @override

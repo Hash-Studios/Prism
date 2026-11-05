@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 
 import 'package:Prism/features/live_wallpaper/data/live_texture_preparer.dart';
 import 'package:Prism/features/live_wallpaper/data/repositories/live_wallpaper_repository_impl.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
+import 'package:Prism/features/live_wallpaper/domain/entities/live_screens.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:async_wallpaper/src/wallpaper_client.dart';
@@ -25,6 +27,7 @@ void main() {
   late LiveWallpaperRepositoryImpl repository;
   late Directory directory;
   final palette = LivePalette.fromAccent(Colors.blue, dark: true);
+  const tag = LiveContentTag(style: MotionStyle.drift, applyId: 'apply-test');
   const pending = aw.WallpaperOperationResult(
     status: aw.WallpaperOperationStatus.awaitingUserConfirmation,
     requestedTarget: aw.WallpaperTarget.both,
@@ -59,8 +62,16 @@ void main() {
       palette: palette,
       screenAspectRatio: 0.5,
       batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
     );
-    final gradient = await repository.applyGradient(style: GradientStyle.aurora, palette: palette, batterySaver: false);
+    final gradient = await repository.applyGradient(
+      style: GradientStyle.aurora,
+      palette: palette,
+      batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
+    );
     final video = await repository.applyVideo('/local.mp4');
 
     expect(<LiveApplyStatus>[motion.status, gradient.status, video.status], everyElement(LiveApplyStatus.cancelled));
@@ -80,6 +91,8 @@ void main() {
       palette: palette,
       screenAspectRatio: 0.5,
       batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
     );
 
     expect(result.status, LiveApplyStatus.cancelled);
@@ -95,10 +108,18 @@ void main() {
     expect(capabilities.supportsVideo, isFalse);
     expect(capabilities.supportsTilt, isTrue);
     when(() => client.applyOpenGlWallpaper(any())).thenAnswer((_) async => applied);
-    final outcome = await repository.applyGradient(style: GradientStyle.aurora, palette: palette, batterySaver: true);
+    final outcome = await repository.applyGradient(
+      style: GradientStyle.aurora,
+      palette: palette,
+      batterySaver: true,
+      target: WallpaperTarget.lock,
+      tag: tag,
+    );
     expect(outcome.status, LiveApplyStatus.applied);
     final request =
         verify(() => client.applyOpenGlWallpaper(captureAny())).captured.single as aw.OpenGlLiveWallpaperRequest;
+    expect(request.target, aw.WallpaperTarget.lock);
+    expect(request.contentTag, tag.encode());
     expect(request.frameRate, 15);
     expect(request.textures, isEmpty);
     expect(request.fragmentShader, contains('void main'));
@@ -113,11 +134,15 @@ void main() {
       palette: palette,
       screenAspectRatio: 0.5,
       batterySaver: false,
+      target: WallpaperTarget.lock,
+      tag: tag,
     );
     expect(outcome.status, LiveApplyStatus.confirmInPreview);
     verify(() => texture.prepare('https://example.test/wall.jpg', 0.5)).called(1);
     final request =
         verify(() => client.applyOpenGlWallpaper(captureAny())).captured.single as aw.OpenGlLiveWallpaperRequest;
+    expect(request.target, aw.WallpaperTarget.lock);
+    expect(request.contentTag, tag.encode());
     expect(request.frameRate, 30);
     expect(request.textures.single.filePath, '/prepared/texture.jpg');
   });
@@ -129,6 +154,8 @@ void main() {
       palette: palette,
       screenAspectRatio: 0.5,
       batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
     );
     expect(outcome.failure, LiveApplyFailure.styleUnavailable);
     verifyNever(() => texture.prepare(any(), any()));
@@ -147,6 +174,8 @@ void main() {
       palette: palette,
       screenAspectRatio: 0.5,
       batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
       depthMapUrl: 'https://example.test/map.png',
     );
     expect(outcome.status, LiveApplyStatus.confirmInPreview);
@@ -168,6 +197,8 @@ void main() {
       palette: palette,
       screenAspectRatio: 0.5,
       batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
       depthMapUrl: 'https://example.test/map.png',
       tilt: true,
     );
@@ -193,6 +224,8 @@ void main() {
       palette: palette,
       screenAspectRatio: 0.5,
       batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
       depthMapUrl: 'https://example.test/map.png',
     );
     expect(first.failure, LiveApplyFailure.textureDownloadFailed);
@@ -204,6 +237,8 @@ void main() {
       palette: palette,
       screenAspectRatio: 0.5,
       batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
       depthMapUrl: 'https://example.test/map.png',
     );
     expect(retry.status, LiveApplyStatus.confirmInPreview);
@@ -221,6 +256,8 @@ void main() {
       palette: palette,
       screenAspectRatio: 1,
       batterySaver: false,
+      target: WallpaperTarget.home,
+      tag: tag,
     );
     expect(outcome.failure, LiveApplyFailure.textureTooDetailed);
     verifyNever(() => client.applyOpenGlWallpaper(any()));

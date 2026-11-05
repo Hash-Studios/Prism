@@ -1,10 +1,13 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/live_wallpaper/biz/bloc/live_wallpaper_bloc.j.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_capabilities.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
+import 'package:Prism/features/live_wallpaper/domain/entities/live_screens.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -315,5 +318,297 @@ void main() {
       expect(applied(), isEmpty);
       await bloc.close();
     });
+  });
+
+  group('per-screen target', () {
+    const LiveCapabilities perScreen = LiveCapabilities(
+      supportsShaders: true,
+      supportsVideo: true,
+      supportsPerScreen: true,
+    );
+
+    blocTest<LiveWallpaperBloc, LiveWallpaperState>(
+      'started with per-screen support targets both screens by default',
+      build: () {
+        repository.capabilities = perScreen;
+        return build();
+      },
+      act: (bloc) async {
+        bloc.add(const LiveWallpaperEvent.started(isPro: true));
+        await settle();
+      },
+      verify: (bloc) => expect(bloc.state.target, WallpaperTarget.both),
+    );
+
+    blocTest<LiveWallpaperBloc, LiveWallpaperState>(
+      'started without per-screen support targets home even when a next target is kept',
+      build: () {
+        repository.nextTarget = WallpaperTarget.lock;
+        return build();
+      },
+      act: (bloc) async {
+        bloc.add(const LiveWallpaperEvent.started(isPro: true));
+        await settle();
+      },
+      verify: (bloc) => expect(bloc.state.target, WallpaperTarget.home),
+    );
+
+    blocTest<LiveWallpaperBloc, LiveWallpaperState>(
+      'started takes the next target the user chose and clears it',
+      build: () {
+        repository.capabilities = perScreen;
+        repository.nextTarget = WallpaperTarget.lock;
+        return build();
+      },
+      act: (bloc) async {
+        bloc.add(const LiveWallpaperEvent.started(isPro: true));
+        await settle();
+      },
+      verify: (bloc) {
+        expect(bloc.state.target, WallpaperTarget.lock);
+        expect(repository.nextTarget, isNull);
+      },
+    );
+
+    blocTest<LiveWallpaperBloc, LiveWallpaperState>(
+      'a gradient apply with per-screen support sends the selected target and a fresh tag',
+      build: () {
+        repository.capabilities = perScreen;
+        return build(imageUrl: null);
+      },
+      act: (bloc) async {
+        bloc
+          ..add(const LiveWallpaperEvent.started(isPro: true))
+          ..add(const LiveWallpaperEvent.targetSelected(WallpaperTarget.lock))
+          ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+        await settle();
+      },
+      verify: (bloc) {
+        expect(repository.lastTarget, WallpaperTarget.lock);
+        expect(repository.lastTag?.style, GradientStyle.aurora);
+      },
+    );
+
+    blocTest<LiveWallpaperBloc, LiveWallpaperState>(
+      'without per-screen support a gradient apply always sends home',
+      build: () => build(imageUrl: null),
+      act: (bloc) async {
+        bloc
+          ..add(const LiveWallpaperEvent.started(isPro: true))
+          ..add(const LiveWallpaperEvent.targetSelected(WallpaperTarget.lock))
+          ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+        await settle();
+      },
+      verify: (bloc) => expect(repository.lastTarget, WallpaperTarget.home),
+    );
+
+    blocTest<LiveWallpaperBloc, LiveWallpaperState>(
+      'a non-Pro paid gradient is refused for lock and nothing is applied',
+      build: () {
+        repository.capabilities = perScreen;
+        return build(imageUrl: null);
+      },
+      act: (bloc) async {
+        bloc
+          ..add(const LiveWallpaperEvent.started(isPro: false))
+          ..add(const LiveWallpaperEvent.targetSelected(WallpaperTarget.lock))
+          ..add(const LiveWallpaperEvent.gradientSelected(GradientStyle.waves))
+          ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+        await settle();
+      },
+      verify: (bloc) {
+        expect(bloc.state.outcome?.status, LiveApplyStatus.proRequired);
+        expect(repository.gradientApplies, isEmpty);
+        expect(repository.lastTarget, isNull);
+      },
+    );
+
+    blocTest<LiveWallpaperBloc, LiveWallpaperState>(
+      'a non-Pro paid motion style is refused for lock and nothing is applied',
+      build: () {
+        repository.capabilities = perScreen;
+        return build();
+      },
+      act: (bloc) async {
+        bloc
+          ..add(const LiveWallpaperEvent.started(isPro: false))
+          ..add(const LiveWallpaperEvent.targetSelected(WallpaperTarget.lock))
+          ..add(const LiveWallpaperEvent.motionSelected(MotionStyle.ripple))
+          ..add(LiveWallpaperEvent.motionApplied(palette: palette, screenAspectRatio: 0.45));
+        await settle();
+      },
+      verify: (bloc) {
+        expect(bloc.state.outcome?.status, LiveApplyStatus.proRequired);
+        expect(repository.motionApplies, isEmpty);
+        expect(repository.lastTarget, isNull);
+      },
+    );
+
+    blocTest<LiveWallpaperBloc, LiveWallpaperState>(
+      'a confirm-in-preview apply with per-screen support keeps its tag as the pending tag',
+      build: () {
+        repository.capabilities = perScreen;
+        repository.outcome = const LiveApplyOutcome.confirmInPreview(target: WallpaperTarget.lock);
+        return build(imageUrl: null);
+      },
+      act: (bloc) async {
+        bloc
+          ..add(const LiveWallpaperEvent.started(isPro: true))
+          ..add(const LiveWallpaperEvent.targetSelected(WallpaperTarget.lock))
+          ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+        await settle();
+      },
+      verify: (bloc) {
+        expect(repository.lastTag, isNotNull);
+        expect(bloc.state.pendingTag, repository.lastTag);
+      },
+    );
+
+    blocTest<LiveWallpaperBloc, LiveWallpaperState>(
+      'a confirm-in-preview apply without per-screen support has no pending tag',
+      build: () {
+        repository.outcome = const LiveApplyOutcome.confirmInPreview(target: WallpaperTarget.home);
+        return build(imageUrl: null);
+      },
+      act: (bloc) async {
+        bloc
+          ..add(const LiveWallpaperEvent.started(isPro: true))
+          ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+        await settle();
+      },
+      verify: (bloc) => expect(bloc.state.pendingTag, isNull),
+    );
+
+    blocTest<LiveWallpaperBloc, LiveWallpaperState>(
+      'checking the screens after a preview reports the screens that got the apply',
+      build: () {
+        repository.capabilities = perScreen;
+        repository.outcome = const LiveApplyOutcome.confirmInPreview(target: WallpaperTarget.lock);
+        return build(imageUrl: null);
+      },
+      act: (bloc) async {
+        bloc
+          ..add(const LiveWallpaperEvent.started(isPro: true))
+          ..add(const LiveWallpaperEvent.targetSelected(WallpaperTarget.lock))
+          ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+        await settle();
+        repository.screens = LiveScreens(
+          home: LiveScreenContent.other,
+          lock: LiveScreenContent(showsPrism: true, tag: repository.lastTag),
+        );
+        bloc.add(const LiveWallpaperEvent.screensChecked());
+        await settle();
+      },
+      verify: (bloc) {
+        expect(bloc.state.outcome?.status, LiveApplyStatus.applied);
+        expect(bloc.state.outcome?.target, WallpaperTarget.lock);
+        expect(bloc.state.outcome?.screens, repository.screens);
+        expect(bloc.state.pendingTag, isNull);
+      },
+    );
+
+    blocTest<LiveWallpaperBloc, LiveWallpaperState>(
+      'checking the screens when no screen shows the tag reports no outcome',
+      build: () {
+        repository.capabilities = perScreen;
+        repository.outcome = const LiveApplyOutcome.confirmInPreview(target: WallpaperTarget.lock);
+        return build(imageUrl: null);
+      },
+      act: (bloc) async {
+        bloc
+          ..add(const LiveWallpaperEvent.started(isPro: true))
+          ..add(const LiveWallpaperEvent.targetSelected(WallpaperTarget.lock))
+          ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+        await settle();
+        repository.screens = const LiveScreens(
+          home: LiveScreenContent(
+            showsPrism: true,
+            tag: LiveContentTag(style: GradientStyle.mesh, applyId: 'someone-else'),
+          ),
+          lock: LiveScreenContent.other,
+        );
+        bloc.add(const LiveWallpaperEvent.screensChecked());
+        await settle();
+      },
+      verify: (bloc) {
+        expect(bloc.state.outcome, isNull);
+        expect(bloc.state.pendingTag, isNull);
+      },
+    );
+
+    blocTest<LiveWallpaperBloc, LiveWallpaperState>(
+      'checking the screens without a pending apply does not read the screens',
+      build: () {
+        repository.capabilities = perScreen;
+        return build();
+      },
+      act: (bloc) async {
+        bloc
+          ..add(const LiveWallpaperEvent.started(isPro: true))
+          ..add(const LiveWallpaperEvent.screensChecked());
+        await settle();
+      },
+      verify: (bloc) => expect(repository.getScreensCalls, 0),
+    );
+
+    blocTest<LiveWallpaperBloc, LiveWallpaperState>(
+      'picking another screen selects it and keeps it for the next wall',
+      build: () {
+        repository.capabilities = perScreen;
+        return build();
+      },
+      act: (bloc) async {
+        bloc
+          ..add(const LiveWallpaperEvent.started(isPro: true))
+          ..add(const LiveWallpaperEvent.otherScreenPicked(WallpaperTarget.home));
+        await settle();
+      },
+      verify: (bloc) {
+        expect(bloc.state.target, WallpaperTarget.home);
+        expect(repository.nextTarget, WallpaperTarget.home);
+      },
+    );
+
+    blocTest<LiveWallpaperBloc, LiveWallpaperState>(
+      'a per-screen gradient apply is tracked with its target, per_screen on and no fallback',
+      build: () {
+        repository.capabilities = perScreen;
+        repository.outcome = const LiveApplyOutcome.confirmInPreview(target: WallpaperTarget.lock);
+        return build(imageUrl: null);
+      },
+      act: (bloc) async {
+        bloc
+          ..add(const LiveWallpaperEvent.started(isPro: true))
+          ..add(const LiveWallpaperEvent.targetSelected(WallpaperTarget.lock))
+          ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+        await settle();
+      },
+      verify: (bloc) {
+        final LiveWallpaperAppliedEvent applied = analytics.events.whereType<LiveWallpaperAppliedEvent>().single;
+        expect(applied.target, WallpaperTarget.lock);
+        expect(applied.perScreen, isTrue);
+        expect(applied.fallback, isFalse);
+      },
+    );
+
+    blocTest<LiveWallpaperBloc, LiveWallpaperState>(
+      'a per-screen-off apply that fell back is tracked as home with fallback on',
+      build: () {
+        repository.outcome = const LiveApplyOutcome.confirmInPreview(target: WallpaperTarget.home, fallback: true);
+        return build(imageUrl: null);
+      },
+      act: (bloc) async {
+        bloc
+          ..add(const LiveWallpaperEvent.started(isPro: true))
+          ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+        await settle();
+      },
+      verify: (bloc) {
+        final LiveWallpaperAppliedEvent applied = analytics.events.whereType<LiveWallpaperAppliedEvent>().single;
+        expect(applied.target, WallpaperTarget.home);
+        expect(applied.perScreen, isFalse);
+        expect(applied.fallback, isTrue);
+      },
+    );
   });
 }

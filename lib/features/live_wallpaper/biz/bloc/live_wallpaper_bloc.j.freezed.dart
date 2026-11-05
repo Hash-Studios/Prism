@@ -55,7 +55,7 @@ extension LiveWallpaperEventPatterns on LiveWallpaperEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _ProChanged value)?  proChanged,TResult Function( _UnlockedStylesChanged value)?  unlockedStylesChanged,TResult Function( _MotionSelected value)?  motionSelected,TResult Function( _GradientSelected value)?  gradientSelected,TResult Function( _BatterySaverChanged value)?  batterySaverChanged,TResult Function( _MotionApplied value)?  motionApplied,TResult Function( _GradientApplied value)?  gradientApplied,TResult Function( _VideoPicked value)?  videoPicked,TResult Function( _VideoApplied value)?  videoApplied,TResult Function( _OutcomeHandled value)?  outcomeHandled,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _ProChanged value)?  proChanged,TResult Function( _UnlockedStylesChanged value)?  unlockedStylesChanged,TResult Function( _MotionSelected value)?  motionSelected,TResult Function( _GradientSelected value)?  gradientSelected,TResult Function( _BatterySaverChanged value)?  batterySaverChanged,TResult Function( _TargetSelected value)?  targetSelected,TResult Function( _ScreensChecked value)?  screensChecked,TResult Function( _OtherScreenPicked value)?  otherScreenPicked,TResult Function( _MotionApplied value)?  motionApplied,TResult Function( _GradientApplied value)?  gradientApplied,TResult Function( _VideoPicked value)?  videoPicked,TResult Function( _VideoApplied value)?  videoApplied,TResult Function( _OutcomeHandled value)?  outcomeHandled,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -64,7 +64,10 @@ return proChanged(_that);case _UnlockedStylesChanged() when unlockedStylesChange
 return unlockedStylesChanged(_that);case _MotionSelected() when motionSelected != null:
 return motionSelected(_that);case _GradientSelected() when gradientSelected != null:
 return gradientSelected(_that);case _BatterySaverChanged() when batterySaverChanged != null:
-return batterySaverChanged(_that);case _MotionApplied() when motionApplied != null:
+return batterySaverChanged(_that);case _TargetSelected() when targetSelected != null:
+return targetSelected(_that);case _ScreensChecked() when screensChecked != null:
+return screensChecked(_that);case _OtherScreenPicked() when otherScreenPicked != null:
+return otherScreenPicked(_that);case _MotionApplied() when motionApplied != null:
 return motionApplied(_that);case _GradientApplied() when gradientApplied != null:
 return gradientApplied(_that);case _VideoPicked() when videoPicked != null:
 return videoPicked(_that);case _VideoApplied() when videoApplied != null:
@@ -87,7 +90,7 @@ return outcomeHandled(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _ProChanged value)  proChanged,required TResult Function( _UnlockedStylesChanged value)  unlockedStylesChanged,required TResult Function( _MotionSelected value)  motionSelected,required TResult Function( _GradientSelected value)  gradientSelected,required TResult Function( _BatterySaverChanged value)  batterySaverChanged,required TResult Function( _MotionApplied value)  motionApplied,required TResult Function( _GradientApplied value)  gradientApplied,required TResult Function( _VideoPicked value)  videoPicked,required TResult Function( _VideoApplied value)  videoApplied,required TResult Function( _OutcomeHandled value)  outcomeHandled,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _ProChanged value)  proChanged,required TResult Function( _UnlockedStylesChanged value)  unlockedStylesChanged,required TResult Function( _MotionSelected value)  motionSelected,required TResult Function( _GradientSelected value)  gradientSelected,required TResult Function( _BatterySaverChanged value)  batterySaverChanged,required TResult Function( _TargetSelected value)  targetSelected,required TResult Function( _ScreensChecked value)  screensChecked,required TResult Function( _OtherScreenPicked value)  otherScreenPicked,required TResult Function( _MotionApplied value)  motionApplied,required TResult Function( _GradientApplied value)  gradientApplied,required TResult Function( _VideoPicked value)  videoPicked,required TResult Function( _VideoApplied value)  videoApplied,required TResult Function( _OutcomeHandled value)  outcomeHandled,}){
 final _that = this;
 switch (_that) {
 case _Started():
@@ -96,7 +99,10 @@ return proChanged(_that);case _UnlockedStylesChanged():
 return unlockedStylesChanged(_that);case _MotionSelected():
 return motionSelected(_that);case _GradientSelected():
 return gradientSelected(_that);case _BatterySaverChanged():
-return batterySaverChanged(_that);case _MotionApplied():
+return batterySaverChanged(_that);case _TargetSelected():
+return targetSelected(_that);case _ScreensChecked():
+return screensChecked(_that);case _OtherScreenPicked():
+return otherScreenPicked(_that);case _MotionApplied():
 return motionApplied(_that);case _GradientApplied():
 return gradientApplied(_that);case _VideoPicked():
 return videoPicked(_that);case _VideoApplied():
@@ -118,7 +124,7 @@ return outcomeHandled(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _ProChanged value)?  proChanged,TResult? Function( _UnlockedStylesChanged value)?  unlockedStylesChanged,TResult? Function( _MotionSelected value)?  motionSelected,TResult? Function( _GradientSelected value)?  gradientSelected,TResult? Function( _BatterySaverChanged value)?  batterySaverChanged,TResult? Function( _MotionApplied value)?  motionApplied,TResult? Function( _GradientApplied value)?  gradientApplied,TResult? Function( _VideoPicked value)?  videoPicked,TResult? Function( _VideoApplied value)?  videoApplied,TResult? Function( _OutcomeHandled value)?  outcomeHandled,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _ProChanged value)?  proChanged,TResult? Function( _UnlockedStylesChanged value)?  unlockedStylesChanged,TResult? Function( _MotionSelected value)?  motionSelected,TResult? Function( _GradientSelected value)?  gradientSelected,TResult? Function( _BatterySaverChanged value)?  batterySaverChanged,TResult? Function( _TargetSelected value)?  targetSelected,TResult? Function( _ScreensChecked value)?  screensChecked,TResult? Function( _OtherScreenPicked value)?  otherScreenPicked,TResult? Function( _MotionApplied value)?  motionApplied,TResult? Function( _GradientApplied value)?  gradientApplied,TResult? Function( _VideoPicked value)?  videoPicked,TResult? Function( _VideoApplied value)?  videoApplied,TResult? Function( _OutcomeHandled value)?  outcomeHandled,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
@@ -127,7 +133,10 @@ return proChanged(_that);case _UnlockedStylesChanged() when unlockedStylesChange
 return unlockedStylesChanged(_that);case _MotionSelected() when motionSelected != null:
 return motionSelected(_that);case _GradientSelected() when gradientSelected != null:
 return gradientSelected(_that);case _BatterySaverChanged() when batterySaverChanged != null:
-return batterySaverChanged(_that);case _MotionApplied() when motionApplied != null:
+return batterySaverChanged(_that);case _TargetSelected() when targetSelected != null:
+return targetSelected(_that);case _ScreensChecked() when screensChecked != null:
+return screensChecked(_that);case _OtherScreenPicked() when otherScreenPicked != null:
+return otherScreenPicked(_that);case _MotionApplied() when motionApplied != null:
 return motionApplied(_that);case _GradientApplied() when gradientApplied != null:
 return gradientApplied(_that);case _VideoPicked() when videoPicked != null:
 return videoPicked(_that);case _VideoApplied() when videoApplied != null:
@@ -149,7 +158,7 @@ return outcomeHandled(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isPro,  Map<String, DateTime> unlockedStyles)?  started,TResult Function( bool isPro)?  proChanged,TResult Function( Map<String, DateTime> unlockedStyles)?  unlockedStylesChanged,TResult Function( MotionStyle style)?  motionSelected,TResult Function( GradientStyle style)?  gradientSelected,TResult Function( bool enabled)?  batterySaverChanged,TResult Function( LivePalette palette,  double screenAspectRatio)?  motionApplied,TResult Function( LivePalette palette)?  gradientApplied,TResult Function( String path)?  videoPicked,TResult Function()?  videoApplied,TResult Function()?  outcomeHandled,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isPro,  Map<String, DateTime> unlockedStyles)?  started,TResult Function( bool isPro)?  proChanged,TResult Function( Map<String, DateTime> unlockedStyles)?  unlockedStylesChanged,TResult Function( MotionStyle style)?  motionSelected,TResult Function( GradientStyle style)?  gradientSelected,TResult Function( bool enabled)?  batterySaverChanged,TResult Function( WallpaperTarget target)?  targetSelected,TResult Function()?  screensChecked,TResult Function( WallpaperTarget screen)?  otherScreenPicked,TResult Function( LivePalette palette,  double screenAspectRatio)?  motionApplied,TResult Function( LivePalette palette)?  gradientApplied,TResult Function( String path)?  videoPicked,TResult Function()?  videoApplied,TResult Function()?  outcomeHandled,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.isPro,_that.unlockedStyles);case _ProChanged() when proChanged != null:
@@ -157,7 +166,10 @@ return proChanged(_that.isPro);case _UnlockedStylesChanged() when unlockedStyles
 return unlockedStylesChanged(_that.unlockedStyles);case _MotionSelected() when motionSelected != null:
 return motionSelected(_that.style);case _GradientSelected() when gradientSelected != null:
 return gradientSelected(_that.style);case _BatterySaverChanged() when batterySaverChanged != null:
-return batterySaverChanged(_that.enabled);case _MotionApplied() when motionApplied != null:
+return batterySaverChanged(_that.enabled);case _TargetSelected() when targetSelected != null:
+return targetSelected(_that.target);case _ScreensChecked() when screensChecked != null:
+return screensChecked();case _OtherScreenPicked() when otherScreenPicked != null:
+return otherScreenPicked(_that.screen);case _MotionApplied() when motionApplied != null:
 return motionApplied(_that.palette,_that.screenAspectRatio);case _GradientApplied() when gradientApplied != null:
 return gradientApplied(_that.palette);case _VideoPicked() when videoPicked != null:
 return videoPicked(_that.path);case _VideoApplied() when videoApplied != null:
@@ -180,7 +192,7 @@ return outcomeHandled();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isPro,  Map<String, DateTime> unlockedStyles)  started,required TResult Function( bool isPro)  proChanged,required TResult Function( Map<String, DateTime> unlockedStyles)  unlockedStylesChanged,required TResult Function( MotionStyle style)  motionSelected,required TResult Function( GradientStyle style)  gradientSelected,required TResult Function( bool enabled)  batterySaverChanged,required TResult Function( LivePalette palette,  double screenAspectRatio)  motionApplied,required TResult Function( LivePalette palette)  gradientApplied,required TResult Function( String path)  videoPicked,required TResult Function()  videoApplied,required TResult Function()  outcomeHandled,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isPro,  Map<String, DateTime> unlockedStyles)  started,required TResult Function( bool isPro)  proChanged,required TResult Function( Map<String, DateTime> unlockedStyles)  unlockedStylesChanged,required TResult Function( MotionStyle style)  motionSelected,required TResult Function( GradientStyle style)  gradientSelected,required TResult Function( bool enabled)  batterySaverChanged,required TResult Function( WallpaperTarget target)  targetSelected,required TResult Function()  screensChecked,required TResult Function( WallpaperTarget screen)  otherScreenPicked,required TResult Function( LivePalette palette,  double screenAspectRatio)  motionApplied,required TResult Function( LivePalette palette)  gradientApplied,required TResult Function( String path)  videoPicked,required TResult Function()  videoApplied,required TResult Function()  outcomeHandled,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started(_that.isPro,_that.unlockedStyles);case _ProChanged():
@@ -188,7 +200,10 @@ return proChanged(_that.isPro);case _UnlockedStylesChanged():
 return unlockedStylesChanged(_that.unlockedStyles);case _MotionSelected():
 return motionSelected(_that.style);case _GradientSelected():
 return gradientSelected(_that.style);case _BatterySaverChanged():
-return batterySaverChanged(_that.enabled);case _MotionApplied():
+return batterySaverChanged(_that.enabled);case _TargetSelected():
+return targetSelected(_that.target);case _ScreensChecked():
+return screensChecked();case _OtherScreenPicked():
+return otherScreenPicked(_that.screen);case _MotionApplied():
 return motionApplied(_that.palette,_that.screenAspectRatio);case _GradientApplied():
 return gradientApplied(_that.palette);case _VideoPicked():
 return videoPicked(_that.path);case _VideoApplied():
@@ -210,7 +225,7 @@ return outcomeHandled();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isPro,  Map<String, DateTime> unlockedStyles)?  started,TResult? Function( bool isPro)?  proChanged,TResult? Function( Map<String, DateTime> unlockedStyles)?  unlockedStylesChanged,TResult? Function( MotionStyle style)?  motionSelected,TResult? Function( GradientStyle style)?  gradientSelected,TResult? Function( bool enabled)?  batterySaverChanged,TResult? Function( LivePalette palette,  double screenAspectRatio)?  motionApplied,TResult? Function( LivePalette palette)?  gradientApplied,TResult? Function( String path)?  videoPicked,TResult? Function()?  videoApplied,TResult? Function()?  outcomeHandled,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isPro,  Map<String, DateTime> unlockedStyles)?  started,TResult? Function( bool isPro)?  proChanged,TResult? Function( Map<String, DateTime> unlockedStyles)?  unlockedStylesChanged,TResult? Function( MotionStyle style)?  motionSelected,TResult? Function( GradientStyle style)?  gradientSelected,TResult? Function( bool enabled)?  batterySaverChanged,TResult? Function( WallpaperTarget target)?  targetSelected,TResult? Function()?  screensChecked,TResult? Function( WallpaperTarget screen)?  otherScreenPicked,TResult? Function( LivePalette palette,  double screenAspectRatio)?  motionApplied,TResult? Function( LivePalette palette)?  gradientApplied,TResult? Function( String path)?  videoPicked,TResult? Function()?  videoApplied,TResult? Function()?  outcomeHandled,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.isPro,_that.unlockedStyles);case _ProChanged() when proChanged != null:
@@ -218,7 +233,10 @@ return proChanged(_that.isPro);case _UnlockedStylesChanged() when unlockedStyles
 return unlockedStylesChanged(_that.unlockedStyles);case _MotionSelected() when motionSelected != null:
 return motionSelected(_that.style);case _GradientSelected() when gradientSelected != null:
 return gradientSelected(_that.style);case _BatterySaverChanged() when batterySaverChanged != null:
-return batterySaverChanged(_that.enabled);case _MotionApplied() when motionApplied != null:
+return batterySaverChanged(_that.enabled);case _TargetSelected() when targetSelected != null:
+return targetSelected(_that.target);case _ScreensChecked() when screensChecked != null:
+return screensChecked();case _OtherScreenPicked() when otherScreenPicked != null:
+return otherScreenPicked(_that.screen);case _MotionApplied() when motionApplied != null:
 return motionApplied(_that.palette,_that.screenAspectRatio);case _GradientApplied() when gradientApplied != null:
 return gradientApplied(_that.palette);case _VideoPicked() when videoPicked != null:
 return videoPicked(_that.path);case _VideoApplied() when videoApplied != null:
@@ -644,6 +662,170 @@ as bool,
 /// @nodoc
 
 
+class _TargetSelected implements LiveWallpaperEvent {
+  const _TargetSelected(this.target);
+  
+
+ final  WallpaperTarget target;
+
+/// Create a copy of LiveWallpaperEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$TargetSelectedCopyWith<_TargetSelected> get copyWith => __$TargetSelectedCopyWithImpl<_TargetSelected>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TargetSelected&&(identical(other.target, target) || other.target == target));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,target);
+
+@override
+String toString() {
+  return 'LiveWallpaperEvent.targetSelected(target: $target)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$TargetSelectedCopyWith<$Res> implements $LiveWallpaperEventCopyWith<$Res> {
+  factory _$TargetSelectedCopyWith(_TargetSelected value, $Res Function(_TargetSelected) _then) = __$TargetSelectedCopyWithImpl;
+@useResult
+$Res call({
+ WallpaperTarget target
+});
+
+
+
+
+}
+/// @nodoc
+class __$TargetSelectedCopyWithImpl<$Res>
+    implements _$TargetSelectedCopyWith<$Res> {
+  __$TargetSelectedCopyWithImpl(this._self, this._then);
+
+  final _TargetSelected _self;
+  final $Res Function(_TargetSelected) _then;
+
+/// Create a copy of LiveWallpaperEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? target = null,}) {
+  return _then(_TargetSelected(
+null == target ? _self.target : target // ignore: cast_nullable_to_non_nullable
+as WallpaperTarget,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class _ScreensChecked implements LiveWallpaperEvent {
+  const _ScreensChecked();
+  
+
+
+
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ScreensChecked);
+}
+
+
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'LiveWallpaperEvent.screensChecked()';
+}
+
+
+}
+
+
+
+
+/// @nodoc
+
+
+class _OtherScreenPicked implements LiveWallpaperEvent {
+  const _OtherScreenPicked(this.screen);
+  
+
+ final  WallpaperTarget screen;
+
+/// Create a copy of LiveWallpaperEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$OtherScreenPickedCopyWith<_OtherScreenPicked> get copyWith => __$OtherScreenPickedCopyWithImpl<_OtherScreenPicked>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _OtherScreenPicked&&(identical(other.screen, screen) || other.screen == screen));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,screen);
+
+@override
+String toString() {
+  return 'LiveWallpaperEvent.otherScreenPicked(screen: $screen)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$OtherScreenPickedCopyWith<$Res> implements $LiveWallpaperEventCopyWith<$Res> {
+  factory _$OtherScreenPickedCopyWith(_OtherScreenPicked value, $Res Function(_OtherScreenPicked) _then) = __$OtherScreenPickedCopyWithImpl;
+@useResult
+$Res call({
+ WallpaperTarget screen
+});
+
+
+
+
+}
+/// @nodoc
+class __$OtherScreenPickedCopyWithImpl<$Res>
+    implements _$OtherScreenPickedCopyWith<$Res> {
+  __$OtherScreenPickedCopyWithImpl(this._self, this._then);
+
+  final _OtherScreenPicked _self;
+  final $Res Function(_OtherScreenPicked) _then;
+
+/// Create a copy of LiveWallpaperEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? screen = null,}) {
+  return _then(_OtherScreenPicked(
+null == screen ? _self.screen : screen // ignore: cast_nullable_to_non_nullable
+as WallpaperTarget,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
 class _MotionApplied implements LiveWallpaperEvent {
   const _MotionApplied({required this.palette, required this.screenAspectRatio});
   
@@ -908,8 +1090,10 @@ String toString() {
 /// @nodoc
 mixin _$LiveWallpaperState {
 
- LiveWallpaperStatus get status; LiveCapabilities get capabilities; bool get isPro; MotionStyle get motionStyle; GradientStyle get gradientStyle; bool get batterySaver; bool get applying;/// Paid style id to the end of its coin unlock, as the server stored it.
- Map<String, DateTime> get unlockedStyles; String? get videoPath; LiveApplyOutcome? get outcome;
+ LiveWallpaperStatus get status; LiveCapabilities get capabilities; bool get isPro; MotionStyle get motionStyle; GradientStyle get gradientStyle; bool get batterySaver; bool get applying;/// The screen the next shader apply is for. Android asks again in its preview.
+ WallpaperTarget get target;/// Paid style id to the end of its coin unlock, as the server stored it.
+ Map<String, DateTime> get unlockedStyles; String? get videoPath; LiveApplyOutcome? get outcome;/// The apply that waits for the user to finish in the system preview.
+ LiveContentTag? get pendingTag;
 /// Create a copy of LiveWallpaperState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -920,16 +1104,16 @@ $LiveWallpaperStateCopyWith<LiveWallpaperState> get copyWith => _$LiveWallpaperS
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LiveWallpaperState&&(identical(other.status, status) || other.status == status)&&(identical(other.capabilities, capabilities) || other.capabilities == capabilities)&&(identical(other.isPro, isPro) || other.isPro == isPro)&&(identical(other.motionStyle, motionStyle) || other.motionStyle == motionStyle)&&(identical(other.gradientStyle, gradientStyle) || other.gradientStyle == gradientStyle)&&(identical(other.batterySaver, batterySaver) || other.batterySaver == batterySaver)&&(identical(other.applying, applying) || other.applying == applying)&&const DeepCollectionEquality().equals(other.unlockedStyles, unlockedStyles)&&(identical(other.videoPath, videoPath) || other.videoPath == videoPath)&&(identical(other.outcome, outcome) || other.outcome == outcome));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LiveWallpaperState&&(identical(other.status, status) || other.status == status)&&(identical(other.capabilities, capabilities) || other.capabilities == capabilities)&&(identical(other.isPro, isPro) || other.isPro == isPro)&&(identical(other.motionStyle, motionStyle) || other.motionStyle == motionStyle)&&(identical(other.gradientStyle, gradientStyle) || other.gradientStyle == gradientStyle)&&(identical(other.batterySaver, batterySaver) || other.batterySaver == batterySaver)&&(identical(other.applying, applying) || other.applying == applying)&&(identical(other.target, target) || other.target == target)&&const DeepCollectionEquality().equals(other.unlockedStyles, unlockedStyles)&&(identical(other.videoPath, videoPath) || other.videoPath == videoPath)&&(identical(other.outcome, outcome) || other.outcome == outcome)&&(identical(other.pendingTag, pendingTag) || other.pendingTag == pendingTag));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,capabilities,isPro,motionStyle,gradientStyle,batterySaver,applying,const DeepCollectionEquality().hash(unlockedStyles),videoPath,outcome);
+int get hashCode => Object.hash(runtimeType,status,capabilities,isPro,motionStyle,gradientStyle,batterySaver,applying,target,const DeepCollectionEquality().hash(unlockedStyles),videoPath,outcome,pendingTag);
 
 @override
 String toString() {
-  return 'LiveWallpaperState(status: $status, capabilities: $capabilities, isPro: $isPro, motionStyle: $motionStyle, gradientStyle: $gradientStyle, batterySaver: $batterySaver, applying: $applying, unlockedStyles: $unlockedStyles, videoPath: $videoPath, outcome: $outcome)';
+  return 'LiveWallpaperState(status: $status, capabilities: $capabilities, isPro: $isPro, motionStyle: $motionStyle, gradientStyle: $gradientStyle, batterySaver: $batterySaver, applying: $applying, target: $target, unlockedStyles: $unlockedStyles, videoPath: $videoPath, outcome: $outcome, pendingTag: $pendingTag)';
 }
 
 
@@ -940,7 +1124,7 @@ abstract mixin class $LiveWallpaperStateCopyWith<$Res>  {
   factory $LiveWallpaperStateCopyWith(LiveWallpaperState value, $Res Function(LiveWallpaperState) _then) = _$LiveWallpaperStateCopyWithImpl;
 @useResult
 $Res call({
- LiveWallpaperStatus status, LiveCapabilities capabilities, bool isPro, MotionStyle motionStyle, GradientStyle gradientStyle, bool batterySaver, bool applying, Map<String, DateTime> unlockedStyles, String? videoPath, LiveApplyOutcome? outcome
+ LiveWallpaperStatus status, LiveCapabilities capabilities, bool isPro, MotionStyle motionStyle, GradientStyle gradientStyle, bool batterySaver, bool applying, WallpaperTarget target, Map<String, DateTime> unlockedStyles, String? videoPath, LiveApplyOutcome? outcome, LiveContentTag? pendingTag
 });
 
 
@@ -957,7 +1141,7 @@ class _$LiveWallpaperStateCopyWithImpl<$Res>
 
 /// Create a copy of LiveWallpaperState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? capabilities = null,Object? isPro = null,Object? motionStyle = null,Object? gradientStyle = null,Object? batterySaver = null,Object? applying = null,Object? unlockedStyles = null,Object? videoPath = freezed,Object? outcome = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? capabilities = null,Object? isPro = null,Object? motionStyle = null,Object? gradientStyle = null,Object? batterySaver = null,Object? applying = null,Object? target = null,Object? unlockedStyles = null,Object? videoPath = freezed,Object? outcome = freezed,Object? pendingTag = freezed,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LiveWallpaperStatus,capabilities: null == capabilities ? _self.capabilities : capabilities // ignore: cast_nullable_to_non_nullable
@@ -966,10 +1150,12 @@ as bool,motionStyle: null == motionStyle ? _self.motionStyle : motionStyle // ig
 as MotionStyle,gradientStyle: null == gradientStyle ? _self.gradientStyle : gradientStyle // ignore: cast_nullable_to_non_nullable
 as GradientStyle,batterySaver: null == batterySaver ? _self.batterySaver : batterySaver // ignore: cast_nullable_to_non_nullable
 as bool,applying: null == applying ? _self.applying : applying // ignore: cast_nullable_to_non_nullable
-as bool,unlockedStyles: null == unlockedStyles ? _self.unlockedStyles : unlockedStyles // ignore: cast_nullable_to_non_nullable
+as bool,target: null == target ? _self.target : target // ignore: cast_nullable_to_non_nullable
+as WallpaperTarget,unlockedStyles: null == unlockedStyles ? _self.unlockedStyles : unlockedStyles // ignore: cast_nullable_to_non_nullable
 as Map<String, DateTime>,videoPath: freezed == videoPath ? _self.videoPath : videoPath // ignore: cast_nullable_to_non_nullable
 as String?,outcome: freezed == outcome ? _self.outcome : outcome // ignore: cast_nullable_to_non_nullable
-as LiveApplyOutcome?,
+as LiveApplyOutcome?,pendingTag: freezed == pendingTag ? _self.pendingTag : pendingTag // ignore: cast_nullable_to_non_nullable
+as LiveContentTag?,
   ));
 }
 
@@ -1054,10 +1240,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LiveWallpaperStatus status,  LiveCapabilities capabilities,  bool isPro,  MotionStyle motionStyle,  GradientStyle gradientStyle,  bool batterySaver,  bool applying,  Map<String, DateTime> unlockedStyles,  String? videoPath,  LiveApplyOutcome? outcome)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LiveWallpaperStatus status,  LiveCapabilities capabilities,  bool isPro,  MotionStyle motionStyle,  GradientStyle gradientStyle,  bool batterySaver,  bool applying,  WallpaperTarget target,  Map<String, DateTime> unlockedStyles,  String? videoPath,  LiveApplyOutcome? outcome,  LiveContentTag? pendingTag)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LiveWallpaperState() when $default != null:
-return $default(_that.status,_that.capabilities,_that.isPro,_that.motionStyle,_that.gradientStyle,_that.batterySaver,_that.applying,_that.unlockedStyles,_that.videoPath,_that.outcome);case _:
+return $default(_that.status,_that.capabilities,_that.isPro,_that.motionStyle,_that.gradientStyle,_that.batterySaver,_that.applying,_that.target,_that.unlockedStyles,_that.videoPath,_that.outcome,_that.pendingTag);case _:
   return orElse();
 
 }
@@ -1075,10 +1261,10 @@ return $default(_that.status,_that.capabilities,_that.isPro,_that.motionStyle,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LiveWallpaperStatus status,  LiveCapabilities capabilities,  bool isPro,  MotionStyle motionStyle,  GradientStyle gradientStyle,  bool batterySaver,  bool applying,  Map<String, DateTime> unlockedStyles,  String? videoPath,  LiveApplyOutcome? outcome)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LiveWallpaperStatus status,  LiveCapabilities capabilities,  bool isPro,  MotionStyle motionStyle,  GradientStyle gradientStyle,  bool batterySaver,  bool applying,  WallpaperTarget target,  Map<String, DateTime> unlockedStyles,  String? videoPath,  LiveApplyOutcome? outcome,  LiveContentTag? pendingTag)  $default,) {final _that = this;
 switch (_that) {
 case _LiveWallpaperState():
-return $default(_that.status,_that.capabilities,_that.isPro,_that.motionStyle,_that.gradientStyle,_that.batterySaver,_that.applying,_that.unlockedStyles,_that.videoPath,_that.outcome);case _:
+return $default(_that.status,_that.capabilities,_that.isPro,_that.motionStyle,_that.gradientStyle,_that.batterySaver,_that.applying,_that.target,_that.unlockedStyles,_that.videoPath,_that.outcome,_that.pendingTag);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1095,10 +1281,10 @@ return $default(_that.status,_that.capabilities,_that.isPro,_that.motionStyle,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LiveWallpaperStatus status,  LiveCapabilities capabilities,  bool isPro,  MotionStyle motionStyle,  GradientStyle gradientStyle,  bool batterySaver,  bool applying,  Map<String, DateTime> unlockedStyles,  String? videoPath,  LiveApplyOutcome? outcome)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LiveWallpaperStatus status,  LiveCapabilities capabilities,  bool isPro,  MotionStyle motionStyle,  GradientStyle gradientStyle,  bool batterySaver,  bool applying,  WallpaperTarget target,  Map<String, DateTime> unlockedStyles,  String? videoPath,  LiveApplyOutcome? outcome,  LiveContentTag? pendingTag)?  $default,) {final _that = this;
 switch (_that) {
 case _LiveWallpaperState() when $default != null:
-return $default(_that.status,_that.capabilities,_that.isPro,_that.motionStyle,_that.gradientStyle,_that.batterySaver,_that.applying,_that.unlockedStyles,_that.videoPath,_that.outcome);case _:
+return $default(_that.status,_that.capabilities,_that.isPro,_that.motionStyle,_that.gradientStyle,_that.batterySaver,_that.applying,_that.target,_that.unlockedStyles,_that.videoPath,_that.outcome,_that.pendingTag);case _:
   return null;
 
 }
@@ -1110,7 +1296,7 @@ return $default(_that.status,_that.capabilities,_that.isPro,_that.motionStyle,_t
 
 
 class _LiveWallpaperState implements LiveWallpaperState {
-  const _LiveWallpaperState({required this.status, required this.capabilities, required this.isPro, required this.motionStyle, required this.gradientStyle, required this.batterySaver, required this.applying, final  Map<String, DateTime> unlockedStyles = const <String, DateTime>{}, this.videoPath, this.outcome}): _unlockedStyles = unlockedStyles;
+  const _LiveWallpaperState({required this.status, required this.capabilities, required this.isPro, required this.motionStyle, required this.gradientStyle, required this.batterySaver, required this.applying, required this.target, final  Map<String, DateTime> unlockedStyles = const <String, DateTime>{}, this.videoPath, this.outcome, this.pendingTag}): _unlockedStyles = unlockedStyles;
   
 
 @override final  LiveWallpaperStatus status;
@@ -1120,6 +1306,8 @@ class _LiveWallpaperState implements LiveWallpaperState {
 @override final  GradientStyle gradientStyle;
 @override final  bool batterySaver;
 @override final  bool applying;
+/// The screen the next shader apply is for. Android asks again in its preview.
+@override final  WallpaperTarget target;
 /// Paid style id to the end of its coin unlock, as the server stored it.
  final  Map<String, DateTime> _unlockedStyles;
 /// Paid style id to the end of its coin unlock, as the server stored it.
@@ -1131,6 +1319,8 @@ class _LiveWallpaperState implements LiveWallpaperState {
 
 @override final  String? videoPath;
 @override final  LiveApplyOutcome? outcome;
+/// The apply that waits for the user to finish in the system preview.
+@override final  LiveContentTag? pendingTag;
 
 /// Create a copy of LiveWallpaperState
 /// with the given fields replaced by the non-null parameter values.
@@ -1142,16 +1332,16 @@ _$LiveWallpaperStateCopyWith<_LiveWallpaperState> get copyWith => __$LiveWallpap
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LiveWallpaperState&&(identical(other.status, status) || other.status == status)&&(identical(other.capabilities, capabilities) || other.capabilities == capabilities)&&(identical(other.isPro, isPro) || other.isPro == isPro)&&(identical(other.motionStyle, motionStyle) || other.motionStyle == motionStyle)&&(identical(other.gradientStyle, gradientStyle) || other.gradientStyle == gradientStyle)&&(identical(other.batterySaver, batterySaver) || other.batterySaver == batterySaver)&&(identical(other.applying, applying) || other.applying == applying)&&const DeepCollectionEquality().equals(other._unlockedStyles, _unlockedStyles)&&(identical(other.videoPath, videoPath) || other.videoPath == videoPath)&&(identical(other.outcome, outcome) || other.outcome == outcome));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LiveWallpaperState&&(identical(other.status, status) || other.status == status)&&(identical(other.capabilities, capabilities) || other.capabilities == capabilities)&&(identical(other.isPro, isPro) || other.isPro == isPro)&&(identical(other.motionStyle, motionStyle) || other.motionStyle == motionStyle)&&(identical(other.gradientStyle, gradientStyle) || other.gradientStyle == gradientStyle)&&(identical(other.batterySaver, batterySaver) || other.batterySaver == batterySaver)&&(identical(other.applying, applying) || other.applying == applying)&&(identical(other.target, target) || other.target == target)&&const DeepCollectionEquality().equals(other._unlockedStyles, _unlockedStyles)&&(identical(other.videoPath, videoPath) || other.videoPath == videoPath)&&(identical(other.outcome, outcome) || other.outcome == outcome)&&(identical(other.pendingTag, pendingTag) || other.pendingTag == pendingTag));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,capabilities,isPro,motionStyle,gradientStyle,batterySaver,applying,const DeepCollectionEquality().hash(_unlockedStyles),videoPath,outcome);
+int get hashCode => Object.hash(runtimeType,status,capabilities,isPro,motionStyle,gradientStyle,batterySaver,applying,target,const DeepCollectionEquality().hash(_unlockedStyles),videoPath,outcome,pendingTag);
 
 @override
 String toString() {
-  return 'LiveWallpaperState(status: $status, capabilities: $capabilities, isPro: $isPro, motionStyle: $motionStyle, gradientStyle: $gradientStyle, batterySaver: $batterySaver, applying: $applying, unlockedStyles: $unlockedStyles, videoPath: $videoPath, outcome: $outcome)';
+  return 'LiveWallpaperState(status: $status, capabilities: $capabilities, isPro: $isPro, motionStyle: $motionStyle, gradientStyle: $gradientStyle, batterySaver: $batterySaver, applying: $applying, target: $target, unlockedStyles: $unlockedStyles, videoPath: $videoPath, outcome: $outcome, pendingTag: $pendingTag)';
 }
 
 
@@ -1162,7 +1352,7 @@ abstract mixin class _$LiveWallpaperStateCopyWith<$Res> implements $LiveWallpape
   factory _$LiveWallpaperStateCopyWith(_LiveWallpaperState value, $Res Function(_LiveWallpaperState) _then) = __$LiveWallpaperStateCopyWithImpl;
 @override @useResult
 $Res call({
- LiveWallpaperStatus status, LiveCapabilities capabilities, bool isPro, MotionStyle motionStyle, GradientStyle gradientStyle, bool batterySaver, bool applying, Map<String, DateTime> unlockedStyles, String? videoPath, LiveApplyOutcome? outcome
+ LiveWallpaperStatus status, LiveCapabilities capabilities, bool isPro, MotionStyle motionStyle, GradientStyle gradientStyle, bool batterySaver, bool applying, WallpaperTarget target, Map<String, DateTime> unlockedStyles, String? videoPath, LiveApplyOutcome? outcome, LiveContentTag? pendingTag
 });
 
 
@@ -1179,7 +1369,7 @@ class __$LiveWallpaperStateCopyWithImpl<$Res>
 
 /// Create a copy of LiveWallpaperState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? capabilities = null,Object? isPro = null,Object? motionStyle = null,Object? gradientStyle = null,Object? batterySaver = null,Object? applying = null,Object? unlockedStyles = null,Object? videoPath = freezed,Object? outcome = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? capabilities = null,Object? isPro = null,Object? motionStyle = null,Object? gradientStyle = null,Object? batterySaver = null,Object? applying = null,Object? target = null,Object? unlockedStyles = null,Object? videoPath = freezed,Object? outcome = freezed,Object? pendingTag = freezed,}) {
   return _then(_LiveWallpaperState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LiveWallpaperStatus,capabilities: null == capabilities ? _self.capabilities : capabilities // ignore: cast_nullable_to_non_nullable
@@ -1188,10 +1378,12 @@ as bool,motionStyle: null == motionStyle ? _self.motionStyle : motionStyle // ig
 as MotionStyle,gradientStyle: null == gradientStyle ? _self.gradientStyle : gradientStyle // ignore: cast_nullable_to_non_nullable
 as GradientStyle,batterySaver: null == batterySaver ? _self.batterySaver : batterySaver // ignore: cast_nullable_to_non_nullable
 as bool,applying: null == applying ? _self.applying : applying // ignore: cast_nullable_to_non_nullable
-as bool,unlockedStyles: null == unlockedStyles ? _self._unlockedStyles : unlockedStyles // ignore: cast_nullable_to_non_nullable
+as bool,target: null == target ? _self.target : target // ignore: cast_nullable_to_non_nullable
+as WallpaperTarget,unlockedStyles: null == unlockedStyles ? _self._unlockedStyles : unlockedStyles // ignore: cast_nullable_to_non_nullable
 as Map<String, DateTime>,videoPath: freezed == videoPath ? _self.videoPath : videoPath // ignore: cast_nullable_to_non_nullable
 as String?,outcome: freezed == outcome ? _self.outcome : outcome // ignore: cast_nullable_to_non_nullable
-as LiveApplyOutcome?,
+as LiveApplyOutcome?,pendingTag: freezed == pendingTag ? _self.pendingTag : pendingTag // ignore: cast_nullable_to_non_nullable
+as LiveContentTag?,
   ));
 }
 

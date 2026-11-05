@@ -1,8 +1,10 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_capabilities.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
+import 'package:Prism/features/live_wallpaper/domain/entities/live_screens.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/features/live_wallpaper/domain/repositories/live_wallpaper_repository.dart';
 import 'package:bloc/bloc.dart';
@@ -24,6 +26,12 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
         },
         gradientSelected: (event) async => emit(state.copyWith(gradientStyle: event.style)),
         batterySaverChanged: (event) async => emit(state.copyWith(batterySaver: event.enabled)),
+        targetSelected: (event) async => emit(state.copyWith(target: event.target)),
+        screensChecked: (event) => _onScreensChecked(emit),
+        otherScreenPicked: (event) async {
+          _repository.nextTarget = event.screen;
+          emit(state.copyWith(target: event.screen));
+        },
         motionApplied: (event) => _onMotionApplied(event, emit),
         gradientApplied: (event) => _onGradientApplied(event, emit),
         videoPicked: (event) => _onVideoPicked(event, emit),
@@ -48,10 +56,41 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
     } catch (_) {
       capabilities = LiveCapabilities.none;
     }
+    final WallpaperTarget? next = _repository.nextTarget;
+    _repository.nextTarget = null;
     emit(
       state.copyWith(
         capabilities: capabilities,
         status: capabilities.isSupported ? LiveWallpaperStatus.ready : LiveWallpaperStatus.unsupported,
+        target: capabilities.supportsPerScreen ? next ?? WallpaperTarget.both : WallpaperTarget.home,
+      ),
+    );
+  }
+
+  /// Without per-screen support the screen hides the choice and keeps the plugin's default, Home.
+  WallpaperTarget get _applyTarget => state.capabilities.supportsPerScreen ? state.target : WallpaperTarget.home;
+
+  LiveContentTag _newTag(Enum style) =>
+      LiveContentTag(style: style, applyId: DateTime.now().microsecondsSinceEpoch.toRadixString(36));
+
+  /// Remembers a per-screen apply until the user is back from the preview and the screens can be read.
+  LiveContentTag? _pendingFor(LiveApplyOutcome outcome, LiveContentTag tag) =>
+      state.capabilities.supportsPerScreen && outcome.status == LiveApplyStatus.confirmInPreview ? tag : null;
+
+  Future<void> _onScreensChecked(Emitter<LiveWallpaperState> emit) async {
+    final LiveContentTag? tag = state.pendingTag;
+    if (tag == null) return;
+    LiveScreens screens;
+    try {
+      screens = await _repository.getScreens();
+    } catch (_) {
+      screens = LiveScreens.unknown;
+    }
+    final WallpaperTarget? landed = screens.screensShowing(tag);
+    emit(
+      state.copyWith(
+        pendingTag: null,
+        outcome: landed == null ? null : LiveApplyOutcome.screensSet(target: landed, screens: screens),
       ),
     );
   }
@@ -63,22 +102,34 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
       emit(state.copyWith(outcome: const LiveApplyOutcome.proRequired()));
       return;
     }
-    emit(state.copyWith(applying: true));
+    emit(state.copyWith(applying: true, pendingTag: null));
+    final LiveContentTag tag = _newTag(state.motionStyle);
+    final WallpaperTarget target = _applyTarget;
     final LiveApplyOutcome outcome = await _repository.applyMotion(
       imageUrl: url,
       style: state.motionStyle,
       palette: event.palette,
       screenAspectRatio: event.screenAspectRatio,
       batterySaver: state.batterySaver,
+      target: target,
+      tag: tag,
       depthMapUrl: depthMapUrl,
       tilt: state.capabilities.supportsTilt,
     );
-    _trackApplied(_motionAnalytics(state.motionStyle), outcome);
-    emit(state.copyWith(applying: false, outcome: outcome));
+    _trackApplied(_motionAnalytics(state.motionStyle), outcome, target: target);
+    emit(state.copyWith(applying: false, outcome: outcome, pendingTag: _pendingFor(outcome, tag)));
   }
 
-  void _trackApplied(LiveWallpaperStyleValue style, LiveApplyOutcome outcome) {
-    analytics.track(LiveWallpaperAppliedEvent(style: style, result: outcome.status.name));
+  void _trackApplied(LiveWallpaperStyleValue style, LiveApplyOutcome outcome, {WallpaperTarget? target}) {
+    analytics.track(
+      LiveWallpaperAppliedEvent(
+        style: style,
+        result: outcome.status.name,
+        target: target,
+        perScreen: target != null && state.capabilities.supportsPerScreen,
+        fallback: outcome.fallback,
+      ),
+    );
   }
 
   static LiveWallpaperStyleValue _motionAnalytics(MotionStyle style) => switch (style) {
@@ -103,14 +154,18 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
       emit(state.copyWith(outcome: const LiveApplyOutcome.proRequired()));
       return;
     }
-    emit(state.copyWith(applying: true));
+    emit(state.copyWith(applying: true, pendingTag: null));
+    final LiveContentTag tag = _newTag(state.gradientStyle);
+    final WallpaperTarget target = _applyTarget;
     final LiveApplyOutcome outcome = await _repository.applyGradient(
       style: state.gradientStyle,
       palette: event.palette,
       batterySaver: state.batterySaver,
+      target: target,
+      tag: tag,
     );
-    _trackApplied(_gradientAnalytics(state.gradientStyle), outcome);
-    emit(state.copyWith(applying: false, outcome: outcome));
+    _trackApplied(_gradientAnalytics(state.gradientStyle), outcome, target: target);
+    emit(state.copyWith(applying: false, outcome: outcome, pendingTag: _pendingFor(outcome, tag)));
   }
 
   Future<void> _onVideoPicked(_VideoPicked event, Emitter<LiveWallpaperState> emit) async {
@@ -125,8 +180,9 @@ class LiveWallpaperBloc extends Bloc<LiveWallpaperEvent, LiveWallpaperState> {
   Future<void> _onVideoApplied(Emitter<LiveWallpaperState> emit) async {
     final String? path = state.videoPath;
     if (state.applying || path == null) return;
-    emit(state.copyWith(applying: true));
-    final LiveApplyOutcome outcome = await _repository.applyVideo(path);
+    emit(state.copyWith(applying: true, pendingTag: null));
+    final LiveApplyOutcome applied = await _repository.applyVideo(path);
+    final LiveApplyOutcome outcome = LiveApplyOutcome(applied.status, failure: applied.failure);
     _trackApplied(LiveWallpaperStyleValue.video, outcome);
     emit(state.copyWith(applying: false, outcome: outcome));
   }

@@ -9007,6 +9007,39 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperLiveConfirmPreview => 'Bestätige in der Systemvorschau.';
 
   @override
+  String get wallpaperLiveConfirmHome =>
+      'Tippe in der Vorschau auf „Hintergrundbild festlegen“ und dann auf „Startbildschirm“.';
+
+  @override
+  String get wallpaperLiveConfirmLock =>
+      'Tippe in der Vorschau auf „Hintergrundbild festlegen“ und dann auf „Sperrbildschirm“.';
+
+  @override
+  String get wallpaperLiveConfirmBoth =>
+      'Tippe in der Vorschau auf „Hintergrundbild festlegen“ und dann auf „Startbildschirm und Sperrbildschirm“.';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'Bestätige in der Systemvorschau. Dieses Handy zeigt auf beiden Bildschirmen dasselbe Live-Hintergrundbild.';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'Startbildschirm: $home. Sperrbildschirm: $lock.';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'ein anderes Hintergrundbild';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'ein Prism-Live-Hintergrundbild';
+
+  @override
+  String get wallpaperLivePickForHome => 'Hintergrundbild für den Startbildschirm wählen';
+
+  @override
+  String get wallpaperLivePickForLock => 'Hintergrundbild für den Sperrbildschirm wählen';
+
+  @override
   String get wallpaperLiveDeviceUnavailable => 'Auf diesem Gerät nicht verfügbar';
 
   @override

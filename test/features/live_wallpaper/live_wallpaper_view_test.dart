@@ -1,19 +1,74 @@
+import 'dart:async';
+
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/live_wallpaper/biz/bloc/live_wallpaper_bloc.j.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_capabilities.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
+import 'package:Prism/features/live_wallpaper/domain/entities/live_screens.dart';
+import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_wallpaper_view.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_tilt_view.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../support/profile_user_fixture.dart';
 import 'fake_live_wallpaper_repository.dart';
+
+class _MockLiveWallpaperBloc extends MockBloc<LiveWallpaperEvent, LiveWallpaperState> implements LiveWallpaperBloc {}
+
+/// A device that can show the per-screen choice, on gradients with the Aurora style, unless told otherwise.
+LiveWallpaperState _readyState({
+  LiveCapabilities capabilities = const LiveCapabilities(
+    supportsShaders: true,
+    supportsVideo: true,
+    supportsPerScreen: true,
+  ),
+  bool isPro = false,
+  GradientStyle gradientStyle = GradientStyle.aurora,
+  WallpaperTarget target = WallpaperTarget.home,
+  LiveApplyOutcome? outcome,
+}) => LiveWallpaperState.initial().copyWith(
+  status: LiveWallpaperStatus.ready,
+  capabilities: capabilities,
+  isPro: isPro,
+  gradientStyle: gradientStyle,
+  target: target,
+  outcome: outcome,
+);
+
+/// Pumps the view over a [MockBloc]. [states] are emitted after the first build, as the bloc would.
+Future<_MockLiveWallpaperBloc> _pumpScreen(
+  WidgetTester tester, {
+  required LiveWallpaperState state,
+  Stream<LiveWallpaperState>? states,
+  TextScaler textScaler = TextScaler.noScaling,
+}) async {
+  final _MockLiveWallpaperBloc bloc = _MockLiveWallpaperBloc();
+  whenListen(bloc, states ?? const Stream<LiveWallpaperState>.empty(), initialState: state);
+  await tester.pumpWidget(
+    MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+        child: child!,
+      ),
+      home: BlocProvider<LiveWallpaperBloc>.value(value: bloc, child: const LiveWallpaperView()),
+    ),
+  );
+  await tester.pump();
+  await tester.pump();
+  return bloc;
+}
 
 void main() {
   late FakeLiveWallpaperRepository repository;
@@ -280,6 +335,180 @@ void main() {
       await applyGradient(tester);
 
       expectPalette(repository.gradientPalettes.single, seed);
+    });
+  });
+
+  group('per-screen choice', () {
+    testWidgets('per-screen on shows Home, Lock, Both before Apply', (tester) async {
+      final _MockLiveWallpaperBloc bloc = await _pumpScreen(tester, state: _readyState());
+
+      expect(find.bySemanticsLabel('Where to set it'), findsOneWidget);
+      expect(find.byType(PrismSegmented<WallpaperTarget>), findsOneWidget);
+      expect(find.text('Home screen'), findsOneWidget);
+      expect(find.text('Lock screen'), findsOneWidget);
+      expect(find.text('Both'), findsOneWidget);
+
+      await tester.tap(find.text('Lock screen'));
+      await tester.pump();
+      verify(() => bloc.add(const LiveWallpaperEvent.targetSelected(WallpaperTarget.lock))).called(1);
+    });
+
+    testWidgets('per-screen off looks the same as master', (tester) async {
+      await _pumpScreen(
+        tester,
+        state: _readyState(capabilities: const LiveCapabilities(supportsShaders: true, supportsVideo: true)),
+      );
+
+      expect(find.byType(PrismSegmented<WallpaperTarget>), findsNothing);
+      expect(find.text('Where to set it'), findsNothing);
+      expect(find.text('Home screen'), findsNothing);
+      expect(find.text('Lock screen'), findsNothing);
+      expect(find.text('Both'), findsNothing);
+
+      expect(find.byType(FilledButton), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Set live wallpaper'), findsOneWidget);
+      expect(find.text('Android opens a preview. Tap Set wallpaper there.'), findsOneWidget);
+      expect(find.text('Gradients'), findsOneWidget);
+      expect(find.text('Video'), findsOneWidget);
+      expect(find.byType(PrismCard), findsNothing);
+    });
+
+    testWidgets('video mode hides the screen choice', (tester) async {
+      await _pumpScreen(tester, state: _readyState());
+
+      await tester.tap(find.text('Video'));
+      await tester.pump();
+
+      expect(find.byType(PrismSegmented<WallpaperTarget>), findsNothing);
+      expect(find.bySemanticsLabel('Where to set it'), findsNothing);
+      expect(find.text('Home screen'), findsNothing);
+    });
+
+    testWidgets('second-screen offer after Lock got the wall', (tester) async {
+      const LiveScreens screens = LiveScreens(
+        home: LiveScreenContent(
+          showsPrism: true,
+          tag: LiveContentTag(style: GradientStyle.aurora, applyId: 'a'),
+        ),
+        lock: LiveScreenContent(
+          showsPrism: true,
+          tag: LiveContentTag(style: MotionStyle.ripple, applyId: 'b'),
+        ),
+      );
+      const LiveApplyOutcome outcome = LiveApplyOutcome.screensSet(target: WallpaperTarget.lock, screens: screens);
+      final _MockLiveWallpaperBloc bloc = await _pumpScreen(
+        tester,
+        state: _readyState(),
+        states: Stream<LiveWallpaperState>.value(_readyState(outcome: outcome)),
+      );
+      await tester.pump();
+
+      expect(find.text('Home screen: Aurora. Lock screen: Ripple.'), findsOneWidget);
+      expect(find.text('Pick a wall for the Home screen'), findsOneWidget);
+      expect(find.text('Pick a wall for the Lock screen'), findsNothing);
+
+      await tester.tap(find.text('Pick a wall for the Home screen'));
+      await tester.pump();
+      verify(() => bloc.add(const LiveWallpaperEvent.otherScreenPicked(WallpaperTarget.home))).called(1);
+    });
+
+    testWidgets('a both-screens apply offers no second-screen button', (tester) async {
+      const LiveScreens screens = LiveScreens(
+        home: LiveScreenContent(
+          showsPrism: true,
+          tag: LiveContentTag(style: GradientStyle.aurora, applyId: 'a'),
+        ),
+        lock: LiveScreenContent(
+          showsPrism: true,
+          tag: LiveContentTag(style: GradientStyle.aurora, applyId: 'a'),
+        ),
+      );
+      const LiveApplyOutcome outcome = LiveApplyOutcome.screensSet(target: WallpaperTarget.both, screens: screens);
+      await _pumpScreen(
+        tester,
+        state: _readyState(),
+        states: Stream<LiveWallpaperState>.value(_readyState(outcome: outcome)),
+      );
+      await tester.pump();
+
+      expect(find.text('Home screen: Aurora. Lock screen: Aurora.'), findsOneWidget);
+      expect(find.text('Pick a wall for the Home screen'), findsNothing);
+      expect(find.text('Pick a wall for the Lock screen'), findsNothing);
+    });
+
+    testWidgets('fallback says both screens get the same wall', (tester) async {
+      const LiveApplyOutcome outcome = LiveApplyOutcome.confirmInPreview(target: WallpaperTarget.home, fallback: true);
+      await _pumpScreen(
+        tester,
+        state: _readyState(),
+        states: Stream<LiveWallpaperState>.value(_readyState(outcome: outcome)),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(
+        find.descendant(
+          of: find.byType(SnackBar),
+          matching: find.text('Confirm in the system preview. This phone shows the same live wall on both screens.'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('per-screen hint names the picked screen', (tester) async {
+      const LiveApplyOutcome outcome = LiveApplyOutcome.confirmInPreview(target: WallpaperTarget.lock);
+      await _pumpScreen(
+        tester,
+        state: _readyState(),
+        states: Stream<LiveWallpaperState>.value(_readyState(outcome: outcome)),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(
+        find.descendant(
+          of: find.byType(SnackBar),
+          matching: find.text('In the preview, tap Set wallpaper, then Lock screen.'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('resume reads the screens', (tester) async {
+      final _MockLiveWallpaperBloc bloc = await _pumpScreen(tester, state: _readyState());
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+
+      verify(() => bloc.add(const LiveWallpaperEvent.screensChecked())).called(1);
+    });
+
+    testWidgets('large text keeps the choice usable', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2340);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await _pumpScreen(tester, state: _readyState(), textScaler: const TextScaler.linear(2.0));
+
+      expect(tester.takeException(), isNull);
+      for (final String label in <String>['Home screen', 'Lock screen', 'Both']) {
+        expect(find.text(label), findsOneWidget);
+        final Finder segment = find.ancestor(of: find.text(label), matching: find.byType(GestureDetector)).first;
+        final Size size = tester.getSize(segment);
+        expect(size.width, greaterThanOrEqualTo(44), reason: label);
+        expect(size.height, greaterThanOrEqualTo(44), reason: label);
+      }
+    });
+
+    testWidgets('access rules unchanged: a locked style still asks to unlock, with the choice shown', (tester) async {
+      await _pumpScreen(tester, state: _readyState(gradientStyle: GradientStyle.starfield));
+
+      expect(find.widgetWithText(FilledButton, 'Unlock · 20 coins'), findsOneWidget);
+      expect(find.text('Set live wallpaper'), findsNothing);
+      expect(find.byType(PrismSegmented<WallpaperTarget>), findsOneWidget);
+      expect(find.text('Home screen'), findsOneWidget);
     });
   });
 }
