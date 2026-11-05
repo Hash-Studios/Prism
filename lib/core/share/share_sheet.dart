@@ -668,7 +668,14 @@ class _ShareTarget extends StatelessWidget {
 
   /// The text scale, lowered only as far as needed so that no word of the label breaks across lines.
   TextScaler _wordsFit(BuildContext context, TextStyle ownStyle, double maxWidth) {
-    final TextStyle style = DefaultTextStyle.of(context).style.merge(ownStyle);
+    TextStyle style = DefaultTextStyle.of(context).style.merge(ownStyle);
+    if (MediaQuery.boldTextOf(context)) style = style.merge(const TextStyle(fontWeight: FontWeight.bold));
+    style = style.merge(
+      TextStyle(
+        letterSpacing: MediaQuery.maybeLetterSpacingOverrideOf(context),
+        wordSpacing: MediaQuery.maybeWordSpacingOverrideOf(context),
+      ),
+    );
     final TextDirection direction = Directionality.of(context);
     TextScaler scaler = MediaQuery.textScalerOf(context);
     if (!maxWidth.isFinite) return scaler;
