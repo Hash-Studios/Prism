@@ -8,6 +8,7 @@ import {
   cleanupDeletedFolder,
   createFolderInvite,
   folderActivityPayload,
+  getFolderInvite,
   joinFolder,
   leaveFolder,
   planActivityPushes,
@@ -336,4 +337,64 @@ test("folderActivityPayload titles a burst by its adder and wall count, and rout
 test("an invite cannot join a same-owner folder recreated with the same id", async (t) => {
   setup(t, validInvite({folderCreatedAt: at(0)}));
   await assert.rejects(call(joinFolder, "c", {code: CODE}), {code: "failed-precondition", message: "not_found"});
+});
+
+
+test("joining again as a member is unchanged even if another editor blocked them", async (t) => {
+  const store = setup(t, {
+    ...validInvite(),
+    "folders/f1": folder("a", ["b", "c"]),
+    "usersv2/b/blockedUsers/c": {},
+  });
+  assert.deepEqual(await call(joinFolder, "b", {code: CODE}), {folderId: "f1", joined: false});
+  assert.equal(store.get(`folderInvites/${CODE}`)?.usedBy, null);
+});
+
+
+test("a deleted existing editor cannot use an invite to rejoin", async (t) => {
+  setup(t, {"folders/f1": folder("a", ["c"]), "usersv2/c": {name: "Cy", deleted: true}, ...validInvite()});
+  await assert.rejects(call(joinFolder, "c", {code: CODE}), {code: "failed-precondition", message: "account"});
+});
+
+
+test("getFolderInvite does not reveal a folder when either side has blocked the caller", async (t) => {
+  setup(t, {...validInvite(), "usersv2/a/blockedUsers/c": {}});
+  assert.deepEqual(await call(getFolderInvite, "c", {code: CODE}), {status: "not_found"});
+});
+
+
+test("getFolderInvite does not reveal an invite to a deleted account", async (t) => {
+  setup(t, {...validInvite(), "usersv2/c": {name: "Cy", deleted: true}});
+  assert.deepEqual(await call(getFolderInvite, "c", {code: CODE}), {status: "not_found"});
+});
+
+
+test("two callers racing the same single-use invite produce one member", async (t) => {
+  const store = setup(t, validInvite());
+  const results = await Promise.allSettled([
+    call(joinFolder, "c", {code: CODE}),
+    call(joinFolder, "d", {code: CODE}),
+  ]);
+  assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
+  assert.equal(results.filter((result) => result.status === "rejected").length, 1);
+  assert.equal((store.get("folders/f1")?.memberIds as string[]).length, 1);
+  assert.ok(["c", "d"].includes(store.get(`folderInvites/${CODE}`)?.usedBy as string));
+});
+
+
+test("two different invites racing for the tenth editor slot cannot overfill the folder", async (t) => {
+  const secondCode = "BCDEFGHJKM";
+  const store = setup(t, {
+    "folders/f1": folder("a", TEN_EDITORS.slice(0, 9)),
+    ...validInvite(),
+    [`folderInvites/${secondCode}`]: invite({code: secondCode}),
+  });
+  const results = await Promise.allSettled([
+    call(joinFolder, "c", {code: CODE}),
+    call(joinFolder, "d", {code: secondCode}),
+  ]);
+  assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
+  const refused = results.find((result) => result.status === "rejected");
+  assert.equal((refused as PromiseRejectedResult).reason.message, "full");
+  assert.equal((store.get("folders/f1")?.memberIds as string[]).length, 10);
 });

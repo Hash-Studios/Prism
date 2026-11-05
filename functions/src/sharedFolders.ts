@@ -129,13 +129,13 @@ export function joinDecision(input: {
   }
   const ownerId = str(folder.ownerId);
   if (!ownerId || ownerId !== str(invite.createdBy)) return "not_found";
+  if (uid && input.accountOpen === false) return "account";
   if (uid && uid === ownerId) return "owner";
   const editors = editorsOf(folder);
   if (uid && editors.some((m) => m.uid === uid)) return "member";
+  if (input.blocked) return "blocked";
   if (str(invite.usedBy)) return "used";
   if (millis(invite.expiresAt) <= input.nowMs) return "expired";
-  if (input.blocked) return "blocked";
-  if (uid && input.accountOpen === false) return "account";
   if (editors.length >= MAX_FOLDER_EDITORS) return "full";
   return "join";
 }
@@ -216,6 +216,7 @@ export const getFolderInvite = onCall(
   async (request: CallableRequest<{code?: unknown}>): Promise<FolderInvitePreview> => {
     const uid = request.auth?.uid;
     const code = inviteCodeFrom(request.data?.code);
+    if (uid && await publicFolderDeps.authDisabled(uid)) return {status: "not_found"};
     return db.runTransaction(async (tx) => {
       const invite = (await tx.get(inviteRef(code))).data();
       const folderId = str(invite?.folderId);
@@ -223,7 +224,10 @@ export const getFolderInvite = onCall(
       const folder = folderSnap?.data();
       const others = membersOf(folder).map((m) => m.uid);
       const blocked = uid ? await blockedWithAny(tx, uid, others) : false;
-      const status = joinDecision({invite, folder, folderCreatedAt: folderSnap?.createTime, uid, nowMs: Date.now(), blocked});
+      const open = uid ? await accountOpen(tx, uid) : undefined;
+      const decision = joinDecision({invite, folder, folderCreatedAt: folderSnap?.createTime, uid, nowMs: Date.now(),
+        blocked, accountOpen: open});
+      const status = blocked || decision === "blocked" || decision === "account" ? "not_found" : decision;
       if (status !== "join" && status !== "member" && status !== "owner") return {status};
       return {
         status,

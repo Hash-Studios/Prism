@@ -288,7 +288,7 @@ A folder has at most 10 editors, besides the owner.
 - The owner taps **Invite**. The `createFolderInvite` callable makes a code. The code has 10 characters and no look-alike characters. It works once and is valid for 7 days. The app makes a short link and opens the share sheet.
 - Opening the link shows the join page. It shows the covers, the name, "<owner> invited you…", the counts and **Join folder**. A guest sees **Sign in to join**.
 - The page reads the folder through the `getFolderInvite` callable. The rules refuse a read by a non-member.
-- A refused code shows only its reason. It never shows the folder.
+- A refused code shows only its reason. It never shows the folder. A blocked caller or a caller with a closed account gets the generic unavailable status, not a status that reveals the block.
 - `joinFolder` refuses a join in one transaction when:
 
 | Reason | Refused when |
