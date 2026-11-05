@@ -31,6 +31,14 @@ const IMAGE_BASE = 'https://localhost:19375/covers/';
 const FIXTURE_COUNT = 8;
 const COVER_NAME = /^[A-Za-z0-9_-]+\.webp$/;
 const SYNTHETIC_KEY = 'AIzaSy000000000000000000000000000000000';
+const ANDROID_CONFIG = {project_info: {project_number: '1234567890', project_id: PROJECT, storage_bucket: `${PROJECT}.appspot.com`},
+  client: [{client_info: {mobilesdk_app_id: '1:1234567890:android:0123456789abcdef', android_client_info: {package_name: 'com.hash.prism'}},
+    api_key: [{current_key: SYNTHETIC_KEY}]}], configuration_version: '1'};
+const IOS_CONFIG = `<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict>
+<key>API_KEY</key><string>${SYNTHETIC_KEY}</string><key>GCM_SENDER_ID</key><string>1234567890</string>
+<key>GOOGLE_APP_ID</key><string>1:1234567890:ios:0123456789abcdef</string><key>PROJECT_ID</key><string>${PROJECT}</string><key>STORAGE_BUCKET</key><string>${PROJECT}.appspot.com</string>
+<key>BUNDLE_ID</key><string>com.hash.prism</string><key>IS_ANALYTICS_ENABLED</key><false/>
+<key>IS_GCM_ENABLED</key><false/><key>PLIST_VERSION</key><string>1</string></dict></plist>\n`;
 const AUTH_URL = 'http://127.0.0.1:19371';
 const FUNCTIONS_URL = 'http://127.0.0.1:19373';
 const INVITE_CODE = /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{10}$/;
@@ -90,29 +98,20 @@ function fixtureNames() {
 }
 
 function validateAndroid(bytes) {
-  const config = JSON.parse(bytes);
-  assert.equal(config.project_info?.project_id, PROJECT, 'Refusing non-demo native config');
-  assert.equal(config.client?.[0]?.api_key?.[0]?.current_key, SYNTHETIC_KEY, 'Refusing non-synthetic native key');
+  assert.deepEqual(JSON.parse(bytes), ANDROID_CONFIG, 'Refusing non-synthetic Android config');
 }
 function validateIos(bytes) {
-  const text = bytes.toString('utf8');
-  assert.ok(text.includes(`<string>${SYNTHETIC_KEY}</string>`) && text.includes(`<string>${PROJECT}</string>`),
-    'Refusing non-synthetic iOS config');
+  assert.equal(bytes.toString('utf8'), IOS_CONFIG, 'Refusing non-synthetic iOS config');
 }
 
 async function preflight() {
   guardEnvironment();
   const androidConfig = path.join(repo, 'android/app/google-services.json');
   if (fs.existsSync(androidConfig)) {
-    const config = JSON.parse(fs.readFileSync(androidConfig));
-    if (config.project_info?.project_id !== PROJECT || config.client?.[0]?.api_key?.[0]?.current_key !== SYNTHETIC_KEY) {
-      throw Error('Real Android Firebase config present. Use isolated synthetic build inputs first.');
-    }
+    validateAndroid(fs.readFileSync(androidConfig));
   }
   const iosConfig = path.join(repo, 'ios/Runner/GoogleService-Info.plist');
-  if (fs.existsSync(iosConfig) && !fs.readFileSync(iosConfig, 'utf8').includes(`<string>${SYNTHETIC_KEY}</string>`)) {
-    throw Error('Real iOS Firebase config present. Use isolated synthetic build inputs first.');
-  }
+  if (fs.existsSync(iosConfig)) validateIos(fs.readFileSync(iosConfig));
   if (Number(process.versions.node.split('.')[0]) < 24) throw Error('Local QA requires Node 24 or newer.');
   console.log(`Local runtime Node ${process.versions.node}; production Functions target Node 24. Runtime parity is a separate gate.`);
   for (const port of [...PORTS, 19376, 19377, 19378, 19379]) await available(port);
@@ -172,14 +171,8 @@ async function prepare() {
   }
   // Synthetic native configuration is an explicit build input. Never overwrite a real file.
   fs.mkdirSync(path.join(runtime, 'native'));
-  write('native/google-services.json', {project_info: {project_number: '1234567890', project_id: PROJECT, storage_bucket: `${PROJECT}.appspot.com`},
-    client: [{client_info: {mobilesdk_app_id: '1:1234567890:android:0123456789abcdef', android_client_info: {package_name: 'com.hash.prism'}},
-      api_key: [{current_key: SYNTHETIC_KEY}]}], configuration_version: '1'});
-  write('native/GoogleService-Info.plist', `<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict>
-<key>API_KEY</key><string>${SYNTHETIC_KEY}</string><key>GCM_SENDER_ID</key><string>1234567890</string>
-<key>GOOGLE_APP_ID</key><string>1:1234567890:ios:0123456789abcdef</string><key>PROJECT_ID</key><string>${PROJECT}</string><key>STORAGE_BUCKET</key><string>${PROJECT}.appspot.com</string>
-<key>BUNDLE_ID</key><string>com.hash.prism</string><key>IS_ANALYTICS_ENABLED</key><false/>
-<key>IS_GCM_ENABLED</key><false/><key>PLIST_VERSION</key><string>1</string></dict></plist>\n`);
+  write('native/google-services.json', ANDROID_CONFIG);
+  write('native/GoogleService-Info.plist', IOS_CONFIG);
   run('python3', ['-c', `import plistlib,sys
 from pathlib import Path
 p=plistlib.loads(Path(sys.argv[1]).read_bytes())

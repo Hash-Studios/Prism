@@ -100,6 +100,7 @@ void main() {
     expect(oldCancellations, 1);
     next.add(_bea);
     await tester.pump();
+    await tester.pump();
     expect(find.text('Bea'), findsOneWidget);
     expect(find.text('Loading profile'), findsNothing);
 

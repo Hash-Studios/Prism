@@ -111,7 +111,7 @@ Deep link forms:
 ## Safety
 
 - Project `demo-prism` only. Emulator hosts are `127.0.0.1` only.
-- Refuses real native Firebase config. `android/app/google-services.json` and `ios/Runner/GoogleService-Info.plist` must use the synthetic key.
+- Refuses real or mixed native Firebase config. Android must match the generated synthetic fields. iOS must match the generated synthetic plist exactly, including whitespace. Use a fresh `prepare` runtime to regenerate these inputs.
 - The 7-day certificate is disposable. The app pins it only for `localhost:19375`.
 - The runtime root must be under `/tmp` and start with `prism-shared-folders-qa`.
 - `build-apk` and `build-ios` swap in synthetic native inputs and restore the originals afterwards.
