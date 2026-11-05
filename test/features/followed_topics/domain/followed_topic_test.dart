@@ -1,8 +1,43 @@
+import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/features/followed_topics/domain/entities/followed_topic.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('the topic ids match the classifier categories and Home moods', () {
+    expect(prismClassifierCategories, <String>{
+      'Nature',
+      'Architecture',
+      'Cars',
+      'Anime',
+      'Gaming',
+      'Space',
+      'Ocean',
+      'Flowers',
+      'Neon',
+      'Dark',
+      'Abstract',
+      '3D Render',
+      'Minimal',
+      'Gradient',
+      'AI Art',
+      'Cyberpunk',
+      'Vintage',
+      'Landscape',
+      'Galaxy',
+      'Pastel',
+    });
+    expect(WallMood.values.map((WallMood mood) => FollowedTopic.mood(mood).key).toSet(), <String>{
+      'mood:duo_reveal',
+      'mood:dreamy',
+      'mood:dark_quiet',
+      'mood:bright_bold',
+      'mood:minimal',
+      'mood:spatial_ready',
+      'mood:depth_ready',
+    });
+  });
+
   test('a category is found in any letter case and keeps the classifier spelling', () {
     expect(FollowedTopic.category('Pastel')!.key, 'category:Pastel');
     expect(FollowedTopic.category('pastel')!.key, 'category:Pastel');

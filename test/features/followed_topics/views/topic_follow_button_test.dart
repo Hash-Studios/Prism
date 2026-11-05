@@ -33,6 +33,7 @@ import '../../../support/fake_firestore_client.dart';
 import '../../../support/fake_user_block_repository.dart';
 import '../../../support/in_memory_local_store.dart';
 import '../../../support/profile_user_fixture.dart';
+import '../support/transaction_firestore_client.dart';
 
 class _MockCategoryFeedBloc extends MockBloc<CategoryFeedEvent, CategoryFeedState> implements CategoryFeedBloc {}
 
@@ -70,7 +71,7 @@ void main() {
   final Future<bool> Function(BuildContext) originalSignIn = signedInActionSignIn;
 
   setUp(() {
-    firestore = FakeFirestoreClient();
+    firestore = TransactionFirestoreClient();
     final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
     store = FollowedTopicsStore(settings, firestore);
     pastel = FollowedTopic.category('Pastel')!;

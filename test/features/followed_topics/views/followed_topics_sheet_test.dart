@@ -17,6 +17,7 @@ import '../../../support/fake_app_analytics.dart';
 import '../../../support/fake_firestore_client.dart';
 import '../../../support/in_memory_local_store.dart';
 import '../../../support/profile_user_fixture.dart';
+import '../support/transaction_firestore_client.dart';
 
 Widget _app(Widget home, {TextScaler textScaler = TextScaler.noScaling}) => MaterialApp(
   localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -60,7 +61,7 @@ void main() {
   }
 
   setUp(() {
-    firestore = FakeFirestoreClient();
+    firestore = TransactionFirestoreClient();
     store = FollowedTopicsStore(SettingsLocalDataSource(InMemoryLocalStore()), firestore);
     getIt.registerSingleton<FollowedTopicsStore>(store);
     AnalyticsRuntime.instance = FakeAppAnalytics();

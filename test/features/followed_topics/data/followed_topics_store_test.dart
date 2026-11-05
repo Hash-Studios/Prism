@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/categories/category_definition.dart';
@@ -15,6 +18,43 @@ import '../../../support/profile_user_fixture.dart';
 /// Fails every write while [failWrites] is true, so a test can break the save after the list has loaded.
 class _FailingWritesFirestore extends FakeFirestoreClient {
   bool failWrites = false;
+  Completer<void>? holdU1Session;
+  Completer<void>? releaseU1Session;
+  Completer<void>? unfollowStarted;
+  Completer<void>? releaseUnfollow;
+  bool failUnfollow = false;
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async {
+    if (collection == 'usersv2/u1/private' && holdU1Session != null) {
+      holdU1Session!.complete();
+      holdU1Session = null;
+      await releaseU1Session!.future;
+    }
+    return super.getById<T>(collection, id, map, sourceTag: sourceTag, preferCacheFirst: preferCacheFirst);
+  }
+
+  @override
+  Future<T> runTransaction<T>(
+    Future<T> Function(FirestoreTransaction transaction) action, {
+    required String sourceTag,
+    required String collection,
+    String? docId,
+  }) async {
+    if (sourceTag == 'followed_topics.unfollow' && unfollowStarted != null) {
+      final bool shouldFail = failUnfollow;
+      if (!unfollowStarted!.isCompleted) unfollowStarted!.complete();
+      await releaseUnfollow!.future;
+      if (shouldFail) throw StateError('offline');
+    }
+    return action(_TestTransaction(this));
+  }
 
   @override
   Future<void> setDoc(
@@ -26,6 +66,45 @@ class _FailingWritesFirestore extends FakeFirestoreClient {
   }) async {
     if (failWrites) throw StateError('offline');
     await super.setDoc(collection, id, data, merge: merge, sourceTag: sourceTag);
+  }
+}
+
+class _TestTransaction implements FirestoreTransaction {
+  _TestTransaction(this.firestore);
+
+  final _FailingWritesFirestore firestore;
+
+  Map<String, dynamic>? _data(String collection, String id) => firestore.docs[collection]?[id];
+
+  void _merge(String collection, String id, Map<String, dynamic> data) {
+    if (firestore.failWrites) throw StateError('offline');
+    firestore.writes.add((op: 'set', collection: collection, id: id, data: data));
+    final Map<String, Map<String, dynamic>> docs = firestore.docs.putIfAbsent(
+      collection,
+      () => <String, Map<String, dynamic>>{},
+    );
+    docs[id] = <String, dynamic>{...?docs[id], ...data};
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getDoc(String collection, String id) async => _data(collection, id);
+
+  @override
+  void setDoc(String collection, String id, Map<String, dynamic> data, {bool merge = false}) =>
+      _merge(collection, id, data);
+
+  @override
+  void updateDoc(String collection, String id, Map<String, dynamic> data) => _merge(collection, id, data);
+
+  @override
+  void deleteDoc(String collection, String id) => firestore.docs[collection]?.remove(id);
+}
+
+class _FailingSeenLocalStore extends InMemoryLocalStore {
+  @override
+  Future<void> set(String key, Object? value) async {
+    if (key.startsWith('settings.followed_topics.seen.')) throw StateError('local storage unavailable');
+    await super.set(key, value);
   }
 }
 
@@ -114,22 +193,140 @@ void main() {
     expect(store.topics, isEmpty);
   });
 
-  test('unfollow of the last topic saves the offset as a delete and leaves the list empty', () async {
+  test('a local seen-marker write failure does not block the server follow', () async {
+    final SettingsLocalDataSource failingSettings = SettingsLocalDataSource(_FailingSeenLocalStore());
+    final FollowedTopicsStore store = FollowedTopicsStore(failingSettings, firestore);
+
+    expect(await store.follow(FollowedTopic.category('Pastel')!), TopicFollowResult.done);
+    expect(firestore.writes, hasLength(1));
+  });
+
+  test('unfollow removes only its topic and preserves offset against another-device follows', () async {
     firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
       'session': <String, dynamic>{
         'followedTopics': <String>['category:Pastel'],
+        'followedTopicsOffset': 0,
       },
     };
     final FollowedTopicsStore store = newStore();
     await store.ensureLoaded();
+    firestore.docs['usersv2/u1/private']!['session']!['followedTopics'] = <String>['category:Pastel', 'mood:dreamy'];
 
     final bool saved = await store.unfollow(FollowedTopic.category('Pastel')!);
 
     expect(saved, isTrue);
     expect(store.topics, isEmpty);
     final Map<String, dynamic> session = firestore.docs['usersv2/u1/private']!['session']!;
-    expect(session['followedTopicsOffset'], isA<FieldValue>());
+    expect(session['followedTopicsOffset'], 0);
+    expect(firestore.writes.last.data, isNot(contains('followedTopicsOffset')));
     expect(session['followedTopics'], isA<FieldValue>());
+  });
+
+  test('unfollow deletes offset when another device removed the other topic first', () async {
+    firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
+      'session': <String, dynamic>{
+        'followedTopics': <String>['category:Pastel', 'mood:dreamy'],
+        'followedTopicsOffset': 0,
+      },
+    };
+    final FollowedTopicsStore store = newStore();
+    await store.ensureLoaded();
+    firestore.docs['usersv2/u1/private']!['session']!['followedTopics'] = <String>['category:Pastel'];
+
+    expect(await store.unfollow(FollowedTopic.category('Pastel')!), isTrue);
+
+    expect(firestore.writes.last.data, contains('followedTopicsOffset'));
+    expect(firestore.writes.last.data!['followedTopicsOffset'], isA<FieldValue>());
+  });
+
+  test('a failed earlier unfollow cannot restore a later successful unfollow', () async {
+    firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
+      'session': <String, dynamic>{
+        'followedTopics': <String>['category:Pastel', 'mood:dreamy'],
+        'followedTopicsOffset': 0,
+      },
+    };
+    final FollowedTopicsStore store = newStore();
+    await store.ensureLoaded();
+    final Completer<void> started = Completer<void>();
+    firestore.unfollowStarted = started;
+    firestore.releaseUnfollow = Completer<void>();
+    firestore.failUnfollow = true;
+
+    final Future<bool> first = store.unfollow(FollowedTopic.category('Pastel')!);
+    await started.future;
+    firestore.failUnfollow = false;
+    final Future<bool> second = store.unfollow(FollowedTopic.mood(WallMood.dreamy));
+    firestore.releaseUnfollow!.complete();
+
+    expect(await first, isFalse);
+    expect(await second, isTrue);
+    expect(store.topics.map((FollowedTopic topic) => topic.key), <String>['category:Pastel']);
+  });
+
+  test('loading an empty topic list clears a stale digest offset', () async {
+    firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
+      'session': <String, dynamic>{'followedTopics': <String>[], 'followedTopicsOffset': 0},
+    };
+
+    await newStore().ensureLoaded();
+
+    expect(firestore.writes, isNotEmpty);
+    expect(firestore.writes.last.data!['followedTopicsOffset'], isA<FieldValue>());
+  });
+
+  test('a queued follow cannot recreate state after same-account sign-out cleanup', () async {
+    final FollowedTopic pastel = FollowedTopic.category('Pastel')!;
+    final FollowedTopic dreamy = FollowedTopic.mood(WallMood.dreamy);
+    firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
+      'session': <String, dynamic>{
+        'followedTopics': <String>[pastel.key],
+        'followedTopicsOffset': 0,
+      },
+    };
+    final FollowedTopicsStore store = newStore();
+    await store.ensureLoaded();
+    firestore.unfollowStarted = Completer<void>();
+    firestore.releaseUnfollow = Completer<void>();
+    final Future<bool> first = store.unfollow(pastel);
+    await firestore.unfollowStarted!.future;
+    final Future<TopicFollowResult> queued = store.follow(dreamy);
+
+    await store.clearLocalSeenForUser('u1');
+    final int writesAfterCleanup = firestore.writes.length;
+    firestore.releaseUnfollow!.complete();
+    expect(await first, isFalse);
+
+    expect(await queued, TopicFollowResult.failed);
+    expect(settings.get<int?>('followed_topics.seen.u1.${dreamy.key}'), isNull);
+    expect(store.topics, isEmpty);
+    expect(firestore.writes.length, writesAfterCleanup);
+  });
+
+  test('a failed old mutation cannot roll back a fresh load after same-account cleanup', () async {
+    final FollowedTopic pastel = FollowedTopic.category('Pastel')!;
+    final FollowedTopic dreamy = FollowedTopic.mood(WallMood.dreamy);
+    firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
+      'session': <String, dynamic>{
+        'followedTopics': <String>[pastel.key],
+        'followedTopicsOffset': 0,
+      },
+    };
+    final FollowedTopicsStore store = newStore();
+    await store.ensureLoaded();
+    firestore.unfollowStarted = Completer<void>();
+    firestore.releaseUnfollow = Completer<void>();
+    firestore.failUnfollow = true;
+    final Future<bool> oldMutation = store.unfollow(pastel);
+    await firestore.unfollowStarted!.future;
+
+    await store.clearLocalSeenForUser('u1');
+    firestore.docs['usersv2/u1/private']!['session']!['followedTopics'] = <String>[dreamy.key];
+    await store.ensureLoaded();
+    firestore.releaseUnfollow!.complete();
+
+    expect(await oldMutation, isFalse);
+    expect(store.topics, <FollowedTopic>[dreamy]);
   });
 
   test('a topic followed on another device shows no dot until a newer wall lands, and markSeen clears it', () async {
@@ -181,5 +378,129 @@ void main() {
     await store.ensureLoaded();
 
     expect(store.topics.map((FollowedTopic topic) => topic.key).toList(), <String>['mood:dreamy']);
+  });
+
+  test('new-wall seen markers are scoped to the signed-in account', () async {
+    final FollowedTopic pastel = FollowedTopic.category('Pastel')!;
+    await settings.set('followed_topics.seen.u1.${pastel.key}', 150);
+    await settings.set('followed_topics.seen.u2.${pastel.key}', 250);
+    firestore.docs['topicNews'] = <String, Map<String, dynamic>>{
+      'current': <String, dynamic>{
+        'latest': <String, int>{pastel.key: 200},
+      },
+    };
+    for (final String uid in <String>['u1', 'u2']) {
+      firestore.docs['usersv2/$uid/private'] = <String, Map<String, dynamic>>{
+        'session': <String, dynamic>{
+          'followedTopics': <String>[pastel.key],
+        },
+      };
+    }
+    final FollowedTopicsStore store = newStore();
+    await store.ensureLoaded();
+    expect(store.hasNew(pastel), isTrue);
+
+    app_state.prismUser = profileUser(id: 'u2');
+    await store.ensureLoaded();
+
+    expect(store.hasNew(pastel), isFalse);
+  });
+
+  test('a pending load cannot recreate seen markers after sign-out cleanup', () async {
+    final FollowedTopic pastel = FollowedTopic.category('Pastel')!;
+    firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
+      'session': <String, dynamic>{
+        'followedTopics': <String>[pastel.key],
+      },
+    };
+    final Completer<void> held = Completer<void>();
+    firestore.holdU1Session = held;
+    firestore.releaseU1Session = Completer<void>();
+    final FollowedTopicsStore store = newStore();
+    final Future<void> loading = store.ensureLoaded();
+    await held.future;
+
+    await store.clearLocalSeenForUser('u1');
+    firestore.releaseU1Session!.complete();
+    await loading;
+
+    expect(settings.get<int?>('followed_topics.seen.u1.${pastel.key}'), isNull);
+    expect(store.topics, isEmpty);
+  });
+
+  test('account switch during a load does not block the new account or write for the old one', () async {
+    firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
+      'session': <String, dynamic>{
+        'followedTopics': <String>['category:Pastel'],
+      },
+    };
+    firestore.docs['usersv2/u2/private'] = <String, Map<String, dynamic>>{
+      'session': <String, dynamic>{
+        'followedTopics': <String>['mood:dreamy'],
+      },
+    };
+    final Completer<void> held = Completer<void>();
+    firestore.holdU1Session = held;
+    firestore.releaseU1Session = Completer<void>();
+    final FollowedTopicsStore store = newStore();
+    final Future<void> oldLoad = store.ensureLoaded();
+    await held.future;
+    final Future<TopicFollowResult> oldFollow = store.follow(FollowedTopic.category('Pastel')!);
+
+    app_state.prismUser = profileUser(id: 'u2');
+    await store.ensureLoaded();
+    expect(store.topics.map((FollowedTopic topic) => topic.key), <String>['mood:dreamy']);
+
+    firestore.releaseU1Session!.complete();
+    await oldLoad;
+    expect(await oldFollow, TopicFollowResult.failed);
+    expect(firestore.writes.where((write) => write.collection == 'usersv2/u1/private'), isEmpty);
+    expect(store.topics.map((FollowedTopic topic) => topic.key), <String>['mood:dreamy']);
+  });
+
+  test('same-account cleanup allows a fresh load without waiting for the old load', () async {
+    firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
+      'session': <String, dynamic>{
+        'followedTopics': <String>['mood:dreamy'],
+      },
+    };
+    firestore.holdU1Session = Completer<void>();
+    final Completer<void> started = firestore.holdU1Session!;
+    firestore.releaseU1Session = Completer<void>();
+    final FollowedTopicsStore store = newStore();
+    final Future<void> oldLoad = store.ensureLoaded();
+    await started.future;
+    await store.clearLocalSeenForUser('u1');
+
+    try {
+      await store.ensureLoaded().timeout(const Duration(seconds: 2));
+      expect(store.topics, <FollowedTopic>[FollowedTopic.mood(WallMood.dreamy)]);
+    } finally {
+      firestore.releaseU1Session!.complete();
+      await oldLoad;
+    }
+  });
+
+  test('an old load completion cannot evict a newer same-account load', () async {
+    firestore.holdU1Session = Completer<void>();
+    final Completer<void> oldStarted = firestore.holdU1Session!;
+    final Completer<void> oldRelease = Completer<void>();
+    firestore.releaseU1Session = oldRelease;
+    final FollowedTopicsStore store = newStore();
+    final Future<void> oldLoad = store.ensureLoaded();
+    await oldStarted.future;
+    await store.clearLocalSeenForUser('u1');
+    firestore.holdU1Session = Completer<void>();
+    firestore.releaseU1Session = Completer<void>();
+    final Future<void> freshLoad = store.ensureLoaded();
+
+    oldRelease.complete();
+    await oldLoad;
+    try {
+      expect(identical(store.ensureLoaded(), freshLoad), isTrue);
+    } finally {
+      firestore.releaseU1Session!.complete();
+      await freshLoad;
+    }
   });
 }

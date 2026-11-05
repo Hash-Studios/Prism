@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import {randomUUID} from "node:crypto";
 import {logger} from "firebase-functions/v2";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {db, REGION, str} from "./common";
@@ -14,7 +15,8 @@ import {matchesMood, MOODS} from "./wallMoods";
 const TOPIC_DIGEST_MINUTE = 16 * 60;
 const WINDOW_MS = 24 * 60 * 60 * 1000;
 const INACTIVE_MS = 30 * 24 * 60 * 60 * 1000;
-const CHUNK_SIZE = 25;
+// Keep large offset cohorts moving without unbounded Firestore and FCM fan-out.
+const WORKERS = 100;
 const MARKER = "topicDigest";
 export const MAX_FOLLOWED_TOPICS = 20;
 /** The session field the job queries. The app writes it only while the user follows at least one topic. */
@@ -83,10 +85,28 @@ export interface TopicDigest {
 export function planTopicDigest(
   followed: Topic[], walls: TopicWall[], sinceMs: number, blocked: ReadonlySet<string> = new Set(),
 ): TopicDigest | null {
-  const fresh = walls.filter((w) => w.approvedMs > sinceMs && !blocked.has(w.creatorUid))
-    .sort((a, b) => b.approvedMs - a.approvedMs);
+  return planIndexedDigest(followed, indexTopicWalls(walls), sinceMs, blocked);
+}
+
+function indexTopicWalls(walls: TopicWall[]): Map<string, TopicWall[]> {
+  const index = new Map<string, TopicWall[]>();
+  for (const wall of [...walls].sort((a, b) => b.approvedMs - a.approvedMs)) {
+    for (const key of wall.topicKeys) {
+      const group = index.get(key);
+      if (group) group.push(wall);
+      else index.set(key, [wall]);
+    }
+  }
+  return index;
+}
+
+function planIndexedDigest(
+  followed: Topic[], walls: ReadonlyMap<string, TopicWall[]>, sinceMs: number, blocked: ReadonlySet<string>,
+): TopicDigest | null {
   const groups = followed
-    .map((topic, order) => ({topic, order, walls: fresh.filter((w) => w.topicKeys.includes(topic.key))}))
+    .map((topic, order) => ({topic, order,
+      walls: (walls.get(topic.key) ?? []).filter((w) => w.approvedMs > sinceMs && !blocked.has(w.creatorUid)),
+    }))
     .filter((g) => g.walls.length > 0)
     .sort((a, b) => b.walls.length - a.walls.length || a.order - b.order);
   if (groups.length === 0) return null;
@@ -169,11 +189,13 @@ async function recordTopicNews(walls: TopicWall[]): Promise<void> {
   }
   if (latest.size === 0) return;
   const ref = db.doc(TOPIC_NEWS_DOC);
-  const stored = ((await ref.get()).data()?.latest ?? {}) as Record<string, unknown>;
-  const changed = [...latest].filter(([key, ms]) => typeof stored[key] !== "number" || (stored[key] as number) < ms);
-  if (changed.length === 0) return;
-  await ref.set({latest: Object.fromEntries(changed), updatedAt: admin.firestore.FieldValue.serverTimestamp()},
-    {merge: true});
+  await db.runTransaction(async (tx) => {
+    const stored = ((await tx.get(ref)).data()?.latest ?? {}) as Record<string, unknown>;
+    const changed = [...latest].filter(([key, ms]) => typeof stored[key] !== "number" || (stored[key] as number) < ms);
+    if (changed.length === 0) return;
+    tx.set(ref, {latest: Object.fromEntries(changed), updatedAt: admin.firestore.FieldValue.serverTimestamp()},
+      {merge: true});
+  });
 }
 
 interface Candidate {
@@ -195,9 +217,7 @@ function candidateFrom(doc: admin.firestore.QueryDocumentSnapshot): Candidate | 
   return topics.length > 0 ? {uid: user.id, offset: session[TOPIC_OFFSET_FIELD], token, topics} : null;
 }
 
-/** Signed in, not deleted, and opened the app in the last 30 days. Returns the email the inbox needs. */
-async function activeEmail(uid: string, nowMs: number): Promise<string | null> {
-  const user = (await db.doc(`usersv2/${uid}`).get()).data();
+function activeEmail(user: admin.firestore.DocumentData | undefined, nowMs: number): string | null {
   const email = str(user?.email);
   const lastOpen = user?.lastAppOpenAt;
   if (!user || !email || user.deleted === true || user.loggedIn === false ||
@@ -207,7 +227,9 @@ async function activeEmail(uid: string, nowMs: number): Promise<string | null> {
 
 interface Claim {
   digest: TopicDigest;
-  previous: {day?: unknown; atMs?: unknown} | undefined;
+  email: string;
+  id: string;
+  previous: admin.firestore.DocumentData | undefined;
 }
 
 /**
@@ -215,25 +237,41 @@ interface Claim {
  * in the last push are left out. Returns null when the day is taken or nothing is new.
  */
 async function claimDigest(
-  candidate: Candidate, day: string, nowMs: number, walls: TopicWall[], blocked: ReadonlySet<string>,
+  candidate: Candidate, day: string, nowMs: number, walls: ReadonlyMap<string, TopicWall[]>,
 ): Promise<Claim | null> {
   const ref = db.doc(`usersv2/${candidate.uid}/private/${MARKER}`);
+  const id = randomUUID();
   return db.runTransaction(async (tx) => {
     const previous = (await tx.get(ref)).data();
-    if (typeof previous?.day === "string" && previous.day >= day) return null;
-    const lastMs = typeof previous?.atMs === "number" ? previous.atMs : 0;
-    const digest = planTopicDigest(candidate.topics, walls, Math.max(nowMs - WINDOW_MS, lastMs), blocked);
+    const lastMs = typeof previous?.atMs === "number" && Number.isFinite(previous.atMs) ? previous.atMs : 0;
+    if (lastMs > 0 ? lastMs >= nowMs || localDay(lastMs, candidate.offset) === day : previous?.day === day) return null;
+    const sessionRef = db.doc(`usersv2/${candidate.uid}/private/session`);
+    const [sessionSnap, account, barrier] = await tx.getAll(sessionRef, db.doc(`usersv2/${candidate.uid}`),
+      db.doc(`creatorDeletionState/${candidate.uid}`));
+    const email = activeEmail(account.data(), nowMs);
+    if (!email || barrier.data()?.closed === true) return null;
+    const session = sessionSnap.data();
+    const currentTopics = parseFollowedTopics(session?.followedTopics).map((topic) => topic.key);
+    if (session?.topicAlerts !== true || session.topicAlertsToken !== candidate.token ||
+      session.fcmToken !== candidate.token || session.fcmTokenBindingVersion !== FCM_TOKEN_BINDING_VERSION ||
+      session.fcmTokenBindingToken !== candidate.token || session[TOPIC_OFFSET_FIELD] !== candidate.offset ||
+      currentTopics.length !== candidate.topics.length ||
+      currentTopics.some((key, index) => key !== candidate.topics[index].key)) return null;
+    const blockedSnap = await tx.get(db.collection(`usersv2/${candidate.uid}/blockedUsers`));
+    const blocked = new Set(blockedSnap.docs.map((doc) => doc.id));
+    const digest = planIndexedDigest(candidate.topics, walls, Math.max(nowMs - WINDOW_MS, lastMs), blocked);
     if (!digest) return null;
-    tx.set(ref, {day, atMs: nowMs, at: admin.firestore.FieldValue.serverTimestamp()});
-    return {digest, previous};
+    tx.set(ref, {day, atMs: nowMs, claimId: id, at: admin.firestore.FieldValue.serverTimestamp()});
+    return {digest, email, id, previous};
   });
 }
 
-async function releaseDigest(uid: string, day: string, previous: Claim["previous"]): Promise<void> {
+async function releaseDigest(uid: string, claim: Claim): Promise<void> {
   const ref = db.doc(`usersv2/${uid}/private/${MARKER}`);
   await db.runTransaction(async (tx) => {
-    if ((await tx.get(ref)).data()?.day !== day) return;
-    if (previous) tx.set(ref, previous);
+    const [marker, barrier] = await tx.getAll(ref, db.doc(`creatorDeletionState/${uid}`));
+    if (marker.data()?.claimId !== claim.id || barrier.data()?.closed === true) return;
+    if (claim.previous) tx.set(ref, claim.previous);
     else tx.delete(ref);
   });
 }
@@ -244,10 +282,12 @@ export async function sendDueTopicDigests(nowMs: number): Promise<number> {
   const walls = await recentTopicWalls(nowMs, premium);
   await recordTopicNews(walls);
   if (walls.length === 0) return 0;
+  const wallIndex = indexTopicWalls(walls);
   const offsets = offsetsAtDigestTime(nowMs, TOPIC_DIGEST_MINUTE);
-  const sessions = await db.collectionGroup("private").where(TOPIC_OFFSET_FIELD, "in", offsets).get();
+  const sessions = await db.collectionGroup("private").where("topicAlerts", "==", true)
+    .where(TOPIC_OFFSET_FIELD, "in", offsets).get();
   const candidates = sessions.docs.map(candidateFrom).filter((c): c is Candidate =>
-    c !== null && planTopicDigest(c.topics, walls, nowMs - WINDOW_MS) !== null);
+    c !== null && c.topics.some((topic) => wallIndex.has(topic.key)));
   const galleries = new Map<string, Promise<PushGallery | null>>();
   const galleryFor = (digest: TopicDigest) => {
     const key = digest.walls.slice(0, 4).map((w) => w.id).join(",");
@@ -256,32 +296,30 @@ export async function sendDueTopicDigests(nowMs: number): Promise<number> {
   };
   let sent = 0;
   const failures: unknown[] = [];
-  for (let i = 0; i < candidates.length; i += CHUNK_SIZE) {
-    const results = await Promise.allSettled(candidates.slice(i, i + CHUNK_SIZE).map(async (candidate) => {
-      const email = await activeEmail(candidate.uid, nowMs);
-      if (!email) return false;
-      const blockedSnap = await db.collection(`usersv2/${candidate.uid}/blockedUsers`).get();
-      const blocked = new Set(blockedSnap.docs.map((d) => d.id));
-      const day = localDay(nowMs, candidate.offset);
-      const claim = await claimDigest(candidate, day, nowMs, walls, blocked);
-      if (!claim) return false;
-      let delivered = false;
+  let next = 0;
+  await Promise.all(Array.from({length: Math.min(WORKERS, candidates.length)}, async () => {
+    while (next < candidates.length) {
+      const candidate = candidates[next++];
       try {
-        const payload = topicDigestPayload(claim.digest, candidate.uid, day, await galleryFor(claim.digest));
-        delivered = await sendToUser({...payload, modifier: email},
-          {uid: candidate.uid, email, topicAlertsToken: candidate.token});
-        if (!delivered) throw new Error("topicDigest: push delivery failed.");
-      } finally {
-        if (!delivered) await releaseDigest(candidate.uid, day, claim.previous);
+        const day = localDay(nowMs, candidate.offset);
+        const claim = await claimDigest(candidate, day, nowMs, wallIndex);
+        if (!claim) continue;
+        let delivered = false;
+        try {
+          const payload = topicDigestPayload(claim.digest, candidate.uid, day, await galleryFor(claim.digest));
+          delivered = await sendToUser({...payload, modifier: claim.email},
+            {uid: candidate.uid, email: claim.email, topicAlertsToken: candidate.token});
+          if (!delivered) throw new Error("topicDigest: push delivery failed.");
+        } finally {
+          if (!delivered) await releaseDigest(candidate.uid, claim);
+        }
+        sent++;
+      } catch (err) {
+        failures.push(err);
+        logger.warn("topicDigest: one digest failed.", {uid: candidate.uid, err: String(err)});
       }
-      return true;
-    }));
-    sent += results.filter((r) => r.status === "fulfilled" && r.value).length;
-    results.filter((r): r is PromiseRejectedResult => r.status === "rejected").forEach((r) => {
-      failures.push(r.reason);
-      logger.warn("topicDigest: one digest failed.", {err: String(r.reason)});
-    });
-  }
+    }
+  }));
   logger.info("topicDigest: run done.", {offsets, walls: walls.length, sessions: sessions.size,
     candidates: candidates.length, sent});
   if (failures.length > 0) throw new Error(`topicDigest: ${failures.length} digest delivery failure(s).`);

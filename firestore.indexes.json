@@ -1593,6 +1593,20 @@
       ]
     },
     {
+      "collectionGroup": "private",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "topicAlerts",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "followedTopicsOffset",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "comments",
       "queryScope": "COLLECTION",
       "fields": [

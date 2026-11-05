@@ -1,8 +1,11 @@
 import 'dart:async';
 
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/features/followed_topics/data/followed_topics_store.dart';
 import 'package:Prism/notifications/fcm_token_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fake_firebase_messaging.dart';
@@ -43,19 +46,51 @@ class _BlockingWriteClient extends FakeFirestoreClient {
   }
 }
 
-class _BlockingClearClient extends FakeFirestoreClient {
+class _BlockingClearClient extends _SessionTransactionClient {
   final Completer<void> clearGate = Completer<void>();
 
   @override
-  Future<void> setDoc(
-    String collection,
-    String id,
-    Map<String, dynamic> data, {
-    bool merge = false,
+  Future<T> runTransaction<T>(
+    Future<T> Function(FirestoreTransaction transaction) action, {
     required String sourceTag,
+    required String collection,
+    String? docId,
   }) async {
-    if (sourceTag == 'fcm_token.clear_on_signout') await clearGate.future;
-    await super.setDoc(collection, id, data, merge: merge, sourceTag: sourceTag);
+    await clearGate.future;
+    return super.runTransaction(action, sourceTag: sourceTag, collection: collection, docId: docId);
+  }
+}
+
+class _SessionTransactionClient extends FakeFirestoreClient {
+  @override
+  Future<T> runTransaction<T>(
+    Future<T> Function(FirestoreTransaction transaction) action, {
+    required String sourceTag,
+    required String collection,
+    String? docId,
+  }) => action(_SessionTransaction(this));
+}
+
+class _SessionTransaction extends Fake implements FirestoreTransaction {
+  _SessionTransaction(this.client);
+  final FakeFirestoreClient client;
+
+  @override
+  Future<Map<String, dynamic>?> getDoc(String collection, String id) async => client.docs[collection]?[id];
+
+  @override
+  void setDoc(String collection, String id, Map<String, dynamic> data, {bool merge = false}) {
+    unawaited(client.setDoc(collection, id, data, merge: merge, sourceTag: 'test.transaction'));
+  }
+}
+
+class _FailingSyncedMarkerStore extends InMemoryLocalStore {
+  bool failSyncedMarker = false;
+
+  @override
+  Future<void> set(String key, Object? value) async {
+    if (failSyncedMarker && key == 'settings.fcmTokenSynced') throw StateError('marker write failed');
+    await super.set(key, value);
   }
 }
 
@@ -76,6 +111,11 @@ class _FailingWriteClient extends FakeFirestoreClient {
 }
 
 void main() {
+  setUp(() async {
+    await FcmTokenService.instance.cancelAndWait();
+    await FcmTokenService.instance.invalidateTokenForSignOut(messaging: FakeFirebaseMessaging());
+  });
+
   test('the Followers switch is stored where onFollowCreated reads it', () async {
     final client = _MergeRecordingClient();
 
@@ -326,6 +366,7 @@ void main() {
   test('a new user cannot register until delayed sign-out storage cleanup finishes', () async {
     await getIt.reset();
     final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set('fcmTokenSynced', 'old-user|old-token');
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
     addTearDown(getIt.reset);
     final Completer<void> getStarted = Completer<void>();
@@ -352,6 +393,79 @@ void main() {
     await getStarted.future;
     await sync;
     expect(client.writes.where((write) => write.collection == 'usersv2/new-user/private'), hasLength(1));
+  });
+
+  test('sign-out clears local followed-topic seen state for the departing account', () async {
+    await getIt.reset();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set('followed_topics.seen.uid1.category:Pastel', 100);
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    getIt.registerSingleton<FollowedTopicsStore>(FollowedTopicsStore(settings, FakeFirestoreClient()));
+    addTearDown(getIt.reset);
+
+    await FcmTokenService.instance.invalidateTokenForSignOut(
+      userId: 'uid1',
+      messaging: FakeFirebaseMessaging(),
+      client: _SessionTransactionClient(),
+    );
+
+    expect(settings.get<int?>('followed_topics.seen.uid1.category:Pastel'), isNull);
+  });
+
+  test('failed token invalidation still clears the departing accounts local topic state', () async {
+    await getIt.reset();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+    await settings.set('followed_topics.seen.uid1.category:Pastel', 100);
+    await settings.set('followed_topics.seen.uid2.category:Pastel', 200);
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    getIt.registerSingleton<FollowedTopicsStore>(FollowedTopicsStore(settings, FakeFirestoreClient()));
+    addTearDown(getIt.reset);
+
+    await expectLater(
+      FcmTokenService.instance.invalidateTokenForSignOut(
+        userId: 'uid1',
+        messaging: FakeFirebaseMessaging()..deleteTokenHandler = () async => throw StateError('offline'),
+        client: _SessionTransactionClient(),
+      ),
+      throwsStateError,
+    );
+
+    expect(settings.get<int?>('followed_topics.seen.uid1.category:Pastel'), isNull);
+    expect(settings.get<int>('followed_topics.seen.uid2.category:Pastel'), 200);
+  });
+
+  test('sign-out clears the current token when saving its local marker failed', () async {
+    await getIt.reset();
+    final _FailingSyncedMarkerStore local = _FailingSyncedMarkerStore();
+    final SettingsLocalDataSource settings = SettingsLocalDataSource(local);
+    await settings.set('fcmTokenSynced', 'uid1|old-token|digest_v2');
+    await settings.set('fcmTokenRotationV2', 'uid1');
+    getIt.registerSingleton<SettingsLocalDataSource>(settings);
+    addTearDown(getIt.reset);
+    final _SessionTransactionClient client = _SessionTransactionClient();
+    final FcmTokenService service = FcmTokenService.instance;
+    await service.cancelAndWait();
+    await service.clearSyncedToken();
+    await settings.set('fcmTokenSynced', 'uid1|old-token|digest_v2');
+    local.failSyncedMarker = true;
+
+    await service.syncToken(
+      userId: 'uid1',
+      messaging: FakeFirebaseMessaging()..getTokenHandler = () async => 'new-token',
+      client: client,
+    );
+    await service.cancelAndWait();
+    await service.clearSyncedToken();
+    await expectLater(
+      service.invalidateTokenForSignOut(
+        userId: 'uid1',
+        messaging: FakeFirebaseMessaging()..deleteTokenHandler = () async => throw StateError('offline'),
+        client: client,
+      ),
+      throwsStateError,
+    );
+
+    expect(client.writes.last.data?['fcmToken'], isA<FieldValue>());
   });
 
   test('waits for an already-started token refresh write before returning', () async {
@@ -483,7 +597,7 @@ void main() {
     await sync;
   });
 
-  group('token write skip', () {
+  group('token binding sync', () {
     late FakeFirestoreClient client;
 
     Future<void> sync(String userId, String token) => FcmTokenService.instance.syncToken(
@@ -501,11 +615,93 @@ void main() {
     });
     tearDown(getIt.reset);
 
-    test('the same user and token are written once across launches', () async {
+    test('the same user and token restore the active binding across launches', () async {
       await sync('uid1', 'tok');
+      client.docs['usersv2/uid1/private']!['session']!['fcmToken'] = 'other-device';
       await sync('uid1', 'tok');
 
-      expect(tokenWrites(), 1);
+      expect(client.docs['usersv2/uid1/private']!['session']!['fcmToken'], 'tok');
+      expect(tokenWrites(), 2);
+    });
+
+    test('same-token sync restores the local topic opt-out after another device changes the session', () async {
+      final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+      await settings.set('topicsSubscriber', false);
+      await sync('uid1', 'tok');
+      client.docs['usersv2/uid1/private']!['session']!['topicAlerts'] = true;
+
+      await sync('uid1', 'tok');
+
+      expect(client.docs['usersv2/uid1/private']!['session']!['topicAlerts'], isFalse);
+    });
+
+    test('sign-out does not clear a different device token bound after this device synced', () async {
+      client = _SessionTransactionClient();
+      await sync('uid1', 'tok');
+      final Map<String, dynamic> session = client.docs['usersv2/uid1/private']!['session']!;
+      session.addAll(<String, dynamic>{'fcmToken': 'other-device', 'fcmTokenBindingToken': 'other-device'});
+
+      await FcmTokenService.instance.invalidateTokenForSignOut(
+        userId: 'uid1',
+        messaging: FakeFirebaseMessaging(),
+        client: client,
+      );
+
+      expect(client.docs['usersv2/uid1/private']!['session']!['fcmToken'], 'other-device');
+      expect(client.docs['usersv2/uid1/private']!['session']!['fcmTokenBindingToken'], 'other-device');
+    });
+
+    test('sign-out clears its own token binding', () async {
+      client = _SessionTransactionClient();
+      await sync('uid1', 'tok');
+
+      await FcmTokenService.instance.cancelAndWait();
+      await FcmTokenService.instance.clearSyncedToken();
+
+      await FcmTokenService.instance.invalidateTokenForSignOut(
+        userId: 'uid1',
+        messaging: FakeFirebaseMessaging(),
+        client: client,
+      );
+
+      expect(client.writes, hasLength(2));
+      expect(client.writes.last.data?['fcmToken'], isA<FieldValue>());
+      expect(getIt<SettingsLocalDataSource>().get<String?>('fcmTokenSynced'), isNull);
+    });
+
+    test('sign-out uses the persisted binding when no in-memory binding remains', () async {
+      client = _SessionTransactionClient();
+      await getIt<SettingsLocalDataSource>().set('fcmTokenSynced', 'uid1|tok|digest_v2');
+      client.docs['usersv2/uid1/private'] = <String, Map<String, dynamic>>{
+        'session': <String, dynamic>{'fcmToken': 'tok'},
+      };
+
+      await FcmTokenService.instance.cancelAndWait();
+      await FcmTokenService.instance.clearSyncedToken();
+      await getIt<SettingsLocalDataSource>().delete('fcmTokenSynced');
+
+      await FcmTokenService.instance.invalidateTokenForSignOut(
+        userId: 'uid1',
+        messaging: FakeFirebaseMessaging(),
+        client: client,
+      );
+
+      expect(client.writes.single.data?['fcmToken'], isA<FieldValue>());
+    });
+
+    test('sign-out does not recreate a session deleted after token sync', () async {
+      client = _SessionTransactionClient();
+      await sync('uid1', 'tok');
+      client.docs['usersv2/uid1/private']!.remove('session');
+
+      await FcmTokenService.instance.invalidateTokenForSignOut(
+        userId: 'uid1',
+        messaging: FakeFirebaseMessaging(),
+        client: client,
+      );
+
+      expect(client.docs['usersv2/uid1/private']!.containsKey('session'), isFalse);
+      expect(client.writes, hasLength(1));
     });
 
     test('a changed token writes again', () async {

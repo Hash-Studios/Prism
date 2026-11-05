@@ -5,7 +5,9 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/features/followed_topics/domain/entities/followed_topic.dart';
+import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/notification_retention.dart';
 import 'package:flutter/foundation.dart';
@@ -32,7 +34,9 @@ class FollowedTopicsStore extends ChangeNotifier {
   List<FollowedTopic> _topics = const <FollowedTopic>[];
   Map<String, int> _latestMs = const <String, int>{};
   String? _loadedFor;
-  Future<void>? _loading;
+  final Map<String, Future<void>> _loading = <String, Future<void>>{};
+  final Map<String, int> _seenGenerations = <String, int>{};
+  final Map<String, Future<void>> _mutationTails = <String, Future<void>>{};
 
   /// Followed topics in follow order. Empty for a guest.
   List<FollowedTopic> get topics =>
@@ -41,9 +45,12 @@ class FollowedTopicsStore extends ChangeNotifier {
   bool isFollowed(FollowedTopic topic) => topics.contains(topic);
 
   /// A Prism wall landed in [topic] after the user last opened its page on this device.
-  bool hasNew(FollowedTopic topic) => (_latestMs[topic.key] ?? 0) > _seenMs(topic);
+  bool hasNew(FollowedTopic topic) =>
+      app_state.prismUser.loggedIn &&
+      _loadedFor == app_state.prismUser.id &&
+      (_latestMs[topic.key] ?? 0) > _seenMs(topic);
 
-  String get _sessionPath => '${FirebaseCollections.usersV2}/${app_state.prismUser.id}/private';
+  String _sessionPath(String uid) => '${FirebaseCollections.usersV2}/$uid/private';
 
   static int get _deviceOffset => roundedTimezoneOffsetMinutes(DateTime.now().timeZoneOffset);
 
@@ -51,10 +58,19 @@ class FollowedTopicsStore extends ChangeNotifier {
   Future<void> ensureLoaded() {
     if (!app_state.prismUser.loggedIn) return Future<void>.value();
     if (_loadedFor == app_state.prismUser.id) return Future<void>.value();
-    return _loading ??= _load(app_state.prismUser.id).whenComplete(() => _loading = null);
+    final String uid = app_state.prismUser.id;
+    final Future<void>? pending = _loading[uid];
+    if (pending != null) return pending;
+    late final Future<void> loading;
+    loading = _load(uid).whenComplete(() {
+      if (identical(_loading[uid], loading)) _loading.remove(uid);
+    });
+    _loading[uid] = loading;
+    return loading;
   }
 
   Future<void> _load(String uid) async {
+    final int generation = _seenGenerations[uid] ?? 0;
     try {
       final (List<FollowedTopic>, Object?)? session = await _firestore.getById(
         '${FirebaseCollections.usersV2}/$uid/private',
@@ -63,17 +79,28 @@ class FollowedTopicsStore extends ChangeNotifier {
         sourceTag: 'followed_topics.load',
       );
       final Map<String, int> latest = await _readNews();
-      if (app_state.prismUser.id != uid) return;
+      if (!app_state.prismUser.loggedIn ||
+          app_state.prismUser.id != uid ||
+          generation != (_seenGenerations[uid] ?? 0)) {
+        return;
+      }
       _topics = session?.$1 ?? const <FollowedTopic>[];
       _latestMs = latest;
       _loadedFor = uid;
       for (final FollowedTopic topic in _topics) {
-        if (_settings.get<int?>('$_seenPrefix${topic.key}') == null) await _markSeenAt(topic, latest[topic.key] ?? 0);
+        if (_settings.get<int?>(_seenKey(uid, topic)) == null) {
+          await _markSeenAt(uid, topic, latest[topic.key] ?? 0, generation: generation);
+        }
+      }
+      if (!app_state.prismUser.loggedIn ||
+          app_state.prismUser.id != uid ||
+          generation != (_seenGenerations[uid] ?? 0)) {
+        return;
       }
       notifyListeners();
       // The user changed time zone since the last write: move the daily push to the new 16:00.
-      if (_topics.isNotEmpty && session?.$2 != _deviceOffset) {
-        await _write(<String, dynamic>{offsetField: _deviceOffset}, 'followed_topics.sync_offset');
+      if ((_topics.isNotEmpty && session?.$2 != _deviceOffset) || (_topics.isEmpty && session?.$2 != null)) {
+        await _syncOffset(uid, generation);
       }
     } catch (error, stackTrace) {
       logger.w('Followed topics did not load.', tag: 'Topics', error: error, stackTrace: stackTrace);
@@ -102,56 +129,202 @@ class FollowedTopicsStore extends ChangeNotifier {
       : const <FollowedTopic>[];
 
   /// Follows [topic] for the signed-in user. The list stays at most [FollowedTopic.maxFollowed] long.
-  Future<TopicFollowResult> follow(FollowedTopic topic) async {
-    if (!app_state.prismUser.loggedIn) return TopicFollowResult.failed;
-    await ensureLoaded();
-    if (isFollowed(topic)) return TopicFollowResult.done;
-    if (topics.length >= FollowedTopic.maxFollowed) return TopicFollowResult.limit;
-    final List<FollowedTopic> before = _topics;
-    _topics = List<FollowedTopic>.unmodifiable(<FollowedTopic>[..._topics, topic]);
-    await _markSeenAt(topic, DateTime.now().millisecondsSinceEpoch);
-    notifyListeners();
-    final bool saved = await _write(<String, dynamic>{
-      topicsField: FirestoreSentinels.arrayUnion(<Object?>[topic.key]),
-      offsetField: _deviceOffset,
-    }, 'followed_topics.follow');
-    if (saved) return TopicFollowResult.done;
-    _topics = before;
-    notifyListeners();
-    return TopicFollowResult.failed;
+  Future<TopicFollowResult> follow(FollowedTopic topic) {
+    if (!app_state.prismUser.loggedIn) return Future<TopicFollowResult>.value(TopicFollowResult.failed);
+    final String uid = app_state.prismUser.id;
+    final int generation = _seenGenerations[uid] ?? 0;
+    return _enqueueMutation<TopicFollowResult>(uid, () async {
+      if (generation != (_seenGenerations[uid] ?? 0)) return TopicFollowResult.failed;
+      await ensureLoaded();
+      if (!app_state.prismUser.loggedIn ||
+          app_state.prismUser.id != uid ||
+          _loadedFor != uid ||
+          generation != (_seenGenerations[uid] ?? 0)) {
+        return TopicFollowResult.failed;
+      }
+      if (isFollowed(topic)) return TopicFollowResult.done;
+      if (topics.length >= FollowedTopic.maxFollowed) return TopicFollowResult.limit;
+      final List<FollowedTopic> before = _topics;
+      _topics = List<FollowedTopic>.unmodifiable(<FollowedTopic>[..._topics, topic]);
+      await _markSeenAt(uid, topic, DateTime.now().millisecondsSinceEpoch, generation: generation);
+      if (!app_state.prismUser.loggedIn ||
+          app_state.prismUser.id != uid ||
+          generation != (_seenGenerations[uid] ?? 0)) {
+        return TopicFollowResult.failed;
+      }
+      notifyListeners();
+      final bool saved = await _changeTopic(uid, topic, generation: generation, follow: true);
+      if (saved) return TopicFollowResult.done;
+      if (app_state.prismUser.id == uid && _loadedFor == uid && generation == (_seenGenerations[uid] ?? 0)) {
+        _topics = before;
+        notifyListeners();
+      }
+      return TopicFollowResult.failed;
+    });
   }
 
   /// Stops following [topic]. Returns false when the account did not save the change.
-  Future<bool> unfollow(FollowedTopic topic) async {
-    if (!isFollowed(topic)) return true;
-    final List<FollowedTopic> before = _topics;
-    _topics = List<FollowedTopic>.unmodifiable(_topics.where((t) => t != topic));
-    notifyListeners();
-    final bool saved = await _write(<String, dynamic>{
-      topicsField: FirestoreSentinels.arrayRemove(<Object?>[topic.key]),
-      if (_topics.isEmpty) offsetField: FirestoreSentinels.delete(),
-    }, 'followed_topics.unfollow');
-    if (saved) return true;
-    _topics = before;
-    notifyListeners();
-    return false;
+  Future<bool> unfollow(FollowedTopic topic) {
+    if (!app_state.prismUser.loggedIn) return Future<bool>.value(true);
+    final String uid = app_state.prismUser.id;
+    final int generation = _seenGenerations[uid] ?? 0;
+    return _enqueueMutation<bool>(uid, () async {
+      if (!app_state.prismUser.loggedIn ||
+          app_state.prismUser.id != uid ||
+          _loadedFor != uid ||
+          generation != (_seenGenerations[uid] ?? 0)) {
+        return false;
+      }
+      if (!isFollowed(topic)) return true;
+      final List<FollowedTopic> before = _topics;
+      _topics = List<FollowedTopic>.unmodifiable(_topics.where((t) => t != topic));
+      notifyListeners();
+      final bool saved = await _changeTopic(uid, topic, generation: generation, follow: false);
+      if (saved) return true;
+      if (app_state.prismUser.id == uid && _loadedFor == uid && generation == (_seenGenerations[uid] ?? 0)) {
+        _topics = before;
+        notifyListeners();
+      }
+      return false;
+    });
   }
 
   /// The user opened the page of [topic]: its dot goes away until a newer wall lands.
   Future<void> markSeen(FollowedTopic topic) async {
+    if (!app_state.prismUser.loggedIn || _loadedFor != app_state.prismUser.id) return;
     if (!hasNew(topic)) return;
-    await _markSeenAt(topic, _latestMs[topic.key] ?? 0);
+    final String uid = app_state.prismUser.id;
+    final int generation = _seenGenerations[uid] ?? 0;
+    await _markSeenAt(uid, topic, _latestMs[topic.key] ?? 0, generation: generation);
+    if (!app_state.prismUser.loggedIn ||
+        app_state.prismUser.id != uid ||
+        _loadedFor != uid ||
+        generation != (_seenGenerations[uid] ?? 0)) {
+      return;
+    }
     notifyListeners();
   }
 
-  int _seenMs(FollowedTopic topic) => _settings.get<int?>('$_seenPrefix${topic.key}') ?? 0;
+  /// Removes this account's local new-wall markers when it signs out or is deleted.
+  Future<void> clearLocalSeenForUser(String uid) async {
+    _seenGenerations[uid] = (_seenGenerations[uid] ?? 0) + 1;
+    _loading.remove(uid);
+    for (final String key in <String>[
+      for (final String category in prismClassifierCategories) ...<String>[
+        '$_seenPrefix$uid.category:$category',
+        '${_seenPrefix}category:$category',
+      ],
+      for (final WallMood mood in WallMood.values) ...<String>[
+        '$_seenPrefix$uid.mood:${mood.id}',
+        '${_seenPrefix}mood:${mood.id}',
+      ],
+    ]) {
+      try {
+        await _settings.delete(key);
+      } catch (error, stackTrace) {
+        logger.w('Followed topic state did not clear.', tag: 'Topics', error: error, stackTrace: stackTrace);
+      }
+    }
+    if (_loadedFor == uid) {
+      _topics = const <FollowedTopic>[];
+      _latestMs = const <String, int>{};
+      _loadedFor = null;
+      notifyListeners();
+    }
+  }
 
-  Future<void> _markSeenAt(FollowedTopic topic, int ms) => _settings.set('$_seenPrefix${topic.key}', ms);
+  String _seenKey(String uid, FollowedTopic topic) => '$_seenPrefix$uid.${topic.key}';
 
-  Future<bool> _write(Map<String, dynamic> data, String sourceTag) async {
+  int _seenMs(FollowedTopic topic) =>
+      app_state.prismUser.loggedIn ? _settings.get<int?>(_seenKey(app_state.prismUser.id, topic)) ?? 0 : 0;
+
+  Future<void> _markSeenAt(String uid, FollowedTopic topic, int ms, {required int generation}) async {
+    if (generation != (_seenGenerations[uid] ?? 0)) return;
+    final String key = _seenKey(uid, topic);
     try {
-      await _firestore.setDoc(_sessionPath, 'session', data, merge: true, sourceTag: sourceTag);
-      return true;
+      await _settings.set(key, ms);
+      if (generation != (_seenGenerations[uid] ?? 0)) await _settings.delete(key);
+    } catch (error, stackTrace) {
+      logger.w('Followed topic state did not save.', tag: 'Topics', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  Future<T> _enqueueMutation<T>(String uid, Future<T> Function() operation) {
+    final Future<void> previous = _mutationTails[uid] ?? Future<void>.value();
+    final Future<T> result = previous.then((_) => operation());
+    late final Future<void> tail;
+    tail = result.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    _mutationTails[uid] = tail;
+    return result.whenComplete(() {
+      if (identical(_mutationTails[uid], tail)) _mutationTails.remove(uid);
+    });
+  }
+
+  Future<void> _syncOffset(String uid, int generation) async {
+    try {
+      await _firestore.runTransaction<void>(
+        (FirestoreTransaction transaction) async {
+          final Map<String, dynamic>? session = await transaction.getDoc(_sessionPath(uid), 'session');
+          if (!app_state.prismUser.loggedIn ||
+              app_state.prismUser.id != uid ||
+              generation != (_seenGenerations[uid] ?? 0)) {
+            return;
+          }
+          final Object? rawTopics = session?[topicsField];
+          final bool hasTopics = rawTopics is List && rawTopics.isNotEmpty;
+          if (hasTopics) {
+            if (session?[offsetField] != _deviceOffset) {
+              transaction.updateDoc(_sessionPath(uid), 'session', <String, dynamic>{offsetField: _deviceOffset});
+            }
+          } else if (session?.containsKey(offsetField) == true) {
+            transaction.updateDoc(_sessionPath(uid), 'session', <String, dynamic>{
+              offsetField: FirestoreSentinels.delete(),
+            });
+          }
+        },
+        sourceTag: 'followed_topics.sync_offset',
+        collection: _sessionPath(uid),
+        docId: 'session',
+      );
+    } catch (error, stackTrace) {
+      logger.w('Followed topics offset did not sync.', tag: 'Topics', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  Future<bool> _changeTopic(String uid, FollowedTopic topic, {required int generation, required bool follow}) async {
+    try {
+      return await _firestore.runTransaction<bool>(
+        (FirestoreTransaction transaction) async {
+          final Map<String, dynamic>? session = await transaction.getDoc(_sessionPath(uid), 'session');
+          if (!app_state.prismUser.loggedIn ||
+              app_state.prismUser.id != uid ||
+              generation != (_seenGenerations[uid] ?? 0)) {
+            return false;
+          }
+          final Object? rawTopics = session?[topicsField];
+          final List<Object?> keys = rawTopics is List ? List<Object?>.of(rawTopics) : <Object?>[];
+          final bool alreadyFollowed = keys.contains(topic.key);
+          if (follow && alreadyFollowed) return true;
+          if (!follow && !alreadyFollowed && keys.isNotEmpty) return true;
+          if (!follow && !alreadyFollowed && session?.containsKey(offsetField) != true) return true;
+          if (follow && keys.toSet().length >= FollowedTopic.maxFollowed) return false;
+
+          final List<Object?> remaining = follow
+              ? <Object?>[...keys, topic.key]
+              : keys.where((Object? key) => key != topic.key).toList(growable: false);
+          transaction.setDoc(_sessionPath(uid), 'session', <String, dynamic>{
+            topicsField: follow
+                ? FirestoreSentinels.arrayUnion(<Object?>[topic.key])
+                : FirestoreSentinels.arrayRemove(<Object?>[topic.key]),
+            if (follow) offsetField: _deviceOffset,
+            if (!follow && remaining.isEmpty) offsetField: FirestoreSentinels.delete(),
+          }, merge: true);
+          return true;
+        },
+        sourceTag: follow ? 'followed_topics.follow' : 'followed_topics.unfollow',
+        collection: _sessionPath(uid),
+        docId: 'session',
+      );
     } catch (error, stackTrace) {
       logger.w('Followed topics did not save.', tag: 'Topics', error: error, stackTrace: stackTrace);
       return false;

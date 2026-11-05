@@ -372,8 +372,14 @@ service cloud.firestore {
       }
 
       match /private/session {
+        function sessionWritesOpen() {
+          let deletionBarrier = /databases/$(database)/documents/creatorDeletionState/$(userId);
+          return !exists(deletionBarrier) || get(deletionBarrier).data.get('closed', false) != true;
+        }
+
         allow read, delete: if isOwner(userId) || isConfiguredAdmin();
-        allow create, update: if (isOwner(userId) && validTopicSession(request.resource.data)) || isConfiguredAdmin();
+        allow create, update: if (isOwner(userId) && sessionWritesOpen()
+            && validTopicSession(request.resource.data)) || isConfiguredAdmin();
       }
 
       // Public folders this user follows. Written only by the setFolderFollow callable.

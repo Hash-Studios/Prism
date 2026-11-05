@@ -45,6 +45,26 @@ export interface NotificationPayload {
   gallery?: PushGallery;
 }
 
+function notificationDocument(payload: NotificationPayload) {
+  return {
+    notification: {title: payload.title, body: payload.body},
+    ...(payload.message ? {message: {kind: payload.message.kind, args: payload.message.args}} : {}),
+    data: {
+      route: payload.data.route,
+      imageUrl: payload.imageUrl ?? "",
+      url: payload.data.url ?? "",
+      pageName: payload.data.pageName ?? "",
+      arguments: [],
+      ...Object.fromEntries(
+        Object.entries(payload.data).filter(([k]) => !["route", "url", "pageName"].includes(k)),
+      ),
+    },
+    modifier: payload.modifier,
+    pushHandled: true,
+    createdAt: admin.firestore.Timestamp.now(),
+  };
+}
+
 /**
  * Core notification helper — used by every Cloud Function that needs to
  * send a notification. It attempts two independent operations:
@@ -63,37 +83,7 @@ export async function sendNotification(
   if (!payload.pushOnly) {
     try {
       const inbox = db.collection("notifications");
-      const doc = {
-        notification: {
-          title: payload.title,
-          body: payload.body,
-        },
-        ...(payload.message ?
-          {
-            message: {
-              kind: payload.message.kind,
-              args: payload.message.args,
-            },
-          } :
-          {}),
-        data: {
-          route: payload.data.route,
-          imageUrl: payload.imageUrl ?? "",
-          url: payload.data.url ?? "",
-          pageName: payload.data.pageName ?? "",
-          arguments: [],
-          // Forward any extra fields (e.g. wall_id, follower_email)
-          ...Object.fromEntries(
-            Object.entries(payload.data).filter(
-              ([k]) => !["route", "url", "pageName"].includes(k),
-            ),
-          ),
-        },
-        modifier: payload.modifier,
-        // onNotificationCreated pushes entries without this flag.
-        pushHandled: true,
-        createdAt: admin.firestore.Timestamp.now(),
-      };
+      const doc = notificationDocument(payload);
       if (payload.docId) {
         await inbox.doc(payload.docId).set(doc);
       } else {
@@ -419,6 +409,17 @@ export async function userPushTokens(
     logger.warn("Could not read the session FCM token.", {uid, err});
     if (expectedPostAlertsToken || expectedFolderAlertsToken || expectedTopicAlertsToken) throw err;
   }
+  return sessionPushTokens(session, legacyToken, expectedPostAlertsToken, expectedFolderAlertsToken,
+    expectedTopicAlertsToken);
+}
+
+function sessionPushTokens(
+  session: Record<string, unknown> | undefined,
+  legacyToken: unknown,
+  expectedPostAlertsToken?: string,
+  expectedFolderAlertsToken?: string,
+  expectedTopicAlertsToken?: string,
+): UserPushToken[] {
   const sessionToken = pickFcmToken(session?.fcmToken, legacyToken);
   if (expectedPostAlertsToken && (session?.postAlerts !== true ||
     session?.postAlertsToken !== expectedPostAlertsToken || sessionToken !== expectedPostAlertsToken ||
@@ -472,6 +473,24 @@ function personalCollapseKey(payload: PersonalPayload): string {
   return `p_${hash}`;
 }
 
+async function writeDigestInbox(payload: PersonalPayload, uid: string, recipient: PushRecipient): Promise<boolean> {
+  const inbox = database.collection("notifications");
+  const ref = payload.docId ? inbox.doc(payload.docId) : inbox.doc();
+  return database.runTransaction(async (tx) => {
+    const [account, barrier, session] = await tx.getAll(
+      database.doc(`usersv2/${uid}`),
+      database.doc(`creatorDeletionState/${uid}`),
+      database.doc(`usersv2/${uid}/private/session`),
+    );
+    const user = account.data();
+    if (!user || user.loggedIn === false || user.deleted === true || barrier.data()?.closed === true) return false;
+    if (sessionPushTokens(session.data(), recipient.legacyToken, recipient.postAlertsToken, recipient.folderAlertsToken,
+      recipient.topicAlertsToken).length === 0) return false;
+    tx.set(ref, notificationDocument(payload));
+    return true;
+  });
+}
+
 /**
  * Writes the in-app doc (unless pushOnly), then pushes only to the user's private session FCM token. The email-prefix
  * topic is shared by every address with the same prefix, so personal payloads never go there. Returns false when a
@@ -486,14 +505,10 @@ export async function sendToUser(
   const alertsToken = recipient.folderAlertsToken || recipient.topicAlertsToken;
   if (alertsToken) {
     if (!recipient.uid || !pushEnabled || recipient.loggedOut) return true;
-    const [open, tokens] = await Promise.all([
-      userCanReceivePersonalPush(recipient.uid, true, true),
-      userPushTokens(recipient.uid, recipient.legacyToken, recipient.postAlertsToken, recipient.folderAlertsToken,
-        recipient.topicAlertsToken),
-    ]);
-    if (!open || tokens.length === 0) return true;
+    if (!payload.pushOnly && !(await writeDigestInbox(inboxPayload, recipient.uid, recipient))) return true;
+  } else {
+    await sendNotification(inboxPayload);
   }
-  await sendNotification(inboxPayload);
   if (!pushEnabled || recipient.loggedOut) return true;
 
   let pushPayload: PersonalPayload = inboxPayload;

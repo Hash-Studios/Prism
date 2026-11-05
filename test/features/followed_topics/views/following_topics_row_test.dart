@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../support/fake_firestore_client.dart';
 import '../../../support/in_memory_local_store.dart';
 import '../../../support/profile_user_fixture.dart';
+import '../support/transaction_firestore_client.dart';
 
 Widget _app(Widget home, {TextScaler textScaler = TextScaler.noScaling}) => MaterialApp(
   localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -31,7 +32,7 @@ void main() {
   late LayoutPrefsStore layout;
 
   setUp(() {
-    firestore = FakeFirestoreClient();
+    firestore = TransactionFirestoreClient();
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     layout = LayoutPrefsStore(settings, firestore);
     getIt.registerSingleton<FollowedTopicsStore>(FollowedTopicsStore(settings, firestore));
@@ -99,7 +100,7 @@ void main() {
     app_state.prismUser = profileUser();
     followPastelAndDreamy();
     // The user last saw Pastel at 1000 ms. The Prism news says a wall landed at 2000 ms.
-    await settings.set('followed_topics.seen.category:Pastel', 1000);
+    await settings.set('followed_topics.seen.u1.category:Pastel', 1000);
     firestore.docs['topicNews'] = <String, Map<String, dynamic>>{
       'current': <String, dynamic>{
         'latest': <String, int>{'category:Pastel': 2000},
