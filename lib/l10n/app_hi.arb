@@ -2899,7 +2899,13 @@
   "coreShareTargetInstagram": "Instagram",
   "coreShareTargetCopyLink": "लिंक कॉपी करें",
   "coreShareOpenOnComputer": "कंप्यूटर पर खोलें",
+  "@coreShareOpenOnComputer": {
+    "description": "Share sheet target and sheet title. Opens a sheet with a QR code and a short link that opens this wallpaper on a computer."
+  },
   "coreShareOpenOnComputerBody": "इस लिंक को अपने कंप्यूटर के ब्राउज़र में टाइप करें या कोड स्कैन करें।",
+  "@coreShareOpenOnComputerBody": {
+    "description": "Instruction under the Open on computer title. The link and QR code are shown below it."
+  },
   "coreShareOpenOnComputerQr": "{link} का QR कोड",
   "@coreShareOpenOnComputerQr": {
     "description": "Screen reader label for the QR code image. {link} is the short link shown under it.",
