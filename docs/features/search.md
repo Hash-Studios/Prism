@@ -183,7 +183,7 @@ The photo chip shows:
 | `capped` | You've used today's 20 photo searches. Matching by colour until tomorrow. |
 | `unavailable` | Couldn't read what's in the photo. Matching by colour only. |
 
-The chip fades in. With reduce motion on, it shows at once (`context.motion`). The text wraps at large text sizes.
+The chip fades in. With reduce motion on, it shows at once (`context.motion`). The text wraps at large text sizes. With text larger than 130%, **Clear** moves under the note, so the labels keep the full width. The labels line shows 3 lines at most.
 
 #### Colours on the phone
 
@@ -403,6 +403,16 @@ Automated tests:
 - `test/features/user_search/photo_search_screen_test.dart` (picker button, guest note, privacy sheet, capped note, results order, large text)
 - `test/features/user_search/photo_search_chip_test.dart` (chip, notes, large text, dark theme)
 - `functions/src/__tests__/photoSearchLabels.test.ts` (auth, cap, `requestId` replay, oversize image, no image stored)
+
+Screen renders (real photo pipeline and ranking, stub labels, light and dark):
+
+```sh
+fvm flutter test --no-pub test/qa_render/photo_search_render.dart --dart-define=QA_RENDER=true
+```
+
+The files go to `build/qa_render/photo_search_*.png`.
+
+Local emulator QA: `tool/photo_search_qa.cjs` (`prepare`, `emulators`, `serve`, `seed`, `build-apk`, `cap`, `uncap`). It uses the weekly challenge QA runtime. That runtime blocks all nonlocal network, so a stub replaces Cloud Vision. The stub names the photo from its mean colour.
 
 Command:
 

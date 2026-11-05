@@ -26,6 +26,24 @@ class PhotoSearchChip extends StatelessWidget {
     final String colours = photo.palette
         .map((entry) => prismPaletteColorDisplayName(entry.color, context.l10n))
         .join(', ');
+    // With large text, Clear goes under the note so the labels keep the full width.
+    final bool stacked = MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    final Widget clear = Tooltip(
+      message: context.l10n.searchPhotoClearTooltip,
+      excludeFromSemantics: true,
+      child: Semantics(
+        label: context.l10n.searchPhotoClearTooltip,
+        excludeSemantics: true,
+        button: true,
+        onTap: onClear,
+        child: PrismButton(
+          label: context.l10n.searchPhotoClear,
+          onPressed: onClear,
+          variant: PrismButtonVariant.tonal,
+          size: PrismButtonSize.compact,
+        ),
+      ),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -63,7 +81,7 @@ class PhotoSearchChip extends StatelessWidget {
                     photo.labels.isEmpty
                         ? context.l10n.searchPhotoColourMatches
                         : context.l10n.searchPhotoMatchesFor(photo.labels.take(3).join(', ').toLowerCase()),
-                    maxLines: 2,
+                    maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: PrismTextStyles.rowTitle(context),
                   ),
@@ -80,7 +98,7 @@ class PhotoSearchChip extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: entry.color.color,
-                                  border: Border.all(color: cs.onSurface.withValues(alpha: 0.16)),
+                                  border: Border.all(color: cs.onSurface.withValues(alpha: 0.3)),
                                 ),
                                 child: const SizedBox.square(dimension: 12),
                               ),
@@ -92,27 +110,12 @@ class PhotoSearchChip extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: PrismSpace.xs),
-            Tooltip(
-              message: context.l10n.searchPhotoClearTooltip,
-              excludeFromSemantics: true,
-              child: Semantics(
-                label: context.l10n.searchPhotoClearTooltip,
-                excludeSemantics: true,
-                button: true,
-                onTap: onClear,
-                child: PrismButton(
-                  label: context.l10n.searchPhotoClear,
-                  onPressed: onClear,
-                  variant: PrismButtonVariant.tonal,
-                  size: PrismButtonSize.compact,
-                ),
-              ),
-            ),
+            if (!stacked) ...<Widget>[const SizedBox(width: PrismSpace.xs), clear],
           ],
         ),
         const SizedBox(height: PrismSpace.xs),
         Text(_note(context), style: PrismTextStyles.caption(context)),
+        if (stacked) ...<Widget>[const SizedBox(height: PrismSpace.xs), clear],
       ],
     );
   }

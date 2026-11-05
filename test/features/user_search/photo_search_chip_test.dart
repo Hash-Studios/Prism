@@ -114,6 +114,10 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text(en.searchPhotoSentNote), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text(en.searchPhotoClear)).dy,
+      greaterThan(tester.getBottomLeft(find.text(en.searchPhotoSentNote)).dy),
+    );
   });
 
   testWidgets('dark theme renders', (tester) async {
