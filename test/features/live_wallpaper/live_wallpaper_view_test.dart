@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:Prism/auth/user_model.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -11,6 +13,7 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart'
 import 'package:Prism/features/live_wallpaper/domain/entities/live_screens.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_wallpaper_view.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_tilt_view.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -24,6 +27,8 @@ import '../../support/profile_user_fixture.dart';
 import 'fake_live_wallpaper_repository.dart';
 
 class _MockLiveWallpaperBloc extends MockBloc<LiveWallpaperEvent, LiveWallpaperState> implements LiveWallpaperBloc {}
+
+class _MockSessionRepository extends Mock implements SessionRepository {}
 
 /// A device that can show the per-screen choice, on gradients with the Aurora style, unless told otherwise.
 LiveWallpaperState _readyState({
@@ -111,7 +116,10 @@ void main() {
     app_state.prismUser = profileUser();
     repository = FakeLiveWallpaperRepository();
   });
-  tearDown(() => app_state.prismUser = profileUser(loggedIn: false));
+  tearDown(() async {
+    await getIt.reset();
+    app_state.prismUser = profileUser(loggedIn: false);
+  });
 
   testWidgets('shows a clear empty state when the device cannot do live wallpapers', (tester) async {
     repository.capabilities = LiveCapabilities.none;
@@ -461,6 +469,72 @@ void main() {
       expect(find.text('Pick a wall for the Home screen'), findsNothing);
       expect(find.byType(PrismSegmented<WallpaperTarget>), findsNothing);
       expect(find.text('Choose a video'), findsOneWidget);
+    });
+
+    for (final bool signedOut in <bool>[false, true]) {
+      testWidgets('resume clears a previous account result after ${signedOut ? 'sign-out' : 'account switch'}', (
+        tester,
+      ) async {
+        const LiveApplyOutcome outcome = LiveApplyOutcome.screensSet(
+          target: WallpaperTarget.lock,
+          screens: LiveScreens(
+            home: LiveScreenContent.other,
+            lock: LiveScreenContent(
+              showsPrism: true,
+              tag: LiveContentTag(style: GradientStyle.aurora, applyId: 'a'),
+            ),
+          ),
+        );
+        final _MockLiveWallpaperBloc bloc = await _pumpScreen(
+          tester,
+          state: _readyState(),
+          states: Stream<LiveWallpaperState>.value(_readyState(outcome: outcome)),
+        );
+        expect(find.text('Pick a wall for the Home screen'), findsOneWidget);
+
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        app_state.prismUser = profileUser(id: signedOut ? 'u1' : 'u2', loggedIn: !signedOut);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+        await tester.pump();
+
+        expect(find.byType(PrismCard), findsNothing);
+        verifyNever(() => bloc.add(const LiveWallpaperEvent.otherScreenPicked(WallpaperTarget.home)));
+      });
+    }
+
+    testWidgets('signing back into the same account clears a previous session result', (tester) async {
+      final users = StreamController<PrismUsersV2>.broadcast(sync: true);
+      addTearDown(users.close);
+      final sessions = _MockSessionRepository();
+      when(() => sessions.currentUser).thenReturn(profileUser());
+      when(() => sessions.watchCurrentUser()).thenAnswer((_) => users.stream);
+      getIt.registerSingleton<SessionRepository>(sessions);
+      const LiveApplyOutcome outcome = LiveApplyOutcome.screensSet(
+        target: WallpaperTarget.lock,
+        screens: LiveScreens(
+          home: LiveScreenContent.other,
+          lock: LiveScreenContent(
+            showsPrism: true,
+            tag: LiveContentTag(style: GradientStyle.aurora, applyId: 'a'),
+          ),
+        ),
+      );
+      await _pumpScreen(
+        tester,
+        state: _readyState(),
+        states: Stream<LiveWallpaperState>.value(_readyState(outcome: outcome)),
+      );
+      expect(find.text('Pick a wall for the Home screen'), findsOneWidget);
+
+      users.add(profileUser(username: 'updated'));
+      await tester.pump();
+      expect(find.text('Pick a wall for the Home screen'), findsOneWidget);
+
+      users.add(profileUser(loggedIn: false));
+      users.add(profileUser());
+      await tester.pump();
+
+      expect(find.byType(PrismCard), findsNothing);
     });
 
     testWidgets('fallback says both screens get the same wall', (tester) async {

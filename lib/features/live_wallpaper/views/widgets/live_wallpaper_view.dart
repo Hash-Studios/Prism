@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -17,6 +19,7 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_picker.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_preview.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_style_unlock.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_tilt_view.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -145,16 +148,29 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
 
   /// The last per-screen apply the user confirmed. It stays until the next apply.
   LiveApplyOutcome? _screensSet;
+  String? _screensSetOwner;
+  StreamSubscription<Object?>? _session;
+
+  bool get _ownsScreensSet => app_state.prismUser.loggedIn && _screensSetOwner == app_state.prismUser.id;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (getIt.isRegistered<SessionRepository>()) {
+      String? previousOwner = app_state.prismUser.loggedIn ? app_state.prismUser.id : null;
+      _session = getIt<SessionRepository>().watchCurrentUser().listen((user) {
+        final String? owner = user.loggedIn ? user.id : null;
+        if (owner != previousOwner && mounted && _screensSet != null) setState(() => _screensSet = null);
+        previousOwner = owner;
+      });
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(_session?.cancel());
     super.dispose();
   }
 
@@ -162,6 +178,7 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;
+    if (_screensSet != null && !_ownsScreensSet) setState(() => _screensSet = null);
     context.read<LiveWallpaperBloc>()
       ..add(LiveWallpaperEvent.proChanged(app_state.prismUser.premium))
       ..add(LiveWallpaperEvent.unlockedStylesChanged(liveStyleUnlocks()))
@@ -184,7 +201,10 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
   Future<void> _onOutcome(BuildContext context, LiveApplyOutcome outcome) async {
     final LiveWallpaperBloc bloc = context.read<LiveWallpaperBloc>()..add(const LiveWallpaperEvent.outcomeHandled());
     if (outcome.screens != null) {
-      setState(() => _screensSet = outcome);
+      setState(() {
+        _screensSet = outcome;
+        _screensSetOwner = app_state.prismUser.id;
+      });
       return;
     }
     switch (outcome.status) {
@@ -348,7 +368,7 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
                   },
                 ),
         ),
-        if (_mode != _LiveMode.video && _screensSet != null)
+        if (_mode != _LiveMode.video && _screensSet != null && _ownsScreensSet)
           Flexible(
             child: SingleChildScrollView(
               child: _ScreensSetCard(outcome: _screensSet!, onPickOther: (screen) => _pickOtherScreen(context, screen)),
@@ -371,6 +391,10 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
   /// From a wall, go back so the user can open another one; the next Live screen opens on [screen].
   /// From Settings there is no wall to change, so stay and let them pick another style.
   void _pickOtherScreen(BuildContext context, WallpaperTarget screen) {
+    if (!_ownsScreensSet) {
+      setState(() => _screensSet = null);
+      return;
+    }
     context.read<LiveWallpaperBloc>().add(LiveWallpaperEvent.otherScreenPicked(screen));
     setState(() => _screensSet = null);
     if (widget.imageUrl != null) Navigator.of(context).maybePop();
