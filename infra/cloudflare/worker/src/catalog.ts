@@ -102,7 +102,7 @@ type DownloadKind = keyof typeof DOWNLOADS;
 const SITE_HOSTS = [DOMAIN, `www.${DOMAIN}`];
 
 type Route =
-  | { kind: 'wall'; id: string }
+  | { kind: 'wall'; id: string; desktop: boolean }
   | { kind: 'folder'; id: string }
   | { kind: 'hub'; list: 'latest' | 'popular' | 'category'; slug: string; page: number }
   | { kind: 'desktop-hub'; list: 'desktop' | 'sets'; page: number }
@@ -160,7 +160,8 @@ function matchRoute(url: URL): Route | null {
   if (segments[0] === 'wallpaper' && segments.length === 2 && SHARE_ID.test(segments[1])) {
     // Wallhaven and Pexels walls are not Prism walls: they keep the app landing.
     const source = (url.searchParams.get('source') || url.searchParams.get('provider') || 'prism').toLowerCase();
-    return source === 'prism' ? { kind: 'wall', id: segments[1] } : null;
+    const desktop = url.searchParams.get('view') === 'desktop';
+    return source === 'prism' ? { kind: 'wall', id: segments[1], desktop } : null;
   }
   if (segments[0] === 'folder' && segments.length === 2 && FOLDER_ID.test(segments[1])) {
     return { kind: 'folder', id: segments[1] };
@@ -205,7 +206,8 @@ function matchList(segments: string[]): Route | null {
 /** Only the parsed route names the cache entry, never the raw URL: query strings and headers cannot pick a copy. */
 function cacheKeyOf(route: Route): string {
   switch (route.kind) {
-    case 'wall': case 'folder': case 'og': case 'preview': return `${route.kind}/${route.id}`;
+    case 'wall': return route.desktop ? `wall/${route.id}/desktop` : `wall/${route.id}`;
+    case 'folder': case 'og': case 'preview': return `${route.kind}/${route.id}`;
     case 'desktop-image': return `${route.kind}/${route.id}/${route.version ?? 'unversioned'}`;
     case 'hub': return `hub/${route.list}/${route.slug}/${route.page}`;
     case 'desktop-hub': return `desktop-hub/${route.list}/${route.page}`;
@@ -290,7 +292,7 @@ function withMethod(request: Request, response: Response): Response {
 
 async function render(route: Route, env: CatalogEnv): Promise<Response> {
   switch (route.kind) {
-    case 'wall': return renderWall(route.id, env);
+    case 'wall': return renderWall(route.id, route.desktop, env);
     case 'folder': return renderFolder(route.id, env);
     case 'hub': return renderHub(route.list, route.slug, route.page, env);
     case 'desktop-hub': return renderDesktopHub(route.list, route.page, env);
@@ -540,12 +542,12 @@ function parseFolderPage(value: unknown, env: CatalogEnv): FolderPage {
   };
 }
 
-async function renderWall(id: string, env: CatalogEnv): Promise<Response> {
+async function renderWall(id: string, desktopView: boolean, env: CatalogEnv): Promise<Response> {
   const stored = await readDoc<unknown>(env, `webWalls/${id}`);
   const wall = stored == null ? null : parseWall(stored, env);
   if (wall == null || wall.state === 'hidden' || wall.state === 'gone') {
     if (wall == null && id !== id.toUpperCase() && await readDoc<WebWall>(env, `webWalls/${id.toUpperCase()}`)) {
-      return redirect(`${SITE}/wallpaper/${id.toUpperCase()}`);
+      return redirect(`${SITE}/wallpaper/${id.toUpperCase()}${desktopView ? '?view=desktop' : ''}`);
     }
     return renderMissing(wall?.state === 'gone' ? 410 : 404, 'wallpaper', env);
   }
@@ -578,10 +580,12 @@ async function renderWall(id: string, env: CatalogEnv): Promise<Response> {
     ? `<a href="/creator/${encodeURIComponent(wall.creator.username)}">${escapeHtml(creatorName)}</a>`
     : escapeHtml(creatorName);
 
+  const desktopPage = live && desktopView;
+  const sideBySide = desktopPage && desktop != null;
   const hero = live
     ? `<img class="wall-img" src="${escapeAttribute(previewPath)}" srcset="${escapeAttribute(wall.thumb ?? '')} ${THUMB_WIDTH}w, ${escapeAttribute(previewPath)} ${previewWidth}w"
-        sizes="(min-width: 960px) 420px, min(100vw - 32px, 480px)" width="${width}" height="${height}"
-        alt="${escapeAttribute(`${heading}${creatorName ? ` by ${creatorName}` : ''}`)}" fetchpriority="high" decoding="async"
+        sizes="${sideBySide ? '(min-width: 960px) 220px, 40vw' : '(min-width: 960px) 420px, min(100vw - 32px, 480px)'}" width="${width}" height="${height}"
+        alt="${escapeAttribute(`${heading}${creatorName ? ` by ${creatorName}` : ''}`)}"${sideBySide ? '' : ' fetchpriority="high"'} decoding="async"
         data-fallback="${escapeAttribute(wall.thumb ?? '')}" onerror="this.onerror=null;this.removeAttribute('srcset');this.src=this.dataset.fallback">`
     : `<div class="wall-img gated" role="img" aria-label="${escapeAttribute(`Blurred preview of ${heading}`)}"
         style="aspect-ratio: ${width} / ${height}${wall.blur?.startsWith('data:image/jpeg;base64,') ? `; background-image: url('${escapeAttribute(wall.blur)}')` : ''}">
@@ -598,31 +602,40 @@ async function renderWall(id: string, env: CatalogEnv): Promise<Response> {
     ? `<ul class="tags" aria-label="Tags">${wall.tags.map((tag) => `<li>${escapeHtml(tag)}</li>`).join('')}</ul>` : '';
   const crumbs: Array<[string, string]> = [['Wallpapers', `${SITE}/wallpapers`], [category, `${SITE}/wallpapers/${slug}`], [heading, canonical]];
 
-  const phoneFigure = `<figure class="wall-figure" style="--ar: ${(width / height).toFixed(4)}"${desktop
-    ? ' id="panel-phone" role="tabpanel" aria-labelledby="tab-phone"' : ''}>${hero}</figure>`;
-  const media = desktop ? `<div class="wall-media">
+  const tabbed = desktop != null && !desktopPage;
+  const phoneFigure = `<figure class="wall-figure${sideBySide ? ' phone-side' : ''}" style="--ar: ${(width / height).toFixed(4)}"${tabbed
+    ? ' id="panel-phone" role="tabpanel" aria-labelledby="tab-phone"' : ''}>${hero}${sideBySide ? '<figcaption>Phone</figcaption>' : ''}</figure>`;
+  const phoneSize = `${previewWidth} × ${previewHeight}`;
+  const monitorAlt = `${heading}, desktop version, on a computer screen`;
+  const media = desktop == null ? phoneFigure
+    : sideBySide ? `<div class="desktop-stage">
+    <figure class="desktop-figure desktop-lead">${monitorHtml(id, desktop, monitorAlt, '(min-width: 960px) 760px, calc(100vw - 52px)', 'fetchpriority="high"')}<figcaption>Desktop</figcaption></figure>
+    ${phoneFigure}
+  </div>`
+    : `<div class="wall-media">
     <div class="view-tabs" role="tablist" aria-label="Show this wallpaper on">
       <button type="button" role="tab" id="tab-phone" aria-controls="panel-phone" aria-selected="true">Phone</button>
       <button type="button" role="tab" id="tab-desktop" aria-controls="panel-desktop" aria-selected="false" tabindex="-1">Desktop</button>
     </div>
     ${phoneFigure}
-    <figure class="desktop-figure" id="panel-desktop" role="tabpanel" aria-labelledby="tab-desktop" hidden>
-      <div class="monitor"><img src="/api/catalog/desktop/${escapeAttribute(id)}.jpg?v=${escapeAttribute(desktop.v)}"
-        srcset="${escapeAttribute(desktop.thumb)} ${DESKTOP_THUMB_WIDTH}w, /api/catalog/desktop/${escapeAttribute(id)}.jpg?v=${escapeAttribute(desktop.v)} ${DOWNLOADS.desktop.width}w"
-        sizes="(min-width: 960px) 720px, calc(100vw - 52px)" width="${DOWNLOADS.desktop.width}" height="${DOWNLOADS.desktop.height}"
-        alt="${escapeAttribute(`${heading}, desktop version, on a computer screen`)}" loading="lazy" decoding="async"></div>
-      <div class="stand" aria-hidden="true"></div>
-    </figure>
-  </div>` : phoneFigure;
+    <figure class="desktop-figure" id="panel-desktop" role="tabpanel" aria-labelledby="tab-desktop" hidden>${monitorHtml(id, desktop, monitorAlt, '(min-width: 960px) 720px, calc(100vw - 52px)', 'loading="lazy"')}</figure>
+  </div>`;
+  const downloads = !live ? '<p class="lead">This wallpaper is part of a premium or limited set. Open Prism to see it in full.</p>'
+    : sideBySide ? desktopDownloadsHtml(id, phoneSize)
+    : desktopPage ? `${downloadsHtml(id, phoneSize, false)}${DESKTOP_HOWTO}`
+    : downloadsHtml(id, phoneSize, desktop != null);
+  const mainOpen = sideBySide ? '<main class="wall-layout desktop-mode" data-mode="desktop">'
+    : desktopPage ? '<main class="wall-layout" data-mode="desktop">'
+    : `<main class="wall-layout"${desktop ? ' data-views data-view="phone"' : ''}>`;
   const body = `
-<main class="wall-layout"${desktop ? ' data-views data-view="phone"' : ''}>
+${mainOpen}
   ${media}
   <section class="wall-info">
     ${breadcrumbHtml(crumbs)}
     <h1>${escapeHtml(heading)}</h1>
     ${creatorName ? `<p class="byline">by ${creatorLink}</p>` : ''}
     ${wall.description ? `<p class="lead">${escapeHtml(wall.description)}</p>` : ''}
-    ${live ? downloadsHtml(id, `${previewWidth} × ${previewHeight}`, desktop != null) : '<p class="lead">This wallpaper is part of a premium or limited set. Open Prism to see it in full.</p>'}
+    ${downloads}
     ${actionsHtml(canonical, live ? 'Open in Prism' : 'Get it in Prism', env)}
     <dl class="facts">${facts}</dl>
     ${tags}
@@ -659,23 +672,48 @@ ${related.length ? `<section class="shelf">
   return page({
     title, description, canonical, ogImage, ogType: 'article', body, jsonLd,
     robots: live ? 'index,follow,max-image-preview:large' : 'noindex,follow',
-    appUrl: canonical, script: desktop ? TABS_SCRIPT : '',
+    appUrl: canonical, script: tabbed ? TABS_SCRIPT : '',
   });
 }
 
-function downloadsHtml(id: string, phoneSize: string, hasDesktop: boolean): string {
-  const item = (file: DownloadKind, size: string) => `<li><a class="dl" href="/api/catalog/download/${escapeAttribute(id)}/${file}.jpg" download>
+function downloadItem(id: string, file: DownloadKind, size: string): string {
+  return `<li><a class="dl" href="/api/catalog/download/${escapeAttribute(id)}/${file}.jpg" download>
         ${DOWNLOAD_ICON}<span>${DOWNLOADS[file].label}<small>${escapeHtml(size)} JPEG</small></span></a></li>`;
+}
+
+function downloadsHtml(id: string, phoneSize: string, hasDesktop: boolean): string {
   return `<section class="downloads" aria-labelledby="downloads-title">
       <h2 id="downloads-title">Download free</h2>
       <ul class="dl-list">
-        ${item('phone', phoneSize)}
-        ${hasDesktop ? `${item('desktop', '1920 × 1200')}\n        ${item('desktop-16x9', '1920 × 1080')}` : ''}
+        ${downloadItem(id, 'phone', phoneSize)}
+        ${hasDesktop ? `${downloadItem(id, 'desktop', '1920 × 1200')}\n        ${downloadItem(id, 'desktop-16x9', '1920 × 1080')}` : ''}
       </ul>
       <p class="note">${hasDesktop
     ? 'Full quality is in Prism: the original phone file and the 2560 × 1600 desktop version.'
     : 'Full quality is in Prism: the original file, set in one tap.'}</p>
     </section>`;
+}
+
+/** Desktop mode with a companion: the desktop file leads, and the phone file sits in the list below it. */
+function desktopDownloadsHtml(id: string, phoneSize: string): string {
+  return `<section class="downloads" aria-labelledby="downloads-title">
+      <h2 id="downloads-title">Download free</h2>
+      <a class="btn primary dl-lead" href="/api/catalog/download/${escapeAttribute(id)}/desktop.jpg" download>${DOWNLOAD_ICON}<span>Download 1920 × 1200</span></a>
+      <ul class="dl-list">
+        ${downloadItem(id, 'desktop-16x9', '1920 × 1080')}
+        ${downloadItem(id, 'phone', phoneSize)}
+      </ul>
+      <p class="note">The full 2560 × 1600 desktop file is in Prism.</p>
+    </section>`;
+}
+
+function monitorHtml(id: string, desktop: Desktop, alt: string, sizes: string, loading: string): string {
+  const src = `/api/catalog/desktop/${escapeAttribute(id)}.jpg?v=${escapeAttribute(desktop.v)}`;
+  return `<div class="monitor"><img src="${src}"
+        srcset="${escapeAttribute(desktop.thumb)} ${DESKTOP_THUMB_WIDTH}w, ${src} ${DOWNLOADS.desktop.width}w"
+        sizes="${sizes}" width="${DOWNLOADS.desktop.width}" height="${DOWNLOADS.desktop.height}"
+        alt="${escapeAttribute(alt)}" ${loading} decoding="async"></div>
+      <div class="stand" aria-hidden="true"></div>`;
 }
 
 async function renderFolder(id: string, env: CatalogEnv): Promise<Response> {
@@ -1232,6 +1270,14 @@ function xml(markup: string): Response {
 const PLAY_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><polygon points="4,3.5 13,8.5 20.5,12 13,15.5 4,20.5 6,12"/></svg>';
 const APPLE_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M16.37 1.43c0 1.14-.46 2.2-1.2 2.98-.8.85-2.1 1.5-3.14 1.42-.13-1.1.4-2.24 1.15-3 .83-.86 2.2-1.5 3.19-1.4zM20.5 17.1c-.55 1.27-.82 1.84-1.52 2.96-.98 1.57-2.37 3.52-4.08 3.54-1.52.02-1.91-.99-3.97-.98-2.06.01-2.49 1-4.01.99-1.71-.02-3.02-1.78-4-3.35C-.1 15.9-.4 10.7 1.3 8.1c1.2-1.85 3.1-2.93 4.88-2.93 1.81 0 2.95.99 4.45.99 1.45 0 2.34-.99 4.44-.99 1.58 0 3.26.86 4.46 2.35-3.92 2.15-3.28 7.75.97 9.58z"/></svg>';
 const DOWNLOAD_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14"/></svg>';
+const DESKTOP_HOWTO = `<section class="desktop-howto" aria-labelledby="desktop-howto-title">
+      <h2 id="desktop-howto-title">Use it on your computer</h2>
+      <p>This wallpaper has no desktop version yet. You can still set the phone file as your background.</p>
+      <ul>
+        <li><strong>Windows:</strong> download the file, right-click it, then choose Set as desktop background.</li>
+        <li><strong>Mac:</strong> download the file, Control-click it in Finder, then choose Set Desktop Picture.</li>
+      </ul>
+    </section>`;
 /** Phone and Desktop tabs. Arrow keys move between them, and `#desktop` opens the desktop tab. */
 const TABS_SCRIPT = `(function(){var m=document.querySelector('[data-views]');if(!m)return;var t=[].slice.call(m.querySelectorAll('[role=tab]'));function show(x,f){t.forEach(function(y){var on=y===x;y.setAttribute('aria-selected',on);y.tabIndex=on?0:-1;document.getElementById(y.getAttribute('aria-controls')).hidden=!on});m.setAttribute('data-view',x.id.slice(4));if(f)x.focus()}t.forEach(function(x,i){x.addEventListener('click',function(){show(x);history.replaceState(null,'',x.id==='tab-desktop'?'#desktop':location.pathname)});x.addEventListener('keydown',function(e){var n=e.key==='ArrowRight'?1:e.key==='ArrowLeft'?-1:0;if(n){e.preventDefault();show(t[(i+n+t.length)%t.length],true)}})});if(location.hash==='#desktop')show(t[1])})()`;
 const LOCK_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
@@ -1331,6 +1377,23 @@ h2{font-size:1.25rem;font-weight:700}
   .wall-media .wall-figure{position:static;width:min(100%,420px,calc(80svh * var(--ar,.5)))}
 }
 @media (min-width:1600px){.wall-layout[data-view=desktop]{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}}
+.wall-layout.desktop-mode{grid-template-columns:minmax(0,1fr);gap:32px}
+.wall-layout.desktop-mode .wall-info{max-width:720px}
+.desktop-stage{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;justify-items:center;align-items:end}
+.desktop-stage .desktop-lead{width:100%}
+.desktop-stage .wall-figure{position:static;width:min(100%,200px);margin:0}
+.desktop-stage .wall-img{aspect-ratio:var(--ar,.5);object-fit:cover}
+.desktop-mode figcaption{margin-top:10px;text-align:center;color:var(--muted);font-size:.85rem;font-weight:600}
+.dl-lead{display:inline-flex;align-items:center;gap:8px;min-height:48px;margin-top:14px}
+.desktop-howto{margin-top:28px;padding:20px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--line)}
+.desktop-howto h2{font-size:1rem}
+.desktop-howto p{color:var(--muted);margin:8px 0 0}
+.desktop-howto ul{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px;color:var(--muted)}
+.desktop-howto strong{color:var(--text)}
+@media (min-width:960px){
+  .desktop-stage{grid-template-columns:minmax(0,1fr) clamp(150px,17vw,220px);gap:32px;justify-items:stretch}
+  .desktop-stage .wall-figure{width:100%}
+}
 .shelf{margin-top:56px}
 .shelf h2{margin-bottom:16px}
 .shelf-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:16px}

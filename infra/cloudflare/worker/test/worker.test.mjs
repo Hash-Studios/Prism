@@ -3931,3 +3931,71 @@ class MemoryStorage {
     return this.#values.delete(key);
   }
 }
+
+test('a Prism wall short link with d=1 redirects desktop browsers to the desktop wall page without a read', async () => {
+  const links = new MemoryKv([storedLink('AbCdEfGh', 'share', '/share?id=W1&source=prism&provider=Prism', {
+    title: 'W1 - Prism', description: 'Desktop test', image_source_url: '', provider: 'Prism', wall_id: 'W1',
+  })]);
+  const env = workerEnv({ LINKS_KV: links, PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism', APP_STORE_URL: 'https://apps.apple.com/app/id6670200846' });
+  const realFetch = globalThis.fetch;
+  let fetches = 0;
+  globalThis.fetch = async () => {
+    fetches += 1;
+    throw new Error('the desktop redirect must not read Firestore');
+  };
+  let response;
+  try {
+    response = await getShare(DESKTOP_UA, '/l/AbCdEfGh?d=1', env);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get('location'), '/wallpaper/W1?view=desktop');
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.equal(fetches, 0);
+});
+
+test('a Prism wall short link without d=1 keeps the landing page', async () => {
+  const links = new MemoryKv([storedLink('AbCdEfGi', 'share', '/share?id=W1&source=prism&provider=Prism', {
+    title: 'W1 - Prism', description: 'Desktop test', image_source_url: '', provider: 'Prism', wall_id: 'W1',
+  })]);
+  const env = workerEnv({ LINKS_KV: links, PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism', APP_STORE_URL: 'https://apps.apple.com/app/id6670200846' });
+  for (const path of ['/l/AbCdEfGi', '/l/AbCdEfGi?d=0']) {
+    const response = await getShare(DESKTOP_UA, path, env);
+    assert.equal(response.status, 200, path);
+    assert.equal(response.headers.get('location'), null, path);
+    assert.match(response.headers.get('content-type'), /text\/html/);
+  }
+});
+
+test('a Wallhaven short link with d=1 keeps the landing page', async () => {
+  const links = new MemoryKv([storedLink('AbCdEfGj', 'share', '/share?id=abc123&source=wallhaven&provider=Wallhaven', {
+    title: 'abc123 - Wallhaven', description: 'Test', image_source_url: '', provider: 'Wallhaven', wall_id: 'abc123',
+  })]);
+  const env = workerEnv({ LINKS_KV: links, PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism', APP_STORE_URL: 'https://apps.apple.com/app/id6670200846' });
+  const response = await getShare(DESKTOP_UA, '/l/AbCdEfGj?d=1', env);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('location'), null);
+});
+
+test('a crawler with d=1 still gets the preview HTML, not a redirect', async () => {
+  const links = new MemoryKv([storedLink('AbCdEfGk', 'share', '/share?id=W1&source=prism&provider=Prism', {
+    title: 'W1 - Prism', description: 'Desktop test', image_source_url: '', provider: 'Prism', wall_id: 'W1',
+  })]);
+  const env = workerEnv({ LINKS_KV: links, PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism', APP_STORE_URL: 'https://apps.apple.com/app/id6670200846' });
+  const response = await getShare('facebookexternalhit/1.1', '/l/AbCdEfGk?d=1', env);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('location'), null);
+  assert.match(await response.text(), /og:title/);
+});
+
+test('an unknown short code with d=1 is still a 404 unavailable page', async () => {
+  const env = workerEnv({
+    PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
+    APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
+  });
+  const response = await getShare(DESKTOP_UA, '/l/ZzZzZzZz?d=1', env);
+  assert.equal(response.status, 404);
+  assert.equal(response.headers.get('location'), null);
+  assert.match(await response.text(), /This link is no longer available/);
+});
