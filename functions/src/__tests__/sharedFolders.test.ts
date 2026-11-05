@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
+import "./sharedFoldersDelivery.test";
 import {repairFolder} from "../folders";
 import {publicFolderDeps} from "../publicFolders";
 import {

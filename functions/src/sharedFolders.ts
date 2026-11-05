@@ -539,11 +539,11 @@ export async function sendDueFolderActivity(nowMs: number): Promise<number> {
       const user = users.get(adder);
       if (!user || user.deleted === true || !displayName(user)) delete adds[key];
     }
-    const blockRefs = people.flatMap((a) => people.filter((b) => b !== a)
-      .map((b) => db.collection(USERS).doc(a).collection("blockedUsers").doc(b)));
-    const blocks = new Set((blockRefs.length ? await db.getAll(...blockRefs) : [])
-      .filter((snap) => snap.exists).map((snap) => `${snap.ref.parent.parent?.id}|${snap.id}`));
-    const blockedPair = (a: string, b: string) => blocks.has(`${a}|${b}`) || blocks.has(`${b}|${a}`);
+    const blockPairs = people.flatMap((a) => people.filter((b) => b !== a)
+      .map((b) => ({a, b, ref: db.collection(USERS).doc(a).collection("blockedUsers").doc(b)})));
+    const blockSnaps = blockPairs.length ? await db.getAll(...blockPairs.map(({ref}) => ref)) : [];
+    const blocks = new Set(blockSnaps.flatMap((snap, i) => snap.exists ? [[blockPairs[i].a, blockPairs[i].b].sort().join("|")] : []));
+    const blockedPair = (a: string, b: string) => blocks.has([a, b].sort().join("|"));
     const plans = planActivityPushes(members, adds, blockedPair);
     for (let i = 0; i < plans.length; i += CHUNK_SIZE) {
       const results = await Promise.allSettled(plans.slice(i, i + CHUNK_SIZE).map(async (plan) => {
@@ -552,9 +552,44 @@ export async function sendDueFolderActivity(nowMs: number): Promise<number> {
         const session = (await db.doc(`${USERS}/${plan.uid}/private/session`).get()).data();
         const token = str(session?.folderAlertsToken);
         if (session?.folderAlerts !== true || !token || str(session?.fcmToken) !== token) return false;
-        const email = str(recipient.email);
+        const deliveryKeys = Object.keys(adds);
+        const latestAdders = [...new Set(deliveryKeys.map((key) => adds[key]))];
+        const sourceRefs = deliveryKeys.map((key) => folderRef(doc.id).collection(ITEMS).doc(key));
+        const latestBlockPairs = latestAdders.flatMap((adder) => [
+          {a: plan.uid, b: adder, ref: db.collection(USERS).doc(plan.uid).collection("blockedUsers").doc(adder)},
+          {a: adder, b: plan.uid, ref: db.collection(USERS).doc(adder).collection("blockedUsers").doc(plan.uid)},
+        ]);
+        const delivery = await db.runTransaction(async (tx) => {
+          const folderSnap = await tx.get(folderRef(doc.id));
+          const recipientSnap = await tx.get(db.collection(USERS).doc(plan.uid));
+          const [itemSnaps, blockSnaps] = await Promise.all([
+            Promise.all(sourceRefs.map((ref) => tx.get(ref))),
+            Promise.all(latestBlockPairs.map(({ref}) => tx.get(ref))),
+          ]);
+          const folderData = folderSnap.data();
+          if (!folderData || !sameTimestamp(folderSnap.createTime, claim.folderCreatedAt) ||
+            !membersOf(folderData).some((member) => member.uid === plan.uid) || !recipientSnap.exists ||
+            recipientSnap.data()?.deleted === true) return null;
+          const latestAdds: Record<string, string> = {};
+          itemSnaps.forEach((item, index) => {
+            const key = deliveryKeys[index];
+            const adder = str(item.data()?.addedBy) || ownerId;
+            const expectedCreatedAt = claim.itemCreatedAt[key];
+            if (item.exists && str(item.data()?.ownerId) === ownerId && adder === claim.adds[key] &&
+              expectedCreatedAt && sameTimestamp(item.createTime, expectedCreatedAt)) latestAdds[key] = adder;
+          });
+          const blocked = new Set(blockSnaps.flatMap((block, index) => block.exists ?
+            [[latestBlockPairs[index].a, latestBlockPairs[index].b].sort().join("|")] : []));
+          const latestPlan = planActivityPushes([plan.uid], latestAdds,
+            (a, b) => blocked.has([a, b].sort().join("|")))[0];
+          return latestPlan ? {folder: folderData, recipient: recipientSnap.data(), plan: latestPlan} : null;
+        });
+        if (!delivery) return false;
+        const {folder: latestData, recipient: latestRecipient, plan: latestPlan} = delivery;
+        if (!latestPlan) return false;
+        const email = str(latestRecipient?.email);
         return sendToUser(
-          {...folderActivityPayload(plan, doc.id, str(folder.name), displayName(users.get(plan.adderUid)), nowMs),
+          {...folderActivityPayload(latestPlan, doc.id, str(latestData.name), displayName(users.get(latestPlan.adderUid)), nowMs),
             modifier: email},
           {uid: plan.uid, email, folderAlertsToken: token},
         );
