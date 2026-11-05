@@ -138,7 +138,7 @@ class _DesktopUploadScreenState extends State<DesktopUploadScreen> {
               DesktopImageWrongAspect() => DesktopSubmitFailure.wrongAspect,
               DesktopImageTooSmall() => DesktopSubmitFailure.tooSmall,
             };
-      if (check is DesktopImageOk) _ok = check;
+      if (_pickFailure == null && check is DesktopImageOk) _ok = check;
     });
   }
 

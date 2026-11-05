@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import {createHash} from "node:crypto";
+import {createHash, randomUUID} from "node:crypto";
 import {logger} from "firebase-functions/v2";
 import {onDocumentDeleted} from "firebase-functions/v2/firestore";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
@@ -11,10 +11,10 @@ import {isLoggedOut, sendToUser} from "./notificationHelper";
 import {R2Storage, r2Secrets} from "./r2Storage";
 import {
   DESKTOP_COMPANIONS, DESKTOP_JPEG_QUALITY, DESKTOP_SIZE, DESKTOP_THUMB_QUALITY, DESKTOP_THUMB_SIZE, DESKTOP_WIDE_SIZE,
-  type DesktopObject, type DesktopVariant, desktopObjectName, desktopThumbObject, desktopThumbUrl, desktopVersion,
+  creatorDesktopVersion, type DesktopObject, type DesktopVariant, desktopObjectName, desktopThumbObject, desktopThumbUrl,
   parseDesktopVariant, SHARE_ID,
 } from "./studio/desktop";
-import {activeWallOwner, openAccount, signedIn} from "./wallEditingCommon";
+import {activeWallOwner, signedIn} from "./wallEditingCommon";
 import {boundedDisplayText, exactKeys, wallDocumentId} from "./wallMetadataValidation";
 
 /**
@@ -23,6 +23,7 @@ import {boundedDisplayText, exactKeys, wallDocumentId} from "./wallMetadataValid
  * in the same shape as a Studio companion, so every reader of `desktopVariant` serves it unchanged.
  */
 export const DESKTOP_SUBMISSIONS = "desktopSubmissions";
+export const DESKTOP_STORAGE_LEASES = "desktopStorageLeases";
 export const DESKTOP_MIN_WIDTH = 1920;
 export const DESKTOP_ASPECT_TOLERANCE = 0.02;
 export const DESKTOP_ASPECTS = {"16:10": 16 / 10, "16:9": 16 / 9} as const;
@@ -42,6 +43,31 @@ interface DesktopFiles {original: DesktopObject; wide: DesktopObject; thumb: Des
 
 const ACTIVE: DesktopSubmissionState[] = ["uploading", "pending"];
 const now = () => admin.firestore.FieldValue.serverTimestamp();
+/** Longer than a callable can run, so a lease older than this belongs to a crashed run. */
+const STORAGE_LEASE_MS = 10 * 60_000;
+
+/**
+ * Runs one creator storage step per wall at a time. Identical uploads share object names, so a store must not
+ * overlap a delete of the same names. Studio companions do not take this lease: a Studio wall has no creator owner.
+ */
+async function withStorageLease<T>(shareId: string, callback: () => Promise<T>): Promise<T> {
+  const ref = db.collection(DESKTOP_STORAGE_LEASES).doc(shareId);
+  const token = randomUUID();
+  await db.runTransaction(async (tx) => {
+    const current = (await tx.get(ref)).data();
+    if (current?.leaseUntil instanceof admin.firestore.Timestamp && current.leaseUntil.toMillis() > Date.now()) {
+      throw new HttpsError("unavailable", "desktop-storage-busy");
+    }
+    tx.set(ref, {token, leaseUntil: admin.firestore.Timestamp.fromMillis(Date.now() + STORAGE_LEASE_MS)});
+  });
+  try {
+    return await callback();
+  } finally {
+    await db.runTransaction(async (tx) => {
+      if ((await tx.get(ref)).data()?.token === token) tx.delete(ref);
+    });
+  }
+}
 
 /** The aspect of an upright image, or why it cannot be a desktop version. The order matches the app's checks. */
 export function checkDesktopImage(width: number, height: number): {aspect: DesktopAspect} | {problem: DesktopImageProblem} {
@@ -126,7 +152,10 @@ async function deleteUnlinked(shareId: string, objects: StoredObject[], keep: St
   if (objects.length === 0) return;
   const live = (await db.collection(DESKTOP_COMPANIONS).doc(shareId).get()).data();
   const linked = live?.status === "ready" ? objectsOf(shareId, {original: live.original, wide: live.wide, thumb: live.thumb}) : [];
-  const kept = new Set([...linked, ...keep].map((item) => item.object));
+  const reserved = ["generating", "queued", "deferred"].includes(str(live?.status)) ? objectsOf(shareId, live) : [];
+  const active = await db.collection(DESKTOP_SUBMISSIONS).where("shareId", "==", shareId).where("state", "in", ACTIVE).get();
+  const kept = new Set([...linked, ...reserved, ...keep, ...active.docs.flatMap((doc) => objectsOf(shareId, doc.data()))]
+    .map((item) => item.object));
   const storage = new R2Storage();
   for (const item of objects) {
     if (!kept.has(item.object)) await storage.delete(item.kind, item.object);
@@ -179,69 +208,80 @@ function parseSubmitInput(raw: unknown): {wallDocId: string; bytes: Buffer} {
 }
 
 /** Withdraws an active submission and deletes its files and its doc. Approved files belong to the companion. */
-async function retire(ref: admin.firestore.DocumentReference): Promise<void> {
+async function retireLocked(ref: admin.firestore.DocumentReference, fallback?: admin.firestore.DocumentData): Promise<void> {
   const data = await db.runTransaction(async (tx) => {
     const current = (await tx.get(ref)).data();
     if (current && ACTIVE.includes(current.state)) tx.update(ref, {state: "withdrawn", updatedAt: now()});
-    return current;
+    return current ?? fallback;
   });
   if (!data) return;
+  if (data.state === "approved") await clearRetired(str(data.shareId), ref.id);
   if (data.state !== "approved" && data.filesDeleted !== true) await deleteUnlinked(str(data.shareId), objectsOf(str(data.shareId), data));
   await ref.delete();
+}
+
+async function retire(ref: admin.firestore.DocumentReference): Promise<void> {
+  const data = (await ref.get()).data();
+  if (!data) return;
+  await withStorageLease(str(data.shareId), () => retireLocked(ref));
 }
 
 export const submitDesktopVersion = onCall({region: CALLABLE_REGIONS, cors: true, secrets: r2Secrets, memory: "1GiB",
   timeoutSeconds: 120}, async (request: CallableRequest<unknown>) => {
   const uid = signedIn(request);
   const {wallDocId, bytes} = parseSubmitInput(request.data);
-  await db.runTransaction((tx) => ownApprovedWall(tx, uid, wallDocId));
+  const initial = await db.runTransaction((tx) => ownApprovedWall(tx, uid, wallDocId));
   await reserveUploadSlot(uid, false, Date.now());
   const rendered = await renderCreatorDesktop(bytes);
 
-  const ref = db.collection(DESKTOP_SUBMISSIONS).doc();
-  const {shareId, files, stale} = await db.runTransaction(async (tx) => {
-    const {wall, shareId} = await ownApprovedWall(tx, uid, wallDocId);
-    const active = await tx.get(db.collection(DESKTOP_SUBMISSIONS).where("wallDocId", "==", wallDocId)
-      .where("state", "in", ACTIVE));
-    const nowMs = Date.now();
-    const stale: admin.firestore.DocumentReference[] = [];
-    for (const doc of active.docs) {
-      const lease = doc.data().leaseUntil;
-      const expired = doc.data().state === "uploading" &&
+  return withStorageLease(initial.shareId, async () => {
+    const ref = db.collection(DESKTOP_SUBMISSIONS).doc();
+    const {shareId, files, stale} = await db.runTransaction(async (tx) => {
+      const {wall, shareId} = await ownApprovedWall(tx, uid, wallDocId);
+      if (shareId !== initial.shareId) throw new HttpsError("aborted", "desktop-wall-unavailable");
+      const active = await tx.get(db.collection(DESKTOP_SUBMISSIONS).where("wallDocId", "==", wallDocId)
+        .where("state", "in", [...ACTIVE, "withdrawn"]));
+      const nowMs = Date.now();
+      const stale: admin.firestore.DocumentReference[] = [];
+      for (const doc of active.docs) {
+        const lease = doc.data().leaseUntil;
+        const expired = doc.data().state === "withdrawn" || doc.data().state === "uploading" &&
         (!(lease instanceof admin.firestore.Timestamp) || lease.toMillis() <= nowMs);
-      if (!expired) throw new HttpsError("failed-precondition", "desktop-pending-exists");
-      stale.push(doc.ref);
-    }
-    const files = filesFor(shareId, rendered);
-    for (const doc of stale) tx.update(doc, {state: "withdrawn", updatedAt: now()});
-    tx.create(ref, {wallDocId, shareId, creatorUid: uid, state: "uploading", ...files,
-      source: {width: rendered.width, height: rendered.height, aspect: rendered.aspect},
-      wallThumb: str(wall.wallpaper_thumb), wallTitle: str(wall.title), creatorName: str(wall.by),
-      replaces: parseDesktopVariant(wall.desktopVariant) !== null,
-      leaseUntil: admin.firestore.Timestamp.fromMillis(nowMs + DESKTOP_UPLOAD_LEASE_MS), createdAt: now(), updatedAt: now()});
-    return {shareId, files, stale};
-  });
-  const own = objectsOf(shareId, files);
-  for (const doc of stale) {
-    const data = (await doc.get()).data();
-    if (data?.state === "withdrawn") await deleteUnlinked(shareId, objectsOf(shareId, data), own);
-    await doc.delete();
-  }
-
-  try {
-    await store([[own[0], rendered.original], [own[1], rendered.wide], [own[2], rendered.thumb]]);
-    await db.runTransaction(async (tx) => {
-      const current = (await tx.get(ref)).data();
-      if (current?.state !== "uploading") throw new HttpsError("aborted", "desktop-upload-withdrawn");
-      await openAccount(tx, uid);
-      tx.update(ref, {state: "pending", leaseUntil: admin.firestore.FieldValue.delete(), updatedAt: now()});
+        if (!expired) throw new HttpsError("failed-precondition", "desktop-pending-exists");
+        stale.push(doc.ref);
+      }
+      const files = filesFor(shareId, rendered);
+      for (const doc of stale) tx.update(doc, {state: "withdrawn", updatedAt: now()});
+      tx.create(ref, {wallDocId, shareId, creatorUid: uid, state: "uploading", ...files,
+        source: {width: rendered.width, height: rendered.height, aspect: rendered.aspect},
+        wallThumb: str(wall.wallpaper_thumb), wallTitle: str(wall.title), creatorName: str(wall.by),
+        replaces: parseDesktopVariant(wall.desktopVariant) !== null,
+        leaseUntil: admin.firestore.Timestamp.fromMillis(nowMs + DESKTOP_UPLOAD_LEASE_MS), createdAt: now(), updatedAt: now()});
+      return {shareId, files, stale};
     });
-  } catch (error) {
-    await retire(ref).catch((err) => logger.warn("desktop: could not clean a failed submission.", {id: ref.id, err}));
-    throw error instanceof HttpsError ? error : new HttpsError("unavailable", "desktop-store-failed");
-  }
-  logger.info("desktop: submission pending.", {id: ref.id, wallDocId, aspect: rendered.aspect});
-  return {submissionId: ref.id, state: "pending"};
+    const own = objectsOf(shareId, files);
+    try {
+      for (const doc of stale) {
+        const data = (await doc.get()).data();
+        if (data?.state === "withdrawn") await deleteUnlinked(str(data.shareId), objectsOf(str(data.shareId), data), own);
+        await doc.delete();
+      }
+      await store([[own[0], rendered.original], [own[1], rendered.wide], [own[2], rendered.thumb]]);
+      await db.runTransaction(async (tx) => {
+        const current = (await tx.get(ref)).data();
+        if (current?.state !== "uploading") throw new HttpsError("aborted", "desktop-upload-withdrawn");
+        const wall = await ownApprovedWall(tx, uid, wallDocId);
+        if (wall.shareId !== shareId) throw new HttpsError("aborted", "desktop-wall-unavailable");
+        tx.update(ref, {state: "pending", leaseUntil: admin.firestore.FieldValue.delete(), updatedAt: now()});
+      });
+    } catch (error) {
+      await retireLocked(ref, {shareId, ...files}).catch((err) =>
+        logger.warn("desktop: could not clean a failed submission.", {id: ref.id, err}));
+      throw error instanceof HttpsError ? error : new HttpsError("unavailable", "desktop-store-failed");
+    }
+    logger.info("desktop: submission pending.", {id: ref.id, wallDocId, aspect: rendered.aspect});
+    return {submissionId: ref.id, state: "pending"};
+  });
 });
 
 function parseReviewInput(raw: unknown) {
@@ -282,7 +322,7 @@ async function approve(ref: admin.firestore.DocumentReference, adminUid: string)
     const linked = new Set(objectsOf(shareId, files).map((item) => item.object));
     if (linked.size !== 3) throw new HttpsError("failed-precondition", "desktop-wall-unavailable");
     const retired = objectsOf(shareId, companion).filter((item) => !linked.has(item.object));
-    const variant: DesktopVariant = {v: desktopVersion(files.original.sha256), ...DESKTOP_SIZE,
+    const variant: DesktopVariant = {v: creatorDesktopVersion(files.original.sha256, files.wide.sha256), ...DESKTOP_SIZE,
       wideHeight: DESKTOP_WIDE_SIZE.height, thumb: files.thumb.url};
     tx.set(companionRef, {status: "ready", source: "creator", submissionId: ref.id, wallPath: wallRef.path, ...files,
       variant, ...(retired.length > 0 ? {pendingObjects: retired} : {}), updatedAt: now()});
@@ -308,19 +348,13 @@ async function clearRetired(shareId: string, submissionId: string): Promise<void
 }
 
 async function reject(ref: admin.firestore.DocumentReference, adminUid: string, reason: string, reasonCode: string) {
-  const result = await db.runTransaction(async (tx) => {
+  return db.runTransaction(async (tx) => {
     const submission = (await tx.get(ref)).data();
     if (submission?.state === "rejected") return {submission, changed: false};
     if (submission?.state !== "pending") throw new HttpsError("failed-precondition", "desktop-not-pending");
     tx.update(ref, {state: "rejected", reason, reasonCode, decidedBy: adminUid, decidedAt: now(), updatedAt: now()});
-    return {submission, changed: true};
+    return {submission: {...submission, reason, reasonCode}, changed: true};
   });
-  if (result.submission.filesDeleted !== true) {
-    const shareId = str(result.submission.shareId);
-    await deleteUnlinked(shareId, objectsOf(shareId, result.submission));
-    await ref.update({filesDeleted: true});
-  }
-  return result;
 }
 
 async function notifyCreator(submission: admin.firestore.DocumentData, id: string, outcome: "approved" | "rejected",
@@ -348,18 +382,28 @@ export const reviewDesktopSubmission = onCall({region: CALLABLE_REGIONS, cors: t
     if (!request.auth?.uid || !(await isAdminCaller(request.auth))) {
       throw new HttpsError("permission-denied", "Only admins can review desktop versions.");
     }
+    const adminUid = request.auth.uid;
     const input = parseReviewInput(request.data);
     const ref = db.collection(DESKTOP_SUBMISSIONS).doc(input.submissionId);
-    const result = input.decision === "approve" ?
-      await approve(ref, request.auth.uid) :
-      await reject(ref, request.auth.uid, input.reason, input.reasonCode);
-    if (input.decision === "approve") await clearRetired(str(result.submission.shareId), ref.id);
-    if (result.changed) {
-      await notifyCreator(result.submission, ref.id, input.decision === "approve" ? "approved" : "rejected",
-        input.decision === "reject" ? input.reason : "").catch((err) =>
-        logger.warn("desktop: creator notification failed.", {id: ref.id, err}));
-    }
-    return {state: input.decision === "approve" ? "approved" : "rejected"};
+    const submission = (await ref.get()).data();
+    if (!submission) throw new HttpsError("failed-precondition", "desktop-not-pending");
+    return withStorageLease(str(submission.shareId), async () => {
+      const result = input.decision === "approve" ?
+        await approve(ref, adminUid) :
+        await reject(ref, adminUid, input.reason, input.reasonCode);
+      if (result.changed) {
+        await notifyCreator(result.submission, ref.id, input.decision === "approve" ? "approved" : "rejected",
+          input.decision === "reject" ? str(result.submission.reason) : "").catch((err) =>
+          logger.warn("desktop: creator notification failed.", {id: ref.id, err}));
+      }
+      if (input.decision === "approve") await clearRetired(str(result.submission.shareId), ref.id);
+      else if (result.submission.filesDeleted !== true) {
+        const shareId = str(result.submission.shareId);
+        await deleteUnlinked(shareId, objectsOf(shareId, result.submission));
+        await ref.update({filesDeleted: true});
+      }
+      return {state: input.decision === "approve" ? "approved" : "rejected"};
+    });
   });
 
 /** Every submission of a deleted wall. The companion itself is removed by `onStudioWallDesktop`. */

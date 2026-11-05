@@ -123,7 +123,7 @@ The server code is in `functions/src/desktopSubmissions.ts`.
 6. In a transaction, it refuses a second submission while one is pending (`desktop-pending-exists`). It writes the submission with the state `uploading`.
 7. It stores the three files with the same R2 layout as a Studio companion. Then it sets the state to `pending`.
 
-If storage fails, the server deletes the stored files and the submission. A submission that stays `uploading` for more than 10 minutes is from a crashed run. The next submission for that wall deletes it and its files.
+Identical uploads have the same file names. So each creator step that stores or deletes files takes a short per-wall lease (`desktopStorageLeases/{shareId}`, server only). A second step on the same wall waits for the first, and the app shows "Unable to submit". If storage fails, the server deletes the stored files and the submission. A submission that stays `uploading` for more than 10 minutes is from a crashed run. The next submission for that wall deletes it and its files.
 
 The server does not write `desktopVariant` before an admin approves.
 
@@ -133,7 +133,7 @@ The admin review screen has a **Desktop** tab. Each card shows the phone wall ne
 
 The callable `reviewDesktopSubmission` accepts only admins.
 
-- **Approve.** In one transaction, the server checks that the wall is still approved and has the same owner. It replaces the `desktopCompanions/{shareId}` manifest (`source: "creator"`) and writes `desktopVariant` on the wall. The value of `v` comes from the new original's SHA-256, so a cache never serves the old file. The files of the old companion are listed in `pendingObjects`. The server deletes them after the transaction, then clears the list.
+- **Approve.** In one transaction, the server checks that the wall is still approved and has the same owner. It replaces the `desktopCompanions/{shareId}` manifest (`source: "creator"`) and writes `desktopVariant` on the wall. For a creator version, `v` comes from the SHA-256 of both new files, because the wide file keeps edges that the original crops. So a cache never serves an old file. The files of the old companion are listed in `pendingObjects`. The server deletes them after the transaction, then clears the list.
 - **Reject.** The server saves the reason and deletes the files of the upload. The old companion stays on the wall. A file that the live companion also uses (an identical upload) is kept.
 
 A second approve or reject of the same submission does nothing. It does not send a second push.

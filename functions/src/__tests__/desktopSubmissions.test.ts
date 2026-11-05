@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import * as admin from "firebase-admin";
 import test, {type TestContext} from "node:test";
 import sharp from "sharp";
+import {createHash} from "node:crypto";
 import {
   checkDesktopImage, DESKTOP_UPLOAD_LEASE_MS, removeDesktopSubmissionsForAccount, removeDesktopSubmissionsForWall,
   renderCreatorDesktop, reviewDesktopSubmission, submitDesktopVersion,
@@ -19,7 +20,9 @@ const moderator = {uid: "moderator", token: {admin: true}};
 const png = async (width: number, height: number, background = "navy") =>
   (await sharp({create: {width, height, channels: 3, background}}).png().toBuffer()).toString("base64");
 
-function setup(t: TestContext, docs: Record<string, Doc> = {}, opts: {failPutAt?: number} = {}) {
+function setup(t: TestContext, docs: Record<string, Doc> = {}, opts: {
+  failPutAt?: number; onPut?: (put: number, store: Map<string, Row>) => Promise<void>;
+} = {}) {
   const env = {...process.env};
   t.after(() => {
     process.env = env;
@@ -40,6 +43,7 @@ function setup(t: TestContext, docs: Record<string, Doc> = {}, opts: {failPutAt?
   t.mock.method(R2Storage.prototype, "put", async (_kind: string, object: string) => {
     if (++puts === opts.failPutAt) throw new Error("R2 PUT failed (500)");
     objects.add(object);
+    await opts.onPut?.(puts, store);
     return true;
   });
   t.mock.method(R2Storage.prototype, "head", async () => null);
@@ -63,6 +67,8 @@ const refusedWith = (code: string, message: string) => (error: unknown) => {
 };
 const submissionObjects = (doc: Row | undefined) =>
   [doc?.original?.object, doc?.wide?.object, doc?.thumb?.object] as string[];
+const creatorVersion = (doc: Row | undefined) =>
+  createHash("sha256").update(`${doc?.original.sha256}\0${doc?.wide.sha256}`).digest("hex").slice(0, 16);
 const inbox = (store: Map<string, Row>) => [...store.entries()].filter(([path]) => path.startsWith("notifications/"))
   .map(([, doc]) => doc);
 
@@ -103,6 +109,44 @@ test("a creator cannot submit a desktop version for another creator's wall", asy
   await assert.rejects(submit(stranger, await png(2560, 1600)), refusedWith("permission-denied", "desktop-not-owner"));
   assert.equal(objects.size, 0);
   assert.equal([...store.keys()].some((path) => path.startsWith("desktopSubmissions/")), false);
+});
+
+test("creatorUid wins over conflicting wall, token and profile emails", async (t) => {
+  const {store} = setup(t, {"walls/w1": {id: "WALL1", creatorUid: "maker", email: "other@example.com", review: true}});
+  const lookup = t.mock.method(admin.auth(), "getUserByEmail", async () => {
+    throw new Error("A creatorUid wall must not resolve ownership by email.");
+  });
+  await assert.rejects(submit(stranger, await png(2560, 1600)), refusedWith("permission-denied", "desktop-not-owner"));
+  const {submissionId} = await submit({...maker, token: {...maker.token, email: "different@example.com"}},
+    await png(2560, 1600));
+  await review({submissionId, decision: "approve"});
+  assert.equal(store.get(`desktopSubmissions/${submissionId}`)?.creatorUid, "maker");
+  assert.equal(lookup.mock.callCount(), 0);
+});
+
+test("a legacy wall requires server-verified email ownership, not a matching token or profile", async (t) => {
+  setup(t, {"walls/w1": {id: "WALL1", email: "maker@example.com", review: true},
+    "usersv2/other": {email: "maker@example.com"}});
+  let verified = false;
+  t.mock.method(admin.auth(), "getUserByEmail", async () => ({uid: "maker", emailVerified: verified}));
+  const image = await png(2560, 1600);
+  await assert.rejects(submit(maker, image), refusedWith("permission-denied", "desktop-not-owner"));
+  verified = true;
+  await assert.rejects(submit({...stranger, token: {...stranger.token, email: "maker@example.com"}}, image),
+    refusedWith("permission-denied", "desktop-not-owner"));
+  const {submissionId} = await submit(maker, image);
+  verified = false;
+  await assert.rejects(review({submissionId, decision: "approve"}),
+    refusedWith("failed-precondition", "desktop-wall-unavailable"));
+  verified = true;
+  await review({submissionId, decision: "approve"});
+});
+
+test("an explicit unavailable creatorUid never falls back to a matching verified email", async (t) => {
+  setup(t, {"walls/w1": {id: "WALL1", creatorUid: "", email: "maker@example.com", review: true}});
+  const lookup = t.mock.method(admin.auth(), "getUserByEmail", async () => ({uid: "maker", emailVerified: true}));
+  await assert.rejects(submit(maker, await png(2560, 1600)), refusedWith("permission-denied", "desktop-not-owner"));
+  assert.equal(lookup.mock.callCount(), 0);
 });
 
 test("a creator cannot submit a desktop version for an unapproved wall", async (t) => {
@@ -167,6 +211,59 @@ test("a failed upload deletes the files it stored and the submission", async (t)
   await submit(maker, await png(2560, 1600));
 });
 
+test("a wall deleted during upload cannot leave a pending submission or stored files", async (t) => {
+  const {store, objects} = setup(t, {}, {onPut: async (put, docs) => {
+    if (put === 1) docs.delete("walls/w1");
+  }});
+  await assert.rejects(submit(maker, await png(2560, 1600)),
+    refusedWith("not-found", "desktop-wall-not-found"));
+  assert.equal(objects.size, 0);
+  assert.equal([...store.keys()].some((path) => path.startsWith("desktopSubmissions/")), false);
+});
+
+test("a submission removed during storage still cleans files written after removal", async (t) => {
+  const {store, objects} = setup(t, {}, {onPut: async (put, docs) => {
+    if (put === 1) {
+      docs.set("creatorDeletionState/maker", {closed: true});
+      for (const path of docs.keys()) if (path.startsWith("desktopSubmissions/")) docs.delete(path);
+    }
+  }});
+  await assert.rejects(submit(maker, await png(2560, 1600)),
+    refusedWith("aborted", "desktop-upload-withdrawn"));
+  assert.equal(objects.size, 0);
+  assert.equal([...store.keys()].some((path) => path.startsWith("desktopSubmissions/")), false);
+});
+
+test("a withdrawn crash record is cleaned on the next submission", async (t) => {
+  const orphan = {wallDocId: "w1", shareId: "WALL1", creatorUid: "maker", state: "withdrawn",
+    original: {object: `desktop-originals/WALL1/${"a".repeat(64)}.jpg`},
+    wide: {object: `desktop-originals/WALL1/${"b".repeat(64)}.jpg`},
+    thumb: {object: `previews/desktop-${"c".repeat(64)}.jpg`}};
+  const {store, removed} = setup(t, {"desktopSubmissions/orphan": orphan});
+  await submit(maker, await png(2560, 1600));
+  assert.equal(store.get("desktopSubmissions/orphan"), undefined);
+  assert.deepEqual(removed.sort(), submissionObjects(orphan).sort());
+});
+
+test("a stale cleanup error does not strand the new submission as uploading", async (t) => {
+  const stale = {wallDocId: "w1", shareId: "WALL1", creatorUid: "maker", state: "uploading",
+    original: {object: `desktop-originals/WALL1/${"a".repeat(64)}.jpg`},
+    leaseUntil: admin.firestore.Timestamp.fromMillis(0)};
+  const {store} = setup(t, {"desktopSubmissions/stale": stale});
+  let first = true;
+  t.mock.method(R2Storage.prototype, "delete", async () => {
+    if (first) {
+      first = false;
+      throw new Error("R2 DELETE failed (500)");
+    }
+  });
+  await assert.rejects(submit(maker, await png(2560, 1600)),
+    refusedWith("unavailable", "desktop-store-failed"));
+  assert.equal([...store.values()].some((doc) => doc.state === "uploading"), false);
+  await submit(maker, await png(2560, 1600));
+  assert.equal(store.get("desktopSubmissions/stale"), undefined);
+});
+
 test("only an admin can review, and a reject needs a reason", async (t) => {
   setup(t);
   const {submissionId} = await submit(maker, await png(2560, 1600));
@@ -186,7 +283,7 @@ test("approve links the desktop version to the wall with a new v and tells the c
   const submission = store.get(`desktopSubmissions/${submissionId}`);
   const variant = parseDesktopVariant(store.get("walls/w1")?.desktopVariant);
   assert.ok(variant);
-  assert.equal(variant.v, submission?.original.sha256.slice(0, 16));
+  assert.equal(variant.v, creatorVersion(submission));
   assert.equal(variant.thumb, submission?.thumb.url);
   assert.equal(submission?.state, "approved");
   assert.equal(submission?.decidedBy, "moderator");
@@ -253,6 +350,118 @@ test("rejecting an upload identical to the live desktop version keeps the live f
   await readyDesktopCompanion("WALL1", store.get("walls/w1"));
 });
 
+test("a committed rejection notifies once even if object cleanup fails and is retried", async (t) => {
+  const {store, objects} = setup(t);
+  const {submissionId} = await submit(maker, await png(2560, 1600));
+  let fail = true;
+  t.mock.method(R2Storage.prototype, "delete", async (_kind: string, object: string) => {
+    if (fail) throw new Error("R2 DELETE failed (500)");
+    objects.delete(object);
+  });
+  await assert.rejects(review({submissionId, decision: "reject", reason: "Blurry."}));
+  assert.equal(store.get(`desktopSubmissions/${submissionId}`)?.state, "rejected");
+  assert.equal(inbox(store).length, 1);
+  fail = false;
+  await review({submissionId, decision: "reject", reason: "Changed retry reason."});
+  assert.equal(objects.size, 0);
+  assert.equal(inbox(store).length, 1);
+  assert.equal(inbox(store)[0].notification.body, "Reason: Blurry.");
+});
+
+test("a committed approval notifies once before retired-file cleanup and retries only that cleanup", async (t) => {
+  const {store, objects} = setup(t);
+  const first = await submit(maker, await png(2560, 1600));
+  await review({submissionId: first.submissionId, decision: "approve"});
+  const second = await submit(maker, await png(1920, 1080, "maroon"));
+  let fail = true;
+  t.mock.method(R2Storage.prototype, "delete", async (_kind: string, object: string) => {
+    if (fail) throw new Error("R2 DELETE failed (500)");
+    objects.delete(object);
+  });
+  await assert.rejects(review({submissionId: second.submissionId, decision: "approve"}));
+  assert.equal(store.get(`desktopSubmissions/${second.submissionId}`)?.state, "approved");
+  assert.equal(inbox(store).length, 2);
+  fail = false;
+  await review({submissionId: second.submissionId, decision: "approve"});
+  assert.equal(objects.size, 3);
+  assert.equal(inbox(store).length, 2);
+  assert.equal(store.get("desktopCompanions/WALL1")?.pendingObjects, undefined);
+});
+
+test("retrying rejection cannot delete the files reused by a new pending submission", async (t) => {
+  const {store, objects} = setup(t);
+  const image = await png(2560, 1600);
+  const first = await submit(maker, image);
+  let fail = true;
+  t.mock.method(R2Storage.prototype, "delete", async (_kind: string, object: string) => {
+    if (fail) throw new Error("R2 DELETE failed (500)");
+    objects.delete(object);
+  });
+  await assert.rejects(review({submissionId: first.submissionId, decision: "reject", reason: "Blurry."}));
+  fail = false;
+  const second = await submit(maker, image);
+  await review({submissionId: first.submissionId, decision: "reject", reason: "Blurry."});
+  assert.equal(objects.size, 3);
+  await review({submissionId: second.submissionId, decision: "approve"});
+  await readyDesktopCompanion("WALL1", store.get("walls/w1"));
+});
+
+test("a new upload cannot reuse content-addressed files while rejection is deleting them", async (t) => {
+  const {objects} = setup(t);
+  const image = await png(2560, 1600);
+  const {submissionId} = await submit(maker, image);
+  let probed = false;
+  t.mock.method(R2Storage.prototype, "delete", async (_kind: string, object: string) => {
+    if (!probed) {
+      probed = true;
+      await assert.rejects(submit(maker, image), refusedWith("unavailable", "desktop-storage-busy"));
+    }
+    objects.delete(object);
+  });
+  await review({submissionId, decision: "reject", reason: "Blurry."});
+  assert.equal(probed, true);
+  assert.equal(objects.size, 0);
+});
+
+test("rejecting a creator upload preserves the files still journaled by a queued Studio companion", async (t) => {
+  const {store, objects} = setup(t);
+  const {submissionId} = await submit(maker, await png(2560, 1600));
+  const files = submissionObjects(store.get(`desktopSubmissions/${submissionId}`));
+  store.set("desktopCompanions/WALL1", {status: "queued", pendingObjects: files.map((object, index) => ({
+    kind: index < 2 ? "private" : "preview", object,
+  }))});
+  await review({submissionId, decision: "reject", reason: "Blurry."});
+  assert.deepEqual([...objects].sort(), files.sort());
+});
+
+test("changing only the wide image changes the desktop cache version", async (t) => {
+  const {store} = setup(t);
+  const image = async (edge: string) => (await sharp({create: {
+    width: 2560, height: 1440, channels: 3, background: edge,
+  }}).composite([{input: await sharp({create: {width: 2400, height: 1440, channels: 3, background: "navy"}})
+    .png().toBuffer(), left: 80, top: 0}]).png().toBuffer()).toString("base64");
+  const first = await submit(maker, await image("red"));
+  await review({submissionId: first.submissionId, decision: "approve"});
+  const firstDoc = store.get(`desktopSubmissions/${first.submissionId}`);
+  const oldVersion = store.get("walls/w1")?.desktopVariant.v;
+  const second = await submit(maker, await image("green"));
+  await review({submissionId: second.submissionId, decision: "approve"});
+  const secondDoc = store.get(`desktopSubmissions/${second.submissionId}`);
+  assert.equal(firstDoc?.original.sha256, secondDoc?.original.sha256);
+  assert.notEqual(firstDoc?.wide.sha256, secondDoc?.wide.sha256);
+  assert.notEqual(oldVersion, store.get("walls/w1")?.desktopVariant.v);
+  await readyDesktopCompanion("WALL1", store.get("walls/w1"));
+});
+
+test("approval refuses a wall whose creator changed while the upload waited", async (t) => {
+  const {store} = setup(t);
+  const {submissionId} = await submit(maker, await png(2560, 1600));
+  store.set("walls/w1", {...store.get("walls/w1"), creatorUid: "other"});
+  await assert.rejects(review({submissionId, decision: "approve"}),
+    refusedWith("failed-precondition", "desktop-wall-unavailable"));
+  assert.equal(store.get(`desktopSubmissions/${submissionId}`)?.state, "pending");
+});
+
 test("replace approves a new desktop version, changes v and deletes the old files", async (t) => {
   const {store, removed, objects} = setup(t);
   const first = await submit(maker, await png(2560, 1600));
@@ -265,7 +474,7 @@ test("replace approves a new desktop version, changes v and deletes the old file
   const newFiles = submissionObjects(store.get(`desktopSubmissions/${second.submissionId}`));
   const newV = store.get("walls/w1")?.desktopVariant.v;
   assert.notEqual(newV, oldV);
-  assert.equal(newV, store.get(`desktopSubmissions/${second.submissionId}`)?.original.sha256.slice(0, 16));
+  assert.equal(newV, creatorVersion(store.get(`desktopSubmissions/${second.submissionId}`)));
   assert.deepEqual(removed.sort(), [...oldFiles].sort());
   assert.deepEqual([...objects].sort(), [...newFiles].sort());
   assert.equal(store.get("desktopCompanions/WALL1")?.pendingObjects, undefined);
@@ -297,5 +506,21 @@ test("account deletion deletes the pending upload and keeps the approved desktop
   await removeDesktopSubmissionsForAccount("maker");
   assert.deepEqual([...objects].sort(), [...liveFiles].sort());
   assert.equal([...store.keys()].some((path) => path.startsWith("desktopSubmissions/")), false);
+  await readyDesktopCompanion("WALL1", store.get("walls/w1"));
+});
+
+test("account deletion drains an approved replacement's crash cleanup before deleting its receipt", async (t) => {
+  const {store, objects, removed} = setup(t);
+  const first = await submit(maker, await png(2560, 1600));
+  await review({submissionId: first.submissionId, decision: "approve"});
+  const orphan = `desktop-originals/WALL1/${"a".repeat(64)}.jpg`;
+  objects.add(orphan);
+  store.set("desktopCompanions/WALL1", {...store.get("desktopCompanions/WALL1"),
+    pendingObjects: [{kind: "private", object: orphan}]});
+  await removeDesktopSubmissionsForAccount("maker");
+  assert.ok(removed.includes(orphan));
+  assert.equal(objects.size, 3);
+  assert.equal(store.get("desktopCompanions/WALL1")?.pendingObjects, undefined);
+  assert.equal(store.get(`desktopSubmissions/${first.submissionId}`), undefined);
   await readyDesktopCompanion("WALL1", store.get("walls/w1"));
 });

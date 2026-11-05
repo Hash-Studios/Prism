@@ -31,6 +31,7 @@ void main() {
     WidgetTester tester, {
     required _FakeRepo repo,
     Size? measured,
+    Uint8List? bytes,
     bool replace = false,
     double textScale = 1,
   }) async {
@@ -41,7 +42,7 @@ void main() {
       wallTitle: 'Harbour',
       replace: replace,
       repository: repo,
-      pickImage: () async => measured == null ? null : _bytes,
+      pickImage: () async => measured == null ? null : bytes ?? _bytes,
       measure: (_) async => measured,
     );
     if (textScale != 1) {
@@ -97,6 +98,17 @@ void main() {
 
     expect(find.text('Choose an image at least 1920 px wide. This one is 1600 px wide.'), findsOneWidget);
     expect(submitButton(tester).onPressed, isNull);
+  });
+
+  testWidgets('an image over 15 MB cannot be submitted even when its dimensions are valid', (tester) async {
+    final _FakeRepo repo = _FakeRepo();
+    final Uint8List largeBytes = Uint8List(15 * 1024 * 1024 + 1);
+    await pumpScreen(tester, repo: repo, measured: const Size(2560, 1600), bytes: largeBytes);
+    await pick(tester);
+
+    expect(find.text('This file is too large. Choose an image under 15 MB.'), findsOneWidget);
+    expect(submitButton(tester).onPressed, isNull);
+    expect(repo.submitted, isEmpty);
   });
 
   testWidgets('a valid image shows the side by side preview and enables submit', (tester) async {

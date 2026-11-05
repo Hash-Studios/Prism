@@ -103,6 +103,9 @@ export function parseDesktopVariant(value: unknown): DesktopVariant | null {
 
 const sha256 = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
 export const desktopVersion = (originalSha256: string) => originalSha256.slice(0, 16);
+/** Creator wide files keep edges that the 16:10 original crops, so both files name the version. */
+export const creatorDesktopVersion = (originalSha256: string, wideSha256: string) =>
+  desktopVersion(createHash("sha256").update(`${originalSha256}\0${wideSha256}`).digest("hex"));
 /** Worker generation id: stable per wall so retries replay the Worker's studio_claim record. */
 export const desktopGenerationId = (shareId: string, prompt: string, model: string, seed?: number) =>
   `desk_${createHash("sha256").update(JSON.stringify([shareId, prompt, model, seed ?? null])).digest("hex").slice(0, 48)}`;
@@ -377,7 +380,9 @@ export async function readyDesktopCompanion(shareId: string, wall: admin.firesto
       item.object === desktopObjectName(shareId, item.sha256) && item.width === size.width && item.height === size.height;
   };
   if (!variant || !SHARE_ID.test(shareId) || manifest?.status !== "ready" || !valid(manifest.original, DESKTOP_SIZE) ||
-    !valid(manifest.wide, DESKTOP_WIDE_SIZE) || desktopVersion(manifest.original.sha256) !== variant.v) {
+    !valid(manifest.wide, DESKTOP_WIDE_SIZE) || (manifest.source === "creator" ?
+    creatorDesktopVersion(manifest.original.sha256, manifest.wide.sha256) : desktopVersion(manifest.original.sha256)) !==
+    variant.v) {
     throw new Error("Desktop companion unavailable");
   }
   return {original: manifest.original, wide: manifest.wide, variant};
