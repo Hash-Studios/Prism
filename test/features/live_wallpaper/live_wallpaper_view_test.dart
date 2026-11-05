@@ -436,6 +436,33 @@ void main() {
       expect(find.text('Pick a wall for the Lock screen'), findsNothing);
     });
 
+    testWidgets('switching to video hides the previous per-screen result and offer', (tester) async {
+      const LiveApplyOutcome outcome = LiveApplyOutcome.screensSet(
+        target: WallpaperTarget.lock,
+        screens: LiveScreens(
+          home: LiveScreenContent.other,
+          lock: LiveScreenContent(
+            showsPrism: true,
+            tag: LiveContentTag(style: GradientStyle.aurora, applyId: 'a'),
+          ),
+        ),
+      );
+      await _pumpScreen(
+        tester,
+        state: _readyState(),
+        states: Stream<LiveWallpaperState>.value(_readyState(outcome: outcome)),
+      );
+      expect(find.text('Pick a wall for the Home screen'), findsOneWidget);
+
+      await tester.tap(find.text('Video'));
+      await tester.pump();
+
+      expect(find.byType(PrismCard), findsNothing);
+      expect(find.text('Pick a wall for the Home screen'), findsNothing);
+      expect(find.byType(PrismSegmented<WallpaperTarget>), findsNothing);
+      expect(find.text('Choose a video'), findsOneWidget);
+    });
+
     testWidgets('fallback says both screens get the same wall', (tester) async {
       const LiveApplyOutcome outcome = LiveApplyOutcome.confirmInPreview(target: WallpaperTarget.home, fallback: true);
       await _pumpScreen(

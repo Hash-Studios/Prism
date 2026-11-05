@@ -343,8 +343,8 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
                   },
                 ),
         ),
-        if (_screensSet case final LiveApplyOutcome set?)
-          _ScreensSetCard(outcome: set, onPickOther: (screen) => _pickOtherScreen(context, screen)),
+        if (_mode != _LiveMode.video && _screensSet != null)
+          _ScreensSetCard(outcome: _screensSet!, onPickOther: (screen) => _pickOtherScreen(context, screen)),
         if (!(shadersOff || videoOff))
           _ApplyBar(
             label: _applyLabel(state),
@@ -668,7 +668,6 @@ class _ApplyBar extends StatelessWidget {
   final bool enabled;
   final VoidCallback onPressed;
 
-  /// Null hides the screen choice: the device shows one live wall on both screens.
   final WallpaperTarget? target;
   final ValueChanged<WallpaperTarget> onTargetChanged;
 
