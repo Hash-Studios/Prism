@@ -18,6 +18,7 @@ class StreakCycleStrip extends StatefulWidget {
     this.todayDay,
     this.showRewards = true,
     this.startDelay = Duration.zero,
+    this.animateIn = false,
   });
 
   final int cycleDay;
@@ -25,6 +26,9 @@ class StreakCycleStrip extends StatefulWidget {
   final int? todayDay;
   final bool showRewards;
   final Duration startDelay;
+
+  /// Plays the fill when the strip mounts. Off by default, so a strip that only shows data is full at once.
+  final bool animateIn;
 
   @override
   State<StreakCycleStrip> createState() => _StreakCycleStripState();
@@ -45,7 +49,11 @@ class _StreakCycleStripState extends State<StreakCycleStrip> with SingleTickerPr
     }
     if (_started) return;
     _started = true;
-    _controller.forward();
+    if (widget.animateIn) {
+      _controller.forward();
+    } else {
+      _controller.value = 1;
+    }
   }
 
   @override

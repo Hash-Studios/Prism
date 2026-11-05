@@ -56,6 +56,7 @@ void main() {
   late FavoritesLocalDataSource favorites;
 
   setUp(() {
+    FavouriteWallpaperButton.resetGlintForTest();
     fetchUseCase = _MockFetchFavouriteWallsUseCase();
     toggleUseCase = _MockToggleFavouriteWallUseCase();
     clearUseCase = _MockClearFavouriteWallsUseCase();
@@ -244,6 +245,25 @@ void main() {
 
     expect(recordingAnalytics.events.whereType<FavStatusChangedEvent>().single.isFavourite, isTrue);
     expect(find.byType(Glint), findsOneWidget);
+    await tester.pumpAndSettle(const Duration(seconds: 3));
+  });
+
+  testWidgets('only the first favourite of a session shows a Glint', (tester) async {
+    when(() => toggleUseCase(any())).thenAnswer((_) async => Result.success(true));
+    final bloc = FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
+    addTearDown(bloc.close);
+    await pumpButton(tester, bloc);
+
+    await tester.tap(find.byType(FavoriteIcon));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+    expect(find.byType(Glint), findsOneWidget);
+    await tester.pumpAndSettle(const Duration(seconds: 3));
+
+    await tester.tap(find.byType(FavoriteIcon));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 450));
+    expect(find.byType(Glint), findsNothing);
     await tester.pumpAndSettle(const Duration(seconds: 3));
   });
 

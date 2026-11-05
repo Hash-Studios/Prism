@@ -137,13 +137,10 @@ export const buyDrawTicket = onCall(
     if (!config.flags.drawEnabled) return response;
 
     await db.runTransaction(async (tx) => {
-      const userSnap = await tx.get(userRef);
+      const [userSnap, txSnap, drawSnap, ticketSnap] = await tx.getAll(userRef, txRef, drawRef, ticketRef);
       if (!userSnap.exists) {
         throw new HttpsError("not-found", "User profile was not found.");
       }
-      const txSnap = await tx.get(txRef);
-      const drawSnap = await tx.get(drawRef);
-      const ticketSnap = await tx.get(ticketRef);
       const balance = num(userSnap.data()?.coins);
       const isPremium = userSnap.data()?.premium === true;
       const owned = num(ticketSnap.data()?.count);

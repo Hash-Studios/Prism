@@ -25,6 +25,9 @@ import '../../support/offline_asset_fixture.dart';
 final AppLocalizationsEn _l10n = AppLocalizationsEn();
 
 class _Client implements WallpaperClient {
+  @override
+  Future<aw.LiveWallpaperScreens> getLiveWallpaperScreens() async => const aw.LiveWallpaperScreens();
+
   _Client({this.status = aw.WallpaperOperationStatus.applied});
 
   aw.WallpaperOperationStatus status;

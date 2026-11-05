@@ -2309,6 +2309,25 @@
   "wallpaperLiveChooseAnotherVideo": "Escolha outro vídeo",
   "wallpaperLiveChooseVideo": "Escolha um vídeo",
   "wallpaperLiveConfirmPreview": "Confirme na visualização do sistema.",
+  "wallpaperLiveConfirmHome": "Na visualização, toque em Definir papel de parede e depois em Tela inicial.",
+  "wallpaperLiveConfirmLock": "Na visualização, toque em Definir papel de parede e depois em Tela de bloqueio.",
+  "wallpaperLiveConfirmBoth": "Na visualização, toque em Definir papel de parede e depois em Tela inicial e de bloqueio.",
+  "wallpaperLiveSameWallBothScreens": "Confirme na visualização do sistema. Este celular mostra o mesmo papel de parede animado nas duas telas.",
+  "wallpaperLiveScreensResult": "Tela inicial: {home}. Tela de bloqueio: {lock}.",
+  "@wallpaperLiveScreensResult": {
+    "placeholders": {
+      "home": {
+        "type": "String"
+      },
+      "lock": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperLiveScreenOther": "outro papel de parede",
+  "wallpaperLiveScreenPrismWall": "um papel de parede animado do Prism",
+  "wallpaperLivePickForHome": "Escolher um papel de parede para a tela inicial",
+  "wallpaperLivePickForLock": "Escolher um papel de parede para a tela de bloqueio",
   "wallpaperLiveDeviceUnavailable": "Não disponível neste dispositivo",
   "wallpaperLiveErrorGeneric": "Não foi possível definir o papel de parede animado. Tente novamente.",
   "wallpaperLiveErrorImageTooLarge": "Essa imagem é muito grande para um papel de parede animado.",

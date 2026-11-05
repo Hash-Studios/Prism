@@ -52,10 +52,12 @@ class _LivePhotoPreviewState extends State<LivePhotoPreview> with SingleTickerPr
         child: image == null
             ? ColoredBox(color: scheme.surfaceContainerHigh)
             : LayoutBuilder(
-                builder: (context, constraints) => AnimatedBuilder(
-                  animation: _loop,
-                  builder: (context, child) => _frame(child!, _loop.value, constraints.biggest),
-                  child: Image(image: image, fit: BoxFit.cover, gaplessPlayback: true),
+                builder: (context, constraints) => RepaintBoundary(
+                  child: AnimatedBuilder(
+                    animation: _loop,
+                    builder: (context, child) => _frame(child!, _loop.value, constraints.biggest),
+                    child: Image(image: image, fit: BoxFit.cover, gaplessPlayback: true),
+                  ),
                 ),
               ),
       ),

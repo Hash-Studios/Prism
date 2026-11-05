@@ -201,7 +201,7 @@ class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
           child: AnimatedSwitcher(
             duration: context.motion(PrismDurations.fast),
             switchInCurve: PrismCurves.enter,
-            switchOutCurve: PrismCurves.enter,
+            switchOutCurve: PrismCurves.exitReverse,
             child: KeyedSubtree(
               key: ValueKey<HistorySegment>(_segment),
               child: switch (_segment) {

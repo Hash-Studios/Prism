@@ -53,28 +53,50 @@ class SpinPlinth extends StatelessWidget {
     return SizedBox(
       width: width,
       height: height,
-      child: CustomPaint(
-        painter: _PlinthPainter(geometry: geometry, palette: palette, bulbs: bulbs),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            PlinthMetrics.sideReserve,
-            top,
-            PlinthMetrics.sideReserve,
-            PlinthMetrics.panelGap + 4,
+      child: RepaintBoundary(
+        child: CustomPaint(
+          painter: _PlinthPainter(geometry: geometry, palette: palette),
+          child: Stack(
+            fit: StackFit.expand,
+            children: <Widget>[
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      painter: _PlinthLightsPainter(geometry: geometry, bulbs: bulbs, palette: palette),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  PlinthMetrics.sideReserve,
+                  top,
+                  PlinthMetrics.sideReserve,
+                  PlinthMetrics.panelGap + 4,
+                ),
+                child: child,
+              ),
+            ],
           ),
-          child: child,
         ),
       ),
     );
   }
 }
 
+Rect _panelRect(WheelGeometry geometry, Size size) => Rect.fromLTRB(
+  PlinthMetrics.panelInset,
+  geometry.plinthOverlap + PlinthMetrics.panelGap,
+  size.width - PlinthMetrics.panelInset,
+  size.height - PlinthMetrics.panelGap - 4,
+);
+
 class _PlinthPainter extends CustomPainter {
-  _PlinthPainter({required this.geometry, required this.palette, required this.bulbs}) : super(repaint: bulbs);
+  _PlinthPainter({required this.geometry, required this.palette});
 
   final WheelGeometry geometry;
   final WheelPalette palette;
-  final ValueListenable<BulbFrame> bulbs;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -138,12 +160,7 @@ class _PlinthPainter extends CustomPainter {
         ).createShader(Offset.zero & size),
     );
 
-    final Rect panel = Rect.fromLTRB(
-      PlinthMetrics.panelInset,
-      geometry.plinthOverlap + PlinthMetrics.panelGap,
-      size.width - PlinthMetrics.panelInset,
-      size.height - PlinthMetrics.panelGap - 4,
-    );
+    final Rect panel = _panelRect(geometry, size);
     final RRect panelShape = RRect.fromRectAndRadius(panel, const Radius.circular(PrismRadius.lg));
     canvas.drawRRect(panelShape, Paint()..color = palette.plinthPanel);
     canvas.drawRRect(
@@ -157,9 +174,24 @@ class _PlinthPainter extends CustomPainter {
           colors: <Color>[palette.ink.withValues(alpha: 0.3), palette.shine.withValues(alpha: 0.26)],
         ).createShader(panel),
     );
+  }
 
+  @override
+  bool shouldRepaint(_PlinthPainter oldDelegate) =>
+      oldDelegate.geometry != geometry || oldDelegate.palette.colorScheme != palette.colorScheme;
+}
+
+class _PlinthLightsPainter extends CustomPainter {
+  _PlinthLightsPainter({required this.geometry, required this.palette, required this.bulbs}) : super(repaint: bulbs);
+
+  final WheelGeometry geometry;
+  final WheelPalette palette;
+  final ValueListenable<BulbFrame> bulbs;
+
+  @override
+  void paint(Canvas canvas, Size size) {
     final BulbFrame frame = bulbs.value;
-    final double midY = panel.center.dy;
+    final double midY = _panelRect(geometry, size).center.dy;
     for (int k = 0; k < 3; k++) {
       final double y = midY + (k - 1) * PlinthMetrics.lightSpacing;
       final double lit = frame.intensity(k, period: 3);
@@ -169,7 +201,7 @@ class _PlinthPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_PlinthPainter oldDelegate) =>
+  bool shouldRepaint(_PlinthLightsPainter oldDelegate) =>
       oldDelegate.geometry != geometry ||
       oldDelegate.palette.colorScheme != palette.colorScheme ||
       oldDelegate.bulbs != bulbs;

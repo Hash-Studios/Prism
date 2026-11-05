@@ -3802,6 +3802,314 @@ test('Duo paid staging and trial keep metadata, while small output fails without
   } finally { globalThis.fetch = originalFetch; }
 });
 
+const LEGACY_THUMB_ENV = { GH_USERNAME: 'codenameakshay2', GH_REPO_WALLS: 'prism-walls' };
+const LEGACY_THUMB_UPSTREAM = 'https://raw.githubusercontent.com/codenameakshay2/prism-walls';
+const LEGACY_JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
+const LEGACY_IMAGE_HEADERS = {
+  'cache-control': 'public, max-age=86400',
+  'content-length': String(LEGACY_JPEG.length),
+  'content-type': 'image/jpeg',
+  'x-content-type-options': 'nosniff',
+};
+
+test('legacy thumbnails proxy walls repo thumbs and send none of the request or GitHub headers', async () => {
+  await withLegacyUpstream(() => new Response(LEGACY_JPEG, { headers: {
+    'content-type': 'image/jpeg',
+    'set-cookie': 'gh=1',
+    etag: '"abc"',
+    'access-control-allow-origin': '*',
+    'content-security-policy': "default-src 'none'",
+    'x-github-request-id': 'request-1',
+    'cache-control': 'max-age=300',
+  } }), async (calls) => {
+    const response = await legacyThumb('main/walls/thumb_wall%201.jpg', { headers: {
+      authorization: 'Bearer secret',
+      cookie: 'session=1',
+      'cf-connecting-ip': '203.0.113.1',
+      'x-forwarded-for': '203.0.113.1',
+      referer: 'https://evil.example/',
+      'user-agent': 'Prism/1.0',
+    } });
+    assert.equal(response.status, 200);
+    assert.deepEqual(new Uint8Array(await response.arrayBuffer()), LEGACY_JPEG);
+    assert.deepEqual(Object.fromEntries(response.headers), LEGACY_IMAGE_HEADERS);
+    assert.equal(calls.length, 1);
+    const [{ input, init }] = calls;
+    assert.equal(input, `${LEGACY_THUMB_UPSTREAM}/main/walls/thumb_wall%201.jpg`);
+    assert.equal(init.method, 'GET');
+    assert.equal(init.redirect, 'manual');
+    assert.equal(init.body, undefined);
+    assert.ok(init.signal instanceof AbortSignal);
+    assert.deepEqual([...new Headers(init.headers).keys()], ['accept']);
+  });
+});
+
+test('legacy thumbnail HEAD answers with the GET status and headers and no body', async () => {
+  await withLegacyUpstream(() => new Response(LEGACY_JPEG, { headers: { 'content-type': 'image/jpeg' } }), async (calls) => {
+    const head = await legacyThumb('main/thumb_a.jpg', { method: 'HEAD' });
+    assert.equal(head.status, 200);
+    assert.equal(head.body, null);
+    assert.deepEqual(Object.fromEntries(head.headers), LEGACY_IMAGE_HEADERS);
+    assert.equal(calls[0].init.method, 'GET');
+
+    const original = await legacyThumb('main/a.jpg', { method: 'HEAD' });
+    assert.equal(original.status, 404);
+    assert.equal(original.body, null);
+    assert.equal(original.headers.get('cache-control'), 'no-store');
+    assert.equal(calls.length, 1);
+  });
+});
+
+test('legacy thumbnail paths reject traversal, separators, control characters, empty segments, queries and originals', async () => {
+  await withLegacyUpstream(() => { throw new Error('must not fetch'); }, async (calls) => {
+    for (const path of [
+      '',
+      'thumb_a.jpg',
+      'main/',
+      'main//thumb_a.jpg',
+      'main/thumb_a.jpg/',
+      'main/walls/',
+      'main/a.jpg',
+      'main/walls/wall-1.jpg',
+      'main/thumb_',
+      'main/Thumb_a.jpg',
+      'main/thumb_dir/original.jpg',
+      'main/walls/%2e%2e/%2e%2e/thumb_a.jpg',
+      'main/..%2Fthumb_a.jpg',
+      'main/walls%2Fthumb_a.jpg',
+      'main/walls%5Cthumb_a.jpg',
+      'main/thumb_a%00.jpg',
+      'main/thumb_a%0A.jpg',
+      'main/thumb_a%7F.jpg',
+      'main/%252e%252e/thumb_a.jpg',
+      'main/thumb_a%3F.jpg',
+      'main/thumb_a%23.jpg',
+      'main/thumb_a%E0%A4%A.jpg',
+      'ma:in/thumb_a.jpg',
+      'https:%2F%2Fevil.example/thumb_a.jpg',
+      `main/thumb_${'a'.repeat(1100)}.jpg`,
+      'main/thumb_a.jpg?raw=1',
+      'main/thumb_a.jpg?url=https%3A%2F%2Fevil.example%2Fx.jpg',
+    ]) {
+      const response = await legacyThumb(path);
+      assert.equal(response.status, 404, path);
+      assert.equal(response.headers.get('cache-control'), 'no-store', path);
+      assert.equal(response.headers.get('x-content-type-options'), 'nosniff', path);
+    }
+    for (const method of ['POST', 'PUT', 'DELETE']) {
+      const response = await legacyThumb('main/thumb_a.jpg', { method });
+      assert.equal(response.status, 405, method);
+      assert.equal(response.headers.get('allow'), 'GET, HEAD', method);
+      assert.equal(response.headers.get('cache-control'), 'no-store', method);
+    }
+    assert.equal(calls.length, 0);
+  });
+});
+
+test('legacy thumbnails need a valid walls repo owner and name', async () => {
+  await withLegacyUpstream(() => { throw new Error('must not fetch'); }, async (calls) => {
+    for (const overrides of [
+      { GH_USERNAME: undefined },
+      { GH_REPO_WALLS: undefined },
+      { GH_USERNAME: '  ' },
+      { GH_REPO_WALLS: '' },
+      { GH_USERNAME: 'evil.example/x' },
+      { GH_REPO_WALLS: '..' },
+      { GH_REPO_WALLS: 'walls/../x' },
+    ]) {
+      const response = await legacyThumb('main/thumb_a.jpg', {}, workerEnv({ ...LEGACY_THUMB_ENV, ...overrides }));
+      assert.equal(response.status, 503, JSON.stringify(overrides));
+      assert.equal(response.headers.get('cache-control'), 'no-store');
+    }
+    assert.equal(calls.length, 0);
+  });
+});
+
+test('legacy thumbnails refuse upstream redirects, errors, non-images and oversized bodies', async () => {
+  const redirectBody = trackedBody([LEGACY_JPEG], false);
+  const declaredTooLarge = trackedBody([LEGACY_JPEG], false);
+  const endless = { cancelled: false, pulls: 0 };
+  endless.body = new ReadableStream({
+    pull(controller) {
+      endless.pulls += 1;
+      controller.enqueue(new Uint8Array(1024 * 1024));
+    },
+    cancel() { endless.cancelled = true; },
+  });
+  const jpeg = { 'content-type': 'image/jpeg' };
+  for (const [name, upstream, status] of [
+    ['redirect', () => new Response(redirectBody.body, { status: 302, headers: { ...jpeg, location: 'https://evil.example/x.jpg' } }), 502],
+    ['permanent redirect', () => new Response(null, { status: 301, headers: { location: 'https://evil.example/x.jpg' } }), 502],
+    ['network error', () => Response.error(), 502],
+    ['missing', () => new Response('Not Found', { status: 404, headers: { 'content-type': 'text/plain' } }), 404],
+    ['server error', () => new Response('busy', { status: 503 }), 502],
+    ['partial', () => new Response(LEGACY_JPEG, { status: 206, headers: jpeg }), 502],
+    ['html', () => new Response('<html><script>alert(1)</script></html>', { headers: { 'content-type': 'text/html' } }), 502],
+    ['svg', () => new Response('<svg xmlns="http://www.w3.org/2000/svg"/>', { headers: { 'content-type': 'image/svg+xml' } }), 502],
+    ['html bytes typed as jpeg', () => new Response('<html></html>', { headers: jpeg }), 502],
+    ['empty', () => new Response(new Uint8Array(), { headers: jpeg }), 502],
+    ['declared too large', () => new Response(declaredTooLarge.body, {
+      headers: { ...jpeg, 'content-length': String(4 * 1024 * 1024 + 1) },
+    }), 502],
+    ['streamed too large', () => new Response(endless.body, { headers: jpeg }), 502],
+  ]) {
+    await withLegacyUpstream(upstream, async (calls) => {
+      const response = await legacyThumb('main/thumb_a.jpg');
+      assert.equal(response.status, status, name);
+      assert.equal(response.headers.get('cache-control'), 'no-store', name);
+      assert.equal(response.headers.get('x-content-type-options'), 'nosniff', name);
+      assert.equal(response.headers.get('location'), null, name);
+      assert.doesNotMatch(await response.text(), /<html|<svg/, name);
+      assert.equal(calls.length, 1, name);
+    });
+  }
+  assert.equal(redirectBody.cancelled, true);
+  assert.equal(declaredTooLarge.cancelled, true);
+  assert.equal(endless.cancelled, true);
+  assert.ok(endless.pulls <= 6, `read ${endless.pulls} MiB`);
+});
+
+test('legacy thumbnails serve the image type their bytes show', async () => {
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
+  const webp = new TextEncoder().encode('RIFF\u0000\u0000\u0000\u0000WEBPVP8 ');
+  for (const [declared, bytes, type] of [
+    ['application/octet-stream', png, 'image/png'],
+    ['image/jpeg; charset=binary', webp, 'image/webp'],
+    ['image/gif', new TextEncoder().encode('GIF89a....'), 'image/gif'],
+  ]) {
+    await withLegacyUpstream(() => new Response(bytes, { headers: { 'content-type': declared } }), async () => {
+      const response = await legacyThumb('main/thumb_a.jpg');
+      assert.equal(response.status, 200, declared);
+      assert.equal(response.headers.get('content-type'), type, declared);
+      assert.deepEqual(new Uint8Array(await response.arrayBuffer()), bytes);
+    });
+  }
+});
+
+test('legacy thumbnail fetches time out, abort GitHub and release the upstream body', async () => {
+  const originalTimeout = AbortSignal.timeout;
+  const timers = [];
+  AbortSignal.timeout = (ms) => {
+    const controller = new AbortController();
+    timers.push({ ms, controller });
+    return controller.signal;
+  };
+  const timeout = () => new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+  try {
+    // GitHub sends headers, then the body stalls.
+    const stalled = trackedBody([LEGACY_JPEG], false);
+    let started;
+    const fetched = new Promise((resolve) => { started = resolve; });
+    await withLegacyUpstream(() => {
+      started();
+      return new Response(stalled.body, { headers: { 'content-type': 'image/jpeg' } });
+    }, async (calls) => {
+      const pending = legacyThumb('main/thumb_a.jpg');
+      await Promise.race([fetched, pending]);
+      await new Promise((resolve) => setImmediate(resolve));
+      assert.equal(timers.length, 1);
+      assert.equal(calls[0].init.signal, timers[0].controller.signal);
+      timers[0].controller.abort(timeout());
+      const response = await pending;
+      assert.equal(response.status, 504);
+      assert.equal(response.headers.get('cache-control'), 'no-store');
+      assert.equal(stalled.cancelled, true);
+    });
+
+    // GitHub never answers.
+    await withLegacyUpstream((_input, init) => new Promise((_resolve, reject) => {
+      init.signal.addEventListener('abort', () => reject(init.signal.reason));
+      setImmediate(() => timers.at(-1).controller.abort(timeout()));
+    }), async () => {
+      const response = await legacyThumb('main/thumb_a.jpg');
+      assert.equal(response.status, 504);
+      assert.equal(response.headers.get('cache-control'), 'no-store');
+    });
+    assert.equal(timers.length, 2);
+    assert.ok(timers.every(({ ms }) => ms > 0 && ms <= 10_000), JSON.stringify(timers.map(({ ms }) => ms)));
+  } finally {
+    AbortSignal.timeout = originalTimeout;
+  }
+});
+
+test('legacy thumbnails are edge cached for one day per repo path and served with fresh headers', async () => {
+  const cache = new MemoryCache();
+  const hadCaches = 'caches' in globalThis;
+  const originalCaches = globalThis.caches;
+  globalThis.caches = { default: cache };
+  const waits = [];
+  const ctx = { waitUntil(promise) { waits.push(promise); } };
+  try {
+    await withLegacyUpstream((input) => input.endsWith('/thumb_missing.jpg')
+      ? new Response('Not Found', { status: 404 })
+      : new Response(LEGACY_JPEG, { headers: { 'content-type': 'image/jpeg', 'set-cookie': 'gh=1' } }), async (calls) => {
+      const first = await legacyThumb('main/thumb_a.jpg', {}, workerEnv(LEGACY_THUMB_ENV), ctx);
+      assert.equal(first.status, 200);
+      await Promise.all(waits);
+      assert.equal(cache.entries.size, 1);
+      const [stored] = cache.entries.values();
+      assert.deepEqual(Object.fromEntries(new Headers(stored.headers)), LEGACY_IMAGE_HEADERS);
+
+      for (const init of [{}, { method: 'HEAD' }, { headers: { cookie: 'session=2', authorization: 'Bearer secret' } }]) {
+        const hit = await worker.fetch(
+          new Request('https://www.prismwalls.com/api/legacy-thumbs/main/thumb_a.jpg', init),
+          workerEnv(LEGACY_THUMB_ENV),
+          ctx,
+        );
+        assert.equal(hit.status, 200);
+        assert.deepEqual(Object.fromEntries(hit.headers), LEGACY_IMAGE_HEADERS);
+        if (init.method === 'HEAD') {
+          assert.equal(hit.body, null);
+        } else {
+          assert.deepEqual(new Uint8Array(await hit.arrayBuffer()), LEGACY_JPEG);
+        }
+      }
+      assert.equal(calls.length, 1);
+
+      // Another repo is another entry, and misses are never stored.
+      await legacyThumb('main/thumb_a.jpg', {}, workerEnv({ ...LEGACY_THUMB_ENV, GH_REPO_WALLS: 'other-walls' }), ctx);
+      const missing = await legacyThumb('main/thumb_missing.jpg', {}, workerEnv(LEGACY_THUMB_ENV), ctx);
+      await Promise.all(waits);
+      assert.equal(missing.status, 404);
+      assert.equal(calls.length, 3);
+      assert.equal(cache.entries.size, 2);
+    });
+  } finally {
+    if (hadCaches) globalThis.caches = originalCaches;
+    else delete globalThis.caches;
+  }
+});
+
+function legacyThumb(path, init = {}, env = workerEnv(LEGACY_THUMB_ENV), ctx = { waitUntil() {} }) {
+  return worker.fetch(new Request(`https://prismwalls.com/api/legacy-thumbs/${path}`, init), env, ctx);
+}
+
+async function withLegacyUpstream(respond, run) {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (input, init = {}) => {
+    calls.push({ input, init });
+    return respond(input, init);
+  };
+  try {
+    return await run(calls);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+function trackedBody(chunks, close = true) {
+  const tracked = { cancelled: false };
+  tracked.body = new ReadableStream({
+    start(controller) {
+      for (const chunk of chunks) controller.enqueue(chunk);
+      if (close) controller.close();
+    },
+    cancel() { tracked.cancelled = true; },
+  });
+  return tracked;
+}
+
 async function makeToken(overrides = {}) {
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: 'RS256', kid: publicJwk.kid };
@@ -4054,3 +4362,20 @@ test('an unknown short code with d=1 is still a 404 unavailable page', async () 
   assert.equal(response.headers.get('location'), null);
   assert.match(await response.text(), /This link is no longer available/);
 });
+
+class MemoryCache {
+  entries = new Map();
+
+  async match(request) {
+    const entry = this.entries.get(request.url);
+    return entry ? new Response(entry.body, { status: entry.status, headers: entry.headers }) : undefined;
+  }
+
+  async put(request, response) {
+    this.entries.set(request.url, {
+      status: response.status,
+      headers: [...response.headers],
+      body: await response.arrayBuffer(),
+    });
+  }
+}

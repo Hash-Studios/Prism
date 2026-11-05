@@ -1,5 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/auth/user_model.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/live_wallpaper/data/live_apply_outcome_mapper.dart';
 import 'package:Prism/features/live_wallpaper/data/live_texture_preparer.dart';
@@ -7,14 +11,28 @@ import 'package:Prism/features/live_wallpaper/data/shaders/live_shader_sources.d
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_capabilities.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_palette.dart';
+import 'package:Prism/features/live_wallpaper/domain/entities/live_screens.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/features/live_wallpaper/domain/repositories/live_wallpaper_repository.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:injectable/injectable.dart';
 
+class _LiveSessionGuard {
+  _LiveSessionGuard(this.owner);
+
+  final String owner;
+  bool invalidated = false;
+  StreamSubscription<PrismUsersV2>? subscription;
+
+  bool get isValid => !invalidated && app_state.prismUser.loggedIn && app_state.prismUser.id == owner;
+
+  Future<void> dispose() async => subscription?.cancel();
+}
+
 @LazySingleton(as: LiveWallpaperRepository)
 class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
-  const LiveWallpaperRepositoryImpl({LiveTexturePreparer texturePreparer = const LiveTexturePreparer()})
+  LiveWallpaperRepositoryImpl({LiveTexturePreparer texturePreparer = const LiveTexturePreparer()})
     : _texturePreparer = texturePreparer;
 
   static const int defaultFrameRate = 30;
@@ -23,6 +41,42 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
 
   final LiveTexturePreparer _texturePreparer;
 
+  _LiveSessionGuard _watchSession(String owner) {
+    final _LiveSessionGuard guard = _LiveSessionGuard(owner);
+    if (getIt.isRegistered<SessionRepository>()) {
+      guard.subscription = getIt<SessionRepository>().watchCurrentUser().listen((user) {
+        if (!user.loggedIn || user.id != owner) guard.invalidated = true;
+      });
+    }
+    return guard;
+  }
+
+  WallpaperTarget? _nextTarget;
+  String? _nextTargetOwner;
+  StreamSubscription<PrismUsersV2>? _nextTargetSessionSubscription;
+
+  @override
+  WallpaperTarget? get nextTarget {
+    if (!app_state.prismUser.loggedIn || app_state.prismUser.id != _nextTargetOwner) {
+      nextTarget = null;
+    }
+    return _nextTarget;
+  }
+
+  @override
+  set nextTarget(WallpaperTarget? target) {
+    _nextTargetOwner = target == null || !app_state.prismUser.loggedIn ? null : app_state.prismUser.id;
+    _nextTarget = _nextTargetOwner == null ? null : target;
+    unawaited(_nextTargetSessionSubscription?.cancel());
+    _nextTargetSessionSubscription = null;
+    if (_nextTarget != null && getIt.isRegistered<SessionRepository>()) {
+      final String owner = _nextTargetOwner!;
+      _nextTargetSessionSubscription = getIt<SessionRepository>().watchCurrentUser().listen((user) {
+        if (!user.loggedIn || user.id != owner) nextTarget = null;
+      });
+    }
+  }
+
   @override
   Future<LiveCapabilities> getCapabilities() async {
     final aw.WallpaperCapabilities capabilities = await aw.AsyncWallpaper.getCapabilities();
@@ -30,7 +84,18 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
       supportsShaders: capabilities.supportsOpenGlLiveWallpaper,
       supportsVideo: capabilities.supportsLiveWallpaper,
       supportsTilt: capabilities.supportsTilt,
+      supportsPerScreen: capabilities.supportsPerScreenLiveWallpaper,
     );
+  }
+
+  @override
+  Future<LiveScreens> getScreens() async {
+    final aw.LiveWallpaperScreens screens = await aw.AsyncWallpaper.getLiveWallpaperScreens();
+    LiveScreenContent content(aw.LiveScreenState state) => LiveScreenContent(
+      showsPrism: state.showsThisWallpaper,
+      tag: state.showsThisWallpaper ? LiveContentTag.parse(state.contentTag) : null,
+    );
+    return LiveScreens(home: content(screens.home), lock: content(screens.lock));
   }
 
   @override
@@ -40,6 +105,8 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
     required LivePalette palette,
     required double screenAspectRatio,
     required bool batterySaver,
+    required WallpaperTarget target,
+    required LiveContentTag tag,
     String? depthMapUrl,
     bool tilt = false,
   }) async {
@@ -48,27 +115,38 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
     if (style.needsDepthMap && depthMapUrl == null) {
       return const LiveApplyOutcome.failed(LiveApplyFailure.styleUnavailable);
     }
-    final List<String> texturePaths;
+    final _LiveSessionGuard session = _watchSession(owner);
+    final List<String> texturePaths = <String>[];
     try {
       if (style.needsDepthMap) {
         final ({String photo, String depth}) textures = await _texturePreparer.prepareWithDepth(
           imageUrl,
           depthMapUrl!,
           screenAspectRatio,
+          uniquePaths: true,
         );
-        texturePaths = <String>[textures.photo, textures.depth];
+        texturePaths.addAll(<String>[textures.photo, textures.depth]);
       } else {
-        texturePaths = <String>[await _texturePreparer.prepare(imageUrl, screenAspectRatio)];
+        texturePaths.add(await _texturePreparer.prepare(imageUrl, screenAspectRatio, uniquePaths: true));
       }
+      if (!session.isValid) return const LiveApplyOutcome(LiveApplyStatus.cancelled);
+      return await _applyShader(
+        LiveShaderSources.motion(style, palette, tilt: tilt),
+        <aw.WallpaperSource>[for (final String path in texturePaths) aw.WallpaperSource.filePath(path)],
+        batterySaver,
+        target,
+        tag,
+      );
     } on LiveTextureException catch (error) {
       return LiveApplyOutcome.failed(error.failure);
+    } finally {
+      await session.dispose();
+      for (final String path in texturePaths) {
+        try {
+          await File(path).delete();
+        } on FileSystemException catch (_) {}
+      }
     }
-    if (!app_state.prismUser.loggedIn || owner != app_state.prismUser.id) {
-      return const LiveApplyOutcome(LiveApplyStatus.cancelled);
-    }
-    return _applyShader(LiveShaderSources.motion(style, palette, tilt: tilt), <aw.WallpaperSource>[
-      for (final String path in texturePaths) aw.WallpaperSource.filePath(path),
-    ], batterySaver);
   }
 
   @override
@@ -76,16 +154,32 @@ class LiveWallpaperRepositoryImpl implements LiveWallpaperRepository {
     required GradientStyle style,
     required LivePalette palette,
     required bool batterySaver,
+    required WallpaperTarget target,
+    required LiveContentTag tag,
   }) {
-    return _applyShader(LiveShaderSources.gradient(style, palette), const <aw.WallpaperSource>[], batterySaver);
+    return _applyShader(
+      LiveShaderSources.gradient(style, palette),
+      const <aw.WallpaperSource>[],
+      batterySaver,
+      target,
+      tag,
+    );
   }
 
-  Future<LiveApplyOutcome> _applyShader(String shader, List<aw.WallpaperSource> textures, bool batterySaver) async {
+  Future<LiveApplyOutcome> _applyShader(
+    String shader,
+    List<aw.WallpaperSource> textures,
+    bool batterySaver,
+    WallpaperTarget target,
+    LiveContentTag tag,
+  ) async {
     if (!app_state.prismUser.loggedIn) return const LiveApplyOutcome(LiveApplyStatus.cancelled);
     final aw.OpenGlLiveWallpaperRequest request = aw.OpenGlLiveWallpaperRequest(
       fragmentShader: shader,
       textures: textures,
+      target: aw.WallpaperTarget.values.byName(target.name),
       frameRate: batterySaver ? batterySaverFrameRate : defaultFrameRate,
+      contentTag: tag.encode(),
     );
     try {
       return liveApplyOutcomeFromResult(await aw.AsyncWallpaper.setOpenGlLiveWallpaper(request));

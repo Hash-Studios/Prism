@@ -56,6 +56,9 @@ Future<void> settleUndoIo(WidgetTester tester) async {
 }
 
 class _Client implements WallpaperClient {
+  @override
+  Future<aw.LiveWallpaperScreens> getLiveWallpaperScreens() async => const aw.LiveWallpaperScreens();
+
   _Client({this.capabilities = const aw.WallpaperCapabilities(), this.status = aw.WallpaperOperationStatus.applied});
 
   final aw.WallpaperCapabilities capabilities;
@@ -2105,6 +2108,259 @@ void main() {
     await tester.pumpAndSettle(const Duration(seconds: 2));
     expect(prepares, 1);
     expect(client.requests.last.target, aw.WallpaperTarget.lock);
+  });
+
+  group('a failure while getting a wall ready', () {
+    late List<String> toastMessages;
+
+    void recordToasts(WidgetTester tester) {
+      toastMessages = <String>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('PonnamKarthik/fluttertoast'),
+        (call) async {
+          if (call.method == 'showToast') toastMessages.add((call.arguments as Map)['msg'] as String);
+          return true;
+        },
+      );
+    }
+
+    bool userSaw(String message) => toastMessages.contains(message) || find.text(message).evaluate().isNotEmpty;
+
+    Future<void> installAccess(WidgetTester tester, {required bool Function() fail}) async {
+      final backend = CoinsTestBackend();
+      await backend.install();
+      // A granted original is checked against the scratch folders before history keeps it.
+      const MethodChannel pathProvider = MethodChannel('plugins.flutter.io/path_provider');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        pathProvider,
+        (_) async => '${assets.directory.path}/scratch',
+      );
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(pathProvider, null));
+      backend.onCall = (name, input) async {
+        if (fail()) throw FirebaseFunctionsException(code: 'unavailable', message: 'Server unavailable');
+        if (input['mode'] == 'quote') {
+          return <String, dynamic>{'status': 'quoted', 'requiredCoins': 0, 'currentBalance': 100};
+        }
+        return <String, dynamic>{
+          'status': 'granted',
+          'url': 'https://signed.test/${input['assetId']}',
+          'expiresAt': DateTime.now().add(const Duration(minutes: 2)).millisecondsSinceEpoch,
+          'currentBalance': 100,
+        };
+      };
+    }
+
+    testWidgets('a pair whose lock wall cannot be read tells the user and does not throw', (tester) async {
+      aw.AsyncWallpaper.debugSetClient(_Client());
+      SetWallpaperFlow.screenOpener = (_, _) async => const SetWallpaperChoice.pair();
+      SetWallpaperFlow.pairPicker = (_, {excludeUrl}) async => PairPick(
+        source: PairSource.favourites,
+        candidate: PairCandidate(fullUrl: '/tmp/missing-lock.png', thumbnailUrl: lockFilePath),
+      );
+      await pumpButton(tester);
+      recordToasts(tester);
+      Object? error;
+      var finished = false;
+
+      unawaited(
+        SetWallpaperFlow.run(
+          tester.element(find.byType(SetWallpaperButton)),
+          url: '/tmp/wall.png',
+        ).then<void>((_) {}, onError: (Object e) => error = e).whenComplete(() => finished = true),
+      );
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+
+      expect(finished, isTrue);
+      expect(error, isNull);
+      expect(userSaw(l10n.coreWallpaperOfflineUnavailable), isTrue);
+    });
+
+    for (final signOut in <bool>[false, true]) {
+      testWidgets('a lock retry access failure preserves home or cancels after sign-out ($signOut)', (tester) async {
+        var failAccess = false;
+        await installAccess(
+          tester,
+          fail: () {
+            if (failAccess && signOut) app_state.prismUser = app_constants.createGuestPrismUser();
+            return failAccess;
+          },
+        );
+        assets.mapSource('https://signed.test/protected-lock', File(lockFilePath));
+        final client = _Client()
+          ..statusFor[aw.WallpaperTarget.lock] = aw.WallpaperOperationStatus.failed
+          ..errorCode = 'timeout';
+        aw.AsyncWallpaper.debugSetClient(client);
+        SetWallpaperFlow.pairPicker = (_, {excludeUrl}) async => PairPick(
+          source: PairSource.favourites,
+          candidate: PairCandidate(
+            fullUrl: '',
+            thumbnailUrl: lockFilePath,
+            wallpaperId: 'protected-lock',
+            wallpaperSource: WallpaperSource.prism,
+          ),
+        );
+        await pumpButton(tester);
+        recordToasts(tester);
+        await openSetScreen(tester);
+        await tester.tap(find.byKey(const ValueKey<String>('set-screen-more')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(l10n.setScreenPairLock));
+        await settleUndoIo(tester);
+        await tester.pumpAndSettle();
+        expect(find.text(l10n.coreWallpaperHomeSetLockFailed), findsOneWidget);
+        final int before = client.requests.length;
+
+        toastMessages.clear();
+        failAccess = true;
+        client.statusFor.clear();
+        await tester.tap(find.text(l10n.coreRetryOnScreen(l10n.coreLockScreen)));
+        await tester.pumpAndSettle(const Duration(seconds: 2));
+
+        expect(tester.takeException(), isNull);
+        expect(client.requests.skip(before), isEmpty);
+        expect(userSaw(l10n.coreWallpaperHomeSetLockFailed), !signOut);
+        if (signOut) expect(toastMessages, isEmpty);
+      });
+    }
+
+    testWidgets('Try again on a protected wall tells the user when access fails', (tester) async {
+      var failAccess = false;
+      await installAccess(tester, fail: () => failAccess);
+      await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
+      assets.mapSource('https://signed.test/retry-wall', File(wallFilePath));
+      final client = _Client(status: aw.WallpaperOperationStatus.failed)..errorCode = 'timeout';
+      aw.AsyncWallpaper.debugSetClient(client);
+      await pumpButton(tester, source: WallpaperSource.prism, wallpaperId: 'retry-wall', url: '');
+      recordToasts(tester);
+      unawaited(
+        SetWallpaperFlow.apply(
+          tester.element(find.byType(SetWallpaperButton)),
+          url: 'https://signed.test/retry-wall',
+          choice: const SetWallpaperChoice(WallpaperTarget.home),
+          wallpaperSource: WallpaperSource.prism,
+          wallpaperId: 'retry-wall',
+          recordHistory: false,
+        ),
+      );
+      await settleUndoIo(tester);
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.coreTryAgain), findsOneWidget);
+      final int before = client.requests.length;
+
+      failAccess = true;
+      toastMessages.clear();
+      await tester.tap(find.text(l10n.coreTryAgain));
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+
+      expect(tester.takeException(), isNull);
+      expect(client.requests, hasLength(before));
+      expect(userSaw(l10n.coreWallpaperErrorGeneric), isTrue);
+    });
+
+    testWidgets('Set on a protected wall that cannot get access tells the user and returns a failure', (tester) async {
+      await installAccess(tester, fail: () => true);
+      final client = _Client();
+      aw.AsyncWallpaper.debugSetClient(client);
+      await pumpButton(tester, source: WallpaperSource.prism, wallpaperId: 'protected-wall', url: '');
+      recordToasts(tester);
+      final List<bool> busy = <bool>[];
+      WallpaperSetResult? result;
+      Object? error;
+
+      unawaited(
+        SetWallpaperFlow.run(
+          tester.element(find.byType(SetWallpaperButton)),
+          url: '',
+          wallpaperId: 'protected-wall',
+          wallpaperSource: WallpaperSource.prism,
+          target: WallpaperTarget.home,
+          onBusy: busy.add,
+        ).then<void>((value) => result = value, onError: (Object e) => error = e),
+      );
+      await settleUndoIo(tester);
+      await tester.pumpAndSettle();
+
+      expect(error, isNull);
+      expect(result?.isFailure, isTrue);
+      expect(busy, <bool>[true, false]);
+      expect(client.requests, isEmpty);
+      expect(userSaw(l10n.coreWallpaperErrorGeneric), isTrue);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('an access failure after signing out cancels without showing an error', (tester) async {
+      await installAccess(
+        tester,
+        fail: () {
+          app_state.prismUser = app_constants.createGuestPrismUser();
+          return true;
+        },
+      );
+      final client = _Client();
+      aw.AsyncWallpaper.debugSetClient(client);
+      await pumpButton(tester, source: WallpaperSource.prism, wallpaperId: 'protected-wall', url: '');
+      recordToasts(tester);
+      final List<bool> busy = <bool>[];
+      WallpaperSetResult? result;
+      Object? error;
+
+      unawaited(
+        SetWallpaperFlow.run(
+          tester.element(find.byType(SetWallpaperButton)),
+          url: '',
+          wallpaperId: 'protected-wall',
+          wallpaperSource: WallpaperSource.prism,
+          target: WallpaperTarget.home,
+          onBusy: busy.add,
+        ).then<void>((value) => result = value, onError: (Object e) => error = e),
+      );
+      await settleUndoIo(tester);
+      await tester.pumpAndSettle();
+
+      expect(error, isNull);
+      expect(result, isNull);
+      expect(busy, <bool>[true, false]);
+      expect(client.requests, isEmpty);
+      expect(toastMessages, isEmpty);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
+    testWidgets('an Adjust that cannot get access tells the user, and Set on the same screen asks again', (
+      tester,
+    ) async {
+      var failAccess = true;
+      await installAccess(tester, fail: () => failAccess);
+      assets.mapSource('https://signed.test/protected-wall', File(wallFilePath));
+      final client = _Client();
+      aw.AsyncWallpaper.debugSetClient(client);
+      var studioOpened = 0;
+      SetWallpaperFlow.studioOpener = (_, {required url, thumbnailUrl, entryPoint}) async {
+        studioOpened++;
+        return null;
+      };
+      await pumpButton(tester, source: WallpaperSource.prism, wallpaperId: 'protected-wall', url: '');
+      recordToasts(tester);
+      await openSetScreen(tester);
+      await tester.tap(find.byKey(const ValueKey<String>('set-screen-adjust')));
+      await settleUndoIo(tester);
+      await tester.pumpAndSettle();
+
+      expect(studioOpened, 0);
+      expect(userSaw(l10n.coreWallpaperErrorGeneric), isTrue);
+      expect(
+        tester.widget<CircularMenuButton>(find.byType(CircularMenuButton, skipOffstage: false)).isLoading,
+        isFalse,
+      );
+
+      failAccess = false;
+      await tester.tap(find.byKey(const ValueKey<String>('set-screen-set')));
+      await settleUndoIo(tester);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(client.requests.map((request) => request.target), <aw.WallpaperTarget>[aw.WallpaperTarget.home]);
+      await tester.pump(const Duration(seconds: 5));
+    });
   });
 
   test('defaultTarget reads the saved value and treats ask or junk as ask', () async {

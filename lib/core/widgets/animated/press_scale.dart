@@ -1,4 +1,5 @@
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:flutter/gestures.dart' show kTouchSlop;
 import 'package:flutter/widgets.dart';
 
 /// Scales [child] down while a pointer is down on it. Uses a [Listener], so the child still gets its own taps.
@@ -20,6 +21,7 @@ class PressScale extends StatefulWidget {
 class _PressScaleState extends State<PressScale> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _scale;
+  Offset? _down;
 
   @override
   void initState() {
@@ -62,9 +64,25 @@ class _PressScaleState extends State<PressScale> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Listener(
       behavior: HitTestBehavior.translucent,
-      onPointerDown: (_) => _setPressed(true),
-      onPointerUp: (_) => _setPressed(false),
-      onPointerCancel: (_) => _setPressed(false),
+      onPointerDown: (e) {
+        _down = e.position;
+        _setPressed(true);
+      },
+      // A drag is a scroll, not a press: release the shrink once the finger leaves the slop.
+      onPointerMove: (e) {
+        if (_down != null && (e.position - _down!).distance > kTouchSlop) {
+          _down = null;
+          _setPressed(false);
+        }
+      },
+      onPointerUp: (_) {
+        _down = null;
+        _setPressed(false);
+      },
+      onPointerCancel: (_) {
+        _down = null;
+        _setPressed(false);
+      },
       child: AnimatedBuilder(
         animation: _scale,
         builder: (context, child) => Transform.scale(scale: _scale.value, child: child),

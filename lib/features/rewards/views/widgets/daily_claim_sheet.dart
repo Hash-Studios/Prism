@@ -272,6 +272,7 @@ class _DailyClaimSheetState extends State<DailyClaimSheet> with SingleTickerProv
             streakCount: r.streakCount,
             showRewards: false,
             startDelay: PrismDurations.slow + PrismDurations.fast,
+            animateIn: true,
           ),
           if (offerOpen) ...<Widget>[
             const SizedBox(height: PrismSpace.md),

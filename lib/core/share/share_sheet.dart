@@ -528,11 +528,11 @@ class _FormatPreview extends StatelessWidget {
         child: AnimatedScale(
           scale: selected ? 1 : 0.9,
           duration: duration,
-          curve: PrismCurves.move,
+          curve: PrismCurves.enter,
           child: AnimatedOpacity(
             opacity: selected ? 1 : 0.6,
             duration: duration,
-            curve: PrismCurves.move,
+            curve: PrismCurves.enter,
             child: Column(
               children: <Widget>[
                 Expanded(

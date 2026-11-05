@@ -9192,6 +9192,38 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperLiveConfirmPreview => 'Confirme na visualização do sistema.';
 
   @override
+  String get wallpaperLiveConfirmHome => 'Na visualização, toque em Definir papel de parede e depois em Tela inicial.';
+
+  @override
+  String get wallpaperLiveConfirmLock =>
+      'Na visualização, toque em Definir papel de parede e depois em Tela de bloqueio.';
+
+  @override
+  String get wallpaperLiveConfirmBoth =>
+      'Na visualização, toque em Definir papel de parede e depois em Tela inicial e de bloqueio.';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'Confirme na visualização do sistema. Este celular mostra o mesmo papel de parede animado nas duas telas.';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'Tela inicial: $home. Tela de bloqueio: $lock.';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'outro papel de parede';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'um papel de parede animado do Prism';
+
+  @override
+  String get wallpaperLivePickForHome => 'Escolher um papel de parede para a tela inicial';
+
+  @override
+  String get wallpaperLivePickForLock => 'Escolher um papel de parede para a tela de bloqueio';
+
+  @override
   String get wallpaperLiveDeviceUnavailable => 'Não disponível neste dispositivo';
 
   @override
@@ -23268,6 +23300,38 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperLiveConfirmPreview => 'Confirme na visualização do sistema.';
+
+  @override
+  String get wallpaperLiveConfirmHome => 'Na visualização, toque em Definir papel de parede e depois em Tela inicial.';
+
+  @override
+  String get wallpaperLiveConfirmLock =>
+      'Na visualização, toque em Definir papel de parede e depois em Tela de bloqueio.';
+
+  @override
+  String get wallpaperLiveConfirmBoth =>
+      'Na visualização, toque em Definir papel de parede e depois em Tela inicial e de bloqueio.';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'Confirme na visualização do sistema. Este celular mostra o mesmo papel de parede animado nas duas telas.';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'Tela inicial: $home. Tela de bloqueio: $lock.';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'outro papel de parede';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'um papel de parede animado do Prism';
+
+  @override
+  String get wallpaperLivePickForHome => 'Escolher um papel de parede para a tela inicial';
+
+  @override
+  String get wallpaperLivePickForLock => 'Escolher um papel de parede para a tela de bloqueio';
 
   @override
   String get wallpaperLiveDeviceUnavailable => 'Não disponível neste dispositivo';

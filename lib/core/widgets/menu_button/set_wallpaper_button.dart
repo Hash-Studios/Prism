@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/analytics_correlation.dart';
@@ -6,6 +7,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
@@ -192,8 +194,10 @@ class SetWallpaperFlow {
     String? authorizedOriginalUrl;
     // Consent and the colour variation run once, on Adjust or on Set, whichever comes first.
     Future<String?>? authorization;
+    WallpaperSetResult? authorizationFailure;
     Future<String?> authorizeOnce(BuildContext context) async {
       onBusy?.call(true);
+      authorizationFailure = null;
       try {
         final bool wasLoggedIn = app_state.prismUser.loggedIn;
         final bool requiresSignIn = OriginalAccessService.requiresGrant(url, wallpaperId, wallpaperSource);
@@ -216,14 +220,21 @@ class SetWallpaperFlow {
         authorizedOriginalUrl = authorized;
         if (authorized == null || prepareAuthorized == null) return authorizedUrl = authorized;
         return authorizedUrl = await runPrepareSource(() => prepareAuthorized(authorized), l10n: l10n);
+      } catch (error, stackTrace) {
+        if (!_isSignedInOwner(owner)) return null;
+        authorizationFailure = _reportPreparationFailure(error, stackTrace, l10n);
+        return null;
       } finally {
         onBusy?.call(false);
       }
     }
 
-    Future<String?> authorize(BuildContext context) {
-      if (!_isSignedInOwner(owner)) return Future<String?>.value();
-      return authorization ??= authorizeOnce(context);
+    Future<String?> authorize(BuildContext context) async {
+      if (!_isSignedInOwner(owner)) return null;
+      final String? source = await (authorization ??= authorizeOnce(context));
+      // An access failure is not kept, so the next Adjust or Set tries again.
+      if (authorizationFailure != null) authorization = null;
+      return source;
     }
 
     choice ??= await openScreen(
@@ -269,7 +280,7 @@ class SetWallpaperFlow {
     final String? source = context.mounted ? await authorize(context) : null;
     if (source == null || !context.mounted || !_isSignedInOwner(owner)) {
       await choice.placed?.discard();
-      return null;
+      return authorizationFailure;
     }
     String? originalHistorySource;
     if (choice.placed != null || prepareAuthorized != null) {
@@ -281,10 +292,11 @@ class SetWallpaperFlow {
             wallpaperId: wallpaperId,
             wallpaperSource: wallpaperSource,
           )).path;
-        } catch (_) {
+        } catch (error, stackTrace) {
           final PlacedWallpaper? placed = choice.placed;
           if (placed != null) await placed.discard();
-          rethrow;
+          if (!_isSignedInOwner(owner)) return null;
+          return _reportPreparationFailure(error, stackTrace, l10n);
         }
       } else {
         originalHistorySource = original;
@@ -427,7 +439,10 @@ class SetWallpaperFlow {
                 action: OriginalAccessAction.set,
                 label: l10n.coreSetWallpaper,
                 requestId: requestId,
-              );
+              ).catchError((Object error, StackTrace stackTrace) {
+                if (_isSignedInOwner(owner)) _reportPreparationFailure(error, stackTrace, l10n);
+                return null;
+              });
         if (retryUrl == null || !_isSignedInOwner(owner)) return;
         await apply(
           context,
@@ -522,21 +537,26 @@ class SetWallpaperFlow {
       if (!protectedAssets.contains(id)) protectedAssets.add(id);
     }
 
-    if (authorizedHomeUrl == null) addProtected(url, wallpaperId, wallpaperSource);
-    addProtected(pick.candidate.fullUrl, pick.candidate.wallpaperId, pick.candidate.wallpaperSource);
     int maxCoins = 0;
-    if (protectedAssets.isNotEmpty) {
-      final quote = await quoteOriginalWithConsent(
-        context,
-        url: '',
-        wallpaperId: protectedAssets.first,
-        wallpaperSource: WallpaperSource.prism,
-        action: OriginalAccessAction.set,
-        label: l10n.coreSetWallpaper,
-        quoteProvider: () => OriginalAccessService.instance.quotePair(protectedAssets),
-      );
-      if (quote == null) return null;
-      maxCoins = quote.requiredCoins;
+    try {
+      if (authorizedHomeUrl == null) addProtected(url, wallpaperId, wallpaperSource);
+      addProtected(pick.candidate.fullUrl, pick.candidate.wallpaperId, pick.candidate.wallpaperSource);
+      if (protectedAssets.isNotEmpty) {
+        final quote = await quoteOriginalWithConsent(
+          context,
+          url: '',
+          wallpaperId: protectedAssets.first,
+          wallpaperSource: WallpaperSource.prism,
+          action: OriginalAccessAction.set,
+          label: l10n.coreSetWallpaper,
+          quoteProvider: () => OriginalAccessService.instance.quotePair(protectedAssets),
+        );
+        if (quote == null) return null;
+        maxCoins = quote.requiredCoins;
+      }
+    } catch (error, stackTrace) {
+      if (!_isSignedInOwner(owner)) return null;
+      return _reportPreparationFailure(error, stackTrace, l10n);
     }
     if (!context.mounted || !_isSignedInOwner(owner)) return null;
     return _applyPair(
@@ -584,7 +604,7 @@ class SetWallpaperFlow {
   }) async {
     final owner = app_state.prismUser.id;
     onBusy?.call(true);
-    final WallpaperSetResult home;
+    WallpaperSetResult? home = homeDone;
     WallpaperSetResult? lock;
     try {
       final grants = await OriginalAccessService.instance.resolvePair(protectedAssets, maxCoins: maxCoins);
@@ -640,25 +660,23 @@ class SetWallpaperFlow {
       if (!_isSignedInOwner(owner)) {
         return const WallpaperSetResult(WallpaperSetStatus.cancelled, '');
       }
-      home =
-          homeDone ??
-          await WallpaperService.setWallpaper(
-            homeFile!.path,
-            WallpaperTarget.home,
-            thumbnailUrl: thumbnailUrl,
-            recordHistory: recordHistory,
-            wallpaperId: wallpaperId,
-            wallpaperSource: wallpaperSource,
-            historySource: originalHomeFile?.path ?? url,
-            historyOriginalIdentity:
-                originalHomeFile != null &&
-                    wallpaperSource == WallpaperSource.prism &&
-                    (wallpaperId?.isNotEmpty ?? false) &&
-                    !url.startsWith('/') &&
-                    !url.startsWith('file:')
-                ? 'prism:$wallpaperId'
-                : null,
-          );
+      home ??= await WallpaperService.setWallpaper(
+        homeFile!.path,
+        WallpaperTarget.home,
+        thumbnailUrl: thumbnailUrl,
+        recordHistory: recordHistory,
+        wallpaperId: wallpaperId,
+        wallpaperSource: wallpaperSource,
+        historySource: originalHomeFile?.path ?? url,
+        historyOriginalIdentity:
+            originalHomeFile != null &&
+                wallpaperSource == WallpaperSource.prism &&
+                (wallpaperId?.isNotEmpty ?? false) &&
+                !url.startsWith('/') &&
+                !url.startsWith('file:')
+            ? 'prism:$wallpaperId'
+            : null,
+      );
       if (home.isSuccess && _isSignedInOwner(owner)) {
         lock = await WallpaperService.setWallpaper(
           lockFile.path,
@@ -669,6 +687,13 @@ class SetWallpaperFlow {
           wallpaperSource: pick.candidate.wallpaperSource,
           historySource: pick.candidate.fullUrl,
         );
+      }
+    } catch (error, stackTrace) {
+      if (!_isSignedInOwner(owner)) return const WallpaperSetResult(WallpaperSetStatus.cancelled, '');
+      if (home == null) {
+        home = _preparationFailure(error, stackTrace);
+      } else {
+        lock = _preparationFailure(error, stackTrace);
       }
     } finally {
       onBusy?.call(false);
@@ -750,6 +775,34 @@ class SetWallpaperFlow {
       restore: home.restore,
       historyIds: home.historyIds,
     );
+  }
+
+  /// An error while getting a wall ready, mapped as [WallpaperService.setWallpaper] maps a load error.
+  static WallpaperSetResult _preparationFailure(Object error, StackTrace stackTrace) {
+    logger.w('SetWallpaperFlow: could not get the wall ready', error: error, stackTrace: stackTrace);
+    return switch (error) {
+      TimeoutException() => const WallpaperSetResult(
+        WallpaperSetStatus.failed,
+        WallpaperService.timeoutMessage,
+        errorCode: 'timeout',
+      ),
+      OfflineAssetUnavailableException() || SocketException() => const WallpaperSetResult(
+        WallpaperSetStatus.failed,
+        WallpaperService.offlineUnavailableMessage,
+        errorCode: 'offline_unavailable',
+      ),
+      _ => const WallpaperSetResult(
+        WallpaperSetStatus.failed,
+        WallpaperService.failedMessage,
+        errorCode: 'load_failed',
+      ),
+    };
+  }
+
+  static WallpaperSetResult _reportPreparationFailure(Object error, StackTrace stackTrace, AppLocalizations l10n) {
+    final WallpaperSetResult failure = _preparationFailure(error, stackTrace);
+    toasts.error(failure.localizedMessage(l10n));
+    return failure;
   }
 
   static void _trackPlacement(PlacedWallpaper placed, WallpaperTarget target, WallpaperSetResult result) {

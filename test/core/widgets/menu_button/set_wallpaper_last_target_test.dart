@@ -30,6 +30,9 @@ const aw.WallpaperCapabilities _allCapabilities = aw.WallpaperCapabilities(
 const ValueKey<String> _setKey = ValueKey<String>('set-screen-set');
 
 class _Client implements WallpaperClient {
+  @override
+  Future<aw.LiveWallpaperScreens> getLiveWallpaperScreens() async => const aw.LiveWallpaperScreens();
+
   _Client({this.capabilities = const aw.WallpaperCapabilities()});
 
   final aw.WallpaperCapabilities capabilities;

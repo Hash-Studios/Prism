@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
@@ -23,15 +25,14 @@ class UserSearchRepositoryImpl implements UserSearchRepository {
     }
 
     try {
-      final List<List<({String id, String name, String username, String profilePhoto, int followerCount})>> results =
-          await Future.wait(
-            <Future<List<({String id, String name, String username, String profilePhoto, int followerCount})>>>[
-              _prefixNameQuery(trimmed),
-              _prefixUsernameQueries(trimmed),
-            ],
-          );
-      final usernameRows = await _usernamePrefixQuery(trimmed.toLowerCase());
-      final blockedResult = await _userBlockRepository.fetchBlockedUsersList();
+      final (results, usernameRows, blockedResult) = await (
+        Future.wait(<Future<List<({String id, String name, String username, String profilePhoto, int followerCount})>>>[
+          _prefixNameQuery(trimmed),
+          _prefixUsernameQueries(trimmed),
+        ]),
+        _usernamePrefixQuery(trimmed.toLowerCase()),
+        _userBlockRepository.fetchBlockedUsersList(),
+      ).wait;
       if (blockedResult.isFailure) return Result.error(blockedResult.failure!);
       final Set<String> blocked = blockedResult.data!.map((row) => row.blockedUid).toSet();
 
@@ -50,22 +51,34 @@ class UserSearchRepositoryImpl implements UserSearchRepository {
         );
       }
 
-      for (final String uid in usernameRows.map((row) => row.uid)) {
-        if (uid.isEmpty || blocked.contains(uid) || users.containsKey(uid)) continue;
-        final Map<String, dynamic>? profile = await _firestoreClient.getById<Map<String, dynamic>>(
-          FirebaseCollections.profiles,
-          uid,
-          (data, _) => data,
-          sourceTag: 'user_search.profile_for_username',
+      final missingIds = usernameRows
+          .map((row) => row.uid)
+          .where((uid) => uid.isNotEmpty && !blocked.contains(uid) && !users.containsKey(uid))
+          .toSet()
+          .toList();
+      for (int offset = 0; offset < missingIds.length; offset += 4) {
+        final ids = missingIds.skip(offset).take(4).toList();
+        final profiles = await Future.wait(
+          ids.map(
+            (uid) => _firestoreClient.getById<Map<String, dynamic>>(
+              FirebaseCollections.profiles,
+              uid,
+              (data, _) => data,
+              sourceTag: 'user_search.profile_for_username',
+            ),
+          ),
         );
-        if (profile == null) continue;
-        users[uid] = UserSearchUser(
-          id: uid,
-          name: profile['name'] is String ? profile['name'] as String : '',
-          username: profile['username'] is String ? profile['username'] as String : '',
-          profilePhoto: profile['profilePhoto'] is String ? profile['profilePhoto'] as String : '',
-          followerCount: profile['followerCount'] is int ? profile['followerCount'] as int : 0,
-        );
+        for (int i = 0; i < ids.length; i++) {
+          final profile = profiles[i];
+          if (profile == null) continue;
+          users[ids[i]] = UserSearchUser(
+            id: ids[i],
+            name: profile['name'] is String ? profile['name'] as String : '',
+            username: profile['username'] is String ? profile['username'] as String : '',
+            profilePhoto: profile['profilePhoto'] is String ? profile['profilePhoto'] as String : '',
+            followerCount: profile['followerCount'] is int ? profile['followerCount'] as int : 0,
+          );
+        }
       }
 
       return Result.success(users.values.toList(growable: false));

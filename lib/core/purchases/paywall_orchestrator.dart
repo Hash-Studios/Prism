@@ -205,10 +205,10 @@ class PaywallOrchestrator {
     try {
       await PurchasesService.instance.ensureConfigured(requestedUserId).timeout(_loadTimeout);
       if (!isCurrentAccount()) return PaywallResultValue.error;
-      final Offering? placementOffering = await PurchasesService.instance
-          .getCurrentOfferingForPlacement(placement)
-          .timeout(_loadTimeout);
-      final Offerings? offerings = await PurchasesService.instance.getOfferings().timeout(_loadTimeout);
+      final (placementOffering, offerings) = await (
+        PurchasesService.instance.getCurrentOfferingForPlacement(placement).timeout(_loadTimeout),
+        PurchasesService.instance.getOfferings().timeout(_loadTimeout),
+      ).wait;
       if (!isCurrentAccount()) return PaywallResultValue.error;
       // Never substitute legacy pricing when the v3 catalog is unavailable.
       final Offering? offering = offerings?.all[PurchaseConstants.offeringV3Default];

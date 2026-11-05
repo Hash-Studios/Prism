@@ -39,7 +39,10 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   Animation<double>? _xAnimation;
 
   _SwipePhase _phase = _SwipePhase.idle;
-  double _dragX = 0;
+  // The drag moves the cards through this notifier, so a pan frame does not rebuild the page.
+  final ValueNotifier<double> _drag = ValueNotifier<double>(0);
+  double get _dragX => _drag.value;
+  set _dragX(double value) => _drag.value = value;
 
   static const double _swipeThreshold = 100;
   static const double _velocityThreshold = 500;
@@ -56,6 +59,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   @override
   void dispose() {
     _animationController.dispose();
+    _drag.dispose();
     _bloc.close();
     super.dispose();
   }
@@ -81,9 +85,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   void _onPanUpdate(DragUpdateDetails details) {
     if (_phase != _SwipePhase.dragging) return;
     final maxX = _maxDragX(MediaQuery.sizeOf(context).width);
-    setState(() {
-      _dragX = (_dragX + details.delta.dx).clamp(-maxX, maxX);
-    });
+    _dragX = (_dragX + details.delta.dx).clamp(-maxX, maxX);
   }
 
   void _onPanEnd(DragEndDetails details) {
@@ -154,7 +156,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
     _xAnimation = Tween<double>(
       begin: _dragX,
       end: target,
-    ).animate(CurvedAnimation(parent: _animationController, curve: PrismCurves.enter));
+    ).animate(_animationController.drive(CurveTween(curve: PrismCurves.enter)));
 
     setState(() {
       _phase = _SwipePhase.animating;
@@ -258,7 +260,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
                 if (state.currentIndex + 1 < state.walls.length)
                   Positioned.fill(
                     child: AnimatedBuilder(
-                      animation: _animationController,
+                      animation: Listenable.merge(<Listenable>[_animationController, _drag]),
                       builder: (context, child) => Transform.scale(
                         scale: 0.94 + 0.06 * (_displayX.abs() / _swipeThreshold).clamp(0.0, 1.0),
                         child: child,
@@ -267,7 +269,8 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
                     ),
                   ),
                 AnimatedBuilder(
-                  animation: _animationController,
+                  animation: Listenable.merge(<Listenable>[_animationController, _drag]),
+                  child: SwipeWallpaperCard.fromDocument(currentWall),
                   builder: (context, child) {
                     final x = _displayX;
                     final swipeProgress = x / _swipeThreshold;
@@ -277,10 +280,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
                         Center(
                           child: Transform.translate(
                             offset: Offset(x, 0),
-                            child: Transform.rotate(
-                              angle: (x / 1000) * 0.3,
-                              child: SwipeWallpaperCard.fromDocument(currentWall),
-                            ),
+                            child: Transform.rotate(angle: (x / 1000) * 0.3, child: child),
                           ),
                         ),
                         SwipeActionOverlay(swipeProgress: swipeProgress),

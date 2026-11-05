@@ -569,6 +569,7 @@ class _FeedBrowser extends StatefulWidget {
 class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderStateMixin {
   /// A fling faster than this, in logical pixels a second, moves to the wall it points at.
   static const double _flingVelocity = 300;
+  static const double _overshoot = 0.15;
   static final SpringDescription _spring = SpringDescription.withDampingRatio(mass: 1, stiffness: 500);
 
   late final AnimationController _position = AnimationController.unbounded(vsync: this, value: widget.start.toDouble())
@@ -588,12 +589,18 @@ class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderSta
 
   void _onMove() {
     final double position = _position.value;
-    final (int, int) span = (position.floor(), position.ceil());
+    final int last = _tiles.length - 1;
+    final (int, int) span = (position.floor().clamp(0, last), position.ceil().clamp(0, last));
     if (span != _span) setState(() => _span = span);
   }
 
   void _dragUpdate(double dx) {
-    _position.value = (_position.value - dx * _sign / _width).clamp(0.0, _tiles.length - 1.0);
+    final double end = _tiles.length - 1.0;
+    final double from = _position.value;
+    final double move = -dx * _sign / _width;
+    // Past either end the drag resists: the part of the move beyond the end counts at 0.35x, up to 0.15 of a page.
+    final double inside = (from + move).clamp(0.0, end) - from.clamp(0.0, end);
+    _position.value = (from + inside + (move - inside) * 0.35).clamp(-_overshoot, end + _overshoot);
   }
 
   void _dragEnd(double velocity) {
@@ -620,8 +627,8 @@ class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderSta
     _position.animateWith(
       ClampedSimulation(
         SpringSimulation(_spring, _position.value, next.toDouble(), velocity, snapToEnd: true),
-        xMin: 0,
-        xMax: _tiles.length - 1.0,
+        xMin: -_overshoot,
+        xMax: _tiles.length - 1.0 + _overshoot,
       ),
     );
   }
@@ -1813,7 +1820,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     } else {
       _morphFrom = from;
       _shapeMorph
-        ..duration = PrismDurations.slow
+        ..duration = PrismDurations.base
         ..forward(from: 0);
     }
   }
@@ -3057,7 +3064,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             child.key == shown ? FadeTransition(opacity: animation, child: child) : child,
         child: KeyedSubtree(
           key: shown,
-          child: _HueTint(tint: state.tint, duration: context.motion(const Duration(milliseconds: 220)), child: image),
+          child: _HueTint(tint: state.tint, duration: context.motion(PrismDurations.base), child: image),
         ),
       ),
     );
@@ -3138,8 +3145,10 @@ class _HueTint extends StatefulWidget {
 class _HueTintState extends State<_HueTint> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(vsync: this, duration: widget.duration)..value = 1;
   late _HueTintTween _tween = _HueTintTween(begin: widget.tint, end: widget.tint);
+  // Keeps the picture mounted when the filter wrapper appears or goes, so it does not reload.
+  final GlobalKey _picture = GlobalKey();
 
-  Color? get _shown => _tween.transform(Curves.easeOutCubic.transform(_controller.value));
+  Color? get _shown => _tween.transform(PrismCurves.enter.transform(_controller.value));
 
   @override
   void didUpdateWidget(_HueTint oldWidget) {
@@ -3161,7 +3170,7 @@ class _HueTintState extends State<_HueTint> with SingleTickerProviderStateMixin 
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      child: RepaintBoundary(child: widget.child),
+      child: RepaintBoundary(key: _picture, child: widget.child),
       builder: (BuildContext context, Widget? child) {
         final Color? tint = _shown;
         return tint == null ? child! : ColorFiltered(colorFilter: ColorFilter.mode(tint, BlendMode.hue), child: child);

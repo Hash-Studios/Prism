@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Async hot-path latency</title>
+<style>
+:root{font-family:var(--font-sans,system-ui);color:var(--foreground,CanvasText);color-scheme:light dark}
+body{margin:0;background:transparent}h2,h3,p{margin:0}h2{font-size:18px;font-weight:500}h3{font-size:15px;font-weight:500}
+.note{color:var(--muted-foreground,GrayText);font-size:13px;margin:8px 0 18px}
+.panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+svg{width:100%;height:340px;display:block}svg text{fill:var(--foreground,CanvasText);font-size:12px;font-family:var(--font-sans,system-ui)}
+.axis{stroke:var(--border,GrayText);stroke-width:1;fill:none}.before{fill:var(--chart-2,GrayText)}.after{fill:var(--chart-1,Highlight)}
+</style></head><body><main id="async-latency">
+<h2>Local latency with simulated I/O</h2>
+<p class="note">100 samples per version · 5 interleaved runs · milliseconds, lower is better<br>Actual repository code, simulated 8–20 ms dependency delays. Not production or device latency.</p>
+<div class="panels"><section><h3>p50</h3><svg data-percentile="p50" role="img" aria-label="Before and after median repository latency"></svg></section>
+<section><h3>p90</h3><svg data-percentile="p90" role="img" aria-label="Before and after 90th percentile repository latency"></svg></section></div>
+<p class="note">Before: original code · After: concurrent code · Shared axis scale · 0 failed requests<br>Analytics: 3 providers · Favourites: 150 walls · Search: 8 registry profiles</p>
+</main><script>
+const data = [{"name":"Analytics dispatch","before":{"p50":47.003,"p90":55.966},"after":{"p50":19.857,"p90":21.612}},{"name":"Favourite counts","before":{"p50":79.975,"p90":87.616},"after":{"p50":28.798,"p90":38.22}},{"name":"User search","before":{"p50":179.19,"p90":262.052},"after":{"p50":60.077,"p90":72.001}}];
+const root = document.getElementById('async-latency');
+const max = Math.ceil(Math.max(...data.flatMap(d=>[d.before.p50,d.after.p50,d.before.p90,d.after.p90]))/20)*20;
+const ns = 'http://www.w3.org/2000/svg';
+function draw(svg){
+  const width = svg.getBoundingClientRect().width;
+  svg.setAttribute('viewBox','0 0 '+width+' 340');svg.replaceChildren();
+  const left=64,right=width-46,span=right-left,p=svg.dataset.percentile;
+  function el(tag,attrs,text){const node=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))node.setAttribute(k,v);if(text!==undefined)node.textContent=text;svg.append(node);return node;}
+  el('text',{x:0,y:17,class:'axis-title','data-axis':'y'},'Repository path');
+  for(let i=0;i<4;i++){const x=left+span*i/3;el('line',{x1:x,x2:x,y1:35,y2:293,class:'axis'});el('text',{x,y:312,'text-anchor':'middle'},Math.round(max*i/3));}
+  data.forEach((d,i)=>{const y=43+i*84;el('text',{x:0,y},d.name);['before','after'].forEach((side,j)=>{
+    const value=d[side][p],barY=y+10+j*24;
+    el('text',{x:left-7,y:barY+13,'text-anchor':'end'},side==='before'?'Before':'After');
+    const mark=el('rect',{x:left,y:barY,width:value/max*span,height:18,class:side});
+    const title=document.createElementNS(ns,'title');title.textContent=d.name+' '+side+' '+p+': '+value.toFixed(1)+' ms';mark.append(title);
+    el('text',{x:left+value/max*span+5,y:barY+13},value.toFixed(1));
+  });});
+  el('text',{x:(left+right)/2,y:335,'text-anchor':'middle',class:'axis-title','data-axis':'x'},'Latency (ms)');
+}
+for(const svg of root.querySelectorAll('svg'))new ResizeObserver(()=>draw(svg)).observe(svg);
+</script></body></html>

@@ -8898,6 +8898,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get wallpaperLiveConfirmPreview => 'Confirm in the system preview.';
 
   @override
+  String get wallpaperLiveConfirmHome => 'In the preview, tap Set wallpaper, then Home screen.';
+
+  @override
+  String get wallpaperLiveConfirmLock => 'In the preview, tap Set wallpaper, then Lock screen.';
+
+  @override
+  String get wallpaperLiveConfirmBoth => 'In the preview, tap Set wallpaper, then Home screen and lock screen.';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'Confirm in the system preview. This phone shows the same live wall on both screens.';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'Home screen: $home. Lock screen: $lock.';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'another wallpaper';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'a Prism live wall';
+
+  @override
+  String get wallpaperLivePickForHome => 'Pick a wall for the Home screen';
+
+  @override
+  String get wallpaperLivePickForLock => 'Pick a wall for the Lock screen';
+
+  @override
   String get wallpaperLiveDeviceUnavailable => 'Not available on this device';
 
   @override

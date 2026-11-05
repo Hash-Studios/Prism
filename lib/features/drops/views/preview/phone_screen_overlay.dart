@@ -1,3 +1,4 @@
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -24,7 +25,7 @@ class PhoneScreenOverlay extends StatelessWidget {
         return IgnorePointer(
           child: ExcludeSemantics(
             child: AnimatedSwitcher(
-              duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : const Duration(milliseconds: 220),
+              duration: context.motion(PrismDurations.base),
               child: KeyedSubtree(key: ValueKey<DropPreviewMode>(mode), child: screen),
             ),
           ),

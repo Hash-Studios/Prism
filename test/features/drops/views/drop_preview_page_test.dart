@@ -25,6 +25,37 @@ class _MockDropsBloc extends MockBloc<DropsEvent, DropsState> implements DropsBl
 
 class _MockStackRouter extends Mock implements StackRouter {}
 
+class _RouteRecorder extends NavigatorObserver {
+  PageRoute<dynamic>? pushed;
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (route is PageRoute<dynamic>) pushed = route;
+  }
+}
+
+class _TrackedAnimation extends Animation<double> {
+  int statusListeners = 0;
+
+  @override
+  double get value => 0.5;
+
+  @override
+  AnimationStatus get status => AnimationStatus.forward;
+
+  @override
+  void addListener(VoidCallback listener) {}
+
+  @override
+  void removeListener(VoidCallback listener) {}
+
+  @override
+  void addStatusListener(AnimationStatusListener listener) => statusListeners++;
+
+  @override
+  void removeStatusListener(AnimationStatusListener listener) => statusListeners--;
+}
+
 void main() {
   late _MockDropsBloc bloc;
   late _MockStackRouter router;
@@ -59,6 +90,7 @@ void main() {
     DropsState state, {
     String wallId = 'A',
     StreamController<DropsState>? states,
+    _RouteRecorder? observer,
   }) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
@@ -68,6 +100,7 @@ void main() {
       BlocProvider<DropsBloc>.value(
         value: bloc,
         child: MaterialApp(
+          navigatorObservers: observer == null ? const <NavigatorObserver>[] : <NavigatorObserver>[observer],
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
 
@@ -84,6 +117,18 @@ void main() {
     await tester.tap(find.text('launch'));
     await tester.pumpAndSettle();
   }
+
+  testWidgets('rebuilding the preview route transition does not retain status listeners', (tester) async {
+    final _RouteRecorder recorder = _RouteRecorder();
+    await openPreview(tester, loaded(dropEntity()), observer: recorder);
+    final PageRoute<dynamic> route = recorder.pushed!;
+    final _TrackedAnimation animation = _TrackedAnimation();
+    final BuildContext context = tester.element(find.byType(Navigator).first);
+    for (int i = 0; i < 100; i++) {
+      route.buildTransitions(context, animation, animation, const SizedBox());
+    }
+    expect(animation.statusListeners, 0);
+  });
 
   group('DropPreviewRoutePage', () {
     Future<void> pumpRoute(WidgetTester tester, DropsState state, {String wallId = 'C'}) async {

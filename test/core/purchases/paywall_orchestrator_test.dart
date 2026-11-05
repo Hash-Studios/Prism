@@ -74,6 +74,7 @@ void main() {
       bool loginFails = false,
       bool includeV3 = true,
       bool offeringsFail = false,
+      Future<void> Function()? beforePlacementReply,
       Future<Object?> Function(Map<String, Object?> offers)? offeringsReply,
       void Function(MethodCall)? onPaywallCall,
       void Function(MethodCall)? onPurchaseCall,
@@ -150,6 +151,7 @@ void main() {
             if (loginFails) throw PlatformException(code: 'login_failed');
             return <String, Object?>{'customerInfo': customer, 'created': false};
           case 'getCurrentOfferingForPlacement':
+            await beforePlacementReply?.call();
             return offering;
           case 'getOfferings':
             if (offeringsFail) throw PlatformException(code: 'offerings_failed');
@@ -222,6 +224,25 @@ void main() {
       });
       return backend;
     }
+
+    test('loads the catalog while the placement offering is pending', () async {
+      final gate = Completer<void>();
+      var catalogStarted = false;
+      await installPaywall(
+        present: () async => 'CANCELLED',
+        beforePlacementReply: () => gate.future,
+        offeringsReply: (offers) async {
+          catalogStarted = true;
+          return offers;
+        },
+      );
+      final pending = orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test');
+      await pumpEventQueue();
+      final overlapped = catalogStarted;
+      gate.complete();
+      await pending;
+      expect(overlapped, isTrue);
+    });
 
     test('daily moment waits until a presented purchase is dismissed', () async {
       final gate = DailyMomentPresentationGate.instance;

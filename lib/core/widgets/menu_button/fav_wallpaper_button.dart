@@ -22,11 +22,16 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+bool _favouriteGlintShown = false;
+
 class FavouriteWallpaperButton extends StatefulWidget {
   final FavouriteWallEntity? wall;
   final bool trash;
   final VoidCallback? onFavourited;
   const FavouriteWallpaperButton({required this.wall, required this.trash, this.onFavourited, super.key});
+
+  @visibleForTesting
+  static void resetGlintForTest() => _favouriteGlintShown = false;
 
   @override
   _FavouriteWallpaperButtonState createState() => _FavouriteWallpaperButtonState();
@@ -125,7 +130,10 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
       }
       if (desired) {
         if (mounted) {
-          _followUp(() => showGlintToast(context, mood: GlintMood.love));
+          if (!_favouriteGlintShown) {
+            _favouriteGlintShown = true;
+            _followUp(() => showGlintToast(context, mood: GlintMood.love));
+          }
           _followUp(() => _offerFolders(l10n, wall));
         }
       }

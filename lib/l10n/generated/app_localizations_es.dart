@@ -9008,6 +9008,39 @@ class AppLocalizationsEs extends AppLocalizations {
   String get wallpaperLiveConfirmPreview => 'Confirma la selección en la vista previa del sistema.';
 
   @override
+  String get wallpaperLiveConfirmHome =>
+      'En la vista previa, toca Aplicar fondo de pantalla y luego Pantalla de inicio.';
+
+  @override
+  String get wallpaperLiveConfirmLock =>
+      'En la vista previa, toca Aplicar fondo de pantalla y luego Pantalla de bloqueo.';
+
+  @override
+  String get wallpaperLiveConfirmBoth =>
+      'En la vista previa, toca Aplicar fondo de pantalla y luego Pantalla de inicio y de bloqueo.';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'Confirma en la vista previa del sistema. Este teléfono muestra el mismo fondo animado en las dos pantallas.';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'Pantalla de inicio: $home. Pantalla de bloqueo: $lock.';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'otro fondo de pantalla';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'un fondo animado de Prism';
+
+  @override
+  String get wallpaperLivePickForHome => 'Elige un fondo para la pantalla de inicio';
+
+  @override
+  String get wallpaperLivePickForLock => 'Elige un fondo para la pantalla de bloqueo';
+
+  @override
   String get wallpaperLiveDeviceUnavailable => 'No está disponible en este dispositivo';
 
   @override

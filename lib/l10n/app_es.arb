@@ -2499,6 +2499,25 @@
   "wallpaperLiveChooseAnotherVideo": "Elegir otro video",
   "wallpaperLiveChooseVideo": "Elegir un video",
   "wallpaperLiveConfirmPreview": "Confirma la selección en la vista previa del sistema.",
+  "wallpaperLiveConfirmHome": "En la vista previa, toca Aplicar fondo de pantalla y luego Pantalla de inicio.",
+  "wallpaperLiveConfirmLock": "En la vista previa, toca Aplicar fondo de pantalla y luego Pantalla de bloqueo.",
+  "wallpaperLiveConfirmBoth": "En la vista previa, toca Aplicar fondo de pantalla y luego Pantalla de inicio y de bloqueo.",
+  "wallpaperLiveSameWallBothScreens": "Confirma en la vista previa del sistema. Este teléfono muestra el mismo fondo animado en las dos pantallas.",
+  "wallpaperLiveScreensResult": "Pantalla de inicio: {home}. Pantalla de bloqueo: {lock}.",
+  "@wallpaperLiveScreensResult": {
+    "placeholders": {
+      "home": {
+        "type": "String"
+      },
+      "lock": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperLiveScreenOther": "otro fondo de pantalla",
+  "wallpaperLiveScreenPrismWall": "un fondo animado de Prism",
+  "wallpaperLivePickForHome": "Elige un fondo para la pantalla de inicio",
+  "wallpaperLivePickForLock": "Elige un fondo para la pantalla de bloqueo",
   "wallpaperLiveDeviceUnavailable": "No está disponible en este dispositivo",
   "wallpaperLiveErrorGeneric": "No se pudo aplicar el fondo animado. Inténtalo de nuevo.",
   "wallpaperLiveErrorImageTooLarge": "La imagen es demasiado grande para usarla como fondo animado.",

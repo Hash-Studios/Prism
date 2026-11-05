@@ -8925,6 +8925,36 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperLiveConfirmPreview => 'Konfirmasikan di pratinjau sistem.';
 
   @override
+  String get wallpaperLiveConfirmHome => 'Di pratinjau, ketuk Pasang wallpaper, lalu Layar utama.';
+
+  @override
+  String get wallpaperLiveConfirmLock => 'Di pratinjau, ketuk Pasang wallpaper, lalu Layar kunci.';
+
+  @override
+  String get wallpaperLiveConfirmBoth => 'Di pratinjau, ketuk Pasang wallpaper, lalu Layar utama dan layar kunci.';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'Konfirmasikan di pratinjau sistem. Ponsel ini menampilkan wallpaper bergerak yang sama di kedua layar.';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'Layar utama: $home. Layar kunci: $lock.';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'wallpaper lain';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'sebuah wallpaper bergerak Prism';
+
+  @override
+  String get wallpaperLivePickForHome => 'Pilih wallpaper untuk layar utama';
+
+  @override
+  String get wallpaperLivePickForLock => 'Pilih wallpaper untuk layar kunci';
+
+  @override
   String get wallpaperLiveDeviceUnavailable => 'Tidak tersedia di perangkat ini';
 
   @override

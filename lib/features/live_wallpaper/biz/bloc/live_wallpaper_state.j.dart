@@ -13,10 +13,16 @@ abstract class LiveWallpaperState with _$LiveWallpaperState {
     required bool batterySaver,
     required bool applying,
 
+    /// The screen the next shader apply is for. Android asks again in its preview.
+    required WallpaperTarget target,
+
     /// Paid style id to the end of its coin unlock, as the server stored it.
     @Default(<String, DateTime>{}) Map<String, DateTime> unlockedStyles,
     String? videoPath,
     LiveApplyOutcome? outcome,
+
+    /// The apply that waits for the user to finish in the system preview.
+    LiveContentTag? pendingTag,
   }) = _LiveWallpaperState;
 
   factory LiveWallpaperState.initial() => const LiveWallpaperState(
@@ -27,6 +33,7 @@ abstract class LiveWallpaperState with _$LiveWallpaperState {
     gradientStyle: GradientStyle.aurora,
     batterySaver: false,
     applying: false,
+    target: WallpaperTarget.home,
   );
 }
 

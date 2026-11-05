@@ -38,13 +38,13 @@ class _GlintToast extends StatefulWidget {
 class _GlintToastState extends State<_GlintToast> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 220),
+    duration: PrismDurations.base,
     reverseDuration: PrismDurations.fast,
   );
   late final CurvedAnimation _curve = CurvedAnimation(
     parent: _controller,
     curve: PrismCurves.enter,
-    reverseCurve: PrismCurves.exit,
+    reverseCurve: PrismCurves.exitReverse,
   );
   late final Animation<Offset> _position = Tween<Offset>(
     begin: const Offset(0, 0.12),

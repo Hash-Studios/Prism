@@ -3409,17 +3409,32 @@ class AccentMatchedFromWallEvent extends AnalyticsEvent {
 }
 
 class LiveWallpaperAppliedEvent extends AnalyticsEvent {
-  const LiveWallpaperAppliedEvent({required this.style, required this.result});
+  const LiveWallpaperAppliedEvent({
+    required this.style,
+    required this.result,
+    this.target,
+    required this.perScreen,
+    required this.fallback,
+  });
 
   final LiveWallpaperStyleValue style;
   final String result;
+  final WallpaperTarget? target;
+  final bool perScreen;
+  final bool fallback;
 
   @override
   String get eventName => 'live_wallpaper_applied';
 
   @override
   Map<String, Object?> toWireParameters() {
-    return <String, Object?>{'style': style.wireValue, 'result': result};
+    return <String, Object?>{
+      'style': style.wireValue,
+      'result': result,
+      if (target != null) 'target': target!.wireValue,
+      'per_screen': perScreen ? 1 : 0,
+      'fallback': fallback ? 1 : 0,
+    };
   }
 }
 

@@ -131,11 +131,78 @@ Prism resizes the photo to fit these limits. If the JPEG is still over 8 MiB, th
 | Plugin result | User message |
 |---|---|
 | `applied` | "Live wallpaper set." |
-| `previewOpened` or `awaitingUserConfirmation` | "Confirm in the system preview." |
+| `previewOpened`, Android 16 with a screen picked | "In the preview, tap Set wallpaper, then Home screen." (or Lock screen, or Home screen and lock screen) |
+| `previewOpened`, Android 15 or older (`effectiveTarget: both`) | "Confirm in the system preview. This phone shows the same live wall on both screens." |
+| `previewOpened` or `awaitingUserConfirmation` for video | "Confirm in the system preview." |
 | `cancelled` | No message. |
 | `unsupported` | "This device cannot show live wallpapers." |
 | `foregroundRequired` | "Keep Prism open and try again." |
 | `failed` | A message chosen by error code. The mapper has a default: "Could not set the live wallpaper. Try again." |
+
+## A different live wall on each screen (Android 16)
+
+### What Android 16 adds
+
+Android 16 (API 36) adds two classes for live wallpapers. One wallpaper service can then show different content on the Home Screen and the Lock Screen.
+
+| API | What it does |
+|---|---|
+| [`WallpaperDescription`](https://developer.android.com/reference/android/app/wallpaper/WallpaperDescription) | Describes one instance of a live wallpaper: an id, a title, and a `PersistableBundle` of content. |
+| [`WallpaperInstance`](https://developer.android.com/reference/android/app/wallpaper/WallpaperInstance) | Pairs a `WallpaperInfo` with a `WallpaperDescription`. |
+| [`WallpaperService.onCreateEngine(WallpaperDescription)`](https://developer.android.com/reference/android/service/wallpaper/WallpaperService#onCreateEngine(android.app.wallpaper.WallpaperDescription)) | The system creates the engine for a screen with the description it saved for that screen. |
+| [`Engine.onApplyWallpaper(int which)`](https://developer.android.com/reference/android/service/wallpaper/WallpaperService.Engine#onApplyWallpaper(int)) | A picker calls it on the preview engine when the user sets Home, Lock, or both. The engine returns the description to save. |
+| [`Engine.getWallpaperFlags()`](https://developer.android.com/reference/android/service/wallpaper/WallpaperService.Engine#getWallpaperFlags()) (API 34) | Tells an engine which screen it draws: `FLAG_SYSTEM` (Home), `FLAG_LOCK`, or both. |
+
+Source: [Android 16 features and APIs](https://developer.android.com/about/versions/16/features).
+
+### What an app can and cannot do
+
+- An app cannot set a live wallpaper on one screen by itself. `WallpaperManager.setWallpaperComponentWithDescription` and `setWallpaperComponentWithFlags` are not in the public SDK. In the Android 16 source they need `SET_WALLPAPER_COMPONENT`, a system permission. Only the system picker holds it.
+- So the user always confirms the screen in the system preview. Prism opens it with `ACTION_CHANGE_LIVE_WALLPAPER`.
+- The system flag `android.app.Flags.liveWallpaperContentHandling` turns the description API on. The public API 36 SDK ships it, so release builds have it on. An OEM build can turn it off.
+
+### Which pickers support it
+
+| Picker | Handles `ACTION_CHANGE_LIVE_WALLPAPER` | Calls `onApplyWallpaper` | Source |
+|---|---|---|---|
+| AOSP Live Wallpaper Picker (`com.android.wallpaper.livepicker`), Android 16 | Yes | No. It calls `setWallpaperComponentWithFlags(component, which)`. | [`LiveWallpaperPreview.java`](https://android.googlesource.com/platform/packages/wallpapers/LivePicker/+/refs/heads/android16-release/src/com/android/wallpaper/livepicker/LiveWallpaperPreview.java) |
+| AOSP Wallpaper & style (`WallpaperPicker2`), Android 16 | No | Yes, for wallpapers the user picks inside it. | [`WallpaperConnectionUtils.kt`](https://android.googlesource.com/platform/packages/apps/WallpaperPicker2/+/refs/heads/android16-release/src/com/android/wallpaper/util/wallpaperconnection/WallpaperConnectionUtils.kt) |
+| Pixel (Google builds of the two pickers) | Not verified on a device. | Not verified. | |
+| Samsung One UI 8, other OEMs | Not verified. OEM pickers may offer only some screens. | Not verified. | |
+
+The Android 16 emulator image (Pixel 9, API 36) uses the AOSP Live Wallpaper Picker. Its Set wallpaper button offers "Home screen", "Lock screen", and "Home screen and lock screen".
+
+Because the stock picker never calls `onApplyWallpaper`, a description alone does not separate the screens. `async_wallpaper` 3.7.0 therefore does two things:
+
+1. Each running engine reads its screen with `getWallpaperFlags()` and that screen's id with `WallpaperManager.getWallpaperId()`. Android issues a new id each time the user sets a screen. A new id means "this screen was just set", so the engine takes the content Prism staged for the preview. An id the engine saw before means a restart, so it keeps that screen's content.
+2. A picker that does call `onApplyWallpaper` gets a `WallpaperDescription` that carries the shader, frame rate, texture folder, and content tag. The engine for that screen then reads its own description.
+
+Verified on the API 36 emulator: a cool shader on Lock and a warm shader on Home show at the same time, and each stays after the other changes.
+
+### In Prism
+
+- When `supportsPerScreenLiveWallpaper` is true, Make it live and Gradients show "Where to set it" above the main button: Home screen, Lock screen, Both. Both is the default. Video never shows it.
+- When it is false, the screen looks the same as before. Prism sends the plugin default target, Home.
+- Prism tags every shader apply with `prism.live:<motion|gradient>:<style>:<apply id>`. When the app comes back from the system preview, it calls `getLiveWallpaperScreens()` and finds the screens that carry this apply's tag.
+- If at least one screen got it, a card above the main button says what each screen shows, for example "Home screen: Aurora. Lock screen: Ripple." The text is a live region for screen readers.
+- If only one screen got it, the card offers "Pick a wall for the Lock screen" (or Home screen). From a wall, it goes back so the user can open another wall; the next Live screen opens with that screen picked. From Settings, it stays and picks that screen, so the user can choose another gradient.
+- If no screen got it (the user backed out of the preview), Prism says nothing.
+- The Pro and coin gates are unchanged. Every apply goes through them, whatever screen is picked.
+- Analytics: `live_wallpaper_applied` adds `target` (null for video), `per_screen`, and `fallback`.
+
+### Release order
+
+The Prism change needs `async_wallpaper` 3.7.0. Do these steps in this order:
+
+1. Merge the plugin PR: https://github.com/codenameakshay/async_wallpaper/pull/89.
+2. Publish `async_wallpaper` 3.7.0 to pub.dev. The plugin owner must approve this step.
+3. Run `fvm flutter pub get` in Prism to update `pubspec.lock` to 3.7.0. Then merge the Prism PR: https://github.com/Hash-Studios/Prism/pull/818.
+
+Until step 2 is done, `pub get` fails in Prism CI, because pub.dev does not have 3.7.0.
+
+### Older Android
+
+On Android 15 (API 35) and lower, all live wallpaper engines share the last content Prism applied. The plugin reports `effectiveTarget: both`, and Prism tells the user that both screens use the same live wall.
 
 ## 3D
 
