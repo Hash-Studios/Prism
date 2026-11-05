@@ -481,6 +481,63 @@ void main() {
       },
     );
 
+    test('cancelling a second same-style preview does not report the first apply as its success', () async {
+      repository.capabilities = perScreen;
+      final LiveWallpaperBloc bloc = build(imageUrl: null)
+        ..add(const LiveWallpaperEvent.started(isPro: true))
+        ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+      addTearDown(bloc.close);
+      await settle();
+      final LiveContentTag? firstTag = repository.lastTag;
+      expect(firstTag, isNotNull);
+      repository.screens = LiveScreens(
+        home: LiveScreenContent(showsPrism: true, tag: firstTag),
+        lock: LiveScreenContent.other,
+      );
+
+      bloc
+        ..add(const LiveWallpaperEvent.outcomeHandled())
+        ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+      await settle();
+      expect(repository.gradientApplies, <GradientStyle>[GradientStyle.aurora, GradientStyle.aurora]);
+      expect(repository.lastTag, isNotNull);
+      expect(repository.lastTag, isNot(firstTag));
+      expect(bloc.state.pendingTag, repository.lastTag);
+      expect(bloc.state.outcome?.status, LiveApplyStatus.confirmInPreview);
+
+      bloc.add(const LiveWallpaperEvent.screensChecked());
+      await settle();
+
+      expect(repository.getScreensCalls, 1);
+      expect(bloc.state.outcome, isNull);
+      expect(bloc.state.pendingTag, isNull);
+    });
+
+    test('a fresh bloc does not recover an interrupted preview from the current screen tag', () async {
+      repository.capabilities = perScreen;
+      final LiveWallpaperBloc previousBloc = build(imageUrl: null)
+        ..add(const LiveWallpaperEvent.started(isPro: true))
+        ..add(LiveWallpaperEvent.gradientApplied(palette: palette));
+      addTearDown(previousBloc.close);
+      await settle();
+      expect(previousBloc.state.pendingTag, isNotNull);
+      repository.screens = LiveScreens(
+        home: LiveScreenContent(showsPrism: true, tag: repository.lastTag),
+        lock: LiveScreenContent.other,
+      );
+      await previousBloc.close();
+
+      final LiveWallpaperBloc freshBloc = build(imageUrl: null)
+        ..add(const LiveWallpaperEvent.started(isPro: true))
+        ..add(const LiveWallpaperEvent.screensChecked());
+      addTearDown(freshBloc.close);
+      await settle();
+
+      expect(repository.getScreensCalls, 0);
+      expect(freshBloc.state.outcome, isNull);
+      expect(freshBloc.state.pendingTag, isNull);
+    });
+
     test('starting a new session clears an apply tag from the previous session', () async {
       repository.capabilities = perScreen;
       final LiveWallpaperBloc bloc = build(imageUrl: null)
