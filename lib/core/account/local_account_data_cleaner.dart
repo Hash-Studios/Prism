@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
@@ -67,6 +69,7 @@ class LocalAccountDataCleaner {
     (name: 'favourites', run: (String userId) => getIt<FavoritesLocalDataSource>().clearUser(userId)),
     (name: 'iOS favourites mirror', run: ShortcutsFavouritesStore.clearForUser),
     (name: 'iOS folders mirror', run: ShortcutsFoldersStore.clearForUser),
+    (name: 'iOS day and night snapshot', run: clearDayNightSnapshotForUser),
     (name: 'iOS widget streak', run: clearIosWidgetStreakForUser),
     (name: 'native favourites paths', run: NativeAssetPathsStore.clearForUser),
     (name: 'Android favourites mirror', run: _clearAndroidFavouritesForUser),
@@ -103,6 +106,45 @@ class LocalAccountDataCleaner {
     (name: 'last upload details', run: (String userId) => LastSubmissionDefaultsStore().clearForUser(userId)),
     (name: 'AI history and prompts', run: (String userId) => getIt<AiGenerationRepositoryImpl>().clearForUser(userId)),
   ];
+
+  @visibleForTesting
+  static Future<void> clearDayNightSnapshotForUser(String userId) async {
+    final String owner = userId.trim();
+    if (owner.isEmpty) return;
+    final SettingsLocalDataSource? settings = getIt.isRegistered<SettingsLocalDataSource>()
+        ? getIt<SettingsLocalDataSource>()
+        : null;
+    String? currentPairOwner() {
+      String? rawPair;
+      try {
+        rawPair = settings?.get<String?>('dayNight.pair');
+      } on Object {
+        // An unreadable owner record cannot prove that another account owns the snapshot.
+      }
+      if (rawPair == null) return null;
+      try {
+        final Object? decoded = jsonDecode(rawPair);
+        return decoded is Map && decoded['ownerId'] is String ? decoded['ownerId'] as String : null;
+      } on FormatException {
+        return null;
+      }
+    }
+
+    bool belongsToDeletedOwner() {
+      final String activeOwner = app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '';
+      final String? pairOwner = currentPairOwner();
+      return (activeOwner.isEmpty || activeOwner == owner) && (pairOwner == null || pairOwner == owner);
+    }
+
+    if (!belongsToDeletedOwner()) return;
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (!belongsToDeletedOwner()) return;
+    await prefs.remove('shortcuts.day_night');
+    if (!belongsToDeletedOwner()) return;
+    if (currentPairOwner() == owner) await settings!.delete('dayNight.pair');
+    if (!belongsToDeletedOwner()) return;
+    await NativeAssetPathsStore.replaceGroup('daynight', const <String, String>{});
+  }
 
   static Future<void> _clearOwnerRecords(String storeName, String userId) async {
     final DurableJsonStore store = DurableJsonStore(storeName);
