@@ -189,9 +189,12 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
   Future<void> _onFolderOpened(_FolderOpened event, Emitter<FoldersState> emit, _FolderSession session) async {
     final String id = event.folderId;
     emit(state.copyWith(itemsStatus: <String, LoadStatus>{...state.itemsStatus, id: LoadStatus.loading}));
-    if (state.folder(id) == null && state.userId.isNotEmpty) {
+    // A shared folder changes on other devices (people join, leave, are removed), so each open reads it again.
+    // Offline, a folder already in the list keeps its last copy.
+    if (state.userId.isNotEmpty) {
+      final bool known = state.folder(id) != null;
       final Result<List<FolderEntity>> folders = await session.wait(_repository.fetchFolders(state.userId));
-      if (folders.failure case final failure?) {
+      if (folders.failure case final failure? when !known) {
         emit(state.copyWith(itemsStatus: <String, LoadStatus>{...state.itemsStatus, id: LoadStatus.failure}));
         _finish(emit, event.operationId, failure: failure);
         return;

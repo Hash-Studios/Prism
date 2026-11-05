@@ -845,6 +845,59 @@ void main() {
     expect(repo.calls, <String>['deleteFolder:a']);
   });
 
+  test('opening a known folder picks up an editor who joined on another device', () async {
+    final _FakeFoldersRepository repo = _FakeFoldersRepository()..folders = <FolderEntity>[folder('a')];
+    final FoldersBloc bloc = _blocFor(repo);
+    await _started(bloc);
+    expect(bloc.state.folder('a')?.editors, isEmpty);
+
+    repo.folders = <FolderEntity>[
+      FolderEntity(
+        id: 'a',
+        ownerId: 'u1',
+        name: 'F-a',
+        createdAt: DateTime.utc(2026),
+        updatedAt: DateTime.utc(2026),
+        itemCount: 0,
+        covers: const <String>[],
+        editors: <FolderMember>[
+          FolderMember(uid: 'e1', role: FolderRole.editor, addedBy: 'u1', addedAt: DateTime.utc(2026, 2)),
+        ],
+      ),
+    ];
+    expect(await bloc.run((id) => FoldersEvent.folderOpened(folderId: 'a', operationId: id)), isTrue);
+
+    expect(bloc.state.folder('a')?.editors.map((member) => member.uid), <String>['e1']);
+  });
+
+  test('opening a known folder offline keeps it and still loads its walls', () async {
+    final _FakeFoldersRepository repo = _FakeFoldersRepository()
+      ..folders = <FolderEntity>[folder('a')]
+      ..items = <String, List<FavouriteWallEntity>>{
+        'a': <FavouriteWallEntity>[wall('w1')],
+      };
+    final FoldersBloc bloc = _blocFor(repo);
+    await _started(bloc);
+    repo.fetchFoldersOverride = (_) async => Result.error<List<FolderEntity>>(const ServerFailure('offline'));
+
+    expect(await bloc.run((id) => FoldersEvent.folderOpened(folderId: 'a', operationId: id)), isTrue);
+
+    expect(bloc.state.folder('a'), isNotNull);
+    expect(bloc.state.items['a']?.map((item) => item.id), <String>['w1']);
+  });
+
+  test('an editor removed on another device loses the folder when they open it', () async {
+    final _FakeFoldersRepository repo = _FakeFoldersRepository()..folders = <FolderEntity>[sharedFolder('s')];
+    final FoldersBloc bloc = _blocFor(repo);
+    await _started(bloc, userId: 'me');
+    expect(bloc.state.folder('s'), isNotNull);
+
+    repo.folders = <FolderEntity>[];
+    await bloc.run((id) => FoldersEvent.folderOpened(folderId: 's', operationId: id));
+
+    expect(bloc.state.folder('s'), isNull);
+  });
+
   test("an editor's rename, visibility and delete of a shared folder are refused without a write", () async {
     final _FakeFoldersRepository repo = _FakeFoldersRepository()..folders = <FolderEntity>[sharedFolder('s')];
     final _NoPublicFolders publicRepo = _NoPublicFolders();
