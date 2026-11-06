@@ -2351,6 +2351,46 @@
     }
   },
   "adminWalls": "Walls",
+  "adminDesktop": "Desktop",
+  "@adminDesktop": {
+    "description": "Admin review tab for desktop versions."
+  },
+  "adminDesktopEmptyTitle": "No desktop versions to review",
+  "@adminDesktopEmptyTitle": {
+    "description": "Admin empty state title."
+  },
+  "adminDesktopEmptyBody": "Desktop versions that creators submit show here.",
+  "@adminDesktopEmptyBody": {
+    "description": "Admin empty state body."
+  },
+  "adminDesktopLoadError": "Unable to load desktop versions",
+  "@adminDesktopLoadError": {
+    "description": "Admin error state title."
+  },
+  "adminDesktopReplaces": "Replaces the current desktop version",
+  "@adminDesktopReplaces": {
+    "description": "Admin card fact when the wall already has a desktop version."
+  },
+  "adminDesktopUploadSize": "Upload size",
+  "@adminDesktopUploadSize": {
+    "description": "Admin card fact label for the uploaded image size."
+  },
+  "adminDesktopApproved": "Desktop version approved",
+  "@adminDesktopApproved": {
+    "description": "Admin toast after approve."
+  },
+  "adminDesktopRejected": "Desktop version rejected",
+  "@adminDesktopRejected": {
+    "description": "Admin toast after reject."
+  },
+  "adminDesktopRejectTitle": "Reject desktop version",
+  "@adminDesktopRejectTitle": {
+    "description": "Title and confirm button of the reject sheet for a desktop version."
+  },
+  "adminDesktopWallUnavailable": "This wallpaper is no longer approved. Reject this desktop version.",
+  "@adminDesktopWallUnavailable": {
+    "description": "Admin error when approve fails because the wall changed."
+  },
   "adminWriteCount": "{count, plural, one{{count} write} other{{count} writes}}",
   "@adminWriteCount": {
     "placeholders": {
@@ -6430,6 +6470,36 @@
   },
   "notifPushWallApprovedArtistBodyUntitled": "Your wallpaper has been approved and is now visible to everyone.",
   "notifPushWallApprovedArtistTitle": "Your wallpaper is live! 🎉",
+  "notifPushDesktopVersionApprovedTitle": "Your desktop version is live",
+  "@notifPushDesktopVersionApprovedTitle": {
+    "description": "Notification title when an admin approves the creator's desktop version."
+  },
+  "notifPushDesktopVersionApprovedBody": "\"{wallTitle}\" now has a desktop version.",
+  "@notifPushDesktopVersionApprovedBody": {
+    "description": "Notification body.",
+    "placeholders": {
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushDesktopVersionApprovedBodyUntitled": "Your wallpaper now has a desktop version.",
+  "@notifPushDesktopVersionApprovedBodyUntitled": {
+    "description": "Notification body when the wall has no title."
+  },
+  "notifPushDesktopVersionRejectedTitle": "Desktop version not approved",
+  "@notifPushDesktopVersionRejectedTitle": {
+    "description": "Notification title when an admin rejects the creator's desktop version."
+  },
+  "notifPushDesktopVersionRejectedBody": "Reason: {reason}",
+  "@notifPushDesktopVersionRejectedBody": {
+    "description": "Notification body with the admin's reason.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "notifPushWallLiveFollowersBody": "\"{wallTitle}\" is now live on Prism.",
   "@notifPushWallLiveFollowersBody": {
     "placeholders": {
@@ -12893,6 +12963,134 @@
   "desktopVersionSetOnTablet": "Set desktop version",
   "@desktopVersionSetOnTablet": {
     "description": "Tablet button. Sets the wide desktop version as the tablet wallpaper."
+  },
+  "desktopUploadAdd": "Add a desktop version",
+  "@desktopUploadAdd": {
+    "description": "Button on the creator's own approved wallpaper. Opens the screen to upload a wide version for computers."
+  },
+  "desktopUploadReplace": "Replace desktop version",
+  "@desktopUploadReplace": {
+    "description": "Same button when the wallpaper already has a desktop version."
+  },
+  "desktopUploadInReview": "Desktop version in review",
+  "@desktopUploadInReview": {
+    "description": "Disabled button text while the creator's desktop version waits for review."
+  },
+  "desktopUploadTitle": "Add a desktop version",
+  "@desktopUploadTitle": {
+    "description": "Title of the upload screen."
+  },
+  "desktopUploadReplaceTitle": "Replace desktop version",
+  "@desktopUploadReplaceTitle": {
+    "description": "Title of the upload screen when a desktop version already exists."
+  },
+  "desktopUploadIntro": "Add a wide version of this wallpaper for computers. It goes live after review.",
+  "@desktopUploadIntro": {
+    "description": "Intro text on the upload screen."
+  },
+  "desktopUploadReplaceNote": "The current desktop version stays live until the new one is approved.",
+  "@desktopUploadReplaceNote": {
+    "description": "Note on the upload screen when the creator replaces a desktop version."
+  },
+  "desktopUploadRequirements": "Use a landscape image in 16:10 or 16:9, at least 1920 px wide.",
+  "@desktopUploadRequirements": {
+    "description": "Requirements shown before the creator picks an image."
+  },
+  "desktopUploadPhoneLabel": "Phone",
+  "@desktopUploadPhoneLabel": {
+    "description": "Label under the phone wallpaper in the side-by-side preview."
+  },
+  "desktopUploadDesktopLabel": "Desktop",
+  "@desktopUploadDesktopLabel": {
+    "description": "Label under the wide image in the side-by-side preview."
+  },
+  "desktopUploadPhoneSemantic": "Phone wallpaper",
+  "@desktopUploadPhoneSemantic": {
+    "description": "Screen reader label for the phone preview."
+  },
+  "desktopUploadDesktopSemantic": "Desktop version, {width} × {height}",
+  "@desktopUploadDesktopSemantic": {
+    "description": "Screen reader label for the wide preview.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopUploadSize": "{width} × {height}, {ratio}",
+  "@desktopUploadSize": {
+    "description": "Size line under the wide preview, for example 2560 × 1600, 16:10.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      },
+      "ratio": {
+        "type": "String"
+      }
+    }
+  },
+  "desktopUploadChooseImage": "Choose image",
+  "@desktopUploadChooseImage": {
+    "description": "Button that opens the photo picker."
+  },
+  "desktopUploadChooseAnother": "Choose another image",
+  "@desktopUploadChooseAnother": {
+    "description": "Button that opens the photo picker again after a pick."
+  },
+  "desktopUploadSubmit": "Submit for review",
+  "@desktopUploadSubmit": {
+    "description": "Primary button that sends the desktop version for review."
+  },
+  "desktopUploadSubmitted": "Desktop version sent for review",
+  "@desktopUploadSubmitted": {
+    "description": "Toast after a successful submit."
+  },
+  "desktopUploadErrorPortrait": "Choose a landscape image. It must be wider than it is tall.",
+  "@desktopUploadErrorPortrait": {
+    "description": "Error when the picked image is portrait or square."
+  },
+  "desktopUploadErrorAspect": "Choose an image in 16:10 or 16:9. Crop it on your computer, then try again.",
+  "@desktopUploadErrorAspect": {
+    "description": "Error when the aspect ratio is not 16:10 or 16:9."
+  },
+  "desktopUploadErrorTooSmall": "Choose an image at least 1920 px wide. This one is {width} px wide.",
+  "@desktopUploadErrorTooSmall": {
+    "description": "Error when the image is too small.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopUploadErrorUnreadable": "Unable to open this image. Choose another one.",
+  "@desktopUploadErrorUnreadable": {
+    "description": "Error when the image cannot be decoded."
+  },
+  "desktopUploadErrorTooLarge": "This file is too large. Choose an image under 15 MB.",
+  "@desktopUploadErrorTooLarge": {
+    "description": "Error when the file is over the size limit."
+  },
+  "desktopUploadErrorPending": "A desktop version of this wallpaper is already in review.",
+  "@desktopUploadErrorPending": {
+    "description": "Error when a submission is already pending."
+  },
+  "desktopUploadErrorNotAllowed": "You can add a desktop version only to your own approved wallpapers.",
+  "@desktopUploadErrorNotAllowed": {
+    "description": "Error when the wall is not the caller's or not approved."
+  },
+  "desktopUploadErrorLimit": "Daily upload limit reached. Try again tomorrow.",
+  "@desktopUploadErrorLimit": {
+    "description": "Error when the daily upload limit is reached."
+  },
+  "desktopUploadErrorFailed": "Unable to submit. Check your connection and try again.",
+  "@desktopUploadErrorFailed": {
+    "description": "Generic submit failure."
   },
   "desktopVersionSaveOnTablet": "Save desktop version",
   "@desktopVersionSaveOnTablet": {

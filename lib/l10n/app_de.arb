@@ -2241,6 +2241,46 @@
     }
   },
   "adminWalls": "Hintergrundbilder",
+  "adminDesktop": "Desktop",
+  "@adminDesktop": {
+    "description": "Admin review tab for desktop versions."
+  },
+  "adminDesktopEmptyTitle": "Keine Desktop-Versionen zu prüfen",
+  "@adminDesktopEmptyTitle": {
+    "description": "Admin empty state title."
+  },
+  "adminDesktopEmptyBody": "Desktop-Versionen, die Creator einreichen, erscheinen hier.",
+  "@adminDesktopEmptyBody": {
+    "description": "Admin empty state body."
+  },
+  "adminDesktopLoadError": "Desktop-Versionen konnten nicht geladen werden",
+  "@adminDesktopLoadError": {
+    "description": "Admin error state title."
+  },
+  "adminDesktopReplaces": "Ersetzt die aktuelle Desktop-Version",
+  "@adminDesktopReplaces": {
+    "description": "Admin card fact when the wall already has a desktop version."
+  },
+  "adminDesktopUploadSize": "Upload-Größe",
+  "@adminDesktopUploadSize": {
+    "description": "Admin card fact label for the uploaded image size."
+  },
+  "adminDesktopApproved": "Desktop-Version genehmigt",
+  "@adminDesktopApproved": {
+    "description": "Admin toast after approve."
+  },
+  "adminDesktopRejected": "Desktop-Version abgelehnt",
+  "@adminDesktopRejected": {
+    "description": "Admin toast after reject."
+  },
+  "adminDesktopRejectTitle": "Desktop-Version ablehnen",
+  "@adminDesktopRejectTitle": {
+    "description": "Title and confirm button of the reject sheet for a desktop version."
+  },
+  "adminDesktopWallUnavailable": "Dieses Hintergrundbild ist nicht mehr genehmigt. Lehne diese Desktop-Version ab.",
+  "@adminDesktopWallUnavailable": {
+    "description": "Admin error when approve fails because the wall changed."
+  },
   "adminWriteCount": "{count, plural, one{{count} Schreibvorgang} other{{count} Schreibvorgänge}}",
   "@adminWriteCount": {
     "placeholders": {
@@ -6308,6 +6348,36 @@
   },
   "notifPushWallApprovedArtistBodyUntitled": "Dein Hintergrundbild wurde freigegeben und ist jetzt für alle sichtbar.",
   "notifPushWallApprovedArtistTitle": "Dein Hintergrundbild ist online! 🎉",
+  "notifPushDesktopVersionApprovedTitle": "Deine Desktop-Version ist online",
+  "@notifPushDesktopVersionApprovedTitle": {
+    "description": "Notification title when an admin approves the creator's desktop version."
+  },
+  "notifPushDesktopVersionApprovedBody": "„{wallTitle}“ hat jetzt eine Desktop-Version.",
+  "@notifPushDesktopVersionApprovedBody": {
+    "description": "Notification body.",
+    "placeholders": {
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushDesktopVersionApprovedBodyUntitled": "Dein Hintergrundbild hat jetzt eine Desktop-Version.",
+  "@notifPushDesktopVersionApprovedBodyUntitled": {
+    "description": "Notification body when the wall has no title."
+  },
+  "notifPushDesktopVersionRejectedTitle": "Desktop-Version nicht genehmigt",
+  "@notifPushDesktopVersionRejectedTitle": {
+    "description": "Notification title when an admin rejects the creator's desktop version."
+  },
+  "notifPushDesktopVersionRejectedBody": "Grund: {reason}",
+  "@notifPushDesktopVersionRejectedBody": {
+    "description": "Notification body with the admin's reason.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "notifPushWallLiveFollowersBody": "„{wallTitle}“ ist jetzt auf Prism verfügbar.",
   "@notifPushWallLiveFollowersBody": {
     "placeholders": {
@@ -12431,6 +12501,134 @@
   "desktopVersionSetOnTablet": "Desktop-Version festlegen",
   "@desktopVersionSetOnTablet": {
     "description": "Tablet button. Sets the wide desktop version as the tablet wallpaper."
+  },
+  "desktopUploadAdd": "Desktop-Version hinzufügen",
+  "@desktopUploadAdd": {
+    "description": "Button on the creator's own approved wallpaper. Opens the screen to upload a wide version for computers."
+  },
+  "desktopUploadReplace": "Desktop-Version ersetzen",
+  "@desktopUploadReplace": {
+    "description": "Same button when the wallpaper already has a desktop version."
+  },
+  "desktopUploadInReview": "Desktop-Version wird geprüft",
+  "@desktopUploadInReview": {
+    "description": "Disabled button text while the creator's desktop version waits for review."
+  },
+  "desktopUploadTitle": "Desktop-Version hinzufügen",
+  "@desktopUploadTitle": {
+    "description": "Title of the upload screen."
+  },
+  "desktopUploadReplaceTitle": "Desktop-Version ersetzen",
+  "@desktopUploadReplaceTitle": {
+    "description": "Title of the upload screen when a desktop version already exists."
+  },
+  "desktopUploadIntro": "Füge eine breite Version dieses Hintergrundbilds für Computer hinzu. Sie ist nach der Prüfung online.",
+  "@desktopUploadIntro": {
+    "description": "Intro text on the upload screen."
+  },
+  "desktopUploadReplaceNote": "Die aktuelle Desktop-Version bleibt online, bis die neue genehmigt ist.",
+  "@desktopUploadReplaceNote": {
+    "description": "Note on the upload screen when the creator replaces a desktop version."
+  },
+  "desktopUploadRequirements": "Verwende ein Querformatbild im Format 16:10 oder 16:9 mit mindestens 1920 px Breite.",
+  "@desktopUploadRequirements": {
+    "description": "Requirements shown before the creator picks an image."
+  },
+  "desktopUploadPhoneLabel": "Handy",
+  "@desktopUploadPhoneLabel": {
+    "description": "Label under the phone wallpaper in the side-by-side preview."
+  },
+  "desktopUploadDesktopLabel": "Desktop",
+  "@desktopUploadDesktopLabel": {
+    "description": "Label under the wide image in the side-by-side preview."
+  },
+  "desktopUploadPhoneSemantic": "Hintergrundbild für das Handy",
+  "@desktopUploadPhoneSemantic": {
+    "description": "Screen reader label for the phone preview."
+  },
+  "desktopUploadDesktopSemantic": "Desktop-Version, {width} × {height}",
+  "@desktopUploadDesktopSemantic": {
+    "description": "Screen reader label for the wide preview.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopUploadSize": "{width} × {height}, {ratio}",
+  "@desktopUploadSize": {
+    "description": "Size line under the wide preview, for example 2560 × 1600, 16:10.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      },
+      "ratio": {
+        "type": "String"
+      }
+    }
+  },
+  "desktopUploadChooseImage": "Bild auswählen",
+  "@desktopUploadChooseImage": {
+    "description": "Button that opens the photo picker."
+  },
+  "desktopUploadChooseAnother": "Anderes Bild auswählen",
+  "@desktopUploadChooseAnother": {
+    "description": "Button that opens the photo picker again after a pick."
+  },
+  "desktopUploadSubmit": "Zur Prüfung einreichen",
+  "@desktopUploadSubmit": {
+    "description": "Primary button that sends the desktop version for review."
+  },
+  "desktopUploadSubmitted": "Desktop-Version zur Prüfung gesendet",
+  "@desktopUploadSubmitted": {
+    "description": "Toast after a successful submit."
+  },
+  "desktopUploadErrorPortrait": "Wähle ein Bild im Querformat. Es muss breiter als hoch sein.",
+  "@desktopUploadErrorPortrait": {
+    "description": "Error when the picked image is portrait or square."
+  },
+  "desktopUploadErrorAspect": "Wähle ein Bild im Format 16:10 oder 16:9. Schneide es auf deinem Computer zu und versuche es dann erneut.",
+  "@desktopUploadErrorAspect": {
+    "description": "Error when the aspect ratio is not 16:10 or 16:9."
+  },
+  "desktopUploadErrorTooSmall": "Wähle ein Bild mit mindestens 1920 px Breite. Dieses ist {width} px breit.",
+  "@desktopUploadErrorTooSmall": {
+    "description": "Error when the image is too small.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopUploadErrorUnreadable": "Dieses Bild kann nicht geöffnet werden. Wähle ein anderes.",
+  "@desktopUploadErrorUnreadable": {
+    "description": "Error when the image cannot be decoded."
+  },
+  "desktopUploadErrorTooLarge": "Diese Datei ist zu groß. Wähle ein Bild mit weniger als 15 MB.",
+  "@desktopUploadErrorTooLarge": {
+    "description": "Error when the file is over the size limit."
+  },
+  "desktopUploadErrorPending": "Eine Desktop-Version dieses Hintergrundbilds wird bereits geprüft.",
+  "@desktopUploadErrorPending": {
+    "description": "Error when a submission is already pending."
+  },
+  "desktopUploadErrorNotAllowed": "Du kannst nur deinen eigenen genehmigten Hintergrundbildern eine Desktop-Version hinzufügen.",
+  "@desktopUploadErrorNotAllowed": {
+    "description": "Error when the wall is not the caller's or not approved."
+  },
+  "desktopUploadErrorLimit": "Das tägliche Upload-Limit ist erreicht. Versuche es morgen erneut.",
+  "@desktopUploadErrorLimit": {
+    "description": "Error when the daily upload limit is reached."
+  },
+  "desktopUploadErrorFailed": "Senden nicht möglich. Prüfe deine Verbindung und versuche es erneut.",
+  "@desktopUploadErrorFailed": {
+    "description": "Generic submit failure."
   },
   "desktopVersionSaveOnTablet": "Desktop-Version in Fotos speichern",
   "@desktopVersionSaveOnTablet": {

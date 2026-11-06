@@ -28,6 +28,7 @@ import 'package:Prism/features/daily_flow/views/daily_moment_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
 import 'package:Prism/features/deep_link_input/views/pages/deep_link_input_page.dart';
+import 'package:Prism/features/desktop_submission/data/desktop_submission_repository.dart';
 import 'package:Prism/features/draw/draw.dart';
 import 'package:Prism/features/drops/biz/bloc/drops_bloc.j.dart';
 import 'package:Prism/features/drops/views/pages/drop_detail_page.dart';

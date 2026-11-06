@@ -4312,6 +4312,66 @@ class WallpaperVariantUploadStartedEvent extends AnalyticsEvent {
   }
 }
 
+class DesktopUploadStartedEvent extends AnalyticsEvent {
+  const DesktopUploadStartedEvent({required this.wallId, required this.replace});
+
+  final String wallId;
+  final bool replace;
+
+  @override
+  String get eventName => 'desktop_upload_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId, 'replace': replace ? 1 : 0};
+  }
+}
+
+class DesktopUploadSubmittedEvent extends AnalyticsEvent {
+  const DesktopUploadSubmittedEvent({required this.wallId, required this.aspect, required this.replace});
+
+  final String wallId;
+  final String aspect;
+  final bool replace;
+
+  @override
+  String get eventName => 'desktop_upload_submitted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId, 'aspect': aspect, 'replace': replace ? 1 : 0};
+  }
+}
+
+class DesktopUploadApprovedEvent extends AnalyticsEvent {
+  const DesktopUploadApprovedEvent({required this.wallId});
+
+  final String wallId;
+
+  @override
+  String get eventName => 'desktop_upload_approved';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId};
+  }
+}
+
+class DesktopUploadRejectedEvent extends AnalyticsEvent {
+  const DesktopUploadRejectedEvent({required this.wallId, required this.reason});
+
+  final String wallId;
+  final String reason;
+
+  @override
+  String get eventName => 'desktop_upload_rejected';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId, 'reason': reason};
+  }
+}
+
 class WallpaperVariantLinkResolvedEvent extends AnalyticsEvent {
   const WallpaperVariantLinkResolvedEvent({required this.wallId, required this.result});
 

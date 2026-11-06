@@ -2129,6 +2129,36 @@ class AppLocalizationsId extends AppLocalizations {
   String get adminWalls => 'Wallpaper';
 
   @override
+  String get adminDesktop => 'Desktop';
+
+  @override
+  String get adminDesktopEmptyTitle => 'Tidak ada versi desktop untuk ditinjau';
+
+  @override
+  String get adminDesktopEmptyBody => 'Versi desktop yang dikirim kreator akan tampil di sini.';
+
+  @override
+  String get adminDesktopLoadError => 'Tidak dapat memuat versi desktop';
+
+  @override
+  String get adminDesktopReplaces => 'Menggantikan versi desktop yang sekarang';
+
+  @override
+  String get adminDesktopUploadSize => 'Ukuran unggahan';
+
+  @override
+  String get adminDesktopApproved => 'Versi desktop disetujui';
+
+  @override
+  String get adminDesktopRejected => 'Versi desktop ditolak';
+
+  @override
+  String get adminDesktopRejectTitle => 'Tolak versi desktop';
+
+  @override
+  String get adminDesktopWallUnavailable => 'Wallpaper ini sudah tidak disetujui. Tolak versi desktop ini.';
+
+  @override
   String adminWriteCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7402,6 +7432,25 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get notifPushWallApprovedArtistTitle => 'Wallpaper Anda kini tayang! 🎉';
+
+  @override
+  String get notifPushDesktopVersionApprovedTitle => 'Versi desktop Anda sudah tayang';
+
+  @override
+  String notifPushDesktopVersionApprovedBody(String wallTitle) {
+    return '\"$wallTitle\" kini punya versi desktop.';
+  }
+
+  @override
+  String get notifPushDesktopVersionApprovedBodyUntitled => 'Wallpaper Anda kini punya versi desktop.';
+
+  @override
+  String get notifPushDesktopVersionRejectedTitle => 'Versi desktop tidak disetujui';
+
+  @override
+  String notifPushDesktopVersionRejectedBody(String reason) {
+    return 'Alasan: $reason';
+  }
 
   @override
   String notifPushWallLiveFollowersBody(String wallTitle) {
@@ -13021,6 +13070,93 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopVersionSetOnTablet => 'Pasang versi desktop';
+
+  @override
+  String get desktopUploadAdd => 'Tambahkan versi desktop';
+
+  @override
+  String get desktopUploadReplace => 'Ganti versi desktop';
+
+  @override
+  String get desktopUploadInReview => 'Versi desktop sedang ditinjau';
+
+  @override
+  String get desktopUploadTitle => 'Tambahkan versi desktop';
+
+  @override
+  String get desktopUploadReplaceTitle => 'Ganti versi desktop';
+
+  @override
+  String get desktopUploadIntro =>
+      'Tambahkan versi lebar wallpaper ini untuk komputer. Versi ini tayang setelah ditinjau.';
+
+  @override
+  String get desktopUploadReplaceNote => 'Versi desktop yang sekarang tetap tayang sampai versi baru disetujui.';
+
+  @override
+  String get desktopUploadRequirements => 'Gunakan gambar lanskap dengan rasio 16:10 atau 16:9, lebar minimal 1920 px.';
+
+  @override
+  String get desktopUploadPhoneLabel => 'Ponsel';
+
+  @override
+  String get desktopUploadDesktopLabel => 'Desktop';
+
+  @override
+  String get desktopUploadPhoneSemantic => 'Wallpaper ponsel';
+
+  @override
+  String desktopUploadDesktopSemantic(int width, int height) {
+    return 'Versi desktop, $width × $height';
+  }
+
+  @override
+  String desktopUploadSize(int width, int height, String ratio) {
+    return '$width × $height, $ratio';
+  }
+
+  @override
+  String get desktopUploadChooseImage => 'Pilih gambar';
+
+  @override
+  String get desktopUploadChooseAnother => 'Pilih gambar lain';
+
+  @override
+  String get desktopUploadSubmit => 'Kirim untuk ditinjau';
+
+  @override
+  String get desktopUploadSubmitted => 'Versi desktop dikirim untuk ditinjau';
+
+  @override
+  String get desktopUploadErrorPortrait => 'Pilih gambar lanskap. Lebarnya harus lebih besar dari tingginya.';
+
+  @override
+  String get desktopUploadErrorAspect =>
+      'Pilih gambar dengan rasio 16:10 atau 16:9. Potong gambar di komputer Anda, lalu coba lagi.';
+
+  @override
+  String desktopUploadErrorTooSmall(int width) {
+    return 'Pilih gambar dengan lebar minimal 1920 px. Gambar ini lebarnya $width px.';
+  }
+
+  @override
+  String get desktopUploadErrorUnreadable => 'Gambar ini tidak dapat dibuka. Pilih gambar lain.';
+
+  @override
+  String get desktopUploadErrorTooLarge => 'File ini terlalu besar. Pilih gambar di bawah 15 MB.';
+
+  @override
+  String get desktopUploadErrorPending => 'Versi desktop dari wallpaper ini sudah dalam peninjauan.';
+
+  @override
+  String get desktopUploadErrorNotAllowed =>
+      'Anda hanya dapat menambahkan versi desktop ke wallpaper Anda sendiri yang sudah disetujui.';
+
+  @override
+  String get desktopUploadErrorLimit => 'Batas unggahan harian tercapai. Coba lagi besok.';
+
+  @override
+  String get desktopUploadErrorFailed => 'Tidak dapat mengirim. Periksa koneksi Anda lalu coba lagi.';
 
   @override
   String get desktopVersionSaveOnTablet => 'Simpan versi desktop ke Foto';

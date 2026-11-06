@@ -2981,6 +2981,38 @@ events:
       - name: variant_count
         key: variant_count
         type: int
+  - id: desktop_upload_started
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: replace
+        key: replace
+        type: bool
+  - id: desktop_upload_submitted
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: aspect
+        key: aspect
+        type: string
+      - name: replace
+        key: replace
+        type: bool
+  - id: desktop_upload_approved
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+  - id: desktop_upload_rejected
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: reason
+        key: reason
+        type: string
   - id: wallpaper_variant_link_resolved
     fields:
       - name: wall_id

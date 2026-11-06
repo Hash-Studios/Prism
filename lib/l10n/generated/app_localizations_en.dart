@@ -2131,6 +2131,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminWalls => 'Walls';
 
   @override
+  String get adminDesktop => 'Desktop';
+
+  @override
+  String get adminDesktopEmptyTitle => 'No desktop versions to review';
+
+  @override
+  String get adminDesktopEmptyBody => 'Desktop versions that creators submit show here.';
+
+  @override
+  String get adminDesktopLoadError => 'Unable to load desktop versions';
+
+  @override
+  String get adminDesktopReplaces => 'Replaces the current desktop version';
+
+  @override
+  String get adminDesktopUploadSize => 'Upload size';
+
+  @override
+  String get adminDesktopApproved => 'Desktop version approved';
+
+  @override
+  String get adminDesktopRejected => 'Desktop version rejected';
+
+  @override
+  String get adminDesktopRejectTitle => 'Reject desktop version';
+
+  @override
+  String get adminDesktopWallUnavailable => 'This wallpaper is no longer approved. Reject this desktop version.';
+
+  @override
   String adminWriteCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7375,6 +7405,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifPushWallApprovedArtistTitle => 'Your wallpaper is live! 🎉';
+
+  @override
+  String get notifPushDesktopVersionApprovedTitle => 'Your desktop version is live';
+
+  @override
+  String notifPushDesktopVersionApprovedBody(String wallTitle) {
+    return '\"$wallTitle\" now has a desktop version.';
+  }
+
+  @override
+  String get notifPushDesktopVersionApprovedBodyUntitled => 'Your wallpaper now has a desktop version.';
+
+  @override
+  String get notifPushDesktopVersionRejectedTitle => 'Desktop version not approved';
+
+  @override
+  String notifPushDesktopVersionRejectedBody(String reason) {
+    return 'Reason: $reason';
+  }
 
   @override
   String notifPushWallLiveFollowersBody(String wallTitle) {
@@ -12973,6 +13022,90 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopVersionSetOnTablet => 'Set desktop version';
+
+  @override
+  String get desktopUploadAdd => 'Add a desktop version';
+
+  @override
+  String get desktopUploadReplace => 'Replace desktop version';
+
+  @override
+  String get desktopUploadInReview => 'Desktop version in review';
+
+  @override
+  String get desktopUploadTitle => 'Add a desktop version';
+
+  @override
+  String get desktopUploadReplaceTitle => 'Replace desktop version';
+
+  @override
+  String get desktopUploadIntro => 'Add a wide version of this wallpaper for computers. It goes live after review.';
+
+  @override
+  String get desktopUploadReplaceNote => 'The current desktop version stays live until the new one is approved.';
+
+  @override
+  String get desktopUploadRequirements => 'Use a landscape image in 16:10 or 16:9, at least 1920 px wide.';
+
+  @override
+  String get desktopUploadPhoneLabel => 'Phone';
+
+  @override
+  String get desktopUploadDesktopLabel => 'Desktop';
+
+  @override
+  String get desktopUploadPhoneSemantic => 'Phone wallpaper';
+
+  @override
+  String desktopUploadDesktopSemantic(int width, int height) {
+    return 'Desktop version, $width × $height';
+  }
+
+  @override
+  String desktopUploadSize(int width, int height, String ratio) {
+    return '$width × $height, $ratio';
+  }
+
+  @override
+  String get desktopUploadChooseImage => 'Choose image';
+
+  @override
+  String get desktopUploadChooseAnother => 'Choose another image';
+
+  @override
+  String get desktopUploadSubmit => 'Submit for review';
+
+  @override
+  String get desktopUploadSubmitted => 'Desktop version sent for review';
+
+  @override
+  String get desktopUploadErrorPortrait => 'Choose a landscape image. It must be wider than it is tall.';
+
+  @override
+  String get desktopUploadErrorAspect => 'Choose an image in 16:10 or 16:9. Crop it on your computer, then try again.';
+
+  @override
+  String desktopUploadErrorTooSmall(int width) {
+    return 'Choose an image at least 1920 px wide. This one is $width px wide.';
+  }
+
+  @override
+  String get desktopUploadErrorUnreadable => 'Unable to open this image. Choose another one.';
+
+  @override
+  String get desktopUploadErrorTooLarge => 'This file is too large. Choose an image under 15 MB.';
+
+  @override
+  String get desktopUploadErrorPending => 'A desktop version of this wallpaper is already in review.';
+
+  @override
+  String get desktopUploadErrorNotAllowed => 'You can add a desktop version only to your own approved wallpapers.';
+
+  @override
+  String get desktopUploadErrorLimit => 'Daily upload limit reached. Try again tomorrow.';
+
+  @override
+  String get desktopUploadErrorFailed => 'Unable to submit. Check your connection and try again.';
 
   @override
   String get desktopVersionSaveOnTablet => 'Save desktop version';

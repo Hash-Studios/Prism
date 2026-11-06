@@ -40,7 +40,7 @@ export const DESKTOP_COMPOSITION =
   "detail, so desktop icons, a menu bar and a dock stay readable and a 16:9 crop loses nothing important. Crisp, " +
   "clean detail, no clutter.";
 
-const SHARE_ID = /^[A-Za-z0-9_-]{1,200}$/;
+export const SHARE_ID = /^[A-Za-z0-9_-]{1,200}$/;
 
 export type DesktopSkip = "not_approved" | "not_studio" | "duo" | "model" | "prompt" | "exists";
 
@@ -103,6 +103,9 @@ export function parseDesktopVariant(value: unknown): DesktopVariant | null {
 
 const sha256 = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
 export const desktopVersion = (originalSha256: string) => originalSha256.slice(0, 16);
+/** Creator wide files keep edges that the 16:10 original crops, so both files name the version. */
+export const creatorDesktopVersion = (originalSha256: string, wideSha256: string) =>
+  desktopVersion(createHash("sha256").update(`${originalSha256}\0${wideSha256}`).digest("hex"));
 /** Worker generation id: stable per wall so retries replay the Worker's studio_claim record. */
 export const desktopGenerationId = (shareId: string, prompt: string, model: string, seed?: number) =>
   `desk_${createHash("sha256").update(JSON.stringify([shareId, prompt, model, seed ?? null])).digest("hex").slice(0, 48)}`;
@@ -128,7 +131,7 @@ export const desktopObjectName = (shareId: string, sha: string) => `desktop-orig
 export const desktopThumbObject = (shareId: string, sha: string) =>
   `previews/desktop-${createHash("sha256").update(`${shareId}\0${sha}`).digest("hex")}.jpg`;
 
-function desktopThumbUrl(shareId: string, sha: string): string {
+export function desktopThumbUrl(shareId: string, sha: string): string {
   const base = r2Env("R2_PREVIEW_BASE_URL");
   if (!base) throw new PermanentError("desktop_storage", "R2_PREVIEW_BASE_URL is not configured.");
   return `${base.replace(/\/$/, "")}/${desktopThumbObject(shareId, sha)}`;
@@ -377,7 +380,9 @@ export async function readyDesktopCompanion(shareId: string, wall: admin.firesto
       item.object === desktopObjectName(shareId, item.sha256) && item.width === size.width && item.height === size.height;
   };
   if (!variant || !SHARE_ID.test(shareId) || manifest?.status !== "ready" || !valid(manifest.original, DESKTOP_SIZE) ||
-    !valid(manifest.wide, DESKTOP_WIDE_SIZE) || desktopVersion(manifest.original.sha256) !== variant.v) {
+    !valid(manifest.wide, DESKTOP_WIDE_SIZE) || (manifest.source === "creator" ?
+    creatorDesktopVersion(manifest.original.sha256, manifest.wide.sha256) : desktopVersion(manifest.original.sha256)) !==
+    variant.v) {
     throw new Error("Desktop companion unavailable");
   }
   return {original: manifest.original, wide: manifest.wide, variant};

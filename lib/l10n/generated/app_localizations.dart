@@ -3723,6 +3723,66 @@ abstract class AppLocalizations {
   /// **'Walls'**
   String get adminWalls;
 
+  /// Admin review tab for desktop versions.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop'**
+  String get adminDesktop;
+
+  /// Admin empty state title.
+  ///
+  /// In en, this message translates to:
+  /// **'No desktop versions to review'**
+  String get adminDesktopEmptyTitle;
+
+  /// Admin empty state body.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop versions that creators submit show here.'**
+  String get adminDesktopEmptyBody;
+
+  /// Admin error state title.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load desktop versions'**
+  String get adminDesktopLoadError;
+
+  /// Admin card fact when the wall already has a desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Replaces the current desktop version'**
+  String get adminDesktopReplaces;
+
+  /// Admin card fact label for the uploaded image size.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload size'**
+  String get adminDesktopUploadSize;
+
+  /// Admin toast after approve.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version approved'**
+  String get adminDesktopApproved;
+
+  /// Admin toast after reject.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version rejected'**
+  String get adminDesktopRejected;
+
+  /// Title and confirm button of the reject sheet for a desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject desktop version'**
+  String get adminDesktopRejectTitle;
+
+  /// Admin error when approve fails because the wall changed.
+  ///
+  /// In en, this message translates to:
+  /// **'This wallpaper is no longer approved. Reject this desktop version.'**
+  String get adminDesktopWallUnavailable;
+
   /// No description provided for @adminWriteCount.
   ///
   /// In en, this message translates to:
@@ -11394,6 +11454,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your wallpaper is live! 🎉'**
   String get notifPushWallApprovedArtistTitle;
+
+  /// Notification title when an admin approves the creator's desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Your desktop version is live'**
+  String get notifPushDesktopVersionApprovedTitle;
+
+  /// Notification body.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{wallTitle}\" now has a desktop version.'**
+  String notifPushDesktopVersionApprovedBody(String wallTitle);
+
+  /// Notification body when the wall has no title.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallpaper now has a desktop version.'**
+  String get notifPushDesktopVersionApprovedBodyUntitled;
+
+  /// Notification title when an admin rejects the creator's desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version not approved'**
+  String get notifPushDesktopVersionRejectedTitle;
+
+  /// Notification body with the admin's reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason: {reason}'**
+  String notifPushDesktopVersionRejectedBody(String reason);
 
   /// No description provided for @notifPushWallLiveFollowersBody.
   ///
@@ -20976,6 +21066,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set desktop version'**
   String get desktopVersionSetOnTablet;
+
+  /// Button on the creator's own approved wallpaper. Opens the screen to upload a wide version for computers.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a desktop version'**
+  String get desktopUploadAdd;
+
+  /// Same button when the wallpaper already has a desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace desktop version'**
+  String get desktopUploadReplace;
+
+  /// Disabled button text while the creator's desktop version waits for review.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version in review'**
+  String get desktopUploadInReview;
+
+  /// Title of the upload screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a desktop version'**
+  String get desktopUploadTitle;
+
+  /// Title of the upload screen when a desktop version already exists.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace desktop version'**
+  String get desktopUploadReplaceTitle;
+
+  /// Intro text on the upload screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a wide version of this wallpaper for computers. It goes live after review.'**
+  String get desktopUploadIntro;
+
+  /// Note on the upload screen when the creator replaces a desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'The current desktop version stays live until the new one is approved.'**
+  String get desktopUploadReplaceNote;
+
+  /// Requirements shown before the creator picks an image.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a landscape image in 16:10 or 16:9, at least 1920 px wide.'**
+  String get desktopUploadRequirements;
+
+  /// Label under the phone wallpaper in the side-by-side preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get desktopUploadPhoneLabel;
+
+  /// Label under the wide image in the side-by-side preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop'**
+  String get desktopUploadDesktopLabel;
+
+  /// Screen reader label for the phone preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone wallpaper'**
+  String get desktopUploadPhoneSemantic;
+
+  /// Screen reader label for the wide preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version, {width} × {height}'**
+  String desktopUploadDesktopSemantic(int width, int height);
+
+  /// Size line under the wide preview, for example 2560 × 1600, 16:10.
+  ///
+  /// In en, this message translates to:
+  /// **'{width} × {height}, {ratio}'**
+  String desktopUploadSize(int width, int height, String ratio);
+
+  /// Button that opens the photo picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose image'**
+  String get desktopUploadChooseImage;
+
+  /// Button that opens the photo picker again after a pick.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another image'**
+  String get desktopUploadChooseAnother;
+
+  /// Primary button that sends the desktop version for review.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit for review'**
+  String get desktopUploadSubmit;
+
+  /// Toast after a successful submit.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version sent for review'**
+  String get desktopUploadSubmitted;
+
+  /// Error when the picked image is portrait or square.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a landscape image. It must be wider than it is tall.'**
+  String get desktopUploadErrorPortrait;
+
+  /// Error when the aspect ratio is not 16:10 or 16:9.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an image in 16:10 or 16:9. Crop it on your computer, then try again.'**
+  String get desktopUploadErrorAspect;
+
+  /// Error when the image is too small.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an image at least 1920 px wide. This one is {width} px wide.'**
+  String desktopUploadErrorTooSmall(int width);
+
+  /// Error when the image cannot be decoded.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open this image. Choose another one.'**
+  String get desktopUploadErrorUnreadable;
+
+  /// Error when the file is over the size limit.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is too large. Choose an image under 15 MB.'**
+  String get desktopUploadErrorTooLarge;
+
+  /// Error when a submission is already pending.
+  ///
+  /// In en, this message translates to:
+  /// **'A desktop version of this wallpaper is already in review.'**
+  String get desktopUploadErrorPending;
+
+  /// Error when the wall is not the caller's or not approved.
+  ///
+  /// In en, this message translates to:
+  /// **'You can add a desktop version only to your own approved wallpapers.'**
+  String get desktopUploadErrorNotAllowed;
+
+  /// Error when the daily upload limit is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily upload limit reached. Try again tomorrow.'**
+  String get desktopUploadErrorLimit;
+
+  /// Generic submit failure.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to submit. Check your connection and try again.'**
+  String get desktopUploadErrorFailed;
 
   /// iPad button. Saves the wide desktop version to Photos.
   ///

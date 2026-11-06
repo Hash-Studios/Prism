@@ -68,10 +68,15 @@ class AdminReviewRoute extends PageRouteInfo<AdminReviewRouteArgs> {
   AdminReviewRoute({
     Key? key,
     AdminModerationRepository? repository,
+    DesktopSubmissionRepository? desktopRepository,
     List<PageRouteInfo>? children,
   }) : super(
          AdminReviewRoute.name,
-         args: AdminReviewRouteArgs(key: key, repository: repository),
+         args: AdminReviewRouteArgs(
+           key: key,
+           repository: repository,
+           desktopRepository: desktopRepository,
+         ),
          initialChildren: children,
        );
 
@@ -83,32 +88,45 @@ class AdminReviewRoute extends PageRouteInfo<AdminReviewRouteArgs> {
       final args = data.argsAs<AdminReviewRouteArgs>(
         orElse: () => const AdminReviewRouteArgs(),
       );
-      return AdminReviewScreen(key: args.key, repository: args.repository);
+      return AdminReviewScreen(
+        key: args.key,
+        repository: args.repository,
+        desktopRepository: args.desktopRepository,
+      );
     },
   );
 }
 
 class AdminReviewRouteArgs {
-  const AdminReviewRouteArgs({this.key, this.repository});
+  const AdminReviewRouteArgs({
+    this.key,
+    this.repository,
+    this.desktopRepository,
+  });
 
   final Key? key;
 
   final AdminModerationRepository? repository;
 
+  final DesktopSubmissionRepository? desktopRepository;
+
   @override
   String toString() {
-    return 'AdminReviewRouteArgs{key: $key, repository: $repository}';
+    return 'AdminReviewRouteArgs{key: $key, repository: $repository, desktopRepository: $desktopRepository}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! AdminReviewRouteArgs) return false;
-    return key == other.key && repository == other.repository;
+    return key == other.key &&
+        repository == other.repository &&
+        desktopRepository == other.desktopRepository;
   }
 
   @override
-  int get hashCode => key.hashCode ^ repository.hashCode;
+  int get hashCode =>
+      key.hashCode ^ repository.hashCode ^ desktopRepository.hashCode;
 }
 
 /// generated route for

@@ -3,6 +3,8 @@ export type NotificationCopy =
   | { kind: "creatorStatsWeekly"; week: string }
   | { kind: "challengeWinner"; theme: string }
   | { kind: "wallApprovedForArtist"; wallTitle: string }
+  | { kind: "desktopVersionApproved"; wallTitle: string }
+  | { kind: "desktopVersionRejected"; wallTitle: string; reason: string }
   | { kind: "wallLiveForFollowers"; artistName: string; wallTitle: string }
   | { kind: "wallApprovedForAdmin"; wallTitle: string; artistName: string }
   | { kind: "wallRemixed"; remixerName: string; wallTitle: string }
@@ -100,6 +102,22 @@ export function renderNotificationCopy(
       body: copy.wallTitle ?
         `"${copy.wallTitle}" has been approved and is now visible to everyone.` :
         "Your wallpaper has been approved and is now visible to everyone.",
+    };
+  case "desktopVersionApproved":
+    return {
+      kind: copy.kind,
+      args: {wallTitle: copy.wallTitle},
+      title: "Your desktop version is live",
+      body: copy.wallTitle ?
+        `"${copy.wallTitle}" now has a desktop version.` :
+        "Your wallpaper now has a desktop version.",
+    };
+  case "desktopVersionRejected":
+    return {
+      kind: copy.kind,
+      args: {wallTitle: copy.wallTitle, reason: copy.reason},
+      title: "Desktop version not approved",
+      body: `Reason: ${copy.reason}`,
     };
   case "wallLiveForFollowers":
     return {
@@ -410,6 +428,8 @@ export function nativeNotificationLocalization(
   // Installed builds that advertise localization version 2 lack these resources, so they get the English copy until a
   // later localization version ships the notif_push_wall_commented_* keys.
   if (kind === "wallCommented") return null;
+  // Installed builds lack notif_push_desktop_version_* resources, so banners stay English and the inbox localizes.
+  if (kind === "desktopVersionApproved" || kind === "desktopVersionRejected") return null;
   // A shared folder owner can be on a build without notif_push_folder_activity_* keys, so this copy stays English.
   if (kind === "folderActivity") return null;
 

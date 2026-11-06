@@ -2467,6 +2467,46 @@
     }
   },
   "adminWalls": "Wallpaper",
+  "adminDesktop": "Desktop",
+  "@adminDesktop": {
+    "description": "Admin review tab for desktop versions."
+  },
+  "adminDesktopEmptyTitle": "Tidak ada versi desktop untuk ditinjau",
+  "@adminDesktopEmptyTitle": {
+    "description": "Admin empty state title."
+  },
+  "adminDesktopEmptyBody": "Versi desktop yang dikirim kreator akan tampil di sini.",
+  "@adminDesktopEmptyBody": {
+    "description": "Admin empty state body."
+  },
+  "adminDesktopLoadError": "Tidak dapat memuat versi desktop",
+  "@adminDesktopLoadError": {
+    "description": "Admin error state title."
+  },
+  "adminDesktopReplaces": "Menggantikan versi desktop yang sekarang",
+  "@adminDesktopReplaces": {
+    "description": "Admin card fact when the wall already has a desktop version."
+  },
+  "adminDesktopUploadSize": "Ukuran unggahan",
+  "@adminDesktopUploadSize": {
+    "description": "Admin card fact label for the uploaded image size."
+  },
+  "adminDesktopApproved": "Versi desktop disetujui",
+  "@adminDesktopApproved": {
+    "description": "Admin toast after approve."
+  },
+  "adminDesktopRejected": "Versi desktop ditolak",
+  "@adminDesktopRejected": {
+    "description": "Admin toast after reject."
+  },
+  "adminDesktopRejectTitle": "Tolak versi desktop",
+  "@adminDesktopRejectTitle": {
+    "description": "Title and confirm button of the reject sheet for a desktop version."
+  },
+  "adminDesktopWallUnavailable": "Wallpaper ini sudah tidak disetujui. Tolak versi desktop ini.",
+  "@adminDesktopWallUnavailable": {
+    "description": "Admin error when approve fails because the wall changed."
+  },
   "adminWriteCount": "{count, plural, one{{count} penulisan} other{{count} penulisan}}",
   "@adminWriteCount": {
     "placeholders": {
@@ -6534,6 +6574,36 @@
   },
   "notifPushWallApprovedArtistBodyUntitled": "Wallpaper Anda telah disetujui dan kini dapat dilihat semua orang.",
   "notifPushWallApprovedArtistTitle": "Wallpaper Anda kini tayang! 🎉",
+  "notifPushDesktopVersionApprovedTitle": "Versi desktop Anda sudah tayang",
+  "@notifPushDesktopVersionApprovedTitle": {
+    "description": "Notification title when an admin approves the creator's desktop version."
+  },
+  "notifPushDesktopVersionApprovedBody": "\"{wallTitle}\" kini punya versi desktop.",
+  "@notifPushDesktopVersionApprovedBody": {
+    "description": "Notification body.",
+    "placeholders": {
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushDesktopVersionApprovedBodyUntitled": "Wallpaper Anda kini punya versi desktop.",
+  "@notifPushDesktopVersionApprovedBodyUntitled": {
+    "description": "Notification body when the wall has no title."
+  },
+  "notifPushDesktopVersionRejectedTitle": "Versi desktop tidak disetujui",
+  "@notifPushDesktopVersionRejectedTitle": {
+    "description": "Notification title when an admin rejects the creator's desktop version."
+  },
+  "notifPushDesktopVersionRejectedBody": "Alasan: {reason}",
+  "@notifPushDesktopVersionRejectedBody": {
+    "description": "Notification body with the admin's reason.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "notifPushWallLiveFollowersBody": "\"{wallTitle}\" kini tayang di Prism.",
   "@notifPushWallLiveFollowersBody": {
     "placeholders": {
@@ -12463,6 +12533,134 @@
   "desktopVersionSetOnTablet": "Pasang versi desktop",
   "@desktopVersionSetOnTablet": {
     "description": "Tablet button. Sets the wide desktop version as the tablet wallpaper."
+  },
+  "desktopUploadAdd": "Tambahkan versi desktop",
+  "@desktopUploadAdd": {
+    "description": "Button on the creator's own approved wallpaper. Opens the screen to upload a wide version for computers."
+  },
+  "desktopUploadReplace": "Ganti versi desktop",
+  "@desktopUploadReplace": {
+    "description": "Same button when the wallpaper already has a desktop version."
+  },
+  "desktopUploadInReview": "Versi desktop sedang ditinjau",
+  "@desktopUploadInReview": {
+    "description": "Disabled button text while the creator's desktop version waits for review."
+  },
+  "desktopUploadTitle": "Tambahkan versi desktop",
+  "@desktopUploadTitle": {
+    "description": "Title of the upload screen."
+  },
+  "desktopUploadReplaceTitle": "Ganti versi desktop",
+  "@desktopUploadReplaceTitle": {
+    "description": "Title of the upload screen when a desktop version already exists."
+  },
+  "desktopUploadIntro": "Tambahkan versi lebar wallpaper ini untuk komputer. Versi ini tayang setelah ditinjau.",
+  "@desktopUploadIntro": {
+    "description": "Intro text on the upload screen."
+  },
+  "desktopUploadReplaceNote": "Versi desktop yang sekarang tetap tayang sampai versi baru disetujui.",
+  "@desktopUploadReplaceNote": {
+    "description": "Note on the upload screen when the creator replaces a desktop version."
+  },
+  "desktopUploadRequirements": "Gunakan gambar lanskap dengan rasio 16:10 atau 16:9, lebar minimal 1920 px.",
+  "@desktopUploadRequirements": {
+    "description": "Requirements shown before the creator picks an image."
+  },
+  "desktopUploadPhoneLabel": "Ponsel",
+  "@desktopUploadPhoneLabel": {
+    "description": "Label under the phone wallpaper in the side-by-side preview."
+  },
+  "desktopUploadDesktopLabel": "Desktop",
+  "@desktopUploadDesktopLabel": {
+    "description": "Label under the wide image in the side-by-side preview."
+  },
+  "desktopUploadPhoneSemantic": "Wallpaper ponsel",
+  "@desktopUploadPhoneSemantic": {
+    "description": "Screen reader label for the phone preview."
+  },
+  "desktopUploadDesktopSemantic": "Versi desktop, {width} × {height}",
+  "@desktopUploadDesktopSemantic": {
+    "description": "Screen reader label for the wide preview.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopUploadSize": "{width} × {height}, {ratio}",
+  "@desktopUploadSize": {
+    "description": "Size line under the wide preview, for example 2560 × 1600, 16:10.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      },
+      "ratio": {
+        "type": "String"
+      }
+    }
+  },
+  "desktopUploadChooseImage": "Pilih gambar",
+  "@desktopUploadChooseImage": {
+    "description": "Button that opens the photo picker."
+  },
+  "desktopUploadChooseAnother": "Pilih gambar lain",
+  "@desktopUploadChooseAnother": {
+    "description": "Button that opens the photo picker again after a pick."
+  },
+  "desktopUploadSubmit": "Kirim untuk ditinjau",
+  "@desktopUploadSubmit": {
+    "description": "Primary button that sends the desktop version for review."
+  },
+  "desktopUploadSubmitted": "Versi desktop dikirim untuk ditinjau",
+  "@desktopUploadSubmitted": {
+    "description": "Toast after a successful submit."
+  },
+  "desktopUploadErrorPortrait": "Pilih gambar lanskap. Lebarnya harus lebih besar dari tingginya.",
+  "@desktopUploadErrorPortrait": {
+    "description": "Error when the picked image is portrait or square."
+  },
+  "desktopUploadErrorAspect": "Pilih gambar dengan rasio 16:10 atau 16:9. Potong gambar di komputer Anda, lalu coba lagi.",
+  "@desktopUploadErrorAspect": {
+    "description": "Error when the aspect ratio is not 16:10 or 16:9."
+  },
+  "desktopUploadErrorTooSmall": "Pilih gambar dengan lebar minimal 1920 px. Gambar ini lebarnya {width} px.",
+  "@desktopUploadErrorTooSmall": {
+    "description": "Error when the image is too small.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopUploadErrorUnreadable": "Gambar ini tidak dapat dibuka. Pilih gambar lain.",
+  "@desktopUploadErrorUnreadable": {
+    "description": "Error when the image cannot be decoded."
+  },
+  "desktopUploadErrorTooLarge": "File ini terlalu besar. Pilih gambar di bawah 15 MB.",
+  "@desktopUploadErrorTooLarge": {
+    "description": "Error when the file is over the size limit."
+  },
+  "desktopUploadErrorPending": "Versi desktop dari wallpaper ini sudah dalam peninjauan.",
+  "@desktopUploadErrorPending": {
+    "description": "Error when a submission is already pending."
+  },
+  "desktopUploadErrorNotAllowed": "Anda hanya dapat menambahkan versi desktop ke wallpaper Anda sendiri yang sudah disetujui.",
+  "@desktopUploadErrorNotAllowed": {
+    "description": "Error when the wall is not the caller's or not approved."
+  },
+  "desktopUploadErrorLimit": "Batas unggahan harian tercapai. Coba lagi besok.",
+  "@desktopUploadErrorLimit": {
+    "description": "Error when the daily upload limit is reached."
+  },
+  "desktopUploadErrorFailed": "Tidak dapat mengirim. Periksa koneksi Anda lalu coba lagi.",
+  "@desktopUploadErrorFailed": {
+    "description": "Generic submit failure."
   },
   "desktopVersionSaveOnTablet": "Simpan versi desktop ke Foto",
   "@desktopVersionSaveOnTablet": {

@@ -2365,6 +2365,46 @@
     }
   },
   "adminWalls": "वॉलपेपर",
+  "adminDesktop": "डेस्कटॉप",
+  "@adminDesktop": {
+    "description": "Admin review tab for desktop versions."
+  },
+  "adminDesktopEmptyTitle": "समीक्षा के लिए कोई डेस्कटॉप वर्शन नहीं है",
+  "@adminDesktopEmptyTitle": {
+    "description": "Admin empty state title."
+  },
+  "adminDesktopEmptyBody": "क्रिएटर जो डेस्कटॉप वर्शन भेजते हैं, वे यहाँ दिखेंगे।",
+  "@adminDesktopEmptyBody": {
+    "description": "Admin empty state body."
+  },
+  "adminDesktopLoadError": "डेस्कटॉप वर्शन लोड नहीं हो सके",
+  "@adminDesktopLoadError": {
+    "description": "Admin error state title."
+  },
+  "adminDesktopReplaces": "मौजूदा डेस्कटॉप वर्शन की जगह लेगा",
+  "@adminDesktopReplaces": {
+    "description": "Admin card fact when the wall already has a desktop version."
+  },
+  "adminDesktopUploadSize": "अपलोड का आकार",
+  "@adminDesktopUploadSize": {
+    "description": "Admin card fact label for the uploaded image size."
+  },
+  "adminDesktopApproved": "डेस्कटॉप वर्शन मंज़ूर किया गया",
+  "@adminDesktopApproved": {
+    "description": "Admin toast after approve."
+  },
+  "adminDesktopRejected": "डेस्कटॉप वर्शन अस्वीकार किया गया",
+  "@adminDesktopRejected": {
+    "description": "Admin toast after reject."
+  },
+  "adminDesktopRejectTitle": "डेस्कटॉप वर्शन अस्वीकार करें",
+  "@adminDesktopRejectTitle": {
+    "description": "Title and confirm button of the reject sheet for a desktop version."
+  },
+  "adminDesktopWallUnavailable": "यह वॉलपेपर अब मंज़ूर नहीं है। इस डेस्कटॉप वर्शन को अस्वीकार करें।",
+  "@adminDesktopWallUnavailable": {
+    "description": "Admin error when approve fails because the wall changed."
+  },
   "adminWriteCount": "{count, plural, one{{count} बार लिखा} other{{count} बार लिखा}}",
   "@adminWriteCount": {
     "placeholders": {
@@ -6418,6 +6458,36 @@
   },
   "notifPushWallApprovedArtistBodyUntitled": "आपका वॉलपेपर मंज़ूर हो गया है और अब सभी को दिख रहा है।",
   "notifPushWallApprovedArtistTitle": "आपका वॉलपेपर लाइव है! 🎉",
+  "notifPushDesktopVersionApprovedTitle": "आपका डेस्कटॉप वर्शन लाइव है",
+  "@notifPushDesktopVersionApprovedTitle": {
+    "description": "Notification title when an admin approves the creator's desktop version."
+  },
+  "notifPushDesktopVersionApprovedBody": "\"{wallTitle}\" अब एक डेस्कटॉप वर्शन के साथ उपलब्ध है।",
+  "@notifPushDesktopVersionApprovedBody": {
+    "description": "Notification body.",
+    "placeholders": {
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushDesktopVersionApprovedBodyUntitled": "आपके वॉलपेपर का अब एक डेस्कटॉप वर्शन है।",
+  "@notifPushDesktopVersionApprovedBodyUntitled": {
+    "description": "Notification body when the wall has no title."
+  },
+  "notifPushDesktopVersionRejectedTitle": "डेस्कटॉप वर्शन मंज़ूर नहीं हुआ",
+  "@notifPushDesktopVersionRejectedTitle": {
+    "description": "Notification title when an admin rejects the creator's desktop version."
+  },
+  "notifPushDesktopVersionRejectedBody": "कारण: {reason}",
+  "@notifPushDesktopVersionRejectedBody": {
+    "description": "Notification body with the admin's reason.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "notifPushWallLiveFollowersBody": "\"{wallTitle}\" अब Prism पर लाइव है।",
   "@notifPushWallLiveFollowersBody": {
     "placeholders": {
@@ -12893,6 +12963,134 @@
   "desktopVersionSetOnTablet": "डेस्कटॉप वर्शन लगाएँ",
   "@desktopVersionSetOnTablet": {
     "description": "Tablet button. Sets the wide desktop version as the tablet wallpaper."
+  },
+  "desktopUploadAdd": "डेस्कटॉप वर्शन जोड़ें",
+  "@desktopUploadAdd": {
+    "description": "Button on the creator's own approved wallpaper. Opens the screen to upload a wide version for computers."
+  },
+  "desktopUploadReplace": "डेस्कटॉप वर्शन बदलें",
+  "@desktopUploadReplace": {
+    "description": "Same button when the wallpaper already has a desktop version."
+  },
+  "desktopUploadInReview": "डेस्कटॉप वर्शन समीक्षा में है",
+  "@desktopUploadInReview": {
+    "description": "Disabled button text while the creator's desktop version waits for review."
+  },
+  "desktopUploadTitle": "डेस्कटॉप वर्शन जोड़ें",
+  "@desktopUploadTitle": {
+    "description": "Title of the upload screen."
+  },
+  "desktopUploadReplaceTitle": "डेस्कटॉप वर्शन बदलें",
+  "@desktopUploadReplaceTitle": {
+    "description": "Title of the upload screen when a desktop version already exists."
+  },
+  "desktopUploadIntro": "इस वॉलपेपर का कंप्यूटर के लिए चौड़ा वर्शन जोड़ें। समीक्षा के बाद यह लाइव होगा।",
+  "@desktopUploadIntro": {
+    "description": "Intro text on the upload screen."
+  },
+  "desktopUploadReplaceNote": "नया वर्शन मंज़ूर होने तक मौजूदा डेस्कटॉप वर्शन लाइव रहेगा।",
+  "@desktopUploadReplaceNote": {
+    "description": "Note on the upload screen when the creator replaces a desktop version."
+  },
+  "desktopUploadRequirements": "16:10 या 16:9 अनुपात की लैंडस्केप इमेज लें, जो कम से कम 1920 px चौड़ी हो।",
+  "@desktopUploadRequirements": {
+    "description": "Requirements shown before the creator picks an image."
+  },
+  "desktopUploadPhoneLabel": "फ़ोन",
+  "@desktopUploadPhoneLabel": {
+    "description": "Label under the phone wallpaper in the side-by-side preview."
+  },
+  "desktopUploadDesktopLabel": "डेस्कटॉप",
+  "@desktopUploadDesktopLabel": {
+    "description": "Label under the wide image in the side-by-side preview."
+  },
+  "desktopUploadPhoneSemantic": "फ़ोन वॉलपेपर",
+  "@desktopUploadPhoneSemantic": {
+    "description": "Screen reader label for the phone preview."
+  },
+  "desktopUploadDesktopSemantic": "डेस्कटॉप वर्शन, {width} × {height}",
+  "@desktopUploadDesktopSemantic": {
+    "description": "Screen reader label for the wide preview.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopUploadSize": "{width} × {height}, {ratio}",
+  "@desktopUploadSize": {
+    "description": "Size line under the wide preview, for example 2560 × 1600, 16:10.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      },
+      "ratio": {
+        "type": "String"
+      }
+    }
+  },
+  "desktopUploadChooseImage": "इमेज चुनें",
+  "@desktopUploadChooseImage": {
+    "description": "Button that opens the photo picker."
+  },
+  "desktopUploadChooseAnother": "दूसरी इमेज चुनें",
+  "@desktopUploadChooseAnother": {
+    "description": "Button that opens the photo picker again after a pick."
+  },
+  "desktopUploadSubmit": "समीक्षा के लिए भेजें",
+  "@desktopUploadSubmit": {
+    "description": "Primary button that sends the desktop version for review."
+  },
+  "desktopUploadSubmitted": "डेस्कटॉप वर्शन समीक्षा के लिए भेजा गया",
+  "@desktopUploadSubmitted": {
+    "description": "Toast after a successful submit."
+  },
+  "desktopUploadErrorPortrait": "लैंडस्केप इमेज चुनें। इमेज की चौड़ाई उसकी ऊंचाई से ज़्यादा होनी चाहिए।",
+  "@desktopUploadErrorPortrait": {
+    "description": "Error when the picked image is portrait or square."
+  },
+  "desktopUploadErrorAspect": "16:10 या 16:9 अनुपात की इमेज चुनें। इसे अपने कंप्यूटर पर क्रॉप करके फिर से कोशिश करें।",
+  "@desktopUploadErrorAspect": {
+    "description": "Error when the aspect ratio is not 16:10 or 16:9."
+  },
+  "desktopUploadErrorTooSmall": "कम से कम 1920 px चौड़ी इमेज चुनें। यह {width} px चौड़ी है।",
+  "@desktopUploadErrorTooSmall": {
+    "description": "Error when the image is too small.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopUploadErrorUnreadable": "यह इमेज नहीं खुल सकी। कोई दूसरी इमेज चुनें।",
+  "@desktopUploadErrorUnreadable": {
+    "description": "Error when the image cannot be decoded."
+  },
+  "desktopUploadErrorTooLarge": "यह फ़ाइल बहुत बड़ी है। 15 MB से छोटी इमेज चुनें।",
+  "@desktopUploadErrorTooLarge": {
+    "description": "Error when the file is over the size limit."
+  },
+  "desktopUploadErrorPending": "इस वॉलपेपर का डेस्कटॉप वर्शन पहले से समीक्षा में है।",
+  "@desktopUploadErrorPending": {
+    "description": "Error when a submission is already pending."
+  },
+  "desktopUploadErrorNotAllowed": "आप केवल अपने मंज़ूर किए गए वॉलपेपर के लिए डेस्कटॉप वर्शन जोड़ सकते हैं।",
+  "@desktopUploadErrorNotAllowed": {
+    "description": "Error when the wall is not the caller's or not approved."
+  },
+  "desktopUploadErrorLimit": "रोज़ की अपलोड सीमा पूरी हो गई है। कल फिर से कोशिश करें।",
+  "@desktopUploadErrorLimit": {
+    "description": "Error when the daily upload limit is reached."
+  },
+  "desktopUploadErrorFailed": "भेजा नहीं जा सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।",
+  "@desktopUploadErrorFailed": {
+    "description": "Generic submit failure."
   },
   "desktopVersionSaveOnTablet": "डेस्कटॉप वर्शन फ़ोटो में सेव करें",
   "@desktopVersionSaveOnTablet": {

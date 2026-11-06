@@ -13,6 +13,8 @@ import {removeWallRequestsForAccount, REQUEST_RATE_DAILY, VOTE_RATE_DAILY} from 
 import {WRAPPED_COLLECTION} from "./wrapped";
 import {FOLLOWED_FOLDERS, removeAllFolderFollows, removeOwnerPublicFolders} from "./publicFolders";
 import {COMMENT_RATE, removeCommentsForAccount} from "./comments";
+import {removeDesktopSubmissionsForAccount} from "./desktopSubmissions";
+import {r2Secrets} from "./r2Storage";
 
 const USERS = "usersv2";
 const COIN_TRANSACTIONS = "coinTransactions";
@@ -97,7 +99,7 @@ async function releaseUsernames(uid: string): Promise<void> {
  * draft setups is read before the profile is anonymized, and any failed delete throws before the profile is
  * anonymized or the auth user is removed. A retry therefore finishes what an earlier call left.
  */
-export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeoutSeconds: 300}, async (request: CallableRequest<unknown>) => {
+export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeoutSeconds: 300, secrets: r2Secrets}, async (request: CallableRequest<unknown>) => {
   const callerUid = request.auth?.uid;
   if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to delete your account.");
 
@@ -120,6 +122,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   await removeAllFolderFollows(callerUid);
   await removeAllFolderMemberships(callerUid);
   await removeCommentsForAccount(callerUid);
+  await removeDesktopSubmissionsForAccount(callerUid);
 
   // 1. Favourite/private subcollections — same set the client wipes in delete_account_service.dart.
   await db.recursiveDelete(userRef.collection("images"));

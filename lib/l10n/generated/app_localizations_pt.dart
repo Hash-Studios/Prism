@@ -2153,6 +2153,37 @@ class AppLocalizationsPt extends AppLocalizations {
   String get adminWalls => 'Papéis de parede';
 
   @override
+  String get adminDesktop => 'Computador';
+
+  @override
+  String get adminDesktopEmptyTitle => 'Nenhuma versão para computador para analisar';
+
+  @override
+  String get adminDesktopEmptyBody => 'As versões para computador enviadas pelos criadores aparecem aqui.';
+
+  @override
+  String get adminDesktopLoadError => 'Não foi possível carregar as versões para computador';
+
+  @override
+  String get adminDesktopReplaces => 'Substitui a versão para computador atual';
+
+  @override
+  String get adminDesktopUploadSize => 'Tamanho do envio';
+
+  @override
+  String get adminDesktopApproved => 'Versão para computador aprovada';
+
+  @override
+  String get adminDesktopRejected => 'Versão para computador rejeitada';
+
+  @override
+  String get adminDesktopRejectTitle => 'Rejeitar versão para computador';
+
+  @override
+  String get adminDesktopWallUnavailable =>
+      'Este papel de parede não está mais aprovado. Rejeite esta versão para computador.';
+
+  @override
   String adminWriteCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7629,6 +7660,25 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get notifPushWallApprovedArtistTitle => 'Seu papel de parede está ativo! 🎉';
+
+  @override
+  String get notifPushDesktopVersionApprovedTitle => 'Sua versão para computador está ativa';
+
+  @override
+  String notifPushDesktopVersionApprovedBody(String wallTitle) {
+    return '\"$wallTitle\" agora tem uma versão para computador.';
+  }
+
+  @override
+  String get notifPushDesktopVersionApprovedBodyUntitled => 'Seu papel de parede agora tem uma versão para computador.';
+
+  @override
+  String get notifPushDesktopVersionRejectedTitle => 'Versão para computador não aprovada';
+
+  @override
+  String notifPushDesktopVersionRejectedBody(String reason) {
+    return 'Motivo: $reason';
+  }
 
   @override
   String notifPushWallLiveFollowersBody(String wallTitle) {
@@ -13325,6 +13375,95 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get desktopVersionSetOnTablet => 'Definir versão para computador';
+
+  @override
+  String get desktopUploadAdd => 'Adicionar versão para computador';
+
+  @override
+  String get desktopUploadReplace => 'Substituir versão para computador';
+
+  @override
+  String get desktopUploadInReview => 'Versão para computador em análise';
+
+  @override
+  String get desktopUploadTitle => 'Adicionar versão para computador';
+
+  @override
+  String get desktopUploadReplaceTitle => 'Substituir versão para computador';
+
+  @override
+  String get desktopUploadIntro =>
+      'Adicione uma versão larga deste papel de parede para computadores. Ela fica disponível depois da análise.';
+
+  @override
+  String get desktopUploadReplaceNote =>
+      'A versão para computador atual continua disponível até que a nova seja aprovada.';
+
+  @override
+  String get desktopUploadRequirements =>
+      'Use uma imagem na horizontal em 16:10 ou 16:9, com pelo menos 1920 px de largura.';
+
+  @override
+  String get desktopUploadPhoneLabel => 'Celular';
+
+  @override
+  String get desktopUploadDesktopLabel => 'Computador';
+
+  @override
+  String get desktopUploadPhoneSemantic => 'Papel de parede do celular';
+
+  @override
+  String desktopUploadDesktopSemantic(int width, int height) {
+    return 'Versão para computador, $width × $height';
+  }
+
+  @override
+  String desktopUploadSize(int width, int height, String ratio) {
+    return '$width × $height, $ratio';
+  }
+
+  @override
+  String get desktopUploadChooseImage => 'Escolher imagem';
+
+  @override
+  String get desktopUploadChooseAnother => 'Escolher outra imagem';
+
+  @override
+  String get desktopUploadSubmit => 'Enviar para análise';
+
+  @override
+  String get desktopUploadSubmitted => 'Versão para computador enviada para análise';
+
+  @override
+  String get desktopUploadErrorPortrait => 'Escolha uma imagem na horizontal. Ela precisa ser mais larga do que alta.';
+
+  @override
+  String get desktopUploadErrorAspect =>
+      'Escolha uma imagem em 16:10 ou 16:9. Recorte no seu computador e tente novamente.';
+
+  @override
+  String desktopUploadErrorTooSmall(int width) {
+    return 'Escolha uma imagem com pelo menos 1920 px de largura. Esta tem $width px de largura.';
+  }
+
+  @override
+  String get desktopUploadErrorUnreadable => 'Não foi possível abrir esta imagem. Escolha outra.';
+
+  @override
+  String get desktopUploadErrorTooLarge => 'Este arquivo é grande demais. Escolha uma imagem com menos de 15 MB.';
+
+  @override
+  String get desktopUploadErrorPending => 'Uma versão para computador deste papel de parede já está em análise.';
+
+  @override
+  String get desktopUploadErrorNotAllowed =>
+      'Você só pode adicionar uma versão para computador aos seus próprios papéis de parede aprovados.';
+
+  @override
+  String get desktopUploadErrorLimit => 'Limite diário de envios atingido. Tente de novo amanhã.';
+
+  @override
+  String get desktopUploadErrorFailed => 'Não foi possível enviar. Verifique sua conexão e tente novamente.';
 
   @override
   String get desktopVersionSaveOnTablet => 'Salvar versão para computador em Fotos';
@@ -16994,6 +17133,37 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get adminWalls => 'Papéis de parede';
 
   @override
+  String get adminDesktop => 'Computador';
+
+  @override
+  String get adminDesktopEmptyTitle => 'Nenhuma versão para computador para analisar';
+
+  @override
+  String get adminDesktopEmptyBody => 'As versões para computador enviadas pelos criadores aparecem aqui.';
+
+  @override
+  String get adminDesktopLoadError => 'Não foi possível carregar as versões para computador';
+
+  @override
+  String get adminDesktopReplaces => 'Substitui a versão para computador atual';
+
+  @override
+  String get adminDesktopUploadSize => 'Tamanho do envio';
+
+  @override
+  String get adminDesktopApproved => 'Versão para computador aprovada';
+
+  @override
+  String get adminDesktopRejected => 'Versão para computador rejeitada';
+
+  @override
+  String get adminDesktopRejectTitle => 'Rejeitar versão para computador';
+
+  @override
+  String get adminDesktopWallUnavailable =>
+      'Este papel de parede não está mais aprovado. Rejeite esta versão para computador.';
+
+  @override
   String adminWriteCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -22470,6 +22640,25 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get notifPushWallApprovedArtistTitle => 'Seu papel de parede está ativo! 🎉';
+
+  @override
+  String get notifPushDesktopVersionApprovedTitle => 'Sua versão para computador está ativa';
+
+  @override
+  String notifPushDesktopVersionApprovedBody(String wallTitle) {
+    return '\"$wallTitle\" agora tem uma versão para computador.';
+  }
+
+  @override
+  String get notifPushDesktopVersionApprovedBodyUntitled => 'Seu papel de parede agora tem uma versão para computador.';
+
+  @override
+  String get notifPushDesktopVersionRejectedTitle => 'Versão para computador não aprovada';
+
+  @override
+  String notifPushDesktopVersionRejectedBody(String reason) {
+    return 'Motivo: $reason';
+  }
 
   @override
   String notifPushWallLiveFollowersBody(String wallTitle) {
@@ -28166,6 +28355,95 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get desktopVersionSetOnTablet => 'Definir versão para computador';
+
+  @override
+  String get desktopUploadAdd => 'Adicionar versão para computador';
+
+  @override
+  String get desktopUploadReplace => 'Substituir versão para computador';
+
+  @override
+  String get desktopUploadInReview => 'Versão para computador em análise';
+
+  @override
+  String get desktopUploadTitle => 'Adicionar versão para computador';
+
+  @override
+  String get desktopUploadReplaceTitle => 'Substituir versão para computador';
+
+  @override
+  String get desktopUploadIntro =>
+      'Adicione uma versão larga deste papel de parede para computadores. Ela fica disponível depois da análise.';
+
+  @override
+  String get desktopUploadReplaceNote =>
+      'A versão para computador atual continua disponível até que a nova seja aprovada.';
+
+  @override
+  String get desktopUploadRequirements =>
+      'Use uma imagem na horizontal em 16:10 ou 16:9, com pelo menos 1920 px de largura.';
+
+  @override
+  String get desktopUploadPhoneLabel => 'Celular';
+
+  @override
+  String get desktopUploadDesktopLabel => 'Computador';
+
+  @override
+  String get desktopUploadPhoneSemantic => 'Papel de parede do celular';
+
+  @override
+  String desktopUploadDesktopSemantic(int width, int height) {
+    return 'Versão para computador, $width × $height';
+  }
+
+  @override
+  String desktopUploadSize(int width, int height, String ratio) {
+    return '$width × $height, $ratio';
+  }
+
+  @override
+  String get desktopUploadChooseImage => 'Escolher imagem';
+
+  @override
+  String get desktopUploadChooseAnother => 'Escolher outra imagem';
+
+  @override
+  String get desktopUploadSubmit => 'Enviar para análise';
+
+  @override
+  String get desktopUploadSubmitted => 'Versão para computador enviada para análise';
+
+  @override
+  String get desktopUploadErrorPortrait => 'Escolha uma imagem na horizontal. Ela precisa ser mais larga do que alta.';
+
+  @override
+  String get desktopUploadErrorAspect =>
+      'Escolha uma imagem em 16:10 ou 16:9. Recorte no seu computador e tente novamente.';
+
+  @override
+  String desktopUploadErrorTooSmall(int width) {
+    return 'Escolha uma imagem com pelo menos 1920 px de largura. Esta tem $width px de largura.';
+  }
+
+  @override
+  String get desktopUploadErrorUnreadable => 'Não foi possível abrir esta imagem. Escolha outra.';
+
+  @override
+  String get desktopUploadErrorTooLarge => 'Este arquivo é grande demais. Escolha uma imagem com menos de 15 MB.';
+
+  @override
+  String get desktopUploadErrorPending => 'Uma versão para computador deste papel de parede já está em análise.';
+
+  @override
+  String get desktopUploadErrorNotAllowed =>
+      'Você só pode adicionar uma versão para computador aos seus próprios papéis de parede aprovados.';
+
+  @override
+  String get desktopUploadErrorLimit => 'Limite diário de envios atingido. Tente de novo amanhã.';
+
+  @override
+  String get desktopUploadErrorFailed => 'Não foi possível enviar. Verifique sua conexão e tente novamente.';
 
   @override
   String get desktopVersionSaveOnTablet => 'Salvar versão para computador em Fotos';

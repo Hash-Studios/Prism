@@ -291,4 +291,56 @@ void main() {
       'Love the colours',
     );
   });
+
+  test('a desktop version approval names the wall', () {
+    expect(
+      localizedNotificationCopyData(
+        'desktopVersionApproved',
+        const <String, Object?>{'wallTitle': 'Neon rain'},
+        fallbackTitle: '',
+        fallbackBody: '',
+        l10n: l10n,
+      ),
+      (title: 'Your desktop version is live', body: '"Neon rain" now has a desktop version.'),
+    );
+  });
+
+  test('a desktop version approval with a blank wall title uses the untitled copy', () {
+    expect(
+      localizedNotificationCopyData(
+        'desktopVersionApproved',
+        const <String, Object?>{'wallTitle': '   '},
+        fallbackTitle: '',
+        fallbackBody: '',
+        l10n: l10n,
+      ),
+      (title: 'Your desktop version is live', body: 'Your wallpaper now has a desktop version.'),
+    );
+  });
+
+  test('a desktop version rejection shows the admin reason', () {
+    expect(
+      localizedNotificationCopyData(
+        'desktopVersionRejected',
+        const <String, Object?>{'wallTitle': 'Neon rain', 'reason': 'Image is blurry'},
+        fallbackTitle: '',
+        fallbackBody: 'Stored body',
+        l10n: l10n,
+      ),
+      (title: 'Desktop version not approved', body: 'Reason: Image is blurry'),
+    );
+  });
+
+  test('a desktop version rejection with a blank reason keeps the fallback body', () {
+    expect(
+      localizedNotificationCopyData(
+        'desktopVersionRejected',
+        const <String, Object?>{'reason': '  '},
+        fallbackTitle: '',
+        fallbackBody: 'Stored body',
+        l10n: l10n,
+      ),
+      (title: 'Desktop version not approved', body: 'Stored body'),
+    );
+  });
 }

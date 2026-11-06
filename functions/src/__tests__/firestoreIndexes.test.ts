@@ -235,3 +235,9 @@ test("wall comments have a collection group index on authorUid for account delet
   assert.deepEqual(override.indexes.map((i) => [i.order, i.queryScope]),
     [["ASCENDING", "COLLECTION"], ["ASCENDING", "COLLECTION_GROUP"]]);
 });
+
+test("desktop submissions have the admin queue index: state, newest first", () => {
+  const index = config.indexes.find((i) => i.collectionGroup === "desktopSubmissions");
+  assert.ok(index);
+  assert.deepEqual(index.fields.map((f) => [f.fieldPath, f.order]), [["state", "ASCENDING"], ["createdAt", "DESCENDING"]]);
+});

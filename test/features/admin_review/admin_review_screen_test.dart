@@ -9,7 +9,9 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/views/pages/admin_review_screen.dart';
+import 'package:Prism/features/admin_review/views/widgets/desktop_submission_card.dart';
 import 'package:Prism/features/admin_review/views/widgets/moderation_bits.dart';
+import 'package:Prism/features/desktop_submission/desktop_submission.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +19,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_firestore_client.dart';
+import 'fake_desktop_submissions.dart';
 
 class _FakeAdminReviewRepository extends AdminModerationRepository {
   _FakeAdminReviewRepository()
@@ -138,7 +141,9 @@ void main() {
   );
 
   Future<void> pumpReviewScreen(WidgetTester tester, _FakeAdminReviewRepository repository) async {
-    await tester.pumpWidget(app(AdminReviewScreen(repository: repository)));
+    await tester.pumpWidget(
+      app(AdminReviewScreen(repository: repository, desktopRepository: FakeDesktopSubmissionRepository())),
+    );
     await tester.pumpAndSettle();
   }
 
@@ -164,11 +169,32 @@ void main() {
     app_state.prismUser = originalUser;
   });
 
+  testWidgets('the Desktop tab counts queued desktop versions and opens their card', (WidgetTester tester) async {
+    final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository();
+    await tester.pumpWidget(
+      app(
+        AdminReviewScreen(
+          repository: repository,
+          desktopRepository: FakeDesktopSubmissionRepository(submissions: <DesktopSubmission>[desktopSubmission()]),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Desktop (1)'), findsOneWidget);
+    await tester.tap(find.text('Desktop (1)'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DesktopSubmissionCard), findsOneWidget);
+  });
+
   testWidgets('shows a skeleton while the pending list loads', (WidgetTester tester) async {
     final StreamController<List<FirestoreDocument>> walls = StreamController<List<FirestoreDocument>>.broadcast();
     addTearDown(walls.close);
     final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()..wallsStream = walls.stream;
-    await tester.pumpWidget(app(AdminReviewScreen(repository: repository)));
+    await tester.pumpWidget(
+      app(AdminReviewScreen(repository: repository, desktopRepository: FakeDesktopSubmissionRepository())),
+    );
     await tester.pump();
 
     expect(find.byType(PrismSkeleton), findsOneWidget);
@@ -218,7 +244,9 @@ void main() {
         retryWalls.stream,
       ];
 
-    await tester.pumpWidget(app(AdminReviewScreen(repository: repository)));
+    await tester.pumpWidget(
+      app(AdminReviewScreen(repository: repository, desktopRepository: FakeDesktopSubmissionRepository())),
+    );
     firstWalls.add(const <FirestoreDocument>[requestWall]);
     await tester.pump();
     await tester.pumpAndSettle();
@@ -253,7 +281,9 @@ void main() {
       ..requestTexts['r1'] = 'lofi capybara astronaut'
       ..wallsStream = walls.stream;
 
-    await tester.pumpWidget(app(AdminReviewScreen(repository: repository)));
+    await tester.pumpWidget(
+      app(AdminReviewScreen(repository: repository, desktopRepository: FakeDesktopSubmissionRepository())),
+    );
     walls.add(const <FirestoreDocument>[requestWall]);
     await tester.pumpAndSettle();
     expect(find.bySemanticsLabel('Fills request: Unknown'), findsOneWidget);
@@ -282,7 +312,9 @@ void main() {
       ..requestTexts['r1'] = 'lofi capybara astronaut'
       ..wallsStream = walls.stream;
 
-    await tester.pumpWidget(app(AdminReviewScreen(repository: repository)));
+    await tester.pumpWidget(
+      app(AdminReviewScreen(repository: repository, desktopRepository: FakeDesktopSubmissionRepository())),
+    );
     walls.add(const <FirestoreDocument>[requestWall]);
     await tester.pumpAndSettle();
     expect(find.bySemanticsLabel('Fills request: lofi capybara astronaut'), findsOneWidget);
@@ -314,7 +346,9 @@ void main() {
       ..requestTextCompleters['r2'] = newRequest
       ..wallsStream = walls.stream;
 
-    await tester.pumpWidget(app(AdminReviewScreen(repository: repository)));
+    await tester.pumpWidget(
+      app(AdminReviewScreen(repository: repository, desktopRepository: FakeDesktopSubmissionRepository())),
+    );
     walls.add(const <FirestoreDocument>[oldWall]);
     await tester.pump();
     walls.add(const <FirestoreDocument>[newWall]);
@@ -450,7 +484,7 @@ void main() {
       ];
     await tester.pumpWidget(
       app(
-        AdminReviewScreen(repository: repository),
+        AdminReviewScreen(repository: repository, desktopRepository: FakeDesktopSubmissionRepository()),
         media: const MediaQueryData(size: Size(320, 800), textScaler: TextScaler.linear(2)),
       ),
     );
@@ -468,7 +502,7 @@ void main() {
     final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository();
     await tester.pumpWidget(
       app(
-        AdminReviewScreen(repository: repository),
+        AdminReviewScreen(repository: repository, desktopRepository: FakeDesktopSubmissionRepository()),
         media: const MediaQueryData(size: Size(320, 800), textScaler: TextScaler.linear(2)),
       ),
     );
@@ -495,7 +529,7 @@ void main() {
       ];
     await tester.pumpWidget(
       app(
-        AdminReviewScreen(repository: repository),
+        AdminReviewScreen(repository: repository, desktopRepository: FakeDesktopSubmissionRepository()),
         media: const MediaQueryData(size: Size(320, 800), textScaler: TextScaler.linear(2)),
       ),
     );
@@ -518,7 +552,9 @@ void main() {
     final StreamController<List<FirestoreDocument>> reports = StreamController<List<FirestoreDocument>>.broadcast();
     addTearDown(reports.close);
     final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()..reportsStream = reports.stream;
-    await tester.pumpWidget(app(AdminReviewScreen(repository: repository)));
+    await tester.pumpWidget(
+      app(AdminReviewScreen(repository: repository, desktopRepository: FakeDesktopSubmissionRepository())),
+    );
     await tester.drag(find.byType(TabBarView), const Offset(-800, 0));
     await tester.pump(const Duration(milliseconds: 600));
     reports.add(const <FirestoreDocument>[
@@ -594,7 +630,9 @@ void main() {
           'reporterUid': 'reporter-1',
         }),
       ];
-    await tester.pumpWidget(app(AdminReviewScreen(repository: repository)));
+    await tester.pumpWidget(
+      app(AdminReviewScreen(repository: repository, desktopRepository: FakeDesktopSubmissionRepository())),
+    );
     await tester.drag(find.byType(TabBarView), const Offset(-800, 0));
     await tester.pumpAndSettle();
 
@@ -616,7 +654,9 @@ void main() {
     final _FakeAdminReviewRepository repository = _FakeAdminReviewRepository()..wallsStream = walls.stream;
     final Completer<void> pendingApproval = Completer<void>();
     repository.approveAction = () => pendingApproval.future;
-    await tester.pumpWidget(app(AdminReviewScreen(repository: repository)));
+    await tester.pumpWidget(
+      app(AdminReviewScreen(repository: repository, desktopRepository: FakeDesktopSubmissionRepository())),
+    );
     await tester.pump();
     walls.add(const <FirestoreDocument>[
       FirestoreDocument('wall-a', <String, dynamic>{'review': false}),
@@ -826,7 +866,9 @@ void main() {
         }),
       ]
       ..wallWasRemoved = false;
-    await tester.pumpWidget(app(AdminReviewScreen(repository: repository)));
+    await tester.pumpWidget(
+      app(AdminReviewScreen(repository: repository, desktopRepository: FakeDesktopSubmissionRepository())),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Reports (1)'));
     await tester.pumpAndSettle();
@@ -868,7 +910,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       app(
-        AdminReviewScreen(repository: repository),
+        AdminReviewScreen(repository: repository, desktopRepository: FakeDesktopSubmissionRepository()),
         media: const MediaQueryData(size: Size(700, 640), viewInsets: EdgeInsets.only(bottom: 300)),
       ),
     );
