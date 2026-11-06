@@ -14497,7 +14497,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get foldersDeleteSharedMessage =>
-      'Die Personen, die du eingeladen hast, verlieren ihn auch. Die Hintergrundbilder bleiben in deinen Favoriten.';
+      'Die Personen, die du eingeladen hast, verlieren ihn auch. Hintergrundbilder in deinen Favoriten bleiben dort.';
 
   @override
   String get foldersJoinTitle => 'Ordner-Einladung';
@@ -14558,4 +14558,8 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get foldersJoinUnavailableBody => 'Der Ordner wurde vielleicht gelöscht, oder du kannst ihm nicht beitreten.';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'Nur du und die Personen, die du eingeladen hast, sehen ihn. Sein Link funktioniert nicht mehr und seine Follower verlieren ihn.';
 }

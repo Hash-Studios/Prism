@@ -14326,7 +14326,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get foldersDeleteSharedMessage =>
-      'Orang yang Anda undang juga akan kehilangannya. Wallpaper tetap ada di favorit Anda.';
+      'Orang yang Anda undang juga akan kehilangannya. Wallpaper yang ada di favorit Anda tetap di sana.';
 
   @override
   String get foldersJoinTitle => 'Undangan folder';
@@ -14388,4 +14388,8 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get foldersJoinUnavailableBody =>
       'Mungkin folder ini sudah dihapus, atau Anda tidak bisa bergabung dengannya.';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'Hanya Anda dan orang yang Anda undang yang bisa melihatnya. Tautannya berhenti berfungsi dan pengikutnya kehilangan folder ini.';
 }

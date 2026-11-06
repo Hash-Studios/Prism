@@ -4007,7 +4007,7 @@
   "foldersAddedBy": "Añadido por {name}",
   "foldersAddedByYou": "Añadido por ti",
   "foldersRemoveFromFolder": "Quitar de la carpeta",
-  "foldersDeleteSharedMessage": "Las personas que invitaste también la perderán. Los fondos de pantalla seguirán en tus favoritos.",
+  "foldersDeleteSharedMessage": "Las personas que invitaste también la perderán. Los fondos de pantalla que están en tus favoritos siguen ahí.",
   "foldersJoinTitle": "Invitación a carpeta",
   "foldersJoinHeadline": "Únete a {name}",
   "foldersJoinInvitedBy": "{name} te invitó a añadir y quitar fondos de pantalla en esta carpeta.",
@@ -4025,5 +4025,6 @@
   "foldersJoinFullTitle": "Esta carpeta está llena",
   "foldersJoinFullBody": "Pide al propietario que quite a alguien y luego vuelve a abrir el enlace.",
   "foldersJoinUnavailableTitle": "Esta invitación no está disponible",
-  "foldersJoinUnavailableBody": "Es posible que la carpeta se haya eliminado o que no puedas unirte a ella."
+  "foldersJoinUnavailableBody": "Es posible que la carpeta se haya eliminado o que no puedas unirte a ella.",
+  "foldersMakePrivateMessageShared": "Solo tú y las personas que invitaste la verán. Su enlace dejará de funcionar y sus seguidores la perderán."
 }

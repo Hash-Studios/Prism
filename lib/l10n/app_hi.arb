@@ -14319,7 +14319,7 @@
   "@foldersRemoveFromFolder": {
     "description": "Button that removes a wallpaper from a folder."
   },
-  "foldersDeleteSharedMessage": "आपके आमंत्रित लोग भी इसे खो देंगे। वॉलपेपर आपके पसंदीदा में रहेंगे।",
+  "foldersDeleteSharedMessage": "आपके आमंत्रित लोग भी इसे खो देंगे। जो वॉलपेपर आपके पसंदीदा में हैं, वे वहीं रहेंगे।",
   "@foldersDeleteSharedMessage": {
     "description": "Message of the delete confirm for a folder with editors."
   },
@@ -14409,5 +14409,9 @@
   "foldersJoinUnavailableBody": "हो सकता है यह फ़ोल्डर हटा दिया गया हो, या आप इससे जुड़ नहीं सकते।",
   "@foldersJoinUnavailableBody": {
     "description": "Body for an unavailable invite."
+  },
+  "foldersMakePrivateMessageShared": "इसे सिर्फ़ आप और आपके आमंत्रित लोग देखेंगे। इसका लिंक काम करना बंद कर देगा और इसके फ़ॉलोअर इसे खो देंगे।",
+  "@foldersMakePrivateMessageShared": {
+    "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
   }
 }

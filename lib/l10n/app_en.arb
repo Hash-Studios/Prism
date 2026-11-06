@@ -14502,7 +14502,7 @@
   "@foldersRemoveFromFolder": {
     "description": "Button that removes a wallpaper from a folder."
   },
-  "foldersDeleteSharedMessage": "The people you invited lose it too. The wallpapers stay in your favourites.",
+  "foldersDeleteSharedMessage": "The people you invited lose it too. Wallpapers that are in your favourites stay there.",
   "@foldersDeleteSharedMessage": {
     "description": "Message of the delete confirm for a folder with editors."
   },
@@ -14592,5 +14592,9 @@
   "foldersJoinUnavailableBody": "The folder may have been deleted, or you cannot join it.",
   "@foldersJoinUnavailableBody": {
     "description": "Body for an unavailable invite."
+  },
+  "foldersMakePrivateMessageShared": "Only you and the people you invited will see it. Its link stops working and its followers lose it.",
+  "@foldersMakePrivateMessageShared": {
+    "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
   }
 }

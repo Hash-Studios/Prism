@@ -164,7 +164,11 @@ class _FolderScreenState extends State<FolderScreen> {
     final bool confirmed = await showPrismConfirm(
       context,
       title: isPublic ? l10n.foldersMakePublicTitle : l10n.foldersMakePrivateTitle,
-      message: isPublic ? l10n.foldersMakePublicMessage : l10n.foldersMakePrivateMessage,
+      message: isPublic
+          ? l10n.foldersMakePublicMessage
+          : folder.editors.isNotEmpty
+          ? l10n.foldersMakePrivateMessageShared
+          : l10n.foldersMakePrivateMessage,
       confirmLabel: isPublic ? l10n.foldersMakePublic : l10n.foldersMakePrivate,
     );
     if (!confirmed || !mounted || app_state.prismUser.id != folder.ownerId || bloc.state.userId != folder.ownerId) {

@@ -22816,7 +22816,7 @@ abstract class AppLocalizations {
   /// Message of the delete confirm for a folder with editors.
   ///
   /// In en, this message translates to:
-  /// **'The people you invited lose it too. The wallpapers stay in your favourites.'**
+  /// **'The people you invited lose it too. Wallpapers that are in your favourites stay there.'**
   String get foldersDeleteSharedMessage;
 
   /// Title of the page that opens a folder invite link.
@@ -22926,6 +22926,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The folder may have been deleted, or you cannot join it.'**
   String get foldersJoinUnavailableBody;
+
+  /// Confirm message when the owner makes a folder with editors private. The editors keep access.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you and the people you invited will see it. Its link stops working and its followers lose it.'**
+  String get foldersMakePrivateMessageShared;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

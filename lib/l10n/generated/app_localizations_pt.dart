@@ -14639,7 +14639,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get foldersDeleteSharedMessage =>
-      'As pessoas que você convidou também vão perdê-la. Os papéis de parede continuam nos seus favoritos.';
+      'As pessoas que você convidou também vão perdê-la. Os papéis de parede que estão nos seus favoritos continuam lá.';
 
   @override
   String get foldersJoinTitle => 'Convite para pasta';
@@ -14700,6 +14700,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get foldersJoinUnavailableBody => 'Talvez a pasta tenha sido excluída, ou você não pode entrar nela.';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -29335,7 +29339,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get foldersDeleteSharedMessage =>
-      'As pessoas que você convidou também vão perdê-la. Os papéis de parede continuam nos seus favoritos.';
+      'As pessoas que você convidou também vão perdê-la. Os papéis de parede que estão nos seus favoritos continuam lá.';
 
   @override
   String get foldersJoinTitle => 'Convite para pasta';
@@ -29396,4 +29400,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get foldersJoinUnavailableBody => 'Talvez a pasta tenha sido excluída, ou você não pode entrar nela.';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso.';
 }

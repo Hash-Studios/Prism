@@ -13570,7 +13570,7 @@
   "@foldersRemoveFromFolder": {
     "description": "Button that removes a wallpaper from a folder."
   },
-  "foldersDeleteSharedMessage": "Die Personen, die du eingeladen hast, verlieren ihn auch. Die Hintergrundbilder bleiben in deinen Favoriten.",
+  "foldersDeleteSharedMessage": "Die Personen, die du eingeladen hast, verlieren ihn auch. Hintergrundbilder in deinen Favoriten bleiben dort.",
   "@foldersDeleteSharedMessage": {
     "description": "Message of the delete confirm for a folder with editors."
   },
@@ -13660,5 +13660,9 @@
   "foldersJoinUnavailableBody": "Der Ordner wurde vielleicht gelöscht, oder du kannst ihm nicht beitreten.",
   "@foldersJoinUnavailableBody": {
     "description": "Body for an unavailable invite."
+  },
+  "foldersMakePrivateMessageShared": "Nur du und die Personen, die du eingeladen hast, sehen ihn. Sein Link funktioniert nicht mehr und seine Follower verlieren ihn.",
+  "@foldersMakePrivateMessageShared": {
+    "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
   }
 }

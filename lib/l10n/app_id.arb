@@ -13698,7 +13698,7 @@
   "@foldersRemoveFromFolder": {
     "description": "Button that removes a wallpaper from a folder."
   },
-  "foldersDeleteSharedMessage": "Orang yang Anda undang juga akan kehilangannya. Wallpaper tetap ada di favorit Anda.",
+  "foldersDeleteSharedMessage": "Orang yang Anda undang juga akan kehilangannya. Wallpaper yang ada di favorit Anda tetap di sana.",
   "@foldersDeleteSharedMessage": {
     "description": "Message of the delete confirm for a folder with editors."
   },
@@ -13788,5 +13788,9 @@
   "foldersJoinUnavailableBody": "Mungkin folder ini sudah dihapus, atau Anda tidak bisa bergabung dengannya.",
   "@foldersJoinUnavailableBody": {
     "description": "Body for an unavailable invite."
+  },
+  "foldersMakePrivateMessageShared": "Hanya Anda dan orang yang Anda undang yang bisa melihatnya. Tautannya berhenti berfungsi dan pengikutnya kehilangan folder ini.",
+  "@foldersMakePrivateMessageShared": {
+    "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
   }
 }

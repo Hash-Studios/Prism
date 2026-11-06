@@ -14418,7 +14418,8 @@ class AppLocalizationsHi extends AppLocalizations {
   String get foldersRemoveFromFolder => 'फ़ोल्डर से हटाएँ';
 
   @override
-  String get foldersDeleteSharedMessage => 'आपके आमंत्रित लोग भी इसे खो देंगे। वॉलपेपर आपके पसंदीदा में रहेंगे।';
+  String get foldersDeleteSharedMessage =>
+      'आपके आमंत्रित लोग भी इसे खो देंगे। जो वॉलपेपर आपके पसंदीदा में हैं, वे वहीं रहेंगे।';
 
   @override
   String get foldersJoinTitle => 'फ़ोल्डर का आमंत्रण';
@@ -14479,4 +14480,8 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get foldersJoinUnavailableBody => 'हो सकता है यह फ़ोल्डर हटा दिया गया हो, या आप इससे जुड़ नहीं सकते।';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'इसे सिर्फ़ आप और आपके आमंत्रित लोग देखेंगे। इसका लिंक काम करना बंद कर देगा और इसके फ़ॉलोअर इसे खो देंगे।';
 }

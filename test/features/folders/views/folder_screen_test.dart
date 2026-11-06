@@ -544,7 +544,10 @@ void main() {
     await tester.tap(_menuItem('Delete'));
     await settle(tester);
 
-    expect(find.text('The people you invited lose it too. The wallpapers stay in your favourites.'), findsOneWidget);
+    expect(
+      find.text('The people you invited lose it too. Wallpapers that are in your favourites stay there.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('the editor view with walls fits at large text on a 375 point phone', (tester) async {

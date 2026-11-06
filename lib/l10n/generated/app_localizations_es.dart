@@ -14458,7 +14458,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get foldersDeleteSharedMessage =>
-      'Las personas que invitaste también la perderán. Los fondos de pantalla seguirán en tus favoritos.';
+      'Las personas que invitaste también la perderán. Los fondos de pantalla que están en tus favoritos siguen ahí.';
 
   @override
   String get foldersJoinTitle => 'Invitación a carpeta';
@@ -14520,4 +14520,8 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get foldersJoinUnavailableBody => 'Es posible que la carpeta se haya eliminado o que no puedas unirte a ella.';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'Solo tú y las personas que invitaste la verán. Su enlace dejará de funcionar y sus seguidores la perderán.';
 }

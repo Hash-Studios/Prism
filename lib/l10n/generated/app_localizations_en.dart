@@ -14270,7 +14270,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get foldersDeleteSharedMessage =>
-      'The people you invited lose it too. The wallpapers stay in your favourites.';
+      'The people you invited lose it too. Wallpapers that are in your favourites stay there.';
 
   @override
   String get foldersJoinTitle => 'Folder invite';
@@ -14331,4 +14331,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get foldersJoinUnavailableBody => 'The folder may have been deleted, or you cannot join it.';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'Only you and the people you invited will see it. Its link stops working and its followers lose it.';
 }
