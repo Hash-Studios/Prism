@@ -338,3 +338,68 @@ test('MCP batches above the limit are refused before any catalogue read', async 
   assert.equal(reads, 0);
   assert.equal((await h.post('/mcp', Array.from({ length: 10 }, (_, id) => ({ jsonrpc: '2.0', id, method: 'ping' })))).status, 200);
 });
+
+function installMockAgentEdgeCache() {
+  const originalFetch = globalThis.fetch;
+  const cache = new Map();
+  const reads = [];
+  let outage = false;
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    const key = url;
+    const bypass = init?.cache === 'no-store';
+    if (!bypass && cache.has(key)) return cache.get(key).clone();
+    reads.push({ url, init });
+    const response = outage && url.endsWith('/webPages/category~outage~1')
+      ? new Response(null, { status: 503 }) : await originalFetch(input, init);
+    const statusTtls = init?.cf?.cacheTtlByStatus ?? {};
+    const range = Object.keys(statusTtls).find((range) => {
+      if (range === String(response.status)) return true;
+      const [start, end] = range.split('-').map(Number);
+      return response.status >= start && response.status <= end;
+    });
+    const shouldCache = init?.cf?.cacheTtl > 0 || (range != null && statusTtls[range] > 0);
+    if (!bypass && init?.cf?.cacheEverything && shouldCache) cache.set(key, response.clone());
+    return response;
+  };
+  return { reads, setOutage(value) { outage = value; } };
+}
+
+test('mock edge cache refreshes visibility per wallpaper document', async (t) => {
+  const h = setup(t);
+  h.docs['webPages/latest~1'].items.push({ id: 'W2', title: 'Moonlit Lake' });
+  h.docs['webWalls/W2'] = { state: 'live', title: 'Moonlit Lake', thumb: 'https://img.prismwalls.com/moon.jpg' };
+  const { reads } = installMockAgentEdgeCache();
+
+  const first = await (await h.get('/api/v1/wallpapers')).json();
+  assert.equal(first.data[0].thumb, 'https://img.prismwalls.com/sunset.jpg');
+  assert.deepEqual(first.data.map((wall) => wall.id), ['W1', 'W2']);
+  assert.ok(reads.find(({ url }) => url.endsWith('/webPages/latest~1')));
+  assert.ok(reads.find(({ url }) => url.endsWith('/webWalls/W1')));
+
+  h.docs['webWalls/W1'].state = 'gated';
+  const gated = await (await h.get('/api/v1/wallpapers')).json();
+  assert.equal(Object.hasOwn(gated.data.find((wall) => wall.id === 'W1'), 'thumb'), false);
+  assert.equal(gated.data.find((wall) => wall.id === 'W2').thumb, 'https://img.prismwalls.com/moon.jpg');
+  assert.equal(reads.filter(({ url }) => url.endsWith('/webWalls/W1')).length, 2);
+  assert.equal(reads.filter(({ url }) => url.endsWith('/webWalls/W2')).length, 2);
+
+  h.docs['webWalls/W1'].state = 'hidden';
+  assert.deepEqual((await (await h.get('/api/v1/wallpapers')).json()).data.map((wall) => wall.id), ['W2']);
+});
+
+test('mock edge cache does not retain page misses or outages', async (t) => {
+  const h = setup(t);
+  const { setOutage } = installMockAgentEdgeCache();
+  delete h.docs['webPages/category~space~1'];
+  assert.deepEqual((await (await h.get('/api/v1/wallpapers?category=space')).json()).data, []);
+  h.docs['webPages/category~space~1'] = { items: [{ id: 'S1' }], page: 1, pages: 1, total: 1 };
+  h.docs['webWalls/S1'] = { state: 'live', title: 'Space', category: 'Space', categorySlug: 'space' };
+  assert.equal((await (await h.get('/api/v1/wallpapers?category=space')).json()).data[0].id, 'S1');
+
+  setOutage(true);
+  assert.equal((await h.get('/api/v1/wallpapers?category=outage')).status, 503);
+  setOutage(false);
+  h.docs['webPages/category~outage~1'] = { items: [], page: 1, pages: 1, total: 0 };
+  assert.equal((await h.get('/api/v1/wallpapers?category=outage')).status, 200);
+});

@@ -76,3 +76,45 @@ test('store clicks retain validated landing campaign across internal navigation'
   assert.equal(nextPage.requests[1].payload.properties.utm_campaign, 'summer');
   assert.equal(nextPage.requests[1].payload.properties.email, undefined);
 });
+
+function mountWebMcp(fetch) {
+  const tools = new Map();
+  let effect;
+  const source = fs.readFileSync(require.resolve('../components/webmcp.tsx'), 'utf8');
+  const compiled = ts.transpileModule(source, { compilerOptions: {
+    module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX,
+  } }).outputText;
+  const exports = {};
+  vm.runInNewContext(compiled, {
+    exports,
+    fetch,
+    document: { modelContext: {
+      registerTool: (tool) => tools.set(tool.name, tool),
+      unregisterTool: (name) => tools.delete(name),
+    } },
+    navigator: {},
+    require(name) { return name === 'react' ? { useEffect: (callback) => { effect = callback; } } : {}; },
+    encodeURIComponent,
+  });
+  exports.WebMcp();
+  effect();
+  return tools;
+}
+
+test('WebMCP marks HTTP and transport failures as tool errors', async () => {
+  let mode = 'http';
+  const tools = mountWebMcp(async () => {
+    if (mode === 'network') throw new TypeError('offline');
+    return new Response('unavailable', { status: 503 });
+  });
+  const execute = tools.get('get_pricing').execute;
+
+  const httpFailure = await execute({});
+  assert.equal(httpFailure.isError, true);
+  assert.equal(httpFailure.content[0].text, 'unavailable');
+
+  mode = 'network';
+  const networkFailure = await execute({});
+  assert.equal(networkFailure.isError, true);
+  assert.match(networkFailure.content[0].text, /offline/);
+});

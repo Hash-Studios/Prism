@@ -185,8 +185,13 @@ async function readDoc<T>(env: AgentEnv, path: string): Promise<T | null> {
     + path.split('/').map(encodeURIComponent).join('/');
   let response: Response;
   try {
-    // Public projection docs: a short edge cache stops repeated agent calls from re-billing the same Firestore reads.
-    response = await fetch(url, { signal: AbortSignal.timeout(4000), cf: { cacheTtl: 300, cacheEverything: true } });
+    // Cache catalogue pages, but always re-check wall visibility and asset fields against Firestore.
+    response = await fetch(url, {
+      signal: AbortSignal.timeout(4000),
+      ...(path.startsWith('webPages/')
+        ? { cf: { cacheTtlByStatus: { '200-299': 300, '400-599': -1 }, cacheEverything: true } }
+        : { cache: 'no-store' }),
+    });
   } catch (error) {
     throw new AgentReadError(`${error}`);
   }
