@@ -90,14 +90,13 @@ void main() {
     await tester.pumpWidget(_winterApp(kDarkTheme11));
     await tester.pump(const Duration(milliseconds: 100));
     final CustomPainter painter = tester.widget<CustomPaint>(_snow()).painter!;
-    final AnimationController clock = (painter as dynamic).clock as AnimationController;
     final Size size = tester.getSize(_snow());
     final _CircleRecordingCanvas before = _CircleRecordingCanvas();
     final _CircleRecordingCanvas after = _CircleRecordingCanvas();
 
-    clock.value = 1 - 0.00001;
+    await tester.pump(const Duration(seconds: 59, milliseconds: 899));
     painter.paint(before, size);
-    clock.value = 0.00001;
+    await tester.pump(const Duration(milliseconds: 2));
     painter.paint(after, size);
 
     expect(before.centers, isNotEmpty);
