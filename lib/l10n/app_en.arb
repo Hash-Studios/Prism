@@ -14147,5 +14147,356 @@
   "watchGuideNoteGooglePhotos": "Pixel Watch reads Google Photos. If the image doesn't show, back it up to Google Photos first.",
   "@watchGuideNoteGooglePhotos": {
     "description": "Note in the Android watch face guide."
+  },
+  "searchByPhoto": "Search by photo",
+  "@searchByPhoto": {
+    "description": "Tooltip of the camera roll button in the search bar, and title of the photo search privacy sheet."
+  },
+  "searchPhotoPrivacy": "Prism reads the photo's colours on your phone. To find what's in the photo, a small copy goes to Google Cloud Vision. It isn't stored.",
+  "@searchPhotoPrivacy": {
+    "description": "Shown once before a signed-in user's first photo search."
+  },
+  "searchPhotoChoose": "Choose photo",
+  "@searchPhotoChoose": {
+    "description": "Button on the photo search privacy sheet. Opens the camera roll."
+  },
+  "searchPhotoChipLabel": "Your photo",
+  "@searchPhotoChipLabel": {
+    "description": "Screen reader label of the small photo thumbnail above photo search results."
+  },
+  "searchPhotoClear": "Clear",
+  "@searchPhotoClear": {
+    "description": "Button next to the photo thumbnail. Ends the photo search."
+  },
+  "searchPhotoClearTooltip": "Clear photo",
+  "@searchPhotoClearTooltip": {
+    "description": "Tooltip and screen reader label of the Clear button next to the photo thumbnail."
+  },
+  "searchPhotoMatchesFor": "Matches for {labels}",
+  "@searchPhotoMatchesFor": {
+    "description": "Line above photo search results. labels is a comma-separated list of words that describe the photo, in English.",
+    "placeholders": {
+      "labels": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoColourMatches": "Matches by colour",
+  "@searchPhotoColourMatches": {
+    "description": "Line above photo search results when the photo has no labels."
+  },
+  "searchPhotoMainColours": "Main colours: {colours}",
+  "@searchPhotoMainColours": {
+    "description": "Screen reader label of the colour dots next to the photo thumbnail.",
+    "placeholders": {
+      "colours": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoSentNote": "A small copy went to Google Cloud Vision to find what's in it. It isn't stored.",
+  "@searchPhotoSentNote": {
+    "description": "Note under the photo thumbnail after the photo was sent for labels."
+  },
+  "searchPhotoGuestNote": "Colour matches only. Sign in to match what's in the photo too.",
+  "@searchPhotoGuestNote": {
+    "description": "Note under the photo thumbnail for a guest. A guest's photo never leaves the phone."
+  },
+  "searchPhotoCappedNote": "You've used today's {count} photo searches. Matching by colour until tomorrow.",
+  "@searchPhotoCappedNote": {
+    "description": "Note under the photo thumbnail when the daily photo search limit is reached.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchPhotoUnavailableNote": "Couldn't read what's in the photo. Matching by colour only.",
+  "@searchPhotoUnavailableNote": {
+    "description": "Note under the photo thumbnail when the labels call failed."
+  },
+  "searchPhotoNoMatches": "No walls match this photo",
+  "@searchPhotoNoMatches": {
+    "description": "Empty state title for a photo search."
+  },
+  "searchPhotoNoMatchesBody": "Try a photo with bolder colours.",
+  "@searchPhotoNoMatchesBody": {
+    "description": "Empty state body for a photo search."
+  },
+  "searchPhotoChooseAnother": "Choose another photo",
+  "@searchPhotoChooseAnother": {
+    "description": "Empty state button for a photo search. Opens the camera roll."
+  },
+  "searchPhotoCouldNotOpen": "Couldn't open that photo. Try another one.",
+  "@searchPhotoCouldNotOpen": {
+    "description": "Toast when the picked photo cannot be decoded."
+  },
+  "foldersSaveAll": "Save all",
+  "@foldersSaveAll": {
+    "description": "Button label that starts saving all wallpapers in a folder."
+  },
+  "foldersSaveAllTitle": "Save all wallpapers",
+  "@foldersSaveAllTitle": {
+    "description": "Title of the Save all plan sheet."
+  },
+  "foldersSaveAllChecking": "Checking the wallpapers…",
+  "@foldersSaveAllChecking": {
+    "description": "Shown while the app checks which wallpapers in the folder can be saved."
+  },
+  "foldersSaveAllPlanFailed": "Could not check the wallpapers. Try again.",
+  "@foldersSaveAllPlanFailed": {
+    "description": "Message when the Save all check fails."
+  },
+  "foldersSaveAllBusy": "Another folder is saving. Try again when it ends.",
+  "@foldersSaveAllBusy": {
+    "description": "Message when another folder is already saving."
+  },
+  "foldersSaveAllRowFree": "{count, plural, =1{1 wallpaper is free} other{{count} wallpapers are free}}",
+  "@foldersSaveAllRowFree": {
+    "description": "Plan sheet row: number of free wallpapers.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowCoins": "{count, plural, =1{1 wallpaper costs {price} coins} other{{count} wallpapers cost {price} coins each}}",
+  "@foldersSaveAllRowCoins": {
+    "description": "Plan sheet row: number of paid wallpapers and their coin price.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "price": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowPro": "{count, plural, =1{1 wallpaper needs Pro} other{{count} wallpapers need Pro}}",
+  "@foldersSaveAllRowPro": {
+    "description": "Plan sheet row: number of wallpapers that need Pro.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowSaved": "{count, plural, =1{1 wallpaper is already in Downloads} other{{count} wallpapers are already in Downloads}}",
+  "@foldersSaveAllRowSaved": {
+    "description": "Plan sheet row: number of wallpapers already in Downloads.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowBlocked": "{count, plural, =1{1 wallpaper is not available to save} other{{count} wallpapers are not available to save}}",
+  "@foldersSaveAllRowBlocked": {
+    "description": "Plan sheet row: number of wallpapers that cannot be saved.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllAffordable": "{count, plural, =0{You do not have enough coins for a paid wallpaper.} =1{Your coins cover 1 paid wallpaper.} other{Your coins cover {count} paid wallpapers.}}",
+  "@foldersSaveAllAffordable": {
+    "description": "Plan sheet line: how many paid wallpapers the user's coins cover.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllPhotosAlbum": "They go to the “{name}” album in Photos and to Downloads.",
+  "@foldersSaveAllPhotosAlbum": {
+    "description": "Plan sheet note on iOS: where saved wallpapers go. {name} is the album name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllGalleryAlbum": "They go to Pictures/Prism/{name} in your gallery and to Downloads.",
+  "@foldersSaveAllGalleryAlbum": {
+    "description": "Plan sheet note on Android: where saved wallpapers go. {name} is the folder name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllLeaveNote": "You can leave this page while it saves. If you close Prism, tap Save all again to finish.",
+  "@foldersSaveAllLeaveNote": {
+    "description": "Plan sheet note: saving continues when the user leaves the page, and what to do if Prism closes."
+  },
+  "foldersSaveAllNothing": "There is nothing new to save in this folder.",
+  "@foldersSaveAllNothing": {
+    "description": "Shown when no wallpaper in the folder can be saved."
+  },
+  "foldersSaveAllFreeButton": "{count, plural, =1{Save the free wallpaper} other{Save the {count} free wallpapers}}",
+  "@foldersSaveAllFreeButton": {
+    "description": "Primary button when only free wallpapers can be saved.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllPaidButton": "{coins, plural, =1{Save all I can (1 coin)} other{Save all I can ({coins} coins)}}",
+  "@foldersSaveAllPaidButton": {
+    "description": "Primary button that saves as many paid wallpapers as the coins allow.",
+    "placeholders": {
+      "coins": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllCountButton": "{count, plural, =1{Save 1 wallpaper} other{Save {count} wallpapers}}",
+  "@foldersSaveAllCountButton": {
+    "description": "Primary button that saves a set number of wallpapers.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllProgress": "Saving {done} of {total}",
+  "@foldersSaveAllProgress": {
+    "description": "Progress row text while wallpapers are saving.",
+    "placeholders": {
+      "done": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllProgressSemantics": "{total, plural, =1{Saving {done} of 1 wallpaper} other{Saving {done} of {total} wallpapers}}",
+  "@foldersSaveAllProgressSemantics": {
+    "description": "Screen reader label for the save progress row.",
+    "placeholders": {
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "done": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllStopping": "Stopping…",
+  "@foldersSaveAllStopping": {
+    "description": "Progress row text after the user taps Cancel."
+  },
+  "foldersSaveAllCancel": "Cancel",
+  "@foldersSaveAllCancel": {
+    "description": "Button that stops a Save all run."
+  },
+  "foldersSaveAllCancelHint": "Stops the wallpapers that have not started. They cost nothing.",
+  "@foldersSaveAllCancelHint": {
+    "description": "Hint under the Cancel button: wallpapers that have not started cost nothing."
+  },
+  "foldersSaveAllSavedTitle": "{count, plural, =0{No wallpapers saved} =1{1 wallpaper saved} other{{count} wallpapers saved}}",
+  "@foldersSaveAllSavedTitle": {
+    "description": "Summary card title after a Save all run finishes.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllStoppedTitle": "{count, plural, =0{Stopped. No wallpapers saved} =1{Stopped. 1 wallpaper saved} other{Stopped. {count} wallpapers saved}}",
+  "@foldersSaveAllStoppedTitle": {
+    "description": "Summary card title after the user stops a Save all run.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllSkipped": "{count, plural, =1{1 already in Downloads} other{{count} already in Downloads}}",
+  "@foldersSaveAllSkipped": {
+    "description": "Summary card row: wallpapers skipped because they were already in Downloads.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllFailed": "{count, plural, =1{1 failed} other{{count} failed}}",
+  "@foldersSaveAllFailed": {
+    "description": "Summary card row: wallpapers that failed to save.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllNotStarted": "{count, plural, =1{1 not started} other{{count} not started}}",
+  "@foldersSaveAllNotStarted": {
+    "description": "Summary card row: wallpapers that did not start because the run stopped.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRetry": "Retry failed",
+  "@foldersSaveAllRetry": {
+    "description": "Summary card button that retries the wallpapers that failed."
+  },
+  "foldersSaveAllDone": "Done",
+  "@foldersSaveAllDone": {
+    "description": "Summary card button that closes the summary."
+  },
+  "foldersSaveAllToast": "{count, plural, =0{No wallpapers saved from {name}.} =1{Saved 1 wallpaper from {name}.} other{Saved {count} wallpapers from {name}.}}",
+  "@foldersSaveAllToast": {
+    "description": "Toast after a Save all run. {name} is the folder name.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllToastFailed": "{failed, plural, =1{Saved {saved} from {name}. 1 failed. Open the folder to retry.} other{Saved {saved} from {name}. {failed} failed. Open the folder to retry.}}",
+  "@foldersSaveAllToastFailed": {
+    "description": "Toast after a Save all run with failures. {saved} is the number saved, {failed} the number failed, {name} the folder name.",
+    "placeholders": {
+      "failed": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "saved": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
   }
 }

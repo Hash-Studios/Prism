@@ -84,6 +84,10 @@ PrismPaletteColor nearestPaletteColor(Color color) {
   return best;
 }
 
+/// CIE76 distance in Lab space between two palette colours. Black to white is 100.
+double paletteDistance(PrismPaletteColor a, PrismPaletteColor b) =>
+    _Lab.fromColor(a.color).distanceTo(_Lab.fromColor(b.color));
+
 class _Lab {
   const _Lab(this.l, this.a, this.b);
 

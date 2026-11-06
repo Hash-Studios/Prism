@@ -139,6 +139,13 @@ test("walls have the protected spatial index the app queries: protected asset fi
     ["createdAt", "DESCENDING"], ["__name__", "DESCENDING"]]));
 });
 
+test("walls have the protected Editors' Choice index the app queries: protected asset fields, review, newest pick first", () => {
+  const protectedFields = ["originalProtected", "wallpaper_url", "wallpaper_path", "wallpaper_sha", "thumb_path", "thumb_sha"]
+    .map((field): [string, string] => [field, "ASCENDING"]);
+  assert.ok(hasIndex("walls", [...protectedFields, ["review", "ASCENDING"], ["editorsChoiceAt", "DESCENDING"],
+    ["__name__", "DESCENDING"]]));
+});
+
 test("wall requests have the status and hidden indexes for top, new, filled and the token search", () => {
   for (const [field, order] of [["voteCount", "DESCENDING"], ["createdAt", "DESCENDING"], ["filledAt", "DESCENDING"]]) {
     assert.ok(hasIndex("wallRequests", [["status", "ASCENDING"], ["hidden", "ASCENDING"], [field, order]]), field);

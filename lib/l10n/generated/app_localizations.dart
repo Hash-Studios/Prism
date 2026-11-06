@@ -22494,6 +22494,300 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pixel Watch reads Google Photos. If the image doesn\'t show, back it up to Google Photos first.'**
   String get watchGuideNoteGooglePhotos;
+
+  /// Tooltip of the camera roll button in the search bar, and title of the photo search privacy sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by photo'**
+  String get searchByPhoto;
+
+  /// Shown once before a signed-in user's first photo search.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism reads the photo\'s colours on your phone. To find what\'s in the photo, a small copy goes to Google Cloud Vision. It isn\'t stored.'**
+  String get searchPhotoPrivacy;
+
+  /// Button on the photo search privacy sheet. Opens the camera roll.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose photo'**
+  String get searchPhotoChoose;
+
+  /// Screen reader label of the small photo thumbnail above photo search results.
+  ///
+  /// In en, this message translates to:
+  /// **'Your photo'**
+  String get searchPhotoChipLabel;
+
+  /// Button next to the photo thumbnail. Ends the photo search.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get searchPhotoClear;
+
+  /// Tooltip and screen reader label of the Clear button next to the photo thumbnail.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear photo'**
+  String get searchPhotoClearTooltip;
+
+  /// Line above photo search results. labels is a comma-separated list of words that describe the photo, in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches for {labels}'**
+  String searchPhotoMatchesFor(String labels);
+
+  /// Line above photo search results when the photo has no labels.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches by colour'**
+  String get searchPhotoColourMatches;
+
+  /// Screen reader label of the colour dots next to the photo thumbnail.
+  ///
+  /// In en, this message translates to:
+  /// **'Main colours: {colours}'**
+  String searchPhotoMainColours(String colours);
+
+  /// Note under the photo thumbnail after the photo was sent for labels.
+  ///
+  /// In en, this message translates to:
+  /// **'A small copy went to Google Cloud Vision to find what\'s in it. It isn\'t stored.'**
+  String get searchPhotoSentNote;
+
+  /// Note under the photo thumbnail for a guest. A guest's photo never leaves the phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour matches only. Sign in to match what\'s in the photo too.'**
+  String get searchPhotoGuestNote;
+
+  /// Note under the photo thumbnail when the daily photo search limit is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve used today\'s {count} photo searches. Matching by colour until tomorrow.'**
+  String searchPhotoCappedNote(int count);
+
+  /// Note under the photo thumbnail when the labels call failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read what\'s in the photo. Matching by colour only.'**
+  String get searchPhotoUnavailableNote;
+
+  /// Empty state title for a photo search.
+  ///
+  /// In en, this message translates to:
+  /// **'No walls match this photo'**
+  String get searchPhotoNoMatches;
+
+  /// Empty state body for a photo search.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a photo with bolder colours.'**
+  String get searchPhotoNoMatchesBody;
+
+  /// Empty state button for a photo search. Opens the camera roll.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another photo'**
+  String get searchPhotoChooseAnother;
+
+  /// Toast when the picked photo cannot be decoded.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open that photo. Try another one.'**
+  String get searchPhotoCouldNotOpen;
+
+  /// Button label that starts saving all wallpapers in a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Save all'**
+  String get foldersSaveAll;
+
+  /// Title of the Save all plan sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Save all wallpapers'**
+  String get foldersSaveAllTitle;
+
+  /// Shown while the app checks which wallpapers in the folder can be saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the wallpapers…'**
+  String get foldersSaveAllChecking;
+
+  /// Message when the Save all check fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check the wallpapers. Try again.'**
+  String get foldersSaveAllPlanFailed;
+
+  /// Message when another folder is already saving.
+  ///
+  /// In en, this message translates to:
+  /// **'Another folder is saving. Try again when it ends.'**
+  String get foldersSaveAllBusy;
+
+  /// Plan sheet row: number of free wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 wallpaper is free} other{{count} wallpapers are free}}'**
+  String foldersSaveAllRowFree(int count);
+
+  /// Plan sheet row: number of paid wallpapers and their coin price.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 wallpaper costs {price} coins} other{{count} wallpapers cost {price} coins each}}'**
+  String foldersSaveAllRowCoins(int count, int price);
+
+  /// Plan sheet row: number of wallpapers that need Pro.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 wallpaper needs Pro} other{{count} wallpapers need Pro}}'**
+  String foldersSaveAllRowPro(int count);
+
+  /// Plan sheet row: number of wallpapers already in Downloads.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 wallpaper is already in Downloads} other{{count} wallpapers are already in Downloads}}'**
+  String foldersSaveAllRowSaved(int count);
+
+  /// Plan sheet row: number of wallpapers that cannot be saved.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 wallpaper is not available to save} other{{count} wallpapers are not available to save}}'**
+  String foldersSaveAllRowBlocked(int count);
+
+  /// Plan sheet line: how many paid wallpapers the user's coins cover.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{You do not have enough coins for a paid wallpaper.} =1{Your coins cover 1 paid wallpaper.} other{Your coins cover {count} paid wallpapers.}}'**
+  String foldersSaveAllAffordable(int count);
+
+  /// Plan sheet note on iOS: where saved wallpapers go. {name} is the album name.
+  ///
+  /// In en, this message translates to:
+  /// **'They go to the “{name}” album in Photos and to Downloads.'**
+  String foldersSaveAllPhotosAlbum(String name);
+
+  /// Plan sheet note on Android: where saved wallpapers go. {name} is the folder name.
+  ///
+  /// In en, this message translates to:
+  /// **'They go to Pictures/Prism/{name} in your gallery and to Downloads.'**
+  String foldersSaveAllGalleryAlbum(String name);
+
+  /// Plan sheet note: saving continues when the user leaves the page, and what to do if Prism closes.
+  ///
+  /// In en, this message translates to:
+  /// **'You can leave this page while it saves. If you close Prism, tap Save all again to finish.'**
+  String get foldersSaveAllLeaveNote;
+
+  /// Shown when no wallpaper in the folder can be saved.
+  ///
+  /// In en, this message translates to:
+  /// **'There is nothing new to save in this folder.'**
+  String get foldersSaveAllNothing;
+
+  /// Primary button when only free wallpapers can be saved.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Save the free wallpaper} other{Save the {count} free wallpapers}}'**
+  String foldersSaveAllFreeButton(int count);
+
+  /// Primary button that saves as many paid wallpapers as the coins allow.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins, plural, =1{Save all I can (1 coin)} other{Save all I can ({coins} coins)}}'**
+  String foldersSaveAllPaidButton(int coins);
+
+  /// Primary button that saves a set number of wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Save 1 wallpaper} other{Save {count} wallpapers}}'**
+  String foldersSaveAllCountButton(int count);
+
+  /// Progress row text while wallpapers are saving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving {done} of {total}'**
+  String foldersSaveAllProgress(int done, int total);
+
+  /// Screen reader label for the save progress row.
+  ///
+  /// In en, this message translates to:
+  /// **'{total, plural, =1{Saving {done} of 1 wallpaper} other{Saving {done} of {total} wallpapers}}'**
+  String foldersSaveAllProgressSemantics(int total, int done);
+
+  /// Progress row text after the user taps Cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopping…'**
+  String get foldersSaveAllStopping;
+
+  /// Button that stops a Save all run.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get foldersSaveAllCancel;
+
+  /// Hint under the Cancel button: wallpapers that have not started cost nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Stops the wallpapers that have not started. They cost nothing.'**
+  String get foldersSaveAllCancelHint;
+
+  /// Summary card title after a Save all run finishes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No wallpapers saved} =1{1 wallpaper saved} other{{count} wallpapers saved}}'**
+  String foldersSaveAllSavedTitle(int count);
+
+  /// Summary card title after the user stops a Save all run.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Stopped. No wallpapers saved} =1{Stopped. 1 wallpaper saved} other{Stopped. {count} wallpapers saved}}'**
+  String foldersSaveAllStoppedTitle(int count);
+
+  /// Summary card row: wallpapers skipped because they were already in Downloads.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 already in Downloads} other{{count} already in Downloads}}'**
+  String foldersSaveAllSkipped(int count);
+
+  /// Summary card row: wallpapers that failed to save.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 failed} other{{count} failed}}'**
+  String foldersSaveAllFailed(int count);
+
+  /// Summary card row: wallpapers that did not start because the run stopped.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 not started} other{{count} not started}}'**
+  String foldersSaveAllNotStarted(int count);
+
+  /// Summary card button that retries the wallpapers that failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry failed'**
+  String get foldersSaveAllRetry;
+
+  /// Summary card button that closes the summary.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get foldersSaveAllDone;
+
+  /// Toast after a Save all run. {name} is the folder name.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No wallpapers saved from {name}.} =1{Saved 1 wallpaper from {name}.} other{Saved {count} wallpapers from {name}.}}'**
+  String foldersSaveAllToast(int count, String name);
+
+  /// Toast after a Save all run with failures. {saved} is the number saved, {failed} the number failed, {name} the folder name.
+  ///
+  /// In en, this message translates to:
+  /// **'{failed, plural, =1{Saved {saved} from {name}. 1 failed. Open the folder to retry.} other{Saved {saved} from {name}. {failed} failed. Open the folder to retry.}}'**
+  String foldersSaveAllToastFailed(int failed, int saved, String name);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -46,6 +46,7 @@ class SearchGrid extends StatefulWidget {
     this.searchId,
     this.trackInitialResults = true,
     this.footer,
+    this.fromPhoto = false,
   });
 
   final String query;
@@ -61,6 +62,9 @@ class SearchGrid extends StatefulWidget {
 
   /// Shown under the results, above the bottom bar clearance.
   final Widget? footer;
+
+  /// The results are for a picked photo, so an opened result also sends [PhotoSearchResultOpenedEvent].
+  final bool fromPhoto;
 
   @override
   State<SearchGrid> createState() => _SearchGridState();
@@ -216,7 +220,15 @@ class _SearchGridState extends State<SearchGrid> {
     }
   }
 
+  void _trackPhotoResultOpened(SearchProviderValue provider, FeedItemEntity wallpaper, int index) {
+    if (!widget.fromPhoto) return;
+    analytics.track(
+      PhotoSearchResultOpenedEvent(provider: provider, itemId: wallpaper.id, index: index, searchId: widget.searchId),
+    );
+  }
+
   void _openWallpaper(BuildContext grid, FeedItemEntity wallpaper, int index) {
+    _trackPhotoResultOpened(widget.provider, wallpaper, index);
     analytics.track(
       SearchResultOpenedEvent(
         provider: widget.provider,
@@ -245,6 +257,7 @@ class _SearchGridState extends State<SearchGrid> {
   }
 
   void _openPrismWallpaper(BuildContext grid, FeedItemEntity wallpaper, int index, List<FeedItemEntity> results) {
+    _trackPhotoResultOpened(SearchProviderValue.prism, wallpaper, index);
     analytics.track(
       SearchResultOpenedEvent(
         provider: SearchProviderValue.prism,

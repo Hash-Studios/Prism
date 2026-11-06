@@ -1,6 +1,6 @@
 # Folders: private and public
 
-A **folder** is a named group of saved wallpapers. Each folder is private when the user makes it. The owner can make a folder **public**. Other signed-in users can then see the folder, follow it, and share its link. Followers get one "New in <folder>" push a day when the owner adds wallpapers.
+A **folder** is a named group of saved wallpapers. Each folder is private when the user makes it. The owner can make a folder **public**. Other signed-in users can then see the folder, follow it, and share its link. Followers get one "New in <folder>" push a day when the owner adds wallpapers. The user can save all the wallpapers of a folder at once with **Save all**.
 
 The Library page ([library.md](library.md)) covers the Folders tab, the folder grid and the Save to folder sheet. This page covers public folders.
 
@@ -15,6 +15,8 @@ The Library page ([library.md](library.md)) covers the Folders tab, the folder g
 | Folder link | `https://prismwalls.com/folder/<folderId>` opens the folder page. |
 | Push | "New in <folder>" once a day, at 13:00 local time. |
 | Settings > Notifications | **Folders you follow**. |
+| Folder page, owner | A download button **Save all** in the top bar, when the folder has wallpapers. |
+| Folder page, a public folder the user follows | The same **Save all** button. It shows only while the user follows the folder. |
 
 ## Platforms
 
@@ -28,6 +30,77 @@ A guest cannot open a folder. The `/folder/:folderId` route has the signed-in gu
 ## Free and Pro
 
 Public folders are free. A viewer opens each wallpaper through the normal detail page. The Pro, Drop and streak gates of the detail page stay in effect.
+
+## Save all
+
+### The plan
+
+Before a download starts, the app builds a `FolderSavePlan` (`lib/features/folders/domain/entities/folder_save_plan.dart`). The app shows the plan in a sheet.
+
+Each wall gets one kind:
+
+| Kind | Meaning |
+|---|---|
+| `free` | The wall costs no coins. The user has Pro, a free grace download, or a premium wall with a premium pass. |
+| `coins` | The wall costs the download price. The default price is 10 coins. |
+| `proOnly` | A premium wall. The user has no Pro and no premium pass. |
+| `protected` | A streak or Drop wall. It needs its own unlock. |
+| `removed` | The wall is deleted or held for review, or it has no protected original. |
+| `saved` | The wall is already in Downloads. |
+
+The app reads the `walls` documents where `review == true`, in batches of 30. It uses them to find premium, protected and removed walls. The app uses the same checks as the server callable `resolveOriginalAccess`.
+
+Free grace downloads go to the first walls in folder order.
+
+The sheet shows one line for each kind. For example: "23 wallpapers are free", "2 wallpapers cost 10 coins each", "3 wallpapers need Pro".
+
+A user without Pro sees two buttons: "Save the 23 free wallpapers" and "Save all I can (20 coins)". **Save all I can** saves the free walls. It also saves the coin walls that the balance covers, in folder order.
+
+A Pro user sees one button. If a folder has no coin walls, the user sees one button.
+
+In Save all, premium walls are for Pro users only. A user without Pro can still buy one premium wall on its own page.
+
+### Coins
+
+Save all adds no coin logic and makes no backend change.
+
+The coin gate (`lib/features/ads/biz/coin_gate.dart`) has no batch mode. So Save all runs the gate once for each wall. The gate shows no ad and no low-balance sheet during Save all.
+
+For a Prism wall, the server callable `resolveOriginalAccess` charges the coins when it grants the original link. Its batch mode takes only 1 or 2 `set` items. So Save all calls it once for each wall. Each call sends `maxCoins`. Its value is the price that the plan showed. If the server asks for more, it charges nothing. The wall then fails with the message "price changed".
+
+Wallhaven and Pexels walls exist only in the owner's private folders. For these walls, the app downloads the file first, with no charge. Then the app spends the coins through the gate. Then the app saves the file. If the save fails, the gate requests a refund. An unconfirmed refund stays in pending recovery and blocks another charge for the same wall until it settles. This is the same refund flow as a single download.
+
+Charges run one at a time. So the server prices each charge after the one before it. Planned-free walls finish before any paid wall starts, so a faster paid request cannot take the grace promised to a slower free wall.
+
+A Prism wall that is charged but not saved keeps its grant for 5 minutes. In that time, "Retry failed" does not charge again. This is the same rule as a single download. After 5 minutes, a new save charges again. See Limits.
+
+Before the first charge, the app asks for Photos or storage access. If the user refuses, nothing is charged.
+
+### Save
+
+`FolderSaveBloc` is one app-wide singleton in `lib/features/folders/biz/folder_save/`. One save runs at a time. Leaving the folder page does not stop a save.
+
+It saves at most 3 walls at the same time. For each wall, the app downloads the file into the app temporary folder `folder_save/`. Then it saves the file. Then it deletes the file. The app deletes the whole `folder_save/` folder at the start and at the end of each run.
+
+Each download tries 2 times when a network or server error occurs.
+
+On iOS, each wall goes to Downloads and Photos. With full Photos access, it also goes to an album with the folder name. With limited or add-only access, the wall goes to Photos with no album.
+
+On Android, each wall goes to `Pictures/Prism/<folder name>`. Each character that a path cannot hold becomes a space. The name is at most 60 characters. The Downloads list also shows the files in every `Pictures/Prism/<name>/` folder. "Clear downloads" in Library deletes them too.
+
+A wall that is already in Downloads is skipped. The plan skips it. The save skips it again just before it saves the wall.
+
+The folder page shows a progress row, for example "Saving 12 of 23", with **Cancel**. **Cancel** stops the walls that have not started. Walls that have started finish. Their coins stay spent when the file saves. A failed Wallhaven or Pexels save uses the gate's refund flow. A failed Prism save keeps its paid grant for 5 minutes for retry, as described above. Walls that did not start cost nothing.
+
+At the end, the row changes to a summary card. The card shows four counts: saved, already in Downloads, failed, and not started after a cancel. **Retry failed** saves the failed walls again. **Done** closes the card.
+
+When no page for that folder is on screen at the end, the app shows a toast. For example, the toast reads "Saved 20 wallpapers from Night." or "Saved 20 from Night. 1 failed. Open the folder to retry."
+
+If the app is killed, the save stops. Walls that saved stay in Downloads and in the album. The pending download recovery returns the coins for a Wallhaven or Pexels wall that did not save. It runs 2 minutes after the charge. To finish, tap **Save all** again. The plan skips the walls that are already in Downloads.
+
+### Followed folders
+
+On a public folder, Save all uses the walls on the page. These walls come from the public projection. They pass the free gallery gate. So a follower gets only the walls that the follower can open. Private folder items, premium walls and Drop walls do not show in Save all.
 
 ## How it works
 
@@ -147,6 +220,11 @@ The share sheet uses the `shareImage`, or the newest cover when there is no shar
 | `lib/features/folders/views/widgets/profile_folders_row.dart` | The profile Folders row. |
 | `lib/features/folders/views/widgets/folder_card.dart` | Shared card for the Library, the profile and followed folders. |
 | `lib/features/folders/views/folder_share.dart` | Short link and share sheet. |
+| `lib/features/folders/domain/entities/folder_save_plan.dart` | The Save all plan. |
+| `lib/features/folders/domain/entities/folder_save_run.dart` | One Save all run and its outcomes. |
+| `lib/features/folders/biz/folder_save/folder_save_bloc.j.dart` | The run, 3 walls at a time, cancel and retry. |
+| `lib/features/folders/data/folder_save_gateway_impl.dart` | Wall access, the coin gate for each wall, download and album save. |
+| `lib/features/folders/views/widgets/folder_save_views.dart` | The plan sheet, progress row and summary. |
 
 States of the public folder page:
 
@@ -169,6 +247,9 @@ When the user comes back to the app, the page reloads the folder without a loadi
 | `folder_shared` | `source` (`folder_page` or `owner_folder`) |
 | `folder_push_opened` | `folder_count` |
 | `notification_preference_changed` | `preference: folders` |
+| `folder_save_started` | `wall_count`, `coin_cost`, `pro` |
+| `folder_save_finished` | `saved`, `skipped`, `failed` |
+| `folder_save_cancelled` | `saved`, `not_saved` |
 
 ## Deploy order
 
@@ -181,6 +262,8 @@ Do these steps in this order. No backfill is necessary, because every folder sta
 
 ## Limits
 
+- Wallhaven and Pexels spending has no server-side price cap. If its price changes after planning, a spend above the plan's cap stops the save and attempts a refund. Pending recovery blocks another charge for the same wall until it settles. Preventing that initial debit needs a backend change.
+
 - Prism has no word filter for public user text. Folder names get the length and hidden-character check. Reports and the moderation hide cover the rest.
 - Prism has no suspension state. A disabled Firebase Auth user counts as suspended at the next sync, follow or digest. No event starts a sync when Auth disables a user. A moderator can hide the folders at once with `setFolderHidden`.
 - Wallhaven and Pexels wallpapers do not show in public folders.
@@ -188,6 +271,9 @@ Do these steps in this order. No backfill is necessary, because every folder sta
 - A short link keeps the name and image it had when it was made. When the folder goes private or is deleted, the link preview still shows them, and the app shows the private state. The Make public dialog tells the owner this.
 - Premium walls do not show in public folders. The projection uses the free gallery gate, the same gate as the folder page and the push.
 - Making a folder private removes its followers. Making it public again starts at 0 followers.
+- A Prism wall that is charged but not saved keeps its grant for 5 minutes. After 5 minutes, a new save charges again.
+- Save all does not save the Drop walls that the user unlocked. Save those walls from their own page.
+- On iOS, the Save all album needs full Photos access. Limited or add-only access saves to Photos with no album.
 
 ## How to test
 
@@ -200,6 +286,21 @@ Do these steps in this order. No backfill is necessary, because every folder sta
 7. As A, tap **Make private**. As B, open the folder link. Make sure "This folder is private or no longer exists" shows.
 8. As B, block A. Make sure A's folder does not open for B and does not show on A's profile.
 
+**Save all**
+
+1. Sign in as a free user with 30 coins.
+2. Open a folder with 3 or more Prism walls.
+3. Tap the **Save all** button.
+4. Make sure that the plan shows the kind lines and the two buttons.
+5. Tap **Save all I can**.
+6. Make sure that the progress row shows. Make sure that the balance drops by the price for each coin wall.
+7. Make sure that the summary card shows the counts.
+8. On iOS, open Photos. Make sure that the album has the folder name. On Android, open the gallery. Make sure that `Pictures/Prism/<folder>` has the walls.
+9. Open Library > Downloads. Make sure that the walls are there.
+10. Tap **Save all** again. Make sure that the plan says the walls are already in Downloads.
+11. Start a save. Tap **Cancel**.
+12. Make sure that the balance drops only for the walls that saved.
+
 Tests:
 
 | Area | Files |
@@ -209,3 +310,6 @@ Tests:
 | Rules | `tool/firestore_rules_smoke.mjs` (public folder cases) |
 | Worker | `infra/cloudflare/worker/test/worker.test.mjs` (folder link cases) |
 | App | `test/features/folders/` |
+| Save all plan | `test/features/folders/domain/folder_save_plan_test.dart` |
+| Save all bloc | `test/features/folders/biz/folder_save_bloc_test.dart` |
+| Save all views | `test/features/folders/views/folder_save_views_test.dart` |

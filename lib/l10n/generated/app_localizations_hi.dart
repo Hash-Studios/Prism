@@ -14067,4 +14067,363 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'Pixel Watch Google Photos पढ़ता है। अगर इमेज नहीं दिखती, तो पहले उसे Google Photos में बैकअप करें।';
+
+  @override
+  String get searchByPhoto => 'फ़ोटो से खोजें';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'Prism आपकी फ़ोटो के रंग आपके फ़ोन पर ही पढ़ता है। फ़ोटो में क्या है, यह पता करने के लिए उसकी एक छोटी कॉपी Google Cloud Vision को भेजी जाती है। वह सेव नहीं होती।';
+
+  @override
+  String get searchPhotoChoose => 'फ़ोटो चुनें';
+
+  @override
+  String get searchPhotoChipLabel => 'आपकी फ़ोटो';
+
+  @override
+  String get searchPhotoClear => 'हटाएं';
+
+  @override
+  String get searchPhotoClearTooltip => 'फ़ोटो हटाएं';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return '$labels से मिलते नतीजे';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'रंग के हिसाब से मिलते नतीजे';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'मुख्य रंग: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote =>
+      'यह पता करने के लिए कि इसमें क्या है, एक छोटी कॉपी Google Cloud Vision को भेजी गई। वह सेव नहीं होती।';
+
+  @override
+  String get searchPhotoGuestNote => 'सिर्फ़ रंग के आधार पर मिलान। फ़ोटो में जो है उससे मिलान के लिए साइन इन करें।';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'आप आज के $count फ़ोटो सर्च इस्तेमाल कर चुके हैं। कल तक सिर्फ़ रंग से मिलान होगा।';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'फ़ोटो में क्या है, यह पढ़ नहीं पाए। सिर्फ़ रंग से मिलान हो रहा है।';
+
+  @override
+  String get searchPhotoNoMatches => 'इस फ़ोटो से मिलता कोई वॉलपेपर नहीं है';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'ज़्यादा चटख रंगों वाली फ़ोटो आज़माएं।';
+
+  @override
+  String get searchPhotoChooseAnother => 'कोई दूसरी फ़ोटो चुनें';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'वह फ़ोटो खोली नहीं जा सकी। कोई और फ़ोटो आज़माएं।';
+
+  @override
+  String get foldersSaveAll => 'सभी सहेजें';
+
+  @override
+  String get foldersSaveAllTitle => 'सभी वॉलपेपर सहेजें';
+
+  @override
+  String get foldersSaveAllChecking => 'वॉलपेपर जाँचे जा रहे हैं…';
+
+  @override
+  String get foldersSaveAllPlanFailed => 'वॉलपेपर जाँचे नहीं जा सके। फिर कोशिश करें।';
+
+  @override
+  String get foldersSaveAllBusy => 'एक और फ़ोल्डर सहेजा जा रहा है। उसके पूरा होने पर फिर कोशिश करें।';
+
+  @override
+  String foldersSaveAllRowFree(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर मुफ़्त हैं',
+      one: '1 वॉलपेपर मुफ़्त है',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowCoins(int count, int price) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर, प्रत्येक की कीमत $priceString सिक्के है',
+      one: '1 वॉलपेपर की कीमत $priceString सिक्के है',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowPro(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर के लिए Pro चाहिए',
+      one: '1 वॉलपेपर के लिए Pro चाहिए',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowSaved(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर पहले से डाउनलोड में हैं',
+      one: '1 वॉलपेपर पहले से डाउनलोड में है',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowBlocked(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर सहेजने के लिए उपलब्ध नहीं हैं',
+      one: '1 वॉलपेपर सहेजने के लिए उपलब्ध नहीं है',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllAffordable(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आपके सिक्के $countString भुगतान वाले वॉलपेपर के लिए काफ़ी हैं।',
+      one: 'आपके सिक्के 1 भुगतान वाले वॉलपेपर के लिए काफ़ी हैं।',
+      zero: 'आपके सिक्के किसी भुगतान वाले वॉलपेपर के लिए काफ़ी नहीं हैं।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPhotosAlbum(String name) {
+    return 'ये Photos में “$name” एल्बम और डाउनलोड में जाएँगे।';
+  }
+
+  @override
+  String foldersSaveAllGalleryAlbum(String name) {
+    return 'ये आपकी गैलरी में Pictures/Prism/$name और डाउनलोड में जाएँगे।';
+  }
+
+  @override
+  String get foldersSaveAllLeaveNote =>
+      'सहेजते समय आप यह पेज छोड़ सकते हैं। अगर आप Prism बंद करते हैं, तो पूरा करने के लिए फिर से सभी सहेजें पर टैप करें।';
+
+  @override
+  String get foldersSaveAllNothing => 'इस फ़ोल्डर में सहेजने के लिए कुछ नया नहीं है।';
+
+  @override
+  String foldersSaveAllFreeButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString मुफ़्त वॉलपेपर सहेजें',
+      one: 'मुफ़्त वॉलपेपर सहेजें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPaidButton(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'जो बचा सकूँ, सब सहेजें ($coinsString सिक्के)',
+      one: 'जो बचा सकूँ, सब सहेजें (1 सिक्का)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllCountButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर सहेजें',
+      one: '1 वॉलपेपर सहेजें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllProgress(int done, int total) {
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return '$totalString में से $doneString सहेजे जा रहे हैं';
+  }
+
+  @override
+  String foldersSaveAllProgressSemantics(int total, int done) {
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$totalString वॉलपेपर में से $doneString सहेजे जा रहे हैं',
+      one: '1 वॉलपेपर में से $doneString सहेजे जा रहे हैं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllStopping => 'रोका जा रहा है…';
+
+  @override
+  String get foldersSaveAllCancel => 'रद्द करें';
+
+  @override
+  String get foldersSaveAllCancelHint => 'जो वॉलपेपर शुरू नहीं हुए हैं, वे रुक जाएँगे। उनकी कोई कीमत नहीं लगेगी।';
+
+  @override
+  String foldersSaveAllSavedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर सहेजे गए',
+      one: '1 वॉलपेपर सहेजा गया',
+      zero: 'कोई वॉलपेपर नहीं सहेजा गया',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllStoppedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'रोका गया। $countString वॉलपेपर सहेजे गए',
+      one: 'रोका गया। 1 वॉलपेपर सहेजा गया',
+      zero: 'रोका गया। कोई वॉलपेपर नहीं सहेजा गया',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllSkipped(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString पहले से डाउनलोड में',
+      one: '1 पहले से डाउनलोड में',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllFailed(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString विफल', one: '1 विफल');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllNotStarted(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString शुरू नहीं हुए',
+      one: '1 शुरू नहीं हुआ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllRetry => 'विफल वाले फिर से करें';
+
+  @override
+  String get foldersSaveAllDone => 'हो गया';
+
+  @override
+  String foldersSaveAllToast(int count, String name) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$name से $countString वॉलपेपर सहेजे गए।',
+      one: '$name से 1 वॉलपेपर सहेजा गया।',
+      zero: '$name से कोई वॉलपेपर नहीं सहेजा गया।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllToastFailed(int failed, int saved, String name) {
+    final intl.NumberFormat failedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String failedString = failedNumberFormat.format(failed);
+    final intl.NumberFormat savedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String savedString = savedNumberFormat.format(saved);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      failed,
+      locale: localeName,
+      other: '$name से $savedString सहेजे गए। $failedString विफल। फिर से कोशिश करने के लिए फ़ोल्डर खोलें।',
+      one: '$name से $savedString सहेजे गए। 1 विफल। फिर से कोशिश करने के लिए फ़ोल्डर खोलें।',
+    );
+    return '$_temp0';
+  }
 }

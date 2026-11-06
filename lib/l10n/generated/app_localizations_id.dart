@@ -13971,4 +13971,364 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'Pixel Watch membaca Google Photos. Jika gambar tidak muncul, cadangkan dulu ke Google Photos.';
+
+  @override
+  String get searchByPhoto => 'Cari dengan foto';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'Prism membaca warna foto di ponselmu. Untuk mencari tahu isi fotonya, salinan kecil dikirim ke Google Cloud Vision. Salinan itu tidak disimpan.';
+
+  @override
+  String get searchPhotoChoose => 'Pilih foto';
+
+  @override
+  String get searchPhotoChipLabel => 'Fotomu';
+
+  @override
+  String get searchPhotoClear => 'Hapus';
+
+  @override
+  String get searchPhotoClearTooltip => 'Hapus foto';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return 'Cocok dengan $labels';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'Cocok berdasarkan warna';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'Warna utama: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote =>
+      'Salinan kecil dikirim ke Google Cloud Vision untuk mencari tahu isinya. Salinan itu tidak disimpan.';
+
+  @override
+  String get searchPhotoGuestNote => 'Hanya cocok berdasarkan warna. Masuk untuk juga mencocokkan isi fotomu.';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'Kamu sudah memakai $count pencarian foto hari ini. Sampai besok, pencocokan hanya berdasarkan warna.';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'Isi foto tidak bisa dibaca. Hanya cocok berdasarkan warna.';
+
+  @override
+  String get searchPhotoNoMatches => 'Tidak ada wallpaper yang cocok dengan foto ini';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'Coba foto dengan warna yang lebih cerah.';
+
+  @override
+  String get searchPhotoChooseAnother => 'Pilih foto lain';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'Foto itu tidak bisa dibuka. Coba foto lain.';
+
+  @override
+  String get foldersSaveAll => 'Simpan semua';
+
+  @override
+  String get foldersSaveAllTitle => 'Simpan semua wallpaper';
+
+  @override
+  String get foldersSaveAllChecking => 'Memeriksa wallpaper…';
+
+  @override
+  String get foldersSaveAllPlanFailed => 'Wallpaper tidak bisa diperiksa. Coba lagi.';
+
+  @override
+  String get foldersSaveAllBusy => 'Folder lain sedang disimpan. Coba lagi setelah selesai.';
+
+  @override
+  String foldersSaveAllRowFree(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper gratis',
+      one: '1 wallpaper gratis',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowCoins(int count, int price) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper berharga $priceString koin masing-masing',
+      one: '1 wallpaper berharga $priceString koin',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowPro(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper perlu Pro',
+      one: '1 wallpaper perlu Pro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowSaved(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper sudah ada di Unduhan',
+      one: '1 wallpaper sudah ada di Unduhan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowBlocked(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper tidak tersedia untuk disimpan',
+      one: '1 wallpaper tidak tersedia untuk disimpan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllAffordable(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Koinmu cukup untuk $countString wallpaper berbayar.',
+      one: 'Koinmu cukup untuk 1 wallpaper berbayar.',
+      zero: 'Koinmu tidak cukup untuk wallpaper berbayar.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPhotosAlbum(String name) {
+    return 'Wallpaper akan masuk ke album “$name” di Foto dan ke Unduhan.';
+  }
+
+  @override
+  String foldersSaveAllGalleryAlbum(String name) {
+    return 'Wallpaper akan masuk ke Pictures/Prism/$name di galerimu dan ke Unduhan.';
+  }
+
+  @override
+  String get foldersSaveAllLeaveNote =>
+      'Kamu bisa meninggalkan halaman ini saat menyimpan. Jika kamu menutup Prism, ketuk Simpan semua lagi untuk menyelesaikannya.';
+
+  @override
+  String get foldersSaveAllNothing => 'Tidak ada yang baru untuk disimpan di folder ini.';
+
+  @override
+  String foldersSaveAllFreeButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Simpan $countString wallpaper gratis',
+      one: 'Simpan wallpaper gratis',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPaidButton(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Simpan semua yang bisa ($coinsString koin)',
+      one: 'Simpan semua yang bisa (1 koin)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllCountButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Simpan $countString wallpaper',
+      one: 'Simpan 1 wallpaper',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllProgress(int done, int total) {
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Menyimpan $doneString dari $totalString';
+  }
+
+  @override
+  String foldersSaveAllProgressSemantics(int total, int done) {
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: 'Menyimpan $doneString dari $totalString wallpaper',
+      one: 'Menyimpan $doneString dari 1 wallpaper',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllStopping => 'Menghentikan…';
+
+  @override
+  String get foldersSaveAllCancel => 'Batal';
+
+  @override
+  String get foldersSaveAllCancelHint =>
+      'Menghentikan wallpaper yang belum dimulai. Wallpaper itu tidak dikenai biaya.';
+
+  @override
+  String foldersSaveAllSavedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper disimpan',
+      one: '1 wallpaper disimpan',
+      zero: 'Tidak ada wallpaper yang disimpan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllStoppedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Dihentikan. $countString wallpaper disimpan',
+      one: 'Dihentikan. 1 wallpaper disimpan',
+      zero: 'Dihentikan. Tidak ada wallpaper yang disimpan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllSkipped(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString sudah ada di Unduhan',
+      one: '1 sudah ada di Unduhan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllFailed(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString gagal', one: '1 gagal');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllNotStarted(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString belum dimulai',
+      one: '1 belum dimulai',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllRetry => 'Coba ulang yang gagal';
+
+  @override
+  String get foldersSaveAllDone => 'Selesai';
+
+  @override
+  String foldersSaveAllToast(int count, String name) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Tersimpan $countString wallpaper dari $name.',
+      one: 'Tersimpan 1 wallpaper dari $name.',
+      zero: 'Tidak ada wallpaper yang tersimpan dari $name.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllToastFailed(int failed, int saved, String name) {
+    final intl.NumberFormat failedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String failedString = failedNumberFormat.format(failed);
+    final intl.NumberFormat savedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String savedString = savedNumberFormat.format(saved);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      failed,
+      locale: localeName,
+      other: 'Tersimpan $savedString dari $name. $failedString gagal. Buka folder untuk mencoba lagi.',
+      one: 'Tersimpan $savedString dari $name. 1 gagal. Buka folder untuk mencoba lagi.',
+    );
+    return '$_temp0';
+  }
 }

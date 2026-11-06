@@ -13917,4 +13917,362 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'Pixel Watch reads Google Photos. If the image doesn\'t show, back it up to Google Photos first.';
+
+  @override
+  String get searchByPhoto => 'Search by photo';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'Prism reads the photo\'s colours on your phone. To find what\'s in the photo, a small copy goes to Google Cloud Vision. It isn\'t stored.';
+
+  @override
+  String get searchPhotoChoose => 'Choose photo';
+
+  @override
+  String get searchPhotoChipLabel => 'Your photo';
+
+  @override
+  String get searchPhotoClear => 'Clear';
+
+  @override
+  String get searchPhotoClearTooltip => 'Clear photo';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return 'Matches for $labels';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'Matches by colour';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'Main colours: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote => 'A small copy went to Google Cloud Vision to find what\'s in it. It isn\'t stored.';
+
+  @override
+  String get searchPhotoGuestNote => 'Colour matches only. Sign in to match what\'s in the photo too.';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'You\'ve used today\'s $count photo searches. Matching by colour until tomorrow.';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'Couldn\'t read what\'s in the photo. Matching by colour only.';
+
+  @override
+  String get searchPhotoNoMatches => 'No walls match this photo';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'Try a photo with bolder colours.';
+
+  @override
+  String get searchPhotoChooseAnother => 'Choose another photo';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'Couldn\'t open that photo. Try another one.';
+
+  @override
+  String get foldersSaveAll => 'Save all';
+
+  @override
+  String get foldersSaveAllTitle => 'Save all wallpapers';
+
+  @override
+  String get foldersSaveAllChecking => 'Checking the wallpapers…';
+
+  @override
+  String get foldersSaveAllPlanFailed => 'Could not check the wallpapers. Try again.';
+
+  @override
+  String get foldersSaveAllBusy => 'Another folder is saving. Try again when it ends.';
+
+  @override
+  String foldersSaveAllRowFree(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpapers are free',
+      one: '1 wallpaper is free',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowCoins(int count, int price) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpapers cost $priceString coins each',
+      one: '1 wallpaper costs $priceString coins',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowPro(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpapers need Pro',
+      one: '1 wallpaper needs Pro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowSaved(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpapers are already in Downloads',
+      one: '1 wallpaper is already in Downloads',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowBlocked(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpapers are not available to save',
+      one: '1 wallpaper is not available to save',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllAffordable(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Your coins cover $countString paid wallpapers.',
+      one: 'Your coins cover 1 paid wallpaper.',
+      zero: 'You do not have enough coins for a paid wallpaper.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPhotosAlbum(String name) {
+    return 'They go to the “$name” album in Photos and to Downloads.';
+  }
+
+  @override
+  String foldersSaveAllGalleryAlbum(String name) {
+    return 'They go to Pictures/Prism/$name in your gallery and to Downloads.';
+  }
+
+  @override
+  String get foldersSaveAllLeaveNote =>
+      'You can leave this page while it saves. If you close Prism, tap Save all again to finish.';
+
+  @override
+  String get foldersSaveAllNothing => 'There is nothing new to save in this folder.';
+
+  @override
+  String foldersSaveAllFreeButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Save the $countString free wallpapers',
+      one: 'Save the free wallpaper',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPaidButton(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Save all I can ($coinsString coins)',
+      one: 'Save all I can (1 coin)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllCountButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Save $countString wallpapers',
+      one: 'Save 1 wallpaper',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllProgress(int done, int total) {
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Saving $doneString of $totalString';
+  }
+
+  @override
+  String foldersSaveAllProgressSemantics(int total, int done) {
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: 'Saving $doneString of $totalString wallpapers',
+      one: 'Saving $doneString of 1 wallpaper',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllStopping => 'Stopping…';
+
+  @override
+  String get foldersSaveAllCancel => 'Cancel';
+
+  @override
+  String get foldersSaveAllCancelHint => 'Stops the wallpapers that have not started. They cost nothing.';
+
+  @override
+  String foldersSaveAllSavedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpapers saved',
+      one: '1 wallpaper saved',
+      zero: 'No wallpapers saved',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllStoppedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Stopped. $countString wallpapers saved',
+      one: 'Stopped. 1 wallpaper saved',
+      zero: 'Stopped. No wallpapers saved',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllSkipped(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString already in Downloads',
+      one: '1 already in Downloads',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllFailed(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString failed', one: '1 failed');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllNotStarted(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString not started',
+      one: '1 not started',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllRetry => 'Retry failed';
+
+  @override
+  String get foldersSaveAllDone => 'Done';
+
+  @override
+  String foldersSaveAllToast(int count, String name) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Saved $countString wallpapers from $name.',
+      one: 'Saved 1 wallpaper from $name.',
+      zero: 'No wallpapers saved from $name.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllToastFailed(int failed, int saved, String name) {
+    final intl.NumberFormat failedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String failedString = failedNumberFormat.format(failed);
+    final intl.NumberFormat savedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String savedString = savedNumberFormat.format(saved);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      failed,
+      locale: localeName,
+      other: 'Saved $savedString from $name. $failedString failed. Open the folder to retry.',
+      one: 'Saved $savedString from $name. 1 failed. Open the folder to retry.',
+    );
+    return '$_temp0';
+  }
 }

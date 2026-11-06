@@ -1583,11 +1583,39 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_sha",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "review",
           "order": "ASCENDING"
         },
         {
           "fieldPath": "editorsChoiceAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
           "order": "DESCENDING"
         }
       ]
@@ -1622,6 +1650,12 @@
     }
   ],
   "fieldOverrides": [
+    {
+      "collectionGroup": "photoSearchRate",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
     {
       "collectionGroup": "creatorMemberRateDaily",
       "fieldPath": "expireAt",

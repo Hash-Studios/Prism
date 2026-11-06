@@ -31,6 +31,18 @@ void main() {
     }
   });
 
+  test('every default interest has its own cover', () {
+    final List<Object?> interests = json.decode(defaultPersonalizedInterestsJson) as List<Object?>;
+    final Map<String, String> nameByCover = <String, String>{};
+    for (final Object? interest in interests) {
+      final Map<String, Object?> map = interest! as Map<String, Object?>;
+      final String cover = bundledCoverAsset(map['imageUrl']! as String)!;
+      final String? other = nameByCover[cover];
+      expect(other, isNull, reason: '${map['name']} and $other share $cover');
+      nameByCover[cover] = map['name']! as String;
+    }
+  });
+
   test('the covers folder is a declared asset folder', () {
     expect(File('pubspec.yaml').readAsStringSync(), contains('    - assets/images/covers/\n'));
   });
