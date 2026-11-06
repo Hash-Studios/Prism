@@ -77,7 +77,9 @@ Each subject has an `id`, a `title`, a `prompt` and 2 `tags`. No subject shows a
 
 - Week: Monday 7 December to Sunday 13 December 2026.
 - 6 walls from `winter-light`, one from each palette.
-- Use the existing `dailyDropReserves` path. From 30 November to 5 December, reserve the winter walls for the next Drop. Set `dailyDropReserves` to 1 and the weight to 2 in those 6 days.
+- How a wall gets into a Drop: `processStudioCandidate` marks the first `dailyDropReserves` walls of each UTC day with `dropReserved: true` and keeps `review: false`. `planWeeklyDrop` picks only walls with `dropReserved: true` and `review: false`. So a Drop wall never goes through the admin approval. An approval makes it public and takes it out of the Drop.
+- The reserve is the first wall of the day from any series. To make the reserves Winter walls, run the Winter candidates first each day: from 30 November to 5 December, start one manual run with `seriesId: "winter-light"` and `count: 1` before the daily schedule. Keep `dailyDropReserves` at 1.
+- Review the reserved walls before Monday 7 December in the admin review list without approving them. If one is bad, delete it and run one more manual Winter candidate.
 - Use the normal Drop prices and pushes. The `live` push copy can say "Winter Drop".
 
 ## Cost per wall
@@ -90,11 +92,11 @@ Facts from `docs/features/studio.md`: the default model is GPT Image 2.5 Sunburs
 | Vision, 3 features at about $1.50 per 1,000 | $0.0045 |
 | Total | about $0.075 |
 
-The share of candidates that pass the checks and the admin review is not measured for a new series. The table uses a guess of 50%.
+The share of candidates that pass the checks and the review (admin approval for feed walls, a look for Drop reserves) is not measured for a new series. The table uses a guess of 50%.
 
-| Plan | Candidates | Approved walls (guess) | Cost |
+| Plan | Candidates | Usable walls (guess) | Cost |
 |---|---|---|---|
-| December Drop | 12 | 6 | about $0.90 |
+| December Drop | 12 | 6 that pass the automatic checks and a look | about $0.90 |
 | Season, 17 Nov to 31 Dec | about 60 | about 30 | about $4.50 |
 | Cost per approved wall | | | about $0.15 |
 
@@ -102,7 +104,8 @@ If the pass rate is 30%, the season costs the same and gives about 18 walls, abo
 
 ## Steps after the OK
 
-1. Add the series object to `functions/src/studio/series.ts` with a test that checks the ids are unique and no prompt has text or people.
-2. Deploy functions.
-3. Run one manual run of 4 candidates and review them. Expected cost: about $0.30.
-4. If the walls look right, set the weight and the Drop reserve as above.
+1. Set `studioConfig/current.seriesWeights["winter-light"]` to 0. A series that is not in the map has weight 1, so without this the daily schedule starts Winter candidates as soon as the functions deploy.
+2. Add the series object to `functions/src/studio/series.ts` with a test that checks the ids are unique and no prompt has text or people.
+3. Deploy functions.
+4. Start one manual run with `seriesId: "winter-light"` and `count: 4`, and review the 4 candidates. Expected cost: about $0.30.
+5. If the walls look right, set the weight to 2 and do the Drop steps above.
