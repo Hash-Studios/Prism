@@ -1,0 +1,236 @@
+name: Android app size
+
+# Optional profiling proxy, not the shipping AAB size. No required checks live here.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Open pull request number to compare against its base
+        required: true
+        type: number
+
+concurrency:
+  # Unrelated label events must not cancel an opted-in build.
+  group: app-size-${{ github.event.pull_request.number || inputs.pr_number }}-${{ github.event.label.name || 'ci:app-size' }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  APP_SIZE_MAX_DELTA_BYTES: 1572864
+  APP_SIZE_MAX_DELTA_PERCENT: 5
+  APP_SIZE_TARGET_PLATFORM: android-arm64
+  APP_SIZE_BUILD_MODE: profile
+  GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Dkotlin.daemon.jvm.options=-Xmx2g -Dorg.gradle.vfs.watch=false
+
+jobs:
+  request:
+    name: Resolve app-size request
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.draft == false &&
+       contains(github.event.pull_request.labels.*.name, 'ci:app-size') &&
+       github.event.action != 'unlabeled' &&
+       (github.event.action != 'labeled' || github.event.label.name == 'ci:app-size'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      base_sha: ${{ steps.pr.outputs.base_sha }}
+      head_sha: ${{ steps.pr.outputs.head_sha }}
+      pr_number: ${{ steps.pr.outputs.pr_number }}
+    steps:
+      - name: Resolve open pull request
+        id: pr
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ inputs.pr_number || github.event.pull_request.number }}
+        with:
+          script: |
+            const number = Number(process.env.PR_NUMBER);
+            if (!Number.isSafeInteger(number) || number <= 0) {
+              throw new Error('pr_number must be a positive integer.');
+            }
+            const { data: pull } = await github.rest.pulls.get({
+              ...context.repo, pull_number: number
+            });
+            if (pull.state !== 'open') throw new Error('The pull request must be open.');
+            core.setOutput('base_sha', pull.base.sha);
+            core.setOutput('head_sha', pull.head.sha);
+            core.setOutput('pr_number', String(number));
+
+  app_size:
+    name: Android app size
+    needs: request
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      BASE_SHA: ${{ needs.request.outputs.base_sha }}
+      HEAD_SHA: ${{ needs.request.outputs.head_sha }}
+      PR_NUMBER: ${{ needs.request.outputs.pr_number }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # The base commit may predate the script, so run the head copy.
+      - name: Compute the base APK cache key
+        id: base
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          if ! git fetch --no-tags --depth=1 origin "$HEAD_SHA"; then
+            git fetch --no-tags --depth=1 origin "refs/pull/$PR_NUMBER/head"
+            test "$(git rev-parse FETCH_HEAD)" = "$HEAD_SHA"
+          fi
+          git checkout --force --detach "$HEAD_SHA"
+          cp tool/build_size_apk.sh "$RUNNER_TEMP/"
+          key=$("$RUNNER_TEMP/build_size_apk.sh" --key "$BASE_SHA")
+          echo "key=app-size-apk-${{ runner.os }}-$APP_SIZE_BUILD_MODE-$APP_SIZE_TARGET_PLATFORM-$key" >> "$GITHUB_OUTPUT"
+
+      # Reuse an existing baseline when available; otherwise build it on demand.
+      - name: Restore the base APK
+        id: base_apk
+        uses: actions/cache/restore@v4
+        with:
+          path: build/size/base
+          key: ${{ steps.base.outputs.key }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # Reuse the native dependency cache warmed by CI on master.
+      - name: Cache Gradle
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-native-v2-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties', 'packages/**/android/**/*.gradle*', 'pubspec.lock', '.fvmrc') }}
+          restore-keys: |
+            gradle-native-v2-${{ runner.os }}-
+
+      - name: Checkout base for build
+        if: steps.base_apk.outputs.cache-hit != 'true'
+        run: git checkout --force --detach "$BASE_SHA"
+
+      - name: Read base Flutter version from .fvmrc
+        id: base_fvm
+        if: steps.base_apk.outputs.cache-hit != 'true'
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup base Flutter
+        if: steps.base_apk.outputs.cache-hit != 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.base_fvm.outputs.version }}
+          channel: stable
+          cache: true
+          cache-key: flutter-${{ runner.os }}-${{ steps.base_fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+
+      - name: Build base APK
+        if: steps.base_apk.outputs.cache-hit != 'true'
+        run: |
+          "$RUNNER_TEMP/build_size_apk.sh" build/size/base
+          ./android/gradlew --stop || true
+
+      # PR-scoped only: reuse the baseline on subsequent pushes, without
+      # allowing a manually requested fork head to write default-branch caches.
+      - name: Cache base APK for this PR
+        if: github.event_name == 'pull_request' && steps.base_apk.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: build/size/base
+          key: ${{ steps.base.outputs.key }}
+
+      - name: Checkout head for build
+        run: git checkout --force --detach "$HEAD_SHA"
+
+      - name: Read head Flutter version from .fvmrc
+        id: head_fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup head Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.head_fvm.outputs.version }}
+          channel: stable
+          cache: true
+          cache-key: flutter-${{ runner.os }}-${{ steps.head_fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+
+      - name: Build head APK
+        run: |
+          "$RUNNER_TEMP/build_size_apk.sh" build/size/head
+
+      - name: Compare app size and enforce thresholds
+        run: |
+          python3 tool/compare_app_size.py \
+            --base-artifact build/size/base/app-"$APP_SIZE_BUILD_MODE".apk \
+            --head-artifact build/size/head/app-"$APP_SIZE_BUILD_MODE".apk \
+            --max-delta-bytes "$APP_SIZE_MAX_DELTA_BYTES" \
+            --max-delta-percent "$APP_SIZE_MAX_DELTA_PERCENT" \
+            --json-out build/size/report.json \
+            --summary-out build/size/report.md
+          cat build/size/report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload app size artifacts
+        if: ${{ always() && !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-size-report
+          path: build/size
+
+  # Builds run PR-controlled code, including manually requested fork heads.
+  # Keep the write token in a job that only downloads and comments on the report.
+  app_size_comment:
+    name: Report app size
+    needs: [request, app_size]
+    if: ${{ always() && !cancelled() && needs.request.result == 'success' && needs.app_size.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      - name: Download app-size report
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: app-size-report
+          path: build/size
+      - name: Upsert app-size PR comment
+        if: hashFiles('build/size/report.md') != ''
+        continue-on-error: true
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: app-size-report
+          number: ${{ needs.request.outputs.pr_number }}
+          path: build/size/report.md
+
+  app_size_skipped:
+    name: Clear opted-out app-size report
+    if: github.event.action == 'unlabeled' && github.event.label.name == 'ci:app-size'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: marocchino/sticky-pull-request-comment@v2
+        continue-on-error: true
+        with:
+          header: app-size-report
+          message: |
+            ## Android App Size Report
+
+            Skipped: add the `ci:app-size` label or run the Android app size workflow manually.

@@ -2,6 +2,8 @@
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
+TEST_TOTAL_SHARDS ?= 2
+TEST_SHARD_INDEX ?= 0
 QA_RENDER_TARGET ?= $(wildcard test/qa_render/*_render.dart)
 QA_RENDER_FLAGS ?=
 DEVICE ?=
@@ -128,7 +130,7 @@ l10n-check: ensure-fvm
 	@$(FLUTTER) gen-l10n
 	@git diff --exit-code -- lib/l10n/generated
 	@$(DART) run tool/l10n_audit.dart --check --summary
-	@$(FLUTTER) test tool/l10n_audit_test.dart
+	@$(FLUTTER) test --no-pub tool/l10n_audit_test.dart
 
 analytics-gen: ensure-fvm
 	@$(DART) run tool/generate_analytics_schema.dart
@@ -137,8 +139,12 @@ analytics-gen: ensure-fvm
 analytics-guard:
 	@./tool/analytics_raw_usage_guard.sh
 
-analytics-check: ensure-fvm analytics-guard
-	@$(FLUTTER) test test/core/analytics/analytics_schema_contract_test.dart
+.PHONY: analytics-schema-check
+analytics-check: analytics-schema-check
+	@$(FLUTTER) test --no-pub test/core/analytics/analytics_schema_contract_test.dart
+
+# The full Flutter suite owns the contract test in CI. Keep the generator check separate.
+analytics-schema-check: ensure-fvm analytics-guard
 	@$(DART) run tool/generate_analytics_schema.dart
 	@$(DART) format --line-length $(DART_FORMAT_LINE_LENGTH) lib/core/analytics/events/generated/analytics_events.g.dart
 	@git diff --exit-code -- lib/core/analytics/events/generated/analytics_events.g.dart
@@ -157,16 +163,15 @@ no-shape-parse-guard:
 
 guard-test:
 	@bash tool/search_guard_test.sh
-	@python3 -m unittest tool.release_tools_test tool.release_workflows_test tool.ios_ci_signing_test tool.app_size_workflow_test tool.check_store_listings_test tool.shorebird_ota_test tool.public_apk_test
+	@python3 -m unittest tool.release_tools_test tool.release_workflows_test tool.ios_ci_signing_test tool.app_size_workflow_test tool.ci_workflow_test tool.shorebird_ota_test tool.public_apk_test
 	@node --test tool/ai_style_samples.test.mjs tool/shared_folders_qa.test.mjs
 
 .PHONY: notification-contract-fixture-test
 notification-contract-fixture-test: ensure-fvm
 	@FLUTTER="$(FLUTTER)" python3 tool/notification_contract_fixture_test.py
 
-env-guard:
+env-guard: system-ui-guard
 	@./tool/env_define_guard.sh
-	@bash ./tool/system_ui_guard.sh
 
 system-ui-guard:
 	@bash ./tool/system_ui_guard.sh
@@ -410,6 +415,7 @@ repo-assets-check:
 
 store-listings-check:
 	@python3 tool/check_store_listings.py
+	@python3 -m unittest tool.check_store_listings_test
 
 .PHONY: duo-check
 duo-check:
@@ -417,7 +423,11 @@ duo-check:
 	@node tool/generate_duo_web_copy.mjs --check
 	@node --test tool/generate_duo_reveal.test.mjs tool/generate_duo_web_copy.test.mjs
 
-ci: get format-check l10n-check guard-test env-guard secrets-guard version-guard analytics-check duo-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard system-ui-guard find-unused-ci cloudflare-worker-check repo-assets-check store-listings-check test
+.PHONY: ci-static test-shard test-release
+ci-static: get format-check l10n-check guard-test env-guard secrets-guard version-guard analytics-schema-check duo-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard find-unused-ci cloudflare-worker-check
+
+# Local CI remains complete. Hosted CI runs these three parts in separate jobs.
+ci: ci-static secrets-guard repo-assets-check store-listings-check test
 
 .PHONY: native-android-check native-ios-check ios-strip-test
 native-android-check: get
@@ -443,13 +453,21 @@ native-ios-check: get ios-strip-test
 		-sdk iphonesimulator -destination 'generic/platform=iOS Simulator' ARCHS=arm64 ONLY_ACTIVE_ARCH=YES COMPILATION_CACHE_ENABLE_CACHING=YES \
 		-derivedDataPath build/ios/native-tests build-for-testing CODE_SIGNING_ALLOWED=NO FLUTTER_BUILD_MODE=debug
 
-test: ensure-fvm
+RELEASE_TEST_COMMAND = $(FLUTTER) test --no-pub $(TEST_FLAGS) --dart-define=dart.vm.product=true --dart-define=PRISM_PERF_AUTODRIVE=true test/core/debug/performance_probe_release_test.dart test/core/platform/cloud_functions_perf_test.dart
+
+test: get
 	@if ls test/*_test.dart >/dev/null 2>&1 || find test -name '*_test.dart' -print -quit | grep -q .; then \
-		$(FLUTTER) test $(TEST_FLAGS) && \
-		$(FLUTTER) test $(TEST_FLAGS) --dart-define=dart.vm.product=true --dart-define=PRISM_PERF_AUTODRIVE=true test/core/debug/performance_probe_release_test.dart test/core/platform/cloud_functions_perf_test.dart; \
+		$(FLUTTER) test --no-pub $(TEST_FLAGS) && $(RELEASE_TEST_COMMAND); \
 	else \
 		echo "No test files found, skipping."; \
 	fi
+
+test-shard: get
+	@python3 tool/run_flutter_test_shard.py --total-shards=$(TEST_TOTAL_SHARDS) --shard-index=$(TEST_SHARD_INDEX) -- $(FLUTTER) test --no-pub $(TEST_FLAGS)
+	@if [ "$(TEST_SHARD_INDEX)" = 0 ]; then $(RELEASE_TEST_COMMAND); fi
+
+test-release: ensure-fvm
+	@$(RELEASE_TEST_COMMAND)
 
 .PHONY: test-qa-render
 test-qa-render: ensure-fvm
