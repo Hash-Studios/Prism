@@ -13,6 +13,7 @@ import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -68,35 +69,41 @@ void main() {
 
   ThemeBloc buildBloc() => ThemeBloc(loadUseCase, updateUseCase, repository, systemColors);
 
-  test('the season-end timer reloads the preferences when Winter ends', () async {
+  test('the season-end timer reloads the preferences when Winter ends', () {
     final DateTime Function() originalClock = seasonClock;
-    final DateTime start = DateTime.now();
-    final DateTime fakeStart = winterSeason.window.end.subtract(const Duration(milliseconds: 80));
-    seasonClock = () => fakeStart.add(DateTime.now().difference(start));
     addTearDown(() => seasonClock = originalClock);
-    final ThemeBloc bloc = buildBloc();
-    addTearDown(bloc.close);
+    fakeAsync((async) {
+      final DateTime start = winterSeason.window.end.subtract(const Duration(seconds: 1));
+      seasonClock = () => start.add(async.elapsed);
+      final ThemeBloc bloc = buildBloc();
 
-    verifyNever(() => loadUseCase(const NoParams()));
-    await Future<void>.delayed(const Duration(milliseconds: 300));
+      async.elapse(const Duration(milliseconds: 999));
+      verifyNever(() => loadUseCase(const NoParams()));
 
-    verify(() => loadUseCase(const NoParams())).called(1);
-    expect(bloc.state.dark.themeId, _dark.themeId);
-    expect(bloc.state.status, LoadStatus.success);
+      async.elapse(const Duration(milliseconds: 2));
+      verify(() => loadUseCase(const NoParams())).called(1);
+      expect(bloc.state.dark.themeId, _dark.themeId);
+      expect(bloc.state.status, LoadStatus.success);
+      unawaited(bloc.close());
+      async.flushMicrotasks();
+    });
   });
 
-  test('closing the bloc cancels the season-end timer', () async {
+  test('closing the bloc cancels the season-end timer', () {
     final DateTime Function() originalClock = seasonClock;
-    final DateTime start = DateTime.now();
-    final DateTime fakeStart = winterSeason.window.end.subtract(const Duration(milliseconds: 80));
-    seasonClock = () => fakeStart.add(DateTime.now().difference(start));
     addTearDown(() => seasonClock = originalClock);
-    final ThemeBloc bloc = buildBloc();
+    fakeAsync((async) {
+      final DateTime start = winterSeason.window.end.subtract(const Duration(seconds: 1));
+      seasonClock = () => start.add(async.elapsed);
+      final ThemeBloc bloc = buildBloc();
 
-    await bloc.close();
-    await Future<void>.delayed(const Duration(milliseconds: 300));
+      unawaited(bloc.close());
+      async.flushMicrotasks();
+      async.elapse(const Duration(seconds: 2));
 
-    verifyNever(() => loadUseCase(const NoParams()));
+      verifyNever(() => loadUseCase(const NoParams()));
+      expect(async.pendingTimers, isEmpty);
+    });
   });
 
   test('the first state carries the schemes the source already holds', () async {
