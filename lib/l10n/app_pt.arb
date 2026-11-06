@@ -3952,21 +3952,21 @@
   "foldersJoinUnavailableBody": "Talvez a pasta tenha sido excluída, ou você não pode entrar nela.",
   "foldersMakePrivateMessageShared": "Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso.",
   "photoWallEntryTitle": "A partir da sua foto",
-  "photoWallEntrySubtitle": "Adapte qualquer fotografia ao seu ecrã",
-  "photoWallPickPhoto": "Escolha uma fotografia",
-  "photoWallPickAnother": "Escolha outra fotografia",
-  "photoWallPrivacyNote": "A sua fotografia é enviada ao nosso fornecedor de IA, o fal.ai, e ao Google Cloud Vision apenas para este trabalho. A Prism não a guarda e pede ao fal.ai que a apague depois do trabalho.",
+  "photoWallEntrySubtitle": "Ajuste qualquer foto à sua tela",
+  "photoWallPickPhoto": "Escolha uma foto",
+  "photoWallPickAnother": "Escolha outra foto",
+  "photoWallPrivacyNote": "Sua foto é enviada ao nosso provedor de IA, o fal.ai, e ao Google Cloud Vision apenas para este trabalho. O Prism não a guarda e pede ao fal.ai que a apague depois do trabalho.",
   "photoWallTargetLabel": "Criar para",
-  "photoWallTargetPhone": "Telemóvel",
+  "photoWallTargetPhone": "Celular",
   "photoWallTargetDesktop": "Versão para computador",
-  "photoWallPlanExtend": "Estender para caber no seu ecrã",
-  "photoWallPlanExtendDesktop": "Estender para caber num ecrã de computador",
-  "photoWallPlanExtendDetail": "A IA preenche as margens que faltam em volta da sua fotografia.",
+  "photoWallPlanExtend": "Estender para caber na sua tela",
+  "photoWallPlanExtendDesktop": "Estender para caber em uma tela de computador",
+  "photoWallPlanExtendDetail": "A IA preenche as bordas que faltam ao redor da sua foto.",
   "photoWallPlanUpscale": "Aumentar resolução",
-  "photoWallPlanUpscaleDetail": "A IA acrescenta detalhe para que a fotografia fique nítida no seu ecrã.",
-  "photoWallPlanFits": "Esta fotografia já cabe no seu ecrã",
-  "photoWallPlanFitsDesktop": "Esta fotografia já cabe num ecrã de computador",
-  "photoWallPlanFitsDetail": "A forma e o tamanho estão certos. Escolha outra fotografia ou mude o destino.",
+  "photoWallPlanUpscaleDetail": "A IA adiciona detalhes para que a foto fique nítida na sua tela.",
+  "photoWallPlanFits": "Esta foto já cabe na sua tela",
+  "photoWallPlanFitsDesktop": "Esta foto já cabe em uma tela de computador",
+  "photoWallPlanFitsDetail": "A forma e o tamanho estão certos. Escolha outra foto ou mude o destino.",
   "photoWallRunExtend": "{coins, plural, =1{Estender · 1 moeda} other{Estender · {coins} moedas}}",
   "@photoWallRunExtend": {
     "description": "Main button. Starts an Extend job and shows its coin cost.",
@@ -3985,7 +3985,7 @@
       }
     }
   },
-  "photoWallGetCoins": "Obter moedas · necessita de {coins}",
+  "photoWallGetCoins": "Obter moedas · precisa de {coins}",
   "@photoWallGetCoins": {
     "description": "Main button when the balance is too low. Opens Rewards.",
     "placeholders": {
@@ -3994,26 +3994,26 @@
       }
     }
   },
-  "photoWallPlaceTitle": "Posicione a sua fotografia",
+  "photoWallPlaceTitle": "Posicione sua foto",
   "photoWallPlaceHint": "Arraste para mover. Belisque para diminuir.",
-  "photoWallPlaceReset": "Repor posição",
-  "photoWallPlaceSemantics": "Posição da fotografia na moldura",
+  "photoWallPlaceReset": "Redefinir posição",
+  "photoWallPlaceSemantics": "Posição da foto na moldura",
   "photoWallPlaceMoveStart": "Mover para o início",
   "photoWallPlaceMoveCentre": "Mover para o centro",
   "photoWallPlaceMoveEnd": "Mover para o fim",
-  "photoWallWorkingExtend": "A estender a sua fotografia",
-  "photoWallWorkingUpscale": "A aumentar a resolução da sua fotografia",
-  "photoWallWorkingDetail": "Isto pode demorar até um minuto.",
+  "photoWallWorkingExtend": "Estendendo sua foto",
+  "photoWallWorkingUpscale": "Aumentando a resolução da sua foto",
+  "photoWallWorkingDetail": "Isso pode levar até um minuto.",
   "photoWallBefore": "Antes",
   "photoWallAfter": "Depois",
   "photoWallCompareSemantics": "Antes e depois. Deslize para cima ou para baixo para comparar.",
   "photoWallSet": "Definir como papel de parede",
-  "photoWallDownload": "Transferir",
-  "photoWallSaved": "Guardado no seu dispositivo",
-  "photoWallStartOver": "Usar outra fotografia",
-  "photoWallErrorUnsafeInput": "Não é possível usar esta fotografia. Escolha outra.",
-  "photoWallErrorUnsafeOutput": "O resultado foi bloqueado. Tente novamente ou escolha outra fotografia.",
-  "photoWallErrorLimit": "Atingiu o limite de hoje de {count} papéis de parede com fotografias.",
+  "photoWallDownload": "Baixar",
+  "photoWallSaved": "Salvo no seu dispositivo",
+  "photoWallStartOver": "Usar outra foto",
+  "photoWallErrorUnsafeInput": "Não é possível usar esta foto. Escolha outra.",
+  "photoWallErrorUnsafeOutput": "O resultado foi bloqueado. Tente novamente ou escolha outra foto.",
+  "photoWallErrorLimit": "Você atingiu o limite de hoje de {count} papéis de parede com fotos.",
   "@photoWallErrorLimit": {
     "description": "Error when the daily cap is reached.",
     "placeholders": {
@@ -4022,11 +4022,11 @@
       }
     }
   },
-  "photoWallErrorBusy": "Os papéis de parede com fotografias estão muito ocupados neste momento. Tente mais tarde.",
-  "photoWallErrorUnreadable": "Não é possível abrir esta fotografia. Escolha outra.",
-  "photoWallErrorInProgress": "Ainda estamos a trabalhar na sua última fotografia.",
+  "photoWallErrorBusy": "Os papéis de parede com fotos estão muito ocupados agora. Tente novamente mais tarde.",
+  "photoWallErrorUnreadable": "Não é possível abrir esta foto. Escolha outra.",
+  "photoWallErrorInProgress": "Ainda estamos trabalhando na sua última foto.",
   "photoWallErrorGeneric": "Não foi possível criar o papel de parede. Tente novamente.",
-  "photoWallRefunded": "{coins, plural, =1{A sua moeda foi devolvida.} other{As suas {coins} moedas foram devolvidas.}}",
+  "photoWallRefunded": "{coins, plural, =1{Sua moeda foi devolvida.} other{Suas {coins} moedas foram devolvidas.}}",
   "@photoWallRefunded": {
     "description": "Added after an error when the server refunded the coins.",
     "placeholders": {
@@ -4035,6 +4035,6 @@
       }
     }
   },
-  "photoWallRefundPending": "As suas moedas serão devolvidas.",
+  "photoWallRefundPending": "Suas moedas serão devolvidas.",
   "photoWallTryAgain": "Tentar novamente"
 }
