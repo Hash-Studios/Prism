@@ -332,6 +332,22 @@ Future<String> createFolderLink({
   },
 );
 
+/// A short link to a folder invite. It opens the join page in the app.
+Future<String> createFolderInviteLink({
+  required Uri canonicalLink,
+  required String title,
+  required String description,
+  String coverImage = '',
+}) => _buildShareableLink(
+  type: 'page',
+  canonicalUri: canonicalLink,
+  preview: <String, dynamic>{
+    'title': title,
+    'description': description,
+    if (coverImage.isNotEmpty) 'image_source_url': coverImage,
+  },
+);
+
 /// Creates the invite link. The preview reads "Name invited you to Prism" and shows the inviter's photo.
 Future<String> createSharingPrismLink(
   String userID, {

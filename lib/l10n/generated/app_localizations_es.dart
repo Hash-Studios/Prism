@@ -14463,4 +14463,205 @@ class AppLocalizationsEs extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get foldersInvite => 'Invitar';
+
+  @override
+  String foldersInviteShareText(String name, String link) {
+    return 'Añade fondos de pantalla conmigo en $name en Prism: $link';
+  }
+
+  @override
+  String foldersInvitePreviewTitle(String name) {
+    return 'Únete a $name en Prism';
+  }
+
+  @override
+  String get foldersInvitePreviewDescription => 'Añade y quita fondos de pantalla en esta carpeta junto con otros.';
+
+  @override
+  String get foldersInviteFailed => 'No se pudo crear el enlace de invitación. Inténtalo de nuevo.';
+
+  @override
+  String get foldersInviteFull => 'Esta carpeta está llena. Quita a alguien para invitar a más personas.';
+
+  @override
+  String get foldersInviteLimit => 'Hoy has hecho demasiadas invitaciones. Inténtalo de nuevo mañana.';
+
+  @override
+  String get foldersPeople => 'Personas';
+
+  @override
+  String foldersPeopleHintOwner(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Invita a hasta $countString personas para que añadan y quiten fondos de pantalla. Solo tú puedes cambiar el nombre, compartir o eliminar esta carpeta.';
+  }
+
+  @override
+  String get foldersPeopleHintEditor =>
+      'Puedes añadir y quitar fondos de pantalla. Solo el propietario puede cambiar el nombre, compartir o eliminar esta carpeta.';
+
+  @override
+  String foldersPeopleCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString personas', one: '1 persona');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersPeopleButtonLabel(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString personas en esta carpeta. Mostrar personas',
+      one: '1 persona en esta carpeta. Mostrar personas',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersRoleOwner => 'Propietario';
+
+  @override
+  String get foldersRoleEditor => 'Puede añadir y quitar';
+
+  @override
+  String foldersPersonYou(String name) {
+    return '$name (tú)';
+  }
+
+  @override
+  String get foldersUnknownPerson => 'Usuario de Prism';
+
+  @override
+  String get foldersRemovePerson => 'Quitar';
+
+  @override
+  String foldersRemovePersonTitle(String name) {
+    return '¿Quitar a $name?';
+  }
+
+  @override
+  String get foldersRemovePersonMessage =>
+      'Ya no podrá añadir ni quitar fondos de pantalla aquí. Los fondos de pantalla que añadió seguirán aquí.';
+
+  @override
+  String get foldersRemovePersonConfirm => 'Quitar a la persona';
+
+  @override
+  String foldersPersonRemoved(String name) {
+    return 'Se quitó a $name.';
+  }
+
+  @override
+  String get foldersLeave => 'Salir de la carpeta';
+
+  @override
+  String foldersLeaveTitle(String name) {
+    return '¿Salir de $name?';
+  }
+
+  @override
+  String get foldersLeaveMessage =>
+      'Ya no podrás añadir ni quitar fondos de pantalla aquí. Los fondos de pantalla que añadiste seguirán aquí.';
+
+  @override
+  String get foldersLeft => 'Has salido de la carpeta.';
+
+  @override
+  String get foldersPeopleFailed => 'No se pudieron actualizar las personas de esta carpeta. Inténtalo de nuevo.';
+
+  @override
+  String get foldersSharedWithYou => 'Compartidas contigo';
+
+  @override
+  String get foldersSharedLabel => 'Compartida';
+
+  @override
+  String foldersAddedBy(String name) {
+    return 'Añadido por $name';
+  }
+
+  @override
+  String get foldersAddedByYou => 'Añadido por ti';
+
+  @override
+  String get foldersRemoveFromFolder => 'Quitar de la carpeta';
+
+  @override
+  String get foldersDeleteSharedMessage =>
+      'Las personas que invitaste también la perderán. Los fondos de pantalla que están en tus favoritos siguen ahí.';
+
+  @override
+  String get foldersJoinTitle => 'Invitación a carpeta';
+
+  @override
+  String foldersJoinHeadline(String name) {
+    return 'Únete a $name';
+  }
+
+  @override
+  String foldersJoinInvitedBy(String name) {
+    return '$name te invitó a añadir y quitar fondos de pantalla en esta carpeta.';
+  }
+
+  @override
+  String get foldersJoin => 'Unirse a la carpeta';
+
+  @override
+  String get foldersJoinSignIn => 'Inicia sesión para unirte';
+
+  @override
+  String get foldersJoinOpen => 'Abrir carpeta';
+
+  @override
+  String get foldersJoinAlreadyIn => 'Ya estás en esta carpeta.';
+
+  @override
+  String foldersJoined(String name) {
+    return 'Te uniste a $name.';
+  }
+
+  @override
+  String get foldersJoinFailed => 'No se pudo unir a esta carpeta. Inténtalo de nuevo.';
+
+  @override
+  String get foldersJoinLoadFailed => 'No se pudo cargar esta invitación.';
+
+  @override
+  String get foldersJoinExpiredTitle => 'Esta invitación caducó';
+
+  @override
+  String get foldersJoinExpiredBody =>
+      'Las invitaciones son válidas durante 7 días. Pide un enlace nuevo al propietario.';
+
+  @override
+  String get foldersJoinUsedTitle => 'Esta invitación ya se usó';
+
+  @override
+  String get foldersJoinUsedBody => 'Cada invitación funciona una sola vez. Pide un enlace nuevo al propietario.';
+
+  @override
+  String get foldersJoinFullTitle => 'Esta carpeta está llena';
+
+  @override
+  String get foldersJoinFullBody => 'Pide al propietario que quite a alguien y luego vuelve a abrir el enlace.';
+
+  @override
+  String get foldersJoinUnavailableTitle => 'Esta invitación no está disponible';
+
+  @override
+  String get foldersJoinUnavailableBody => 'Es posible que la carpeta se haya eliminado o que no puedas unirte a ella.';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'Solo tú y las personas que invitaste la verán. Su enlace dejará de funcionar y sus seguidores la perderán.';
 }

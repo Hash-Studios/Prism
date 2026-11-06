@@ -2361,6 +2361,31 @@ events:
       - name: source
         key: source
         type: string
+  - id: folder_invite_created
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: folder_joined
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: folder_join_refused
+    fields:
+      - name: reason
+        key: reason
+        type: string
+  - id: folder_member_removed
+    fields:
+      - name: member_count
+        key: member_count
+        type: int
+  - id: folder_member_left
+    fields:
+      - name: member_count
+        key: member_count
+        type: int
   - id: folder_push_opened
     fields:
       - name: folder_count

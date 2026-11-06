@@ -3131,6 +3131,76 @@ class FolderSharedEvent extends AnalyticsEvent {
   }
 }
 
+class FolderInviteCreatedEvent extends AnalyticsEvent {
+  const FolderInviteCreatedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'folder_invite_created';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class FolderJoinedEvent extends AnalyticsEvent {
+  const FolderJoinedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'folder_joined';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class FolderJoinRefusedEvent extends AnalyticsEvent {
+  const FolderJoinRefusedEvent({required this.reason});
+
+  final String reason;
+
+  @override
+  String get eventName => 'folder_join_refused';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'reason': reason};
+  }
+}
+
+class FolderMemberRemovedEvent extends AnalyticsEvent {
+  const FolderMemberRemovedEvent({required this.memberCount});
+
+  final int memberCount;
+
+  @override
+  String get eventName => 'folder_member_removed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'member_count': memberCount};
+  }
+}
+
+class FolderMemberLeftEvent extends AnalyticsEvent {
+  const FolderMemberLeftEvent({required this.memberCount});
+
+  final int memberCount;
+
+  @override
+  String get eventName => 'folder_member_left';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'member_count': memberCount};
+  }
+}
+
 class FolderPushOpenedEvent extends AnalyticsEvent {
   const FolderPushOpenedEvent({required this.folderCount});
 

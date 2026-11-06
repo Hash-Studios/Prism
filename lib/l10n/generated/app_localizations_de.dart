@@ -14502,4 +14502,206 @@ class AppLocalizationsDe extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get foldersInvite => 'Einladen';
+
+  @override
+  String foldersInviteShareText(String name, String link) {
+    return 'Füge mit mir Hintergrundbilder in $name auf Prism hinzu: $link';
+  }
+
+  @override
+  String foldersInvitePreviewTitle(String name) {
+    return '$name auf Prism beitreten';
+  }
+
+  @override
+  String get foldersInvitePreviewDescription =>
+      'Hintergrundbilder in diesem Ordner gemeinsam hinzufügen und entfernen.';
+
+  @override
+  String get foldersInviteFailed => 'Der Einladungslink konnte nicht erstellt werden. Versuche es erneut.';
+
+  @override
+  String get foldersInviteFull => 'Dieser Ordner ist voll. Entferne jemanden, um weitere Personen einzuladen.';
+
+  @override
+  String get foldersInviteLimit => 'Du hast heute zu viele Einladungen verschickt. Versuche es morgen erneut.';
+
+  @override
+  String get foldersPeople => 'Personen';
+
+  @override
+  String foldersPeopleHintOwner(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Lade bis zu $countString Personen ein, damit sie Hintergrundbilder hinzufügen und entfernen können. Nur du kannst diesen Ordner umbenennen, teilen oder löschen.';
+  }
+
+  @override
+  String get foldersPeopleHintEditor =>
+      'Du kannst Hintergrundbilder hinzufügen und entfernen. Nur der Besitzer kann diesen Ordner umbenennen, teilen oder löschen.';
+
+  @override
+  String foldersPeopleCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString Personen', one: '1 Person');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersPeopleButtonLabel(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Personen in diesem Ordner. Personen anzeigen',
+      one: '1 Person in diesem Ordner. Personen anzeigen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersRoleOwner => 'Besitzer';
+
+  @override
+  String get foldersRoleEditor => 'Kann hinzufügen und entfernen';
+
+  @override
+  String foldersPersonYou(String name) {
+    return '$name (du)';
+  }
+
+  @override
+  String get foldersUnknownPerson => 'Prism-Nutzer';
+
+  @override
+  String get foldersRemovePerson => 'Entfernen';
+
+  @override
+  String foldersRemovePersonTitle(String name) {
+    return '$name entfernen?';
+  }
+
+  @override
+  String get foldersRemovePersonMessage =>
+      'Diese Person kann hier keine Hintergrundbilder mehr hinzufügen oder entfernen. Die Hintergrundbilder, die sie hinzugefügt hat, bleiben.';
+
+  @override
+  String get foldersRemovePersonConfirm => 'Person entfernen';
+
+  @override
+  String foldersPersonRemoved(String name) {
+    return '$name wurde entfernt.';
+  }
+
+  @override
+  String get foldersLeave => 'Ordner verlassen';
+
+  @override
+  String foldersLeaveTitle(String name) {
+    return '$name verlassen?';
+  }
+
+  @override
+  String get foldersLeaveMessage =>
+      'Du kannst hier keine Hintergrundbilder mehr hinzufügen oder entfernen. Die Hintergrundbilder, die du hinzugefügt hast, bleiben.';
+
+  @override
+  String get foldersLeft => 'Du hast den Ordner verlassen.';
+
+  @override
+  String get foldersPeopleFailed =>
+      'Die Personen in diesem Ordner konnten nicht aktualisiert werden. Versuche es erneut.';
+
+  @override
+  String get foldersSharedWithYou => 'Mit dir geteilt';
+
+  @override
+  String get foldersSharedLabel => 'Geteilt';
+
+  @override
+  String foldersAddedBy(String name) {
+    return 'Hinzugefügt von $name';
+  }
+
+  @override
+  String get foldersAddedByYou => 'Von dir hinzugefügt';
+
+  @override
+  String get foldersRemoveFromFolder => 'Aus Ordner entfernen';
+
+  @override
+  String get foldersDeleteSharedMessage =>
+      'Die Personen, die du eingeladen hast, verlieren ihn auch. Hintergrundbilder in deinen Favoriten bleiben dort.';
+
+  @override
+  String get foldersJoinTitle => 'Ordner-Einladung';
+
+  @override
+  String foldersJoinHeadline(String name) {
+    return '$name beitreten';
+  }
+
+  @override
+  String foldersJoinInvitedBy(String name) {
+    return '$name hat dich eingeladen, in diesem Ordner Hintergrundbilder hinzuzufügen und zu entfernen.';
+  }
+
+  @override
+  String get foldersJoin => 'Ordner beitreten';
+
+  @override
+  String get foldersJoinSignIn => 'Anmelden, um beizutreten';
+
+  @override
+  String get foldersJoinOpen => 'Ordner öffnen';
+
+  @override
+  String get foldersJoinAlreadyIn => 'Du bist bereits in diesem Ordner.';
+
+  @override
+  String foldersJoined(String name) {
+    return 'Du bist $name beigetreten.';
+  }
+
+  @override
+  String get foldersJoinFailed => 'Du konntest diesem Ordner nicht beitreten. Versuche es erneut.';
+
+  @override
+  String get foldersJoinLoadFailed => 'Diese Einladung konnte nicht geladen werden.';
+
+  @override
+  String get foldersJoinExpiredTitle => 'Diese Einladung ist abgelaufen';
+
+  @override
+  String get foldersJoinExpiredBody => 'Einladungen sind 7 Tage gültig. Bitte den Besitzer um einen neuen Link.';
+
+  @override
+  String get foldersJoinUsedTitle => 'Diese Einladung wurde bereits verwendet';
+
+  @override
+  String get foldersJoinUsedBody => 'Jede Einladung funktioniert nur einmal. Bitte den Besitzer um einen neuen Link.';
+
+  @override
+  String get foldersJoinFullTitle => 'Dieser Ordner ist voll';
+
+  @override
+  String get foldersJoinFullBody => 'Bitte den Besitzer, jemanden zu entfernen. Öffne dann den Link erneut.';
+
+  @override
+  String get foldersJoinUnavailableTitle => 'Diese Einladung ist nicht verfügbar';
+
+  @override
+  String get foldersJoinUnavailableBody => 'Der Ordner wurde vielleicht gelöscht, oder du kannst ihm nicht beitreten.';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'Nur du und die Personen, die du eingeladen hast, sehen ihn. Sein Link funktioniert nicht mehr und seine Follower verlieren ihn.';
 }

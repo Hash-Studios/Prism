@@ -14275,4 +14275,203 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get foldersInvite => 'Invite';
+
+  @override
+  String foldersInviteShareText(String name, String link) {
+    return 'Add wallpapers with me in $name on Prism: $link';
+  }
+
+  @override
+  String foldersInvitePreviewTitle(String name) {
+    return 'Join $name on Prism';
+  }
+
+  @override
+  String get foldersInvitePreviewDescription => 'Add and remove wallpapers in this folder together.';
+
+  @override
+  String get foldersInviteFailed => 'Could not make an invite link. Try again.';
+
+  @override
+  String get foldersInviteFull => 'This folder is full. Remove someone to invite more people.';
+
+  @override
+  String get foldersInviteLimit => 'You made too many invites today. Try again tomorrow.';
+
+  @override
+  String get foldersPeople => 'People';
+
+  @override
+  String foldersPeopleHintOwner(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Invite up to $countString people to add and remove wallpapers. Only you can rename, share or delete this folder.';
+  }
+
+  @override
+  String get foldersPeopleHintEditor =>
+      'You can add and remove wallpapers. Only the owner can rename, share or delete this folder.';
+
+  @override
+  String foldersPeopleCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString people', one: '1 person');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersPeopleButtonLabel(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString people in this folder. Show people',
+      one: '1 person in this folder. Show people',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersRoleOwner => 'Owner';
+
+  @override
+  String get foldersRoleEditor => 'Can add and remove';
+
+  @override
+  String foldersPersonYou(String name) {
+    return '$name (you)';
+  }
+
+  @override
+  String get foldersUnknownPerson => 'Prism user';
+
+  @override
+  String get foldersRemovePerson => 'Remove';
+
+  @override
+  String foldersRemovePersonTitle(String name) {
+    return 'Remove $name?';
+  }
+
+  @override
+  String get foldersRemovePersonMessage =>
+      'They can no longer add or remove wallpapers here. The wallpapers they added stay.';
+
+  @override
+  String get foldersRemovePersonConfirm => 'Remove person';
+
+  @override
+  String foldersPersonRemoved(String name) {
+    return 'Removed $name.';
+  }
+
+  @override
+  String get foldersLeave => 'Leave folder';
+
+  @override
+  String foldersLeaveTitle(String name) {
+    return 'Leave $name?';
+  }
+
+  @override
+  String get foldersLeaveMessage => 'You can no longer add or remove wallpapers here. The wallpapers you added stay.';
+
+  @override
+  String get foldersLeft => 'You left the folder.';
+
+  @override
+  String get foldersPeopleFailed => 'Could not update the people in this folder. Try again.';
+
+  @override
+  String get foldersSharedWithYou => 'Shared with you';
+
+  @override
+  String get foldersSharedLabel => 'Shared';
+
+  @override
+  String foldersAddedBy(String name) {
+    return 'Added by $name';
+  }
+
+  @override
+  String get foldersAddedByYou => 'Added by you';
+
+  @override
+  String get foldersRemoveFromFolder => 'Remove from folder';
+
+  @override
+  String get foldersDeleteSharedMessage =>
+      'The people you invited lose it too. Wallpapers that are in your favourites stay there.';
+
+  @override
+  String get foldersJoinTitle => 'Folder invite';
+
+  @override
+  String foldersJoinHeadline(String name) {
+    return 'Join $name';
+  }
+
+  @override
+  String foldersJoinInvitedBy(String name) {
+    return '$name invited you to add and remove wallpapers in this folder.';
+  }
+
+  @override
+  String get foldersJoin => 'Join folder';
+
+  @override
+  String get foldersJoinSignIn => 'Sign in to join';
+
+  @override
+  String get foldersJoinOpen => 'Open folder';
+
+  @override
+  String get foldersJoinAlreadyIn => 'You are already in this folder.';
+
+  @override
+  String foldersJoined(String name) {
+    return 'You joined $name.';
+  }
+
+  @override
+  String get foldersJoinFailed => 'Could not join this folder. Try again.';
+
+  @override
+  String get foldersJoinLoadFailed => 'Could not load this invite.';
+
+  @override
+  String get foldersJoinExpiredTitle => 'This invite expired';
+
+  @override
+  String get foldersJoinExpiredBody => 'Invites work for 7 days. Ask the owner for a new link.';
+
+  @override
+  String get foldersJoinUsedTitle => 'This invite was already used';
+
+  @override
+  String get foldersJoinUsedBody => 'Each invite works once. Ask the owner for a new link.';
+
+  @override
+  String get foldersJoinFullTitle => 'This folder is full';
+
+  @override
+  String get foldersJoinFullBody => 'Ask the owner to remove someone, then open the link again.';
+
+  @override
+  String get foldersJoinUnavailableTitle => 'This invite is not available';
+
+  @override
+  String get foldersJoinUnavailableBody => 'The folder may have been deleted, or you cannot join it.';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'Only you and the people you invited will see it. Its link stops working and its followers lose it.';
 }

@@ -37,6 +37,7 @@ export type NotificationCopy =
       wallCount: number;
       tags: string;
     }
+  | { kind: "folderActivity"; adderName: string; folderName: string; wallCount: number; otherCount: number }
   | { kind: "wallRequestFilled"; requestText: string }
   | { kind: "drawWinner" }
   | { kind: "wrappedReady"; year: number }
@@ -239,6 +240,16 @@ export function renderNotificationCopy(
       title: topicDigestTitle(copy),
       body: copy.tags || "Tap to see what's new.",
     };
+  case "folderActivity":
+    return {
+      kind: copy.kind,
+      args: {adderName: copy.adderName, folderName: copy.folderName, wallCount: copy.wallCount, otherCount: copy.otherCount},
+      title: copy.otherCount > 0 ?
+        `${copy.adderName} and ${copy.otherCount} more added ${copy.wallCount} walls to ${copy.folderName}` :
+        copy.wallCount === 1 ? `${copy.adderName} added a wall to ${copy.folderName}` :
+          `${copy.adderName} added ${copy.wallCount} walls to ${copy.folderName}`,
+      body: "Tap to open the folder.",
+    };
   case "wallRequestFilled":
     return {
       kind: copy.kind,
@@ -399,6 +410,8 @@ export function nativeNotificationLocalization(
   // Installed builds that advertise localization version 2 lack these resources, so they get the English copy until a
   // later localization version ships the notif_push_wall_commented_* keys.
   if (kind === "wallCommented") return null;
+  // A shared folder owner can be on a build without notif_push_folder_activity_* keys, so this copy stays English.
+  if (kind === "folderActivity") return null;
 
   const prefix = `notif_push_${kind.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)}`;
   const stringArg = (key: string): string => String(message.args[key] ?? "");

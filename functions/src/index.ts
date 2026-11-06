@@ -51,6 +51,9 @@ export {onWallPublicGateChanged, setFolderFollow, setFolderHidden, setFolderPubl
 export {buildWebCatalog, onWallWebCatalog} from "./webCatalog";
 export {sendFolderDigests} from "./folderDigest";
 export {sendTopicDigests} from "./topicDigest";
+export {
+  createFolderInvite, getFolderInvite, joinFolder, leaveFolder, removeFolderMember, sendFolderActivityPushes,
+} from "./sharedFolders";
 export {syncSubscription, reconcileSubscriptions} from "./syncSubscription";
 export {resolveOriginalAccess} from "./originalAccess";
 

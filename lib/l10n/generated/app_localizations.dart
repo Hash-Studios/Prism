@@ -22788,6 +22788,312 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{failed, plural, =1{Saved {saved} from {name}. 1 failed. Open the folder to retry.} other{Saved {saved} from {name}. {failed} failed. Open the folder to retry.}}'**
   String foldersSaveAllToastFailed(int failed, int saved, String name);
+
+  /// Button that makes an invite link for a shared folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get foldersInvite;
+
+  /// Text shared with a folder invite link.
+  ///
+  /// In en, this message translates to:
+  /// **'Add wallpapers with me in {name} on Prism: {link}'**
+  String foldersInviteShareText(String name, String link);
+
+  /// Title of the link preview for a folder invite.
+  ///
+  /// In en, this message translates to:
+  /// **'Join {name} on Prism'**
+  String foldersInvitePreviewTitle(String name);
+
+  /// Description of the link preview for a folder invite.
+  ///
+  /// In en, this message translates to:
+  /// **'Add and remove wallpapers in this folder together.'**
+  String get foldersInvitePreviewDescription;
+
+  /// Error when the invite link cannot be made.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not make an invite link. Try again.'**
+  String get foldersInviteFailed;
+
+  /// Error when the owner invites into a folder that has the most editors.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder is full. Remove someone to invite more people.'**
+  String get foldersInviteFull;
+
+  /// Error when the owner hits the daily invite limit.
+  ///
+  /// In en, this message translates to:
+  /// **'You made too many invites today. Try again tomorrow.'**
+  String get foldersInviteLimit;
+
+  /// Title of the sheet that lists the people in a shared folder.
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get foldersPeople;
+
+  /// Hint for the owner in the people sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite up to {count} people to add and remove wallpapers. Only you can rename, share or delete this folder.'**
+  String foldersPeopleHintOwner(int count);
+
+  /// Hint for an editor in the people sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'You can add and remove wallpapers. Only the owner can rename, share or delete this folder.'**
+  String get foldersPeopleHintEditor;
+
+  /// Number of people in a shared folder, with the owner.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 person} other{{count} people}}'**
+  String foldersPeopleCount(int count);
+
+  /// Screen reader label for the member avatars on a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 person in this folder. Show people} other{{count} people in this folder. Show people}}'**
+  String foldersPeopleButtonLabel(int count);
+
+  /// Role of the folder owner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get foldersRoleOwner;
+
+  /// Role of a person the owner invited.
+  ///
+  /// In en, this message translates to:
+  /// **'Can add and remove'**
+  String get foldersRoleEditor;
+
+  /// A member row for the current user.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (you)'**
+  String foldersPersonYou(String name);
+
+  /// Name shown when a member's profile cannot be read.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism user'**
+  String get foldersUnknownPerson;
+
+  /// Button that removes a person from a shared folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get foldersRemovePerson;
+
+  /// Title of the confirm before the owner removes a person.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}?'**
+  String foldersRemovePersonTitle(String name);
+
+  /// Message of the confirm before the owner removes a person.
+  ///
+  /// In en, this message translates to:
+  /// **'They can no longer add or remove wallpapers here. The wallpapers they added stay.'**
+  String get foldersRemovePersonMessage;
+
+  /// Confirm button that removes a person from a shared folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove person'**
+  String get foldersRemovePersonConfirm;
+
+  /// Toast after the owner removes a person.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed {name}.'**
+  String foldersPersonRemoved(String name);
+
+  /// Button for an editor to leave a shared folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave folder'**
+  String get foldersLeave;
+
+  /// Title of the confirm before an editor leaves.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave {name}?'**
+  String foldersLeaveTitle(String name);
+
+  /// Message of the confirm before an editor leaves.
+  ///
+  /// In en, this message translates to:
+  /// **'You can no longer add or remove wallpapers here. The wallpapers you added stay.'**
+  String get foldersLeaveMessage;
+
+  /// Toast after an editor leaves a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'You left the folder.'**
+  String get foldersLeft;
+
+  /// Error when a remove or leave fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the people in this folder. Try again.'**
+  String get foldersPeopleFailed;
+
+  /// Library section of folders other people invited the user to.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared with you'**
+  String get foldersSharedWithYou;
+
+  /// Screen reader label for the shared icon on a folder card.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared'**
+  String get foldersSharedLabel;
+
+  /// Who added a wallpaper to a shared folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Added by {name}'**
+  String foldersAddedBy(String name);
+
+  /// The current user added this wallpaper to a shared folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Added by you'**
+  String get foldersAddedByYou;
+
+  /// Button that removes a wallpaper from a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from folder'**
+  String get foldersRemoveFromFolder;
+
+  /// Message of the delete confirm for a folder with editors.
+  ///
+  /// In en, this message translates to:
+  /// **'The people you invited lose it too. Wallpapers that are in your favourites stay there.'**
+  String get foldersDeleteSharedMessage;
+
+  /// Title of the page that opens a folder invite link.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder invite'**
+  String get foldersJoinTitle;
+
+  /// Headline on the folder invite page.
+  ///
+  /// In en, this message translates to:
+  /// **'Join {name}'**
+  String foldersJoinHeadline(String name);
+
+  /// Body on the folder invite page.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} invited you to add and remove wallpapers in this folder.'**
+  String foldersJoinInvitedBy(String name);
+
+  /// Button that joins a shared folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Join folder'**
+  String get foldersJoin;
+
+  /// Button on the invite page for a guest.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to join'**
+  String get foldersJoinSignIn;
+
+  /// Button on the invite page when the user is already in the folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Open folder'**
+  String get foldersJoinOpen;
+
+  /// Note on the invite page when the user is already a member.
+  ///
+  /// In en, this message translates to:
+  /// **'You are already in this folder.'**
+  String get foldersJoinAlreadyIn;
+
+  /// Toast after the user joins a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'You joined {name}.'**
+  String foldersJoined(String name);
+
+  /// Error when a join fails for a network or server reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not join this folder. Try again.'**
+  String get foldersJoinFailed;
+
+  /// Error when the invite page cannot load.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load this invite.'**
+  String get foldersJoinLoadFailed;
+
+  /// Title when an invite is older than 7 days.
+  ///
+  /// In en, this message translates to:
+  /// **'This invite expired'**
+  String get foldersJoinExpiredTitle;
+
+  /// Body when an invite expired.
+  ///
+  /// In en, this message translates to:
+  /// **'Invites work for 7 days. Ask the owner for a new link.'**
+  String get foldersJoinExpiredBody;
+
+  /// Title when someone already used the invite.
+  ///
+  /// In en, this message translates to:
+  /// **'This invite was already used'**
+  String get foldersJoinUsedTitle;
+
+  /// Body when an invite was used.
+  ///
+  /// In en, this message translates to:
+  /// **'Each invite works once. Ask the owner for a new link.'**
+  String get foldersJoinUsedBody;
+
+  /// Title when the folder has the most people it can have.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder is full'**
+  String get foldersJoinFullTitle;
+
+  /// Body when the folder is full.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the owner to remove someone, then open the link again.'**
+  String get foldersJoinFullBody;
+
+  /// Title for a missing folder, a block or a closed account. It does not say which.
+  ///
+  /// In en, this message translates to:
+  /// **'This invite is not available'**
+  String get foldersJoinUnavailableTitle;
+
+  /// Body for an unavailable invite.
+  ///
+  /// In en, this message translates to:
+  /// **'The folder may have been deleted, or you cannot join it.'**
+  String get foldersJoinUnavailableBody;
+
+  /// Confirm message when the owner makes a folder with editors private. The editors keep access.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you and the people you invited will see it. Its link stops working and its followers lose it.'**
+  String get foldersMakePrivateMessageShared;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
