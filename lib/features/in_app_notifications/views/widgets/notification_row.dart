@@ -11,6 +11,7 @@ import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notif
 import 'package:Prism/features/in_app_notifications/domain/notification_copy.dart';
 import 'package:Prism/features/in_app_notifications/domain/notification_grouping.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_visuals.dart';
+import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
@@ -72,6 +73,14 @@ class NotificationRow extends StatelessWidget {
         hasExternalUrl: notification.url.trim().isNotEmpty,
       ),
     );
+    final SeasonalTheme? season = seasonalThemes
+        .where((season) => season.announcementId == notification.id)
+        .firstOrNull;
+    if (season != null) {
+      analytics.track(
+        SeasonalAnnouncementOpenedEvent(season: season.name, surface: SeasonalAnnouncementSurfaceValue.inbox),
+      );
+    }
     if (notification.url.trim().isNotEmpty) {
       await openPrismLink(context, notification.url);
       return;

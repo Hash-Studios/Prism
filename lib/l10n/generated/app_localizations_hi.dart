@@ -3229,6 +3229,26 @@ class AppLocalizationsHi extends AppLocalizations {
   String get diwaliAnnouncementBody => 'दीये, आतिशबाज़ी और सोना। यह मुफ़्त है। आज़माने के लिए टैप करें।';
 
   @override
+  String get coreThemeWinter => 'विंटर';
+
+  @override
+  String get winterBannerTitle => 'विंटर थीम आ गई है';
+
+  @override
+  String get winterBannerSubtitle =>
+      'ठंडे नीले रंग और हल्की बर्फ़, लाइट और डार्क में। मुफ़्त। आज़माने के लिए टैप करें।';
+
+  @override
+  String get winterAnnouncementTitle => 'नया: विंटर थीम ❄️';
+
+  @override
+  String get winterAnnouncementBody =>
+      'छुट्टियों के लिए ठंडे नीले रंग और हल्की बर्फ़। यह मुफ़्त है। आज़माने के लिए टैप करें।';
+
+  @override
+  String get winterNewYearGreeting => 'नया साल मुबारक';
+
+  @override
   String get coreThisPageDoesNotExist => 'यह पेज मौजूद नहीं है';
 
   @override

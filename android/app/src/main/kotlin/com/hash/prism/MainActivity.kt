@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import androidx.activity.enableEdgeToEdge
 import androidx.core.content.FileProvider
 import com.hash.prism.pigeon.PrismAppIconHostApi
@@ -31,6 +32,7 @@ class MainActivity : FlutterFragmentActivity() {
     private var hapticsChannel: MethodChannel? = null
     private var quickSettingsChannel: MethodChannel? = null
     private var systemColorsChannel: MethodChannel? = null
+    private var powerChannel: MethodChannel? = null
     private var wallpaperCropChannel: MethodChannel? = null
     private var tiltChannel: EventChannel? = null
     private var tiltStream: PrismTiltStream? = null
@@ -97,6 +99,15 @@ class MainActivity : FlutterFragmentActivity() {
         systemColorsChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/system_colors").apply {
             setMethodCallHandler(systemColors::handle)
         }
+        powerChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/power").apply {
+            setMethodCallHandler { call, result ->
+                if (call.method == "lowPowerMode") {
+                    result.success(getSystemService(PowerManager::class.java)?.isPowerSaveMode ?: false)
+                } else {
+                    result.notImplemented()
+                }
+            }
+        }
         tiltStream = PrismTiltStream(applicationContext).also { stream ->
             tiltChannel = EventChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/tilt").apply { setStreamHandler(stream) }
         }
@@ -137,6 +148,8 @@ class MainActivity : FlutterFragmentActivity() {
         quickSettingsChannel = null
         systemColorsChannel?.setMethodCallHandler(null)
         systemColorsChannel = null
+        powerChannel?.setMethodCallHandler(null)
+        powerChannel = null
         tiltStream?.onCancel(null)
         tiltStream = null
         tiltChannel?.setStreamHandler(null)

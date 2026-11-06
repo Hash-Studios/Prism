@@ -12,6 +12,10 @@ const String prismSpookyThemeId = 'kDSpooky';
 const int prismSpookyAccentValue = 0xffff7a1a;
 const String prismDiwaliThemeId = 'kDDiwali';
 const int prismDiwaliAccentValue = 0xffffb020;
+const String prismWinterLightThemeId = 'kLWinter';
+const int prismWinterLightAccentValue = 0xff265d92;
+const String prismWinterDarkThemeId = 'kDWinter';
+const int prismWinterDarkAccentValue = 0xff8cc4ee;
 const int prismDefaultAccentValue = 0xffe57697;
 
 /// A selectable app theme. [id] is the value stored in the settings, so it must not change.
@@ -53,6 +57,7 @@ String prismThemeDisplayName(PrismThemeOption option, AppLocalizations l10n) => 
   'kDPepper' => l10n.coreThemePepper,
   'kDSky' => l10n.coreThemeSky,
   'kDSteel' => l10n.coreThemeSteel,
+  prismWinterLightThemeId || prismWinterDarkThemeId => l10n.coreThemeWinter,
   prismDiwaliThemeId => l10n.coreThemeDiwali,
   prismSpookyThemeId => l10n.coreThemeSpooky,
   _ => l10n.coreThemeCustom,
@@ -60,6 +65,7 @@ String prismThemeDisplayName(PrismThemeOption option, AppLocalizations l10n) => 
 
 final List<PrismThemeOption> prismLightThemes = <PrismThemeOption>[
   PrismThemeOption(id: prismDefaultLightThemeId, theme: kLightTheme),
+  PrismThemeOption(id: prismWinterLightThemeId, theme: kLightTheme5, defaultAccentValue: prismWinterLightAccentValue),
   PrismThemeOption(id: 'kLCoffee', theme: kLightTheme2, defaultAccentValue: 0xffc19439),
   PrismThemeOption(id: 'kLRose', theme: kLightTheme3, defaultAccentValue: 0xffa7796d, shopItemId: 'theme_rose'),
   PrismThemeOption(
@@ -73,6 +79,7 @@ final List<PrismThemeOption> prismLightThemes = <PrismThemeOption>[
 final List<PrismThemeOption> prismDarkThemes = <PrismThemeOption>[
   PrismThemeOption(id: prismDefaultDarkThemeId, theme: kDarkTheme),
   PrismThemeOption(id: prismAmoledDarkThemeId, theme: kDarkTheme2, defaultAccentValue: 0xffffffff),
+  PrismThemeOption(id: prismWinterDarkThemeId, theme: kDarkTheme11, defaultAccentValue: prismWinterDarkAccentValue),
   PrismThemeOption(id: prismDiwaliThemeId, theme: kDarkTheme10, defaultAccentValue: prismDiwaliAccentValue),
   PrismThemeOption(id: prismSpookyThemeId, theme: kDarkTheme9, defaultAccentValue: prismSpookyAccentValue),
   PrismThemeOption(id: 'kDOlive', theme: kDarkTheme3, defaultAccentValue: 0xff767b45, shopItemId: 'theme_olive'),

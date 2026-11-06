@@ -78,13 +78,13 @@ void main() {
       final Finder row = find.byType(ListView).at(rowIndex);
       final Finder scrollable = find.descendant(of: row, matching: find.byType(Scrollable));
       for (final PrismThemeOption option in themeGroups[rowIndex]) {
-        await tester.scrollUntilVisible(
-          find.text(prismThemeDisplayName(option, AppLocalizationsEn())),
-          200,
-          scrollable: scrollable,
+        final Finder labelFinder = find.descendant(
+          of: row,
+          matching: find.text(prismThemeDisplayName(option, AppLocalizationsEn())),
         );
+        await tester.scrollUntilVisible(labelFinder, 200, scrollable: scrollable);
 
-        final Text label = tester.widget<Text>(find.text(prismThemeDisplayName(option, AppLocalizationsEn())));
+        final Text label = tester.widget<Text>(labelFinder);
         expect(label.style!.color, option.theme.colorScheme.onSurface);
         expect(
           contrastRatio(option.theme.colorScheme.onSurface, option.theme.colorScheme.surfaceContainerHigh),

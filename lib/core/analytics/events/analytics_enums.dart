@@ -488,6 +488,27 @@ enum DailyMomentStepValue {
   String get wireValue => name;
 }
 
+enum SeasonalThemeSourceValue {
+  homeCard,
+  themesPage;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum SeasonalAnnouncementSurfaceValue {
+  homeCard,
+  push,
+  inbox;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum SeasonalDecorDisabledReasonValue {
+  reducedMotion;
+
+  String get wireValue => _snakeCase(name);
+}
+
 enum WrappedSourceValue {
   home,
   push,
