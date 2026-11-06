@@ -7,6 +7,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
 import 'package:Prism/features/theme_mode/domain/repositories/theme_repository.dart';
 import 'package:Prism/features/theme_mode/domain/usecases/theme_usecases.dart';
+import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart' show Brightness, ThemeMode;
@@ -55,15 +56,33 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
       (event, emit) => _update(UpdateThemeParams(darkAccentColorValue: event.accentColorValue), emit),
     );
     on<_ModeChanged>((event, emit) => _update(UpdateThemeParams(mode: event.mode), emit));
+    _scheduleSeasonEnd();
   }
 
   final LoadThemeUseCase _loadThemeUseCase;
   final UpdateThemeUseCase _updateThemeUseCase;
   StreamSubscription<ThemePreferences>? _accountChanges;
   StreamSubscription<SystemColorSchemes?>? _systemColorChanges;
+  Timer? _seasonEndTimer;
+
+  /// Reloads when the next season that reverts ends, so a user on its theme goes back while the app is open.
+  void _scheduleSeasonEnd() {
+    final DateTime now = seasonNow();
+    final Duration? left = seasonalThemes
+        .where((season) => season.revertsAtEnd && !season.window.hasEnded(now))
+        .map((season) => season.window.end.difference(now))
+        .fold<Duration?>(null, (soonest, left) => soonest == null || left < soonest ? left : soonest);
+    if (left == null) return;
+    _seasonEndTimer = Timer(left, () {
+      if (isClosed) return;
+      add(const ThemeEvent.started());
+      _scheduleSeasonEnd();
+    });
+  }
 
   @override
   Future<void> close() async {
+    _seasonEndTimer?.cancel();
     await _accountChanges?.cancel();
     await _systemColorChanges?.cancel();
     return super.close();

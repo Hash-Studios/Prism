@@ -206,6 +206,12 @@ ThemeData kLightTheme4 = _lightTheme(
   tint: const Color(0xFF36435A),
 );
 
+ThemeData kLightTheme5 = _lightTheme(
+  background: const Color(0xFFE8F0F7),
+  accent: const Color(0xFF2A649C),
+  tint: const Color(0xFF1B3550),
+);
+
 ThemeData kDarkTheme = _darkTheme(
   background: const Color(0xFF000000),
   accent: _defaultPink,
@@ -251,6 +257,11 @@ ThemeData kDarkTheme10 = _darkTheme(
   background: const Color(0xFF0D0718),
   accent: const Color(0xFFFFB020),
   foreground: const Color(0xFFFFF1D6),
+);
+ThemeData kDarkTheme11 = _darkTheme(
+  background: const Color(0xFF0A1521),
+  accent: const Color(0xFF8CC4EE),
+  foreground: const Color(0xFFE3EDF7),
 );
 
 /// Applies a Prism [ColorScheme] and the component defaults that follow from it. The accent picker calls this again

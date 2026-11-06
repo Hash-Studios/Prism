@@ -125,6 +125,21 @@ enums:
       - push
       - inbox
       - deep_link
+  - name: seasonal_theme_source
+    dart_type: SeasonalThemeSourceValue
+    values:
+      - home_card
+      - themes_page
+  - name: seasonal_announcement_surface
+    dart_type: SeasonalAnnouncementSurfaceValue
+    values:
+      - home_card
+      - push
+      - inbox
+  - name: seasonal_decor_disabled_reason
+    dart_type: SeasonalDecorDisabledReasonValue
+    values:
+      - reduced_motion
   - name: subscription_entitlement_refresh_result
     dart_type: SubscriptionEntitlementRefreshResultValue
     values:
@@ -3311,6 +3326,33 @@ events:
         key: source
         type: enum
         enum: WrappedSourceValue
+  - id: seasonal_theme_applied
+    fields:
+      - name: season
+        key: season
+        type: string
+      - name: source
+        key: source
+        type: enum
+        enum: SeasonalThemeSourceValue
+  - id: seasonal_announcement_opened
+    fields:
+      - name: season
+        key: season
+        type: string
+      - name: surface
+        key: surface
+        type: enum
+        enum: SeasonalAnnouncementSurfaceValue
+  - id: seasonal_decor_disabled
+    fields:
+      - name: season
+        key: season
+        type: string
+      - name: reason
+        key: reason
+        type: enum
+        enum: SeasonalDecorDisabledReasonValue
   - id: trial_timeline_shown
     fields:
       - name: source

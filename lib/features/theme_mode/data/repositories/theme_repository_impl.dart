@@ -11,6 +11,7 @@ import 'package:Prism/features/theme_mode/data/account_theme.dart';
 import 'package:Prism/features/theme_mode/data/legacy_themes.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
 import 'package:Prism/features/theme_mode/domain/repositories/theme_repository.dart';
+import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
@@ -69,9 +70,19 @@ class ThemeRepositoryImpl implements ThemeRepository {
     );
   }
 
-  /// A theme change resets the accent to the new theme default only while the accent still
-  /// equals the default of the theme being replaced. A custom accent survives.
+  /// The accent after a theme change. It resets to the new theme default only while it still equals the default of the
+  /// theme being replaced. A custom accent survives.
+  int _accentAfterChange(List<PrismThemeOption> options, String previousThemeId, int? storedAccent, String newThemeId) {
+    final int previousDefault = prismThemeById(options, previousThemeId)?.defaultAccentValue ?? prismDefaultAccentValue;
+    final int currentAccent = storedAccent ?? previousDefault;
+    final bool legacyAmoledAccent =
+        previousThemeId == prismAmoledDarkThemeId && currentAccent == _legacyAmoledAccentValue;
+    if (currentAccent != previousDefault && !legacyAmoledAccent) return currentAccent;
+    return prismThemeById(options, newThemeId)?.defaultAccentValue ?? prismDefaultAccentValue;
+  }
+
   Future<void> _applyThemeChange({
+    required Brightness slot,
     required String themeKey,
     required String accentKey,
     required String defaultThemeId,
@@ -79,17 +90,77 @@ class ThemeRepositoryImpl implements ThemeRepository {
     required String newThemeId,
   }) async {
     final String previousThemeId = _settingsLocal.get<String>(themeKey, defaultValue: defaultThemeId);
-    final int previousDefault = prismThemeById(options, previousThemeId)?.defaultAccentValue ?? prismDefaultAccentValue;
-    final int currentAccent = _settingsLocal.get<int>(accentKey, defaultValue: previousDefault);
+    final int? storedAccent = _settingsLocal.get<int?>(accentKey);
     await _settingsLocal.set(themeKey, newThemeId);
-    final bool legacyAmoledAccent =
-        previousThemeId == prismAmoledDarkThemeId && currentAccent == _legacyAmoledAccentValue;
-    if (currentAccent == previousDefault || legacyAmoledAccent) {
-      await _settingsLocal.set(
-        accentKey,
-        prismThemeById(options, newThemeId)?.defaultAccentValue ?? prismDefaultAccentValue,
-      );
+    final int accent = _accentAfterChange(options, previousThemeId, storedAccent, newThemeId);
+    if (accent != storedAccent) await _settingsLocal.set(accentKey, accent);
+    for (final SeasonalTheme season in seasonalThemes) {
+      if (season.revertsAtEnd && season.themeIdFor(slot) == newThemeId && previousThemeId != newThemeId) {
+        await _settingsLocal.set(season.previousThemeKey(slot), previousThemeId);
+      }
     }
+  }
+
+  /// The selection for [slot] once [season] has ended and has not yet reverted here: the theme the user had before the
+  /// season theme, or the default theme. Null when nothing changes.
+  ThemeSelection? _seasonRevert(SeasonalTheme season, Brightness slot, ThemeSelection current, DateTime now) {
+    if (!season.revertsAtEnd || !season.window.hasEnded(now) || current.themeId != season.themeIdFor(slot)) return null;
+    if (_settingsLocal.get<bool>(season.revertedKey, defaultValue: false)) return null;
+    final bool dark = slot == Brightness.dark;
+    final String? previous = _settingsLocal.get<String?>(season.previousThemeKey(slot));
+    final String themeId = previous == null || previous == current.themeId
+        ? (dark ? prismDefaultDarkThemeId : prismDefaultLightThemeId)
+        : previous;
+    return ThemeSelection(
+      themeId: themeId,
+      accentColorValue: _accentAfterChange(
+        dark ? prismDarkThemes : prismLightThemes,
+        current.themeId,
+        current.accentColorValue,
+        themeId,
+      ),
+    );
+  }
+
+  /// [_read] with every ended season reverted. It writes nothing, so the first frame already shows the reverted theme.
+  ThemePreferences _readReverted(DateTime now) {
+    final ThemePreferences stored = _read();
+    ThemeSelection light = stored.light;
+    ThemeSelection dark = stored.dark;
+    for (final SeasonalTheme season in seasonalThemes) {
+      light = _seasonRevert(season, Brightness.light, light, now) ?? light;
+      dark = _seasonRevert(season, Brightness.dark, dark, now) ?? dark;
+    }
+    return ThemePreferences(light: light, dark: dark, mode: stored.mode);
+  }
+
+  /// Saves the reverts of [_readReverted] and marks each ended season as reverted, once per device. A season theme the
+  /// user picks after that stays.
+  Future<ThemePreferences> _revertEndedSeasons() async {
+    final DateTime now = seasonNow();
+    final ThemePreferences stored = _read();
+    final ThemePreferences reverted = _readReverted(now);
+    for (final SeasonalTheme season in seasonalThemes) {
+      if (season.revertsAtEnd && season.window.hasEnded(now)) await _settingsLocal.set(season.revertedKey, true);
+    }
+    final bool lightChanged = reverted.light.themeId != stored.light.themeId;
+    final bool darkChanged = reverted.dark.themeId != stored.dark.themeId;
+    if (!lightChanged && !darkChanged) return stored;
+    if (lightChanged) {
+      await _settingsLocal.set('lightThemeID', reverted.light.themeId);
+      await _settingsLocal.set('lightAccent', reverted.light.accentColorValue);
+    }
+    if (darkChanged) {
+      await _settingsLocal.set('darkThemeID', reverted.dark.themeId);
+      await _settingsLocal.set('darkAccent', reverted.dark.accentColorValue);
+    }
+    final int changedAt = DateTime.now().millisecondsSinceEpoch;
+    await _settingsLocal.set(_changedAtKey, changedAt);
+    final ThemePreferences preferences = _read();
+    if (app_state.prismUser.loggedIn) {
+      unawaited(_push(app_state.prismUser.id, AccountTheme(preferences: preferences, changedAt: changedAt)));
+    }
+    return preferences;
   }
 
   Future<void> _push(String userId, AccountTheme theme) async {
@@ -103,7 +174,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
   }
 
   @override
-  ThemePreferences readSync() => _read();
+  ThemePreferences readSync() => _readReverted(seasonNow());
 
   @override
   Stream<ThemePreferences> get accountChanges => _accountChangesController.stream;
@@ -142,7 +213,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
   @override
   Future<Result<ThemePreferences>> load() async {
     try {
-      return Result.success(_read());
+      return Result.success(await _revertEndedSeasons());
     } catch (error) {
       return Result.error(CacheFailure('Unable to read theme: $error'));
     }
@@ -160,6 +231,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
       _rememberLegacyThemes();
       if (lightThemeId != null) {
         await _applyThemeChange(
+          slot: Brightness.light,
           themeKey: 'lightThemeID',
           accentKey: 'lightAccent',
           defaultThemeId: prismDefaultLightThemeId,
@@ -172,6 +244,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
       }
       if (darkThemeId != null) {
         await _applyThemeChange(
+          slot: Brightness.dark,
           themeKey: 'darkThemeID',
           accentKey: 'darkAccent',
           defaultThemeId: prismDefaultDarkThemeId,

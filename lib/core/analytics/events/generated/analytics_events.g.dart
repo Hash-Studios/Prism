@@ -32,6 +32,9 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'live_wallpaper_style': LiveWallpaperStyleValue.values.map((value) => value.wireValue).toList(),
   'paywall_result': PaywallResultValue.values.map((value) => value.wireValue).toList(),
   'wrapped_source': WrappedSourceValue.values.map((value) => value.wireValue).toList(),
+  'seasonal_theme_source': SeasonalThemeSourceValue.values.map((value) => value.wireValue).toList(),
+  'seasonal_announcement_surface': SeasonalAnnouncementSurfaceValue.values.map((value) => value.wireValue).toList(),
+  'seasonal_decor_disabled_reason': SeasonalDecorDisabledReasonValue.values.map((value) => value.wireValue).toList(),
   'subscription_entitlement_refresh_result': SubscriptionEntitlementRefreshResultValue.values
       .map((value) => value.wireValue)
       .toList(),
@@ -5075,6 +5078,51 @@ class WrappedNotEligibleEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'source': source.wireValue};
+  }
+}
+
+class SeasonalThemeAppliedEvent extends AnalyticsEvent {
+  const SeasonalThemeAppliedEvent({required this.season, required this.source});
+
+  final String season;
+  final SeasonalThemeSourceValue source;
+
+  @override
+  String get eventName => 'seasonal_theme_applied';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'season': season, 'source': source.wireValue};
+  }
+}
+
+class SeasonalAnnouncementOpenedEvent extends AnalyticsEvent {
+  const SeasonalAnnouncementOpenedEvent({required this.season, required this.surface});
+
+  final String season;
+  final SeasonalAnnouncementSurfaceValue surface;
+
+  @override
+  String get eventName => 'seasonal_announcement_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'season': season, 'surface': surface.wireValue};
+  }
+}
+
+class SeasonalDecorDisabledEvent extends AnalyticsEvent {
+  const SeasonalDecorDisabledEvent({required this.season, required this.reason});
+
+  final String season;
+  final SeasonalDecorDisabledReasonValue reason;
+
+  @override
+  String get eventName => 'seasonal_decor_disabled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'season': season, 'reason': reason.wireValue};
   }
 }
 

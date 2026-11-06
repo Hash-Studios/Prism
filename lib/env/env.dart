@@ -26,6 +26,9 @@ class Env {
   // Debug builds only: shows the Wrapped Home card outside its Remote Config window, for QA before 1 December.
   static const bool wrappedQaOpen = bool.fromEnvironment('WRAPPED_QA_OPEN');
 
+  // Debug and profile builds only: an ISO date and time the seasonal themes read as now. See docs/features/themes.md.
+  static const String seasonDate = String.fromEnvironment('PRISM_SEASON_DATE');
+
   static const bool creatorStatsEmulator = bool.fromEnvironment('CREATOR_STATS_EMULATOR');
   static const String creatorStatsEmulatorHost = String.fromEnvironment(
     'CREATOR_STATS_EMULATOR_HOST',

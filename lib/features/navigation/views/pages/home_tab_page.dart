@@ -29,6 +29,7 @@ import 'package:Prism/features/theme_mode/data/seasonal_announcement.dart';
 import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/features/theme_mode/views/widgets/diwali_decor.dart';
 import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
+import 'package:Prism/features/theme_mode/views/widgets/winter_decor.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
 import 'package:Prism/features/wall_of_the_day/domain/usecases/fetch_wall_of_the_day_usecase.dart';
 import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
@@ -180,7 +181,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
             priority: Priority.high,
           ),
         ),
-        payload: jsonEncode(<String, String>{'route': '/theme'}),
+        payload: jsonEncode(<String, String>{'route': '/theme', 'seasonal_announcement': season.name}),
       ),
     );
     if (announced && mounted) {
@@ -351,7 +352,10 @@ class _HomeTabPageState extends State<HomeTabPage> {
         backgroundColor: Theme.of(context).colorScheme.surface,
         body: Stack(
           children: <Widget>[
-            PersonalizedFeedScreen(onTuneTap: _openFeedSettings, sessionStartedAt: _sessionStartedAt),
+            WinterSnowfall(
+              headerHeight: PersonalizedFeedScreen.headerHeight(context),
+              child: PersonalizedFeedScreen(onTuneTap: _openFeedSettings, sessionStartedAt: _sessionStartedAt),
+            ),
             Padding(
               padding: EdgeInsets.only(top: PersonalizedFeedScreen.headerHeight(context)),
               child: ConnectivityWidget(offline: !_isOnline),

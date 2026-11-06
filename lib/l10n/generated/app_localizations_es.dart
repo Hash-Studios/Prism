@@ -3237,6 +3237,24 @@ class AppLocalizationsEs extends AppLocalizations {
   String get diwaliAnnouncementBody => 'Diyas, fuegos artificiales y oro. Es gratis. Toca para probarlo.';
 
   @override
+  String get coreThemeWinter => 'Invierno';
+
+  @override
+  String get winterBannerTitle => 'Ya llegó el tema Invierno';
+
+  @override
+  String get winterBannerSubtitle => 'Azules fríos y nieve suave, en claro y oscuro. Gratis. Toca para probarlo.';
+
+  @override
+  String get winterAnnouncementTitle => 'Nuevo: el tema Invierno ❄️';
+
+  @override
+  String get winterAnnouncementBody => 'Azules fríos y nieve suave para las fiestas. Es gratis. Toca para probarlo.';
+
+  @override
+  String get winterNewYearGreeting => 'Feliz Año Nuevo';
+
+  @override
   String get coreThisPageDoesNotExist => 'Esta página no existe';
 
   @override
