@@ -1,5 +1,11 @@
 ## Changelog
 
+### v3.22.0
+- Open a wallpaper on your computer: scan the QR code or copy the short link from the share sheet
+- On Android 16, set a different live wallpaper on your Home and Lock screens
+- Day and night walls now work on Android too
+- Security and stability fixes
+
 ### v3.21.0
 - Save a watch set: the phone wall, a crop sized for your watch and the desktop version in one tap
 - On iPhone, pick a day wall and a night wall and let Shortcuts switch them

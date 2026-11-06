@@ -4,6 +4,7 @@ import {logger} from "firebase-functions/v2";
 import {db, readDailyCount, CALLABLE_REGIONS, utcDateString} from "./common";
 import {applyFollowEdge} from "./profiles";
 import {removeFolderFollowsBetween} from "./publicFolders";
+import {removeFolderMembershipsBetween} from "./sharedFolders";
 
 const USERS_V2 = "usersv2";
 const BLOCKED_USERS = "blockedUsers";
@@ -221,9 +222,10 @@ export const blockUser = onCall(
     }
     try {
       await removeFolderFollowsBetween(callerUid, blockedUid);
+      await removeFolderMembershipsBetween(callerUid, blockedUid);
     } catch (err) {
       logger.error("blockUser: could not remove folder follows.", {callerUid, blockedUid, err});
-      throw new HttpsError("internal", "Could not remove folder follows. Try again.");
+      throw new HttpsError("internal", "Could not remove folder follows or members. Try again.");
     }
 
     logger.info("blockUser: success", {callerUid, blockedUid, contentReportId: contentReportRef.id});

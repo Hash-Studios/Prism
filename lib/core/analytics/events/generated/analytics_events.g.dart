@@ -1283,6 +1283,77 @@ class SearchResultOpenedEvent extends AnalyticsEvent {
   }
 }
 
+class PhotoSearchStartedEvent extends AnalyticsEvent {
+  const PhotoSearchStartedEvent({required this.signedIn, required this.searchId});
+
+  final bool signedIn;
+  final String searchId;
+
+  @override
+  String get eventName => 'photo_search_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'signed_in': signedIn ? 1 : 0, 'search_id': searchId};
+  }
+}
+
+class PhotoSearchLabelsReturnedEvent extends AnalyticsEvent {
+  const PhotoSearchLabelsReturnedEvent({required this.labelCount, required this.searchId});
+
+  final int labelCount;
+  final String searchId;
+
+  @override
+  String get eventName => 'photo_search_labels_returned';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'label_count': labelCount, 'search_id': searchId};
+  }
+}
+
+class PhotoSearchLabelsCappedEvent extends AnalyticsEvent {
+  const PhotoSearchLabelsCappedEvent({required this.searchId});
+
+  final String searchId;
+
+  @override
+  String get eventName => 'photo_search_labels_capped';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'search_id': searchId};
+  }
+}
+
+class PhotoSearchResultOpenedEvent extends AnalyticsEvent {
+  const PhotoSearchResultOpenedEvent({
+    required this.provider,
+    required this.itemId,
+    required this.index,
+    this.searchId,
+  });
+
+  final SearchProviderValue provider;
+  final String itemId;
+  final int index;
+  final String? searchId;
+
+  @override
+  String get eventName => 'photo_search_result_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'provider': provider.wireValue,
+      'item_id': itemId,
+      'index': index,
+      if (searchId != null) 'search_id': searchId!,
+    };
+  }
+}
+
 class SearchPaginationRequestedEvent extends AnalyticsEvent {
   const SearchPaginationRequestedEvent({
     required this.provider,
@@ -1976,6 +2047,35 @@ class InviteShareResultEvent extends AnalyticsEvent {
       if (format != null) 'format': format!.wireValue,
       if (target != null) 'target': target!.wireValue,
     };
+  }
+}
+
+class OpenOnComputerShownEvent extends AnalyticsEvent {
+  const OpenOnComputerShownEvent({required this.sourceContext});
+
+  final String sourceContext;
+
+  @override
+  String get eventName => 'open_on_computer_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source_context': sourceContext};
+  }
+}
+
+class OpenOnComputerLinkCopiedEvent extends AnalyticsEvent {
+  const OpenOnComputerLinkCopiedEvent({required this.sourceContext, required this.result});
+
+  final String sourceContext;
+  final EventResultValue result;
+
+  @override
+  String get eventName => 'open_on_computer_link_copied';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source_context': sourceContext, 'result': result.wireValue};
   }
 }
 
@@ -3031,6 +3131,76 @@ class FolderSharedEvent extends AnalyticsEvent {
   }
 }
 
+class FolderInviteCreatedEvent extends AnalyticsEvent {
+  const FolderInviteCreatedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'folder_invite_created';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class FolderJoinedEvent extends AnalyticsEvent {
+  const FolderJoinedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'folder_joined';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class FolderJoinRefusedEvent extends AnalyticsEvent {
+  const FolderJoinRefusedEvent({required this.reason});
+
+  final String reason;
+
+  @override
+  String get eventName => 'folder_join_refused';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'reason': reason};
+  }
+}
+
+class FolderMemberRemovedEvent extends AnalyticsEvent {
+  const FolderMemberRemovedEvent({required this.memberCount});
+
+  final int memberCount;
+
+  @override
+  String get eventName => 'folder_member_removed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'member_count': memberCount};
+  }
+}
+
+class FolderMemberLeftEvent extends AnalyticsEvent {
+  const FolderMemberLeftEvent({required this.memberCount});
+
+  final int memberCount;
+
+  @override
+  String get eventName => 'folder_member_left';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'member_count': memberCount};
+  }
+}
+
 class FolderPushOpenedEvent extends AnalyticsEvent {
   const FolderPushOpenedEvent({required this.folderCount});
 
@@ -3042,6 +3212,97 @@ class FolderPushOpenedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'folder_count': folderCount};
+  }
+}
+
+class TopicFollowedEvent extends AnalyticsEvent {
+  const TopicFollowedEvent({required this.kind, required this.topicId});
+
+  final String kind;
+  final String topicId;
+
+  @override
+  String get eventName => 'topic_followed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'kind': kind, 'topic_id': topicId};
+  }
+}
+
+class TopicUnfollowedEvent extends AnalyticsEvent {
+  const TopicUnfollowedEvent({required this.kind, required this.topicId});
+
+  final String kind;
+  final String topicId;
+
+  @override
+  String get eventName => 'topic_unfollowed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'kind': kind, 'topic_id': topicId};
+  }
+}
+
+class TopicPushOpenedEvent extends AnalyticsEvent {
+  const TopicPushOpenedEvent({required this.topicCount});
+
+  final int topicCount;
+
+  @override
+  String get eventName => 'topic_push_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'topic_count': topicCount};
+  }
+}
+
+class FolderSaveStartedEvent extends AnalyticsEvent {
+  const FolderSaveStartedEvent({required this.wallCount, required this.coinCost, required this.pro});
+
+  final int wallCount;
+  final int coinCost;
+  final bool pro;
+
+  @override
+  String get eventName => 'folder_save_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_count': wallCount, 'coin_cost': coinCost, 'pro': pro ? 1 : 0};
+  }
+}
+
+class FolderSaveFinishedEvent extends AnalyticsEvent {
+  const FolderSaveFinishedEvent({required this.saved, required this.skipped, required this.failed});
+
+  final int saved;
+  final int skipped;
+  final int failed;
+
+  @override
+  String get eventName => 'folder_save_finished';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'saved': saved, 'skipped': skipped, 'failed': failed};
+  }
+}
+
+class FolderSaveCancelledEvent extends AnalyticsEvent {
+  const FolderSaveCancelledEvent({required this.saved, required this.notSaved});
+
+  final int saved;
+  final int notSaved;
+
+  @override
+  String get eventName => 'folder_save_cancelled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'saved': saved, 'not_saved': notSaved};
   }
 }
 

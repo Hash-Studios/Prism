@@ -9,6 +9,8 @@ import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
 import 'package:Prism/features/prism_feed/data/wall_search_terms.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
+import 'package:Prism/features/user_search/data/photo_match_ranking.dart';
+import 'package:Prism/features/user_search/domain/entities/photo_query.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:collection/collection.dart';
 import 'package:injectable/injectable.dart';
@@ -128,6 +130,42 @@ class PrismWallSearch {
     } catch (error, stackTrace) {
       logger.w('[PrismWallSearch] search failed', error: error, stackTrace: stackTrace);
       return const <PrismWallpaper>[];
+    }
+  }
+
+  /// Reviewed walls that share the top colour of [query] or any of its label terms, newest first, without blocked
+  /// creators. Each comes with its stored `searchTerms` so the caller can rank by label overlap. Never throws.
+  Future<List<PhotoCandidate>> photoCandidates(PhotoQuery query, {int limit = 48}) async {
+    final List<String> terms = photoQueryTerms(query).take(_maxTerms).toList(growable: false);
+    PhotoCandidate toCandidate(Map<String, dynamic> data, String docId) =>
+        (wall: _toWall(data, docId), terms: const FirestoreStringListConverter().fromJson(data['searchTerms']));
+    try {
+      final List<List<PhotoCandidate>> found = await Future.wait(<Future<List<PhotoCandidate>>>[
+        _run(
+          'photoColor',
+          limit,
+          FirestoreFilter(field: 'colors', op: FirestoreFilterOp.arrayContains, value: query.topColor.id),
+          toCandidate,
+        ),
+        if (terms.isNotEmpty)
+          _run(
+            'photoTerms',
+            limit,
+            FirestoreFilter(field: 'searchTerms', op: FirestoreFilterOp.arrayContainsAny, value: terms),
+            toCandidate,
+          ),
+      ]);
+      final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
+      final Map<String, PhotoCandidate> unique = <String, PhotoCandidate>{};
+      for (final PhotoCandidate candidate in found.expand((list) => list)) {
+        if (!BlockedCreatorsFilter.hidesCreatorUid(candidate.wall.core.authorUid, blocked)) {
+          unique.putIfAbsent(candidate.wall.id, () => candidate);
+        }
+      }
+      return unique.values.toList(growable: false);
+    } catch (error, stackTrace) {
+      logger.w('[PrismWallSearch] photo search failed', error: error, stackTrace: stackTrace);
+      return const <PhotoCandidate>[];
     }
   }
 

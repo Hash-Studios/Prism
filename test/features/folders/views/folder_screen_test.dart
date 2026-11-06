@@ -13,16 +13,20 @@ import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.da
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_member.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
+import 'package:Prism/features/folders/domain/repositories/shared_folders_repository.dart';
 import 'package:Prism/features/folders/views/pages/folder_screen.dart';
+import 'package:Prism/features/folders/views/widgets/folder_members_row.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
+import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
+import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,6 +35,10 @@ import 'package:mocktail/mocktail.dart';
 class _MockStackRouter extends Mock implements StackRouter {}
 
 class _MockAutoRotateBloc extends MockBloc<AutoRotateEvent, AutoRotateState> implements AutoRotateBloc {}
+
+class _MockSharedFoldersRepository extends Mock implements SharedFoldersRepository {}
+
+class _MockPublicProfileRepository extends Mock implements PublicProfileRepository {}
 
 class _OnlineConnectivity implements ConnectivityService {
   @override
@@ -94,13 +102,13 @@ class _FakeFoldersRepository implements FoldersRepository {
   }
 
   @override
-  Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall) async {
+  Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId}) async {
     calls.add('addItem:${folder.id}');
     return Result.success<void>(null);
   }
 
   @override
-  Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall) async {
+  Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId}) async {
     calls.add('removeItem:${folder.id}');
     return Result.success<void>(null);
   }
@@ -127,6 +135,43 @@ FolderEntity _folder(String id, String name, {int itemCount = 0}) => FolderEntit
   itemCount: itemCount,
   covers: const <String>[],
 );
+
+const PublicProfileEntity _anaProfile = PublicProfileEntity(
+  id: 'owner',
+  name: 'Ana',
+  email: '',
+  username: 'ana',
+  profilePhoto: '',
+  bio: '',
+  links: <String, String>{},
+  coverPhoto: '',
+);
+
+FolderMember _editor(String uid, String addedBy) =>
+    FolderMember(uid: uid, role: FolderRole.editor, addedBy: addedBy, addedAt: _at);
+
+FolderEntity _teamFolder({required String ownerId, List<FolderMember> editors = const <FolderMember>[]}) =>
+    FolderEntity(
+      id: 'work',
+      ownerId: ownerId,
+      name: 'Work',
+      createdAt: _at,
+      updatedAt: _at,
+      itemCount: 2,
+      covers: const <String>[],
+      editors: editors,
+    );
+
+PrismFavouriteWall _wall(String id) => PrismFavouriteWall(
+  id: id,
+  wallpaper: PrismWallpaper(
+    core: WallpaperCore(id: id, source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+  ),
+);
+
+/// A menu entry of the folder's overflow menu, by its label.
+Finder _menuItem(String label) =>
+    find.ancestor(of: find.text(label), matching: find.byWidgetPredicate((widget) => widget is PopupMenuItem));
 
 class _NoPublicFolders implements PublicFoldersRepository {
   @override
@@ -328,6 +373,198 @@ void main() {
     await tester.tap(find.text('Remove'));
     await settle(tester);
     expect(repo.calls.where((call) => call.startsWith('removeItem:')), isEmpty);
+  });
+
+  Future<({_FakeFoldersRepository repo, _MockSharedFoldersRepository shared})> pumpTeamFolder(
+    WidgetTester tester, {
+    required String userId,
+    required FolderEntity folder,
+    List<FavouriteWallEntity> walls = const <FavouriteWallEntity>[],
+    String addedByUid = 'owner',
+  }) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = userId;
+    getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
+    final _MockSharedFoldersRepository shared = _MockSharedFoldersRepository();
+    when(() => shared.addedBy(any(), any())).thenAnswer((_) async => Result.success<String?>(addedByUid));
+    when(() => shared.removeMember(any(), any())).thenAnswer((_) async => Result.success<void>(null));
+    final _MockPublicProfileRepository profiles = _MockPublicProfileRepository();
+    when(() => profiles.watchProfile(any())).thenAnswer(
+      (invocation) =>
+          Stream<PublicProfileEntity?>.value(invocation.positionalArguments.first == 'owner' ? _anaProfile : null),
+    );
+    getIt.registerSingleton<SharedFoldersRepository>(shared);
+    getIt.registerSingleton<PublicProfileRepository>(profiles);
+    addTearDown(getIt.reset);
+    final _FakeFoldersRepository repo = _FakeFoldersRepository(folders: <FolderEntity>[folder])
+      ..items = <String, List<FavouriteWallEntity>>{folder.id: walls};
+    final FoldersBloc bloc = FoldersBloc(repo, _NoPublicFolders());
+    addTearDown(bloc.close);
+    final _MockStackRouter router = _MockStackRouter();
+    when(() => router.stack).thenReturn(const <AutoRoutePage<dynamic>>[]);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        home: StackRouterScope(
+          controller: router,
+          stateHash: 0,
+          child: BlocProvider<FoldersBloc>.value(
+            value: bloc,
+            child: BlocProvider<AutoRotateBloc>.value(
+              value: _rotationBloc(),
+              child: FolderScreen(folderId: folder.id),
+            ),
+          ),
+        ),
+      ),
+    );
+    await settle(tester);
+    return (repo: repo, shared: shared);
+  }
+
+  testWidgets('the owner of a folder with an editor sees Invite in the header and the owner actions in the menu', (
+    tester,
+  ) async {
+    await pumpTeamFolder(
+      tester,
+      userId: 'me',
+      folder: _teamFolder(ownerId: 'me', editors: <FolderMember>[_editor('friend', 'me')]),
+    );
+
+    expect(find.text('2 people'), findsOneWidget);
+    expect(find.descendant(of: find.byType(FolderMembersRow), matching: find.text('Invite')), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await settle(tester);
+
+    for (final String label in <String>['Rotate this folder', 'Invite', 'People', 'Make public', 'Rename', 'Delete']) {
+      expect(_menuItem(label), findsOneWidget, reason: label);
+    }
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('an editor sees People in the menu and no owner actions or Invite button', (tester) async {
+    await pumpTeamFolder(
+      tester,
+      userId: 'me',
+      folder: _teamFolder(ownerId: 'owner', editors: <FolderMember>[_editor('me', 'owner')]),
+    );
+
+    expect(find.text('2 people'), findsOneWidget);
+    expect(find.descendant(of: find.byType(FolderMembersRow), matching: find.text('Invite')), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await settle(tester);
+
+    expect(_menuItem('People'), findsOneWidget);
+    for (final String label in <String>['Rotate this folder', 'Invite', 'Make public', 'Rename', 'Delete']) {
+      expect(_menuItem(label), findsNothing, reason: label);
+    }
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('removing an editor reloads the open folder items', (tester) async {
+    final result = await pumpTeamFolder(
+      tester,
+      userId: 'me',
+      folder: _teamFolder(ownerId: 'me', editors: <FolderMember>[_editor('friend', 'me')]),
+      walls: <FavouriteWallEntity>[_wall('wall-1')],
+    );
+    final _FakeFoldersRepository repo = result.repo;
+    final _MockSharedFoldersRepository shared = result.shared;
+    final Finder wallTile = find.byType(PrismWallTile);
+    expect(wallTile, findsOneWidget);
+
+    await tester.tap(find.text('2 people'));
+    await settle(tester);
+    await tester.tap(find.text('Remove').first);
+    await settle(tester);
+    await tester.tap(find.text('Remove person'));
+    await settle(tester);
+
+    verify(() => shared.removeMember('work', 'friend')).called(1);
+    expect(repo.calls.where((call) => call == 'fetchItems:work'), hasLength(2));
+    expect(find.text('2 people'), findsOneWidget);
+    expect(wallTile, findsOneWidget);
+  });
+
+  testWidgets('an editor long-press on a wall names the editor who added it', (tester) async {
+    await pumpTeamFolder(
+      tester,
+      userId: 'me',
+      folder: _teamFolder(ownerId: 'owner', editors: <FolderMember>[_editor('me', 'owner')]),
+      walls: <FavouriteWallEntity>[_wall('w1')],
+    );
+
+    await tester.longPress(find.byType(PrismWallTile));
+    await settle(tester);
+
+    expect(find.text('Remove from folder'), findsOneWidget);
+    expect(find.text('Added by Ana'), findsOneWidget);
+  });
+
+  testWidgets('an editor long-press on their own wall says Added by you', (tester) async {
+    await pumpTeamFolder(
+      tester,
+      userId: 'me',
+      folder: _teamFolder(ownerId: 'owner', editors: <FolderMember>[_editor('me', 'owner')]),
+      walls: <FavouriteWallEntity>[_wall('w1')],
+      addedByUid: 'me',
+    );
+
+    await tester.longPress(find.byType(PrismWallTile));
+    await settle(tester);
+
+    expect(find.text('Added by you'), findsOneWidget);
+    expect(find.text('Remove from folder'), findsOneWidget);
+  });
+
+  testWidgets('a solo owner long-press on a wall still asks to remove it from this folder', (tester) async {
+    await pumpTeamFolder(
+      tester,
+      userId: 'me',
+      folder: _teamFolder(ownerId: 'me'),
+      walls: <FavouriteWallEntity>[_wall('w1')],
+    );
+
+    await tester.longPress(find.byType(PrismWallTile));
+    await settle(tester);
+
+    expect(find.text('Remove from this folder?'), findsOneWidget);
+  });
+
+  testWidgets('deleting a folder with editors warns that the people you invited lose it', (tester) async {
+    await pumpTeamFolder(
+      tester,
+      userId: 'me',
+      folder: _teamFolder(ownerId: 'me', editors: <FolderMember>[_editor('friend', 'me')]),
+    );
+
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await settle(tester);
+    await tester.tap(_menuItem('Delete'));
+    await settle(tester);
+
+    expect(
+      find.text('The people you invited lose it too. Wallpapers that are in your favourites stay there.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('the editor view with walls fits at large text on a 375 point phone', (tester) async {
+    tester.view.physicalSize = const Size(375, 812);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pumpTeamFolder(
+      tester,
+      userId: 'me',
+      folder: _teamFolder(ownerId: 'owner', editors: <FolderMember>[_editor('me', 'owner')]),
+      walls: <FavouriteWallEntity>[_wall('w1'), _wall('w2')],
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('2 people'), findsOneWidget);
   });
 
   // The rotation tests run the folder page on one platform and pump it with a given rotation state.

@@ -6,9 +6,18 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/features/favourite_walls/biz/favourite_counts_cubit.dart';
+import 'package:Prism/features/favourite_walls/domain/repositories/favourite_counts_repository.dart';
+import 'package:Prism/features/folders/biz/folder_save/folder_save_bloc.j.dart';
 import 'package:Prism/features/folders/biz/public_folder_cubit.dart';
+import 'package:Prism/features/folders/domain/entities/folder_save_plan.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
+import 'package:Prism/features/folders/domain/repositories/folder_save_gateway.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/widgets/public_folder_view.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
@@ -17,13 +26,22 @@ import 'package:Prism/features/session/domain/repositories/session_repository.da
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../support/fake_app_analytics.dart';
 
 class _MockStackRouter extends Mock implements StackRouter {}
+
+class _MockFolderSaveGateway extends Mock implements FolderSaveGateway {}
+
+class _MockFavouriteCountsCubit extends MockCubit<Map<String, PrismWallpaperStats>> implements FavouriteCountsCubit {}
+
+class _MockFavouriteWallsBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState>
+    implements FavouriteWallsBloc {}
 
 class _FakePublicFoldersRepository implements PublicFoldersRepository {
   PublicFolderEntity? folder;
@@ -76,16 +94,16 @@ class _FakePublicFoldersRepository implements PublicFoldersRepository {
 }
 
 class _FakeMoodRepository implements MoodRepository {
-  _FakeMoodRepository({this.visibility = const Stream<void>.empty()});
+  _FakeMoodRepository({this.visibility = const Stream<void>.empty(), this.walls = const <PrismWallpaper>[]});
 
   final Stream<void> visibility;
+  final List<PrismWallpaper> walls;
 
   @override
   Future<List<MoodList>> fetchMoods() async => const <MoodList>[];
 
   @override
-  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids, {bool keepOrder = false}) async =>
-      const <PrismWallpaper>[];
+  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids, {bool keepOrder = false}) async => walls;
 
   @override
   Stream<void> watchVisibilityChanges() => visibility;
@@ -119,6 +137,10 @@ Future<void> _settle(WidgetTester tester) async {
 }
 
 void main() {
+  setUpAll(() {
+    registerFallbackValue(const FolderSaveWall(id: 'fallback', source: WallpaperSource.prism));
+  });
+
   setUp(() {
     _router = _MockStackRouter();
     when(() => _router.stack).thenReturn(const <AutoRoutePage<dynamic>>[]);
@@ -129,6 +151,68 @@ void main() {
   tearDown(() {
     AnalyticsRuntime.reset();
     app_state.prismUser = app_constants.createGuestPrismUser();
+  });
+
+  testWidgets('Save all is follower-only and plans only the current filtered public walls', (tester) async {
+    final repo = _FakePublicFoldersRepository()
+      ..folder = _folder()
+      ..wallIds = <String>['visible', 'filtered'];
+    final PublicFolderCubit cubit = PublicFolderCubit(
+      repo,
+      _FakeMoodRepository(
+        walls: const <PrismWallpaper>[
+          PrismWallpaper(
+            core: WallpaperCore(id: 'visible', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+          ),
+        ],
+      ),
+    );
+    addTearDown(cubit.close);
+    final gateway = _MockFolderSaveGateway();
+    when(() => gateway.wallAccess(any())).thenAnswer((_) async => <String, WallAccess>{'visible': WallAccess.open});
+    when(() => gateway.isSaved(any())).thenAnswer((_) async => false);
+    when(
+      () => gateway.account(),
+    ).thenReturn(const FolderSaveAccount(isPro: true, premiumUnlocked: true, balance: 0, graceLeft: 0, price: 10));
+    final FolderSaveBloc saveBloc = FolderSaveBloc(gateway);
+    getIt.registerSingleton<FolderSaveBloc>(saveBloc);
+    final counts = _MockFavouriteCountsCubit();
+    when(() => counts.state).thenReturn(const <String, PrismWallpaperStats>{});
+    getIt.registerSingleton<FavouriteCountsCubit>(counts);
+    final favourites = _MockFavouriteWallsBloc();
+    when(
+      () => favourites.state,
+    ).thenReturn(FavouriteWallsState.initial().copyWith(status: LoadStatus.success, userId: 'viewer'));
+    addTearDown(() async {
+      await getIt.unregister<FolderSaveBloc>();
+      await getIt.unregister<FavouriteCountsCubit>();
+      await saveBloc.close();
+    });
+    await tester.pumpWidget(
+      _host(
+        BlocProvider<FavouriteWallsBloc>.value(
+          value: favourites,
+          child: PublicFolderView(folderId: 'f1', cubit: cubit),
+        ),
+      ),
+    );
+    await _settle(tester);
+    expect(find.byKey(const ValueKey<String>('folder-save-open')), findsNothing);
+
+    await tester.tap(find.text('Follow'));
+    await _settle(tester);
+    expect(find.byKey(const ValueKey<String>('folder-save-open')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey<String>('folder-save-open')));
+    await tester.runAsync(() => pumpEventQueue());
+    await _settle(tester);
+
+    expect(saveBloc.state, isA<FolderSavePlanned>());
+    final FolderSavePlanned planned = saveBloc.state as FolderSavePlanned;
+    expect(planned.target.ownerId, 'viewer');
+    expect(planned.plan.items.map((item) => item.wall.id), <String>['visible']);
+    expect(verify(() => gateway.wallAccess(captureAny())).captured.single, <String>['visible']);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
   });
 
   testWidgets('a viewer follows a public folder and the button and count change', (tester) async {

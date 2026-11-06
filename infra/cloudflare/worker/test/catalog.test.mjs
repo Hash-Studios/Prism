@@ -93,6 +93,19 @@ function seedDocs() {
       creator: { username: 'sam', name: 'Sam K' },
       blur: 'data:image/jpeg;base64,AAAA',
     },
+    'webWalls/DW1': {
+      state: 'live',
+      updatedAt: '2026-10-30T00:00:00.000Z',
+      title: 'Desk Dawn',
+      category: 'Nature',
+      categorySlug: 'nature',
+      width: 1080,
+      height: 2340,
+      creatorName: 'Sam K',
+      creator: { username: 'sam', name: 'Sam K' },
+      thumb: THUMB,
+      desktop: { v: '0123456789abcdef', thumb: 'https://img.prismwalls.com/previews/desktop-dw1.jpg', width: 2560, height: 1600 },
+    },
     'webWalls/H1': { state: 'hidden', updatedAt: 'x' },
     'webWalls/D1': { state: 'gone', updatedAt: 'x' },
     'webPages/category~nature~1': {
@@ -615,6 +628,38 @@ test('stale entries are served once while a background refresh runs, then a gone
   assert.equal(gone.status, 410);
 });
 
+test('wall and desktop cache entries expire after the stale window when Firestore is unavailable', async (t) => {
+  const clock = stubClock(t);
+  const h = setup(t);
+  const paths = ['/wallpaper/W1', '/wallpaper/DW1?view=desktop'];
+  for (const path of paths) {
+    const first = await h.get(path);
+    assert.equal(first.status, 200, path);
+    await first.text();
+  }
+  await h.flush();
+
+  h.state.firestoreStatus = 503;
+  clock.advance(600 + 86400 - 1);
+  for (const path of paths) {
+    const lastStaleSecond = await h.get(path);
+    await lastStaleSecond.text();
+    assert.equal(lastStaleSecond.headers.get('cache-control'), 'public, max-age=0, stale-while-revalidate=1', path);
+  }
+  await h.flush();
+
+  clock.advance(2);
+  for (const [path, oldTitle, expectedStatus] of [
+    ['/wallpaper/W1', 'Sunset Ridge', 200], ['/wallpaper/DW1?view=desktop', 'Desk Dawn', 302],
+  ]) {
+    const expired = await h.get(path);
+    const body = await expired.text();
+    assert.equal(expired.status, expectedStatus, path);
+    assert.ok(!body.includes(oldTitle), `${path} must not serve the expired cached page`);
+  }
+  await h.flush();
+});
+
 test('concurrent stale hits share one background refresh per cache key', async (t) => {
   const clock = stubClock(t);
   const h = setup(t);
@@ -918,4 +963,81 @@ test('HEAD on a wall returns 200 with an empty body', async (t) => {
   );
   assert.equal(response.status, 200);
   assert.equal(await response.text(), '');
+});
+
+test('desktop mode leads with the monitor and puts the phone beside it, with a Download 1920 × 1200 button', async (t) => {
+  const h = setup(t);
+  const response = await h.get('/wallpaper/DW1?view=desktop');
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(body, /<main class="wall-layout desktop-mode" data-mode="desktop">/);
+  const desktopAt = body.indexOf('/api/catalog/desktop/DW1.jpg?v=');
+  const phoneAt = body.indexOf('src="/api/catalog/preview/DW1.jpg"');
+  assert.ok(desktopAt > 0 && phoneAt > desktopAt, 'the desktop monitor comes before the phone preview');
+  assert.ok(body.includes('Download 1920 × 1200'));
+  assert.ok(body.includes('href="/api/catalog/download/DW1/desktop.jpg"'));
+  assert.ok(body.includes('The full 2560 × 1600 desktop file is in Prism.'));
+  assert.ok(!body.includes('role="tablist"'));
+  assert.ok(body.includes('<link rel="canonical" href="https://prismwalls.com/wallpaper/DW1">'));
+});
+
+test('desktop mode without a desktop companion shows the phone file and set-as-background steps', async (t) => {
+  const h = setup(t);
+  const body = await (await h.get('/wallpaper/W1?view=desktop')).text();
+
+  assert.match(body, /<main class="wall-layout" data-mode="desktop">/);
+  assert.ok(body.includes('Use it on your computer'));
+  assert.ok(body.includes('Set as desktop background'));
+  assert.ok(body.includes('src="/api/catalog/preview/W1.jpg"'));
+  assert.ok(!body.includes('/api/catalog/desktop/'));
+});
+
+test('desktop mode keeps the gated page and answers hidden walls with 404', async (t) => {
+  const h = setup(t);
+  const gated = await (await h.get('/wallpaper/G1?view=desktop')).text();
+
+  assert.ok(gated.includes('Get it in Prism'));
+  assert.ok(!gated.includes('/api/catalog/preview/'));
+  assert.ok(!gated.includes('/api/catalog/desktop/'));
+  assert.ok(!gated.includes('/api/catalog/download/'));
+  assert.ok(!gated.includes('data-mode="desktop"'));
+
+  const hidden = await h.get('/wallpaper/H1?view=desktop');
+  await hidden.text();
+  assert.equal(hidden.status, 404);
+});
+
+test('desktop mode reads the same two documents once, and its own cache entry serves the page after that', async (t) => {
+  const h = setup(t);
+  const cold = await h.get('/wallpaper/DW1?view=desktop');
+  await cold.text();
+  await h.flush();
+  assert.equal(cold.status, 200);
+  assert.equal(h.state.reads.length, 2);
+  assert.ok(h.state.reads[0].endsWith('/webWalls/DW1'));
+  assert.ok(h.state.reads[1].endsWith('/webPages/category~nature~1'));
+
+  const warm = await h.get('/wallpaper/DW1?view=desktop');
+  await warm.text();
+  await h.flush();
+  assert.equal(h.state.reads.length, 2);
+
+  const sameEntry = await h.get('/wallpaper/DW1?view=desktop&utm_source=x');
+  await sameEntry.text();
+  await h.flush();
+  assert.equal(h.state.reads.length, 2);
+
+  const normal = await h.get('/wallpaper/DW1');
+  const normalBody = await normal.text();
+  await h.flush();
+  assert.equal(h.state.reads.length, 4);
+  assert.ok(normalBody.includes('role="tablist"'));
+  assert.ok(!normalBody.includes('data-mode="desktop"'));
+
+  const phoneView = await (await h.get('/wallpaper/DW1?view=phone')).text();
+  await h.flush();
+  assert.equal(h.state.reads.length, 4);
+  assert.ok(phoneView.includes('role="tablist"'));
+  assert.ok(!phoneView.includes('data-mode="desktop"'));
 });

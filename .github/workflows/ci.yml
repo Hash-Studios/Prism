@@ -105,6 +105,7 @@ jobs:
               - '.fvmrc'
             web:
               - 'web/**'
+              - 'infra/cloudflare/worker/**'
               # The changelog pages and share cards build from these.
               - 'CHANGELOG.md'
               - 'assets/fonts/Proxima*'

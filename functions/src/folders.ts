@@ -3,6 +3,7 @@ import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {db, REGION, str} from "./common";
 import {syncPublicFolder, syncPublicFolderItem} from "./publicFolders";
 import {r2Secrets} from "./r2Storage";
+import {cleanupDeletedFolder, forgetFolderActivityItem, recordFolderActivity} from "./sharedFolders";
 
 export const FOLDERS = "folders";
 export const FOLDER_ITEMS = "items";
@@ -40,6 +41,14 @@ export const onFolderItemWritten = onDocumentWritten(
   async (event) => {
     await repairFolder(event.params.folderId);
     await syncPublicFolderItem(event.params.folderId, event.params.itemKey);
+    const after = event.data?.after;
+    if (!event.data?.before?.exists && after?.exists) {
+      if (after.createTime) {
+        await recordFolderActivity(event.params.folderId, event.params.itemKey, after.data() ?? {}, after.createTime);
+      }
+    } else if (event.data?.before?.exists && !after?.exists) {
+      await forgetFolderActivityItem(event.params.folderId, event.params.itemKey, event.data.before.createTime);
+    }
   },
 );
 
@@ -56,6 +65,7 @@ export const onFolderWritten = onDocumentWritten(
     const before = event.data?.before;
     const after = event.data?.after;
     if (changesPublicFolder(before?.data(), after?.data())) await syncPublicFolder(event.params.folderId);
+    if (before?.exists && !after?.exists) await cleanupDeletedFolder(event.params.folderId);
     if (!before?.exists || !after?.exists) return;
     const previousCount = before.data()?.itemCount;
     const currentCount = after.data()?.itemCount;

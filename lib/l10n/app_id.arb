@@ -3040,6 +3040,17 @@
   "coreShareFormatClean": "Polos",
   "coreShareTargetInstagram": "Instagram",
   "coreShareTargetCopyLink": "Salin tautan",
+  "coreShareOpenOnComputer": "Buka di komputer",
+  "coreShareOpenOnComputerBody": "Ketik tautan ini di browser komputermu, atau pindai kodenya.",
+  "coreShareOpenOnComputerQr": "Kode QR untuk {link}",
+  "@coreShareOpenOnComputerQr": {
+    "description": "Screen reader label for the QR code image. {link} is the short link shown under it.",
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
   "coreShareTargetSaveImage": "Simpan gambar",
   "coreShareTargetMore": "Lainnya",
   "coreShareCardBy": "oleh {creator}",
@@ -10306,6 +10317,183 @@
       }
     }
   },
+  "topicFollow": "Ikuti",
+  "@topicFollow": {
+    "description": "Button on a category or mood page. Follows it for a daily push about new wallpapers."
+  },
+  "topicFollowing": "Diikuti",
+  "@topicFollowing": {
+    "description": "Button label when the user follows this category or mood. A tap stops following."
+  },
+  "topicFollowHint": "Ikuti {topic}",
+  "@topicFollowHint": {
+    "description": "Screen reader label of the Follow button. topic is a category or mood name.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicUnfollowHint": "Berhenti mengikuti {topic}",
+  "@topicUnfollowHint": {
+    "description": "Screen reader label of a button that stops following a category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicFollowedToast": "Anda mengikuti {topic}. Jika notifikasi topik aktif, Anda mendapat paling banyak satu notifikasi per hari tentang wallpaper baru di sini.",
+  "@topicFollowedToast": {
+    "description": "Toast after the user follows a category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicFollowLimit": "Anda dapat mengikuti hingga {max} topik. Berhenti mengikuti salah satu di Pengaturan terlebih dahulu.",
+  "@topicFollowLimit": {
+    "description": "Toast when the user already follows the most topics allowed.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "topicFollowFailed": "Tidak dapat memperbarui status ikuti. Periksa koneksi Anda dan coba lagi.",
+  "@topicFollowFailed": {
+    "description": "Toast when follow or unfollow of a category or mood fails."
+  },
+  "topicUnfollow": "Berhenti ikuti",
+  "@topicUnfollow": {
+    "description": "Button in the list of followed topics. Stops following that topic."
+  },
+  "topicKindCategory": "Kategori",
+  "@topicKindCategory": {
+    "description": "Small label under a followed topic that is a category."
+  },
+  "topicKindMood": "Suasana",
+  "@topicKindMood": {
+    "description": "Small label under a followed topic that is a Home mood, such as Dreamy."
+  },
+  "followingRowTitle": "Diikuti",
+  "@followingRowTitle": {
+    "description": "Header of the Home row of the categories and moods the user follows."
+  },
+  "followingRowLabel": "Kategori dan suasana yang Anda ikuti",
+  "@followingRowLabel": {
+    "description": "Screen reader label of the Home row of followed topics."
+  },
+  "topicNewWallpapers": "{topic}, wallpaper baru",
+  "@topicNewWallpapers": {
+    "description": "Screen reader label of a followed topic that has new wallpapers.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "followedTopicsTitle": "Topik yang Anda ikuti",
+  "@followedTopicsTitle": {
+    "description": "Settings row and sheet title: the categories and moods the user follows."
+  },
+  "followedTopicsCount": "{count, plural, =0{Belum ada} =1{1 topik} other{{count} topik}}",
+  "@followedTopicsCount": {
+    "description": "Settings row subtitle: how many categories and moods the user follows.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "followedTopicsEmptyTitle": "Belum ada topik",
+  "@followedTopicsEmptyTitle": {
+    "description": "Empty state title of the followed topics sheet."
+  },
+  "followedTopicsEmptyBody": "Buka kategori atau suasana, lalu ketuk Ikuti. Jika notifikasi topik aktif, Anda mendapat paling banyak satu notifikasi per hari tentang wallpaper baru di sana.",
+  "@followedTopicsEmptyBody": {
+    "description": "Empty state body of the followed topics sheet."
+  },
+  "notifSettingTopics": "Topik yang Anda ikuti",
+  "@notifSettingTopics": {
+    "description": "Notification setting for new wallpapers in followed categories and moods."
+  },
+  "notifSettingTopicsDescription": "Wallpaper baru di kategori dan suasana yang Anda ikuti, sekali sehari",
+  "@notifSettingTopicsDescription": {
+    "description": "Description of the followed topics notification setting."
+  },
+  "layoutHomeHeader": "Beranda",
+  "@layoutHomeHeader": {
+    "description": "Layout settings section header for the Home page."
+  },
+  "layoutFollowingRow": "Tampilkan topik yang Anda ikuti",
+  "@layoutFollowingRow": {
+    "description": "Layout setting switch. When on, Home shows a row of followed categories and moods."
+  },
+  "layoutFollowingRowFootnote": "Baris di bagian atas Untuk Anda. Titik menandai topik dengan wallpaper baru.",
+  "@layoutFollowingRowFootnote": {
+    "description": "Footnote under the layout setting for the followed topics row."
+  },
+  "notifPushTopicDigestTitleOne": "Wallpaper baru di {topic}",
+  "@notifPushTopicDigestTitleOne": {
+    "description": "Daily push title: one new wallpaper in a followed category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitleSolo": "{count, plural, =1{Wallpaper baru di {topic}} other{{count} wallpaper baru di {topic}}}",
+  "@notifPushTopicDigestTitleSolo": {
+    "description": "Daily push title: new wallpapers in one followed category or mood.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitlePair": "{count, plural, =1{Wallpaper baru di {topic} dan {secondTopic}} other{{count} wallpaper baru di {topic} dan {secondTopic}}}",
+  "@notifPushTopicDigestTitlePair": {
+    "description": "Daily push title: new wallpapers in two followed categories or moods.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      },
+      "secondTopic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitleGroup": "{count, plural, =1{Wallpaper baru di {topic} dan {others} topik lainnya} other{{count} wallpaper baru di {topic} dan {others} topik lainnya}}",
+  "@notifPushTopicDigestTitleGroup": {
+    "description": "Daily push title: new wallpapers in three or more followed topics. others is always 2 or more.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      },
+      "others": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushTopicDigestBodyUntitled": "Ketuk untuk melihat yang baru.",
+  "@notifPushTopicDigestBodyUntitled": {
+    "description": "Daily push body when the new wallpapers have no tags."
+  },
   "historySetAndDownloaded": "Dipasang dan diunduh",
   "@historySetAndDownloaded": {
     "description": "History tab segment on Android: walls the user set as wallpaper or downloaded."
@@ -13353,5 +13541,631 @@
   "watchGuideNoteGooglePhotos": "Pixel Watch membaca Google Photos. Jika gambar tidak muncul, cadangkan dulu ke Google Photos.",
   "@watchGuideNoteGooglePhotos": {
     "description": "Note in the Android watch face guide."
+  },
+  "searchByPhoto": "Cari dengan foto",
+  "@searchByPhoto": {
+    "description": "Tooltip of the camera roll button in the search bar, and title of the photo search privacy sheet."
+  },
+  "searchPhotoPrivacy": "Prism membaca warna foto di ponselmu. Untuk mencari tahu isi fotonya, salinan kecil dikirim ke Google Cloud Vision. Salinan itu tidak disimpan.",
+  "@searchPhotoPrivacy": {
+    "description": "Shown once before a signed-in user's first photo search."
+  },
+  "searchPhotoChoose": "Pilih foto",
+  "@searchPhotoChoose": {
+    "description": "Button on the photo search privacy sheet. Opens the camera roll."
+  },
+  "searchPhotoChipLabel": "Fotomu",
+  "@searchPhotoChipLabel": {
+    "description": "Screen reader label of the small photo thumbnail above photo search results."
+  },
+  "searchPhotoClear": "Hapus",
+  "@searchPhotoClear": {
+    "description": "Button next to the photo thumbnail. Ends the photo search."
+  },
+  "searchPhotoClearTooltip": "Hapus foto",
+  "@searchPhotoClearTooltip": {
+    "description": "Tooltip and screen reader label of the Clear button next to the photo thumbnail."
+  },
+  "searchPhotoMatchesFor": "Cocok dengan {labels}",
+  "@searchPhotoMatchesFor": {
+    "description": "Line above photo search results. labels is a comma-separated list of words that describe the photo, in English.",
+    "placeholders": {
+      "labels": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoColourMatches": "Cocok berdasarkan warna",
+  "@searchPhotoColourMatches": {
+    "description": "Line above photo search results when the photo has no labels."
+  },
+  "searchPhotoMainColours": "Warna utama: {colours}",
+  "@searchPhotoMainColours": {
+    "description": "Screen reader label of the colour dots next to the photo thumbnail.",
+    "placeholders": {
+      "colours": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoSentNote": "Salinan kecil dikirim ke Google Cloud Vision untuk mencari tahu isinya. Salinan itu tidak disimpan.",
+  "@searchPhotoSentNote": {
+    "description": "Note under the photo thumbnail after the photo was sent for labels."
+  },
+  "searchPhotoGuestNote": "Hanya cocok berdasarkan warna. Masuk untuk juga mencocokkan isi fotomu.",
+  "@searchPhotoGuestNote": {
+    "description": "Note under the photo thumbnail for a guest. A guest's photo never leaves the phone."
+  },
+  "searchPhotoCappedNote": "Kamu sudah memakai {count} pencarian foto hari ini. Sampai besok, pencocokan hanya berdasarkan warna.",
+  "@searchPhotoCappedNote": {
+    "description": "Note under the photo thumbnail when the daily photo search limit is reached.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchPhotoUnavailableNote": "Isi foto tidak bisa dibaca. Hanya cocok berdasarkan warna.",
+  "@searchPhotoUnavailableNote": {
+    "description": "Note under the photo thumbnail when the labels call failed."
+  },
+  "searchPhotoNoMatches": "Tidak ada wallpaper yang cocok dengan foto ini",
+  "@searchPhotoNoMatches": {
+    "description": "Empty state title for a photo search."
+  },
+  "searchPhotoNoMatchesBody": "Coba foto dengan warna yang lebih cerah.",
+  "@searchPhotoNoMatchesBody": {
+    "description": "Empty state body for a photo search."
+  },
+  "searchPhotoChooseAnother": "Pilih foto lain",
+  "@searchPhotoChooseAnother": {
+    "description": "Empty state button for a photo search. Opens the camera roll."
+  },
+  "searchPhotoCouldNotOpen": "Foto itu tidak bisa dibuka. Coba foto lain.",
+  "@searchPhotoCouldNotOpen": {
+    "description": "Toast when the picked photo cannot be decoded."
+  },
+  "foldersSaveAll": "Simpan semua",
+  "@foldersSaveAll": {
+    "description": "Button label that starts saving all wallpapers in a folder."
+  },
+  "foldersSaveAllTitle": "Simpan semua wallpaper",
+  "@foldersSaveAllTitle": {
+    "description": "Title of the Save all plan sheet."
+  },
+  "foldersSaveAllChecking": "Memeriksa wallpaper…",
+  "@foldersSaveAllChecking": {
+    "description": "Shown while the app checks which wallpapers in the folder can be saved."
+  },
+  "foldersSaveAllPlanFailed": "Wallpaper tidak bisa diperiksa. Coba lagi.",
+  "@foldersSaveAllPlanFailed": {
+    "description": "Message when the Save all check fails."
+  },
+  "foldersSaveAllBusy": "Folder lain sedang disimpan. Coba lagi setelah selesai.",
+  "@foldersSaveAllBusy": {
+    "description": "Message when another folder is already saving."
+  },
+  "foldersSaveAllRowFree": "{count, plural, =1{1 wallpaper gratis} other{{count} wallpaper gratis}}",
+  "@foldersSaveAllRowFree": {
+    "description": "Plan sheet row: number of free wallpapers.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowCoins": "{count, plural, =1{1 wallpaper berharga {price} koin} other{{count} wallpaper berharga {price} koin masing-masing}}",
+  "@foldersSaveAllRowCoins": {
+    "description": "Plan sheet row: number of paid wallpapers and their coin price.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "price": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowPro": "{count, plural, =1{1 wallpaper perlu Pro} other{{count} wallpaper perlu Pro}}",
+  "@foldersSaveAllRowPro": {
+    "description": "Plan sheet row: number of wallpapers that need Pro.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowSaved": "{count, plural, =1{1 wallpaper sudah ada di Unduhan} other{{count} wallpaper sudah ada di Unduhan}}",
+  "@foldersSaveAllRowSaved": {
+    "description": "Plan sheet row: number of wallpapers already in Downloads.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowBlocked": "{count, plural, =1{1 wallpaper tidak tersedia untuk disimpan} other{{count} wallpaper tidak tersedia untuk disimpan}}",
+  "@foldersSaveAllRowBlocked": {
+    "description": "Plan sheet row: number of wallpapers that cannot be saved.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllAffordable": "{count, plural, =0{Koinmu tidak cukup untuk wallpaper berbayar.} =1{Koinmu cukup untuk 1 wallpaper berbayar.} other{Koinmu cukup untuk {count} wallpaper berbayar.}}",
+  "@foldersSaveAllAffordable": {
+    "description": "Plan sheet line: how many paid wallpapers the user's coins cover.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllPhotosAlbum": "Wallpaper akan masuk ke album “{name}” di Foto dan ke Unduhan.",
+  "@foldersSaveAllPhotosAlbum": {
+    "description": "Plan sheet note on iOS: where saved wallpapers go. {name} is the album name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllGalleryAlbum": "Wallpaper akan masuk ke Pictures/Prism/{name} di galerimu dan ke Unduhan.",
+  "@foldersSaveAllGalleryAlbum": {
+    "description": "Plan sheet note on Android: where saved wallpapers go. {name} is the folder name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllLeaveNote": "Kamu bisa meninggalkan halaman ini saat menyimpan. Jika kamu menutup Prism, ketuk Simpan semua lagi untuk menyelesaikannya.",
+  "@foldersSaveAllLeaveNote": {
+    "description": "Plan sheet note: saving continues when the user leaves the page, and what to do if Prism closes."
+  },
+  "foldersSaveAllNothing": "Tidak ada yang baru untuk disimpan di folder ini.",
+  "@foldersSaveAllNothing": {
+    "description": "Shown when no wallpaper in the folder can be saved."
+  },
+  "foldersSaveAllFreeButton": "{count, plural, =1{Simpan wallpaper gratis} other{Simpan {count} wallpaper gratis}}",
+  "@foldersSaveAllFreeButton": {
+    "description": "Primary button when only free wallpapers can be saved.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllPaidButton": "{coins, plural, =1{Simpan semua yang bisa (1 koin)} other{Simpan semua yang bisa ({coins} koin)}}",
+  "@foldersSaveAllPaidButton": {
+    "description": "Primary button that saves as many paid wallpapers as the coins allow.",
+    "placeholders": {
+      "coins": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllCountButton": "{count, plural, =1{Simpan 1 wallpaper} other{Simpan {count} wallpaper}}",
+  "@foldersSaveAllCountButton": {
+    "description": "Primary button that saves a set number of wallpapers.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllProgress": "Menyimpan {done} dari {total}",
+  "@foldersSaveAllProgress": {
+    "description": "Progress row text while wallpapers are saving.",
+    "placeholders": {
+      "done": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllProgressSemantics": "{total, plural, =1{Menyimpan {done} dari 1 wallpaper} other{Menyimpan {done} dari {total} wallpaper}}",
+  "@foldersSaveAllProgressSemantics": {
+    "description": "Screen reader label for the save progress row.",
+    "placeholders": {
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "done": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllStopping": "Menghentikan…",
+  "@foldersSaveAllStopping": {
+    "description": "Progress row text after the user taps Cancel."
+  },
+  "foldersSaveAllCancel": "Batal",
+  "@foldersSaveAllCancel": {
+    "description": "Button that stops a Save all run."
+  },
+  "foldersSaveAllCancelHint": "Menghentikan wallpaper yang belum dimulai. Wallpaper itu tidak dikenai biaya.",
+  "@foldersSaveAllCancelHint": {
+    "description": "Hint under the Cancel button: wallpapers that have not started cost nothing."
+  },
+  "foldersSaveAllSavedTitle": "{count, plural, =0{Tidak ada wallpaper yang disimpan} =1{1 wallpaper disimpan} other{{count} wallpaper disimpan}}",
+  "@foldersSaveAllSavedTitle": {
+    "description": "Summary card title after a Save all run finishes.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllStoppedTitle": "{count, plural, =0{Dihentikan. Tidak ada wallpaper yang disimpan} =1{Dihentikan. 1 wallpaper disimpan} other{Dihentikan. {count} wallpaper disimpan}}",
+  "@foldersSaveAllStoppedTitle": {
+    "description": "Summary card title after the user stops a Save all run.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllSkipped": "{count, plural, =1{1 sudah ada di Unduhan} other{{count} sudah ada di Unduhan}}",
+  "@foldersSaveAllSkipped": {
+    "description": "Summary card row: wallpapers skipped because they were already in Downloads.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllFailed": "{count, plural, =1{1 gagal} other{{count} gagal}}",
+  "@foldersSaveAllFailed": {
+    "description": "Summary card row: wallpapers that failed to save.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllNotStarted": "{count, plural, =1{1 belum dimulai} other{{count} belum dimulai}}",
+  "@foldersSaveAllNotStarted": {
+    "description": "Summary card row: wallpapers that did not start because the run stopped.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRetry": "Coba ulang yang gagal",
+  "@foldersSaveAllRetry": {
+    "description": "Summary card button that retries the wallpapers that failed."
+  },
+  "foldersSaveAllDone": "Selesai",
+  "@foldersSaveAllDone": {
+    "description": "Summary card button that closes the summary."
+  },
+  "foldersSaveAllToast": "{count, plural, =0{Tidak ada wallpaper yang tersimpan dari {name}.} =1{Tersimpan 1 wallpaper dari {name}.} other{Tersimpan {count} wallpaper dari {name}.}}",
+  "@foldersSaveAllToast": {
+    "description": "Toast after a Save all run. {name} is the folder name.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllToastFailed": "{failed, plural, =1{Tersimpan {saved} dari {name}. 1 gagal. Buka folder untuk mencoba lagi.} other{Tersimpan {saved} dari {name}. {failed} gagal. Buka folder untuk mencoba lagi.}}",
+  "@foldersSaveAllToastFailed": {
+    "description": "Toast after a Save all run with failures. {saved} is the number saved, {failed} the number failed, {name} the folder name.",
+    "placeholders": {
+      "failed": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "saved": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersInvite": "Undang",
+  "@foldersInvite": {
+    "description": "Button that makes an invite link for a shared folder."
+  },
+  "foldersInviteShareText": "Tambahkan wallpaper bersama saya di {name} di Prism: {link}",
+  "@foldersInviteShareText": {
+    "description": "Text shared with a folder invite link.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersInvitePreviewTitle": "Gabung ke {name} di Prism",
+  "@foldersInvitePreviewTitle": {
+    "description": "Title of the link preview for a folder invite.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersInvitePreviewDescription": "Tambahkan dan hapus wallpaper di folder ini bersama-sama.",
+  "@foldersInvitePreviewDescription": {
+    "description": "Description of the link preview for a folder invite."
+  },
+  "foldersInviteFailed": "Tidak dapat membuat tautan undangan. Coba lagi.",
+  "@foldersInviteFailed": {
+    "description": "Error when the invite link cannot be made."
+  },
+  "foldersInviteFull": "Folder ini sudah penuh. Hapus seseorang untuk mengundang lebih banyak orang.",
+  "@foldersInviteFull": {
+    "description": "Error when the owner invites into a folder that has the most editors."
+  },
+  "foldersInviteLimit": "Anda sudah membuat terlalu banyak undangan hari ini. Coba lagi besok.",
+  "@foldersInviteLimit": {
+    "description": "Error when the owner hits the daily invite limit."
+  },
+  "foldersPeople": "Orang",
+  "@foldersPeople": {
+    "description": "Title of the sheet that lists the people in a shared folder."
+  },
+  "foldersPeopleHintOwner": "Undang hingga {count} orang untuk menambah dan menghapus wallpaper. Hanya Anda yang bisa mengganti nama, membagikan, atau menghapus folder ini.",
+  "@foldersPeopleHintOwner": {
+    "description": "Hint for the owner in the people sheet.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersPeopleHintEditor": "Anda bisa menambah dan menghapus wallpaper. Hanya pemilik yang bisa mengganti nama, membagikan, atau menghapus folder ini.",
+  "@foldersPeopleHintEditor": {
+    "description": "Hint for an editor in the people sheet."
+  },
+  "foldersPeopleCount": "{count, plural, =1{1 orang} other{{count} orang}}",
+  "@foldersPeopleCount": {
+    "description": "Number of people in a shared folder, with the owner.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersPeopleButtonLabel": "{count, plural, =1{1 orang di folder ini. Tampilkan orang} other{{count} orang di folder ini. Tampilkan orang}}",
+  "@foldersPeopleButtonLabel": {
+    "description": "Screen reader label for the member avatars on a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersRoleOwner": "Pemilik",
+  "@foldersRoleOwner": {
+    "description": "Role of the folder owner."
+  },
+  "foldersRoleEditor": "Bisa menambah dan menghapus",
+  "@foldersRoleEditor": {
+    "description": "Role of a person the owner invited."
+  },
+  "foldersPersonYou": "{name} (Anda)",
+  "@foldersPersonYou": {
+    "description": "A member row for the current user.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersUnknownPerson": "Pengguna Prism",
+  "@foldersUnknownPerson": {
+    "description": "Name shown when a member's profile cannot be read."
+  },
+  "foldersRemovePerson": "Hapus",
+  "@foldersRemovePerson": {
+    "description": "Button that removes a person from a shared folder."
+  },
+  "foldersRemovePersonTitle": "Hapus {name}?",
+  "@foldersRemovePersonTitle": {
+    "description": "Title of the confirm before the owner removes a person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersRemovePersonMessage": "Mereka tidak bisa lagi menambah atau menghapus wallpaper di sini. Wallpaper yang mereka tambahkan tetap ada.",
+  "@foldersRemovePersonMessage": {
+    "description": "Message of the confirm before the owner removes a person."
+  },
+  "foldersRemovePersonConfirm": "Hapus orang",
+  "@foldersRemovePersonConfirm": {
+    "description": "Confirm button that removes a person from a shared folder."
+  },
+  "foldersPersonRemoved": "{name} dihapus.",
+  "@foldersPersonRemoved": {
+    "description": "Toast after the owner removes a person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersLeave": "Keluar dari folder",
+  "@foldersLeave": {
+    "description": "Button for an editor to leave a shared folder."
+  },
+  "foldersLeaveTitle": "Keluar dari {name}?",
+  "@foldersLeaveTitle": {
+    "description": "Title of the confirm before an editor leaves.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersLeaveMessage": "Anda tidak bisa lagi menambah atau menghapus wallpaper di sini. Wallpaper yang Anda tambahkan tetap ada.",
+  "@foldersLeaveMessage": {
+    "description": "Message of the confirm before an editor leaves."
+  },
+  "foldersLeft": "Anda keluar dari folder.",
+  "@foldersLeft": {
+    "description": "Toast after an editor leaves a folder."
+  },
+  "foldersPeopleFailed": "Tidak dapat memperbarui orang di folder ini. Coba lagi.",
+  "@foldersPeopleFailed": {
+    "description": "Error when a remove or leave fails."
+  },
+  "foldersSharedWithYou": "Dibagikan kepada Anda",
+  "@foldersSharedWithYou": {
+    "description": "Library section of folders other people invited the user to."
+  },
+  "foldersSharedLabel": "Dibagikan",
+  "@foldersSharedLabel": {
+    "description": "Screen reader label for the shared icon on a folder card."
+  },
+  "foldersAddedBy": "Ditambahkan oleh {name}",
+  "@foldersAddedBy": {
+    "description": "Who added a wallpaper to a shared folder.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersAddedByYou": "Ditambahkan oleh Anda",
+  "@foldersAddedByYou": {
+    "description": "The current user added this wallpaper to a shared folder."
+  },
+  "foldersRemoveFromFolder": "Hapus dari folder",
+  "@foldersRemoveFromFolder": {
+    "description": "Button that removes a wallpaper from a folder."
+  },
+  "foldersDeleteSharedMessage": "Orang yang Anda undang juga akan kehilangannya. Wallpaper yang ada di favorit Anda tetap di sana.",
+  "@foldersDeleteSharedMessage": {
+    "description": "Message of the delete confirm for a folder with editors."
+  },
+  "foldersJoinTitle": "Undangan folder",
+  "@foldersJoinTitle": {
+    "description": "Title of the page that opens a folder invite link."
+  },
+  "foldersJoinHeadline": "Gabung ke {name}",
+  "@foldersJoinHeadline": {
+    "description": "Headline on the folder invite page.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersJoinInvitedBy": "{name} mengundang Anda untuk menambah dan menghapus wallpaper di folder ini.",
+  "@foldersJoinInvitedBy": {
+    "description": "Body on the folder invite page.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersJoin": "Gabung ke folder",
+  "@foldersJoin": {
+    "description": "Button that joins a shared folder."
+  },
+  "foldersJoinSignIn": "Masuk untuk bergabung",
+  "@foldersJoinSignIn": {
+    "description": "Button on the invite page for a guest."
+  },
+  "foldersJoinOpen": "Buka folder",
+  "@foldersJoinOpen": {
+    "description": "Button on the invite page when the user is already in the folder."
+  },
+  "foldersJoinAlreadyIn": "Anda sudah ada di folder ini.",
+  "@foldersJoinAlreadyIn": {
+    "description": "Note on the invite page when the user is already a member."
+  },
+  "foldersJoined": "Anda bergabung ke {name}.",
+  "@foldersJoined": {
+    "description": "Toast after the user joins a folder.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersJoinFailed": "Tidak dapat bergabung ke folder ini. Coba lagi.",
+  "@foldersJoinFailed": {
+    "description": "Error when a join fails for a network or server reason."
+  },
+  "foldersJoinLoadFailed": "Tidak dapat memuat undangan ini.",
+  "@foldersJoinLoadFailed": {
+    "description": "Error when the invite page cannot load."
+  },
+  "foldersJoinExpiredTitle": "Undangan ini sudah kedaluwarsa",
+  "@foldersJoinExpiredTitle": {
+    "description": "Title when an invite is older than 7 days."
+  },
+  "foldersJoinExpiredBody": "Undangan berlaku selama 7 hari. Minta tautan baru kepada pemilik.",
+  "@foldersJoinExpiredBody": {
+    "description": "Body when an invite expired."
+  },
+  "foldersJoinUsedTitle": "Undangan ini sudah pernah digunakan",
+  "@foldersJoinUsedTitle": {
+    "description": "Title when someone already used the invite."
+  },
+  "foldersJoinUsedBody": "Setiap undangan hanya berlaku sekali. Minta tautan baru kepada pemilik.",
+  "@foldersJoinUsedBody": {
+    "description": "Body when an invite was used."
+  },
+  "foldersJoinFullTitle": "Folder ini sudah penuh",
+  "@foldersJoinFullTitle": {
+    "description": "Title when the folder has the most people it can have."
+  },
+  "foldersJoinFullBody": "Minta pemilik untuk menghapus seseorang, lalu buka tautan lagi.",
+  "@foldersJoinFullBody": {
+    "description": "Body when the folder is full."
+  },
+  "foldersJoinUnavailableTitle": "Undangan ini tidak tersedia",
+  "@foldersJoinUnavailableTitle": {
+    "description": "Title for a missing folder, a block or a closed account. It does not say which."
+  },
+  "foldersJoinUnavailableBody": "Mungkin folder ini sudah dihapus, atau Anda tidak bisa bergabung dengannya.",
+  "@foldersJoinUnavailableBody": {
+    "description": "Body for an unavailable invite."
+  },
+  "foldersMakePrivateMessageShared": "Hanya Anda dan orang yang Anda undang yang bisa melihatnya. Tautannya berhenti berfungsi dan pengikutnya kehilangan folder ini.",
+  "@foldersMakePrivateMessageShared": {
+    "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
   }
 }

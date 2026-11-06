@@ -63,15 +63,25 @@ internal class PrismMediaHostApiImpl(
             callback(Result.success(operationError("INVALID_FILENAME", error)))
             return
         }
+        val album = request.album
+        if (album != null && !isValidAlbum(album)) {
+            callback(Result.success(operationError("INVALID_ALBUM", IllegalArgumentException("Invalid album"))))
+            return
+        }
+        val folder = album?.let { "Prism/$it" } ?: DOWNLOAD_FOLDER
         withWritePermission(callback) {
             // ponytail: in-process transfer; use WorkManager if downloads must survive process death.
             runInBackground(callback, { operationError("DOWNLOAD_FAILED", it) }) {
                 withImage(request.link, request.isLocalFile) { image ->
-                    publish(image, DOWNLOAD_FOLDER, request.filenameWithoutExtension)
+                    publish(image, folder, request.filenameWithoutExtension)
                     OperationResult(success = true)
                 }
             }
         }
+    }
+
+    override fun prepareAlbumSave(album: String, callback: (Result<OperationResult>) -> Unit) {
+        withWritePermission(callback) { callback(Result.success(OperationResult(success = true))) }
     }
 
     private fun withWritePermission(callback: (Result<OperationResult>) -> Unit, task: () -> Unit) {
@@ -297,18 +307,29 @@ internal class PrismMediaHostApiImpl(
         const val TAG = "PrismMedia"
         const val DOWNLOAD_CACHE_DIRECTORY = "prism_downloads"
         val storageLock = Any()
-        const val DOWNLOAD_SELECTION = "(${MediaStore.Images.Media.RELATIVE_PATH}=? OR ${MediaStore.Images.Media.RELATIVE_PATH}=?)"
-        val downloadSelectionArgs = arrayOf("Pictures/$DOWNLOAD_FOLDER/", "$DOWNLOAD_FOLDER/")
+        const val DOWNLOAD_SELECTION = "(${MediaStore.Images.Media.RELATIVE_PATH}=? OR ${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?)"
+        val downloadSelectionArgs = arrayOf("$DOWNLOAD_FOLDER/", "Pictures/Prism/%/")
     }
 }
 
 private const val DOWNLOAD_FOLDER = "Prism/Downloads"
 private const val ENGINE_DETACHED_MESSAGE = "App engine detached"
 
-private fun legacyDownloadDirectories() = listOf(
-    File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), DOWNLOAD_FOLDER),
-    File(Environment.getExternalStorageDirectory(), DOWNLOAD_FOLDER),
-)
+private fun legacyDownloadDirectories(): List<File> {
+    val pictures = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+    val albums = File(pictures, "Prism").listFiles { it.isDirectory } ?: emptyArray()
+    return (listOf(
+        File(pictures, DOWNLOAD_FOLDER),
+        File(Environment.getExternalStorageDirectory(), DOWNLOAD_FOLDER),
+    ) + albums).distinctBy { it.absolutePath }
+}
+
+private const val ALBUM_MAX_LENGTH = 60
+private const val ALBUM_FORBIDDEN_CHARACTERS = "/\\:*?\"<>|"
+
+private fun isValidAlbum(album: String) =
+    album.isNotBlank() && album.length <= ALBUM_MAX_LENGTH && album != "." && album != ".." &&
+        album.none { it in ALBUM_FORBIDDEN_CHARACTERS || it.code < 0x20 }
 
 private fun isImageName(name: String) =
     name.substringAfterLast('.', "").lowercase() in setOf("jpg", "jpeg", "png", "webp", "gif", "heic", "heif", "avif")

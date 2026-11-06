@@ -18,6 +18,7 @@ export {onWallSearchTerms} from "./wallSearchTerms";
 export {onWallModerate} from "./wallModeration";
 export {refreshCollections} from "./wallCollections";
 export {categorizeWallpaper} from "./categorizeWallpaper";
+export {photoSearchLabels} from "./photoSearchLabels";
 export {onCampaignNotificationRequested} from "./onCampaignNotificationRequested";
 export {onNotificationCreated} from "./onNotificationCreated";
 export {recordWallpaperView, recordSetupView} from "./viewStats";
@@ -49,6 +50,10 @@ export {onFolderItemWritten, onFolderWritten} from "./folders";
 export {onWallPublicGateChanged, setFolderFollow, setFolderHidden, setFolderPublic} from "./publicFolders";
 export {buildWebCatalog, onWallWebCatalog} from "./webCatalog";
 export {sendFolderDigests} from "./folderDigest";
+export {sendTopicDigests} from "./topicDigest";
+export {
+  createFolderInvite, getFolderInvite, joinFolder, leaveFolder, removeFolderMember, sendFolderActivityPushes,
+} from "./sharedFolders";
 export {syncSubscription, reconcileSubscriptions} from "./syncSubscription";
 export {resolveOriginalAccess} from "./originalAccess";
 

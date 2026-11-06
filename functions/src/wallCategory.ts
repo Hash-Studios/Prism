@@ -31,6 +31,9 @@ const CATEGORY_RULES: ReadonlyArray<readonly [string, readonly string[]]> = [
   ["Pastel", ["pastel"]],
 ];
 
+/** Every name the classifier can write to `walls.category`, in rule order. */
+export const CATEGORY_NAMES: readonly string[] = [...new Set(CATEGORY_RULES.map(([name]) => name))];
+
 const wordsOf = (text: string): string[] => text.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 0);
 
 /** True when the keyword's words come in order in the label, each one as is or with a plural "s" or "es". */
@@ -58,15 +61,31 @@ export function mapLabelsToCategory(labels: string[]): string {
 let visionClient: ImageAnnotatorClient | undefined;
 
 export async function detectLabels(imageUrl: string): Promise<string[]> {
+  return labelsFor({source: {imageUri: imageUrl}});
+}
+
+/** Labels for image bytes sent inline. Vision reads the bytes for this request only. */
+export async function detectLabelsInImage(content: Buffer): Promise<string[]> {
+  return labelsFor({content});
+}
+
+async function labelsFor(image: {source: {imageUri: string}} | {content: Buffer}): Promise<string[]> {
   const {ImageAnnotatorClient} = await import("@google-cloud/vision");
   visionClient ??= new ImageAnnotatorClient();
+  const features = [{type: "LABEL_DETECTION" as const, maxResults: 10}];
+  if (!("content" in image)) {
+    const [result] = await visionClient.annotateImage({image, features});
+    return labelsFrom(result.labelAnnotations || []);
+  }
+  const [response] = await visionClient.batchAnnotateImages({
+    requests: [{image, features}],
+  }, {retry: null, timeout: 20_000});
+  const result = response.responses?.[0];
+  if (result?.error?.code) throw new Error("Vision label detection failed.");
+  return labelsFrom(result?.labelAnnotations || []);
+}
 
-  const [result] = await visionClient.annotateImage({
-    image: {source: {imageUri: imageUrl}},
-    features: [{type: "LABEL_DETECTION", maxResults: 10}],
-  });
-
-  const labels = result.labelAnnotations || [];
+function labelsFrom(labels: Array<{score?: number | null; description?: string | null}>): string[] {
   return labels
     .filter((label) => label.score && label.score > 0.7)
     .map((label) => label.description || "")

@@ -57,6 +57,7 @@ internal class PrismMediaPluginTest {
         var closes = 0
         override fun saveMedia(request: SaveMediaRequest, callback: (Result<OperationResult>) -> Unit) { pending.add(callback) }
         override fun enqueueDownload(request: DownloadRequest, callback: (Result<OperationResult>) -> Unit) { pending.add(callback) }
+        override fun prepareAlbumSave(album: String, callback: (Result<OperationResult>) -> Unit) { pending.add(callback) }
         override fun listDownloads(callback: (Result<DownloadItemsResult>) -> Unit) {
             callback(Result.success(DownloadItemsResult(true, listOf("a.jpg"))))
         }
@@ -67,7 +68,7 @@ internal class PrismMediaPluginTest {
 
     private fun binding(messenger: BinaryMessenger) = FlutterPlugin.FlutterPluginBinding::class.java.constructors.single()
         .newInstance(null, null, messenger, null, null, null, null) as FlutterPlugin.FlutterPluginBinding
-    private val channelNames = listOf("saveMedia", "enqueueDownload", "listDownloads", "clearDownloads", "deleteDownload")
+    private val channelNames = listOf("saveMedia", "enqueueDownload", "listDownloads", "clearDownloads", "deleteDownload", "prepareAlbumSave")
         .map { "dev.flutter.pigeon.Prism.PrismMediaHostApi.$it" }
 
     private fun plugin(api: HostApi, attaches: () -> Unit = {}) = PrismMediaPlugin(
@@ -90,8 +91,9 @@ internal class PrismMediaPluginTest {
         plugin.onAttachedToActivity(old.binding)
         val pendingSave = messenger.call(channelNames[0], listOf(SaveMediaRequest("url", false, SaveMediaKind.WALLPAPER)))
         val pendingDownload = messenger.call(channelNames[1], listOf(DownloadRequest("url", "file", false)))
+        val pendingAlbumSave = messenger.call(channelNames[5], listOf("Night"))
         assertEquals(listOf(DownloadItemsResult(true, listOf("a.jpg"))), messenger.call(channelNames[2], emptyList()))
-        assertEquals(2, host.pending.size)
+        assertEquals(3, host.pending.size)
         val registeredHandlers = messenger.handlers.toMap()
 
         plugin.onDetachedFromActivityForConfigChanges()
@@ -102,12 +104,15 @@ internal class PrismMediaPluginTest {
         channelNames.forEach { assertSame(registeredHandlers[it], messenger.handlers[it]) }
         assertEquals(1, attaches)
         assertEquals(0, host.closes)
-        assertEquals(2, host.pending.size)
+        assertEquals(3, host.pending.size)
+        assertTrue(pendingAlbumSave.isEmpty())
 
         host.pending[0](Result.success(OperationResult(true)))
         host.pending[1](Result.success(OperationResult(false, "DENIED", "no")))
+        host.pending[2](Result.success(OperationResult(true)))
         assertEquals(listOf(OperationResult(true)), pendingSave)
         assertEquals(listOf(OperationResult(false, "DENIED", "no")), pendingDownload)
+        assertEquals(listOf(OperationResult(true)), pendingAlbumSave)
         plugin.onDetachedFromActivity()
         assertEquals(0, host.closes)
         plugin.onDetachedFromEngine(engine)

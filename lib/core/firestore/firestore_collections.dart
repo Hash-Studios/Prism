@@ -5,6 +5,7 @@ class FirebaseCollections {
   static const String profiles = 'profiles';
   static const String usernames = 'usernames';
   static const String walls = 'walls';
+  static const String webWalls = 'webWalls';
   static const String contentReports = 'contentReports';
   static const String rejectedWalls = 'rejectedWalls';
   static const String notifications = 'notifications';

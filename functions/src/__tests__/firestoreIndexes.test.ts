@@ -112,9 +112,14 @@ test("quest event rate docs expire through a TTL policy on expireAt", () => {
 });
 
 test("folders have the owner index: ownerId, newest update first", () => {
-  const index = config.indexes.find((i) => i.collectionGroup === "folders");
+  assert.ok(hasIndex("folders", [["ownerId", "ASCENDING"], ["updatedAt", "DESCENDING"]]));
+});
+
+test("folders have the shared-with-you index: memberIds contains, newest update first", () => {
+  const index = config.indexes.find((i) => i.collectionGroup === "folders" && i.fields[0]?.fieldPath === "memberIds");
   assert.ok(index);
-  assert.deepEqual(index.fields.map((f) => [f.fieldPath, f.order]), [["ownerId", "ASCENDING"], ["updatedAt", "DESCENDING"]]);
+  assert.deepEqual(index.fields.map((f) => [f.fieldPath, f.order ?? (f as {arrayConfig?: string}).arrayConfig]),
+    [["memberIds", "CONTAINS"], ["updatedAt", "DESCENDING"]]);
 });
 
 test("folder items: account deletion finds them by owner across folders, repair reads the newest by owner", () => {
@@ -137,6 +142,13 @@ test("walls have the protected spatial index the app queries: protected asset fi
     .map((field): [string, string] => [field, "ASCENDING"]);
   assert.ok(hasIndex("walls", [...protectedFields, ["review", "ASCENDING"], ["spatial.tier", "ASCENDING"],
     ["createdAt", "DESCENDING"], ["__name__", "DESCENDING"]]));
+});
+
+test("walls have the protected Editors' Choice index the app queries: protected asset fields, review, newest pick first", () => {
+  const protectedFields = ["originalProtected", "wallpaper_url", "wallpaper_path", "wallpaper_sha", "thumb_path", "thumb_sha"]
+    .map((field): [string, string] => [field, "ASCENDING"]);
+  assert.ok(hasIndex("walls", [...protectedFields, ["review", "ASCENDING"], ["editorsChoiceAt", "DESCENDING"],
+    ["__name__", "DESCENDING"]]));
 });
 
 test("wall requests have the status and hidden indexes for top, new, filled and the token search", () => {

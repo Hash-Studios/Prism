@@ -17,9 +17,15 @@ import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.da
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_save_run.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
+import 'package:Prism/features/folders/views/folder_invite.dart';
 import 'package:Prism/features/folders/views/folders_access.dart';
+import 'package:Prism/features/folders/views/widgets/folder_item_sheet.dart';
+import 'package:Prism/features/folders/views/widgets/folder_members_row.dart';
+import 'package:Prism/features/folders/views/widgets/folder_members_sheet.dart';
+import 'package:Prism/features/folders/views/widgets/folder_save_views.dart';
 import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
 import 'package:Prism/features/folders/views/widgets/public_folder_view.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
@@ -33,7 +39,7 @@ import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatf
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-enum _FolderMenuAction { rotate, rotateDaily, visibility, rename, delete }
+enum _FolderMenuAction { rotate, rotateDaily, invite, people, visibility, rename, delete }
 
 /// One folder. The owner sees and edits their folder. Anyone else sees its public projection, read-only, or a calm
 /// "private or no longer exists" state.
@@ -158,7 +164,11 @@ class _FolderScreenState extends State<FolderScreen> {
     final bool confirmed = await showPrismConfirm(
       context,
       title: isPublic ? l10n.foldersMakePublicTitle : l10n.foldersMakePrivateTitle,
-      message: isPublic ? l10n.foldersMakePublicMessage : l10n.foldersMakePrivateMessage,
+      message: isPublic
+          ? l10n.foldersMakePublicMessage
+          : folder.editors.isNotEmpty
+          ? l10n.foldersMakePrivateMessageShared
+          : l10n.foldersMakePrivateMessage,
       confirmLabel: isPublic ? l10n.foldersMakePublic : l10n.foldersMakePrivate,
     );
     if (!confirmed || !mounted || app_state.prismUser.id != folder.ownerId || bloc.state.userId != folder.ownerId) {
@@ -206,6 +216,11 @@ class _FolderScreenState extends State<FolderScreen> {
           ),
         );
         unawaited(router.push(IosShortcutsGuideRoute(source: 'folder_menu')));
+      case _FolderMenuAction.invite:
+        await inviteToFolder(context, folder, source: 'folder_menu');
+      case _FolderMenuAction.people:
+        final bool left = await showFolderMembersSheet(context, folder);
+        if (left && mounted) await context.router.maybePop();
       case _FolderMenuAction.visibility:
         await _setPublic(folder, isPublic: !folder.isPublic);
       case _FolderMenuAction.rename:
@@ -230,7 +245,7 @@ class _FolderScreenState extends State<FolderScreen> {
         final bool confirmed = await showPrismConfirm(
           context,
           title: l10n.foldersDeleteTitle(folder.name),
-          message: l10n.foldersDeleteMessage,
+          message: folder.editors.isNotEmpty ? l10n.foldersDeleteSharedMessage : l10n.foldersDeleteMessage,
           confirmLabel: l10n.foldersDeleteConfirm,
           destructive: true,
         );
@@ -247,6 +262,12 @@ class _FolderScreenState extends State<FolderScreen> {
         await router.maybePop();
     }
   }
+
+  Future<void> _saveAll(FolderEntity folder, List<FavouriteWallEntity> walls) => openFolderSave(
+    context,
+    target: FolderSaveTarget(folderId: folder.id, name: folder.name, ownerId: app_state.prismUser.id),
+    walls: folderSaveWallsOfFavourites(context.l10n, walls),
+  );
 
   Widget _body(BuildContext context, FoldersState state, FolderEntity? folder) {
     final AppLocalizations l10n = context.l10n;
@@ -269,36 +290,52 @@ class _FolderScreenState extends State<FolderScreen> {
     );
   }
 
+  /// Keeps a message scrollable, so a tall header or large text never clips it.
+  Widget _message(Widget child) => LayoutBuilder(
+    builder: (context, constraints) => SingleChildScrollView(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+        child: Center(child: child),
+      ),
+    ),
+  );
+
   Widget _grid(BuildContext context, FoldersState state, FolderEntity? folder) {
     final AppLocalizations l10n = context.l10n;
     final LoadStatus? status = state.itemsStatus[widget.folderId];
     final List<FavouriteWallEntity>? walls = state.items[widget.folderId];
     if (state.status == LoadStatus.failure || status == LoadStatus.failure) {
-      return GlintState(
-        kind: GlintStateKind.error,
-        title: l10n.foldersLoadError,
-        body: l10n.wallpaperCheckConnection,
-        actionLabel: l10n.wallpaperTryAgain,
-        onAction: () => unawaited(_load()),
+      return _message(
+        GlintState(
+          kind: GlintStateKind.error,
+          title: l10n.foldersLoadError,
+          body: l10n.wallpaperCheckConnection,
+          actionLabel: l10n.wallpaperTryAgain,
+          onAction: () => unawaited(_load()),
+        ),
       );
     }
     if (status == LoadStatus.success && (folder == null || walls == null)) {
-      return GlintState(
-        kind: GlintStateKind.empty,
-        title: l10n.foldersNotFoundTitle,
-        body: l10n.foldersNotFoundBody,
-        actionLabel: l10n.wallpaperBrowseWallpapers,
-        onAction: () => context.router.navigate(const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()])),
+      return _message(
+        GlintState(
+          kind: GlintStateKind.empty,
+          title: l10n.foldersNotFoundTitle,
+          body: l10n.foldersNotFoundBody,
+          actionLabel: l10n.wallpaperBrowseWallpapers,
+          onAction: () => context.router.navigate(const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()])),
+        ),
       );
     }
     if (walls == null) return const LoadingCards();
     if (walls.isEmpty) {
-      return GlintState(
-        kind: GlintStateKind.empty,
-        title: l10n.foldersEmptyTitle,
-        body: l10n.foldersEmptyBody,
-        actionLabel: l10n.wallpaperBrowseWallpapers,
-        onAction: () => context.router.navigate(const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()])),
+      return _message(
+        GlintState(
+          kind: GlintStateKind.empty,
+          title: l10n.foldersEmptyTitle,
+          body: l10n.foldersEmptyBody,
+          actionLabel: l10n.wallpaperBrowseWallpapers,
+          onAction: () => context.router.navigate(const DashboardRoute(children: <PageRouteInfo>[HomeTabRoute()])),
+        ),
       );
     }
     return GridView.builder(
@@ -314,7 +351,9 @@ class _FolderScreenState extends State<FolderScreen> {
           heroTag: _heroTag(wall),
           semanticLabel: wallpaperSemanticLabel(wall.authorName, l10n),
           onTap: wall is LegacyFavouriteWall ? null : () => _openWall(grid, walls, index),
-          onLongPress: () => unawaited(_remove(wall)),
+          onLongPress: () => folder == null || (folder.editors.isEmpty && folder.isOwnedBy(state.userId))
+              ? unawaited(_remove(wall))
+              : unawaited(showFolderItemSheet(context, folder, wall)),
         );
       },
     );
@@ -354,11 +393,18 @@ class _FolderScreenState extends State<FolderScreen> {
                   bloc.state.config.source == AutoRotateSource.folder &&
                   bloc.state.config.folderId == widget.folderId,
             );
+        final String userId = state.userId;
+        final bool owner = folder?.isOwnedBy(userId) ?? false;
+        final bool showMembers = folder != null && (owner || folder.editors.isNotEmpty);
         return PrismPage(
           title: folder?.name ?? context.l10n.foldersTitle,
           maxContentWidth: double.infinity,
-          headerBottom: rotating
-              ? Padding(
+          headerBottom: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              if (rotating)
+                Padding(
                   padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
@@ -376,41 +422,71 @@ class _FolderScreenState extends State<FolderScreen> {
                       ),
                     ),
                   ),
-                )
-              : null,
+                ),
+              if (showMembers)
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.sm),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: FolderMembersRow(folder: folder, userId: userId),
+                  ),
+                ),
+              FolderSaveStatus(folderId: widget.folderId),
+            ],
+          ),
           actions: <Widget>[
             const OfflineChip(),
+            if (folder != null && (state.items[widget.folderId]?.isNotEmpty ?? false))
+              PrismIconButton(
+                key: const ValueKey<String>('folder-save-open'),
+                icon: Icons.download_rounded,
+                tooltip: context.l10n.foldersSaveAll,
+                onPressed: () => unawaited(_saveAll(folder, state.items[widget.folderId]!)),
+              ),
             if (folder != null)
               PopupMenuButton<_FolderMenuAction>(
                 tooltip: context.l10n.foldersMoreOptions,
                 icon: const Icon(Icons.more_vert_rounded),
                 onSelected: (action) => unawaited(_onMenu(action, folder)),
                 itemBuilder: (context) => <PopupMenuEntry<_FolderMenuAction>>[
-                  if (android)
+                  if (android && owner)
                     PopupMenuItem<_FolderMenuAction>(
                       value: _FolderMenuAction.rotate,
                       child: Text(context.l10n.foldersRotateThisFolder),
                     ),
-                  if (_iosShortcuts)
+                  if (_iosShortcuts && owner)
                     PopupMenuItem<_FolderMenuAction>(
                       value: _FolderMenuAction.rotateDaily,
                       child: Text(context.l10n.foldersRotateDaily),
                     ),
-                  PopupMenuItem<_FolderMenuAction>(
-                    value: _FolderMenuAction.visibility,
-                    child: Text(folder.isPublic ? context.l10n.foldersMakePrivate : context.l10n.foldersMakePublic),
-                  ),
-                  PopupMenuItem<_FolderMenuAction>(
-                    value: _FolderMenuAction.rename,
-                    child: Text(context.l10n.foldersRename),
-                  ),
-                  PopupMenuItem<_FolderMenuAction>(
-                    value: _FolderMenuAction.delete,
-                    child: Text(
-                      context.l10n.foldersDelete,
-                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  if (owner)
+                    PopupMenuItem<_FolderMenuAction>(
+                      value: _FolderMenuAction.invite,
+                      child: Text(context.l10n.foldersInvite),
                     ),
-                  ),
+                  if (!owner || folder.editors.isNotEmpty)
+                    PopupMenuItem<_FolderMenuAction>(
+                      value: _FolderMenuAction.people,
+                      child: Text(context.l10n.foldersPeople),
+                    ),
+                  if (owner)
+                    PopupMenuItem<_FolderMenuAction>(
+                      value: _FolderMenuAction.visibility,
+                      child: Text(folder.isPublic ? context.l10n.foldersMakePrivate : context.l10n.foldersMakePublic),
+                    ),
+                  if (owner)
+                    PopupMenuItem<_FolderMenuAction>(
+                      value: _FolderMenuAction.rename,
+                      child: Text(context.l10n.foldersRename),
+                    ),
+                  if (owner)
+                    PopupMenuItem<_FolderMenuAction>(
+                      value: _FolderMenuAction.delete,
+                      child: Text(
+                        context.l10n.foldersDelete,
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      ),
+                    ),
                 ],
               ),
           ],

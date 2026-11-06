@@ -22,6 +22,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/creator_directory/views/widgets/creators_section.dart';
 import 'package:Prism/features/editors_choice/views/widgets/editors_choice_row.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
+import 'package:Prism/features/followed_topics/views/widgets/following_topics_row.dart';
 import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
 import 'package:Prism/features/layout_prefs/views/widgets/pinch_density.dart';
 import 'package:Prism/features/moods/biz/moods_cubit.dart';
@@ -609,6 +610,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         ),
         if (!loadingFirstPage)
           SliverToBoxAdapter(child: WeeklyChallengeCard(key: ValueKey('challenge-$_moodRowsRevision'))),
+        if (!loadingFirstPage) const SliverToBoxAdapter(child: FollowingTopicsRow()),
         if (!loadingFirstPage) SliverToBoxAdapter(child: MoodChipRow(moods: moods)),
         ..._forYouGridSlivers(context, visibleState, visibleItems, moods, crossAxisCount, tileMemCacheHeight),
       ],

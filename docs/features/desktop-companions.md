@@ -90,6 +90,8 @@ On the web, the wall page has a Phone tab and a Desktop tab. The download links 
 
 In the app, the wall detail shows a **Desktop version** chip when the wall has a companion. The chip opens a sheet with a preview. The sheet has **Send to my computer**, which shares the wall link. On tablets, the sheet gets the 2560 x 1600 original through `resolveOriginalAccess` with variant `desktop`. On Android, it sets the wallpaper. On iPad, it saves the file to Photos. The price is the same as the phone set.
 
+**Open on computer** is a share target in the app. It shows only for a Prism wall that the web catalogue shows. It opens a sheet with a QR code and the link. The link opens desktop mode, which shows the desktop version first when there is one. See [web-catalogue.md](web-catalogue.md#desktop-mode).
+
 ## Limits
 
 - The server makes companions only for Studio walls. Duo reveal walls are skipped.
@@ -193,7 +195,7 @@ Do not deploy without the owner's OK. Deploy in this order, before a store build
 1. Deploy the Firestore rules: `firebase deploy --only firestore:rules`. This makes `desktopVariant` server-only.
 2. Deploy the functions: `onStudioWallDesktop`, `wallpaperPreview`, `resolveOriginalAccess`, `onWallWebCatalog` and `buildWebCatalog`. Use `make functions-deploy`.
 3. Run the backfill with `--apply`. Do this only with the owner's OK and the cost in this page.
-4. Deploy the links Worker: `npx wrangler deploy` in `infra/cloudflare/worker`. The routes `/desktop-wallpapers*` and `/matching-sets*` are added. Set the `MIXPANEL_TOKEN` variable to the website's public Mixpanel token, so that downloads count. Then run `buildWebCatalog` with a force run.
+4. Deploy the links Worker: `npx wrangler deploy` in `infra/cloudflare/worker`. The routes `/desktop-wallpapers*` and `/matching-sets*` are added. Set the `MIXPANEL_TOKEN` variable to the website's public Mixpanel token, so that downloads count. Then run `buildWebCatalog` with a force run. This deploy also turns on desktop mode and the `?d=1` link hint.
 5. Deploy the website. The header links to the desktop pages.
 
 After these steps, set `studioConfig/current.desktopCompanions` to `true`. New approvals get a companion from then on.

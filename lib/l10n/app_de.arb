@@ -2814,6 +2814,17 @@
   "coreShareFormatClean": "Schlicht",
   "coreShareTargetInstagram": "Instagram",
   "coreShareTargetCopyLink": "Link kopieren",
+  "coreShareOpenOnComputer": "Am Computer öffnen",
+  "coreShareOpenOnComputerBody": "Gib diesen Link in einem Browser auf deinem Computer ein oder scanne den Code.",
+  "coreShareOpenOnComputerQr": "QR-Code für {link}",
+  "@coreShareOpenOnComputerQr": {
+    "description": "Screen reader label for the QR code image. {link} is the short link shown under it.",
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
   "coreShareTargetSaveImage": "Bild speichern",
   "coreShareTargetMore": "Mehr",
   "coreShareCardBy": "von {creator}",
@@ -10309,6 +10320,183 @@
       }
     }
   },
+  "topicFollow": "Folgen",
+  "@topicFollow": {
+    "description": "Button on a category or mood page. Follows it for a daily push about new wallpapers."
+  },
+  "topicFollowing": "Gefolgt",
+  "@topicFollowing": {
+    "description": "Button label when the user follows this category or mood. A tap stops following."
+  },
+  "topicFollowHint": "{topic} folgen",
+  "@topicFollowHint": {
+    "description": "Screen reader label of the Follow button. topic is a category or mood name.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicUnfollowHint": "{topic} nicht mehr folgen",
+  "@topicUnfollowHint": {
+    "description": "Screen reader label of a button that stops following a category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicFollowedToast": "Du folgst {topic}. Wenn Themen-Benachrichtigungen an sind, bekommst du höchstens eine Benachrichtigung am Tag zu neuen Hintergrundbildern hier.",
+  "@topicFollowedToast": {
+    "description": "Toast after the user follows a category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicFollowLimit": "Du kannst bis zu {max} Themen folgen. Entferne zuerst eines in den Einstellungen.",
+  "@topicFollowLimit": {
+    "description": "Toast when the user already follows the most topics allowed.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "topicFollowFailed": "Die Auswahl konnte nicht geändert werden. Prüfe deine Verbindung und versuche es erneut.",
+  "@topicFollowFailed": {
+    "description": "Toast when follow or unfollow of a category or mood fails."
+  },
+  "topicUnfollow": "Nicht mehr folgen",
+  "@topicUnfollow": {
+    "description": "Button in the list of followed topics. Stops following that topic."
+  },
+  "topicKindCategory": "Kategorie",
+  "@topicKindCategory": {
+    "description": "Small label under a followed topic that is a category."
+  },
+  "topicKindMood": "Stimmung",
+  "@topicKindMood": {
+    "description": "Small label under a followed topic that is a Home mood, such as Dreamy."
+  },
+  "followingRowTitle": "Gefolgt",
+  "@followingRowTitle": {
+    "description": "Header of the Home row of the categories and moods the user follows."
+  },
+  "followingRowLabel": "Kategorien und Stimmungen, denen du folgst",
+  "@followingRowLabel": {
+    "description": "Screen reader label of the Home row of followed topics."
+  },
+  "topicNewWallpapers": "{topic}, neue Hintergrundbilder",
+  "@topicNewWallpapers": {
+    "description": "Screen reader label of a followed topic that has new wallpapers.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "followedTopicsTitle": "Themen, denen du folgst",
+  "@followedTopicsTitle": {
+    "description": "Settings row and sheet title: the categories and moods the user follows."
+  },
+  "followedTopicsCount": "{count, plural, =0{Noch keine} =1{1 Thema} other{{count} Themen}}",
+  "@followedTopicsCount": {
+    "description": "Settings row subtitle: how many categories and moods the user follows.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "followedTopicsEmptyTitle": "Noch keine Themen",
+  "@followedTopicsEmptyTitle": {
+    "description": "Empty state title of the followed topics sheet."
+  },
+  "followedTopicsEmptyBody": "Öffne eine Kategorie oder eine Stimmung und tippe auf Folgen. Wenn Themen-Benachrichtigungen an sind, bekommst du höchstens eine Benachrichtigung am Tag zu neuen Hintergrundbildern dort.",
+  "@followedTopicsEmptyBody": {
+    "description": "Empty state body of the followed topics sheet."
+  },
+  "notifSettingTopics": "Themen, denen du folgst",
+  "@notifSettingTopics": {
+    "description": "Notification setting for new wallpapers in followed categories and moods."
+  },
+  "notifSettingTopicsDescription": "Neue Hintergrundbilder in Kategorien und Stimmungen, denen du folgst, einmal am Tag",
+  "@notifSettingTopicsDescription": {
+    "description": "Description of the followed topics notification setting."
+  },
+  "layoutHomeHeader": "Start",
+  "@layoutHomeHeader": {
+    "description": "Layout settings section header for the Home page."
+  },
+  "layoutFollowingRow": "Gefolgte Themen anzeigen",
+  "@layoutFollowingRow": {
+    "description": "Layout setting switch. When on, Home shows a row of followed categories and moods."
+  },
+  "layoutFollowingRowFootnote": "Eine Reihe oben bei Für dich. Ein Punkt markiert ein Thema mit neuen Hintergrundbildern.",
+  "@layoutFollowingRowFootnote": {
+    "description": "Footnote under the layout setting for the followed topics row."
+  },
+  "notifPushTopicDigestTitleOne": "Ein neues Hintergrundbild in {topic}",
+  "@notifPushTopicDigestTitleOne": {
+    "description": "Daily push title: one new wallpaper in a followed category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitleSolo": "{count, plural, =1{Ein neues Hintergrundbild in {topic}} other{{count} neue Hintergrundbilder in {topic}}}",
+  "@notifPushTopicDigestTitleSolo": {
+    "description": "Daily push title: new wallpapers in one followed category or mood.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitlePair": "{count, plural, =1{Ein neues Hintergrundbild in {topic} und {secondTopic}} other{{count} neue Hintergrundbilder in {topic} und {secondTopic}}}",
+  "@notifPushTopicDigestTitlePair": {
+    "description": "Daily push title: new wallpapers in two followed categories or moods.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      },
+      "secondTopic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitleGroup": "{count, plural, =1{Ein neues Hintergrundbild in {topic} und {others} weiteren Themen} other{{count} neue Hintergrundbilder in {topic} und {others} weiteren Themen}}",
+  "@notifPushTopicDigestTitleGroup": {
+    "description": "Daily push title: new wallpapers in three or more followed topics. others is always 2 or more.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      },
+      "others": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushTopicDigestBodyUntitled": "Tippe, um zu sehen, was neu ist.",
+  "@notifPushTopicDigestBodyUntitled": {
+    "description": "Daily push body when the new wallpapers have no tags."
+  },
   "historySetAndDownloaded": "Gesetzt und heruntergeladen",
   "@historySetAndDownloaded": {
     "description": "History tab segment on Android: walls the user set as wallpaper or downloaded."
@@ -13225,5 +13413,631 @@
   "watchGuideNoteGooglePhotos": "Pixel Watch liest Google Photos. Wenn das Bild nicht erscheint, sichere es zuerst in Google Photos.",
   "@watchGuideNoteGooglePhotos": {
     "description": "Note in the Android watch face guide."
+  },
+  "searchByPhoto": "Mit Foto suchen",
+  "@searchByPhoto": {
+    "description": "Tooltip of the camera roll button in the search bar, and title of the photo search privacy sheet."
+  },
+  "searchPhotoPrivacy": "Prism liest die Farben des Fotos auf deinem Handy. Um zu erkennen, was auf dem Foto ist, wird eine kleine Kopie an Google Cloud Vision geschickt. Sie wird nicht gespeichert.",
+  "@searchPhotoPrivacy": {
+    "description": "Shown once before a signed-in user's first photo search."
+  },
+  "searchPhotoChoose": "Foto auswählen",
+  "@searchPhotoChoose": {
+    "description": "Button on the photo search privacy sheet. Opens the camera roll."
+  },
+  "searchPhotoChipLabel": "Dein Foto",
+  "@searchPhotoChipLabel": {
+    "description": "Screen reader label of the small photo thumbnail above photo search results."
+  },
+  "searchPhotoClear": "Entfernen",
+  "@searchPhotoClear": {
+    "description": "Button next to the photo thumbnail. Ends the photo search."
+  },
+  "searchPhotoClearTooltip": "Foto entfernen",
+  "@searchPhotoClearTooltip": {
+    "description": "Tooltip and screen reader label of the Clear button next to the photo thumbnail."
+  },
+  "searchPhotoMatchesFor": "Treffer für {labels}",
+  "@searchPhotoMatchesFor": {
+    "description": "Line above photo search results. labels is a comma-separated list of words that describe the photo, in English.",
+    "placeholders": {
+      "labels": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoColourMatches": "Treffer nach Farbe",
+  "@searchPhotoColourMatches": {
+    "description": "Line above photo search results when the photo has no labels."
+  },
+  "searchPhotoMainColours": "Hauptfarben: {colours}",
+  "@searchPhotoMainColours": {
+    "description": "Screen reader label of the colour dots next to the photo thumbnail.",
+    "placeholders": {
+      "colours": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoSentNote": "Eine kleine Kopie wurde an Google Cloud Vision geschickt, um zu erkennen, was drauf ist. Sie wird nicht gespeichert.",
+  "@searchPhotoSentNote": {
+    "description": "Note under the photo thumbnail after the photo was sent for labels."
+  },
+  "searchPhotoGuestNote": "Nur Farbtreffer. Melde dich an, damit auch passende Motive gefunden werden.",
+  "@searchPhotoGuestNote": {
+    "description": "Note under the photo thumbnail for a guest. A guest's photo never leaves the phone."
+  },
+  "searchPhotoCappedNote": "Du hast die {count} Fotosuchen von heute genutzt. Bis morgen nur nach Farbe suchen.",
+  "@searchPhotoCappedNote": {
+    "description": "Note under the photo thumbnail when the daily photo search limit is reached.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchPhotoUnavailableNote": "Was auf dem Foto zu sehen ist, konnte nicht erkannt werden. Nur Farbtreffer.",
+  "@searchPhotoUnavailableNote": {
+    "description": "Note under the photo thumbnail when the labels call failed."
+  },
+  "searchPhotoNoMatches": "Keine Hintergrundbilder passen zu diesem Foto",
+  "@searchPhotoNoMatches": {
+    "description": "Empty state title for a photo search."
+  },
+  "searchPhotoNoMatchesBody": "Versuch es mit einem Foto mit kräftigeren Farben.",
+  "@searchPhotoNoMatchesBody": {
+    "description": "Empty state body for a photo search."
+  },
+  "searchPhotoChooseAnother": "Anderes Foto auswählen",
+  "@searchPhotoChooseAnother": {
+    "description": "Empty state button for a photo search. Opens the camera roll."
+  },
+  "searchPhotoCouldNotOpen": "Dieses Foto konnte nicht geöffnet werden. Versuch ein anderes.",
+  "@searchPhotoCouldNotOpen": {
+    "description": "Toast when the picked photo cannot be decoded."
+  },
+  "foldersSaveAll": "Alle speichern",
+  "@foldersSaveAll": {
+    "description": "Button label that starts saving all wallpapers in a folder."
+  },
+  "foldersSaveAllTitle": "Alle Hintergrundbilder speichern",
+  "@foldersSaveAllTitle": {
+    "description": "Title of the Save all plan sheet."
+  },
+  "foldersSaveAllChecking": "Hintergrundbilder werden geprüft…",
+  "@foldersSaveAllChecking": {
+    "description": "Shown while the app checks which wallpapers in the folder can be saved."
+  },
+  "foldersSaveAllPlanFailed": "Die Hintergrundbilder konnten nicht geprüft werden. Versuche es erneut.",
+  "@foldersSaveAllPlanFailed": {
+    "description": "Message when the Save all check fails."
+  },
+  "foldersSaveAllBusy": "Ein anderer Ordner wird gerade gespeichert. Versuche es erneut, wenn er fertig ist.",
+  "@foldersSaveAllBusy": {
+    "description": "Message when another folder is already saving."
+  },
+  "foldersSaveAllRowFree": "{count, plural, =1{1 Hintergrundbild ist kostenlos} other{{count} Hintergrundbilder sind kostenlos}}",
+  "@foldersSaveAllRowFree": {
+    "description": "Plan sheet row: number of free wallpapers.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowCoins": "{count, plural, =1{1 Hintergrundbild kostet {price} Münzen} other{{count} Hintergrundbilder kosten je {price} Münzen}}",
+  "@foldersSaveAllRowCoins": {
+    "description": "Plan sheet row: number of paid wallpapers and their coin price.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "price": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowPro": "{count, plural, =1{1 Hintergrundbild braucht Pro} other{{count} Hintergrundbilder brauchen Pro}}",
+  "@foldersSaveAllRowPro": {
+    "description": "Plan sheet row: number of wallpapers that need Pro.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowSaved": "{count, plural, =1{1 Hintergrundbild ist bereits in Downloads} other{{count} Hintergrundbilder sind bereits in Downloads}}",
+  "@foldersSaveAllRowSaved": {
+    "description": "Plan sheet row: number of wallpapers already in Downloads.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowBlocked": "{count, plural, =1{1 Hintergrundbild kann nicht gespeichert werden} other{{count} Hintergrundbilder können nicht gespeichert werden}}",
+  "@foldersSaveAllRowBlocked": {
+    "description": "Plan sheet row: number of wallpapers that cannot be saved.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllAffordable": "{count, plural, =0{Du hast nicht genug Münzen für ein kostenpflichtiges Hintergrundbild.} =1{Deine Münzen reichen für 1 kostenpflichtiges Hintergrundbild.} other{Deine Münzen reichen für {count} kostenpflichtige Hintergrundbilder.}}",
+  "@foldersSaveAllAffordable": {
+    "description": "Plan sheet line: how many paid wallpapers the user's coins cover.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllPhotosAlbum": "Sie landen im Album „{name}“ in Fotos und in Downloads.",
+  "@foldersSaveAllPhotosAlbum": {
+    "description": "Plan sheet note on iOS: where saved wallpapers go. {name} is the album name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllGalleryAlbum": "Sie landen in Pictures/Prism/{name} in deiner Galerie und in Downloads.",
+  "@foldersSaveAllGalleryAlbum": {
+    "description": "Plan sheet note on Android: where saved wallpapers go. {name} is the folder name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllLeaveNote": "Du kannst diese Seite verlassen, während gespeichert wird. Wenn du Prism schließt, tippe erneut auf Alle speichern, um den Vorgang abzuschließen.",
+  "@foldersSaveAllLeaveNote": {
+    "description": "Plan sheet note: saving continues when the user leaves the page, and what to do if Prism closes."
+  },
+  "foldersSaveAllNothing": "In diesem Ordner gibt es nichts Neues zum Speichern.",
+  "@foldersSaveAllNothing": {
+    "description": "Shown when no wallpaper in the folder can be saved."
+  },
+  "foldersSaveAllFreeButton": "{count, plural, =1{Das kostenlose Hintergrundbild speichern} other{Die {count} kostenlosen Hintergrundbilder speichern}}",
+  "@foldersSaveAllFreeButton": {
+    "description": "Primary button when only free wallpapers can be saved.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllPaidButton": "{coins, plural, =1{Alles speichern, was ich kann (1 Münze)} other{Alles speichern, was ich kann ({coins} Münzen)}}",
+  "@foldersSaveAllPaidButton": {
+    "description": "Primary button that saves as many paid wallpapers as the coins allow.",
+    "placeholders": {
+      "coins": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllCountButton": "{count, plural, =1{1 Hintergrundbild speichern} other{{count} Hintergrundbilder speichern}}",
+  "@foldersSaveAllCountButton": {
+    "description": "Primary button that saves a set number of wallpapers.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllProgress": "{done} von {total} werden gespeichert",
+  "@foldersSaveAllProgress": {
+    "description": "Progress row text while wallpapers are saving.",
+    "placeholders": {
+      "done": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllProgressSemantics": "{total, plural, =1{{done} von 1 Hintergrundbild wird gespeichert} other{{done} von {total} Hintergrundbildern werden gespeichert}}",
+  "@foldersSaveAllProgressSemantics": {
+    "description": "Screen reader label for the save progress row.",
+    "placeholders": {
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "done": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllStopping": "Wird beendet…",
+  "@foldersSaveAllStopping": {
+    "description": "Progress row text after the user taps Cancel."
+  },
+  "foldersSaveAllCancel": "Abbrechen",
+  "@foldersSaveAllCancel": {
+    "description": "Button that stops a Save all run."
+  },
+  "foldersSaveAllCancelHint": "Stoppt die Hintergrundbilder, die noch nicht begonnen haben. Sie kosten nichts.",
+  "@foldersSaveAllCancelHint": {
+    "description": "Hint under the Cancel button: wallpapers that have not started cost nothing."
+  },
+  "foldersSaveAllSavedTitle": "{count, plural, =0{Keine Hintergrundbilder gespeichert} =1{1 Hintergrundbild gespeichert} other{{count} Hintergrundbilder gespeichert}}",
+  "@foldersSaveAllSavedTitle": {
+    "description": "Summary card title after a Save all run finishes.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllStoppedTitle": "{count, plural, =0{Beendet. Keine Hintergrundbilder gespeichert} =1{Beendet. 1 Hintergrundbild gespeichert} other{Beendet. {count} Hintergrundbilder gespeichert}}",
+  "@foldersSaveAllStoppedTitle": {
+    "description": "Summary card title after the user stops a Save all run.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllSkipped": "{count, plural, =1{1 bereits in Downloads} other{{count} bereits in Downloads}}",
+  "@foldersSaveAllSkipped": {
+    "description": "Summary card row: wallpapers skipped because they were already in Downloads.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllFailed": "{count, plural, =1{1 fehlgeschlagen} other{{count} fehlgeschlagen}}",
+  "@foldersSaveAllFailed": {
+    "description": "Summary card row: wallpapers that failed to save.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllNotStarted": "{count, plural, =1{1 nicht gestartet} other{{count} nicht gestartet}}",
+  "@foldersSaveAllNotStarted": {
+    "description": "Summary card row: wallpapers that did not start because the run stopped.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRetry": "Fehlgeschlagene wiederholen",
+  "@foldersSaveAllRetry": {
+    "description": "Summary card button that retries the wallpapers that failed."
+  },
+  "foldersSaveAllDone": "Fertig",
+  "@foldersSaveAllDone": {
+    "description": "Summary card button that closes the summary."
+  },
+  "foldersSaveAllToast": "{count, plural, =0{Keine Hintergrundbilder aus {name} gespeichert.} =1{1 Hintergrundbild aus {name} gespeichert.} other{{count} Hintergrundbilder aus {name} gespeichert.}}",
+  "@foldersSaveAllToast": {
+    "description": "Toast after a Save all run. {name} is the folder name.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllToastFailed": "{failed, plural, =1{{saved} aus {name} gespeichert. 1 fehlgeschlagen. Öffne den Ordner, um es erneut zu versuchen.} other{{saved} aus {name} gespeichert. {failed} fehlgeschlagen. Öffne den Ordner, um es erneut zu versuchen.}}",
+  "@foldersSaveAllToastFailed": {
+    "description": "Toast after a Save all run with failures. {saved} is the number saved, {failed} the number failed, {name} the folder name.",
+    "placeholders": {
+      "failed": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "saved": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersInvite": "Einladen",
+  "@foldersInvite": {
+    "description": "Button that makes an invite link for a shared folder."
+  },
+  "foldersInviteShareText": "Füge mit mir Hintergrundbilder in {name} auf Prism hinzu: {link}",
+  "@foldersInviteShareText": {
+    "description": "Text shared with a folder invite link.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersInvitePreviewTitle": "{name} auf Prism beitreten",
+  "@foldersInvitePreviewTitle": {
+    "description": "Title of the link preview for a folder invite.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersInvitePreviewDescription": "Hintergrundbilder in diesem Ordner gemeinsam hinzufügen und entfernen.",
+  "@foldersInvitePreviewDescription": {
+    "description": "Description of the link preview for a folder invite."
+  },
+  "foldersInviteFailed": "Der Einladungslink konnte nicht erstellt werden. Versuche es erneut.",
+  "@foldersInviteFailed": {
+    "description": "Error when the invite link cannot be made."
+  },
+  "foldersInviteFull": "Dieser Ordner ist voll. Entferne jemanden, um weitere Personen einzuladen.",
+  "@foldersInviteFull": {
+    "description": "Error when the owner invites into a folder that has the most editors."
+  },
+  "foldersInviteLimit": "Du hast heute zu viele Einladungen verschickt. Versuche es morgen erneut.",
+  "@foldersInviteLimit": {
+    "description": "Error when the owner hits the daily invite limit."
+  },
+  "foldersPeople": "Personen",
+  "@foldersPeople": {
+    "description": "Title of the sheet that lists the people in a shared folder."
+  },
+  "foldersPeopleHintOwner": "Lade bis zu {count} Personen ein, damit sie Hintergrundbilder hinzufügen und entfernen können. Nur du kannst diesen Ordner umbenennen, teilen oder löschen.",
+  "@foldersPeopleHintOwner": {
+    "description": "Hint for the owner in the people sheet.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersPeopleHintEditor": "Du kannst Hintergrundbilder hinzufügen und entfernen. Nur der Besitzer kann diesen Ordner umbenennen, teilen oder löschen.",
+  "@foldersPeopleHintEditor": {
+    "description": "Hint for an editor in the people sheet."
+  },
+  "foldersPeopleCount": "{count, plural, =1{1 Person} other{{count} Personen}}",
+  "@foldersPeopleCount": {
+    "description": "Number of people in a shared folder, with the owner.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersPeopleButtonLabel": "{count, plural, =1{1 Person in diesem Ordner. Personen anzeigen} other{{count} Personen in diesem Ordner. Personen anzeigen}}",
+  "@foldersPeopleButtonLabel": {
+    "description": "Screen reader label for the member avatars on a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersRoleOwner": "Besitzer",
+  "@foldersRoleOwner": {
+    "description": "Role of the folder owner."
+  },
+  "foldersRoleEditor": "Kann hinzufügen und entfernen",
+  "@foldersRoleEditor": {
+    "description": "Role of a person the owner invited."
+  },
+  "foldersPersonYou": "{name} (du)",
+  "@foldersPersonYou": {
+    "description": "A member row for the current user.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersUnknownPerson": "Prism-Nutzer",
+  "@foldersUnknownPerson": {
+    "description": "Name shown when a member's profile cannot be read."
+  },
+  "foldersRemovePerson": "Entfernen",
+  "@foldersRemovePerson": {
+    "description": "Button that removes a person from a shared folder."
+  },
+  "foldersRemovePersonTitle": "{name} entfernen?",
+  "@foldersRemovePersonTitle": {
+    "description": "Title of the confirm before the owner removes a person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersRemovePersonMessage": "Diese Person kann hier keine Hintergrundbilder mehr hinzufügen oder entfernen. Die Hintergrundbilder, die sie hinzugefügt hat, bleiben.",
+  "@foldersRemovePersonMessage": {
+    "description": "Message of the confirm before the owner removes a person."
+  },
+  "foldersRemovePersonConfirm": "Person entfernen",
+  "@foldersRemovePersonConfirm": {
+    "description": "Confirm button that removes a person from a shared folder."
+  },
+  "foldersPersonRemoved": "{name} wurde entfernt.",
+  "@foldersPersonRemoved": {
+    "description": "Toast after the owner removes a person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersLeave": "Ordner verlassen",
+  "@foldersLeave": {
+    "description": "Button for an editor to leave a shared folder."
+  },
+  "foldersLeaveTitle": "{name} verlassen?",
+  "@foldersLeaveTitle": {
+    "description": "Title of the confirm before an editor leaves.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersLeaveMessage": "Du kannst hier keine Hintergrundbilder mehr hinzufügen oder entfernen. Die Hintergrundbilder, die du hinzugefügt hast, bleiben.",
+  "@foldersLeaveMessage": {
+    "description": "Message of the confirm before an editor leaves."
+  },
+  "foldersLeft": "Du hast den Ordner verlassen.",
+  "@foldersLeft": {
+    "description": "Toast after an editor leaves a folder."
+  },
+  "foldersPeopleFailed": "Die Personen in diesem Ordner konnten nicht aktualisiert werden. Versuche es erneut.",
+  "@foldersPeopleFailed": {
+    "description": "Error when a remove or leave fails."
+  },
+  "foldersSharedWithYou": "Mit dir geteilt",
+  "@foldersSharedWithYou": {
+    "description": "Library section of folders other people invited the user to."
+  },
+  "foldersSharedLabel": "Geteilt",
+  "@foldersSharedLabel": {
+    "description": "Screen reader label for the shared icon on a folder card."
+  },
+  "foldersAddedBy": "Hinzugefügt von {name}",
+  "@foldersAddedBy": {
+    "description": "Who added a wallpaper to a shared folder.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersAddedByYou": "Von dir hinzugefügt",
+  "@foldersAddedByYou": {
+    "description": "The current user added this wallpaper to a shared folder."
+  },
+  "foldersRemoveFromFolder": "Aus Ordner entfernen",
+  "@foldersRemoveFromFolder": {
+    "description": "Button that removes a wallpaper from a folder."
+  },
+  "foldersDeleteSharedMessage": "Die Personen, die du eingeladen hast, verlieren ihn auch. Hintergrundbilder in deinen Favoriten bleiben dort.",
+  "@foldersDeleteSharedMessage": {
+    "description": "Message of the delete confirm for a folder with editors."
+  },
+  "foldersJoinTitle": "Ordner-Einladung",
+  "@foldersJoinTitle": {
+    "description": "Title of the page that opens a folder invite link."
+  },
+  "foldersJoinHeadline": "{name} beitreten",
+  "@foldersJoinHeadline": {
+    "description": "Headline on the folder invite page.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersJoinInvitedBy": "{name} hat dich eingeladen, in diesem Ordner Hintergrundbilder hinzuzufügen und zu entfernen.",
+  "@foldersJoinInvitedBy": {
+    "description": "Body on the folder invite page.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersJoin": "Ordner beitreten",
+  "@foldersJoin": {
+    "description": "Button that joins a shared folder."
+  },
+  "foldersJoinSignIn": "Anmelden, um beizutreten",
+  "@foldersJoinSignIn": {
+    "description": "Button on the invite page for a guest."
+  },
+  "foldersJoinOpen": "Ordner öffnen",
+  "@foldersJoinOpen": {
+    "description": "Button on the invite page when the user is already in the folder."
+  },
+  "foldersJoinAlreadyIn": "Du bist bereits in diesem Ordner.",
+  "@foldersJoinAlreadyIn": {
+    "description": "Note on the invite page when the user is already a member."
+  },
+  "foldersJoined": "Du bist {name} beigetreten.",
+  "@foldersJoined": {
+    "description": "Toast after the user joins a folder.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersJoinFailed": "Du konntest diesem Ordner nicht beitreten. Versuche es erneut.",
+  "@foldersJoinFailed": {
+    "description": "Error when a join fails for a network or server reason."
+  },
+  "foldersJoinLoadFailed": "Diese Einladung konnte nicht geladen werden.",
+  "@foldersJoinLoadFailed": {
+    "description": "Error when the invite page cannot load."
+  },
+  "foldersJoinExpiredTitle": "Diese Einladung ist abgelaufen",
+  "@foldersJoinExpiredTitle": {
+    "description": "Title when an invite is older than 7 days."
+  },
+  "foldersJoinExpiredBody": "Einladungen sind 7 Tage gültig. Bitte den Besitzer um einen neuen Link.",
+  "@foldersJoinExpiredBody": {
+    "description": "Body when an invite expired."
+  },
+  "foldersJoinUsedTitle": "Diese Einladung wurde bereits verwendet",
+  "@foldersJoinUsedTitle": {
+    "description": "Title when someone already used the invite."
+  },
+  "foldersJoinUsedBody": "Jede Einladung funktioniert nur einmal. Bitte den Besitzer um einen neuen Link.",
+  "@foldersJoinUsedBody": {
+    "description": "Body when an invite was used."
+  },
+  "foldersJoinFullTitle": "Dieser Ordner ist voll",
+  "@foldersJoinFullTitle": {
+    "description": "Title when the folder has the most people it can have."
+  },
+  "foldersJoinFullBody": "Bitte den Besitzer, jemanden zu entfernen. Öffne dann den Link erneut.",
+  "@foldersJoinFullBody": {
+    "description": "Body when the folder is full."
+  },
+  "foldersJoinUnavailableTitle": "Diese Einladung ist nicht verfügbar",
+  "@foldersJoinUnavailableTitle": {
+    "description": "Title for a missing folder, a block or a closed account. It does not say which."
+  },
+  "foldersJoinUnavailableBody": "Der Ordner wurde vielleicht gelöscht, oder du kannst ihm nicht beitreten.",
+  "@foldersJoinUnavailableBody": {
+    "description": "Body for an unavailable invite."
+  },
+  "foldersMakePrivateMessageShared": "Nur du und die Personen, die du eingeladen hast, sehen ihn. Sein Link funktioniert nicht mehr und seine Follower verlieren ihn.",
+  "@foldersMakePrivateMessageShared": {
+    "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
   }
 }

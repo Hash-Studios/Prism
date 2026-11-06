@@ -40,6 +40,7 @@ class LayoutPrefs {
     this.density = WallGridDensity.comfortable,
     this.feedTab = HomeFeedChip.forYou,
     this.oneHanded = false,
+    this.followingRow = true,
   });
 
   static const int minVisibleTabs = 3;
@@ -50,6 +51,9 @@ class LayoutPrefs {
 
   /// The profile and the notifications sit in the bottom bar, in thumb reach, instead of the top bar.
   final bool oneHanded;
+
+  /// Home shows the row of followed topics. On by default.
+  final bool followingRow;
 
   /// The Home feed tab the user saw last. It stays on this device and does not sync.
   final HomeFeedChip feedTab;
@@ -63,7 +67,11 @@ class LayoutPrefs {
 
   /// The bar, grid and controls parts equal the defaults. [feedTab] is not a setting, so it does not count.
   bool get isDefaultLayout =>
-      listEquals(tabOrder, NavTab.values) && hiddenTabs.isEmpty && density == WallGridDensity.comfortable && !oneHanded;
+      listEquals(tabOrder, NavTab.values) &&
+      hiddenTabs.isEmpty &&
+      density == WallGridDensity.comfortable &&
+      !oneHanded &&
+      followingRow;
 
   /// [tab] shown or hidden. A change that breaks a rule returns this object unchanged.
   LayoutPrefs withTabVisible(NavTab tab, {required bool visible}) {
@@ -90,12 +98,14 @@ class LayoutPrefs {
     WallGridDensity? density,
     HomeFeedChip? feedTab,
     bool? oneHanded,
+    bool? followingRow,
   }) => LayoutPrefs(
     tabOrder: List<NavTab>.unmodifiable(tabOrder ?? this.tabOrder),
     hiddenTabs: Set<NavTab>.unmodifiable(hiddenTabs ?? this.hiddenTabs),
     density: density ?? this.density,
     feedTab: feedTab ?? this.feedTab,
     oneHanded: oneHanded ?? this.oneHanded,
+    followingRow: followingRow ?? this.followingRow,
   );
 
   /// The synced part: `{tabs, hidden, density}`, plus `oneHanded: true` when it is on. The store adds `changedAt`.
@@ -105,6 +115,8 @@ class LayoutPrefs {
     'density': density.name,
     // Written only when on, so builds without the rules change still accept an off copy.
     if (oneHanded) 'oneHanded': true,
+    // Written only when off, so builds without the rules change still accept the default.
+    if (!followingRow) 'followingRow': false,
   };
 
   /// Reads [toLayoutMap] output over [feedTab]. Unknown names are dropped, missing tabs are added at the end, and a
@@ -127,6 +139,7 @@ class LayoutPrefs {
       density: WallGridDensity.values.asNameMap()[raw['density']] ?? WallGridDensity.comfortable,
       feedTab: feedTab,
       oneHanded: raw['oneHanded'] == true,
+      followingRow: raw['followingRow'] != false,
     );
   }
 
@@ -137,9 +150,16 @@ class LayoutPrefs {
       setEquals(other.hiddenTabs, hiddenTabs) &&
       other.density == density &&
       other.feedTab == feedTab &&
-      other.oneHanded == oneHanded;
+      other.oneHanded == oneHanded &&
+      other.followingRow == followingRow;
 
   @override
-  int get hashCode =>
-      Object.hash(Object.hashAll(tabOrder), Object.hashAllUnordered(hiddenTabs), density, feedTab, oneHanded);
+  int get hashCode => Object.hash(
+    Object.hashAll(tabOrder),
+    Object.hashAllUnordered(hiddenTabs),
+    density,
+    feedTab,
+    oneHanded,
+    followingRow,
+  );
 }

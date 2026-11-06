@@ -2938,6 +2938,23 @@
   "coreShareFormatClean": "सादा",
   "coreShareTargetInstagram": "Instagram",
   "coreShareTargetCopyLink": "लिंक कॉपी करें",
+  "coreShareOpenOnComputer": "कंप्यूटर पर खोलें",
+  "@coreShareOpenOnComputer": {
+    "description": "Share sheet target and sheet title. Opens a sheet with a QR code and a short link that opens this wallpaper on a computer."
+  },
+  "coreShareOpenOnComputerBody": "इस लिंक को अपने कंप्यूटर के ब्राउज़र में टाइप करें या कोड स्कैन करें।",
+  "@coreShareOpenOnComputerBody": {
+    "description": "Instruction under the Open on computer title. The link and QR code are shown below it."
+  },
+  "coreShareOpenOnComputerQr": "{link} का QR कोड",
+  "@coreShareOpenOnComputerQr": {
+    "description": "Screen reader label for the QR code image. {link} is the short link shown under it.",
+    "placeholders": {
+      "link": {
+        "type": "String"
+      }
+    }
+  },
   "coreShareTargetSaveImage": "इमेज सेव करें",
   "coreShareTargetMore": "और",
   "coreShareCardBy": "{creator} द्वारा",
@@ -10477,6 +10494,183 @@
       }
     }
   },
+  "topicFollow": "फ़ॉलो करें",
+  "@topicFollow": {
+    "description": "Button on a category or mood page. Follows it for a daily push about new wallpapers."
+  },
+  "topicFollowing": "फ़ॉलो कर रहे हैं",
+  "@topicFollowing": {
+    "description": "Button label when the user follows this category or mood. A tap stops following."
+  },
+  "topicFollowHint": "{topic} को फ़ॉलो करें",
+  "@topicFollowHint": {
+    "description": "Screen reader label of the Follow button. topic is a category or mood name.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicUnfollowHint": "{topic} को अनफ़ॉलो करें",
+  "@topicUnfollowHint": {
+    "description": "Screen reader label of a button that stops following a category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicFollowedToast": "अब आप {topic} को फ़ॉलो कर रहे हैं। विषय सूचनाएँ चालू होने पर, यहाँ नए वॉलपेपर के लिए आपको दिन में ज़्यादा से ज़्यादा एक सूचना मिलेगी।",
+  "@topicFollowedToast": {
+    "description": "Toast after the user follows a category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicFollowLimit": "आप अधिकतम {max} विषयों को फ़ॉलो कर सकते हैं। पहले सेटिंग्स में से कोई एक अनफ़ॉलो करें।",
+  "@topicFollowLimit": {
+    "description": "Toast when the user already follows the most topics allowed.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "topicFollowFailed": "फ़ॉलो बदला नहीं जा सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।",
+  "@topicFollowFailed": {
+    "description": "Toast when follow or unfollow of a category or mood fails."
+  },
+  "topicUnfollow": "अनफ़ॉलो करें",
+  "@topicUnfollow": {
+    "description": "Button in the list of followed topics. Stops following that topic."
+  },
+  "topicKindCategory": "श्रेणी",
+  "@topicKindCategory": {
+    "description": "Small label under a followed topic that is a category."
+  },
+  "topicKindMood": "मूड",
+  "@topicKindMood": {
+    "description": "Small label under a followed topic that is a Home mood, such as Dreamy."
+  },
+  "followingRowTitle": "फ़ॉलो किए गए",
+  "@followingRowTitle": {
+    "description": "Header of the Home row of the categories and moods the user follows."
+  },
+  "followingRowLabel": "वे श्रेणियाँ और मूड जिन्हें आप फ़ॉलो करते हैं",
+  "@followingRowLabel": {
+    "description": "Screen reader label of the Home row of followed topics."
+  },
+  "topicNewWallpapers": "{topic}, नए वॉलपेपर",
+  "@topicNewWallpapers": {
+    "description": "Screen reader label of a followed topic that has new wallpapers.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "followedTopicsTitle": "आप जिन विषयों को फ़ॉलो करते हैं",
+  "@followedTopicsTitle": {
+    "description": "Settings row and sheet title: the categories and moods the user follows."
+  },
+  "followedTopicsCount": "{count, plural, =0{अभी कोई नहीं} =1{1 विषय} other{{count} विषय}}",
+  "@followedTopicsCount": {
+    "description": "Settings row subtitle: how many categories and moods the user follows.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "followedTopicsEmptyTitle": "अभी कोई विषय नहीं",
+  "@followedTopicsEmptyTitle": {
+    "description": "Empty state title of the followed topics sheet."
+  },
+  "followedTopicsEmptyBody": "कोई श्रेणी या मूड खोलें और फ़ॉलो करें दबाएँ। विषय सूचनाएँ चालू होने पर, वहाँ नए वॉलपेपर के लिए आपको दिन में ज़्यादा से ज़्यादा एक सूचना मिलेगी।",
+  "@followedTopicsEmptyBody": {
+    "description": "Empty state body of the followed topics sheet."
+  },
+  "notifSettingTopics": "आप जिन विषयों को फ़ॉलो करते हैं",
+  "@notifSettingTopics": {
+    "description": "Notification setting for new wallpapers in followed categories and moods."
+  },
+  "notifSettingTopicsDescription": "आप जिन श्रेणियों और मूड को फ़ॉलो करते हैं, उनमें नए वॉलपेपर, दिन में एक बार",
+  "@notifSettingTopicsDescription": {
+    "description": "Description of the followed topics notification setting."
+  },
+  "layoutHomeHeader": "होम",
+  "@layoutHomeHeader": {
+    "description": "Layout settings section header for the Home page."
+  },
+  "layoutFollowingRow": "फ़ॉलो किए गए विषय दिखाएँ",
+  "@layoutFollowingRow": {
+    "description": "Layout setting switch. When on, Home shows a row of followed categories and moods."
+  },
+  "layoutFollowingRowFootnote": "आपके लिए टैब के ऊपर एक पंक्ति। बिंदु उस विषय को दिखाता है जिसमें नए वॉलपेपर हैं।",
+  "@layoutFollowingRowFootnote": {
+    "description": "Footnote under the layout setting for the followed topics row."
+  },
+  "notifPushTopicDigestTitleOne": "{topic} में एक नया वॉलपेपर",
+  "@notifPushTopicDigestTitleOne": {
+    "description": "Daily push title: one new wallpaper in a followed category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitleSolo": "{count, plural, =1{{topic} में एक नया वॉलपेपर} other{{topic} में {count} नए वॉलपेपर}}",
+  "@notifPushTopicDigestTitleSolo": {
+    "description": "Daily push title: new wallpapers in one followed category or mood.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitlePair": "{count, plural, =1{{topic} और {secondTopic} में एक नया वॉलपेपर} other{{topic} और {secondTopic} में {count} नए वॉलपेपर}}",
+  "@notifPushTopicDigestTitlePair": {
+    "description": "Daily push title: new wallpapers in two followed categories or moods.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      },
+      "secondTopic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitleGroup": "{count, plural, =1{{topic} और {others} अन्य विषयों में एक नया वॉलपेपर} other{{topic} और {others} अन्य विषयों में {count} नए वॉलपेपर}}",
+  "@notifPushTopicDigestTitleGroup": {
+    "description": "Daily push title: new wallpapers in three or more followed topics. others is always 2 or more.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      },
+      "others": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushTopicDigestBodyUntitled": "देखने के लिए टैप करें कि क्या नया है।",
+  "@notifPushTopicDigestBodyUntitled": {
+    "description": "Daily push body when the new wallpapers have no tags."
+  },
   "historySetAndDownloaded": "सेट और डाउनलोड किए गए",
   "@historySetAndDownloaded": {
     "description": "History tab segment on Android: walls the user set as wallpaper or downloaded."
@@ -13968,5 +14162,631 @@
   "watchGuideNoteGooglePhotos": "Pixel Watch Google Photos पढ़ता है। अगर इमेज नहीं दिखती, तो पहले उसे Google Photos में बैकअप करें।",
   "@watchGuideNoteGooglePhotos": {
     "description": "Note in the Android watch face guide."
+  },
+  "searchByPhoto": "फ़ोटो से खोजें",
+  "@searchByPhoto": {
+    "description": "Tooltip of the camera roll button in the search bar, and title of the photo search privacy sheet."
+  },
+  "searchPhotoPrivacy": "Prism आपकी फ़ोटो के रंग आपके फ़ोन पर ही पढ़ता है। फ़ोटो में क्या है, यह पता करने के लिए उसकी एक छोटी कॉपी Google Cloud Vision को भेजी जाती है। वह सेव नहीं होती।",
+  "@searchPhotoPrivacy": {
+    "description": "Shown once before a signed-in user's first photo search."
+  },
+  "searchPhotoChoose": "फ़ोटो चुनें",
+  "@searchPhotoChoose": {
+    "description": "Button on the photo search privacy sheet. Opens the camera roll."
+  },
+  "searchPhotoChipLabel": "आपकी फ़ोटो",
+  "@searchPhotoChipLabel": {
+    "description": "Screen reader label of the small photo thumbnail above photo search results."
+  },
+  "searchPhotoClear": "हटाएं",
+  "@searchPhotoClear": {
+    "description": "Button next to the photo thumbnail. Ends the photo search."
+  },
+  "searchPhotoClearTooltip": "फ़ोटो हटाएं",
+  "@searchPhotoClearTooltip": {
+    "description": "Tooltip and screen reader label of the Clear button next to the photo thumbnail."
+  },
+  "searchPhotoMatchesFor": "{labels} से मिलते नतीजे",
+  "@searchPhotoMatchesFor": {
+    "description": "Line above photo search results. labels is a comma-separated list of words that describe the photo, in English.",
+    "placeholders": {
+      "labels": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoColourMatches": "रंग के हिसाब से मिलते नतीजे",
+  "@searchPhotoColourMatches": {
+    "description": "Line above photo search results when the photo has no labels."
+  },
+  "searchPhotoMainColours": "मुख्य रंग: {colours}",
+  "@searchPhotoMainColours": {
+    "description": "Screen reader label of the colour dots next to the photo thumbnail.",
+    "placeholders": {
+      "colours": {
+        "type": "String"
+      }
+    }
+  },
+  "searchPhotoSentNote": "यह पता करने के लिए कि इसमें क्या है, एक छोटी कॉपी Google Cloud Vision को भेजी गई। वह सेव नहीं होती।",
+  "@searchPhotoSentNote": {
+    "description": "Note under the photo thumbnail after the photo was sent for labels."
+  },
+  "searchPhotoGuestNote": "सिर्फ़ रंग के आधार पर मिलान। फ़ोटो में जो है उससे मिलान के लिए साइन इन करें।",
+  "@searchPhotoGuestNote": {
+    "description": "Note under the photo thumbnail for a guest. A guest's photo never leaves the phone."
+  },
+  "searchPhotoCappedNote": "आप आज के {count} फ़ोटो सर्च इस्तेमाल कर चुके हैं। कल तक सिर्फ़ रंग से मिलान होगा।",
+  "@searchPhotoCappedNote": {
+    "description": "Note under the photo thumbnail when the daily photo search limit is reached.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchPhotoUnavailableNote": "फ़ोटो में क्या है, यह पढ़ नहीं पाए। सिर्फ़ रंग से मिलान हो रहा है।",
+  "@searchPhotoUnavailableNote": {
+    "description": "Note under the photo thumbnail when the labels call failed."
+  },
+  "searchPhotoNoMatches": "इस फ़ोटो से मिलता कोई वॉलपेपर नहीं है",
+  "@searchPhotoNoMatches": {
+    "description": "Empty state title for a photo search."
+  },
+  "searchPhotoNoMatchesBody": "ज़्यादा चटख रंगों वाली फ़ोटो आज़माएं।",
+  "@searchPhotoNoMatchesBody": {
+    "description": "Empty state body for a photo search."
+  },
+  "searchPhotoChooseAnother": "कोई दूसरी फ़ोटो चुनें",
+  "@searchPhotoChooseAnother": {
+    "description": "Empty state button for a photo search. Opens the camera roll."
+  },
+  "searchPhotoCouldNotOpen": "वह फ़ोटो खोली नहीं जा सकी। कोई और फ़ोटो आज़माएं।",
+  "@searchPhotoCouldNotOpen": {
+    "description": "Toast when the picked photo cannot be decoded."
+  },
+  "foldersSaveAll": "सभी सहेजें",
+  "@foldersSaveAll": {
+    "description": "Button label that starts saving all wallpapers in a folder."
+  },
+  "foldersSaveAllTitle": "सभी वॉलपेपर सहेजें",
+  "@foldersSaveAllTitle": {
+    "description": "Title of the Save all plan sheet."
+  },
+  "foldersSaveAllChecking": "वॉलपेपर जाँचे जा रहे हैं…",
+  "@foldersSaveAllChecking": {
+    "description": "Shown while the app checks which wallpapers in the folder can be saved."
+  },
+  "foldersSaveAllPlanFailed": "वॉलपेपर जाँचे नहीं जा सके। फिर कोशिश करें।",
+  "@foldersSaveAllPlanFailed": {
+    "description": "Message when the Save all check fails."
+  },
+  "foldersSaveAllBusy": "एक और फ़ोल्डर सहेजा जा रहा है। उसके पूरा होने पर फिर कोशिश करें।",
+  "@foldersSaveAllBusy": {
+    "description": "Message when another folder is already saving."
+  },
+  "foldersSaveAllRowFree": "{count, plural, =1{1 वॉलपेपर मुफ़्त है} other{{count} वॉलपेपर मुफ़्त हैं}}",
+  "@foldersSaveAllRowFree": {
+    "description": "Plan sheet row: number of free wallpapers.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowCoins": "{count, plural, =1{1 वॉलपेपर की कीमत {price} सिक्के है} other{{count} वॉलपेपर, प्रत्येक की कीमत {price} सिक्के है}}",
+  "@foldersSaveAllRowCoins": {
+    "description": "Plan sheet row: number of paid wallpapers and their coin price.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "price": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowPro": "{count, plural, =1{1 वॉलपेपर के लिए Pro चाहिए} other{{count} वॉलपेपर के लिए Pro चाहिए}}",
+  "@foldersSaveAllRowPro": {
+    "description": "Plan sheet row: number of wallpapers that need Pro.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowSaved": "{count, plural, =1{1 वॉलपेपर पहले से डाउनलोड में है} other{{count} वॉलपेपर पहले से डाउनलोड में हैं}}",
+  "@foldersSaveAllRowSaved": {
+    "description": "Plan sheet row: number of wallpapers already in Downloads.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowBlocked": "{count, plural, =1{1 वॉलपेपर सहेजने के लिए उपलब्ध नहीं है} other{{count} वॉलपेपर सहेजने के लिए उपलब्ध नहीं हैं}}",
+  "@foldersSaveAllRowBlocked": {
+    "description": "Plan sheet row: number of wallpapers that cannot be saved.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllAffordable": "{count, plural, =0{आपके सिक्के किसी भुगतान वाले वॉलपेपर के लिए काफ़ी नहीं हैं।} =1{आपके सिक्के 1 भुगतान वाले वॉलपेपर के लिए काफ़ी हैं।} other{आपके सिक्के {count} भुगतान वाले वॉलपेपर के लिए काफ़ी हैं।}}",
+  "@foldersSaveAllAffordable": {
+    "description": "Plan sheet line: how many paid wallpapers the user's coins cover.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllPhotosAlbum": "ये Photos में “{name}” एल्बम और डाउनलोड में जाएँगे।",
+  "@foldersSaveAllPhotosAlbum": {
+    "description": "Plan sheet note on iOS: where saved wallpapers go. {name} is the album name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllGalleryAlbum": "ये आपकी गैलरी में Pictures/Prism/{name} और डाउनलोड में जाएँगे।",
+  "@foldersSaveAllGalleryAlbum": {
+    "description": "Plan sheet note on Android: where saved wallpapers go. {name} is the folder name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllLeaveNote": "सहेजते समय आप यह पेज छोड़ सकते हैं। अगर आप Prism बंद करते हैं, तो पूरा करने के लिए फिर से सभी सहेजें पर टैप करें।",
+  "@foldersSaveAllLeaveNote": {
+    "description": "Plan sheet note: saving continues when the user leaves the page, and what to do if Prism closes."
+  },
+  "foldersSaveAllNothing": "इस फ़ोल्डर में सहेजने के लिए कुछ नया नहीं है।",
+  "@foldersSaveAllNothing": {
+    "description": "Shown when no wallpaper in the folder can be saved."
+  },
+  "foldersSaveAllFreeButton": "{count, plural, =1{मुफ़्त वॉलपेपर सहेजें} other{{count} मुफ़्त वॉलपेपर सहेजें}}",
+  "@foldersSaveAllFreeButton": {
+    "description": "Primary button when only free wallpapers can be saved.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllPaidButton": "{coins, plural, =1{जो बचा सकूँ, सब सहेजें (1 सिक्का)} other{जो बचा सकूँ, सब सहेजें ({coins} सिक्के)}}",
+  "@foldersSaveAllPaidButton": {
+    "description": "Primary button that saves as many paid wallpapers as the coins allow.",
+    "placeholders": {
+      "coins": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllCountButton": "{count, plural, =1{1 वॉलपेपर सहेजें} other{{count} वॉलपेपर सहेजें}}",
+  "@foldersSaveAllCountButton": {
+    "description": "Primary button that saves a set number of wallpapers.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllProgress": "{total} में से {done} सहेजे जा रहे हैं",
+  "@foldersSaveAllProgress": {
+    "description": "Progress row text while wallpapers are saving.",
+    "placeholders": {
+      "done": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllProgressSemantics": "{total, plural, =1{1 वॉलपेपर में से {done} सहेजे जा रहे हैं} other{{total} वॉलपेपर में से {done} सहेजे जा रहे हैं}}",
+  "@foldersSaveAllProgressSemantics": {
+    "description": "Screen reader label for the save progress row.",
+    "placeholders": {
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "done": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllStopping": "रोका जा रहा है…",
+  "@foldersSaveAllStopping": {
+    "description": "Progress row text after the user taps Cancel."
+  },
+  "foldersSaveAllCancel": "रद्द करें",
+  "@foldersSaveAllCancel": {
+    "description": "Button that stops a Save all run."
+  },
+  "foldersSaveAllCancelHint": "जो वॉलपेपर शुरू नहीं हुए हैं, वे रुक जाएँगे। उनकी कोई कीमत नहीं लगेगी।",
+  "@foldersSaveAllCancelHint": {
+    "description": "Hint under the Cancel button: wallpapers that have not started cost nothing."
+  },
+  "foldersSaveAllSavedTitle": "{count, plural, =0{कोई वॉलपेपर नहीं सहेजा गया} =1{1 वॉलपेपर सहेजा गया} other{{count} वॉलपेपर सहेजे गए}}",
+  "@foldersSaveAllSavedTitle": {
+    "description": "Summary card title after a Save all run finishes.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllStoppedTitle": "{count, plural, =0{रोका गया। कोई वॉलपेपर नहीं सहेजा गया} =1{रोका गया। 1 वॉलपेपर सहेजा गया} other{रोका गया। {count} वॉलपेपर सहेजे गए}}",
+  "@foldersSaveAllStoppedTitle": {
+    "description": "Summary card title after the user stops a Save all run.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllSkipped": "{count, plural, =1{1 पहले से डाउनलोड में} other{{count} पहले से डाउनलोड में}}",
+  "@foldersSaveAllSkipped": {
+    "description": "Summary card row: wallpapers skipped because they were already in Downloads.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllFailed": "{count, plural, =1{1 विफल} other{{count} विफल}}",
+  "@foldersSaveAllFailed": {
+    "description": "Summary card row: wallpapers that failed to save.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllNotStarted": "{count, plural, =1{1 शुरू नहीं हुआ} other{{count} शुरू नहीं हुए}}",
+  "@foldersSaveAllNotStarted": {
+    "description": "Summary card row: wallpapers that did not start because the run stopped.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRetry": "विफल वाले फिर से करें",
+  "@foldersSaveAllRetry": {
+    "description": "Summary card button that retries the wallpapers that failed."
+  },
+  "foldersSaveAllDone": "हो गया",
+  "@foldersSaveAllDone": {
+    "description": "Summary card button that closes the summary."
+  },
+  "foldersSaveAllToast": "{count, plural, =0{{name} से कोई वॉलपेपर नहीं सहेजा गया।} =1{{name} से 1 वॉलपेपर सहेजा गया।} other{{name} से {count} वॉलपेपर सहेजे गए।}}",
+  "@foldersSaveAllToast": {
+    "description": "Toast after a Save all run. {name} is the folder name.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllToastFailed": "{failed, plural, =1{{name} से {saved} सहेजे गए। 1 विफल। फिर से कोशिश करने के लिए फ़ोल्डर खोलें।} other{{name} से {saved} सहेजे गए। {failed} विफल। फिर से कोशिश करने के लिए फ़ोल्डर खोलें।}}",
+  "@foldersSaveAllToastFailed": {
+    "description": "Toast after a Save all run with failures. {saved} is the number saved, {failed} the number failed, {name} the folder name.",
+    "placeholders": {
+      "failed": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "saved": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersInvite": "आमंत्रित करें",
+  "@foldersInvite": {
+    "description": "Button that makes an invite link for a shared folder."
+  },
+  "foldersInviteShareText": "Prism पर {name} में मेरे साथ वॉलपेपर जोड़ें: {link}",
+  "@foldersInviteShareText": {
+    "description": "Text shared with a folder invite link.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersInvitePreviewTitle": "Prism पर {name} से जुड़ें",
+  "@foldersInvitePreviewTitle": {
+    "description": "Title of the link preview for a folder invite.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersInvitePreviewDescription": "इस फ़ोल्डर के वॉलपेपर साथ मिलकर जोड़ें और हटाएँ।",
+  "@foldersInvitePreviewDescription": {
+    "description": "Description of the link preview for a folder invite."
+  },
+  "foldersInviteFailed": "आमंत्रण लिंक नहीं बन सका। फिर से कोशिश करें।",
+  "@foldersInviteFailed": {
+    "description": "Error when the invite link cannot be made."
+  },
+  "foldersInviteFull": "यह फ़ोल्डर भर गया है। और लोगों को आमंत्रित करने के लिए किसी को हटाएँ।",
+  "@foldersInviteFull": {
+    "description": "Error when the owner invites into a folder that has the most editors."
+  },
+  "foldersInviteLimit": "आपने आज बहुत ज़्यादा आमंत्रण भेज दिए हैं। कल फिर से कोशिश करें।",
+  "@foldersInviteLimit": {
+    "description": "Error when the owner hits the daily invite limit."
+  },
+  "foldersPeople": "लोग",
+  "@foldersPeople": {
+    "description": "Title of the sheet that lists the people in a shared folder."
+  },
+  "foldersPeopleHintOwner": "वॉलपेपर जोड़ने और हटाने के लिए अधिकतम {count} लोगों को आमंत्रित करें। इस फ़ोल्डर का नाम बदलना, इसे साझा करना या हटाना सिर्फ़ आप कर सकते हैं।",
+  "@foldersPeopleHintOwner": {
+    "description": "Hint for the owner in the people sheet.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersPeopleHintEditor": "आप वॉलपेपर जोड़ और हटा सकते हैं। इस फ़ोल्डर का नाम बदलना, इसे साझा करना या हटाना सिर्फ़ मालिक कर सकता है।",
+  "@foldersPeopleHintEditor": {
+    "description": "Hint for an editor in the people sheet."
+  },
+  "foldersPeopleCount": "{count, plural, =1{1 व्यक्ति} other{{count} लोग}}",
+  "@foldersPeopleCount": {
+    "description": "Number of people in a shared folder, with the owner.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersPeopleButtonLabel": "{count, plural, =1{इस फ़ोल्डर में 1 व्यक्ति। लोग दिखाएँ} other{इस फ़ोल्डर में {count} लोग। लोग दिखाएँ}}",
+  "@foldersPeopleButtonLabel": {
+    "description": "Screen reader label for the member avatars on a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersRoleOwner": "मालिक",
+  "@foldersRoleOwner": {
+    "description": "Role of the folder owner."
+  },
+  "foldersRoleEditor": "जोड़ और हटा सकते हैं",
+  "@foldersRoleEditor": {
+    "description": "Role of a person the owner invited."
+  },
+  "foldersPersonYou": "{name} (आप)",
+  "@foldersPersonYou": {
+    "description": "A member row for the current user.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersUnknownPerson": "Prism उपयोगकर्ता",
+  "@foldersUnknownPerson": {
+    "description": "Name shown when a member's profile cannot be read."
+  },
+  "foldersRemovePerson": "हटाएँ",
+  "@foldersRemovePerson": {
+    "description": "Button that removes a person from a shared folder."
+  },
+  "foldersRemovePersonTitle": "{name} को हटाएँ?",
+  "@foldersRemovePersonTitle": {
+    "description": "Title of the confirm before the owner removes a person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersRemovePersonMessage": "ये लोग यहाँ अब वॉलपेपर नहीं जोड़ या हटा सकेंगे। इनके जोड़े गए वॉलपेपर बने रहेंगे।",
+  "@foldersRemovePersonMessage": {
+    "description": "Message of the confirm before the owner removes a person."
+  },
+  "foldersRemovePersonConfirm": "व्यक्ति को हटाएँ",
+  "@foldersRemovePersonConfirm": {
+    "description": "Confirm button that removes a person from a shared folder."
+  },
+  "foldersPersonRemoved": "{name} को हटा दिया गया।",
+  "@foldersPersonRemoved": {
+    "description": "Toast after the owner removes a person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersLeave": "फ़ोल्डर छोड़ें",
+  "@foldersLeave": {
+    "description": "Button for an editor to leave a shared folder."
+  },
+  "foldersLeaveTitle": "{name} छोड़ें?",
+  "@foldersLeaveTitle": {
+    "description": "Title of the confirm before an editor leaves.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersLeaveMessage": "आप यहाँ अब वॉलपेपर नहीं जोड़ या हटा सकेंगे। आपके जोड़े गए वॉलपेपर बने रहेंगे।",
+  "@foldersLeaveMessage": {
+    "description": "Message of the confirm before an editor leaves."
+  },
+  "foldersLeft": "आपने फ़ोल्डर छोड़ दिया।",
+  "@foldersLeft": {
+    "description": "Toast after an editor leaves a folder."
+  },
+  "foldersPeopleFailed": "इस फ़ोल्डर के लोगों को अपडेट नहीं किया जा सका। फिर से कोशिश करें।",
+  "@foldersPeopleFailed": {
+    "description": "Error when a remove or leave fails."
+  },
+  "foldersSharedWithYou": "आपके साथ साझा किए गए",
+  "@foldersSharedWithYou": {
+    "description": "Library section of folders other people invited the user to."
+  },
+  "foldersSharedLabel": "साझा किया गया",
+  "@foldersSharedLabel": {
+    "description": "Screen reader label for the shared icon on a folder card."
+  },
+  "foldersAddedBy": "{name} ने जोड़ा",
+  "@foldersAddedBy": {
+    "description": "Who added a wallpaper to a shared folder.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersAddedByYou": "आपने जोड़ा",
+  "@foldersAddedByYou": {
+    "description": "The current user added this wallpaper to a shared folder."
+  },
+  "foldersRemoveFromFolder": "फ़ोल्डर से हटाएँ",
+  "@foldersRemoveFromFolder": {
+    "description": "Button that removes a wallpaper from a folder."
+  },
+  "foldersDeleteSharedMessage": "आपके आमंत्रित लोग भी इसे खो देंगे। जो वॉलपेपर आपके पसंदीदा में हैं, वे वहीं रहेंगे।",
+  "@foldersDeleteSharedMessage": {
+    "description": "Message of the delete confirm for a folder with editors."
+  },
+  "foldersJoinTitle": "फ़ोल्डर का आमंत्रण",
+  "@foldersJoinTitle": {
+    "description": "Title of the page that opens a folder invite link."
+  },
+  "foldersJoinHeadline": "{name} से जुड़ें",
+  "@foldersJoinHeadline": {
+    "description": "Headline on the folder invite page.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersJoinInvitedBy": "{name} ने आपको इस फ़ोल्डर में वॉलपेपर जोड़ने और हटाने के लिए आमंत्रित किया है।",
+  "@foldersJoinInvitedBy": {
+    "description": "Body on the folder invite page.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersJoin": "फ़ोल्डर से जुड़ें",
+  "@foldersJoin": {
+    "description": "Button that joins a shared folder."
+  },
+  "foldersJoinSignIn": "जुड़ने के लिए साइन इन करें",
+  "@foldersJoinSignIn": {
+    "description": "Button on the invite page for a guest."
+  },
+  "foldersJoinOpen": "फ़ोल्डर खोलें",
+  "@foldersJoinOpen": {
+    "description": "Button on the invite page when the user is already in the folder."
+  },
+  "foldersJoinAlreadyIn": "आप पहले से इस फ़ोल्डर में हैं।",
+  "@foldersJoinAlreadyIn": {
+    "description": "Note on the invite page when the user is already a member."
+  },
+  "foldersJoined": "आप {name} से जुड़ गए।",
+  "@foldersJoined": {
+    "description": "Toast after the user joins a folder.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersJoinFailed": "इस फ़ोल्डर से जुड़ा नहीं जा सका। फिर से कोशिश करें।",
+  "@foldersJoinFailed": {
+    "description": "Error when a join fails for a network or server reason."
+  },
+  "foldersJoinLoadFailed": "यह आमंत्रण लोड नहीं हो सका।",
+  "@foldersJoinLoadFailed": {
+    "description": "Error when the invite page cannot load."
+  },
+  "foldersJoinExpiredTitle": "यह आमंत्रण समाप्त हो गया है",
+  "@foldersJoinExpiredTitle": {
+    "description": "Title when an invite is older than 7 days."
+  },
+  "foldersJoinExpiredBody": "आमंत्रण 7 दिनों तक काम करते हैं। मालिक से नया लिंक माँगें।",
+  "@foldersJoinExpiredBody": {
+    "description": "Body when an invite expired."
+  },
+  "foldersJoinUsedTitle": "यह आमंत्रण पहले ही इस्तेमाल हो चुका है",
+  "@foldersJoinUsedTitle": {
+    "description": "Title when someone already used the invite."
+  },
+  "foldersJoinUsedBody": "हर आमंत्रण एक बार ही काम करता है। मालिक से नया लिंक माँगें।",
+  "@foldersJoinUsedBody": {
+    "description": "Body when an invite was used."
+  },
+  "foldersJoinFullTitle": "यह फ़ोल्डर भर गया है",
+  "@foldersJoinFullTitle": {
+    "description": "Title when the folder has the most people it can have."
+  },
+  "foldersJoinFullBody": "मालिक से किसी को हटाने को कहें, फिर लिंक दोबारा खोलें।",
+  "@foldersJoinFullBody": {
+    "description": "Body when the folder is full."
+  },
+  "foldersJoinUnavailableTitle": "यह आमंत्रण उपलब्ध नहीं है",
+  "@foldersJoinUnavailableTitle": {
+    "description": "Title for a missing folder, a block or a closed account. It does not say which."
+  },
+  "foldersJoinUnavailableBody": "हो सकता है यह फ़ोल्डर हटा दिया गया हो, या आप इससे जुड़ नहीं सकते।",
+  "@foldersJoinUnavailableBody": {
+    "description": "Body for an unavailable invite."
+  },
+  "foldersMakePrivateMessageShared": "इसे सिर्फ़ आप और आपके आमंत्रित लोग देखेंगे। इसका लिंक काम करना बंद कर देगा और इसके फ़ॉलोअर इसे खो देंगे।",
+  "@foldersMakePrivateMessageShared": {
+    "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
   }
 }

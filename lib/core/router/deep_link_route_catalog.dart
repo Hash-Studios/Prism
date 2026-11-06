@@ -31,6 +31,7 @@ enum DeepLinkPageTarget {
   downloads,
   library,
   folder,
+  folderInvite,
   mood,
   editorsChoice,
   gallery,
@@ -143,6 +144,8 @@ final class DeepLinkRouteCatalog {
     DeepLinkRouteExample('/downloads', DeepLinkPageTarget.downloads),
     DeepLinkRouteExample('/library?tab=downloads', DeepLinkPageTarget.library),
     DeepLinkRouteExample('/folder/abc123', DeepLinkPageTarget.folder),
+    DeepLinkRouteExample('/folder/abc123?invite=ABCDEFGHJK', DeepLinkPageTarget.folderInvite),
+    DeepLinkRouteExample('/folder/invite/ABCDEFGHJK', DeepLinkPageTarget.folderInvite),
     DeepLinkRouteExample('/mood/dreamy', DeepLinkPageTarget.mood),
     DeepLinkRouteExample('/editors-choice', DeepLinkPageTarget.editorsChoice),
     DeepLinkRouteExample('/gallery?ids=a1,b2', DeepLinkPageTarget.gallery),
@@ -220,6 +223,7 @@ final class DeepLinkRouteCatalog {
   ];
 
   static const Set<String> _utmKeys = <String>{'utm_source', 'utm_medium', 'utm_campaign'};
+  static final RegExp _inviteCodePattern = RegExp(r'^[A-Za-z0-9]{10}$');
   static const Map<DeepLinkPageTarget, Set<String>> _allowedQuery = <DeepLinkPageTarget, Set<String>>{
     DeepLinkPageTarget.wallpaperDetail: <String>{'wallId', 'id', 'source', 'provider'},
     DeepLinkPageTarget.library: <String>{'tab'},
@@ -238,6 +242,8 @@ final class DeepLinkRouteCatalog {
     DeepLinkPageTarget.debugPanel: <String>{'tab'},
     DeepLinkPageTarget.redeemCode: <String>{'code'},
     DeepLinkPageTarget.home: <String>{'feed'},
+    DeepLinkPageTarget.folder: <String>{'invite'},
+    DeepLinkPageTarget.folderInvite: <String>{'invite'},
   };
 
   /// Returns null unless the URL matches a catalog route exactly and carries only supported scalar parameters.
@@ -295,6 +301,10 @@ final class DeepLinkRouteCatalog {
       target = DeepLinkPageTarget.dropPreview;
       pathParams['weekKey'] = segments[1];
       pathParams['wallId'] = segments[3];
+    } else if (segments.length == 3 && segments[0].toLowerCase() == 'folder' && segments[1] == 'invite') {
+      if (!_inviteCodePattern.hasMatch(segments[2])) return null;
+      target = DeepLinkPageTarget.folderInvite;
+      pathParams['code'] = segments[2];
     } else if (segments.length == 2 && segments[0].toLowerCase() == 'folder') {
       target = DeepLinkPageTarget.folder;
       pathParams['folderId'] = segments[1];
@@ -329,6 +339,12 @@ final class DeepLinkRouteCatalog {
       target = _staticTargets[path.toLowerCase()];
     }
     if (target == null) return null;
+
+    final String? inviteCode = query['invite'];
+    if (target == DeepLinkPageTarget.folder && inviteCode != null && _inviteCodePattern.hasMatch(inviteCode)) {
+      target = DeepLinkPageTarget.folderInvite;
+      pathParams['code'] = inviteCode;
+    }
 
     final Set<String> allowed = _allowedQuery[target] ?? const <String>{};
     if (query.keys.any((String key) => !allowed.contains(key) && !_utmKeys.contains(key))) {

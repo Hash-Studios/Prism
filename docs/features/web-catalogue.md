@@ -9,6 +9,7 @@ The catalogue uses the links Worker. Its code is in `infra/cloudflare/worker/src
 | Page | Address | Contents |
 |---|---|---|
 | Wall | `/wallpaper/<id>` | One approved wall, its details and up to 12 related walls. |
+| Wall, desktop mode | `/wallpaper/<id>?view=desktop` | One wall for a computer screen. The desktop version comes first when there is one. |
 | Folder | `/folder/<id>` | One public folder and its walls. |
 | New walls | `/wallpapers` | The newest walls. |
 | Popular walls | `/wallpapers/popular` | The popular walls. |
@@ -132,6 +133,8 @@ This is the same gate that public folders use.
 | Request | Firestore reads, when not cached |
 |---|---|
 | Wall page | 2. The `webWalls` document and page 1 of its category. |
+| Wall page, desktop mode | 2. The same reads as the wall page. |
+| `/l/<code>?d=1` | 0. The Worker reads one KV record. |
 | Any other page | 1. |
 | Any cached page | 0. |
 
@@ -169,6 +172,30 @@ A `HEAD` request to a download or image route gets 405, so it costs no Firestore
 The Referer check stops hotlinks from other sites. It does not stop scripts, because a script can send any Referer. The limit is per IP, so visitors that share one IP share the allowance.
 
 Each download counts as `web_wallpaper_downloaded` in the website's Mixpanel project. The Worker sends the event with no IP. The count needs the `MIXPANEL_TOKEN` variable on the Worker. Without it, downloads are not counted.
+
+## Desktop mode
+
+Desktop mode shows a wall on a computer screen. The app share sheet has **Open on computer**. That target opens desktop mode. See [desktop-companions.md](desktop-companions.md) for desktop versions.
+
+### Short link
+
+The short link `/l/<code>?d=1` opens desktop mode. Only Prism wall shares use `d=1`. The Worker reads only the KV record. It does not read Firestore. It answers 302 to the relative path `/wallpaper/<id>?view=desktop`, with `cache-control: no-store`. Crawlers still get the preview HTML. Other link types, and other `d` values, get the old landing page.
+
+### Desktop page
+
+The page `/wallpaper/<id>?view=desktop` has three cases:
+
+- **Live wall with a desktop version.** The desktop version comes first, in a monitor frame. The phone wall is on its right. On a narrow screen, the phone wall is below it. The download block starts with **Download 1920 x 1200**. Then it shows 1920 x 1080 and the phone file. A note says that the full 2560 x 1600 file is in Prism.
+- **Live wall without a desktop version.** The phone wall and the normal downloads appear. A short **Use it on your computer** note gives the steps. On Windows, right-click the file, then choose Set as desktop background. On a Mac, Control-click the file in Finder, then choose Set Desktop Picture.
+- **Gated wall.** The normal gated page appears. It has no image and no download links.
+
+Hidden walls get 404 and gone walls get 410, as before.
+
+The web size stays at 1920 x 1200. Tablets get the 2560 x 1600 file in Prism, at the set price.
+
+### Canonical URL and cache
+
+The canonical URL stays `/wallpaper/<id>`. The edge cache key is `wall/<id>/desktop`. It is separate from the key `wall/<id>`. Other query keys do not change the key. A `view` value other than `desktop` gives the normal page.
 
 ## Limits
 
@@ -211,4 +238,10 @@ Run this in `functions`:
 
 ```bash
 npx tsc -p . && node --test lib/__tests__/webCatalog.test.js
+```
+
+Run this in `web`:
+
+```bash
+npx playwright test test/e2e/desktop-mode.spec.ts
 ```

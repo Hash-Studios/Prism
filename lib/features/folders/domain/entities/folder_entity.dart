@@ -2,11 +2,12 @@ import 'dart:math' as math;
 
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_member.dart';
 
 const int folderNameMaxLength = 50;
 const int folderMaxCovers = 4;
 
-/// One of the user's private folders, `folders/{id}`.
+/// A folder the user owns or edits, `folders/{id}`.
 class FolderEntity {
   const FolderEntity({
     required this.id,
@@ -17,6 +18,7 @@ class FolderEntity {
     required this.itemCount,
     required this.covers,
     this.isPublic = false,
+    this.editors = const <FolderMember>[],
   });
 
   final String id;
@@ -32,6 +34,24 @@ class FolderEntity {
   /// Others can see the folder. Only the server sets it, through the setFolderPublic callable.
   final bool isPublic;
 
+  /// The people the owner invited, oldest first. Only the server sets them.
+  final List<FolderMember> editors;
+
+  bool isOwnedBy(String uid) => uid.isNotEmpty && uid == ownerId;
+
+  /// Owner or editor. Null for anyone else.
+  FolderRole? roleOf(String uid) => isOwnedBy(uid)
+      ? FolderRole.owner
+      : editors.any((member) => member.uid == uid)
+      ? FolderRole.editor
+      : null;
+
+  /// The owner first, then the editors.
+  List<FolderMember> get members => <FolderMember>[
+    FolderMember(uid: ownerId, role: FolderRole.owner, addedBy: ownerId, addedAt: createdAt),
+    ...editors,
+  ];
+
   FolderEntity copyWith({String? name, DateTime? updatedAt, int? itemCount, List<String>? covers, bool? isPublic}) =>
       FolderEntity(
         id: id,
@@ -42,6 +62,7 @@ class FolderEntity {
         itemCount: itemCount ?? this.itemCount,
         covers: covers ?? this.covers,
         isPublic: isPublic ?? this.isPublic,
+        editors: editors,
       );
 
   FolderEntity withItemAdded(String thumbnailUrl, DateTime at) => copyWith(
