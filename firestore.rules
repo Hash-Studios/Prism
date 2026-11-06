@@ -130,12 +130,13 @@ service cloud.firestore {
 
     function validLayoutPrefs(p) {
       return p is map
-        && p.keys().hasOnly(['tabs', 'hidden', 'density', 'oneHanded', 'changedAt'])
+        && p.keys().hasOnly(['tabs', 'hidden', 'density', 'oneHanded', 'followingRow', 'changedAt'])
         && p.keys().hasAll(['tabs', 'hidden', 'density', 'changedAt'])
         && p.tabs is list && p.tabs.size() <= 8 && p.tabs.hasOnly(['home', 'search', 'rewards', 'collection'])
         && p.hidden is list && p.hidden.size() <= 8 && p.hidden.hasOnly(['search', 'rewards', 'collection'])
         && p.density in ['compact', 'comfortable', 'large']
         && (!('oneHanded' in p) || p.oneHanded is bool)
+        && (!('followingRow' in p) || p.followingRow is bool)
         && p.changedAt is int && p.changedAt >= 0;
     }
 
@@ -198,6 +199,12 @@ service cloud.firestore {
       match /{privatePath=**} {
         allow read, write: if false;
       }
+    }
+
+    // The newest approval time of each followed topic, for the dots on Home. Written by sendTopicDigests.
+    match /topicNews/{docId} {
+      allow read: if true;
+      allow write: if false;
     }
 
     // Wall of the Day — public read, admin-only write (set via Cloud Function)
@@ -344,8 +351,35 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Followed topics: at most 20 keys, no repeats, only keys from TOPICS in functions/src/topicDigest.ts.
+      function validTopicSession(data) {
+        return (!('followedTopics' in data) || (data.followedTopics is list
+              && data.followedTopics.size() <= 20
+              && data.followedTopics.toSet().size() == data.followedTopics.size()
+              && data.followedTopics.hasOnly([
+          'category:Nature', 'category:Architecture', 'category:Cars', 'category:Anime', 'category:Gaming',
+          'category:Space', 'category:Ocean', 'category:Flowers', 'category:Neon', 'category:Dark',
+          'category:Abstract', 'category:3D Render', 'category:Minimal', 'category:Gradient', 'category:AI Art',
+          'category:Cyberpunk', 'category:Vintage', 'category:Landscape', 'category:Galaxy', 'category:Pastel',
+          'mood:duo_reveal', 'mood:dreamy', 'mood:dark_quiet', 'mood:bright_bold', 'mood:minimal',
+          'mood:spatial_ready', 'mood:depth_ready'
+        ])))
+          && (!('followedTopicsOffset' in data) || (data.followedTopicsOffset is int
+              && data.followedTopicsOffset >= -720 && data.followedTopicsOffset <= 840
+              && data.followedTopicsOffset % 15 == 0))
+          && (!('topicAlerts' in data) || data.topicAlerts is bool)
+          && (!('topicAlertsToken' in data) || data.topicAlertsToken is string);
+      }
+
       match /private/session {
-        allow read, write: if isOwner(userId) || isConfiguredAdmin();
+        function sessionWritesOpen() {
+          let deletionBarrier = /databases/$(database)/documents/creatorDeletionState/$(userId);
+          return !exists(deletionBarrier) || get(deletionBarrier).data.get('closed', false) != true;
+        }
+
+        allow read, delete: if isOwner(userId) || isConfiguredAdmin();
+        allow create, update: if (isOwner(userId) && sessionWritesOpen()
+            && validTopicSession(request.resource.data)) || isConfiguredAdmin();
       }
 
       // Public folders this user follows. Written only by the setFolderFollow callable.

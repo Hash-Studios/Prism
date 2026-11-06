@@ -1635,6 +1635,20 @@
       ]
     },
     {
+      "collectionGroup": "private",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "topicAlerts",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "followedTopicsOffset",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "comments",
       "queryScope": "COLLECTION",
       "fields": [
@@ -2003,6 +2017,20 @@
     {
       "collectionGroup": "comments",
       "fieldPath": "authorUid",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "private",
+      "fieldPath": "followedTopicsOffset",
       "indexes": [
         {
           "order": "ASCENDING",

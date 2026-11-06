@@ -10424,6 +10424,183 @@
       }
     }
   },
+  "topicFollow": "Follow",
+  "@topicFollow": {
+    "description": "Button on a category or mood page. Follows it for a daily push about new wallpapers."
+  },
+  "topicFollowing": "Following",
+  "@topicFollowing": {
+    "description": "Button label when the user follows this category or mood. A tap stops following."
+  },
+  "topicFollowHint": "Follow {topic}",
+  "@topicFollowHint": {
+    "description": "Screen reader label of the Follow button. topic is a category or mood name.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicUnfollowHint": "Unfollow {topic}",
+  "@topicUnfollowHint": {
+    "description": "Screen reader label of a button that stops following a category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicFollowedToast": "Following {topic}. With topic notifications on, you get at most one push a day about new wallpapers here.",
+  "@topicFollowedToast": {
+    "description": "Toast after the user follows a category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicFollowLimit": "You can follow up to {max} topics. Unfollow one in Settings first.",
+  "@topicFollowLimit": {
+    "description": "Toast when the user already follows the most topics allowed.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "topicFollowFailed": "Could not update the follow. Check your connection and try again.",
+  "@topicFollowFailed": {
+    "description": "Toast when follow or unfollow of a category or mood fails."
+  },
+  "topicUnfollow": "Unfollow",
+  "@topicUnfollow": {
+    "description": "Button in the list of followed topics. Stops following that topic."
+  },
+  "topicKindCategory": "Category",
+  "@topicKindCategory": {
+    "description": "Small label under a followed topic that is a category."
+  },
+  "topicKindMood": "Mood",
+  "@topicKindMood": {
+    "description": "Small label under a followed topic that is a Home mood, such as Dreamy."
+  },
+  "followingRowTitle": "Following",
+  "@followingRowTitle": {
+    "description": "Header of the Home row of the categories and moods the user follows."
+  },
+  "followingRowLabel": "Categories and moods you follow",
+  "@followingRowLabel": {
+    "description": "Screen reader label of the Home row of followed topics."
+  },
+  "topicNewWallpapers": "{topic}, new wallpapers",
+  "@topicNewWallpapers": {
+    "description": "Screen reader label of a followed topic that has new wallpapers.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "followedTopicsTitle": "Topics you follow",
+  "@followedTopicsTitle": {
+    "description": "Settings row and sheet title: the categories and moods the user follows."
+  },
+  "followedTopicsCount": "{count, plural, =0{None yet} =1{1 topic} other{{count} topics}}",
+  "@followedTopicsCount": {
+    "description": "Settings row subtitle: how many categories and moods the user follows.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "followedTopicsEmptyTitle": "No topics yet",
+  "@followedTopicsEmptyTitle": {
+    "description": "Empty state title of the followed topics sheet."
+  },
+  "followedTopicsEmptyBody": "Open a category or a mood and tap Follow. With topic notifications on, you get at most one push a day about new wallpapers there.",
+  "@followedTopicsEmptyBody": {
+    "description": "Empty state body of the followed topics sheet."
+  },
+  "notifSettingTopics": "Topics you follow",
+  "@notifSettingTopics": {
+    "description": "Notification setting for new wallpapers in followed categories and moods."
+  },
+  "notifSettingTopicsDescription": "New wallpapers in categories and moods you follow, once a day",
+  "@notifSettingTopicsDescription": {
+    "description": "Description of the followed topics notification setting."
+  },
+  "layoutHomeHeader": "Home",
+  "@layoutHomeHeader": {
+    "description": "Layout settings section header for the Home page."
+  },
+  "layoutFollowingRow": "Show topics you follow",
+  "@layoutFollowingRow": {
+    "description": "Layout setting switch. When on, Home shows a row of followed categories and moods."
+  },
+  "layoutFollowingRowFootnote": "A row at the top of For you. A dot marks a topic with new wallpapers.",
+  "@layoutFollowingRowFootnote": {
+    "description": "Footnote under the layout setting for the followed topics row."
+  },
+  "notifPushTopicDigestTitleOne": "A new wall in {topic}",
+  "@notifPushTopicDigestTitleOne": {
+    "description": "Daily push title: one new wallpaper in a followed category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitleSolo": "{count, plural, =1{A new wall in {topic}} other{{count} new walls in {topic}}}",
+  "@notifPushTopicDigestTitleSolo": {
+    "description": "Daily push title: new wallpapers in one followed category or mood.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitlePair": "{count, plural, =1{A new wall in {topic} and {secondTopic}} other{{count} new walls in {topic} and {secondTopic}}}",
+  "@notifPushTopicDigestTitlePair": {
+    "description": "Daily push title: new wallpapers in two followed categories or moods.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      },
+      "secondTopic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitleGroup": "{count, plural, =1{A new wall in {topic} and {others} other topics} other{{count} new walls in {topic} and {others} other topics}}",
+  "@notifPushTopicDigestTitleGroup": {
+    "description": "Daily push title: new wallpapers in three or more followed topics. others is always 2 or more.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      },
+      "others": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushTopicDigestBodyUntitled": "Tap to see what's new.",
+  "@notifPushTopicDigestBodyUntitled": {
+    "description": "Daily push body when the new wallpapers have no tags."
+  },
   "historySetAndDownloaded": "Set and downloaded",
   "@historySetAndDownloaded": {
     "description": "History tab segment on Android: walls the user set as wallpaper or downloaded."

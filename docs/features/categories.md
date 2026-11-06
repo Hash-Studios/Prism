@@ -56,6 +56,20 @@ The Collections tab lists collections and categories. A category shows a grid of
 - The saved copy of the page (the offline fallback) includes the Prism walls.
 - The grid shows Prism and provider tiles together. Analytics use the source context `category_prism_first` for a Prism tile in a provider category.
 
+### Follow a category
+
+A signed-in user can follow a category. The 20 classifier names in **Prism walls first** can be followed. The seven Home moods can be followed too. The push is described in [Topic digest](notifications.md#topic-digest).
+
+Stock-only categories (AMOLED, Aesthetic and Forest) and Desktop have no Follow button. No new Prism walls land there through approval.
+
+The **Follow** button is in the header of each category page and each mood page. A guest who taps it sees the sign-in prompt.
+
+A user can follow up to 20 topics, across categories and moods. At 20, the app shows "You can follow up to 20 topics. Unfollow one in Settings first." To unfollow, open **Settings**, then **Topics you follow**, and tap **Unfollow**.
+
+A followed topic can send one push a day at 16:00 local time. The push comes only when the topic got new walls in the last 24 hours. It can show a gallery of those walls.
+
+The **Following** row sits at the top of **For you**, above the mood chips. It lists the followed topics. A dot marks a topic with a wall newer than the last time the user opened its page on this device. Opening the page clears the dot. To hide the row, turn off **Show topics you follow** in the Home section of the layout settings.
+
 ### AMOLED tile
 
 - A new tile, **AMOLED**, searches Wallhaven for "amoled". Its picture is a dark Pexels photo.
@@ -222,6 +236,7 @@ A long press on a tile opens one sheet in these grids: home and category grids, 
 - The Prism-first list has no second page. After the first 24 Prism walls, the grid continues with the provider.
 - The AMOLED tile is a plain Wallhaven search. Pure black walls are not guaranteed.
 - A guest can open the sheet. Whether a guest can favourite depends on the favourites feature.
+- Stock-only categories cannot be followed. A remote category can be followed only when its name matches a classifier name, in any letter case.
 
 ## How to test
 

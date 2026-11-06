@@ -186,6 +186,32 @@ test("draw tickets and boosts are deleted, the boosted wall is cleared and the e
   assert.ok(log.indexOf("anonymize") > log.indexOf("update:walls/w9:boostedUntil"));
 });
 
+test("account deletion removes the followed topics session and the topic digest marker", async (t) => {
+  fake(t, {email: ""});
+  const store = installFakeDb(t, {
+    "usersv2/u1": {coins: 20},
+    "usersv2/u1/private/session": {followedTopics: ["category:Pastel"], followedTopicsOffset: 330, topicAlerts: true},
+    "usersv2/u1/private/topicDigest": {day: "2026-11-05", atMs: 1},
+  });
+  const empty = {where: () => empty, get: async () => ({docs: []})};
+  t.mock.method(db, "collectionGroup", () => empty);
+  t.mock.method(db, "bulkWriter", () => ({
+    set: (ref: admin.firestore.DocumentReference, data: admin.firestore.DocumentData) => ref.set(data),
+    update: (ref: admin.firestore.DocumentReference, data: admin.firestore.UpdateData<admin.firestore.DocumentData>) => ref.update(data),
+    delete: (ref: admin.firestore.DocumentReference) => ref.delete(),
+    close: async () => undefined,
+  }));
+  // The fake has no recursive delete: remove the direct children of a collection, or the document itself.
+  t.mock.method(db, "recursiveDelete", async (ref: unknown) => {
+    const snap = await (ref as {get: () => Promise<{docs?: Array<{ref: {path: string}}>; ref?: {path: string}}>}).get();
+    const targets = snap.docs ?? [snap as {ref: {path: string}}];
+    targets.forEach((doc) => store.delete(doc.ref.path));
+  });
+  await call();
+  assert.equal(store.has("usersv2/u1/private/session"), false);
+  assert.equal(store.has("usersv2/u1/private/topicDigest"), false);
+});
+
 test("account deletion covers private metadata, lineage, operation and receipt ledgers by owner and actor", async (t) => {
   const log = fake(t);
   await call();

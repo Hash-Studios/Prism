@@ -3215,6 +3215,50 @@ class FolderPushOpenedEvent extends AnalyticsEvent {
   }
 }
 
+class TopicFollowedEvent extends AnalyticsEvent {
+  const TopicFollowedEvent({required this.kind, required this.topicId});
+
+  final String kind;
+  final String topicId;
+
+  @override
+  String get eventName => 'topic_followed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'kind': kind, 'topic_id': topicId};
+  }
+}
+
+class TopicUnfollowedEvent extends AnalyticsEvent {
+  const TopicUnfollowedEvent({required this.kind, required this.topicId});
+
+  final String kind;
+  final String topicId;
+
+  @override
+  String get eventName => 'topic_unfollowed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'kind': kind, 'topic_id': topicId};
+  }
+}
+
+class TopicPushOpenedEvent extends AnalyticsEvent {
+  const TopicPushOpenedEvent({required this.topicCount});
+
+  final int topicCount;
+
+  @override
+  String get eventName => 'topic_push_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'topic_count': topicCount};
+  }
+}
+
 class FolderSaveStartedEvent extends AnalyticsEvent {
   const FolderSaveStartedEvent({required this.wallCount, required this.coinCost, required this.pro});
 

@@ -272,7 +272,7 @@ class GoogleAuth {
     clearInAppNotificationSyncGateAll();
     await _bounded(FcmTokenService.instance.cancelAndWait, 'stop FCM token writes');
     if (!operation.isCurrent) return false;
-    await _bounded(FcmTokenService.instance.clearSyncedToken, 'clear synced FCM token');
+    await _bounded(FcmTokenService.instance.captureSyncedBinding, 'capture the synced FCM token');
     if (!operation.isCurrent) return false;
     await _bounded(waitForSignInBootstraps, 'drain sign-in bootstrap');
     if (!operation.isCurrent) return false;

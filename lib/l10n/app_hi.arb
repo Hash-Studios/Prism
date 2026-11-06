@@ -10424,6 +10424,183 @@
       }
     }
   },
+  "topicFollow": "फ़ॉलो करें",
+  "@topicFollow": {
+    "description": "Button on a category or mood page. Follows it for a daily push about new wallpapers."
+  },
+  "topicFollowing": "फ़ॉलो कर रहे हैं",
+  "@topicFollowing": {
+    "description": "Button label when the user follows this category or mood. A tap stops following."
+  },
+  "topicFollowHint": "{topic} को फ़ॉलो करें",
+  "@topicFollowHint": {
+    "description": "Screen reader label of the Follow button. topic is a category or mood name.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicUnfollowHint": "{topic} को अनफ़ॉलो करें",
+  "@topicUnfollowHint": {
+    "description": "Screen reader label of a button that stops following a category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicFollowedToast": "अब आप {topic} को फ़ॉलो कर रहे हैं। विषय सूचनाएँ चालू होने पर, यहाँ नए वॉलपेपर के लिए आपको दिन में ज़्यादा से ज़्यादा एक सूचना मिलेगी।",
+  "@topicFollowedToast": {
+    "description": "Toast after the user follows a category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicFollowLimit": "आप अधिकतम {max} विषयों को फ़ॉलो कर सकते हैं। पहले सेटिंग्स में से कोई एक अनफ़ॉलो करें।",
+  "@topicFollowLimit": {
+    "description": "Toast when the user already follows the most topics allowed.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "topicFollowFailed": "फ़ॉलो बदला नहीं जा सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।",
+  "@topicFollowFailed": {
+    "description": "Toast when follow or unfollow of a category or mood fails."
+  },
+  "topicUnfollow": "अनफ़ॉलो करें",
+  "@topicUnfollow": {
+    "description": "Button in the list of followed topics. Stops following that topic."
+  },
+  "topicKindCategory": "श्रेणी",
+  "@topicKindCategory": {
+    "description": "Small label under a followed topic that is a category."
+  },
+  "topicKindMood": "मूड",
+  "@topicKindMood": {
+    "description": "Small label under a followed topic that is a Home mood, such as Dreamy."
+  },
+  "followingRowTitle": "फ़ॉलो किए गए",
+  "@followingRowTitle": {
+    "description": "Header of the Home row of the categories and moods the user follows."
+  },
+  "followingRowLabel": "वे श्रेणियाँ और मूड जिन्हें आप फ़ॉलो करते हैं",
+  "@followingRowLabel": {
+    "description": "Screen reader label of the Home row of followed topics."
+  },
+  "topicNewWallpapers": "{topic}, नए वॉलपेपर",
+  "@topicNewWallpapers": {
+    "description": "Screen reader label of a followed topic that has new wallpapers.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "followedTopicsTitle": "आप जिन विषयों को फ़ॉलो करते हैं",
+  "@followedTopicsTitle": {
+    "description": "Settings row and sheet title: the categories and moods the user follows."
+  },
+  "followedTopicsCount": "{count, plural, =0{अभी कोई नहीं} =1{1 विषय} other{{count} विषय}}",
+  "@followedTopicsCount": {
+    "description": "Settings row subtitle: how many categories and moods the user follows.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "followedTopicsEmptyTitle": "अभी कोई विषय नहीं",
+  "@followedTopicsEmptyTitle": {
+    "description": "Empty state title of the followed topics sheet."
+  },
+  "followedTopicsEmptyBody": "कोई श्रेणी या मूड खोलें और फ़ॉलो करें दबाएँ। विषय सूचनाएँ चालू होने पर, वहाँ नए वॉलपेपर के लिए आपको दिन में ज़्यादा से ज़्यादा एक सूचना मिलेगी।",
+  "@followedTopicsEmptyBody": {
+    "description": "Empty state body of the followed topics sheet."
+  },
+  "notifSettingTopics": "आप जिन विषयों को फ़ॉलो करते हैं",
+  "@notifSettingTopics": {
+    "description": "Notification setting for new wallpapers in followed categories and moods."
+  },
+  "notifSettingTopicsDescription": "आप जिन श्रेणियों और मूड को फ़ॉलो करते हैं, उनमें नए वॉलपेपर, दिन में एक बार",
+  "@notifSettingTopicsDescription": {
+    "description": "Description of the followed topics notification setting."
+  },
+  "layoutHomeHeader": "होम",
+  "@layoutHomeHeader": {
+    "description": "Layout settings section header for the Home page."
+  },
+  "layoutFollowingRow": "फ़ॉलो किए गए विषय दिखाएँ",
+  "@layoutFollowingRow": {
+    "description": "Layout setting switch. When on, Home shows a row of followed categories and moods."
+  },
+  "layoutFollowingRowFootnote": "आपके लिए टैब के ऊपर एक पंक्ति। बिंदु उस विषय को दिखाता है जिसमें नए वॉलपेपर हैं।",
+  "@layoutFollowingRowFootnote": {
+    "description": "Footnote under the layout setting for the followed topics row."
+  },
+  "notifPushTopicDigestTitleOne": "{topic} में एक नया वॉलपेपर",
+  "@notifPushTopicDigestTitleOne": {
+    "description": "Daily push title: one new wallpaper in a followed category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitleSolo": "{count, plural, =1{{topic} में एक नया वॉलपेपर} other{{topic} में {count} नए वॉलपेपर}}",
+  "@notifPushTopicDigestTitleSolo": {
+    "description": "Daily push title: new wallpapers in one followed category or mood.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitlePair": "{count, plural, =1{{topic} और {secondTopic} में एक नया वॉलपेपर} other{{topic} और {secondTopic} में {count} नए वॉलपेपर}}",
+  "@notifPushTopicDigestTitlePair": {
+    "description": "Daily push title: new wallpapers in two followed categories or moods.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      },
+      "secondTopic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitleGroup": "{count, plural, =1{{topic} और {others} अन्य विषयों में एक नया वॉलपेपर} other{{topic} और {others} अन्य विषयों में {count} नए वॉलपेपर}}",
+  "@notifPushTopicDigestTitleGroup": {
+    "description": "Daily push title: new wallpapers in three or more followed topics. others is always 2 or more.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      },
+      "others": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushTopicDigestBodyUntitled": "देखने के लिए टैप करें कि क्या नया है।",
+  "@notifPushTopicDigestBodyUntitled": {
+    "description": "Daily push body when the new wallpapers have no tags."
+  },
   "historySetAndDownloaded": "सेट और डाउनलोड किए गए",
   "@historySetAndDownloaded": {
     "description": "History tab segment on Android: walls the user set as wallpaper or downloaded."

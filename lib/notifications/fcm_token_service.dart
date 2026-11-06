@@ -6,6 +6,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/features/followed_topics/data/followed_topics_store.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -27,6 +28,7 @@ class FcmTokenService {
   Future<void>? _signOutBarrier;
   String? _boundUserId;
   String? _activeSyncUserId;
+  ({String userId, String token})? _syncedBinding;
   static const String _syncedTokenKey = 'fcmTokenSynced';
   static const String _tokenRotationKey = 'fcmTokenRotationV2';
   static const String _tokenInvalidationPendingKey = 'fcmTokenInvalidationPendingV1';
@@ -142,6 +144,24 @@ class FcmTokenService {
     }
   }
 
+  /// Stores the "Topics you follow" switch where the topic digest reads it.
+  Future<void> saveTopicAlerts({required String userId, required bool enabled, FirestoreClient? client}) async {
+    if (userId.trim().isEmpty) return;
+    try {
+      await _trackWrite(
+        () => (client ?? firestoreClient).setDoc(
+          '${FirebaseCollections.usersV2}/$userId/private',
+          'session',
+          <String, dynamic>{'topicAlerts': enabled},
+          merge: true,
+          sourceTag: 'fcm_token.topic_alerts',
+        ),
+      );
+    } catch (e, st) {
+      logger.w('FcmTokenService: failed to save topic alerts.', error: e, stackTrace: st);
+    }
+  }
+
   /// Stores the Recommendations switch where the win-back and campaign pushes read it.
   Future<void> saveMarketingPushes({required String userId, required bool enabled, FirestoreClient? client}) async {
     if (userId.trim().isEmpty) return;
@@ -219,6 +239,13 @@ class FcmTokenService {
     try {
       await _invalidateToken(messaging ?? FirebaseMessaging.instance, clearForUser: userId, client: client);
     } finally {
+      if (userId.trim().isNotEmpty && getIt.isRegistered<FollowedTopicsStore>()) {
+        try {
+          await getIt<FollowedTopicsStore>().clearLocalSeenForUser(userId);
+        } catch (error, stackTrace) {
+          logger.w('FcmTokenService: failed to clear local topic state.', error: error, stackTrace: stackTrace);
+        }
+      }
       barrier.complete();
       if (identical(_signOutBarrier, barrier.future)) _signOutBarrier = null;
     }
@@ -263,7 +290,7 @@ class FcmTokenService {
       if (clearForUser != null && clearForUser.trim().isNotEmpty) {
         await _clearStoredTokenBestEffort(clearForUser, client: client);
       }
-      await clearSyncedToken();
+      await _forgetSyncedToken();
       if (getIt.isRegistered<SettingsLocalDataSource>()) {
         final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
         if (settings.isOpen) {
@@ -310,8 +337,20 @@ class FcmTokenService {
     }
   }
 
-  /// Forgets the last synced token so the next sign-in writes it again.
-  Future<void> clearSyncedToken() async {
+  /// Captures any persisted binding before the caller drains local token state.
+  Future<void> captureSyncedBinding() async {
+    if (!getIt.isRegistered<SettingsLocalDataSource>()) return;
+    final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+    if (settings.isOpen && _syncedBinding == null) {
+      final List<String> parts = settings.get<String>(_syncedTokenKey, defaultValue: '').split('|');
+      if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
+        _syncedBinding = (userId: parts[0], token: parts[1]);
+      }
+    }
+  }
+
+  Future<void> _forgetSyncedToken() async {
+    _syncedBinding = null;
     if (!getIt.isRegistered<SettingsLocalDataSource>()) return;
     final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
     if (settings.isOpen) await settings.delete(_syncedTokenKey);
@@ -327,9 +366,10 @@ class FcmTokenService {
             settings.get<bool>(NotificationPrefKeys.followers, defaultValue: true);
     final bool folderAlerts =
         settings?.isOpen != true || settings!.get<bool>(NotificationPrefKeys.folders, defaultValue: true);
-    final String marker = '$userId|$token|digest_v2|posts:$postAlerts|folders:$folderAlerts';
+    final bool topicAlerts =
+        settings?.isOpen != true || settings!.get<bool>(NotificationPrefKeys.topics, defaultValue: true);
+    final String marker = '$userId|$token|digest_v2|posts:$postAlerts|folders:$folderAlerts|topics:$topicAlerts';
     final bool track = settings != null && settings.isOpen;
-    if (track && settings.get<String>(_syncedTokenKey, defaultValue: '') == marker) return;
     await (client ?? firestoreClient).setDoc(
       '${FirebaseCollections.usersV2}/$userId/private',
       'session',
@@ -346,27 +386,46 @@ class FcmTokenService {
         // The folder digest goes only to a device whose token carries the switch, like the follow digest.
         'folderAlerts': folderAlerts,
         'folderAlertsToken': token,
+        // The topic digest goes only to a device whose token carries the switch.
+        'topicAlerts': topicAlerts,
+        'topicAlertsToken': token,
       },
       merge: true,
       sourceTag: 'fcm_token.sync',
     );
+    _syncedBinding = (userId: userId, token: token);
     if (track) await settings.set(_syncedTokenKey, marker);
     logger.d('FcmTokenService: token synced for user $userId');
   }
 
   Future<void> _clearStoredToken(String userId, {FirestoreClient? client}) async {
-    await (client ?? firestoreClient).setDoc(
-      '${FirebaseCollections.usersV2}/$userId/private',
-      'session',
-      <String, dynamic>{
-        'fcmToken': FirestoreSentinels.delete(),
-        'notificationLocalizationVersion': FirestoreSentinels.delete(),
-        'notificationLocalizationToken': FirestoreSentinels.delete(),
-        'fcmTokenBindingVersion': FirestoreSentinels.delete(),
-        'fcmTokenBindingToken': FirestoreSentinels.delete(),
+    String? token = _syncedBinding?.userId == userId ? _syncedBinding?.token : null;
+    if (getIt.isRegistered<SettingsLocalDataSource>()) {
+      final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+      if (settings.isOpen) {
+        final String marker = settings.get<String>(_syncedTokenKey, defaultValue: '');
+        if (token == null && marker.startsWith('$userId|')) {
+          token = marker.substring(userId.length + 1).split('|').first;
+        }
+      }
+    }
+    if (token == null || token.isEmpty) return;
+    final String collection = '${FirebaseCollections.usersV2}/$userId/private';
+    await (client ?? firestoreClient).runTransaction<void>(
+      (FirestoreTransaction transaction) async {
+        final Map<String, dynamic>? session = await transaction.getDoc(collection, 'session');
+        if (session?['fcmToken'] != token) return;
+        transaction.setDoc(collection, 'session', <String, dynamic>{
+          'fcmToken': FirestoreSentinels.delete(),
+          'notificationLocalizationVersion': FirestoreSentinels.delete(),
+          'notificationLocalizationToken': FirestoreSentinels.delete(),
+          'fcmTokenBindingVersion': FirestoreSentinels.delete(),
+          'fcmTokenBindingToken': FirestoreSentinels.delete(),
+        }, merge: true);
       },
-      merge: true,
       sourceTag: 'fcm_token.clear_on_signout',
+      collection: collection,
+      docId: 'session',
     );
   }
 

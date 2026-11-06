@@ -27,6 +27,16 @@ export type NotificationCopy =
       tags: string;
     }
   | { kind: "folderDigest"; folderName: string; folderCount: number; wallCount: number; tags: string }
+  | {
+      kind: "topicDigest";
+      topicKey: string;
+      topicName: string;
+      secondTopicKey: string;
+      secondTopicName: string;
+      topicCount: number;
+      wallCount: number;
+      tags: string;
+    }
   | { kind: "folderActivity"; adderName: string; folderName: string; wallCount: number; otherCount: number }
   | { kind: "wallRequestFilled"; requestText: string }
   | { kind: "drawWinner" }
@@ -215,6 +225,21 @@ export function renderNotificationCopy(
         `New in ${copy.folderName}`,
       body: copy.tags || "Tap to see them all.",
     };
+  case "topicDigest":
+    return {
+      kind: copy.kind,
+      args: {
+        topicKey: copy.topicKey,
+        topicName: copy.topicName,
+        secondTopicKey: copy.secondTopicKey,
+        secondTopicName: copy.secondTopicName,
+        topicCount: copy.topicCount,
+        wallCount: copy.wallCount,
+        tags: copy.tags,
+      },
+      title: topicDigestTitle(copy),
+      body: copy.tags || "Tap to see what's new.",
+    };
   case "folderActivity":
     return {
       kind: copy.kind,
@@ -344,6 +369,26 @@ function followDigestTitle(copy: Extract<NotificationCopy, {kind: "followDigest"
   }
 }
 
+/** One wall, one topic, two topics, or more. Native resources have no plurals, so each is a key. */
+export function topicDigestShape(topicCount: number, wallCount: number): FollowDigestShape {
+  if (wallCount <= 1) return "one";
+  if (topicCount <= 1) return "solo";
+  return topicCount === 2 ? "pair" : "group";
+}
+
+function topicDigestTitle(copy: Extract<NotificationCopy, {kind: "topicDigest"}>): string {
+  switch (topicDigestShape(copy.topicCount, copy.wallCount)) {
+  case "one":
+    return `A new wall in ${copy.topicName}`;
+  case "solo":
+    return `${copy.wallCount} new walls in ${copy.topicName}`;
+  case "pair":
+    return `${copy.wallCount} new walls in ${copy.topicName} and ${copy.secondTopicName}`;
+  case "group":
+    return `${copy.wallCount} new walls in ${copy.topicName} and ${copy.topicCount - 1} other topics`;
+  }
+}
+
 export function notificationCopyPayload(copy: NotificationCopy): {
   title: string;
   body: string;
@@ -443,6 +488,20 @@ export function nativeNotificationLocalization(
     const folders = Number(message.args.folderCount ?? 0);
     titleSuffix = folders > 1 ? "_more" : "_one";
     titleArgs = folders > 1 ? [stringArg("folderName"), String(folders - 1)] : [stringArg("folderName")];
+    tagsBody();
+    break;
+  }
+  case "topicDigest": {
+    const topics = Number(message.args.topicCount ?? 0);
+    const walls = String(Number(message.args.wallCount ?? 0));
+    const shape = topicDigestShape(topics, Number(walls));
+    titleSuffix = `_${shape}`;
+    titleArgs = {
+      one: [stringArg("topicName")],
+      solo: [stringArg("topicName"), walls],
+      pair: [stringArg("topicName"), stringArg("secondTopicName"), walls],
+      group: [stringArg("topicName"), String(topics - 1), walls],
+    }[shape];
     tagsBody();
     break;
   }

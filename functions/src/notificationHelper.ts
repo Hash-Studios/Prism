@@ -45,6 +45,26 @@ export interface NotificationPayload {
   gallery?: PushGallery;
 }
 
+function notificationDocument(payload: NotificationPayload) {
+  return {
+    notification: {title: payload.title, body: payload.body},
+    ...(payload.message ? {message: {kind: payload.message.kind, args: payload.message.args}} : {}),
+    data: {
+      route: payload.data.route,
+      imageUrl: payload.imageUrl ?? "",
+      url: payload.data.url ?? "",
+      pageName: payload.data.pageName ?? "",
+      arguments: [],
+      ...Object.fromEntries(
+        Object.entries(payload.data).filter(([k]) => !["route", "url", "pageName"].includes(k)),
+      ),
+    },
+    modifier: payload.modifier,
+    pushHandled: true,
+    createdAt: admin.firestore.Timestamp.now(),
+  };
+}
+
 /**
  * Core notification helper — used by every Cloud Function that needs to
  * send a notification. It attempts two independent operations:
@@ -63,37 +83,7 @@ export async function sendNotification(
   if (!payload.pushOnly) {
     try {
       const inbox = db.collection("notifications");
-      const doc = {
-        notification: {
-          title: payload.title,
-          body: payload.body,
-        },
-        ...(payload.message ?
-          {
-            message: {
-              kind: payload.message.kind,
-              args: payload.message.args,
-            },
-          } :
-          {}),
-        data: {
-          route: payload.data.route,
-          imageUrl: payload.imageUrl ?? "",
-          url: payload.data.url ?? "",
-          pageName: payload.data.pageName ?? "",
-          arguments: [],
-          // Forward any extra fields (e.g. wall_id, follower_email)
-          ...Object.fromEntries(
-            Object.entries(payload.data).filter(
-              ([k]) => !["route", "url", "pageName"].includes(k),
-            ),
-          ),
-        },
-        modifier: payload.modifier,
-        // onNotificationCreated pushes entries without this flag.
-        pushHandled: true,
-        createdAt: admin.firestore.Timestamp.now(),
-      };
+      const doc = notificationDocument(payload);
       if (payload.docId) {
         await inbox.doc(payload.docId).set(doc);
       } else {
@@ -380,6 +370,8 @@ export interface PushRecipient {
   postAlertsToken?: string;
   /** When set, deliver only if this exact folder-alert token is still enabled in the private session. */
   folderAlertsToken?: string;
+  /** When set, deliver only if this exact topic-alert token is still enabled in the private session. */
+  topicAlertsToken?: string;
   /** Deprecated legacy token input. Kept for caller compatibility; never used for delivery. */
   legacyToken?: unknown;
 }
@@ -406,6 +398,7 @@ export async function userPushTokens(
   legacyToken: unknown,
   expectedPostAlertsToken?: string,
   expectedFolderAlertsToken?: string,
+  expectedTopicAlertsToken?: string,
 ): Promise<UserPushToken[]> {
   let session: Record<string, unknown> | undefined;
   try {
@@ -414,8 +407,19 @@ export async function userPushTokens(
     ).data();
   } catch (err) {
     logger.warn("Could not read the session FCM token.", {uid, err});
-    if (expectedPostAlertsToken || expectedFolderAlertsToken) throw err;
+    if (expectedPostAlertsToken || expectedFolderAlertsToken || expectedTopicAlertsToken) throw err;
   }
+  return sessionPushTokens(session, legacyToken, expectedPostAlertsToken, expectedFolderAlertsToken,
+    expectedTopicAlertsToken);
+}
+
+function sessionPushTokens(
+  session: Record<string, unknown> | undefined,
+  legacyToken: unknown,
+  expectedPostAlertsToken?: string,
+  expectedFolderAlertsToken?: string,
+  expectedTopicAlertsToken?: string,
+): UserPushToken[] {
   const sessionToken = pickFcmToken(session?.fcmToken, legacyToken);
   if (expectedPostAlertsToken && (session?.postAlerts !== true ||
     session?.postAlertsToken !== expectedPostAlertsToken || sessionToken !== expectedPostAlertsToken ||
@@ -423,6 +427,8 @@ export async function userPushTokens(
     session?.notificationLocalizationToken !== expectedPostAlertsToken)) return [];
   if (expectedFolderAlertsToken && (session?.folderAlerts !== true ||
     session?.folderAlertsToken !== expectedFolderAlertsToken || sessionToken !== expectedFolderAlertsToken)) return [];
+  if (expectedTopicAlertsToken && (session?.topicAlerts !== true ||
+    session?.topicAlertsToken !== expectedTopicAlertsToken || sessionToken !== expectedTopicAlertsToken)) return [];
   if (sessionToken) {
     if (
       session?.fcmTokenBindingVersion !== FCM_TOKEN_BINDING_VERSION ||
@@ -467,6 +473,24 @@ function personalCollapseKey(payload: PersonalPayload): string {
   return `p_${hash}`;
 }
 
+async function writeDigestInbox(payload: PersonalPayload, uid: string, recipient: PushRecipient): Promise<boolean> {
+  const inbox = database.collection("notifications");
+  const ref = payload.docId ? inbox.doc(payload.docId) : inbox.doc();
+  return database.runTransaction(async (tx) => {
+    const [account, barrier, session] = await tx.getAll(
+      database.doc(`usersv2/${uid}`),
+      database.doc(`creatorDeletionState/${uid}`),
+      database.doc(`usersv2/${uid}/private/session`),
+    );
+    const user = account.data();
+    if (!user || user.loggedIn === false || user.deleted === true || barrier.data()?.closed === true) return false;
+    if (sessionPushTokens(session.data(), recipient.legacyToken, recipient.postAlertsToken, recipient.folderAlertsToken,
+      recipient.topicAlertsToken).length === 0) return false;
+    tx.set(ref, notificationDocument(payload));
+    return true;
+  });
+}
+
 /**
  * Writes the in-app doc (unless pushOnly), then pushes only to the user's private session FCM token. The email-prefix
  * topic is shared by every address with the same prefix, so personal payloads never go there. Returns false when a
@@ -478,15 +502,13 @@ export async function sendToUser(
   pushEnabled = true,
 ): Promise<boolean> {
   const inboxPayload = {...payload, fcmTarget: undefined};
-  if (recipient.folderAlertsToken) {
+  const alertsToken = recipient.folderAlertsToken || recipient.topicAlertsToken;
+  if (alertsToken) {
     if (!recipient.uid || !pushEnabled || recipient.loggedOut) return true;
-    const [open, tokens] = await Promise.all([
-      userCanReceivePersonalPush(recipient.uid, true, true),
-      userPushTokens(recipient.uid, recipient.legacyToken, recipient.postAlertsToken, recipient.folderAlertsToken),
-    ]);
-    if (!open || tokens.length === 0) return true;
+    if (!payload.pushOnly && !(await writeDigestInbox(inboxPayload, recipient.uid, recipient))) return true;
+  } else {
+    await sendNotification(inboxPayload);
   }
-  await sendNotification(inboxPayload);
   if (!pushEnabled || recipient.loggedOut) return true;
 
   let pushPayload: PersonalPayload = inboxPayload;
@@ -509,15 +531,16 @@ export async function sendToUser(
     });
     return true;
   }
-  if (!(await userCanReceivePersonalPush(recipient.uid, Boolean(recipient.postAlertsToken || recipient.folderAlertsToken),
-    Boolean(recipient.folderAlertsToken)))) return true;
+  if (!(await userCanReceivePersonalPush(recipient.uid, Boolean(recipient.postAlertsToken || alertsToken),
+    Boolean(alertsToken)))) return true;
   const collapseKey = payload.collapseKey ?? personalCollapseKey(payload);
   const targets: Array<{
     fcmTarget: NonNullable<NotificationPayload["fcmTarget"]>;
     nativeLocalization?: boolean;
     nativeLocalizationVersion?: 1 | 2;
   }> = [
-    ...(await userPushTokens(recipient.uid, recipient.legacyToken, recipient.postAlertsToken, recipient.folderAlertsToken)).map(
+    ...(await userPushTokens(recipient.uid, recipient.legacyToken, recipient.postAlertsToken, recipient.folderAlertsToken,
+      recipient.topicAlertsToken)).map(
       ({token, nativeLocalization, nativeLocalizationVersion}) => ({
         fcmTarget: {token},
         nativeLocalization,
@@ -538,7 +561,7 @@ export async function sendToUser(
     ),
   );
   if (targets.length === 0) {
-    return recipient.postAlertsToken || recipient.folderAlertsToken ? true : sendInboxNudge(recipient.uid, payload.data.route);
+    return recipient.postAlertsToken || alertsToken ? true : sendInboxNudge(recipient.uid, payload.data.route);
   }
   return results.some(Boolean);
 }

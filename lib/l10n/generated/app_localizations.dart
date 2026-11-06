@@ -17653,6 +17653,168 @@ abstract class AppLocalizations {
   /// **'New in {folderName} and {count} more'**
   String notifPushFolderDigestTitleMore(String folderName, int count);
 
+  /// Button on a category or mood page. Follows it for a daily push about new wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow'**
+  String get topicFollow;
+
+  /// Button label when the user follows this category or mood. A tap stops following.
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get topicFollowing;
+
+  /// Screen reader label of the Follow button. topic is a category or mood name.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow {topic}'**
+  String topicFollowHint(String topic);
+
+  /// Screen reader label of a button that stops following a category or mood.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow {topic}'**
+  String topicUnfollowHint(String topic);
+
+  /// Toast after the user follows a category or mood.
+  ///
+  /// In en, this message translates to:
+  /// **'Following {topic}. With topic notifications on, you get at most one push a day about new wallpapers here.'**
+  String topicFollowedToast(String topic);
+
+  /// Toast when the user already follows the most topics allowed.
+  ///
+  /// In en, this message translates to:
+  /// **'You can follow up to {max} topics. Unfollow one in Settings first.'**
+  String topicFollowLimit(int max);
+
+  /// Toast when follow or unfollow of a category or mood fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the follow. Check your connection and try again.'**
+  String get topicFollowFailed;
+
+  /// Button in the list of followed topics. Stops following that topic.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow'**
+  String get topicUnfollow;
+
+  /// Small label under a followed topic that is a category.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get topicKindCategory;
+
+  /// Small label under a followed topic that is a Home mood, such as Dreamy.
+  ///
+  /// In en, this message translates to:
+  /// **'Mood'**
+  String get topicKindMood;
+
+  /// Header of the Home row of the categories and moods the user follows.
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get followingRowTitle;
+
+  /// Screen reader label of the Home row of followed topics.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories and moods you follow'**
+  String get followingRowLabel;
+
+  /// Screen reader label of a followed topic that has new wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'{topic}, new wallpapers'**
+  String topicNewWallpapers(String topic);
+
+  /// Settings row and sheet title: the categories and moods the user follows.
+  ///
+  /// In en, this message translates to:
+  /// **'Topics you follow'**
+  String get followedTopicsTitle;
+
+  /// Settings row subtitle: how many categories and moods the user follows.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{None yet} =1{1 topic} other{{count} topics}}'**
+  String followedTopicsCount(int count);
+
+  /// Empty state title of the followed topics sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'No topics yet'**
+  String get followedTopicsEmptyTitle;
+
+  /// Empty state body of the followed topics sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a category or a mood and tap Follow. With topic notifications on, you get at most one push a day about new wallpapers there.'**
+  String get followedTopicsEmptyBody;
+
+  /// Notification setting for new wallpapers in followed categories and moods.
+  ///
+  /// In en, this message translates to:
+  /// **'Topics you follow'**
+  String get notifSettingTopics;
+
+  /// Description of the followed topics notification setting.
+  ///
+  /// In en, this message translates to:
+  /// **'New wallpapers in categories and moods you follow, once a day'**
+  String get notifSettingTopicsDescription;
+
+  /// Layout settings section header for the Home page.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get layoutHomeHeader;
+
+  /// Layout setting switch. When on, Home shows a row of followed categories and moods.
+  ///
+  /// In en, this message translates to:
+  /// **'Show topics you follow'**
+  String get layoutFollowingRow;
+
+  /// Footnote under the layout setting for the followed topics row.
+  ///
+  /// In en, this message translates to:
+  /// **'A row at the top of For you. A dot marks a topic with new wallpapers.'**
+  String get layoutFollowingRowFootnote;
+
+  /// Daily push title: one new wallpaper in a followed category or mood.
+  ///
+  /// In en, this message translates to:
+  /// **'A new wall in {topic}'**
+  String notifPushTopicDigestTitleOne(String topic);
+
+  /// Daily push title: new wallpapers in one followed category or mood.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{A new wall in {topic}} other{{count} new walls in {topic}}}'**
+  String notifPushTopicDigestTitleSolo(int count, String topic);
+
+  /// Daily push title: new wallpapers in two followed categories or moods.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{A new wall in {topic} and {secondTopic}} other{{count} new walls in {topic} and {secondTopic}}}'**
+  String notifPushTopicDigestTitlePair(int count, String topic, String secondTopic);
+
+  /// Daily push title: new wallpapers in three or more followed topics. others is always 2 or more.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{A new wall in {topic} and {others} other topics} other{{count} new walls in {topic} and {others} other topics}}'**
+  String notifPushTopicDigestTitleGroup(int count, String topic, int others);
+
+  /// Daily push body when the new wallpapers have no tags.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see what\'s new.'**
+  String get notifPushTopicDigestBodyUntitled;
+
   /// History tab segment on Android: walls the user set as wallpaper or downloaded.
   ///
   /// In en, this message translates to:

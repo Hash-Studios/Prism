@@ -10247,6 +10247,183 @@
       }
     }
   },
+  "topicFollow": "Ikuti",
+  "@topicFollow": {
+    "description": "Button on a category or mood page. Follows it for a daily push about new wallpapers."
+  },
+  "topicFollowing": "Diikuti",
+  "@topicFollowing": {
+    "description": "Button label when the user follows this category or mood. A tap stops following."
+  },
+  "topicFollowHint": "Ikuti {topic}",
+  "@topicFollowHint": {
+    "description": "Screen reader label of the Follow button. topic is a category or mood name.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicUnfollowHint": "Berhenti mengikuti {topic}",
+  "@topicUnfollowHint": {
+    "description": "Screen reader label of a button that stops following a category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicFollowedToast": "Anda mengikuti {topic}. Jika notifikasi topik aktif, Anda mendapat paling banyak satu notifikasi per hari tentang wallpaper baru di sini.",
+  "@topicFollowedToast": {
+    "description": "Toast after the user follows a category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicFollowLimit": "Anda dapat mengikuti hingga {max} topik. Berhenti mengikuti salah satu di Pengaturan terlebih dahulu.",
+  "@topicFollowLimit": {
+    "description": "Toast when the user already follows the most topics allowed.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "topicFollowFailed": "Tidak dapat memperbarui status ikuti. Periksa koneksi Anda dan coba lagi.",
+  "@topicFollowFailed": {
+    "description": "Toast when follow or unfollow of a category or mood fails."
+  },
+  "topicUnfollow": "Berhenti ikuti",
+  "@topicUnfollow": {
+    "description": "Button in the list of followed topics. Stops following that topic."
+  },
+  "topicKindCategory": "Kategori",
+  "@topicKindCategory": {
+    "description": "Small label under a followed topic that is a category."
+  },
+  "topicKindMood": "Suasana",
+  "@topicKindMood": {
+    "description": "Small label under a followed topic that is a Home mood, such as Dreamy."
+  },
+  "followingRowTitle": "Diikuti",
+  "@followingRowTitle": {
+    "description": "Header of the Home row of the categories and moods the user follows."
+  },
+  "followingRowLabel": "Kategori dan suasana yang Anda ikuti",
+  "@followingRowLabel": {
+    "description": "Screen reader label of the Home row of followed topics."
+  },
+  "topicNewWallpapers": "{topic}, wallpaper baru",
+  "@topicNewWallpapers": {
+    "description": "Screen reader label of a followed topic that has new wallpapers.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "followedTopicsTitle": "Topik yang Anda ikuti",
+  "@followedTopicsTitle": {
+    "description": "Settings row and sheet title: the categories and moods the user follows."
+  },
+  "followedTopicsCount": "{count, plural, =0{Belum ada} =1{1 topik} other{{count} topik}}",
+  "@followedTopicsCount": {
+    "description": "Settings row subtitle: how many categories and moods the user follows.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "followedTopicsEmptyTitle": "Belum ada topik",
+  "@followedTopicsEmptyTitle": {
+    "description": "Empty state title of the followed topics sheet."
+  },
+  "followedTopicsEmptyBody": "Buka kategori atau suasana, lalu ketuk Ikuti. Jika notifikasi topik aktif, Anda mendapat paling banyak satu notifikasi per hari tentang wallpaper baru di sana.",
+  "@followedTopicsEmptyBody": {
+    "description": "Empty state body of the followed topics sheet."
+  },
+  "notifSettingTopics": "Topik yang Anda ikuti",
+  "@notifSettingTopics": {
+    "description": "Notification setting for new wallpapers in followed categories and moods."
+  },
+  "notifSettingTopicsDescription": "Wallpaper baru di kategori dan suasana yang Anda ikuti, sekali sehari",
+  "@notifSettingTopicsDescription": {
+    "description": "Description of the followed topics notification setting."
+  },
+  "layoutHomeHeader": "Beranda",
+  "@layoutHomeHeader": {
+    "description": "Layout settings section header for the Home page."
+  },
+  "layoutFollowingRow": "Tampilkan topik yang Anda ikuti",
+  "@layoutFollowingRow": {
+    "description": "Layout setting switch. When on, Home shows a row of followed categories and moods."
+  },
+  "layoutFollowingRowFootnote": "Baris di bagian atas Untuk Anda. Titik menandai topik dengan wallpaper baru.",
+  "@layoutFollowingRowFootnote": {
+    "description": "Footnote under the layout setting for the followed topics row."
+  },
+  "notifPushTopicDigestTitleOne": "Wallpaper baru di {topic}",
+  "@notifPushTopicDigestTitleOne": {
+    "description": "Daily push title: one new wallpaper in a followed category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitleSolo": "{count, plural, =1{Wallpaper baru di {topic}} other{{count} wallpaper baru di {topic}}}",
+  "@notifPushTopicDigestTitleSolo": {
+    "description": "Daily push title: new wallpapers in one followed category or mood.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitlePair": "{count, plural, =1{Wallpaper baru di {topic} dan {secondTopic}} other{{count} wallpaper baru di {topic} dan {secondTopic}}}",
+  "@notifPushTopicDigestTitlePair": {
+    "description": "Daily push title: new wallpapers in two followed categories or moods.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      },
+      "secondTopic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitleGroup": "{count, plural, =1{Wallpaper baru di {topic} dan {others} topik lainnya} other{{count} wallpaper baru di {topic} dan {others} topik lainnya}}",
+  "@notifPushTopicDigestTitleGroup": {
+    "description": "Daily push title: new wallpapers in three or more followed topics. others is always 2 or more.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      },
+      "others": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushTopicDigestBodyUntitled": "Ketuk untuk melihat yang baru.",
+  "@notifPushTopicDigestBodyUntitled": {
+    "description": "Daily push body when the new wallpapers have no tags."
+  },
   "historySetAndDownloaded": "Dipasang dan diunduh",
   "@historySetAndDownloaded": {
     "description": "History tab segment on Android: walls the user set as wallpaper or downloaded."
