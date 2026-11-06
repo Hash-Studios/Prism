@@ -4094,5 +4094,91 @@
   "foldersJoinFullBody": "Pide al propietario que quite a alguien y luego vuelve a abrir el enlace.",
   "foldersJoinUnavailableTitle": "Esta invitación no está disponible",
   "foldersJoinUnavailableBody": "Es posible que la carpeta se haya eliminado o que no puedas unirte a ella.",
-  "foldersMakePrivateMessageShared": "Solo tú y las personas que invitaste la verán. Su enlace dejará de funcionar y sus seguidores la perderán."
+  "foldersMakePrivateMessageShared": "Solo tú y las personas que invitaste la verán. Su enlace dejará de funcionar y sus seguidores la perderán.",
+  "photoWallEntryTitle": "Desde tu foto",
+  "photoWallEntrySubtitle": "Ajusta cualquier foto a tu pantalla",
+  "photoWallPickPhoto": "Elige una foto",
+  "photoWallPickAnother": "Elige otra foto",
+  "photoWallPrivacyNote": "Tu foto se envía a nuestro proveedor de IA, fal.ai, solo para este trabajo. Prism la elimina cuando termina el trabajo.",
+  "photoWallTargetLabel": "Hacerlo para",
+  "photoWallTargetPhone": "Teléfono",
+  "photoWallTargetDesktop": "Versión para escritorio",
+  "photoWallPlanExtend": "Extender para ajustarse a tu pantalla",
+  "photoWallPlanExtendDesktop": "Extender para ajustarse a una pantalla de escritorio",
+  "photoWallPlanExtendDetail": "La IA rellena los bordes que faltan alrededor de tu foto.",
+  "photoWallPlanUpscale": "Ampliar resolución",
+  "photoWallPlanUpscaleDetail": "La IA añade detalle para que la foto se vea nítida en tu pantalla.",
+  "photoWallPlanFits": "Esta foto ya se ajusta a tu pantalla",
+  "photoWallPlanFitsDesktop": "Esta foto ya se ajusta a una pantalla de escritorio",
+  "photoWallPlanFitsDetail": "Tiene la forma y el tamaño correctos. Elige otra foto o cambia el destino.",
+  "photoWallRunExtend": "{coins, plural, =1{Extender · 1 moneda} other{Extender · {coins} monedas}}",
+  "@photoWallRunExtend": {
+    "description": "Main button. Starts an Extend job and shows its coin cost.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "photoWallRunUpscale": "{coins, plural, =1{Ampliar · 1 moneda} other{Ampliar · {coins} monedas}}",
+  "@photoWallRunUpscale": {
+    "description": "Main button. Starts an Upscale job and shows its coin cost.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "photoWallGetCoins": "Consigue monedas · necesitas {coins}",
+  "@photoWallGetCoins": {
+    "description": "Main button when the balance is too low. Opens Rewards.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "photoWallPlaceTitle": "Coloca tu foto",
+  "photoWallPlaceHint": "Arrastra para mover. Pellizca para hacerla más pequeña.",
+  "photoWallPlaceReset": "Restablecer posición",
+  "photoWallPlaceSemantics": "Posición de la foto en el marco",
+  "photoWallPlaceMoveStart": "Mover al inicio",
+  "photoWallPlaceMoveCentre": "Mover al centro",
+  "photoWallPlaceMoveEnd": "Mover al final",
+  "photoWallWorkingExtend": "Extendiendo tu foto",
+  "photoWallWorkingUpscale": "Ampliando la resolución de tu foto",
+  "photoWallWorkingDetail": "Puede tardar hasta un minuto.",
+  "photoWallBefore": "Antes",
+  "photoWallAfter": "Después",
+  "photoWallCompareSemantics": "Antes y después. Desliza hacia arriba o hacia abajo para comparar.",
+  "photoWallSet": "Definir como fondo de pantalla",
+  "photoWallDownload": "Descargar",
+  "photoWallSaved": "Guardado en tu dispositivo",
+  "photoWallStartOver": "Usar otra foto",
+  "photoWallErrorUnsafeInput": "No se puede usar esta foto. Elige otra foto.",
+  "photoWallErrorUnsafeOutput": "Se bloqueó el resultado. Inténtalo de nuevo o elige otra foto.",
+  "photoWallErrorLimit": "Has alcanzado el límite de hoy de {count} fondos de pantalla con fotos.",
+  "@photoWallErrorLimit": {
+    "description": "Error when the daily cap is reached.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photoWallErrorBusy": "Los fondos de pantalla con fotos están muy ocupados ahora mismo. Inténtalo más tarde.",
+  "photoWallErrorUnreadable": "No se puede abrir esta foto. Elige otra foto.",
+  "photoWallErrorInProgress": "Todavía se está procesando tu última foto.",
+  "photoWallErrorGeneric": "No se pudo crear el fondo de pantalla. Inténtalo de nuevo.",
+  "photoWallRefunded": "{coins, plural, =1{Tu moneda se ha devuelto.} other{Tus {coins} monedas se han devuelto.}}",
+  "@photoWallRefunded": {
+    "description": "Added after an error when the server refunded the coins.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "photoWallRefundPending": "Tus monedas se devolverán.",
+  "photoWallTryAgain": "Inténtalo de nuevo"
 }

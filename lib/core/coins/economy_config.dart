@@ -64,6 +64,8 @@ class EconomySpend {
     this.drawTicket = 20,
     this.spinWheel = 10,
     this.dailyChest = 8,
+    this.photoExtend = 75,
+    this.photoUpscale = 10,
   });
 
   factory EconomySpend.fromMap(Map<String, dynamic> m) {
@@ -87,6 +89,8 @@ class EconomySpend {
       drawTicket: _int(m['drawTicket'], d.drawTicket),
       spinWheel: _int(m['spinWheel'], d.spinWheel),
       dailyChest: _int(m['dailyChest'], d.dailyChest),
+      photoExtend: _int(m['photoExtend'], d.photoExtend),
+      photoUpscale: _int(m['photoUpscale'], d.photoUpscale),
     );
   }
 
@@ -112,6 +116,10 @@ class EconomySpend {
 
   /// What the daily chest costs before today's quests are done.
   final int dailyChest;
+
+  /// What a photo wallpaper job costs: Extend to the screen shape, or Upscale.
+  final int photoExtend;
+  final int photoUpscale;
 }
 
 class SpinSegment {
@@ -355,7 +363,7 @@ class EconomyConfig {
   const EconomyConfig({
     this.version = 2,
     this.spend = const EconomySpend(),
-    this.proDiscountActions = const <String>['aiGeneration', 'dropWall', 'dropPack'],
+    this.proDiscountActions = const <String>['aiGeneration', 'dropWall', 'dropPack', 'photoWallpaper'],
     this.proBypassActions = const <String>[
       'wallpaperDownload',
       'premiumWallpaperDownload',

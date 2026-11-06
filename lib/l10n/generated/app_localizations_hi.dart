@@ -14759,4 +14759,171 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get foldersMakePrivateMessageShared =>
       'इसे सिर्फ़ आप और आपके आमंत्रित लोग देखेंगे। इसका लिंक काम करना बंद कर देगा और इसके फ़ॉलोअर इसे खो देंगे।';
+
+  @override
+  String get photoWallEntryTitle => 'आपकी फ़ोटो से';
+
+  @override
+  String get photoWallEntrySubtitle => 'कोई भी फ़ोटो अपनी स्क्रीन के हिसाब से सेट करें';
+
+  @override
+  String get photoWallPickPhoto => 'कोई फ़ोटो चुनें';
+
+  @override
+  String get photoWallPickAnother => 'कोई और फ़ोटो चुनें';
+
+  @override
+  String get photoWallPrivacyNote =>
+      'आपकी फ़ोटो इस काम के लिए ही हमारे AI प्रदाता fal.ai को भेजी जाती है। काम खत्म होने पर Prism उसे हटा देता है।';
+
+  @override
+  String get photoWallTargetLabel => 'इसके लिए बनाएँ';
+
+  @override
+  String get photoWallTargetPhone => 'फ़ोन';
+
+  @override
+  String get photoWallTargetDesktop => 'डेस्कटॉप वर्शन';
+
+  @override
+  String get photoWallPlanExtend => 'आपकी स्क्रीन के हिसाब से बढ़ाएँ';
+
+  @override
+  String get photoWallPlanExtendDesktop => 'डेस्कटॉप स्क्रीन के हिसाब से बढ़ाएँ';
+
+  @override
+  String get photoWallPlanExtendDetail => 'AI आपकी फ़ोटो के आसपास के खाली किनारे भर देता है।';
+
+  @override
+  String get photoWallPlanUpscale => 'अपस्केल';
+
+  @override
+  String get photoWallPlanUpscaleDetail => 'AI विवरण जोड़ता है, ताकि आपकी स्क्रीन पर फ़ोटो साफ़ दिखे।';
+
+  @override
+  String get photoWallPlanFits => 'यह फ़ोटो आपकी स्क्रीन में पहले से फ़िट है';
+
+  @override
+  String get photoWallPlanFitsDesktop => 'यह फ़ोटो डेस्कटॉप स्क्रीन में पहले से फ़िट है';
+
+  @override
+  String get photoWallPlanFitsDetail => 'इसका आकार और साइज़ सही है। कोई और फ़ोटो चुनें या लक्ष्य बदलें।';
+
+  @override
+  String photoWallRunExtend(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'बढ़ाएँ · $coins कॉइन',
+      one: 'बढ़ाएँ · 1 कॉइन',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String photoWallRunUpscale(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'अपस्केल · $coins कॉइन',
+      one: 'अपस्केल · 1 कॉइन',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String photoWallGetCoins(int coins) {
+    return 'कॉइन पाएँ · $coins चाहिए';
+  }
+
+  @override
+  String get photoWallPlaceTitle => 'अपनी फ़ोटो सेट करें';
+
+  @override
+  String get photoWallPlaceHint => 'हिलाने के लिए खींचें। छोटा करने के लिए पिंच करें।';
+
+  @override
+  String get photoWallPlaceReset => 'स्थिति रीसेट करें';
+
+  @override
+  String get photoWallPlaceSemantics => 'फ़्रेम में फ़ोटो की स्थिति';
+
+  @override
+  String get photoWallPlaceMoveStart => 'शुरुआत तक ले जाएँ';
+
+  @override
+  String get photoWallPlaceMoveCentre => 'बीच में ले जाएँ';
+
+  @override
+  String get photoWallPlaceMoveEnd => 'आखिर तक ले जाएँ';
+
+  @override
+  String get photoWallWorkingExtend => 'आपकी फ़ोटो बढ़ाई जा रही है';
+
+  @override
+  String get photoWallWorkingUpscale => 'आपकी फ़ोटो की क्वालिटी बढ़ाई जा रही है';
+
+  @override
+  String get photoWallWorkingDetail => 'इसमें एक मिनट तक लग सकता है।';
+
+  @override
+  String get photoWallBefore => 'पहले';
+
+  @override
+  String get photoWallAfter => 'बाद में';
+
+  @override
+  String get photoWallCompareSemantics => 'पहले और बाद में। तुलना करने के लिए ऊपर या नीचे स्वाइप करें।';
+
+  @override
+  String get photoWallSet => 'वॉलपेपर के रूप में सेट करें';
+
+  @override
+  String get photoWallDownload => 'डाउनलोड करें';
+
+  @override
+  String get photoWallSaved => 'आपके डिवाइस में सहेजा गया';
+
+  @override
+  String get photoWallStartOver => 'कोई और फ़ोटो इस्तेमाल करें';
+
+  @override
+  String get photoWallErrorUnsafeInput => 'यह फ़ोटो इस्तेमाल नहीं की जा सकती। कोई और फ़ोटो चुनें।';
+
+  @override
+  String get photoWallErrorUnsafeOutput => 'नतीजे को रोक दिया गया। फिर से कोशिश करें या कोई और फ़ोटो चुनें।';
+
+  @override
+  String photoWallErrorLimit(int count) {
+    return 'आज की $count फ़ोटो वॉलपेपर की सीमा पूरी हो गई है।';
+  }
+
+  @override
+  String get photoWallErrorBusy => 'फ़ोटो वॉलपेपर इस समय बहुत व्यस्त हैं। बाद में फिर कोशिश करें।';
+
+  @override
+  String get photoWallErrorUnreadable => 'यह फ़ोटो नहीं खुल सकती। कोई और फ़ोटो चुनें।';
+
+  @override
+  String get photoWallErrorInProgress => 'आपकी पिछली फ़ोटो पर अभी भी काम चल रहा है।';
+
+  @override
+  String get photoWallErrorGeneric => 'वॉलपेपर नहीं बनाया जा सका। फिर से कोशिश करें।';
+
+  @override
+  String photoWallRefunded(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'आपके $coins कॉइन लौटा दिए गए हैं।',
+      one: 'आपका 1 कॉइन लौटा दिया गया है।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photoWallRefundPending => 'आपके कॉइन लौटा दिए जाएँगे।';
+
+  @override
+  String get photoWallTryAgain => 'फिर से कोशिश करें';
 }

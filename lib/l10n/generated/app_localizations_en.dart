@@ -14607,4 +14607,171 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get foldersMakePrivateMessageShared =>
       'Only you and the people you invited will see it. Its link stops working and its followers lose it.';
+
+  @override
+  String get photoWallEntryTitle => 'From your photo';
+
+  @override
+  String get photoWallEntrySubtitle => 'Fit any photo to your screen';
+
+  @override
+  String get photoWallPickPhoto => 'Choose a photo';
+
+  @override
+  String get photoWallPickAnother => 'Choose another photo';
+
+  @override
+  String get photoWallPrivacyNote =>
+      'Your photo goes to our AI provider, fal.ai, for this job only. Prism deletes it when the job ends.';
+
+  @override
+  String get photoWallTargetLabel => 'Make it for';
+
+  @override
+  String get photoWallTargetPhone => 'Phone';
+
+  @override
+  String get photoWallTargetDesktop => 'Desktop version';
+
+  @override
+  String get photoWallPlanExtend => 'Extend to fit your screen';
+
+  @override
+  String get photoWallPlanExtendDesktop => 'Extend to fit a desktop screen';
+
+  @override
+  String get photoWallPlanExtendDetail => 'AI fills in the missing edges around your photo.';
+
+  @override
+  String get photoWallPlanUpscale => 'Upscale';
+
+  @override
+  String get photoWallPlanUpscaleDetail => 'AI adds detail so the photo stays sharp on your screen.';
+
+  @override
+  String get photoWallPlanFits => 'This photo already fits your screen';
+
+  @override
+  String get photoWallPlanFitsDesktop => 'This photo already fits a desktop screen';
+
+  @override
+  String get photoWallPlanFitsDetail => 'It has the right shape and size. Choose another photo or switch the target.';
+
+  @override
+  String photoWallRunExtend(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Extend · $coins coins',
+      one: 'Extend · 1 coin',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String photoWallRunUpscale(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Upscale · $coins coins',
+      one: 'Upscale · 1 coin',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String photoWallGetCoins(int coins) {
+    return 'Get coins · need $coins';
+  }
+
+  @override
+  String get photoWallPlaceTitle => 'Place your photo';
+
+  @override
+  String get photoWallPlaceHint => 'Drag to move. Pinch to make it smaller.';
+
+  @override
+  String get photoWallPlaceReset => 'Reset position';
+
+  @override
+  String get photoWallPlaceSemantics => 'Photo position in the frame';
+
+  @override
+  String get photoWallPlaceMoveStart => 'Move to start';
+
+  @override
+  String get photoWallPlaceMoveCentre => 'Move to centre';
+
+  @override
+  String get photoWallPlaceMoveEnd => 'Move to end';
+
+  @override
+  String get photoWallWorkingExtend => 'Extending your photo';
+
+  @override
+  String get photoWallWorkingUpscale => 'Upscaling your photo';
+
+  @override
+  String get photoWallWorkingDetail => 'This can take up to a minute.';
+
+  @override
+  String get photoWallBefore => 'Before';
+
+  @override
+  String get photoWallAfter => 'After';
+
+  @override
+  String get photoWallCompareSemantics => 'Before and after. Swipe up or down to compare.';
+
+  @override
+  String get photoWallSet => 'Set as wallpaper';
+
+  @override
+  String get photoWallDownload => 'Download';
+
+  @override
+  String get photoWallSaved => 'Saved to your device';
+
+  @override
+  String get photoWallStartOver => 'Use another photo';
+
+  @override
+  String get photoWallErrorUnsafeInput => 'This photo can\'t be used. Choose another photo.';
+
+  @override
+  String get photoWallErrorUnsafeOutput => 'The result was blocked. Try again or choose another photo.';
+
+  @override
+  String photoWallErrorLimit(int count) {
+    return 'You reached today\'s limit of $count photo wallpapers.';
+  }
+
+  @override
+  String get photoWallErrorBusy => 'Photo wallpapers are very busy right now. Try again later.';
+
+  @override
+  String get photoWallErrorUnreadable => 'This photo can\'t be opened. Choose another photo.';
+
+  @override
+  String get photoWallErrorInProgress => 'Still working on your last photo.';
+
+  @override
+  String get photoWallErrorGeneric => 'Couldn\'t make the wallpaper. Try again.';
+
+  @override
+  String photoWallRefunded(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Your $coins coins were returned.',
+      one: 'Your coin was returned.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photoWallRefundPending => 'Your coins will be returned.';
+
+  @override
+  String get photoWallTryAgain => 'Try again';
 }

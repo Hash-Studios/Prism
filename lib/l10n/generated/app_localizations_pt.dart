@@ -14984,6 +14984,174 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get foldersMakePrivateMessageShared =>
       'Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso.';
+
+  @override
+  String get photoWallEntryTitle => 'A partir da sua foto';
+
+  @override
+  String get photoWallEntrySubtitle => 'Adapte qualquer fotografia ao seu ecrã';
+
+  @override
+  String get photoWallPickPhoto => 'Escolha uma fotografia';
+
+  @override
+  String get photoWallPickAnother => 'Escolha outra fotografia';
+
+  @override
+  String get photoWallPrivacyNote =>
+      'A sua fotografia é enviada ao nosso fornecedor de IA, o fal.ai, apenas para este trabalho. A Prism apaga-a quando o trabalho terminar.';
+
+  @override
+  String get photoWallTargetLabel => 'Criar para';
+
+  @override
+  String get photoWallTargetPhone => 'Telemóvel';
+
+  @override
+  String get photoWallTargetDesktop => 'Versão para computador';
+
+  @override
+  String get photoWallPlanExtend => 'Estender para caber no seu ecrã';
+
+  @override
+  String get photoWallPlanExtendDesktop => 'Estender para caber num ecrã de computador';
+
+  @override
+  String get photoWallPlanExtendDetail => 'A IA preenche as margens que faltam em volta da sua fotografia.';
+
+  @override
+  String get photoWallPlanUpscale => 'Aumentar resolução';
+
+  @override
+  String get photoWallPlanUpscaleDetail => 'A IA acrescenta detalhe para que a fotografia fique nítida no seu ecrã.';
+
+  @override
+  String get photoWallPlanFits => 'Esta fotografia já cabe no seu ecrã';
+
+  @override
+  String get photoWallPlanFitsDesktop => 'Esta fotografia já cabe num ecrã de computador';
+
+  @override
+  String get photoWallPlanFitsDetail => 'A forma e o tamanho estão certos. Escolha outra fotografia ou mude o destino.';
+
+  @override
+  String photoWallRunExtend(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Estender · $coins moedas',
+      one: 'Estender · 1 moeda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String photoWallRunUpscale(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Aumentar · $coins moedas',
+      one: 'Aumentar · 1 moeda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String photoWallGetCoins(int coins) {
+    return 'Obter moedas · necessita de $coins';
+  }
+
+  @override
+  String get photoWallPlaceTitle => 'Posicione a sua fotografia';
+
+  @override
+  String get photoWallPlaceHint => 'Arraste para mover. Belisque para diminuir.';
+
+  @override
+  String get photoWallPlaceReset => 'Repor posição';
+
+  @override
+  String get photoWallPlaceSemantics => 'Posição da fotografia na moldura';
+
+  @override
+  String get photoWallPlaceMoveStart => 'Mover para o início';
+
+  @override
+  String get photoWallPlaceMoveCentre => 'Mover para o centro';
+
+  @override
+  String get photoWallPlaceMoveEnd => 'Mover para o fim';
+
+  @override
+  String get photoWallWorkingExtend => 'A estender a sua fotografia';
+
+  @override
+  String get photoWallWorkingUpscale => 'A aumentar a resolução da sua fotografia';
+
+  @override
+  String get photoWallWorkingDetail => 'Isto pode demorar até um minuto.';
+
+  @override
+  String get photoWallBefore => 'Antes';
+
+  @override
+  String get photoWallAfter => 'Depois';
+
+  @override
+  String get photoWallCompareSemantics => 'Antes e depois. Deslize para cima ou para baixo para comparar.';
+
+  @override
+  String get photoWallSet => 'Definir como papel de parede';
+
+  @override
+  String get photoWallDownload => 'Transferir';
+
+  @override
+  String get photoWallSaved => 'Guardado no seu dispositivo';
+
+  @override
+  String get photoWallStartOver => 'Usar outra fotografia';
+
+  @override
+  String get photoWallErrorUnsafeInput => 'Não é possível usar esta fotografia. Escolha outra.';
+
+  @override
+  String get photoWallErrorUnsafeOutput => 'O resultado foi bloqueado. Tente novamente ou escolha outra fotografia.';
+
+  @override
+  String photoWallErrorLimit(int count) {
+    return 'Atingiu o limite de hoje de $count papéis de parede com fotografias.';
+  }
+
+  @override
+  String get photoWallErrorBusy =>
+      'Os papéis de parede com fotografias estão muito ocupados neste momento. Tente mais tarde.';
+
+  @override
+  String get photoWallErrorUnreadable => 'Não é possível abrir esta fotografia. Escolha outra.';
+
+  @override
+  String get photoWallErrorInProgress => 'Ainda estamos a trabalhar na sua última fotografia.';
+
+  @override
+  String get photoWallErrorGeneric => 'Não foi possível criar o papel de parede. Tente novamente.';
+
+  @override
+  String photoWallRefunded(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'As suas $coins moedas foram devolvidas.',
+      one: 'A sua moeda foi devolvida.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photoWallRefundPending => 'As suas moedas serão devolvidas.';
+
+  @override
+  String get photoWallTryAgain => 'Tentar novamente';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -29964,4 +30132,172 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get foldersMakePrivateMessageShared =>
       'Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso.';
+
+  @override
+  String get photoWallEntryTitle => 'A partir da sua foto';
+
+  @override
+  String get photoWallEntrySubtitle => 'Ajuste qualquer foto à sua tela';
+
+  @override
+  String get photoWallPickPhoto => 'Escolha uma foto';
+
+  @override
+  String get photoWallPickAnother => 'Escolha outra foto';
+
+  @override
+  String get photoWallPrivacyNote =>
+      'Sua foto é enviada ao nosso provedor de IA, o fal.ai, apenas para este trabalho. O Prism a apaga quando o trabalho termina.';
+
+  @override
+  String get photoWallTargetLabel => 'Criar para';
+
+  @override
+  String get photoWallTargetPhone => 'Celular';
+
+  @override
+  String get photoWallTargetDesktop => 'Versão para computador';
+
+  @override
+  String get photoWallPlanExtend => 'Estender para caber na sua tela';
+
+  @override
+  String get photoWallPlanExtendDesktop => 'Estender para caber em uma tela de computador';
+
+  @override
+  String get photoWallPlanExtendDetail => 'A IA preenche as bordas que faltam ao redor da sua foto.';
+
+  @override
+  String get photoWallPlanUpscale => 'Aumentar resolução';
+
+  @override
+  String get photoWallPlanUpscaleDetail => 'A IA adiciona detalhes para que a foto fique nítida na sua tela.';
+
+  @override
+  String get photoWallPlanFits => 'Esta foto já cabe na sua tela';
+
+  @override
+  String get photoWallPlanFitsDesktop => 'Esta foto já cabe em uma tela de computador';
+
+  @override
+  String get photoWallPlanFitsDetail => 'A forma e o tamanho estão certos. Escolha outra foto ou mude o destino.';
+
+  @override
+  String photoWallRunExtend(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Estender · $coins moedas',
+      one: 'Estender · 1 moeda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String photoWallRunUpscale(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Aumentar · $coins moedas',
+      one: 'Aumentar · 1 moeda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String photoWallGetCoins(int coins) {
+    return 'Obter moedas · precisa de $coins';
+  }
+
+  @override
+  String get photoWallPlaceTitle => 'Posicione sua foto';
+
+  @override
+  String get photoWallPlaceHint => 'Arraste para mover. Belisque para diminuir.';
+
+  @override
+  String get photoWallPlaceReset => 'Redefinir posição';
+
+  @override
+  String get photoWallPlaceSemantics => 'Posição da foto na moldura';
+
+  @override
+  String get photoWallPlaceMoveStart => 'Mover para o início';
+
+  @override
+  String get photoWallPlaceMoveCentre => 'Mover para o centro';
+
+  @override
+  String get photoWallPlaceMoveEnd => 'Mover para o fim';
+
+  @override
+  String get photoWallWorkingExtend => 'Estendendo sua foto';
+
+  @override
+  String get photoWallWorkingUpscale => 'Aumentando a resolução da sua foto';
+
+  @override
+  String get photoWallWorkingDetail => 'Isso pode levar até um minuto.';
+
+  @override
+  String get photoWallBefore => 'Antes';
+
+  @override
+  String get photoWallAfter => 'Depois';
+
+  @override
+  String get photoWallCompareSemantics => 'Antes e depois. Deslize para cima ou para baixo para comparar.';
+
+  @override
+  String get photoWallSet => 'Definir como papel de parede';
+
+  @override
+  String get photoWallDownload => 'Baixar';
+
+  @override
+  String get photoWallSaved => 'Salvo no seu dispositivo';
+
+  @override
+  String get photoWallStartOver => 'Usar outra foto';
+
+  @override
+  String get photoWallErrorUnsafeInput => 'Não é possível usar esta foto. Escolha outra.';
+
+  @override
+  String get photoWallErrorUnsafeOutput => 'O resultado foi bloqueado. Tente novamente ou escolha outra foto.';
+
+  @override
+  String photoWallErrorLimit(int count) {
+    return 'Você atingiu o limite de hoje de $count papéis de parede com fotos.';
+  }
+
+  @override
+  String get photoWallErrorBusy =>
+      'Os papéis de parede com fotos estão muito ocupados agora. Tente novamente mais tarde.';
+
+  @override
+  String get photoWallErrorUnreadable => 'Não é possível abrir esta foto. Escolha outra.';
+
+  @override
+  String get photoWallErrorInProgress => 'Ainda estamos trabalhando na sua última foto.';
+
+  @override
+  String get photoWallErrorGeneric => 'Não foi possível criar o papel de parede. Tente novamente.';
+
+  @override
+  String photoWallRefunded(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Suas $coins moedas foram devolvidas.',
+      one: 'Sua moeda foi devolvida.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photoWallRefundPending => 'Suas moedas serão devolvidas.';
+
+  @override
+  String get photoWallTryAgain => 'Tentar novamente';
 }

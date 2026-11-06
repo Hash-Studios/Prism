@@ -14668,4 +14668,171 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get foldersMakePrivateMessageShared =>
       'Hanya Anda dan orang yang Anda undang yang bisa melihatnya. Tautannya berhenti berfungsi dan pengikutnya kehilangan folder ini.';
+
+  @override
+  String get photoWallEntryTitle => 'Dari fotomu';
+
+  @override
+  String get photoWallEntrySubtitle => 'Sesuaikan foto apa pun dengan layarmu';
+
+  @override
+  String get photoWallPickPhoto => 'Pilih foto';
+
+  @override
+  String get photoWallPickAnother => 'Pilih foto lain';
+
+  @override
+  String get photoWallPrivacyNote =>
+      'Fotomu dikirim ke penyedia AI kami, fal.ai, hanya untuk tugas ini. Prism menghapusnya saat tugas selesai.';
+
+  @override
+  String get photoWallTargetLabel => 'Buat untuk';
+
+  @override
+  String get photoWallTargetPhone => 'Ponsel';
+
+  @override
+  String get photoWallTargetDesktop => 'Versi desktop';
+
+  @override
+  String get photoWallPlanExtend => 'Perluas agar pas dengan layarmu';
+
+  @override
+  String get photoWallPlanExtendDesktop => 'Perluas agar pas dengan layar desktop';
+
+  @override
+  String get photoWallPlanExtendDetail => 'AI mengisi tepi yang kurang di sekitar fotomu.';
+
+  @override
+  String get photoWallPlanUpscale => 'Tingkatkan resolusi';
+
+  @override
+  String get photoWallPlanUpscaleDetail => 'AI menambahkan detail agar fotomu tetap tajam di layarmu.';
+
+  @override
+  String get photoWallPlanFits => 'Foto ini sudah pas dengan layarmu';
+
+  @override
+  String get photoWallPlanFitsDesktop => 'Foto ini sudah pas dengan layar desktop';
+
+  @override
+  String get photoWallPlanFitsDetail => 'Bentuk dan ukurannya sudah sesuai. Pilih foto lain atau ubah tujuannya.';
+
+  @override
+  String photoWallRunExtend(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Perluas · $coins koin',
+      one: 'Perluas · 1 koin',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String photoWallRunUpscale(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Tingkatkan · $coins koin',
+      one: 'Tingkatkan · 1 koin',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String photoWallGetCoins(int coins) {
+    return 'Dapatkan koin · perlu $coins';
+  }
+
+  @override
+  String get photoWallPlaceTitle => 'Atur posisi fotomu';
+
+  @override
+  String get photoWallPlaceHint => 'Seret untuk memindahkan. Cubit untuk memperkecil.';
+
+  @override
+  String get photoWallPlaceReset => 'Atur ulang posisi';
+
+  @override
+  String get photoWallPlaceSemantics => 'Posisi foto dalam bingkai';
+
+  @override
+  String get photoWallPlaceMoveStart => 'Pindah ke awal';
+
+  @override
+  String get photoWallPlaceMoveCentre => 'Pindah ke tengah';
+
+  @override
+  String get photoWallPlaceMoveEnd => 'Pindah ke akhir';
+
+  @override
+  String get photoWallWorkingExtend => 'Memperluas fotomu';
+
+  @override
+  String get photoWallWorkingUpscale => 'Meningkatkan resolusi fotomu';
+
+  @override
+  String get photoWallWorkingDetail => 'Ini bisa memakan waktu hingga satu menit.';
+
+  @override
+  String get photoWallBefore => 'Sebelum';
+
+  @override
+  String get photoWallAfter => 'Sesudah';
+
+  @override
+  String get photoWallCompareSemantics => 'Sebelum dan sesudah. Geser ke atas atau ke bawah untuk membandingkan.';
+
+  @override
+  String get photoWallSet => 'Atur sebagai wallpaper';
+
+  @override
+  String get photoWallDownload => 'Unduh';
+
+  @override
+  String get photoWallSaved => 'Disimpan ke perangkatmu';
+
+  @override
+  String get photoWallStartOver => 'Pakai foto lain';
+
+  @override
+  String get photoWallErrorUnsafeInput => 'Foto ini tidak dapat digunakan. Pilih foto lain.';
+
+  @override
+  String get photoWallErrorUnsafeOutput => 'Hasilnya diblokir. Coba lagi atau pilih foto lain.';
+
+  @override
+  String photoWallErrorLimit(int count) {
+    return 'Kamu sudah mencapai batas hari ini, yaitu $count wallpaper foto.';
+  }
+
+  @override
+  String get photoWallErrorBusy => 'Wallpaper foto sedang sangat sibuk. Coba lagi nanti.';
+
+  @override
+  String get photoWallErrorUnreadable => 'Foto ini tidak dapat dibuka. Pilih foto lain.';
+
+  @override
+  String get photoWallErrorInProgress => 'Fotomu yang terakhir masih diproses.';
+
+  @override
+  String get photoWallErrorGeneric => 'Tidak dapat membuat wallpaper. Coba lagi.';
+
+  @override
+  String photoWallRefunded(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: '$coins koin kamu sudah dikembalikan.',
+      one: 'Koin kamu sudah dikembalikan.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photoWallRefundPending => 'Koin kamu akan dikembalikan.';
+
+  @override
+  String get photoWallTryAgain => 'Coba lagi';
 }

@@ -14788,5 +14788,214 @@
   "foldersMakePrivateMessageShared": "इसे सिर्फ़ आप और आपके आमंत्रित लोग देखेंगे। इसका लिंक काम करना बंद कर देगा और इसके फ़ॉलोअर इसे खो देंगे।",
   "@foldersMakePrivateMessageShared": {
     "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
+  },
+  "photoWallEntryTitle": "आपकी फ़ोटो से",
+  "@photoWallEntryTitle": {
+    "description": "Entry card on the AI tab that opens photo to wallpaper."
+  },
+  "photoWallEntrySubtitle": "कोई भी फ़ोटो अपनी स्क्रीन के हिसाब से सेट करें",
+  "@photoWallEntrySubtitle": {
+    "description": "Subtitle of the From your photo entry card."
+  },
+  "photoWallPickPhoto": "कोई फ़ोटो चुनें",
+  "@photoWallPickPhoto": {
+    "description": "Button that opens the photo gallery."
+  },
+  "photoWallPickAnother": "कोई और फ़ोटो चुनें",
+  "@photoWallPickAnother": {
+    "description": "Button that replaces the picked photo."
+  },
+  "photoWallPrivacyNote": "आपकी फ़ोटो इस काम के लिए ही हमारे AI प्रदाता fal.ai को भेजी जाती है। काम खत्म होने पर Prism उसे हटा देता है।",
+  "@photoWallPrivacyNote": {
+    "description": "Privacy note under the photo picker."
+  },
+  "photoWallTargetLabel": "इसके लिए बनाएँ",
+  "@photoWallTargetLabel": {
+    "description": "Label of the phone or desktop choice."
+  },
+  "photoWallTargetPhone": "फ़ोन",
+  "@photoWallTargetPhone": {
+    "description": "Choice: make a phone wallpaper."
+  },
+  "photoWallTargetDesktop": "डेस्कटॉप वर्शन",
+  "@photoWallTargetDesktop": {
+    "description": "Choice: make a 16:10 desktop wallpaper."
+  },
+  "photoWallPlanExtend": "आपकी स्क्रीन के हिसाब से बढ़ाएँ",
+  "@photoWallPlanExtend": {
+    "description": "Plan shown when the photo has the wrong shape for a phone."
+  },
+  "photoWallPlanExtendDesktop": "डेस्कटॉप स्क्रीन के हिसाब से बढ़ाएँ",
+  "@photoWallPlanExtendDesktop": {
+    "description": "Plan shown when the photo has the wrong shape for a desktop."
+  },
+  "photoWallPlanExtendDetail": "AI आपकी फ़ोटो के आसपास के खाली किनारे भर देता है।",
+  "@photoWallPlanExtendDetail": {
+    "description": "Detail under the Extend plan."
+  },
+  "photoWallPlanUpscale": "अपस्केल",
+  "@photoWallPlanUpscale": {
+    "description": "Plan shown when the photo is too small."
+  },
+  "photoWallPlanUpscaleDetail": "AI विवरण जोड़ता है, ताकि आपकी स्क्रीन पर फ़ोटो साफ़ दिखे।",
+  "@photoWallPlanUpscaleDetail": {
+    "description": "Detail under the Upscale plan."
+  },
+  "photoWallPlanFits": "यह फ़ोटो आपकी स्क्रीन में पहले से फ़िट है",
+  "@photoWallPlanFits": {
+    "description": "Shown when no AI job is needed for a phone."
+  },
+  "photoWallPlanFitsDesktop": "यह फ़ोटो डेस्कटॉप स्क्रीन में पहले से फ़िट है",
+  "@photoWallPlanFitsDesktop": {
+    "description": "Shown when no AI job is needed for a desktop."
+  },
+  "photoWallPlanFitsDetail": "इसका आकार और साइज़ सही है। कोई और फ़ोटो चुनें या लक्ष्य बदलें।",
+  "@photoWallPlanFitsDetail": {
+    "description": "Detail when no AI job is needed."
+  },
+  "photoWallRunExtend": "{coins, plural, =1{बढ़ाएँ · 1 कॉइन} other{बढ़ाएँ · {coins} कॉइन}}",
+  "@photoWallRunExtend": {
+    "description": "Main button. Starts an Extend job and shows its coin cost.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "photoWallRunUpscale": "{coins, plural, =1{अपस्केल · 1 कॉइन} other{अपस्केल · {coins} कॉइन}}",
+  "@photoWallRunUpscale": {
+    "description": "Main button. Starts an Upscale job and shows its coin cost.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "photoWallGetCoins": "कॉइन पाएँ · {coins} चाहिए",
+  "@photoWallGetCoins": {
+    "description": "Main button when the balance is too low. Opens Rewards.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "photoWallPlaceTitle": "अपनी फ़ोटो सेट करें",
+  "@photoWallPlaceTitle": {
+    "description": "Header over the placement frame."
+  },
+  "photoWallPlaceHint": "हिलाने के लिए खींचें। छोटा करने के लिए पिंच करें।",
+  "@photoWallPlaceHint": {
+    "description": "Hint under the placement frame."
+  },
+  "photoWallPlaceReset": "स्थिति रीसेट करें",
+  "@photoWallPlaceReset": {
+    "description": "Button that puts the photo back in the centre at full size."
+  },
+  "photoWallPlaceSemantics": "फ़्रेम में फ़ोटो की स्थिति",
+  "@photoWallPlaceSemantics": {
+    "description": "Screen reader label of the placement frame."
+  },
+  "photoWallPlaceMoveStart": "शुरुआत तक ले जाएँ",
+  "@photoWallPlaceMoveStart": {
+    "description": "Screen reader action: move the photo to the top or left edge."
+  },
+  "photoWallPlaceMoveCentre": "बीच में ले जाएँ",
+  "@photoWallPlaceMoveCentre": {
+    "description": "Screen reader action: move the photo to the centre."
+  },
+  "photoWallPlaceMoveEnd": "आखिर तक ले जाएँ",
+  "@photoWallPlaceMoveEnd": {
+    "description": "Screen reader action: move the photo to the bottom or right edge."
+  },
+  "photoWallWorkingExtend": "आपकी फ़ोटो बढ़ाई जा रही है",
+  "@photoWallWorkingExtend": {
+    "description": "Progress title during an Extend job."
+  },
+  "photoWallWorkingUpscale": "आपकी फ़ोटो की क्वालिटी बढ़ाई जा रही है",
+  "@photoWallWorkingUpscale": {
+    "description": "Progress title during an Upscale job."
+  },
+  "photoWallWorkingDetail": "इसमें एक मिनट तक लग सकता है।",
+  "@photoWallWorkingDetail": {
+    "description": "Progress detail."
+  },
+  "photoWallBefore": "पहले",
+  "@photoWallBefore": {
+    "description": "Label on the original side of the compare slider."
+  },
+  "photoWallAfter": "बाद में",
+  "@photoWallAfter": {
+    "description": "Label on the result side of the compare slider."
+  },
+  "photoWallCompareSemantics": "पहले और बाद में। तुलना करने के लिए ऊपर या नीचे स्वाइप करें।",
+  "@photoWallCompareSemantics": {
+    "description": "Screen reader label of the compare slider."
+  },
+  "photoWallSet": "वॉलपेपर के रूप में सेट करें",
+  "@photoWallSet": {
+    "description": "Result button that sets the wallpaper."
+  },
+  "photoWallDownload": "डाउनलोड करें",
+  "@photoWallDownload": {
+    "description": "Result button that saves the wallpaper to the device."
+  },
+  "photoWallSaved": "आपके डिवाइस में सहेजा गया",
+  "@photoWallSaved": {
+    "description": "Toast after Download."
+  },
+  "photoWallStartOver": "कोई और फ़ोटो इस्तेमाल करें",
+  "@photoWallStartOver": {
+    "description": "Result button that returns to the picker."
+  },
+  "photoWallErrorUnsafeInput": "यह फ़ोटो इस्तेमाल नहीं की जा सकती। कोई और फ़ोटो चुनें।",
+  "@photoWallErrorUnsafeInput": {
+    "description": "Error when the content filter blocks the input photo."
+  },
+  "photoWallErrorUnsafeOutput": "नतीजे को रोक दिया गया। फिर से कोशिश करें या कोई और फ़ोटो चुनें।",
+  "@photoWallErrorUnsafeOutput": {
+    "description": "Error when the content filter blocks the result."
+  },
+  "photoWallErrorLimit": "आज की {count} फ़ोटो वॉलपेपर की सीमा पूरी हो गई है।",
+  "@photoWallErrorLimit": {
+    "description": "Error when the daily cap is reached.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photoWallErrorBusy": "फ़ोटो वॉलपेपर इस समय बहुत व्यस्त हैं। बाद में फिर कोशिश करें।",
+  "@photoWallErrorBusy": {
+    "description": "Error when the global daily cap is reached."
+  },
+  "photoWallErrorUnreadable": "यह फ़ोटो नहीं खुल सकती। कोई और फ़ोटो चुनें।",
+  "@photoWallErrorUnreadable": {
+    "description": "Error when the photo does not decode."
+  },
+  "photoWallErrorInProgress": "आपकी पिछली फ़ोटो पर अभी भी काम चल रहा है।",
+  "@photoWallErrorInProgress": {
+    "description": "Error when the same job is still running."
+  },
+  "photoWallErrorGeneric": "वॉलपेपर नहीं बनाया जा सका। फिर से कोशिश करें।",
+  "@photoWallErrorGeneric": {
+    "description": "Error for any other failure."
+  },
+  "photoWallRefunded": "{coins, plural, =1{आपका 1 कॉइन लौटा दिया गया है।} other{आपके {coins} कॉइन लौटा दिए गए हैं।}}",
+  "@photoWallRefunded": {
+    "description": "Added after an error when the server refunded the coins.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "photoWallRefundPending": "आपके कॉइन लौटा दिए जाएँगे।",
+  "@photoWallRefundPending": {
+    "description": "Added after an error when the refund is not confirmed yet."
+  },
+  "photoWallTryAgain": "फिर से कोशिश करें",
+  "@photoWallTryAgain": {
+    "description": "Button on the error card that runs the same job again."
   }
 }
