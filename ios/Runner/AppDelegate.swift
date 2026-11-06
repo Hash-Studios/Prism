@@ -59,7 +59,7 @@ import WidgetKit
       if call.method == "lowPowerMode" {
         result(ProcessInfo.processInfo.isLowPowerModeEnabled)
       } else {
-        result(FlutterMethodNotImplemented)
+        result(FlutterError(code: "UNKNOWN_METHOD", message: call.method, details: nil))
       }
     }
     NotificationCenter.default.addObserver(
