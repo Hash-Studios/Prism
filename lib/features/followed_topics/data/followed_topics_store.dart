@@ -172,13 +172,14 @@ class FollowedTopicsStore extends ChangeNotifier {
         return TopicFollowResult.failed;
       }
       notifyListeners();
-      final bool saved = await _changeTopic(uid, topic, generation: generation, follow: true);
-      if (saved) return TopicFollowResult.done;
+      final TopicFollowResult result = await _changeTopic(uid, topic, generation: generation, follow: true);
+      if (result == TopicFollowResult.done) return result;
       if (app_state.prismUser.id == uid && _loadedFor == uid && generation == (_seenGenerations[uid] ?? 0)) {
         _topics = before;
         notifyListeners();
       }
-      return TopicFollowResult.failed;
+      // Another device can fill the list after this one loaded it; then the account, not the cache, is full.
+      return result;
     });
   }
 
@@ -198,7 +199,8 @@ class FollowedTopicsStore extends ChangeNotifier {
       final List<FollowedTopic> before = _topics;
       _topics = List<FollowedTopic>.unmodifiable(_topics.where((t) => t != topic));
       notifyListeners();
-      final bool saved = await _changeTopic(uid, topic, generation: generation, follow: false);
+      final bool saved =
+          await _changeTopic(uid, topic, generation: generation, follow: false) == TopicFollowResult.done;
       if (saved) return true;
       if (app_state.prismUser.id == uid && _loadedFor == uid && generation == (_seenGenerations[uid] ?? 0)) {
         _topics = before;
@@ -310,23 +312,28 @@ class FollowedTopicsStore extends ChangeNotifier {
     }
   }
 
-  Future<bool> _changeTopic(String uid, FollowedTopic topic, {required int generation, required bool follow}) async {
+  Future<TopicFollowResult> _changeTopic(
+    String uid,
+    FollowedTopic topic, {
+    required int generation,
+    required bool follow,
+  }) async {
     try {
-      return await _firestore.runTransaction<bool>(
+      return await _firestore.runTransaction<TopicFollowResult>(
         (FirestoreTransaction transaction) async {
           final Map<String, dynamic>? session = await transaction.getDoc(_sessionPath(uid), 'session');
           if (!app_state.prismUser.loggedIn ||
               app_state.prismUser.id != uid ||
               generation != (_seenGenerations[uid] ?? 0)) {
-            return false;
+            return TopicFollowResult.failed;
           }
           final Object? rawTopics = session?[topicsField];
           final List<Object?> keys = rawTopics is List ? List<Object?>.of(rawTopics) : <Object?>[];
           final bool alreadyFollowed = keys.contains(topic.key);
-          if (follow && alreadyFollowed) return true;
-          if (!follow && !alreadyFollowed && keys.isNotEmpty) return true;
-          if (!follow && !alreadyFollowed && session?.containsKey(offsetField) != true) return true;
-          if (follow && keys.toSet().length >= FollowedTopic.maxFollowed) return false;
+          if (follow && alreadyFollowed) return TopicFollowResult.done;
+          if (!follow && !alreadyFollowed && keys.isNotEmpty) return TopicFollowResult.done;
+          if (!follow && !alreadyFollowed && session?.containsKey(offsetField) != true) return TopicFollowResult.done;
+          if (follow && keys.toSet().length >= FollowedTopic.maxFollowed) return TopicFollowResult.limit;
 
           final List<Object?> remaining = follow
               ? <Object?>[...keys, topic.key]
@@ -338,7 +345,7 @@ class FollowedTopicsStore extends ChangeNotifier {
             if (follow) offsetField: _deviceOffset,
             if (!follow && remaining.isEmpty) offsetField: FirestoreSentinels.delete(),
           }, merge: true);
-          return true;
+          return TopicFollowResult.done;
         },
         sourceTag: follow ? 'followed_topics.follow' : 'followed_topics.unfollow',
         collection: _sessionPath(uid),
@@ -346,7 +353,7 @@ class FollowedTopicsStore extends ChangeNotifier {
       );
     } catch (error, stackTrace) {
       logger.w('Followed topics did not save.', tag: 'Topics', error: error, stackTrace: stackTrace);
-      return false;
+      return TopicFollowResult.failed;
     }
   }
 }

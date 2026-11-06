@@ -194,6 +194,21 @@ void main() {
     expect(firestore.writes.length, writesBefore);
   });
 
+  test('a list another device filled after this load returns limit, not failed', () async {
+    final List<String> twenty = <String>[for (final String name in prismClassifierCategories) 'category:$name'];
+    firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
+      'session': <String, dynamic>{'followedTopics': twenty.sublist(0, 19)},
+    };
+    final FollowedTopicsStore store = newStore();
+    await store.ensureLoaded();
+    firestore.docs['usersv2/u1/private']!['session'] = <String, dynamic>{'followedTopics': twenty};
+
+    final TopicFollowResult result = await store.follow(FollowedTopic.mood(WallMood.dreamy));
+
+    expect(result, TopicFollowResult.limit);
+    expect(store.isFollowed(FollowedTopic.mood(WallMood.dreamy)), isFalse);
+  });
+
   test('a write that throws returns failed and the topic is not kept', () async {
     final FollowedTopicsStore store = newStore();
     await store.ensureLoaded();
