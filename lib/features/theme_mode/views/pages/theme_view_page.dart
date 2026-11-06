@@ -304,6 +304,7 @@ class _ThemeTile extends StatelessWidget {
       selected: selected,
       label: locked ? '$name, ${l10n.coreThemeLocked}' : name,
       excludeSemantics: true,
+      onTap: onTap,
       child: PressScale(
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -517,6 +518,7 @@ class _Swatch extends StatelessWidget {
       selected: selected,
       label: label,
       excludeSemantics: true,
+      onTap: onTap,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,

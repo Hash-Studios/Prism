@@ -88,6 +88,7 @@ void main() {
         ('Download', Icons.download),
       ]) {
         expect(find.text(caption), findsOneWidget, reason: caption);
+        expect(tester.widget<Text>(find.text(caption)).style!.fontSize, greaterThanOrEqualTo(12));
         expect(tester.getRect(find.text(caption)).top, greaterThan(tester.getRect(find.byIcon(icon)).bottom));
         expect(tester.getCenter(find.text(caption)).dx, closeTo(tester.getCenter(find.byIcon(icon)).dx, 0.5));
       }
@@ -95,6 +96,39 @@ void main() {
       expect(find.text('Set as wallpaper'), findsNothing);
       expect(tester.getSize(find.byType(WallpaperActionBar)).height, WallpaperActionBar.height);
     });
+
+    for (final double textScale in <double>[1, 2]) {
+      testWidgets('the full caption is tappable at ${textScale}x text', (tester) async {
+        var taps = 0;
+        await tester.pumpWidget(
+          _host(
+            MediaQuery(
+              data: MediaQueryData(textScaler: TextScaler.linear(textScale)),
+              child: WallpaperActionBar(
+                primary: const WallpaperBarAction(label: 'Set as wallpaper', child: Text('Set')),
+                actions: <WallpaperBarAction>[
+                  WallpaperBarAction(
+                    label: 'Share',
+                    child: CircularMenuButton(
+                      label: 'Share',
+                      isLoading: false,
+                      onTap: () => taps++,
+                      child: const Icon(Icons.share),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+
+        final Rect caption = tester.getRect(find.text('Share'));
+        final Rect target = tester.getRect(find.byType(CircularMenuButton));
+        expect(target.contains(caption.bottomCenter - const Offset(0, 1)), isTrue);
+        await tester.tapAt(Offset(caption.center.dx, caption.bottom - 1));
+        expect(taps, 1);
+      });
+    }
 
     testWidgets('draws menu buttons bare and the primary action as an accent pill', (tester) async {
       await tester.pumpWidget(

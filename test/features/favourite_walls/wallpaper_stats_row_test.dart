@@ -1,6 +1,7 @@
 import 'package:Prism/features/favourite_walls/views/widgets/wallpaper_stats_row.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -61,6 +62,24 @@ void main() {
     );
     expect(find.byType(Icon), findsNothing);
     expect(find.text('0'), findsNothing);
+  });
+
+  testWidgets('detail totals are read-only and expose exact accessible counts', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Center(child: WallpaperStatsRow(favourites: 12345, views: 65432)),
+      ),
+    );
+    for (final String label in <String>['12,345 favourites', '65,432 views']) {
+      final SemanticsNode node = tester.getSemantics(find.bySemanticsLabel(label));
+      expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isFalse);
+    }
+    expect(find.byType(GestureDetector), findsNothing);
+    expect(find.byType(Tooltip), findsNothing);
+    semantics.dispose();
   });
 
   testWidgets('counts use a 13 w600 caption and 17 pt icons', (tester) async {

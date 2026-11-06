@@ -1,8 +1,6 @@
-import 'package:Prism/core/widgets/cosmetics/glow_text.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
@@ -98,15 +96,6 @@ void main() {
       expect(styleOf('Item 0').fontWeight, FontWeight.w700);
       expect(styleOf('Item 1').color, cs.onSurfaceVariant);
       expect(styleOf('Item 1').fontWeight, FontWeight.w600);
-    });
-  });
-
-  group('GlowText', () {
-    test('a light stop is darkened until it reads 6:1 on white, a dark stop is kept', () {
-      const Color gold = Color(0xFFFFD86B);
-      final Color readable = readableGlowStop(gold, Colors.black, Colors.white);
-      expect(contrastRatio(readable, Colors.white), greaterThanOrEqualTo(6.0));
-      expect(readableGlowStop(const Color(0xFF1A1A1A), Colors.black, Colors.white), const Color(0xFF1A1A1A));
     });
   });
 

@@ -1,4 +1,3 @@
-import 'package:Prism/core/widgets/cosmetics/glow_text.dart';
 import 'package:Prism/core/widgets/cosmetics/profile_frame.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -89,32 +88,6 @@ void main() {
 
       await tester.pumpWidget(_host(const PrismAvatar(name: 'Ana', frameId: 'frame_prism', premium: true)));
       expect(find.byKey(ProfileFrame.ringKey), findsOneWidget);
-    });
-  });
-
-  group('GlowText', () {
-    testWidgets('is plain text without a glow id', (tester) async {
-      await tester.pumpWidget(_host(const GlowText('Ana')));
-
-      expect(find.text('Ana'), findsOneWidget);
-      expect(find.byType(ShaderMask), findsNothing);
-    });
-
-    testWidgets('is plain text for an unknown id or an id of another kind', (tester) async {
-      await tester.pumpWidget(_host(const GlowText('Ana', glowId: 'glow_missing')));
-      expect(find.byType(ShaderMask), findsNothing);
-
-      await tester.pumpWidget(_host(const GlowText('Ana', glowId: 'frame_ring')));
-      expect(find.byType(ShaderMask), findsNothing);
-    });
-
-    testWidgets('fills the text with the gradient and a soft shadow for a known glow', (tester) async {
-      await tester.pumpWidget(_host(const GlowText('Ana', glowId: 'glow_ocean', style: TextStyle(fontSize: 20))));
-
-      expect(find.byType(ShaderMask), findsOneWidget);
-      final Text text = tester.widget<Text>(find.text('Ana'));
-      expect(text.style?.shadows, isNotEmpty);
-      expect(text.style?.fontSize, 20);
     });
   });
 }

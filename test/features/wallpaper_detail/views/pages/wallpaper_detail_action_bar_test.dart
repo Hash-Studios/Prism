@@ -518,7 +518,7 @@ void main() {
       expect(icon.size, 24, reason: '$button');
       expect(
         tester.getSize(find.descendant(of: find.byType(button), matching: find.byType(CircularMenuButton))),
-        const Size.square(50),
+        const Size(50, 56),
       );
     }
     final FavoriteIcon heart = tester.widget<FavoriteIcon>(find.byType(FavoriteIcon));

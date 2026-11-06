@@ -2728,14 +2728,9 @@
   },
   "coreDepthEffectAutoLongTip": "Efek Kedalaman aktif secara otomatis. Di iOS 18 atau versi lebih lama, jangan letakkan widget di ruang bawah jam.",
   "coreDepthEffectAutoTip": "Efek Kedalaman aktif secara otomatis.",
-  "coreDepthEffectBadge": "Kedalaman",
   "coreDepthEffectBadgeSemantic": "Mendukung Efek Kedalaman",
   "coreDepthEffectMenuShortTip": "Ketuk ••• lalu Efek Kedalaman.",
   "coreDepthEffectMenuTip": "Di editor Layar Kunci, ketuk ••• lalu Efek Kedalaman.",
-  "coreSpatialBadge": "Spasial",
-  "@coreSpatialBadge": {
-    "description": "Spatial Scene text: coreSpatialBadge."
-  },
   "coreSpatialBadgeSemantic": "Berfungsi sebagai Adegan Spasial",
   "@coreSpatialBadgeSemantic": {
     "description": "Spatial Scene text: coreSpatialBadgeSemantic."

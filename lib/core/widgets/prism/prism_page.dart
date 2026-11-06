@@ -122,9 +122,12 @@ class _PrismPageState extends State<PrismPage> {
   TabController? _tabController;
   List<bool> _tabScroll = <bool>[];
   List<bool> _tabMore = <bool>[];
+  (bool, bool)? _pendingScroll;
+  bool _scrollCallbackScheduled = false;
 
   void _setTabController(TabController? controller, int length) {
     if (identical(controller, _tabController) && _tabScroll.length == length) return;
+    _pendingScroll = null;
     _tabController?.removeListener(_onTabChanged);
     _tabController = controller;
     _tabScroll = List<bool>.filled(length, false);
@@ -136,12 +139,8 @@ class _PrismPageState extends State<PrismPage> {
     final int index = _tabController!.index;
     final bool scrolled = index < _tabScroll.length && _tabScroll[index];
     final bool more = index < _tabMore.length && _tabMore[index];
-    if (scrolled != _scrolled || more != _moreBelow) {
-      setState(() {
-        _scrolled = scrolled;
-        _moreBelow = more;
-      });
-    }
+    _pendingScroll = null;
+    _setScrollState(scrolled, more);
   }
 
   bool _onTabScroll(int index, ScrollMetrics metrics) {
@@ -163,22 +162,27 @@ class _PrismPageState extends State<PrismPage> {
   }
 
   /// Scroll metrics notifications also arrive during layout, where setState is not allowed. Then the change waits for
-  /// the end of the frame.
+  /// the end of the frame. Only the latest metrics from that layout frame apply.
   void _setScrollState(bool scrolled, bool more) {
-    if (scrolled == _scrolled && more == _moreBelow) return;
-    void apply() {
-      if (!mounted || (scrolled == _scrolled && more == _moreBelow)) return;
-      setState(() {
-        _scrolled = scrolled;
-        _moreBelow = more;
-      });
-    }
-
+    if (_pendingScroll == null && scrolled == _scrolled && more == _moreBelow) return;
     if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
-      SchedulerBinding.instance.addPostFrameCallback((_) => apply());
-    } else {
-      apply();
+      _pendingScroll = (scrolled, more);
+      if (_scrollCallbackScheduled) return;
+      _scrollCallbackScheduled = true;
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        _scrollCallbackScheduled = false;
+        final (bool, bool)? pending = _pendingScroll;
+        _pendingScroll = null;
+        if (mounted && pending != null) _setScrollState(pending.$1, pending.$2);
+      });
+      return;
     }
+    _pendingScroll = null;
+    if (scrolled == _scrolled && more == _moreBelow) return;
+    setState(() {
+      _scrolled = scrolled;
+      _moreBelow = more;
+    });
   }
 
   Widget _buildBody() {
@@ -280,7 +284,7 @@ class _PrismPageState extends State<PrismPage> {
 /// Give the page's main action as [action], not as [PrismPage.bottomBar]. When [child] and [action] fit together, the
 /// action sits [PrismSpace.xl] below [child] and the two are centred as one group, so no empty band separates a short
 /// message from its action. When they do not fit, [child] scrolls and [action] pins at the bottom, clear of the home
-/// indicator.
+/// indicator. If the action itself cannot fit, the whole group scrolls instead.
 class PrismCenteredScroll extends StatefulWidget {
   const PrismCenteredScroll({
     super.key,
@@ -306,6 +310,9 @@ class _PrismCenteredScrollState extends State<PrismCenteredScroll> {
   /// the centred group and the pinned action is stable.
   double? _childHeight;
   double? _actionHeight;
+  bool _moreBelow = false;
+  bool? _pendingMore;
+  bool _moreCallbackScheduled = false;
 
   void _setChildHeight(double height) {
     if (mounted && height != _childHeight) setState(() => _childHeight = height);
@@ -315,14 +322,37 @@ class _PrismCenteredScrollState extends State<PrismCenteredScroll> {
     if (mounted && height != _actionHeight) setState(() => _actionHeight = height);
   }
 
-  Widget _scroll(BoxConstraints constraints, EdgeInsets padding, Widget content) => SingleChildScrollView(
-    physics: widget.physics,
-    padding: padding,
-    child: ConstrainedBox(
-      constraints: BoxConstraints(minHeight: math.max(0, constraints.maxHeight - padding.vertical)),
-      child: Align(alignment: const Alignment(0, -0.12), child: content),
-    ),
-  );
+  bool _onScrollMetrics(ScrollMetrics metrics) {
+    if (metrics.axis != Axis.vertical) return false;
+    final bool more = metrics.extentAfter > 2;
+    if (_pendingMore == null && more == _moreBelow) return false;
+    _pendingMore = more;
+    if (_moreCallbackScheduled) return false;
+    _moreCallbackScheduled = true;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _moreCallbackScheduled = false;
+      final bool? pending = _pendingMore;
+      _pendingMore = null;
+      if (mounted && pending != null && pending != _moreBelow) setState(() => _moreBelow = pending);
+    });
+    return false;
+  }
+
+  Widget _scroll(BoxConstraints constraints, EdgeInsets padding, Widget content) =>
+      NotificationListener<ScrollMetricsNotification>(
+        onNotification: (n) => _onScrollMetrics(n.metrics),
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (n) => _onScrollMetrics(n.metrics),
+          child: SingleChildScrollView(
+            physics: widget.physics,
+            padding: padding,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: math.max(0, constraints.maxHeight - padding.vertical)),
+              child: Align(alignment: const Alignment(0, -0.12), child: content),
+            ),
+          ),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -340,7 +370,11 @@ class _PrismCenteredScrollState extends State<PrismCenteredScroll> {
             _childHeight == null ||
             _actionHeight == null ||
             padding.vertical + _childHeight! + PrismSpace.xl + _actionHeight! <= constraints.maxHeight;
-        if (fits) {
+        final bool actionFillsViewport =
+            _actionHeight != null &&
+            _actionHeight! + PrismSpace.xs + math.max(PrismSpace.md, MediaQuery.paddingOf(context).bottom) >=
+                constraints.maxHeight;
+        if (fits || actionFillsViewport) {
           return _scroll(
             constraints,
             padding,
@@ -362,10 +396,21 @@ class _PrismCenteredScrollState extends State<PrismCenteredScroll> {
                 builder: (context, inner) => _scroll(inner, widget.padding.copyWith(bottom: PrismSpace.md), child),
               ),
             ),
-            SafeArea(
-              top: false,
-              minimum: EdgeInsets.fromLTRB(widget.padding.left, PrismSpace.xs, widget.padding.right, PrismSpace.md),
-              child: reported,
+            DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: _moreBelow
+                        ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08)
+                        : Colors.transparent,
+                  ),
+                ),
+              ),
+              child: SafeArea(
+                top: false,
+                minimum: EdgeInsets.fromLTRB(widget.padding.left, PrismSpace.xs, widget.padding.right, PrismSpace.md),
+                child: reported,
+              ),
             ),
           ],
         );

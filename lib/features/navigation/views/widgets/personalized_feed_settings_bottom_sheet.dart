@@ -178,7 +178,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
       _feedMix = FeedMix.balanced;
       _hideAi = false;
     });
-    if (_learned.topTerms(1).isNotEmpty) await _clearLearned();
+    if (_tasteSignals.read().isNotEmpty) await _clearLearned();
   }
 
   Future<void> _clearLearned() async {

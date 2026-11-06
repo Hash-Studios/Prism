@@ -2567,9 +2567,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreDepthEffectAutoTip => 'Depth Effect turns on by itself.';
 
   @override
-  String get coreDepthEffectBadge => 'Depth';
-
-  @override
   String get coreDepthEffectBadgeSemantic => 'Works with Depth Effect';
 
   @override
@@ -2577,9 +2574,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreDepthEffectMenuTip => 'In the Lock Screen editor, tap ••• then Depth Effect.';
-
-  @override
-  String get coreSpatialBadge => 'Spatial';
 
   @override
   String get coreSpatialBadgeSemantic => 'Works as a Spatial Scene';

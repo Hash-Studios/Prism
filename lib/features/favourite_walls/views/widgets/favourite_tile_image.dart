@@ -40,6 +40,7 @@ class FavouriteTileImage extends StatefulWidget {
 
 class _FavouriteTileImageState extends State<FavouriteTileImage> {
   File? _cachedFull;
+  bool _checkingFull = false;
 
   @override
   void initState() {
@@ -57,15 +58,19 @@ class _FavouriteTileImageState extends State<FavouriteTileImage> {
 
   Future<void> _lookUp() async {
     final String url = widget.cachedFullUrl;
-    if (!isValidNetworkUrl(url)) return;
+    _checkingFull = isValidNetworkUrl(url);
+    if (!_checkingFull) return;
     File? file;
     try {
       file = (await PrismFullImageCache.instance.getFileFromCache(url))?.file;
     } catch (_) {
-      return;
+      file = null;
     }
-    if (!mounted || file == null || url != widget.cachedFullUrl) return;
-    setState(() => _cachedFull = file);
+    if (!mounted || url != widget.cachedFullUrl) return;
+    setState(() {
+      _cachedFull = file;
+      _checkingFull = false;
+    });
   }
 
   Widget _image(BuildContext context, String url, {String? fallback}) => CachedNetworkImage(
@@ -82,8 +87,12 @@ class _FavouriteTileImageState extends State<FavouriteTileImage> {
   );
 
   Widget _unavailable(BuildContext context) {
+    if (_checkingFull) return const PulseFill();
     final ThemeData theme = Theme.of(context);
-    WidgetsBinding.instance.addPostFrameCallback((_) => widget.onUnavailable());
+    final FavouriteTileImage current = widget;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && identical(widget, current) && !_checkingFull) current.onUnavailable();
+    });
     return ColoredBox(
       color: theme.colorScheme.surfaceContainerHighest,
       child: Center(

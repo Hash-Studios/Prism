@@ -56,4 +56,57 @@ void main() {
     await tester.pump();
     expect(tester.getRect(find.byKey(action)), button, reason: 'the pinned action does not scroll');
   });
+
+  testWidgets('an action taller than the keyboard viewport scrolls with its content', (tester) async {
+    tester.view.physicalSize = const Size(390, 600);
+    tester.view.devicePixelRatio = 1;
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        home: const PrismPage(
+          title: 'Title',
+          body: PrismCenteredScroll(
+            action: SizedBox(height: 300, key: action),
+            child: SizedBox(height: 200, key: content),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    final ScrollableState scrollable = tester.state<ScrollableState>(find.byType(Scrollable).last);
+    expect(scrollable.position.maxScrollExtent, greaterThan(0));
+    scrollable.position.jumpTo(scrollable.position.maxScrollExtent);
+    await tester.pump();
+    final Rect viewport = tester.getRect(find.byType(PrismCenteredScroll));
+    expect(tester.getRect(find.byKey(action)).bottom, lessThanOrEqualTo(viewport.bottom));
+  });
+
+  testWidgets('the pinned action has a hairline only while content remains below', (tester) async {
+    await pump(tester, 2000);
+    await tester.pump();
+    Color? borderColor() {
+      final Finder boxes = find.ancestor(of: find.byKey(action), matching: find.byType(DecoratedBox));
+      for (final DecoratedBox box in tester.widgetList<DecoratedBox>(boxes)) {
+        final Decoration decoration = box.decoration;
+        if (decoration is BoxDecoration && decoration.border is Border) {
+          return (decoration.border! as Border).top.color;
+        }
+      }
+      return null;
+    }
+
+    expect(borderColor(), kLightTheme.colorScheme.onSurface.withValues(alpha: 0.08));
+    final ScrollableState scrollable = tester.state<ScrollableState>(find.byType(Scrollable).last);
+    scrollable.position.jumpTo(scrollable.position.maxScrollExtent);
+    await tester.pump();
+    await tester.pump();
+    expect(borderColor(), Colors.transparent);
+  });
 }

@@ -2626,14 +2626,9 @@
   },
   "coreDepthEffectAutoLongTip": "डेप्थ इफ़ेक्ट अपने-आप चालू हो जाता है। iOS 18 या उससे पुराने संस्करण में, घड़ी के नीचे वाली जगह विजेट से खाली रखें।",
   "coreDepthEffectAutoTip": "डेप्थ इफ़ेक्ट अपने-आप चालू हो जाता है।",
-  "coreDepthEffectBadge": "डेप्थ",
   "coreDepthEffectBadgeSemantic": "डेप्थ इफ़ेक्ट के साथ काम करता है",
   "coreDepthEffectMenuShortTip": "••• पर टैप करें, फिर डेप्थ इफ़ेक्ट चुनें।",
   "coreDepthEffectMenuTip": "लॉक स्क्रीन एडिटर में ••• पर टैप करें, फिर डेप्थ इफ़ेक्ट चुनें।",
-  "coreSpatialBadge": "स्पेशियल",
-  "@coreSpatialBadge": {
-    "description": "Spatial Scene text: coreSpatialBadge."
-  },
   "coreSpatialBadgeSemantic": "स्पेशियल सीन के रूप में काम करता है",
   "@coreSpatialBadgeSemantic": {
     "description": "Spatial Scene text: coreSpatialBadgeSemantic."

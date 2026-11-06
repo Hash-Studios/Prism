@@ -572,6 +572,7 @@ void main() {
     WidgetTester tester, {
     required String folderId,
     required AutoRotateState rotation,
+    double textScale = 1,
   }) async {
     app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
@@ -586,6 +587,10 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: kLightTheme,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
         home: StackRouterScope(
           controller: router,
           stateHash: 0,
@@ -629,6 +634,22 @@ void main() {
     );
 
     expect(find.text('Rotating'), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('the rotating folder count fits a narrow screen at large text', (tester) async {
+    tester.view.physicalSize = const Size(320, 740);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pumpFolderPage(
+      tester,
+      folderId: 'work',
+      rotation: _rotatingState(enabled: true, folderId: 'work'),
+      textScale: 2,
+    );
+
+    expect(find.text('Rotating'), findsOneWidget);
+    expect(find.text('No wallpapers'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('the folder page hides Rotating when rotation is off', (tester) async {

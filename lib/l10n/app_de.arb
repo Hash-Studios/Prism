@@ -2502,14 +2502,9 @@
   },
   "coreDepthEffectAutoLongTip": "Der Tiefeneffekt wird automatisch aktiviert. Unter iOS 18 solltest du keine Widgets im Bereich unter der Uhr platzieren.",
   "coreDepthEffectAutoTip": "Der Tiefeneffekt wird automatisch aktiviert.",
-  "coreDepthEffectBadge": "Tiefe",
   "coreDepthEffectBadgeSemantic": "Funktioniert mit Tiefeneffekt",
   "coreDepthEffectMenuShortTip": "Tippe auf ••• und dann auf Tiefeneffekt.",
   "coreDepthEffectMenuTip": "Tippe im Sperrbildschirm-Editor auf ••• und dann auf Tiefeneffekt.",
-  "coreSpatialBadge": "Räumlich",
-  "@coreSpatialBadge": {
-    "description": "Spatial Scene text: coreSpatialBadge."
-  },
   "coreSpatialBadgeSemantic": "Funktioniert als räumliche Szene",
   "@coreSpatialBadgeSemantic": {
     "description": "Spatial Scene text: coreSpatialBadgeSemantic."
