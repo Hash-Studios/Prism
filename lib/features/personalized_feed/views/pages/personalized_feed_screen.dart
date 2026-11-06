@@ -61,6 +61,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// twelfth.
 const List<int> _moodRowGridRows = <int>[4, 12];
 
+/// How long the old tab's content takes to fade out before the new tab's content fades in.
+const Duration _contentFadeOut = Duration(milliseconds: 90);
+
+/// How far the new tab's content rises as it fades in.
+const double _contentRise = 8;
+
 /// Grid rows before the "Pick up where you left off" row.
 const int _pickUpGridRows = 2;
 
@@ -129,6 +135,19 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   final WeeklyChallengesCubit _challenge = getIt<WeeklyChallengesCubit>();
   int _moodLoadVersion = 0;
   bool _moodsReady = false;
+
+  /// The chip whose content shows. It trails the selected chip by the fade out of a tab change.
+  late HomeFeedChip _shownChip = _bloc.state.chip;
+
+  /// 1 while the content shows fully. A tab change fades the old content out, swaps it, then fades the new one in.
+  late final AnimationController _contentFade = AnimationController(vsync: this, value: 1);
+  bool _contentRising = false;
+
+  /// Stops the carousel's tickers, which also turns its auto-advance off. On while a finger is down, and for one frame
+  /// after a tab change. When it goes off, the auto-advance starts a fresh countdown, so the carousel waits a full
+  /// interval (5 s) after any touch or tab change.
+  final ValueNotifier<bool> _carouselHeld = ValueNotifier<bool>(false);
+  int _pointersDown = 0;
 
   bool get _showAi =>
       !getIt.isRegistered<SettingsLocalDataSource>() || AiContentFilter.showsAi(getIt<SettingsLocalDataSource>());
@@ -207,6 +226,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     _viewedHistory?.removeListener(_onHistoryChanged);
     _syncedHistory?.removeListener(_onHistoryChanged);
     _scrollController.dispose();
+    _contentFade.dispose();
+    _carouselHeld.dispose();
     _tabs.dispose();
     unawaited(_bloc.close());
     unawaited(_trending.close());
@@ -224,6 +245,48 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     HomeFeedChip.following => _following ??= getIt<FollowingFeedBloc>()..add(const PagedFeedEvent.started()),
     HomeFeedChip.popular => _popular ??= getIt<PopularFeedBloc>()..add(const PagedFeedEvent.started()),
   };
+
+  /// Fades the old tab's content out, shows the new tab from the top, then fades it in with a short rise.
+  Future<void> _fadeThrough(HomeFeedChip to) async {
+    if (context.reduceMotion || !TickerMode.valuesOf(context).enabled) {
+      _contentFade.value = 1;
+      _showChip(to);
+      return;
+    }
+    _contentRising = false;
+    // A newer tab change stops this animation. This future then never completes, and the newer change takes over.
+    await _contentFade.animateTo(0, duration: _contentFadeOut, curve: PrismCurves.exit);
+    if (!mounted) return;
+    _showChip(to);
+    _contentRising = true;
+    await _contentFade.animateTo(1, duration: PrismDurations.fast, curve: PrismCurves.enter);
+  }
+
+  void _onPointerDown(PointerDownEvent _) {
+    _pointersDown++;
+    _carouselHeld.value = true;
+  }
+
+  void _onPointerUp(PointerEvent _) {
+    _pointersDown = math.max(0, _pointersDown - 1);
+    if (_pointersDown == 0) _carouselHeld.value = false;
+  }
+
+  /// Holds the carousel for one frame, which restarts its countdown.
+  void _restartCarouselCountdown() {
+    if (_carouselHeld.value) return;
+    _carouselHeld.value = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _pointersDown == 0) _carouselHeld.value = false;
+    });
+  }
+
+  void _showChip(HomeFeedChip chip) {
+    if (_scrollController.hasClients && _scrollController.offset > 0) {
+      _scrollController.jumpTo(0);
+    }
+    setState(() => _shownChip = chip);
+  }
 
   bool _showsSignIn(HomeFeedChip chip) => chip == HomeFeedChip.following && !app_state.prismUser.loggedIn;
 
@@ -395,9 +458,10 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                   _tabs.animateTo(state.chip.index, duration: PrismDurations.fast, curve: PrismCurves.move);
                 }
               }
-              if (_scrollController.hasClients && _scrollController.offset > 0) {
-                _scrollController.jumpTo(0);
-              }
+              _restartCarouselCountdown();
+              // Start the new tab's list now, so it loads while the old content fades out.
+              if (!_showsSignIn(state.chip)) _chipBloc(state.chip);
+              unawaited(_fadeThrough(state.chip));
               // The quest is daily and the screen outlives a day, so every visit reports it.
               if (state.chip == HomeFeedChip.trending) {
                 CoinsService.instance.reportQuestEvent(QuestEvent.viewTrending);
@@ -422,67 +486,90 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
           builder: (context, state) {
             // The scroll view starts under the status bar, so the floating header slides in right below the strip and
             // never under it.
-            return Column(
-              children: <Widget>[
-                ColoredBox(
-                  color: cs.surface,
-                  child: SizedBox(width: double.infinity, height: MediaQuery.paddingOf(context).top),
-                ),
-                Expanded(
-                  child: PrismRefresh(
-                    edgeOffset: PrismTopAppBar.height + HomeFeedTabBar.height,
-                    onRefresh: _refresh,
-                    child: NotificationListener<ScrollNotification>(
-                      onNotification: (notification) {
-                        if (notification.depth == 0) {
-                          _maybeFetchMore(notification.metrics);
-                        }
-                        return false;
-                      },
-                      child: WallpaperImpressionScope(
-                        session: _impressions,
-                        child: PinchDensity(
-                          store: _layout,
-                          controller: _scrollController,
-                          child: CustomScrollView(
+            return Listener(
+              onPointerDown: _onPointerDown,
+              onPointerUp: _onPointerUp,
+              onPointerCancel: _onPointerUp,
+              child: Column(
+                children: <Widget>[
+                  ColoredBox(
+                    color: cs.surface,
+                    child: SizedBox(width: double.infinity, height: MediaQuery.paddingOf(context).top),
+                  ),
+                  Expanded(
+                    child: PrismRefresh(
+                      edgeOffset: PrismTopAppBar.height + HomeFeedTabBar.height,
+                      onRefresh: _refresh,
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (notification) {
+                          if (notification.depth == 0) {
+                            _maybeFetchMore(notification.metrics);
+                          }
+                          return false;
+                        },
+                        child: WallpaperImpressionScope(
+                          session: _impressions,
+                          child: PinchDensity(
+                            store: _layout,
                             controller: _scrollController,
-                            scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
-                            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                            slivers: [
-                              SliverAppBar(
-                                primary: false,
-                                floating: true,
-                                snap: true,
-                                automaticallyImplyLeading: false,
-                                centerTitle: false,
-                                toolbarHeight: PrismTopAppBar.height,
-                                titleSpacing: 0,
-                                backgroundColor: cs.surface,
-                                surfaceTintColor: Colors.transparent,
-                                elevation: 0,
-                                scrolledUnderElevation: 0,
-                                title: const PrismTopAppBar(),
-                                bottom: HomeFeedTabBar(
-                                  controller: _tabs,
-                                  selected: state.chip,
-                                  onSelected: (chip) {
-                                    setState(() => _impressions = WallpaperImpressionSession());
-                                    _bloc.add(PersonalizedFeedEvent.chipSelected(chip));
-                                  },
-                                  onTuneTap: widget.onTuneTap,
-                                  isRefreshing: state.isRefreshing,
+                            child: CustomScrollView(
+                              controller: _scrollController,
+                              scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
+                              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                              slivers: [
+                                SliverAppBar(
+                                  primary: false,
+                                  floating: true,
+                                  snap: true,
+                                  automaticallyImplyLeading: false,
+                                  centerTitle: false,
+                                  toolbarHeight: PrismTopAppBar.height,
+                                  titleSpacing: 0,
+                                  backgroundColor: cs.surface,
+                                  surfaceTintColor: Colors.transparent,
+                                  elevation: 0,
+                                  scrolledUnderElevation: 0,
+                                  title: const PrismTopAppBar(),
+                                  bottom: HomeFeedTabBar(
+                                    controller: _tabs,
+                                    selected: state.chip,
+                                    onSelected: (chip) {
+                                      setState(() => _impressions = WallpaperImpressionSession());
+                                      _bloc.add(PersonalizedFeedEvent.chipSelected(chip));
+                                    },
+                                    onTuneTap: widget.onTuneTap,
+                                    isRefreshing: state.isRefreshing,
+                                  ),
                                 ),
-                              ),
-                              ..._contentSlivers(context, state, crossAxisCount, tileMemCacheHeight),
-                              const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
-                            ],
+                                AnimatedBuilder(
+                                  animation: _contentFade,
+                                  builder: (context, sliver) => _SliverRise(
+                                    dy: _contentRising ? _contentRise * (1 - _contentFade.value) : 0,
+                                    sliver: sliver!,
+                                  ),
+                                  child: SliverFadeTransition(
+                                    opacity: _contentFade,
+                                    sliver: SliverMainAxisGroup(
+                                      slivers: _contentSlivers(
+                                        context,
+                                        state,
+                                        _shownChip,
+                                        crossAxisCount,
+                                        tileMemCacheHeight,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           },
         ),
@@ -493,10 +580,11 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   List<Widget> _contentSlivers(
     BuildContext context,
     PersonalizedFeedState state,
+    HomeFeedChip chip,
     int crossAxisCount,
     int tileMemCacheHeight,
   ) {
-    switch (state.chip) {
+    switch (chip) {
       case HomeFeedChip.forYou:
         return <Widget>[
           BlocBuilder<MoodsCubit, List<MoodList>>(
@@ -603,11 +691,17 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
           sliver: SliverToBoxAdapter(
             child: loadingFirstPage
                 ? const _CarouselSkeleton()
-                : FeedCarousel(
-                    boostedWalls: boostedWalls,
-                    liveDrop: state.liveDrop,
-                    previewWalls: previewWalls,
-                    onWallShown: (wall) => _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[wall.canonicalKey])),
+                : ValueListenableBuilder<bool>(
+                    valueListenable: _carouselHeld,
+                    // FeedCarousel turns pages only while its tickers run. A drag needs no ticker, and its snap starts
+                    // after the finger lifts, so a swipe on the carousel still works.
+                    builder: (context, held, carousel) => TickerMode(enabled: !held, child: carousel!),
+                    child: FeedCarousel(
+                      boostedWalls: boostedWalls,
+                      liveDrop: state.liveDrop,
+                      previewWalls: previewWalls,
+                      onWallShown: (wall) => _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[wall.canonicalKey])),
+                    ),
                   ),
           ),
         ),
@@ -817,4 +911,34 @@ class _CarouselSkeleton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Paints its sliver [dy] lower, so new content can rise into place. Layout does not move.
+class _SliverRise extends SingleChildRenderObjectWidget {
+  const _SliverRise({required this.dy, required Widget sliver}) : super(child: sliver);
+
+  final double dy;
+
+  @override
+  _RenderSliverRise createRenderObject(BuildContext context) => _RenderSliverRise(dy);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderSliverRise renderObject) => renderObject.dy = dy;
+}
+
+// ponytail: paint only; hit tests stay at the layout position, at most 8 pt off for the 160 ms of the rise.
+class _RenderSliverRise extends RenderProxySliver {
+  _RenderSliverRise(this._dy);
+
+  double _dy;
+  double get dy => _dy;
+
+  set dy(double value) {
+    if (value == _dy) return;
+    _dy = value;
+    markNeedsPaint();
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) => super.paint(context, offset.translate(0, _dy));
 }

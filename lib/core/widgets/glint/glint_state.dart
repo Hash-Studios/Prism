@@ -1,4 +1,5 @@
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -50,7 +51,9 @@ class GlintHalo extends StatelessWidget {
 /// One widget for empty, error, offline, loading and "nothing new" states, with Glint.
 ///
 /// On a tall area (480 and up) the state sits above the centre, where the eye lands first, and fills a short page:
-/// Glint on a [GlintHalo], a section title and a large action. The action is the screen's primary action by default. A page that already shows a primary action (or a bottom bar) passes
+/// a hero, a section title and a large action. The hero is a [CoverMosaic] of wallpapers with a small Glint (56) on its
+/// bottom corner, seeded by [title], on an empty state only. With [covers] false, on any other kind, or in an unbounded height (an inline state in a scroll
+/// view), the hero is Glint on a [GlintHalo]. The action is the screen's primary action by default. A page that already shows a primary action (or a bottom bar) passes
 /// [PrismButtonVariant.tonal] as [actionVariant].
 ///
 /// When large text makes the state taller than its area, it scrolls instead of overflowing. Below 260 points it scales
@@ -66,7 +69,11 @@ class GlintState extends StatelessWidget {
     this.actionVariant = PrismButtonVariant.primary,
     this.glintSize,
     this.padding = const EdgeInsets.all(24),
+    this.covers = true,
   });
+
+  /// Show the [CoverMosaic] hero on a tall, bounded area. False keeps plain Glint on a [GlintHalo].
+  final bool covers;
 
   final GlintStateKind kind;
   final String title;
@@ -75,7 +82,7 @@ class GlintState extends StatelessWidget {
   final VoidCallback? onAction;
   final PrismButtonVariant actionVariant;
 
-  /// Glint's size. Null is 120 on a tall area and 96 otherwise.
+  /// Glint's size. Null is 120 on a tall area and 96 otherwise. The [CoverMosaic] hero always uses a 56 Glint.
   final double? glintSize;
   final EdgeInsetsGeometry padding;
 
@@ -88,12 +95,24 @@ class GlintState extends StatelessWidget {
       builder: (context, constraints) {
         final bool tight = constraints.maxHeight < 260;
         final bool tall = constraints.maxHeight >= 480;
+        // Only an empty state gets wallpaper art: on an error, offline or loading state it would look like the content
+        // that failed to arrive.
+        final bool mosaic = tall && covers && kind == GlintStateKind.empty && constraints.hasBoundedHeight;
         final Widget content = ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 320),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (tall)
+              if (mosaic)
+                SizedBox(
+                  width: 240,
+                  height: 220,
+                  child: CoverMosaic(
+                    seed: title,
+                    badge: Glint(mood: kind.mood, size: 56),
+                  ),
+                )
+              else if (tall)
                 GlintHalo(mood: kind.mood, glintSize: glintSize ?? 120)
               else
                 Glint(mood: kind.mood, size: glintSize ?? 96),

@@ -34,9 +34,10 @@ class _LargeOffset implements SheetOffset {
 const double _flushBegin = 0.6;
 const double _flushEnd = 0.9;
 
-// A sheet opens a little slower than it closes: the arrival is watched, the exit is not.
+// A sheet opens a little slower than it closes. The close must stay long enough to read: on the strong ease-out,
+// 200 ms put most of the drop and the dim fade inside three frames, and it looked like a cut.
 const Duration _openDuration = Duration(milliseconds: 280);
-const Duration _closeDuration = Duration(milliseconds: 200);
+const Duration _closeDuration = Duration(milliseconds: 240);
 
 /// Where the change from floating to flush starts and ends. Both move up by the keyboard height, so a keyboard that
 /// lifts the sheet does not make it flush.

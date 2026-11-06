@@ -1,3 +1,4 @@
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
@@ -80,7 +81,8 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 300));
     final Rect tall = tester.getRect(find.byType(GlintState));
-    final double tallMiddle = (tester.getTopLeft(find.byType(Glint)).dy + tester.getBottomLeft(find.text('T')).dy) / 2;
+    final double tallMiddle =
+        (tester.getTopLeft(find.byType(CoverMosaic)).dy + tester.getBottomLeft(find.text('T')).dy) / 2;
     expect(tallMiddle, lessThan(tall.center.dy - 60), reason: 'biased towards the top');
 
     await tester.pumpWidget(
@@ -108,6 +110,7 @@ void main() {
             actionLabel: 'Go',
             onAction: () {},
             glintSize: glintSize,
+            covers: false,
           ),
           size: size,
         ),
@@ -133,6 +136,50 @@ void main() {
     await pumpAt(const Size(390, 700), glintSize: 64);
     expect(tester.widget<Glint>(find.byType(Glint)).size, 64);
     expect(tester.getSize(find.byType(GlintHalo)), const Size.square(120));
+  });
+
+  testWidgets('a tall bounded area shows the cover mosaic with a small Glint on its corner', (tester) async {
+    await tester.pumpWidget(
+      host(
+        GlintState(kind: GlintStateKind.empty, title: 'T', body: 'B', actionLabel: 'Go', onAction: () {}),
+        size: const Size(390, 700),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(CoverMosaic), findsOneWidget);
+    expect(find.byType(GlintHalo), findsNothing);
+    expect(tester.widget<CoverMosaic>(find.byType(CoverMosaic)).seed, 'T');
+    expect(tester.widget<Glint>(find.byType(Glint)).size, 56);
+    final Rect mosaic = tester.getRect(find.byType(CoverMosaic));
+    final Rect glint = tester.getRect(find.byType(Glint));
+    expect(mosaic.contains(glint.center), isTrue, reason: 'Glint sits on the mosaic');
+    expect(glint.center.dx, greaterThan(mosaic.center.dx), reason: 'on the bottom-end corner');
+    expect(glint.center.dy, greaterThan(mosaic.center.dy));
+    expect(tester.getTopLeft(find.text('T')).dy - mosaic.bottom, 24);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('an unbounded height or covers: false keeps Glint on the halo', (tester) async {
+    await tester.pumpWidget(
+      host(
+        const SingleChildScrollView(
+          child: GlintState(kind: GlintStateKind.nothingNew, title: 'T', glintSize: 64),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(CoverMosaic), findsNothing);
+    expect(tester.widget<Glint>(find.byType(Glint)).size, 64);
+
+    await tester.pumpWidget(
+      host(
+        const GlintState(kind: GlintStateKind.empty, title: 'T', covers: false),
+        size: const Size(390, 700),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(CoverMosaic), findsNothing);
+    expect(find.byType(GlintHalo), findsOneWidget);
   });
 
   testWidgets('does not overflow at 320x200', (tester) async {

@@ -55,6 +55,7 @@ class _Fake {
   bool shareFails = false;
   bool textShareFails = false;
   bool copyFails = false;
+  ImageProvider? thumbnail;
 
   ShareSheetServices get services => ShareSheetServices(
     render: (ShareCardFormat format, ShareCardContent content) {
@@ -99,6 +100,7 @@ class _Fake {
       if (copyFails) throw PlatformException(code: 'clipboard_failed');
       copied.add(text);
     },
+    thumbnail: (String imageUrl) => thumbnail,
   );
 }
 
@@ -287,6 +289,26 @@ void main() {
 
     expect(fake.copied, <String>[shortLink]);
     expect(fake.renders, contains(ShareCardFormat.story));
+  });
+
+  testWidgets('the card frame shows the wall image while the card renders, then the card fades in over it', (
+    tester,
+  ) async {
+    _mockChannels(tester);
+    final Completer<File> render = Completer<File>();
+    final _Fake fake = _Fake(await _writeCards(tester))
+      ..pendingRender = render.future
+      ..thumbnail = MemoryImage(base64Decode(_pngBase64));
+    await _openSheet(tester, fake.services);
+
+    const ValueKey<String> thumb = ValueKey<String>('share-preview-thumb-story');
+    expect(find.byKey(thumb), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('share-preview-story')), findsNothing);
+
+    render.complete(fake.cards[ShareCardFormat.story]!);
+    await _settle(tester);
+    expect(find.byKey(const ValueKey<String>('share-preview-story')), findsOneWidget);
+    expect(find.byKey(thumb), findsOneWidget);
   });
 
   testWidgets('a pending share that cannot load closes the sheet', (tester) async {

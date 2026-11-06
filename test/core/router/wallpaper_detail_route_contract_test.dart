@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/wallpaper_detail_route.dart';
 import 'package:Prism/core/widgets/prism_sheet/prism_sheet_route.dart';
 import 'package:auto_route/auto_route.dart';
@@ -116,24 +115,31 @@ void main() {
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
-    testWidgets('$platform controller keeps the 160ms entry and exit durations', (tester) async {
+    testWidgets('$platform controller runs 260 ms each way, and a slow first frame does not use it up', (tester) async {
+      const double frame = 16.667;
       final router = await _pumpRouter(tester);
       final result = router.push<int>(const PageRouteInfo<void>('Detail'));
       await tester.pump();
       await tester.pump();
       final detail = router.builtRoutes['Detail']!;
-      await tester.pump(const Duration(milliseconds: 80));
+      expect(detail.transitionDuration, wallpaperDetailZoomDuration);
+      expect(detail.reverseTransitionDuration, wallpaperDetailZoomDuration);
+      expect(wallpaperDetailZoomDuration, const Duration(milliseconds: 260));
+      // The first frame builds the whole page. A 200 ms stall there moves the clock by one frame only.
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(detail.animation!.value, closeTo(frame / 260, 0.001));
+      await tester.pump(const Duration(milliseconds: 113));
       expect(detail.animation!.value, closeTo(0.5, 0.01));
-      await tester.pump(const Duration(milliseconds: 81));
+      await tester.pump(const Duration(milliseconds: 131));
       expect(detail.animation!.isCompleted, isTrue);
-      expect(detail.transitionDuration, PrismDurations.fast);
-      expect(detail.reverseTransitionDuration, PrismDurations.fast);
 
       await router.maybePop<int>(42);
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 80));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(detail.animation!.value, closeTo(1 - frame / 260, 0.001));
+      await tester.pump(const Duration(milliseconds: 113));
       expect(detail.animation!.value, closeTo(0.5, 0.01));
-      await tester.pump(const Duration(milliseconds: 81));
+      await tester.pump(const Duration(milliseconds: 131));
       expect(await result, 42);
       expect(router.current.name, 'Grid');
     }, variant: TargetPlatformVariant({platform}));

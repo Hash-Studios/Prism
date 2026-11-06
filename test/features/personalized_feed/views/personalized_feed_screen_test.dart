@@ -781,6 +781,85 @@ void main() {
     expect(find.byType(FeedCarousel), findsNothing);
   });
 
+  testWidgets('a tab change fades the old content out, then fades the new content in with a rise', (tester) async {
+    await pumpScreen(tester);
+    double opacity() => tester.widget<SliverFadeTransition>(find.byType(SliverFadeTransition)).opacity.value;
+    expect(opacity(), 1);
+
+    await tapTab(tester, 'Latest');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 45));
+    expect(find.byType(FeedCarousel), findsOneWidget, reason: 'the old content stays while it fades out');
+    expect(opacity(), inExclusiveRange(0, 1));
+    final TabController tabs = tester.widget<TabBar>(find.byType(TabBar)).controller!;
+    expect(tabs.animation!.value, greaterThan(0), reason: 'the underline moves with it');
+
+    await tester.pump(const Duration(milliseconds: 60));
+    await tester.pump(const Duration(milliseconds: 40));
+    expect(find.byType(FeedCarousel), findsNothing, reason: 'the new content took its place');
+    expect(opacity(), inExclusiveRange(0, 1));
+
+    await _settle(tester);
+    expect(opacity(), 1);
+  });
+
+  testWidgets('with reduce motion on, a tab change swaps the content at once', (tester) async {
+    await pumpScreen(tester, disableAnimations: true);
+
+    await tapTab(tester, 'Latest');
+    await tester.pump();
+
+    expect(find.byType(FeedCarousel), findsNothing);
+    expect(tester.widget<SliverFadeTransition>(find.byType(SliverFadeTransition)).opacity.value, 1);
+  });
+
+  testWidgets('the carousel does not turn for 5 s after a touch', (tester) async {
+    await pumpScreen(tester);
+    int page() => tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current;
+    Future<void> wait(Duration total) async {
+      for (Duration d = Duration.zero; d < total; d += const Duration(milliseconds: 100)) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
+    // Count from the last rebuild of the carousel: the next turn is due in 5 s.
+    await wait(const Duration(seconds: 5));
+    final int start = page();
+    await wait(const Duration(seconds: 4));
+    expect(page(), start);
+
+    // Below the carousel: a touch on the carousel already pauses it by itself.
+    final TestGesture touch = await tester.startGesture(
+      Offset(4, tester.getRect(find.byType(FeedCarousel)).bottom + 200),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    await touch.up();
+    await wait(const Duration(milliseconds: 4500));
+    expect(page(), start, reason: 'the touch restarted the countdown');
+
+    await wait(const Duration(seconds: 1));
+    expect(page(), isNot(start));
+  });
+
+  testWidgets('a swipe on the carousel still turns its page while the touch holds the auto-advance', (tester) async {
+    await pumpScreen(tester);
+    int page() => tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current;
+    final int start = page();
+
+    await tester.fling(find.byType(FeedCarousel), const Offset(-300, 0), 1000);
+    for (int i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(page(), isNot(start));
+    expect(
+      tester
+          .widget<TickerMode>(find.ancestor(of: find.byType(FeedCarousel), matching: find.byType(TickerMode)).first)
+          .enabled,
+      isTrue,
+    );
+  });
+
   testWidgets('the home loads the trending week list once at start, and has no Trending strip', (tester) async {
     await pumpScreen(tester);
 

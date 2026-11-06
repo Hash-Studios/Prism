@@ -8,6 +8,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/purchases/annual_trial.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/premium/views/pages/premium_page.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -49,12 +50,31 @@ void main() {
     await getIt.reset();
   });
 
-  // A phone screen: the actions follow the benefits, below the default 800x600 test view's fold.
+  // A phone screen: the actions follow the benefits, below the default 800x600 test view's fold. The test font is
+  // wider than the app's, so the benefit rows wrap more; the extra 120 points keep the cover banner's page on screen.
   void phone(WidgetTester tester) {
-    tester.view.physicalSize = const Size(393, 852);
+    tester.view.physicalSize = const Size(393, 972);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
   }
+
+  testWidgets('a wallpaper cover banner leads the page and View plans stays above the fold', (tester) async {
+    phone(tester);
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: PremiumPage(),
+      ),
+    );
+    await tester.pump();
+    expect(tester.widget<CoverMosaic>(find.byType(CoverMosaic)).seed, AppLocalizationsEn().premiumPageTitle);
+    expect(
+      tester.getBottomLeft(find.byType(CoverMosaic)).dy,
+      lessThan(tester.getTopLeft(find.text(AppLocalizationsEn().premiumPageHeadline)).dy),
+    );
+    expect(find.text(AppLocalizationsEn().premiumPageViewPlans).hitTestable(), findsOneWidget);
+  });
 
   testWidgets('opening Premium waits for the user to view plans', (tester) async {
     phone(tester);
@@ -187,6 +207,7 @@ void main() {
   });
 
   testWidgets('a trial that starts while the page is open replaces View plans', (tester) async {
+    phone(tester);
     await tester.pumpWidget(
       const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,

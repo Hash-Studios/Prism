@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math' show max, min;
+import 'dart:math' show max, min, sqrt;
 import 'dart:ui' show lerpDouble;
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -797,6 +797,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   /// Set by a drag that started at the top of the page, until its release.
   bool _swipeFromTop = false;
 
+  /// Where the snap to "More like this" is going, from the release until the scroll stops.
+  double? _snapTarget;
+
   /// Set while the similar walls fill the screen. "^" then shows to go back up to the wall.
   /// A notifier, so only "^" rebuilds as it shows and hides.
   final ValueNotifier<bool> _similarFocus = ValueNotifier<bool>(false);
@@ -852,25 +855,30 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   /// Called with the release velocity of every fling or settle. A drag up from the top of the page that went far or
-  /// fast enough snaps to the similar walls instead of coasting.
-  bool _onRelease(ScrollMetrics position, double velocity) {
-    if (!_swipeFromTop) return false;
+  /// fast enough snaps to the similar walls instead of coasting: this returns the offset to snap to, or null to coast.
+  double? _onRelease(ScrollMetrics position, double velocity) {
+    // A snap that is under way keeps its target when the scroll's dimensions change and the physics are asked again.
+    // That can happen during layout, so this path has no side effects.
+    if (_snapTarget != null) return _snapTarget;
+    if (!_swipeFromTop) return null;
     _swipeFromTop = false;
     final WallpaperDetailState state = context.read<WallpaperDetailBloc>().state;
-    if (state is! WallpaperDetailLoaded || !_hasSimilar(state.recommendations)) return false;
+    if (state is! WallpaperDetailLoaded || !_hasSimilar(state.recommendations)) return null;
     final double? target = _similarOffset();
     final bool far = position.pixels > position.viewportDimension * _similarDrag;
     if (target == null || target <= position.pixels || velocity < 0 || !(far || velocity > _similarFling)) {
-      return false;
+      return null;
     }
-    // The release is still being handled. Start the snap once it settles, so the fling does not replace it.
-    scheduleMicrotask(() {
-      if (!mounted || !_scroll.hasClients) return;
-      PrismHaptics.selection();
-      GestureHints.markSeen(GestureHint.swipeForSimilar);
-      unawaited(_scroll.animateOrJump(target, duration: context.motion(PrismDurations.slow), curve: PrismCurves.move));
-    });
-    return true;
+    PrismHaptics.selection();
+    GestureHints.markSeen(GestureHint.swipeForSimilar);
+    if (context.reduceMotion) {
+      // After the release is handled, so the jump ends the fling it starts.
+      scheduleMicrotask(() {
+        if (mounted && _scroll.hasClients) _scroll.jumpTo(target);
+      });
+      return null;
+    }
+    return _snapTarget = target;
   }
 
   /// "^": the reverse of the snap, back up to the wall.
@@ -1764,6 +1772,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                     if (canonicalLoading) return false;
                     if (notification is ScrollStartNotification && notification.depth == 0) {
                       _swipeFromTop = notification.dragDetails != null && notification.metrics.pixels <= 1;
+                    }
+                    if ((notification is ScrollStartNotification || notification is ScrollEndNotification) &&
+                        notification.depth == 0) {
+                      _snapTarget = null;
                     }
                     if (notification is ScrollStartNotification) {
                       context.read<WallpaperDetailBloc>().add(const OnPanelScrollStart());
@@ -3562,12 +3574,15 @@ class _HueTintState extends State<_HueTint> with SingleTickerProviderStateMixin 
   }
 }
 
-/// Platform scroll physics that first offer each release to [onRelease]. When it takes the release, the page stops
-/// where it is and [onRelease] animates it on.
+/// Platform scroll physics that first offer each release to [onRelease]. When it returns an offset, the page springs
+/// there from the release velocity, so the drag and the snap are one motion.
 class _SimilarSnapPhysics extends ScrollPhysics {
   const _SimilarSnapPhysics({required this.onRelease, super.parent});
 
-  final bool Function(ScrollMetrics position, double velocity) onRelease;
+  final double? Function(ScrollMetrics position, double velocity) onRelease;
+
+  /// Critically damped: about 330 ms to settle within 2%, near [PrismDurations.slow].
+  static final SpringDescription _spring = SpringDescription.withDampingRatio(mass: 1, stiffness: 300);
 
   @override
   _SimilarSnapPhysics applyTo(ScrollPhysics? ancestor) =>
@@ -3575,8 +3590,22 @@ class _SimilarSnapPhysics extends ScrollPhysics {
 
   @override
   Simulation? createBallisticSimulation(ScrollMetrics position, double velocity) {
-    if (!position.outOfRange && onRelease(position, velocity)) return null;
-    return super.createBallisticSimulation(position, velocity);
+    final double? target = position.outOfRange ? null : onRelease(position, velocity);
+    final Tolerance tolerance = toleranceFor(position);
+    if (target == null || (target - position.pixels).abs() <= tolerance.distance) {
+      return super.createBallisticSimulation(position, velocity);
+    }
+    // A critically damped spring overshoots when it starts faster than this toward its target. Past it, "More like
+    // this" would slide under the header and come back.
+    final double distance = target - position.pixels;
+    final double limit = sqrt(_spring.stiffness / _spring.mass) * distance.abs();
+    return ScrollSpringSimulation(
+      _spring,
+      position.pixels,
+      target,
+      velocity.clamp(-limit, limit),
+      tolerance: tolerance,
+    );
   }
 }
 

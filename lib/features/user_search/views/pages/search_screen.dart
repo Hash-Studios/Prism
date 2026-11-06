@@ -401,9 +401,19 @@ class _SearchScreenState extends State<SearchScreen> {
     _triggerSearch(tag, sourceContext: 'wallpaper_tag', fromSuggestion: true);
   }
 
+  void _onFocusChanged() => setState(() {});
+
+  /// The Cancel button beside the focused field: clears the query, closes the keyboard and returns to discovery.
+  void _cancelSearch() {
+    searchController.clear();
+    _focus.unfocus();
+    if (isSubmitted) _backToDiscover();
+  }
+
   @override
   void initState() {
     super.initState();
+    _focus.addListener(_onFocusChanged);
     _showAi = AiContentFilter.showsAi(_settingsLocal);
     personalizedFeedSettingsRevision.addListener(_onFeedSettingsChanged);
     pendingTagSearch.addListener(_consumePendingTag);
@@ -417,7 +427,9 @@ class _SearchScreenState extends State<SearchScreen> {
     personalizedFeedSettingsRevision.removeListener(_onFeedSettingsChanged);
     pendingTagSearch.removeListener(_consumePendingTag);
     searchController.dispose();
-    _focus.dispose();
+    _focus
+      ..removeListener(_onFocusChanged)
+      ..dispose();
     unawaited(_discoveryBloc.close());
     super.dispose();
   }
@@ -451,21 +463,59 @@ class _SearchScreenState extends State<SearchScreen> {
                   },
                 ),
               ),
-              const SizedBox(width: PrismSpace.xxs),
-              PrismIconButton(
-                icon: Icons.image_search_rounded,
-                tooltip: context.l10n.searchByPhoto,
-                onPressed: () => unawaited(_searchByPhoto()),
-              ),
-              Badge(
-                isLabelVisible: _filters != const SearchFilters(),
-                smallSize: 8,
-                alignment: AlignmentDirectional.topEnd,
-                offset: const Offset(-8, 8),
-                child: PrismIconButton(
-                  icon: Icons.tune_rounded,
-                  tooltip: context.l10n.accountFilters,
-                  onPressed: _openFilters,
+              // Like iOS: on focus the photo and filter buttons give way to a Cancel button that slides in, and the
+              // field resizes with it. Unfocus reverses it.
+              AnimatedSize(
+                duration: context.motion(PrismDurations.fast),
+                curve: PrismCurves.enter,
+                alignment: AlignmentDirectional.centerStart,
+                child: AnimatedSwitcher(
+                  duration: context.motion(PrismDurations.fast),
+                  switchInCurve: PrismCurves.enter,
+                  switchOutCurve: PrismCurves.exitReverse,
+                  layoutBuilder: (current, previous) =>
+                      Stack(alignment: AlignmentDirectional.centerEnd, children: <Widget>[...previous, ?current]),
+                  transitionBuilder: (child, animation) => FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(begin: const Offset(0.4, 0), end: Offset.zero).animate(animation),
+                      child: child,
+                    ),
+                  ),
+                  child: _focus.hasFocus
+                      ? Padding(
+                          key: const ValueKey<String>('cancel'),
+                          padding: const EdgeInsetsDirectional.only(start: PrismSpace.xxs, end: PrismSpace.xs),
+                          child: PrismButton(
+                            label: context.l10n.accountCancel,
+                            variant: PrismButtonVariant.ghost,
+                            size: PrismButtonSize.compact,
+                            onPressed: _cancelSearch,
+                          ),
+                        )
+                      : Row(
+                          key: const ValueKey<String>('actions'),
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            const SizedBox(width: PrismSpace.xxs),
+                            PrismIconButton(
+                              icon: Icons.image_search_rounded,
+                              tooltip: context.l10n.searchByPhoto,
+                              onPressed: () => unawaited(_searchByPhoto()),
+                            ),
+                            Badge(
+                              isLabelVisible: _filters != const SearchFilters(),
+                              smallSize: 8,
+                              alignment: AlignmentDirectional.topEnd,
+                              offset: const Offset(-8, 8),
+                              child: PrismIconButton(
+                                icon: Icons.tune_rounded,
+                                tooltip: context.l10n.accountFilters,
+                                onPressed: _openFilters,
+                              ),
+                            ),
+                          ],
+                        ),
                 ),
               ),
             ],
@@ -632,6 +682,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   )
                 : SearchDiscoveryWidget(
                     header: _header(context),
+                    dimmed: _focus.hasFocus,
                     tags: curatedSearchTags,
                     selectedTag: searchController.text,
                     recentSearches: _recentSearches,

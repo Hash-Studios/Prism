@@ -9,6 +9,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/install_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/core/widgets/popup/contri_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -189,8 +190,14 @@ class _AboutScreenState extends State<AboutScreen> {
   Widget _header(BuildContext context) {
     return Column(
       children: <Widget>[
-        Image.asset('assets/images/prism.webp', height: 70),
-        const SizedBox(height: PrismSpace.sm),
+        SizedBox(
+          height: 220,
+          child: CoverMosaic(
+            seed: context.l10n.accountAppName,
+            badge: Image.asset('assets/images/prism.webp', width: 56, height: 56),
+          ),
+        ),
+        const SizedBox(height: PrismSpace.md),
         Text(context.l10n.accountAppName, textAlign: TextAlign.center, style: PrismTextStyles.rowTitle(context)),
         Semantics(
           button: true,

@@ -235,6 +235,23 @@ void _expectScrimAlpha(WidgetTester tester, _TestRouter router, {required bool r
   expect(scrim.color, expected);
 }
 
+/// The other tile, on the grid stepped back to 0.94 around [tile]'s centre as far as the zoom has gone.
+void _expectBehindSteppedBack(
+  WidgetTester tester,
+  _TestRouter router,
+  Rect tile, {
+  required bool reverse,
+  required String reason,
+}) {
+  final Curve curve = reverse ? const FlippedCurve(_testZoomCurve) : _testZoomCurve;
+  final double s = 1 - 0.06 * curve.transform(router.detailRoute!.animation!.value);
+  final Offset c = tile.center;
+  final Rect other = tester.getRect(find.byKey(_otherTileKey));
+  expect(other.left, closeTo(c.dx + (600 - c.dx) * s, 0.01), reason: reason);
+  expect(other.top, closeTo(c.dy + (400 - c.dy) * s, 0.01), reason: reason);
+  expect(other.width, closeTo(100 * s, 0.01), reason: reason);
+}
+
 void main() {
   for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
     testWidgets('$platform opens in place while its Hero expands, then returns a typed result', (tester) async {
@@ -247,7 +264,7 @@ void main() {
 
       expect(tester.getRect(find.byKey(_artKey)).width, closeTo(tile.width, 1));
       expect(tester.getTopLeft(find.byKey(_bodyKey)), const Offset(0, 300));
-      expect(router.detailRoute!.transitionDuration, PrismDurations.fast);
+      expect(router.detailRoute!.transitionDuration, wallpaperDetailZoomDuration);
       expect(router.detailRoute!.settings, same(router.stack.last));
       expect(router.current.animationCompletion, isNotNull);
 
@@ -261,7 +278,7 @@ void main() {
         final fade = tester.widget<FadeTransition>(
           find.ancestor(of: find.byKey(_bodyKey), matching: find.byType(FadeTransition)).first,
         );
-        expect(fade.opacity.value, closeTo(PrismCurves.enter.transform(((i + 1) * 40 + 1) / 160), 0.001));
+        expect(fade.opacity.value, closeTo(PrismCurves.enter.transform(((i + 1) * 40 + 1) / 260), 0.001));
         lastWidth = flying.width;
       }
       await tester.pumpAndSettle();
@@ -327,13 +344,9 @@ void main() {
         expect(body.top, closeTo(art.top + art.width * 300 / 800, 0.01), reason: 'frame $frames');
         expect(body.top, lessThanOrEqualTo(art.bottom + 0.01), reason: 'frame $frames');
         _expectScrimAlpha(tester, router, reverse: false);
-        // The grid behind zooms with the card, so its other tile maps the same way as the tile does.
+        // The grid behind steps back around the tile while the card grows out of it.
         if (find.byKey(_otherTileKey).evaluate().isNotEmpty) {
-          final Rect other = tester.getRect(find.byKey(_otherTileKey));
-          final double s = art.width / tile.width;
-          expect(other.left, closeTo(art.left + (600 - tile.left) * s, 0.01), reason: 'frame $frames');
-          expect(other.top, closeTo(art.top + (400 - tile.top) * s, 0.01), reason: 'frame $frames');
-          expect(other.width, closeTo(100 * s, 0.01), reason: 'frame $frames');
+          _expectBehindSteppedBack(tester, router, tile, reverse: false, reason: 'frame $frames');
           behindFrames++;
         }
         frames++;
@@ -350,7 +363,7 @@ void main() {
       );
       expect(card.curve, const Cubic(0.45, 0.3, 0.1, 1));
 
-      // Going back shrinks the page into its tile, and the grid behind zooms back out with it.
+      // Going back shrinks the page into its tile, and the grid behind steps forward again.
       unawaited(router.maybePop<int>(3));
       await tester.pump();
       var popFrames = 0;
@@ -366,11 +379,7 @@ void main() {
           _expectScrimAlpha(tester, router, reverse: true);
           lastWidth = body.width;
           if (find.byKey(_otherTileKey).evaluate().isNotEmpty) {
-            final Rect other = tester.getRect(find.byKey(_otherTileKey));
-            final double s = art.width / tile.width;
-            expect(other.left, closeTo(art.left + (600 - tile.left) * s, 0.01), reason: 'pop frame $popFrames');
-            expect(other.top, closeTo(art.top + (400 - tile.top) * s, 0.01), reason: 'pop frame $popFrames');
-            expect(other.width, closeTo(100 * s, 0.01), reason: 'pop frame $popFrames');
+            _expectBehindSteppedBack(tester, router, tile, reverse: true, reason: 'pop frame $popFrames');
           }
           popFrames++;
         }
@@ -503,6 +512,8 @@ void main() {
     for (var i = 0; i < 4 && find.byKey(_artKey).evaluate().isEmpty; i++) {
       await tester.pump();
     }
+    // The clock's first step is one frame at most, so take that frame before the 60 ms.
+    await tester.pump(const Duration(milliseconds: 16));
     await tester.pump(const Duration(milliseconds: 60));
     unawaited(router.maybePop<void>());
     await tester.pump();

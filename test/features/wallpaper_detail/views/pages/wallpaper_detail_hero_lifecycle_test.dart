@@ -126,7 +126,7 @@ class _HeroRouter extends RootStackRouter {
 void main() {
   setUpFavouriteCounts();
 
-  testWidgets('canonical Prism loading preserves the destination Hero throughout its real 160ms flight', (
+  testWidgets('canonical Prism loading preserves the destination Hero throughout its real 260 ms flight', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(400, 800);
@@ -180,7 +180,7 @@ void main() {
       matching: find.byType(Hero, skipOffstage: false),
     );
     final heroState = tester.state(destination);
-    expect(ModalRoute.of(tester.element(destination))!.transitionDuration, const Duration(milliseconds: 160));
+    expect(ModalRoute.of(tester.element(destination))!.transitionDuration, wallpaperDetailZoomDuration);
     await tester.pump();
     expect(bloc.state, isA<WallpaperDetailLoading>());
     expect(tester.state(destination), same(heroState));

@@ -226,4 +226,30 @@ void main() {
 
     expect(find.byType(CollectionViewGrid), findsOneWidget);
   });
+
+  testWidgets('a category with a cover shows it as the header with tinted blocks while loading', (tester) async {
+    const CategoryEntity covered = CategoryEntity(
+      name: 'Dark',
+      source: WallpaperSource.prism,
+      searchType: CategorySearchType.search,
+      image: 'https://images.pexels.com/photos/1616403/x.jpeg',
+      image2: '',
+    );
+    current = CategoryFeedState.initial().copyWith(
+      status: LoadStatus.success,
+      categories: const <CategoryEntity>[covered, _space],
+      selectedCategory: _space,
+      items: <FeedItemEntity>[],
+    );
+    when(() => bloc.add(any())).thenAnswer((_) {});
+
+    await pumpScreen(tester);
+
+    expect(find.byType(LoadingCards), findsNothing, reason: 'the cover header replaces the grey skeleton');
+    expect(find.byType(Image), findsOneWidget);
+    expect(find.byType(GridView), findsOneWidget);
+
+    states.add(current.copyWith(selectedCategory: covered));
+    await tester.pump(const Duration(seconds: 31));
+  });
 }

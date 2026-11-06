@@ -237,4 +237,54 @@ void main() {
     await tester.pumpAndSettle();
     expect(landed(), everyElement(1));
   });
+
+  /// Drags up from the top at 12 px a frame for 16 frames, lets go, and returns the offset of each frame after.
+  Future<List<double>> dragAndRelease(WidgetTester tester) async {
+    final ScrollController scroll = scrollOf(tester);
+    final TestGesture gesture = await tester.startGesture(tester.getCenter(find.byType(CustomScrollView)));
+    for (int i = 1; i <= 16; i++) {
+      await gesture.moveBy(const Offset(0, -12), timeStamp: Duration(milliseconds: 16 * i));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await gesture.up(timeStamp: const Duration(milliseconds: 16 * 17));
+    final List<double> offsets = <double>[scroll.offset];
+    for (int i = 0; i < 40; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      offsets.add(scroll.offset);
+    }
+    return offsets;
+  }
+
+  testWidgets('the snap carries on from the release speed: no stop, no step back, no overshoot', (tester) async {
+    await pump(tester);
+    final List<double> offsets = await dragAndRelease(tester);
+    // The drag moved 12 px a frame. Like any fling, the snap starts its clock on the first frame after the release;
+    // the frame after that keeps at least the drag's pace. S1 stopped here (1 px), then eased in from rest.
+    expect(offsets[2] - offsets[1], greaterThanOrEqualTo(12));
+    for (int i = 1; i < offsets.length; i++) {
+      expect(offsets[i], greaterThanOrEqualTo(offsets[i - 1] - 0.01), reason: 'frame $i went back');
+    }
+    final double end = offsets.last;
+    expect(offsets, everyElement(lessThanOrEqualTo(end + 0.5)));
+    await tester.pumpAndSettle();
+    expectSnapped(tester);
+  });
+
+  testWidgets('with reduce motion the snap jumps', (tester) async {
+    sizeView(tester);
+    final bloc = _DetailBloc();
+    whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: _loaded());
+    await tester.pumpWidget(
+      app(
+        Builder(
+          builder: (context) =>
+              MediaQuery(data: MediaQuery.of(context).copyWith(disableAnimations: true), child: screen(bloc)),
+        ),
+      ),
+    );
+    await tester.pump();
+    final List<double> offsets = await dragAndRelease(tester);
+    expect(offsets[1], offsets.last);
+    expectSnapped(tester);
+  });
 }

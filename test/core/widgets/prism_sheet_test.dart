@@ -63,7 +63,7 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('opens in 280 ms, closes faster in 200 ms, and the dim fades on the same curves', (tester) async {
+  testWidgets('opens in 280 ms, closes in 240 ms, and the dim fades on the same curves', (tester) async {
     await tester.pumpWidget(
       _app((context) => showPrismSheet<void>(context, builder: (_) => const PrismSheetBody(title: 'Sort by'))),
     );
@@ -81,7 +81,30 @@ void main() {
     await tester.pump(const Duration(milliseconds: 60));
     // An ease-out exit: most of the dim is gone in the first third.
     expect(_dim(tester), lessThan(PrismBottomSheet.barrier.a * 0.5));
-    await tester.pump(const Duration(milliseconds: 141));
+    // The sheet is still sliding at 120 ms, not already gone: the close reads as a slide, not a cut.
+    await tester.pump(const Duration(milliseconds: 60));
+    expect(find.text('Sort by'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 121));
+    expect(find.text('Sort by'), findsNothing);
+  });
+
+  testWidgets('the close button slides the sheet down over several frames, with the dim fading', (tester) async {
+    await tester.pumpWidget(
+      _app((context) => showPrismSheet<void>(context, builder: (_) => const PrismSheetBody(title: 'Sort by'))),
+    );
+    await _open(tester);
+    final double rest = tester.getTopLeft(find.text('Sort by')).dy;
+    await tester.tap(find.byTooltip('Close'));
+    final List<double> offsets = <double>[];
+    for (int i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      offsets.add(tester.getTopLeft(find.text('Sort by')).dy - rest);
+    }
+    for (int i = 1; i < offsets.length; i++) {
+      expect(offsets[i], greaterThan(offsets[i - 1]));
+    }
+    expect(_dim(tester), lessThan(PrismBottomSheet.barrier.a));
+    await tester.pumpAndSettle();
     expect(find.text('Sort by'), findsNothing);
   });
 

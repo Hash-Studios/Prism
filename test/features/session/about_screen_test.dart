@@ -1,6 +1,7 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -108,6 +109,26 @@ void main() {
       await tester.pump();
       await tester.pump();
     }
+
+    testWidgets('the header shows a wallpaper cover mosaic with the Prism logo on its corner', (tester) async {
+      await pumpAbout(tester);
+      final CoverMosaic mosaic = tester.widget<CoverMosaic>(find.byType(CoverMosaic));
+      expect(mosaic.seed, 'Prism Wallpapers');
+      expect(
+        find.descendant(
+          of: find.byType(CoverMosaic),
+          matching: find.byWidgetPredicate(
+            (Widget w) =>
+                w is Image && w.image is AssetImage && (w.image as AssetImage).assetName == 'assets/images/prism.webp',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        tester.getBottomLeft(find.byType(CoverMosaic)).dy,
+        lessThan(tester.getTopLeft(find.text('Prism Wallpapers')).dy),
+      );
+    });
 
     testWidgets('the contributor list loads once per session', (tester) async {
       var loads = 0;

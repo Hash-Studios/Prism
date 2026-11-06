@@ -147,6 +147,52 @@ void main() {
     expect(find.byTooltip('Clear search'), findsNothing);
   });
 
+  testWidgets('focusing the field slides in Cancel in place of the photo and filter buttons; Cancel reverses it', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+    expect(find.text('Cancel'), findsNothing);
+    expect(find.byTooltip('Filters'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'fog');
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+
+    expect(find.text('Cancel'), findsOneWidget);
+    expect(find.byTooltip('Filters'), findsNothing);
+    expect(find.byTooltip('Search by photo'), findsNothing);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pump(); // The focus change rebuilds the header; the 160 ms swap starts on this frame.
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+
+    expect(find.text('Cancel'), findsNothing);
+    expect(find.byTooltip('Filters'), findsOneWidget);
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+    expect(tester.widget<TextField>(find.byType(TextField)).focusNode!.hasFocus, isFalse);
+  });
+
+  testWidgets('Cancel on a results page returns to discovery', (tester) async {
+    when(
+      () => service.search(any(), filters: any(named: 'filters')),
+    ).thenAnswer((_) async => _page(<FeedItemEntity>[_wallpaper('wh-1')]));
+    await pumpScreen(tester);
+    await enterQuery(tester, 'forest');
+    await tester.pump();
+    expect(find.byType(SearchGrid), findsOneWidget);
+
+    await tester.showKeyboard(find.byType(TextField));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+    await tester.tap(find.text('Cancel'));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+
+    expect(find.byType(SearchGrid), findsNothing);
+    expect(find.text('Find creators'), findsOneWidget);
+  });
+
   testWidgets('shows the trending skeleton while loading and an error with retry when it fails', (tester) async {
     await getIt.unregister<SearchDiscoveryBloc>();
     stubDiscovery(
@@ -588,6 +634,8 @@ void main() {
         ),
       );
       await tester.pump();
+      // Colours sit below Trending and the categories, under the fold of the test view.
+      await tester.ensureVisible(find.bySemanticsLabel(name));
       await tester.tap(find.bySemanticsLabel(name));
       await tester.pump();
       await tester.pump();
@@ -621,6 +669,7 @@ void main() {
 
       await tester.tap(find.byTooltip('Clear search'));
       await tester.pump();
+      await tester.ensureVisible(find.bySemanticsLabel('Red'));
       await tester.tap(find.bySemanticsLabel('Red'));
       await tester.pump();
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
@@ -749,6 +798,7 @@ void main() {
           );
           await pumpScreen(tester);
 
+          await tester.ensureVisible(find.text('Spatial'));
           await tester.tap(find.text('Spatial'));
           await tester.pump();
           await tester.pump();
@@ -774,6 +824,7 @@ void main() {
         );
         await pumpScreen(tester);
 
+        await tester.ensureVisible(find.text('Depth Effect'));
         await tester.tap(find.text('Depth Effect'));
         await tester.pump();
         await tester.pump();

@@ -176,15 +176,22 @@ void main() {
       states.add(_loaded(_wall(width: 1600, height: 900)));
       await tester.pump();
       await tester.pump();
+      // The loaded card's picture brings its own fade-ins into the flight. The flight's own fade is the outermost.
+      final Finder outer = flight.first;
       var frames = 0;
       while (router.detail!.animation!.isAnimating) {
-        expect(flight, findsOneWidget);
+        expect(flight, findsWidgets);
         expect(
-          tester.widget<FadeTransition>(flight).opacity.value,
+          find.descendant(of: outer, matching: flight),
+          findsNWidgets(flight.evaluate().length - 1),
+          reason: 'every other fade sits inside the flight at frame $frames',
+        );
+        expect(
+          tester.widget<FadeTransition>(outer).opacity.value,
           1,
           reason: 'loading to loaded must not abort or fade the actual Hero at flight frame $frames',
         );
-        final art = tester.getRect(flight);
+        final art = tester.getRect(outer);
         final card = tester.getRect(find.byType(WallpaperDetailHero));
         expect(art.isEmpty, isFalse);
         expect(art.left, closeTo(card.left, 0.01));
@@ -367,7 +374,9 @@ void main() {
         initial: const WallpaperDetailLoading(),
         viewport: shrinking ? const Size(800, 1000) : const Size(400, 800),
       );
-      await tester.pump(const Duration(milliseconds: 200));
+      // One frame, then the rest of the 260 ms opening: the clock's first step is one frame at most.
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 300));
       await tester.pump();
       expect(router.detail!.animation!.isCompleted, isTrue);
       final opened = _card(tester);

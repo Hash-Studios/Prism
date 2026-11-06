@@ -5,6 +5,7 @@ import 'package:Prism/core/purchases/manage_subscription.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -108,6 +109,9 @@ class _PremiumPageState extends State<PremiumPage> {
           PrismSpace.xl + (trial == null ? MediaQuery.paddingOf(context).bottom : 0),
         ),
         children: <Widget>[
+          // A short banner, so View plans and Restore purchases stay above the fold on a 852 point phone.
+          SizedBox(height: 104, child: CoverMosaic(seed: l10n.premiumPageTitle)),
+          const SizedBox(height: PrismSpace.md),
           Text(l10n.premiumPageHeadline, style: PrismTextStyles.display(context)),
           if (trial != null) ...<Widget>[
             const SizedBox(height: PrismSpace.sm),

@@ -168,13 +168,14 @@ void main() {
     });
   }
 
-  testWidgets('keyboard feedback clears the lifted pill instead of applying its inset twice', (tester) async {
+  testWidgets('the keyboard covers the pill instead of lifting it, and feedback sits on the keyboard', (tester) async {
     await pumpBar(tester, keyboard: 300);
     await showMessage(tester);
 
     final Rect pill = tester.getRect(find.byType(PrismBottomNav));
-    expect(pill.bottom, closeTo(844 - 300 - 10, 0.01));
-    expect(cardRect(tester).bottom, closeTo(pill.top - 8, 0.01));
+    expect(pill.bottom, closeTo(844 - 10, 0.01), reason: 'the pill does not ride up with the keyboard');
+    expect(pill.top, greaterThan(844 - 300), reason: 'the keyboard covers all of it');
+    expect(cardRect(tester).bottom, closeTo(844 - 300 - 10, 0.01));
     expect(tester.takeException(), isNull);
   });
 

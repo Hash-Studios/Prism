@@ -6,6 +6,7 @@ import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -131,7 +132,13 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                const Glint(mood: GlintMood.happy, size: 120),
+                SizedBox(
+                  height: 220,
+                  child: CoverMosaic(
+                    seed: context.l10n.accountInviteFriends,
+                    badge: const Glint(mood: GlintMood.happy, size: 56),
+                  ),
+                ),
                 const SizedBox(height: PrismSpace.lg),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 300),

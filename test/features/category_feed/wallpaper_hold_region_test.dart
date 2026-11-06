@@ -28,6 +28,7 @@ void main() {
     double textScale = 1,
     String? dayNightLabel,
     Brightness brightness = Brightness.light,
+    Color? tone,
   }) => tester.pumpWidget(
     MaterialApp(
       theme: ThemeData(brightness: brightness),
@@ -54,6 +55,7 @@ void main() {
                 unpinLabel: 'Unpin',
                 readIsPinned: isPinned == null ? null : () => isPinned,
                 dayNightLabel: dayNightLabel,
+                tone: tone,
                 onAction: actions.add,
                 preview: const ColoredBox(key: ValueKey('preview'), color: Colors.blue),
                 child: GestureDetector(
@@ -403,6 +405,136 @@ void main() {
     await tester.pump();
     expect(find.byKey(const ValueKey<String>('wallpaper-hold-scrim')), findsNothing);
     expect(actions, isEmpty);
+  });
+
+  group('press ring', () {
+    final ring = find.byKey(const ValueKey<String>('wallpaper-hold-ring'));
+    final scrim = find.byKey(const ValueKey<String>('wallpaper-hold-scrim'));
+
+    /// The sweep and colour of the ring's arc, or null when nothing is drawn.
+    (double, Color)? readArc(WidgetTester tester) {
+      (double, Color)? arc;
+      final matcher = paints
+        ..something((method, arguments) {
+          if (method != #drawArc) return false;
+          arc = (arguments[2] as double, (arguments[4] as Paint).color);
+          return true;
+        });
+      return (matcher as Matcher).matches(tester.renderObject(ring), <dynamic, dynamic>{}) ? arc : null;
+    }
+
+    testWidgets('touch-down draws the ring at once and it fills until the menu opens', (tester) async {
+      final actions = <WallpaperQuickAction>[];
+      await pumpRegion(tester, actions);
+      final Offset centre = tester.getCenter(find.byKey(const ValueKey('source')));
+      final gesture = await tester.startGesture(centre);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      final double early = readArc(tester)!.$1;
+      expect(early, greaterThan(0));
+      expect(tester.renderObject(ring), paints..circle(x: 80, y: 100));
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(readArc(tester)!.$1, greaterThan(early));
+      expect(scrim, findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(scrim, findsOneWidget);
+      expect(readArc(tester), isNull, reason: 'the open menu replaces the ring');
+      await gesture.up();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump();
+    });
+
+    for (final bool drag in <bool>[false, true]) {
+      testWidgets('${drag ? 'a drag' : 'a lift'} before the timeout unwinds the ring in 120 ms, no menu', (
+        tester,
+      ) async {
+        final actions = <WallpaperQuickAction>[];
+        await pumpRegion(tester, actions);
+        final gesture = await tester.startGesture(tester.getCenter(find.byKey(const ValueKey('source'))));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 250));
+        final double held = readArc(tester)!.$1;
+        if (drag) {
+          await gesture.moveBy(const Offset(0, 40));
+        } else {
+          await gesture.up();
+        }
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 60));
+        final double reversing = readArc(tester)!.$1;
+        expect(reversing, lessThan(held));
+        await tester.pump(const Duration(milliseconds: 70));
+        expect(readArc(tester), isNull);
+        await tester.pump(const Duration(milliseconds: 600));
+        expect(scrim, findsNothing);
+        if (drag) await gesture.up();
+        await tester.pump();
+        expect(actions, isEmpty);
+      });
+    }
+
+    testWidgets('a dark wall gets a white ring; without a tone the ring uses the theme ink', (tester) async {
+      await pumpRegion(tester, <WallpaperQuickAction>[], tone: const Color(0xFF101418));
+      var gesture = await tester.startGesture(tester.getCenter(find.byKey(const ValueKey('source'))));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(readArc(tester)!.$2, isSameColorAs(Colors.white));
+      await gesture.up();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      await pumpRegion(tester, <WallpaperQuickAction>[], identity: 'light wall');
+      gesture = await tester.startGesture(tester.getCenter(find.byKey(const ValueKey('source'))));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(readArc(tester)!.$2, isSameColorAs(ThemeData().colorScheme.onSurface));
+      await gesture.up();
+      await tester.pump(const Duration(milliseconds: 200));
+    });
+
+    testWidgets('reduced motion keeps the ring a fixed size', (tester) async {
+      await pumpRegion(tester, <WallpaperQuickAction>[], reduceMotion: true);
+      final gesture = await tester.startGesture(tester.getCenter(find.byKey(const ValueKey('source'))));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(tester.renderObject(ring), paints..circle(radius: 24));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(tester.renderObject(ring), paints..circle(radius: 24));
+      await gesture.up();
+      await tester.pump(const Duration(milliseconds: 200));
+    });
+  });
+
+  testWidgets('menu close is readable: the wash and buttons fold back toward the finger over 160 ms', (tester) async {
+    final actions = <WallpaperQuickAction>[];
+    await pumpRegion(tester, actions);
+    final Offset finger = tester.getCenter(find.byKey(const ValueKey('source')));
+    final gesture = await hold(tester);
+    final scrim = find.byKey(const ValueKey<String>('wallpaper-hold-scrim'));
+    final double openAlpha = tester.widget<ColoredBox>(scrim).color.a;
+    final double openDistance = (tester.getCenter(find.bySemanticsLabel('Favourite')) - finger).distance;
+    await gesture.moveTo(tester.getCenter(find.bySemanticsLabel('Share')));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+
+    // Halfway through, a third or so of the wash is still there, not a near-instant cut.
+    expect(tester.widget<ColoredBox>(scrim).color.a, greaterThan(openAlpha * 0.2));
+    expect((tester.getCenter(find.bySemanticsLabel('Favourite')) - finger).distance, lessThan(openDistance));
+    // The chosen action's label fades with the menu instead of vanishing on release.
+    final double labelOpacity = tester
+        .widget<Opacity>(
+          find.ancestor(of: find.byKey(const ValueKey<String>('wallpaper-hold-label')), matching: find.byType(Opacity)),
+        )
+        .opacity;
+    expect(labelOpacity, inExclusiveRange(0, 1));
+
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump();
+    expect(scrim, findsNothing);
+    expect(actions, [WallpaperQuickAction.share]);
   });
 
   testWidgets('release in the same frame as the hold timeout cleans up an initially exiting overlay', (tester) async {

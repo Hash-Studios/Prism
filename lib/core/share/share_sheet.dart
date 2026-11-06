@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
+import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
@@ -19,6 +20,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
@@ -33,6 +35,7 @@ class ShareSheetServices {
     this.shareFile = _shareFile,
     this.shareText = _shareText,
     this.copyText = _copyText,
+    this.thumbnail = _thumbnail,
   });
 
   final ShareCardRender render;
@@ -43,6 +46,17 @@ class ShareSheetServices {
   shareFile;
   final Future<ShareResult> Function({required String text, required BuildContext context}) shareText;
   final Future<void> Function(String text) copyText;
+
+  /// The wall's own image, shown inside the card frame until the card is drawn. Null shows the wall colour.
+  final ImageProvider? Function(String imageUrl) thumbnail;
+}
+
+ImageProvider? _thumbnail(String imageUrl) {
+  if (imageUrl.isEmpty) return null;
+  if (imageUrl.startsWith('http')) {
+    return CachedNetworkImageProvider(imageUrl, cacheManager: PrismImageCache.instance);
+  }
+  return FileImage(File(imageUrl));
 }
 
 Future<OperationResult> _saveImage(File file) =>
@@ -485,6 +499,7 @@ class _ShareSheetState extends State<ShareSheet> {
                   label: _formatLabel(l10n, format),
                   selected: selected,
                   placeholder: _content.palette.firstOrNull,
+                  thumbnail: widget.services.thumbnail(_content.imageUrl),
                   render: _ready && _ownerSessionValid && (near || _renders.containsKey(format))
                       ? _render(format)
                       : null,
@@ -564,6 +579,7 @@ class _FormatPreview extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.placeholder,
+    required this.thumbnail,
     required this.render,
     required this.onTap,
     super.key,
@@ -575,6 +591,9 @@ class _FormatPreview extends StatelessWidget {
 
   /// The wall's main colour, shown until the card is ready. Null shows a loading skeleton.
   final Color? placeholder;
+
+  /// The wall's own image, under the card while it loads and while it fades in.
+  final ImageProvider? thumbnail;
   final Future<File>? render;
   final VoidCallback? onTap;
 
@@ -607,17 +626,17 @@ class _FormatPreview extends StatelessWidget {
                         child: ColoredBox(
                           key: ValueKey<String>('share-preview-placeholder-${format.name}'),
                           color: placeholder ?? cs.surfaceContainerHigh,
-                          child: FutureBuilder<File>(
-                            future: render,
-                            builder: (BuildContext context, AsyncSnapshot<File> snapshot) {
-                              if (snapshot.hasData) {
-                                return Image.file(
-                                  snapshot.requireData,
-                                  key: ValueKey<String>('share-preview-${format.name}'),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: <Widget>[
+                              if (thumbnail != null)
+                                Image(
+                                  key: ValueKey<String>('share-preview-thumb-${format.name}'),
+                                  image: thumbnail!,
                                   fit: BoxFit.cover,
                                   gaplessPlayback: true,
                                   excludeFromSemantics: true,
-                                  // The card fades in over the wall colour instead of popping.
+                                  errorBuilder: (_, _, _) => const SizedBox.expand(),
                                   frameBuilder: (BuildContext context, Widget child, int? frame, bool sync) => sync
                                       ? child
                                       : AnimatedOpacity(
@@ -626,14 +645,36 @@ class _FormatPreview extends StatelessWidget {
                                           curve: PrismCurves.enter,
                                           child: child,
                                         ),
-                                );
-                              }
-                              if (snapshot.hasError) return _PreviewFallback(format: format);
-                              if (placeholder != null) return const SizedBox.expand();
-                              return const PrismSkeleton(
-                                child: PrismBone(width: double.infinity, height: double.infinity, radius: 0),
-                              );
-                            },
+                                ),
+                              FutureBuilder<File>(
+                                future: render,
+                                builder: (BuildContext context, AsyncSnapshot<File> snapshot) {
+                                  if (snapshot.hasData) {
+                                    return Image.file(
+                                      snapshot.requireData,
+                                      key: ValueKey<String>('share-preview-${format.name}'),
+                                      fit: BoxFit.cover,
+                                      gaplessPlayback: true,
+                                      excludeFromSemantics: true,
+                                      // The card fades in over the wall colour instead of popping.
+                                      frameBuilder: (BuildContext context, Widget child, int? frame, bool sync) => sync
+                                          ? child
+                                          : AnimatedOpacity(
+                                              opacity: frame == null ? 0 : 1,
+                                              duration: context.motion(PrismDurations.fast),
+                                              curve: PrismCurves.enter,
+                                              child: child,
+                                            ),
+                                    );
+                                  }
+                                  if (snapshot.hasError) return _PreviewFallback(format: format);
+                                  if (placeholder != null || thumbnail != null) return const SizedBox.expand();
+                                  return const PrismSkeleton(
+                                    child: PrismBone(width: double.infinity, height: double.infinity, radius: 0),
+                                  );
+                                },
+                              ),
+                            ],
                           ),
                         ),
                       ),

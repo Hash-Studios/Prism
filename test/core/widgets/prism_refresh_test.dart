@@ -84,7 +84,8 @@ void main() {
 
     done.complete();
     await tester.pump();
-    await frames(tester, const Duration(milliseconds: 300));
+    // The mark fades and the scroll physics spring the content back.
+    await frames(tester, const Duration(seconds: 1));
     expect(find.byType(PrismLoader), findsNothing);
     expect(tester.getTopLeft(find.text('row 0')).dy, 0);
     expect(haptics.length, 3, reason: 'no second impact on release');
@@ -109,6 +110,47 @@ void main() {
     await pull(tester, 400);
 
     expect(tester.getTopLeft(find.byType(PrismLoader)).dy, greaterThanOrEqualTo(96));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('iOS: a header pinned in the scroll view stays put while the refresh holds the gap', (tester) async {
+    const double header = 96;
+    final Completer<void> done = Completer<void>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PrismRefresh(
+            onRefresh: () => done.future,
+            edgeOffset: header,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              slivers: <Widget>[
+                const SliverAppBar(primary: false, pinned: true, toolbarHeight: header, title: Text('header')),
+                SliverList.list(
+                  children: <Widget>[for (int i = 0; i < 20; i++) SizedBox(height: 100, child: Text('row $i'))],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    final double headerTop = tester.getTopLeft(find.text('header')).dy;
+
+    final TestGesture gesture = await pull(tester, 400);
+    await gesture.up();
+    await frames(tester, const Duration(seconds: 1));
+
+    expect(tester.getTopLeft(find.text('header')).dy, headerTop, reason: 'the header does not shift');
+    expect(tester.getTopLeft(find.text('row 0')).dy, closeTo(header + PrismRefresh.holdExtent, 0.5));
+    final Rect mark = tester.getRect(find.byType(PrismLoader));
+    expect(mark.top, greaterThanOrEqualTo(header), reason: 'the mark stays off the header');
+    expect(mark.bottom, lessThanOrEqualTo(tester.getTopLeft(find.text('row 0')).dy));
+
+    done.complete();
+    await tester.pump();
+    await frames(tester, const Duration(seconds: 1));
+    expect(tester.getTopLeft(find.text('header')).dy, headerTop);
+    expect(tester.getTopLeft(find.text('row 0')).dy, header);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('Android: a RefreshIndicator in the page colours that plays an impact', (tester) async {

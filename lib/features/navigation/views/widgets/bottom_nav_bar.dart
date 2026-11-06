@@ -65,7 +65,7 @@ bool oneHandedAvatarAbove(BuildContext context) => _oneHandedRowSpace(context) <
 ///
 /// The pill, the create button and the floating controls are glass ([NavGlass]) that share one backdrop read. A light
 /// fade to the page colour sits under the row, so content that scrolls under it does not fight the pill. While the
-/// keyboard is up, the row fades out and stops taking taps.
+/// keyboard is up, the row stays at the bottom, so the keyboard covers it as it fades out and stops taking taps.
 class BottomBar extends StatefulWidget {
   final Widget? child;
   const BottomBar({this.child, super.key});
@@ -168,6 +168,8 @@ class _BottomBarState extends State<BottomBar> {
           width: MediaQuery.sizeOf(context).width,
           borderRadius: BorderRadius.circular(500),
           fit: StackFit.expand,
+          // The package lifts the row over the keyboard by default. It rode up with the keyboard while it faded.
+          avoidKeyboard: false,
         ),
         theme: floating.BottomBarThemeData(
           barDecoration: BoxDecoration(color: Colors.transparent, borderRadius: BorderRadius.circular(500)),
@@ -192,15 +194,17 @@ class _BottomBarState extends State<BottomBar> {
             child: Center(child: Icon(Icons.arrow_upward_rounded, color: cs.onSurface, size: 20)),
           ),
         ),
-        // The tab Scaffolds do not know about the pill, so lift their floating snackbars above it.
+        // The tab Scaffolds do not know about the pill, so lift their floating snackbars above it. The keyboard hides
+        // the pill, so then they sit on the keyboard.
         body: Theme(
-          data: theme.copyWith(
-            snackBarTheme: theme.snackBarTheme.copyWith(
-              insetPadding: (theme.snackBarTheme.insetPadding ?? const EdgeInsets.fromLTRB(15, 5, 15, 10)).copyWith(
-                bottom: _snackBarBottomInset + (avatarAbove ? _controlSize + PrismSpace.xs : 0),
-              ),
-            ),
-          ),
+          data: keyboardUp
+              ? theme
+              : theme.copyWith(
+                  snackBarTheme: theme.snackBarTheme.copyWith(
+                    insetPadding: (theme.snackBarTheme.insetPadding ?? const EdgeInsets.fromLTRB(15, 5, 15, 10))
+                        .copyWith(bottom: _snackBarBottomInset + (avatarAbove ? _controlSize + PrismSpace.xs : 0)),
+                  ),
+                ),
           child: Stack(
             children: [
               Positioned.fill(

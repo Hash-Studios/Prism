@@ -4,6 +4,8 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
+import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/features/session/views/pages/share_prism_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -49,6 +51,10 @@ void main() {
   });
 
   Future<void> pumpPage(WidgetTester tester) async {
+    // A phone screen: the cover mosaic header puts the action below the default 800x600 test view's fold.
+    tester.view.physicalSize = const Size(393, 852);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -70,6 +76,21 @@ void main() {
     // A short page: the action follows the link card instead of a pinned bottom bar.
     expect(tester.widget<Scaffold>(find.byType(Scaffold)).bottomNavigationBar, isNull);
     expect(tester.getSize(find.text('Give 100, get 100')).width, lessThanOrEqualTo(300));
+  });
+
+  testWidgets('the header is a wallpaper cover mosaic with a happy Glint on its corner', (tester) async {
+    await pumpPage(tester);
+    expect(tester.widget<CoverMosaic>(find.byType(CoverMosaic)).seed, 'Invite friends');
+    final Glint glint = tester.widget<Glint>(
+      find.descendant(of: find.byType(CoverMosaic), matching: find.byType(Glint)),
+    );
+    expect(glint.mood, GlintMood.happy);
+    expect(glint.size, 56);
+    expect(
+      tester.getBottomLeft(find.byType(CoverMosaic)).dy,
+      lessThan(tester.getTopLeft(find.text('Give 100, get 100')).dy),
+    );
+    expect(find.text('Share invite').hitTestable(), findsOneWidget, reason: 'the action stays above the fold');
   });
 
   testWidgets('without an account the link card says to sign in and sharing prompts for sign-in', (tester) async {

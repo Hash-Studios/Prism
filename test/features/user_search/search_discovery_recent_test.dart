@@ -142,7 +142,7 @@ void main() {
   }
 
   group('Depth Effect row', () {
-    testWidgets('shows above Browse by colour and calls the handler on tap', (tester) async {
+    testWidgets('closes the page below Browse by colour and calls the handler on tap', (tester) async {
       int taps = 0;
       await pumpDiscovery(tester, onDepthPressed: () => taps++);
 
@@ -152,9 +152,10 @@ void main() {
       expect(find.bySemanticsLabel('Depth Effect, subject in front of the clock'), findsOneWidget);
       expect(
         tester.getTopLeft(find.text('Depth Effect')).dy,
-        lessThan(tester.getTopLeft(find.text('Browse by colour')).dy),
+        greaterThan(tester.getTopLeft(find.text('Browse by colour')).dy),
       );
 
+      await tester.ensureVisible(find.text('Depth Effect'));
       await tester.tap(find.text('Depth Effect'));
       await tester.pump();
 
@@ -181,6 +182,7 @@ void main() {
       expect(find.bySemanticsLabel('Spatial, walls with clear 3D depth'), findsOneWidget);
       expect(tester.getTopLeft(find.text('Spatial')).dy, greaterThan(tester.getTopLeft(find.text('Depth Effect')).dy));
 
+      await tester.ensureVisible(find.text('Spatial'));
       await tester.tap(find.text('Spatial'));
       await tester.pump();
 
@@ -193,6 +195,71 @@ void main() {
       expect(find.text('Spatial'), findsNothing);
       expect(find.byIcon(Icons.view_in_ar_rounded), findsNothing);
       expect(find.text('Find creators'), findsOneWidget);
+    });
+  });
+  group('image-first order', () {
+    Future<void> pumpOrdered(WidgetTester tester, {bool dimmed = false}) async {
+      const state = SearchDiscoveryState(status: LoadStatus.loading, trendingWalls: []);
+      final bloc = _MockSearchDiscoveryBloc();
+      when(() => bloc.state).thenReturn(state);
+      whenListen(bloc, const Stream<SearchDiscoveryState>.empty(), initialState: state);
+      await tester.pumpWidget(
+        BlocProvider<SearchDiscoveryBloc>.value(
+          value: bloc,
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: SearchDiscoveryWidget(
+                header: const Text('header'),
+                dimmed: dimmed,
+                tags: const <String>['Nature'],
+                selectedTag: '',
+                onTagPressed: (_) {},
+                recentSearches: const <String>['space'],
+                onColorPressed: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    double top(WidgetTester tester, String text) => tester.getTopLeft(find.text(text)).dy;
+
+    testWidgets('recents and tags share one chip row, then trending, categories, colours, and the text rows last', (
+      tester,
+    ) async {
+      await pumpOrdered(tester);
+
+      expect(top(tester, 'space'), top(tester, 'Nature'));
+      expect(top(tester, 'Nature'), lessThan(top(tester, 'Trending now')));
+      expect(top(tester, 'Trending now'), lessThan(top(tester, 'Browse by category')));
+      expect(top(tester, 'Browse by category'), lessThan(top(tester, 'Browse by colour')));
+      expect(top(tester, 'Browse by colour'), lessThan(top(tester, 'Find creators')));
+      expect(top(tester, 'Find creators'), lessThan(top(tester, 'Wall requests')));
+    });
+
+    testWidgets('dims the content below the header while the field has focus', (tester) async {
+      await pumpOrdered(tester, dimmed: true);
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final AnimatedOpacity dim = tester.widget<AnimatedOpacity>(
+        find.ancestor(of: find.text('Find creators'), matching: find.byType(AnimatedOpacity)).first,
+      );
+      expect(dim.opacity, lessThan(1));
+      expect(find.ancestor(of: find.text('header'), matching: find.byType(AnimatedOpacity)), findsNothing);
+
+      await pumpOrdered(tester);
+      expect(
+        tester
+            .widget<AnimatedOpacity>(
+              find.ancestor(of: find.text('Find creators'), matching: find.byType(AnimatedOpacity)).first,
+            )
+            .opacity,
+        1,
+      );
     });
   });
 }
