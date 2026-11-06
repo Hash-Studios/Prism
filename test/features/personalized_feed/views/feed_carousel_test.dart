@@ -115,8 +115,7 @@ void main() {
     AnalyticsRuntime.reset();
   });
 
-  /// The pages are the Wall of the Day, the boosted walls, one page per wall, then the promos (Drop, seasonal cards) and
-  /// the banner last. Reduce motion keeps autoplay off.
+  /// The first page is the promo banner, then one page per wall. Reduce motion keeps autoplay off.
   Future<void> pumpCarousel(
     WidgetTester tester,
     List<PrismFeedItem> walls, {
@@ -204,7 +203,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('a page is the screen less a 16 px margin each side, 0.45 times as tall, with rounded corners', (
+  testWidgets('a page is the screen less a 16 px margin each side, 0.6 times as tall, with rounded corners', (
     tester,
   ) async {
     await pumpCarousel(tester, <PrismFeedItem>[_wall('a'), _wall('b')]);
@@ -212,7 +211,7 @@ void main() {
     final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
     expect(card.left, 16);
     expect(card.width, 368);
-    expect(card.height, closeTo(165.6, 0.01));
+    expect(card.height, closeTo(220.8, 0.01));
     final ClipRRect clip = tester.widget<ClipRRect>(
       find.descendant(of: find.byType(FeedHeroCard), matching: find.byType(ClipRRect)).first,
     );
@@ -233,7 +232,7 @@ void main() {
     final Rect secondCard = tester.getRect(find.byType(FeedHeroCard).at(1));
     final Rect dots = tester.getRect(find.byType(FeedCarouselDots));
     expect(carousel.width, 951 - 84);
-    expect(carousel.height, closeTo(((951 - 84) / 2 - 32) * feedCarouselAspect, 0.01));
+    expect(carousel.height, closeTo(((951 - 84) / 2 - 32) * 0.6, 0.01));
     expect(card.width, closeTo(carousel.width / 2 - 32, 0.01));
     expect(secondCard.left, closeTo(card.right + 32, 0.01));
     expect(secondCard.right, lessThanOrEqualTo(carousel.right));
@@ -271,7 +270,7 @@ void main() {
     final Rect railDots = tester.getRect(find.byType(FeedCarouselDots));
     final double railCardHeight = railCarousel.height;
     expect(railCarousel.width, size.width - 84);
-    expect(railCardHeight, closeTo(((size.width - 84) / 2 - 32) * feedCarouselAspect, 0.01));
+    expect(railCardHeight, closeTo(((size.width - 84) / 2 - 32) * 0.6, 0.01));
     expect(railDots.right, closeTo(railCarousel.width / 2 - 28, 0.01));
 
     tester.view
@@ -285,7 +284,7 @@ void main() {
     final Rect widerRailSecondCard = tester.getRect(find.byType(FeedHeroCard).at(1));
     final Rect widerRailDots = tester.getRect(find.byType(FeedCarouselDots));
     expect(widerRailCarousel.width, size.width - 100);
-    expect(widerRailCarousel.height, closeTo(((size.width - 100) / 2 - 32) * feedCarouselAspect, 0.01));
+    expect(widerRailCarousel.height, closeTo(((size.width - 100) / 2 - 32) * 0.6, 0.01));
     expect(widerRailCard.width, closeTo(widerRailCarousel.width / 2 - 32, 0.01));
     expect(widerRailSecondCard.left, closeTo(widerRailCard.right + 32, 0.01));
     expect(widerRailSecondCard.right, lessThanOrEqualTo(widerRailCarousel.right));
@@ -403,7 +402,6 @@ void main() {
     getIt.registerSingleton<StartupRepository>(repository);
 
     await pumpCarousel(tester, <PrismFeedItem>[_wall('a'), _wall('b')]);
-    await swipeToPreviousPage(tester);
 
     expect(find.text('Join our Telegram'), findsOneWidget);
   });
@@ -414,7 +412,6 @@ void main() {
     getIt.registerSingleton<StartupRepository>(repository);
 
     await pumpCarousel(tester, <PrismFeedItem>[_wall('a'), _wall('b')]);
-    await swipeToPreviousPage(tester);
 
     expect(find.text('Summer wallpaper event'), findsOneWidget);
   });
@@ -489,43 +486,42 @@ void main() {
     expect(image.decodeBox, card.size);
   });
 
-  testWidgets(
-    'the Wall of the Day leads, then the boosted walls with a Boosted tag, then the wallpapers, then the banner',
-    (tester) async {
-      await pumpCarousel(
-        tester,
-        <PrismFeedItem>[_wall('a')],
-        boosted: <PrismWallpaper>[_boosted('hot1'), _boosted('hot2')],
-        wotdEntity: const WallOfTheDayEntity(wallId: 'wotd-1', url: '', thumbnailUrl: '', photographer: 'Ana'),
-      );
+  testWidgets('the Wall of the Day leads, then the boosted walls with a Boosted tag and no caption, then the banner', (
+    tester,
+  ) async {
+    await pumpCarousel(
+      tester,
+      <PrismFeedItem>[_wall('a')],
+      boosted: <PrismWallpaper>[_boosted('hot1'), _boosted('hot2')],
+      wotdEntity: const WallOfTheDayEntity(wallId: 'wotd-1', url: '', thumbnailUrl: '', photographer: 'Ana'),
+    );
 
-      expect(find.text('Wall of the day'), findsOneWidget);
-      expect(find.byType(WallpaperImpression), findsNothing);
-      expect(find.text('Boosted'), findsNothing);
+    expect(find.text('Wall of the day'), findsOneWidget);
+    expect(find.byType(WallpaperImpression), findsNothing);
+    expect(find.text('Boosted'), findsNothing);
 
-      await swipeToNextPage(tester);
+    await swipeToNextPage(tester);
 
-      expect(shownWallId(tester), 'hot1');
-      expect(find.text('Boosted'), findsOneWidget);
-      expect(find.text('by Ana'), findsNothing);
-      expect(find.text('Landscapes'), findsNothing);
+    expect(shownWallId(tester), 'hot1');
+    expect(find.text('Boosted'), findsOneWidget);
+    expect(find.text('by Ana'), findsNothing);
+    expect(find.text('Landscapes'), findsNothing);
 
-      await swipeToNextPage(tester);
+    await swipeToNextPage(tester);
 
-      expect(shownWallId(tester), 'hot2');
-      expect(find.text('Boosted'), findsOneWidget);
+    expect(shownWallId(tester), 'hot2');
+    expect(find.text('Boosted'), findsOneWidget);
 
-      await swipeToNextPage(tester);
+    await swipeToNextPage(tester);
 
-      expect(shownWallId(tester), 'a');
-      expect(find.text('Boosted'), findsNothing);
+    expect(find.text('Join our Telegram'), findsOneWidget);
+    expect(find.text('Boosted'), findsNothing);
 
-      await swipeToNextPage(tester);
+    await swipeToNextPage(tester);
 
-      expect(find.text('Join our Telegram'), findsOneWidget);
-      expect(find.text('Boosted'), findsNothing);
-    },
-  );
+    expect(shownWallId(tester), 'a');
+    expect(find.text('Boosted'), findsNothing);
+  });
 
   testWidgets('with no Wall of the Day the first boosted wall is the first page', (tester) async {
     await pumpCarousel(
@@ -544,11 +540,6 @@ void main() {
 
     expect(shownWallId(tester), 'hot2');
     expect(find.text('Boosted'), findsOneWidget);
-
-    await swipeToNextPage(tester);
-
-    expect(shownWallId(tester), 'a');
-    expect(find.text('Boosted'), findsNothing);
 
     await swipeToNextPage(tester);
 
@@ -581,6 +572,7 @@ void main() {
     final _MockStackRouter router = _MockStackRouter();
     when(() => router.push(any())).thenAnswer((_) async => null);
     await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], router: router);
+    await swipeToNextPage(tester);
 
     await tester.tap(find.byType(FeedHeroCard));
     await tester.pump();
@@ -615,6 +607,7 @@ void main() {
       router: router,
       navigatorKey: navigatorKey,
     );
+    await swipeToNextPage(tester);
 
     final List<Hero> heroes = tester.widgetList<Hero>(find.byType(Hero)).toList();
     expect(heroes, hasLength(2));
@@ -639,6 +632,8 @@ void main() {
       _wall('a', collections: <String>['space']),
     ]);
 
+    await swipeToNextPage(tester);
+
     expect(find.byType(PremiumStarBadge), findsOneWidget);
   });
 
@@ -661,7 +656,7 @@ void main() {
     await pumpCarousel(tester, <PrismFeedItem>[_wall('a'), _wall('b')]);
     await swipeToNextPage(tester);
     expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
-    expect(shownWallId(tester), 'b');
+    expect(shownWallId(tester), 'a');
 
     tester.view.physicalSize = const Size(960, 744);
     await tester.pump();
@@ -674,8 +669,7 @@ void main() {
     expect(slider.itemCount, 3);
     expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
     expect(tester.getRect(find.byType(FeedHeroCard).first).width, 448);
-    expect(shownWallIds(tester), <String>['b']);
-    expect(find.text('Join our Telegram'), findsOneWidget);
+    expect(shownWallIds(tester), <String>['a', 'b']);
   });
 
   testWidgets('autoplay is gated by page count and motion, and tablet dots track the leading card', (tester) async {
@@ -698,8 +692,7 @@ void main() {
     expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).count, 2);
     await tester.pump(const Duration(seconds: 6));
     await tester.pumpAndSettle();
-    // The banner was the only page, so the carousel keeps showing it, now as the last page.
-    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
 
     await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], size: tablet, reduceMotion: false);
     slider = tester.widget<CarouselSlider>(find.byType(CarouselSlider));
@@ -707,14 +700,13 @@ void main() {
     expect(tester.getRect(find.byType(FeedCarouselDots)).right, 488);
     await tester.pump(const Duration(seconds: 6));
     await tester.pumpAndSettle();
-    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
     expect(shownWallId(tester), 'a');
     expect(tester.getRect(find.byType(WallpaperImpression)).left, 16);
     expect(tester.getRect(find.byType(FeedCarouselDots)).right, 488);
     await tester.pump(const Duration(seconds: 6));
     await tester.pumpAndSettle();
-    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
-    expect(find.text('Join our Telegram'), findsOneWidget);
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
     expect(tester.getRect(find.byType(FeedHeroCard).first).left, 16);
   });
 
@@ -743,9 +735,7 @@ void main() {
 
   const WallOfTheDayEntity wotd = WallOfTheDayEntity(wallId: 'wotd-1', url: '', thumbnailUrl: '', photographer: 'Ana');
 
-  testWidgets('a live Drop gets the page after the wallpapers, before the seasonal cards and the banner', (
-    tester,
-  ) async {
+  testWidgets('a live Drop gets the page right after the Wall of the Day, before the boosted walls', (tester) async {
     await pumpCarousel(
       tester,
       <PrismFeedItem>[_wall('a')],
@@ -759,16 +749,6 @@ void main() {
 
     await swipeToNextPage(tester);
 
-    expect(shownWallId(tester), 'hot1');
-    expect(find.byType(DropCarouselSlide), findsNothing);
-
-    await swipeToNextPage(tester);
-
-    expect(shownWallId(tester), 'a');
-    expect(find.byType(DropCarouselSlide), findsNothing);
-
-    await swipeToNextPage(tester);
-
     expect(find.text('Weekly Drop'), findsOneWidget);
     expect(find.text('Weekly Drop 2026-W42'), findsOneWidget);
     expect(find.text('4 walls · Ends in 5d 23h'), findsOneWidget);
@@ -777,17 +757,11 @@ void main() {
 
     await swipeToNextPage(tester);
 
-    expect(find.text('Join our Telegram'), findsOneWidget);
-    expect(find.byType(DropCarouselSlide), findsNothing);
+    expect(shownWallId(tester), 'hot1');
   });
 
-  testWidgets('with no Wall of the Day the Drop follows the wallpapers', (tester) async {
+  testWidgets('with no Wall of the Day the Drop is the first page', (tester) async {
     await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], liveDrop: dropEntity());
-
-    expect(shownWallId(tester), 'a');
-    expect(find.byType(DropCarouselSlide), findsNothing);
-
-    await swipeToNextPage(tester);
 
     expect(find.byType(DropCarouselSlide), findsOneWidget);
   });
@@ -809,16 +783,14 @@ void main() {
   });
 
   testWidgets('the Drop page goes when the Drop ends', (tester) async {
-    await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], liveDrop: dropEntity(endsIn: const Duration(seconds: 3)));
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], liveDrop: dropEntity(endsIn: const Duration(seconds: 1)));
 
-    // The swipe settles in fake time, so the Drop lasts longer than it takes to turn the page.
-    await swipeToNextPage(tester);
     expect(find.byType(DropCarouselSlide), findsOneWidget);
     expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).count, 3);
 
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 3100)));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 1100)));
     await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(find.byType(DropCarouselSlide), findsNothing);
     expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).count, 2);
@@ -826,6 +798,8 @@ void main() {
 
   testWidgets('a Drop ending keeps the viewed wallpaper selected', (tester) async {
     await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], liveDrop: dropEntity(endsIn: const Duration(seconds: 1)));
+    await swipeToNextPage(tester);
+    await swipeToNextPage(tester);
     expect(shownWallId(tester), 'a');
 
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 1100)));
@@ -857,6 +831,7 @@ void main() {
   testWidgets('a Drop that arrives later keeps the user on the page they were viewing', (tester) async {
     await pumpCarousel(tester, <PrismFeedItem>[_wall('a'), _wall('b')], wotdEntity: wotd);
     await swipeToNextPage(tester);
+    await swipeToNextPage(tester);
     expect(shownWallId(tester), 'a');
 
     await pumpCarousel(tester, <PrismFeedItem>[_wall('a'), _wall('b')], wotdEntity: wotd, liveDrop: dropEntity());
@@ -864,51 +839,13 @@ void main() {
 
     expect(shownWallId(tester), 'a');
     expect(tester.widget<CarouselSlider>(find.byType(CarouselSlider)).itemCount, 5);
-    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
-  });
-
-  testWidgets('swiping forward visits the Wall of the Day, boosted, wallpapers, Drop, seasonal card, then the banner', (
-    tester,
-  ) async {
-    seasonClock = () => DateTime(2026, 11, 5);
-    await pumpCarousel(
-      tester,
-      <PrismFeedItem>[_wall('a'), _wall('b')],
-      boosted: <PrismWallpaper>[_boosted('hot1')],
-      wotdEntity: wotd,
-      liveDrop: dropEntity(),
-    );
-    expect(tester.widget<CarouselSlider>(find.byType(CarouselSlider)).itemCount, 7);
-    expect(find.text('Wall of the day'), findsOneWidget);
-
-    await swipeToNextPage(tester);
-    expect(shownWallId(tester), 'hot1');
-    expect(find.text('Boosted'), findsOneWidget);
-
-    await swipeToNextPage(tester);
-    expect(shownWallId(tester), 'a');
-
-    await swipeToNextPage(tester);
-    expect(shownWallId(tester), 'b');
-
-    await swipeToNextPage(tester);
-    expect(find.byType(DropCarouselSlide), findsOneWidget);
-    expect(find.byType(WallpaperImpression), findsNothing);
-
-    await swipeToNextPage(tester);
-    expect(centeredCarouselTitle(tester), 'The Diwali theme is here');
-    expect(find.byType(DropCarouselSlide), findsNothing);
-
-    await swipeToNextPage(tester);
-    expect(centeredCarouselTitle(tester), 'Join our Telegram');
-    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 6);
+    expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 3);
   });
 
   group('Spooky theme card', () {
     testWidgets('shows the card in the season when the theme is not Spooky', (tester) async {
       seasonClock = () => DateTime(2026, 10, 31);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
-      await swipeToNextPage(tester);
       await swipeToNextPage(tester);
 
       expect(find.text('The Spooky theme is here'), findsOneWidget);
@@ -924,6 +861,9 @@ void main() {
     testWidgets('keeps the viewed wallpaper selected when the seasonal card disappears', (tester) async {
       seasonClock = () => DateTime(2026, 10, 31);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+      await swipeToNextPage(tester);
+      await swipeToNextPage(tester);
+      await swipeToNextPage(tester);
       expect(shownWallId(tester), 'a');
 
       seasonClock = () => DateTime(2026, 11, 3);
@@ -936,7 +876,6 @@ void main() {
       Duration elapsed = Duration.zero;
       seasonClock = () => DateTime(2026, 11, 2, 23, 59).add(elapsed);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
-      await swipeToNextPage(tester);
       await swipeToNextPage(tester);
       expect(centeredCarouselTitle(tester), 'The Spooky theme is here');
 
@@ -962,7 +901,6 @@ void main() {
       when(() => router.push(any())).thenAnswer((_) async => null);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], router: router, themeBloc: themeBloc);
       await swipeToNextPage(tester);
-      await swipeToNextPage(tester);
 
       await tester.tap(find.text('The Spooky theme is here'));
 
@@ -977,7 +915,6 @@ void main() {
     testWidgets('shows the card in the season when the theme is not Diwali', (tester) async {
       seasonClock = () => DateTime(2026, 11, 5);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
-      await swipeToNextPage(tester);
 
       expect(find.text('The Diwali theme is here'), findsOneWidget);
     });
@@ -993,7 +930,6 @@ void main() {
       Duration elapsed = Duration.zero;
       seasonClock = () => DateTime(2026, 11, 11, 23, 59).add(elapsed);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
-      await swipeToNextPage(tester);
       expect(find.text('The Diwali theme is here'), findsOneWidget);
 
       elapsed = const Duration(minutes: 1);
@@ -1017,7 +953,6 @@ void main() {
       final _MockStackRouter router = _MockStackRouter();
       when(() => router.push(any())).thenAnswer((_) async => null);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], router: router, themeBloc: themeBloc);
-      await swipeToNextPage(tester);
 
       await tester.tap(find.byType(FeedHeroCard).first);
 
@@ -1030,7 +965,6 @@ void main() {
     testWidgets('on 31 October the Diwali card comes before the Spooky card', (tester) async {
       seasonClock = () => DateTime(2026, 10, 31);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
-      await swipeToNextPage(tester);
 
       expect(find.text('The Diwali theme is here'), findsOneWidget);
       expect(find.text('The Spooky theme is here'), findsNothing);
@@ -1045,7 +979,6 @@ void main() {
       seasonClock = () => DateTime(2026, 10, 31).add(elapsed);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
       expect(tester.widget<CarouselSlider>(find.byType(CarouselSlider)).itemCount, 4);
-      await swipeToNextPage(tester);
 
       elapsed = const Duration(days: 3);
       await tester.pump(const Duration(days: 3));
@@ -1065,7 +998,6 @@ void main() {
       seasonClock = () => DateTime(2026, 10, 31).add(elapsed);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
       await swipeToNextPage(tester);
-      await swipeToNextPage(tester);
       expect(find.text('The Spooky theme is here'), findsOneWidget);
 
       elapsed = const Duration(days: 3);
@@ -1073,14 +1005,13 @@ void main() {
 
       expect(find.text('The Spooky theme is here'), findsNothing);
       expect(find.text('Join our Telegram'), findsOneWidget);
-      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 2);
+      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
       expect(centeredCarouselTitle(tester), 'Join our Telegram');
     });
 
     testWidgets('switching active seasonal themes reveals the other card at the selected page', (tester) async {
       seasonClock = () => DateTime(2026, 10, 31);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
-      await swipeToNextPage(tester);
       expect(centeredCarouselTitle(tester), 'The Diwali theme is here');
 
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], theme: kDarkTheme10);
@@ -1088,7 +1019,7 @@ void main() {
 
       expect(find.text('The Diwali theme is here'), findsNothing);
       expect(centeredCarouselTitle(tester), 'The Spooky theme is here');
-      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
+      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
 
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], theme: kDarkTheme9);
       await tester.pumpAndSettle();
@@ -1097,23 +1028,23 @@ void main() {
       expect(find.text('The Spooky theme is here'), findsNothing);
       expect(tester.widget<CarouselSlider>(find.byType(CarouselSlider)).itemCount, 3);
       expect(centeredCarouselTitle(tester), 'Join our Telegram');
-      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 2);
+      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
 
       await swipeToPreviousPage(tester);
 
       expect(centeredCarouselTitle(tester), 'The Diwali theme is here');
-      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
+      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
     });
 
     testWidgets('same-index seasonal page stays selected after a full infinite cycle and removal', (tester) async {
       Duration elapsed = Duration.zero;
       seasonClock = () => DateTime(2026, 10, 31).add(elapsed);
       await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < 4; i++) {
         await swipeToNextPage(tester);
       }
       expect(centeredCarouselTitle(tester), 'The Diwali theme is here');
-      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
+      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
 
       elapsed = const Duration(days: 3);
       await tester.pump(const Duration(days: 3));
@@ -1121,7 +1052,7 @@ void main() {
 
       expect(centeredCarouselTitle(tester), 'The Diwali theme is here');
       expect(find.text('The Spooky theme is here'), findsNothing);
-      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
+      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
     });
   });
 }

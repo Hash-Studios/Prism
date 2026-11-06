@@ -34,7 +34,7 @@ void main() {
     expect(CreatorProgress.fromMap(<String, Object?>{'version': 2}), isNull);
   });
 
-  Future<void> pump(WidgetTester tester, CreatorProgressState state, {double scale = 1, bool expanded = true}) async {
+  Future<void> pump(WidgetTester tester, CreatorProgressState state, {double scale = 1}) async {
     tester.view.physicalSize = const Size(320, 1800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -51,38 +51,13 @@ void main() {
           body: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: CreatorProgressView(
-                state: state,
-                now: DateTime.utc(2026, 10, 18),
-                onRefresh: () {},
-                initiallyExpanded: expanded,
-              ),
+              child: CreatorProgressView(state: state, now: DateTime.utc(2026, 10, 18), onRefresh: () {}),
             ),
           ),
         ),
       ),
     );
   }
-
-  testWidgets('starts as one row with the next milestone, and a tap opens the milestones', (tester) async {
-    await pump(
-      tester,
-      CreatorProgressState(progress: creatorFixture(), status: CreatorProgressStatus.loaded),
-      expanded: false,
-    );
-    expect(find.text(AppLocalizationsEn().economyCreatorMilestones), findsOneWidget);
-    expect(find.text('Approved wallpapers: 2 / 5'), findsOneWidget);
-    expect(find.byTooltip('Stats'), findsOneWidget);
-    expect(find.text('Next milestone: +100 XP'), findsNothing);
-    expect(find.text('What counts & history'), findsNothing);
-
-    await tester.tap(find.text(AppLocalizationsEn().economyCreatorMilestones));
-    await tester.pumpAndSettle();
-    expect(find.text('Next milestone: +100 XP'), findsOneWidget);
-    expect(find.text('What counts & history'), findsOneWidget);
-    // Open, the count shows once: in the milestone row, not again under the title.
-    expect(find.text('Approved wallpapers: 2 / 5'), findsOneWidget);
-  });
 
   testWidgets('unknown is distinct from a real loaded zero', (tester) async {
     await pump(tester, const CreatorProgressState());

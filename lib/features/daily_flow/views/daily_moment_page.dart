@@ -247,7 +247,7 @@ class _DailyMomentContentState extends State<DailyMomentContent> {
                   ),
                 Expanded(
                   child: PrismCenteredScroll(
-                    action: button,
+                    padding: const EdgeInsets.fromLTRB(PrismSpace.xl, PrismSpace.md, PrismSpace.xl, PrismSpace.xl),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
@@ -266,6 +266,12 @@ class _DailyMomentContentState extends State<DailyMomentContent> {
                       ],
                     ),
                   ),
+                ),
+                // The action is pinned at the bottom, clear of the home indicator, like a page bottom bar.
+                SafeArea(
+                  top: false,
+                  minimum: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.md),
+                  child: button,
                 ),
               ],
             );

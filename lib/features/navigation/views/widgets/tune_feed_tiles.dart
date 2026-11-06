@@ -8,8 +8,7 @@ import 'package:Prism/theme/app_tokens.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-/// A term Prism learned from the user, as a plain pill. The sheet lists terms strongest first, so the order carries the
-/// strength; screen readers also hear it as a percent.
+/// A term Prism learned from the user, as a pill with a bar for how strong the signal is.
 class LearnedPill extends StatelessWidget {
   const LearnedPill({super.key, required this.term, required this.strength});
 
@@ -20,17 +19,38 @@ class LearnedPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final String label = '${term[0].toUpperCase()}${term.substring(1)}';
+    const BorderRadius barRadius = BorderRadius.all(Radius.circular(PrismBottomSheet.dragHandleRadius));
     return Semantics(
       label: context.l10n.wallpaperInterestLearnedLabel(label, (strength * 100).round()),
       excludeSemantics: true,
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: cs.onSurface.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(PrismRadius.pill),
-        ),
+        decoration: BoxDecoration(color: cs.onSurface.withValues(alpha: 0.06), borderRadius: barRadius),
         child: Padding(
           padding: PrismBottomSheet.learnedPillPadding,
-          child: Text(label, style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Text(label, style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14)),
+              const SizedBox(height: PrismSpace.xs),
+              Container(
+                width: PrismBottomSheet.learnedBarWidth,
+                height: PrismBottomSheet.learnedBarHeight,
+                alignment: AlignmentDirectional.centerStart,
+                decoration: BoxDecoration(
+                  color: cs.primary.withValues(alpha: PrismBottomSheet.learnedBarTrackAlpha),
+                  borderRadius: barRadius,
+                ),
+                child: FractionallySizedBox(
+                  widthFactor: strength,
+                  heightFactor: 1,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(color: cs.primary, borderRadius: barRadius),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -38,13 +58,10 @@ class LearnedPill extends StatelessWidget {
 }
 
 const double _selectedRingWidth = 2.5;
-
-/// The scrim darkens the lower 55% of a tile to this, so a white label reads on pale photos too.
-const double _scrimAlpha = 0.75;
 const List<Shadow> _labelShadows = <Shadow>[Shadow(color: Color(0x80000000), blurRadius: 6, offset: Offset(0, 1))];
 
-/// One interest to pick: a photo with its name over a bottom scrim. Selected tiles get a 2.5 point accent ring drawn over
-/// the photo and a filled accent tick. The tile keeps its size, so the grid never shifts.
+/// One interest to pick: a photo with its name over a bottom scrim. Selected tiles get a 2.5 point accent ring and a
+/// filled accent tick.
 class InterestTile extends StatelessWidget {
   const InterestTile({super.key, required this.interest, required this.selected, required this.onTap});
 
@@ -69,90 +86,95 @@ class InterestTile extends StatelessWidget {
       excludeSemantics: true,
       child: PressScale(
         scale: 0.97,
-        child: ClipRRect(
-          borderRadius: radius,
-          child: Stack(
-            fit: StackFit.expand,
-            children: <Widget>[
-              LayoutBuilder(
-                builder: (BuildContext context, BoxConstraints constraints) {
-                  final int decodeWidth = (constraints.maxWidth * MediaQuery.devicePixelRatioOf(context)).round();
-                  final String? asset = bundledCoverAsset(interest.imageUrl);
-                  if (asset != null) return Image.asset(asset, cacheWidth: decodeWidth, fit: BoxFit.cover);
-                  return CachedNetworkImage(
-                    imageUrl: interest.imageUrl,
-                    fit: BoxFit.cover,
-                    memCacheWidth: decodeWidth,
-                    fadeInDuration: fast,
-                    placeholder: (_, _) => ColoredBox(color: cs.surfaceContainerHighest),
-                    errorWidget: (_, _, _) => ColoredBox(color: cs.surfaceContainerHighest),
-                  );
-                },
-              ),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: const Alignment(0, -0.1),
-                    end: Alignment.bottomCenter,
-                    colors: <Color>[
-                      Colors.black.withValues(alpha: 0),
-                      Colors.black.withValues(alpha: _scrimAlpha),
-                    ],
+        child: AnimatedScale(
+          scale: selected ? PrismBottomSheet.interestTileSelectedScale : 1,
+          duration: fast,
+          curve: PrismCurves.enter,
+          child: ClipRRect(
+            borderRadius: radius,
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    final int decodeWidth = (constraints.maxWidth * MediaQuery.devicePixelRatioOf(context)).round();
+                    final String? asset = bundledCoverAsset(interest.imageUrl);
+                    if (asset != null) return Image.asset(asset, cacheWidth: decodeWidth, fit: BoxFit.cover);
+                    return CachedNetworkImage(
+                      imageUrl: interest.imageUrl,
+                      fit: BoxFit.cover,
+                      memCacheWidth: decodeWidth,
+                      fadeInDuration: fast,
+                      placeholder: (_, _) => ColoredBox(color: cs.surfaceContainerHighest),
+                      errorWidget: (_, _, _) => ColoredBox(color: cs.surfaceContainerHighest),
+                    );
+                  },
+                ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.center,
+                      end: Alignment.bottomCenter,
+                      colors: <Color>[
+                        Colors.black.withValues(alpha: 0),
+                        Colors.black.withValues(alpha: PrismBottomSheet.interestTileScrimAlpha),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                left: PrismBottomSheet.interestTileLabelInset,
-                right: PrismBottomSheet.interestTileLabelInset,
-                bottom: PrismBottomSheet.interestTileLabelInset,
-                child: Text(
-                  displayName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: PrismTextStyles.rowTitle(
-                    context,
-                  ).copyWith(fontSize: 14, color: Colors.white, shadows: _labelShadows),
-                ),
-              ),
-              AnimatedContainer(
-                duration: fast,
-                curve: PrismCurves.enter,
-                decoration: BoxDecoration(
-                  borderRadius: radius,
-                  border: Border.all(
-                    color: selected ? cs.primary : cs.primary.withValues(alpha: 0),
-                    width: _selectedRingWidth,
+                Positioned(
+                  left: PrismBottomSheet.interestTileLabelInset,
+                  right: PrismBottomSheet.interestTileLabelInset,
+                  bottom: PrismBottomSheet.interestTileLabelInset,
+                  child: Text(
+                    displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: PrismTextStyles.rowTitle(
+                      context,
+                    ).copyWith(fontSize: 14, color: Colors.white, shadows: _labelShadows),
                   ),
                 ),
-              ),
-              PositionedDirectional(
-                top: PrismBottomSheet.interestTileLabelInset,
-                end: PrismBottomSheet.interestTileLabelInset,
-                child: AnimatedScale(
-                  scale: selected ? 1 : 0.9,
+                AnimatedContainer(
                   duration: fast,
-                  curve: PrismCurves.pop,
-                  child: AnimatedOpacity(
-                    opacity: selected ? 1 : 0,
+                  curve: PrismCurves.enter,
+                  decoration: BoxDecoration(
+                    borderRadius: radius,
+                    border: Border.all(
+                      color: selected ? cs.primary : cs.primary.withValues(alpha: 0),
+                      width: _selectedRingWidth,
+                    ),
+                  ),
+                ),
+                PositionedDirectional(
+                  top: PrismBottomSheet.interestTileLabelInset,
+                  end: PrismBottomSheet.interestTileLabelInset,
+                  child: AnimatedScale(
+                    scale: selected ? 1 : 0.9,
                     duration: fast,
-                    child: Container(
-                      width: PrismBottomSheet.interestCheckBadgeSize,
-                      height: PrismBottomSheet.interestCheckBadgeSize,
-                      decoration: BoxDecoration(color: cs.primary, shape: BoxShape.circle),
-                      child: Icon(
-                        Icons.check_rounded,
-                        size: PrismBottomSheet.interestCheckIconSize,
-                        color: cs.onPrimary,
+                    curve: PrismCurves.pop,
+                    child: AnimatedOpacity(
+                      opacity: selected ? 1 : 0,
+                      duration: fast,
+                      child: Container(
+                        width: PrismBottomSheet.interestCheckBadgeSize,
+                        height: PrismBottomSheet.interestCheckBadgeSize,
+                        decoration: BoxDecoration(color: cs.primary, shape: BoxShape.circle),
+                        child: Icon(
+                          Icons.check_rounded,
+                          size: PrismBottomSheet.interestCheckIconSize,
+                          color: cs.onPrimary,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              Material(
-                type: MaterialType.transparency,
-                child: InkWell(onTap: onTap),
-              ),
-            ],
+                Material(
+                  type: MaterialType.transparency,
+                  child: InkWell(onTap: onTap),
+                ),
+              ],
+            ),
           ),
         ),
       ),

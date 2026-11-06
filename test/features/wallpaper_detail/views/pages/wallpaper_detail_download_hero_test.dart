@@ -126,7 +126,7 @@ void main() {
     }
 
     final target = targetRect();
-    expect(target.width, closeTo(400 - 2 * 16, 0.01));
+    expect(target.width, closeTo(392, 0.01));
     expect(target.width / target.height, closeTo(1.5, 0.001));
     expect(route.transitionDuration, const Duration(milliseconds: 160));
     final flying = find.byElementPredicate(

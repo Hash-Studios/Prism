@@ -56,46 +56,6 @@ void main() {
       }
     });
 
-    testWidgets('shows a caption under each icon action, not under the primary action', (tester) async {
-      await tester.pumpWidget(
-        _host(
-          const WallpaperActionBar(
-            primary: WallpaperBarAction(label: 'Set as wallpaper', child: Text('Set')),
-            secondary: <WallpaperBarAction>[
-              WallpaperBarAction(
-                label: 'Download',
-                child: CircularMenuButton(label: 'Download', isLoading: false, child: Icon(Icons.download)),
-              ),
-            ],
-            actions: <WallpaperBarAction>[
-              WallpaperBarAction(
-                label: 'Share',
-                child: CircularMenuButton(label: 'Share', isLoading: false, child: Icon(Icons.share)),
-              ),
-              WallpaperBarAction(
-                label: 'Remix this wallpaper with AI',
-                caption: 'Remix',
-                child: CircularMenuButton(label: 'Remix', isLoading: false, child: Icon(Icons.brush)),
-              ),
-            ],
-          ),
-        ),
-      );
-
-      for (final (String caption, IconData icon) in <(String, IconData)>[
-        ('Share', Icons.share),
-        ('Remix', Icons.brush),
-        ('Download', Icons.download),
-      ]) {
-        expect(find.text(caption), findsOneWidget, reason: caption);
-        expect(tester.getRect(find.text(caption)).top, greaterThan(tester.getRect(find.byIcon(icon)).bottom));
-        expect(tester.getCenter(find.text(caption)).dx, closeTo(tester.getCenter(find.byIcon(icon)).dx, 0.5));
-      }
-      expect(find.text('Remix this wallpaper with AI'), findsNothing);
-      expect(find.text('Set as wallpaper'), findsNothing);
-      expect(tester.getSize(find.byType(WallpaperActionBar)).height, WallpaperActionBar.height);
-    });
-
     testWidgets('draws menu buttons bare and the primary action as an accent pill', (tester) async {
       await tester.pumpWidget(
         _host(

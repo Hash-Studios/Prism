@@ -101,41 +101,6 @@ class _PremiumPageState extends State<PremiumPage> {
     return PrismPage(
       title: l10n.premiumPageTitle,
       body: PrismCenteredScroll(
-        action: trial != null
-            ? PrismButton(
-                label: l10n.accountManageSubscription,
-                variant: PrismButtonVariant.tonal,
-                expand: true,
-                trailing: const Icon(Icons.open_in_new_rounded, size: 18),
-                onPressed: () => openManageSubscription(l10n),
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  if (_unavailable) ...<Widget>[
-                    Text(
-                      l10n.premiumPagePlansUnavailable,
-                      textAlign: TextAlign.center,
-                      style: PrismTextStyles.body(context),
-                    ),
-                    const SizedBox(height: PrismSpace.sm),
-                  ],
-                  PrismButton(
-                    label: _unavailable ? l10n.premiumPageTryAgain : l10n.premiumPageViewPlans,
-                    loading: _presenting,
-                    expand: true,
-                    onPressed: _viewPlans,
-                  ),
-                  const SizedBox(height: PrismSpace.xxs),
-                  PrismButton(
-                    label: l10n.accountRestorePurchases,
-                    variant: PrismButtonVariant.ghost,
-                    loading: _restoring,
-                    expand: true,
-                    onPressed: _restore,
-                  ),
-                ],
-              ),
         padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -166,6 +131,41 @@ class _PremiumPageState extends State<PremiumPage> {
           ],
         ),
       ),
+      bottomBar: trial != null
+          ? PrismButton(
+              label: l10n.accountManageSubscription,
+              variant: PrismButtonVariant.tonal,
+              expand: true,
+              trailing: const Icon(Icons.open_in_new_rounded, size: 18),
+              onPressed: () => openManageSubscription(l10n),
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (_unavailable) ...<Widget>[
+                  Text(
+                    l10n.premiumPagePlansUnavailable,
+                    textAlign: TextAlign.center,
+                    style: PrismTextStyles.body(context),
+                  ),
+                  const SizedBox(height: PrismSpace.sm),
+                ],
+                PrismButton(
+                  label: _unavailable ? l10n.premiumPageTryAgain : l10n.premiumPageViewPlans,
+                  loading: _presenting,
+                  expand: true,
+                  onPressed: _viewPlans,
+                ),
+                const SizedBox(height: PrismSpace.xxs),
+                PrismButton(
+                  label: l10n.accountRestorePurchases,
+                  variant: PrismButtonVariant.ghost,
+                  loading: _restoring,
+                  expand: true,
+                  onPressed: _restore,
+                ),
+              ],
+            ),
     );
   }
 }

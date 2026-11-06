@@ -8,7 +8,6 @@ import 'package:Prism/features/layout_prefs/views/layout_prefs_scope.dart';
 import 'package:Prism/features/layout_prefs/views/nav_tab_view.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -36,8 +35,8 @@ class PrismBottomNav extends StatefulWidget {
 class _PrismBottomNavState extends State<PrismBottomNav> {
   static const double _slot = 48;
 
-  /// A horizontal slot is wider than it is high, so the 12 point label under the icon fits ("Collections").
-  static const double _slotWidth = 68;
+  /// A horizontal slot is wider than it is high, so the label under the icon fits.
+  static const double _slotWidth = 64;
 
   TabsRouter? _tabsRouter;
 
@@ -161,15 +160,6 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
   }
 }
 
-/// The ink of an inactive tab: [ink] at 0.7, or stronger where 0.7 reads under 4.5:1 on the [pill].
-Color _inactiveInk(Color ink, Color pill) {
-  for (final double alpha in const <double>[0.7, 0.85]) {
-    final Color soft = ink.withValues(alpha: alpha);
-    if (contrastRatio(Color.alphaBlend(soft, pill), pill) >= PrismChipMetrics.minLabelContrast) return soft;
-  }
-  return ink;
-}
-
 class _TabButton extends StatelessWidget {
   const _TabButton({
     required this.icon,
@@ -220,7 +210,7 @@ class _TabButton extends StatelessWidget {
                   borderRadius: iconOnly ? null : BorderRadius.circular(PrismRadius.pill),
                 ),
                 child: TweenAnimationBuilder<Color?>(
-                  tween: ColorTween(end: isActive ? secondary : _inactiveInk(secondary, theme.primaryColor)),
+                  tween: ColorTween(end: isActive ? secondary : secondary.withValues(alpha: 0.6)),
                   duration: duration,
                   curve: PrismCurves.enter,
                   builder: (BuildContext context, Color? color, Widget? _) {
@@ -241,7 +231,7 @@ class _TabButton extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: PrismTextStyles.caption(
                                 context,
-                              ).copyWith(fontSize: 12, fontWeight: FontWeight.w600, height: 1.2, color: color),
+                              ).copyWith(fontSize: 10.5, fontWeight: FontWeight.w600, height: 1.2, color: color),
                             ),
                           ),
                         ),

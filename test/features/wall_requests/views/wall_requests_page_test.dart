@@ -123,12 +123,9 @@ void main() {
     expect(find.text('Neon city rain'), findsOneWidget);
   });
 
-  testWidgets('a short list holds the Request button under its rows; a long list pins it at the bottom', (
+  testWidgets('the Request button is pinned for short and long lists; a short list opens with the intro', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(393, 852);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
     Future<void> pumpTop(int rows) async {
       await tester.pumpWidget(const SizedBox());
       stub(
@@ -141,33 +138,24 @@ void main() {
         ),
       );
       await pumpPage(tester);
-      await tester.pump();
     }
 
     Widget? pinnedBar() => tester
         .widget<Scaffold>(find.descendant(of: find.byType(PrismPage), matching: find.byType(Scaffold)))
         .bottomNavigationBar;
-    const String intro = "Ask for the wall you can't find. Others can upvote it.";
 
-    await pumpTop(1);
-    expect(pinnedBar(), isNull);
+    await pumpTop(2);
+    expect(find.descendant(of: find.byWidget(pinnedBar()!), matching: find.text('Request a wall')), findsOneWidget);
     expect(find.text('Request a wall'), findsOneWidget);
-    expect(find.text(intro), findsOneWidget);
-    expect(find.byType(GlintHalo), findsOneWidget);
-    final double gap =
-        tester.getTopLeft(find.widgetWithText(PrismButton, 'Request a wall')).dy -
-        tester.getBottomLeft(find.byType(WallRequestRow)).dy;
-    expect(gap, moreOrLessEquals(24, epsilon: 1), reason: 'the action sits 24 below the last row, not far below it');
+    expect(find.text("Ask for the wall you can't find. Others can upvote it."), findsOneWidget);
 
     await pumpTop(4);
     expect(find.descendant(of: find.byWidget(pinnedBar()!), matching: find.text('Request a wall')), findsOneWidget);
     expect(find.text('Request a wall'), findsOneWidget);
-    expect(find.text(intro), findsNothing);
-    expect(find.byType(GlintHalo), findsNothing);
+    expect(find.text("Ask for the wall you can't find. Others can upvote it."), findsNothing);
 
     await pumpTop(0);
-    expect(pinnedBar(), isNull);
-    expect(find.text('Request a wall'), findsOneWidget, reason: 'the empty state holds the one Request action');
+    expect(find.text('Request a wall'), findsOneWidget, reason: 'the empty state does not repeat the pinned action');
   });
 
   testWidgets('switching to Filled loads it and shows the filled wall thumbnail', (tester) async {

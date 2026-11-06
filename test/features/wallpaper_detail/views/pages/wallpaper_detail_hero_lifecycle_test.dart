@@ -233,11 +233,9 @@ void main() {
     final pendingBefore = tester.getRect(
       find.descendant(of: find.byType(WallpaperDetailScreen), matching: find.byType(PrismSkeleton)),
     );
-    expect(pendingBefore.top, closeTo(before.top + before.width * 528 / 368, 0.5));
-    // The card on the 16 point margin is taller for its width than the picture early in the flight, so the slot may
-    // end up to 3 points past it for the first frames.
-    expect(pendingBefore.top, lessThanOrEqualTo(before.bottom + 3));
-    expect(pendingBefore.width, closeTo(400 * before.width / 368, 0.5));
+    expect(pendingBefore.top, closeTo(before.top + before.width * 528 / 392, 0.5));
+    expect(pendingBefore.top, lessThanOrEqualTo(before.bottom + 0.5));
+    expect(pendingBefore.width, closeTo(400 * before.width / 392, 0.5));
     final pixels = find.descendant(of: flyingImage, matching: find.byType(RawImage));
     bool hasDecodedImage() => tester.widgetList<RawImage>(pixels).any((image) => image.image != null);
     for (var attempt = 0; attempt < 20 && !hasDecodedImage(); attempt++) {
@@ -258,7 +256,7 @@ void main() {
     expect(after.width, lessThan(400));
     expect(flightRadius(), inExclusiveRange(beforeRadius, 20));
     final actions = tester.getRect(find.byType(WallpaperActionBar));
-    expect(actions.top, closeTo(after.top + after.width * 528 / 368, 0.5));
+    expect(actions.top, closeTo(after.top + after.width * 528 / 392, 0.5));
     expect(actions.top, lessThanOrEqualTo(after.bottom + 0.5));
     final flightFade = tester.widget<FadeTransition>(
       find.ancestor(of: flyingImage, matching: find.byType(FadeTransition)).first,
@@ -266,7 +264,7 @@ void main() {
     expect(flightFade.opacity.value, 1, reason: 'The flight must not fade out after canonical hydration.');
     await tester.pumpAndSettle();
     expect(tester.state(destination), same(heroState));
-    expect(tester.getSize(destination), const Size(368, 528));
+    expect(tester.getSize(destination), const Size(392, 528));
     expect(
       tester.widget<ClipRRect>(find.descendant(of: destination, matching: find.byType(ClipRRect)).first).borderRadius,
       const BorderRadius.all(Radius.circular(20)),

@@ -30,14 +30,8 @@ class WallRequestsPage extends StatelessWidget implements AutoRouteWrapper {
   Widget build(BuildContext context) => _WallRequestsView(initialTab: WallRequestTab.fromWire(tab));
 }
 
-/// A list shorter than this sits under a Glint hero and the intro line, with the Request button just below it, as one
-/// centred group. A longer list pins the Request button at the bottom.
+/// A list shorter than this opens with an intro line, so a short page does not look empty.
 const int _shortListRows = 4;
-
-/// The Request button pins at the bottom while a tab loads, fails or shows a long list. A short or empty list holds the
-/// button in its own centred group instead.
-bool _pinsAction(WallRequestsTabState state) =>
-    state is! WallRequestsTabLoaded || state.requests.length >= _shortListRows;
 
 const List<WallRequestTab> _tabOrder = <WallRequestTab>[
   WallRequestTab.top,
@@ -78,8 +72,6 @@ class _WallRequestsViewState extends State<_WallRequestsView> with SingleTickerP
   void _onTabChanged() {
     if (_tabs.indexIsChanging) return;
     _ensureLoaded(_tabOrder[_tabs.index]);
-    // The tab decides whether the Request button is pinned.
-    setState(() {});
   }
 
   void _ensureLoaded(WallRequestTab tab) {
@@ -114,14 +106,6 @@ class _WallRequestsViewState extends State<_WallRequestsView> with SingleTickerP
     final ColorScheme cs = Theme.of(context).colorScheme;
     final TextStyle label = PrismTextStyles.rowTitle(context).copyWith(fontSize: 15);
     final bool isAdmin = app_state.isAdminUser();
-    final WallRequestTab current = _tabOrder[_tabs.index];
-    final bool pinned = context.select((WallRequestsCubit cubit) => _pinsAction(cubit.state.tab(current)));
-    final Widget action = PrismButton(
-      label: l10n.wallRequestsAsk,
-      icon: Icons.add_rounded,
-      expand: true,
-      onPressed: () => unawaited(_ask()),
-    );
     return BlocListener<WallRequestsCubit, WallRequestsState>(
       listenWhen: (WallRequestsState previous, WallRequestsState current) =>
           current.error != null && current.error != previous.error,
@@ -162,33 +146,27 @@ class _WallRequestsViewState extends State<_WallRequestsView> with SingleTickerP
               _TabBody(
                 tab: tab,
                 isAdmin: isAdmin,
-                action: action,
-                onAsk: () => unawaited(_ask()),
                 onVote: (WallRequest request) => _vote(context.read<WallRequestsCubit>(), request, tab),
               ),
           ],
         ),
-        bottomBar: pinned ? action : null,
+        // The page's one primary action, pinned at the bottom on every tab and list length.
+        bottomBar: PrismButton(
+          label: l10n.wallRequestsAsk,
+          icon: Icons.add_rounded,
+          expand: true,
+          onPressed: () => unawaited(_ask()),
+        ),
       ),
     );
   }
 }
 
 class _TabBody extends StatelessWidget {
-  const _TabBody({
-    required this.tab,
-    required this.isAdmin,
-    required this.action,
-    required this.onAsk,
-    required this.onVote,
-  });
+  const _TabBody({required this.tab, required this.isAdmin, required this.onVote});
 
   final WallRequestTab tab;
   final bool isAdmin;
-
-  /// The Request button, for a short list that holds it under its last row.
-  final Widget action;
-  final VoidCallback onAsk;
   final void Function(WallRequest request) onVote;
 
   @override
@@ -196,6 +174,7 @@ class _TabBody extends StatelessWidget {
     final AppLocalizations l10n = context.l10n;
     final WallRequestsCubit cubit = context.read<WallRequestsCubit>();
     final ColorScheme cs = Theme.of(context).colorScheme;
+    bool short(List<WallRequest> requests) => requests.length < _shortListRows;
     return BlocSelector<WallRequestsCubit, WallRequestsState, WallRequestsTabState>(
       selector: (WallRequestsState state) => state.tab(tab),
       builder: (BuildContext context, WallRequestsTabState state) {
@@ -208,70 +187,63 @@ class _TabBody extends StatelessWidget {
             actionVariant: PrismButtonVariant.tonal,
             onAction: () => unawaited(cubit.load(tab)),
           ),
-          // An empty tab has nothing to pin the Request button under, so the state holds it.
-          WallRequestsTabLoaded(:final List<WallRequest> requests) when requests.isEmpty => GlintState(
-            kind: GlintStateKind.empty,
-            title: tab == WallRequestTab.filled ? l10n.wallRequestsEmptyFilledTitle : l10n.wallRequestsEmptyTopTitle,
-            body: tab == WallRequestTab.filled ? l10n.wallRequestsEmptyFilledBody : l10n.wallRequestsEmptyTopBody,
-            actionLabel: l10n.wallRequestsAsk,
-            onAction: onAsk,
-          ),
-          WallRequestsTabLoaded(:final List<WallRequest> requests) when !_pinsAction(state) => RefreshIndicator(
-            onRefresh: () => cubit.load(tab),
-            child: PrismCenteredScroll(
-              physics: const AlwaysScrollableScrollPhysics(),
-              action: action,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  const Center(child: GlintHalo()),
-                  const SizedBox(height: PrismSpace.md),
-                  Text(
-                    l10n.wallRequestsEmptyTopBody,
-                    textAlign: TextAlign.center,
-                    style: PrismTextStyles.body(context),
-                  ),
-                  const SizedBox(height: PrismSpace.md),
-                  for (final (int index, WallRequest request) in requests.indexed) ...<Widget>[
-                    if (index > 0) Divider(height: 1, thickness: 1, color: cs.onSurface.withValues(alpha: 0.08)),
-                    _row(context, request),
-                  ],
-                ],
-              ),
+          WallRequestsTabLoaded(:final List<WallRequest> requests) when requests.isEmpty => switch (tab) {
+            WallRequestTab.filled => GlintState(
+              kind: GlintStateKind.empty,
+              title: l10n.wallRequestsEmptyFilledTitle,
+              body: l10n.wallRequestsEmptyFilledBody,
             ),
-          ),
+            // The pinned Request button is the action, so the state does not repeat it.
+            _ => GlintState(
+              kind: GlintStateKind.empty,
+              title: l10n.wallRequestsEmptyTopTitle,
+              body: l10n.wallRequestsEmptyTopBody,
+            ),
+          },
           WallRequestsTabLoaded(:final List<WallRequest> requests) => RefreshIndicator(
             onRefresh: () => cubit.load(tab),
-            child: ListView.separated(
+            child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xl),
-              itemCount: requests.length,
-              separatorBuilder: (BuildContext context, int index) =>
-                  Divider(height: 1, thickness: 1, color: cs.onSurface.withValues(alpha: 0.08)),
-              itemBuilder: (BuildContext context, int index) => _row(context, requests[index]),
+              // A short list opens with the intro, so the page does not look empty.
+              itemCount: requests.length + (short(requests) ? 1 : 0),
+              itemBuilder: (BuildContext context, int index) {
+                final bool isShort = short(requests);
+                if (isShort && index == 0) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: PrismSpace.xs),
+                    child: Text(l10n.wallRequestsEmptyTopBody, style: PrismTextStyles.caption(context)),
+                  );
+                }
+                final int rowIndex = isShort ? index - 1 : index;
+                final WallRequest request = requests[rowIndex];
+                final Widget row = WallRequestRow(
+                  request: request,
+                  isAdmin: isAdmin,
+                  onVote: request.canVote ? () => onVote(request) : null,
+                  onOpenWall: request.isFilled
+                      ? () => context.router.pushPath('/gallery?ids=${request.filledWallId}&source=request')
+                      : null,
+                  onReport: request.mine
+                      ? null
+                      : () => unawaited(
+                          showContentReportSheet(context, contentType: 'wallRequest', targetFirestoreDocId: request.id),
+                        ),
+                  onToggleHidden: isAdmin ? () => unawaited(cubit.setHidden(request, hidden: !request.hidden)) : null,
+                );
+                if (rowIndex == requests.length - 1) return row;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    row,
+                    Divider(height: 1, thickness: 1, color: cs.onSurface.withValues(alpha: 0.08)),
+                  ],
+                );
+              },
             ),
           ),
         };
       },
-    );
-  }
-
-  Widget _row(BuildContext context, WallRequest request) {
-    final WallRequestsCubit cubit = context.read<WallRequestsCubit>();
-    return WallRequestRow(
-      request: request,
-      isAdmin: isAdmin,
-      onVote: request.canVote ? () => onVote(request) : null,
-      onOpenWall: request.isFilled
-          ? () => context.router.pushPath('/gallery?ids=${request.filledWallId}&source=request')
-          : null,
-      onReport: request.mine
-          ? null
-          : () => unawaited(
-              showContentReportSheet(context, contentType: 'wallRequest', targetFirestoreDocId: request.id),
-            ),
-      onToggleHidden: isAdmin ? () => unawaited(cubit.setHidden(request, hidden: !request.hidden)) : null,
     );
   }
 }

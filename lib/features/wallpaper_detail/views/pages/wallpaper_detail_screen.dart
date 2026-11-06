@@ -709,9 +709,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Widget Function()? _headerSave;
   static const double _sheetHPad = PrismSpace.md;
 
-  /// The wallpaper is a card just under the status bar, on the page margin like the content under it, with large
-  /// corners.
-  static const double _cardInset = PrismSpace.page;
+  /// The wallpaper is a card just under the status bar: a small side gap and large corners.
+  static const double _cardInset = PrismSpace.xxs;
   static const double _cardRadius = PrismRadius.lg;
 
   /// A tall card stops at this share of the screen, so the actions and the next wallpapers show on the first screen.
@@ -733,9 +732,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   /// The solid bar under the status bar once the card scrolls away. Back stays where it was, centred in the bar.
   static const double _headerHeight = _chromeSize + 2 * _chromePad;
-
-  /// The wall's thumbnail beside Back in the solid header.
-  static const double _headerThumbSize = 32;
 
   /// A colour variation swatch, and the 44 point target around it that holds its selection ring.
   static const double _swatchSize = 36;
@@ -1410,22 +1406,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           ),
         ),
       ),
-      // Under the header a small copy of the wall says what the header's action saves or sets.
-      if (state is WallpaperDetailLoaded)
-        PositionedDirectional(
-          start: padding.left + _cardInset + centring + _chromePad + _chromeSize + PrismSpace.xxs,
-          top: top + (_chromeSize - _headerThumbSize) / 2,
-          child: _hiddenWhenImmersive(
-            AnimatedSwitcher(
-              duration: context.motion(PrismDurations.fast),
-              switchInCurve: PrismCurves.enter,
-              switchOutCurve: PrismCurves.exitReverse,
-              child: header
-                  ? KeyedSubtree(key: const ValueKey<String>('detail-header-thumb'), child: _headerThumb(state))
-                  : const SizedBox.shrink(),
-            ),
-          ),
-        ),
       if (onClock != null)
         PositionedDirectional(
           end: padding.right + _cardInset + centring + _chromeInset,
@@ -1471,25 +1451,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           ),
         ),
     ];
-  }
-
-  /// The wall at [_headerThumbSize], from the local file when there is one. Decorative: the header action names it.
-  Widget _headerThumb(WallpaperDetailLoaded state) {
-    final File? local = _localFileFor(state);
-    final String thumbnail = WallpaperDisplaySource.of(state.entity).thumbnail;
-    if (local == null && thumbnail.isEmpty) return const SizedBox.shrink();
-    final int decodeWidth = (_headerThumbSize * MediaQuery.devicePixelRatioOf(context)).round();
-    return ExcludeSemantics(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(PrismRadius.xs),
-        child: SizedBox.square(
-          dimension: _headerThumbSize,
-          child: local != null
-              ? Image.file(local, cacheWidth: decodeWidth, fit: BoxFit.cover)
-              : PrismImageTile(url: thumbnail, memCacheWidth: decodeWidth),
-        ),
-      ),
-    );
   }
 
   Widget _chromeButton({
@@ -2747,7 +2708,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           if (_remixSeedOf(state) case final AiRemixSeed seed)
             WallpaperBarAction(
               label: context.l10n.wallRemixActionTooltip,
-              caption: context.l10n.wallRemixAction,
               child: RemixActionButton(seed: seed),
             ),
           WallpaperBarAction(

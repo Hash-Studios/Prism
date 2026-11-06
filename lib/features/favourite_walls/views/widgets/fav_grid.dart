@@ -12,7 +12,6 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
-import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
@@ -562,7 +561,6 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                       Uri.tryParse(wall.fullUrl)?.scheme == 'file' ||
                       BundledWallpapers.isStarterIdentity(wall.id, wall.source),
                   heroTag: _wallHeroTag(wall),
-                  cachedFullUrl: wall is LegacyFavouriteWall ? '' : WallpaperDisplaySource.of(wall.toFeedItem()).full,
                   onUnavailable: () => _markUnavailable(wall.id),
                 ),
                 if (wall is LegacyFavouriteWall)

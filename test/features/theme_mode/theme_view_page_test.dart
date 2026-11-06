@@ -213,32 +213,17 @@ void main() {
     expect(tester.widget<Text>(find.byKey(const ValueKey<String>('accent-name'))).data, 'Custom color');
   });
 
-  testWidgets('no theme sits alone in the last row of its grid', (tester) async {
-    await pumpPage(tester, ThemeMode.system);
-
-    for (final List<PrismThemeOption> themes in <List<PrismThemeOption>>[prismLightThemes, prismDarkThemes]) {
-      final List<double> rowTops = <double>[
-        for (final PrismThemeOption option in themes)
-          tester.getTopLeft(find.text(prismThemeDisplayName(option, AppLocalizationsEn()))).dy,
-      ];
-      final Map<double, int> perRow = <double, int>{};
-      for (final double top in rowTops) {
-        perRow[top] = (perRow[top] ?? 0) + 1;
-      }
-      // Rows are in order, so the last value is the last row.
-      expect(perRow.values.last, greaterThan(1), reason: '${themes.length} themes leave an orphan: $perRow');
-      expect(perRow.values.first, inInclusiveRange(3, 4));
-    }
-  });
-
-  testWidgets('four light themes fill one row of four', (tester) async {
+  testWidgets('themes sit three per row in a grid, not a sideways row', (tester) async {
     await pumpPage(tester, ThemeMode.light);
 
     final List<Offset> tops = <Offset>[
       for (final PrismThemeOption option in prismLightThemes.take(4))
         tester.getTopLeft(find.text(prismThemeDisplayName(option, AppLocalizationsEn()))),
     ];
-    expect(tops.map((o) => o.dy).toSet(), hasLength(1));
+    expect(tops[1].dy, tops[0].dy);
+    expect(tops[2].dy, tops[0].dy);
+    expect(tops[3].dy, greaterThan(tops[0].dy));
+    expect(tops[3].dx, closeTo(tops[0].dx, 0.5));
   });
 
   testWidgets('accent targets stay at least 44 points tall on a short screen and remain selectable', (tester) async {

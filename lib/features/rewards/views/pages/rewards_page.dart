@@ -194,14 +194,11 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
                       onStreakFreeze: () => buyStreakFreezeFlow(context, onEarnCoins: () => _scrollTo(_earnKey)),
                     ),
                   ),
-                  // Quests lead the lower half: they are the one thing to do today. Every section below starts
-                  // 32 under the last, like Earn and Spend above.
-                  const SizedBox(height: PrismSpace.xxl),
-                  TodayCard(onOpenSpin: () => unawaited(showSpinWheel(context))),
+                  const SizedBox(height: PrismSpace.lg),
                   PrismSectionHeader(
                     key: const ValueKey<String>('rewards-more'),
                     title: context.l10n.dailyMomentMore,
-                    padding: const EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.sm),
+                    padding: const EdgeInsets.only(bottom: PrismSpace.sm),
                   ),
                   PrismGroup(
                     children: <Widget>[
@@ -224,6 +221,8 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
                   RankProgressCard(onOpenShop: () => context.router.root.push(const ShopRoute())),
                   gap,
                   const CreatorProgressCard(),
+                  gap,
+                  TodayCard(onOpenSpin: () => unawaited(showSpinWheel(context))),
                   gap,
                   FreezeCard(onEarnCoins: () => _scrollTo(_earnKey)),
                   const RewardsLinksSection(),

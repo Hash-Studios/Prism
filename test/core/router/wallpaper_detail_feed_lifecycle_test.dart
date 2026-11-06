@@ -445,10 +445,9 @@ void main() {
   testWidgets('iOS edge back beats the card drag recognizer and does not open a previous wall', (tester) async {
     final router = await open(tester);
     final card = tester.getRect(find.byType(WallpaperQuickActionRegion).first);
-    // The card sits at the 16-pt page margin, so a touch 2 pt inside it is still in the 20-pt iOS back edge.
-    expect(card.left, lessThan(18));
+    expect(card.left, lessThan(10));
     expect(router.detail!.popGestureEnabled, isTrue);
-    final gesture = await tester.startGesture(Offset(card.left + 2, card.center.dy));
+    final gesture = await tester.startGesture(Offset(10, card.center.dy));
     await gesture.moveBy(const Offset(80, 0));
     await tester.pump();
     expect(router.navigatorKey.currentState!.userGestureInProgress, isTrue);

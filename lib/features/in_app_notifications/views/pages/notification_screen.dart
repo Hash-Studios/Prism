@@ -332,57 +332,60 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
               group.unreadCount > 0 ? l10n.notifHasUnread : '',
               expanded ? l10n.notifActivateToCollapse : l10n.notifActivateToExpand,
             ),
-            child: UnreadRowTint(
-              unread: group.unreadCount > 0,
-              child: Material(
-                type: MaterialType.transparency,
-                child: InkWell(
-                  onTap: () {
-                    PrismHaptics.tap();
-                    setState(() {
-                      if (expanded) {
-                        _expandedNotificationGroups.remove(group.key);
-                      } else {
-                        _expandedNotificationGroups.add(group.key);
-                      }
-                    });
-                  },
-                  child: ExcludeSemantics(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page, vertical: PrismSpace.xs),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          NotificationIconTile(title: groupTitle, body: first.body, unread: group.unreadCount > 0),
-                          const SizedBox(width: PrismSpace.sm),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                NotificationTitleLine(
-                                  title: title,
-                                  time: notificationTimeLabel(first.createdAt, l10n: l10n, locale: locale),
-                                  unread: group.unreadCount > 0,
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                onTap: () {
+                  PrismHaptics.tap();
+                  setState(() {
+                    if (expanded) {
+                      _expandedNotificationGroups.remove(group.key);
+                    } else {
+                      _expandedNotificationGroups.add(group.key);
+                    }
+                  });
+                },
+                child: ExcludeSemantics(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page, vertical: PrismSpace.xs),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        NotificationIconTile(title: groupTitle, body: first.body, unread: group.unreadCount > 0),
+                        const SizedBox(width: PrismSpace.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              NotificationTitleLine(
+                                title: title,
+                                time: notificationTimeLabel(first.createdAt, l10n: l10n, locale: locale),
+                                unread: group.unreadCount > 0,
+                                trailing: AnimatedRotation(
+                                  turns: expanded ? 0.5 : 0,
+                                  duration: context.motion(PrismDurations.fast),
+                                  curve: PrismCurves.move,
+                                  child: Icon(Icons.expand_more_rounded, size: 20, color: cs.onSurfaceVariant),
                                 ),
-                                if (!expanded) ...<Widget>[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    glueTrailingEmoji(collapsedGroupSummaryLine(group, l10n)),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: PrismTextStyles.body(context),
-                                  ),
-                                ],
-                                const SizedBox(height: PrismSpace.xs),
-                                NotificationGroupToggle(
-                                  label: groupedListCountActionLine(group, expanded: expanded, l10n: l10n),
-                                  expanded: expanded,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                groupedListCountActionLine(group, expanded: expanded, l10n: l10n),
+                                style: PrismTextStyles.caption(context),
+                              ),
+                              if (!expanded) ...<Widget>[
+                                const SizedBox(height: PrismSpace.xxs),
+                                Text(
+                                  glueTrailingEmoji(collapsedGroupSummaryLine(group, l10n)),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: PrismTextStyles.body(context),
                                 ),
                               ],
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

@@ -188,13 +188,15 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
   Widget build(BuildContext context) {
     return PrismPage(
       title: context.l10n.wallpaperAutoRotateTitle,
+      bottomBar: _isAndroid
+          ? null
+          : PrismButton(
+              label: context.l10n.autoRotateIosAction,
+              expand: true,
+              onPressed: () => context.router.replace(IosShortcutsGuideRoute(source: 'auto_rotate')),
+            ),
       body: !_isAndroid
           ? PrismCenteredScroll(
-              action: PrismButton(
-                label: context.l10n.autoRotateIosAction,
-                expand: true,
-                onPressed: () => context.router.replace(IosShortcutsGuideRoute(source: 'auto_rotate')),
-              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,

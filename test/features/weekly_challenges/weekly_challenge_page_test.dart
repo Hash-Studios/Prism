@@ -224,7 +224,6 @@ void main() {
       expect(find.text('Quiet oceans'), findsOneWidget);
       expect(find.text('Upload an entry'), state == ChallengeState.open ? findsOneWidget : findsNothing);
       expect(find.text('Approved entries will appear here.'), findsOneWidget);
-      expect(find.byType(GlintHalo), findsOneWidget, reason: 'the empty entries use the same halo as other states');
       await tester.drag(find.byType(ListView), const Offset(0, -600));
       await tester.pump();
       expect(find.text('Winner · Maya'), findsOneWidget);

@@ -270,17 +270,10 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
                     onChanged: (sort) => _cubit.load(widget.challengeId, sort: sort),
                   ),
                   const SizedBox(height: 16),
-                  // Glint on the same halo as other empty states, with a calm line instead of a bold title.
                   if (detail.entries.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: PrismSpace.xl),
-                      child: Column(
-                        children: [
-                          const GlintHalo(glintSize: 72),
-                          const SizedBox(height: PrismSpace.md),
-                          Text(l10n.challengeEmpty, textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
-                        ],
-                      ),
+                    SizedBox(
+                      height: 240,
+                      child: GlintState(kind: GlintStateKind.empty, title: l10n.challengeEmpty),
                     ),
                   for (final (i, entry) in detail.entries.indexed) _entry(entry, detail.entries, i, open),
                   if (state.past.isNotEmpty) ...[

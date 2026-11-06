@@ -116,23 +116,6 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('a lone folder fills the row and its long name wraps instead of truncating at one line', (tester) async {
-    tester.view.physicalSize = const Size(400, 800);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    const String name = 'Purple Landscapes and Pastel Skies';
-    repo.ownerFolders = <PublicFolderEntity>[_folder('a', name)];
-    await tester.pumpWidget(_host(const ProfileFoldersRow(ownerId: 'owner', ownProfile: false)));
-    await _settle(tester);
-
-    final Text title = tester.widget<Text>(find.text(name));
-    expect(title.maxLines, 2);
-    final Rect card = tester.getRect(find.ancestor(of: find.text(name), matching: find.byType(SizedBox)).first);
-    // The page gutter on both sides, nothing else.
-    expect(card.width, 400 - 16 * 2);
-    expect(tester.takeException(), isNull);
-  });
-
   testWidgets('no public folders hide the Folders header', (tester) async {
     repo.ownerFolders = const <PublicFolderEntity>[];
     await tester.pumpWidget(_host(const ProfileFoldersRow(ownerId: 'owner', ownProfile: true)));

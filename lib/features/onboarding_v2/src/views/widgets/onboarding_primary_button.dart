@@ -27,7 +27,7 @@ class OnboardingPrimaryButton extends StatelessWidget {
     final isEnabled = enabled && onPressed != null && !loading;
     final Duration short = context.motion(OnboardingMotion.short);
     final BorderRadius radius = BorderRadius.circular(OnboardingRadius.cta);
-    // Disabled stays a solid white pill with 55% black text (about 4.6:1 on the gradient), not a faded-out button.
+    // Disabled stays a visible pill with 60% text, not a faded-out button.
     final Color fill = isEnabled
         ? OnboardingColors.buttonBackground
         : OnboardingColors.buttonBackground.withValues(alpha: OnboardingOpacity.disabledButtonFill);

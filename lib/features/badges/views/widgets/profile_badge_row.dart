@@ -4,18 +4,15 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// The meta row under the bio: [leading] (for example the Pro pill), then one chip that counts the earned badges and
-/// opens a sheet that lists them by name, then [trailing] (for example the rank). Empty when the user has no badge this
-/// app version knows and there is no [leading] or [trailing] item.
+/// opens a sheet that lists them by name. Empty when the user has no badge this app version knows and there is no
+/// [leading] item.
 class ProfileBadgeRow extends StatelessWidget {
-  const ProfileBadgeRow({super.key, required this.badgeIds, this.leading, this.trailing});
+  const ProfileBadgeRow({super.key, required this.badgeIds, this.leading});
 
   final List<String> badgeIds;
 
   /// Shown first in the same row, for example the Pro pill, so the profile has one meta row.
   final Widget? leading;
-
-  /// Shown last in the same row, for example the rank chip.
-  final Widget? trailing;
 
   void _showAll(BuildContext context, List<BadgeInfo> badges) {
     showPrismSheet<void>(
@@ -42,7 +39,7 @@ class ProfileBadgeRow extends StatelessWidget {
       for (final String id in badgeIds.toSet())
         if (badgeInfo(id) case final BadgeInfo info) info,
     ];
-    if (badges.isEmpty && leading == null && trailing == null) return const SizedBox.shrink();
+    if (badges.isEmpty && leading == null) return const SizedBox.shrink();
     final ColorScheme cs = Theme.of(context).colorScheme;
     final String label = context.l10n.profileBadgeCount(badges.length);
     return Padding(
@@ -100,7 +97,6 @@ class ProfileBadgeRow extends StatelessWidget {
                 ),
               ),
             ),
-          ?trailing,
         ],
       ),
     );
