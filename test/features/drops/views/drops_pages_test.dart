@@ -11,7 +11,6 @@ import 'package:Prism/features/drops/views/widgets/drop_actions.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
 import 'package:Prism/features/drops/views/widgets/drop_wall_tiles.dart';
 import 'package:Prism/features/drops/views/widgets/unlock_sheet.dart';
-import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart' show favouriteFooterHeight;
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -166,7 +165,7 @@ void main() {
       expect(find.descendant(of: tile, matching: find.text('Owned')), findsOneWidget);
     });
 
-    testWidgets('with no wall unlocked the grid has no empty footer band', (tester) async {
+    testWidgets('unlocking a wall puts its heart on the tile and keeps the grid spacing', (tester) async {
       tester.view.physicalSize = const Size(393, 852);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -193,7 +192,16 @@ void main() {
       unlocked.value = {'A': ownedA};
       await tester.pump();
 
-      expect(rowGap() - bare, moreOrLessEquals(favouriteFooterHeight, epsilon: 0.01));
+      expect(rowGap(), moreOrLessEquals(bare, epsilon: 0.01));
+      final Finder heart = find.byIcon(Icons.favorite_border_rounded);
+      expect(find.descendant(of: find.byKey(const ValueKey<String>('A')), matching: heart), findsOneWidget);
+      expect(heart, findsOneWidget);
+      // The heart sits on the image's bottom-start corner.
+      final Rect tile = tester.getRect(find.byType(PrismWallTile).at(0));
+      final Offset glyph = tester.getCenter(heart);
+      expect(tile.contains(glyph), isTrue);
+      expect(glyph.dx, lessThan(tile.center.dx));
+      expect(glyph.dy, greaterThan(tile.center.dy));
     });
 
     testWidgets('starts the bloc and shows a skeleton while loading', (tester) async {

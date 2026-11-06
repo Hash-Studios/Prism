@@ -6,8 +6,8 @@ import 'package:intl/intl.dart';
 /// Favourites and views for a wallpaper. A zero count is noise: views hide at 0, and the heart shows without a number
 /// until someone favourites the wall. Screen readers still hear the favourite count.
 ///
-/// With [onFavouriteTap] the heart is a 44 point toggle whose 20 point glyph sits on the leading edge, so it lines up
-/// with the tile above it.
+/// With [onFavouriteTap] it is only the heart toggle for a wallpaper tile: a white 18 point glyph on a 32 point black
+/// circle in a 44 point target, drawn on the image. Tiles show no counts.
 class WallpaperStatsRow extends StatelessWidget {
   const WallpaperStatsRow({
     super.key,
@@ -18,7 +18,6 @@ class WallpaperStatsRow extends StatelessWidget {
     this.favouriteActionLabel,
     this.favouriteSaved = false,
     this.favouriteIcon,
-    this.favouriteIconColor,
   });
 
   final int? favourites;
@@ -28,7 +27,6 @@ class WallpaperStatsRow extends StatelessWidget {
   final String? favouriteActionLabel;
   final bool favouriteSaved;
   final IconData? favouriteIcon;
-  final Color? favouriteIconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -45,57 +43,58 @@ class WallpaperStatsRow extends StatelessWidget {
     final String? favouriteCount = safeFavourites == null || safeFavourites == 0
         ? null
         : formatter.format(safeFavourites);
-    final Widget favourite = onFavouriteTap == null
-        ? Semantics(
-            container: true,
-            label: favouriteLabel,
-            child: ExcludeSemantics(
-              child: _Stat(
-                icon: favouriteIcon ?? Icons.favorite_rounded,
-                count: favouriteCount,
-                iconColor: scheme.onSurfaceVariant,
-                style: style,
-              ),
-            ),
-          )
-        : Tooltip(
-            message: favouriteActionLabel ?? '',
-            child: Semantics(
-              container: true,
-              button: true,
-              enabled: favouriteEnabled,
-              toggled: favouriteSaved,
-              label: <String?>[favouriteActionLabel, favouriteLabel].whereType<String>().join(', '),
-              onTap: favouriteEnabled ? onFavouriteTap : null,
-              child: ExcludeSemantics(
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: favouriteEnabled ? onFavouriteTap : null,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                    child: Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      widthFactor: 1,
-                      heightFactor: 1,
-                      child: _Stat(
-                        icon: favouriteIcon ?? Icons.favorite_rounded,
-                        count: favouriteCount,
-                        iconColor: favouriteIconColor ?? scheme.onSurfaceVariant,
-                        iconSize: 20,
-                        gap: 5,
-                        style: style,
-                      ),
+    if (onFavouriteTap != null) {
+      return Tooltip(
+        message: favouriteActionLabel ?? '',
+        child: Semantics(
+          container: true,
+          button: true,
+          enabled: favouriteEnabled,
+          toggled: favouriteSaved,
+          label: <String?>[favouriteActionLabel, favouriteLabel].whereType<String>().join(', '),
+          onTap: favouriteEnabled ? onFavouriteTap : null,
+          child: ExcludeSemantics(
+            // Its own transparent Material, so the ink shows over the image, not on the page under it.
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: favouriteEnabled ? onFavouriteTap : null,
+                child: SizedBox.square(
+                  dimension: 44,
+                  child: Center(
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), shape: BoxShape.circle),
+                      child: Icon(favouriteIcon ?? Icons.favorite_rounded, size: 18, color: Colors.white),
                     ),
                   ),
                 ),
               ),
             ),
-          );
+          ),
+        ),
+      );
+    }
+    final Widget favourite = Semantics(
+      container: true,
+      label: favouriteLabel,
+      child: ExcludeSemantics(
+        child: _Stat(
+          icon: favouriteIcon ?? Icons.favorite_rounded,
+          count: favouriteCount,
+          iconColor: scheme.onSurfaceVariant,
+          style: style,
+        ),
+      ),
+    );
 
     return Row(
       children: [
-        if (safeFavourites != null || onFavouriteTap != null) Flexible(child: favourite),
-        if ((safeFavourites != null || onFavouriteTap != null) && safeViews != null) const SizedBox(width: 4),
+        if (safeFavourites != null) Flexible(child: favourite),
+        if (safeFavourites != null && safeViews != null) const SizedBox(width: 4),
         if (safeViews != null)
           Flexible(
             child: Semantics(
@@ -117,27 +116,18 @@ class WallpaperStatsRow extends StatelessWidget {
 }
 
 class _Stat extends StatelessWidget {
-  const _Stat({
-    required this.icon,
-    required this.count,
-    required this.iconColor,
-    required this.style,
-    this.iconSize = 17,
-    this.gap = 4,
-  });
+  const _Stat({required this.icon, required this.count, required this.iconColor, required this.style});
 
   final IconData? icon;
   final String? count;
   final Color iconColor;
   final TextStyle style;
-  final double iconSize;
-  final double gap;
 
   @override
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      if (icon != null) ...[Icon(icon, size: iconSize, color: iconColor), if (count != null) SizedBox(width: gap)],
+      if (icon != null) ...[Icon(icon, size: 17, color: iconColor), if (count != null) const SizedBox(width: 4)],
       if (count != null)
         Flexible(
           child: Text(count!, maxLines: 1, overflow: TextOverflow.ellipsis, style: style),

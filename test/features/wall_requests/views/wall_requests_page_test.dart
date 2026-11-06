@@ -5,7 +5,7 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/moods/biz/gallery_walls_cubit.dart';
 import 'package:Prism/features/moods/views/pages/gallery_screen.dart';
 import 'package:Prism/features/wall_requests/biz/wall_requests_cubit.dart';
@@ -121,6 +121,36 @@ void main() {
     expect(find.byType(WallRequestRow), findsNWidgets(2));
     expect(find.text('Dark minimal mountains'), findsOneWidget);
     expect(find.text('Neon city rain'), findsOneWidget);
+  });
+
+  testWidgets('a short list has its Request button in the list and no pinned bar, a long list pins it', (tester) async {
+    Future<void> pumpTop(int rows) async {
+      await tester.pumpWidget(const SizedBox());
+      stub(
+        _state(
+          tabs: <WallRequestTab, WallRequestsTabState>{
+            WallRequestTab.top: WallRequestsTabLoaded(<WallRequest>[
+              for (int i = 0; i < rows; i++) _request(id: 'r$i', text: 'wall $i'),
+            ]),
+          },
+        ),
+      );
+      await pumpPage(tester);
+    }
+
+    Widget? pinnedBar() => tester
+        .widget<Scaffold>(find.descendant(of: find.byType(PrismPage), matching: find.byType(Scaffold)))
+        .bottomNavigationBar;
+
+    await pumpTop(2);
+    expect(pinnedBar(), isNull);
+    expect(find.text('Request a wall'), findsOneWidget);
+    expect(find.text("Ask for the wall you can't find. Others can upvote it."), findsOneWidget);
+
+    await pumpTop(4);
+    expect(pinnedBar(), isNotNull);
+    expect(find.text('Request a wall'), findsOneWidget);
+    expect(find.text("Ask for the wall you can't find. Others can upvote it."), findsNothing);
   });
 
   testWidgets('switching to Filled loads it and shows the filled wall thumbnail', (tester) async {

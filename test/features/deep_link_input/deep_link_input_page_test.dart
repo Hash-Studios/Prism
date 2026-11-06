@@ -159,6 +159,18 @@ void main() {
     });
   }
 
+  testWidgets('the title shows once, in the header, and the live preview has an on-image pill', (tester) async {
+    await showChooser(tester, DeepLinkInputWorkflow.liveWallpaper);
+
+    expect(find.text(AppLocalizationsEn().deepLinkInputLiveTitle), findsOneWidget);
+    final Finder pill = find.ancestor(
+      of: find.text(AppLocalizationsEn().wallpaperLive),
+      matching: find.byType(DecoratedBox),
+    );
+    final DecoratedBox box = tester.widget<DecoratedBox>(pill.first);
+    expect((box.decoration as BoxDecoration).color, Colors.black.withValues(alpha: 0.55));
+  });
+
   testWidgets('pending chooser shows progress until selection is cancelled', (tester) async {
     final pending = Completer<XFile?>();
     picker.choose = () => pending.future;

@@ -121,6 +121,10 @@ void main() {
     // The earned badge takes the first slot; the first catalog badge moves beside it.
     expect(earned.dy, moreOrLessEquals(firstLocked.dy));
     expect(earned.dx, lessThan(firstLocked.dx));
+    // Locked badges keep their own glyph and add a small lock; the earned one has no lock.
+    expect(find.byIcon(badgeCatalog.first.icon), findsWidgets);
+    expect(find.byIcon(Icons.lock_rounded), findsNWidgets(badgeCatalog.length - 1));
+    expect(find.byIcon(Icons.lock_outline_rounded), findsNothing);
   });
 
   testWidgets('daily moment places Today, Earn, Spend and More in order', (tester) async {

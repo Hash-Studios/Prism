@@ -59,38 +59,46 @@ class _WotdWidgetCardState extends State<WotdWidgetCard> {
   Widget _card(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final l10n = context.l10n;
-    return PrismCard(
-      padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.md, PrismSpace.sm, PrismSpace.xxs, PrismSpace.sm),
-      child: Row(
-        children: <Widget>[
-          Icon(Icons.widgets_rounded, color: cs.primary),
-          const SizedBox(width: PrismSpace.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(l10n.widgetsCardTitle, maxLines: 2, style: PrismTextStyles.cardTitle(context)),
-                Text(
-                  l10n.widgetsCardBody,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: PrismTextStyles.caption(context),
-                ),
-                const SizedBox(height: PrismSpace.xs),
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: PrismButton(
-                    label: l10n.widgetsCardAction,
-                    variant: PrismButtonVariant.ghost,
-                    size: PrismButtonSize.compact,
-                    onPressed: _showGuide,
-                  ),
-                ),
-              ],
+    // The archive grid adds 8 above its first date header. 12 more here makes the gap 20.
+    return Padding(
+      padding: const EdgeInsets.only(bottom: PrismSpace.sm),
+      child: PrismCard(
+        padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.md, PrismSpace.sm, PrismSpace.xxs, PrismSpace.sm),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(top: PrismSpace.xxs),
+              child: Icon(Icons.widgets_rounded, color: cs.primary),
             ),
-          ),
-          PrismIconButton(icon: Icons.close_rounded, tooltip: l10n.widgetsCardDismiss, onPressed: _dismiss),
-        ],
+            const SizedBox(width: PrismSpace.sm),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: PrismSpace.xxs),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(l10n.widgetsCardTitle, maxLines: 2, style: PrismTextStyles.cardTitle(context)),
+                    Text(
+                      l10n.widgetsCardBody,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: PrismTextStyles.caption(context),
+                    ),
+                    const SizedBox(height: PrismSpace.sm),
+                    PrismButton(
+                      label: l10n.widgetsCardAction,
+                      variant: PrismButtonVariant.tonal,
+                      size: PrismButtonSize.compact,
+                      onPressed: _showGuide,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            PrismIconButton(icon: Icons.close_rounded, tooltip: l10n.widgetsCardDismiss, onPressed: _dismiss),
+          ],
+        ),
       ),
     );
   }

@@ -51,9 +51,12 @@ class XpProgressCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          // The rank title leads the card; the help button sits on its row instead of under an extra eyebrow.
           Row(
             children: <Widget>[
-              Expanded(child: Text(context.l10n.economyYourXp, style: PrismTextStyles.eyebrow(context))),
+              Expanded(
+                child: Text(rankTitle(progress.rank.id, context.l10n), style: PrismTextStyles.cardTitle(context)),
+              ),
               IconButton(
                 tooltip: context.l10n.economyRankRewardsHelp,
                 style: IconButton.styleFrom(minimumSize: const Size.square(48), visualDensity: VisualDensity.standard),
@@ -62,8 +65,6 @@ class XpProgressCard extends StatelessWidget {
               ),
             ],
           ),
-          Text(rankTitle(progress.rank.id, context.l10n), style: PrismTextStyles.cardTitle(context)),
-          const SizedBox(height: PrismSpace.xxs),
           Text(
             context.l10n.economyLifetimeXp(groupedXp(progress.xp, context.l10n)),
             style: PrismTextStyles.body(context),

@@ -126,7 +126,7 @@ void main() {
     expect(_aspect(midway), lessThan(16 / 9 - 0.01));
     final Rect imageRect = tester.getRect(find.byType(WallpaperDetailHero));
     final Rect backRect = tester.getRect(find.byTooltip('Back'));
-    expect(backRect.left, closeTo(imageRect.left + 4, 1));
+    expect(backRect.left, closeTo(imageRect.left + 12, 1));
 
     await tester.pump(const Duration(milliseconds: 400));
     expect(_aspect(card(tester)), closeTo(16 / 9, 0.01));

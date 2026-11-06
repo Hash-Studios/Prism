@@ -31,24 +31,39 @@ class LeaderboardBloc extends Bloc<LeaderboardEvent, LeaderboardState> {
   }
 
   Future<void> _load(LeaderboardTab tab, Emitter<LeaderboardState> emit) async {
-    final bool friends = tab == LeaderboardTab.friends;
-    emit(
-      friends
-          ? state.copyWith(tab: tab, friendsStatus: LoadStatus.loading)
-          : state.copyWith(tab: tab, globalStatus: LoadStatus.loading),
+    if (tab == LeaderboardTab.global) {
+      emit(state.copyWith(tab: tab));
+      return _loadGlobal(emit);
+    }
+    emit(state.copyWith(tab: tab, friendsStatus: LoadStatus.loading));
+    final Result<List<LeaderboardEntry>> result = await _repository.fetchFriends(
+      app_state.prismUser.following,
+      isoWeekKey(DateTime.now().toUtc()),
     );
-    final Result<List<LeaderboardEntry>> result = friends
-        ? await _repository.fetchFriends(app_state.prismUser.following, isoWeekKey(DateTime.now().toUtc()))
-        : await _repository.fetchGlobal();
     result.fold(
-      onSuccess: (entries) => emit(
-        friends
-            ? state.copyWith(friendsStatus: LoadStatus.success, friends: entries)
-            : state.copyWith(globalStatus: LoadStatus.success, global: entries),
-      ),
-      onFailure: (_) => emit(
-        friends ? state.copyWith(friendsStatus: LoadStatus.failure) : state.copyWith(globalStatus: LoadStatus.failure),
-      ),
+      onSuccess: (entries) => emit(state.copyWith(friendsStatus: LoadStatus.success, friends: entries)),
+      onFailure: (_) => emit(state.copyWith(friendsStatus: LoadStatus.failure)),
+    );
+    // A short Following list shows the global top 5 under it. Load it once, in place: the tab does not change.
+    final LoadStatus global = state.globalStatus;
+    if (state.friendsStatus == LoadStatus.success &&
+        state.friends.length < shortFriendsList &&
+        global != LoadStatus.success &&
+        global != LoadStatus.loading) {
+      await _loadGlobal(emit);
+    }
+  }
+
+  /// Loads the global board. It changes only [LeaderboardState.global] and [LeaderboardState.globalStatus].
+  Future<void> _loadGlobal(Emitter<LeaderboardState> emit) async {
+    emit(state.copyWith(globalStatus: LoadStatus.loading));
+    final Result<List<LeaderboardEntry>> result = await _repository.fetchGlobal();
+    result.fold(
+      onSuccess: (entries) => emit(state.copyWith(globalStatus: LoadStatus.success, global: entries)),
+      onFailure: (_) => emit(state.copyWith(globalStatus: LoadStatus.failure)),
     );
   }
 }
+
+/// Fewer Following rows than this show the follow tip and the global top list under them.
+const int shortFriendsList = 5;

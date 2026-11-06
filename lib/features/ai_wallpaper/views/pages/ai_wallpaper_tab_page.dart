@@ -1366,7 +1366,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                       onSceneIdea: _useSceneIdea,
                     ),
                   PrismSwitchRow(
-                    padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
+                    padding: const EdgeInsets.only(top: PrismSpace.xs),
                     title: context.l10n.duoAiFormatLabel,
                     value: _duoReveal,
                     onChanged: busy ? null : (value) => setState(() => _duoReveal = value),
@@ -1379,7 +1379,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
               actionLabel: AppLocalizations.of(context).economySeeAll,
               onAction: _openStyleSheet,
               small: true,
-              padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.lg, PrismSpace.page, PrismSpace.sm),
+              padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, PrismSpace.sm),
             ),
             AiStylePicker(
               selected: _selectedStyle,

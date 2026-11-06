@@ -693,6 +693,31 @@ class _ClockOverlayState extends State<ClockOverlay> {
     final Widget layers = Stack(
       fit: StackFit.expand,
       children: <Widget>[
+        // On the Lock Screen the date and clock read over a soft shade at the top, as iOS draws it.
+        IgnorePointer(
+          child: AnimatedOpacity(
+            key: const ValueKey<String>('lock-shade'),
+            opacity: lock ? 1 : 0,
+            duration: fade,
+            curve: PrismCurves.enter,
+            child: const Align(
+              alignment: Alignment.topCenter,
+              child: FractionallySizedBox(
+                heightFactor: 0.4,
+                widthFactor: 1,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: <Color>[Color(0x40000000), Color(0x00000000)],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
         AnimatedSwitcher(
           duration: fade,
           switchInCurve: PrismCurves.enter,
@@ -770,27 +795,44 @@ class _ClockOverlayState extends State<ClockOverlay> {
                               child: _ControlCard(
                                 maxHeight: _duo ? duoControlsHeight : null,
                                 children: <Widget>[
-                                  // Home icon styles sit on the card, above the screen choice, so nothing floats over
-                                  // the wallpaper. The card grows upwards, so Lock and Home never move.
-                                  if (!lock && styles.length > 1) ...<Widget>[
-                                    Semantics(
-                                      container: true,
-                                      label: l10n.wallpaperPreviewIconStyle,
-                                      child: PrismSegmented<PreviewIconStyle>(
-                                        values: styles,
-                                        selected: _iconStyle,
-                                        labelOf: (style) => switch (style) {
-                                          PreviewIconStyle.standard => l10n.wallpaperPreviewIconDefault,
-                                          PreviewIconStyle.dark => l10n.wallpaperPreviewIconDark,
-                                          PreviewIconStyle.clear => l10n.wallpaperPreviewIconClear,
-                                          PreviewIconStyle.tinted => l10n.wallpaperPreviewIconTinted,
-                                          PreviewIconStyle.themed => l10n.wallpaperPreviewIconThemed,
-                                        },
-                                        onChanged: _pickIconStyle,
-                                      ),
-                                    ),
-                                    const SizedBox(height: PrismSpace.xs),
-                                  ],
+                                  // Home icon styles: small chips on top of the card, above the screen choice. The card
+                                  // grows upwards, so Lock, Home and Save never move. The chips only fade.
+                                  AnimatedSwitcher(
+                                    duration: fade,
+                                    switchInCurve: PrismCurves.enter,
+                                    switchOutCurve: PrismCurves.exitReverse,
+                                    child: !lock && styles.length > 1
+                                        ? KeyedSubtree(
+                                            key: const ValueKey<String>('icon-styles'),
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(bottom: PrismSpace.xs),
+                                              child: Semantics(
+                                                container: true,
+                                                label: l10n.wallpaperPreviewIconStyle,
+                                                child: Wrap(
+                                                  alignment: WrapAlignment.center,
+                                                  spacing: PrismSpace.xs,
+                                                  children: <Widget>[
+                                                    for (final PreviewIconStyle style in styles)
+                                                      PrismChip(
+                                                        label: switch (style) {
+                                                          PreviewIconStyle.standard => l10n.wallpaperPreviewIconDefault,
+                                                          PreviewIconStyle.dark => l10n.wallpaperPreviewIconDark,
+                                                          PreviewIconStyle.clear => l10n.wallpaperPreviewIconClear,
+                                                          PreviewIconStyle.tinted => l10n.wallpaperPreviewIconTinted,
+                                                          PreviewIconStyle.themed => l10n.wallpaperPreviewIconThemed,
+                                                        },
+                                                        compact: true,
+                                                        selected: style == _iconStyle,
+                                                        onTap: () => _pickIconStyle(style),
+                                                      ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        : const SizedBox.shrink(),
+                                  ),
                                   if (widget.allowDuo || widget.duoReveal || _wideObserved) ...<Widget>[
                                     PrismSegmented<bool>(
                                       values: const <bool>[false, true],
@@ -851,11 +893,8 @@ class _ClockOverlayState extends State<ClockOverlay> {
                                         _SpatialToggle(on: _spatial, onChanged: (on) => setState(() => _spatial = on)),
                                       ],
                                       if (primary != null) ...<Widget>[
-                                        const SizedBox(width: PrismSpace.xs),
-                                        Expanded(child: Center(child: primary)),
-                                        // Balances Close, so the action sits in the true centre of the panel.
-                                        if (widget.spatialMapUrl == null || _duo)
-                                          const SizedBox(width: 48 + PrismSpace.xs),
+                                        const SizedBox(width: PrismSpace.sm),
+                                        Expanded(child: primary),
                                       ],
                                     ],
                                   ),

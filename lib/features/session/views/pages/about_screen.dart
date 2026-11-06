@@ -538,7 +538,7 @@ class ActionButton extends StatelessWidget {
           ? Icon(
               Icons.open_in_new_rounded,
               size: 20,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: PrismInk.iconAlpha),
             )
           : null,
       onTap: () async {

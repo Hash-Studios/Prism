@@ -224,26 +224,31 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
                   const SizedBox(height: 16),
                   if (open) ...[
                     if (detail.myEntryCount >= _maxChallengeEntries) Text(l10n.challengeLimit),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 8,
+                    Row(
                       children: [
-                        PrismButton(
-                          label: l10n.challengeUpload,
-                          onPressed: detail.myEntryCount >= _maxChallengeEntries
-                              ? null
-                              : () => _upload(challenge, detail.myEntryCount),
+                        Expanded(
+                          child: PrismButton(
+                            label: l10n.challengeUpload,
+                            expand: true,
+                            onPressed: detail.myEntryCount >= _maxChallengeEntries
+                                ? null
+                                : () => _upload(challenge, detail.myEntryCount),
+                          ),
                         ),
-                        PrismButton(
-                          label: l10n.challengeAi,
-                          variant: PrismButtonVariant.tonal,
-                          onPressed: detail.myEntryCount >= _maxChallengeEntries
-                              ? null
-                              : () async {
-                                  if (!_signedIn()) return;
-                                  await context.router.push(AiTabRoute(challengeSeed: challenge.seed));
-                                  if (mounted) unawaited(_cubit.load(widget.challengeId));
-                                },
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: PrismButton(
+                            label: l10n.challengeAi,
+                            variant: PrismButtonVariant.tonal,
+                            expand: true,
+                            onPressed: detail.myEntryCount >= _maxChallengeEntries
+                                ? null
+                                : () async {
+                                    if (!_signedIn()) return;
+                                    await context.router.push(AiTabRoute(challengeSeed: challenge.seed));
+                                    if (mounted) unawaited(_cubit.load(widget.challengeId));
+                                  },
+                          ),
                         ),
                       ],
                     ),

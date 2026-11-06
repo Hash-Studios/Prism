@@ -99,18 +99,35 @@ class _BadgeTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: earned ? cs.primary : cs.onSurface.withValues(alpha: 0.08),
-              ),
-              child: Icon(
-                earned ? info.icon : Icons.lock_outline_rounded,
-                size: 22,
-                color: earned ? cs.onPrimary : cs.onSurfaceVariant,
-              ),
+            // A locked badge shows its own glyph, muted, with a small lock at the bottom end.
+            Stack(
+              clipBehavior: Clip.none,
+              children: <Widget>[
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: earned ? cs.primary : cs.onSurface.withValues(alpha: 0.06),
+                  ),
+                  child: Icon(info.icon, size: 22, color: earned ? cs.onPrimary : cs.onSurfaceVariant),
+                ),
+                if (!earned)
+                  PositionedDirectional(
+                    end: -2,
+                    bottom: -2,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: cs.surfaceContainerHighest,
+                        border: Border.all(color: cs.surface, width: 1.5),
+                      ),
+                      child: Icon(Icons.lock_rounded, size: 10, color: cs.onSurfaceVariant),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 10),
             Text(

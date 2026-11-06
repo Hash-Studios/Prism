@@ -39,7 +39,65 @@ void main() {
         'friends',
         const [_ana],
       ),
+      // One friend is a short list, so the global top list loads under it.
+      isA<LeaderboardState>().having((s) => s.globalStatus, 'globalStatus', LoadStatus.loading),
+      isA<LeaderboardState>().having((s) => s.globalStatus, 'globalStatus', LoadStatus.success),
     ],
+  );
+
+  blocTest<LeaderboardBloc, LeaderboardState>(
+    'a short following list loads global in place and keeps the selected tab',
+    build: () => LeaderboardBloc(repository),
+    setUp: () {
+      when(() => repository.fetchGlobal()).thenAnswer((_) async => Result.success(const [_ana]));
+    },
+    act: (bloc) => bloc.add(const LeaderboardEvent.started()),
+    verify: (bloc) {
+      verify(() => repository.fetchGlobal()).called(1);
+      expect(bloc.state.tab, LeaderboardTab.friends);
+      expect(bloc.state.globalStatus, LoadStatus.success);
+      expect(bloc.state.global, const [_ana]);
+      expect(bloc.state.friends, const [_ana]);
+    },
+  );
+
+  blocTest<LeaderboardBloc, LeaderboardState>(
+    'the in-place global load does not undo a tab change made while it runs',
+    build: () => LeaderboardBloc(repository),
+    setUp: () {
+      when(() => repository.fetchGlobal()).thenAnswer((_) async {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        return Result.success(const [_ana]);
+      });
+    },
+    act: (bloc) async {
+      bloc.add(const LeaderboardEvent.started());
+      await Future<void>.delayed(Duration.zero);
+      bloc.add(const LeaderboardEvent.tabChanged(LeaderboardTab.global));
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+    },
+    verify: (bloc) {
+      // The tab change saw a load in flight, so it did not start a second one.
+      verify(() => repository.fetchGlobal()).called(1);
+      expect(bloc.state.tab, LeaderboardTab.global);
+      expect(bloc.state.globalStatus, LoadStatus.success);
+      expect(bloc.state.global, const [_ana]);
+    },
+  );
+
+  blocTest<LeaderboardBloc, LeaderboardState>(
+    'five or more following rows do not load global',
+    build: () => LeaderboardBloc(repository),
+    setUp: () {
+      when(
+        () => repository.fetchFriends(any(), any()),
+      ).thenAnswer((_) async => Result.success(List<LeaderboardEntry>.filled(5, _ana)));
+    },
+    act: (bloc) => bloc.add(const LeaderboardEvent.started()),
+    verify: (bloc) {
+      verifyNever(() => repository.fetchGlobal());
+      expect(bloc.state.globalStatus, LoadStatus.initial);
+    },
   );
 
   blocTest<LeaderboardBloc, LeaderboardState>(

@@ -6074,7 +6074,6 @@
       }
     }
   },
-  "economyYourXp": "YOUR XP",
   "errorGeneric": "Something went wrong. Please try again.",
   "errorNetwork": "Check your connection and try again.",
   "navigationBackOnline": "Back online",
@@ -14081,5 +14080,11 @@
   "searchMoreWallpapers": "More wallpapers",
   "@searchMoreWallpapers": {"description": "Section header for extra wallpaper results in search."},
   "wallpaperPreviewNoEvents": "No events today",
-  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."}
+  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."},
+  "accountFollowersLabel": "{count, plural, one{Follower} other{Followers}}",
+  "@accountFollowersLabel": {"description": "Label under a profile's follower count. The number is shown separately.", "placeholders": {"count": {"type": "int"}}},
+  "profileBadgeCount": "{count, plural, one{1 badge} other{{count} badges}}",
+  "@profileBadgeCount": {"description": "Chip on a profile that opens the list of earned badges.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyLeaderboardTopThisWeek": "Top this week",
+  "@economyLeaderboardTopThisWeek": {"description": "Section heading above the global top 5 on the Following leaderboard."}
 }

@@ -32,23 +32,31 @@ class FavouriteWallpaperCard extends StatelessWidget {
   final bool enabled;
   final VoidCallback? onShowLessLikeThis;
 
+  /// The heart sits on the image at the bottom-start corner, inside the long-press region: a tap on it toggles the
+  /// favourite before the hold menu can start, and a hold anywhere on the tile still opens the menu.
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Expanded(
-        child: enabled
-            ? WallpaperQuickActionRegion(item: item, onShowLessLikeThis: onShowLessLikeThis, child: child)
-            : child,
+  Widget build(BuildContext context) {
+    if (!enabled) return child;
+    return WallpaperQuickActionRegion(
+      item: item,
+      onShowLessLikeThis: onShowLessLikeThis,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          child,
+          PositionedDirectional(start: 0, bottom: 0, child: FavouriteWallpaperFooter(item: item)),
+        ],
       ),
-      if (enabled) FavouriteWallpaperFooter(item: item) else const SizedBox(height: favouriteFooterHeight),
-    ],
-  );
+    );
+  }
 }
 
-const double favouriteFooterHeight = 44;
+/// Space a grid keeps under each tile for the heart. The heart is on the image now, so it is 0. Kept so grids that
+/// add it still compile and leave no gap.
+const double favouriteFooterHeight = 0;
 
-/// The heart under a wallpaper tile: a favourite toggle only. Counts belong on the detail screen, not on every tile.
+/// The heart on a wallpaper tile: a favourite toggle only, in a 44 point target. Counts belong on the detail screen,
+/// not on every tile. Place it over the image's bottom-start corner.
 class FavouriteWallpaperFooter extends StatefulWidget {
   const FavouriteWallpaperFooter({super.key, required this.item});
 
@@ -89,24 +97,13 @@ class _FavouriteWallpaperFooterState extends State<FavouriteWallpaperFooter> {
     },
   );
 
-  Widget _row(bool saved) {
-    final scheme = Theme.of(context).colorScheme;
-    final label = saved ? context.l10n.wallpaperUnfavourite : context.l10n.wallpaperFavourite;
-    return SizedBox(
-      height: favouriteFooterHeight,
-      child: Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: WallpaperStatsRow(
-          favouriteActionLabel: label,
-          favouriteSaved: saved,
-          favouriteIcon: saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-          favouriteIconColor: saved ? scheme.primary : scheme.onSurfaceVariant,
-          favouriteEnabled: !_pending,
-          onFavouriteTap: () => unawaited(_toggle(saved)),
-        ),
-      ),
-    );
-  }
+  Widget _row(bool saved) => WallpaperStatsRow(
+    favouriteActionLabel: saved ? context.l10n.wallpaperUnfavourite : context.l10n.wallpaperFavourite,
+    favouriteSaved: saved,
+    favouriteIcon: saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+    favouriteEnabled: !_pending,
+    onFavouriteTap: () => unawaited(_toggle(saved)),
+  );
 }
 
 class PrismFavouriteCount extends StatefulWidget {

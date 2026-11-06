@@ -127,4 +127,10 @@ void main() {
     expect(cleanNotificationTitle('Streak 🔥 alert'), 'Streak 🔥 alert');
     expect(cleanNotificationTitle('🎉'), '🎉');
   });
+
+  test('glueTrailingEmoji joins a trailing emoji to the last word with a no-break space', () {
+    expect(glueTrailingEmoji('Keep your streak alive 🔥'), 'Keep your streak alive\u00A0🔥');
+    expect(glueTrailingEmoji('Streak 🔥 alert'), 'Streak 🔥 alert');
+    expect(glueTrailingEmoji('No emoji here'), 'No emoji here');
+  });
 }

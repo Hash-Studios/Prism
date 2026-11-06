@@ -91,7 +91,7 @@ class PrismRow extends StatelessWidget {
             if (!trailingBelow && trailing != null) ...<Widget>[const SizedBox(width: PrismSpace.sm), trailing!],
             if (chevron) ...<Widget>[
               const SizedBox(width: PrismSpace.xxs),
-              Icon(Icons.chevron_right_rounded, size: 20, color: cs.onSurface.withValues(alpha: 0.35)),
+              Icon(Icons.chevron_right_rounded, size: 20, color: cs.onSurface.withValues(alpha: PrismInk.iconAlpha)),
             ],
           ],
         ),

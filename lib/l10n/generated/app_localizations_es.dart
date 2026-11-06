@@ -7031,9 +7031,6 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get economyYourXp => 'TU XP';
-
-  @override
   String get errorGeneric => 'Algo salió mal. Inténtalo de nuevo.';
 
   @override
@@ -14041,4 +14038,27 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallpaperPreviewNoEvents => 'Sin eventos hoy';
+
+  @override
+  String accountFollowersLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Seguidores', one: 'Seguidor');
+    return '$_temp0';
+  }
+
+  @override
+  String profileBadgeCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString insignias',
+      one: '1 insignia',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get economyLeaderboardTopThisWeek => 'Top de esta semana';
 }

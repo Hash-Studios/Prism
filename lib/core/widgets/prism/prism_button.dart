@@ -104,7 +104,7 @@ class PrismButton extends StatelessWidget {
           disabledBackgroundColor: variant == PrismButtonVariant.ghost
               ? Colors.transparent
               : cs.onSurface.withValues(alpha: 0.06),
-          disabledForegroundColor: cs.onSurface.withValues(alpha: 0.38),
+          disabledForegroundColor: cs.onSurface.withValues(alpha: 0.5),
           minimumSize: Size(expand ? double.infinity : 0, large ? 52 : 40),
           padding: EdgeInsets.symmetric(horizontal: large ? PrismSpace.xl : PrismSpace.md),
           textStyle: large ? PrismTextStyles.button : PrismTextStyles.button.copyWith(fontSize: 14),
@@ -160,7 +160,7 @@ class PrismIconButton extends StatelessWidget {
     final Color? bg = glass
         ? cs.surface.withValues(alpha: 0.92)
         : onImage
-        ? Colors.black.withValues(alpha: 0.38)
+        ? Colors.black.withValues(alpha: 0.5)
         : filled
         ? cs.onSurface.withValues(alpha: 0.08)
         : null;

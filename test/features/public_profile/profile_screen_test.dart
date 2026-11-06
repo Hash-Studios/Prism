@@ -241,6 +241,57 @@ void main() {
     expect(tester.widget<Opacity>(find.ancestor(of: title, matching: find.byType(Opacity)).first).opacity, 1);
   });
 
+  testWidgets('own profile collapsed: flat header buttons, and Stats and Edit give way to the title', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const ProfileScreen(),
+        builder: favouriteTestBuilder,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    bool glass(String tooltip) => tester
+        .widget<PrismIconButton>(find.ancestor(of: find.byTooltip(tooltip), matching: find.byType(PrismIconButton)))
+        .glass;
+
+    expect(glass('Menu'), isTrue);
+    expect(find.byTooltip('Stats').hitTestable(), findsOneWidget);
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -600));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(glass('Menu'), isFalse);
+    expect(find.byTooltip('Menu').hitTestable(), findsOneWidget);
+    expect(find.byTooltip('Stats').hitTestable(), findsNothing);
+    final Finder title = find.descendant(of: find.byType(AppBar), matching: find.text('Me Myself'));
+    expect(tester.getCenter(title).dx, closeTo(195, 1));
+  });
+
+  testWidgets('one follower reads as a singular label', (tester) async {
+    await pumpScreen(tester);
+    repository.profiles.add(
+      const PublicProfileEntity(
+        id: 'me',
+        name: 'Me Myself',
+        email: '',
+        username: 'creator_01',
+        profilePhoto: '',
+        bio: '',
+        links: <String, String>{},
+        coverPhoto: '',
+        followerCount: 1,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('1 Follower', findRichText: true), findsOneWidget);
+    expect(find.text('1 Followers', findRichText: true), findsNothing);
+  });
+
   testWidgets('own profile keeps private header data and uses UID public graph counts', (tester) async {
     await pumpScreen(tester);
     repository.profiles.add(

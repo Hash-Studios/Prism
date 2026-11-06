@@ -6986,9 +6986,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get economyYourXp => 'XP ANDA';
-
-  @override
   String get errorGeneric => 'Terjadi kesalahan. Coba lagi.';
 
   @override
@@ -13912,4 +13909,22 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallpaperPreviewNoEvents => 'Tidak ada acara hari ini';
+
+  @override
+  String accountFollowersLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Pengikut', one: 'Pengikut');
+    return '$_temp0';
+  }
+
+  @override
+  String profileBadgeCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString lencana', one: '1 lencana');
+    return '$_temp0';
+  }
+
+  @override
+  String get economyLeaderboardTopThisWeek => 'Teratas minggu ini';
 }

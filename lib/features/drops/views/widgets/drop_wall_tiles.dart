@@ -9,7 +9,6 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
@@ -65,22 +64,16 @@ class DropWallGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int price = drop.wallPrice(isPro: app_state.prismUser.premium);
-    // The favourite footer only shows under unlocked walls. With none, the grid drops the empty band.
-    final double footerHeight = unlocked.isEmpty ? 0 : favouriteFooterHeight;
     return SliverPadding(
       padding: PrismWallGrid.padding,
       sliver: SliverGrid.builder(
-        gridDelegate: PrismWallGrid.delegate(
-          context,
-          columns: largeTileGridColumns(MediaQuery.sizeOf(context).width),
-          footerHeight: footerHeight,
-        ),
+        gridDelegate: PrismWallGrid.delegate(context, columns: largeTileGridColumns(MediaQuery.sizeOf(context).width)),
         itemCount: drop.walls.length,
         itemBuilder: (context, index) {
           final DropWall wall = drop.walls[index];
           final DropUnlock? unlock = unlocked[wall.id];
           final String heroTag = prismHeroTag(context, index, 'drop-grid-${drop.weekKey}-${wall.id}');
-          final tile = DropWallTile(
+          return DropWallTile(
             key: ValueKey<String>(wall.id),
             wall: wall,
             position: context.l10n.economyDropPosition(index + 1, drop.walls.length),
@@ -95,16 +88,6 @@ class DropWallGrid extends StatelessWidget {
                 : canBuy
                 ? () => onLockedTap(wall)
                 : null,
-          );
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: tile),
-              if (unlock != null)
-                FavouriteWallpaperFooter(item: dropWallFeedItem(wall, unlock))
-              else
-                SizedBox(height: footerHeight),
-            ],
           );
         },
       ),
@@ -135,6 +118,8 @@ class DropWallTile extends StatelessWidget {
   final bool missed;
   final bool busy;
   final VoidCallback? onTap;
+
+  /// Set on an unlocked wall: the tile gets the hold menu and the favourite heart.
   final FeedItemEntity? quickActionItem;
   final String? heroTag;
 
@@ -192,6 +177,6 @@ class DropWallTile extends StatelessWidget {
       ),
     );
     final FeedItemEntity? item = quickActionItem;
-    return item == null ? tile : WallpaperQuickActionRegion(item: item, child: tile);
+    return item == null ? tile : FavouriteWallpaperCard(item: item, child: tile);
   }
 }

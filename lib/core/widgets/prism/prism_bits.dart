@@ -30,7 +30,7 @@ class PrismInlineState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: PrismSpace.md),
       child: Column(
         children: <Widget>[
-          Icon(icon, size: 28, color: cs.onSurface.withValues(alpha: 0.45)),
+          Icon(icon, size: 28, color: cs.onSurfaceVariant),
           const SizedBox(height: PrismSpace.xs),
           Text(title, textAlign: TextAlign.center, style: PrismTextStyles.rowTitle(context)),
           if (body != null) ...<Widget>[
@@ -89,7 +89,7 @@ class PrismTag extends StatelessWidget {
               label,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: PrismTextStyles.caption(context).copyWith(fontSize: 11, fontWeight: FontWeight.w700, color: fg),
+              style: PrismTextStyles.caption(context).copyWith(fontSize: 12, fontWeight: FontWeight.w700, color: fg),
             ),
           ),
         ],

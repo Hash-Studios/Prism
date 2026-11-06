@@ -71,6 +71,13 @@ void main() {
     expect(find.text('Next reward: Gold frame'), findsOneWidget);
   });
 
+  testWidgets('the rank title leads the card with the help button on its row', (tester) async {
+    await pump(tester);
+    expect(find.text('YOUR XP'), findsNothing);
+    final Finder title = find.text('Silver');
+    expect(tester.getCenter(find.byTooltip('How XP and rank rewards work')).dy, closeTo(tester.getCenter(title).dy, 1));
+  });
+
   testWidgets('explanation opens from accessible info button and explains XP versus coins', (tester) async {
     await pump(tester);
     final Size infoTarget = tester.getSize(find.byTooltip('How XP and rank rewards work'));

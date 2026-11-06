@@ -243,6 +243,15 @@ class _PrismImageTileState extends State<PrismImageTile> {
     }
     tile = SizedBox.expand(child: tile);
     if (widget.borderRadius != null) tile = ClipRRect(borderRadius: widget.borderRadius!, child: tile);
+    // A faint hairline keeps a light image from melting into a white page, and a dark one into a black page.
+    tile = DecoratedBox(
+      position: DecorationPosition.foreground,
+      decoration: BoxDecoration(
+        borderRadius: widget.borderRadius,
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
+      ),
+      child: tile,
+    );
     return widget.heroTag == null || context.reduceMotion
         ? tile
         : Hero(tag: widget.heroTag!, createRectTween: wallpaperHeroRectTween, child: tile);

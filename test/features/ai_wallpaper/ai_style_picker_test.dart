@@ -319,6 +319,23 @@ void main() {
       _expectTileInRowViewport(tester, _rowTile(AiStylePreset.ukiyoE));
     });
 
+    testWidgets('opens with the selected tile at the leading margin, even when it is already in view', (tester) async {
+      tester.view
+        ..physicalSize = const Size(360, 800)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      stubCache((_) => const Stream<FileResponse>.empty());
+
+      await tester.pumpWidget(_pickerHost(selected: AiStylePreset.minimal));
+      await tester.pumpAndSettle();
+
+      final Rect viewport = tester.getRect(
+        find.descendant(of: find.byType(AiStylePicker), matching: find.byType(Scrollable)),
+      );
+      expect(tester.getRect(_rowTile(AiStylePreset.minimal)).left, viewport.left + 16);
+    });
+
     testWidgets('lands on the selected tile in one frame under reduce motion', (tester) async {
       tester.view
         ..physicalSize = const Size(360, 800)

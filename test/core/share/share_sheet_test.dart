@@ -1082,7 +1082,7 @@ void main() {
         }
       }
     }
-    expect(oneXShrinks, <String>{'pt/openOnComputer', 'pt-BR/openOnComputer'});
+    expect(oneXShrinks, <String>{'es/openOnComputer', 'pt/openOnComputer', 'pt-BR/openOnComputer'});
     semantics.dispose();
   });
 

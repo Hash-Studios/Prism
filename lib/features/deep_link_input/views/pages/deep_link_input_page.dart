@@ -58,7 +58,7 @@ class _DeepLinkInputPageState extends State<DeepLinkInputPage> {
           Center(
             child: ExcludeSemantics(
               child: SizedBox(
-                height: 260,
+                height: (MediaQuery.sizeOf(context).height * 0.45).clamp(260.0, 400.0),
                 child: AspectRatio(
                   aspectRatio: 9 / 16,
                   child: ClipRRect(
@@ -71,7 +71,21 @@ class _DeepLinkInputPageState extends State<DeepLinkInputPage> {
                           PositionedDirectional(
                             top: PrismSpace.xs,
                             start: PrismSpace.xs,
-                            child: PrismTag(label: l10n.wallpaperLive),
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.55),
+                                borderRadius: BorderRadius.circular(PrismRadius.pill),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs, vertical: 3),
+                                child: Text(
+                                  l10n.wallpaperLive,
+                                  style: PrismTextStyles.caption(
+                                    context,
+                                  ).copyWith(fontWeight: FontWeight.w700, color: Colors.white),
+                                ),
+                              ),
+                            ),
                           ),
                       ],
                     ),
@@ -81,8 +95,6 @@ class _DeepLinkInputPageState extends State<DeepLinkInputPage> {
             ),
           ),
           const SizedBox(height: PrismSpace.lg),
-          Text(title, textAlign: TextAlign.center, style: PrismTextStyles.sectionTitle(context)),
-          const SizedBox(height: PrismSpace.xs),
           Text(
             widget.workflow == DeepLinkInputWorkflow.liveWallpaper
                 ? l10n.deepLinkInputLiveDescription

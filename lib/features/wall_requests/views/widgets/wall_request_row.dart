@@ -67,7 +67,7 @@ class WallRequestRow extends StatelessWidget {
     final AppLocalizations l10n = context.l10n;
     final ColorScheme cs = Theme.of(context).colorScheme;
     final WallRequest r = request;
-    final Color soft = cs.onSurface.withValues(alpha: 0.6);
+    final Color soft = cs.onSurfaceVariant;
     final List<String> meta = <String>[
       l10n.wallRequestVotes(r.voteCount),
       wallRequestAge(context, r.createdAt),

@@ -39,6 +39,11 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
 
   void _trackViewed(LeaderboardTab tab) => unawaited(analytics.track(LeaderboardViewedEvent(tab: tab.name)));
 
+  void _changeTab(BuildContext context, LeaderboardTab tab) {
+    _trackViewed(tab);
+    context.read<LeaderboardBloc>().add(LeaderboardEvent.tabChanged(tab));
+  }
+
   Future<void> _refresh(BuildContext context) {
     final LeaderboardBloc bloc = context.read<LeaderboardBloc>();
     final Future<LeaderboardState> settled = bloc.stream.firstWhere((s) => s.status != LoadStatus.loading);
@@ -69,14 +74,15 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                 labelOf: (tab) => tab == LeaderboardTab.friends
                     ? context.l10n.economyLeaderboardFollowing
                     : context.l10n.economyLeaderboardGlobal,
-                onChanged: (tab) {
-                  _trackViewed(tab);
-                  context.read<LeaderboardBloc>().add(LeaderboardEvent.tabChanged(tab));
-                },
+                onChanged: (tab) => _changeTab(context, tab),
               ),
             ),
             Expanded(
-              child: _Content(state: state, onRefresh: () => _refresh(context)),
+              child: _Content(
+                state: state,
+                onRefresh: () => _refresh(context),
+                onSeeAllGlobal: () => _changeTab(context, LeaderboardTab.global),
+              ),
             ),
           ],
         ),
@@ -129,10 +135,11 @@ class _ScoringSheet extends StatelessWidget {
 }
 
 class _Content extends StatelessWidget {
-  const _Content({required this.state, required this.onRefresh});
+  const _Content({required this.state, required this.onRefresh, required this.onSeeAllGlobal});
 
   final LeaderboardState state;
   final Future<void> Function() onRefresh;
+  final VoidCallback onSeeAllGlobal;
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +184,32 @@ class _Content extends StatelessWidget {
         ),
       );
     }
-    final bool fewRows = state.tab == LeaderboardTab.friends && entries.length < 5;
+    final bool fewRows = state.tab == LeaderboardTab.friends && entries.length < shortFriendsList;
+    final List<LeaderboardEntry> top = fewRows && state.globalStatus == LoadStatus.success
+        ? state.global.take(5).toList(growable: false)
+        : const <LeaderboardEntry>[];
+    // A short Following list keeps going: the follow tip, then this week's global top 5.
+    final List<Widget> footer = <Widget>[
+      if (fewRows) _FollowTipCard(onFind: () => unawaited(context.router.push(CreatorsRoute(source: 'leaderboard')))),
+      if (top.isNotEmpty) ...<Widget>[
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),
+          child: PrismSectionHeader(title: context.l10n.economyLeaderboardTopThisWeek),
+        ),
+        for (int i = 0; i < top.length; i++) _EntryRow(entry: top[i], position: i + 1),
+        Padding(
+          padding: const EdgeInsets.only(top: PrismSpace.xs),
+          child: Center(
+            child: PrismButton(
+              label: context.l10n.economySeeAll,
+              variant: PrismButtonVariant.ghost,
+              size: PrismButtonSize.compact,
+              onPressed: onSeeAllGlobal,
+            ),
+          ),
+        ),
+      ],
+    ];
     return RefreshIndicator(
       color: cs.primary,
       backgroundColor: cs.surfaceContainerHigh,
@@ -185,23 +217,60 @@ class _Content extends StatelessWidget {
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: PrismSpace.bottomBarClearance),
-        itemCount: entries.length + 1 + (fewRows ? 1 : 0),
+        itemCount: 1 + entries.length + footer.length,
         itemBuilder: (context, index) {
           if (index == 0) return const _ScoreCaption();
           final int entryIndex = index - 1;
-          if (entryIndex == entries.length) {
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, 0),
-              child: PrismInlineState(
-                icon: Icons.group_add_rounded,
-                title: context.l10n.economyLeaderboardFollowTip,
-                actionLabel: context.l10n.accountFindCreators,
-                onAction: () => unawaited(context.router.push(CreatorsRoute(source: 'leaderboard'))),
-              ),
-            );
-          }
+          if (entryIndex >= entries.length) return footer[entryIndex - entries.length];
           return _EntryRow(entry: entries[entryIndex], position: entryIndex + 1);
         },
+      ),
+    );
+  }
+}
+
+/// "Follow creators to compare": a 40-point icon tile, the tip and the screen's one primary action.
+class _FollowTipCard extends StatelessWidget {
+  const _FollowTipCard({required this.onFind});
+
+  final VoidCallback onFind;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, 0),
+      child: PrismCard(
+        padding: const EdgeInsets.all(PrismSpace.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: cs.primaryContainer,
+                borderRadius: BorderRadius.circular(PrismRadius.sm),
+              ),
+              child: Icon(Icons.group_add_rounded, size: 22, color: cs.onPrimaryContainer),
+            ),
+            const SizedBox(width: PrismSpace.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(context.l10n.economyLeaderboardFollowTip, style: PrismTextStyles.rowTitle(context)),
+                  const SizedBox(height: PrismSpace.sm),
+                  PrismButton(
+                    label: context.l10n.accountFindCreators,
+                    size: PrismButtonSize.compact,
+                    onPressed: onFind,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

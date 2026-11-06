@@ -381,15 +381,19 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
       },
       child: PrismPage(
         title: l10n.coreEditProfile,
-        bottomBar: PrismButton(
-          label: l10n.coreSaveChanges,
-          expand: true,
-          loading: isLoading,
-          onPressed: _hasChanges ? _saveProfile : null,
-        ),
+        // Save sits in the header, where it stays in reach above the keyboard. A short label leaves room for the title.
+        actions: <Widget>[
+          const SizedBox(width: PrismSpace.xs),
+          PrismButton(
+            label: l10n.wallpaperSave,
+            size: PrismButtonSize.compact,
+            loading: isLoading,
+            onPressed: _hasChanges ? _saveProfile : null,
+          ),
+        ],
         body: SingleChildScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.only(top: PrismSpace.xs, bottom: PrismSpace.xl),
+          padding: EdgeInsets.only(top: PrismSpace.xs, bottom: PrismSpace.xl + MediaQuery.paddingOf(context).bottom),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[

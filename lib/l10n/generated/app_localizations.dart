@@ -10837,12 +10837,6 @@ abstract class AppLocalizations {
   /// **'You have {count} coins'**
   String economyYouHaveCoins(int count);
 
-  /// No description provided for @economyYourXp.
-  ///
-  /// In en, this message translates to:
-  /// **'YOUR XP'**
-  String get economyYourXp;
-
   /// No description provided for @errorGeneric.
   ///
   /// In en, this message translates to:
@@ -22494,6 +22488,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No events today'**
   String get wallpaperPreviewNoEvents;
+
+  /// Label under a profile's follower count. The number is shown separately.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Follower} other{Followers}}'**
+  String accountFollowersLabel(int count);
+
+  /// Chip on a profile that opens the list of earned badges.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 badge} other{{count} badges}}'**
+  String profileBadgeCount(int count);
+
+  /// Section heading above the global top 5 on the Following leaderboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Top this week'**
+  String get economyLeaderboardTopThisWeek;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -30,6 +30,9 @@ class WallRequestsPage extends StatelessWidget implements AutoRouteWrapper {
   Widget build(BuildContext context) => _WallRequestsView(initialTab: WallRequestTab.fromWire(tab));
 }
 
+/// A list shorter than this puts its intro and its Request button in the list. A longer one pins the button.
+const int _shortListRows = 4;
+
 const List<WallRequestTab> _tabOrder = <WallRequestTab>[
   WallRequestTab.top,
   WallRequestTab.newest,
@@ -112,52 +115,63 @@ class _WallRequestsViewState extends State<_WallRequestsView> with SingleTickerP
         toasts.error(wallRequestErrorText(context, error));
         context.read<WallRequestsCubit>().clearError();
       },
-      child: PrismPage(
-        title: l10n.wallRequestsTitle,
-        headerBottom: TabBar(
-          controller: _tabs,
-          isScrollable: true,
-          tabAlignment: TabAlignment.start,
-          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
-          labelPadding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm),
-          labelColor: cs.primary,
-          unselectedLabelColor: cs.onSurface.withValues(alpha: 0.6),
-          labelStyle: label,
-          unselectedLabelStyle: label,
-          indicator: UnderlineTabIndicator(
-            borderSide: BorderSide(color: cs.primary, width: 3),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
-          ),
-          indicatorSize: TabBarIndicatorSize.label,
-          dividerColor: Colors.transparent,
-          tabs: <Widget>[
-            Tab(text: l10n.wallRequestsTabTop),
-            Tab(text: l10n.wallRequestsTabNew),
-            Tab(text: l10n.wallRequestsTabFilled),
-          ],
-        ),
-        body: TabBarView(
-          controller: _tabs,
-          children: <Widget>[
-            for (final WallRequestTab tab in _tabOrder)
-              _TabBody(
-                tab: tab,
-                isAdmin: isAdmin,
-                onVote: (WallRequest request) => _vote(context.read<WallRequestsCubit>(), request, tab),
-                onAsk: () => unawaited(_ask()),
+      child: ListenableBuilder(
+        listenable: _tabs,
+        builder: (BuildContext context, _) => BlocBuilder<WallRequestsCubit, WallRequestsState>(
+          builder: (BuildContext context, WallRequestsState state) => PrismPage(
+            title: l10n.wallRequestsTitle,
+            headerBottom: TabBar(
+              controller: _tabs,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
+              labelPadding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm),
+              labelColor: cs.primary,
+              unselectedLabelColor: cs.onSurfaceVariant,
+              labelStyle: label,
+              unselectedLabelStyle: label,
+              indicator: UnderlineTabIndicator(
+                borderSide: BorderSide(color: cs.primary, width: 3),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
               ),
-          ],
-        ),
-        bottomBar: PrismButton(
-          label: l10n.wallRequestsAsk,
-          icon: Icons.add_rounded,
-          expand: true,
-          onPressed: () => unawaited(_ask()),
+              indicatorSize: TabBarIndicatorSize.label,
+              dividerColor: Colors.transparent,
+              tabs: <Widget>[
+                Tab(text: l10n.wallRequestsTabTop),
+                Tab(text: l10n.wallRequestsTabNew),
+                Tab(text: l10n.wallRequestsTabFilled),
+              ],
+            ),
+            body: TabBarView(
+              controller: _tabs,
+              children: <Widget>[
+                for (final WallRequestTab tab in _tabOrder)
+                  _TabBody(
+                    tab: tab,
+                    isAdmin: isAdmin,
+                    onVote: (WallRequest request) => _vote(context.read<WallRequestsCubit>(), request, tab),
+                    onAsk: () => unawaited(_ask()),
+                  ),
+              ],
+            ),
+            bottomBar: _listIsShort(state.tab(_tabOrder[_tabs.index]))
+                ? null
+                : PrismButton(
+                    label: l10n.wallRequestsAsk,
+                    icon: Icons.add_rounded,
+                    expand: true,
+                    onPressed: () => unawaited(_ask()),
+                  ),
+          ),
         ),
       ),
     );
   }
 }
+
+/// A loaded list of one to three rows. It has its Request button in the list, not pinned.
+bool _listIsShort(WallRequestsTabState state) =>
+    state is WallRequestsTabLoaded && state.requests.isNotEmpty && state.requests.length < _shortListRows;
 
 class _TabBody extends StatelessWidget {
   const _TabBody({required this.tab, required this.isAdmin, required this.onVote, required this.onAsk});
@@ -172,6 +186,7 @@ class _TabBody extends StatelessWidget {
     final AppLocalizations l10n = context.l10n;
     final WallRequestsCubit cubit = context.read<WallRequestsCubit>();
     final ColorScheme cs = Theme.of(context).colorScheme;
+    bool short(List<WallRequest> requests) => requests.length < _shortListRows;
     return BlocSelector<WallRequestsCubit, WallRequestsState, WallRequestsTabState>(
       selector: (WallRequestsState state) => state.tab(tab),
       builder: (BuildContext context, WallRequestsTabState state) {
@@ -201,26 +216,33 @@ class _TabBody extends StatelessWidget {
           },
           WallRequestsTabLoaded(:final List<WallRequest> requests) => RefreshIndicator(
             onRefresh: () => cubit.load(tab),
-            child: ListView.separated(
+            child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xl),
-              // A short list ends with a caption, so the page does not look finished early.
-              itemCount: requests.length + (requests.length < 3 ? 1 : 0),
-              separatorBuilder: (BuildContext context, _) =>
-                  Divider(height: 1, thickness: 1, color: cs.onSurface.withValues(alpha: 0.08)),
+              // A short list opens with the intro and ends with the Request button, so the page does not look empty.
+              itemCount: requests.length + (short(requests) ? 2 : 0),
               itemBuilder: (BuildContext context, int index) {
-                if (index == requests.length) {
+                final bool isShort = short(requests);
+                if (isShort && index == 0) {
                   return Padding(
-                    padding: const EdgeInsets.only(top: PrismSpace.xl),
-                    child: Text(
-                      l10n.wallRequestsEmptyTopBody,
-                      textAlign: TextAlign.center,
-                      style: PrismTextStyles.caption(context).copyWith(color: cs.onSurfaceVariant),
+                    padding: const EdgeInsets.only(bottom: PrismSpace.xs),
+                    child: Text(l10n.wallRequestsEmptyTopBody, style: PrismTextStyles.caption(context)),
+                  );
+                }
+                if (isShort && index == requests.length + 1) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: PrismSpace.lg),
+                    child: PrismButton(
+                      label: l10n.wallRequestsAsk,
+                      icon: Icons.add_rounded,
+                      expand: true,
+                      onPressed: onAsk,
                     ),
                   );
                 }
-                final WallRequest request = requests[index];
-                return WallRequestRow(
+                final int rowIndex = isShort ? index - 1 : index;
+                final WallRequest request = requests[rowIndex];
+                final Widget row = WallRequestRow(
                   request: request,
                   isAdmin: isAdmin,
                   onVote: request.canVote ? () => onVote(request) : null,
@@ -233,6 +255,14 @@ class _TabBody extends StatelessWidget {
                           showContentReportSheet(context, contentType: 'wallRequest', targetFirestoreDocId: request.id),
                         ),
                   onToggleHidden: isAdmin ? () => unawaited(cubit.setHidden(request, hidden: !request.hidden)) : null,
+                );
+                if (rowIndex == requests.length - 1) return row;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    row,
+                    Divider(height: 1, thickness: 1, color: cs.onSurface.withValues(alpha: 0.08)),
+                  ],
                 );
               },
             ),

@@ -225,10 +225,10 @@ class _ThemeGrid extends StatelessWidget {
   static const double _cardWidth = 104;
   static const double _gap = PrismSpace.md;
 
-  /// A 104 point card: the preview with its ring (170 with the gap under it), then the name and the Locked tag, which
-  /// grow with the text size.
+  /// A 104 point card: the preview with its ring (170 with the gap under it), then the name, which grows with the
+  /// text size. The Locked tag sits on the preview.
   static const double _fixedHeight = 170;
-  static const double _textHeight = 66;
+  static const double _textHeight = 28;
 
   /// A shop theme the user neither bought nor already uses. The selected theme is never locked.
   bool _locked(PrismThemeOption option, Inventory inventory) {
@@ -333,6 +333,17 @@ class _ThemeTile extends StatelessWidget {
                         child: Icon(Icons.check_rounded, size: 14, color: cs.onPrimary),
                       ),
                     ),
+                  // A locked theme is never the selected one, so this never meets the check badge.
+                  if (locked)
+                    PositionedDirectional(
+                      top: PrismSpace.xs + 1,
+                      start: PrismSpace.xs + 1,
+                      end: PrismSpace.xs + 1,
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: _LockedTag(label: l10n.coreThemeLocked),
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: PrismSpace.xs),
@@ -345,12 +356,43 @@ class _ThemeTile extends StatelessWidget {
                   context,
                 ).copyWith(fontSize: 13, fontWeight: selected ? FontWeight.w700 : FontWeight.w600),
               ),
-              if (locked) ...<Widget>[
-                const SizedBox(height: PrismSpace.xxs),
-                PrismTag(label: l10n.coreThemeLocked, icon: Icons.lock_rounded),
-              ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The Locked tag on a theme preview. It stays readable on any theme, so it is black with white text.
+class _LockedTag extends StatelessWidget {
+  const _LockedTag({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(PrismRadius.pill),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs, vertical: 3),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Icon(Icons.lock_rounded, size: 12, color: Colors.white),
+            const SizedBox(width: PrismSpace.xxs),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: PrismTextStyles.caption(context).copyWith(fontWeight: FontWeight.w700, color: Colors.white),
+              ),
+            ),
+          ],
         ),
       ),
     );

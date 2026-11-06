@@ -120,8 +120,8 @@ void main() {
     final before = tester.getRect(find.byTooltip('Back'));
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -1600));
     await tester.pumpAndSettle();
-    // Back moves into the solid header without moving: same centre, now with a 48 point target.
-    expect(tester.getRect(find.byTooltip('Back')).center, before.center);
+    // Back glides 8 points up and in from the card corner into the solid header, now with a 48 point target.
+    expect(tester.getRect(find.byTooltip('Back')).center, before.center - const Offset(8, 8));
     expect(before.top, greaterThanOrEqualTo(47));
     expect(before.bottom, lessThan(47 + kMinInteractiveDimension + 24));
     final scroll = tester.widget<CustomScrollView>(find.byType(CustomScrollView)).controller!;
@@ -140,10 +140,10 @@ void main() {
     expect(clip.borderRadius, const BorderRadius.all(Radius.circular(20)));
     final back = tester.getRect(find.byTooltip('Back'));
     final clock = tester.getRect(find.byTooltip('Preview on your screen'));
-    expect(back, Rect.fromLTWH(card.left + 4, card.top + 4, 44, 44));
+    expect(back, Rect.fromLTWH(card.left + 12, card.top + 12, 44, 44));
     // The clock is a labelled Preview pill: as tall as Back, its end on the same inset.
-    expect(clock.right, card.right - 4);
-    expect(clock.top, card.top + 4);
+    expect(clock.right, card.right - 12);
+    expect(clock.top, card.top + 12);
     expect(clock.height, 44);
     expect(clock.width, greaterThan(44));
     expect(
@@ -153,7 +153,7 @@ void main() {
 
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -1200));
     await tester.pumpAndSettle();
-    expect(tester.getRect(find.byTooltip('Back')).center, back.center);
+    expect(tester.getRect(find.byTooltip('Back')).center, back.center - const Offset(8, 8));
     expect(find.byTooltip('Back').hitTestable(), findsOneWidget);
   });
 
@@ -169,14 +169,14 @@ void main() {
     expect(header(), 0);
     expect(clock(), 1);
 
-    // The card's bottom edge is still below back and the clock (4 + 44 under the card top).
-    scroll.jumpTo(cardHeight - 48 - 1);
+    // The card's bottom edge is still below back and the clock (12 + 44 under the card top).
+    scroll.jumpTo(cardHeight - 56 - 1);
     await tester.pumpAndSettle();
     expect(header(), 0);
     expect(clockButton.hitTestable(), findsOneWidget);
 
     // One point further, the clock would start to cover the actions.
-    scroll.jumpTo(cardHeight - 48 + 1);
+    scroll.jumpTo(cardHeight - 56 + 1);
     await tester.pumpAndSettle();
     expect(header(), 1);
     expect(clock(), 0);
@@ -208,7 +208,7 @@ void main() {
       expect(barOpacity(), 1);
       expect(headerAction, findsNothing);
 
-      scroll.jumpTo(cardHeight - 48 + 1);
+      scroll.jumpTo(cardHeight - 56 + 1);
       await tester.pumpAndSettle();
       expect(barOpacity(), 0);
       // The faded bar stays in the tree, so the header's Set can reach its button, but it takes no taps.
@@ -218,6 +218,8 @@ void main() {
       final Rect action = tester.getRect(headerAction);
       final Rect back = tester.getRect(find.byTooltip('Back'));
       expect(action.center.dy, closeTo(back.center.dy, 0.5));
+      // The header action ends on the page margin, like Save in the bar.
+      expect(action.right, tester.getSize(find.byType(WallpaperDetailScreen)).width - 16);
 
       scroll.jumpTo(0);
       await tester.pumpAndSettle();
@@ -282,10 +284,10 @@ void main() {
       final imageStyle = overlay();
       expect(imageStyle.value.statusBarIconBrightness, lightFeed ? Brightness.light : Brightness.dark);
       expect(fade(), 0);
-      scroll.jumpTo(cardHeight - 48 - 1);
+      scroll.jumpTo(cardHeight - 56 - 1);
       await tester.pump();
       expect(overlay(), same(imageStyle), reason: 'scrolling within the card must not rebuild the detail shell');
-      scroll.jumpTo(cardHeight - 48 + 1);
+      scroll.jumpTo(cardHeight - 56 + 1);
       await tester.pump();
       // The rest of the card is under the solid header now, so the icons follow the page.
       expect(overlay().value.statusBarIconBrightness, pageStyle.value.statusBarIconBrightness);

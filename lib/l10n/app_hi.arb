@@ -6062,7 +6062,6 @@
       }
     }
   },
-  "economyYourXp": "आपके XP",
   "errorGeneric": "कुछ गड़बड़ हुई। कृपया फिर कोशिश करें।",
   "errorNetwork": "अपना कनेक्शन जाँचें और फिर कोशिश करें।",
   "navigationBackOnline": "फिर से ऑनलाइन",
@@ -13898,5 +13897,11 @@
   "searchMoreWallpapers": "और वॉलपेपर",
   "@searchMoreWallpapers": {"description": "Section header for extra wallpaper results in search."},
   "wallpaperPreviewNoEvents": "आज कोई इवेंट नहीं",
-  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."}
+  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."},
+  "accountFollowersLabel": "{count, plural, one{फ़ॉलोअर} other{फ़ॉलोअर्स}}",
+  "@accountFollowersLabel": {"description": "Label under a profile's follower count. The number is shown separately.", "placeholders": {"count": {"type": "int"}}},
+  "profileBadgeCount": "{count, plural, one{1 बैज} other{{count} बैज}}",
+  "@profileBadgeCount": {"description": "Chip on a profile that opens the list of earned badges.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyLeaderboardTopThisWeek": "इस हफ़्ते के टॉप",
+  "@economyLeaderboardTopThisWeek": {"description": "Section heading above the global top 5 on the Following leaderboard."}
 }

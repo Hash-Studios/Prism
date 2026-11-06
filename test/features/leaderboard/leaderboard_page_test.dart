@@ -150,17 +150,64 @@ void main() {
   });
 
   testWidgets('following cold start keeps my score and explains how to add comparisons', (tester) async {
-    await pumpPage(tester, loaded(tab: LeaderboardTab.friends, friends: const <LeaderboardEntry>[_me]));
+    await pumpPage(
+      tester,
+      loaded(tab: LeaderboardTab.friends, friends: const <LeaderboardEntry>[_me], global: const <LeaderboardEntry>[]),
+    );
 
     expect(find.text('40 XP'), findsOneWidget);
     expect(find.text('Your score is included. Follow creators to compare weekly XP.'), findsOneWidget);
     expect(find.text('Find creators'), findsOneWidget);
-    expect(find.byType(PrismInlineState), findsOneWidget);
+    expect(find.byIcon(Icons.group_add_rounded), findsOneWidget);
     expect(find.text('No rankings yet'), findsNothing);
   });
 
+  testWidgets('a short following list shows the global top 5 and See all opens Global', (tester) async {
+    final List<LeaderboardEntry> global = <LeaderboardEntry>[
+      for (int i = 0; i < 7; i++)
+        LeaderboardEntry(uid: 'g$i', name: 'Global $i', username: 'g$i', photo: '', xp: 900 - i, rank: 'gold'),
+    ];
+    tester.view.physicalSize = const Size(400, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pumpPage(tester, loaded(tab: LeaderboardTab.friends, friends: const <LeaderboardEntry>[_me], global: global));
+
+    expect(find.text('Top this week'), findsOneWidget);
+    for (int i = 0; i < 5; i++) {
+      expect(find.text('Global $i'), findsOneWidget);
+    }
+    expect(find.text('Global 5'), findsNothing);
+    // The tip comes before the global list.
+    expect(
+      tester.getTopLeft(find.text('Find creators')).dy,
+      lessThan(tester.getTopLeft(find.text('Top this week')).dy),
+    );
+
+    await tester.tap(find.text('See all'));
+    verify(() => bloc.add(const LeaderboardEvent.tabChanged(LeaderboardTab.global))).called(1);
+    expect(analytics.events.whereType<LeaderboardViewedEvent>().map((e) => e.tab), <String>['friends', 'global']);
+  });
+
+  testWidgets('the global top list waits for the global board to load', (tester) async {
+    await pumpPage(
+      tester,
+      loaded(
+        tab: LeaderboardTab.friends,
+        friends: const <LeaderboardEntry>[_me],
+        global: const <LeaderboardEntry>[_ana],
+      ).copyWith(globalStatus: LoadStatus.loading),
+    );
+
+    expect(find.text('Find creators'), findsOneWidget);
+    expect(find.text('Top this week'), findsNothing);
+    expect(find.text('See all'), findsNothing);
+  });
+
   testWidgets('Find creators opens the creators page', (tester) async {
-    await pumpPage(tester, loaded(tab: LeaderboardTab.friends, friends: const <LeaderboardEntry>[_me]));
+    await pumpPage(
+      tester,
+      loaded(tab: LeaderboardTab.friends, friends: const <LeaderboardEntry>[_me], global: const <LeaderboardEntry>[]),
+    );
 
     await tester.tap(find.text('Find creators'));
 
@@ -177,6 +224,7 @@ void main() {
     await pumpPage(tester, loaded(tab: LeaderboardTab.friends, friends: five));
 
     expect(find.text('Find creators'), findsNothing);
+    expect(find.text('Top this week'), findsNothing);
   });
 
   testWidgets('scoring explanation separates weekly positions, lifetime ranks and tab rules', (tester) async {
@@ -205,7 +253,7 @@ void main() {
     addTearDown(states.close);
     await pumpPage(
       tester,
-      loaded(tab: LeaderboardTab.friends, friends: const <LeaderboardEntry>[_me]),
+      loaded(tab: LeaderboardTab.friends, friends: const <LeaderboardEntry>[_me], global: const <LeaderboardEntry>[]),
       states: states.stream,
     );
 
@@ -221,7 +269,9 @@ void main() {
 
     await tester.tap(find.text('Following'));
     verify(() => bloc.add(const LeaderboardEvent.tabChanged(LeaderboardTab.friends))).called(1);
-    states.add(loaded(tab: LeaderboardTab.friends, friends: const <LeaderboardEntry>[_me]));
+    states.add(
+      loaded(tab: LeaderboardTab.friends, friends: const <LeaderboardEntry>[_me], global: const <LeaderboardEntry>[]),
+    );
     await tester.pump();
     expect(find.text('40 XP'), findsOneWidget);
     expect(find.text('Find creators'), findsOneWidget);
@@ -231,7 +281,11 @@ void main() {
     tester.view.physicalSize = const Size(320, 568);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await pumpPage(tester, loaded(tab: LeaderboardTab.friends, friends: const <LeaderboardEntry>[_me]), textScale: 2);
+    await pumpPage(
+      tester,
+      loaded(tab: LeaderboardTab.friends, friends: const <LeaderboardEntry>[_me], global: const <LeaderboardEntry>[]),
+      textScale: 2,
+    );
     expect(tester.takeException(), isNull);
     await tester.scrollUntilVisible(find.text('40 XP'), 150, scrollable: find.byType(Scrollable).first);
     expect(tester.takeException(), isNull);
@@ -248,7 +302,10 @@ void main() {
   });
 
   testWidgets('switching tabs sends the event and tracks the view', (tester) async {
-    await pumpPage(tester, loaded(tab: LeaderboardTab.friends, friends: const <LeaderboardEntry>[_me]));
+    await pumpPage(
+      tester,
+      loaded(tab: LeaderboardTab.friends, friends: const <LeaderboardEntry>[_me], global: const <LeaderboardEntry>[]),
+    );
     expect(analytics.events.whereType<LeaderboardViewedEvent>().single.tab, 'friends');
 
     await tester.tap(find.text('Global'));

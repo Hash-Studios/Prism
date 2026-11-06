@@ -489,6 +489,9 @@ void main() {
       expect(realBloc.state.isFetchingMoreWalls, isFalse);
       expect(find.text('Try again'), findsOneWidget);
 
+      // The retry state above the grid pushes the See more cell below the fold.
+      await tester.ensureVisible(find.text('See more'));
+      await tester.pump();
       await tester.tap(find.text('See more'));
       await tester.pump();
       await tester.pump();

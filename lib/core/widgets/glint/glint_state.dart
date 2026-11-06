@@ -26,10 +26,31 @@ enum GlintStateKind {
   final GlintMood mood;
 }
 
+/// Glint on a soft accent disc. The disc is [glintSize] + 56 across (176 for the default 120 Glint).
+///
+/// Use it where a short page has one hero moment: a tall [GlintState], a finished route.
+class GlintHalo extends StatelessWidget {
+  const GlintHalo({super.key, this.mood = GlintMood.calm, this.glintSize = 120});
+
+  final GlintMood mood;
+  final double glintSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: glintSize + 56,
+      height: glintSize + 56,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, shape: BoxShape.circle),
+      child: Glint(mood: mood, size: glintSize),
+    );
+  }
+}
+
 /// One widget for empty, error, offline, loading and "nothing new" states, with Glint.
 ///
-/// On a tall area (480 and up) the state sits above the centre, where the eye lands first. The action is the
-/// screen's primary action by default. A page that already shows a primary action (or a bottom bar) passes
+/// On a tall area (480 and up) the state sits above the centre, where the eye lands first, and fills a short page:
+/// Glint on a [GlintHalo], a section title and a large action. The action is the screen's primary action by default. A page that already shows a primary action (or a bottom bar) passes
 /// [PrismButtonVariant.tonal] as [actionVariant].
 ///
 /// When large text makes the state taller than its area, it scrolls instead of overflowing. Below 260 points it scales
@@ -43,7 +64,7 @@ class GlintState extends StatelessWidget {
     this.actionLabel,
     this.onAction,
     this.actionVariant = PrismButtonVariant.primary,
-    this.glintSize = 96,
+    this.glintSize,
     this.padding = const EdgeInsets.all(24),
   });
 
@@ -53,7 +74,9 @@ class GlintState extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
   final PrismButtonVariant actionVariant;
-  final double glintSize;
+
+  /// Glint's size. Null is 120 on a tall area and 96 otherwise.
+  final double? glintSize;
   final EdgeInsetsGeometry padding;
 
   @override
@@ -70,23 +93,33 @@ class GlintState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Glint(mood: kind.mood, size: glintSize),
-              const SizedBox(height: 16),
-              Text(title, textAlign: TextAlign.center, style: PrismTextStyles.cardTitle(context)),
+              if (tall)
+                GlintHalo(mood: kind.mood, glintSize: glintSize ?? 120)
+              else
+                Glint(mood: kind.mood, size: glintSize ?? 96),
+              SizedBox(height: tall ? PrismSpace.xl : PrismSpace.md),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: tall ? PrismTextStyles.sectionTitle(context) : PrismTextStyles.cardTitle(context),
+              ),
               if (bodyText != null) ...[
-                const SizedBox(height: 6),
+                SizedBox(height: tall ? PrismSpace.xs : 6),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 300),
                   child: Text(bodyText, textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
                 ),
               ],
               if (hasAction) ...[
-                const SizedBox(height: 20),
-                PrismButton(
-                  label: actionLabel!,
-                  onPressed: onAction,
-                  variant: actionVariant,
-                  size: PrismButtonSize.compact,
+                SizedBox(height: tall ? PrismSpace.xl : PrismSpace.lg),
+                ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: tall ? 220 : 0),
+                  child: PrismButton(
+                    label: actionLabel!,
+                    onPressed: onAction,
+                    variant: actionVariant,
+                    size: tall ? PrismButtonSize.large : PrismButtonSize.compact,
+                  ),
                 ),
               ],
             ],
@@ -108,7 +141,7 @@ class GlintState extends StatelessWidget {
                 ),
                 child: body,
               );
-        Widget centered = tall ? Align(alignment: const Alignment(0, -0.35), child: animated) : Center(child: animated);
+        Widget centered = tall ? Align(alignment: const Alignment(0, -0.5), child: animated) : Center(child: animated);
         if (kind == GlintStateKind.error || kind == GlintStateKind.offline) {
           centered = Semantics(liveRegion: true, container: true, child: centered);
         }

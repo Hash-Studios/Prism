@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('the loading row has a 12 px side margin, 8 px gaps and rounded tiles', (tester) async {
+  testWidgets('the loading row has a 16 px side margin, 8 px gaps and rounded tiles', (tester) async {
     tester.view.physicalSize = const Size(600, 1200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -19,13 +19,13 @@ void main() {
 
     final Finder tiles = find.byType(AspectRatio);
     expect(tiles, findsNWidgets(3));
-    const double tileWidth = (600 - 2 * 12 - 2 * 8) / 3;
+    const double tileWidth = (600 - 2 * 16 - 2 * 8) / 3;
     for (int i = 0; i < 3; i++) {
       final Rect rect = tester.getRect(tiles.at(i));
-      expect(rect.left, closeTo(12 + i * (tileWidth + 8), 0.01));
+      expect(rect.left, closeTo(16 + i * (tileWidth + 8), 0.01));
       expect(rect.width, closeTo(tileWidth, 0.01));
     }
-    expect(tester.getRect(tiles.last).right, closeTo(588, 0.01));
+    expect(tester.getRect(tiles.last).right, closeTo(584, 0.01));
     expect(tester.getTopLeft(tiles.first).dy, 8);
     final Finder bone = find.descendant(of: tiles.first, matching: find.byType(DecoratedBox));
     expect(((tester.widget<DecoratedBox>(bone).decoration) as BoxDecoration).borderRadius, BorderRadius.circular(12));

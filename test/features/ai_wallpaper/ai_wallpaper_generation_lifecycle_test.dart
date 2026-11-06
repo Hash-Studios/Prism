@@ -1080,7 +1080,7 @@ void main() {
     await tester.pump();
     await tester.ensureVisible(find.byType(ListView).first);
     await tester.pump();
-    await tester.tap(find.text('Anime'));
+    await tester.tap(find.text('Nature'));
     reservation.complete(<String, Object>{
       'success': true,
       'changed': true,

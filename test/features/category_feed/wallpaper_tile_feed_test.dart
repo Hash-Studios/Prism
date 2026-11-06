@@ -170,6 +170,8 @@ void main() {
       220,
       scrollable: find.descendant(of: find.byType(GridView), matching: find.byType(Scrollable)),
     );
+    await tester.ensureVisible(tappedTile);
+    await tester.pump();
     await tester.tap(tappedTile);
     await tester.pump();
 

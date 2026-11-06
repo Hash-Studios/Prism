@@ -8,6 +8,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_carousel_slide.dart';
@@ -201,15 +202,15 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('a page is the screen less a 12 px margin each side, 0.6 times as tall, with rounded corners', (
+  testWidgets('a page is the screen less a 16 px margin each side, 0.6 times as tall, with rounded corners', (
     tester,
   ) async {
     await pumpCarousel(tester, <PrismFeedItem>[_wall('a'), _wall('b')]);
 
     final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
-    expect(card.left, 12);
-    expect(card.width, 376);
-    expect(card.height, closeTo(225.6, 0.01));
+    expect(card.left, 16);
+    expect(card.width, 368);
+    expect(card.height, closeTo(220.8, 0.01));
     final ClipRRect clip = tester.widget<ClipRRect>(
       find.descendant(of: find.byType(FeedHeroCard), matching: find.byType(ClipRRect)).first,
     );
@@ -230,9 +231,9 @@ void main() {
     final Rect secondCard = tester.getRect(find.byType(FeedHeroCard).at(1));
     final Rect dots = tester.getRect(find.byType(FeedCarouselDots));
     expect(carousel.width, 951 - 84);
-    expect(carousel.height, closeTo(((951 - 84) / 2 - 24) * 0.6, 0.01));
-    expect(card.width, closeTo(carousel.width / 2 - 24, 0.01));
-    expect(secondCard.left, closeTo(card.right + 24, 0.01));
+    expect(carousel.height, closeTo(((951 - 84) / 2 - 32) * 0.6, 0.01));
+    expect(card.width, closeTo(carousel.width / 2 - 32, 0.01));
+    expect(secondCard.left, closeTo(card.right + 32, 0.01));
     expect(secondCard.right, lessThanOrEqualTo(carousel.right));
     expect(dots.right, closeTo(card.right - 12, 0.01));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
@@ -250,7 +251,7 @@ void main() {
     final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
     final Rect dots = tester.getRect(find.byType(FeedCarouselDots));
     expect(carousel.width, 466 - 84);
-    expect(card.width, closeTo(carousel.width - 24, 0.01));
+    expect(card.width, closeTo(carousel.width - 32, 0.01));
     expect(dots.right, closeTo(card.right - 12, 0.01));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
@@ -268,8 +269,8 @@ void main() {
     final Rect railDots = tester.getRect(find.byType(FeedCarouselDots));
     final double railCardHeight = railCarousel.height;
     expect(railCarousel.width, size.width - 84);
-    expect(railCardHeight, closeTo(((size.width - 84) / 2 - 24) * 0.6, 0.01));
-    expect(railDots.right, closeTo(railCarousel.width / 2 - 24, 0.01));
+    expect(railCardHeight, closeTo(((size.width - 84) / 2 - 32) * 0.6, 0.01));
+    expect(railDots.right, closeTo(railCarousel.width / 2 - 28, 0.01));
 
     tester.view
       ..viewPadding = const FakeViewPadding(right: 100, bottom: 34)
@@ -282,9 +283,9 @@ void main() {
     final Rect widerRailSecondCard = tester.getRect(find.byType(FeedHeroCard).at(1));
     final Rect widerRailDots = tester.getRect(find.byType(FeedCarouselDots));
     expect(widerRailCarousel.width, size.width - 100);
-    expect(widerRailCarousel.height, closeTo(((size.width - 100) / 2 - 24) * 0.6, 0.01));
-    expect(widerRailCard.width, closeTo(widerRailCarousel.width / 2 - 24, 0.01));
-    expect(widerRailSecondCard.left, closeTo(widerRailCard.right + 24, 0.01));
+    expect(widerRailCarousel.height, closeTo(((size.width - 100) / 2 - 32) * 0.6, 0.01));
+    expect(widerRailCard.width, closeTo(widerRailCarousel.width / 2 - 32, 0.01));
+    expect(widerRailSecondCard.left, closeTo(widerRailCard.right + 32, 0.01));
     expect(widerRailSecondCard.right, lessThanOrEqualTo(widerRailCarousel.right));
     expect(widerRailDots.right, closeTo(widerRailCard.right - 12, 0.01));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
@@ -309,28 +310,28 @@ void main() {
       expect(dots.right, closeTo(card.right - 12, 0.01));
     }
 
-    expectLayout(width: 466 - 84, cardWidth: 466 - 84 - 24);
+    expectLayout(width: 466 - 84, cardWidth: 466 - 84 - 32);
 
     tester.view
       ..physicalSize = const Size(669, 951)
       ..viewPadding = const FakeViewPadding(top: 82, bottom: 34)
       ..padding = const FakeViewPadding(top: 82, bottom: 34);
     await tester.pump();
-    expectLayout(width: 669, cardWidth: 669 - 24);
+    expectLayout(width: 669, cardWidth: 669 - 32);
 
     tester.view
       ..physicalSize = const Size(951, 669)
       ..viewPadding = const FakeViewPadding(right: 84, bottom: 34)
       ..padding = const FakeViewPadding(right: 84, bottom: 34);
     await tester.pump();
-    expectLayout(width: 951 - 84, cardWidth: (951 - 84) / 2 - 24);
+    expectLayout(width: 951 - 84, cardWidth: (951 - 84) / 2 - 32);
 
     tester.view
       ..physicalSize = const Size(466, 678)
       ..viewPadding = const FakeViewPadding(right: 84, bottom: 34)
       ..padding = const FakeViewPadding(right: 84, bottom: 34);
     await tester.pump();
-    expectLayout(width: 466 - 84, cardWidth: 466 - 84 - 24);
+    expectLayout(width: 466 - 84, cardWidth: 466 - 84 - 32);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('ordinary iPhone landscape does not become a side-rail carousel', (tester) async {
@@ -345,7 +346,7 @@ void main() {
     final Rect carousel = tester.getRect(find.byType(FeedCarousel));
     final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
     expect(carousel.width, 844);
-    expect(card.width, closeTo(carousel.width - 24, 0.01));
+    expect(card.width, closeTo(carousel.width - 32, 0.01));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('iPad split, Stage Manager, and full-window widths keep the regular column policy', (tester) async {
@@ -360,14 +361,14 @@ void main() {
     final Rect carousel = tester.getRect(find.byType(FeedCarousel));
     final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
     expect(carousel.width, 507);
-    expect(card.width, closeTo(carousel.width - 24, 0.01));
+    expect(card.width, closeTo(carousel.width - 32, 0.01));
 
     tester.view.physicalSize = const Size(700, 900);
     await tester.pump();
     final Rect stageManagerSplitCarousel = tester.getRect(find.byType(FeedCarousel));
     final Rect stageManagerSplitCard = tester.getRect(find.byType(FeedHeroCard).first);
     expect(stageManagerSplitCarousel.width, 700);
-    expect(stageManagerSplitCard.width, closeTo(stageManagerSplitCarousel.width - 24, 0.01));
+    expect(stageManagerSplitCard.width, closeTo(stageManagerSplitCarousel.width - 32, 0.01));
 
     tester.view.physicalSize = const Size(1032, 744);
     await tester.pump();
@@ -375,7 +376,7 @@ void main() {
     final Rect stageManagerCard = tester.getRect(find.byType(FeedHeroCard).first);
     final Rect stageManagerDots = tester.getRect(find.byType(FeedCarouselDots));
     expect(stageManagerCarousel.width, 1032);
-    expect(stageManagerCard.width, closeTo(stageManagerCarousel.width / 2 - 24, 0.01));
+    expect(stageManagerCard.width, closeTo(stageManagerCarousel.width / 2 - 32, 0.01));
     expect(stageManagerDots.right, closeTo(stageManagerCard.right - 12, 0.01));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
@@ -391,7 +392,7 @@ void main() {
     final Rect carousel = tester.getRect(find.byType(FeedCarousel));
     final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
     expect(carousel.width, 951);
-    expect(card.width, closeTo(carousel.width - 24, 0.01));
+    expect(card.width, closeTo(carousel.width - 32, 0.01));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('the banner page uses localized default copy when Remote Config has no title', (tester) async {
@@ -441,6 +442,19 @@ void main() {
       .evaluate()
       .map((element) => (element.widget as WallpaperImpression).itemId)
       .toList();
+
+  testWidgets('a wall page decodes the display picture at the size of its card', (tester) async {
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+    while (find.byType(WallpaperImpression).evaluate().isEmpty) {
+      await swipeToNextPage(tester);
+    }
+
+    final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
+    final ProgressiveWallpaperImage image = tester.widget<ProgressiveWallpaperImage>(
+      find.descendant(of: find.byType(WallpaperImpression), matching: find.byType(ProgressiveWallpaperImage)),
+    );
+    expect(image.decodeBox, card.size);
+  });
 
   testWidgets('the Wall of the Day leads, then the boosted walls with a Boosted tag and no caption, then the banner', (
     tester,
@@ -601,7 +615,7 @@ void main() {
     expect(dots.left, greaterThanOrEqualTo(carousel.left));
     expect(dots.right, lessThanOrEqualTo(carousel.right));
     expect(dots.top, greaterThanOrEqualTo(carousel.top));
-    expect(carousel.right - dots.right, closeTo(24, 0.01));
+    expect(carousel.right - dots.right, closeTo(28, 0.01));
     expect(carousel.bottom - dots.bottom, greaterThan(0));
     expect(carousel.bottom - dots.bottom, lessThan(16));
   });
@@ -624,7 +638,7 @@ void main() {
     expect(slider.options.enableInfiniteScroll, isTrue);
     expect(slider.itemCount, 3);
     expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
-    expect(tester.getRect(find.byType(FeedHeroCard).first).width, 456);
+    expect(tester.getRect(find.byType(FeedHeroCard).first).width, 448);
     expect(shownWallIds(tester), <String>['a', 'b']);
   });
 
@@ -653,17 +667,17 @@ void main() {
     await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], size: tablet, reduceMotion: false);
     slider = tester.widget<CarouselSlider>(find.byType(CarouselSlider));
     expect(slider.options.autoPlay, isTrue);
-    expect(tester.getRect(find.byType(FeedCarouselDots)).right, 492);
+    expect(tester.getRect(find.byType(FeedCarouselDots)).right, 488);
     await tester.pump(const Duration(seconds: 6));
     await tester.pumpAndSettle();
     expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
     expect(shownWallId(tester), 'a');
-    expect(tester.getRect(find.byType(WallpaperImpression)).left, 12);
-    expect(tester.getRect(find.byType(FeedCarouselDots)).right, 492);
+    expect(tester.getRect(find.byType(WallpaperImpression)).left, 16);
+    expect(tester.getRect(find.byType(FeedCarouselDots)).right, 488);
     await tester.pump(const Duration(seconds: 6));
     await tester.pumpAndSettle();
     expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
-    expect(tester.getRect(find.byType(FeedHeroCard).first).left, 12);
+    expect(tester.getRect(find.byType(FeedHeroCard).first).left, 16);
   });
 
   testWidgets('a single page has no dots', (tester) async {

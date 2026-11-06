@@ -1793,7 +1793,6 @@
   "economyXpUnit": "XP",
   "economyYesterday": "Ontem",
   "economyYouHaveCoins": "Você tem {count} moedas",
-  "economyYourXp": "SEU XP",
   "errorGeneric": "Algo deu errado. Por favor, tente novamente.",
   "errorNetwork": "Verifique sua conexão e tente novamente.",
   "navigationBackOnline": "De volta on-line",
@@ -3811,5 +3810,11 @@
   "searchMoreWallpapers": "Mais papéis de parede",
   "@searchMoreWallpapers": {"description": "Section header for extra wallpaper results in search."},
   "wallpaperPreviewNoEvents": "Nenhum evento hoje",
-  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."}
+  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."},
+  "accountFollowersLabel": "{count, plural, one{Seguidor} other{Seguidores}}",
+  "@accountFollowersLabel": {"description": "Label under a profile's follower count. The number is shown separately.", "placeholders": {"count": {"type": "int"}}},
+  "profileBadgeCount": "{count, plural, one{1 selo} other{{count} selos}}",
+  "@profileBadgeCount": {"description": "Chip on a profile that opens the list of earned badges.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyLeaderboardTopThisWeek": "Top desta semana",
+  "@economyLeaderboardTopThisWeek": {"description": "Section heading above the global top 5 on the Following leaderboard."}
 }

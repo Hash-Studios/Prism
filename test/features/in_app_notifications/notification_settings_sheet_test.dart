@@ -133,6 +133,10 @@ void main() {
     await pumpSheet(tester, permissions);
 
     expect(find.text('Notifications are off for Prism.'), findsOneWidget);
+    final Opacity rows = tester.widget<Opacity>(
+      find.ancestor(of: find.byType(PrismGroup), matching: find.byType(Opacity)).first,
+    );
+    expect(rows.opacity, 0.5);
     await tester.tap(find.text('Open settings'));
     expect(permissions.settingsOpened, 1);
   });

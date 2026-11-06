@@ -788,7 +788,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         trailing: Icon(
           Icons.open_in_new_rounded,
           size: 18,
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: PrismInk.iconAlpha),
         ),
         onTap: _openManageSubscription,
       ),
@@ -826,8 +826,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _openManageSubscription() => openManageSubscription(context.l10n);
 
-  Icon _external(BuildContext context) =>
-      Icon(Icons.open_in_new_rounded, size: 18, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35));
+  Icon _external(BuildContext context) => Icon(
+    Icons.open_in_new_rounded,
+    size: 18,
+    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: PrismInk.iconAlpha),
+  );
 
   List<Widget> _privacyRows() => <Widget>[
     PrismRow(

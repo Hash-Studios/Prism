@@ -323,6 +323,8 @@ void main() {
         reason: 'the details disclosure to open',
       );
       await tester.pump();
+      // Opening scrolls the details into view.
+      await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('space'), findsOneWidget);
       await tester.ensureVisible(find.byTooltip('Collapse wallpaper details'));
       await tester.tap(find.byTooltip('Collapse wallpaper details'));
@@ -335,6 +337,31 @@ void main() {
       await tester.pump();
       expect(find.text('space'), findsNothing);
       expect((bloc.state as WallpaperDetailLoaded).entity, entity);
+    });
+
+    testWidgets('opening the details scrolls them up toward the solid header', (tester) async {
+      final bloc = await pumpWithRealBloc(tester, twoColours);
+      await tester.ensureVisible(find.byTooltip('Expand wallpaper details'));
+      await tester.pumpAndSettle();
+      final ScrollPosition scroll = tester.widget<CustomScrollView>(find.byType(CustomScrollView)).controller!.position;
+      final double before = scroll.pixels;
+      await tester.tap(find.byTooltip('Expand wallpaper details'));
+      await tester.pump();
+      await waitForRealIo(
+        tester,
+        () => !(bloc.state as WallpaperDetailLoaded).panelCollapsed,
+        reason: 'the details disclosure to open',
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      // With no recommendations under it this page is short, so the details scroll as far up as the page allows. The
+      // summary never goes under the solid header.
+      expect(scroll.pixels, greaterThan(before));
+      final double header = tester.getRect(find.byKey(const ValueKey<String>('detail-header'))).bottom;
+      final double toggle = tester.getRect(find.byTooltip('Collapse wallpaper details')).top;
+      expect(scroll.pixels == scroll.maxScrollExtent || (toggle >= header && toggle < header + 24), isTrue);
+      expect(toggle, greaterThanOrEqualTo(header));
     });
 
     testWidgets('the first swatch shows the untouched thumbnail and each other swatch its colour', (tester) async {

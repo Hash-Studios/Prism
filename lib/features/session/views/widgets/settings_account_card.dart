@@ -78,7 +78,7 @@ class SettingsAccountCard extends StatelessWidget {
               ],
             ),
           ),
-          Icon(Icons.chevron_right_rounded, size: 22, color: cs.onSurface.withValues(alpha: 0.35)),
+          Icon(Icons.chevron_right_rounded, size: 22, color: cs.onSurface.withValues(alpha: PrismInk.iconAlpha)),
         ],
       ),
     );

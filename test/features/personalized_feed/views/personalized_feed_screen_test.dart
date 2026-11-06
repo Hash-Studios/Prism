@@ -811,7 +811,7 @@ void main() {
     expect(find.byType(FeedCarousel), findsNothing);
     final Rect first = tester.getRect(find.byType(WallpaperTile).first);
     final Rect second = tester.getRect(find.byType(WallpaperTile).at(1));
-    expect(first.left, 12, reason: 'a 12 px side margin');
+    expect(first.left, 16, reason: 'a 16 px side margin');
     expect(second.left - first.right, 8, reason: 'an 8 px gap');
   });
 
@@ -1366,7 +1366,7 @@ void main() {
     verify(() => paged.add(const PagedFeedEvent.fetchMoreRequested())).called(1);
   });
 
-  testWidgets('the carousel shows Wall of the Day first, inset by 12 px, with the dots inside the image', (
+  testWidgets('the carousel shows Wall of the Day first, inset by 16 px, with the dots inside the image', (
     tester,
   ) async {
     await pumpScreen(
@@ -1378,19 +1378,19 @@ void main() {
     expect(find.text('by Ana'), findsOneWidget);
     final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
     final Rect dots = tester.getRect(find.byType(FeedCarouselDots));
-    expect(card.left, 12);
-    expect(card.width, 576);
-    expect(card.height, closeTo(345.6, 0.01));
+    expect(card.left, 16);
+    expect(card.width, 568);
+    expect(card.height, closeTo(340.8, 0.01));
     expect(dots.top, greaterThanOrEqualTo(card.top));
     expect(dots.bottom, lessThanOrEqualTo(card.bottom));
   });
 
-  testWidgets('the For you grid has a 12 px side margin, 8 px gaps and rounded tiles', (tester) async {
+  testWidgets('the For you grid has a 16 px side margin, 8 px gaps and rounded tiles', (tester) async {
     await pumpScreen(tester);
 
     final List<Rect> tiles = [for (int i = 0; i < 4; i++) tester.getRect(find.byType(FeedWallTile).at(i))];
-    expect(tiles[0].left, 12);
-    expect(tiles[2].right, closeTo(588, 0.01));
+    expect(tiles[0].left, 16);
+    expect(tiles[2].right, closeTo(584, 0.01));
     expect(tiles[1].left - tiles[0].right, closeTo(8, 0.01));
     expect(tiles[3].top - tiles[0].bottom, closeTo(8, 0.01));
     expect(tester.widget<PrismWallTile>(find.byType(PrismWallTile).first).borderRadius, BorderRadius.circular(12));
@@ -1403,7 +1403,7 @@ void main() {
     expect(tester.getRect(find.byType(FeedWallTile).first).top - carouselBottom, closeTo(8, 0.01));
   });
 
-  testWidgets('the Latest grid has a 12 px side margin, 8 px gaps and rounded tiles', (tester) async {
+  testWidgets('the Latest grid has a 16 px side margin, 8 px gaps and rounded tiles', (tester) async {
     when(
       () => prismRepository.fetchFeed(refresh: any(named: 'refresh')),
     ).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('l1'), _wall('l2'), _wall('l3'), _wall('l4')]));
@@ -1413,7 +1413,7 @@ void main() {
     await _settle(tester);
 
     final List<Rect> tiles = [for (int i = 0; i < 4; i++) tester.getRect(find.byType(FeedWallTile).at(i))];
-    expect(tiles[0].left, 12);
+    expect(tiles[0].left, 16);
     expect(tiles[1].left - tiles[0].right, closeTo(8, 0.01));
     expect(tiles[3].top - tiles[0].bottom, closeTo(8, 0.01));
     expect(tester.widget<PrismWallTile>(find.byType(PrismWallTile).first).borderRadius, BorderRadius.circular(12));
@@ -1605,16 +1605,16 @@ void main() {
       expect(autoPlay(tester), isTrue);
     });
 
-    testWidgets('decodes its wallpaper tiles at the carousel height', (tester) async {
+    testWidgets('decodes its banner tile at the carousel height', (tester) async {
       await pumpScreen(tester);
 
       final Iterable<PrismImageTile> tiles = tester.widgetList<PrismImageTile>(
         find.descendant(of: find.byType(CarouselSlider), matching: find.byType(PrismImageTile)),
       );
 
-      // 600 px wide at a pixel ratio of 1, so the page is 576 px wide and 0.6 as tall: 345.6 px.
+      // 600 px wide at a pixel ratio of 1, so the page is 568 px wide and 0.6 as tall: 340.8 px.
       expect(tiles, isNotEmpty);
-      expect(tiles.map((tile) => tile.memCacheHeight), everyElement(346));
+      expect(tiles.map((tile) => tile.memCacheHeight), everyElement(341));
     });
   });
 
@@ -1636,18 +1636,18 @@ void main() {
     expect(tester.widget<LoadingCards>(find.byType(LoadingCards)).useFeedLayout, isTrue);
     expect(tab('Latest'), findsOneWidget, reason: 'the tabs are usable while it loads');
     final Finder bone = find.descendant(of: find.byType(PrismSkeleton), matching: find.byType(PrismBone));
-    expect(tester.getRect(bone).left, 12);
-    expect(tester.getSize(bone).width, 576);
-    expect(tester.getSize(bone).height, closeTo(345.6, 0.01));
+    expect(tester.getRect(bone).left, 16);
+    expect(tester.getSize(bone).width, 568);
+    expect(tester.getSize(bone).height, closeTo(340.8, 0.01));
   });
 
   for (final viewport in <({String name, Size size, double cardWidth, double cardHeight})>[
-    (name: 'narrow phone', size: const Size(320, 480), cardWidth: 296, cardHeight: 177.6),
+    (name: 'narrow phone', size: const Size(320, 480), cardWidth: 288, cardHeight: 172.8),
     (
       name: 'Android emulator',
       size: const Size(1080 / 2.625, 2400 / 2.625),
-      cardWidth: 387.428571,
-      cardHeight: 232.457143,
+      cardWidth: 379.428571,
+      cardHeight: 227.657143,
     ),
   ]) {
     for (final bool emptyMedia in <bool>[true, false]) {
@@ -1662,7 +1662,7 @@ void main() {
         expect(tester.takeException(), isNull);
         final Finder bone = find.descendant(of: find.byType(PrismSkeleton), matching: find.byType(PrismBone));
         final Rect placeholder = tester.getRect(bone);
-        expect(placeholder.left, 12);
+        expect(placeholder.left, 16);
         expect(placeholder.width, closeTo(viewport.cardWidth, 0.01));
         expect(placeholder.height, closeTo(viewport.cardHeight, 0.01));
         expect(placeholder.top, greaterThanOrEqualTo(0));

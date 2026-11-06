@@ -351,7 +351,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        NotificationIconTile(title: groupTitle, body: first.body),
+                        NotificationIconTile(title: groupTitle, body: first.body, unread: group.unreadCount > 0),
                         const SizedBox(width: PrismSpace.sm),
                         Expanded(
                           child: Column(
@@ -365,11 +365,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                                   turns: expanded ? 0.5 : 0,
                                   duration: context.motion(PrismDurations.fast),
                                   curve: PrismCurves.move,
-                                  child: Icon(
-                                    Icons.expand_more_rounded,
-                                    size: 20,
-                                    color: cs.onSurface.withValues(alpha: 0.6),
-                                  ),
+                                  child: Icon(Icons.expand_more_rounded, size: 20, color: cs.onSurfaceVariant),
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -380,7 +376,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                               if (!expanded) ...<Widget>[
                                 const SizedBox(height: PrismSpace.xxs),
                                 Text(
-                                  collapsedGroupSummaryLine(group, l10n),
+                                  glueTrailingEmoji(collapsedGroupSummaryLine(group, l10n)),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: PrismTextStyles.body(context),

@@ -95,6 +95,46 @@ void main() {
     expect(shortMiddle, closeTo(short.center.dy, 1));
   });
 
+  testWidgets('a tall area gets the halo, a section title and a large wide action; a short one stays compact', (
+    tester,
+  ) async {
+    Future<void> pumpAt(Size size, {double? glintSize}) async {
+      await tester.pumpWidget(
+        host(
+          GlintState(
+            kind: GlintStateKind.empty,
+            title: 'T',
+            body: 'B',
+            actionLabel: 'Go',
+            onAction: () {},
+            glintSize: glintSize,
+          ),
+          size: size,
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    await pumpAt(const Size(390, 700));
+    expect(find.byType(GlintHalo), findsOneWidget);
+    expect(tester.getSize(find.byType(GlintHalo)), const Size.square(176));
+    expect(tester.widget<Glint>(find.byType(Glint)).size, 120);
+    expect(tester.widget<Text>(find.text('T')).style!.fontSize, 20);
+    expect(tester.widget<PrismButton>(find.byType(PrismButton)).size, PrismButtonSize.large);
+    expect(tester.getSize(find.byType(FilledButton)).width, greaterThanOrEqualTo(220));
+    expect(tester.getTopLeft(find.text('T')).dy - tester.getBottomLeft(find.byType(GlintHalo)).dy, 24);
+    expect(tester.getTopLeft(find.byType(FilledButton)).dy - tester.getBottomLeft(find.text('B')).dy, 24);
+
+    await pumpAt(const Size(390, 400));
+    expect(find.byType(GlintHalo), findsNothing);
+    expect(tester.widget<Glint>(find.byType(Glint)).size, 96);
+    expect(tester.widget<PrismButton>(find.byType(PrismButton)).size, PrismButtonSize.compact);
+
+    await pumpAt(const Size(390, 700), glintSize: 64);
+    expect(tester.widget<Glint>(find.byType(Glint)).size, 64);
+    expect(tester.getSize(find.byType(GlintHalo)), const Size.square(120));
+  });
+
   testWidgets('does not overflow at 320x200', (tester) async {
     await tester.pumpWidget(
       host(

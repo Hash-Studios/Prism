@@ -191,7 +191,7 @@ void main() {
     expect(tester.getTopLeft(find.text('For you')).dx, 14);
   });
 
-  testWidgets('every label is 15 pt bold, the chosen one in the text colour and the others in 55% ink', (tester) async {
+  testWidgets('every label is 15 pt bold, the chosen one in the text colour and the others in 62% ink', (tester) async {
     await pumpBar(tester, initial: HomeFeedChip.latest);
 
     for (final String label in <String>['For you', 'Following', 'Trending', 'Latest', 'Popular']) {
@@ -204,7 +204,7 @@ void main() {
     }
     expect(inkOf(tester, 'Latest'), cs.onSurface);
     for (final String label in <String>['For you', 'Following', 'Trending', 'Popular']) {
-      expect(inkOf(tester, label), cs.onSurface.withValues(alpha: 0.55), reason: label);
+      expect(inkOf(tester, label), cs.onSurface.withValues(alpha: 0.62), reason: label);
     }
   });
 
@@ -281,13 +281,15 @@ void main() {
     expect(tuned, 0);
   });
 
-  testWidgets('For you shows a 60% ink caret while the feed settings can open, and none without them', (tester) async {
+  testWidgets('For you shows a secondary ink caret while the feed settings can open, and none without them', (
+    tester,
+  ) async {
     await pumpBar(tester, onTuneTap: () {});
 
     final Icon caret = tester.widget<Icon>(find.descendant(of: tab('For you'), matching: find.byType(Icon)));
     expect(caret.icon, PrismIcons.dropdownCaret);
     expect(caret.size, 18);
-    expect(caret.color, cs.onSurface.withValues(alpha: 0.6));
+    expect(caret.color, cs.onSurfaceVariant);
     expect(find.byIcon(PrismIcons.dropdownCaret), findsOneWidget);
 
     await pumpBar(tester);

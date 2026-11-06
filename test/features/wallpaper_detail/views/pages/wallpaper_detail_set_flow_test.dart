@@ -492,10 +492,11 @@ void main() {
         paletteLoading: false,
       ),
     );
-    // The rows under the card keep the 560 point panel width, centred in the safe area.
+    // The rows under the card keep the 560 point panel width, centred in the safe area. The bar ends 8 points in, so
+    // Save ends on the page margin.
     final actions = tester.getRect(find.byType(WallpaperActionBar));
-    expect(actions.width, 560);
-    expect(actions.center.dx, 844 / 2);
+    expect(actions.left, (844 - 560) / 2);
+    expect(actions.width, 560 - 8);
     final card = tester.getRect(
       find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label == 'Wallpaper'),
     );
@@ -503,8 +504,8 @@ void main() {
     expect(card.height, closeTo(390 * 0.66, 0.01));
     expect(card.width, closeTo(card.height * 0.85, 0.01));
     expect(card.center.dx, closeTo(844 / 2, 0.01));
-    expect(tester.getRect(find.byTooltip('Back')).topLeft, card.topLeft + const Offset(4, 4));
-    expect(tester.getRect(find.byTooltip('Preview on your screen')).topRight, card.topRight + const Offset(-4, 4));
+    expect(tester.getRect(find.byTooltip('Back')).topLeft, card.topLeft + const Offset(12, 12));
+    expect(tester.getRect(find.byTooltip('Preview on your screen')).topRight, card.topRight + const Offset(-12, 12));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('no Live chip on iOS, where nothing can be set from the app', (tester) async {

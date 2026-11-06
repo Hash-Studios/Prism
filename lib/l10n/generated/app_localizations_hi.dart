@@ -7082,9 +7082,6 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get economyYourXp => 'आपके XP';
-
-  @override
   String get errorGeneric => 'कुछ गड़बड़ हुई। कृपया फिर कोशिश करें।';
 
   @override
@@ -14007,4 +14004,22 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperPreviewNoEvents => 'आज कोई इवेंट नहीं';
+
+  @override
+  String accountFollowersLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'फ़ॉलोअर्स', one: 'फ़ॉलोअर');
+    return '$_temp0';
+  }
+
+  @override
+  String profileBadgeCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString बैज', one: '1 बैज');
+    return '$_temp0';
+  }
+
+  @override
+  String get economyLeaderboardTopThisWeek => 'इस हफ़्ते के टॉप';
 }

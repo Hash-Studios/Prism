@@ -13,8 +13,8 @@ abstract final class PrismWallGrid {
   /// Gap between tiles.
   static const double spacing = 8;
 
-  /// Left and right margin of a grid. Smaller than the text page margin so tiles stay large.
-  static const double margin = 12;
+  /// Left and right margin of a grid. The same as the page margin, so tiles line up with titles and text.
+  static const double margin = PrismSpace.page;
 
   /// Corner radius of a tile.
   static const double radius = PrismRadius.sm;
@@ -77,7 +77,8 @@ class _FooterGridDelegate extends SliverGridDelegateWithFixedCrossAxisCount {
       super.shouldRelayout(oldDelegate);
 }
 
-/// One wallpaper in a grid: rounded image, hairline outline, press feedback and a slot for a badge.
+/// One wallpaper in a grid: rounded image (its hairline comes from [PrismImageTile]), press feedback and a slot for a
+/// badge.
 class PrismWallTile extends StatelessWidget {
   const PrismWallTile({
     super.key,
@@ -109,7 +110,6 @@ class PrismWallTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool dark = Theme.of(context).brightness == Brightness.dark;
     final String resolvedSemanticLabel = semanticLabel ?? context.l10n.coreWallpaperSemanticLabel;
     return PressScale(
       scale: 0.97,
@@ -131,15 +131,6 @@ class PrismWallTile extends StatelessWidget {
                 heroTag: heroTag,
                 borderRadius: borderRadius,
                 memCacheHeight: memCacheHeight,
-              ),
-              // A pure white or black hairline keeps dark images from melting into the page.
-              IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: borderRadius,
-                    border: Border.all(color: (dark ? Colors.white : Colors.black).withValues(alpha: 0.08)),
-                  ),
-                ),
               ),
               ?overlay,
             ],

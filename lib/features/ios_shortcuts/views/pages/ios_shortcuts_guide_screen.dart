@@ -277,69 +277,81 @@ class _Step extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: PrismSpace.xl),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          ExcludeSemantics(
-            child: CircleAvatar(
-              radius: 14,
-              backgroundColor: cs.primary,
-              child: Text(
-                '$number',
-                style: PrismTextStyles.caption(context).copyWith(color: cs.onPrimary, fontWeight: FontWeight.w700),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              ExcludeSemantics(
+                child: CircleAvatar(
+                  radius: 14,
+                  backgroundColor: cs.primary,
+                  child: Text(
+                    '$number',
+                    style: PrismTextStyles.caption(context).copyWith(color: cs.onPrimary, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+              const SizedBox(width: PrismSpace.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Semantics(
+                      header: true,
+                      label: context.l10n.shortcutsStepLabel(number, title),
+                      excludeSemantics: true,
+                      child: Text(title, style: PrismTextStyles.cardTitle(context)),
+                    ),
+                    if (body case final String text) ...<Widget>[
+                      const SizedBox(height: PrismSpace.xxs),
+                      Text(text, style: PrismTextStyles.body(context)),
+                    ],
+                    for (final String line in lines)
+                      Padding(
+                        padding: const EdgeInsets.only(top: PrismSpace.xs),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.only(top: 7),
+                              child: Container(
+                                width: 5,
+                                height: 5,
+                                decoration: BoxDecoration(color: cs.onSurfaceVariant, shape: BoxShape.circle),
+                              ),
+                            ),
+                            const SizedBox(width: PrismSpace.xs),
+                            Expanded(
+                              child: Text(
+                                line,
+                                style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (action case final Widget button) ...<Widget>[const SizedBox(height: PrismSpace.sm), button],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (note case final String text) ...<Widget>[
+            const SizedBox(height: PrismSpace.sm),
+            PrismCard(
+              padding: const EdgeInsets.all(PrismSpace.sm),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Icon(Icons.info_outline_rounded, size: 20, color: cs.onSurfaceVariant),
+                  const SizedBox(width: PrismSpace.xs),
+                  Expanded(child: Text(text, style: PrismTextStyles.body(context))),
+                ],
               ),
             ),
-          ),
-          const SizedBox(width: PrismSpace.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Semantics(
-                  header: true,
-                  label: context.l10n.shortcutsStepLabel(number, title),
-                  excludeSemantics: true,
-                  child: Text(title, style: PrismTextStyles.cardTitle(context)),
-                ),
-                if (body case final String text) ...<Widget>[
-                  const SizedBox(height: PrismSpace.xxs),
-                  Text(text, style: PrismTextStyles.body(context)),
-                ],
-                for (final String line in lines)
-                  Padding(
-                    padding: const EdgeInsets.only(top: PrismSpace.xs),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Padding(
-                          padding: const EdgeInsets.only(top: 7),
-                          child: Container(
-                            width: 5,
-                            height: 5,
-                            decoration: BoxDecoration(color: cs.onSurfaceVariant, shape: BoxShape.circle),
-                          ),
-                        ),
-                        const SizedBox(width: PrismSpace.xs),
-                        Expanded(
-                          child: Text(
-                            line,
-                            style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (note case final String text) ...<Widget>[
-                  const SizedBox(height: PrismSpace.sm),
-                  PrismCard(
-                    padding: const EdgeInsets.all(PrismSpace.sm),
-                    child: Text(text, style: PrismTextStyles.body(context)),
-                  ),
-                ],
-                if (action case final Widget button) ...<Widget>[const SizedBox(height: PrismSpace.sm), button],
-              ],
-            ),
-          ),
+          ],
         ],
       ),
     );

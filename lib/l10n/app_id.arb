@@ -6178,7 +6178,6 @@
       }
     }
   },
-  "economyYourXp": "XP ANDA",
   "errorGeneric": "Terjadi kesalahan. Coba lagi.",
   "errorNetwork": "Periksa koneksi Anda, lalu coba lagi.",
   "navigationBackOnline": "Kembali online",
@@ -13277,5 +13276,11 @@
   "searchMoreWallpapers": "Wallpaper lainnya",
   "@searchMoreWallpapers": {"description": "Section header for extra wallpaper results in search."},
   "wallpaperPreviewNoEvents": "Tidak ada acara hari ini",
-  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."}
+  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."},
+  "accountFollowersLabel": "{count, plural, one{Pengikut} other{Pengikut}}",
+  "@accountFollowersLabel": {"description": "Label under a profile's follower count. The number is shown separately.", "placeholders": {"count": {"type": "int"}}},
+  "profileBadgeCount": "{count, plural, one{1 lencana} other{{count} lencana}}",
+  "@profileBadgeCount": {"description": "Chip on a profile that opens the list of earned badges.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyLeaderboardTopThisWeek": "Teratas minggu ini",
+  "@economyLeaderboardTopThisWeek": {"description": "Section heading above the global top 5 on the Following leaderboard."}
 }

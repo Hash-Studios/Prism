@@ -5952,7 +5952,6 @@
       }
     }
   },
-  "economyYourXp": "DEINE XP",
   "errorGeneric": "Etwas ist schiefgelaufen. Bitte versuch es erneut.",
   "errorNetwork": "Prüfe deine Verbindung und versuch es erneut.",
   "navigationBackOnline": "Wieder online",
@@ -13149,5 +13148,11 @@
   "searchMoreWallpapers": "Weitere Hintergrundbilder",
   "@searchMoreWallpapers": {"description": "Section header for extra wallpaper results in search."},
   "wallpaperPreviewNoEvents": "Heute keine Termine",
-  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."}
+  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."},
+  "accountFollowersLabel": "{count, plural, one{Follower} other{Follower}}",
+  "@accountFollowersLabel": {"description": "Label under a profile's follower count. The number is shown separately.", "placeholders": {"count": {"type": "int"}}},
+  "profileBadgeCount": "{count, plural, one{1 Abzeichen} other{{count} Abzeichen}}",
+  "@profileBadgeCount": {"description": "Chip on a profile that opens the list of earned badges.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyLeaderboardTopThisWeek": "Top dieser Woche",
+  "@economyLeaderboardTopThisWeek": {"description": "Section heading above the global top 5 on the Following leaderboard."}
 }

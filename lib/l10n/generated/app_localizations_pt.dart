@@ -7175,9 +7175,6 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get economyYourXp => 'SEU XP';
-
-  @override
   String get errorGeneric => 'Algo deu errado. Por favor, tente novamente.';
 
   @override
@@ -14224,6 +14221,24 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperPreviewNoEvents => 'Nenhum evento hoje';
+
+  @override
+  String accountFollowersLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Seguidores', one: 'Seguidor');
+    return '$_temp0';
+  }
+
+  @override
+  String profileBadgeCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString selos', one: '1 selo');
+    return '$_temp0';
+  }
+
+  @override
+  String get economyLeaderboardTopThisWeek => 'Top desta semana';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -21395,9 +21410,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
-  String get economyYourXp => 'SEU XP';
-
-  @override
   String get errorGeneric => 'Algo deu errado. Por favor, tente novamente.';
 
   @override
@@ -28444,4 +28456,22 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperPreviewNoEvents => 'Nenhum evento hoje';
+
+  @override
+  String accountFollowersLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Seguidores', one: 'Seguidor');
+    return '$_temp0';
+  }
+
+  @override
+  String profileBadgeCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString selos', one: '1 selo');
+    return '$_temp0';
+  }
+
+  @override
+  String get economyLeaderboardTopThisWeek => 'Top desta semana';
 }

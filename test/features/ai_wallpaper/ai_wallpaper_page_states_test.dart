@@ -166,7 +166,7 @@ void main() {
     expect(find.text('AI wallpaper'), findsOneWidget);
     expect(find.text(AppLocalizationsEn().economyAiDescribeScene), findsOneWidget);
     expect(find.text('Style'), findsOneWidget);
-    expect(find.text('Anime'), findsOneWidget);
+    expect(find.text('Abstract'), findsOneWidget);
     expect(find.text('Quality'), findsWidgets);
     expect(find.text('Generate'), findsOneWidget);
     expect(find.byTooltip('Shuffle a new example description'), findsOneWidget);
@@ -248,7 +248,7 @@ void main() {
 
     await tester.enterText(find.byType(TextField), 'my own idea');
     await tester.pump();
-    await tester.tap(find.text('Anime'));
+    await tester.tap(find.text('Nature'));
     await tester.pump();
 
     expect(find.text('my own idea'), findsOneWidget);
@@ -258,7 +258,7 @@ void main() {
     await pumpPage(tester);
     final String before = tester.widget<TextField>(find.byType(TextField)).controller!.text;
 
-    await tester.tap(find.text('Anime'));
+    await tester.tap(find.text('Nature'));
     await tester.pump();
 
     final String after = tester.widget<TextField>(find.byType(TextField)).controller!.text;

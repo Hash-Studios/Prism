@@ -9,11 +9,14 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/wallpaper_detail_route.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/side_safe_column.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
@@ -307,7 +310,7 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
           onTap: _openDrop,
         ),
       for (int i = 0; i < widget.boostedWalls.length; i++)
-        (int realIndex) => _boostedCard(widget.boostedWalls[i], i, memCacheHeight, realIndex),
+        (int realIndex) => _boostedCard(widget.boostedWalls[i], i, realIndex),
       for (final SeasonalTheme season in seasons)
         (_) => FeedHeroCard(
           image: season.bannerArt,
@@ -324,7 +327,7 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
           onTap: _openBanner,
         ),
       for (int i = 0; i < widget.previewWalls.length; i++)
-        (int realIndex) => _previewCard(widget.previewWalls[i], i, memCacheHeight, realIndex),
+        (int realIndex) => _previewCard(widget.previewWalls[i], i, realIndex),
     ];
     if (pages.isEmpty) {
       _current = 0;
@@ -365,19 +368,17 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
     );
   }
 
-  Widget _boostedCard(PrismWallpaper wall, int index, int memCacheHeight, int realIndex) => _wallCard(
+  Widget _boostedCard(PrismWallpaper wall, int index, int realIndex) => _wallCard(
     PrismFeedItem(id: wall.id, wallpaper: wall),
     index,
-    memCacheHeight,
     realIndex: realIndex,
     source: 'personalized_feed_carousel_boosted',
     tag: const BoostedTag(),
   );
 
-  Widget _previewCard(PrismFeedItem wall, int feedIndex, int memCacheHeight, int realIndex) => _wallCard(
+  Widget _previewCard(PrismFeedItem wall, int feedIndex, int realIndex) => _wallCard(
     wall,
     feedIndex,
-    memCacheHeight,
     realIndex: realIndex,
     source: 'personalized_feed_carousel',
     onVisible: () => widget.onWallShown?.call(wall),
@@ -385,14 +386,20 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
 
   Widget _wallCard(
     PrismFeedItem wall,
-    int index,
-    int memCacheHeight, {
+    int index, {
     required String source,
     required int realIndex,
     Widget? tag,
     VoidCallback? onVisible,
   }) {
     final String heroTag = prismHeroTag(this, realIndex, '$source-${wall.id}');
+    // The card is about 1100 px wide on a phone: the thumbnail is too small, so it shows first and the display
+    // picture fades in over it. The decode box is the card, fixed, so a Hero flight does not decode again.
+    final Size decodeBox = Size(
+      math.max(0, _carouselWidth(context) / _carouselColumns(context) - PrismFeedLayout.gridPadding.horizontal),
+      feedCarouselCardHeight(context),
+    );
+    final Widget image = ProgressiveWallpaperImage(display: WallpaperDisplaySource.of(wall), decodeBox: decodeBox);
     return WallpaperImpression(
       itemId: wall.id,
       provider: wall.source.name,
@@ -403,12 +410,9 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
       child: WallpaperQuickActionRegion(
         item: wall,
         child: FeedHeroCard(
-          image: PrismImageTile(
-            url: wall.wallpaper.thumbnailUrl,
-            fallbackUrl: wall.wallpaper.fullUrl,
-            memCacheHeight: memCacheHeight,
-            heroTag: heroTag,
-          ),
+          image: context.reduceMotion
+              ? image
+              : Hero(tag: heroTag, createRectTween: wallpaperHeroRectTween, child: image),
           semanticLabel: wall.semanticLabel(context.l10n),
           tag: tag,
           badge: isPremiumFeedItem(wall) ? const PremiumStarBadge() : null,

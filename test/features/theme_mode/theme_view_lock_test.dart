@@ -74,6 +74,17 @@ void main() {
     expect(lockedIn('AMOLED'), findsNothing);
   });
 
+  testWidgets('the Locked tag sits on the theme preview, above the name', (tester) async {
+    await pumpPicker(tester);
+
+    final Finder rose = find.text('Rose');
+    final Finder tag = find.descendant(
+      of: find.ancestor(of: rose, matching: find.byType(Column)).first,
+      matching: find.text('Locked'),
+    );
+    expect(tester.getRect(tag).bottom, lessThan(tester.getRect(rose).top));
+  });
+
   testWidgets('tapping a locked theme opens the shop sheet and does not select it', (tester) async {
     await pumpPicker(tester);
 

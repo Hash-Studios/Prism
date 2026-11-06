@@ -49,6 +49,9 @@ void main() {
   }
 
   Future<void> tap(WidgetTester tester, String text) async {
+    // The content scrolls in the short test sheet, so bring the button into view first.
+    await tester.ensureVisible(find.text(text));
+    await tester.pump();
     await tester.tap(find.text(text));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));

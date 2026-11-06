@@ -495,10 +495,9 @@ class _ProfileChildState extends State<_ProfileChild> {
     );
     // Own profile is pushed from the home avatar now, so it needs a way back like any other profile.
     final bool showBack = !ownProfile || Navigator.canPop(context);
-    final Widget editButton = PrismIconButton(
+    final Widget editButton = _HeaderButton(
       tooltip: context.l10n.accountEditProfile,
       icon: Icons.edit_rounded,
-      glass: true,
       onPressed: () {
         PrismHaptics.tap();
         unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit'));
@@ -599,10 +598,9 @@ class _ProfileChildState extends State<_ProfileChild> {
                 padding: const EdgeInsetsDirectional.only(start: PrismSpace.sm),
                 child: Center(
                   child: showBack
-                      ? PrismIconButton(
+                      ? _HeaderButton(
                           tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                           icon: Icons.arrow_back_rounded,
-                          glass: true,
                           onPressed: () {
                             _trackAction(AnalyticsActionValue.backTapped, sourceContext: 'profile_screen_header_back');
                             Navigator.pop(context);
@@ -613,77 +611,88 @@ class _ProfileChildState extends State<_ProfileChild> {
               ),
               actions: <Widget>[
                 if (ownProfile) ...<Widget>[
-                  // StatsEntryButton has no glass look, so the header builds the same button here.
-                  PrismIconButton(
-                    icon: Icons.bar_chart_rounded,
-                    tooltip: context.l10n.statsEntry,
-                    glass: true,
-                    onPressed: () => context.router.push(CreatorStatsRoute(source: 'profile')),
+                  // Stats and Edit fade out and give up their width as the header collapses, so the name centres
+                  // between Back and the menu.
+                  _CollapsingActions(
+                    children: <Widget>[
+                      // StatsEntryButton has no glass look, so the header builds the same button here.
+                      _HeaderButton(
+                        icon: Icons.bar_chart_rounded,
+                        tooltip: context.l10n.statsEntry,
+                        onPressed: () => context.router.push(CreatorStatsRoute(source: 'profile')),
+                      ),
+                      if (showBack) ...<Widget>[const SizedBox(width: PrismSpace.xxs), editButton],
+                      const SizedBox(width: PrismSpace.xxs),
+                    ],
                   ),
-                  if (showBack) ...<Widget>[const SizedBox(width: PrismSpace.xxs), editButton],
-                  const SizedBox(width: PrismSpace.xxs),
-                  PrismIconButton(
+                  _HeaderButton(
                     tooltip: context.l10n.accountMenu,
                     icon: Icons.menu_rounded,
-                    glass: true,
                     onPressed: () {
                       _trackAction(AnalyticsActionValue.openDrawerTapped, sourceContext: 'profile_screen_header_menu');
                       _scaffoldKey.currentState?.openEndDrawer();
                     },
                   ),
                 ] else ...<Widget>[
-                  PrismIconButton(
+                  _HeaderButton(
                     tooltip: context.l10n.accountGiftPassTooltip,
                     icon: Icons.card_giftcard_rounded,
-                    glass: true,
                     onPressed: _openGiftSheet,
                   ),
                   const SizedBox(width: PrismSpace.xxs),
-                  // The same glass look as PrismIconButton(glass: true): the shadow sits under the 44 point circle.
-                  Stack(
-                    alignment: Alignment.center,
-                    children: <Widget>[
-                      const SizedBox.square(
-                        dimension: 44,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: <BoxShadow>[
-                              BoxShadow(color: Color(0x1F000000), blurRadius: 6, offset: Offset(0, 1)),
+                  // The same glass look as PrismIconButton(glass: true) while the cover shows: the shadow sits under
+                  // the 44 point circle. Collapsed, it is a plain icon like the rest of the bar.
+                  Builder(
+                    builder: (BuildContext context) {
+                      final bool glass = _collapsedTitleOpacity(context) < 1;
+                      return Stack(
+                        alignment: Alignment.center,
+                        children: <Widget>[
+                          if (glass)
+                            const SizedBox.square(
+                              dimension: 44,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  boxShadow: <BoxShadow>[
+                                    BoxShadow(color: Color(0x1F000000), blurRadius: 6, offset: Offset(0, 1)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          PopupMenuButton<_ProfileMenuAction>(
+                            tooltip: context.l10n.accountMoreOptions,
+                            icon: const Icon(Icons.more_vert_rounded, size: 22),
+                            iconColor: cs.onSurface,
+                            padding: EdgeInsets.zero,
+                            style: IconButton.styleFrom(
+                              backgroundColor: glass ? cs.surface.withValues(alpha: 0.92) : null,
+                              minimumSize: const Size.square(44),
+                              fixedSize: const Size.square(44),
+                              padding: EdgeInsets.zero,
+                              shape: const CircleBorder(),
+                            ),
+                            onSelected: _onMenuSelected,
+                            itemBuilder: (BuildContext context) => <PopupMenuEntry<_ProfileMenuAction>>[
+                              if (app_state.prismUser.loggedIn &&
+                                  context.read<PublicProfileBloc>().state.walls.isNotEmpty)
+                                PopupMenuItem<_ProfileMenuAction>(
+                                  value: _ProfileMenuAction.tip,
+                                  child: Text(context.l10n.tipMenuItem),
+                                ),
+                              PopupMenuItem<_ProfileMenuAction>(
+                                value: _ProfileMenuAction.report,
+                                child: Text(context.l10n.accountReportUser),
+                              ),
+                              PopupMenuItem<_ProfileMenuAction>(
+                                value: _ProfileMenuAction.block,
+                                child: Text(context.l10n.accountBlockUser),
+                              ),
                             ],
                           ),
-                        ),
-                      ),
-                      PopupMenuButton<_ProfileMenuAction>(
-                        tooltip: context.l10n.accountMoreOptions,
-                        icon: const Icon(Icons.more_vert_rounded, size: 22),
-                        iconColor: cs.onSurface,
-                        padding: EdgeInsets.zero,
-                        style: IconButton.styleFrom(
-                          backgroundColor: cs.surface.withValues(alpha: 0.92),
-                          minimumSize: const Size.square(44),
-                          fixedSize: const Size.square(44),
-                          padding: EdgeInsets.zero,
-                          shape: const CircleBorder(),
-                        ),
-                        onSelected: _onMenuSelected,
-                        itemBuilder: (BuildContext context) => <PopupMenuEntry<_ProfileMenuAction>>[
-                          if (app_state.prismUser.loggedIn && context.read<PublicProfileBloc>().state.walls.isNotEmpty)
-                            PopupMenuItem<_ProfileMenuAction>(
-                              value: _ProfileMenuAction.tip,
-                              child: Text(context.l10n.tipMenuItem),
-                            ),
-                          PopupMenuItem<_ProfileMenuAction>(
-                            value: _ProfileMenuAction.report,
-                            child: Text(context.l10n.accountReportUser),
-                          ),
-                          PopupMenuItem<_ProfileMenuAction>(
-                            value: _ProfileMenuAction.block,
-                            child: Text(context.l10n.accountBlockUser),
-                          ),
                         ],
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ],
               ],
@@ -702,7 +711,25 @@ class _ProfileChildState extends State<_ProfileChild> {
                             SizedBox(
                               width: screen.width,
                               height: coverHeight,
-                              child: ProfileCover(url: _profile.coverPhoto),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: <Widget>[
+                                  ProfileCover(url: _profile.coverPhoto),
+                                  // The bottom 40% of the cover fades into the page, so it has no hard edge.
+                                  IgnorePointer(
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          stops: const <double>[0.6, 1],
+                                          colors: <Color>[cs.surface.withValues(alpha: 0), cs.surface],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                             const SizedBox(width: double.maxFinite, height: 37),
                           ],
@@ -734,7 +761,6 @@ class _ProfileChildState extends State<_ProfileChild> {
                       ],
                     ),
                   ),
-                  Container(width: double.maxFinite, height: topInset, color: cs.surface.withValues(alpha: 0.5)),
                   // A hairline under the pinned bar once the cover has scrolled away, as on every other page.
                   PositionedDirectional(
                     start: 0,
@@ -850,7 +876,10 @@ class _ProfileChildState extends State<_ProfileChild> {
                               child: GestureDetector(
                                 excludeFromSemantics: true,
                                 onTap: _openFollowersList,
-                                child: _StatPill(count: _profile.followerCount, label: context.l10n.accountFollowers),
+                                child: _StatPill(
+                                  count: _profile.followerCount,
+                                  label: context.l10n.accountFollowersLabel(_profile.followerCount),
+                                ),
                               ),
                             ),
                           ),
@@ -930,6 +959,46 @@ class _ProfileChildState extends State<_ProfileChild> {
             UserProfileLoader(userId: _profile.id, ownProfile: ownProfile),
             SliverToBoxAdapter(child: SizedBox(height: PrismSpace.xxl + MediaQuery.paddingOf(context).bottom)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A header icon button: glass (page-colour circle, soft shadow) while the cover shows, a plain icon once the header
+/// has collapsed into a flat bar. Reads the enclosing app bar's settings.
+class _HeaderButton extends StatelessWidget {
+  const _HeaderButton({required this.icon, required this.tooltip, required this.onPressed});
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) =>
+      PrismIconButton(icon: icon, tooltip: tooltip, glass: _collapsedTitleOpacity(context) < 1, onPressed: onPressed);
+}
+
+/// Header actions that fade out and shrink to no width as the header collapses, in step with the collapsed title.
+/// They take no taps while they fade.
+class _CollapsingActions extends StatelessWidget {
+  const _CollapsingActions({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final double visible = 1 - _collapsedTitleOpacity(context);
+    return IgnorePointer(
+      ignoring: visible < 1,
+      child: ClipRect(
+        child: Align(
+          alignment: AlignmentDirectional.centerEnd,
+          widthFactor: visible,
+          child: Opacity(
+            opacity: visible,
+            child: Row(mainAxisSize: MainAxisSize.min, children: children),
+          ),
         ),
       ),
     );

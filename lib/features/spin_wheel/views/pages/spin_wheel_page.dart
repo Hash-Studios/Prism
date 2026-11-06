@@ -527,7 +527,7 @@ class _ProRow extends StatelessWidget {
               style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14),
             ),
           ),
-          Icon(Icons.chevron_right_rounded, size: 20, color: cs.onSurface.withValues(alpha: 0.35)),
+          Icon(Icons.chevron_right_rounded, size: 20, color: cs.onSurface.withValues(alpha: PrismInk.iconAlpha)),
         ],
       ),
     );

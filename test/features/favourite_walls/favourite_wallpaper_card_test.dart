@@ -180,38 +180,46 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1));
   }
 
-  testWidgets('heart is below image at its leading edge, toggles without opening image, and shows no counts', (
-    tester,
-  ) async {
-    var opened = 0;
-    await pump(tester, _item(WallpaperSource.prism), onImageTap: () => opened++);
-    expect(find.text('8'), findsNothing);
-    expect(find.byIcon(Icons.bar_chart_rounded), findsNothing);
-    expect(counts.fetches, 0, reason: 'tiles do not fetch counts; the detail screen does');
-    final favouriteSemantics = tester.getSemantics(find.bySemanticsLabel('Favourite')).getSemanticsData();
-    expect(favouriteSemantics.hasAction(SemanticsAction.tap), isTrue);
-    expect(favouriteSemantics.flagsCollection.isButton, isTrue);
-    final heart = find.byIcon(Icons.favorite_border_rounded);
-    expect(tester.getSize(heart), const Size.square(20));
-    final likeTarget = find.ancestor(of: heart, matching: find.byType(InkWell));
-    expect(tester.getSize(likeTarget), const Size.square(44));
-    final image = find.byKey(const ValueKey('image'));
-    expect(tester.getTopLeft(heart).dx, tester.getTopLeft(image).dx);
-    expect(tester.getTopLeft(heart).dy, greaterThan(tester.getBottomLeft(image).dy));
-    expect(find.text('depth badge'), findsOneWidget);
-    await tester.tap(heart);
-    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
-    await tester.pump(const Duration(milliseconds: 1));
-    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
-    await tester.pump(const Duration(milliseconds: 1));
-    expect(opened, 0);
-    expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
-    expect(find.text('8'), findsNothing);
-    await tester.tap(find.byKey(const ValueKey('image')));
-    expect(opened, 1);
-    await tester.pumpWidget(const SizedBox());
-    await tester.runAsync(cubit.close);
-  });
+  testWidgets(
+    'heart sits on the image at its bottom-start corner, toggles without opening image, and shows no counts',
+    (tester) async {
+      var opened = 0;
+      await pump(tester, _item(WallpaperSource.prism), onImageTap: () => opened++);
+      expect(find.text('8'), findsNothing);
+      expect(find.byIcon(Icons.bar_chart_rounded), findsNothing);
+      expect(counts.fetches, 0, reason: 'tiles do not fetch counts; the detail screen does');
+      final favouriteSemantics = tester.getSemantics(find.bySemanticsLabel('Favourite')).getSemanticsData();
+      expect(favouriteSemantics.hasAction(SemanticsAction.tap), isTrue);
+      expect(favouriteSemantics.flagsCollection.isButton, isTrue);
+      final heart = find.byIcon(Icons.favorite_border_rounded);
+      expect(tester.getSize(heart), const Size.square(18));
+      expect(tester.widget<Icon>(heart).color, Colors.white);
+      final likeTarget = find.ancestor(of: heart, matching: find.byType(InkWell));
+      expect(tester.getSize(likeTarget), const Size.square(44));
+      final circle = find.ancestor(of: heart, matching: find.byType(Container)).first;
+      expect(tester.getSize(circle), const Size.square(32));
+      expect(
+        (tester.widget<Container>(circle).decoration! as BoxDecoration).color,
+        Colors.black.withValues(alpha: 0.5),
+      );
+      final image = find.byKey(const ValueKey('image'));
+      expect(tester.getBottomLeft(likeTarget), tester.getBottomLeft(image));
+      expect(tester.getSize(image), const Size(120, 260), reason: 'no footer band under the image');
+      expect(find.text('depth badge'), findsOneWidget);
+      await tester.tap(heart);
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(opened, 0);
+      expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
+      expect(find.text('8'), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('image')));
+      expect(opened, 1);
+      await tester.pumpWidget(const SizedBox());
+      await tester.runAsync(cubit.close);
+    },
+  );
 
   testWidgets('detail view totals override cached totals and render without fetched favourites', (tester) async {
     await tester.pumpWidget(
@@ -377,7 +385,7 @@ void main() {
     final heart = find.byIcon(Icons.favorite_border_rounded);
     final likeTarget = find.ancestor(of: heart, matching: find.byType(InkWell));
     expect(tester.getSize(likeTarget), const Size.square(44));
-    expect(tester.getTopRight(heart).dx, tester.getTopRight(find.byKey(const ValueKey('image'))).dx);
+    expect(tester.getBottomRight(likeTarget), tester.getBottomRight(find.byKey(const ValueKey('image'))));
     expect(tester.takeException(), isNull);
   });
 

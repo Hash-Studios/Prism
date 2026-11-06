@@ -7027,9 +7027,6 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get economyYourXp => 'DEINE XP';
-
-  @override
   String get errorGeneric => 'Etwas ist schiefgelaufen. Bitte versuch es erneut.';
 
   @override
@@ -14075,4 +14072,27 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallpaperPreviewNoEvents => 'Heute keine Termine';
+
+  @override
+  String accountFollowersLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Follower', one: 'Follower');
+    return '$_temp0';
+  }
+
+  @override
+  String profileBadgeCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Abzeichen',
+      one: '1 Abzeichen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get economyLeaderboardTopThisWeek => 'Top dieser Woche';
 }

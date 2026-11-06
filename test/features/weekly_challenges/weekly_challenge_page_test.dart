@@ -284,4 +284,20 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets('the two entry buttons share the row width', (tester) async {
+    final cubit = MockChallengeCubit();
+    when(() => cubit.state).thenReturn(
+      WeeklyChallengesState(
+        loading: false,
+        detail: ChallengeDetail(challenge: challenge(), entries: [], myEntryCount: 0),
+      ),
+    );
+    when(() => cubit.load(any(), sort: any(named: 'sort'))).thenAnswer((_) async {});
+    await tester.pumpWidget(app(WeeklyChallengePage(challengeId: '2026-10-26', cubit: cubit)));
+    final Finder buttons = find.byType(PrismButton);
+    expect(buttons, findsNWidgets(2));
+    expect(tester.getSize(buttons.at(0)).width, tester.getSize(buttons.at(1)).width);
+    await tester.pumpWidget(const SizedBox());
+  });
 }

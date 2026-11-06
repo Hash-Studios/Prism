@@ -31,6 +31,7 @@ Use `Theme.of(context).colorScheme`. Every role follows the active theme variant
 | Text and icons | `cs.onSurface` | `cs.secondary`, `Colors.white` |
 | Secondary text | `cs.onSurfaceVariant` or `PrismTextStyles.body` | `cs.secondary.withValues(alpha: .5)` |
 | Hairline border | `cs.onSurface.withValues(alpha: 0.08)` | `Colors.grey` |
+| Secondary icon (chevron, external link) | `cs.onSurface.withValues(alpha: PrismInk.iconAlpha)` (0.5) | alphas under 0.5 |
 | Accent | `cs.primary`, text on it `cs.onPrimary` | `cs.error`, `accentColor(context)` |
 | Destructive and errors | `cs.error`, text on it `cs.onError` | `Colors.red` |
 | Neutral control fill | `cs.onSurface.withValues(alpha: 0.08)` | `Colors.white10` |
@@ -38,7 +39,7 @@ Use `Theme.of(context).colorScheme`. Every role follows the active theme variant
 `cs.error` is a real red now. Older code used it as the accent: replace those uses with `cs.primary`.
 
 On top of a wallpaper (detail screen, tiles, carousels) the theme does not apply. Use white text and icons on a
-black scrim (`Colors.black.withValues(alpha: 0.38)` circles, or a bottom gradient). `PrismIconButton(onImage: true)`
+black scrim (`Colors.black.withValues(alpha: 0.5)` circles, or a bottom gradient). `PrismIconButton(onImage: true)`
 does this. Header buttons over a cover that can be light or dark (profiles, collections) use
 `PrismIconButton(glass: true)`: a `cs.surface` circle at 92% with a soft shadow and an `onSurface` icon.
 
@@ -59,18 +60,19 @@ Use `PrismTextStyles`. Do not use `Theme.of(context).textTheme` roles or raw `Te
 | `cardTitle` | 16 w700 | Card heading |
 | `rowTitle` | 15 w600 | Row title, labels |
 | `button` | 15 w600 | Button label |
-| `body` | 14 w500, `onSurfaceVariant` | Body copy |
-| `caption` | 12 w500, `onSurfaceVariant` | Small supporting text |
-| `eyebrow` | 11 w700 tracked | A label above a value. At most one per screen |
+| `body` | 15 w500, height 1.4, `onSurfaceVariant` | Body copy |
+| `caption` | 13 w500, height 1.35, `onSurfaceVariant` | Small supporting text |
+| `eyebrow` | 12 w700 tracked | A label above a value. At most one per screen |
 | `numeral(size)` | Fraunces | Big numbers: coins, streak, counts |
 
 Proxima Nova weights: `w500` is regular, `w600` is bold, `w700` is extra bold. Never use `w400` or lower (thin).
-Text on a wallpaper: copy the style and set `color: Colors.white`.
+Text on a wallpaper: copy the style and set `color: Colors.white`. No text under 12 points; tags, helper text and
+tooltips are 12 to 13. Disabled text and icons use `onSurface` at 0.5, never lower.
 
 ## Space and radius
 
 - `PrismSpace`: `xxs 4`, `xs 8`, `sm 12`, `md 16`, `lg 20`, `xl 24`, `xxl 32`, `xxxl 40`. Page margin is
-  `PrismSpace.page` (20). The gap between groups is at least twice the gap inside a group.
+  `PrismSpace.page` (16). Wallpaper grids use the same margin, so every screen has one left edge. The gap between groups is at least twice the gap inside a group.
 - A tab page ends with `SizedBox(height: PrismSpace.bottomBarClearance)` so the last item clears the bottom bar.
 - The floating bottom row has a fade to `cs.surface` (0 to 85%) under it, `viewPadding.bottom + 90` high, that lets
   taps through. While the keyboard is up, the row fades out and takes no taps. Its scroll-to-top button is 44 points
@@ -102,11 +104,12 @@ Text on a wallpaper: copy the style and set `color: Colors.white`.
 | `showPrismSheet(context, builder:, detents:)` + `PrismSheetBody(title:, message:, mood:, child:, actions:, trailingAction:, childScrolls:)` | Every bottom sheet. See "Bottom sheets" below. |
 | `showPrismConfirm(context, title:, message:, confirmLabel:, destructive:)` | Every confirm. It replaces `AlertDialog`. The confirm label names the action. |
 | `PrismSkeleton`, `PrismSkeleton.rows()`, `PrismSkeleton.cards()`, `PrismBone` | Loading lists and cards. `LoadingCards` for wallpaper grids. |
-| `GlintState(kind:, title:, body:, actionLabel:, onAction:, actionVariant:)` | Empty, error, offline, loading and nothing-new states. The action is `primary` by default. Pass `actionVariant: PrismButtonVariant.tonal` when the page already shows a primary action or a bottom bar. On an area 480 points or taller the state sits above the centre (`Alignment(0, -0.35)`). With large text it scrolls instead of overflowing. |
+| `GlintState(kind:, title:, body:, actionLabel:, onAction:, actionVariant:)` | Empty, error, offline, loading and nothing-new states. The action is `primary` by default. Pass `actionVariant: PrismButtonVariant.tonal` when the page already shows a primary action or a bottom bar. On an area 480 points or taller (a short or empty page) it fills the page: Glint 120 on a `GlintHalo` (a 176 point `primaryContainer` disc), a `sectionTitle`, gaps 24 / 8 / 24, a large action at least 220 wide, placed at `Alignment(0, -0.5)`. Smaller areas keep Glint 96, a `cardTitle` and a compact action. `glintSize` overrides both. With large text it scrolls instead of overflowing. |
 | `showGlintToast(context, mood:)` | A success moment: wallpaper set, upload sent, purchase done. |
 | `toasts.success(msg)` / `toasts.error(msg)` | Short feedback. It is themed and sits above the bottom bar. |
-| `PrismWallGrid.delegate(context)`, `PrismWallGrid.padding`, `PrismWallTile(url:, heroTag:, onTap:, onLongPress:, overlay:)` | Every grid of wallpapers. One spacing (8), margin (12) and radius (12) app-wide. The home feed grid uses the same values (`PrismFeedLayout.gridSpacing`, `gridPadding`). `LoadingCards()` is its skeleton. The footer under a tile (`FavouriteWallpaperFooter`) is a heart toggle only: a 20 point glyph on the tile's leading edge in a 44 point target. No counts on tiles; counts live on the detail screen. |
-| `PrismTag(label:, tone:)` | A status label: Pending, Approved, Pro, New. |
+| `PrismWallGrid.delegate(context)`, `PrismWallGrid.padding`, `PrismWallTile(url:, heroTag:, onTap:, onLongPress:, overlay:)` | Every grid of wallpapers. One spacing (8), margin (16, the page margin) and radius (12) app-wide. The home feed grid uses the same values (`PrismFeedLayout.gridSpacing`, `gridPadding`). `LoadingCards()` is its skeleton. `PrismImageTile` draws a 1 point `onSurface` 0.06 hairline so light images do not melt into a white page. The heart (`FavouriteWallpaperCard`, `FavouriteWallpaperFooter`) sits on the image at the bottom-start corner: a white 18 point glyph on a 32 point black 0.5 circle, in a 44 point target, filled when saved. A tap on it wins over the tile's hold menu. Grids keep no footer space (`favouriteFooterHeight` is 0). No counts on tiles; counts live on the detail screen. |
+| `PrismTag(label:, tone:)` | A status label: Pending, Approved, Pro, New. 12 w700. |
+| `GlintHalo(mood:, glintSize:)` | Glint on a soft accent disc, for the one hero moment of a short page. `GlintState` uses it on tall areas. |
 | `PrismAvatar(url:, name:, size:)` | Every profile picture. |
 | `PrismSegmented(values:, selected:, labelOf:, onChanged:)` | Two to four exclusive choices. iOS look: a raised neutral thumb (`surface` on light, `surfaceContainerHighest` on dark) with a soft shadow, never ink or accent. The selected label is `onSurface` w700, the others `onSurfaceVariant` w600. 44 points high (48 dp on Android). |
 | `PrismThemePreview(theme:)` | A theme shown as a small app (page colour, ink title bar, two wallpaper tiles, accent pill). Theme pickers and shop theme tiles. Label it with the theme name below. |

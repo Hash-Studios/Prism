@@ -170,7 +170,7 @@ class _HomeFeedTabBarState extends State<HomeFeedTabBar> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Text(label, softWrap: false),
-          Icon(PrismIcons.dropdownCaret, size: 18, color: cs.onSurface.withValues(alpha: 0.6)),
+          Icon(PrismIcons.dropdownCaret, size: 18, color: cs.onSurfaceVariant),
         ],
       ),
     );

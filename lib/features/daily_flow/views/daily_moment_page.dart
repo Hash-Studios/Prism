@@ -263,11 +263,11 @@ class _DailyMomentContentState extends State<DailyMomentContent> {
                             minHeight: (constraints.maxHeight - padding.vertical).clamp(0, double.infinity),
                           ),
                           child: Align(
-                            alignment: const Alignment(0, -0.35),
+                            alignment: const Alignment(0, -0.5),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
-                                Glint(mood: mood, size: 112),
+                                GlintHalo(mood: mood),
                                 const SizedBox(height: PrismSpace.xl),
                                 Semantics(
                                   header: true,
@@ -277,7 +277,7 @@ class _DailyMomentContentState extends State<DailyMomentContent> {
                                     style: PrismTextStyles.sheetHeadline(context),
                                   ),
                                 ),
-                                const SizedBox(height: PrismSpace.md),
+                                const SizedBox(height: PrismSpace.xs),
                                 details,
                                 const SizedBox(height: PrismSpace.xl),
                                 button,

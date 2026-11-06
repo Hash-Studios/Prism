@@ -687,6 +687,8 @@ void main() {
       expect(find.text('-7'), findsNothing);
 
       await tester.scrollUntilVisible(find.text('Show more'), 400, scrollable: find.byType(Scrollable).first);
+      await tester.ensureVisible(find.text('Show more'));
+      await tester.pump();
       await tester.tap(find.text('Show more'));
       await tester.pump();
       await tester.pump();
