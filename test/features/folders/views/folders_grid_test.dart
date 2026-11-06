@@ -614,6 +614,10 @@ void main() {
       find.descendant(of: find.byKey(const ValueKey<String>('solo')), matching: find.byIcon(Icons.group_rounded)),
       findsNothing,
     );
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    expect(tester.getSemantics(find.byKey(const ValueKey<String>('mine'))).value, contains('Shared'));
+    expect(tester.getSemantics(find.byKey(const ValueKey<String>('solo'))).value, isNot(contains('Shared')));
+    semantics.dispose();
   });
 
   testWidgets('owned and shared sections fit at large text on a 375 point phone', (tester) async {

@@ -38,7 +38,7 @@ class FolderCard extends StatelessWidget {
       child: Semantics(
         button: true,
         label: name,
-        value: markPublic ? '$count, ${l10n.foldersPublic}' : count,
+        value: <String>[count, if (markPublic) l10n.foldersPublic, if (markShared) l10n.foldersSharedLabel].join(', '),
         excludeSemantics: true,
         onTap: onTap,
         child: GestureDetector(
@@ -57,10 +57,7 @@ class FolderCard extends StatelessWidget {
                     const SizedBox(width: PrismSpace.xxs),
                   ],
                   if (markShared) ...<Widget>[
-                    Semantics(
-                      label: l10n.foldersSharedLabel,
-                      child: Icon(Icons.group_rounded, size: 14, color: cs.onSurfaceVariant),
-                    ),
+                    Icon(Icons.group_rounded, size: 14, color: cs.onSurfaceVariant),
                     const SizedBox(width: PrismSpace.xxs),
                   ],
                   Flexible(
