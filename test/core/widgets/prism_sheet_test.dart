@@ -59,7 +59,8 @@ void main() {
     Navigator.of(tester.element(find.text('Sort by'))).pop();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
-    expect(tester.getTopLeft(find.text('Sort by')).dy - rest, greaterThan(height * 0.15));
+    // The sheet travels its own height, so measure against the way to the bottom of the screen.
+    expect(tester.getTopLeft(find.text('Sort by')).dy - rest, greaterThan((height - rest) * 0.5));
     await tester.pumpAndSettle();
   });
 
@@ -87,6 +88,50 @@ void main() {
     await tester.pump(const Duration(milliseconds: 121));
     expect(find.text('Sort by'), findsNothing);
   });
+
+  for (final bool swipe in <bool>[false, true]) {
+    testWidgets('the dim fades in step with the sheet for the whole ${swipe ? 'swipe-down' : 'close'}', (tester) async {
+      await tester.pumpWidget(
+        _app((context) => showPrismSheet<void>(context, builder: (_) => const PrismSheetBody(title: 'Sort by'))),
+      );
+      await _open(tester);
+      final double height = tester.view.physicalSize.height / tester.view.devicePixelRatio;
+      Finder surface() => find.byWidgetPredicate(
+        (w) => w is DecoratedBox && (w.decoration as BoxDecoration?)?.boxShadow == PrismBottomSheet.shadow,
+      );
+      final double rest = tester.getRect(surface()).top;
+      // The share of the way from rest to off screen that the sheet still has to go: 1 at rest, 0 once it is gone.
+      double left() => ((height - tester.getRect(surface()).top) / (height - rest)).clamp(0.0, 1.0);
+      double dim() => _dim(tester) / PrismBottomSheet.barrier.a;
+
+      if (swipe) {
+        final TestGesture gesture = await tester.startGesture(tester.getCenter(find.text('Sort by')));
+        for (int i = 0; i < 3; i++) {
+          await gesture.moveBy(const Offset(0, 15));
+          await tester.pump(const Duration(milliseconds: 16));
+          // smooth_sheets dims by how much of the sheet shows inside the inset viewport, so allow the inset.
+          expect(dim(), closeTo(left(), 0.1));
+        }
+        // Drag most of the way down and let go: past the dismiss point, the sheet leaves.
+        await gesture.moveBy(const Offset(0, 40));
+        await tester.pump(const Duration(milliseconds: 200));
+        await gesture.up();
+      } else {
+        Navigator.of(tester.element(find.text('Sort by'))).pop();
+      }
+      await tester.pump();
+      int moving = 0;
+      for (int frame = 0; frame < 60 && surface().evaluate().isNotEmpty; frame++) {
+        final double share = left();
+        if (share > 0.05 && share < 0.95) moving++;
+        expect(dim(), closeTo(share, swipe ? 0.1 : 0.02));
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      expect(surface(), findsNothing);
+      // The sheet is visibly on its way down for most of the close, not gone in the first frames.
+      expect(moving, greaterThanOrEqualTo(swipe ? 1 : 5));
+    });
+  }
 
   testWidgets('the close button slides the sheet down over several frames, with the dim fading', (tester) async {
     await tester.pumpWidget(

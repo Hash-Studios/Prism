@@ -104,19 +104,21 @@ class _CollectionViewScreenState extends State<CollectionViewScreen> {
       future: _collectionFuture,
       builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return _CoverLoading(url: _collectionCoverUrl(widget.collectionName));
+          return _Settle(child: _coverLoading(_collectionCoverUrl(widget.collectionName)));
         }
         if (snapshot.hasError) {
-          return RefreshableGlintState(
-            kind: GlintStateKind.error,
-            title: context.l10n.wallpaperCollectionLoadError,
-            body: context.l10n.wallpaperCheckConnection,
-            actionLabel: context.l10n.wallpaperTryAgain,
-            onAction: () => unawaited(_retryCollection()),
-            onRefresh: _retryCollection,
+          return _Settle(
+            child: RefreshableGlintState(
+              kind: GlintStateKind.error,
+              title: context.l10n.wallpaperCollectionLoadError,
+              body: context.l10n.wallpaperCheckConnection,
+              actionLabel: context.l10n.wallpaperTryAgain,
+              onAction: () => unawaited(_retryCollection()),
+              onRefresh: _retryCollection,
+            ),
           );
         }
-        return const CollectionViewGrid();
+        return const _Settle(child: CollectionViewGrid());
       },
     );
   }
@@ -131,53 +133,56 @@ class _CategoryFeedContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<CategoryFeedBloc, CategoryFeedState>(
-      builder: (context, state) {
-        // The bloc is shared, so until it selects this category it still holds the previous one. A name that is
-        // not in the list falls back to the first category, as `_selectCategory` does.
-        final List<String> names = state.categories.map((category) => category.name.trim().toLowerCase()).toList();
-        final String wanted = categoryName.toLowerCase();
-        final String? expected = names.isEmpty ? null : (names.contains(wanted) ? wanted : names.first);
-        final bool showsThisCategory =
-            expected != null && state.selectedCategory?.name.trim().toLowerCase() == expected;
-        if (!showsThisCategory && !(state.items.isEmpty && state.status == LoadStatus.failure)) {
-          return _CoverLoading(url: _categoryCoverUrl(state.categories, categoryName));
-        }
-        if (state.items.isEmpty && (state.status == LoadStatus.initial || state.status == LoadStatus.loading)) {
-          return _CoverLoading(url: _categoryCoverUrl(state.categories, categoryName));
-        }
-        if (state.items.isEmpty && state.status == LoadStatus.failure) {
-          return RefreshableGlintState(
-            kind: GlintStateKind.error,
-            title: context.l10n.wallpaperFeedWallsLoadError,
-            body: context.l10n.wallpaperCheckConnection,
-            actionLabel: context.l10n.wallpaperTryAgain,
-            onAction: () => unawaited(onRetry()),
-            onRefresh: () {
-              PrismHaptics.impact();
-              return onRetry();
-            },
-          );
-        }
-        final source = state.selectedCategory?.source ?? WallpaperSource.prism;
-        switch (source) {
-          case WallpaperSource.wallhaven:
-            return const WallHavenGrid();
-          case WallpaperSource.pexels:
-            return const PexelsGrid();
-          case WallpaperSource.prism:
-            return WallpaperGrid(desktopDownload: state.selectedCategory?.searchType == CategorySearchType.desktop);
-          case WallpaperSource.downloaded:
-          case WallpaperSource.unknown:
-            return const WallpaperGrid();
-        }
-      },
+      builder: (context, state) => _Settle(child: _content(context, state)),
     );
+  }
+
+  Widget _content(BuildContext context, CategoryFeedState state) {
+    // The bloc is shared, so until it selects this category it still holds the previous one. A name that is
+    // not in the list falls back to the first category, as `_selectCategory` does.
+    final List<String> names = state.categories.map((category) => category.name.trim().toLowerCase()).toList();
+    final String wanted = categoryName.toLowerCase();
+    final String? expected = names.isEmpty ? null : (names.contains(wanted) ? wanted : names.first);
+    final bool showsThisCategory = expected != null && state.selectedCategory?.name.trim().toLowerCase() == expected;
+    if (!showsThisCategory && !(state.items.isEmpty && state.status == LoadStatus.failure)) {
+      return _coverLoading(_categoryCoverUrl(state.categories, categoryName));
+    }
+    if (state.items.isEmpty && (state.status == LoadStatus.initial || state.status == LoadStatus.loading)) {
+      return _coverLoading(_categoryCoverUrl(state.categories, categoryName));
+    }
+    if (state.items.isEmpty && state.status == LoadStatus.failure) {
+      return RefreshableGlintState(
+        kind: GlintStateKind.error,
+        title: context.l10n.wallpaperFeedWallsLoadError,
+        body: context.l10n.wallpaperCheckConnection,
+        actionLabel: context.l10n.wallpaperTryAgain,
+        onAction: () => unawaited(onRetry()),
+        onRefresh: () {
+          PrismHaptics.impact();
+          return onRetry();
+        },
+      );
+    }
+    final source = state.selectedCategory?.source ?? WallpaperSource.prism;
+    switch (source) {
+      case WallpaperSource.wallhaven:
+        return const WallHavenGrid();
+      case WallpaperSource.pexels:
+        return const PexelsGrid();
+      case WallpaperSource.prism:
+        return WallpaperGrid(desktopDownload: state.selectedCategory?.searchType == CategorySearchType.desktop);
+      case WallpaperSource.downloaded:
+      case WallpaperSource.unknown:
+        return const WallpaperGrid();
+    }
   }
 }
 
 String _collectionCoverUrl(String name) {
+  // The Collections tab opens a collection by its lowercased name, while the index keeps the name as written.
+  final String wanted = name.trim().toLowerCase();
   for (final Map<String, dynamic> collection in c_data.collections) {
-    if (collection['name']?.toString() == name) {
+    if (collection['name']?.toString().trim().toLowerCase() == wanted) {
       final String thumb1 = collection['thumb1']?.toString().trim() ?? '';
       return thumb1.isNotEmpty ? thumb1 : collection['thumb2']?.toString().trim() ?? '';
     }
@@ -194,10 +199,39 @@ String _categoryCoverUrl(List<CategoryEntity> categories, String name) {
   return '';
 }
 
+/// The loading placeholder for a cover. Keyed by the cover, so a cover that arrives late starts its own tint.
+Widget _coverLoading(String url) => _CoverLoading(key: ValueKey<String>(url), url: url);
+
+/// How long the blocks take to ease from the neutral into the cover's colour.
+const Duration _tintEase = Duration(milliseconds: 200);
+
+/// Cover colours already worked out, so a second visit opens on its tint at once.
+final Map<String, Color> _dominantByUrl = <String, Color>{};
+
+/// Crossfades the loading placeholder into the walls, so the page changes in one calm step.
+class _Settle extends StatelessWidget {
+  const _Settle({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: context.motion(PrismDurations.fast),
+      switchInCurve: PrismCurves.enter,
+      switchOutCurve: PrismCurves.exitReverse,
+      layoutBuilder: (current, previous) =>
+          Stack(fit: StackFit.expand, children: <Widget>[...previous, if (current != null) current]),
+      child: child,
+    );
+  }
+}
+
 /// First paint while a collection loads: its cover as a full-width header (the Collections tab already warmed it) and
-/// still blocks in the cover's dominant colour where the walls will land. Without a cover it is the plain skeleton.
+/// still blocks in the cover's dominant colour where the walls will land. Until that colour is known the header and the
+/// blocks share one neutral that eases into the tint. Without a cover it is the plain skeleton.
 class _CoverLoading extends StatefulWidget {
-  const _CoverLoading({required this.url});
+  const _CoverLoading({super.key, required this.url});
 
   final String url;
 
@@ -206,12 +240,12 @@ class _CoverLoading extends StatefulWidget {
 }
 
 class _CoverLoadingState extends State<_CoverLoading> {
-  Color? _dominant;
+  late Color? _dominant = _dominantByUrl[widget.url];
 
   @override
   void initState() {
     super.initState();
-    if (widget.url.isNotEmpty) unawaited(_resolveDominant());
+    if (widget.url.isNotEmpty && _dominant == null) unawaited(_resolveDominant());
   }
 
   Future<void> _resolveDominant() async {
@@ -220,9 +254,10 @@ class _CoverLoadingState extends State<_CoverLoading> {
         provider: ResizeImage(coverImageProvider(widget.url), width: 32),
         brightness: Brightness.dark,
       );
+      _dominantByUrl[widget.url] = scheme.primary;
       if (mounted) setState(() => _dominant = scheme.primary);
     } on Object {
-      // The blocks stay on the calm skeleton colour.
+      // The blocks stay on the calm neutral.
     }
   }
 
@@ -235,34 +270,35 @@ class _CoverLoadingState extends State<_CoverLoading> {
     return Semantics(
       label: context.l10n.coreLoading,
       child: ExcludeSemantics(
-        child: Column(
-          children: <Widget>[
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: ColoredBox(
-                color: tint,
-                child: Image(
-                  image: ResizeImage(coverImageProvider(widget.url), width: 1080),
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                  frameBuilder: (context, child, frame, sync) => sync
-                      ? child
-                      : AnimatedOpacity(
-                          opacity: frame == null ? 0 : 1,
-                          duration: context.motion(PrismDurations.fast),
-                          curve: PrismCurves.enter,
-                          child: child,
-                        ),
+        child: TweenAnimationBuilder<Color?>(
+          tween: ColorTween(end: tint),
+          duration: context.motion(_tintEase),
+          curve: PrismCurves.enter,
+          builder: (context, color, _) => Column(
+            children: <Widget>[
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: ColoredBox(
+                  color: color!,
+                  child: Image(
+                    image: ResizeImage(coverImageProvider(widget.url), width: 1080),
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    frameBuilder: (context, child, frame, sync) => sync
+                        ? child
+                        : AnimatedOpacity(
+                            opacity: frame == null ? 0 : 1,
+                            duration: context.motion(PrismDurations.fast),
+                            curve: PrismCurves.enter,
+                            child: child,
+                          ),
+                  ),
                 ),
               ),
-            ),
-            Expanded(
-              child: ClipRect(
-                child: TweenAnimationBuilder<Color?>(
-                  tween: ColorTween(end: tint),
-                  duration: context.motion(PrismDurations.fast),
-                  builder: (context, color, _) => GridView.builder(
+              Expanded(
+                child: ClipRect(
+                  child: GridView.builder(
                     primary: false,
                     physics: const NeverScrollableScrollPhysics(),
                     padding: PrismWallGrid.padding,
@@ -274,8 +310,8 @@ class _CoverLoadingState extends State<_CoverLoading> {
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -61,11 +62,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// twelfth.
 const List<int> _moodRowGridRows = <int>[4, 12];
 
-/// How long the old tab's content takes to fade out before the new tab's content fades in.
-const Duration _contentFadeOut = Duration(milliseconds: 90);
+/// How long a tab change takes. The old content leaves and the new content arrives at the same time.
+const Duration _tabSwitchDuration = Duration(milliseconds: 220);
 
-/// How far the new tab's content rises as it fades in.
-const double _contentRise = 8;
+/// How far the old and the new tab's content move sideways during a tab change.
+const double _tabShift = 24;
 
 /// Grid rows before the "Pick up where you left off" row.
 const int _pickUpGridRows = 2;
@@ -136,12 +137,20 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   int _moodLoadVersion = 0;
   bool _moodsReady = false;
 
-  /// The chip whose content shows. It trails the selected chip by the fade out of a tab change.
+  /// The chip whose content shows.
   late HomeFeedChip _shownChip = _bloc.state.chip;
 
-  /// 1 while the content shows fully. A tab change fades the old content out, swaps it, then fades the new one in.
-  late final AnimationController _contentFade = AnimationController(vsync: this, value: 1);
-  bool _contentRising = false;
+  /// 0 when a tab change starts, 1 at rest. The new content slides in from the new tab's side and fades in, while a
+  /// picture of the old content slides away from it and fades out on top.
+  late final AnimationController _tabSwitch = AnimationController(vsync: this, duration: _tabSwitchDuration, value: 1)
+    ..addStatusListener(_onTabSwitchStatus);
+  late final CurvedAnimation _tabSwitchCurve = CurvedAnimation(parent: _tabSwitch, curve: PrismCurves.enter);
+
+  /// +1 when the new tab is to the right of the old one, -1 when it is to the left.
+  double _tabDirection = 1;
+  _ContentSnapshot? _outgoing;
+  final GlobalKey _contentKey = GlobalKey();
+  final GlobalKey _contentStackKey = GlobalKey();
 
   /// Stops the carousel's tickers, which also turns its auto-advance off. On while a finger is down, and for one frame
   /// after a tab change. When it goes off, the auto-advance starts a fresh countdown, so the carousel waits a full
@@ -226,7 +235,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     _viewedHistory?.removeListener(_onHistoryChanged);
     _syncedHistory?.removeListener(_onHistoryChanged);
     _scrollController.dispose();
-    _contentFade.dispose();
+    _outgoing?.image.dispose();
+    _tabSwitchCurve.dispose();
+    _tabSwitch.dispose();
     _carouselHeld.dispose();
     _tabs.dispose();
     unawaited(_bloc.close());
@@ -246,20 +257,33 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     HomeFeedChip.popular => _popular ??= getIt<PopularFeedBloc>()..add(const PagedFeedEvent.started()),
   };
 
-  /// Fades the old tab's content out, shows the new tab from the top, then fades it in with a short rise.
-  Future<void> _fadeThrough(HomeFeedChip to) async {
+  /// Shows the new tab from the top at once. With motion on, a picture of the old content slides away from the new
+  /// tab and fades out over the new content, which slides in from the new tab's side and fades in.
+  void _switchTab(HomeFeedChip to) {
+    final double direction = to.index >= _shownChip.index ? 1 : -1;
+    _outgoing?.image.dispose();
+    _outgoing = null;
     if (context.reduceMotion || !TickerMode.valuesOf(context).enabled) {
-      _contentFade.value = 1;
+      _tabSwitch.value = 1;
       _showChip(to);
       return;
     }
-    _contentRising = false;
-    // A newer tab change stops this animation. This future then never completes, and the newer change takes over.
-    await _contentFade.animateTo(0, duration: _contentFadeOut, curve: PrismCurves.exit);
-    if (!mounted) return;
+    final RenderObject? content = _contentKey.currentContext?.findRenderObject();
+    final RenderObject? stack = _contentStackKey.currentContext?.findRenderObject();
+    if (content is _RenderSliverSnapshot && stack is RenderBox) {
+      _outgoing = content.capture(stack, View.of(context).devicePixelRatio);
+    }
+    _tabDirection = direction;
     _showChip(to);
-    _contentRising = true;
-    await _contentFade.animateTo(1, duration: PrismDurations.fast, curve: PrismCurves.enter);
+    _tabSwitch.forward(from: 0);
+  }
+
+  void _onTabSwitchStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed || _outgoing == null || !mounted) return;
+    setState(() {
+      _outgoing!.image.dispose();
+      _outgoing = null;
+    });
   }
 
   void _onPointerDown(PointerDownEvent _) {
@@ -459,9 +483,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                 }
               }
               _restartCarouselCountdown();
-              // Start the new tab's list now, so it loads while the old content fades out.
               if (!_showsSignIn(state.chip)) _chipBloc(state.chip);
-              unawaited(_fadeThrough(state.chip));
+              _switchTab(state.chip);
               // The quest is daily and the screen outlives a day, so every visit reports it.
               if (state.chip == HomeFeedChip.trending) {
                 CoinsService.instance.reportQuestEvent(QuestEvent.viewTrending);
@@ -497,81 +520,128 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                     child: SizedBox(width: double.infinity, height: MediaQuery.paddingOf(context).top),
                   ),
                   Expanded(
-                    child: PrismRefresh(
-                      edgeOffset: PrismTopAppBar.height + HomeFeedTabBar.height,
-                      onRefresh: _refresh,
-                      child: NotificationListener<ScrollNotification>(
-                        onNotification: (notification) {
-                          if (notification.depth == 0) {
-                            _maybeFetchMore(notification.metrics);
-                          }
-                          return false;
-                        },
-                        child: WallpaperImpressionScope(
-                          session: _impressions,
-                          child: PinchDensity(
-                            store: _layout,
-                            controller: _scrollController,
-                            child: CustomScrollView(
-                              controller: _scrollController,
-                              scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
-                              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                              slivers: [
-                                SliverAppBar(
-                                  primary: false,
-                                  floating: true,
-                                  snap: true,
-                                  automaticallyImplyLeading: false,
-                                  centerTitle: false,
-                                  toolbarHeight: PrismTopAppBar.height,
-                                  titleSpacing: 0,
-                                  backgroundColor: cs.surface,
-                                  surfaceTintColor: Colors.transparent,
-                                  elevation: 0,
-                                  scrolledUnderElevation: 0,
-                                  title: const PrismTopAppBar(),
-                                  bottom: HomeFeedTabBar(
-                                    controller: _tabs,
-                                    selected: state.chip,
-                                    onSelected: (chip) {
-                                      setState(() => _impressions = WallpaperImpressionSession());
-                                      _bloc.add(PersonalizedFeedEvent.chipSelected(chip));
-                                    },
-                                    onTuneTap: widget.onTuneTap,
-                                    isRefreshing: state.isRefreshing,
-                                  ),
-                                ),
-                                AnimatedBuilder(
-                                  animation: _contentFade,
-                                  builder: (context, sliver) => _SliverRise(
-                                    dy: _contentRising ? _contentRise * (1 - _contentFade.value) : 0,
-                                    sliver: sliver!,
-                                  ),
-                                  child: SliverFadeTransition(
-                                    opacity: _contentFade,
-                                    sliver: SliverMainAxisGroup(
-                                      slivers: _contentSlivers(
-                                        context,
-                                        state,
-                                        _shownChip,
-                                        crossAxisCount,
-                                        tileMemCacheHeight,
+                    child: Stack(
+                      key: _contentStackKey,
+                      fit: StackFit.expand,
+                      children: <Widget>[
+                        PrismRefresh(
+                          edgeOffset: PrismTopAppBar.height + HomeFeedTabBar.height,
+                          onRefresh: _refresh,
+                          child: NotificationListener<ScrollNotification>(
+                            onNotification: (notification) {
+                              if (notification.depth == 0) {
+                                _maybeFetchMore(notification.metrics);
+                              }
+                              return false;
+                            },
+                            child: WallpaperImpressionScope(
+                              session: _impressions,
+                              child: PinchDensity(
+                                store: _layout,
+                                controller: _scrollController,
+                                child: CustomScrollView(
+                                  controller: _scrollController,
+                                  scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
+                                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                                  slivers: [
+                                    SliverAppBar(
+                                      primary: false,
+                                      floating: true,
+                                      snap: true,
+                                      automaticallyImplyLeading: false,
+                                      centerTitle: false,
+                                      toolbarHeight: PrismTopAppBar.height,
+                                      titleSpacing: 0,
+                                      backgroundColor: cs.surface,
+                                      surfaceTintColor: Colors.transparent,
+                                      elevation: 0,
+                                      scrolledUnderElevation: 0,
+                                      title: const PrismTopAppBar(),
+                                      bottom: HomeFeedTabBar(
+                                        controller: _tabs,
+                                        selected: state.chip,
+                                        onSelected: (chip) {
+                                          setState(() => _impressions = WallpaperImpressionSession());
+                                          _bloc.add(PersonalizedFeedEvent.chipSelected(chip));
+                                        },
+                                        onTuneTap: widget.onTuneTap,
+                                        isRefreshing: state.isRefreshing,
                                       ),
                                     ),
-                                  ),
+                                    AnimatedBuilder(
+                                      animation: _tabSwitchCurve,
+                                      builder: (context, sliver) => _SliverShift(
+                                        dx: _tabShift * _tabDirection * (1 - _tabSwitchCurve.value),
+                                        sliver: sliver!,
+                                      ),
+                                      child: SliverFadeTransition(
+                                        opacity: _tabSwitchCurve,
+                                        sliver: _SliverSnapshot(
+                                          key: _contentKey,
+                                          sliver: SliverMainAxisGroup(
+                                            slivers: _contentSlivers(
+                                              context,
+                                              state,
+                                              _shownChip,
+                                              crossAxisCount,
+                                              tileMemCacheHeight,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
+                                  ],
                                 ),
-                                const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
-                              ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                        if (_outgoing case final _ContentSnapshot outgoing) _outgoingContent(outgoing),
+                      ],
                     ),
                   ),
                 ],
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+
+  /// The picture of the old tab's content, where it was, under the header. It slides away from the new tab and fades.
+  Widget _outgoingContent(_ContentSnapshot outgoing) {
+    const double header = PrismTopAppBar.height + HomeFeedTabBar.height;
+    return Positioned.fill(
+      top: header,
+      child: IgnorePointer(
+        child: ClipRect(
+          child: AnimatedBuilder(
+            animation: _tabSwitchCurve,
+            builder: (context, image) => Stack(
+              children: <Widget>[
+                Positioned(
+                  left: outgoing.offset.dx,
+                  top: outgoing.offset.dy - header,
+                  width: outgoing.size.width,
+                  height: outgoing.size.height,
+                  child: Transform.translate(
+                    key: const ValueKey<String>('home-tab-outgoing'),
+                    offset: Offset(-_tabShift * _tabDirection * _tabSwitchCurve.value, 0),
+                    child: Opacity(opacity: 1 - _tabSwitchCurve.value, child: image),
+                  ),
+                ),
+              ],
+            ),
+            child: RawImage(
+              image: outgoing.image,
+              width: outgoing.size.width,
+              height: outgoing.size.height,
+              scale: outgoing.pixelRatio,
+              fit: BoxFit.fill,
+            ),
+          ),
         ),
       ),
     );
@@ -914,31 +984,71 @@ class _CarouselSkeleton extends StatelessWidget {
 }
 
 /// Paints its sliver [dy] lower, so new content can rise into place. Layout does not move.
-class _SliverRise extends SingleChildRenderObjectWidget {
-  const _SliverRise({required this.dy, required Widget sliver}) : super(child: sliver);
+class _SliverShift extends SingleChildRenderObjectWidget {
+  const _SliverShift({required this.dx, required Widget sliver}) : super(child: sliver);
 
-  final double dy;
-
-  @override
-  _RenderSliverRise createRenderObject(BuildContext context) => _RenderSliverRise(dy);
+  final double dx;
 
   @override
-  void updateRenderObject(BuildContext context, _RenderSliverRise renderObject) => renderObject.dy = dy;
+  _RenderSliverShift createRenderObject(BuildContext context) => _RenderSliverShift(dx);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderSliverShift renderObject) => renderObject.dx = dx;
 }
 
-// ponytail: paint only; hit tests stay at the layout position, at most 8 pt off for the 160 ms of the rise.
-class _RenderSliverRise extends RenderProxySliver {
-  _RenderSliverRise(this._dy);
+/// Moves its sliver sideways by [dx] for paint and hit tests. Layout does not change.
+class _RenderSliverShift extends RenderProxySliver {
+  _RenderSliverShift(this._dx);
 
-  double _dy;
-  double get dy => _dy;
+  double _dx;
+  double get dx => _dx;
 
-  set dy(double value) {
-    if (value == _dy) return;
-    _dy = value;
+  set dx(double value) {
+    if (value == _dx) return;
+    _dx = value;
     markNeedsPaint();
   }
 
   @override
-  void paint(PaintingContext context, Offset offset) => super.paint(context, offset.translate(0, _dy));
+  void paint(PaintingContext context, Offset offset) => super.paint(context, offset.translate(_dx, 0));
+
+  @override
+  void applyPaintTransform(RenderObject child, Matrix4 transform) => transform.translateByDouble(_dx, 0, 0, 1);
+
+  @override
+  bool hitTestChildren(
+    SliverHitTestResult result, {
+    required double mainAxisPosition,
+    required double crossAxisPosition,
+  }) => super.hitTestChildren(result, mainAxisPosition: mainAxisPosition, crossAxisPosition: crossAxisPosition - _dx);
+}
+
+/// The old tab's content as a picture, and where it showed in the content stack.
+typedef _ContentSnapshot = ({ui.Image image, Offset offset, Size size, double pixelRatio});
+
+/// Paints the tab content in its own layer, so a tab change can take a picture of it and only moves that layer.
+class _SliverSnapshot extends SingleChildRenderObjectWidget {
+  const _SliverSnapshot({super.key, required Widget sliver}) : super(child: sliver);
+
+  @override
+  _RenderSliverSnapshot createRenderObject(BuildContext context) => _RenderSliverSnapshot();
+}
+
+class _RenderSliverSnapshot extends RenderProxySliver {
+  @override
+  bool get isRepaintBoundary => true;
+
+  /// The visible part of the content as last painted, or null when nothing of it shows.
+  _ContentSnapshot? capture(RenderBox ancestor, double pixelRatio) {
+    final ContainerLayer? painted = layer;
+    final SliverGeometry? shown = geometry;
+    if (!attached || painted is! OffsetLayer || shown == null || shown.paintExtent <= 0) return null;
+    final Size size = Size(constraints.crossAxisExtent, shown.paintExtent);
+    return (
+      image: painted.toImageSync(Offset.zero & size, pixelRatio: pixelRatio),
+      offset: MatrixUtils.transformPoint(getTransformTo(ancestor), Offset.zero),
+      size: size,
+      pixelRatio: pixelRatio,
+    );
+  }
 }

@@ -11,6 +11,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
@@ -84,7 +85,8 @@ class _SearchGridState extends State<SearchGrid> {
 
   bool get _showAi =>
       !getIt.isRegistered<SettingsLocalDataSource>() || AiContentFilter.showsAi(getIt<SettingsLocalDataSource>());
-  List<FeedItemEntity> get _visibleResults => AiContentFilter.filterFeedItems(_results, showAi: _showAi);
+  // Re-uploads of the same picture show once, as on Home and in More like this.
+  List<FeedItemEntity> get _visibleResults => distinctWalls(AiContentFilter.filterFeedItems(_results, showAi: _showAi));
   List<FeedItemEntity> get _visiblePrismResults =>
       AiContentFilter.filterFeedItems(widget.prismResults, showAi: _showAi);
 
@@ -363,6 +365,7 @@ class _SearchGridState extends State<SearchGrid> {
                         key: ValueKey<String>(wallpaper.id),
                         url: wallpaper.thumbnailUrl,
                         fallbackUrl: wallpaper.fullUrl,
+                        cachedFullUrl: WallpaperDisplaySource.of(wallpaper).full,
                         placeholderColor: placeholderColorOf(wallpaper, Theme.of(context).colorScheme.surface),
                         memCacheHeight: decodeHeight,
                         heroTag: prismHeroTag(this, index, wallpaper.id),
@@ -437,6 +440,7 @@ class _FromPrismRow extends StatelessWidget {
                     key: ValueKey<String>('prism-${wallpaper.id}'),
                     url: wallpaper.thumbnailUrl,
                     fallbackUrl: wallpaper.fullUrl,
+                    cachedFullUrl: WallpaperDisplaySource.of(wallpaper).full,
                     placeholderColor: placeholderColorOf(wallpaper, Theme.of(context).colorScheme.surface),
                     memCacheHeight: 400,
                     heroTag: prismHeroTag(results, index, wallpaper.id),

@@ -1,13 +1,16 @@
+// ignore_for_file: depend_on_referenced_packages
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:file/local.dart' as local;
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -56,6 +59,7 @@ void main() {
 
   tearDown(() async {
     PrismImageCache.testOverride = null;
+    PrismFullImageCache.testOverride = null;
     OfflineAssetStore.testOverride = null;
     await directory.delete(recursive: true);
   });
@@ -100,6 +104,76 @@ void main() {
     expect((resizedImage.imageProvider as FileImage).file.path, retainedImage.path);
     expect(resizedImage.height, 180);
     expect(find.byType(CachedNetworkImage), findsNothing);
+  });
+
+  group('cachedFullUrl', () {
+    const String thumbnail = 'https://example.com/small.jpg';
+    const String full = 'https://example.com/full.jpg';
+    late _MockCacheManager fullCache;
+
+    setUp(() {
+      fullCache = _MockCacheManager();
+      PrismFullImageCache.testOverride = fullCache;
+      OfflineAssetStore.testOverride = _PendingOfflineAssetStore('', Future<File?>.value());
+      when(
+        () => cache.getFileStream(thumbnail, withProgress: true),
+      ).thenAnswer((_) => const Stream<FileResponse>.empty());
+    });
+
+    Future<void> pumpTile(WidgetTester tester) => tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: MediaQuery(
+          data: MediaQueryData(devicePixelRatio: 3, disableAnimations: true),
+          child: Center(
+            child: SizedBox(
+              width: 120,
+              height: 240,
+              child: PrismImageTile(url: thumbnail, cachedFullUrl: full, placeholderColor: Colors.teal),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    testWidgets('shows the full picture from the disk cache, decoded at tile height times pixel ratio', (tester) async {
+      final File fullFile = File('${directory.path}/full.gif')
+        ..writeAsBytesSync(base64Decode('R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='));
+      when(() => fullCache.getFileFromCache(full)).thenAnswer(
+        (_) async => FileInfo(
+          const local.LocalFileSystem().file(fullFile.path),
+          FileSource.Cache,
+          DateTime.now().add(const Duration(days: 7)),
+          full,
+        ),
+      );
+
+      await pumpTile(tester);
+      await _pumpUntilRetainedImage(tester);
+
+      final Image image = tester.widget<Image>(find.byWidgetPredicate(_isRetainedFileImage));
+      final ResizeImage resized = image.image as ResizeImage;
+      expect((resized.imageProvider as FileImage).file.path, fullFile.path);
+      expect(resized.height, 720);
+      expect(find.byType(CachedNetworkImage), findsNothing);
+      verifyNever(() => fullCache.getFileStream(any(), withProgress: any(named: 'withProgress')));
+      verifyNever(() => fullCache.getSingleFile(any()));
+    });
+
+    testWidgets('keeps the small picture and never downloads the full one when it is not cached', (tester) async {
+      when(() => fullCache.getFileFromCache(full)).thenAnswer((_) async => null);
+
+      await pumpTile(tester);
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+      await tester.pump();
+
+      verify(() => fullCache.getFileFromCache(full)).called(1);
+      expect(find.byType(CachedNetworkImage), findsOneWidget);
+      expect(find.byWidgetPredicate(_isRetainedFileImage), findsNothing);
+      verifyNever(() => fullCache.getFileStream(any(), withProgress: any(named: 'withProgress')));
+      verifyNever(() => fullCache.getSingleFile(any()));
+    });
   });
 
   testWidgets('renders a local file URL directly', (tester) async {

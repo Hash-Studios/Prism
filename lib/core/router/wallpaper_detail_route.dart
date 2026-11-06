@@ -222,7 +222,8 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
   DelegatedTransitionBuilder? get delegatedTransition => _zoomBehind;
 
   /// Steps the page behind back around its tile while the card grows out of it, so the tile visibly leaves its
-  /// neighbours. They shrink to [_zoomBack] and dim under the scrim, then come back as the card shrinks home.
+  /// neighbours. They shrink to [_zoomBack] over the page colour and dim under the scrim, then come back as the card
+  /// shrinks home.
   Widget _zoomBehind(
     BuildContext context,
     Animation<double> animation,
@@ -253,7 +254,12 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
         child: content,
       );
     }
-    return Transform(transform: transform, child: content);
+    // The page shrinks off the screen edges. Paint the page colour there, so the edges never show the black root.
+    // Transparent without a zoom, and always present, so the page behind is never re-parented.
+    return ColoredBox(
+      color: zoom == null ? Colors.transparent : Theme.of(context).scaffoldBackgroundColor,
+      child: Transform(transform: transform, child: content),
+    );
   }
 
   @override

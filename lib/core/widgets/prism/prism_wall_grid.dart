@@ -92,6 +92,7 @@ class PrismWallTile extends StatelessWidget {
     this.borderRadius = PrismWallGrid.tileRadius,
     this.memCacheHeight,
     this.placeholderColor,
+    this.cachedFullUrl,
   });
 
   final String url;
@@ -111,6 +112,9 @@ class PrismWallTile extends StatelessWidget {
 
   /// See [PrismImageTile.placeholderColor].
   final Color? placeholderColor;
+
+  /// See [PrismImageTile.cachedFullUrl].
+  final String? cachedFullUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -136,6 +140,7 @@ class PrismWallTile extends StatelessWidget {
                 borderRadius: borderRadius,
                 memCacheHeight: memCacheHeight,
                 placeholderColor: placeholderColor,
+                cachedFullUrl: cachedFullUrl,
               ),
               ?overlay,
             ],

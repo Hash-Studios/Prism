@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -384,6 +385,8 @@ void main() {
     await gesture.moveTo(tester.getCenter(find.bySemanticsLabel('Favourite')));
     await gesture.cancel();
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 180));
+    await tester.pump();
     expect(actions, isEmpty);
     expect(find.byIcon(Icons.ios_share_rounded), findsNothing);
   });
@@ -536,6 +539,61 @@ void main() {
     expect(scrim, findsNothing);
     expect(actions, [WallpaperQuickAction.share]);
   });
+
+  for (final bool cancel in <bool>[false, true]) {
+    testWidgets('${cancel ? 'a cancelled' : 'a lifted'} finger settles the tile, its shadow and the wash in step', (
+      tester,
+    ) async {
+      final actions = <WallpaperQuickAction>[];
+      await pumpRegion(tester, actions);
+      final gesture = await hold(tester);
+      final scrim = find.byKey(const ValueKey<String>('wallpaper-hold-scrim'));
+      final lift = find.byKey(const ValueKey<String>('wallpaper-hold-lift-shadow'));
+      // Lift, tilt and shadow, each as a share of the open pose: 1 open, 0 at rest.
+      List<double> pose() {
+        final Iterable<Matrix4> transforms = tester
+            .widgetList<Transform>(find.ancestor(of: lift, matching: find.byType(Transform)))
+            .map((t) => t.transform);
+        final double tilt = transforms.map((m) => m.entry(1, 0)).firstWhere((v) => v.abs() > 1e-9, orElse: () => 0);
+        final double lifted = transforms.map((m) => m.entry(1, 3)).firstWhere((v) => v.abs() > 1e-9, orElse: () => 0);
+        final double shadow = (tester.widget<DecoratedBox>(lift).decoration as BoxDecoration).boxShadow!.single.color.a;
+        return <double>[
+          tester.widget<ColoredBox>(scrim).color.a / 0.82,
+          shadow / 0.18,
+          tilt.abs() / math.sin(0.025),
+          1 - lifted / 8,
+        ];
+      }
+
+      expect(pose(), everyElement(closeTo(1, 0.02)));
+      if (cancel) {
+        await gesture.cancel();
+      } else {
+        await gesture.up();
+      }
+      // The close starts on the next frame.
+      await tester.pump();
+      final List<List<double>> frames = <List<double>>[];
+      for (int i = 0; i < 9; i++) {
+        await tester.pump(const Duration(milliseconds: 16));
+        if (scrim.evaluate().isEmpty) break;
+        frames.add(pose());
+      }
+      // Several frames between open and rest, each one a single shared step for all four.
+      expect(frames.length, greaterThanOrEqualTo(8));
+      for (final List<double> frame in frames) {
+        expect(frame.first, inExclusiveRange(0, 1));
+        expect(frame, everyElement(closeTo(frame.first, 0.02)));
+      }
+      for (int i = 1; i < frames.length; i++) {
+        expect(frames[i].first, lessThan(frames[i - 1].first));
+      }
+      await tester.pump(const Duration(milliseconds: 40));
+      await tester.pump();
+      expect(scrim, findsNothing);
+      expect(actions, isEmpty);
+    });
+  }
 
   testWidgets('release in the same frame as the hold timeout cleans up an initially exiting overlay', (tester) async {
     final actions = <WallpaperQuickAction>[];

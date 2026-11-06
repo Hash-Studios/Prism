@@ -10,6 +10,7 @@ import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism/prism_section.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/features/rewards/views/widgets/rewards_cover_art.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -43,6 +44,7 @@ class RewardsSpendSection extends StatelessWidget {
     );
     final List<_SpendTile> tiles = <_SpendTile>[
       _SpendTile(
+        art: rewardsCoverAsset(0),
         icon: Icons.auto_awesome_rounded,
         label: context.l10n.economyAiWallpaper,
         price: context.l10n.economyPriceFrom(aiFrom),
@@ -50,6 +52,7 @@ class RewardsSpendSection extends StatelessWidget {
         onTap: () => context.router.root.push(AiTabRoute()),
       ),
       _SpendTile(
+        art: rewardsCoverAsset(1),
         icon: Icons.lock_open_rounded,
         label: context.l10n.economyDrops,
         price: context.l10n.economyPriceCoinsPerWall(dropWall),
@@ -57,6 +60,7 @@ class RewardsSpendSection extends StatelessWidget {
         onTap: () => context.router.root.push(const DropsRoute()),
       ),
       _SpendTile(
+        art: rewardsCoverAsset(2),
         icon: Icons.storefront_rounded,
         label: context.l10n.economyShopTitle,
         price: context.l10n.economyPriceFrom(shopFrom),
@@ -64,6 +68,7 @@ class RewardsSpendSection extends StatelessWidget {
         onTap: () => context.router.root.push(const ShopRoute()),
       ),
       _SpendTile(
+        art: rewardsCoverAsset(3),
         icon: Icons.workspace_premium_rounded,
         label: context.l10n.economyPremiumCollection,
         price: context.l10n.economyPriceForHours(CoinPolicy.premiumPreview24h, 24),
@@ -72,6 +77,7 @@ class RewardsSpendSection extends StatelessWidget {
             context.router.root.navigate(const DashboardRoute(children: <PageRouteInfo>[CollectionTabRoute()])),
       ),
       _SpendTile(
+        art: rewardsCoverAsset(4),
         icon: Icons.rocket_launch_rounded,
         label: context.l10n.economyBoost,
         price: '${CoinPolicy.boostWall}',
@@ -80,6 +86,7 @@ class RewardsSpendSection extends StatelessWidget {
         onTap: () => _showInfo(context, title: context.l10n.economyBoost, body: boostInfo, showPro: false),
       ),
       _SpendTile(
+        art: rewardsCoverAsset(5),
         icon: Icons.card_giftcard_rounded,
         label: context.l10n.economyGiftPass,
         price: '${CoinPolicy.giftPremiumPass}',
@@ -88,6 +95,7 @@ class RewardsSpendSection extends StatelessWidget {
         onTap: () => _showInfo(context, title: context.l10n.economyGiftPass, body: giftInfo, showPro: false),
       ),
       _SpendTile(
+        art: rewardsCoverAsset(6),
         icon: Icons.ac_unit_rounded,
         label: context.l10n.economyStreakFreeze,
         price: '${CoinPolicy.streakFreezeCost}',
@@ -96,6 +104,7 @@ class RewardsSpendSection extends StatelessWidget {
         haptic: false,
       ),
       _SpendTile(
+        art: rewardsCoverAsset(7),
         icon: Icons.download_rounded,
         label: context.l10n.economyDownloads,
         price: '${CoinPolicy.wallpaperDownload}',
@@ -114,7 +123,7 @@ class RewardsSpendSection extends StatelessWidget {
       children: <Widget>[
         PrismSectionHeader(
           title: context.l10n.economyUseYourCoins,
-          padding: EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.sm),
+          padding: const EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.sm),
         ),
         for (int i = 0; i < tiles.length; i += 2) ...<Widget>[
           if (i > 0) const SizedBox(height: PrismSpace.xs + 2),
@@ -167,6 +176,7 @@ class RewardsSpendSection extends StatelessWidget {
 
 class _SpendTile extends StatelessWidget {
   const _SpendTile({
+    required this.art,
     required this.icon,
     required this.label,
     required this.price,
@@ -177,6 +187,8 @@ class _SpendTile extends StatelessWidget {
     this.haptic = true,
   });
 
+  /// Bundled wallpaper cover shown behind the tile.
+  final String art;
   final IconData icon;
   final String label;
   final String price;
@@ -192,7 +204,10 @@ class _SpendTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
+    final TextStyle title = PrismTextStyles.rowTitle(context).copyWith(color: Colors.white);
+    final TextStyle captionStyle = PrismTextStyles.caption(
+      context,
+    ).copyWith(color: Colors.white.withValues(alpha: 0.88));
     void handleTap() {
       if (haptic) PrismHaptics.tap();
       onTap?.call();
@@ -201,41 +216,43 @@ class _SpendTile extends StatelessWidget {
     return PrismCard(
       onTap: onTap == null ? null : handleTap,
       semanticLabel: context.l10n.economySpendItemSemantics(label, spokenPrice),
-      padding: const EdgeInsets.all(14),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 76),
-        child: ExcludeSemantics(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: cs.onSurface.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(PrismRadius.xs + 2),
-                ),
-                child: Icon(icon, size: 20, color: cs.onSurface),
-              ),
-              const SizedBox(height: PrismSpace.sm),
-              Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: PrismTextStyles.rowTitle(context)),
-              const SizedBox(height: PrismSpace.xs),
-              Row(
-                children: <Widget>[
-                  const PrismCoinIcon(size: 14),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(price, style: PrismTextStyles.rowTitle(context).copyWith(color: cs.onSurface)),
+      padding: EdgeInsets.zero,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(PrismRadius.lg - 1),
+        child: Stack(
+          children: <Widget>[
+            Positioned.fill(child: RewardsCoverArt(asset: art)),
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 120),
+                child: ExcludeSemantics(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: <Widget>[
+                      Icon(icon, size: 20, color: Colors.white),
+                      const SizedBox(height: PrismSpace.xl),
+                      Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: title),
+                      const SizedBox(height: PrismSpace.xs),
+                      Row(
+                        children: <Widget>[
+                          const PrismCoinIcon(size: 14),
+                          const SizedBox(width: 6),
+                          Expanded(child: Text(price, style: title)),
+                        ],
+                      ),
+                      if (caption != null) ...<Widget>[
+                        const SizedBox(height: PrismSpace.xxs),
+                        Text(caption!, maxLines: 2, overflow: TextOverflow.ellipsis, style: captionStyle),
+                      ],
+                      if (note != null) Text(note!, style: captionStyle),
+                    ],
                   ),
-                ],
+                ),
               ),
-              if (caption != null) ...<Widget>[
-                const SizedBox(height: PrismSpace.xxs),
-                Text(caption!, maxLines: 2, overflow: TextOverflow.ellipsis, style: PrismTextStyles.caption(context)),
-              ],
-              if (note != null) Text(note!, style: PrismTextStyles.caption(context)),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

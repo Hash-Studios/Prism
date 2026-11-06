@@ -39,6 +39,7 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final ProfileCompletenessStatus status = widget.status;
     return PrismCard(
+      padding: const EdgeInsets.all(PrismSpace.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -72,7 +73,7 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> {
               ),
             ],
           ),
-          const SizedBox(height: PrismSpace.md),
+          const SizedBox(height: PrismSpace.sm),
           TweenAnimationBuilder<double>(
             tween: Tween<double>(end: status.progress),
             duration: context.motion(PrismDurations.slow),
@@ -85,10 +86,10 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> {
               backgroundColor: cs.onSurface.withValues(alpha: 0.08),
             ),
           ),
-          const SizedBox(height: PrismSpace.sm),
+          const SizedBox(height: PrismSpace.xs),
           for (final ProfileCompletenessStep step in status.missingSteps)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.symmetric(vertical: PrismSpace.xxs),
               child: Row(
                 children: <Widget>[
                   Icon(Icons.radio_button_unchecked_rounded, size: 18, color: cs.onSurface.withValues(alpha: 0.4)),
@@ -102,7 +103,7 @@ class _ProfileCompletenessCardState extends State<ProfileCompletenessCard> {
                 ],
               ),
             ),
-          const SizedBox(height: PrismSpace.xs),
+          const SizedBox(height: PrismSpace.xxs),
           PrismButton(
             label: context.l10n.accountCompleteProfile,
             size: PrismButtonSize.compact,

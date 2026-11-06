@@ -10,6 +10,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/data/categories/category_definition.dart';
+import 'package:Prism/data/collections/provider/collections_without_provider.dart' as c_data;
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -82,17 +83,22 @@ void main() {
     await getIt.reset();
   });
 
-  Future<void> pumpScreen(WidgetTester tester, [String name = 'category:Dark']) => tester.pumpWidget(
-    MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
+  Future<void> pumpScreen(WidgetTester tester, [String name = 'category:Dark', bool reduceMotion = false]) =>
+      tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
+            child: child!,
+          ),
 
-      home: BlocProvider<CategoryFeedBloc>.value(
-        value: bloc,
-        child: CollectionViewScreen(collectionName: name),
-      ),
-    ),
-  );
+          home: BlocProvider<CategoryFeedBloc>.value(
+            value: bloc,
+            child: CollectionViewScreen(collectionName: name),
+          ),
+        ),
+      );
 
   testWidgets('shows loading, not the previous category, until the bloc selects this category', (tester) async {
     current = CategoryFeedState.initial().copyWith(
@@ -112,8 +118,9 @@ void main() {
     expect(find.text('No wallpapers here yet'), findsNothing);
 
     await tester.pump();
-    expect(find.byType(LoadingCards), findsNothing);
     expect(find.text('No wallpapers here yet'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.byType(LoadingCards), findsNothing, reason: 'the skeleton crossfades out');
   });
 
   testWidgets('a Prism category of the desktop type shows the desktop grid', (tester) async {
@@ -251,5 +258,102 @@ void main() {
 
     states.add(current.copyWith(selectedCategory: covered));
     await tester.pump(const Duration(seconds: 31));
+  });
+
+  group('a collection opened from the Collections tab', () {
+    const String cover = 'https://images.pexels.com/photos/1616403/x.jpeg';
+    Finder header() => find.byType(AspectRatio);
+
+    setUp(() {
+      c_data.collections = <Map<String, dynamic>>[
+        <String, dynamic>{'name': 'Abstract', 'thumb1': cover},
+      ];
+    });
+    tearDown(() => c_data.collections = <Map<String, dynamic>>[]);
+
+    Future<void> pumpUntilGrid(WidgetTester tester) async {
+      for (int i = 0; i < 20 && find.byType(CollectionViewGrid).evaluate().isEmpty; i++) {
+        await tester.pump();
+      }
+      expect(find.byType(CollectionViewGrid), findsOneWidget);
+    }
+
+    testWidgets('opens on its cover header, though the route lowercases the name', (tester) async {
+      await pumpScreen(tester, 'abstract');
+
+      expect(find.byType(LoadingCards), findsNothing, reason: 'no grey skeleton before the cover');
+      expect(header(), findsOneWidget);
+      expect(find.byType(Image), findsOneWidget);
+    });
+
+    testWidgets('the placeholder crossfades into the walls', (tester) async {
+      await pumpScreen(tester, 'abstract');
+      await pumpUntilGrid(tester);
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(header(), findsOneWidget, reason: 'the placeholder fades out under the walls');
+
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(header(), findsNothing);
+    });
+
+    testWidgets('the header and the blocks share one colour that eases into the cover tint', (tester) async {
+      const CategoryEntity covered = CategoryEntity(
+        name: 'Dark',
+        source: WallpaperSource.prism,
+        searchType: CategorySearchType.search,
+        image: cover,
+        image2: '',
+      );
+      current = CategoryFeedState.initial().copyWith(
+        status: LoadStatus.success,
+        categories: const <CategoryEntity>[covered, _space],
+        selectedCategory: _space,
+        items: <FeedItemEntity>[],
+      );
+      when(() => bloc.add(any())).thenAnswer((_) {});
+      await pumpScreen(tester);
+      Color headerColour() =>
+          tester.widget<ColoredBox>(find.descendant(of: header(), matching: find.byType(ColoredBox)).first).color;
+      Color? blockColour() =>
+          (tester
+                      .widget<DecoratedBox>(
+                        find.descendant(of: find.byType(GridView), matching: find.byType(DecoratedBox)).first,
+                      )
+                      .decoration
+                  as BoxDecoration)
+              .color;
+      final Color neutral = headerColour();
+      expect(blockColour(), neutral);
+
+      // Decodes the bundled cover for real, so the dominant colour resolves.
+      for (int i = 0; i < 20 && headerColour() == neutral; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+        await tester.pump();
+      }
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(headerColour(), isNot(neutral), reason: 'the tint has started');
+      expect(headerColour(), blockColour(), reason: 'the header does not jump ahead of the blocks');
+
+      await tester.pump(const Duration(milliseconds: 200));
+      final Color tint = headerColour();
+      expect(blockColour(), tint);
+
+      // A second visit knows the colour, so it opens on the tint with no neutral frame.
+      await tester.pumpWidget(const SizedBox());
+      await pumpScreen(tester);
+      expect(headerColour(), tint);
+      expect(blockColour(), tint);
+
+      states.add(current.copyWith(selectedCategory: covered));
+      await tester.pump(const Duration(seconds: 31));
+    });
+
+    testWidgets('with reduce motion on, the walls replace the placeholder at once', (tester) async {
+      await pumpScreen(tester, 'abstract', true);
+      expect(header(), findsOneWidget);
+      await pumpUntilGrid(tester);
+      await tester.pump();
+      expect(header(), findsNothing);
+    });
   });
 }

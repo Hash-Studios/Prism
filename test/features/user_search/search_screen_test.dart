@@ -173,6 +173,40 @@ void main() {
     expect(tester.widget<TextField>(find.byType(TextField)).focusNode!.hasFocus, isFalse);
   });
 
+  testWidgets('the photo and filter buttons leave in 100 ms before Cancel comes in, and back on unfocus', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+    double opacity(Finder of) => of.evaluate().isEmpty
+        ? 0
+        : tester
+              .widget<FadeTransition>(find.ancestor(of: of, matching: find.byType(FadeTransition)).first)
+              .opacity
+              .value;
+    final Finder icons = find.byTooltip('Filters');
+    final Finder cancel = find.text('Cancel');
+
+    Future<void> check(Finder leaving, Finder arriving) async {
+      await tester.pump(); // The focus change rebuilds the header; the swap starts on this frame.
+      for (int ms = 10; ms <= 240; ms += 10) {
+        await tester.pump(const Duration(milliseconds: 10));
+        final double out = opacity(leaving);
+        final double inn = opacity(arriving);
+        expect(out * inn, lessThan(0.0001), reason: 'both visible at $ms ms ($out, $inn)');
+        if (ms < 100) expect(out, greaterThan(0), reason: 'still leaving at $ms ms');
+        if (ms > 110) expect(out, 0, reason: 'gone at $ms ms');
+        if (ms > 110 && ms < 220) expect(inn, inExclusiveRange(0, 1), reason: 'arriving at $ms ms');
+      }
+      expect(opacity(arriving), 1);
+      expect(leaving, findsNothing);
+    }
+
+    await tester.showKeyboard(find.byType(TextField));
+    await check(icons, cancel);
+    await tester.tap(cancel);
+    await check(cancel, icons);
+  });
+
   testWidgets('Cancel on a results page returns to discovery', (tester) async {
     when(
       () => service.search(any(), filters: any(named: 'filters')),

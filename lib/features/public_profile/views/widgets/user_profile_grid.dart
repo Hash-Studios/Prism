@@ -209,7 +209,8 @@ class _UserProfileGridState extends State<UserProfileGrid> {
         if (walls.isEmpty) {
           return SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: PrismSpace.xxl),
+              // A small top gap: the empty gallery follows the header and cards closely, content first.
+              padding: const EdgeInsets.only(top: PrismSpace.md, bottom: PrismSpace.xxl),
               child: failed
                   ? retryState
                   : GlintState(

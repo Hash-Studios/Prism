@@ -11,6 +11,8 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/cosmetics/profile_frame.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
+import 'package:Prism/features/folders/views/widgets/profile_folders_row.dart';
+import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
@@ -19,12 +21,14 @@ import 'package:Prism/features/public_profile/domain/entities/user_summary_entit
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/public_profile/views/widgets/pro_profile_badge.dart';
+import 'package:Prism/features/public_profile/views/widgets/profile_cover.dart';
 import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -214,6 +218,17 @@ void main() {
     expect(tester.getRect(find.byType(RankProgressCard)).top - statsBottom, lessThan(48));
   });
 
+  testWidgets('own profile: tight gaps around the cards, so the gallery starts higher', (tester) async {
+    await pumpScreen(tester);
+
+    final Rect rank = tester.getRect(find.byType(RankProgressCard));
+    final Rect completeness = tester.getRect(find.byType(ProfileCompletenessCard));
+    expect(completeness.top - rank.bottom, lessThanOrEqualTo(PrismSpace.xs));
+    // The folders row is empty (zero height) while it loads, so the finder must look offstage too.
+    final double foldersBottom = tester.getRect(find.byType(ProfileFoldersRow, skipOffstage: false)).bottom;
+    expect(tester.getRect(find.byType(GlintState)).top - foldersBottom, lessThanOrEqualTo(PrismSpace.md));
+  });
+
   testWidgets('scrolled profile pins the header: back stays and the name shows as the title', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
@@ -267,8 +282,89 @@ void main() {
     expect(glass('Menu'), isFalse);
     expect(find.byTooltip('Menu').hitTestable(), findsOneWidget);
     expect(find.byTooltip('Stats').hitTestable(), findsNothing);
+    // The collapsed title (avatar slot, then the name) is centred between Back and the menu.
     final Finder title = find.descendant(of: find.byType(AppBar), matching: find.text('Me Myself'));
-    expect(tester.getCenter(title).dx, closeTo(195, 1));
+    final Rect slot = tester.getRect(find.byKey(const ValueKey<String>('profile-title-avatar-slot')));
+    expect((slot.left + tester.getRect(title).right) / 2, closeTo(195, 1));
+  });
+
+  Future<void> pumpPhone(WidgetTester tester, {String? identifier, bool reduceMotion = false}) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ProfileScreen(profileIdentifier: identifier),
+        builder: (BuildContext context, Widget? child) => favouriteTestBuilder(
+          context,
+          MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
+            child: child!,
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    if (identifier != null) {
+      repository.profiles.add(_ana);
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+  }
+
+  Rect carriedAvatar(WidgetTester tester) => tester.getRect(
+    find.descendant(of: find.byKey(const ValueKey<String>('profile-carried-avatar')), matching: find.byType(ClipOval)),
+  );
+
+  for (final String? identifier in <String?>[null, 'u2']) {
+    final String who = identifier == null ? 'own' : 'creator';
+    testWidgets('$who profile: scroll carries the avatar from the header into the bar next to the name', (
+      tester,
+    ) async {
+      await pumpPhone(tester, identifier: identifier);
+
+      // Expanded: the full avatar sits centred on the cover edge.
+      final Rect expanded = carriedAvatar(tester);
+      expect(expanded.center.dx, closeTo(195, 1));
+      expect(expanded.width, closeTo(78, 1));
+
+      // Half way: smaller and higher, on its way to the bar.
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -70));
+      await tester.pump();
+      final Rect midway = carriedAvatar(tester);
+      expect(midway.width, lessThan(expanded.width));
+      expect(midway.center.dy, lessThan(expanded.center.dy));
+
+      // Collapsed: a 28 point avatar exactly on the title slot, next to the name.
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -600));
+      await tester.pump(const Duration(milliseconds: 400));
+      final Rect slot = tester.getRect(find.byKey(const ValueKey<String>('profile-title-avatar-slot')));
+      final Rect collapsed = carriedAvatar(tester);
+      expect(collapsed.center.dx, closeTo(slot.center.dx, 0.5));
+      expect(collapsed.center.dy, closeTo(slot.center.dy, 0.5));
+      expect(collapsed.width, closeTo(78 * 28 / 86, 0.5));
+      final String name = identifier == null ? 'Me Myself' : 'Ana Rivera';
+      final Rect title = tester.getRect(find.descendant(of: find.byType(AppBar), matching: find.text(name)));
+      expect(title.left, greaterThan(slot.right));
+      expect((slot.left + title.right) / 2, closeTo(195, 1));
+    });
+  }
+
+  testWidgets('reduce motion: the avatar does not travel; a small copy fades in with the collapsed name', (
+    tester,
+  ) async {
+    await pumpPhone(tester, reduceMotion: true);
+
+    expect(find.byKey(const ValueKey<String>('profile-carried-avatar')), findsNothing);
+    expect(find.byType(ClipOval), findsOneWidget);
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -600));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final Finder slot = find.byKey(const ValueKey<String>('profile-title-avatar-slot'));
+    expect(find.descendant(of: slot, matching: find.byType(ClipOval)), findsOneWidget);
+    expect(tester.getRect(slot).width, 28);
   });
 
   testWidgets('one follower reads as a singular label', (tester) async {
@@ -411,6 +507,30 @@ void main() {
     expect(find.text('Me Myself'), findsOneWidget);
     expect(find.byType(PrismWallTile), findsNWidgets(2));
     expect(find.text('No wallpapers yet'), findsNothing);
+  });
+
+  testWidgets('with no custom cover, the latest upload is the blurred cover art', (tester) async {
+    whenListen(
+      bloc,
+      const Stream<PublicProfileState>.empty(),
+      initialState: PublicProfileState.initial().copyWith(
+        profileId: 'me',
+        status: LoadStatus.success,
+        walls: <PublicProfileWallEntity>[
+          const PublicProfileWallEntity(
+            id: 'w1',
+            wallpaperUrl: 'https://example.com/1',
+            wallpaperThumb: 'https://example.com/t1',
+          ),
+          const PublicProfileWallEntity(id: 'w2', wallpaperUrl: 'https://example.com/2'),
+        ],
+      ),
+    );
+    await pumpScreen(tester);
+
+    final Finder cover = find.descendant(of: find.byType(ProfileCover), matching: find.byType(ImageFiltered));
+    final Finder art = find.descendant(of: cover, matching: find.byType(CachedNetworkImage));
+    expect(tester.widget<CachedNetworkImage>(art).imageUrl, 'https://example.com/t1');
   });
 
   testWidgets('the header fits a wide phone with links and scrolls up to the gallery', (tester) async {
@@ -721,8 +841,8 @@ void main() {
 
       expect(find.byType(RankProgressCard), findsOneWidget);
       final AppLocalizationsEn l10n = AppLocalizationsEn();
-      expect(find.text(l10n.economyLifetimeXp('1,240')), findsOneWidget);
-      expect(find.text(l10n.economyXpToRank('760', l10n.economyRankGold)), findsOneWidget);
+      expect(find.textContaining(l10n.economyLifetimeXp('1,240')), findsOneWidget);
+      expect(find.textContaining(l10n.economyXpToRank('760', l10n.economyRankGold)), findsOneWidget);
       expect(find.text(l10n.economyNextReward('Gold frame')), findsOneWidget);
       expect(find.byType(RankInfoChip), findsNothing);
     });

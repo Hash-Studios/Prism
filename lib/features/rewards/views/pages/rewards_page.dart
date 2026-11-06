@@ -22,11 +22,12 @@ import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_activity_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.dart';
+import 'package:Prism/features/rewards/views/widgets/rewards_cover_art.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_hero.dart';
-import 'package:Prism/features/rewards/views/widgets/streak_details.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_links_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_spend_section.dart';
+import 'package:Prism/features/rewards/views/widgets/streak_details.dart';
 import 'package:Prism/features/spin_wheel/spin_wheel.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -179,7 +180,7 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
             sliver: SliverList.list(
               children: <Widget>[
                 if (DailyMomentConfig.enabled) ...<Widget>[
-                  const DailyMomentTodayCard(),
+                  RewardsCoverWash(asset: rewardsCoverAsset(4), child: const DailyMomentTodayCard()),
                   KeyedSubtree(key: _earnKey, child: const RewardsEarnSection()),
                   LayoutBuilder(
                     builder: (context, constraints) => ExperimentalInlineAd(

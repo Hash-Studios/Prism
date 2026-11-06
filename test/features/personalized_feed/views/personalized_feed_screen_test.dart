@@ -781,26 +781,57 @@ void main() {
     expect(find.byType(FeedCarousel), findsNothing);
   });
 
-  testWidgets('a tab change fades the old content out, then fades the new content in with a rise', (tester) async {
+  testWidgets('a tab change slides the old content out and the new content in at the same time', (tester) async {
     await pumpScreen(tester);
-    double opacity() => tester.widget<SliverFadeTransition>(find.byType(SliverFadeTransition)).opacity.value;
-    expect(opacity(), 1);
+    final Finder outgoing = find.byKey(const ValueKey<String>('home-tab-outgoing'));
+    double incomingOpacity() => tester.widget<SliverFadeTransition>(find.byType(SliverFadeTransition)).opacity.value;
+    double outgoingOpacity() =>
+        tester.widget<Opacity>(find.descendant(of: outgoing, matching: find.byType(Opacity))).opacity;
+    double outgoingDx() => tester.widget<Transform>(outgoing).transform.getTranslation().x;
+    Finder latestTile() => find.descendant(of: find.byType(PagedChipSliver), matching: find.byType(FeedWallTile)).first;
+    expect(outgoing, findsNothing);
 
     await tapTab(tester, 'Latest');
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 45));
-    expect(find.byType(FeedCarousel), findsOneWidget, reason: 'the old content stays while it fades out');
-    expect(opacity(), inExclusiveRange(0, 1));
-    final TabController tabs = tester.widget<TabBar>(find.byType(TabBar)).controller!;
-    expect(tabs.animation!.value, greaterThan(0), reason: 'the underline moves with it');
+    expect(find.byType(FeedCarousel), findsNothing, reason: 'the new content shows from the first frame');
+    expect(outgoing, findsOneWidget, reason: 'a picture of the old content stays over it');
 
-    await tester.pump(const Duration(milliseconds: 60));
-    await tester.pump(const Duration(milliseconds: 40));
-    expect(find.byType(FeedCarousel), findsNothing, reason: 'the new content took its place');
-    expect(opacity(), inExclusiveRange(0, 1));
+    final List<double> lastDx = <double>[];
+    for (int frame = 0; frame < 5; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(incomingOpacity(), inExclusiveRange(0, 1));
+      expect(outgoingOpacity(), inExclusiveRange(0, 1));
+      expect(incomingOpacity() + outgoingOpacity(), closeTo(1, 0.001), reason: 'no near-blank frame');
+      expect(outgoingDx(), inInclusiveRange(-24, 0), reason: 'Latest is to the right, so the old content goes left');
+      lastDx.add(outgoingDx());
+    }
+    expect(lastDx.last, lessThan(lastDx.first));
+    await tester.pump();
+    final double movingX = tester.getTopLeft(latestTile()).dx;
 
     await _settle(tester);
-    expect(opacity(), 1);
+    expect(outgoing, findsNothing);
+    expect(incomingOpacity(), 1);
+    final double restX = tester.getTopLeft(latestTile()).dx;
+    expect(movingX - restX, inExclusiveRange(0, 24), reason: 'the new content came in from the right');
+
+    await tapTab(tester, 'Following');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 40));
+    expect(outgoingDx(), greaterThan(0), reason: 'Following is to the left, so the old content goes right');
+    await _settle(tester);
+  });
+
+  testWidgets('a tab change takes about 220 ms', (tester) async {
+    await pumpScreen(tester);
+    await tapTab(tester, 'Latest');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.byKey(const ValueKey<String>('home-tab-outgoing')), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 30));
+    await tester.pump();
+    expect(find.byKey(const ValueKey<String>('home-tab-outgoing')), findsNothing);
+    expect(tester.widget<SliverFadeTransition>(find.byType(SliverFadeTransition)).opacity.value, 1);
   });
 
   testWidgets('with reduce motion on, a tab change swaps the content at once', (tester) async {
@@ -811,6 +842,7 @@ void main() {
 
     expect(find.byType(FeedCarousel), findsNothing);
     expect(tester.widget<SliverFadeTransition>(find.byType(SliverFadeTransition)).opacity.value, 1);
+    expect(find.byKey(const ValueKey<String>('home-tab-outgoing')), findsNothing, reason: 'no slide, no picture');
   });
 
   testWidgets('the carousel does not turn for 5 s after a touch', (tester) async {

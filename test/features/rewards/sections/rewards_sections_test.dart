@@ -18,6 +18,7 @@ import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_activity_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.dart';
+import 'package:Prism/features/rewards/views/widgets/rewards_cover_art.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_spend_section.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
@@ -436,6 +437,10 @@ void main() {
         await tester.pumpWidget(_host(RewardsSpendSection(onStreakFreeze: () => freezeTaps++), brightness));
 
         expect(find.text('Use your coins'), findsOneWidget);
+        // Every tile has wallpaper art behind its text.
+        expect(find.byType(RewardsCoverArt), findsNWidgets(8));
+        expect(find.descendant(of: find.byType(RewardsCoverArt).first, matching: find.byType(Image)), findsOneWidget);
+        expect(find.text('Streak freeze'), findsOneWidget);
         expect(find.text('from ${CoinPolicy.aiGenerationFast}'), findsOneWidget);
         expect(find.text('${CoinPolicy.dropWall} a wall'), findsOneWidget);
         expect(find.text('from 100'), findsOneWidget);

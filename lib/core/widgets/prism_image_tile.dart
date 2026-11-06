@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/router/wallpaper_detail_route.dart';
+import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -39,6 +41,7 @@ class PrismImageTile extends StatefulWidget {
     this.heroTag,
     this.borderRadius,
     this.placeholderColor,
+    this.cachedFullUrl,
   });
 
   final String url;
@@ -53,6 +56,11 @@ class PrismImageTile extends StatefulWidget {
   /// The wall's own colour (see `placeholderColorOf`). When set, the tile is a still block of it until the picture
   /// decodes, instead of the grey pulse.
   final Color? placeholderColor;
+
+  /// The wall's full picture, the link the detail page caches (`WallpaperDisplaySource.of(wall).full`). When it is
+  /// already in [PrismFullImageCache], the tile shows it at tile size instead of the small [url]. It is never
+  /// downloaded here. Leave it empty for a wall whose full picture is withheld.
+  final String? cachedFullUrl;
 
   @override
   State<PrismImageTile> createState() => _PrismImageTileState();
@@ -74,7 +82,9 @@ class _PrismImageTileState extends State<PrismImageTile> {
   @override
   void didUpdateWidget(PrismImageTile oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.url != widget.url || oldWidget.fallbackUrl != widget.fallbackUrl) {
+    if (oldWidget.url != widget.url ||
+        oldWidget.fallbackUrl != widget.fallbackUrl ||
+        oldWidget.cachedFullUrl != widget.cachedFullUrl) {
       _attempt = 0;
       _retrying = false;
       _loadReported = false;
@@ -94,7 +104,18 @@ class _PrismImageTileState extends State<PrismImageTile> {
     try {
       final File localFile = File(source);
       if (await localFile.exists()) return localFile;
-      return await OfflineAssetStore.instance.lookup(source);
+      final File? retained = await OfflineAssetStore.instance.lookup(source);
+      if (retained != null) return retained;
+    } catch (_) {}
+    return _cachedFull();
+  }
+
+  /// The full picture from the disk cache the detail page fills. Reads the cache only.
+  Future<File?> _cachedFull() async {
+    final String full = widget.cachedFullUrl?.trim() ?? '';
+    if (!isValidNetworkUrl(full)) return null;
+    try {
+      return (await PrismFullImageCache.instance.getFileFromCache(full))?.file;
     } catch (_) {
       return null;
     }
@@ -222,6 +243,14 @@ class _PrismImageTileState extends State<PrismImageTile> {
     fit: BoxFit.cover,
     cacheHeight: decodeHeight,
     cacheWidth: widget.memCacheWidth,
+    frameBuilder: (context, child, frame, sync) => sync
+        ? child
+        : AnimatedOpacity(
+            opacity: frame == null ? 0 : 1,
+            duration: context.motion(widget.placeholderColor == null ? PrismDurations.fast : _colourFade),
+            curve: PrismCurves.enter,
+            child: child,
+          ),
     errorBuilder: (context, _, _) =>
         ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest, child: const SizedBox.expand()),
   );

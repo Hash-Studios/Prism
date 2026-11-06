@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show lerpDouble;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -49,7 +50,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:url_launcher/url_launcher.dart';
 
 @RoutePage()
@@ -558,6 +559,47 @@ class _ProfileChildState extends State<_ProfileChild> {
             )
           : defaultPhoto,
     );
+    // 86 points across with the frame or the accent ring.
+    final Widget headerAvatar = ProfileFrame.draws(cosmetics.frame, premium: cosmetics.premium)
+        ? ProfileFrame(frameId: cosmetics.frame, premium: cosmetics.premium, size: _headerAvatarSize, child: photo)
+        : Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              // The accent ring follows the theme, like the camera badge in the edit panel.
+              border: Border.all(color: cs.primary, width: 4),
+              color: cs.onSurface,
+            ),
+            child: photo,
+          );
+    // As the header collapses, the avatar shrinks and moves into the bar next to the name, so the page keeps its
+    // identity. With reduce motion it stays in the header, and a small copy fades in with the name.
+    final bool carryAvatar = !context.reduceMotion;
+    final TextStyle titleStyle = PrismTextStyles.cardTitle(context).copyWith(fontSize: 17);
+    // The collapsed bar: Back at the start; the menu (and Gift on a creator profile) at the end. The title gets the
+    // same room on both sides, so the toolbar centres it on the screen and the carried avatar can find its slot.
+    final double trailingWidth =
+        (ownProfile ? 44 : 44 + PrismSpace.xxs + 44) + sideSafeColumnWidth(context) + PrismSpace.sm;
+    final double titleMaxWidth = math.max(
+      0,
+      screen.width - 2 * (math.max(PrismSpace.sm + 44, trailingWidth) + NavigationToolbar.kMiddleSpacing),
+    );
+    final TextPainter namePainter = TextPainter(
+      text: TextSpan(text: displayName, style: titleStyle),
+      maxLines: 1,
+      ellipsis: '\u2026',
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout(maxWidth: math.max(0, titleMaxWidth - _titleAvatarSize - PrismSpace.xs));
+    final double titleNameWidth = math.min(
+      namePainter.width.ceilToDouble(),
+      math.max(0, titleMaxWidth - _titleAvatarSize - PrismSpace.xs),
+    );
+    namePainter.dispose();
+    final double titleRowWidth = _titleAvatarSize + PrismSpace.xs + titleNameWidth;
+    final double slotOffset = titleRowWidth / 2 - _titleAvatarSize / 2;
+    final double collapsedAvatarX =
+        screen.width / 2 + (Directionality.of(context) == TextDirection.rtl ? slotOffset : -slotOffset);
+    final double expandedAvatarY = coverHeight - 56 + _headerAvatarSize / 2;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -582,14 +624,32 @@ class _ProfileChildState extends State<_ProfileChild> {
                   if (opacity == 0) return const SizedBox.shrink();
                   // The name is already read out in the header below, so this copy is visual only.
                   return ExcludeSemantics(
-                    child: Opacity(
-                      opacity: opacity,
-                      child: Text(
-                        displayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: PrismTextStyles.cardTitle(context).copyWith(fontSize: 17),
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        // The carried header avatar lands on this slot.
+                        SizedBox.square(
+                          key: const ValueKey<String>('profile-title-avatar-slot'),
+                          dimension: _titleAvatarSize,
+                          child: carryAvatar
+                              ? null
+                              : Opacity(
+                                  opacity: opacity,
+                                  child: FittedBox(child: headerAvatar),
+                                ),
+                        ),
+                        const SizedBox(width: PrismSpace.xs),
+                        // Flexible: mid-collapse, the fading actions can still take some of the bar.
+                        Flexible(
+                          child: Opacity(
+                            opacity: opacity,
+                            child: SizedBox(
+                              width: titleNameWidth,
+                              child: Text(displayName, maxLines: 1, overflow: TextOverflow.ellipsis, style: titleStyle),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 },
@@ -715,7 +775,14 @@ class _ProfileChildState extends State<_ProfileChild> {
                               child: Stack(
                                 fit: StackFit.expand,
                                 children: <Widget>[
-                                  ProfileCover(url: _profile.coverPhoto),
+                                  // With no custom cover, the latest upload (once the gallery has loaded it) is the art.
+                                  BlocSelector<PublicProfileBloc, PublicProfileState, String?>(
+                                    selector: (PublicProfileState state) => state.walls.isEmpty
+                                        ? null
+                                        : state.walls.first.wallpaperThumb ?? state.walls.first.wallpaperUrl,
+                                    builder: (BuildContext context, String? latestWall) =>
+                                        ProfileCover(url: _profile.coverPhoto, seed: _profile.id, artUrl: latestWall),
+                                  ),
                                   // The bottom 40% of the cover fades into the page, so it has no hard edge.
                                   IgnorePointer(
                                     child: DecoratedBox(
@@ -735,33 +802,37 @@ class _ProfileChildState extends State<_ProfileChild> {
                             const SizedBox(width: double.maxFinite, height: 37),
                           ],
                         ),
-                        Positioned(
-                          top: coverHeight - 56,
-                          child: SizedBox(
-                            width: screen.width,
-                            child: Center(
-                              child: ProfileFrame.draws(cosmetics.frame, premium: cosmetics.premium)
-                                  ? ProfileFrame(
-                                      frameId: cosmetics.frame,
-                                      premium: cosmetics.premium,
-                                      size: 86,
-                                      child: photo,
-                                    )
-                                  : Container(
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        // The accent ring follows the theme, like the camera badge in the edit panel.
-                                        border: Border.all(color: cs.primary, width: 4),
-                                        color: cs.onSurface,
-                                      ),
-                                      child: photo,
-                                    ),
+                        if (!carryAvatar)
+                          Positioned(
+                            top: coverHeight - 56,
+                            child: SizedBox(
+                              width: screen.width,
+                              child: Center(child: headerAvatar),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ),
+                  // Outside the fading background, so the avatar stays visible while scroll carries it into the bar.
+                  if (carryAvatar)
+                    Builder(
+                      builder: (BuildContext context) {
+                        final double t = _headerExpansion(context);
+                        final double x = lerpDouble(collapsedAvatarX, screen.width / 2, t)!;
+                        final double y = lerpDouble(topInset + kToolbarHeight / 2, expandedAvatarY, t)!;
+                        return Positioned(
+                          key: const ValueKey<String>('profile-carried-avatar'),
+                          left: x - _headerAvatarSize / 2,
+                          top: y - _headerAvatarSize / 2,
+                          child: IgnorePointer(
+                            child: Transform.scale(
+                              scale: lerpDouble(_titleAvatarSize / _headerAvatarSize, 1, t),
+                              child: headerAvatar,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   // A hairline under the pinned bar once the cover has scrolled away, as on every other page.
                   PositionedDirectional(
                     start: 0,
@@ -938,14 +1009,15 @@ class _ProfileChildState extends State<_ProfileChild> {
             if (ownProfile)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(PrismSpace.page, 8, PrismSpace.page, 6),
+                  // Tight gaps around the cards, so the gallery starts higher.
+                  padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxs, PrismSpace.page, PrismSpace.xxs),
                   child: RankProgressCard(onOpenShop: () => context.router.root.push(const ShopRoute())),
                 ),
               ),
             if (showProfileCompletenessCard)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(PrismSpace.page, 8, PrismSpace.page, 6),
+                  padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxs, PrismSpace.page, PrismSpace.xxs),
                   child: ProfileCompletenessCard(
                     status: profileCompletenessStatus,
                     onCompleteNow: () async {
@@ -1047,16 +1119,22 @@ class _StatPill extends StatelessWidget {
   }
 }
 
-/// How far the pinned header has collapsed, as the opacity of what shows only when it is collapsed: 0 while the
-/// cover shows, rising to 1 over the last quarter of the collapse. Reads the enclosing app bar's settings.
-double _collapsedTitleOpacity(BuildContext context) {
+const double _headerAvatarSize = 86;
+const double _titleAvatarSize = 28;
+
+/// How open the pinned header is: 1 while the whole cover shows, 0 once it has collapsed into the bar. Reads the
+/// enclosing app bar's settings.
+double _headerExpansion(BuildContext context) {
   final FlexibleSpaceBarSettings? settings = context.dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
-  if (settings == null) return 0;
+  if (settings == null) return 1;
   final double range = settings.maxExtent - settings.minExtent;
-  if (range <= 0) return 1;
-  final double expanded = ((settings.currentExtent - settings.minExtent) / range).clamp(0.0, 1.0);
-  return (1 - expanded / 0.25).clamp(0.0, 1.0);
+  if (range <= 0) return 0;
+  return ((settings.currentExtent - settings.minExtent) / range).clamp(0.0, 1.0);
 }
+
+/// How far the pinned header has collapsed, as the opacity of what shows only when it is collapsed: 0 while the
+/// cover shows, rising to 1 over the last quarter of the collapse.
+double _collapsedTitleOpacity(BuildContext context) => (1 - _headerExpansion(context) / 0.25).clamp(0.0, 1.0);
 
 String _compactCount(BuildContext context, int count) =>
     NumberFormat.compact(locale: Localizations.localeOf(context).toString()).format(count);

@@ -284,6 +284,51 @@ void main() {
     expect(bloc.state.hasMore, isFalse);
   });
 
+  test('a Home grid drops repeats and Wallhaven re-uploads on the first page and on later pages', () async {
+    // One picture uploaded under several ids shares its pixel size, palette and file size.
+    FeedItemEntity upload(String id, String picture) => FeedItemEntity.wallhaven(
+      id: id,
+      wallpaper: WallhavenWallpaper(
+        core: WallpaperCore(
+          id: id,
+          source: WallpaperSource.wallhaven,
+          fullUrl: 'https://w.wallhaven.cc/full/$id.jpg',
+          thumbnailUrl: 'https://th.wallhaven.cc/small/$id.jpg',
+          sizeBytes: 900000 + id.length,
+        ),
+        dimensionX: 1440,
+        dimensionY: 3200,
+        colors: <String>[picture],
+      ),
+    );
+    final fetch = _MockFetchCategoryFeedUseCase();
+    when(() => fetch(any())).thenAnswer((invocation) async {
+      final params = invocation.positionalArguments.single as FetchCategoryFeedParams;
+      return Result.success(
+        CategoryFeedPage(
+          items: params.refresh
+              ? <FeedItemEntity>[upload('a', '#red'), upload('a2', '#red'), upload('b', '#blue'), upload('b', '#blue')]
+              : <FeedItemEntity>[upload('b', '#blue'), upload('a3', '#red'), upload('c', '#green')],
+          hasMore: params.refresh,
+        ),
+      );
+    });
+    final bloc = CategoryFeedBloc(
+      _MockLoadCategoriesUseCase(),
+      fetch,
+      FakeUserBlockRepository.pending()..completeInitial(<String>{}),
+    );
+    addTearDown(bloc.close);
+
+    bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(bloc.state.items.map((e) => e.id), <String>['a', 'b']);
+
+    bloc.add(const CategoryFeedEvent.fetchMoreRequested());
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(bloc.state.items.map((e) => e.id), <String>['a', 'b', 'c']);
+  });
+
   test('selecting another category clears the old items, and a same-category refresh keeps them', () async {
     const other = CategoryEntity(
       name: 'Other',

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_cover.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -67,7 +68,8 @@ class EditProfileHeader extends StatelessWidget {
                         key: changeCoverKey,
                         behavior: HitTestBehavior.opaque,
                         onTap: onChangeCover,
-                        child: ProfileCover(url: coverUrl, file: coverFile),
+                        // The edit panel is always the user's own profile, so the fallback art matches it.
+                        child: ProfileCover(url: coverUrl, file: coverFile, seed: app_state.prismUser.id),
                       ),
                     ),
                     const _EditCoverHint(),

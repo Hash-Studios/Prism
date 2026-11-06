@@ -155,15 +155,42 @@ class _PrismSheetRoute<T> extends ModalSheetRoute<T> {
 
   static int open = 0;
 
-  CurvedAnimation? _curved;
+  /// One animation for the sheet and the dim, so they always finish together.
+  late final CurvedAnimation _curved;
 
-  // The dim fades on the sheet's own curves. During a swipe the package ties it to how much of the sheet shows, so
-  // the dim lightens as the sheet is dragged down.
+  /// The share of the page height the page slides to hide the sheet: from the sheet's top to the bottom of the
+  /// screen. Before the first layout the sheet has no metrics, so the page slides its full height.
+  double _travel(double height) {
+    final SheetMetrics? metrics = sheetController.metrics;
+    if (metrics == null || !height.isFinite || height <= 0) return 1;
+    return math.min(1, (metrics.offset + PrismBottomSheet.inset) / height);
+  }
+
+  /// How much of the dim shows. During a swipe it follows how much of the sheet shows, as smooth_sheets does, and
+  /// stays full until the sheet passes its lowest detent.
+  double get _dimShare {
+    if (!(navigator?.userGestureInProgress ?? false)) return _curved.value;
+    final SheetMetrics? metrics = sheetController.metrics;
+    final double lowest = metrics == null || metrics.size.height <= 0
+        ? 1
+        : (metrics.minOffset / metrics.size.height).clamp(0.0, 1.0);
+    return lowest > 0 ? (sheetVisibility.value / lowest).clamp(0.0, 1.0) : sheetVisibility.value;
+  }
+
   @override
-  Curve get barrierCurve => animation?.status == AnimationStatus.reverse ? PrismCurves.exitReverse : transitionCurve;
+  ModalSheetBarrierBuilder<T>? get barrierBuilder =>
+      (_, onDismiss) => AnimatedModalBarrier(
+        onDismiss: onDismiss,
+        color: _SheetDim(this),
+        dismissible: barrierDismissible,
+        semanticsLabel: barrierLabel,
+        barrierSemanticsDismissible: semanticsDismissible,
+      );
 
-  // smooth_sheets runs the close with the open curve backwards, so an ease-out holds still and then drops. Ease out
-  // on the way down too. A swipe-to-dismiss keeps the package's own linear follow.
+  // The sheet slides its own height, not the screen's, on the dim's animation, so the dim reaches zero in the frame
+  // the sheet leaves the screen. smooth_sheets runs the close with the open curve backwards, so an ease-out holds
+  // still and then drops: ease out on the way down too. A swipe keeps the package's own linear follow. Both paths
+  // build a SlideTransition under a LayoutBuilder, so a swipe that starts never remounts the sheet.
   @override
   Widget buildTransitions(
     BuildContext context,
@@ -171,33 +198,49 @@ class _PrismSheetRoute<T> extends ModalSheetRoute<T> {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    if (navigator?.userGestureInProgress ?? false) {
-      return super.buildTransitions(context, animation, secondaryAnimation, child);
-    }
-    if (_curved?.parent != animation) {
-      _curved?.dispose();
-      _curved = CurvedAnimation(parent: animation, curve: transitionCurve, reverseCurve: PrismCurves.exitReverse);
-    }
-    return SlideTransition(
-      position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(_curved!),
-      child: child,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (navigator?.userGestureInProgress ?? false) {
+          return super.buildTransitions(context, animation, secondaryAnimation, child);
+        }
+        return SlideTransition(
+          position: _curved.drive(
+            Animatable<Offset>.fromCallback((t) => Offset(0, (1 - t) * _travel(constraints.maxHeight))),
+          ),
+          child: child,
+        );
+      },
     );
   }
 
   @override
   void install() {
     super.install();
+    _curved = CurvedAnimation(parent: animation!, curve: transitionCurve, reverseCurve: PrismCurves.exitReverse);
     open += 1;
   }
 
   @override
   void dispose() {
     open -= 1;
-    _curved?.dispose();
+    _curved.dispose();
     // One frame later, so a notification the controller queued for the end of this frame still finds it alive.
     WidgetsBinding.instance.addPostFrameCallback((_) => sheetController.dispose());
     super.dispose();
   }
+}
+
+/// The barrier colour on the route's sheet animation.
+class _SheetDim extends Animation<Color?> with AnimationWithParentMixin<double> {
+  _SheetDim(this.route);
+
+  final _PrismSheetRoute<dynamic> route;
+
+  @override
+  Animation<double> get parent => route._curved;
+
+  @override
+  Color? get value => Color.lerp(PrismBottomSheet.barrier.withAlpha(0), PrismBottomSheet.barrier, route._dimShare);
 }
 
 /// Floats the sheet on its inset, removes the inset as the sheet nears full height, and lifts the sheet above the

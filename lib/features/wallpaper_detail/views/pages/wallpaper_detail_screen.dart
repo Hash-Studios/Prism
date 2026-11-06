@@ -832,7 +832,37 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   bool _imageUnderStatusBar(double offset) => offset > _imageStatusStart && offset < _imageStatusEnd;
 
   /// Whether the card's bottom edge has passed the bottom of back and the clock. Follows the card through its morph.
-  bool _headerOver() => _scroll.hasClients && _scroll.offset > _cardShown.height - _chromeSize - _chromeInset;
+  bool _headerOver() => _scroll.hasClients && _scroll.offset > _headerOffset;
+
+  /// The scroll offset past which the solid header takes over.
+  double get _headerOffset => _cardShown.height - _chromeSize - _chromeInset;
+
+  /// The swatches fade out as the card scrolls up and are gone when the solid header takes over, so the header's
+  /// thumbnail never arrives over them, however fast the page moves. Follows the scroll, so it needs no reduce motion
+  /// case.
+  Widget _fadeBeforeHeader(Widget child) => AnimatedBuilder(
+    animation: Listenable.merge(<Listenable>[_scroll, _shapeMorph]),
+    child: child,
+    builder: (context, child) {
+      final double opacity = _scroll.hasClients
+          ? ((_headerOffset - _scroll.offset) / _swatchTarget).clamp(0.0, 1.0)
+          : 1;
+      return IgnorePointer(
+        ignoring: opacity == 0,
+        child: Opacity(key: const ValueKey<String>('detail-swatches'), opacity: opacity, child: child),
+      );
+    },
+  );
+
+  /// Crossfades a row from what showed while Prism confirmed the wall to the real row. Both have the same height, so
+  /// nothing under them moves.
+  Widget _settle(bool pending, Widget child) => AnimatedSwitcher(
+    duration: context.motion(PrismDurations.fast),
+    switchInCurve: PrismCurves.enter,
+    switchOutCurve: PrismCurves.exitReverse,
+    layoutBuilder: (current, previous) => Stack(children: [...previous, if (current != null) current]),
+    child: KeyedSubtree(key: ValueKey<bool>(pending), child: child),
+  );
 
   void _loadMoreRecommendations() {
     context.read<WallpaperDetailBloc>().add(const LoadRecommendations());
@@ -1458,64 +1488,67 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 : const EdgeInsetsDirectional.only(start: _chromeInset - _chromePad, top: _chromeInset - _chromePad),
             duration: context.motion(PrismDurations.fast),
             curve: PrismCurves.move,
-            child: AnimatedSwitcher(
-              duration: context.motion(PrismDurations.fast),
-              switchInCurve: PrismCurves.enter,
-              switchOutCurve: PrismCurves.exitReverse,
-              child: header
-                  ? SizedBox.square(
-                      key: const ValueKey<String>('detail-header-back'),
-                      dimension: _chromeSize,
-                      child: OverflowBox(
-                        maxWidth: kMinInteractiveDimension,
-                        maxHeight: kMinInteractiveDimension,
-                        child: PrismIconButton(
-                          icon: Icons.chevron_left_rounded,
-                          iconSize: 28,
-                          tooltip: backTooltip,
-                          onPressed: back,
+            // The thumbnail rides in Back's row, a fixed gap after it, so the two never overlap while Back glides.
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedSwitcher(
+                  duration: context.motion(PrismDurations.fast),
+                  switchInCurve: PrismCurves.enter,
+                  switchOutCurve: PrismCurves.exitReverse,
+                  child: header
+                      ? SizedBox.square(
+                          key: const ValueKey<String>('detail-header-back'),
+                          dimension: _chromeSize,
+                          child: OverflowBox(
+                            maxWidth: kMinInteractiveDimension,
+                            maxHeight: kMinInteractiveDimension,
+                            child: PrismIconButton(
+                              icon: Icons.chevron_left_rounded,
+                              iconSize: 28,
+                              tooltip: backTooltip,
+                              onPressed: back,
+                            ),
+                          ),
+                        )
+                      : KeyedSubtree(
+                          key: const ValueKey<String>('detail-card-back'),
+                          child: _chromeButton(
+                            icon: Icons.chevron_left_rounded,
+                            iconSize: 28,
+                            tooltip: backTooltip,
+                            onPressed: back,
+                          ),
+                        ),
+                ),
+                // The wall, small, next to back once the card has scrolled away, so the similar walls keep their
+                // source in view.
+                if (headerThumb != null) ...[
+                  const SizedBox(width: PrismSpace.xxs),
+                  IgnorePointer(
+                    ignoring: !header,
+                    child: AnimatedScale(
+                      scale: header ? 1 : 0.6,
+                      duration: context.motion(PrismDurations.fast),
+                      curve: PrismCurves.enter,
+                      child: AnimatedOpacity(
+                        key: const ValueKey<String>('detail-header-thumb'),
+                        opacity: header ? 1 : 0,
+                        duration: context.motion(PrismDurations.fast),
+                        curve: PrismCurves.enter,
+                        // "^" carries this action for a screen reader.
+                        child: ExcludeSemantics(
+                          child: GestureDetector(onTap: _backToWall, child: headerThumb),
                         ),
                       ),
-                    )
-                  : KeyedSubtree(
-                      key: const ValueKey<String>('detail-card-back'),
-                      child: _chromeButton(
-                        icon: Icons.chevron_left_rounded,
-                        iconSize: 28,
-                        tooltip: backTooltip,
-                        onPressed: back,
-                      ),
                     ),
+                  ),
+                ],
+              ],
             ),
           ),
         ),
       ),
-      // The wall, small, next to back once the card has scrolled away, so the similar walls keep their source in view.
-      if (headerThumb != null)
-        PositionedDirectional(
-          start: padding.left + _cardInset + centring + _chromePad + _chromeSize + PrismSpace.xxs,
-          top: top + (_chromeSize - _thumbSize) / 2,
-          child: _hiddenWhenImmersive(
-            IgnorePointer(
-              ignoring: !header,
-              child: AnimatedScale(
-                scale: header ? 1 : 0.6,
-                duration: context.motion(PrismDurations.fast),
-                curve: PrismCurves.enter,
-                child: AnimatedOpacity(
-                  key: const ValueKey<String>('detail-header-thumb'),
-                  opacity: header ? 1 : 0,
-                  duration: context.motion(PrismDurations.fast),
-                  curve: PrismCurves.enter,
-                  // "^" carries this action for a screen reader.
-                  child: ExcludeSemantics(
-                    child: GestureDetector(onTap: _backToWall, child: headerThumb),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
       if (onClock != null)
         PositionedDirectional(
           end: padding.right + _cardInset + centring + _chromeInset,
@@ -1829,15 +1862,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                           opacity: immersion?.controls ?? kAlwaysCompleteAnimation,
                           sliver: SliverMainAxisGroup(
                             slivers: [
-                              if (canonicalLoading)
-                                SliverToBoxAdapter(
-                                  child: SafeArea(
-                                    top: false,
-                                    bottom: false,
-                                    child: _panelColumn(_buildPendingDetails()),
-                                  ),
-                                )
-                              else ...[
+                              if (!canonicalLoading)
                                 if (state.variants case final VariantGroup group)
                                   SliverToBoxAdapter(
                                     child: SafeArea(
@@ -1860,42 +1885,64 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                                       ),
                                     ),
                                   ),
-                                // Under the solid header its primary action moves up there, so the bar fades. It stays
-                                // in the tree: the header's Set opens the Set screen through this bar's button.
-                                SliverToBoxAdapter(
-                                  child: SafeArea(
-                                    top: false,
-                                    bottom: false,
-                                    child: AnimatedBuilder(
-                                      animation: _shapeMorph,
-                                      child: _panelColumn(_buildActionBar(context, state)),
-                                      builder: (context, bar) => IgnorePointer(
-                                        ignoring: _headerOver(),
-                                        child: AnimatedOpacity(
-                                          key: const ValueKey<String>('detail-action-bar'),
-                                          opacity: _headerOver() ? 0 : 1,
-                                          duration: context.motion(PrismDurations.fast),
-                                          curve: PrismCurves.enter,
-                                          child: _landed(bar!),
-                                        ),
+                              // Under the solid header its primary action moves up there, so the bar fades. It stays
+                              // in the tree: the header's Set opens the Set screen through this bar's button.
+                              SliverToBoxAdapter(
+                                key: const ValueKey<String>('detail-actions-row'),
+                                child: SafeArea(
+                                  top: false,
+                                  bottom: false,
+                                  child: AnimatedBuilder(
+                                    animation: _shapeMorph,
+                                    // While Prism confirms the wall, its known favourite count shows among bones.
+                                    child: _panelColumn(
+                                      _settle(
+                                        canonicalLoading,
+                                        canonicalLoading
+                                            ? _buildPendingActionBar(context, state.entity)
+                                            : _landed(_buildActionBar(context, state)),
+                                      ),
+                                    ),
+                                    builder: (context, bar) => IgnorePointer(
+                                      ignoring: _headerOver(),
+                                      child: AnimatedOpacity(
+                                        key: const ValueKey<String>('detail-action-bar'),
+                                        opacity: _headerOver() ? 0 : 1,
+                                        duration: context.motion(PrismDurations.fast),
+                                        curve: PrismCurves.enter,
+                                        child: bar,
                                       ),
                                     ),
                                   ),
                                 ),
-                                SliverToBoxAdapter(
-                                  child: SafeArea(
-                                    top: false,
-                                    bottom: false,
-                                    child: _panelColumn(_buildColorBar(context, state)),
+                              ),
+                              SliverToBoxAdapter(
+                                key: const ValueKey<String>('detail-swatches-row'),
+                                child: SafeArea(
+                                  top: false,
+                                  bottom: false,
+                                  child: _fadeBeforeHeader(
+                                    _panelColumn(
+                                      _settle(
+                                        canonicalLoading,
+                                        canonicalLoading
+                                            ? _buildPendingColorBar(context, state.entity)
+                                            : _buildColorBar(context, state),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                SliverToBoxAdapter(
-                                  child: SafeArea(
-                                    top: false,
-                                    bottom: false,
-                                    child: _panelColumn(_buildSummary(context, state)),
-                                  ),
+                              ),
+                              // Creator, source and title are known from the tile, so they show from the first frame.
+                              SliverToBoxAdapter(
+                                key: const ValueKey<String>('detail-summary-row'),
+                                child: SafeArea(
+                                  top: false,
+                                  bottom: false,
+                                  child: _panelColumn(_buildSummary(context, state)),
                                 ),
+                              ),
+                              if (!canonicalLoading) ...[
                                 if (!state.panelCollapsed)
                                   SliverToBoxAdapter(
                                     child: SafeArea(
@@ -2266,6 +2313,84 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           ),
         ),
       ),
+    );
+  }
+
+  /// The action bar while Prism confirms the wall: the heart and its known count, and bones for the actions that wait
+  /// on the wall's access. As tall as [WallpaperActionBar], so the rows under it stay put when it crossfades.
+  Widget _buildPendingActionBar(BuildContext context, FeedItemEntity entity) {
+    final Color muted = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38);
+    return SizedBox(
+      key: const ValueKey<String>('detail-pending-actions'),
+      height: WallpaperActionBar.height,
+      child: Padding(
+        padding: const EdgeInsetsDirectional.only(start: 4, top: 6, end: _sheetHPad),
+        child: PrismSkeleton(
+          child: Row(
+            children: [
+              SizedBox.square(dimension: 53, child: Icon(Icons.favorite_border_rounded, size: 28, color: muted)),
+              ..._favouriteCount(context, entity),
+              for (int i = 0; i < 2; i++)
+                const SizedBox.square(dimension: 50, child: Center(child: PrismBone.circle(size: 24))),
+              const Spacer(),
+              const PrismBone(width: 88, height: 40, radius: PrismRadius.md),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The swatches while Prism confirms the wall: the untouched wall is known, its palette is not yet.
+  Widget _buildPendingColorBar(BuildContext context, FeedItemEntity entity) => Padding(
+    padding: const EdgeInsetsDirectional.only(start: _sheetHPad - (_swatchTarget - _swatchSize) / 2),
+    child: Row(
+      children: [
+        _buildColorSwatch(
+          context: context,
+          thumbnailUrl: WallpaperDisplaySource.of(entity).thumbnail,
+          localFile: widget.localFile,
+          color: null,
+          isSelected: true,
+          onTap: null,
+          onLongPress: null,
+        ),
+        PrismSkeleton(
+          child: Row(
+            children: [
+              for (int i = 0; i < 3; i++)
+                const SizedBox.square(
+                  dimension: _swatchTarget,
+                  child: Center(child: PrismBone.circle(size: _swatchSize)),
+                ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  /// The published favourite total beside the heart, shown compact like the stats rows ("12.3K") and read as
+  /// "12,345 favourites". An invalid or unknown total stays hidden.
+  List<Widget> _favouriteCount(BuildContext context, FeedItemEntity entity) {
+    final TextStyle countStyle = PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500);
+    final NumberFormat compactCount = NumberFormat.compact(locale: context.l10n.localeName)..maximumFractionDigits = 1;
+    Widget count(int count) => count < 0
+        ? const SizedBox.shrink()
+        : Semantics(
+            container: true,
+            label: context.l10n.wallpaperFavouriteCount(count),
+            child: ExcludeSemantics(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(end: PrismSpace.xxs),
+                child: Text(compactCount.format(count), style: countStyle),
+              ),
+            ),
+          );
+    return entity.when(
+      prism: (_, wall) => [PrismFavouriteCount(id: wall.id, builder: (_, total) => count(total))],
+      wallhaven: (_, wall) => [if (wall.favorites ?? wall.core.favourites case final int total) count(total)],
+      pexels: (_, _) => const <Widget>[],
     );
   }
 
@@ -2830,21 +2955,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             label: context.l10n.wallpaperSetAsWallpaper,
             child: setButton(label: context.l10n.wallpaperSet),
           );
-    final TextStyle countStyle = PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500);
-    final NumberFormat compactCount = NumberFormat.compact(locale: context.l10n.localeName)..maximumFractionDigits = 1;
-    // Shown compact like the stats rows ("12.3K") and read as "12,345 favourites". An invalid total stays hidden.
-    Widget favouriteCount(int count) => count < 0
-        ? const SizedBox.shrink()
-        : Semantics(
-            container: true,
-            label: context.l10n.wallpaperFavouriteCount(count),
-            child: ExcludeSemantics(
-              child: Padding(
-                padding: const EdgeInsetsDirectional.only(end: PrismSpace.xxs),
-                child: Text(compactCount.format(count), style: countStyle),
-              ),
-            ),
-          );
     // The bar keeps 8 at its end. This brings Save in to the page margin, in line with the rows under it.
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: _sheetHPad - 8),
@@ -2870,13 +2980,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                   ),
                 ),
                 // The published total sits beside the heart.
-                ...entity.when(
-                  prism: (_, wall) => [PrismFavouriteCount(id: wall.id, builder: (_, count) => favouriteCount(count))],
-                  wallhaven: (_, wall) => [
-                    if (wall.favorites ?? wall.core.favourites case final int count) favouriteCount(count),
-                  ],
-                  pexels: (_, _) => const <Widget>[],
-                ),
+                ..._favouriteCount(context, entity),
               ],
             ),
           ),

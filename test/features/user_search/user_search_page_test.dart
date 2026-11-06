@@ -10,6 +10,7 @@ import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_row.dart';
 import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/creator_directory/views/widgets/creator_directory_card.dart';
 import 'package:Prism/features/user_search/domain/entities/user_search_user.dart';
 import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -19,11 +20,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/favourite_test_scope.dart';
+import '../creator_directory/creator_directory_test_support.dart';
 
 class _MockUserSearchBloc extends MockBloc<UserSearchEvent, UserSearchState> implements UserSearchBloc {}
 
 void main() {
   late _MockUserSearchBloc bloc;
+  late FakeCreatorDirectoryRepository directory;
+
+  setUpFavouriteCounts();
 
   void stubState(UserSearchState state) {
     when(() => bloc.state).thenReturn(state);
@@ -41,6 +47,8 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'user_1'
       ..loggedIn = true;
+    directory = FakeCreatorDirectoryRepository();
+    registerCreatorDirectoryFakes(repository: directory);
     stubState(UserSearchState.initial());
   });
 
@@ -70,6 +78,22 @@ void main() {
     expect(find.byType(Glint), findsOneWidget);
     expect(find.text('Search creators by name'), findsOneWidget);
     expect(find.widgetWithText(PrismButton, 'Creators to follow'), findsOneWidget);
+  });
+
+  testWidgets('empty query shows up to 6 suggested creator cards and See all', (tester) async {
+    directory.pages[(null, null)] = creatorPage(<DirectoryCreator>[
+      for (int i = 0; i < 8; i++) directoryCreator('c$i', rank: i),
+    ]);
+    tester.view.physicalSize = const Size(800, 6000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pumpPage(tester);
+    await tester.pump();
+
+    expect(find.text('Creators to follow'), findsOneWidget);
+    expect(find.text('See all'), findsOneWidget);
+    expect(find.byType(CreatorDirectoryCard), findsNWidgets(6));
+    expect(find.byType(Glint), findsNothing);
   });
 
   testWidgets('submitting asks the bloc to search and clearing resets it', (tester) async {

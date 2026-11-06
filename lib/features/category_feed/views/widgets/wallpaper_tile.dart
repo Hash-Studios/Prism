@@ -6,6 +6,7 @@ import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/placeholder_color.dart';
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/gesture_hint.dart';
@@ -130,6 +131,7 @@ class WallpaperTile extends StatelessWidget {
         child: PrismWallTile(
           url: item.thumbnailUrl,
           fallbackUrl: item.fullUrl,
+          cachedFullUrl: WallpaperDisplaySource.of(item).full,
           heroTag: heroTag,
           semanticLabel: item.semanticLabel(context.l10n),
           memCacheHeight: decodeHeight,

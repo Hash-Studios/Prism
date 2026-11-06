@@ -463,15 +463,17 @@ class _SearchScreenState extends State<SearchScreen> {
                   },
                 ),
               ),
-              // Like iOS: on focus the photo and filter buttons give way to a Cancel button that slides in, and the
-              // field resizes with it. Unfocus reverses it.
+              // Like iOS: on focus the photo and filter buttons fade and slide out in the first 100 ms, then Cancel
+              // slides in over the next 120 ms, so the two never overlap. The field resizes with them. Unfocus runs
+              // the same order the other way.
               AnimatedSize(
                 duration: context.motion(PrismDurations.fast),
                 curve: PrismCurves.enter,
                 alignment: AlignmentDirectional.centerStart,
                 child: AnimatedSwitcher(
-                  duration: context.motion(PrismDurations.fast),
-                  switchInCurve: PrismCurves.enter,
+                  duration: context.motion(const Duration(milliseconds: 220)),
+                  reverseDuration: context.motion(const Duration(milliseconds: 100)),
+                  switchInCurve: const Interval(100 / 220, 1, curve: PrismCurves.enter),
                   switchOutCurve: PrismCurves.exitReverse,
                   layoutBuilder: (current, previous) =>
                       Stack(alignment: AlignmentDirectional.centerEnd, children: <Widget>[...previous, ?current]),

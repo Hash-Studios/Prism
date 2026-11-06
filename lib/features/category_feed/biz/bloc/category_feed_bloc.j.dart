@@ -111,7 +111,7 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
         state.copyWith(
           status: LoadStatus.success,
           actionStatus: ActionStatus.success,
-          items: BlockedCreatorsFilter.filterFeedItems(page.items, _userBlockRepository.blockedCreators),
+          items: distinctWalls(BlockedCreatorsFilter.filterFeedItems(page.items, _userBlockRepository.blockedCreators)),
           hasMore: page.hasMore,
           isFetchingMore: false,
           failure: null,
@@ -146,13 +146,10 @@ class CategoryFeedBloc extends Bloc<CategoryFeedEvent, CategoryFeedState> {
 
     result.fold(
       onSuccess: (page) {
-        final merged = <FeedItemEntity>[
+        final uniqueById = distinctWalls([
           ...state.items,
           ...BlockedCreatorsFilter.filterFeedItems(page.items, _userBlockRepository.blockedCreators),
-        ];
-        final uniqueById = <String, FeedItemEntity>{
-          for (final item in merged) item.id: item,
-        }.values.toList(growable: false);
+        ]);
 
         emit(
           state.copyWith(

@@ -145,7 +145,8 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion>
 
   void _routePointer(PointerEvent event) {
     if (event is PointerDownEvent && _pointer != null && event.pointer != _pointer) _close(animate: false);
-    if (event is PointerCancelEvent && event.pointer == _pointer) _close(animate: false);
+    // The system took the touch: settle like a lift, without an action.
+    if (event is PointerCancelEvent && event.pointer == _pointer) _close();
   }
 
   void _closeForScroll() {
@@ -553,7 +554,8 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion>
           _move(overlayBox.globalToLocal(details.globalPosition));
           _close(action: _hovered);
         },
-        onLongPressCancel: () => _close(animate: false),
+        // Before the menu opens there is nothing to close. After, only a cancelled pointer gets here.
+        onLongPressCancel: _close,
         child: CustomPaint(
           key: const ValueKey<String>('wallpaper-hold-ring'),
           foregroundPainter: _buildRingPainter(context),

@@ -103,6 +103,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.bySemanticsLabel('Streak freeze, 50 coins'));
     await tester.tap(find.bySemanticsLabel('Streak freeze, 50 coins'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
