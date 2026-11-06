@@ -105,10 +105,10 @@ The Themes page lets the user choose the app theme mode (system, light or dark),
 
 ### Test clock on a device
 
-Debug and profile builds read `PRISM_SEASON_DATE` (ISO date and time) as the season clock. Time still runs from that point. Release builds ignore it. Example:
+Debug and profile builds read `PRISM_SEASON_DATE` as the season clock. The value is a local time written as `yyyyMMddHHmm`. Time still runs from that point. Release builds ignore it. It is an int define, so it is not a Doppler key. Example for 31 December 2026, 20:00:
 
 ```sh
-make run RUN_ARGS="--dart-define=PRISM_SEASON_DATE=2026-12-31T20:00:00"
+make run RUN_ARGS="--dart-define=PRISM_SEASON_DATE=202612312000"
 ```
 
 Do not change the system clock on a shared device.

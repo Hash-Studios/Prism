@@ -14,10 +14,12 @@ DateTime Function() seasonClock = _defaultSeasonClock;
 
 DateTime seasonNow() => seasonClock();
 
-/// `PRISM_SEASON_DATE` moves the season clock in debug and profile builds, for QA on a shared device. Time still runs.
+/// `PRISM_SEASON_DATE` (yyyyMMddHHmm) moves the season clock in debug and profile builds, for QA on a shared device. Time still runs.
 final Duration _debugSeasonOffset = () {
-  final DateTime? forced = kReleaseMode ? null : DateTime.tryParse(Env.seasonDate);
-  return forced == null ? Duration.zero : forced.difference(DateTime.now());
+  const int d = Env.seasonDate;
+  if (kReleaseMode || d <= 0) return Duration.zero;
+  final DateTime forced = DateTime(d ~/ 100000000, d ~/ 1000000 % 100, d ~/ 10000 % 100, d ~/ 100 % 100, d % 100);
+  return forced.difference(DateTime.now());
 }();
 
 DateTime _defaultSeasonClock() => DateTime.now().add(_debugSeasonOffset);
