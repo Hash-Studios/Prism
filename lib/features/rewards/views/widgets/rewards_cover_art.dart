@@ -1,7 +1,4 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// A bundled wallpaper cover for slot [index]. Stable, so a tile always shows the same art.
@@ -39,41 +36,6 @@ class RewardsCoverArt extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// A soft blurred wallpaper wash over [child]'s surface. Low opacity keeps the text on [child] readable.
-/// It ignores touches, so the card under it stays tappable.
-class RewardsCoverWash extends StatelessWidget {
-  const RewardsCoverWash({super.key, required this.asset, required this.child, this.opacity = 0.2});
-
-  final String asset;
-  final Widget child;
-  final double opacity;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: <Widget>[
-        child,
-        Positioned.fill(
-          child: IgnorePointer(
-            child: ExcludeSemantics(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(PrismRadius.lg),
-                child: Opacity(
-                  opacity: opacity,
-                  child: ImageFiltered(
-                    imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                    child: Image.asset(asset, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox.shrink()),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

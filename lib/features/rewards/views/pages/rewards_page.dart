@@ -22,7 +22,6 @@ import 'package:Prism/features/rewards/views/widgets/freeze_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_activity_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.dart';
-import 'package:Prism/features/rewards/views/widgets/rewards_cover_art.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_hero.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_links_section.dart';
@@ -180,7 +179,7 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
             sliver: SliverList.list(
               children: <Widget>[
                 if (DailyMomentConfig.enabled) ...<Widget>[
-                  RewardsCoverWash(asset: rewardsCoverAsset(4), child: const DailyMomentTodayCard()),
+                  const DailyMomentTodayCard(),
                   KeyedSubtree(key: _earnKey, child: const RewardsEarnSection()),
                   LayoutBuilder(
                     builder: (context, constraints) => ExperimentalInlineAd(
