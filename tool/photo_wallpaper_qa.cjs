@@ -68,7 +68,11 @@ function installPhotoSeams(photo, root) {
 async function prepare() {
   assert.ok(fs.existsSync(path.join(__dirname, '../functions/lib/photoWallpaper.js')), 'Run npm run build in functions first');
   weekly('prepare');
-  fs.appendFileSync(file('functions/index.cjs'), `
+  // Only the photo callable. The weekly wrapper's Firestore triggers fire on the seed writes and can stop the
+  // Functions emulator, and this flow needs none of them. backend.cjs still installs the loopback port guard.
+  fs.writeFileSync(file('functions/index.cjs'), `'use strict';
+if (process.env.FUNCTIONS_EMULATOR !== 'true') throw Error('Emulator only');
+require('../backend.cjs').load(require('node:path').resolve(__dirname, '..'));
 const photo = require('./lib/photoWallpaper.js');
 (${installPhotoSeams.toString()})(photo, require('node:path').resolve(__dirname, '..'));
 exports.createPhotoWallpaper = photo.createPhotoWallpaper;
