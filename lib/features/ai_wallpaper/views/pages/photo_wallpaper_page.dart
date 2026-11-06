@@ -121,6 +121,13 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
     final PhotoSource? source = _source;
     final PhotoJobMode? mode = _mode;
     if (source == null || mode == null || _running) return;
+    if (mode == PhotoJobMode.extend && !(_placement?.validForServer ?? false)) {
+      setState(() {
+        _state = const PhotoJobFailed(reason: PhotoJobFailure.unreadable, charged: false, refunded: false);
+        _pendingRequestId = null;
+      });
+      return;
+    }
     final PhotoJob job = PhotoJob(source: source, mode: mode, target: _target, cost: _cost);
     final String requestId = _pendingRequestId ?? AnalyticsCorrelation.newId();
     final AppLocalizations l10n = context.l10n;
@@ -168,7 +175,9 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       _state = result;
       final bool replayable =
           result is PhotoJobFailed &&
-          (result.reason == PhotoJobFailure.network || result.reason == PhotoJobFailure.inProgress);
+          (result.reason == PhotoJobFailure.network ||
+              result.reason == PhotoJobFailure.inProgress ||
+              (result.charged && !result.refunded));
       if (!replayable) _pendingRequestId = null;
     });
   }
@@ -185,7 +194,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       _ => l10n.photoWallErrorGeneric,
     };
     if (!failed.charged) return message;
-    return '$message ${failed.refunded ? l10n.photoWallRefunded(_cost) : l10n.photoWallRefundPending}';
+    return '$message ${failed.refunded ? l10n.photoWallRefunded(failed.cost ?? _cost) : l10n.photoWallRefundPending}';
   }
 
   Future<File?> _resultFile(PhotoJobSucceeded done) async {
@@ -491,7 +500,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       valueListenable: CoinsService.instance.balanceNotifier,
       builder: (BuildContext context, int balance, _) {
         final int cost = _cost;
-        final bool short = mode != null && balance < cost;
+        final bool short = mode != null && balance < cost && _pendingRequestId == null;
         return _BarColumn(
           children: <Widget>[
             if (mode != null)

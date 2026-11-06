@@ -34,6 +34,10 @@ export interface PhotoJob {
   watermarked?: boolean;
   reason?: PhotoJobFailure;
   refunded?: boolean;
+  resultKey?: string;
+  cleanupPending?: boolean;
+  falRequestId?: string;
+  falCleanupPending?: boolean;
 }
 
 export type PhotoJobResult =
@@ -66,6 +70,8 @@ const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
 const DATA_URI = /^data:image\/[\w.+-]+;base64,([A-Za-z0-9+/]+={0,2})$/;
 const ACTION = "photoWallpaper";
 const DAY_MS = 86_400_000;
+const CLEANUP_BATCH_SIZE = 10;
+const CLEANUP_QUEUE_BUDGET_MS = 20_000;
 
 export interface PhotoDeps {
   /** SafeSearch of a JPEG. Throws when Vision fails. */
@@ -73,7 +79,7 @@ export interface PhotoDeps {
   fetch(url: string, init: RequestInit): Promise<Response>;
   falKey(): string;
   /** Stores a public, immutable JPEG under an unguessable key and returns its URL. */
-  store(jpeg: Buffer): Promise<{url: string; key: string}>;
+  store(jpeg: Buffer, key: string): Promise<{url: string; key: string}>;
   remove(key: string): Promise<void>;
 }
 
@@ -89,10 +95,9 @@ export const photoDeps: PhotoDeps = {
   },
   fetch: (url, init) => fetch(url, init),
   falKey: () => falKey.value(),
-  async store(jpeg) {
+  async store(jpeg, key) {
     const base = r2Env("R2_PREVIEW_BASE_URL");
     if (!base) throw new Error("R2 preview base URL is not set");
-    const key = `photo-walls/${randomBytes(16).toString("hex")}.jpg`;
     await new R2Storage().put("preview", key, jpeg, {}, "image/jpeg");
     return {url: `${base.replace(/\/+$/, "")}/${key}`, key};
   },
@@ -142,7 +147,7 @@ export function parsePlacement(raw: unknown, photo: Size, canvas: Size): Placeme
     const scale = Math.min(canvas.width / photo.width, canvas.height / photo.height);
     const width = Math.round(photo.width * scale);
     const height = Math.round(photo.height * scale);
-    return {left: Math.floor((canvas.width - width) / 2), top: Math.floor((canvas.height - height) / 2), width, height};
+    raw = {left: Math.floor((canvas.width - width) / 2), top: Math.floor((canvas.height - height) / 2), width, height};
   }
   if (typeof raw !== "object" || Array.isArray(raw)) throw bad("placement is invalid.");
   const {left, top, width, height} = raw as Record<string, unknown>;
@@ -203,10 +208,10 @@ function falBody(mode: PhotoJobMode, input: string, photo: Size, size: Size, pla
 }
 
 /**
- * Runs the model with the photo inline as a data URI. `X-Fal-Store-IO: 0` keeps fal from storing the request and
- * result, `sync_mode` returns the result inline, and the payload delete removes anything fal kept.
+ * Runs the model with the photo inline as a data URI. `X-Fal-Store-IO: 0` asks fal not to store the request and
+ * result, `sync_mode` requests the result inline, and failed payload deletes remain pending for the sweeper.
  */
-async function runFal(mode: PhotoJobMode, jpeg: Buffer, photo: Size, size: Size, placement: Placement | null,
+async function runFal(jobId: string, mode: PhotoJobMode, jpeg: Buffer, photo: Size, size: Size, placement: Placement | null,
   deps: PhotoDeps): Promise<Buffer> {
   const key = deps.falKey().trim();
   if (key === "") throw new Error("FAL_API_KEY is empty");
@@ -220,11 +225,19 @@ async function runFal(mode: PhotoJobMode, jpeg: Buffer, photo: Size, size: Size,
       signal: AbortSignal.timeout(FAL_TIMEOUT_MS),
     });
     requestId = response.headers.get("x-fal-request-id");
+    if (requestId && /^[A-Za-z0-9-]{8,64}$/.test(requestId)) {
+      await db.collection(PHOTO_JOBS).doc(jobId).update({falRequestId: requestId, falCleanupPending: true});
+    }
     if (!response.ok) throw new Error(`fal request failed with ${response.status}`);
     const payload = (await response.json()) as {image?: {url?: unknown}} | null;
     const url = payload?.image?.url;
     const inline = typeof url === "string" ? DATA_URI.exec(url) : null;
-    if (inline) return Buffer.from(inline[1], "base64");
+    if (inline) {
+      if (inline[1].length > Math.ceil(MAX_RESULT_BYTES / 3) * 4) throw new Error("fal image is too large");
+      const bytes = Buffer.from(inline[1], "base64");
+      if (bytes.length > MAX_RESULT_BYTES) throw new Error("fal image is too large");
+      return bytes;
+    }
     if (typeof url !== "string" || !url.startsWith("https://")) throw new Error("fal result has no image");
     const image = await deps.fetch(url, {signal: AbortSignal.timeout(30_000)});
     if (!image.ok) throw new Error(`fal image fetch failed with ${image.status}`);
@@ -233,16 +246,27 @@ async function runFal(mode: PhotoJobMode, jpeg: Buffer, photo: Size, size: Size,
     return bytes;
   } finally {
     if (requestId && /^[A-Za-z0-9-]{8,64}$/.test(requestId)) {
-      try {
-        await deps.fetch(`https://api.fal.ai/v1/models/requests/${requestId}/payloads`, {
-          method: "DELETE",
-          headers: {"Authorization": `Key ${key}`},
-          signal: AbortSignal.timeout(10_000),
-        });
-      } catch {
-        logger.warn("photoWallpaper: fal payload delete failed.", {requestId});
-      }
+      await cleanupFalPayload(jobId, requestId, deps);
     }
+  }
+}
+
+async function cleanupFalPayload(jobId: string, requestId: string, deps: PhotoDeps): Promise<void> {
+  try {
+    const deleted = await deps.fetch(`https://api.fal.ai/v1/models/requests/${requestId}/payloads`, {
+      method: "DELETE",
+      headers: {"Authorization": `Key ${deps.falKey().trim()}`},
+      signal: AbortSignal.timeout(10_000),
+    });
+    let failed = !deleted.ok;
+    if (deleted.ok) {
+      const body = await deleted.json() as {cdn_delete_results?: Array<{exception?: unknown}>};
+      failed = !Array.isArray(body.cdn_delete_results) || body.cdn_delete_results.some((r) => r.exception != null);
+    }
+    if (failed) logger.warn("photoWallpaper: fal payload delete failed.", {requestId});
+    else await db.collection(PHOTO_JOBS).doc(jobId).update({falCleanupPending: false});
+  } catch {
+    logger.warn("photoWallpaper: fal payload delete failed.", {requestId});
   }
 }
 
@@ -314,6 +338,17 @@ export async function failPhotoJob(jobId: string, startedAtMs: number, reason: P
   });
 }
 
+async function cleanupFailedPhotoJob(jobId: string, job: PhotoJob, deps: PhotoDeps): Promise<void> {
+  if (job.state !== "failed" || !job.resultKey) return;
+  try {
+    if (job.cleanupPending !== true) await db.collection(PHOTO_JOBS).doc(jobId).update({cleanupPending: true});
+    await deps.remove(job.resultKey);
+    await db.collection(PHOTO_JOBS).doc(jobId).update({cleanupPending: false});
+  } catch {
+    logger.warn("photoWallpaper: orphan result delete failed.", {jobId});
+  }
+}
+
 async function claimJob(uid: string, requestId: string, mode: PhotoJobMode, target: PhotoJobTarget, size: Size):
   Promise<{replay: PhotoJob} | {job: PhotoJob; isPro: boolean}> {
   const jobRef = db.collection(PHOTO_JOBS).doc(`pj_${uid}_${requestId}`);
@@ -347,7 +382,8 @@ async function claimJob(uid: string, requestId: string, mode: PhotoJobMode, targ
     if (balance < cost) throw new HttpsError("failed-precondition", "insufficient_coins", {cost, balance});
     const now = admin.firestore.Timestamp.now();
     const job: PhotoJob = {userId: uid, requestId, mode, target, model: PHOTO_MODELS[mode], cost,
-      chargeTxId: chargeRef.id, state: "running", startedAt: now, width: size.width, height: size.height};
+      chargeTxId: chargeRef.id, state: "running", startedAt: now, width: size.width, height: size.height,
+      resultKey: `photo-walls/${randomBytes(16).toString("hex")}.jpg`, cleanupPending: true};
     tx.update(userRef, {coins: balance - cost});
     tx.set(chargeRef, coinTransactionDoc({
       id: chargeRef.id, userId: uid, at: now, delta: -cost, balanceBefore: balance, action: ACTION,
@@ -370,6 +406,7 @@ export async function runPhotoJob(jobId: string, job: PhotoJob, jpeg: Buffer, ph
   const fail = async (reason: PhotoJobFailure): Promise<PhotoJobResult> => {
     try {
       const failed = await failPhotoJob(jobId, startedAtMs, reason);
+      if (failed) await cleanupFailedPhotoJob(jobId, failed, deps);
       return jobResult(jobId, failed ?? {...job, state: "failed", reason, refunded: false});
     } catch {
       logger.error("photoWallpaper: refund failed. The sweeper retries it.", {jobId});
@@ -385,7 +422,7 @@ export async function runPhotoJob(jobId: string, job: PhotoJob, jpeg: Buffer, ph
   }
   let output: Buffer;
   try {
-    output = await finishImage(await runFal(job.mode, jpeg, photo, size, placement, deps), size, !isPro);
+    output = await finishImage(await runFal(jobId, job.mode, jpeg, photo, size, placement, deps), size, !isPro);
   } catch (error) {
     logger.warn("photoWallpaper: model run failed.", {jobId, timeout: (error as Error)?.name === "TimeoutError"});
     return fail((error as Error)?.name === "TimeoutError" ? "timeout" : "provider_error");
@@ -397,8 +434,9 @@ export async function runPhotoJob(jobId: string, job: PhotoJob, jpeg: Buffer, ph
     return fail("provider_error");
   }
   let stored: {url: string; key: string};
+  if (!job.resultKey) return fail("storage_error");
   try {
-    stored = await deps.store(output);
+    stored = await deps.store(output, job.resultKey);
   } catch {
     logger.warn("photoWallpaper: store failed.", {jobId});
     return fail("storage_error");
@@ -410,7 +448,7 @@ export async function runPhotoJob(jobId: string, job: PhotoJob, jpeg: Buffer, ph
       const current = (await tx.get(jobRef)).data() as PhotoJob | undefined;
       if (!current || current.state !== "running" || current.startedAt.toMillis() !== startedAtMs) return null;
       const update = {state: "succeeded" as const, imageUrl: stored.url, watermarked: !isPro,
-        finishedAt: admin.firestore.Timestamp.now()};
+        finishedAt: admin.firestore.Timestamp.now(), cleanupPending: false};
       tx.update(jobRef, update);
       return {...current, ...update};
     });
@@ -427,6 +465,10 @@ export async function runPhotoJob(jobId: string, job: PhotoJob, jpeg: Buffer, ph
     return fail("storage_error");
   }
   if (current?.state === "succeeded" && current.imageUrl === stored.url) return jobResult(jobId, current);
+  if (current?.state === "failed") {
+    await cleanupFailedPhotoJob(jobId, {...current, resultKey: stored.key}, deps);
+    return jobResult(jobId, current);
+  }
   try {
     await deps.remove(stored.key);
   } catch {
@@ -472,21 +514,51 @@ export const createPhotoWallpaper = onCall({
   return runPhotoJob(jobId, claim.job, jpeg, photo, placement, claim.isPro);
 });
 
+async function sweepCleanupQueue(field: "cleanupPending" | "falCleanupPending", nowMs: number): Promise<void> {
+  const progress = db.collection(PHOTO_JOB_BUDGET).doc("cleanup");
+  const cursor = (await progress.get()).data()?.[field];
+  const query = db.collection(PHOTO_JOBS).where(field, "==", true).orderBy(admin.firestore.FieldPath.documentId());
+  const started = Date.now();
+  const page = await (typeof cursor === "string" ? query.startAfter(db.collection(PHOTO_JOBS).doc(cursor)) : query)
+    .limit(CLEANUP_BATCH_SIZE).get();
+  let processed = 0;
+  for (const doc of page.docs) {
+    if (Date.now() - started >= CLEANUP_QUEUE_BUDGET_MS) break;
+    const job = doc.data() as PhotoJob;
+    if (field === "cleanupPending") await cleanupFailedPhotoJob(doc.id, job, photoDeps);
+    else if (job.falRequestId && (job.state !== "running" || nowMs - job.startedAt.toMillis() >= STALE_RUNNING_MS)) {
+      await cleanupFalPayload(doc.id, job.falRequestId, photoDeps);
+    }
+    await progress.set({[field]: doc.id}, {merge: true});
+    processed++;
+  }
+  if (processed === page.size && page.size < CLEANUP_BATCH_SIZE) await progress.set({[field]: null}, {merge: true});
+}
+
 /** Refunds jobs that stopped while they ran, for example when the instance died. */
 export async function sweepStalePhotoJobsOnce(nowMs = Date.now()): Promise<number> {
-  const running = await db.collection(PHOTO_JOBS).where("state", "==", "running").limit(200).get();
   let refunded = 0;
-  for (const doc of running.docs) {
-    const job = doc.data() as PhotoJob;
-    if (nowMs - job.startedAt.toMillis() < STALE_RUNNING_MS) continue;
-    const failed = await failPhotoJob(doc.id, job.startedAt.toMillis(), "timeout");
-    if (failed?.refunded) refunded++;
+  const query = db.collection(PHOTO_JOBS).where("state", "==", "running").orderBy(admin.firestore.FieldPath.documentId());
+  let cursor: admin.firestore.QueryDocumentSnapshot | undefined;
+  do {
+    const page = await (cursor ? query.startAfter(cursor) : query).limit(200).get();
+    for (const doc of page.docs) {
+      const job = doc.data() as PhotoJob;
+      if (nowMs - job.startedAt.toMillis() < STALE_RUNNING_MS) continue;
+      const failed = await failPhotoJob(doc.id, job.startedAt.toMillis(), "timeout");
+      if (failed?.refunded) refunded++;
+    }
+    cursor = page.size === 200 ? page.docs[page.docs.length - 1] : undefined;
+  } while (cursor);
+  for (const field of ["cleanupPending", "falCleanupPending"] as const) {
+    await sweepCleanupQueue(field, nowMs);
   }
   return refunded;
 }
 
-export const sweepStalePhotoJobs = onSchedule({schedule: "every 15 minutes", region: REGION, retryCount: 1},
-  async () => {
-    const refunded = await sweepStalePhotoJobsOnce();
-    if (refunded > 0) logger.info("photoWallpaper: refunded stale jobs.", {refunded});
-  });
+export const sweepStalePhotoJobs = onSchedule({
+  schedule: "every 15 minutes", region: REGION, timeoutSeconds: 180, retryCount: 1, secrets: [falKey, ...r2Secrets],
+}, async () => {
+  const refunded = await sweepStalePhotoJobsOnce();
+  if (refunded > 0) logger.info("photoWallpaper: refunded stale jobs.", {refunded});
+});

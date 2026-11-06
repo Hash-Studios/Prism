@@ -1,10 +1,14 @@
+import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/photo_wallpaper_repository.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/photo_job.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
 
 const PhotoSize _phone = PhotoSize(1080, 2340);
 
@@ -25,6 +29,90 @@ PhotoJob _job({required PhotoJobMode mode, PhotoJobTarget target = PhotoJobTarge
 );
 
 void main() {
+  for (final PhotoSize size in <PhotoSize>[const PhotoSize(4096, 300), const PhotoSize(300, 4096)]) {
+    test('picking a real $size PNG preserves exact dimensions for the panorama upload bound', () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      ui.Canvas(recorder).drawColor(const ui.Color(0xFF000000), ui.BlendMode.src);
+      final ui.Picture picture = recorder.endRecording();
+      addTearDown(picture.dispose);
+      final ui.Image image = await picture.toImage(size.width, size.height);
+      addTearDown(image.dispose);
+      final ByteData? png = await image.toByteData(format: ui.ImageByteFormat.png);
+      final Uint8List bytes = png!.buffer.asUint8List();
+      final List<int> sides = <int>[];
+      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+        () async => bytes,
+        null,
+        (Uint8List bytes, int side) async {
+          sides.add(side);
+          return Uint8List.fromList(<int>[1, 2, 3]);
+        },
+        (Map<String, Object?> payload) async => _successMap,
+      );
+
+      final PhotoSource? source = await repo.pick();
+      expect(source?.size, size);
+      await repo.run(
+        PhotoJob(source: source!, mode: PhotoJobMode.extend, target: PhotoJobTarget.desktop, cost: 75),
+        requestId: 'req-real-panorama',
+        targetSize: photoDesktopSize,
+      );
+      expect(sides, <int>[3496]);
+    });
+  }
+
+  test('picker cache copies are removed after reading, but paths outside temp are not', () async {
+    final Directory temp = await Directory.systemTemp.createTemp('photo-wallpaper-');
+    addTearDown(() => temp.delete(recursive: true));
+    final File cachedCopy = File(p.join(temp.path, 'picked.jpg'))..writeAsBytesSync(<int>[1, 2, 3]);
+
+    expect(await readAndCleanupPickedPhoto(XFile(cachedCopy.path), temporaryDirectory: temp), <int>[1, 2, 3]);
+    expect(await cachedCopy.exists(), isFalse);
+
+    final File outside = File(p.join(temp.parent.path, 'outside-photo-${temp.hashCode}.jpg'))
+      ..writeAsBytesSync(<int>[4, 5, 6]);
+    addTearDown(() => outside.delete());
+    await readAndCleanupPickedPhoto(XFile(outside.path), temporaryDirectory: temp);
+    expect(await outside.exists(), isTrue);
+
+    final Link link = Link(p.join(temp.path, 'outside-link.jpg'))..createSync(outside.path);
+    addTearDown(() => link.delete());
+    await readAndCleanupPickedPhoto(XFile(link.path), temporaryDirectory: temp);
+    expect(await outside.exists(), isTrue);
+  });
+
+  test('picker cleanup resolves a temporary directory alias before checking containment', () async {
+    final Directory fixture = await Directory.systemTemp.createTemp('photo-wallpaper-alias-');
+    addTearDown(() => fixture.delete(recursive: true));
+    final Directory temp = await Directory(p.join(fixture.path, 'cache')).create();
+    final Link alias = await Link(p.join(fixture.path, 'cache-alias')).create(temp.path);
+    final File cachedCopy = File(p.join(temp.path, 'picked.jpg'))..writeAsBytesSync(<int>[1, 2, 3]);
+
+    expect(
+      await readAndCleanupPickedPhoto(XFile(cachedCopy.path), temporaryDirectory: Directory(alias.path)),
+      <int>[1, 2, 3],
+    );
+    expect(await cachedCopy.exists(), isFalse);
+    expect(await alias.exists(), isTrue);
+  });
+
+  test('picker cleanup preserves a source outside temp reached through a directory link', () async {
+    final Directory fixture = await Directory.systemTemp.createTemp('photo-wallpaper-outside-');
+    addTearDown(() => fixture.delete(recursive: true));
+    final Directory temp = await Directory(p.join(fixture.path, 'cache')).create();
+    final Directory outside = await Directory(p.join(fixture.path, 'source')).create();
+    final File source = File(p.join(outside.path, 'picked.jpg'))..writeAsBytesSync(<int>[4, 5, 6]);
+    final Link alias = await Link(p.join(temp.path, 'source-alias')).create(outside.path);
+
+    expect(
+      await readAndCleanupPickedPhoto(XFile(p.join(alias.path, 'picked.jpg')), temporaryDirectory: temp),
+      <int>[4, 5, 6],
+    );
+    expect(await source.exists(), isTrue);
+    expect(await alias.exists(), isTrue);
+  });
+
   group('planPhotoJob', () {
     test('wide landscape photo needs Extend on the phone target', () {
       expect(planPhotoJob(const PhotoSize(4000, 3000), _phone), PhotoJobMode.extend);
@@ -103,6 +191,32 @@ void main() {
       const EconomyConfig config = EconomyConfig(proDiscountActions: <String>['aiGeneration']);
       expect(photoJobCost(PhotoJobMode.extend, isPro: true, config: config), 75);
     });
+
+    test('photo prices and discount action use the server defaults for malformed remote values', () {
+      final EconomyConfig config = EconomyConfig.fromMap(<String, Object?>{
+        'spend': <String, Object?>{'photoExtend': 99.5, 'photoUpscale': 12.5},
+        'proDiscountActions': <Object?>['aiGeneration', 7],
+      });
+      expect(config.spend.photoExtend, 75);
+      expect(config.spend.photoUpscale, 10);
+      expect(config.proDiscountActions, <String>['aiGeneration']);
+      expect(photoJobCost(PhotoJobMode.extend, isPro: true, config: config), 75);
+
+      final EconomyConfig decimalPrice = EconomyConfig.fromMap(<String, Object?>{
+        'spend': <String, Object?>{'photoExtend': 99.0},
+      });
+      expect(decimalPrice.spend.photoExtend, 99);
+    });
+
+    test('photo discount parsing does not change malformed bypass-list fallback', () {
+      final EconomyConfig config = EconomyConfig.fromMap(<String, Object?>{
+        'proDiscountActions': <Object?>['aiGeneration', 7],
+        'proBypassActions': <Object?>['wallpaperDownload', 7],
+      });
+
+      expect(config.proDiscountActions, <String>['aiGeneration']);
+      expect(config.proBypassActions, EconomyConfig.defaults.proBypassActions);
+    });
   });
 
   group('PhotoPlacement', () {
@@ -131,6 +245,17 @@ void main() {
       expect(small.height, 486);
     });
 
+    test('clamps the minimum size so it still meets the server canvas-share limit', () {
+      final PhotoPlacement panoramic = PhotoPlacement.fit(canvas: _phone, photo: const PhotoSize(4096, 1000));
+      expect(panoramic.validForServer, isTrue);
+      expect(panoramic.scaled(0.1).validForServer, isTrue);
+    });
+
+    test('rejects a photo whose largest fitting placement is below the server canvas-share limit', () {
+      final PhotoPlacement narrow = PhotoPlacement.fit(canvas: _phone, photo: const PhotoSize(4096, 256));
+      expect(narrow.validForServer, isFalse);
+    });
+
     test('scaling above the maximum clamps back to the fit size', () {
       final PhotoPlacement small = fit.scaled(0.1);
       expect(small.scaled(10).width, 1080);
@@ -148,6 +273,12 @@ void main() {
   });
 
   group('parsePhotoJobResult', () {
+    test('an unrecognized response is an ambiguous network outcome', () {
+      final PhotoJobFailed failed = parsePhotoJobResult(<String, Object?>{'state': 'running'}) as PhotoJobFailed;
+      expect(failed.reason, PhotoJobFailure.network);
+      expect(failed.charged, isFalse);
+    });
+
     test('succeeded map gives a PhotoJobSucceeded', () {
       final PhotoJobState result = parsePhotoJobResult(<String, dynamic>{
         'jobId': 'pj_1',
@@ -178,11 +309,11 @@ void main() {
       expect(failed.refunded, isTrue);
     });
 
-    test('null gives a provider error that was not charged', () {
+    test('null is an ambiguous network outcome', () {
       final PhotoJobState result = parsePhotoJobResult(null);
       expect(result, isA<PhotoJobFailed>());
       final PhotoJobFailed failed = result as PhotoJobFailed;
-      expect(failed.reason, PhotoJobFailure.providerError);
+      expect(failed.reason, PhotoJobFailure.network);
       expect(failed.charged, isFalse);
     });
   });
@@ -220,6 +351,32 @@ void main() {
   });
 
   group('PhotoWallpaperRepository.run', () {
+    test('extend upload preserves the server minimum short side for a supported desktop panorama', () async {
+      final List<int> sides = <int>[];
+      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+        null,
+        null,
+        (Uint8List bytes, int side) async {
+          sides.add(side);
+          return Uint8List.fromList(<int>[1, 2, 3]);
+        },
+        (Map<String, Object?> payload) async => _successMap,
+      );
+
+      await repo.run(
+        PhotoJob(
+          source: PhotoSource(bytes: Uint8List(4), size: const PhotoSize(4096, 300)),
+          mode: PhotoJobMode.extend,
+          target: PhotoJobTarget.desktop,
+          cost: 75,
+        ),
+        requestId: 'req-panorama',
+        targetSize: photoDesktopSize,
+      );
+
+      expect(sides, <int>[3496]);
+    });
+
     test('extend job sends the phone target, placement and image, and uploads at side 2560', () async {
       final List<Map<String, Object?>> payloads = <Map<String, Object?>>[];
       final List<int> sides = <int>[];

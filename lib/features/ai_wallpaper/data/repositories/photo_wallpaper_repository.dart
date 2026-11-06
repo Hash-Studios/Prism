@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -10,8 +11,10 @@ import 'package:Prism/logger/logger.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
-/// The long side of the photo the app sends for Extend. Bria places it in a canvas of at most 2560 px.
+/// The usual Extend upload long side. Narrow photos keep a longer side so the short side stays at least 256 px.
 const int photoExtendUploadSide = 2560;
 
 /// The long side the app sends for Upscale. An Upscale photo is smaller than the screen, so it is sent at full size.
@@ -56,9 +59,14 @@ class PhotoWallpaperRepository {
   }) async {
     final Uint8List jpeg;
     try {
+      final PhotoSize size = job.source.size;
+      final int minimumLongSide = (256 * math.max(size.width, size.height) / size.shortSide).ceil();
+      final int extendSide = math
+          .max(photoExtendUploadSide, minimumLongSide)
+          .clamp(photoExtendUploadSide, photoUpscaleUploadSide);
       jpeg = await _toUploadJpeg(
         job.source.bytes,
-        job.mode == PhotoJobMode.extend ? photoExtendUploadSide : photoUpscaleUploadSide,
+        job.mode == PhotoJobMode.extend ? extendSide : photoUpscaleUploadSide,
       );
     } catch (_) {
       return const PhotoJobFailed(reason: PhotoJobFailure.unreadable, charged: false, refunded: false);
@@ -97,30 +105,30 @@ class PhotoWallpaperRepository {
           .data;
 
   static Future<Uint8List?> _pickFromGallery() async {
-    final XFile? file = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      maxWidth: photoUpscaleUploadSide.toDouble(),
-      maxHeight: photoUpscaleUploadSide.toDouble(),
-      requestFullMetadata: false,
-    );
-    return file?.readAsBytes();
+    final XFile? file = await ImagePicker().pickImage(source: ImageSource.gallery, requestFullMetadata: false);
+    if (file == null) return null;
+    final Directory temporaryDirectory = Platform.isIOS ? Directory.systemTemp : await getTemporaryDirectory();
+    return readAndCleanupPickedPhoto(file, temporaryDirectory: temporaryDirectory);
   }
 
   /// The upright size: the decoder reports the stored size, and a small upright decode gives the turn.
   static Future<PhotoSize> _uprightSize(Uint8List bytes) async {
-    int storedLong = 0;
+    int storedWidth = 0;
+    int storedHeight = 0;
     final ui.Codec codec = await ui.instantiateImageCodecWithSize(
       await ui.ImmutableBuffer.fromUint8List(bytes),
       getTargetSize: (int width, int height) {
-        storedLong = math.max(width, height);
+        storedWidth = width;
+        storedHeight = height;
         return width >= height ? const ui.TargetImageSize(width: 256) : const ui.TargetImageSize(height: 256);
       },
     );
     try {
       final ui.Image small = (await codec.getNextFrame()).image;
       try {
-        final double scale = storedLong / math.max(small.width, small.height);
-        return PhotoSize((small.width * scale).round(), (small.height * scale).round());
+        final bool turned =
+            small.width != small.height && (storedWidth > storedHeight) != (small.width > small.height);
+        return turned ? PhotoSize(storedHeight, storedWidth) : PhotoSize(storedWidth, storedHeight);
       } finally {
         small.dispose();
       }
@@ -148,9 +156,25 @@ class PhotoWallpaperRepository {
   }
 }
 
+/// Reads a picker-owned cache copy and removes it. Never deletes a path outside the app's temporary directory.
+Future<Uint8List> readAndCleanupPickedPhoto(XFile file, {required Directory temporaryDirectory}) async {
+  try {
+    return await file.readAsBytes();
+  } finally {
+    final String tempPath = p.normalize(p.absolute(temporaryDirectory.path));
+    final String pickedPath = p.normalize(p.absolute(file.path));
+    final FileSystemEntityType type = await FileSystemEntity.type(pickedPath, followLinks: false);
+    if (type == FileSystemEntityType.file) {
+      final String realTempPath = await Directory(tempPath).resolveSymbolicLinks();
+      final String realPickedPath = await File(pickedPath).resolveSymbolicLinks();
+      if (p.isWithin(realTempPath, realPickedPath)) await File(pickedPath).delete();
+    }
+  }
+}
+
 /// The job state from the callable's result.
 PhotoJobState parsePhotoJobResult(Object? data) {
-  if (data is! Map) return const PhotoJobFailed(reason: PhotoJobFailure.providerError, charged: false, refunded: false);
+  if (data is! Map) return const PhotoJobFailed(reason: PhotoJobFailure.network, charged: false, refunded: false);
   if (data['state'] == 'succeeded' && data['imageUrl'] is String && data['width'] is int && data['height'] is int) {
     return PhotoJobSucceeded(
       jobId: data['jobId'] as String? ?? '',
@@ -159,10 +183,15 @@ PhotoJobState parsePhotoJobResult(Object? data) {
       watermarked: data['watermarked'] == true,
     );
   }
+  if (data['state'] != 'failed') {
+    return const PhotoJobFailed(reason: PhotoJobFailure.network, charged: false, refunded: false);
+  }
+  final Object? cost = data['cost'];
   return PhotoJobFailed(
     reason: PhotoJobFailure.fromWire(data['reason']),
-    charged: data['state'] == 'failed',
+    charged: true,
     refunded: data['refunded'] == true,
+    cost: cost is int && cost >= 0 ? cost : null,
   );
 }
 

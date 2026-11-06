@@ -180,12 +180,89 @@ void main() {
     expect(find.text('Extend · 75 coins'), findsNothing);
   });
 
+  testWidgets('a pending retry stays available when the original charge leaves a short balance', (tester) async {
+    final _Harness harness = _Harness()
+      ..onCall = (Map<String, Object?> _) async => throw StateError('connection dropped');
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+
+    await tester.tap(find.byKey(_runKey));
+    await _waitUntilGone(tester, find.byKey(_runKey));
+    expect(harness.payloads, hasLength(2));
+
+    CoinsService.instance.balanceNotifier.value = 0;
+    await tester.pump();
+    expect(find.text('Extend · 75 coins'), findsOneWidget);
+    expect(find.text('Get coins · need 75'), findsNothing);
+
+    await tester.tap(find.byKey(_runKey));
+    await _waitUntilGone(tester, find.byKey(_runKey));
+    expect(harness.payloads, hasLength(4));
+    expect(harness.payloads.map((Map<String, Object?> payload) => payload['requestId']).toSet(), hasLength(1));
+  });
+
+  testWidgets('a charged job with a pending refund retries with the same request ID', (tester) async {
+    final _Harness harness = _Harness();
+    harness.onCall = (Map<String, Object?> _) async => harness.payloads.length == 1
+        ? <String, Object?>{'state': 'failed', 'reason': 'provider_error', 'refunded': false}
+        : _successMap;
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+
+    await tester.tap(find.byKey(_runKey));
+    await _waitUntilGone(tester, find.byKey(_runKey));
+    CoinsService.instance.balanceNotifier.value = 0;
+    await tester.pump();
+    expect(find.text('Extend · 75 coins'), findsOneWidget);
+
+    await tester.tap(find.byKey(_runKey));
+    await _waitUntilGone(tester, find.byKey(_runKey));
+    expect(harness.payloads, hasLength(2));
+    expect(harness.payloads[0]['requestId'], harness.payloads[1]['requestId']);
+    expect(find.text('Before'), findsOneWidget);
+  });
+
+  testWidgets('an unrecognized job response keeps the same request ID for retry', (tester) async {
+    final _Harness harness = _Harness();
+    harness.onCall = (Map<String, Object?> _) async => harness.payloads.length == 1
+        ? <String, Object?>{'state': 'running'}
+        : _successMap;
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+
+    await tester.tap(find.byKey(_runKey));
+    await _waitUntilGone(tester, find.byKey(_runKey));
+    CoinsService.instance.balanceNotifier.value = 0;
+    await tester.pump();
+    expect(find.text('Extend · 75 coins'), findsOneWidget);
+
+    await tester.tap(find.byKey(_runKey));
+    await _waitUntilGone(tester, find.byKey(_runKey));
+    expect(harness.payloads, hasLength(2));
+    expect(harness.payloads[0]['requestId'], harness.payloads[1]['requestId']);
+    expect(find.text('Before'), findsOneWidget);
+  });
+
   testWidgets('a photo that already fits shows no run button', (tester) async {
     await _pumpPage(tester, _Harness(photo: const PhotoSize(1080, 2340)));
     await _pickPhoto(tester);
 
     expect(find.text('This photo already fits your screen'), findsOneWidget);
     expect(find.byKey(_runKey), findsNothing);
+  });
+
+  testWidgets('a photo too narrow for the server placement limit is rejected before the call', (tester) async {
+    final _Harness harness = _Harness(photo: const PhotoSize(4096, 128));
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Desktop version'));
+    await _settle(tester);
+
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+
+    expect(harness.payloads, isEmpty);
+    expect(find.text("This photo can't be opened. Choose another photo."), findsOneWidget);
   });
 
   testWidgets('Desktop version plans an extend to a desktop screen', (tester) async {
@@ -289,7 +366,7 @@ void main() {
   testWidgets('an unsafe input shows the refusal and Choose another photo', (tester) async {
     final _Harness harness = _Harness();
     harness.onCall = (Map<String, Object?> payload) async => <String, Object?>{
-      'state': 'refused',
+      'state': 'failed',
       'reason': 'unsafe_input',
       'refunded': false,
     };
@@ -301,6 +378,25 @@ void main() {
 
     expect(find.textContaining("This photo can't be used"), findsOneWidget);
     expect(find.descendant(of: find.byType(GlintState), matching: find.text('Choose another photo')), findsOneWidget);
+  });
+
+  testWidgets('the refund message uses the actual server charge instead of the client price', (tester) async {
+    final _Harness harness = _Harness();
+    harness.onCall = (Map<String, Object?> _) async => <String, Object?>{
+      'state': 'failed',
+      'reason': 'unsafe_output',
+      'cost': 38,
+      'refunded': true,
+    };
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+    expect(find.text('Extend · 75 coins'), findsOneWidget);
+
+    await tester.tap(find.byKey(_runKey));
+    await _waitUntilGone(tester, find.byKey(_runKey));
+
+    expect(find.textContaining('Your 38 coins were returned.'), findsOneWidget);
+    expect(find.textContaining('Your 75 coins were returned.'), findsNothing);
   });
 
   testWidgets('large text on a small screen lays out without overflow', (tester) async {

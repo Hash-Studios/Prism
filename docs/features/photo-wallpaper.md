@@ -33,7 +33,11 @@ The content filter is Cloud Vision SafeSearch. It costs $0.0015 for each image a
 |---|---|---|---|
 | Extend, phone or desktop | $0.040 + $0.003 = $0.043 | 75 | 38 |
 | Upscale, phone (about 3.3 MP) | $0.0033 + $0.003 = about $0.007 | 10 | 5 |
-| Upscale, worst case (16 MP output) | $0.016 + $0.003 = $0.019 | 10 | 5 |
+| Upscale, bounded worst case (under 8 MP output) | under $0.008 + $0.003 = $0.011 | 10 | 5 |
+
+The largest phone target is 1600 x 3840 (6.144 MP). Upscale accepts at most 5% shape drift. Its factor rounds up to the next 0.1, capped at 4. Since an upscale factor is at least 1, rounding increases either edge by less than 10%. Thus provider output is bounded by `6.144 / 0.95 * 1.1²`, under 7.83 MP. Desktop output has a smaller bound. A very small photo that needs more than 4x AI growth is resized to the final target after the capped AI step.
+
+Public references checked on 2026-11-06: [Bria price](https://fal.ai/models/fal-ai/bria/expand), [SeedVR price](https://fal.ai/models/fal-ai/seedvr/upscale/image), [Bria schema](https://fal.ai/models/fal-ai/bria/expand/api), [SeedVR schema](https://fal.ai/models/fal-ai/seedvr/upscale/image/api). These are list prices, not a check of the Prism account's billing.
 
 The coin prices are the same as the AI tiers with the same provider cost: Extend costs the same as the balanced tier, Upscale costs the same as the fast tier. The prices are in the economy config (`spend.photoExtend`, `spend.photoUpscale`). Pro pays half, rounded up, while `proDiscountActions` lists `photoWallpaper`.
 
@@ -55,7 +59,7 @@ A refused job (bad input, cap reached, not enough coins) does not count. A job t
    - "Upscale" when the shape is correct but the short side is smaller than the short side of the screen.
    - "This photo already fits your screen" when no job is necessary. Then there is no job button.
 4. The user can select "Desktop version". The target then is 2560 x 1600 (16:10), and Prism makes the plan again.
-5. For Extend, the user can move the photo in the frame (drag) and make it smaller (pinch), to 60% of its largest size. "Reset position" puts it back in the centre. A screen reader gets 3 actions: move to start, centre and end.
+5. For Extend, the user can move the photo in the frame (drag) and make it smaller (pinch). The minimum is the larger of 60% of its largest fitting size and the size that covers 10% of the canvas. A narrower photo whose largest fit covers less than 10% is refused. "Reset position" puts it back in the centre. A screen reader gets 3 actions: move to start, centre and end.
 6. The job button shows the cost, for example "Extend · 75 coins". When the balance is too low, it reads "Get coins · need N" and opens Rewards.
 7. While the job runs, the page shows the photo in the frame and "Extending your photo". On iOS, the AI Live Activity shows the job.
 8. The result page shows before and after with a slider. The actions are "Set as wallpaper", "Download" (Android only, because on iOS Set saves to Photos), "Save to folder" and "Use another photo".
@@ -70,27 +74,29 @@ The privacy note under the picker says: "Your photo goes to our AI provider, fal
 The callable runs the full job. The app does not spend coins or ask for a refund itself.
 
 1. It refuses a request that has no sign-in or an anonymous sign-in.
-2. It checks the input: `requestId`, `mode` (`extend` or `upscale`), `target` (`phone` or `desktop`), the phone size (720 to 1600 px wide, 1.6 to 2.4 times as tall), and the placement for Extend.
+2. It checks the input: `requestId`, `mode` (`extend` or `upscale`), `target` (`phone` or `desktop`), the phone size (720 to 1600 px wide, 1.6 to 2.4 times as tall), and the placement for Extend. Both default and explicit placements must cover at least 10% of the canvas. A photo whose largest fitting placement is smaller is refused before charge.
 3. It decodes the photo with `sharp`, turns it upright, and writes a new JPEG. The new JPEG has no EXIF, GPS or other metadata. The photo must be 256 to 4096 px on each side and at most 6 MB.
 4. It makes the plan again from the photo size. When the plan is not the requested mode, it refuses the job (`plan_mismatch`).
 5. In one transaction it:
    - Replays the job when `photoJobs/pj_{uid}_{requestId}` exists. A finished job returns its stored result. A running job returns `aborted`. A running job older than 10 minutes is ended as `timeout` and refunded.
    - Checks the caps (10 for each user each day, 400 for all users each day).
    - Checks the balance.
-   - Takes the coins, writes the debit `coinTransactions/ctx_photoWallpaper_{uid}_{requestId}`, writes the job with state `running`, and adds 1 to both daily counts.
+   - Takes the coins, writes the debit `coinTransactions/ctx_photoWallpaper_{uid}_{requestId}`, writes the job with state `running` and a random result key marked for cleanup on failure, and adds 1 to both daily counts.
 6. It checks the photo with Cloud Vision SafeSearch.
-7. It calls fal with the photo inline as a data URI, `sync_mode: true` and the header `X-Fal-Store-IO: 0`. Then it deletes the fal request data (`DELETE /v1/models/requests/{id}/payloads`).
+7. It calls fal with the photo inline as a data URI, `sync_mode: true` and the header `X-Fal-Store-IO: 0`. It records the provider request ID and a pending marker, then attempts to delete the fal request data (`DELETE /v1/models/requests/{id}/payloads`). HTTP, per-file or network cleanup failures produce a fixed warning without provider error text or photo bytes and leave the marker for retry. The fal key needs the payload-deletion permissions; retention controls and deletion are provider-side behavior, not a Prism guarantee. A crash before the provider ID can be recorded, or a missing response header, prevents explicit cleanup; the retention controls still apply.
 8. It resizes the result to the exact target size and writes a JPEG with no metadata. A free member gets the "Made with Prism AI" badge. A Pro member gets no badge (the same rule as AI wallpapers).
 9. It checks the result with SafeSearch.
-10. It stores the result in the public R2 bucket at a random key (`photo-walls/{32 hex}.jpg`), the same way AI results are stored: a link that is hard to guess, shown only to its owner. The job gets state `succeeded` and the link.
+10. It stores the result in the public R2 bucket at the random key recorded before the provider call (`photo-walls/{32 hex}.jpg`), the same way AI results are stored: a link that is hard to guess, shown only to its owner. The job gets state `succeeded` and the link, and its cleanup marker is cleared.
 
 Every failure after step 5 calls `failPhotoJob`. It marks the job `failed` and returns the coins in the same transaction, with the credit `coinTransactions/ctx_photoWallpaperRefund_{uid}_{requestId}`. Only the claim that started the job can end it, so a refund happens one time only.
 
-The scheduled function `sweepStalePhotoJobs` runs every 15 minutes. It refunds jobs that stay `running` for more than 10 minutes, for example when the instance stopped.
+The scheduled function `sweepStalePhotoJobs` runs every 15 minutes. It pages through all running jobs and refunds jobs older than 10 minutes, for example when the instance stopped. It also deletes failed jobs' recorded result keys and retries pending fal payload deletions after jobs end. Failed deletions stay pending for later sweeps. The callable has a 180-second hard timeout, below the 10-minute stale cutoff. A late worker that loses to the sweeper removes its own result too. An ambiguous success commit is read back before deciding to delete, so the successful image is kept.
+
+Refunds run before cleanup. Each cleanup queue processes at most 10 records per sweep and stops starting new attempts after its own 20-second budget. The document-ID cursor is saved after every attempt in `photoJobBudget/cleanup`, even when deletion fails, and resets at the queue's end. Slow failures at the front therefore cannot starve later records or the other queue. The scheduled function has a 180-second timeout to allow active attempts to finish.
 
 ### Content filter
 
-SafeSearch blocks an image when `adult` or `violence` is LIKELY or more, or `racy` is VERY_LIKELY. A missing result also blocks it. A blocked input gives `unsafe_input`. A blocked result gives `unsafe_output`. Both refund the coins. The upscale model also has its own safety checker on.
+SafeSearch blocks an image when `adult` or `violence` is LIKELY or more, or `racy` is VERY_LIKELY. A missing or unknown result also blocks it. A blocked input gives `unsafe_input`. A blocked result gives `unsafe_output`. Both refund the coins. The two Vision checks are required regardless of any model-side filtering.
 
 ### App
 
@@ -98,7 +104,9 @@ SafeSearch blocks an image when `adult` or `violence` is LIKELY or more, or `rac
 - `lib/features/ai_wallpaper/data/repositories/photo_wallpaper_repository.dart`: picks the photo, makes the upload copy, and calls the callable. When the connection drops, it tries one more time with the same `requestId`.
 - `lib/features/ai_wallpaper/views/pages/photo_wallpaper_page.dart` and `views/widgets/photo_wallpaper_widgets.dart`: the page.
 
-The upload copy is decoded to raw pixels on the phone and then written as a JPEG (the same method as Search by photo). It has no metadata. Extend sends a long side of at most 2560 px. Upscale sends the photo at full size, because it is smaller than the screen.
+The upload copy is decoded to raw pixels on the phone and then written as a JPEG (the same method as Search by photo). It has no metadata. Extend normally limits the long side to 2560 px, but raises this limit, up to 4096 px, when needed to preserve the server's 256 px minimum short side. Upscale sends the photo at full size, because it is smaller than the screen.
+
+The app reads exact source dimensions from decoder metadata; its smaller preview determines orientation only. While the page remains open, it retains the same request ID for charged jobs whose refund is not confirmed and allows their replay even when the remaining balance is below the price. Refund copy uses the authoritative cost returned by the server.
 
 ### Analytics
 
@@ -111,9 +119,9 @@ The upload copy is decoded to raw pixels on the phone and then written as a JPEG
 
 ## Privacy
 
-- The photo goes to fal.ai for the job and to Google Cloud Vision for the check. Prism keeps the photo only in memory during the job.
-- Prism asks fal.ai not to store the request (`X-Fal-Store-IO: 0`), gets the result inline (`sync_mode`), and deletes the request data at fal.ai after the job.
-- Prism keeps the result, the job record (mode, target, model, cost, state) and the daily count.
+- The photo goes to fal.ai for the job and to Google Cloud Vision for the check. The server keeps the input photo only in memory. The app reads the gallery picker's temporary copy, then deletes that copy; it does not delete the user's original gallery photo.
+- Prism asks fal.ai not to store the request (`X-Fal-Store-IO: 0`), requests the result inline (`sync_mode`), and attempts to delete the request data at fal.ai after the job. A provider outage or missing key permissions can prevent deletion.
+- Prism keeps the result, the job record (mode, target, model, cost, state, result key, provider request ID and cleanup markers) and the daily count. Both result transfer paths reject images larger than 30 MB.
 - The privacy policy (`web/app/privacy/page.tsx`) lists fal.ai and this use.
 
 ## Limits
@@ -121,12 +129,15 @@ The upload copy is decoded to raw pixels on the phone and then written as a JPEG
 - The results do not show in the "Recent" strip of the AI tab. The result shows on the page after the job. "Save to folder" keeps it.
 - A desktop version is one fixed size, 2560 x 1600.
 - The models and prices are from the fal model pages. They were not checked against the Prism fal account before the change.
+- Account deletion does not yet remove photo-job records or their stored results. This lifecycle gap needs resolving before release.
+- The app keeps its pending request ID only on the page. After an app restart it cannot recover a completed photo job. Durable result recovery needs a product decision.
+- The picker privacy string still promises deletion when the job ends. It must be revised before release to name Vision and distinguish Prism's input cleanup from best-effort provider deletion.
 
 ## Deploy order
 
 Do not deploy without the owner.
 
-1. Deploy functions: `createPhotoWallpaper` and `sweepStalePhotoJobs`. They need the secrets `FAL_API_KEY`, `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`, and the R2 environment values that `r2Storage.ts` reads.
+1. Deploy functions: `createPhotoWallpaper` and `sweepStalePhotoJobs`. Both need the secrets `FAL_API_KEY`, `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`, and the R2 environment values that `r2Storage.ts` reads.
 2. Optional: set `spend.photoExtend`, `spend.photoUpscale` and `proDiscountActions` in `economyConfig/current`. Without them, the defaults apply.
 3. Release the app.
 

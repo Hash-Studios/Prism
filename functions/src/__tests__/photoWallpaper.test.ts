@@ -2,9 +2,13 @@ import assert from "node:assert/strict";
 import type {TestContext} from "node:test";
 import test from "node:test";
 import * as admin from "firebase-admin";
+import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
+import {db} from "../common";
 import {
   createPhotoWallpaper,
+  failPhotoJob,
+  finishImage,
   isPhotoSafe,
   normalizePhoto,
   PHOTO_JOBS,
@@ -55,11 +59,13 @@ const upscaleData = async (patch: Record<string, unknown> = {}) => ({
 });
 
 /** Mocks every outside dependency. The fal output is a 1080x2340 JPEG unless `falStatus` makes fal fail. */
-function mockDeps(t: TestContext, opts: {falStatus?: number; safe?: (call: number) => Record<string, unknown>} = {}) {
+function mockDeps(t: TestContext, opts: {falStatus?: number; deleteStatus?: number; deleteException?: string;
+  safe?: (call: number) => Record<string, unknown>} = {}) {
   const calls: Call[] = [];
   const stored: Buffer[] = [];
   const counts = {safe: 0};
-  const output = jpegOf(1080, 2340);
+  const output = sharp({create: {width: 1080, height: 2340, channels: 3, background: BLUE}})
+    .withExif({IFD0: {Copyright: "private-provider-metadata"}}).jpeg().toBuffer();
   t.mock.method(photoDeps, "falKey", () => "test-key");
   t.mock.method(photoDeps, "safeSearch", async () => {
     counts.safe++;
@@ -77,12 +83,16 @@ function mockDeps(t: TestContext, opts: {falStatus?: number; safe?: (call: numbe
       return new Response(JSON.stringify({image: {url: `data:image/jpeg;base64,${image}`}}),
         {status: 200, headers: meta});
     }
-    if (url === FAL_DELETE && method === "DELETE") return new Response(null, {status: 200});
+    if (url === FAL_DELETE && method === "DELETE") {
+      return Response.json({cdn_delete_results: opts.deleteException ?
+        [{link: "https://private-provider-link.test", exception: opts.deleteException}] : []},
+      {status: opts.deleteStatus ?? 200});
+    }
     throw new Error(`unexpected fetch ${method} ${url}`);
   });
-  t.mock.method(photoDeps, "store", async (jpeg: Buffer) => {
+  t.mock.method(photoDeps, "store", async (jpeg: Buffer, key: string) => {
     stored.push(jpeg);
-    return {url: OUT_URL, key: "photo-walls/x.jpg"};
+    return {url: OUT_URL, key};
   });
   t.mock.method(photoDeps, "remove", async () => undefined);
   return {calls, stored, counts, fal: () => calls.filter((c) => c.url.startsWith("https://fal.run/"))};
@@ -139,6 +149,8 @@ test("extend returns the 1080x2340 result, charges 75 and stores a succeeded job
   assert.equal(store.get(CHARGE)?.action, "photoWallpaper");
   assert.equal(store.get(JOB)?.state, "succeeded");
   assert.deepEqual(await sizeOf(deps.stored[0]), {width: 1080, height: 2340});
+  assert.equal((await sharp(deps.stored[0]).metadata()).exif, undefined);
+  assert.equal(deps.stored[0].includes("private-provider-metadata"), false);
 });
 
 test("the fal request sends the photo inline, keeps no store, and deletes the payload", async (t) => {
@@ -156,9 +168,132 @@ test("the fal request sends the photo inline, keeps no store, and deletes the pa
   const deletes = deps.calls.filter((c) => c.method === "DELETE");
   assert.equal(deletes.length, 1);
   assert.equal(deletes[0].url, FAL_DELETE);
+  assert.equal(deletes[0].headers.Authorization, "Key test-key");
   // The input photo is never stored. Only the result is stored, once, at the target size.
   assert.equal(deps.stored.length, 1);
   assert.deepEqual(await sizeOf(deps.stored[0]), {width: 1080, height: 2340});
+});
+
+test("a rejected fal cleanup is reported without logging the photo or the provider response", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  const opts = {deleteStatus: 403};
+  mockDeps(t, opts);
+  const removed: string[] = [];
+  t.mock.method(photoDeps, "remove", async (key: string) => removed.push(key));
+  const logs: unknown[][] = [];
+  t.mock.method(logger, "warn", (...args: unknown[]) => logs.push(args));
+  const result = await run(await extendData());
+  assert.equal(result.state, "succeeded");
+  assert.deepEqual(logs, [["photoWallpaper: fal payload delete failed.", {requestId: "req-abcdef12"}]]);
+  assert.equal(store.get(JOB)?.falCleanupPending, true);
+  opts.deleteStatus = 200;
+  assert.equal(await sweepStalePhotoJobsOnce(), 0);
+  assert.equal(store.get(JOB)?.falCleanupPending, false);
+  assert.equal(store.get(JOB)?.state, "succeeded");
+  assert.equal(store.get("usersv2/u1")?.coins, 125);
+  assert.deepEqual(removed, []);
+});
+
+test("an oversized inline fal image is rejected and refunded even when it is a decodable JPEG", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  const deps = mockDeps(t);
+  const fetch = photoDeps.fetch;
+  const oversized = Buffer.concat([await jpegOf(1080, 2340), Buffer.alloc(30 * 1024 * 1024)]);
+  t.mock.method(photoDeps, "fetch", (url: string, init: RequestInit) => url === FAL_EXTEND ?
+    Promise.resolve(Response.json({image: {url: `data:image/jpeg;base64,${oversized.toString("base64")}`}},
+      {headers: {"x-fal-request-id": "req-abcdef12"}})) : fetch(url, init));
+  const result = await run(await extendData()) as Failed;
+  assert.equal(result.state, "failed");
+  assert.equal(result.reason, "provider_error");
+  assert.equal(result.refunded, true);
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(deps.stored.length, 0);
+});
+
+test("fal per-file cleanup errors stay pending without logging the provider link or error", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  const opts = {deleteException: "private-failure"};
+  mockDeps(t, opts);
+  const logs: unknown[][] = [];
+  t.mock.method(logger, "warn", (...args: unknown[]) => logs.push(args));
+  assert.equal((await run(await extendData())).state, "succeeded");
+  assert.equal(store.get(JOB)?.falCleanupPending, true);
+  assert.deepEqual(logs, [["photoWallpaper: fal payload delete failed.", {requestId: "req-abcdef12"}]]);
+  opts.deleteException = "";
+  assert.equal(await sweepStalePhotoJobsOnce(), 0);
+  assert.equal(store.get(JOB)?.falCleanupPending, false);
+});
+
+test("omitted and explicit placements both reject a photo that cannot cover 10% of the canvas", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  mockDeps(t);
+  const data = await extendData({image: await b64(4096, 256)});
+  await assert.rejects(() => run(data), {code: "invalid-argument"});
+  await assert.rejects(() => run({...data, placement: {left: 0, top: 0, width: 1080, height: 68}}),
+    {code: "invalid-argument"});
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(store.has(JOB), false);
+});
+
+test("the sweeper reaches stale jobs beyond its first 200 running jobs", async (t) => {
+  const seed: Record<string, Record<string, unknown>> = {"usersv2/u1": {coins: 125}};
+  for (let i = 0; i < 200; i++) {
+    seed[`${PHOTO_JOBS}/pj_active_${i.toString().padStart(3, "0")}`] = runningJob(admin.firestore.Timestamp.now());
+  }
+  seed[JOB] = runningJob(admin.firestore.Timestamp.fromMillis(Date.now() - 11 * MINUTE));
+  const store = installFakeDb(t, seed);
+  assert.equal(await sweepStalePhotoJobsOnce(), 1);
+  assert.equal(store.get(JOB)?.state, "failed");
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+});
+
+test("the sweeper removes a result left by a crash and retries a failed deletion", async (t) => {
+  const key = "photo-walls/crashed.jpg";
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 125}, [JOB]: {
+    ...runningJob(admin.firestore.Timestamp.fromMillis(Date.now() - 11 * MINUTE)),
+    resultKey: key, cleanupPending: true,
+  }});
+  const images = new Set([key]);
+  let attempts = 0;
+  t.mock.method(photoDeps, "remove", async (resultKey: string) => {
+    if (++attempts === 1) throw new Error("temporary storage failure");
+    images.delete(resultKey);
+  });
+  assert.equal(await sweepStalePhotoJobsOnce(), 1);
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(store.get(JOB)?.cleanupPending, true);
+  assert.equal(await sweepStalePhotoJobsOnce(), 0);
+  assert.equal(images.size, 0);
+  assert.equal(store.get(JOB)?.cleanupPending, false);
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+});
+
+test("cleanup failures rotate across runs and cannot starve the other cleanup queue", async (t) => {
+  let clock = Date.now();
+  t.mock.method(Date, "now", () => clock);
+  const seed: Record<string, Record<string, unknown>> = {};
+  for (const id of ["a", "b", "c"]) {
+    seed[`${PHOTO_JOBS}/pj_${id}`] = {...runningJob(admin.firestore.Timestamp.now()), state: "failed",
+      resultKey: `photo-walls/${id}.jpg`, cleanupPending: true};
+  }
+  seed[`${PHOTO_JOBS}/pj_fal`] = {...runningJob(admin.firestore.Timestamp.now()), state: "succeeded",
+    falRequestId: "req-abcdef12", falCleanupPending: true};
+  const store = installFakeDb(t, seed);
+  mockDeps(t);
+  const remaining = new Set(["photo-walls/c.jpg"]);
+  t.mock.method(photoDeps, "remove", async (key: string) => {
+    if (key !== "photo-walls/c.jpg") {
+      clock += 11_000;
+      throw new Error("storage timeout");
+    }
+    remaining.delete(key);
+  });
+  assert.equal(await sweepStalePhotoJobsOnce(), 0);
+  assert.equal(remaining.size, 1);
+  assert.equal(store.get(`${PHOTO_JOBS}/pj_fal`)?.falCleanupPending, false);
+  assert.equal(await sweepStalePhotoJobsOnce(), 0);
+  assert.equal(remaining.size, 0);
+  assert.equal(store.get(`${PHOTO_JOBS}/pj_c`)?.cleanupPending, false);
 });
 
 test("a Pro member pays half, rounded up, and gets no watermark", async (t) => {
@@ -210,6 +345,46 @@ test("an unsafe result fails as unsafe_output, refunds the coins and stores noth
   assert.equal(deps.stored.length, 0);
 });
 
+test("Vision input and output errors fail closed without logging private request details", async (t) => {
+  for (const failingCall of [1, 2]) {
+    await t.test(`Vision failure at check ${failingCall}`, async (s) => {
+      const store = installFakeDb(s, {"usersv2/u1": {coins: 200}});
+      const deps = mockDeps(s);
+      const data = await extendData();
+      const logs: unknown[][] = [];
+      s.mock.method(logger, "warn", (...args: unknown[]) => logs.push(args));
+      s.mock.method(logger, "error", (...args: unknown[]) => logs.push(args));
+      let checks = 0;
+      s.mock.method(photoDeps, "safeSearch", async () => {
+        if (++checks === failingCall) throw new Error(`private-failure ${data.image}`);
+        return SAFE;
+      });
+      const result = await run(data) as Failed;
+      assert.equal(result.state, "failed");
+      assert.equal(result.reason, "provider_error");
+      assert.equal(result.refunded, true);
+      assert.equal(store.get("usersv2/u1")?.coins, 200);
+      assert.equal(deps.stored.length, 0);
+      assert.equal(JSON.stringify(logs).includes("private-failure"), false);
+      assert.equal(JSON.stringify(logs).includes(data.image), false);
+    });
+  }
+});
+
+test("a refund commit failure leaves a running job for the sweeper to refund once", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}}, undefined, {failCommitAt: 2});
+  mockDeps(t, {falStatus: 500});
+  const result = await run(await extendData()) as Failed;
+  assert.equal(result.refunded, false);
+  assert.equal(store.get(JOB)?.state, "running");
+  assert.equal(store.get("usersv2/u1")?.coins, 125);
+  assert.equal(await sweepStalePhotoJobsOnce(Date.now() + 11 * MINUTE), 1);
+  assert.equal(await sweepStalePhotoJobsOnce(Date.now() + 11 * MINUTE), 0);
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(store.get(REFUND)?.delta, 75);
+  assert.equal(coinTxCount(store), 2);
+});
+
 test("a fal error fails as provider_error and refunds the coins", async (t) => {
   const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
   mockDeps(t, {falStatus: 500});
@@ -253,6 +428,124 @@ test("a job that is still running is not run twice", async (t) => {
   await assert.rejects(async () => run(await extendData()), {code: "aborted"});
   assert.equal(deps.fal().length, 0);
   assert.equal(store.get("usersv2/u1")?.coins, 125);
+});
+
+test("concurrent replays charge once while the original job is running", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  const deps = mockDeps(t);
+  let entered!: () => void;
+  let release!: () => void;
+  const started = new Promise<void>((resolve) => entered = resolve);
+  const wait = new Promise<void>((resolve) => release = resolve);
+  t.mock.method(photoDeps, "safeSearch", async () => {
+    entered();
+    await wait;
+    return SAFE;
+  });
+  const data = await extendData();
+  const first = run(data);
+  await started;
+  try {
+    await assert.rejects(() => run(data), {code: "aborted", message: "in_progress"});
+  } finally {
+    release();
+  }
+  assert.equal((await first).state, "succeeded");
+  assert.equal(store.get("usersv2/u1")?.coins, 125);
+  assert.equal(coinTxCount(store), 1);
+  assert.equal(deps.fal().length, 1);
+});
+
+test("racing failures and a stale claim cannot refund the same job twice", async (t) => {
+  const started = admin.firestore.Timestamp.now();
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 125}, [JOB]: runningJob(started)});
+  assert.equal((await failPhotoJob(JOB_ID, started.toMillis() - 1, "timeout"))?.state, "running");
+  const results = await Promise.all([
+    failPhotoJob(JOB_ID, started.toMillis(), "timeout"),
+    failPhotoJob(JOB_ID, started.toMillis(), "provider_error"),
+  ]);
+  assert.deepEqual(results.map((r) => r?.state), ["failed", "failed"]);
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(store.get(REFUND)?.delta, 75);
+  assert.equal(coinTxCount(store), 1);
+});
+
+test("finish acknowledgement and follow-up read failures preserve the committed outcome", async (t) => {
+  for (const [committed, readFails] of [[true, false], [true, true], [false, true]]) {
+    await t.test(`committed: ${committed}, follow-up read fails: ${readFails}`, async (s) => {
+      const store = installFakeDb(s, {"usersv2/u1": {coins: 200}});
+      mockDeps(s);
+      const removed: string[] = [];
+      s.mock.method(photoDeps, "remove", async (key: string) => removed.push(key));
+      const collection = db.collection.bind(db);
+      let failNextRead = false;
+      s.mock.method(db, "collection", (name: string) => {
+        const col = collection(name);
+        return {...col, doc: (id: string) => {
+          const ref = col.doc(id);
+          return {...ref, get: async () => {
+            if (name === PHOTO_JOBS && failNextRead) {
+              failNextRead = false;
+              throw new Error("read acknowledgement lost");
+            }
+            return ref.get();
+          }};
+        }};
+      });
+      const transaction = db.runTransaction.bind(db);
+      let transactions = 0;
+      s.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+        if (++transactions === 2 && !committed) {
+          failNextRead = readFails;
+          throw new Error("commit failed");
+        }
+        const result = await transaction(callback);
+        if (transactions === 2) {
+          failNextRead = readFails;
+          throw new Error("commit acknowledgement lost");
+        }
+        return result;
+      });
+      const result = await run(await extendData());
+      if (committed) {
+        assert.equal(result.state, "succeeded");
+        assert.equal((result as Succeeded).imageUrl, OUT_URL);
+        assert.equal(store.get("usersv2/u1")?.coins, 125);
+        assert.equal(store.has(REFUND), false);
+        assert.deepEqual(removed, []);
+      } else {
+        assert.equal(result.state, "failed");
+        assert.equal((result as Failed).refunded, true);
+        assert.equal(store.get("usersv2/u1")?.coins, 200);
+        assert.deepEqual(removed, [store.get(JOB)?.resultKey]);
+      }
+    });
+  }
+});
+
+test("a sweeper that wins a late finish refunds once and removes the unused result", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  mockDeps(t);
+  const images = new Set<string>();
+  let removals = 0;
+  t.mock.method(photoDeps, "store", async (_jpeg: Buffer, key: string) => {
+    assert.equal(await sweepStalePhotoJobsOnce(Date.now() + 11 * MINUTE), 1);
+    images.add(OUT_URL);
+    return {url: OUT_URL, key};
+  });
+  t.mock.method(photoDeps, "remove", async (key: string) => {
+    assert.equal(key, store.get(JOB)?.resultKey);
+    if (++removals === 2) throw new Error("temporary late cleanup failure");
+    images.delete(OUT_URL);
+  });
+  const result = await run(await extendData()) as Failed;
+  assert.equal(result.reason, "timeout");
+  assert.equal(result.refunded, true);
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(coinTxCount(store), 2);
+  assert.equal(store.get(JOB)?.cleanupPending, true);
+  assert.equal(await sweepStalePhotoJobsOnce(), 0);
+  assert.equal(images.size, 0);
 });
 
 test("a stale running job is refunded when its requestId is replayed", async (t) => {
@@ -307,6 +600,27 @@ test("the global daily budget refuses the job before any charge", async (t) => {
   assert.equal(store.has(JOB), false);
 });
 
+test("concurrent new jobs cannot cross either daily cap", async (t) => {
+  for (const cap of ["user", "global"]) {
+    await t.test(cap, async (s) => {
+      const store = installFakeDb(s, {"usersv2/u1": {coins: 200},
+        "photoJobDaily/u1": {day: today(), count: cap === "user" ? 9 : 0},
+        [`photoJobBudget/${today()}`]: {day: today(), count: cap === "global" ? 399 : 0},
+      });
+      mockDeps(s, {safe: () => ({...SAFE, adult: "VERY_LIKELY"})});
+      const data = await extendData();
+      const results = await Promise.allSettled([run(data), run({...data, requestId: "req-00000002"})]);
+      assert.equal(results.filter((r) => r.status === "fulfilled").length, 1);
+      const rejected = results.find((r) => r.status === "rejected") as PromiseRejectedResult;
+      assert.equal(rejected.reason.code, "resource-exhausted");
+      assert.equal(store.get("photoJobDaily/u1")?.count, cap === "user" ? 10 : 1);
+      assert.equal(store.get(`photoJobBudget/${today()}`)?.count, cap === "global" ? 400 : 1);
+      assert.equal(coinTxCount(store), 2);
+      assert.equal(store.get("usersv2/u1")?.coins, 200);
+    });
+  }
+});
+
 test("extend with too few coins fails with failed-precondition and charges nothing", async (t) => {
   const store = installFakeDb(t, {"usersv2/u1": {coins: 10}});
   mockDeps(t);
@@ -334,6 +648,10 @@ test("normalizePhoto strips EXIF and GPS metadata from the JPEG it returns", asy
   const {jpeg} = await normalizePhoto(withExif.toString("base64"));
   assert.equal((await sharp(jpeg).metadata()).exif, undefined);
   assert.equal(jpeg.includes("secret-owner"), false);
+  const result = await finishImage(withExif, {width: 720, height: 1600}, false);
+  assert.deepEqual(await sizeOf(result), {width: 720, height: 1600});
+  assert.equal((await sharp(result).metadata()).exif, undefined);
+  assert.equal(result.includes("secret-owner"), false);
 });
 
 test("isPhotoSafe blocks the listed likelihoods and a missing annotation, and allows racy LIKELY", () => {

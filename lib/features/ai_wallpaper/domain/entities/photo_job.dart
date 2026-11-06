@@ -102,6 +102,7 @@ class PhotoPlacement {
 
   /// The smallest size, as a share of the largest fitting size. The server refuses a photo under 10% of the canvas.
   static const double minScale = 0.6;
+  static const double minCanvasShare = 0.1;
 
   final PhotoSize canvas;
   final PhotoSize photo;
@@ -116,13 +117,22 @@ class PhotoPlacement {
   /// The share of the largest fitting size, from [minScale] to 1.
   double get scale => width / (photo.width * _fitScale(canvas, photo));
 
+  double get _fitCanvasShare {
+    final double fit = _fitScale(canvas, photo);
+    return photo.width * fit * photo.height * fit / (canvas.width * canvas.height);
+  }
+
+  double get _minimumScale => math.max(minScale, math.sqrt(minCanvasShare / _fitCanvasShare) + 0.01).clamp(0.0, 1.0);
+
+  bool get validForServer => width * height >= minCanvasShare * canvas.width * canvas.height;
+
   bool get isFit => this == PhotoPlacement.fit(canvas: canvas, photo: photo);
 
   PhotoPlacement moved(double dx, double dy) => _at(left + dx, top + dy, width, height);
 
   /// Scales by [factor] around the photo's centre.
   PhotoPlacement scaled(double factor) {
-    final double next = (scale * factor).clamp(minScale, 1.0);
+    final double next = (scale * factor).clamp(_minimumScale, 1.0);
     final double fit = _fitScale(canvas, photo);
     final int w = (photo.width * fit * next).round().clamp(1, canvas.width);
     final int h = (photo.height * fit * next).round().clamp(1, canvas.height);
@@ -218,7 +228,7 @@ class PhotoJobSucceeded extends PhotoJobState {
 }
 
 class PhotoJobFailed extends PhotoJobState {
-  const PhotoJobFailed({required this.reason, required this.charged, required this.refunded});
+  const PhotoJobFailed({required this.reason, required this.charged, required this.refunded, this.cost});
 
   final PhotoJobFailure reason;
 
@@ -227,6 +237,9 @@ class PhotoJobFailed extends PhotoJobState {
 
   /// True when the server returned the coins. Only meaningful when [charged].
   final bool refunded;
+
+  /// The actual server charge, when returned. Local failures have no charge amount.
+  final int? cost;
 }
 
 /// One photo to wallpaper job.

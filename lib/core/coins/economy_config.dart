@@ -20,6 +20,12 @@ int _int(Object? raw, int fallback, {int min = 0, int max = _maxPrice}) {
   return value < min || value > max ? fallback : value;
 }
 
+int _photoPrice(Object? raw, int fallback) {
+  if (raw is! num || !raw.isFinite || raw != raw.truncateToDouble()) return fallback;
+  final int value = raw.toInt();
+  return value >= 0 && value <= _maxPrice ? value : fallback;
+}
+
 double _double(Object? raw, double fallback) => raw is num && raw.isFinite && raw >= 0 ? raw.toDouble() : fallback;
 
 bool _bool(Object? raw, bool fallback) => raw is bool ? raw : fallback;
@@ -89,8 +95,8 @@ class EconomySpend {
       drawTicket: _int(m['drawTicket'], d.drawTicket),
       spinWheel: _int(m['spinWheel'], d.spinWheel),
       dailyChest: _int(m['dailyChest'], d.dailyChest),
-      photoExtend: _int(m['photoExtend'], d.photoExtend),
-      photoUpscale: _int(m['photoUpscale'], d.photoUpscale),
+      photoExtend: _photoPrice(m['photoExtend'], d.photoExtend),
+      photoUpscale: _photoPrice(m['photoUpscale'], d.photoUpscale),
     );
   }
 
@@ -385,7 +391,9 @@ class EconomyConfig {
     return EconomyConfig(
       version: _int(raw['version'], defaults.version),
       spend: raw['spend'] is Map ? EconomySpend.fromMap(toJsonMap(raw['spend'])) : defaults.spend,
-      proDiscountActions: _strings(raw['proDiscountActions'], defaults.proDiscountActions),
+      proDiscountActions: raw['proDiscountActions'] is List
+          ? List<String>.unmodifiable((raw['proDiscountActions'] as List).whereType<String>())
+          : defaults.proDiscountActions,
       proBypassActions: List<String>.unmodifiable(
         _strings(raw['proBypassActions'], defaults.proBypassActions).where((String a) => !_neverBypassed.contains(a)),
       ),
