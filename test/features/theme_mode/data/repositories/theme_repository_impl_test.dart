@@ -46,6 +46,26 @@ class _FailingAccountReadFirestoreClient extends FakeFirestoreClient {
   }) => throw StateError('account read failed');
 }
 
+/// Holds the first write of [gatedKey] until [release], so a test can start another operation while one waits.
+class _GatedSetStore extends InMemoryLocalStore {
+  _GatedSetStore(this.gatedKey);
+
+  final String gatedKey;
+  final Completer<void> gate = Completer<void>();
+  final Completer<void> waiting = Completer<void>();
+
+  void release() => gate.complete();
+
+  @override
+  Future<void> set(String key, Object? value) async {
+    if (key == gatedKey && !waiting.isCompleted) {
+      waiting.complete();
+      await gate.future;
+    }
+    await super.set(key, value);
+  }
+}
+
 /// Holds the account read until [release], so a test can change the theme while a sync waits on the network.
 class _GatedAccountReadFirestoreClient extends FakeFirestoreClient {
   final Completer<void> gate = Completer<void>();
@@ -561,18 +581,31 @@ void main() {
       expect(store.data['settings.theme.changed_at'], 100);
     });
 
-    test('a sync and an update in flight together run one after the other', () async {
+    test('an update waits until a load that is reverting Winter has finished', () async {
+      final _GatedSetStore gatedStore = _GatedSetStore('settings.darkAccent');
+      final ThemeRepositoryImpl gatedRepository = ThemeRepositoryImpl(SettingsLocalDataSource(gatedStore), firestore);
       seasonClock = () => DateTime(2027, 1, 9);
       addTearDown(() => seasonClock = () => DateTime(2027, 2));
-      store.data['settings.darkThemeID'] = prismWinterDarkThemeId;
-      store.data['settings.darkAccent'] = prismWinterDarkAccentValue;
-      store.data['settings.${winterSeason.previousThemeKey(Brightness.dark)}'] = 'kDSky';
-      store.data['settings.theme.changed_at'] = 100;
+      gatedStore.data['settings.darkThemeID'] = prismWinterDarkThemeId;
+      gatedStore.data['settings.darkAccent'] = prismWinterDarkAccentValue;
+      gatedStore.data['settings.${winterSeason.previousThemeKey(Brightness.dark)}'] = 'kDSky';
+      gatedStore.data['settings.theme.changed_at'] = 100;
 
-      await Future.wait(<Future<Object?>>[repository.load(), repository.update(darkThemeId: 'kDOlive')]);
+      final Future<Object?> load = gatedRepository.load();
+      await gatedStore.waiting.future;
+      bool updated = false;
+      final Future<void> update = gatedRepository.update(darkThemeId: 'kDOlive').then((_) => updated = true);
+      await pumpEventQueue();
 
-      expect(store.data['settings.darkThemeID'], 'kDOlive');
-      expect(repository.readSync().dark.themeId, 'kDOlive');
+      expect(updated, isFalse);
+      expect(gatedStore.data['settings.darkThemeID'], prismWinterDarkThemeId);
+
+      gatedStore.release();
+      await load;
+      await update;
+
+      expect(gatedStore.data['settings.darkThemeID'], 'kDOlive');
+      expect(gatedRepository.readSync().dark.themeId, 'kDOlive');
     });
 
     test('a failed previous-theme write does not replace the selected theme', () async {
