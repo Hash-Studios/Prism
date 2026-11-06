@@ -2342,6 +2342,46 @@
     }
   },
   "adminWalls": "Walls",
+  "adminDesktop": "Desktop",
+  "@adminDesktop": {
+    "description": "Admin review tab for desktop versions."
+  },
+  "adminDesktopEmptyTitle": "No desktop versions to review",
+  "@adminDesktopEmptyTitle": {
+    "description": "Admin empty state title."
+  },
+  "adminDesktopEmptyBody": "Desktop versions that creators submit show here.",
+  "@adminDesktopEmptyBody": {
+    "description": "Admin empty state body."
+  },
+  "adminDesktopLoadError": "Unable to load desktop versions",
+  "@adminDesktopLoadError": {
+    "description": "Admin error state title."
+  },
+  "adminDesktopReplaces": "Replaces the current desktop version",
+  "@adminDesktopReplaces": {
+    "description": "Admin card fact when the wall already has a desktop version."
+  },
+  "adminDesktopUploadSize": "Upload size",
+  "@adminDesktopUploadSize": {
+    "description": "Admin card fact label for the uploaded image size."
+  },
+  "adminDesktopApproved": "Desktop version approved",
+  "@adminDesktopApproved": {
+    "description": "Admin toast after approve."
+  },
+  "adminDesktopRejected": "Desktop version rejected",
+  "@adminDesktopRejected": {
+    "description": "Admin toast after reject."
+  },
+  "adminDesktopRejectTitle": "Reject desktop version",
+  "@adminDesktopRejectTitle": {
+    "description": "Title and confirm button of the reject sheet for a desktop version."
+  },
+  "adminDesktopWallUnavailable": "This wallpaper is no longer approved. Reject this desktop version.",
+  "@adminDesktopWallUnavailable": {
+    "description": "Admin error when approve fails because the wall changed."
+  },
   "adminWriteCount": "{count, plural, one{{count} write} other{{count} writes}}",
   "@adminWriteCount": {
     "placeholders": {
@@ -6421,6 +6461,36 @@
   },
   "notifPushWallApprovedArtistBodyUntitled": "Your wallpaper has been approved and is now visible to everyone.",
   "notifPushWallApprovedArtistTitle": "Your wallpaper is live! 🎉",
+  "notifPushDesktopVersionApprovedTitle": "Your desktop version is live",
+  "@notifPushDesktopVersionApprovedTitle": {
+    "description": "Notification title when an admin approves the creator's desktop version."
+  },
+  "notifPushDesktopVersionApprovedBody": "\"{wallTitle}\" now has a desktop version.",
+  "@notifPushDesktopVersionApprovedBody": {
+    "description": "Notification body.",
+    "placeholders": {
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushDesktopVersionApprovedBodyUntitled": "Your wallpaper now has a desktop version.",
+  "@notifPushDesktopVersionApprovedBodyUntitled": {
+    "description": "Notification body when the wall has no title."
+  },
+  "notifPushDesktopVersionRejectedTitle": "Desktop version not approved",
+  "@notifPushDesktopVersionRejectedTitle": {
+    "description": "Notification title when an admin rejects the creator's desktop version."
+  },
+  "notifPushDesktopVersionRejectedBody": "Reason: {reason}",
+  "@notifPushDesktopVersionRejectedBody": {
+    "description": "Notification body with the admin's reason.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "notifPushWallLiveFollowersBody": "\"{wallTitle}\" is now live on Prism.",
   "@notifPushWallLiveFollowersBody": {
     "placeholders": {
@@ -10443,6 +10513,183 @@
       }
     }
   },
+  "topicFollow": "Follow",
+  "@topicFollow": {
+    "description": "Button on a category or mood page. Follows it for a daily push about new wallpapers."
+  },
+  "topicFollowing": "Following",
+  "@topicFollowing": {
+    "description": "Button label when the user follows this category or mood. A tap stops following."
+  },
+  "topicFollowHint": "Follow {topic}",
+  "@topicFollowHint": {
+    "description": "Screen reader label of the Follow button. topic is a category or mood name.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicUnfollowHint": "Unfollow {topic}",
+  "@topicUnfollowHint": {
+    "description": "Screen reader label of a button that stops following a category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicFollowedToast": "Following {topic}. With topic notifications on, you get at most one push a day about new wallpapers here.",
+  "@topicFollowedToast": {
+    "description": "Toast after the user follows a category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "topicFollowLimit": "You can follow up to {max} topics. Unfollow one in Settings first.",
+  "@topicFollowLimit": {
+    "description": "Toast when the user already follows the most topics allowed.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "topicFollowFailed": "Could not update the follow. Check your connection and try again.",
+  "@topicFollowFailed": {
+    "description": "Toast when follow or unfollow of a category or mood fails."
+  },
+  "topicUnfollow": "Unfollow",
+  "@topicUnfollow": {
+    "description": "Button in the list of followed topics. Stops following that topic."
+  },
+  "topicKindCategory": "Category",
+  "@topicKindCategory": {
+    "description": "Small label under a followed topic that is a category."
+  },
+  "topicKindMood": "Mood",
+  "@topicKindMood": {
+    "description": "Small label under a followed topic that is a Home mood, such as Dreamy."
+  },
+  "followingRowTitle": "Following",
+  "@followingRowTitle": {
+    "description": "Header of the Home row of the categories and moods the user follows."
+  },
+  "followingRowLabel": "Categories and moods you follow",
+  "@followingRowLabel": {
+    "description": "Screen reader label of the Home row of followed topics."
+  },
+  "topicNewWallpapers": "{topic}, new wallpapers",
+  "@topicNewWallpapers": {
+    "description": "Screen reader label of a followed topic that has new wallpapers.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "followedTopicsTitle": "Topics you follow",
+  "@followedTopicsTitle": {
+    "description": "Settings row and sheet title: the categories and moods the user follows."
+  },
+  "followedTopicsCount": "{count, plural, =0{None yet} =1{1 topic} other{{count} topics}}",
+  "@followedTopicsCount": {
+    "description": "Settings row subtitle: how many categories and moods the user follows.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "followedTopicsEmptyTitle": "No topics yet",
+  "@followedTopicsEmptyTitle": {
+    "description": "Empty state title of the followed topics sheet."
+  },
+  "followedTopicsEmptyBody": "Open a category or a mood and tap Follow. With topic notifications on, you get at most one push a day about new wallpapers there.",
+  "@followedTopicsEmptyBody": {
+    "description": "Empty state body of the followed topics sheet."
+  },
+  "notifSettingTopics": "Topics you follow",
+  "@notifSettingTopics": {
+    "description": "Notification setting for new wallpapers in followed categories and moods."
+  },
+  "notifSettingTopicsDescription": "New wallpapers in categories and moods you follow, once a day",
+  "@notifSettingTopicsDescription": {
+    "description": "Description of the followed topics notification setting."
+  },
+  "layoutHomeHeader": "Home",
+  "@layoutHomeHeader": {
+    "description": "Layout settings section header for the Home page."
+  },
+  "layoutFollowingRow": "Show topics you follow",
+  "@layoutFollowingRow": {
+    "description": "Layout setting switch. When on, Home shows a row of followed categories and moods."
+  },
+  "layoutFollowingRowFootnote": "A row at the top of For you. A dot marks a topic with new wallpapers.",
+  "@layoutFollowingRowFootnote": {
+    "description": "Footnote under the layout setting for the followed topics row."
+  },
+  "notifPushTopicDigestTitleOne": "A new wall in {topic}",
+  "@notifPushTopicDigestTitleOne": {
+    "description": "Daily push title: one new wallpaper in a followed category or mood.",
+    "placeholders": {
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitleSolo": "{count, plural, =1{A new wall in {topic}} other{{count} new walls in {topic}}}",
+  "@notifPushTopicDigestTitleSolo": {
+    "description": "Daily push title: new wallpapers in one followed category or mood.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitlePair": "{count, plural, =1{A new wall in {topic} and {secondTopic}} other{{count} new walls in {topic} and {secondTopic}}}",
+  "@notifPushTopicDigestTitlePair": {
+    "description": "Daily push title: new wallpapers in two followed categories or moods.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      },
+      "secondTopic": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushTopicDigestTitleGroup": "{count, plural, =1{A new wall in {topic} and {others} other topics} other{{count} new walls in {topic} and {others} other topics}}",
+  "@notifPushTopicDigestTitleGroup": {
+    "description": "Daily push title: new wallpapers in three or more followed topics. others is always 2 or more.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "topic": {
+        "type": "String"
+      },
+      "others": {
+        "type": "int"
+      }
+    }
+  },
+  "notifPushTopicDigestBodyUntitled": "Tap to see what's new.",
+  "@notifPushTopicDigestBodyUntitled": {
+    "description": "Daily push body when the new wallpapers have no tags."
+  },
   "historySetAndDownloaded": "Set and downloaded",
   "@historySetAndDownloaded": {
     "description": "History tab segment on Android: walls the user set as wallpaper or downloaded."
@@ -12740,6 +12987,134 @@
   "@desktopVersionSetOnTablet": {
     "description": "Tablet button. Sets the wide desktop version as the tablet wallpaper."
   },
+  "desktopUploadAdd": "Add a desktop version",
+  "@desktopUploadAdd": {
+    "description": "Button on the creator's own approved wallpaper. Opens the screen to upload a wide version for computers."
+  },
+  "desktopUploadReplace": "Replace desktop version",
+  "@desktopUploadReplace": {
+    "description": "Same button when the wallpaper already has a desktop version."
+  },
+  "desktopUploadInReview": "Desktop version in review",
+  "@desktopUploadInReview": {
+    "description": "Disabled button text while the creator's desktop version waits for review."
+  },
+  "desktopUploadTitle": "Add a desktop version",
+  "@desktopUploadTitle": {
+    "description": "Title of the upload screen."
+  },
+  "desktopUploadReplaceTitle": "Replace desktop version",
+  "@desktopUploadReplaceTitle": {
+    "description": "Title of the upload screen when a desktop version already exists."
+  },
+  "desktopUploadIntro": "Add a wide version of this wallpaper for computers. It goes live after review.",
+  "@desktopUploadIntro": {
+    "description": "Intro text on the upload screen."
+  },
+  "desktopUploadReplaceNote": "The current desktop version stays live until the new one is approved.",
+  "@desktopUploadReplaceNote": {
+    "description": "Note on the upload screen when the creator replaces a desktop version."
+  },
+  "desktopUploadRequirements": "Use a landscape image in 16:10 or 16:9, at least 1920 px wide.",
+  "@desktopUploadRequirements": {
+    "description": "Requirements shown before the creator picks an image."
+  },
+  "desktopUploadPhoneLabel": "Phone",
+  "@desktopUploadPhoneLabel": {
+    "description": "Label under the phone wallpaper in the side-by-side preview."
+  },
+  "desktopUploadDesktopLabel": "Desktop",
+  "@desktopUploadDesktopLabel": {
+    "description": "Label under the wide image in the side-by-side preview."
+  },
+  "desktopUploadPhoneSemantic": "Phone wallpaper",
+  "@desktopUploadPhoneSemantic": {
+    "description": "Screen reader label for the phone preview."
+  },
+  "desktopUploadDesktopSemantic": "Desktop version, {width} × {height}",
+  "@desktopUploadDesktopSemantic": {
+    "description": "Screen reader label for the wide preview.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopUploadSize": "{width} × {height}, {ratio}",
+  "@desktopUploadSize": {
+    "description": "Size line under the wide preview, for example 2560 × 1600, 16:10.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      },
+      "ratio": {
+        "type": "String"
+      }
+    }
+  },
+  "desktopUploadChooseImage": "Choose image",
+  "@desktopUploadChooseImage": {
+    "description": "Button that opens the photo picker."
+  },
+  "desktopUploadChooseAnother": "Choose another image",
+  "@desktopUploadChooseAnother": {
+    "description": "Button that opens the photo picker again after a pick."
+  },
+  "desktopUploadSubmit": "Submit for review",
+  "@desktopUploadSubmit": {
+    "description": "Primary button that sends the desktop version for review."
+  },
+  "desktopUploadSubmitted": "Desktop version sent for review",
+  "@desktopUploadSubmitted": {
+    "description": "Toast after a successful submit."
+  },
+  "desktopUploadErrorPortrait": "Choose a landscape image. It must be wider than it is tall.",
+  "@desktopUploadErrorPortrait": {
+    "description": "Error when the picked image is portrait or square."
+  },
+  "desktopUploadErrorAspect": "Choose an image in 16:10 or 16:9. Crop it on your computer, then try again.",
+  "@desktopUploadErrorAspect": {
+    "description": "Error when the aspect ratio is not 16:10 or 16:9."
+  },
+  "desktopUploadErrorTooSmall": "Choose an image at least 1920 px wide. This one is {width} px wide.",
+  "@desktopUploadErrorTooSmall": {
+    "description": "Error when the image is too small.",
+    "placeholders": {
+      "width": {
+        "type": "int"
+      }
+    }
+  },
+  "desktopUploadErrorUnreadable": "Unable to open this image. Choose another one.",
+  "@desktopUploadErrorUnreadable": {
+    "description": "Error when the image cannot be decoded."
+  },
+  "desktopUploadErrorTooLarge": "This file is too large. Choose an image under 15 MB.",
+  "@desktopUploadErrorTooLarge": {
+    "description": "Error when the file is over the size limit."
+  },
+  "desktopUploadErrorPending": "A desktop version of this wallpaper is already in review.",
+  "@desktopUploadErrorPending": {
+    "description": "Error when a submission is already pending."
+  },
+  "desktopUploadErrorNotAllowed": "You can add a desktop version only to your own approved wallpapers.",
+  "@desktopUploadErrorNotAllowed": {
+    "description": "Error when the wall is not the caller's or not approved."
+  },
+  "desktopUploadErrorLimit": "Daily upload limit reached. Try again tomorrow.",
+  "@desktopUploadErrorLimit": {
+    "description": "Error when the daily upload limit is reached."
+  },
+  "desktopUploadErrorFailed": "Unable to submit. Check your connection and try again.",
+  "@desktopUploadErrorFailed": {
+    "description": "Generic submit failure."
+  },
   "desktopVersionSaveOnTablet": "Save desktop version",
   "@desktopVersionSaveOnTablet": {
     "description": "iPad button. Saves the wide desktop version to Photos."
@@ -14086,5 +14461,548 @@
   "profileBadgeCount": "{count, plural, one{1 badge} other{{count} badges}}",
   "@profileBadgeCount": {"description": "Chip on a profile that opens the list of earned badges.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
   "economyLeaderboardTopThisWeek": "Top this week",
-  "@economyLeaderboardTopThisWeek": {"description": "Section heading above the global top 5 on the Following leaderboard."}
+  "@economyLeaderboardTopThisWeek": {"description": "Section heading above the global top 5 on the Following leaderboard."},
+  "foldersSaveAll": "Save all",
+  "@foldersSaveAll": {
+    "description": "Button label that starts saving all wallpapers in a folder."
+  },
+  "foldersSaveAllTitle": "Save all wallpapers",
+  "@foldersSaveAllTitle": {
+    "description": "Title of the Save all plan sheet."
+  },
+  "foldersSaveAllChecking": "Checking the wallpapers…",
+  "@foldersSaveAllChecking": {
+    "description": "Shown while the app checks which wallpapers in the folder can be saved."
+  },
+  "foldersSaveAllPlanFailed": "Could not check the wallpapers. Try again.",
+  "@foldersSaveAllPlanFailed": {
+    "description": "Message when the Save all check fails."
+  },
+  "foldersSaveAllBusy": "Another folder is saving. Try again when it ends.",
+  "@foldersSaveAllBusy": {
+    "description": "Message when another folder is already saving."
+  },
+  "foldersSaveAllRowFree": "{count, plural, =1{1 wallpaper is free} other{{count} wallpapers are free}}",
+  "@foldersSaveAllRowFree": {
+    "description": "Plan sheet row: number of free wallpapers.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowCoins": "{count, plural, =1{1 wallpaper costs {price} coins} other{{count} wallpapers cost {price} coins each}}",
+  "@foldersSaveAllRowCoins": {
+    "description": "Plan sheet row: number of paid wallpapers and their coin price.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "price": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowPro": "{count, plural, =1{1 wallpaper needs Pro} other{{count} wallpapers need Pro}}",
+  "@foldersSaveAllRowPro": {
+    "description": "Plan sheet row: number of wallpapers that need Pro.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowSaved": "{count, plural, =1{1 wallpaper is already in Downloads} other{{count} wallpapers are already in Downloads}}",
+  "@foldersSaveAllRowSaved": {
+    "description": "Plan sheet row: number of wallpapers already in Downloads.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowBlocked": "{count, plural, =1{1 wallpaper is not available to save} other{{count} wallpapers are not available to save}}",
+  "@foldersSaveAllRowBlocked": {
+    "description": "Plan sheet row: number of wallpapers that cannot be saved.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllAffordable": "{count, plural, =0{You do not have enough coins for a paid wallpaper.} =1{Your coins cover 1 paid wallpaper.} other{Your coins cover {count} paid wallpapers.}}",
+  "@foldersSaveAllAffordable": {
+    "description": "Plan sheet line: how many paid wallpapers the user's coins cover.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllPhotosAlbum": "They go to the “{name}” album in Photos and to Downloads.",
+  "@foldersSaveAllPhotosAlbum": {
+    "description": "Plan sheet note on iOS: where saved wallpapers go. {name} is the album name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllGalleryAlbum": "They go to Pictures/Prism/{name} in your gallery and to Downloads.",
+  "@foldersSaveAllGalleryAlbum": {
+    "description": "Plan sheet note on Android: where saved wallpapers go. {name} is the folder name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllLeaveNote": "You can leave this page while it saves. If you close Prism, tap Save all again to finish.",
+  "@foldersSaveAllLeaveNote": {
+    "description": "Plan sheet note: saving continues when the user leaves the page, and what to do if Prism closes."
+  },
+  "foldersSaveAllNothing": "There is nothing new to save in this folder.",
+  "@foldersSaveAllNothing": {
+    "description": "Shown when no wallpaper in the folder can be saved."
+  },
+  "foldersSaveAllFreeButton": "{count, plural, =1{Save the free wallpaper} other{Save the {count} free wallpapers}}",
+  "@foldersSaveAllFreeButton": {
+    "description": "Primary button when only free wallpapers can be saved.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllPaidButton": "{coins, plural, =1{Save all I can (1 coin)} other{Save all I can ({coins} coins)}}",
+  "@foldersSaveAllPaidButton": {
+    "description": "Primary button that saves as many paid wallpapers as the coins allow.",
+    "placeholders": {
+      "coins": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllCountButton": "{count, plural, =1{Save 1 wallpaper} other{Save {count} wallpapers}}",
+  "@foldersSaveAllCountButton": {
+    "description": "Primary button that saves a set number of wallpapers.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllProgress": "Saving {done} of {total}",
+  "@foldersSaveAllProgress": {
+    "description": "Progress row text while wallpapers are saving.",
+    "placeholders": {
+      "done": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllProgressSemantics": "{total, plural, =1{Saving {done} of 1 wallpaper} other{Saving {done} of {total} wallpapers}}",
+  "@foldersSaveAllProgressSemantics": {
+    "description": "Screen reader label for the save progress row.",
+    "placeholders": {
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "done": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllStopping": "Stopping…",
+  "@foldersSaveAllStopping": {
+    "description": "Progress row text after the user taps Cancel."
+  },
+  "foldersSaveAllCancel": "Cancel",
+  "@foldersSaveAllCancel": {
+    "description": "Button that stops a Save all run."
+  },
+  "foldersSaveAllCancelHint": "Stops the wallpapers that have not started. They cost nothing.",
+  "@foldersSaveAllCancelHint": {
+    "description": "Hint under the Cancel button: wallpapers that have not started cost nothing."
+  },
+  "foldersSaveAllSavedTitle": "{count, plural, =0{No wallpapers saved} =1{1 wallpaper saved} other{{count} wallpapers saved}}",
+  "@foldersSaveAllSavedTitle": {
+    "description": "Summary card title after a Save all run finishes.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllStoppedTitle": "{count, plural, =0{Stopped. No wallpapers saved} =1{Stopped. 1 wallpaper saved} other{Stopped. {count} wallpapers saved}}",
+  "@foldersSaveAllStoppedTitle": {
+    "description": "Summary card title after the user stops a Save all run.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllSkipped": "{count, plural, =1{1 already in Downloads} other{{count} already in Downloads}}",
+  "@foldersSaveAllSkipped": {
+    "description": "Summary card row: wallpapers skipped because they were already in Downloads.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllFailed": "{count, plural, =1{1 failed} other{{count} failed}}",
+  "@foldersSaveAllFailed": {
+    "description": "Summary card row: wallpapers that failed to save.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllNotStarted": "{count, plural, =1{1 not started} other{{count} not started}}",
+  "@foldersSaveAllNotStarted": {
+    "description": "Summary card row: wallpapers that did not start because the run stopped.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRetry": "Retry failed",
+  "@foldersSaveAllRetry": {
+    "description": "Summary card button that retries the wallpapers that failed."
+  },
+  "foldersSaveAllDone": "Done",
+  "@foldersSaveAllDone": {
+    "description": "Summary card button that closes the summary."
+  },
+  "foldersSaveAllToast": "{count, plural, =0{No wallpapers saved from {name}.} =1{Saved 1 wallpaper from {name}.} other{Saved {count} wallpapers from {name}.}}",
+  "@foldersSaveAllToast": {
+    "description": "Toast after a Save all run. {name} is the folder name.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllToastFailed": "{failed, plural, =1{Saved {saved} from {name}. 1 failed. Open the folder to retry.} other{Saved {saved} from {name}. {failed} failed. Open the folder to retry.}}",
+  "@foldersSaveAllToastFailed": {
+    "description": "Toast after a Save all run with failures. {saved} is the number saved, {failed} the number failed, {name} the folder name.",
+    "placeholders": {
+      "failed": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "saved": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersInvite": "Invite",
+  "@foldersInvite": {
+    "description": "Button that makes an invite link for a shared folder."
+  },
+  "foldersInviteShareText": "Add wallpapers with me in {name} on Prism: {link}",
+  "@foldersInviteShareText": {
+    "description": "Text shared with a folder invite link.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersInvitePreviewTitle": "Join {name} on Prism",
+  "@foldersInvitePreviewTitle": {
+    "description": "Title of the link preview for a folder invite.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersInvitePreviewDescription": "Add and remove wallpapers in this folder together.",
+  "@foldersInvitePreviewDescription": {
+    "description": "Description of the link preview for a folder invite."
+  },
+  "foldersInviteFailed": "Could not make an invite link. Try again.",
+  "@foldersInviteFailed": {
+    "description": "Error when the invite link cannot be made."
+  },
+  "foldersInviteFull": "This folder is full. Remove someone to invite more people.",
+  "@foldersInviteFull": {
+    "description": "Error when the owner invites into a folder that has the most editors."
+  },
+  "foldersInviteLimit": "You made too many invites today. Try again tomorrow.",
+  "@foldersInviteLimit": {
+    "description": "Error when the owner hits the daily invite limit."
+  },
+  "foldersPeople": "People",
+  "@foldersPeople": {
+    "description": "Title of the sheet that lists the people in a shared folder."
+  },
+  "foldersPeopleHintOwner": "Invite up to {count} people to add and remove wallpapers. Only you can rename, share or delete this folder.",
+  "@foldersPeopleHintOwner": {
+    "description": "Hint for the owner in the people sheet.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersPeopleHintEditor": "You can add and remove wallpapers. Only the owner can rename, share or delete this folder.",
+  "@foldersPeopleHintEditor": {
+    "description": "Hint for an editor in the people sheet."
+  },
+  "foldersPeopleCount": "{count, plural, =1{1 person} other{{count} people}}",
+  "@foldersPeopleCount": {
+    "description": "Number of people in a shared folder, with the owner.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersPeopleButtonLabel": "{count, plural, =1{1 person in this folder. Show people} other{{count} people in this folder. Show people}}",
+  "@foldersPeopleButtonLabel": {
+    "description": "Screen reader label for the member avatars on a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersRoleOwner": "Owner",
+  "@foldersRoleOwner": {
+    "description": "Role of the folder owner."
+  },
+  "foldersRoleEditor": "Can add and remove",
+  "@foldersRoleEditor": {
+    "description": "Role of a person the owner invited."
+  },
+  "foldersPersonYou": "{name} (you)",
+  "@foldersPersonYou": {
+    "description": "A member row for the current user.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersUnknownPerson": "Prism user",
+  "@foldersUnknownPerson": {
+    "description": "Name shown when a member's profile cannot be read."
+  },
+  "foldersRemovePerson": "Remove",
+  "@foldersRemovePerson": {
+    "description": "Button that removes a person from a shared folder."
+  },
+  "foldersRemovePersonTitle": "Remove {name}?",
+  "@foldersRemovePersonTitle": {
+    "description": "Title of the confirm before the owner removes a person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersRemovePersonMessage": "They can no longer add or remove wallpapers here. The wallpapers they added stay.",
+  "@foldersRemovePersonMessage": {
+    "description": "Message of the confirm before the owner removes a person."
+  },
+  "foldersRemovePersonConfirm": "Remove person",
+  "@foldersRemovePersonConfirm": {
+    "description": "Confirm button that removes a person from a shared folder."
+  },
+  "foldersPersonRemoved": "Removed {name}.",
+  "@foldersPersonRemoved": {
+    "description": "Toast after the owner removes a person.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersLeave": "Leave folder",
+  "@foldersLeave": {
+    "description": "Button for an editor to leave a shared folder."
+  },
+  "foldersLeaveTitle": "Leave {name}?",
+  "@foldersLeaveTitle": {
+    "description": "Title of the confirm before an editor leaves.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersLeaveMessage": "You can no longer add or remove wallpapers here. The wallpapers you added stay.",
+  "@foldersLeaveMessage": {
+    "description": "Message of the confirm before an editor leaves."
+  },
+  "foldersLeft": "You left the folder.",
+  "@foldersLeft": {
+    "description": "Toast after an editor leaves a folder."
+  },
+  "foldersPeopleFailed": "Could not update the people in this folder. Try again.",
+  "@foldersPeopleFailed": {
+    "description": "Error when a remove or leave fails."
+  },
+  "foldersSharedWithYou": "Shared with you",
+  "@foldersSharedWithYou": {
+    "description": "Library section of folders other people invited the user to."
+  },
+  "foldersSharedLabel": "Shared",
+  "@foldersSharedLabel": {
+    "description": "Screen reader label for the shared icon on a folder card."
+  },
+  "foldersAddedBy": "Added by {name}",
+  "@foldersAddedBy": {
+    "description": "Who added a wallpaper to a shared folder.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersAddedByYou": "Added by you",
+  "@foldersAddedByYou": {
+    "description": "The current user added this wallpaper to a shared folder."
+  },
+  "foldersRemoveFromFolder": "Remove from folder",
+  "@foldersRemoveFromFolder": {
+    "description": "Button that removes a wallpaper from a folder."
+  },
+  "foldersDeleteSharedMessage": "The people you invited lose it too. Wallpapers that are in your favourites stay there.",
+  "@foldersDeleteSharedMessage": {
+    "description": "Message of the delete confirm for a folder with editors."
+  },
+  "foldersJoinTitle": "Folder invite",
+  "@foldersJoinTitle": {
+    "description": "Title of the page that opens a folder invite link."
+  },
+  "foldersJoinHeadline": "Join {name}",
+  "@foldersJoinHeadline": {
+    "description": "Headline on the folder invite page.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersJoinInvitedBy": "{name} invited you to add and remove wallpapers in this folder.",
+  "@foldersJoinInvitedBy": {
+    "description": "Body on the folder invite page.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersJoin": "Join folder",
+  "@foldersJoin": {
+    "description": "Button that joins a shared folder."
+  },
+  "foldersJoinSignIn": "Sign in to join",
+  "@foldersJoinSignIn": {
+    "description": "Button on the invite page for a guest."
+  },
+  "foldersJoinOpen": "Open folder",
+  "@foldersJoinOpen": {
+    "description": "Button on the invite page when the user is already in the folder."
+  },
+  "foldersJoinAlreadyIn": "You are already in this folder.",
+  "@foldersJoinAlreadyIn": {
+    "description": "Note on the invite page when the user is already a member."
+  },
+  "foldersJoined": "You joined {name}.",
+  "@foldersJoined": {
+    "description": "Toast after the user joins a folder.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersJoinFailed": "Could not join this folder. Try again.",
+  "@foldersJoinFailed": {
+    "description": "Error when a join fails for a network or server reason."
+  },
+  "foldersJoinLoadFailed": "Could not load this invite.",
+  "@foldersJoinLoadFailed": {
+    "description": "Error when the invite page cannot load."
+  },
+  "foldersJoinExpiredTitle": "This invite expired",
+  "@foldersJoinExpiredTitle": {
+    "description": "Title when an invite is older than 7 days."
+  },
+  "foldersJoinExpiredBody": "Invites work for 7 days. Ask the owner for a new link.",
+  "@foldersJoinExpiredBody": {
+    "description": "Body when an invite expired."
+  },
+  "foldersJoinUsedTitle": "This invite was already used",
+  "@foldersJoinUsedTitle": {
+    "description": "Title when someone already used the invite."
+  },
+  "foldersJoinUsedBody": "Each invite works once. Ask the owner for a new link.",
+  "@foldersJoinUsedBody": {
+    "description": "Body when an invite was used."
+  },
+  "foldersJoinFullTitle": "This folder is full",
+  "@foldersJoinFullTitle": {
+    "description": "Title when the folder has the most people it can have."
+  },
+  "foldersJoinFullBody": "Ask the owner to remove someone, then open the link again.",
+  "@foldersJoinFullBody": {
+    "description": "Body when the folder is full."
+  },
+  "foldersJoinUnavailableTitle": "This invite is not available",
+  "@foldersJoinUnavailableTitle": {
+    "description": "Title for a missing folder, a block or a closed account. It does not say which."
+  },
+  "foldersJoinUnavailableBody": "The folder may have been deleted, or you cannot join it.",
+  "@foldersJoinUnavailableBody": {
+    "description": "Body for an unavailable invite."
+  },
+  "foldersMakePrivateMessageShared": "Only you and the people you invited will see it. Its link stops working and its followers lose it.",
+  "@foldersMakePrivateMessageShared": {
+    "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
+  }
 }

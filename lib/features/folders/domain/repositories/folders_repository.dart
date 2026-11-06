@@ -10,7 +10,7 @@ abstract class FoldersRepository {
   int get writeRevision;
   Stream<FolderWriteFailure> get writeFailures;
 
-  /// The user's folders, most recently updated first.
+  /// The folders the user owns, then the folders they edit. Each list is most recently updated first.
   Future<Result<List<FolderEntity>>> fetchFolders(String userId);
 
   /// The folder's walls, newest first. Null when the folder does not exist or is not the user's.
@@ -27,9 +27,10 @@ abstract class FoldersRepository {
   /// Deletes the folder's items, then the folder.
   Future<Result<void>> deleteFolder(String folderId, {required String userId, bool Function()? isCancelled});
 
-  /// Writes [wall] into [folder] and the folder's new count, covers and update time in one batch.
-  Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall);
+  /// Writes [wall] into [folder] as added by [userId]. For the owner, the same batch writes the new count, covers and
+  /// update time.
+  Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId});
 
-  /// Deletes [wall] from [folder] and writes the folder's new count, covers and update time in one batch.
-  Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall);
+  /// Deletes [wall] from [folder]. For the owner, the same batch writes the new count, covers and update time.
+  Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId});
 }

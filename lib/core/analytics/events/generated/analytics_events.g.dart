@@ -3131,6 +3131,76 @@ class FolderSharedEvent extends AnalyticsEvent {
   }
 }
 
+class FolderInviteCreatedEvent extends AnalyticsEvent {
+  const FolderInviteCreatedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'folder_invite_created';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class FolderJoinedEvent extends AnalyticsEvent {
+  const FolderJoinedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'folder_joined';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
+class FolderJoinRefusedEvent extends AnalyticsEvent {
+  const FolderJoinRefusedEvent({required this.reason});
+
+  final String reason;
+
+  @override
+  String get eventName => 'folder_join_refused';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'reason': reason};
+  }
+}
+
+class FolderMemberRemovedEvent extends AnalyticsEvent {
+  const FolderMemberRemovedEvent({required this.memberCount});
+
+  final int memberCount;
+
+  @override
+  String get eventName => 'folder_member_removed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'member_count': memberCount};
+  }
+}
+
+class FolderMemberLeftEvent extends AnalyticsEvent {
+  const FolderMemberLeftEvent({required this.memberCount});
+
+  final int memberCount;
+
+  @override
+  String get eventName => 'folder_member_left';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'member_count': memberCount};
+  }
+}
+
 class FolderPushOpenedEvent extends AnalyticsEvent {
   const FolderPushOpenedEvent({required this.folderCount});
 
@@ -3142,6 +3212,97 @@ class FolderPushOpenedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'folder_count': folderCount};
+  }
+}
+
+class TopicFollowedEvent extends AnalyticsEvent {
+  const TopicFollowedEvent({required this.kind, required this.topicId});
+
+  final String kind;
+  final String topicId;
+
+  @override
+  String get eventName => 'topic_followed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'kind': kind, 'topic_id': topicId};
+  }
+}
+
+class TopicUnfollowedEvent extends AnalyticsEvent {
+  const TopicUnfollowedEvent({required this.kind, required this.topicId});
+
+  final String kind;
+  final String topicId;
+
+  @override
+  String get eventName => 'topic_unfollowed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'kind': kind, 'topic_id': topicId};
+  }
+}
+
+class TopicPushOpenedEvent extends AnalyticsEvent {
+  const TopicPushOpenedEvent({required this.topicCount});
+
+  final int topicCount;
+
+  @override
+  String get eventName => 'topic_push_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'topic_count': topicCount};
+  }
+}
+
+class FolderSaveStartedEvent extends AnalyticsEvent {
+  const FolderSaveStartedEvent({required this.wallCount, required this.coinCost, required this.pro});
+
+  final int wallCount;
+  final int coinCost;
+  final bool pro;
+
+  @override
+  String get eventName => 'folder_save_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_count': wallCount, 'coin_cost': coinCost, 'pro': pro ? 1 : 0};
+  }
+}
+
+class FolderSaveFinishedEvent extends AnalyticsEvent {
+  const FolderSaveFinishedEvent({required this.saved, required this.skipped, required this.failed});
+
+  final int saved;
+  final int skipped;
+  final int failed;
+
+  @override
+  String get eventName => 'folder_save_finished';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'saved': saved, 'skipped': skipped, 'failed': failed};
+  }
+}
+
+class FolderSaveCancelledEvent extends AnalyticsEvent {
+  const FolderSaveCancelledEvent({required this.saved, required this.notSaved});
+
+  final int saved;
+  final int notSaved;
+
+  @override
+  String get eventName => 'folder_save_cancelled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'saved': saved, 'not_saved': notSaved};
   }
 }
 
@@ -4148,6 +4309,66 @@ class WallpaperVariantUploadStartedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'wall_id': wallId, 'variant_count': variantCount};
+  }
+}
+
+class DesktopUploadStartedEvent extends AnalyticsEvent {
+  const DesktopUploadStartedEvent({required this.wallId, required this.replace});
+
+  final String wallId;
+  final bool replace;
+
+  @override
+  String get eventName => 'desktop_upload_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId, 'replace': replace ? 1 : 0};
+  }
+}
+
+class DesktopUploadSubmittedEvent extends AnalyticsEvent {
+  const DesktopUploadSubmittedEvent({required this.wallId, required this.aspect, required this.replace});
+
+  final String wallId;
+  final String aspect;
+  final bool replace;
+
+  @override
+  String get eventName => 'desktop_upload_submitted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId, 'aspect': aspect, 'replace': replace ? 1 : 0};
+  }
+}
+
+class DesktopUploadApprovedEvent extends AnalyticsEvent {
+  const DesktopUploadApprovedEvent({required this.wallId});
+
+  final String wallId;
+
+  @override
+  String get eventName => 'desktop_upload_approved';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId};
+  }
+}
+
+class DesktopUploadRejectedEvent extends AnalyticsEvent {
+  const DesktopUploadRejectedEvent({required this.wallId, required this.reason});
+
+  final String wallId;
+  final String reason;
+
+  @override
+  String get eventName => 'desktop_upload_rejected';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_id': wallId, 'reason': reason};
   }
 }
 

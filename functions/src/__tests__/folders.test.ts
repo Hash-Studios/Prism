@@ -113,7 +113,8 @@ test("folder writes that cannot be stale decrements are ignored", async (t) => {
   for (const data of events) {
     await onFolderWritten.run({params: {folderId: "f1"}, data} as unknown as Parameters<typeof onFolderWritten.run>[0]);
   }
-  assert.equal(transactions.mock.callCount(), 0);
+  // The deletion snapshot now performs one guarded cleanup transaction; other stale writes are still ignored.
+  assert.equal(transactions.mock.callCount(), 1);
   assert.deepEqual(store.get("folders/f1"), {ownerId: "u1", itemCount: 1, covers: ["B"]});
 });
 

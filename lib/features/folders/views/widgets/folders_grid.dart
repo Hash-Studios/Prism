@@ -100,6 +100,7 @@ class _FoldersGridState extends State<FoldersGrid> {
     BuildContext context, {
     required int itemCount,
     required Widget Function(int, double) card,
+    List<FolderEntity> shared = const <FolderEntity>[],
     List<PublicFolderEntity> followed = const <PublicFolderEntity>[],
   }) {
     final double textHeight =
@@ -129,6 +130,24 @@ class _FoldersGridState extends State<FoldersGrid> {
           slivers: <Widget>[
             const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.sm)),
             section(itemCount, (index) => card(index, cardWidth)),
+            if (shared.isNotEmpty) ...<Widget>[
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: PrismWallGrid.margin),
+                sliver: SliverToBoxAdapter(child: PrismSectionHeader(title: context.l10n.foldersSharedWithYou)),
+              ),
+              section(shared.length, (index) {
+                final FolderEntity folder = shared[index];
+                return FolderCard(
+                  key: ValueKey<String>('shared:${folder.id}'),
+                  name: folder.name,
+                  covers: folder.covers,
+                  itemCount: folder.itemCount,
+                  coverSize: cardWidth,
+                  markShared: true,
+                  onTap: () => unawaited(_open(folder.id)),
+                );
+              }),
+            ],
             if (followed.isNotEmpty) ...<Widget>[
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: PrismWallGrid.margin),
@@ -207,7 +226,9 @@ class _FoldersGridState extends State<FoldersGrid> {
             ),
           );
         }
-        if (state.folders.isEmpty && followed.isEmpty) {
+        final List<FolderEntity> owned = state.folders.where((folder) => folder.isOwnedBy(state.userId)).toList();
+        final List<FolderEntity> shared = state.folders.where((folder) => !folder.isOwnedBy(state.userId)).toList();
+        if (owned.isEmpty && shared.isEmpty && followed.isEmpty) {
           return _message(
             GlintState(
               kind: GlintStateKind.empty,
@@ -220,13 +241,14 @@ class _FoldersGridState extends State<FoldersGrid> {
         }
         return _grid(
           context,
-          itemCount: state.folders.length + 1,
+          itemCount: owned.length + 1,
+          shared: shared,
           followed: followed,
           card: (index, width) {
             if (index == 0) {
               return _NewFolderTile(size: width, onTap: () => unawaited(createFolderFromLibrary(context)));
             }
-            final FolderEntity folder = state.folders[index - 1];
+            final FolderEntity folder = owned[index - 1];
             return FolderCard(
               key: ValueKey<String>(folder.id),
               name: folder.name,
@@ -234,6 +256,7 @@ class _FoldersGridState extends State<FoldersGrid> {
               itemCount: folder.itemCount,
               coverSize: width,
               markPublic: folder.isPublic,
+              markShared: folder.editors.isNotEmpty,
               onTap: () => unawaited(_open(folder.id)),
             );
           },

@@ -1,3 +1,5 @@
+import 'package:Prism/features/followed_topics/domain/entities/followed_topic.dart';
+import 'package:Prism/features/followed_topics/views/topic_copy.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
 
@@ -37,6 +39,26 @@ String _followDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
   return l10n.notifPushFollowDigestTitleGroup(artist, creators - 1, walls);
 }
 
+String _topicName(String key, String fallback, AppLocalizations l10n) =>
+    FollowedTopic.parse(key)?.title(l10n) ?? fallback;
+
+String _topicDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
+  final String topic = _topicName(_stringArg(args, 'topicKey'), _stringArg(args, 'topicName'), l10n);
+  final int topics = _intArg(args, 'topicCount');
+  final int walls = _intArg(args, 'wallCount');
+  if (walls <= 1) return l10n.notifPushTopicDigestTitleOne(topic);
+  if (topics <= 1) return l10n.notifPushTopicDigestTitleSolo(walls, topic);
+  if (topics == 2) {
+    final String secondTopic = _topicName(
+      _stringArg(args, 'secondTopicKey'),
+      _stringArg(args, 'secondTopicName'),
+      l10n,
+    );
+    return l10n.notifPushTopicDigestTitlePair(walls, topic, secondTopic);
+  }
+  return l10n.notifPushTopicDigestTitleGroup(walls, topic, topics - 1);
+}
+
 ({String title, String body}) localizedNotificationCopy(InAppNotificationEntity notification, AppLocalizations l10n) =>
     localizedNotificationCopyData(
       notification.copyKind,
@@ -58,6 +80,18 @@ String _followDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
     body: _stringArg(args, 'wallTitle').trim().isEmpty
         ? l10n.notifPushWallApprovedArtistBodyUntitled
         : l10n.notifPushWallApprovedArtistBody(_stringArg(args, 'wallTitle')),
+  ),
+  'desktopVersionApproved' => (
+    title: l10n.notifPushDesktopVersionApprovedTitle,
+    body: _stringArg(args, 'wallTitle').trim().isEmpty
+        ? l10n.notifPushDesktopVersionApprovedBodyUntitled
+        : l10n.notifPushDesktopVersionApprovedBody(_stringArg(args, 'wallTitle')),
+  ),
+  'desktopVersionRejected' => (
+    title: l10n.notifPushDesktopVersionRejectedTitle,
+    body: _stringArg(args, 'reason').trim().isEmpty
+        ? fallbackBody
+        : l10n.notifPushDesktopVersionRejectedBody(_stringArg(args, 'reason')),
   ),
   'wallLiveForFollowers' => (
     title: l10n.notifPushWallLiveFollowersTitle(_stringArg(args, 'artistName')),
@@ -112,6 +146,10 @@ String _followDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
         ? l10n.notifPushFolderDigestTitleMore(_stringArg(args, 'folderName'), _intArg(args, 'folderCount') - 1)
         : l10n.notifPushFolderDigestTitleOne(_stringArg(args, 'folderName')),
     body: _stringArg(args, 'tags').trim().isEmpty ? l10n.notifPushFollowDigestBodyUntitled : _stringArg(args, 'tags'),
+  ),
+  'topicDigest' => (
+    title: _topicDigestTitle(args, l10n),
+    body: _stringArg(args, 'tags').trim().isEmpty ? l10n.notifPushTopicDigestBodyUntitled : _stringArg(args, 'tags'),
   ),
   'dropLastCall' => (
     title: l10n.notifPushDropLastCallTitle,

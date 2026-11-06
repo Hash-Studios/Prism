@@ -50,6 +50,10 @@ export {onFolderItemWritten, onFolderWritten} from "./folders";
 export {onWallPublicGateChanged, setFolderFollow, setFolderHidden, setFolderPublic} from "./publicFolders";
 export {buildWebCatalog, onWallWebCatalog} from "./webCatalog";
 export {sendFolderDigests} from "./folderDigest";
+export {sendTopicDigests} from "./topicDigest";
+export {
+  createFolderInvite, getFolderInvite, joinFolder, leaveFolder, removeFolderMember, sendFolderActivityPushes,
+} from "./sharedFolders";
 export {syncSubscription, reconcileSubscriptions} from "./syncSubscription";
 export {resolveOriginalAccess} from "./originalAccess";
 
@@ -60,6 +64,7 @@ export {claimUsername} from "./claimUsername";
 export {onUserCreated} from "./onUserCreated";
 export {processStudioCandidate} from "./studio/process";
 export {onStudioWallDesktop} from "./studio/desktop";
+export {onDesktopSubmissionWallDeleted, reviewDesktopSubmission, submitDesktopVersion} from "./desktopSubmissions";
 export {planStudioBatch, runStudioBatch} from "./studio/planRun";
 export {onStudioWallApproved} from "./studio/telegram";
 export {wallpaperPreview} from "./wallpaperPreview";

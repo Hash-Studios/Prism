@@ -6,6 +6,8 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/prism/prism_page.dart';
+import 'package:Prism/features/followed_topics/domain/entities/followed_topic.dart';
+import 'package:Prism/features/followed_topics/views/widgets/topic_follow_button.dart';
 import 'package:Prism/features/moods/biz/mood_walls_cubit.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/views/mood_copy.dart';
@@ -69,6 +71,7 @@ class _MoodScreenState extends State<MoodScreen> {
     final WallMood? mood = _mood;
     return PrismPage(
       title: mood?.title(l10n) ?? l10n.moodEmptyTitle,
+      actions: <Widget>[if (mood != null) TopicFollowButton(topic: FollowedTopic.mood(mood))],
       body: mood == null || _cubit == null
           ? GlintState(kind: GlintStateKind.empty, title: l10n.moodEmptyTitle, body: l10n.moodEmptyBody)
           : BlocBuilder<MoodWallsCubit, MoodWallsState>(

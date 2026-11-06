@@ -15,6 +15,7 @@ UNCHANGED_ENGLISH = {
     'wallpaperCropPresetPortrait': '9:16',
     'wallpaperCropPresetSquare': '1:1',
     'wallpaperCropSize': '{width} × {height} px',
+    'desktopUploadSize': '{width} × {height}, {ratio}',
     'profileProBadge': 'Pro',
     'notifPushWallRequestFilledBody': '{requestText}',
     'wallpaperLiveStyleDepth': '3D',

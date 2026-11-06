@@ -2124,6 +2124,36 @@ class AppLocalizationsId extends AppLocalizations {
   String get adminWalls => 'Wallpaper';
 
   @override
+  String get adminDesktop => 'Desktop';
+
+  @override
+  String get adminDesktopEmptyTitle => 'Tidak ada versi desktop untuk ditinjau';
+
+  @override
+  String get adminDesktopEmptyBody => 'Versi desktop yang dikirim kreator akan tampil di sini.';
+
+  @override
+  String get adminDesktopLoadError => 'Tidak dapat memuat versi desktop';
+
+  @override
+  String get adminDesktopReplaces => 'Menggantikan versi desktop yang sekarang';
+
+  @override
+  String get adminDesktopUploadSize => 'Ukuran unggahan';
+
+  @override
+  String get adminDesktopApproved => 'Versi desktop disetujui';
+
+  @override
+  String get adminDesktopRejected => 'Versi desktop ditolak';
+
+  @override
+  String get adminDesktopRejectTitle => 'Tolak versi desktop';
+
+  @override
+  String get adminDesktopWallUnavailable => 'Wallpaper ini sudah tidak disetujui. Tolak versi desktop ini.';
+
+  @override
   String adminWriteCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -7393,6 +7423,25 @@ class AppLocalizationsId extends AppLocalizations {
   String get notifPushWallApprovedArtistTitle => 'Wallpaper Anda kini tayang! 🎉';
 
   @override
+  String get notifPushDesktopVersionApprovedTitle => 'Versi desktop Anda sudah tayang';
+
+  @override
+  String notifPushDesktopVersionApprovedBody(String wallTitle) {
+    return '\"$wallTitle\" kini punya versi desktop.';
+  }
+
+  @override
+  String get notifPushDesktopVersionApprovedBodyUntitled => 'Wallpaper Anda kini punya versi desktop.';
+
+  @override
+  String get notifPushDesktopVersionRejectedTitle => 'Versi desktop tidak disetujui';
+
+  @override
+  String notifPushDesktopVersionRejectedBody(String reason) {
+    return 'Alasan: $reason';
+  }
+
+  @override
   String notifPushWallLiveFollowersBody(String wallTitle) {
     return '\"$wallTitle\" kini tayang di Prism.';
   }
@@ -11067,6 +11116,146 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get topicFollow => 'Ikuti';
+
+  @override
+  String get topicFollowing => 'Diikuti';
+
+  @override
+  String topicFollowHint(String topic) {
+    return 'Ikuti $topic';
+  }
+
+  @override
+  String topicUnfollowHint(String topic) {
+    return 'Berhenti mengikuti $topic';
+  }
+
+  @override
+  String topicFollowedToast(String topic) {
+    return 'Anda mengikuti $topic. Jika notifikasi topik aktif, Anda mendapat paling banyak satu notifikasi per hari tentang wallpaper baru di sini.';
+  }
+
+  @override
+  String topicFollowLimit(int max) {
+    return 'Anda dapat mengikuti hingga $max topik. Berhenti mengikuti salah satu di Pengaturan terlebih dahulu.';
+  }
+
+  @override
+  String get topicFollowFailed => 'Tidak dapat memperbarui status ikuti. Periksa koneksi Anda dan coba lagi.';
+
+  @override
+  String get topicUnfollow => 'Berhenti ikuti';
+
+  @override
+  String get topicKindCategory => 'Kategori';
+
+  @override
+  String get topicKindMood => 'Suasana';
+
+  @override
+  String get followingRowTitle => 'Diikuti';
+
+  @override
+  String get followingRowLabel => 'Kategori dan suasana yang Anda ikuti';
+
+  @override
+  String topicNewWallpapers(String topic) {
+    return '$topic, wallpaper baru';
+  }
+
+  @override
+  String get followedTopicsTitle => 'Topik yang Anda ikuti';
+
+  @override
+  String followedTopicsCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString topik',
+      one: '1 topik',
+      zero: 'Belum ada',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get followedTopicsEmptyTitle => 'Belum ada topik';
+
+  @override
+  String get followedTopicsEmptyBody =>
+      'Buka kategori atau suasana, lalu ketuk Ikuti. Jika notifikasi topik aktif, Anda mendapat paling banyak satu notifikasi per hari tentang wallpaper baru di sana.';
+
+  @override
+  String get notifSettingTopics => 'Topik yang Anda ikuti';
+
+  @override
+  String get notifSettingTopicsDescription => 'Wallpaper baru di kategori dan suasana yang Anda ikuti, sekali sehari';
+
+  @override
+  String get layoutHomeHeader => 'Beranda';
+
+  @override
+  String get layoutFollowingRow => 'Tampilkan topik yang Anda ikuti';
+
+  @override
+  String get layoutFollowingRowFootnote =>
+      'Baris di bagian atas Untuk Anda. Titik menandai topik dengan wallpaper baru.';
+
+  @override
+  String notifPushTopicDigestTitleOne(String topic) {
+    return 'Wallpaper baru di $topic';
+  }
+
+  @override
+  String notifPushTopicDigestTitleSolo(int count, String topic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper baru di $topic',
+      one: 'Wallpaper baru di $topic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitlePair(int count, String topic, String secondTopic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper baru di $topic dan $secondTopic',
+      one: 'Wallpaper baru di $topic dan $secondTopic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitleGroup(int count, String topic, int others) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper baru di $topic dan $others topik lainnya',
+      one: 'Wallpaper baru di $topic dan $others topik lainnya',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushTopicDigestBodyUntitled => 'Ketuk untuk melihat yang baru.';
+
+  @override
   String get historySetAndDownloaded => 'Dipasang dan diunduh';
 
   @override
@@ -12896,6 +13085,93 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopVersionSetOnTablet => 'Pasang versi desktop';
 
   @override
+  String get desktopUploadAdd => 'Tambahkan versi desktop';
+
+  @override
+  String get desktopUploadReplace => 'Ganti versi desktop';
+
+  @override
+  String get desktopUploadInReview => 'Versi desktop sedang ditinjau';
+
+  @override
+  String get desktopUploadTitle => 'Tambahkan versi desktop';
+
+  @override
+  String get desktopUploadReplaceTitle => 'Ganti versi desktop';
+
+  @override
+  String get desktopUploadIntro =>
+      'Tambahkan versi lebar wallpaper ini untuk komputer. Versi ini tayang setelah ditinjau.';
+
+  @override
+  String get desktopUploadReplaceNote => 'Versi desktop yang sekarang tetap tayang sampai versi baru disetujui.';
+
+  @override
+  String get desktopUploadRequirements => 'Gunakan gambar lanskap dengan rasio 16:10 atau 16:9, lebar minimal 1920 px.';
+
+  @override
+  String get desktopUploadPhoneLabel => 'Ponsel';
+
+  @override
+  String get desktopUploadDesktopLabel => 'Desktop';
+
+  @override
+  String get desktopUploadPhoneSemantic => 'Wallpaper ponsel';
+
+  @override
+  String desktopUploadDesktopSemantic(int width, int height) {
+    return 'Versi desktop, $width × $height';
+  }
+
+  @override
+  String desktopUploadSize(int width, int height, String ratio) {
+    return '$width × $height, $ratio';
+  }
+
+  @override
+  String get desktopUploadChooseImage => 'Pilih gambar';
+
+  @override
+  String get desktopUploadChooseAnother => 'Pilih gambar lain';
+
+  @override
+  String get desktopUploadSubmit => 'Kirim untuk ditinjau';
+
+  @override
+  String get desktopUploadSubmitted => 'Versi desktop dikirim untuk ditinjau';
+
+  @override
+  String get desktopUploadErrorPortrait => 'Pilih gambar lanskap. Lebarnya harus lebih besar dari tingginya.';
+
+  @override
+  String get desktopUploadErrorAspect =>
+      'Pilih gambar dengan rasio 16:10 atau 16:9. Potong gambar di komputer Anda, lalu coba lagi.';
+
+  @override
+  String desktopUploadErrorTooSmall(int width) {
+    return 'Pilih gambar dengan lebar minimal 1920 px. Gambar ini lebarnya $width px.';
+  }
+
+  @override
+  String get desktopUploadErrorUnreadable => 'Gambar ini tidak dapat dibuka. Pilih gambar lain.';
+
+  @override
+  String get desktopUploadErrorTooLarge => 'File ini terlalu besar. Pilih gambar di bawah 15 MB.';
+
+  @override
+  String get desktopUploadErrorPending => 'Versi desktop dari wallpaper ini sudah dalam peninjauan.';
+
+  @override
+  String get desktopUploadErrorNotAllowed =>
+      'Anda hanya dapat menambahkan versi desktop ke wallpaper Anda sendiri yang sudah disetujui.';
+
+  @override
+  String get desktopUploadErrorLimit => 'Batas unggahan harian tercapai. Coba lagi besok.';
+
+  @override
+  String get desktopUploadErrorFailed => 'Tidak dapat mengirim. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
   String get desktopVersionSaveOnTablet => 'Simpan versi desktop ke Foto';
 
   @override
@@ -13927,4 +14203,506 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get economyLeaderboardTopThisWeek => 'Teratas minggu ini';
+
+  @override
+  String get foldersSaveAll => 'Simpan semua';
+
+  @override
+  String get foldersSaveAllTitle => 'Simpan semua wallpaper';
+
+  @override
+  String get foldersSaveAllChecking => 'Memeriksa wallpaper…';
+
+  @override
+  String get foldersSaveAllPlanFailed => 'Wallpaper tidak bisa diperiksa. Coba lagi.';
+
+  @override
+  String get foldersSaveAllBusy => 'Folder lain sedang disimpan. Coba lagi setelah selesai.';
+
+  @override
+  String foldersSaveAllRowFree(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper gratis',
+      one: '1 wallpaper gratis',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowCoins(int count, int price) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper berharga $priceString koin masing-masing',
+      one: '1 wallpaper berharga $priceString koin',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowPro(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper perlu Pro',
+      one: '1 wallpaper perlu Pro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowSaved(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper sudah ada di Unduhan',
+      one: '1 wallpaper sudah ada di Unduhan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowBlocked(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper tidak tersedia untuk disimpan',
+      one: '1 wallpaper tidak tersedia untuk disimpan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllAffordable(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Koinmu cukup untuk $countString wallpaper berbayar.',
+      one: 'Koinmu cukup untuk 1 wallpaper berbayar.',
+      zero: 'Koinmu tidak cukup untuk wallpaper berbayar.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPhotosAlbum(String name) {
+    return 'Wallpaper akan masuk ke album “$name” di Foto dan ke Unduhan.';
+  }
+
+  @override
+  String foldersSaveAllGalleryAlbum(String name) {
+    return 'Wallpaper akan masuk ke Pictures/Prism/$name di galerimu dan ke Unduhan.';
+  }
+
+  @override
+  String get foldersSaveAllLeaveNote =>
+      'Kamu bisa meninggalkan halaman ini saat menyimpan. Jika kamu menutup Prism, ketuk Simpan semua lagi untuk menyelesaikannya.';
+
+  @override
+  String get foldersSaveAllNothing => 'Tidak ada yang baru untuk disimpan di folder ini.';
+
+  @override
+  String foldersSaveAllFreeButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Simpan $countString wallpaper gratis',
+      one: 'Simpan wallpaper gratis',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPaidButton(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Simpan semua yang bisa ($coinsString koin)',
+      one: 'Simpan semua yang bisa (1 koin)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllCountButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Simpan $countString wallpaper',
+      one: 'Simpan 1 wallpaper',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllProgress(int done, int total) {
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Menyimpan $doneString dari $totalString';
+  }
+
+  @override
+  String foldersSaveAllProgressSemantics(int total, int done) {
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: 'Menyimpan $doneString dari $totalString wallpaper',
+      one: 'Menyimpan $doneString dari 1 wallpaper',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllStopping => 'Menghentikan…';
+
+  @override
+  String get foldersSaveAllCancel => 'Batal';
+
+  @override
+  String get foldersSaveAllCancelHint =>
+      'Menghentikan wallpaper yang belum dimulai. Wallpaper itu tidak dikenai biaya.';
+
+  @override
+  String foldersSaveAllSavedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpaper disimpan',
+      one: '1 wallpaper disimpan',
+      zero: 'Tidak ada wallpaper yang disimpan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllStoppedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Dihentikan. $countString wallpaper disimpan',
+      one: 'Dihentikan. 1 wallpaper disimpan',
+      zero: 'Dihentikan. Tidak ada wallpaper yang disimpan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllSkipped(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString sudah ada di Unduhan',
+      one: '1 sudah ada di Unduhan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllFailed(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString gagal', one: '1 gagal');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllNotStarted(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString belum dimulai',
+      one: '1 belum dimulai',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllRetry => 'Coba ulang yang gagal';
+
+  @override
+  String get foldersSaveAllDone => 'Selesai';
+
+  @override
+  String foldersSaveAllToast(int count, String name) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Tersimpan $countString wallpaper dari $name.',
+      one: 'Tersimpan 1 wallpaper dari $name.',
+      zero: 'Tidak ada wallpaper yang tersimpan dari $name.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllToastFailed(int failed, int saved, String name) {
+    final intl.NumberFormat failedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String failedString = failedNumberFormat.format(failed);
+    final intl.NumberFormat savedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String savedString = savedNumberFormat.format(saved);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      failed,
+      locale: localeName,
+      other: 'Tersimpan $savedString dari $name. $failedString gagal. Buka folder untuk mencoba lagi.',
+      one: 'Tersimpan $savedString dari $name. 1 gagal. Buka folder untuk mencoba lagi.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersInvite => 'Undang';
+
+  @override
+  String foldersInviteShareText(String name, String link) {
+    return 'Tambahkan wallpaper bersama saya di $name di Prism: $link';
+  }
+
+  @override
+  String foldersInvitePreviewTitle(String name) {
+    return 'Gabung ke $name di Prism';
+  }
+
+  @override
+  String get foldersInvitePreviewDescription => 'Tambahkan dan hapus wallpaper di folder ini bersama-sama.';
+
+  @override
+  String get foldersInviteFailed => 'Tidak dapat membuat tautan undangan. Coba lagi.';
+
+  @override
+  String get foldersInviteFull => 'Folder ini sudah penuh. Hapus seseorang untuk mengundang lebih banyak orang.';
+
+  @override
+  String get foldersInviteLimit => 'Anda sudah membuat terlalu banyak undangan hari ini. Coba lagi besok.';
+
+  @override
+  String get foldersPeople => 'Orang';
+
+  @override
+  String foldersPeopleHintOwner(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Undang hingga $countString orang untuk menambah dan menghapus wallpaper. Hanya Anda yang bisa mengganti nama, membagikan, atau menghapus folder ini.';
+  }
+
+  @override
+  String get foldersPeopleHintEditor =>
+      'Anda bisa menambah dan menghapus wallpaper. Hanya pemilik yang bisa mengganti nama, membagikan, atau menghapus folder ini.';
+
+  @override
+  String foldersPeopleCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString orang', one: '1 orang');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersPeopleButtonLabel(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString orang di folder ini. Tampilkan orang',
+      one: '1 orang di folder ini. Tampilkan orang',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersRoleOwner => 'Pemilik';
+
+  @override
+  String get foldersRoleEditor => 'Bisa menambah dan menghapus';
+
+  @override
+  String foldersPersonYou(String name) {
+    return '$name (Anda)';
+  }
+
+  @override
+  String get foldersUnknownPerson => 'Pengguna Prism';
+
+  @override
+  String get foldersRemovePerson => 'Hapus';
+
+  @override
+  String foldersRemovePersonTitle(String name) {
+    return 'Hapus $name?';
+  }
+
+  @override
+  String get foldersRemovePersonMessage =>
+      'Mereka tidak bisa lagi menambah atau menghapus wallpaper di sini. Wallpaper yang mereka tambahkan tetap ada.';
+
+  @override
+  String get foldersRemovePersonConfirm => 'Hapus orang';
+
+  @override
+  String foldersPersonRemoved(String name) {
+    return '$name dihapus.';
+  }
+
+  @override
+  String get foldersLeave => 'Keluar dari folder';
+
+  @override
+  String foldersLeaveTitle(String name) {
+    return 'Keluar dari $name?';
+  }
+
+  @override
+  String get foldersLeaveMessage =>
+      'Anda tidak bisa lagi menambah atau menghapus wallpaper di sini. Wallpaper yang Anda tambahkan tetap ada.';
+
+  @override
+  String get foldersLeft => 'Anda keluar dari folder.';
+
+  @override
+  String get foldersPeopleFailed => 'Tidak dapat memperbarui orang di folder ini. Coba lagi.';
+
+  @override
+  String get foldersSharedWithYou => 'Dibagikan kepada Anda';
+
+  @override
+  String get foldersSharedLabel => 'Dibagikan';
+
+  @override
+  String foldersAddedBy(String name) {
+    return 'Ditambahkan oleh $name';
+  }
+
+  @override
+  String get foldersAddedByYou => 'Ditambahkan oleh Anda';
+
+  @override
+  String get foldersRemoveFromFolder => 'Hapus dari folder';
+
+  @override
+  String get foldersDeleteSharedMessage =>
+      'Orang yang Anda undang juga akan kehilangannya. Wallpaper yang ada di favorit Anda tetap di sana.';
+
+  @override
+  String get foldersJoinTitle => 'Undangan folder';
+
+  @override
+  String foldersJoinHeadline(String name) {
+    return 'Gabung ke $name';
+  }
+
+  @override
+  String foldersJoinInvitedBy(String name) {
+    return '$name mengundang Anda untuk menambah dan menghapus wallpaper di folder ini.';
+  }
+
+  @override
+  String get foldersJoin => 'Gabung ke folder';
+
+  @override
+  String get foldersJoinSignIn => 'Masuk untuk bergabung';
+
+  @override
+  String get foldersJoinOpen => 'Buka folder';
+
+  @override
+  String get foldersJoinAlreadyIn => 'Anda sudah ada di folder ini.';
+
+  @override
+  String foldersJoined(String name) {
+    return 'Anda bergabung ke $name.';
+  }
+
+  @override
+  String get foldersJoinFailed => 'Tidak dapat bergabung ke folder ini. Coba lagi.';
+
+  @override
+  String get foldersJoinLoadFailed => 'Tidak dapat memuat undangan ini.';
+
+  @override
+  String get foldersJoinExpiredTitle => 'Undangan ini sudah kedaluwarsa';
+
+  @override
+  String get foldersJoinExpiredBody => 'Undangan berlaku selama 7 hari. Minta tautan baru kepada pemilik.';
+
+  @override
+  String get foldersJoinUsedTitle => 'Undangan ini sudah pernah digunakan';
+
+  @override
+  String get foldersJoinUsedBody => 'Setiap undangan hanya berlaku sekali. Minta tautan baru kepada pemilik.';
+
+  @override
+  String get foldersJoinFullTitle => 'Folder ini sudah penuh';
+
+  @override
+  String get foldersJoinFullBody => 'Minta pemilik untuk menghapus seseorang, lalu buka tautan lagi.';
+
+  @override
+  String get foldersJoinUnavailableTitle => 'Undangan ini tidak tersedia';
+
+  @override
+  String get foldersJoinUnavailableBody =>
+      'Mungkin folder ini sudah dihapus, atau Anda tidak bisa bergabung dengannya.';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'Hanya Anda dan orang yang Anda undang yang bisa melihatnya. Tautannya berhenti berfungsi dan pengikutnya kehilangan folder ini.';
 }

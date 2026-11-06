@@ -252,7 +252,8 @@ data class SaveMediaRequest (
 data class DownloadRequest (
   val link: String,
   val filenameWithoutExtension: String,
-  val isLocalFile: Boolean
+  val isLocalFile: Boolean,
+  val album: String? = null
 )
  {
   companion object {
@@ -260,7 +261,8 @@ data class DownloadRequest (
       val link = pigeonVar_list[0] as String
       val filenameWithoutExtension = pigeonVar_list[1] as String
       val isLocalFile = pigeonVar_list[2] as Boolean
-      return DownloadRequest(link, filenameWithoutExtension, isLocalFile)
+      val album = pigeonVar_list[3] as String?
+      return DownloadRequest(link, filenameWithoutExtension, isLocalFile, album)
     }
   }
   fun toList(): List<Any?> {
@@ -268,6 +270,7 @@ data class DownloadRequest (
       link,
       filenameWithoutExtension,
       isLocalFile,
+      album,
     )
   }
   override fun equals(other: Any?): Boolean {
@@ -278,7 +281,7 @@ data class DownloadRequest (
       return true
     }
     val other = other as DownloadRequest
-    return PrismMediaApiPigeonUtils.deepEquals(this.link, other.link) && PrismMediaApiPigeonUtils.deepEquals(this.filenameWithoutExtension, other.filenameWithoutExtension) && PrismMediaApiPigeonUtils.deepEquals(this.isLocalFile, other.isLocalFile)
+    return PrismMediaApiPigeonUtils.deepEquals(this.link, other.link) && PrismMediaApiPigeonUtils.deepEquals(this.filenameWithoutExtension, other.filenameWithoutExtension) && PrismMediaApiPigeonUtils.deepEquals(this.isLocalFile, other.isLocalFile) && PrismMediaApiPigeonUtils.deepEquals(this.album, other.album)
   }
 
   override fun hashCode(): Int {
@@ -286,10 +289,11 @@ data class DownloadRequest (
     result = 31 * result + PrismMediaApiPigeonUtils.deepHash(this.link)
     result = 31 * result + PrismMediaApiPigeonUtils.deepHash(this.filenameWithoutExtension)
     result = 31 * result + PrismMediaApiPigeonUtils.deepHash(this.isLocalFile)
+    result = 31 * result + PrismMediaApiPigeonUtils.deepHash(this.album)
     return result
   }
   override fun toString(): String {
-    return "DownloadRequest(link=$link, filenameWithoutExtension=$filenameWithoutExtension, isLocalFile=$isLocalFile)"
+    return "DownloadRequest(link=$link, filenameWithoutExtension=$filenameWithoutExtension, isLocalFile=$isLocalFile, album=$album)"
   }
 }
 
@@ -449,6 +453,7 @@ private open class PrismMediaApiPigeonCodec : StandardMessageCodec() {
 interface PrismMediaHostApi {
   fun saveMedia(request: SaveMediaRequest, callback: (Result<OperationResult>) -> Unit)
   fun enqueueDownload(request: DownloadRequest, callback: (Result<OperationResult>) -> Unit)
+  fun prepareAlbumSave(album: String, callback: (Result<OperationResult>) -> Unit)
   fun listDownloads(callback: (Result<DownloadItemsResult>) -> Unit)
   fun clearDownloads(callback: (Result<OperationResult>) -> Unit)
   fun deleteDownload(path: String, callback: (Result<OperationResult>) -> Unit)
@@ -489,6 +494,26 @@ interface PrismMediaHostApi {
             val args = message as List<Any?>
             val requestArg = args[0] as DownloadRequest
             api.enqueueDownload(requestArg) { result: Result<OperationResult> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PrismMediaApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(PrismMediaApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.Prism.PrismMediaHostApi.prepareAlbumSave$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val albumArg = args[0] as String
+            api.prepareAlbumSave(albumArg) { result: Result<OperationResult> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(PrismMediaApiPigeonUtils.wrapError(error))

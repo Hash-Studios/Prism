@@ -56,6 +56,12 @@
     <string name="notif_push_folder_digest_title_more">New in %1$s and %2$s more</string>
     <string name="notif_push_folder_digest_body">%1$s</string>
     <string name="notif_push_folder_digest_body_untitled">Tap to see them all.</string>
+    <string name="notif_push_topic_digest_title_one">A new wall in %1$s</string>
+    <string name="notif_push_topic_digest_title_solo">%2$s new walls in %1$s</string>
+    <string name="notif_push_topic_digest_title_pair">%3$s new walls in %1$s and %2$s</string>
+    <string name="notif_push_topic_digest_title_group">%3$s new walls in %1$s and %2$s other topics</string>
+    <string name="notif_push_topic_digest_body">%1$s</string>
+    <string name="notif_push_topic_digest_body_untitled">Tap to see what\'s new.</string>
     <string name="notif_push_drop_last_call_title">Last call on this week\'s Drop</string>
     <string name="notif_push_drop_last_call_body">%1$s ends in %2$s h. Wallpapers are unavailable for a month afterward.</string>
     <string name="notif_push_draw_winner_title">You won the Prism Draw</string>

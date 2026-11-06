@@ -72,6 +72,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
   late bool _recommendations = _readPref(NotificationPrefKeys.recommendations);
   late bool _streakReminders = _readPref(NotificationPrefKeys.streakReminders);
   late bool _folders = _readPref(NotificationPrefKeys.folders);
+  late bool _topics = _readPref(NotificationPrefKeys.topics);
 
   bool? _permissionGranted;
 
@@ -242,6 +243,14 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
                 onChanged: (bool value) => _change(value, () => _setFolders(value), needsSignIn: true),
               ),
               _toggle(
+                icon: Icons.interests_rounded,
+                title: context.l10n.notifSettingTopics,
+                subtitle: context.l10n.notifSettingTopicsDescription,
+                value: _topics,
+                needsSignIn: true,
+                onChanged: (bool value) => _change(value, () => _setTopics(value), needsSignIn: true),
+              ),
+              _toggle(
                 icon: Icons.lightbulb_rounded,
                 title: context.l10n.notifSettingRecommendations,
                 subtitle: context.l10n.notifSettingRecommendationsDescription,
@@ -308,6 +317,13 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
     setState(() => _folders = value);
     analytics.track(NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.folders, value: value));
     unawaited(FcmTokenService.instance.saveFolderAlerts(userId: app_state.prismUser.id, enabled: value));
+  }
+
+  Future<void> _setTopics(bool value) async {
+    await _settingsLocal.set(NotificationPrefKeys.topics, value);
+    setState(() => _topics = value);
+    analytics.track(NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.topics, value: value));
+    unawaited(FcmTokenService.instance.saveTopicAlerts(userId: app_state.prismUser.id, enabled: value));
   }
 
   Future<void> _setWotd(bool value) async {

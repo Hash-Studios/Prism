@@ -184,6 +184,7 @@ void main() {
 
     await tester.scrollUntilVisible(find.text('Large'), -200, scrollable: find.byType(Scrollable).first);
     await _tap(tester, find.text('Large'));
+    await tester.scrollUntilVisible(_switchFor('Search'), -200, scrollable: find.byType(Scrollable).first);
     await _tap(tester, _switchFor('Search'));
     expect(store.value.isDefaultLayout, isFalse);
 
@@ -211,7 +212,8 @@ void main() {
     await _tap(tester, find.text('Search'));
     expect(store.value.hiddenTabs, isEmpty);
 
-    await _tap(tester, find.text('Home'));
+    // The first "Home" is the tab row; the second is the Home section header further down.
+    await _tap(tester, find.text('Home').first);
     expect(store.value.hiddenTabs, isEmpty);
   });
 
@@ -293,6 +295,16 @@ void main() {
       findsNothing,
     );
     handle.dispose();
+  });
+
+  testWidgets('the Show topics you follow switch turns the Home row off and back on', (tester) async {
+    await _pumpPage(tester);
+
+    await _tap(tester, find.byType(Switch).last);
+    expect(store.value.followingRow, isFalse);
+
+    await _tap(tester, find.byType(Switch).last);
+    expect(store.value.followingRow, isTrue);
   });
 
   testWidgets('Reset layout turns one-handed controls back off', (tester) async {

@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 /// Asks for a reason, then runs [onSubmit] with it. The sheet stays open, with the reason kept, when saving fails.
 Future<void> showRejectReasonSheet(
   BuildContext context, {
-  required Future<void> Function(String reason) onSubmit,
+  required Future<void> Function(String reason, RejectReason? picked) onSubmit,
   String? title,
   String? confirmLabel,
 }) {
@@ -29,7 +29,7 @@ class _RejectReasonSheet extends StatefulWidget {
 
   final String title;
   final String confirmLabel;
-  final Future<void> Function(String reason) onSubmit;
+  final Future<void> Function(String reason, RejectReason? picked) onSubmit;
 
   @override
   State<_RejectReasonSheet> createState() => _RejectReasonSheetState();
@@ -90,7 +90,7 @@ class _RejectReasonSheetState extends State<_RejectReasonSheet> {
       _errorMessage = null;
     });
     try {
-      await widget.onSubmit(reason);
+      await widget.onSubmit(reason, _picked);
       if (mounted) Navigator.of(context).pop();
     } catch (error, stackTrace) {
       logger.e('Admin reject failed', tag: 'AdminReview', error: error, stackTrace: stackTrace);

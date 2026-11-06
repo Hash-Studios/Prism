@@ -1305,6 +1305,20 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "memberIds",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "folders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "ownerId",
           "order": "ASCENDING"
         },
@@ -1583,17 +1597,73 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "originalProtected",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_url",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "wallpaper_sha",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_path",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "thumb_sha",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "review",
           "order": "ASCENDING"
         },
         {
           "fieldPath": "editorsChoiceAt",
           "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "private",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "topicAlerts",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "followedTopicsOffset",
+          "order": "ASCENDING"
         }
       ]
     },
     {
       "collectionGroup": "comments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "state",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "desktopSubmissions",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -1961,6 +2031,20 @@
     {
       "collectionGroup": "comments",
       "fieldPath": "authorUid",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "private",
+      "fieldPath": "followedTopicsOffset",
       "indexes": [
         {
           "order": "ASCENDING",

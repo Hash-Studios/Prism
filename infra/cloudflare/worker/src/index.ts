@@ -140,6 +140,7 @@ const PAGE_QUERY_KEYS = new Map<string, Set<string>>([
   ['/redeem', new Set(['code'])],
 ]);
 const PAGE_UTM_KEYS = new Set(['utm_source', 'utm_medium', 'utm_campaign']);
+const FOLDER_INVITE_CODE_REGEX = /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{10}$/;
 const PREVIEW_IMAGE_HOSTS = new Set([
   'raw.githubusercontent.com',
   'images.pexels.com',
@@ -825,6 +826,8 @@ function isAllowedAppPage(segments: string[], url: URL): boolean {
   if (PAGE_IDENTIFIER_ROOTS.has(segments[0]) && segments.length === 2 && isSafePathSegment(segments[1])) return true;
   if (PAGE_IDENTIFIER_ROOTS.has(segments[0]) && segments.length === 1 && url.searchParams.size > 0) return true;
   if (PAGE_PARAMETER_ROOTS.has(segments[0]) && segments.length === 2 && isSafePathSegment(segments[1])) return true;
+  if (segments.length === 3 && segments[0] === 'folder' && segments[1] === 'invite'
+      && FOLDER_INVITE_CODE_REGEX.test(segments[2])) return true;
   if (segments.length === 2 && ['collection', 'category', 'wallpaper'].includes(segments[0]) && isSafePathSegment(segments[1])) {
     return true;
   }
@@ -855,11 +858,14 @@ function hasAllowedPageQuery(segments: string[], url: URL): boolean {
     : segments[0] === 'wallpaper'
       ? '/wallpaper'
       : routePath;
-  const allowed = PAGE_QUERY_KEYS.get(queryRoute) ?? new Set<string>();
+  const isFolderRoute = isFolderPage(url);
+  const allowed = isFolderRoute ? new Set<string>(['invite']) : PAGE_QUERY_KEYS.get(queryRoute) ?? new Set<string>();
   for (const key of url.searchParams.keys()) {
     if (url.searchParams.getAll(key).length !== 1) return false;
     if (!allowed.has(key) && !PAGE_UTM_KEYS.has(key)) return false;
   }
+  if (isFolderRoute && url.searchParams.has('invite')
+      && !FOLDER_INVITE_CODE_REGEX.test(url.searchParams.get('invite') ?? '')) return false;
   const queryValue = (...keys: string[]) => keys.map((key) => url.searchParams.get(key)).find(isNonEmptyString) ?? '';
   if (queryRoute === '/library' && url.searchParams.has('tab')
       && !['favourites', 'downloads', 'history'].includes(url.searchParams.get('tab')?.toLowerCase() ?? '')) return false;
@@ -1053,10 +1059,11 @@ function buildDefaultPreview(type: LinkType, canonical: URL, env: Env): PreviewD
   }
 
   if (type === 'page') {
-    if (isFolderPage(canonical)) {
+    if (isFolderPage(canonical) || isFolderInvitePath(canonical)) {
+      const isInvite = canonical.searchParams.has('invite') || isFolderInvitePath(canonical);
       return {
-        title: 'A folder on Prism',
-        description: 'Open this folder in Prism.',
+        title: isInvite ? 'An invite to a folder on Prism' : 'A folder on Prism',
+        description: isInvite ? 'Open this invite in Prism to join the folder.' : 'Open this folder in Prism.',
         image_source_url: '',
         username: '',
         provider: '',
@@ -1150,6 +1157,11 @@ function isFolderShareImageUrl(value: URL, env: Env): boolean {
   const prefix = `${base.pathname.replace(/\/$/, '')}/push-gallery/v1/`;
   return value.origin === base.origin && value.pathname.startsWith(prefix)
     && /^[a-f0-9]{64}\.jpg$/.test(value.pathname.slice(prefix.length));
+}
+
+function isFolderInvitePath(canonical: URL): boolean {
+  const match = /^\/folder\/invite\/([^/]+)$/.exec(canonical.pathname);
+  return match != null && FOLDER_INVITE_CODE_REGEX.test(match[1]);
 }
 
 function isFolderPage(canonical: URL): boolean {

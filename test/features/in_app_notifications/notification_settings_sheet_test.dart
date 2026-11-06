@@ -280,6 +280,7 @@ void main() {
         'Followers',
         'Posts',
         'Folders you follow',
+        'Topics you follow',
         'Recommendations',
         'Streak reminders',
       ];
