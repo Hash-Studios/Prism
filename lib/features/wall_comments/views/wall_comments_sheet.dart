@@ -183,9 +183,8 @@ class CommentRow extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onLongPress: comment.pending ? null : () => showCommentMenu(context, comment, wall),
-        child: AnimatedOpacity(
+        child: Opacity(
           opacity: comment.pending ? 0.55 : 1,
-          duration: context.motion(PrismDurations.fast),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: PrismSpace.sm),
             child: Row(

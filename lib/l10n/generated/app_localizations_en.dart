@@ -2131,6 +2131,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminWalls => 'Walls';
 
   @override
+  String get adminDesktop => 'Desktop';
+
+  @override
+  String get adminDesktopEmptyTitle => 'No desktop versions to review';
+
+  @override
+  String get adminDesktopEmptyBody => 'Desktop versions that creators submit show here.';
+
+  @override
+  String get adminDesktopLoadError => 'Unable to load desktop versions';
+
+  @override
+  String get adminDesktopReplaces => 'Replaces the current desktop version';
+
+  @override
+  String get adminDesktopUploadSize => 'Upload size';
+
+  @override
+  String get adminDesktopApproved => 'Desktop version approved';
+
+  @override
+  String get adminDesktopRejected => 'Desktop version rejected';
+
+  @override
+  String get adminDesktopRejectTitle => 'Reject desktop version';
+
+  @override
+  String get adminDesktopWallUnavailable => 'This wallpaper is no longer approved. Reject this desktop version.';
+
+  @override
   String adminWriteCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -2972,6 +3002,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreShareTargetCopyLink => 'Copy link';
+
+  @override
+  String get coreShareOpenOnComputer => 'Open on computer';
+
+  @override
+  String get coreShareOpenOnComputerBody => 'Type this link in a browser on your computer, or scan the code.';
+
+  @override
+  String coreShareOpenOnComputerQr(String link) {
+    return 'QR code for $link';
+  }
 
   @override
   String get coreShareTargetSaveImage => 'Save image';
@@ -7366,6 +7407,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifPushWallApprovedArtistTitle => 'Your wallpaper is live! 🎉';
 
   @override
+  String get notifPushDesktopVersionApprovedTitle => 'Your desktop version is live';
+
+  @override
+  String notifPushDesktopVersionApprovedBody(String wallTitle) {
+    return '\"$wallTitle\" now has a desktop version.';
+  }
+
+  @override
+  String get notifPushDesktopVersionApprovedBodyUntitled => 'Your wallpaper now has a desktop version.';
+
+  @override
+  String get notifPushDesktopVersionRejectedTitle => 'Desktop version not approved';
+
+  @override
+  String notifPushDesktopVersionRejectedBody(String reason) {
+    return 'Reason: $reason';
+  }
+
+  @override
   String notifPushWallLiveFollowersBody(String wallTitle) {
     return '\"$wallTitle\" is now live on Prism.';
   }
@@ -8885,6 +8945,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallpaperLiveConfirmPreview => 'Confirm in the system preview.';
+
+  @override
+  String get wallpaperLiveConfirmHome => 'In the preview, tap Set wallpaper, then Home screen.';
+
+  @override
+  String get wallpaperLiveConfirmLock => 'In the preview, tap Set wallpaper, then Lock screen.';
+
+  @override
+  String get wallpaperLiveConfirmBoth => 'In the preview, tap Set wallpaper, then Home screen and lock screen.';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'Confirm in the system preview. This phone shows the same live wall on both screens.';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'Home screen: $home. Lock screen: $lock.';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'another wallpaper';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'a Prism live wall';
+
+  @override
+  String get wallpaperLivePickForHome => 'Pick a wall for the Home screen';
+
+  @override
+  String get wallpaperLivePickForLock => 'Pick a wall for the Lock screen';
 
   @override
   String get wallpaperLiveDeviceUnavailable => 'Not available on this device';
@@ -10959,6 +11049,145 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get topicFollow => 'Follow';
+
+  @override
+  String get topicFollowing => 'Following';
+
+  @override
+  String topicFollowHint(String topic) {
+    return 'Follow $topic';
+  }
+
+  @override
+  String topicUnfollowHint(String topic) {
+    return 'Unfollow $topic';
+  }
+
+  @override
+  String topicFollowedToast(String topic) {
+    return 'Following $topic. With topic notifications on, you get at most one push a day about new wallpapers here.';
+  }
+
+  @override
+  String topicFollowLimit(int max) {
+    return 'You can follow up to $max topics. Unfollow one in Settings first.';
+  }
+
+  @override
+  String get topicFollowFailed => 'Could not update the follow. Check your connection and try again.';
+
+  @override
+  String get topicUnfollow => 'Unfollow';
+
+  @override
+  String get topicKindCategory => 'Category';
+
+  @override
+  String get topicKindMood => 'Mood';
+
+  @override
+  String get followingRowTitle => 'Following';
+
+  @override
+  String get followingRowLabel => 'Categories and moods you follow';
+
+  @override
+  String topicNewWallpapers(String topic) {
+    return '$topic, new wallpapers';
+  }
+
+  @override
+  String get followedTopicsTitle => 'Topics you follow';
+
+  @override
+  String followedTopicsCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString topics',
+      one: '1 topic',
+      zero: 'None yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get followedTopicsEmptyTitle => 'No topics yet';
+
+  @override
+  String get followedTopicsEmptyBody =>
+      'Open a category or a mood and tap Follow. With topic notifications on, you get at most one push a day about new wallpapers there.';
+
+  @override
+  String get notifSettingTopics => 'Topics you follow';
+
+  @override
+  String get notifSettingTopicsDescription => 'New wallpapers in categories and moods you follow, once a day';
+
+  @override
+  String get layoutHomeHeader => 'Home';
+
+  @override
+  String get layoutFollowingRow => 'Show topics you follow';
+
+  @override
+  String get layoutFollowingRowFootnote => 'A row at the top of For you. A dot marks a topic with new wallpapers.';
+
+  @override
+  String notifPushTopicDigestTitleOne(String topic) {
+    return 'A new wall in $topic';
+  }
+
+  @override
+  String notifPushTopicDigestTitleSolo(int count, String topic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString new walls in $topic',
+      one: 'A new wall in $topic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitlePair(int count, String topic, String secondTopic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString new walls in $topic and $secondTopic',
+      one: 'A new wall in $topic and $secondTopic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitleGroup(int count, String topic, int others) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString new walls in $topic and $others other topics',
+      one: 'A new wall in $topic and $others other topics',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushTopicDigestBodyUntitled => 'Tap to see what\'s new.';
+
+  @override
   String get historySetAndDownloaded => 'Set and downloaded';
 
   @override
@@ -12303,6 +12532,34 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose Sunrise or Sunset instead of a time. In Get Prism Wallpaper, set Time to Day for sunrise and Night for sunset.';
 
   @override
+  String get dayNightIntroAndroid =>
+      'Pick a wall for the day and one for the night. Prism switches them at the times you set.';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return 'Around $time';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'Android can switch a few minutes late to save battery.';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => 'Turn off auto-rotate?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'Turn off auto-rotate';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => 'Turn off Day and night?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'Turn off Day and night';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'Auto-rotate and Day and night both change your wallpaper. Only one can be on at a time.';
+
+  @override
   String get tipAction => 'Tip creator';
 
   @override
@@ -12765,6 +13022,90 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopVersionSetOnTablet => 'Set desktop version';
+
+  @override
+  String get desktopUploadAdd => 'Add a desktop version';
+
+  @override
+  String get desktopUploadReplace => 'Replace desktop version';
+
+  @override
+  String get desktopUploadInReview => 'Desktop version in review';
+
+  @override
+  String get desktopUploadTitle => 'Add a desktop version';
+
+  @override
+  String get desktopUploadReplaceTitle => 'Replace desktop version';
+
+  @override
+  String get desktopUploadIntro => 'Add a wide version of this wallpaper for computers. It goes live after review.';
+
+  @override
+  String get desktopUploadReplaceNote => 'The current desktop version stays live until the new one is approved.';
+
+  @override
+  String get desktopUploadRequirements => 'Use a landscape image in 16:10 or 16:9, at least 1920 px wide.';
+
+  @override
+  String get desktopUploadPhoneLabel => 'Phone';
+
+  @override
+  String get desktopUploadDesktopLabel => 'Desktop';
+
+  @override
+  String get desktopUploadPhoneSemantic => 'Phone wallpaper';
+
+  @override
+  String desktopUploadDesktopSemantic(int width, int height) {
+    return 'Desktop version, $width × $height';
+  }
+
+  @override
+  String desktopUploadSize(int width, int height, String ratio) {
+    return '$width × $height, $ratio';
+  }
+
+  @override
+  String get desktopUploadChooseImage => 'Choose image';
+
+  @override
+  String get desktopUploadChooseAnother => 'Choose another image';
+
+  @override
+  String get desktopUploadSubmit => 'Submit for review';
+
+  @override
+  String get desktopUploadSubmitted => 'Desktop version sent for review';
+
+  @override
+  String get desktopUploadErrorPortrait => 'Choose a landscape image. It must be wider than it is tall.';
+
+  @override
+  String get desktopUploadErrorAspect => 'Choose an image in 16:10 or 16:9. Crop it on your computer, then try again.';
+
+  @override
+  String desktopUploadErrorTooSmall(int width) {
+    return 'Choose an image at least 1920 px wide. This one is $width px wide.';
+  }
+
+  @override
+  String get desktopUploadErrorUnreadable => 'Unable to open this image. Choose another one.';
+
+  @override
+  String get desktopUploadErrorTooLarge => 'This file is too large. Choose an image under 15 MB.';
+
+  @override
+  String get desktopUploadErrorPending => 'A desktop version of this wallpaper is already in review.';
+
+  @override
+  String get desktopUploadErrorNotAllowed => 'You can add a desktop version only to your own approved wallpapers.';
+
+  @override
+  String get desktopUploadErrorLimit => 'Daily upload limit reached. Try again tomorrow.';
+
+  @override
+  String get desktopUploadErrorFailed => 'Unable to submit. Check your connection and try again.';
 
   @override
   String get desktopVersionSaveOnTablet => 'Save desktop version';
@@ -13709,4 +14050,561 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'Pixel Watch reads Google Photos. If the image doesn\'t show, back it up to Google Photos first.';
+
+  @override
+  String get searchByPhoto => 'Search by photo';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'Prism reads the photo\'s colours on your phone. To find what\'s in the photo, a small copy goes to Google Cloud Vision. It isn\'t stored.';
+
+  @override
+  String get searchPhotoChoose => 'Choose photo';
+
+  @override
+  String get searchPhotoChipLabel => 'Your photo';
+
+  @override
+  String get searchPhotoClear => 'Clear';
+
+  @override
+  String get searchPhotoClearTooltip => 'Clear photo';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return 'Matches for $labels';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'Matches by colour';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'Main colours: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote => 'A small copy went to Google Cloud Vision to find what\'s in it. It isn\'t stored.';
+
+  @override
+  String get searchPhotoGuestNote => 'Colour matches only. Sign in to match what\'s in the photo too.';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'You\'ve used today\'s $count photo searches. Matching by colour until tomorrow.';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'Couldn\'t read what\'s in the photo. Matching by colour only.';
+
+  @override
+  String get searchPhotoNoMatches => 'No walls match this photo';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'Try a photo with bolder colours.';
+
+  @override
+  String get searchPhotoChooseAnother => 'Choose another photo';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'Couldn\'t open that photo. Try another one.';
+
+  @override
+  String get foldersSaveAll => 'Save all';
+
+  @override
+  String get foldersSaveAllTitle => 'Save all wallpapers';
+
+  @override
+  String get foldersSaveAllChecking => 'Checking the wallpapers…';
+
+  @override
+  String get foldersSaveAllPlanFailed => 'Could not check the wallpapers. Try again.';
+
+  @override
+  String get foldersSaveAllBusy => 'Another folder is saving. Try again when it ends.';
+
+  @override
+  String foldersSaveAllRowFree(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpapers are free',
+      one: '1 wallpaper is free',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowCoins(int count, int price) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpapers cost $priceString coins each',
+      one: '1 wallpaper costs $priceString coins',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowPro(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpapers need Pro',
+      one: '1 wallpaper needs Pro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowSaved(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpapers are already in Downloads',
+      one: '1 wallpaper is already in Downloads',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowBlocked(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpapers are not available to save',
+      one: '1 wallpaper is not available to save',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllAffordable(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Your coins cover $countString paid wallpapers.',
+      one: 'Your coins cover 1 paid wallpaper.',
+      zero: 'You do not have enough coins for a paid wallpaper.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPhotosAlbum(String name) {
+    return 'They go to the “$name” album in Photos and to Downloads.';
+  }
+
+  @override
+  String foldersSaveAllGalleryAlbum(String name) {
+    return 'They go to Pictures/Prism/$name in your gallery and to Downloads.';
+  }
+
+  @override
+  String get foldersSaveAllLeaveNote =>
+      'You can leave this page while it saves. If you close Prism, tap Save all again to finish.';
+
+  @override
+  String get foldersSaveAllNothing => 'There is nothing new to save in this folder.';
+
+  @override
+  String foldersSaveAllFreeButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Save the $countString free wallpapers',
+      one: 'Save the free wallpaper',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPaidButton(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Save all I can ($coinsString coins)',
+      one: 'Save all I can (1 coin)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllCountButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Save $countString wallpapers',
+      one: 'Save 1 wallpaper',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllProgress(int done, int total) {
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Saving $doneString of $totalString';
+  }
+
+  @override
+  String foldersSaveAllProgressSemantics(int total, int done) {
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: 'Saving $doneString of $totalString wallpapers',
+      one: 'Saving $doneString of 1 wallpaper',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllStopping => 'Stopping…';
+
+  @override
+  String get foldersSaveAllCancel => 'Cancel';
+
+  @override
+  String get foldersSaveAllCancelHint => 'Stops the wallpapers that have not started. They cost nothing.';
+
+  @override
+  String foldersSaveAllSavedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString wallpapers saved',
+      one: '1 wallpaper saved',
+      zero: 'No wallpapers saved',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllStoppedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Stopped. $countString wallpapers saved',
+      one: 'Stopped. 1 wallpaper saved',
+      zero: 'Stopped. No wallpapers saved',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllSkipped(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString already in Downloads',
+      one: '1 already in Downloads',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllFailed(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString failed', one: '1 failed');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllNotStarted(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString not started',
+      one: '1 not started',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllRetry => 'Retry failed';
+
+  @override
+  String get foldersSaveAllDone => 'Done';
+
+  @override
+  String foldersSaveAllToast(int count, String name) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Saved $countString wallpapers from $name.',
+      one: 'Saved 1 wallpaper from $name.',
+      zero: 'No wallpapers saved from $name.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllToastFailed(int failed, int saved, String name) {
+    final intl.NumberFormat failedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String failedString = failedNumberFormat.format(failed);
+    final intl.NumberFormat savedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String savedString = savedNumberFormat.format(saved);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      failed,
+      locale: localeName,
+      other: 'Saved $savedString from $name. $failedString failed. Open the folder to retry.',
+      one: 'Saved $savedString from $name. 1 failed. Open the folder to retry.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersInvite => 'Invite';
+
+  @override
+  String foldersInviteShareText(String name, String link) {
+    return 'Add wallpapers with me in $name on Prism: $link';
+  }
+
+  @override
+  String foldersInvitePreviewTitle(String name) {
+    return 'Join $name on Prism';
+  }
+
+  @override
+  String get foldersInvitePreviewDescription => 'Add and remove wallpapers in this folder together.';
+
+  @override
+  String get foldersInviteFailed => 'Could not make an invite link. Try again.';
+
+  @override
+  String get foldersInviteFull => 'This folder is full. Remove someone to invite more people.';
+
+  @override
+  String get foldersInviteLimit => 'You made too many invites today. Try again tomorrow.';
+
+  @override
+  String get foldersPeople => 'People';
+
+  @override
+  String foldersPeopleHintOwner(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Invite up to $countString people to add and remove wallpapers. Only you can rename, share or delete this folder.';
+  }
+
+  @override
+  String get foldersPeopleHintEditor =>
+      'You can add and remove wallpapers. Only the owner can rename, share or delete this folder.';
+
+  @override
+  String foldersPeopleCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString people', one: '1 person');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersPeopleButtonLabel(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString people in this folder. Show people',
+      one: '1 person in this folder. Show people',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersRoleOwner => 'Owner';
+
+  @override
+  String get foldersRoleEditor => 'Can add and remove';
+
+  @override
+  String foldersPersonYou(String name) {
+    return '$name (you)';
+  }
+
+  @override
+  String get foldersUnknownPerson => 'Prism user';
+
+  @override
+  String get foldersRemovePerson => 'Remove';
+
+  @override
+  String foldersRemovePersonTitle(String name) {
+    return 'Remove $name?';
+  }
+
+  @override
+  String get foldersRemovePersonMessage =>
+      'They can no longer add or remove wallpapers here. The wallpapers they added stay.';
+
+  @override
+  String get foldersRemovePersonConfirm => 'Remove person';
+
+  @override
+  String foldersPersonRemoved(String name) {
+    return 'Removed $name.';
+  }
+
+  @override
+  String get foldersLeave => 'Leave folder';
+
+  @override
+  String foldersLeaveTitle(String name) {
+    return 'Leave $name?';
+  }
+
+  @override
+  String get foldersLeaveMessage => 'You can no longer add or remove wallpapers here. The wallpapers you added stay.';
+
+  @override
+  String get foldersLeft => 'You left the folder.';
+
+  @override
+  String get foldersPeopleFailed => 'Could not update the people in this folder. Try again.';
+
+  @override
+  String get foldersSharedWithYou => 'Shared with you';
+
+  @override
+  String get foldersSharedLabel => 'Shared';
+
+  @override
+  String foldersAddedBy(String name) {
+    return 'Added by $name';
+  }
+
+  @override
+  String get foldersAddedByYou => 'Added by you';
+
+  @override
+  String get foldersRemoveFromFolder => 'Remove from folder';
+
+  @override
+  String get foldersDeleteSharedMessage =>
+      'The people you invited lose it too. Wallpapers that are in your favourites stay there.';
+
+  @override
+  String get foldersJoinTitle => 'Folder invite';
+
+  @override
+  String foldersJoinHeadline(String name) {
+    return 'Join $name';
+  }
+
+  @override
+  String foldersJoinInvitedBy(String name) {
+    return '$name invited you to add and remove wallpapers in this folder.';
+  }
+
+  @override
+  String get foldersJoin => 'Join folder';
+
+  @override
+  String get foldersJoinSignIn => 'Sign in to join';
+
+  @override
+  String get foldersJoinOpen => 'Open folder';
+
+  @override
+  String get foldersJoinAlreadyIn => 'You are already in this folder.';
+
+  @override
+  String foldersJoined(String name) {
+    return 'You joined $name.';
+  }
+
+  @override
+  String get foldersJoinFailed => 'Could not join this folder. Try again.';
+
+  @override
+  String get foldersJoinLoadFailed => 'Could not load this invite.';
+
+  @override
+  String get foldersJoinExpiredTitle => 'This invite expired';
+
+  @override
+  String get foldersJoinExpiredBody => 'Invites work for 7 days. Ask the owner for a new link.';
+
+  @override
+  String get foldersJoinUsedTitle => 'This invite was already used';
+
+  @override
+  String get foldersJoinUsedBody => 'Each invite works once. Ask the owner for a new link.';
+
+  @override
+  String get foldersJoinFullTitle => 'This folder is full';
+
+  @override
+  String get foldersJoinFullBody => 'Ask the owner to remove someone, then open the link again.';
+
+  @override
+  String get foldersJoinUnavailableTitle => 'This invite is not available';
+
+  @override
+  String get foldersJoinUnavailableBody => 'The folder may have been deleted, or you cannot join it.';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'Only you and the people you invited will see it. Its link stops working and its followers lose it.';
 }

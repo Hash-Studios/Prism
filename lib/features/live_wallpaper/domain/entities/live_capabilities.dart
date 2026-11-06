@@ -1,5 +1,10 @@
 class LiveCapabilities {
-  const LiveCapabilities({this.supportsShaders = false, this.supportsVideo = false, this.supportsTilt = false});
+  const LiveCapabilities({
+    this.supportsShaders = false,
+    this.supportsVideo = false,
+    this.supportsTilt = false,
+    this.supportsPerScreen = false,
+  });
 
   static const LiveCapabilities none = LiveCapabilities();
 
@@ -9,6 +14,9 @@ class LiveCapabilities {
   /// The shader renderer feeds `u_tilt` from a tilt sensor.
   final bool supportsTilt;
 
+  /// Android 16 and later: a shader live wall can differ between the Home and Lock screens.
+  final bool supportsPerScreen;
+
   bool get isSupported => supportsShaders || supportsVideo;
 
   @override
@@ -16,8 +24,9 @@ class LiveCapabilities {
       other is LiveCapabilities &&
       other.supportsShaders == supportsShaders &&
       other.supportsVideo == supportsVideo &&
-      other.supportsTilt == supportsTilt;
+      other.supportsTilt == supportsTilt &&
+      other.supportsPerScreen == supportsPerScreen;
 
   @override
-  int get hashCode => Object.hash(supportsShaders, supportsVideo, supportsTilt);
+  int get hashCode => Object.hash(supportsShaders, supportsVideo, supportsTilt, supportsPerScreen);
 }

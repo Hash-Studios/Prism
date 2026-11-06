@@ -69,6 +69,9 @@ Widget _screenHost(String sourcePath) => MaterialApp(
 );
 
 class _PreviewWallpaperClient implements WallpaperClient {
+  @override
+  Future<aw.LiveWallpaperScreens> getLiveWallpaperScreens() async => const aw.LiveWallpaperScreens();
+
   final List<aw.StaticWallpaperRequest> requests = <aw.StaticWallpaperRequest>[];
 
   @override

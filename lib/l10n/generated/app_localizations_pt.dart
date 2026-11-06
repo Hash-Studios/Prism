@@ -2153,6 +2153,37 @@ class AppLocalizationsPt extends AppLocalizations {
   String get adminWalls => 'Papéis de parede';
 
   @override
+  String get adminDesktop => 'Computador';
+
+  @override
+  String get adminDesktopEmptyTitle => 'Nenhuma versão para computador para analisar';
+
+  @override
+  String get adminDesktopEmptyBody => 'As versões para computador enviadas pelos criadores aparecem aqui.';
+
+  @override
+  String get adminDesktopLoadError => 'Não foi possível carregar as versões para computador';
+
+  @override
+  String get adminDesktopReplaces => 'Substitui a versão para computador atual';
+
+  @override
+  String get adminDesktopUploadSize => 'Tamanho do envio';
+
+  @override
+  String get adminDesktopApproved => 'Versão para computador aprovada';
+
+  @override
+  String get adminDesktopRejected => 'Versão para computador rejeitada';
+
+  @override
+  String get adminDesktopRejectTitle => 'Rejeitar versão para computador';
+
+  @override
+  String get adminDesktopWallUnavailable =>
+      'Este papel de parede não está mais aprovado. Rejeite esta versão para computador.';
+
+  @override
   String adminWriteCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -3026,6 +3057,17 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get coreShareTargetCopyLink => 'Copiar link';
+
+  @override
+  String get coreShareOpenOnComputer => 'Abrir no computador';
+
+  @override
+  String get coreShareOpenOnComputerBody => 'Digite este link em um navegador no seu computador ou escaneie o código.';
+
+  @override
+  String coreShareOpenOnComputerQr(String link) {
+    return 'Código QR de $link';
+  }
 
   @override
   String get coreShareTargetSaveImage => 'Salvar imagem';
@@ -7620,6 +7662,25 @@ class AppLocalizationsPt extends AppLocalizations {
   String get notifPushWallApprovedArtistTitle => 'Seu papel de parede está ativo! 🎉';
 
   @override
+  String get notifPushDesktopVersionApprovedTitle => 'Sua versão para computador está ativa';
+
+  @override
+  String notifPushDesktopVersionApprovedBody(String wallTitle) {
+    return '\"$wallTitle\" agora tem uma versão para computador.';
+  }
+
+  @override
+  String get notifPushDesktopVersionApprovedBodyUntitled => 'Seu papel de parede agora tem uma versão para computador.';
+
+  @override
+  String get notifPushDesktopVersionRejectedTitle => 'Versão para computador não aprovada';
+
+  @override
+  String notifPushDesktopVersionRejectedBody(String reason) {
+    return 'Motivo: $reason';
+  }
+
+  @override
   String notifPushWallLiveFollowersBody(String wallTitle) {
     return '\"$wallTitle\" foi publicado no Prism.';
   }
@@ -9179,6 +9240,38 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallpaperLiveConfirmPreview => 'Confirme na visualização do sistema.';
+
+  @override
+  String get wallpaperLiveConfirmHome => 'Na visualização, toque em Definir papel de parede e depois em Tela inicial.';
+
+  @override
+  String get wallpaperLiveConfirmLock =>
+      'Na visualização, toque em Definir papel de parede e depois em Tela de bloqueio.';
+
+  @override
+  String get wallpaperLiveConfirmBoth =>
+      'Na visualização, toque em Definir papel de parede e depois em Tela inicial e de bloqueio.';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'Confirme na visualização do sistema. Este celular mostra o mesmo papel de parede animado nas duas telas.';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'Tela inicial: $home. Tela de bloqueio: $lock.';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'outro papel de parede';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'um papel de parede animado do Prism';
+
+  @override
+  String get wallpaperLivePickForHome => 'Escolher um papel de parede para a tela inicial';
+
+  @override
+  String get wallpaperLivePickForLock => 'Escolher um papel de parede para a tela de bloqueio';
 
   @override
   String get wallpaperLiveDeviceUnavailable => 'Não disponível neste dispositivo';
@@ -11295,6 +11388,147 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get topicFollow => 'Seguir';
+
+  @override
+  String get topicFollowing => 'Seguindo';
+
+  @override
+  String topicFollowHint(String topic) {
+    return 'Seguir $topic';
+  }
+
+  @override
+  String topicUnfollowHint(String topic) {
+    return 'Deixar de seguir $topic';
+  }
+
+  @override
+  String topicFollowedToast(String topic) {
+    return 'Você está seguindo $topic. Com as notificações de temas ativadas, você recebe no máximo uma notificação por dia sobre papéis de parede novos aqui.';
+  }
+
+  @override
+  String topicFollowLimit(int max) {
+    return 'Você pode seguir até $max temas. Deixe de seguir um em Configurações primeiro.';
+  }
+
+  @override
+  String get topicFollowFailed => 'Não foi possível atualizar o seguimento. Verifique sua conexão e tente de novo.';
+
+  @override
+  String get topicUnfollow => 'Deixar de seguir';
+
+  @override
+  String get topicKindCategory => 'Categoria';
+
+  @override
+  String get topicKindMood => 'Humor';
+
+  @override
+  String get followingRowTitle => 'Seguindo';
+
+  @override
+  String get followingRowLabel => 'Categorias e humores que você segue';
+
+  @override
+  String topicNewWallpapers(String topic) {
+    return '$topic, papéis de parede novos';
+  }
+
+  @override
+  String get followedTopicsTitle => 'Temas que você segue';
+
+  @override
+  String followedTopicsCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString temas',
+      one: '1 tema',
+      zero: 'Nenhum ainda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get followedTopicsEmptyTitle => 'Nenhum tema ainda';
+
+  @override
+  String get followedTopicsEmptyBody =>
+      'Abra uma categoria ou um humor e toque em Seguir. Com as notificações de temas ativadas, você recebe no máximo uma notificação por dia sobre papéis de parede novos ali.';
+
+  @override
+  String get notifSettingTopics => 'Temas que você segue';
+
+  @override
+  String get notifSettingTopicsDescription =>
+      'Papéis de parede novos em categorias e humores que você segue, uma vez por dia';
+
+  @override
+  String get layoutHomeHeader => 'Início';
+
+  @override
+  String get layoutFollowingRow => 'Mostrar temas que você segue';
+
+  @override
+  String get layoutFollowingRowFootnote =>
+      'Uma linha no topo de Para você. Um ponto marca um tema com papéis de parede novos.';
+
+  @override
+  String notifPushTopicDigestTitleOne(String topic) {
+    return 'Um papel de parede novo em $topic';
+  }
+
+  @override
+  String notifPushTopicDigestTitleSolo(int count, String topic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede novos em $topic',
+      one: 'Um papel de parede novo em $topic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitlePair(int count, String topic, String secondTopic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede novos em $topic e $secondTopic',
+      one: 'Um papel de parede novo em $topic e $secondTopic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitleGroup(int count, String topic, int others) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede novos em $topic e mais $others temas',
+      one: 'Um papel de parede novo em $topic e mais $others temas',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushTopicDigestBodyUntitled => 'Toque para ver o que há de novo.';
+
+  @override
   String get historySetAndDownloaded => 'Definido e baixado';
 
   @override
@@ -12649,6 +12883,34 @@ class AppLocalizationsPt extends AppLocalizations {
       'Escolha Nascer do Sol ou Pôr do Sol em vez de um horário. Em \"Obter papel de parede do Prism\", defina Horário como Dia para o nascer do sol e Noite para o pôr do sol.';
 
   @override
+  String get dayNightIntroAndroid =>
+      'Escolha um papel de parede para o dia e outro para a noite. O Prism troca os dois nos horários que você definir.';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return 'Por volta das $time';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'O Android pode trocar com alguns minutos de atraso para economizar bateria.';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => 'Desativar rotação automática?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'Desativar rotação automática';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => 'Desativar Dia e noite?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'Desativar Dia e noite';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'Rotação automática e Dia e noite alteram seu papel de parede. Apenas um pode estar ativo por vez.';
+
+  @override
   String get tipAction => 'Dar gorjeta ao criador';
 
   @override
@@ -13113,6 +13375,95 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get desktopVersionSetOnTablet => 'Definir versão para computador';
+
+  @override
+  String get desktopUploadAdd => 'Adicionar versão para computador';
+
+  @override
+  String get desktopUploadReplace => 'Substituir versão para computador';
+
+  @override
+  String get desktopUploadInReview => 'Versão para computador em análise';
+
+  @override
+  String get desktopUploadTitle => 'Adicionar versão para computador';
+
+  @override
+  String get desktopUploadReplaceTitle => 'Substituir versão para computador';
+
+  @override
+  String get desktopUploadIntro =>
+      'Adicione uma versão larga deste papel de parede para computadores. Ela fica disponível depois da análise.';
+
+  @override
+  String get desktopUploadReplaceNote =>
+      'A versão para computador atual continua disponível até que a nova seja aprovada.';
+
+  @override
+  String get desktopUploadRequirements =>
+      'Use uma imagem na horizontal em 16:10 ou 16:9, com pelo menos 1920 px de largura.';
+
+  @override
+  String get desktopUploadPhoneLabel => 'Celular';
+
+  @override
+  String get desktopUploadDesktopLabel => 'Computador';
+
+  @override
+  String get desktopUploadPhoneSemantic => 'Papel de parede do celular';
+
+  @override
+  String desktopUploadDesktopSemantic(int width, int height) {
+    return 'Versão para computador, $width × $height';
+  }
+
+  @override
+  String desktopUploadSize(int width, int height, String ratio) {
+    return '$width × $height, $ratio';
+  }
+
+  @override
+  String get desktopUploadChooseImage => 'Escolher imagem';
+
+  @override
+  String get desktopUploadChooseAnother => 'Escolher outra imagem';
+
+  @override
+  String get desktopUploadSubmit => 'Enviar para análise';
+
+  @override
+  String get desktopUploadSubmitted => 'Versão para computador enviada para análise';
+
+  @override
+  String get desktopUploadErrorPortrait => 'Escolha uma imagem na horizontal. Ela precisa ser mais larga do que alta.';
+
+  @override
+  String get desktopUploadErrorAspect =>
+      'Escolha uma imagem em 16:10 ou 16:9. Recorte no seu computador e tente novamente.';
+
+  @override
+  String desktopUploadErrorTooSmall(int width) {
+    return 'Escolha uma imagem com pelo menos 1920 px de largura. Esta tem $width px de largura.';
+  }
+
+  @override
+  String get desktopUploadErrorUnreadable => 'Não foi possível abrir esta imagem. Escolha outra.';
+
+  @override
+  String get desktopUploadErrorTooLarge => 'Este arquivo é grande demais. Escolha uma imagem com menos de 15 MB.';
+
+  @override
+  String get desktopUploadErrorPending => 'Uma versão para computador deste papel de parede já está em análise.';
+
+  @override
+  String get desktopUploadErrorNotAllowed =>
+      'Você só pode adicionar uma versão para computador aos seus próprios papéis de parede aprovados.';
+
+  @override
+  String get desktopUploadErrorLimit => 'Limite diário de envios atingido. Tente de novo amanhã.';
+
+  @override
+  String get desktopUploadErrorFailed => 'Não foi possível enviar. Verifique sua conexão e tente novamente.';
 
   @override
   String get desktopVersionSaveOnTablet => 'Salvar versão para computador em Fotos';
@@ -14071,6 +14422,568 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'O Pixel Watch lê o Google Photos. Se a imagem não aparecer, faça primeiro um backup no Google Photos.';
+
+  @override
+  String get searchByPhoto => 'Buscar por foto';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'O Prism lê as cores da foto no seu celular. Para descobrir o que tem na foto, uma pequena cópia é enviada ao Google Cloud Vision. Ela não é armazenada.';
+
+  @override
+  String get searchPhotoChoose => 'Escolher foto';
+
+  @override
+  String get searchPhotoChipLabel => 'Sua foto';
+
+  @override
+  String get searchPhotoClear => 'Remover';
+
+  @override
+  String get searchPhotoClearTooltip => 'Remover foto';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return 'Resultados para $labels';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'Resultados por cor';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'Cores principais: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote =>
+      'Uma pequena cópia foi enviada ao Google Cloud Vision para descobrir o que tem nela. Ela não é armazenada.';
+
+  @override
+  String get searchPhotoGuestNote =>
+      'Apenas resultados por cor. Entre na sua conta para também buscar pelo que tem na foto.';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'Você já usou as $count buscas por foto de hoje. Até amanhã, só resultados por cor.';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'Não foi possível identificar o que tem na foto. Apenas resultados por cor.';
+
+  @override
+  String get searchPhotoNoMatches => 'Nenhum papel de parede combina com esta foto';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'Tente uma foto com cores mais vivas.';
+
+  @override
+  String get searchPhotoChooseAnother => 'Escolher outra foto';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'Não foi possível abrir essa foto. Tente outra.';
+
+  @override
+  String get foldersSaveAll => 'Salvar tudo';
+
+  @override
+  String get foldersSaveAllTitle => 'Salvar todos os papéis de parede';
+
+  @override
+  String get foldersSaveAllChecking => 'Verificando os papéis de parede…';
+
+  @override
+  String get foldersSaveAllPlanFailed => 'Não foi possível verificar os papéis de parede. Tente novamente.';
+
+  @override
+  String get foldersSaveAllBusy => 'Outra pasta está sendo salva. Tente novamente quando ela terminar.';
+
+  @override
+  String foldersSaveAllRowFree(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede são grátis',
+      one: '1 papel de parede é grátis',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowCoins(int count, int price) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede custam $priceString moedas cada',
+      one: '1 papel de parede custa $priceString moedas',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowPro(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede precisam do Pro',
+      one: '1 papel de parede precisa do Pro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowSaved(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede já estão em Downloads',
+      one: '1 papel de parede já está em Downloads',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowBlocked(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede não estão disponíveis para salvar',
+      one: '1 papel de parede não está disponível para salvar',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllAffordable(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Suas moedas cobrem $countString papéis de parede pagos.',
+      one: 'Suas moedas cobrem 1 papel de parede pago.',
+      zero: 'Você não tem moedas suficientes para um papel de parede pago.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPhotosAlbum(String name) {
+    return 'Eles vão para o álbum “$name” em Fotos e para Downloads.';
+  }
+
+  @override
+  String foldersSaveAllGalleryAlbum(String name) {
+    return 'Eles vão para Pictures/Prism/$name na sua galeria e para Downloads.';
+  }
+
+  @override
+  String get foldersSaveAllLeaveNote =>
+      'Você pode sair desta página enquanto salva. Se fechar o Prism, toque em Salvar tudo novamente para terminar.';
+
+  @override
+  String get foldersSaveAllNothing => 'Não há nada novo para salvar nesta pasta.';
+
+  @override
+  String foldersSaveAllFreeButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Salvar os $countString papéis de parede grátis',
+      one: 'Salvar o papel de parede grátis',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPaidButton(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Salvar tudo que eu puder ($coinsString moedas)',
+      one: 'Salvar tudo que eu puder (1 moeda)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllCountButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Salvar $countString papéis de parede',
+      one: 'Salvar 1 papel de parede',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllProgress(int done, int total) {
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Salvando $doneString de $totalString';
+  }
+
+  @override
+  String foldersSaveAllProgressSemantics(int total, int done) {
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: 'Salvando $doneString de $totalString papéis de parede',
+      one: 'Salvando $doneString de 1 papel de parede',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllStopping => 'Parando…';
+
+  @override
+  String get foldersSaveAllCancel => 'Cancelar';
+
+  @override
+  String get foldersSaveAllCancelHint =>
+      'Interrompe os papéis de parede que ainda não começaram. Eles não custam nada.';
+
+  @override
+  String foldersSaveAllSavedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede salvos',
+      one: '1 papel de parede salvo',
+      zero: 'Nenhum papel de parede salvo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllStoppedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Parado. $countString papéis de parede salvos',
+      one: 'Parado. 1 papel de parede salvo',
+      zero: 'Parado. Nenhum papel de parede salvo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllSkipped(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString já estão em Downloads',
+      one: '1 já está em Downloads',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllFailed(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString falharam', one: '1 falhou');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllNotStarted(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString não iniciados',
+      one: '1 não iniciado',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllRetry => 'Tentar novamente os que falharam';
+
+  @override
+  String get foldersSaveAllDone => 'Concluído';
+
+  @override
+  String foldersSaveAllToast(int count, String name) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede salvos de $name.',
+      one: '1 papel de parede salvo de $name.',
+      zero: 'Nenhum papel de parede salvo de $name.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllToastFailed(int failed, int saved, String name) {
+    final intl.NumberFormat failedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String failedString = failedNumberFormat.format(failed);
+    final intl.NumberFormat savedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String savedString = savedNumberFormat.format(saved);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      failed,
+      locale: localeName,
+      other: 'Salvos $savedString de $name. $failedString falharam. Abra a pasta para tentar novamente.',
+      one: 'Salvos $savedString de $name. 1 falhou. Abra a pasta para tentar novamente.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersInvite => 'Convidar';
+
+  @override
+  String foldersInviteShareText(String name, String link) {
+    return 'Adicione papéis de parede comigo em $name no Prism: $link';
+  }
+
+  @override
+  String foldersInvitePreviewTitle(String name) {
+    return 'Junte-se a $name no Prism';
+  }
+
+  @override
+  String get foldersInvitePreviewDescription =>
+      'Adicione e remova papéis de parede desta pasta junto com outras pessoas.';
+
+  @override
+  String get foldersInviteFailed => 'Não foi possível criar o link de convite. Tente novamente.';
+
+  @override
+  String get foldersInviteFull => 'Esta pasta está cheia. Remova alguém para convidar mais pessoas.';
+
+  @override
+  String get foldersInviteLimit => 'Você fez convites demais hoje. Tente novamente amanhã.';
+
+  @override
+  String get foldersPeople => 'Pessoas';
+
+  @override
+  String foldersPeopleHintOwner(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Convide até $countString pessoas para adicionar e remover papéis de parede. Só você pode renomear, compartilhar ou excluir esta pasta.';
+  }
+
+  @override
+  String get foldersPeopleHintEditor =>
+      'Você pode adicionar e remover papéis de parede. Só o dono pode renomear, compartilhar ou excluir esta pasta.';
+
+  @override
+  String foldersPeopleCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString pessoas', one: '1 pessoa');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersPeopleButtonLabel(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString pessoas nesta pasta. Mostrar pessoas',
+      one: '1 pessoa nesta pasta. Mostrar pessoas',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersRoleOwner => 'Dono';
+
+  @override
+  String get foldersRoleEditor => 'Pode adicionar e remover';
+
+  @override
+  String foldersPersonYou(String name) {
+    return '$name (você)';
+  }
+
+  @override
+  String get foldersUnknownPerson => 'Usuário do Prism';
+
+  @override
+  String get foldersRemovePerson => 'Remover';
+
+  @override
+  String foldersRemovePersonTitle(String name) {
+    return 'Remover $name?';
+  }
+
+  @override
+  String get foldersRemovePersonMessage =>
+      'Essa pessoa não poderá mais adicionar nem remover papéis de parede aqui. Os papéis de parede que ela adicionou continuam na pasta.';
+
+  @override
+  String get foldersRemovePersonConfirm => 'Remover pessoa';
+
+  @override
+  String foldersPersonRemoved(String name) {
+    return '$name foi removido(a).';
+  }
+
+  @override
+  String get foldersLeave => 'Sair da pasta';
+
+  @override
+  String foldersLeaveTitle(String name) {
+    return 'Sair de $name?';
+  }
+
+  @override
+  String get foldersLeaveMessage =>
+      'Você não poderá mais adicionar nem remover papéis de parede aqui. Os papéis de parede que você adicionou continuam na pasta.';
+
+  @override
+  String get foldersLeft => 'Você saiu da pasta.';
+
+  @override
+  String get foldersPeopleFailed => 'Não foi possível atualizar as pessoas desta pasta. Tente novamente.';
+
+  @override
+  String get foldersSharedWithYou => 'Compartilhadas com você';
+
+  @override
+  String get foldersSharedLabel => 'Compartilhada';
+
+  @override
+  String foldersAddedBy(String name) {
+    return 'Adicionado por $name';
+  }
+
+  @override
+  String get foldersAddedByYou => 'Adicionado por você';
+
+  @override
+  String get foldersRemoveFromFolder => 'Remover da pasta';
+
+  @override
+  String get foldersDeleteSharedMessage =>
+      'As pessoas que você convidou também vão perdê-la. Os papéis de parede que estão nos seus favoritos continuam lá.';
+
+  @override
+  String get foldersJoinTitle => 'Convite para pasta';
+
+  @override
+  String foldersJoinHeadline(String name) {
+    return 'Entre em $name';
+  }
+
+  @override
+  String foldersJoinInvitedBy(String name) {
+    return '$name convidou você para adicionar e remover papéis de parede nesta pasta.';
+  }
+
+  @override
+  String get foldersJoin => 'Entrar na pasta';
+
+  @override
+  String get foldersJoinSignIn => 'Entrar para participar';
+
+  @override
+  String get foldersJoinOpen => 'Abrir pasta';
+
+  @override
+  String get foldersJoinAlreadyIn => 'Você já está nesta pasta.';
+
+  @override
+  String foldersJoined(String name) {
+    return 'Você entrou em $name.';
+  }
+
+  @override
+  String get foldersJoinFailed => 'Não foi possível entrar nesta pasta. Tente novamente.';
+
+  @override
+  String get foldersJoinLoadFailed => 'Não foi possível carregar este convite.';
+
+  @override
+  String get foldersJoinExpiredTitle => 'Este convite expirou';
+
+  @override
+  String get foldersJoinExpiredBody => 'Os convites funcionam por 7 dias. Peça um novo link ao dono.';
+
+  @override
+  String get foldersJoinUsedTitle => 'Este convite já foi usado';
+
+  @override
+  String get foldersJoinUsedBody => 'Cada convite funciona uma vez. Peça um novo link ao dono.';
+
+  @override
+  String get foldersJoinFullTitle => 'Esta pasta está cheia';
+
+  @override
+  String get foldersJoinFullBody => 'Peça ao dono para remover alguém e depois abra o link de novo.';
+
+  @override
+  String get foldersJoinUnavailableTitle => 'Este convite não está disponível';
+
+  @override
+  String get foldersJoinUnavailableBody => 'Talvez a pasta tenha sido excluída, ou você não pode entrar nela.';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -16220,6 +17133,37 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get adminWalls => 'Papéis de parede';
 
   @override
+  String get adminDesktop => 'Computador';
+
+  @override
+  String get adminDesktopEmptyTitle => 'Nenhuma versão para computador para analisar';
+
+  @override
+  String get adminDesktopEmptyBody => 'As versões para computador enviadas pelos criadores aparecem aqui.';
+
+  @override
+  String get adminDesktopLoadError => 'Não foi possível carregar as versões para computador';
+
+  @override
+  String get adminDesktopReplaces => 'Substitui a versão para computador atual';
+
+  @override
+  String get adminDesktopUploadSize => 'Tamanho do envio';
+
+  @override
+  String get adminDesktopApproved => 'Versão para computador aprovada';
+
+  @override
+  String get adminDesktopRejected => 'Versão para computador rejeitada';
+
+  @override
+  String get adminDesktopRejectTitle => 'Rejeitar versão para computador';
+
+  @override
+  String get adminDesktopWallUnavailable =>
+      'Este papel de parede não está mais aprovado. Rejeite esta versão para computador.';
+
+  @override
   String adminWriteCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -17093,6 +18037,17 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get coreShareTargetCopyLink => 'Copiar link';
+
+  @override
+  String get coreShareOpenOnComputer => 'Abrir no computador';
+
+  @override
+  String get coreShareOpenOnComputerBody => 'Digite este link em um navegador no seu computador ou escaneie o código.';
+
+  @override
+  String coreShareOpenOnComputerQr(String link) {
+    return 'Código QR de $link';
+  }
 
   @override
   String get coreShareTargetSaveImage => 'Salvar imagem';
@@ -21687,6 +22642,25 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get notifPushWallApprovedArtistTitle => 'Seu papel de parede está ativo! 🎉';
 
   @override
+  String get notifPushDesktopVersionApprovedTitle => 'Sua versão para computador está ativa';
+
+  @override
+  String notifPushDesktopVersionApprovedBody(String wallTitle) {
+    return '\"$wallTitle\" agora tem uma versão para computador.';
+  }
+
+  @override
+  String get notifPushDesktopVersionApprovedBodyUntitled => 'Seu papel de parede agora tem uma versão para computador.';
+
+  @override
+  String get notifPushDesktopVersionRejectedTitle => 'Versão para computador não aprovada';
+
+  @override
+  String notifPushDesktopVersionRejectedBody(String reason) {
+    return 'Motivo: $reason';
+  }
+
+  @override
   String notifPushWallLiveFollowersBody(String wallTitle) {
     return '\"$wallTitle\" foi publicado no Prism.';
   }
@@ -23246,6 +24220,38 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallpaperLiveConfirmPreview => 'Confirme na visualização do sistema.';
+
+  @override
+  String get wallpaperLiveConfirmHome => 'Na visualização, toque em Definir papel de parede e depois em Tela inicial.';
+
+  @override
+  String get wallpaperLiveConfirmLock =>
+      'Na visualização, toque em Definir papel de parede e depois em Tela de bloqueio.';
+
+  @override
+  String get wallpaperLiveConfirmBoth =>
+      'Na visualização, toque em Definir papel de parede e depois em Tela inicial e de bloqueio.';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'Confirme na visualização do sistema. Este celular mostra o mesmo papel de parede animado nas duas telas.';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'Tela inicial: $home. Tela de bloqueio: $lock.';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'outro papel de parede';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'um papel de parede animado do Prism';
+
+  @override
+  String get wallpaperLivePickForHome => 'Escolher um papel de parede para a tela inicial';
+
+  @override
+  String get wallpaperLivePickForLock => 'Escolher um papel de parede para a tela de bloqueio';
 
   @override
   String get wallpaperLiveDeviceUnavailable => 'Não disponível neste dispositivo';
@@ -25362,6 +26368,147 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
+  String get topicFollow => 'Seguir';
+
+  @override
+  String get topicFollowing => 'Seguindo';
+
+  @override
+  String topicFollowHint(String topic) {
+    return 'Seguir $topic';
+  }
+
+  @override
+  String topicUnfollowHint(String topic) {
+    return 'Deixar de seguir $topic';
+  }
+
+  @override
+  String topicFollowedToast(String topic) {
+    return 'Você está seguindo $topic. Com as notificações de temas ativadas, você recebe no máximo uma notificação por dia sobre papéis de parede novos aqui.';
+  }
+
+  @override
+  String topicFollowLimit(int max) {
+    return 'Você pode seguir até $max temas. Deixe de seguir um em Configurações primeiro.';
+  }
+
+  @override
+  String get topicFollowFailed => 'Não foi possível atualizar o seguimento. Verifique sua conexão e tente de novo.';
+
+  @override
+  String get topicUnfollow => 'Deixar de seguir';
+
+  @override
+  String get topicKindCategory => 'Categoria';
+
+  @override
+  String get topicKindMood => 'Humor';
+
+  @override
+  String get followingRowTitle => 'Seguindo';
+
+  @override
+  String get followingRowLabel => 'Categorias e humores que você segue';
+
+  @override
+  String topicNewWallpapers(String topic) {
+    return '$topic, papéis de parede novos';
+  }
+
+  @override
+  String get followedTopicsTitle => 'Temas que você segue';
+
+  @override
+  String followedTopicsCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString temas',
+      one: '1 tema',
+      zero: 'Nenhum ainda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get followedTopicsEmptyTitle => 'Nenhum tema ainda';
+
+  @override
+  String get followedTopicsEmptyBody =>
+      'Abra uma categoria ou um humor e toque em Seguir. Com as notificações de temas ativadas, você recebe no máximo uma notificação por dia sobre papéis de parede novos ali.';
+
+  @override
+  String get notifSettingTopics => 'Temas que você segue';
+
+  @override
+  String get notifSettingTopicsDescription =>
+      'Papéis de parede novos em categorias e humores que você segue, uma vez por dia';
+
+  @override
+  String get layoutHomeHeader => 'Início';
+
+  @override
+  String get layoutFollowingRow => 'Mostrar temas que você segue';
+
+  @override
+  String get layoutFollowingRowFootnote =>
+      'Uma linha no topo de Para você. Um ponto marca um tema com papéis de parede novos.';
+
+  @override
+  String notifPushTopicDigestTitleOne(String topic) {
+    return 'Um papel de parede novo em $topic';
+  }
+
+  @override
+  String notifPushTopicDigestTitleSolo(int count, String topic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede novos em $topic',
+      one: 'Um papel de parede novo em $topic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitlePair(int count, String topic, String secondTopic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede novos em $topic e $secondTopic',
+      one: 'Um papel de parede novo em $topic e $secondTopic',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitleGroup(int count, String topic, int others) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede novos em $topic e mais $others temas',
+      one: 'Um papel de parede novo em $topic e mais $others temas',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushTopicDigestBodyUntitled => 'Toque para ver o que há de novo.';
+
+  @override
   String get historySetAndDownloaded => 'Definido e baixado';
 
   @override
@@ -26716,6 +27863,34 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Escolha Nascer do Sol ou Pôr do Sol em vez de um horário. Em \"Obter papel de parede do Prism\", defina Horário como Dia para o nascer do sol e Noite para o pôr do sol.';
 
   @override
+  String get dayNightIntroAndroid =>
+      'Escolha um papel de parede para o dia e outro para a noite. O Prism troca os dois nos horários que você definir.';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return 'Por volta das $time';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'O Android pode trocar com alguns minutos de atraso para economizar bateria.';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => 'Desativar rotação automática?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'Desativar rotação automática';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => 'Desativar Dia e noite?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'Desativar Dia e noite';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'Rotação automática e Dia e noite alteram seu papel de parede. Apenas um pode estar ativo por vez.';
+
+  @override
   String get tipAction => 'Dar gorjeta ao criador';
 
   @override
@@ -27180,6 +28355,95 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get desktopVersionSetOnTablet => 'Definir versão para computador';
+
+  @override
+  String get desktopUploadAdd => 'Adicionar versão para computador';
+
+  @override
+  String get desktopUploadReplace => 'Substituir versão para computador';
+
+  @override
+  String get desktopUploadInReview => 'Versão para computador em análise';
+
+  @override
+  String get desktopUploadTitle => 'Adicionar versão para computador';
+
+  @override
+  String get desktopUploadReplaceTitle => 'Substituir versão para computador';
+
+  @override
+  String get desktopUploadIntro =>
+      'Adicione uma versão larga deste papel de parede para computadores. Ela fica disponível depois da análise.';
+
+  @override
+  String get desktopUploadReplaceNote =>
+      'A versão para computador atual continua disponível até que a nova seja aprovada.';
+
+  @override
+  String get desktopUploadRequirements =>
+      'Use uma imagem na horizontal em 16:10 ou 16:9, com pelo menos 1920 px de largura.';
+
+  @override
+  String get desktopUploadPhoneLabel => 'Celular';
+
+  @override
+  String get desktopUploadDesktopLabel => 'Computador';
+
+  @override
+  String get desktopUploadPhoneSemantic => 'Papel de parede do celular';
+
+  @override
+  String desktopUploadDesktopSemantic(int width, int height) {
+    return 'Versão para computador, $width × $height';
+  }
+
+  @override
+  String desktopUploadSize(int width, int height, String ratio) {
+    return '$width × $height, $ratio';
+  }
+
+  @override
+  String get desktopUploadChooseImage => 'Escolher imagem';
+
+  @override
+  String get desktopUploadChooseAnother => 'Escolher outra imagem';
+
+  @override
+  String get desktopUploadSubmit => 'Enviar para análise';
+
+  @override
+  String get desktopUploadSubmitted => 'Versão para computador enviada para análise';
+
+  @override
+  String get desktopUploadErrorPortrait => 'Escolha uma imagem na horizontal. Ela precisa ser mais larga do que alta.';
+
+  @override
+  String get desktopUploadErrorAspect =>
+      'Escolha uma imagem em 16:10 ou 16:9. Recorte no seu computador e tente novamente.';
+
+  @override
+  String desktopUploadErrorTooSmall(int width) {
+    return 'Escolha uma imagem com pelo menos 1920 px de largura. Esta tem $width px de largura.';
+  }
+
+  @override
+  String get desktopUploadErrorUnreadable => 'Não foi possível abrir esta imagem. Escolha outra.';
+
+  @override
+  String get desktopUploadErrorTooLarge => 'Este arquivo é grande demais. Escolha uma imagem com menos de 15 MB.';
+
+  @override
+  String get desktopUploadErrorPending => 'Uma versão para computador deste papel de parede já está em análise.';
+
+  @override
+  String get desktopUploadErrorNotAllowed =>
+      'Você só pode adicionar uma versão para computador aos seus próprios papéis de parede aprovados.';
+
+  @override
+  String get desktopUploadErrorLimit => 'Limite diário de envios atingido. Tente de novo amanhã.';
+
+  @override
+  String get desktopUploadErrorFailed => 'Não foi possível enviar. Verifique sua conexão e tente novamente.';
 
   @override
   String get desktopVersionSaveOnTablet => 'Salvar versão para computador em Fotos';
@@ -28138,4 +29402,566 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get watchGuideNoteGooglePhotos =>
       'O Pixel Watch lê o Google Photos. Se a imagem não aparecer, faça primeiro um backup no Google Photos.';
+
+  @override
+  String get searchByPhoto => 'Buscar por foto';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'O Prism lê as cores da foto no seu celular. Para descobrir o que tem na foto, uma pequena cópia é enviada ao Google Cloud Vision. Ela não é armazenada.';
+
+  @override
+  String get searchPhotoChoose => 'Escolher foto';
+
+  @override
+  String get searchPhotoChipLabel => 'Sua foto';
+
+  @override
+  String get searchPhotoClear => 'Remover';
+
+  @override
+  String get searchPhotoClearTooltip => 'Remover foto';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return 'Resultados para $labels';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'Resultados por cor';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'Cores principais: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote =>
+      'Uma pequena cópia foi enviada ao Google Cloud Vision para descobrir o que tem nela. Ela não é armazenada.';
+
+  @override
+  String get searchPhotoGuestNote =>
+      'Apenas resultados por cor. Entre na sua conta para também buscar pelo que tem na foto.';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'Você já usou as $count buscas por foto de hoje. Até amanhã, só resultados por cor.';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'Não foi possível identificar o que tem na foto. Apenas resultados por cor.';
+
+  @override
+  String get searchPhotoNoMatches => 'Nenhum papel de parede combina com esta foto';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'Tente uma foto com cores mais vivas.';
+
+  @override
+  String get searchPhotoChooseAnother => 'Escolher outra foto';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'Não foi possível abrir essa foto. Tente outra.';
+
+  @override
+  String get foldersSaveAll => 'Salvar tudo';
+
+  @override
+  String get foldersSaveAllTitle => 'Salvar todos os papéis de parede';
+
+  @override
+  String get foldersSaveAllChecking => 'Verificando os papéis de parede…';
+
+  @override
+  String get foldersSaveAllPlanFailed => 'Não foi possível verificar os papéis de parede. Tente novamente.';
+
+  @override
+  String get foldersSaveAllBusy => 'Outra pasta está sendo salva. Tente novamente quando ela terminar.';
+
+  @override
+  String foldersSaveAllRowFree(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede são grátis',
+      one: '1 papel de parede é grátis',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowCoins(int count, int price) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede custam $priceString moedas cada',
+      one: '1 papel de parede custa $priceString moedas',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowPro(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede precisam do Pro',
+      one: '1 papel de parede precisa do Pro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowSaved(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede já estão em Downloads',
+      one: '1 papel de parede já está em Downloads',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowBlocked(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede não estão disponíveis para salvar',
+      one: '1 papel de parede não está disponível para salvar',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllAffordable(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Suas moedas cobrem $countString papéis de parede pagos.',
+      one: 'Suas moedas cobrem 1 papel de parede pago.',
+      zero: 'Você não tem moedas suficientes para um papel de parede pago.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPhotosAlbum(String name) {
+    return 'Eles vão para o álbum “$name” em Fotos e para Downloads.';
+  }
+
+  @override
+  String foldersSaveAllGalleryAlbum(String name) {
+    return 'Eles vão para Pictures/Prism/$name na sua galeria e para Downloads.';
+  }
+
+  @override
+  String get foldersSaveAllLeaveNote =>
+      'Você pode sair desta página enquanto salva. Se fechar o Prism, toque em Salvar tudo novamente para terminar.';
+
+  @override
+  String get foldersSaveAllNothing => 'Não há nada novo para salvar nesta pasta.';
+
+  @override
+  String foldersSaveAllFreeButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Salvar os $countString papéis de parede grátis',
+      one: 'Salvar o papel de parede grátis',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPaidButton(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Salvar tudo que eu puder ($coinsString moedas)',
+      one: 'Salvar tudo que eu puder (1 moeda)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllCountButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Salvar $countString papéis de parede',
+      one: 'Salvar 1 papel de parede',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllProgress(int done, int total) {
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return 'Salvando $doneString de $totalString';
+  }
+
+  @override
+  String foldersSaveAllProgressSemantics(int total, int done) {
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: 'Salvando $doneString de $totalString papéis de parede',
+      one: 'Salvando $doneString de 1 papel de parede',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllStopping => 'Parando…';
+
+  @override
+  String get foldersSaveAllCancel => 'Cancelar';
+
+  @override
+  String get foldersSaveAllCancelHint =>
+      'Interrompe os papéis de parede que ainda não começaram. Eles não custam nada.';
+
+  @override
+  String foldersSaveAllSavedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede salvos',
+      one: '1 papel de parede salvo',
+      zero: 'Nenhum papel de parede salvo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllStoppedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Parado. $countString papéis de parede salvos',
+      one: 'Parado. 1 papel de parede salvo',
+      zero: 'Parado. Nenhum papel de parede salvo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllSkipped(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString já estão em Downloads',
+      one: '1 já está em Downloads',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllFailed(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString falharam', one: '1 falhou');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllNotStarted(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString não iniciados',
+      one: '1 não iniciado',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllRetry => 'Tentar novamente os que falharam';
+
+  @override
+  String get foldersSaveAllDone => 'Concluído';
+
+  @override
+  String foldersSaveAllToast(int count, String name) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString papéis de parede salvos de $name.',
+      one: '1 papel de parede salvo de $name.',
+      zero: 'Nenhum papel de parede salvo de $name.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllToastFailed(int failed, int saved, String name) {
+    final intl.NumberFormat failedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String failedString = failedNumberFormat.format(failed);
+    final intl.NumberFormat savedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String savedString = savedNumberFormat.format(saved);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      failed,
+      locale: localeName,
+      other: 'Salvos $savedString de $name. $failedString falharam. Abra a pasta para tentar novamente.',
+      one: 'Salvos $savedString de $name. 1 falhou. Abra a pasta para tentar novamente.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersInvite => 'Convidar';
+
+  @override
+  String foldersInviteShareText(String name, String link) {
+    return 'Adicione papéis de parede comigo em $name no Prism: $link';
+  }
+
+  @override
+  String foldersInvitePreviewTitle(String name) {
+    return 'Junte-se a $name no Prism';
+  }
+
+  @override
+  String get foldersInvitePreviewDescription =>
+      'Adicione e remova papéis de parede desta pasta junto com outras pessoas.';
+
+  @override
+  String get foldersInviteFailed => 'Não foi possível criar o link de convite. Tente novamente.';
+
+  @override
+  String get foldersInviteFull => 'Esta pasta está cheia. Remova alguém para convidar mais pessoas.';
+
+  @override
+  String get foldersInviteLimit => 'Você fez convites demais hoje. Tente novamente amanhã.';
+
+  @override
+  String get foldersPeople => 'Pessoas';
+
+  @override
+  String foldersPeopleHintOwner(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Convide até $countString pessoas para adicionar e remover papéis de parede. Só você pode renomear, compartilhar ou excluir esta pasta.';
+  }
+
+  @override
+  String get foldersPeopleHintEditor =>
+      'Você pode adicionar e remover papéis de parede. Só o dono pode renomear, compartilhar ou excluir esta pasta.';
+
+  @override
+  String foldersPeopleCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString pessoas', one: '1 pessoa');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersPeopleButtonLabel(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString pessoas nesta pasta. Mostrar pessoas',
+      one: '1 pessoa nesta pasta. Mostrar pessoas',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersRoleOwner => 'Dono';
+
+  @override
+  String get foldersRoleEditor => 'Pode adicionar e remover';
+
+  @override
+  String foldersPersonYou(String name) {
+    return '$name (você)';
+  }
+
+  @override
+  String get foldersUnknownPerson => 'Usuário do Prism';
+
+  @override
+  String get foldersRemovePerson => 'Remover';
+
+  @override
+  String foldersRemovePersonTitle(String name) {
+    return 'Remover $name?';
+  }
+
+  @override
+  String get foldersRemovePersonMessage =>
+      'Essa pessoa não poderá mais adicionar nem remover papéis de parede aqui. Os papéis de parede que ela adicionou continuam na pasta.';
+
+  @override
+  String get foldersRemovePersonConfirm => 'Remover pessoa';
+
+  @override
+  String foldersPersonRemoved(String name) {
+    return '$name foi removido(a).';
+  }
+
+  @override
+  String get foldersLeave => 'Sair da pasta';
+
+  @override
+  String foldersLeaveTitle(String name) {
+    return 'Sair de $name?';
+  }
+
+  @override
+  String get foldersLeaveMessage =>
+      'Você não poderá mais adicionar nem remover papéis de parede aqui. Os papéis de parede que você adicionou continuam na pasta.';
+
+  @override
+  String get foldersLeft => 'Você saiu da pasta.';
+
+  @override
+  String get foldersPeopleFailed => 'Não foi possível atualizar as pessoas desta pasta. Tente novamente.';
+
+  @override
+  String get foldersSharedWithYou => 'Compartilhadas com você';
+
+  @override
+  String get foldersSharedLabel => 'Compartilhada';
+
+  @override
+  String foldersAddedBy(String name) {
+    return 'Adicionado por $name';
+  }
+
+  @override
+  String get foldersAddedByYou => 'Adicionado por você';
+
+  @override
+  String get foldersRemoveFromFolder => 'Remover da pasta';
+
+  @override
+  String get foldersDeleteSharedMessage =>
+      'As pessoas que você convidou também vão perdê-la. Os papéis de parede que estão nos seus favoritos continuam lá.';
+
+  @override
+  String get foldersJoinTitle => 'Convite para pasta';
+
+  @override
+  String foldersJoinHeadline(String name) {
+    return 'Entre em $name';
+  }
+
+  @override
+  String foldersJoinInvitedBy(String name) {
+    return '$name convidou você para adicionar e remover papéis de parede nesta pasta.';
+  }
+
+  @override
+  String get foldersJoin => 'Entrar na pasta';
+
+  @override
+  String get foldersJoinSignIn => 'Entrar para participar';
+
+  @override
+  String get foldersJoinOpen => 'Abrir pasta';
+
+  @override
+  String get foldersJoinAlreadyIn => 'Você já está nesta pasta.';
+
+  @override
+  String foldersJoined(String name) {
+    return 'Você entrou em $name.';
+  }
+
+  @override
+  String get foldersJoinFailed => 'Não foi possível entrar nesta pasta. Tente novamente.';
+
+  @override
+  String get foldersJoinLoadFailed => 'Não foi possível carregar este convite.';
+
+  @override
+  String get foldersJoinExpiredTitle => 'Este convite expirou';
+
+  @override
+  String get foldersJoinExpiredBody => 'Os convites funcionam por 7 dias. Peça um novo link ao dono.';
+
+  @override
+  String get foldersJoinUsedTitle => 'Este convite já foi usado';
+
+  @override
+  String get foldersJoinUsedBody => 'Cada convite funciona uma vez. Peça um novo link ao dono.';
+
+  @override
+  String get foldersJoinFullTitle => 'Esta pasta está cheia';
+
+  @override
+  String get foldersJoinFullBody => 'Peça ao dono para remover alguém e depois abra o link de novo.';
+
+  @override
+  String get foldersJoinUnavailableTitle => 'Este convite não está disponível';
+
+  @override
+  String get foldersJoinUnavailableBody => 'Talvez a pasta tenha sido excluída, ou você não pode entrar nela.';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso.';
 }

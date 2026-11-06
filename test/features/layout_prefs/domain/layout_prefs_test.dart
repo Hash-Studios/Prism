@@ -130,6 +130,24 @@ void main() {
     expect(const LayoutPrefs().copyWith(oneHanded: true), isNot(equals(const LayoutPrefs())));
   });
 
+  test('followingRow is on by default and reads as off only when stored off', () {
+    expect(const LayoutPrefs().followingRow, isTrue);
+    expect(LayoutPrefs.fromMap(const <Object?, Object?>{}).followingRow, isTrue);
+    expect(LayoutPrefs.fromMap(const {'followingRow': false}).followingRow, isFalse);
+  });
+
+  test('toLayoutMap leaves followingRow out when on and writes false when off', () {
+    expect(const LayoutPrefs().toLayoutMap().containsKey('followingRow'), isFalse);
+    expect(const LayoutPrefs(followingRow: false).toLayoutMap()['followingRow'], isFalse);
+  });
+
+  test('followingRow off makes the layout non-default, and resetLayout turns it on', () {
+    final LayoutPrefs prefs = const LayoutPrefs().copyWith(followingRow: false);
+
+    expect(prefs.isDefaultLayout, isFalse);
+    expect(prefs.resetLayout().followingRow, isTrue);
+  });
+
   test('WallGridDensity steps one size at a time and stops at the ends', () {
     expect(WallGridDensity.compact.larger, WallGridDensity.comfortable);
     expect(WallGridDensity.large.larger, isNull);

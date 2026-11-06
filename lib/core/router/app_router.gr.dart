@@ -68,10 +68,15 @@ class AdminReviewRoute extends PageRouteInfo<AdminReviewRouteArgs> {
   AdminReviewRoute({
     Key? key,
     AdminModerationRepository? repository,
+    DesktopSubmissionRepository? desktopRepository,
     List<PageRouteInfo>? children,
   }) : super(
          AdminReviewRoute.name,
-         args: AdminReviewRouteArgs(key: key, repository: repository),
+         args: AdminReviewRouteArgs(
+           key: key,
+           repository: repository,
+           desktopRepository: desktopRepository,
+         ),
          initialChildren: children,
        );
 
@@ -83,32 +88,45 @@ class AdminReviewRoute extends PageRouteInfo<AdminReviewRouteArgs> {
       final args = data.argsAs<AdminReviewRouteArgs>(
         orElse: () => const AdminReviewRouteArgs(),
       );
-      return AdminReviewScreen(key: args.key, repository: args.repository);
+      return AdminReviewScreen(
+        key: args.key,
+        repository: args.repository,
+        desktopRepository: args.desktopRepository,
+      );
     },
   );
 }
 
 class AdminReviewRouteArgs {
-  const AdminReviewRouteArgs({this.key, this.repository});
+  const AdminReviewRouteArgs({
+    this.key,
+    this.repository,
+    this.desktopRepository,
+  });
 
   final Key? key;
 
   final AdminModerationRepository? repository;
 
+  final DesktopSubmissionRepository? desktopRepository;
+
   @override
   String toString() {
-    return 'AdminReviewRouteArgs{key: $key, repository: $repository}';
+    return 'AdminReviewRouteArgs{key: $key, repository: $repository, desktopRepository: $desktopRepository}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! AdminReviewRouteArgs) return false;
-    return key == other.key && repository == other.repository;
+    return key == other.key &&
+        repository == other.repository &&
+        desktopRepository == other.desktopRepository;
   }
 
   @override
-  int get hashCode => key.hashCode ^ repository.hashCode;
+  int get hashCode =>
+      key.hashCode ^ repository.hashCode ^ desktopRepository.hashCode;
 }
 
 /// generated route for
@@ -1274,6 +1292,57 @@ class FirestoreTelemetryRoute extends PageRouteInfo<void> {
       return const FirestoreTelemetryScreen();
     },
   );
+}
+
+/// generated route for
+/// [FolderInviteScreen]
+class FolderInviteRoute extends PageRouteInfo<FolderInviteRouteArgs> {
+  FolderInviteRoute({
+    Key? key,
+    required String code,
+    List<PageRouteInfo>? children,
+  }) : super(
+         FolderInviteRoute.name,
+         args: FolderInviteRouteArgs(key: key, code: code),
+         rawPathParams: {'code': code},
+         initialChildren: children,
+       );
+
+  static const String name = 'FolderInviteRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final pathParams = data.inheritedPathParams;
+      final args = data.argsAs<FolderInviteRouteArgs>(
+        orElse: () => FolderInviteRouteArgs(code: pathParams.getString('code')),
+      );
+      return FolderInviteScreen(key: args.key, code: args.code);
+    },
+  );
+}
+
+class FolderInviteRouteArgs {
+  const FolderInviteRouteArgs({this.key, required this.code});
+
+  final Key? key;
+
+  final String code;
+
+  @override
+  String toString() {
+    return 'FolderInviteRouteArgs{key: $key, code: $code}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! FolderInviteRouteArgs) return false;
+    return key == other.key && code == other.code;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ code.hashCode;
 }
 
 /// generated route for

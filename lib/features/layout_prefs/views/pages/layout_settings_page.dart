@@ -69,6 +69,18 @@ class LayoutSettingsPage extends StatelessWidget {
                 },
               ),
             ),
+            _Section(
+              title: context.l10n.layoutHomeHeader,
+              footnote: context.l10n.layoutFollowingRowFootnote,
+              child: _FollowingRowSwitch(
+                value: prefs.followingRow,
+                onChanged: (on) {
+                  if (on == prefs.followingRow) return;
+                  PrismHaptics.selection();
+                  layout.update(prefs.copyWith(followingRow: on));
+                },
+              ),
+            ),
             const SizedBox(height: PrismSpace.xl),
             Align(
               child: PrismButton(
@@ -184,6 +196,28 @@ class _OneHandedSwitch extends StatelessWidget {
       ),
     );
   }
+}
+
+class _FollowingRowSwitch extends StatelessWidget {
+  const _FollowingRowSwitch({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) => PrismCard(
+    padding: EdgeInsets.zero,
+    child: Material(
+      type: MaterialType.transparency,
+      child: MergeSemantics(
+        child: PrismRow(
+          title: context.l10n.layoutFollowingRow,
+          onTap: () => onChanged(!value),
+          trailing: Switch(value: value, onChanged: onChanged),
+        ),
+      ),
+    ),
+  );
 }
 
 class _Section extends StatelessWidget {

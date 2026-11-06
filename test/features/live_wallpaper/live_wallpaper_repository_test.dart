@@ -5,7 +5,7 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  const LiveWallpaperRepositoryImpl repository = LiveWallpaperRepositoryImpl();
+  final LiveWallpaperRepositoryImpl repository = LiveWallpaperRepositoryImpl();
   late Directory directory;
 
   setUp(() => directory = Directory.systemTemp.createTempSync('live_wallpaper_test'));

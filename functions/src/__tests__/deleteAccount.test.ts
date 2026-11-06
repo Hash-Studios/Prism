@@ -5,6 +5,7 @@ import {db} from "../common";
 import {deleteAccount} from "../deleteAccount";
 import {claimUsername} from "../claimUsername";
 import * as publicFolders from "../publicFolders";
+import * as desktopSubmissions from "../desktopSubmissions";
 import {installFakeDb} from "./fakeDb";
 
 type Options = {
@@ -13,6 +14,7 @@ type Options = {
   failFirstDelete?: boolean;
   failUpdate?: boolean;
   failFolderFollows?: boolean;
+  failDesktopCleanup?: boolean;
   slowQueries?: boolean;
   authError?: string;
   authEmail?: string;
@@ -51,7 +53,8 @@ function fake(t: TestContext, options: Options = {}) {
       ["u1_2026-10-29", "u1_2026-10-28"] : ["d1"];
     return ids.map((id) => ({
       id, data: () => collection === "boosts" ? {wallId: "w9"} : {},
-      ref: {path: `${collection}/${id}`, delete: async () => {
+      ref: {path: `${collection}/${id}`, get: async () => ({data: () =>
+        collection === "desktopSubmissions" ? {shareId: "WALL1"} : {}}), delete: async () => {
         log.push(`delete:${collection}/${id}`);
       }, collection: (name: string) => query(`${collection}/${id}/${name}`)},
     }));
@@ -85,7 +88,7 @@ function fake(t: TestContext, options: Options = {}) {
       doc: (id: string) => ({path: `${path}/${name}/${id}`, get: async () => ({exists: false})}),
     }),
   }));
-  const transaction = {get: async () => ({data: () => ({})}), delete: () => undefined};
+  const transaction = {get: async () => ({data: () => ({})}), set: () => undefined, delete: () => undefined};
   t.mock.method(db, "runTransaction", async (callback: (tx: typeof transaction) => Promise<unknown>) => callback(transaction));
   t.mock.method(db, "recursiveDelete", async (ref: {path: string}) => {
     log.push(`recursive:${ref.path}`);
@@ -131,6 +134,14 @@ function fake(t: TestContext, options: Options = {}) {
     log.push(`folderFollows:${uid}`);
     if (options.failFolderFollows) throw new Error("folder follow cleanup failed");
   });
+  if (options.failDesktopCleanup) {
+    let attempts = 0;
+    const cleanup = desktopSubmissions.removeDesktopSubmissionsForAccount;
+    t.mock.method(desktopSubmissions, "removeDesktopSubmissionsForAccount", async (uid: string) => {
+      if (++attempts === 1) throw new Error("desktop storage unavailable");
+      await cleanup(uid);
+    });
+  }
   t.mock.method(admin.auth(), "deleteUser", async () => {
     log.push("auth");
     if (options.authError) throw Object.assign(new Error("gone"), {code: options.authError});
@@ -186,6 +197,32 @@ test("draw tickets and boosts are deleted, the boosted wall is cleared and the e
   assert.ok(log.indexOf("anonymize") > log.indexOf("update:walls/w9:boostedUntil"));
 });
 
+test("account deletion removes the followed topics session and the topic digest marker", async (t) => {
+  fake(t, {email: ""});
+  const store = installFakeDb(t, {
+    "usersv2/u1": {coins: 20},
+    "usersv2/u1/private/session": {followedTopics: ["category:Pastel"], followedTopicsOffset: 330, topicAlerts: true},
+    "usersv2/u1/private/topicDigest": {day: "2026-11-05", atMs: 1},
+  });
+  const empty = {where: () => empty, get: async () => ({docs: []})};
+  t.mock.method(db, "collectionGroup", () => empty);
+  t.mock.method(db, "bulkWriter", () => ({
+    set: (ref: admin.firestore.DocumentReference, data: admin.firestore.DocumentData) => ref.set(data),
+    update: (ref: admin.firestore.DocumentReference, data: admin.firestore.UpdateData<admin.firestore.DocumentData>) => ref.update(data),
+    delete: (ref: admin.firestore.DocumentReference) => ref.delete(),
+    close: async () => undefined,
+  }));
+  // The fake has no recursive delete: remove the direct children of a collection, or the document itself.
+  t.mock.method(db, "recursiveDelete", async (ref: unknown) => {
+    const snap = await (ref as {get: () => Promise<{docs?: Array<{ref: {path: string}}>; ref?: {path: string}}>}).get();
+    const targets = snap.docs ?? [snap as {ref: {path: string}}];
+    targets.forEach((doc) => store.delete(doc.ref.path));
+  });
+  await call();
+  assert.equal(store.has("usersv2/u1/private/session"), false);
+  assert.equal(store.has("usersv2/u1/private/topicDigest"), false);
+});
+
 test("account deletion covers private metadata, lineage, operation and receipt ledgers by owner and actor", async (t) => {
   const log = fake(t);
   await call();
@@ -199,6 +236,27 @@ test("account deletion covers private metadata, lineage, operation and receipt l
     assert.ok(log.includes(`query:${collection}.actorUid==u1`), collection);
   }
   assert.ok(log.indexOf("barrier:creatorDeletionState/u1") < log.indexOf("delete:wallResubmissionRoots/d1"));
+});
+
+test("account deletion removes the creator's desktop submissions before the profile is anonymized", async (t) => {
+  const log = fake(t);
+  await call();
+  assert.ok(log.includes("query:desktopSubmissions.creatorUid==u1"));
+  assert.ok(log.includes("delete:desktopSubmissions/d1"));
+  assert.ok(log.indexOf("delete:desktopSubmissions/d1") < log.indexOf("anonymize"));
+  assert.ok(log.indexOf("barrier:creatorDeletionState/u1") < log.indexOf("query:desktopSubmissions.creatorUid==u1"));
+});
+
+test("desktop cleanup failure keeps account state available for retry after the deletion barrier closes", async (t) => {
+  const log = fake(t, {failDesktopCleanup: true});
+  await assert.rejects(call, /desktop storage unavailable/);
+  assert.ok(log.includes("barrier:creatorDeletionState/u1"));
+  assert.ok(!log.includes("recursive:usersv2/u1/private"));
+  assert.ok(!log.includes("anonymize"));
+  assert.ok(!log.includes("auth"));
+  assert.deepEqual(await call(), {ok: true});
+  assert.ok(log.includes("delete:desktopSubmissions/d1"));
+  assert.equal(log.at(-1), "auth");
 });
 
 test("a failed delete throws before the profile is anonymized or the auth user removed", async (t) => {

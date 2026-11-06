@@ -75,10 +75,11 @@ The fallback (default `fallbackToInbox: true`) opens the inbox. If `route` is no
 | Followers | Alerts for new followers. Needs sign-in. |
 | Posts | Alerts for new work from followed creators. Needs sign-in. Off when Followers is off. |
 | Folders you follow | The daily "New in <folder>" push. Needs sign-in. Saved as `folderAlerts` in `usersv2/{uid}/private/session`. The token sync also writes `folderAlertsToken`. |
+| Topics you follow | A push once a day when followed categories or moods get new walls. Needs sign-in. Saved as `topicAlerts` in `usersv2/{uid}/private/session`. The token sync also writes `topicAlertsToken`. See [Topic digest](#topic-digest). The token sync writes the session on each app start, so the device that opened the app last gets the digest pushes. Sign-out clears the token only when it is still this device's token. |
 | Recommendations | Topic `recommendations`. A signed-in user also saves it as `marketingPushes` in `usersv2/{uid}/private/session`, next to `followerAlerts`. Win-back pushes skip a user with `marketingPushes == false`. A switch turned off before sign-in is saved on the next token sync. |
 | Streak reminders | Evening reminder around 8 PM local. Needs sign-in. |
 
-Guests: Followers, Posts and Streak reminders show the hint "Sign in to turn on" when they are off, and the switch is disabled. A guest can still turn one off on this device. Wall of the Day and Recommendations work for guests.
+Guests: Followers, Posts, Topics you follow and Streak reminders show the hint "Sign in to turn on" when they are off, and the switch is disabled. A guest can still turn one off on this device. Wall of the Day and Recommendations work for guests.
 
 Permission rules:
 
@@ -143,7 +144,7 @@ Senders:
 | Drop live | Up to 4 walls of the drop. The tap still opens the Drops page. |
 | Follow digest | Single image. See "Follow digest". |
 
-Daily cap: a user gets at most 1 gallery push a day. On the UTC day that a drop goes live, the Drop push is the gallery. The Wall of the Day push then keeps its single image (`dropOwnsGallery`). The follow digest always uses a single image. On other days, the Wall of the Day push is the gallery.
+Daily cap: a user gets at most 1 gallery push a day from Wall of the Day and Drop. On the UTC day that a drop goes live, the Drop push is the gallery. The Wall of the Day push then keeps its single image (`dropOwnsGallery`). The follow digest always uses a single image. On other days, the Wall of the Day push is the gallery. The topic digest is a personal opt-in push. It has its own gallery, so a user who follows topics can get 2 gallery pushes on one day.
 
 Copy: topic pushes reach builds that do not have new native keys. So they reuse shipped keys.
 
@@ -226,6 +227,74 @@ Topic sends count once per message, not once per device. The data does not show 
 
 `sendFolderDigests` sends "New in <folder>" at 13:00 local time, once per follower and local day. It needs `folderAlerts == true` and `folderAlertsToken` equal to `fcmToken` in `private/session`. The **Folders you follow** switch writes `folderAlerts`. The push has one image, like the follow digest. The details are in [folders.md](folders.md).
 
+### Topic digest
+
+A signed-in user can follow up to 20 categories and moods. A followed topic can send one push a day when new Prism walls land in it. The user turns this on with the **Topics you follow** switch in the preferences sheet.
+
+The job is `sendTopicDigests`. It runs every 15 minutes and sends at 16:00 local time. The push comes after the 13:00 folder digest. It comes before the 18:00 win-back and the 19:00 follow digest.
+
+The job reads approved walls from the last 24 hours (`approvedNotifiedAt`). A wall counts when it passes the gallery gate. It also counts for each followed topic that it belongs to. The job writes the newest approval time of each topic to `topicNews/current`. Home uses that time for the new-wall dot.
+
+The followed topics are in `usersv2/{uid}/private/session.followedTopics`. Each item is a key: `category:<Name>` or `mood:<id>`. The list holds at most 20 keys. The app adds and removes keys with array union and array remove, so two devices do not overwrite each other.
+
+`followedTopicsOffset` holds the UTC offset in minutes. It exists only while the list is not empty. The app updates it when the time zone changes, at the next load of the list.
+
+Only the owner reads or writes the session document. The rules accept `followedTopics` only as a list of at most 20 known keys, with no repeats. They accept `followedTopicsOffset` only as an integer from -720 to 840, in steps of 15. A closed deletion barrier (`creatorDeletionState/{uid}.closed`) refuses client writes to the session. `topicNews` is public read and server write only.
+
+The job skips a session in these cases:
+
+- `topicAlerts` is not `true`, or `topicAlertsToken` is not the same as `fcmToken`.
+- `fcmTokenBindingVersion` and `fcmTokenBindingToken` do not match the token.
+- The user is signed out or deleted, or the user has not opened the app in 30 days (`lastAppOpenAt`).
+- A key is not a known topic.
+
+The walls of a creator that the user blocked are left out.
+
+One push goes to each user per local day. The job claims `usersv2/{uid}/private/topicDigest` (`day`, `atMs`, `claimId`) in a transaction. The same transaction reads the session, the user doc, the deletion barrier and the block list again, so a change after the query stops the push. The local day comes from `atMs` and the current offset, so a time zone change on the same day does not send a second push. The job counts only walls approved after the last push, and at most the last 24 hours. A failed send restores the claim only if the claim is still its own (`claimId`).
+
+The inbox doc is written in a transaction that checks the account, the deletion barrier and the token again. The folder digest uses the same path.
+
+The title depends on the number of new walls and topics.
+
+| Shape | Title |
+|---|---|
+| One wall | "A new wall in Pastel" |
+| One topic | "8 new walls in Pastel" |
+| Two topics | "8 new walls in Pastel and Dreamy" |
+| More topics | "8 new walls in Pastel and 3 other topics" |
+
+The body is the tags line. Without tags, the body is "Tap to see what's new.". Background banners show the English topic name. The inbox and the foreground banner show the localized name.
+
+The native keys are `notif_push_topic_digest_title_one`, `_solo`, `_pair` and `_group`, and `notif_push_topic_digest_body` and `_body_untitled`. Android and iOS have them in each app language, except generic Portuguese (`pt`).
+
+The push data has `route: topic`, `topic_kind`, `topic_id`, `topic_count`, `notification_kind: topic_digest` and `push_kind: post`. The push uses channel `posts`. The collapse key is `topic_digest_<day>`. The inbox doc is `topic_digest_<uid>_<day>`.
+
+The push has no `wall_ids`, so a tap does not open the gallery page. A tap opens the page of the topic with the most new walls, through `url`. The URL is `https://prismwalls.com/category/<Name>` or `https://prismwalls.com/mood/<id>?source=push`.
+
+When 2 or more walls pass the gate, the push has a gallery image (`buildPushGallery`). See [Gallery pushes](#gallery-pushes) and the Gallery cap.
+
+The app records `topic_followed` and `topic_unfollowed`, with `kind` and `topic_id`. A tap on the push records `topic_push_opened`, with `topic_count`.
+
+Cost at 10,000 followers is an estimate, not a measurement:
+
+| Read | Per day |
+|---|---|
+| Session query (`topicAlerts == true` and the offset). Each user is in one offset, so the query reads each session once a day. | 10,000 |
+| Per user who gets a push: the claim transaction (marker, session, user doc, barrier, block list), the inbox transaction (3), and the account and token checks before the FCM send (3). | about 14 each, 140,000 at most |
+| Walls approved in the last 24 hours, in each of 96 runs. At 50 walls a day: | 4,800 |
+| `topicNews/current`, once in each run | 96 |
+
+The worst case is about 155,000 reads a day. The job has the same budget as the folder digest: a 540 s timeout and a run every 15 minutes. It sends to at most 100 users at a time. A test runs 10,000 users in one offset (India) on the fake database. The real time limit is not measured. A user without new walls in the topics they follow costs only the session read.
+
+To see the job run on the Firestore emulator, use `tool/qa_topic_digest.mjs`. It follows Pastel and Dreamy for a test user, approves 2 Pastel walls, and runs the job 2 times. It writes the FCM message and the gallery image to a folder. The second run must send nothing.
+
+```sh
+cd functions && npm run build && cd ..
+firebase emulators:exec --only firestore --project demo-prism "node tool/qa_topic_digest.mjs /tmp/topic-qa"
+```
+
+The deploy order is in [Deploy order](#deploy-order).
+
 ### Remix notice
 
 `onWallRemixWritten` writes one inbox item to the original creator when a counted remix is first approved. The title is "Your wallpaper was remixed", with the remix thumbnail. The doc id is `remix_<remixId>` and the kind is `wallRemixed`. The item has no push. It is skipped when `postAlerts` is false in `private/session`. The details are in [remix.md](remix.md).
@@ -292,10 +361,11 @@ Cloud Function event
 | Legacy topic | `wallOfTheDay` also sends to topic `wall_of_the_day` at 03:30 UTC for old clients. |
 | Streak reminder | `sendStreakReminders` runs every 15 minutes, `timeoutSeconds: 540`. It handles users in chunks of 25 with `Promise.allSettled`, in pages of 200. It writes the sent marker first and rolls it back if the push fails. |
 | Win-back | `sendWinBackPushes` runs every 15 minutes. It sends to the UTC offsets where it is 18:00 local. Steps are 7, 14, 30, and 60 days since `lastAppOpenAt`. Each step stays open for 2 days. Day 7 and 14 open the feed, day 30 opens AI, and day 60 opens Wall of the Day. Day 7 and 14 send `route: home` with `feed: latest`, so they open the Latest tab. Older builds ignore `feed` and open Home. The Android channel is `recommendations`. The Recommendations switch (`marketingPushes`) still gates it. A missed evening sends the next day, once. Deploy the `usersv2` index on `appOpenTimezoneOffsetMinutes` + `lastAppOpenAt` before this query, or the job fails. |
+| Topic digest | `sendTopicDigests` runs every 15 minutes, `timeoutSeconds: 540`. It sends at 16:00 local time, once per user and local day. See [Topic digest](#topic-digest). |
 | Last app open | A signed-in open writes `lastAppOpenAt` (server timestamp) and `appOpenTimezoneOffsetMinutes` (offset rounded to 15 minutes), at most every 15 minutes. A user with no last open is not eligible for win-back. |
 | Scoreboard | Daily counts are split across `metrics/notificationScoreboard/days/{utc date}_{00-31}`: sends, accepts, fails, taps, next-day returns, and permission results. Accepts are FCM API accepts. Every FCM message counts as an attempt: a personal push with both topic generations and a token counts as three. Admins see the sum of those shards for the last 14 UTC dates on the Notifications tab. |
 | Gallery image | A gallery image is stored once for each layout and sorted wall set. A push for the same walls reuses it. A failure keeps the single image. |
-| Gallery cap | A user gets at most 1 gallery push a day. The Drop push owns the gallery on its UTC day. |
+| Gallery cap | A user gets at most 1 gallery push a day from Wall of the Day and Drop. The Drop push owns the gallery on its UTC day. The topic digest is a personal opt-in push with its own gallery, so a user who follows topics can get 2 gallery pushes on one day. |
 | Follow digest | `sendFollowDigests` sends at 19:00 local time, once per follower and local day. The day is claimed before the send. |
 
 ### Wall of the Day topics
@@ -326,6 +396,8 @@ Cloud Function event
 | `functions/src/winBack.ts` | Win-back job. |
 | `functions/src/pushGallery.ts` | Gallery image, layouts and gallery push data. |
 | `functions/src/followDigest.ts` | Follow digest job. |
+| `functions/src/topicDigest.ts` | Topic digest job and topic list (`TOPICS`). |
+| `lib/features/followed_topics/` | Follow button, Following row, topic list sheet and `FollowedTopicsStore`. |
 | `lib/features/moods/views/pages/gallery_screen.dart` | Gallery page for `/gallery`. |
 | `ios/PrismNotificationService/` | iOS notification service extension. |
 
@@ -341,6 +413,15 @@ Deploy the backend before the client. The notification topic migration requires 
 
 If the client ships first, new builds leave `wall_of_the_day`. The bucket topic then gets no push until `sendWallOfTheDayBuckets` is live. Those users get no Wall of the Day push.
 
+For the topic digest, deploy in this order.
+
+1. Deploy the Firestore rules.
+2. Deploy the indexes: the composite index `topicAlerts` + `followedTopicsOffset` and the field index `followedTopicsOffset`, both on the collection group `private`. Wait until they are ready.
+3. Deploy the functions. This adds `sendTopicDigests` and the topic token to `sendToUser`.
+4. Release the app.
+
+See [Topic digest](#topic-digest).
+
 ## Limits
 
 - The iOS 27.0 Simulator cannot make notification thumbnails (QuickLook error 102) for any attachment. The collapsed gallery thumbnail is not proven on a simulator. The expanded image and the clipping rect values in the system log are proven.
@@ -355,6 +436,8 @@ If the client ships first, new builds leave `wall_of_the_day`. The bucket topic 
 - The Wall of the Day push does not write an inbox doc. Only the legacy send at 03:30 UTC writes it (`docId: wotd_<date>`).
 - The app badge clear is native code. It needs a device to confirm.
 - Push delivery, the OS permission banner and the OS prompt need a real device. Automated tests use fakes.
+- A user who follows topics can get 2 gallery pushes on one day. See the Gallery cap.
+- Topic digest push text has no generic Portuguese (`pt`) version. Those devices get the English text.
 
 ## How to test
 
@@ -376,6 +459,10 @@ If the client ships first, new builds leave `wall_of_the_day`. The bucket topic 
 16. Send a gallery push to a test device token. Make sure that the collapsed push shows one wall as the thumbnail.
 17. Expand the push. Make sure that the expanded view shows the walls side by side.
 18. Tap the push. Make sure that the gallery page opens with those walls.
+19. Follow a category and a mood from their pages. Make sure that each button shows **Following**.
+20. Sign out. Tap **Follow** on a category page. Make sure that the sign-in prompt shows.
+21. Open **Settings**, then **Topics you follow**. Make sure that the list shows each followed topic. Tap **Unfollow** and make sure that the topic leaves the list.
+22. Send a topic digest push to a test device token. Make sure that the title names the topic. Tap the push and make sure that the topic page opens.
 
 Automated tests:
 
@@ -393,6 +480,12 @@ Automated tests:
 | Functions | `functions/src/__tests__/wallOfTheDay.test.ts`, `notificationHelper.test.ts`, `personalPushes.test.ts`, `onWallApproved.test.ts`, `onFollowCreated.test.ts`, `streak.test.ts`, `winBack.test.ts` |
 | Gallery pushes and follow digest | `functions/src/__tests__/pushGallery.test.ts`, `functions/src/__tests__/followDigest.test.ts` |
 | iOS push image | `ios/RunnerTests/PushImageTests.swift` |
+| Topic digest | `functions/src/__tests__/topicDigest.test.ts`, `deleteAccount.test.ts`, `notificationHelper.test.ts` |
+| Followed topics in the app | `test/features/followed_topics/`, `test/features/layout_prefs/`, `test/notifications/fcm_token_service_test.dart` |
+| Followed topics rules | `tool/firestore_rules_smoke.mjs` (`make rules-test`) |
+| Topic rules | `tool/firestore_rules_smoke.mjs` |
+| Topic token and switch | `test/notifications/fcm_token_service_test.dart` |
+| Layout setting | `test/features/layout_prefs/` |
 
 Commands:
 

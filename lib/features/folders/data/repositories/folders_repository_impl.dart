@@ -13,6 +13,7 @@ import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/favourite_walls/data/favourite_wall_doc_mapper.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_member.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:injectable/injectable.dart';
@@ -36,7 +37,27 @@ FolderEntity folderFromDoc(Map<String, dynamic> data, String id) {
     itemCount: count is num ? math.max(0, count.toInt()) : 0,
     covers: covers is List ? covers.whereType<String>().take(folderMaxCovers).toList() : const <String>[],
     isPublic: data['public'] == true,
+    editors: folderEditorsFromDoc(data['members']),
   );
+}
+
+/// The server-owned `members` map: uid to `{addedBy, addedAt}`. Oldest first.
+List<FolderMember> folderEditorsFromDoc(Object? members) {
+  if (members is! Map) return const <FolderMember>[];
+  final DateTime epoch = DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+  return <FolderMember>[
+    for (final MapEntry<Object?, Object?> entry in members.entries)
+      if (entry.key is String && (entry.key! as String).isNotEmpty)
+        FolderMember(
+          uid: entry.key! as String,
+          role: FolderRole.editor,
+          addedBy: entry.value is Map ? parseString((entry.value! as Map)['addedBy']) : '',
+          addedAt: (entry.value is Map ? parseDateTime((entry.value! as Map)['addedAt']) : null) ?? epoch,
+        ),
+  ]..sort((a, b) {
+    final int byTime = a.addedAt.compareTo(b.addedAt);
+    return byTime != 0 ? byTime : a.uid.compareTo(b.uid);
+  });
 }
 
 @LazySingleton(as: FoldersRepository)
@@ -91,15 +112,27 @@ class FoldersRepositoryImpl implements FoldersRepository {
   @override
   Future<Result<List<FolderEntity>>> fetchFolders(String userId) => _guard('load folders', () async {
     if (userId.isEmpty) return const <FolderEntity>[];
-    return _firestoreClient.query<FolderEntity>(
+    Future<List<FolderEntity>> query(String sourceTag, FirestoreFilter filter) => _firestoreClient.query<FolderEntity>(
       FirestoreQuerySpec(
         collection: FirebaseCollections.folders,
-        sourceTag: 'folders.fetch_folders',
-        filters: <FirestoreFilter>[FirestoreFilter(field: 'ownerId', op: FirestoreFilterOp.isEqualTo, value: userId)],
+        sourceTag: sourceTag,
+        filters: <FirestoreFilter>[filter],
         orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'updatedAt', descending: true)],
       ),
       folderFromDoc,
     );
+    final List<List<FolderEntity>> lists = await Future.wait(<Future<List<FolderEntity>>>[
+      query('folders.fetch_folders', FirestoreFilter(field: 'ownerId', op: FirestoreFilterOp.isEqualTo, value: userId)),
+      query(
+        'folders.fetch_shared_folders',
+        FirestoreFilter(field: 'memberIds', op: FirestoreFilterOp.arrayContains, value: userId),
+      ),
+    ]);
+    final Set<String> seen = <String>{};
+    return <FolderEntity>[
+      for (final FolderEntity folder in lists.expand((list) => list))
+        if (seen.add(folder.id)) folder,
+    ];
   });
 
   @override
@@ -107,12 +140,20 @@ class FoldersRepositoryImpl implements FoldersRepository {
       _guard('load folder items', () async {
         if (userId.isEmpty) return null;
         try {
+          // Items belong to the folder owner, also when an editor added them. The rules allow only that filter.
+          final String? ownerId = await _firestoreClient.getById<String>(
+            FirebaseCollections.folders,
+            folderId,
+            (data, _) => parseString(data['ownerId']),
+            sourceTag: 'folders.fetch_items.owner',
+          );
+          if (ownerId == null || ownerId.isEmpty) return null;
           return await _firestoreClient.query<FavouriteWallEntity>(
             FirestoreQuerySpec(
               collection: FirebaseCollections.folderItems(folderId),
               sourceTag: 'folders.fetch_items',
               filters: <FirestoreFilter>[
-                FirestoreFilter(field: 'ownerId', op: FirestoreFilterOp.isEqualTo, value: userId),
+                FirestoreFilter(field: 'ownerId', op: FirestoreFilterOp.isEqualTo, value: ownerId),
               ],
               orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'addedAt', descending: true)],
               limit: limit,
@@ -155,9 +196,10 @@ class FoldersRepositoryImpl implements FoldersRepository {
       });
 
   // A pin belongs to Favourites, and the folder item rules allow no pinnedAt.
-  Map<String, dynamic> _itemDoc(FolderEntity folder, FavouriteWallEntity wall) => <String, dynamic>{
+  Map<String, dynamic> _itemDoc(FolderEntity folder, FavouriteWallEntity wall, String userId) => <String, dynamic>{
     ...favouriteWallToDoc(wall.withPinnedAt(null)),
     'ownerId': folder.ownerId,
+    'addedBy': userId,
     'addedAt': FirestoreSentinels.serverTimestamp(),
     if (wall case PrismFavouriteWall(:final wallpaper)) 'wallpaperDocumentId': wallpaper.firestoreDocumentId ?? wall.id,
   };
@@ -179,7 +221,7 @@ class FoldersRepositoryImpl implements FoldersRepository {
               batch.setDoc(
                 FirebaseCollections.folderItems(folder.id),
                 folderItemKey(firstWall),
-                _itemDoc(folder, firstWall),
+                _itemDoc(folder, firstWall, folder.ownerId),
               );
             }
           },
@@ -254,28 +296,35 @@ class FoldersRepositoryImpl implements FoldersRepository {
     'updatedAt': FirestoreSentinels.serverTimestamp(),
   };
 
+  // An editor writes only the item. The server sets the count and covers, which only the owner may write.
   @override
-  Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall) => _guard('add to folder', () async {
+  Future<Result<void>> addItem(
+    FolderEntity folder,
+    FavouriteWallEntity wall, {
+    required String userId,
+  }) => _guard('add to folder', () async {
     await _write(
       (batch) async {
-        batch.setDoc(FirebaseCollections.folderItems(folder.id), folderItemKey(wall), _itemDoc(folder, wall));
-        batch.updateDoc(FirebaseCollections.folders, folder.id, _folderCounts(folder, 1));
+        batch.setDoc(FirebaseCollections.folderItems(folder.id), folderItemKey(wall), _itemDoc(folder, wall, userId));
+        if (folder.isOwnedBy(userId)) batch.updateDoc(FirebaseCollections.folders, folder.id, _folderCounts(folder, 1));
       },
       'folders.add_item',
-      ownerId: folder.ownerId,
+      ownerId: userId,
     );
   });
 
   @override
-  Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall) =>
+  Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId}) =>
       _guard('remove from folder', () async {
         await _write(
           (batch) async {
             batch.deleteDoc(FirebaseCollections.folderItems(folder.id), folderItemKey(wall));
-            batch.updateDoc(FirebaseCollections.folders, folder.id, _folderCounts(folder, -1));
+            if (folder.isOwnedBy(userId)) {
+              batch.updateDoc(FirebaseCollections.folders, folder.id, _folderCounts(folder, -1));
+            }
           },
           'folders.remove_item',
-          ownerId: folder.ownerId,
+          ownerId: userId,
         );
       });
 }

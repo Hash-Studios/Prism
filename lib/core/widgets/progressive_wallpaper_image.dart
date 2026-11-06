@@ -14,8 +14,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
-const Duration _thumbnailFade = Duration(milliseconds: 180);
-const Duration _fullFade = Duration(milliseconds: 280);
+const Duration _thumbnailFade = PrismDurations.fast;
+const Duration _fullFade = PrismDurations.base;
 
 /// A wallpaper on a large surface, drawn with [BoxFit.cover]. The thumbnail shows first; the full picture fades in
 /// over it and, once shown, stays. A copy on the device wins over the network. The full picture gets one retry, then

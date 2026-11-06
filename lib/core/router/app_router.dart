@@ -28,6 +28,7 @@ import 'package:Prism/features/daily_flow/views/daily_moment_page.dart';
 import 'package:Prism/features/debug_panel/views/pages/debug_panel_page.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
 import 'package:Prism/features/deep_link_input/views/pages/deep_link_input_page.dart';
+import 'package:Prism/features/desktop_submission/data/desktop_submission_repository.dart';
 import 'package:Prism/features/draw/draw.dart';
 import 'package:Prism/features/drops/biz/bloc/drops_bloc.j.dart';
 import 'package:Prism/features/drops/views/pages/drop_detail_page.dart';
@@ -35,6 +36,7 @@ import 'package:Prism/features/drops/views/pages/drop_preview_page.dart';
 import 'package:Prism/features/drops/views/pages/drops_page.dart';
 import 'package:Prism/features/editors_choice/views/pages/editors_choice_screen.dart';
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
+import 'package:Prism/features/folders/views/pages/folder_invite_screen.dart';
 import 'package:Prism/features/folders/views/pages/folder_screen.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
 import 'package:Prism/features/ios_shortcuts/views/pages/ios_shortcuts_guide_screen.dart';
@@ -110,16 +112,18 @@ class AppRouter extends RootStackRouter {
       ? const RouteType.adaptive()
       : RouteType.custom(
           duration: PrismDurations.base,
-          reverseDuration: const Duration(milliseconds: 200),
+          reverseDuration: PrismDurations.fast,
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             if (context.reduceMotion) return child;
-            final Animation<double> t = animation.drive(CurveTween(curve: PrismCurves.enter));
-            return FadeTransition(
-              opacity: t,
-              child: AnimatedBuilder(
-                animation: t,
-                builder: (context, child) => Transform.translate(offset: Offset(24 * (1 - t.value), 0), child: child),
-                child: child,
+            return PrismEased(
+              animation: animation,
+              builder: (t) => FadeTransition(
+                opacity: t,
+                child: AnimatedBuilder(
+                  animation: t,
+                  builder: (context, child) => Transform.translate(offset: Offset(24 * (1 - t.value), 0), child: child),
+                  child: child,
+                ),
               ),
             );
           },
@@ -183,9 +187,9 @@ class AppRouter extends RootStackRouter {
       reverseDuration: PrismDurations.fast,
       transitionsBuilder: (context, animation, secondaryAnimation, child) => context.reduceMotion
           ? child
-          : FadeTransition(
-              opacity: animation.drive(CurveTween(curve: PrismCurves.enter)),
-              child: child,
+          : PrismEased(
+              animation: animation,
+              builder: (eased) => FadeTransition(opacity: eased, child: child),
             ),
     ),
     // Standalone path so Edit Profile works when ProfileScreen was opened via
@@ -202,6 +206,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/downloads', page: DownloadRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/library', page: LibraryRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/folder/:folderId', page: FolderRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/folder/invite/:code', page: FolderInviteRoute.page),
     AutoRoute(path: '/upload-wall', page: UploadWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/edit-wall', page: EditWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/creator-stats', page: CreatorStatsRoute.page, guards: [_signedInGuard]),
@@ -239,7 +244,7 @@ class AppRouter extends RootStackRouter {
       page: DailyChestRoute.page,
       guards: [_signedInGuard],
       duration: PrismDurations.base,
-      reverseDuration: PrismDurations.base,
+      reverseDuration: PrismDurations.fast,
       transitionsBuilder: _rewardTransition,
     ),
     CustomRoute(
@@ -247,7 +252,7 @@ class AppRouter extends RootStackRouter {
       page: SpinWheelRoute.page,
       guards: [_signedInGuard],
       duration: PrismDurations.base,
-      reverseDuration: PrismDurations.base,
+      reverseDuration: PrismDurations.fast,
       transitionsBuilder: _rewardTransition,
     ),
     AutoRoute(path: '/shop', page: ShopRoute.page, guards: [_signedInGuard]),
@@ -257,10 +262,10 @@ class AppRouter extends RootStackRouter {
       path: '/drops/:weekKey/preview/:wallId',
       page: DropPreviewRoute.page,
       fullscreenDialog: true,
-      duration: const Duration(milliseconds: 280),
-      reverseDuration: const Duration(milliseconds: 200),
+      duration: PrismDurations.base,
+      reverseDuration: PrismDurations.fast,
       transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-          _previewTransition(context, animation, child, Curves.easeOutCubic),
+          _previewTransition(context, animation, child),
     ),
     AutoRoute(path: '/leaderboard', page: LeaderboardRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/draw', page: DrawRoute.page, guards: [_signedInGuard]),
@@ -275,13 +280,15 @@ Widget _rewardTransition(
   Animation<double> animation,
   Animation<double> secondaryAnimation,
   Widget child,
-) => _previewTransition(context, animation, child, PrismCurves.enter);
+) => _previewTransition(context, animation, child);
 
-Widget _previewTransition(BuildContext context, Animation<double> animation, Widget child, Curve curve) {
+Widget _previewTransition(BuildContext context, Animation<double> animation, Widget child) {
   if (context.reduceMotion) return child;
-  final Animation<double> eased = CurvedAnimation(parent: animation, curve: curve);
-  return FadeTransition(
-    opacity: eased,
-    child: ScaleTransition(scale: Tween<double>(begin: 0.96, end: 1).animate(eased), child: child),
+  return PrismEased(
+    animation: animation,
+    builder: (eased) => FadeTransition(
+      opacity: eased,
+      child: ScaleTransition(scale: Tween<double>(begin: 0.96, end: 1).animate(eased), child: child),
+    ),
   );
 }

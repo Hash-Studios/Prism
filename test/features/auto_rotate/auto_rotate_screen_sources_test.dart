@@ -10,6 +10,7 @@ import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/auto_rotate/views/pages/auto_rotate_screen.dart';
 import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_session_listener.dart';
+import 'package:Prism/features/day_night/biz/bloc/day_night_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
@@ -27,6 +28,14 @@ import 'package:mocktail/mocktail.dart';
 import '../../support/fake_app_analytics.dart';
 
 class _MockAutoRotateBloc extends MockBloc<AutoRotateEvent, AutoRotateState> implements AutoRotateBloc {}
+
+class _MockDayNightBloc extends MockBloc<DayNightEvent, DayNightState> implements DayNightBloc {}
+
+_MockDayNightBloc _dayNightOff() {
+  final _MockDayNightBloc bloc = _MockDayNightBloc();
+  when(() => bloc.state).thenReturn(DayNightState.initial());
+  return bloc;
+}
 
 class _MockFavouriteWallsBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState>
     implements FavouriteWallsBloc {}
@@ -110,6 +119,7 @@ void main() {
         home: MultiBlocProvider(
           providers: [
             BlocProvider<AutoRotateBloc>.value(value: autoRotateBloc),
+            BlocProvider<DayNightBloc>.value(value: _dayNightOff()),
             BlocProvider<FavouriteWallsBloc>.value(value: favouriteWallsBloc),
             BlocProvider<SessionBloc>.value(value: sessionBloc),
             BlocProvider<FoldersBloc>.value(value: foldersBloc),

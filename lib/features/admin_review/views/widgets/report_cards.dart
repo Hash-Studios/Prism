@@ -7,6 +7,7 @@ import 'package:Prism/core/router/deep_link_dispatcher.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/admin_review_localization.dart';
+import 'package:Prism/features/admin_review/biz/reject_reasons.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/views/widgets/moderation_bits.dart';
 import 'package:Prism/features/wall_comments/data/wall_comments_repository.dart';
@@ -16,7 +17,8 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
-typedef ConfirmRemoveWithReason = Future<void> Function({required Future<void> Function(String reason) onSubmit});
+typedef ConfirmRemoveWithReason =
+    Future<void> Function({required Future<void> Function(String reason, RejectReason? picked) onSubmit});
 
 /// An open report on a wallpaper: the wallpaper, the reason, and Keep or Remove.
 class WallContentReportCard extends StatefulWidget {
@@ -90,7 +92,7 @@ class _WallContentReportCardState extends State<WallContentReportCard> {
   Future<void> _removeWallpaper() {
     final AppLocalizations l10n = context.l10n;
     return widget.onConfirmRemoveWithReason(
-      onSubmit: (String reason) async {
+      onSubmit: (String reason, RejectReason? _) async {
         final bool removed = await widget.repository.rejectWallByFirestoreDocumentId(
           widget.targetDocId,
           reason: reason,

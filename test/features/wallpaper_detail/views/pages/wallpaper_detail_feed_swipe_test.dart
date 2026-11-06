@@ -283,6 +283,31 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets('a drag past the first wall resists, stays within 0.15 of a page and springs back', (tester) async {
+    final a = _item('a');
+    final b = _item('b');
+    blocWalls.addAll([a, b]);
+    await _pumpFeed(tester, feed: [a, b], open: a);
+
+    double pageOffset() => tester
+        .widgetList<FractionalTranslation>(find.byType(FractionalTranslation))
+        .map((t) => t.translation.dx)
+        .reduce((x, y) => x.abs() > y.abs() ? x : y);
+
+    final TestGesture gesture = await tester.startGesture(
+      tester.getCenter(find.byType(WallpaperQuickActionRegion).first),
+    );
+    for (var i = 0; i < 10; i++) {
+      await gesture.moveBy(Offset(tester.view.physicalSize.width / tester.view.devicePixelRatio / 20, 0));
+      await tester.pump();
+    }
+    expect(pageOffset(), inExclusiveRange(0, 0.1500001));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(pageOffset(), 0);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('a swipe left on the card shows the next wall of the feed', (tester) async {
     final a = _item('a');
     final b = _item('b');

@@ -298,6 +298,7 @@ enums:
       - copy_link
       - save_image
       - more
+      - open_on_computer
   - name: dismiss_mode
     dart_type: DismissModeValue
     values:
@@ -346,6 +347,7 @@ enums:
       - recommendations
       - streak_reminders
       - folders
+      - topics
   - name: deep_link_source
     dart_type: DeepLinkSourceValue
     values:
@@ -1356,6 +1358,43 @@ events:
         key: search_id
         type: string
         required: false
+  - id: photo_search_started
+    fields:
+      - name: signed_in
+        key: signed_in
+        type: bool
+      - name: search_id
+        key: search_id
+        type: string
+  - id: photo_search_labels_returned
+    fields:
+      - name: label_count
+        key: label_count
+        type: int
+      - name: search_id
+        key: search_id
+        type: string
+  - id: photo_search_labels_capped
+    fields:
+      - name: search_id
+        key: search_id
+        type: string
+  - id: photo_search_result_opened
+    fields:
+      - name: provider
+        key: provider
+        type: enum
+        enum: SearchProviderValue
+      - name: item_id
+        key: item_id
+        type: string
+      - name: index
+        key: index
+        type: int
+      - name: search_id
+        key: search_id
+        type: string
+        required: false
   - id: search_pagination_requested
     fields:
       - name: provider
@@ -1532,6 +1571,14 @@ events:
         key: from_variants
         type: bool
   - id: day_night_disabled
+  - id: day_night_switched
+    fields:
+      - name: slot
+        key: slot
+        type: string
+      - name: source
+        key: source
+        type: string
   - id: day_night_ios_guide_opened
   - id: auto_rotate_folder_set
     fields:
@@ -1733,6 +1780,20 @@ events:
         type: enum
         enum: ShareTargetValue
         required: false
+  - id: open_on_computer_shown
+    fields:
+      - name: source_context
+        key: source_context
+        type: string
+  - id: open_on_computer_link_copied
+    fields:
+      - name: source_context
+        key: source_context
+        type: string
+      - name: result
+        key: result
+        type: enum
+        enum: EventResultValue
   - id: dynamic_link_create_result
     fields:
       - name: share_type
@@ -2300,10 +2361,86 @@ events:
       - name: source
         key: source
         type: string
+  - id: folder_invite_created
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: folder_joined
+    fields:
+      - name: source
+        key: source
+        type: string
+  - id: folder_join_refused
+    fields:
+      - name: reason
+        key: reason
+        type: string
+  - id: folder_member_removed
+    fields:
+      - name: member_count
+        key: member_count
+        type: int
+  - id: folder_member_left
+    fields:
+      - name: member_count
+        key: member_count
+        type: int
   - id: folder_push_opened
     fields:
       - name: folder_count
         key: folder_count
+        type: int
+  - id: topic_followed
+    fields:
+      - name: kind
+        key: kind
+        type: string
+      - name: topic_id
+        key: topic_id
+        type: string
+  - id: topic_unfollowed
+    fields:
+      - name: kind
+        key: kind
+        type: string
+      - name: topic_id
+        key: topic_id
+        type: string
+  - id: topic_push_opened
+    fields:
+      - name: topic_count
+        key: topic_count
+        type: int
+  - id: folder_save_started
+    fields:
+      - name: wall_count
+        key: wall_count
+        type: int
+      - name: coin_cost
+        key: coin_cost
+        type: int
+      - name: pro
+        key: pro
+        type: bool
+  - id: folder_save_finished
+    fields:
+      - name: saved
+        key: saved
+        type: int
+      - name: skipped
+        key: skipped
+        type: int
+      - name: failed
+        key: failed
+        type: int
+  - id: folder_save_cancelled
+    fields:
+      - name: saved
+        key: saved
+        type: int
+      - name: not_saved
+        key: not_saved
         type: int
   - id: mood_chip_tapped
     fields:
@@ -2480,6 +2617,17 @@ events:
       - name: result
         key: result
         type: string
+      - name: target
+        key: target
+        type: enum
+        enum: WallpaperTarget
+        required: false
+      - name: per_screen
+        key: per_screen
+        type: bool
+      - name: fallback
+        key: fallback
+        type: bool
   - id: live_photo_export_started
     fields:
       - name: style
@@ -2833,6 +2981,38 @@ events:
       - name: variant_count
         key: variant_count
         type: int
+  - id: desktop_upload_started
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: replace
+        key: replace
+        type: bool
+  - id: desktop_upload_submitted
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: aspect
+        key: aspect
+        type: string
+      - name: replace
+        key: replace
+        type: bool
+  - id: desktop_upload_approved
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+  - id: desktop_upload_rejected
+    fields:
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: reason
+        key: reason
+        type: string
   - id: wallpaper_variant_link_resolved
     fields:
       - name: wall_id

@@ -80,6 +80,28 @@ void main() {
     expect(taps, 1);
   });
 
+  testWidgets('lets go of the press once the finger drags past the touch slop', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Center(child: PressScale(child: SizedBox(width: 100, height: 100))),
+      ),
+    );
+    double scale() => tester
+        .widget<Transform>(find.descendant(of: find.byType(PressScale), matching: find.byType(Transform)))
+        .transform
+        .storage[0];
+
+    final TestGesture held = await tester.startGesture(tester.getCenter(find.byType(PressScale)));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(scale(), lessThan(1), reason: 'a held press without movement stays shrunk');
+    await held.moveBy(const Offset(0, 40));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(scale(), 1);
+    await held.up();
+  });
+
   testWidgets('presses down at once and lets go at once, with no slow start either way', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(

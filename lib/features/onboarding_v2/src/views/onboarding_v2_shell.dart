@@ -497,9 +497,9 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
                                     children: [
                                       // Layer 1: unique page content, fades between steps.
                                       AnimatedSwitcher(
-                                        duration: context.motion(const Duration(milliseconds: 300)),
-                                        switchInCurve: Curves.easeOut,
-                                        switchOutCurve: Curves.easeIn,
+                                        duration: context.motion(PrismDurations.base),
+                                        switchInCurve: PrismCurves.enter,
+                                        switchOutCurve: PrismCurves.exitReverse,
                                         transitionBuilder: (child, animation) =>
                                             FadeTransition(opacity: animation, child: child),
                                         layoutBuilder: (currentChild, previousChildren) => Stack(
@@ -581,7 +581,7 @@ class _StepSwitcher extends StatelessWidget {
     return AnimatedSwitcher(
       duration: context.motion(PrismDurations.base),
       switchInCurve: PrismCurves.enter,
-      switchOutCurve: PrismCurves.exit,
+      switchOutCurve: PrismCurves.exitReverse,
       transitionBuilder: (child, animation) {
         final bool arriving = child.key == current;
         // One wrapper shape for both ways. A page that starts to leave keeps its state, so the quiz does not restart.
@@ -764,7 +764,7 @@ class _Headline extends StatelessWidget {
       left: _headlineX(step) * sx,
       right: _headlineX(step) * sx,
       child: OnboardingStaggeredFade(
-        delay: const Duration(milliseconds: 450),
+        delay: PrismDurations.stagger * 2,
         child: AnimatedSwitcher(
           duration: context.motion(OnboardingMotion.short),
           child: FittedBox(
@@ -851,7 +851,7 @@ class _CtaButton extends StatelessWidget {
       right: OnboardingLayout.ctaX * sx,
       height: OnboardingLayout.ctaHeight * sy,
       child: OnboardingStaggeredFade(
-        delay: const Duration(milliseconds: 750),
+        delay: PrismDurations.stagger * 4,
         child: OnboardingPrimaryButton(label: label, onPressed: onCtaTap, enabled: isEnabled, loading: isLoading),
       ),
     );
@@ -902,14 +902,12 @@ class _BottomText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = errorText ?? _helperText(context.l10n);
-    return AnimatedPositioned(
-      duration: context.motion(OnboardingMotion.normal),
-      curve: OnboardingMotion.emphasized,
+    return Positioned(
       top: OnboardingLayout.helperY * sy,
       left: 0,
       right: 0,
       child: OnboardingStaggeredFade(
-        delay: const Duration(milliseconds: 900),
+        delay: PrismDurations.stagger * 5,
         child: AnimatedSwitcher(
           duration: context.motion(OnboardingMotion.short),
           child: OnboardingHelperText(key: ValueKey(text), text: text),

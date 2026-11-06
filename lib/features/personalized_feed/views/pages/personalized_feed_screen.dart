@@ -22,6 +22,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/creator_directory/views/widgets/creators_section.dart';
 import 'package:Prism/features/editors_choice/views/widgets/editors_choice_row.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
+import 'package:Prism/features/followed_topics/views/widgets/following_topics_row.dart';
 import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
 import 'package:Prism/features/layout_prefs/views/widgets/pinch_density.dart';
 import 'package:Prism/features/moods/biz/moods_cubit.dart';
@@ -101,7 +102,7 @@ class PersonalizedFeedScreen extends StatefulWidget {
 }
 
 class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
-    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
+    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   static const int _carouselPreviewCount = PrismFeedLayout.carouselPreviewCount;
 
   late final PersonalizedFeedBloc _bloc;
@@ -110,7 +111,10 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   RecentlyViewedStore? _viewedHistory;
   SyncedHistoryStore? _syncedHistory;
   late final TrendingBloc _trending;
-  late final TabController _tabs;
+  // Built in didChangeDependencies, so a tab tap (TabBar animates with the controller's own duration) follows reduce
+  // motion. Rebuilt when that setting changes.
+  TabController? _tabsOrNull;
+  TabController get _tabs => _tabsOrNull!;
   final ScrollController _scrollController = ScrollController();
   LatestFeedBloc? _latest;
   FollowingFeedBloc? _following;
@@ -136,7 +140,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     _trending = getIt<TrendingBloc>()..add(const TrendingEvent.started());
     _moods = getIt<MoodsCubit>();
     unawaited(_loadHomeMoods());
-    _tabs = TabController(length: HomeFeedChip.values.length, vsync: this, initialIndex: _bloc.state.chip.index);
     personalizedFeedSettingsRevision.addListener(_onFeedSettingsChanged);
     if (getIt.isRegistered<RecentlyViewedStore>()) {
       _viewedHistory = getIt<RecentlyViewedStore>()..addListener(_onHistoryChanged);
@@ -145,6 +148,22 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       _syncedHistory = getIt<SyncedHistoryStore>()..addListener(_onHistoryChanged);
     }
     _bloc.add(const PersonalizedFeedEvent.started());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final Duration duration = context.motion(PrismDurations.fast);
+    final TabController? old = _tabsOrNull;
+    if (old != null && old.animationDuration == duration) return;
+    _tabsOrNull = TabController(
+      length: HomeFeedChip.values.length,
+      vsync: this,
+      initialIndex: old?.index ?? _bloc.state.chip.index,
+      animationDuration: duration,
+    );
+    // The TabBar still listens to the old controller until this frame rebuilds it.
+    if (old != null) WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
   }
 
   void _onHistoryChanged() {
@@ -365,7 +384,11 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
             listenWhen: (prev, curr) => prev.chip != curr.chip,
             listener: (context, state) {
               if (_tabs.index != state.chip.index) {
-                _tabs.animateTo(state.chip.index);
+                if (context.reduceMotion) {
+                  _tabs.index = state.chip.index;
+                } else {
+                  _tabs.animateTo(state.chip.index, duration: PrismDurations.fast, curve: PrismCurves.move);
+                }
               }
               if (_scrollController.hasClients && _scrollController.offset > 0) {
                 _scrollController.jumpTo(0);
@@ -587,6 +610,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
         ),
         if (!loadingFirstPage)
           SliverToBoxAdapter(child: WeeklyChallengeCard(key: ValueKey('challenge-$_moodRowsRevision'))),
+        if (!loadingFirstPage) const SliverToBoxAdapter(child: FollowingTopicsRow()),
         if (!loadingFirstPage) SliverToBoxAdapter(child: MoodChipRow(moods: moods)),
         ..._forYouGridSlivers(context, visibleState, visibleItems, moods, crossAxisCount, tileMemCacheHeight),
       ],

@@ -3723,6 +3723,66 @@ abstract class AppLocalizations {
   /// **'Walls'**
   String get adminWalls;
 
+  /// Admin review tab for desktop versions.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop'**
+  String get adminDesktop;
+
+  /// Admin empty state title.
+  ///
+  /// In en, this message translates to:
+  /// **'No desktop versions to review'**
+  String get adminDesktopEmptyTitle;
+
+  /// Admin empty state body.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop versions that creators submit show here.'**
+  String get adminDesktopEmptyBody;
+
+  /// Admin error state title.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load desktop versions'**
+  String get adminDesktopLoadError;
+
+  /// Admin card fact when the wall already has a desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Replaces the current desktop version'**
+  String get adminDesktopReplaces;
+
+  /// Admin card fact label for the uploaded image size.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload size'**
+  String get adminDesktopUploadSize;
+
+  /// Admin toast after approve.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version approved'**
+  String get adminDesktopApproved;
+
+  /// Admin toast after reject.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version rejected'**
+  String get adminDesktopRejected;
+
+  /// Title and confirm button of the reject sheet for a desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject desktop version'**
+  String get adminDesktopRejectTitle;
+
+  /// Admin error when approve fails because the wall changed.
+  ///
+  /// In en, this message translates to:
+  /// **'This wallpaper is no longer approved. Reject this desktop version.'**
+  String get adminDesktopWallUnavailable;
+
   /// No description provided for @adminWriteCount.
   ///
   /// In en, this message translates to:
@@ -5174,6 +5234,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy link'**
   String get coreShareTargetCopyLink;
+
+  /// Share sheet target and sheet title. Opens a sheet with a QR code and a short link that opens this wallpaper on a computer.
+  ///
+  /// In en, this message translates to:
+  /// **'Open on computer'**
+  String get coreShareOpenOnComputer;
+
+  /// Instruction under the Open on computer title. The link and QR code are shown below it.
+  ///
+  /// In en, this message translates to:
+  /// **'Type this link in a browser on your computer, or scan the code.'**
+  String get coreShareOpenOnComputerBody;
+
+  /// Screen reader label for the QR code image. {link} is the short link shown under it.
+  ///
+  /// In en, this message translates to:
+  /// **'QR code for {link}'**
+  String coreShareOpenOnComputerQr(String link);
 
   /// No description provided for @coreShareTargetSaveImage.
   ///
@@ -11377,6 +11455,36 @@ abstract class AppLocalizations {
   /// **'Your wallpaper is live! 🎉'**
   String get notifPushWallApprovedArtistTitle;
 
+  /// Notification title when an admin approves the creator's desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Your desktop version is live'**
+  String get notifPushDesktopVersionApprovedTitle;
+
+  /// Notification body.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{wallTitle}\" now has a desktop version.'**
+  String notifPushDesktopVersionApprovedBody(String wallTitle);
+
+  /// Notification body when the wall has no title.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wallpaper now has a desktop version.'**
+  String get notifPushDesktopVersionApprovedBodyUntitled;
+
+  /// Notification title when an admin rejects the creator's desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version not approved'**
+  String get notifPushDesktopVersionRejectedTitle;
+
+  /// Notification body with the admin's reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason: {reason}'**
+  String notifPushDesktopVersionRejectedBody(String reason);
+
   /// No description provided for @notifPushWallLiveFollowersBody.
   ///
   /// In en, this message translates to:
@@ -13914,6 +14022,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confirm in the system preview.'**
   String get wallpaperLiveConfirmPreview;
+
+  /// Snackbar after Apply when the user picked Home. Tells them which choice to make in Android's live wallpaper preview.
+  ///
+  /// In en, this message translates to:
+  /// **'In the preview, tap Set wallpaper, then Home screen.'**
+  String get wallpaperLiveConfirmHome;
+
+  /// Snackbar after Apply when the user picked Lock. Tells them which choice to make in Android's live wallpaper preview.
+  ///
+  /// In en, this message translates to:
+  /// **'In the preview, tap Set wallpaper, then Lock screen.'**
+  String get wallpaperLiveConfirmLock;
+
+  /// Snackbar after Apply when the user picked Both. Tells them which choice to make in Android's live wallpaper preview.
+  ///
+  /// In en, this message translates to:
+  /// **'In the preview, tap Set wallpaper, then Home screen and lock screen.'**
+  String get wallpaperLiveConfirmBoth;
+
+  /// Snackbar after Apply on Android 15 or older, where one live wallpaper always covers both screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm in the system preview. This phone shows the same live wall on both screens.'**
+  String get wallpaperLiveSameWallBothScreens;
+
+  /// After the user returns from the preview: the live style each screen shows. Each value is a style name, or wallpaperLiveScreenOther, or wallpaperLiveScreenPrismWall.
+  ///
+  /// In en, this message translates to:
+  /// **'Home screen: {home}. Lock screen: {lock}.'**
+  String wallpaperLiveScreensResult(String home, String lock);
+
+  /// Value for wallpaperLiveScreensResult when the screen does not show a Prism live wall. Lower case, it sits inside a sentence.
+  ///
+  /// In en, this message translates to:
+  /// **'another wallpaper'**
+  String get wallpaperLiveScreenOther;
+
+  /// Value for wallpaperLiveScreensResult when the screen shows a Prism live wall whose style is unknown. Lower case.
+  ///
+  /// In en, this message translates to:
+  /// **'a Prism live wall'**
+  String get wallpaperLiveScreenPrismWall;
+
+  /// Button after the Lock screen got a live wall. Lets the user choose a different wall for the Home screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a wall for the Home screen'**
+  String get wallpaperLivePickForHome;
+
+  /// Button after the Home screen got a live wall. Lets the user choose a different wall for the Lock screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a wall for the Lock screen'**
+  String get wallpaperLivePickForLock;
 
   /// Title shown when the selected live wallpaper mode is unsupported.
   ///
@@ -17581,6 +17743,168 @@ abstract class AppLocalizations {
   /// **'New in {folderName} and {count} more'**
   String notifPushFolderDigestTitleMore(String folderName, int count);
 
+  /// Button on a category or mood page. Follows it for a daily push about new wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow'**
+  String get topicFollow;
+
+  /// Button label when the user follows this category or mood. A tap stops following.
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get topicFollowing;
+
+  /// Screen reader label of the Follow button. topic is a category or mood name.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow {topic}'**
+  String topicFollowHint(String topic);
+
+  /// Screen reader label of a button that stops following a category or mood.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow {topic}'**
+  String topicUnfollowHint(String topic);
+
+  /// Toast after the user follows a category or mood.
+  ///
+  /// In en, this message translates to:
+  /// **'Following {topic}. With topic notifications on, you get at most one push a day about new wallpapers here.'**
+  String topicFollowedToast(String topic);
+
+  /// Toast when the user already follows the most topics allowed.
+  ///
+  /// In en, this message translates to:
+  /// **'You can follow up to {max} topics. Unfollow one in Settings first.'**
+  String topicFollowLimit(int max);
+
+  /// Toast when follow or unfollow of a category or mood fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the follow. Check your connection and try again.'**
+  String get topicFollowFailed;
+
+  /// Button in the list of followed topics. Stops following that topic.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow'**
+  String get topicUnfollow;
+
+  /// Small label under a followed topic that is a category.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get topicKindCategory;
+
+  /// Small label under a followed topic that is a Home mood, such as Dreamy.
+  ///
+  /// In en, this message translates to:
+  /// **'Mood'**
+  String get topicKindMood;
+
+  /// Header of the Home row of the categories and moods the user follows.
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get followingRowTitle;
+
+  /// Screen reader label of the Home row of followed topics.
+  ///
+  /// In en, this message translates to:
+  /// **'Categories and moods you follow'**
+  String get followingRowLabel;
+
+  /// Screen reader label of a followed topic that has new wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'{topic}, new wallpapers'**
+  String topicNewWallpapers(String topic);
+
+  /// Settings row and sheet title: the categories and moods the user follows.
+  ///
+  /// In en, this message translates to:
+  /// **'Topics you follow'**
+  String get followedTopicsTitle;
+
+  /// Settings row subtitle: how many categories and moods the user follows.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{None yet} =1{1 topic} other{{count} topics}}'**
+  String followedTopicsCount(int count);
+
+  /// Empty state title of the followed topics sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'No topics yet'**
+  String get followedTopicsEmptyTitle;
+
+  /// Empty state body of the followed topics sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a category or a mood and tap Follow. With topic notifications on, you get at most one push a day about new wallpapers there.'**
+  String get followedTopicsEmptyBody;
+
+  /// Notification setting for new wallpapers in followed categories and moods.
+  ///
+  /// In en, this message translates to:
+  /// **'Topics you follow'**
+  String get notifSettingTopics;
+
+  /// Description of the followed topics notification setting.
+  ///
+  /// In en, this message translates to:
+  /// **'New wallpapers in categories and moods you follow, once a day'**
+  String get notifSettingTopicsDescription;
+
+  /// Layout settings section header for the Home page.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get layoutHomeHeader;
+
+  /// Layout setting switch. When on, Home shows a row of followed categories and moods.
+  ///
+  /// In en, this message translates to:
+  /// **'Show topics you follow'**
+  String get layoutFollowingRow;
+
+  /// Footnote under the layout setting for the followed topics row.
+  ///
+  /// In en, this message translates to:
+  /// **'A row at the top of For you. A dot marks a topic with new wallpapers.'**
+  String get layoutFollowingRowFootnote;
+
+  /// Daily push title: one new wallpaper in a followed category or mood.
+  ///
+  /// In en, this message translates to:
+  /// **'A new wall in {topic}'**
+  String notifPushTopicDigestTitleOne(String topic);
+
+  /// Daily push title: new wallpapers in one followed category or mood.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{A new wall in {topic}} other{{count} new walls in {topic}}}'**
+  String notifPushTopicDigestTitleSolo(int count, String topic);
+
+  /// Daily push title: new wallpapers in two followed categories or moods.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{A new wall in {topic} and {secondTopic}} other{{count} new walls in {topic} and {secondTopic}}}'**
+  String notifPushTopicDigestTitlePair(int count, String topic, String secondTopic);
+
+  /// Daily push title: new wallpapers in three or more followed topics. others is always 2 or more.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{A new wall in {topic} and {others} other topics} other{{count} new walls in {topic} and {others} other topics}}'**
+  String notifPushTopicDigestTitleGroup(int count, String topic, int others);
+
+  /// Daily push body when the new wallpapers have no tags.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see what\'s new.'**
+  String get notifPushTopicDigestBodyUntitled;
+
   /// History tab segment on Android: walls the user set as wallpaper or downloaded.
   ///
   /// In en, this message translates to:
@@ -19933,6 +20257,54 @@ abstract class AppLocalizations {
   /// **'Choose Sunrise or Sunset instead of a time. In Get Prism Wallpaper, set Time to Day for sunrise and Night for sunset.'**
   String get dayNightGuideSunBody;
 
+  /// Android day and night setup: intro text above the wall pickers.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a wall for the day and one for the night. Prism switches them at the times you set.'**
+  String get dayNightIntroAndroid;
+
+  /// Day and night schedule label. {time} is a formatted time such as 07:00.
+  ///
+  /// In en, this message translates to:
+  /// **'Around {time}'**
+  String dayNightAroundTime(String time);
+
+  /// Android day and night setup: note that switches can run a few minutes late to save battery.
+  ///
+  /// In en, this message translates to:
+  /// **'Android can switch a few minutes late to save battery.'**
+  String get dayNightAndroidTimingNote;
+
+  /// Dialog title: asks whether to turn off Auto-rotate before Day and night can be used.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off auto-rotate?'**
+  String get dayNightTurnOffAutoRotateTitle;
+
+  /// Dialog confirm button: turns off Auto-rotate.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off auto-rotate'**
+  String get dayNightTurnOffAutoRotateAction;
+
+  /// Dialog title: asks whether to turn off Day and night before Auto-rotate can be used.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off Day and night?'**
+  String get dayNightTurnOffDayNightTitle;
+
+  /// Dialog confirm button: turns off Day and night.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off Day and night'**
+  String get dayNightTurnOffDayNightAction;
+
+  /// Dialog body: explains that Auto-rotate and Day and night cannot both be on.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-rotate and Day and night both change your wallpaper. Only one can be on at a time.'**
+  String get dayNightOneModeAtATime;
+
   /// Wall detail: opens the sheet to tip the wall's creator coins
   ///
   /// In en, this message translates to:
@@ -20694,6 +21066,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set desktop version'**
   String get desktopVersionSetOnTablet;
+
+  /// Button on the creator's own approved wallpaper. Opens the screen to upload a wide version for computers.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a desktop version'**
+  String get desktopUploadAdd;
+
+  /// Same button when the wallpaper already has a desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace desktop version'**
+  String get desktopUploadReplace;
+
+  /// Disabled button text while the creator's desktop version waits for review.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version in review'**
+  String get desktopUploadInReview;
+
+  /// Title of the upload screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a desktop version'**
+  String get desktopUploadTitle;
+
+  /// Title of the upload screen when a desktop version already exists.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace desktop version'**
+  String get desktopUploadReplaceTitle;
+
+  /// Intro text on the upload screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a wide version of this wallpaper for computers. It goes live after review.'**
+  String get desktopUploadIntro;
+
+  /// Note on the upload screen when the creator replaces a desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'The current desktop version stays live until the new one is approved.'**
+  String get desktopUploadReplaceNote;
+
+  /// Requirements shown before the creator picks an image.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a landscape image in 16:10 or 16:9, at least 1920 px wide.'**
+  String get desktopUploadRequirements;
+
+  /// Label under the phone wallpaper in the side-by-side preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get desktopUploadPhoneLabel;
+
+  /// Label under the wide image in the side-by-side preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop'**
+  String get desktopUploadDesktopLabel;
+
+  /// Screen reader label for the phone preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone wallpaper'**
+  String get desktopUploadPhoneSemantic;
+
+  /// Screen reader label for the wide preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version, {width} × {height}'**
+  String desktopUploadDesktopSemantic(int width, int height);
+
+  /// Size line under the wide preview, for example 2560 × 1600, 16:10.
+  ///
+  /// In en, this message translates to:
+  /// **'{width} × {height}, {ratio}'**
+  String desktopUploadSize(int width, int height, String ratio);
+
+  /// Button that opens the photo picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose image'**
+  String get desktopUploadChooseImage;
+
+  /// Button that opens the photo picker again after a pick.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another image'**
+  String get desktopUploadChooseAnother;
+
+  /// Primary button that sends the desktop version for review.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit for review'**
+  String get desktopUploadSubmit;
+
+  /// Toast after a successful submit.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version sent for review'**
+  String get desktopUploadSubmitted;
+
+  /// Error when the picked image is portrait or square.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a landscape image. It must be wider than it is tall.'**
+  String get desktopUploadErrorPortrait;
+
+  /// Error when the aspect ratio is not 16:10 or 16:9.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an image in 16:10 or 16:9. Crop it on your computer, then try again.'**
+  String get desktopUploadErrorAspect;
+
+  /// Error when the image is too small.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an image at least 1920 px wide. This one is {width} px wide.'**
+  String desktopUploadErrorTooSmall(int width);
+
+  /// Error when the image cannot be decoded.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open this image. Choose another one.'**
+  String get desktopUploadErrorUnreadable;
+
+  /// Error when the file is over the size limit.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is too large. Choose an image under 15 MB.'**
+  String get desktopUploadErrorTooLarge;
+
+  /// Error when a submission is already pending.
+  ///
+  /// In en, this message translates to:
+  /// **'A desktop version of this wallpaper is already in review.'**
+  String get desktopUploadErrorPending;
+
+  /// Error when the wall is not the caller's or not approved.
+  ///
+  /// In en, this message translates to:
+  /// **'You can add a desktop version only to your own approved wallpapers.'**
+  String get desktopUploadErrorNotAllowed;
+
+  /// Error when the daily upload limit is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily upload limit reached. Try again tomorrow.'**
+  String get desktopUploadErrorLimit;
+
+  /// Generic submit failure.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to submit. Check your connection and try again.'**
+  String get desktopUploadErrorFailed;
 
   /// iPad button. Saves the wide desktop version to Photos.
   ///
@@ -22212,6 +22740,606 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pixel Watch reads Google Photos. If the image doesn\'t show, back it up to Google Photos first.'**
   String get watchGuideNoteGooglePhotos;
+
+  /// Tooltip of the camera roll button in the search bar, and title of the photo search privacy sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by photo'**
+  String get searchByPhoto;
+
+  /// Shown once before a signed-in user's first photo search.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism reads the photo\'s colours on your phone. To find what\'s in the photo, a small copy goes to Google Cloud Vision. It isn\'t stored.'**
+  String get searchPhotoPrivacy;
+
+  /// Button on the photo search privacy sheet. Opens the camera roll.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose photo'**
+  String get searchPhotoChoose;
+
+  /// Screen reader label of the small photo thumbnail above photo search results.
+  ///
+  /// In en, this message translates to:
+  /// **'Your photo'**
+  String get searchPhotoChipLabel;
+
+  /// Button next to the photo thumbnail. Ends the photo search.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get searchPhotoClear;
+
+  /// Tooltip and screen reader label of the Clear button next to the photo thumbnail.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear photo'**
+  String get searchPhotoClearTooltip;
+
+  /// Line above photo search results. labels is a comma-separated list of words that describe the photo, in English.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches for {labels}'**
+  String searchPhotoMatchesFor(String labels);
+
+  /// Line above photo search results when the photo has no labels.
+  ///
+  /// In en, this message translates to:
+  /// **'Matches by colour'**
+  String get searchPhotoColourMatches;
+
+  /// Screen reader label of the colour dots next to the photo thumbnail.
+  ///
+  /// In en, this message translates to:
+  /// **'Main colours: {colours}'**
+  String searchPhotoMainColours(String colours);
+
+  /// Note under the photo thumbnail after the photo was sent for labels.
+  ///
+  /// In en, this message translates to:
+  /// **'A small copy went to Google Cloud Vision to find what\'s in it. It isn\'t stored.'**
+  String get searchPhotoSentNote;
+
+  /// Note under the photo thumbnail for a guest. A guest's photo never leaves the phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour matches only. Sign in to match what\'s in the photo too.'**
+  String get searchPhotoGuestNote;
+
+  /// Note under the photo thumbnail when the daily photo search limit is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve used today\'s {count} photo searches. Matching by colour until tomorrow.'**
+  String searchPhotoCappedNote(int count);
+
+  /// Note under the photo thumbnail when the labels call failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read what\'s in the photo. Matching by colour only.'**
+  String get searchPhotoUnavailableNote;
+
+  /// Empty state title for a photo search.
+  ///
+  /// In en, this message translates to:
+  /// **'No walls match this photo'**
+  String get searchPhotoNoMatches;
+
+  /// Empty state body for a photo search.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a photo with bolder colours.'**
+  String get searchPhotoNoMatchesBody;
+
+  /// Empty state button for a photo search. Opens the camera roll.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another photo'**
+  String get searchPhotoChooseAnother;
+
+  /// Toast when the picked photo cannot be decoded.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open that photo. Try another one.'**
+  String get searchPhotoCouldNotOpen;
+
+  /// Button label that starts saving all wallpapers in a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Save all'**
+  String get foldersSaveAll;
+
+  /// Title of the Save all plan sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Save all wallpapers'**
+  String get foldersSaveAllTitle;
+
+  /// Shown while the app checks which wallpapers in the folder can be saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the wallpapers…'**
+  String get foldersSaveAllChecking;
+
+  /// Message when the Save all check fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check the wallpapers. Try again.'**
+  String get foldersSaveAllPlanFailed;
+
+  /// Message when another folder is already saving.
+  ///
+  /// In en, this message translates to:
+  /// **'Another folder is saving. Try again when it ends.'**
+  String get foldersSaveAllBusy;
+
+  /// Plan sheet row: number of free wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 wallpaper is free} other{{count} wallpapers are free}}'**
+  String foldersSaveAllRowFree(int count);
+
+  /// Plan sheet row: number of paid wallpapers and their coin price.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 wallpaper costs {price} coins} other{{count} wallpapers cost {price} coins each}}'**
+  String foldersSaveAllRowCoins(int count, int price);
+
+  /// Plan sheet row: number of wallpapers that need Pro.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 wallpaper needs Pro} other{{count} wallpapers need Pro}}'**
+  String foldersSaveAllRowPro(int count);
+
+  /// Plan sheet row: number of wallpapers already in Downloads.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 wallpaper is already in Downloads} other{{count} wallpapers are already in Downloads}}'**
+  String foldersSaveAllRowSaved(int count);
+
+  /// Plan sheet row: number of wallpapers that cannot be saved.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 wallpaper is not available to save} other{{count} wallpapers are not available to save}}'**
+  String foldersSaveAllRowBlocked(int count);
+
+  /// Plan sheet line: how many paid wallpapers the user's coins cover.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{You do not have enough coins for a paid wallpaper.} =1{Your coins cover 1 paid wallpaper.} other{Your coins cover {count} paid wallpapers.}}'**
+  String foldersSaveAllAffordable(int count);
+
+  /// Plan sheet note on iOS: where saved wallpapers go. {name} is the album name.
+  ///
+  /// In en, this message translates to:
+  /// **'They go to the “{name}” album in Photos and to Downloads.'**
+  String foldersSaveAllPhotosAlbum(String name);
+
+  /// Plan sheet note on Android: where saved wallpapers go. {name} is the folder name.
+  ///
+  /// In en, this message translates to:
+  /// **'They go to Pictures/Prism/{name} in your gallery and to Downloads.'**
+  String foldersSaveAllGalleryAlbum(String name);
+
+  /// Plan sheet note: saving continues when the user leaves the page, and what to do if Prism closes.
+  ///
+  /// In en, this message translates to:
+  /// **'You can leave this page while it saves. If you close Prism, tap Save all again to finish.'**
+  String get foldersSaveAllLeaveNote;
+
+  /// Shown when no wallpaper in the folder can be saved.
+  ///
+  /// In en, this message translates to:
+  /// **'There is nothing new to save in this folder.'**
+  String get foldersSaveAllNothing;
+
+  /// Primary button when only free wallpapers can be saved.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Save the free wallpaper} other{Save the {count} free wallpapers}}'**
+  String foldersSaveAllFreeButton(int count);
+
+  /// Primary button that saves as many paid wallpapers as the coins allow.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins, plural, =1{Save all I can (1 coin)} other{Save all I can ({coins} coins)}}'**
+  String foldersSaveAllPaidButton(int coins);
+
+  /// Primary button that saves a set number of wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Save 1 wallpaper} other{Save {count} wallpapers}}'**
+  String foldersSaveAllCountButton(int count);
+
+  /// Progress row text while wallpapers are saving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving {done} of {total}'**
+  String foldersSaveAllProgress(int done, int total);
+
+  /// Screen reader label for the save progress row.
+  ///
+  /// In en, this message translates to:
+  /// **'{total, plural, =1{Saving {done} of 1 wallpaper} other{Saving {done} of {total} wallpapers}}'**
+  String foldersSaveAllProgressSemantics(int total, int done);
+
+  /// Progress row text after the user taps Cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopping…'**
+  String get foldersSaveAllStopping;
+
+  /// Button that stops a Save all run.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get foldersSaveAllCancel;
+
+  /// Hint under the Cancel button: wallpapers that have not started cost nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Stops the wallpapers that have not started. They cost nothing.'**
+  String get foldersSaveAllCancelHint;
+
+  /// Summary card title after a Save all run finishes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No wallpapers saved} =1{1 wallpaper saved} other{{count} wallpapers saved}}'**
+  String foldersSaveAllSavedTitle(int count);
+
+  /// Summary card title after the user stops a Save all run.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Stopped. No wallpapers saved} =1{Stopped. 1 wallpaper saved} other{Stopped. {count} wallpapers saved}}'**
+  String foldersSaveAllStoppedTitle(int count);
+
+  /// Summary card row: wallpapers skipped because they were already in Downloads.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 already in Downloads} other{{count} already in Downloads}}'**
+  String foldersSaveAllSkipped(int count);
+
+  /// Summary card row: wallpapers that failed to save.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 failed} other{{count} failed}}'**
+  String foldersSaveAllFailed(int count);
+
+  /// Summary card row: wallpapers that did not start because the run stopped.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 not started} other{{count} not started}}'**
+  String foldersSaveAllNotStarted(int count);
+
+  /// Summary card button that retries the wallpapers that failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry failed'**
+  String get foldersSaveAllRetry;
+
+  /// Summary card button that closes the summary.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get foldersSaveAllDone;
+
+  /// Toast after a Save all run. {name} is the folder name.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No wallpapers saved from {name}.} =1{Saved 1 wallpaper from {name}.} other{Saved {count} wallpapers from {name}.}}'**
+  String foldersSaveAllToast(int count, String name);
+
+  /// Toast after a Save all run with failures. {saved} is the number saved, {failed} the number failed, {name} the folder name.
+  ///
+  /// In en, this message translates to:
+  /// **'{failed, plural, =1{Saved {saved} from {name}. 1 failed. Open the folder to retry.} other{Saved {saved} from {name}. {failed} failed. Open the folder to retry.}}'**
+  String foldersSaveAllToastFailed(int failed, int saved, String name);
+
+  /// Button that makes an invite link for a shared folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get foldersInvite;
+
+  /// Text shared with a folder invite link.
+  ///
+  /// In en, this message translates to:
+  /// **'Add wallpapers with me in {name} on Prism: {link}'**
+  String foldersInviteShareText(String name, String link);
+
+  /// Title of the link preview for a folder invite.
+  ///
+  /// In en, this message translates to:
+  /// **'Join {name} on Prism'**
+  String foldersInvitePreviewTitle(String name);
+
+  /// Description of the link preview for a folder invite.
+  ///
+  /// In en, this message translates to:
+  /// **'Add and remove wallpapers in this folder together.'**
+  String get foldersInvitePreviewDescription;
+
+  /// Error when the invite link cannot be made.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not make an invite link. Try again.'**
+  String get foldersInviteFailed;
+
+  /// Error when the owner invites into a folder that has the most editors.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder is full. Remove someone to invite more people.'**
+  String get foldersInviteFull;
+
+  /// Error when the owner hits the daily invite limit.
+  ///
+  /// In en, this message translates to:
+  /// **'You made too many invites today. Try again tomorrow.'**
+  String get foldersInviteLimit;
+
+  /// Title of the sheet that lists the people in a shared folder.
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get foldersPeople;
+
+  /// Hint for the owner in the people sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite up to {count} people to add and remove wallpapers. Only you can rename, share or delete this folder.'**
+  String foldersPeopleHintOwner(int count);
+
+  /// Hint for an editor in the people sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'You can add and remove wallpapers. Only the owner can rename, share or delete this folder.'**
+  String get foldersPeopleHintEditor;
+
+  /// Number of people in a shared folder, with the owner.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 person} other{{count} people}}'**
+  String foldersPeopleCount(int count);
+
+  /// Screen reader label for the member avatars on a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 person in this folder. Show people} other{{count} people in this folder. Show people}}'**
+  String foldersPeopleButtonLabel(int count);
+
+  /// Role of the folder owner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get foldersRoleOwner;
+
+  /// Role of a person the owner invited.
+  ///
+  /// In en, this message translates to:
+  /// **'Can add and remove'**
+  String get foldersRoleEditor;
+
+  /// A member row for the current user.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (you)'**
+  String foldersPersonYou(String name);
+
+  /// Name shown when a member's profile cannot be read.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism user'**
+  String get foldersUnknownPerson;
+
+  /// Button that removes a person from a shared folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get foldersRemovePerson;
+
+  /// Title of the confirm before the owner removes a person.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}?'**
+  String foldersRemovePersonTitle(String name);
+
+  /// Message of the confirm before the owner removes a person.
+  ///
+  /// In en, this message translates to:
+  /// **'They can no longer add or remove wallpapers here. The wallpapers they added stay.'**
+  String get foldersRemovePersonMessage;
+
+  /// Confirm button that removes a person from a shared folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove person'**
+  String get foldersRemovePersonConfirm;
+
+  /// Toast after the owner removes a person.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed {name}.'**
+  String foldersPersonRemoved(String name);
+
+  /// Button for an editor to leave a shared folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave folder'**
+  String get foldersLeave;
+
+  /// Title of the confirm before an editor leaves.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave {name}?'**
+  String foldersLeaveTitle(String name);
+
+  /// Message of the confirm before an editor leaves.
+  ///
+  /// In en, this message translates to:
+  /// **'You can no longer add or remove wallpapers here. The wallpapers you added stay.'**
+  String get foldersLeaveMessage;
+
+  /// Toast after an editor leaves a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'You left the folder.'**
+  String get foldersLeft;
+
+  /// Error when a remove or leave fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the people in this folder. Try again.'**
+  String get foldersPeopleFailed;
+
+  /// Library section of folders other people invited the user to.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared with you'**
+  String get foldersSharedWithYou;
+
+  /// Screen reader label for the shared icon on a folder card.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared'**
+  String get foldersSharedLabel;
+
+  /// Who added a wallpaper to a shared folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Added by {name}'**
+  String foldersAddedBy(String name);
+
+  /// The current user added this wallpaper to a shared folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Added by you'**
+  String get foldersAddedByYou;
+
+  /// Button that removes a wallpaper from a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from folder'**
+  String get foldersRemoveFromFolder;
+
+  /// Message of the delete confirm for a folder with editors.
+  ///
+  /// In en, this message translates to:
+  /// **'The people you invited lose it too. Wallpapers that are in your favourites stay there.'**
+  String get foldersDeleteSharedMessage;
+
+  /// Title of the page that opens a folder invite link.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder invite'**
+  String get foldersJoinTitle;
+
+  /// Headline on the folder invite page.
+  ///
+  /// In en, this message translates to:
+  /// **'Join {name}'**
+  String foldersJoinHeadline(String name);
+
+  /// Body on the folder invite page.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} invited you to add and remove wallpapers in this folder.'**
+  String foldersJoinInvitedBy(String name);
+
+  /// Button that joins a shared folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Join folder'**
+  String get foldersJoin;
+
+  /// Button on the invite page for a guest.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to join'**
+  String get foldersJoinSignIn;
+
+  /// Button on the invite page when the user is already in the folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Open folder'**
+  String get foldersJoinOpen;
+
+  /// Note on the invite page when the user is already a member.
+  ///
+  /// In en, this message translates to:
+  /// **'You are already in this folder.'**
+  String get foldersJoinAlreadyIn;
+
+  /// Toast after the user joins a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'You joined {name}.'**
+  String foldersJoined(String name);
+
+  /// Error when a join fails for a network or server reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not join this folder. Try again.'**
+  String get foldersJoinFailed;
+
+  /// Error when the invite page cannot load.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load this invite.'**
+  String get foldersJoinLoadFailed;
+
+  /// Title when an invite is older than 7 days.
+  ///
+  /// In en, this message translates to:
+  /// **'This invite expired'**
+  String get foldersJoinExpiredTitle;
+
+  /// Body when an invite expired.
+  ///
+  /// In en, this message translates to:
+  /// **'Invites work for 7 days. Ask the owner for a new link.'**
+  String get foldersJoinExpiredBody;
+
+  /// Title when someone already used the invite.
+  ///
+  /// In en, this message translates to:
+  /// **'This invite was already used'**
+  String get foldersJoinUsedTitle;
+
+  /// Body when an invite was used.
+  ///
+  /// In en, this message translates to:
+  /// **'Each invite works once. Ask the owner for a new link.'**
+  String get foldersJoinUsedBody;
+
+  /// Title when the folder has the most people it can have.
+  ///
+  /// In en, this message translates to:
+  /// **'This folder is full'**
+  String get foldersJoinFullTitle;
+
+  /// Body when the folder is full.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the owner to remove someone, then open the link again.'**
+  String get foldersJoinFullBody;
+
+  /// Title for a missing folder, a block or a closed account. It does not say which.
+  ///
+  /// In en, this message translates to:
+  /// **'This invite is not available'**
+  String get foldersJoinUnavailableTitle;
+
+  /// Body for an unavailable invite.
+  ///
+  /// In en, this message translates to:
+  /// **'The folder may have been deleted, or you cannot join it.'**
+  String get foldersJoinUnavailableBody;
+
+  /// Confirm message when the owner makes a folder with editors private. The editors keep access.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you and the people you invited will see it. Its link stops working and its followers lose it.'**
+  String get foldersMakePrivateMessageShared;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

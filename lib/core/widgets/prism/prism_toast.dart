@@ -58,7 +58,11 @@ class _PrismToastState extends State<_PrismToast> with SingleTickerProviderState
     duration: PrismDurations.base,
     reverseDuration: PrismDurations.fast,
   );
-  late final CurvedAnimation _curve = CurvedAnimation(parent: _controller, curve: PrismCurves.enter);
+  late final CurvedAnimation _curve = CurvedAnimation(
+    parent: _controller,
+    curve: PrismCurves.enter,
+    reverseCurve: PrismCurves.exitReverse,
+  );
   Timer? _timer;
   bool _dismissing = false;
 

@@ -17,6 +17,9 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../../../support/fake_app_analytics.dart';
 
 class _Client implements WallpaperClient {
+  @override
+  Future<aw.LiveWallpaperScreens> getLiveWallpaperScreens() async => const aw.LiveWallpaperScreens();
+
   final List<aw.StaticWallpaperRequest> requests = <aw.StaticWallpaperRequest>[];
 
   @override

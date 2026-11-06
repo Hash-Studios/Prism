@@ -53,17 +53,24 @@ class DayNightBloc extends Bloc<DayNightEvent, DayNightState> {
         final DayNightPair pair = await _keepPass(state.pair, until, userId);
         if (userId.isNotEmpty && !_ownsCurrentUser(userId)) return;
         emit(state.copyWith(pair: pair, isPro: entitled, loaded: true));
+        if (pair.enabled && _repository.runsOnDevice) await _resume(pair, userId, emit);
       }
       return;
     }
     final bool isInitialSession = !state.loaded;
-    await _unpublishQuietly();
+    final bool onDevice = _repository.runsOnDevice;
+    if (!onDevice) await _unpublishQuietly();
     if (!_eventOwnerIsCurrent(userId)) return;
     final DayNightPair stored = userId.isEmpty ? DayNightPair() : await _repository.load(ownerId: userId);
     if (!_eventOwnerIsCurrent(userId)) return;
     final (bool entitled, DateTime? until) = _entitlement(event, stored, trustStored: isInitialSession);
     final DayNightPair pair = entitled ? await _keepPass(stored, until, userId) : stored;
     if (!_eventOwnerIsCurrent(userId)) return;
+    final bool resume = onDevice && pair.enabled && entitled && isInitialSession;
+    if (onDevice && !resume) {
+      await _unpublishQuietly();
+      if (!_eventOwnerIsCurrent(userId)) return;
+    }
     emit(
       state.copyWith(
         pair: pair,
@@ -77,6 +84,8 @@ class DayNightBloc extends Bloc<DayNightEvent, DayNightState> {
     );
     if (pair.enabled && !entitled) {
       await _lapse(emit, notice: isInitialSession, unpublish: false);
+    } else if (resume) {
+      await _resume(pair, userId, emit);
     } else if (pair.enabled) {
       final DayNightIssue? issue = await _publish(pair, ownerId: userId);
       if (!_ownsCurrentUser(userId)) return;
@@ -100,6 +109,40 @@ class DayNightBloc extends Bloc<DayNightEvent, DayNightState> {
     final DayNightPair next = pair.copyWith(passUntil: () => until);
     await _repository.save(next, ownerId: owner);
     return next;
+  }
+
+  /// Android: applies the wall for the current time on app open, and starts the device schedule again when it is gone.
+  Future<void> _resume(DayNightPair pair, String owner, Emitter<DayNightState> emit) async {
+    try {
+      pair = await _repository.load(ownerId: owner);
+    } catch (error, stackTrace) {
+      logger.w(
+        'Day and night could not reload its saved pair.',
+        tag: 'DayNightBloc',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return;
+    }
+    if (!_ownsCurrentUser(owner)) return;
+    if (pair != state.pair) emit(state.copyWith(pair: pair, preparing: false, issue: null));
+    if (!pair.enabled) return;
+
+    DayNightOpenResult result;
+    try {
+      result = await _repository.applyOnOpen();
+    } catch (error, stackTrace) {
+      logger.w('Day and night could not apply on open.', tag: 'DayNightBloc', error: error, stackTrace: stackTrace);
+      result = (running: false, switched: null);
+    }
+    if (!_ownsCurrentUser(owner)) return;
+    if (result.switched case final DayNightSwitch switched) {
+      analytics.track(DayNightSwitchedEvent(slot: switched.slot.name, source: switched.source.wireValue));
+    }
+    if (result.running) return;
+    final DayNightIssue? issue = await _publish(pair, ownerId: owner);
+    if (!_ownsCurrentUser(owner)) return;
+    if (issue != null) await _saveDisabledAfterPublishFailure(pair, owner, issue, emit);
   }
 
   Future<void> _onTimesChanged(_TimesChanged event, Emitter<DayNightState> emit) async {
@@ -199,11 +242,15 @@ class DayNightBloc extends Bloc<DayNightEvent, DayNightState> {
   }
 
   Future<void> _turnOff(Emitter<DayNightState> emit) async {
-    if (state.userId.isNotEmpty && !_ownsCurrentUser(state.userId)) return;
+    final String owner = state.userId;
+    if (owner.isNotEmpty && !_ownsCurrentUser(owner)) return;
     await _unpublishQuietly();
-    if (state.userId.isNotEmpty && !_ownsCurrentUser(state.userId)) return;
+    if (owner.isNotEmpty && !_ownsCurrentUser(owner)) return;
     final DayNightPair off = state.pair.copyWith(enabled: false);
-    if (state.userId.isNotEmpty) await _repository.save(off, ownerId: state.userId);
+    if (owner.isNotEmpty) {
+      await _repository.save(off, ownerId: owner);
+      if (!_ownsCurrentUser(owner)) return;
+    }
     emit(state.copyWith(pair: off, issue: null));
     analytics.track(const DayNightDisabledEvent());
   }

@@ -57,7 +57,13 @@ class WheelMachine extends StatelessWidget {
             RepaintBoundary(
               child: CustomPaint(
                 size: size,
-                painter: WheelBezelPainter(geometry: geometry, palette: palette, frame: bulbs),
+                painter: WheelBezelPainter(geometry: geometry, palette: palette),
+              ),
+            ),
+            RepaintBoundary(
+              child: CustomPaint(
+                size: size,
+                painter: WheelBulbsPainter(geometry: geometry, palette: palette, frame: bulbs),
               ),
             ),
             ValueListenableBuilder<double>(

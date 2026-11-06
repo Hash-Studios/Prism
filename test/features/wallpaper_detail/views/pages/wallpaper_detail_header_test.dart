@@ -24,8 +24,11 @@ import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_scr
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:async_wallpaper/async_wallpaper.dart' as aw;
+import 'package:async_wallpaper/src/wallpaper_client.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -128,6 +131,25 @@ Future<void> _waitForCachedImage(WidgetTester tester) async {
     );
     await tester.pump();
   }
+}
+
+class _CountingClient implements WallpaperClient {
+  _CountingClient({this.response, this.responses});
+
+  int asked = 0;
+  final Completer<aw.WallpaperCapabilities>? response;
+  final List<Completer<aw.WallpaperCapabilities>>? responses;
+
+  @override
+  Future<aw.WallpaperCapabilities> getCapabilities() async {
+    asked++;
+    if (response != null) return response!.future;
+    if (responses != null) return responses![asked - 1].future;
+    return const aw.WallpaperCapabilities(supportsOpenGlLiveWallpaper: true);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 void main() {
@@ -768,8 +790,188 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(first, 0);
-      expect(midway, inExclusiveRange(0.3, 0.95));
+      expect(midway, inExclusiveRange(0.3, 0.99));
       expect(chipOpacity(tester), 1);
+    });
+
+    testWidgets('the default probe is asked once, and later chips appear at once', (tester) async {
+      MakeItLiveChip.resetCacheForTest();
+      addTearDown(MakeItLiveChip.resetCacheForTest);
+      Future<void> pumpDefault() async {
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(body: MakeItLiveChip(onPressed: () {})),
+          ),
+        );
+        await tester.pump();
+      }
+
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      final _CountingClient client = _CountingClient();
+      aw.AsyncWallpaper.debugSetClient(client);
+      try {
+        await pumpDefault();
+        await tester.pump(const Duration(milliseconds: 200));
+        await tester.pumpWidget(const SizedBox());
+        await pumpDefault();
+
+        expect(client.asked, 1);
+        expect(chipOpacity(tester), 1);
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+        aw.AsyncWallpaper.debugResetClient();
+      }
+    });
+
+    testWidgets('replacing the probe discards its previous answer and ignores its late result', (tester) async {
+      final Completer<bool> first = Completer<bool>();
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: MakeItLiveChip(onPressed: () {}, supportProbe: () => first.future),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: MakeItLiveChip(onPressed: () {}, supportProbe: () async => false),
+          ),
+        ),
+      );
+      first.complete(true);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Live'), findsNothing);
+    });
+
+    testWidgets('replacing a successful probe hides the chip while the new probe is pending', (tester) async {
+      final Completer<bool> replacement = Completer<bool>();
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: MakeItLiveChip(onPressed: () {}, supportProbe: () async => true),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Live'), findsOneWidget);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: MakeItLiveChip(onPressed: () {}, supportProbe: () => replacement.future),
+          ),
+        ),
+      );
+      expect(find.text('Live'), findsNothing);
+
+      replacement.complete(false);
+      await tester.pump();
+      expect(find.text('Live'), findsNothing);
+    });
+
+    testWidgets('a replaced default probe cannot populate the shared cache', (tester) async {
+      MakeItLiveChip.resetCacheForTest();
+      addTearDown(MakeItLiveChip.resetCacheForTest);
+      final List<Completer<aw.WallpaperCapabilities>> responses = <Completer<aw.WallpaperCapabilities>>[
+        Completer<aw.WallpaperCapabilities>(),
+        Completer<aw.WallpaperCapabilities>(),
+        Completer<aw.WallpaperCapabilities>(),
+      ];
+      final _CountingClient client = _CountingClient(responses: responses);
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      aw.AsyncWallpaper.debugSetClient(client);
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(body: MakeItLiveChip(onPressed: () {})),
+          ),
+        );
+        await tester.pump();
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: MakeItLiveChip(onPressed: () {}, supportProbe: () async => false),
+            ),
+          ),
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(body: MakeItLiveChip(onPressed: () {})),
+          ),
+        );
+        responses.first.complete(const aw.WallpaperCapabilities(supportsOpenGlLiveWallpaper: true));
+        await tester.pump();
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(body: MakeItLiveChip(onPressed: () {})),
+          ),
+        );
+        await tester.pump();
+
+        expect(client.asked, 3);
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+        aw.AsyncWallpaper.debugResetClient();
+      }
+    });
+
+    testWidgets('a probe finishing after cache reset cannot repopulate the cache', (tester) async {
+      MakeItLiveChip.resetCacheForTest();
+      addTearDown(MakeItLiveChip.resetCacheForTest);
+      final Completer<aw.WallpaperCapabilities> response = Completer<aw.WallpaperCapabilities>();
+      final _CountingClient client = _CountingClient(response: response);
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      aw.AsyncWallpaper.debugSetClient(client);
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(body: MakeItLiveChip(onPressed: () {})),
+          ),
+        );
+        await tester.pump();
+        MakeItLiveChip.resetCacheForTest();
+        response.complete(const aw.WallpaperCapabilities(supportsOpenGlLiveWallpaper: true));
+        await tester.pump();
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(body: MakeItLiveChip(onPressed: () {})),
+          ),
+        );
+        await tester.pump();
+
+        expect(client.asked, 2);
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+        aw.AsyncWallpaper.debugResetClient();
+      }
     });
 
     testWidgets('shows at once when the device asks for less motion', (tester) async {

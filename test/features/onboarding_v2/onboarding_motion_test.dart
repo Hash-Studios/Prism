@@ -1,3 +1,4 @@
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
 import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:Prism/features/onboarding_v2/src/views/pages/f3_ai_generate_page.dart';
@@ -60,8 +61,8 @@ void main() {
 
       final fade = tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity));
       expect(fade.opacity, 1.0);
-      expect(fade.duration, OnboardingMotion.fade);
-      await tester.pump(OnboardingMotion.fade);
+      expect(fade.duration, PrismDurations.base);
+      await tester.pump(PrismDurations.base);
     });
   });
 
@@ -75,14 +76,14 @@ void main() {
       expect(_scaleOf(tester), closeTo(1.0, 0.0001));
     });
 
-    testWidgets('plays the zoom reveal when motion is on', (tester) async {
+    testWidgets('has no zoom reveal: the background sits at its final scale', (tester) async {
       await tester.pumpWidget(
         _app(reduceMotion: false, child: const OnboardingStepBackground(step: OnboardingV2Step.auth)),
       );
       await tester.pump();
 
-      expect(_scaleOf(tester), greaterThan(1.1));
-      await tester.pump(OnboardingMotion.backgroundReveal);
+      expect(_scaleOf(tester), closeTo(1.0, 0.0001));
+      expect(tester.hasRunningAnimations, isFalse);
     });
 
     testWidgets('jumps to the new blur on a step change when the system asks for less motion', (tester) async {
@@ -96,15 +97,28 @@ void main() {
       expect(tester.widget<ImageFiltered>(find.byType(ImageFiltered)).imageFilter.toString(), contains('70'));
     });
 
-    testWidgets('eases into the new blur when motion is on', (tester) async {
+    testWidgets('eases between two blurred steps when motion is on', (tester) async {
+      Future<void> pumpStep(OnboardingV2Step step) =>
+          tester.pumpWidget(_app(reduceMotion: false, child: OnboardingStepBackground(step: step)));
+      await pumpStep(OnboardingV2Step.interests);
+      await pumpStep(OnboardingV2Step.starterPack);
+      await tester.pump();
+      await tester.pump(PrismDurations.base ~/ 4);
+
+      final String mid = tester.widget<ImageFiltered>(find.byType(ImageFiltered)).imageFilter.toString();
+      expect(mid, isNot(contains('70')));
+      expect(mid, isNot(contains('40')));
+      await tester.pump(PrismDurations.base);
+    });
+
+    testWidgets('jumps the blur when it starts from or goes to none', (tester) async {
       Future<void> pumpStep(OnboardingV2Step step) =>
           tester.pumpWidget(_app(reduceMotion: false, child: OnboardingStepBackground(step: step)));
       await pumpStep(OnboardingV2Step.auth);
       await pumpStep(OnboardingV2Step.starterPack);
       await tester.pump();
 
-      expect(find.byType(ImageFiltered), findsNothing);
-      await tester.pump(OnboardingMotion.backgroundReveal);
+      expect(tester.widget<ImageFiltered>(find.byType(ImageFiltered)).imageFilter.toString(), contains('70'));
     });
   });
 
@@ -153,6 +167,21 @@ void main() {
       );
 
       expect(dotDurations(tester), everyElement(OnboardingMotion.normal));
+    });
+  });
+
+  group('OnboardingProgressIndicator layout', () {
+    testWidgets('keeps the full active pill inside its box on the last step', (tester) async {
+      await tester.pumpWidget(
+        _app(reduceMotion: true, child: const OnboardingProgressIndicator(step: 4, totalSteps: 4)),
+      );
+
+      final Rect box = tester.getRect(
+        find.descendant(of: find.byType(OnboardingProgressIndicator), matching: find.byType(SizedBox)).first,
+      );
+      final Rect pill = tester.getRect(find.byType(AnimatedContainer).last);
+      expect(pill.width, 24);
+      expect(pill.right, lessThanOrEqualTo(box.right));
     });
   });
 

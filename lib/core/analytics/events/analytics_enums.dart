@@ -299,7 +299,8 @@ enum ShareTargetValue {
   instagramStories,
   copyLink,
   saveImage,
-  more;
+  more,
+  openOnComputer;
 
   String get wireValue => _snakeCase(name);
 }
@@ -354,7 +355,8 @@ enum NotificationPreferenceValue {
   inApp,
   recommendations,
   streakReminders,
-  folders;
+  folders,
+  topics;
 
   String get wireValue => _snakeCase(name);
 }

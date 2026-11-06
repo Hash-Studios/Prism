@@ -2131,6 +2131,36 @@ class AppLocalizationsHi extends AppLocalizations {
   String get adminWalls => 'वॉलपेपर';
 
   @override
+  String get adminDesktop => 'डेस्कटॉप';
+
+  @override
+  String get adminDesktopEmptyTitle => 'समीक्षा के लिए कोई डेस्कटॉप वर्शन नहीं है';
+
+  @override
+  String get adminDesktopEmptyBody => 'क्रिएटर जो डेस्कटॉप वर्शन भेजते हैं, वे यहाँ दिखेंगे।';
+
+  @override
+  String get adminDesktopLoadError => 'डेस्कटॉप वर्शन लोड नहीं हो सके';
+
+  @override
+  String get adminDesktopReplaces => 'मौजूदा डेस्कटॉप वर्शन की जगह लेगा';
+
+  @override
+  String get adminDesktopUploadSize => 'अपलोड का आकार';
+
+  @override
+  String get adminDesktopApproved => 'डेस्कटॉप वर्शन मंज़ूर किया गया';
+
+  @override
+  String get adminDesktopRejected => 'डेस्कटॉप वर्शन अस्वीकार किया गया';
+
+  @override
+  String get adminDesktopRejectTitle => 'डेस्कटॉप वर्शन अस्वीकार करें';
+
+  @override
+  String get adminDesktopWallUnavailable => 'यह वॉलपेपर अब मंज़ूर नहीं है। इस डेस्कटॉप वर्शन को अस्वीकार करें।';
+
+  @override
   String adminWriteCount(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
@@ -2991,6 +3021,17 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get coreShareTargetCopyLink => 'लिंक कॉपी करें';
+
+  @override
+  String get coreShareOpenOnComputer => 'कंप्यूटर पर खोलें';
+
+  @override
+  String get coreShareOpenOnComputerBody => 'इस लिंक को अपने कंप्यूटर के ब्राउज़र में टाइप करें या कोड स्कैन करें।';
+
+  @override
+  String coreShareOpenOnComputerQr(String link) {
+    return '$link का QR कोड';
+  }
 
   @override
   String get coreShareTargetSaveImage => 'इमेज सेव करें';
@@ -7492,6 +7533,25 @@ class AppLocalizationsHi extends AppLocalizations {
   String get notifPushWallApprovedArtistTitle => 'आपका वॉलपेपर लाइव है! 🎉';
 
   @override
+  String get notifPushDesktopVersionApprovedTitle => 'आपका डेस्कटॉप वर्शन लाइव है';
+
+  @override
+  String notifPushDesktopVersionApprovedBody(String wallTitle) {
+    return '\"$wallTitle\" अब एक डेस्कटॉप वर्शन के साथ उपलब्ध है।';
+  }
+
+  @override
+  String get notifPushDesktopVersionApprovedBodyUntitled => 'आपके वॉलपेपर का अब एक डेस्कटॉप वर्शन है।';
+
+  @override
+  String get notifPushDesktopVersionRejectedTitle => 'डेस्कटॉप वर्शन मंज़ूर नहीं हुआ';
+
+  @override
+  String notifPushDesktopVersionRejectedBody(String reason) {
+    return 'कारण: $reason';
+  }
+
+  @override
   String notifPushWallLiveFollowersBody(String wallTitle) {
     return '\"$wallTitle\" अब Prism पर लाइव है।';
   }
@@ -9016,6 +9076,37 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallpaperLiveConfirmPreview => 'सिस्टम प्रीव्यू में पुष्टि करें।';
+
+  @override
+  String get wallpaperLiveConfirmHome => 'प्रीव्यू में “वॉलपेपर लगाएँ” पर टैप करें, फिर “होम स्क्रीन” पर।';
+
+  @override
+  String get wallpaperLiveConfirmLock => 'प्रीव्यू में “वॉलपेपर लगाएँ” पर टैप करें, फिर “लॉक स्क्रीन” पर।';
+
+  @override
+  String get wallpaperLiveConfirmBoth =>
+      'प्रीव्यू में “वॉलपेपर लगाएँ” पर टैप करें, फिर “होम स्क्रीन और लॉक स्क्रीन” पर।';
+
+  @override
+  String get wallpaperLiveSameWallBothScreens =>
+      'सिस्टम प्रीव्यू में पुष्टि करें। इस फ़ोन पर दोनों स्क्रीन पर एक ही लाइव वॉलपेपर दिखेगा।';
+
+  @override
+  String wallpaperLiveScreensResult(String home, String lock) {
+    return 'होम स्क्रीन: $home। लॉक स्क्रीन: $lock।';
+  }
+
+  @override
+  String get wallpaperLiveScreenOther => 'कोई और वॉलपेपर';
+
+  @override
+  String get wallpaperLiveScreenPrismWall => 'Prism का एक लाइव वॉलपेपर';
+
+  @override
+  String get wallpaperLivePickForHome => 'होम स्क्रीन के लिए वॉलपेपर चुनें';
+
+  @override
+  String get wallpaperLivePickForLock => 'लॉक स्क्रीन के लिए वॉलपेपर चुनें';
 
   @override
   String get wallpaperLiveDeviceUnavailable => 'इस डिवाइस पर उपलब्ध नहीं है';
@@ -11100,6 +11191,147 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get topicFollow => 'फ़ॉलो करें';
+
+  @override
+  String get topicFollowing => 'फ़ॉलो कर रहे हैं';
+
+  @override
+  String topicFollowHint(String topic) {
+    return '$topic को फ़ॉलो करें';
+  }
+
+  @override
+  String topicUnfollowHint(String topic) {
+    return '$topic को अनफ़ॉलो करें';
+  }
+
+  @override
+  String topicFollowedToast(String topic) {
+    return 'अब आप $topic को फ़ॉलो कर रहे हैं। विषय सूचनाएँ चालू होने पर, यहाँ नए वॉलपेपर के लिए आपको दिन में ज़्यादा से ज़्यादा एक सूचना मिलेगी।';
+  }
+
+  @override
+  String topicFollowLimit(int max) {
+    return 'आप अधिकतम $max विषयों को फ़ॉलो कर सकते हैं। पहले सेटिंग्स में से कोई एक अनफ़ॉलो करें।';
+  }
+
+  @override
+  String get topicFollowFailed => 'फ़ॉलो बदला नहीं जा सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String get topicUnfollow => 'अनफ़ॉलो करें';
+
+  @override
+  String get topicKindCategory => 'श्रेणी';
+
+  @override
+  String get topicKindMood => 'मूड';
+
+  @override
+  String get followingRowTitle => 'फ़ॉलो किए गए';
+
+  @override
+  String get followingRowLabel => 'वे श्रेणियाँ और मूड जिन्हें आप फ़ॉलो करते हैं';
+
+  @override
+  String topicNewWallpapers(String topic) {
+    return '$topic, नए वॉलपेपर';
+  }
+
+  @override
+  String get followedTopicsTitle => 'आप जिन विषयों को फ़ॉलो करते हैं';
+
+  @override
+  String followedTopicsCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString विषय',
+      one: '1 विषय',
+      zero: 'अभी कोई नहीं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get followedTopicsEmptyTitle => 'अभी कोई विषय नहीं';
+
+  @override
+  String get followedTopicsEmptyBody =>
+      'कोई श्रेणी या मूड खोलें और फ़ॉलो करें दबाएँ। विषय सूचनाएँ चालू होने पर, वहाँ नए वॉलपेपर के लिए आपको दिन में ज़्यादा से ज़्यादा एक सूचना मिलेगी।';
+
+  @override
+  String get notifSettingTopics => 'आप जिन विषयों को फ़ॉलो करते हैं';
+
+  @override
+  String get notifSettingTopicsDescription =>
+      'आप जिन श्रेणियों और मूड को फ़ॉलो करते हैं, उनमें नए वॉलपेपर, दिन में एक बार';
+
+  @override
+  String get layoutHomeHeader => 'होम';
+
+  @override
+  String get layoutFollowingRow => 'फ़ॉलो किए गए विषय दिखाएँ';
+
+  @override
+  String get layoutFollowingRowFootnote =>
+      'आपके लिए टैब के ऊपर एक पंक्ति। बिंदु उस विषय को दिखाता है जिसमें नए वॉलपेपर हैं।';
+
+  @override
+  String notifPushTopicDigestTitleOne(String topic) {
+    return '$topic में एक नया वॉलपेपर';
+  }
+
+  @override
+  String notifPushTopicDigestTitleSolo(int count, String topic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$topic में $countString नए वॉलपेपर',
+      one: '$topic में एक नया वॉलपेपर',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitlePair(int count, String topic, String secondTopic) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$topic और $secondTopic में $countString नए वॉलपेपर',
+      one: '$topic और $secondTopic में एक नया वॉलपेपर',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notifPushTopicDigestTitleGroup(int count, String topic, int others) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$topic और $others अन्य विषयों में $countString नए वॉलपेपर',
+      one: '$topic और $others अन्य विषयों में एक नया वॉलपेपर',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushTopicDigestBodyUntitled => 'देखने के लिए टैप करें कि क्या नया है।';
+
+  @override
   String get historySetAndDownloaded => 'सेट और डाउनलोड किए गए';
 
   @override
@@ -12447,6 +12679,34 @@ class AppLocalizationsHi extends AppLocalizations {
       'समय की जगह सूर्योदय या सूर्यास्त चुनें। \"Prism वॉलपेपर पाएँ\" में समय को सूर्योदय के लिए \"दिन\" और सूर्यास्त के लिए \"रात\" पर सेट करें।';
 
   @override
+  String get dayNightIntroAndroid =>
+      'दिन के लिए एक वॉलपेपर और रात के लिए एक वॉलपेपर चुनें। आपके सेट किए समय पर Prism उन्हें बदल देता है।';
+
+  @override
+  String dayNightAroundTime(String time) {
+    return '$time के आसपास';
+  }
+
+  @override
+  String get dayNightAndroidTimingNote => 'बैटरी बचाने के लिए Android कुछ मिनट देर से बदल सकता है।';
+
+  @override
+  String get dayNightTurnOffAutoRotateTitle => 'ऑटो-रोटेशन बंद करें?';
+
+  @override
+  String get dayNightTurnOffAutoRotateAction => 'ऑटो-रोटेशन बंद करें';
+
+  @override
+  String get dayNightTurnOffDayNightTitle => 'दिन और रात बंद करें?';
+
+  @override
+  String get dayNightTurnOffDayNightAction => 'दिन और रात बंद करें';
+
+  @override
+  String get dayNightOneModeAtATime =>
+      'ऑटो-रोटेशन और दिन और रात, दोनों आपका वॉलपेपर बदलते हैं। एक समय पर सिर्फ़ एक चालू हो सकता है।';
+
+  @override
   String get tipAction => 'क्रिएटर को टिप दें';
 
   @override
@@ -12911,6 +13171,91 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get desktopVersionSetOnTablet => 'डेस्कटॉप वर्शन लगाएँ';
+
+  @override
+  String get desktopUploadAdd => 'डेस्कटॉप वर्शन जोड़ें';
+
+  @override
+  String get desktopUploadReplace => 'डेस्कटॉप वर्शन बदलें';
+
+  @override
+  String get desktopUploadInReview => 'डेस्कटॉप वर्शन समीक्षा में है';
+
+  @override
+  String get desktopUploadTitle => 'डेस्कटॉप वर्शन जोड़ें';
+
+  @override
+  String get desktopUploadReplaceTitle => 'डेस्कटॉप वर्शन बदलें';
+
+  @override
+  String get desktopUploadIntro => 'इस वॉलपेपर का कंप्यूटर के लिए चौड़ा वर्शन जोड़ें। समीक्षा के बाद यह लाइव होगा।';
+
+  @override
+  String get desktopUploadReplaceNote => 'नया वर्शन मंज़ूर होने तक मौजूदा डेस्कटॉप वर्शन लाइव रहेगा।';
+
+  @override
+  String get desktopUploadRequirements => '16:10 या 16:9 अनुपात की लैंडस्केप इमेज लें, जो कम से कम 1920 px चौड़ी हो।';
+
+  @override
+  String get desktopUploadPhoneLabel => 'फ़ोन';
+
+  @override
+  String get desktopUploadDesktopLabel => 'डेस्कटॉप';
+
+  @override
+  String get desktopUploadPhoneSemantic => 'फ़ोन वॉलपेपर';
+
+  @override
+  String desktopUploadDesktopSemantic(int width, int height) {
+    return 'डेस्कटॉप वर्शन, $width × $height';
+  }
+
+  @override
+  String desktopUploadSize(int width, int height, String ratio) {
+    return '$width × $height, $ratio';
+  }
+
+  @override
+  String get desktopUploadChooseImage => 'इमेज चुनें';
+
+  @override
+  String get desktopUploadChooseAnother => 'दूसरी इमेज चुनें';
+
+  @override
+  String get desktopUploadSubmit => 'समीक्षा के लिए भेजें';
+
+  @override
+  String get desktopUploadSubmitted => 'डेस्कटॉप वर्शन समीक्षा के लिए भेजा गया';
+
+  @override
+  String get desktopUploadErrorPortrait => 'लैंडस्केप इमेज चुनें। इमेज की चौड़ाई उसकी ऊंचाई से ज़्यादा होनी चाहिए।';
+
+  @override
+  String get desktopUploadErrorAspect =>
+      '16:10 या 16:9 अनुपात की इमेज चुनें। इसे अपने कंप्यूटर पर क्रॉप करके फिर से कोशिश करें।';
+
+  @override
+  String desktopUploadErrorTooSmall(int width) {
+    return 'कम से कम 1920 px चौड़ी इमेज चुनें। यह $width px चौड़ी है।';
+  }
+
+  @override
+  String get desktopUploadErrorUnreadable => 'यह इमेज नहीं खुल सकी। कोई दूसरी इमेज चुनें।';
+
+  @override
+  String get desktopUploadErrorTooLarge => 'यह फ़ाइल बहुत बड़ी है। 15 MB से छोटी इमेज चुनें।';
+
+  @override
+  String get desktopUploadErrorPending => 'इस वॉलपेपर का डेस्कटॉप वर्शन पहले से समीक्षा में है।';
+
+  @override
+  String get desktopUploadErrorNotAllowed => 'आप केवल अपने मंज़ूर किए गए वॉलपेपर के लिए डेस्कटॉप वर्शन जोड़ सकते हैं।';
+
+  @override
+  String get desktopUploadErrorLimit => 'रोज़ की अपलोड सीमा पूरी हो गई है। कल फिर से कोशिश करें।';
+
+  @override
+  String get desktopUploadErrorFailed => 'भेजा नहीं जा सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
 
   @override
   String get desktopVersionSaveOnTablet => 'डेस्कटॉप वर्शन फ़ोटो में सेव करें';
@@ -13856,4 +14201,562 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get watchGuideNoteGooglePhotos =>
       'Pixel Watch Google Photos पढ़ता है। अगर इमेज नहीं दिखती, तो पहले उसे Google Photos में बैकअप करें।';
+
+  @override
+  String get searchByPhoto => 'फ़ोटो से खोजें';
+
+  @override
+  String get searchPhotoPrivacy =>
+      'Prism आपकी फ़ोटो के रंग आपके फ़ोन पर ही पढ़ता है। फ़ोटो में क्या है, यह पता करने के लिए उसकी एक छोटी कॉपी Google Cloud Vision को भेजी जाती है। वह सेव नहीं होती।';
+
+  @override
+  String get searchPhotoChoose => 'फ़ोटो चुनें';
+
+  @override
+  String get searchPhotoChipLabel => 'आपकी फ़ोटो';
+
+  @override
+  String get searchPhotoClear => 'हटाएं';
+
+  @override
+  String get searchPhotoClearTooltip => 'फ़ोटो हटाएं';
+
+  @override
+  String searchPhotoMatchesFor(String labels) {
+    return '$labels से मिलते नतीजे';
+  }
+
+  @override
+  String get searchPhotoColourMatches => 'रंग के हिसाब से मिलते नतीजे';
+
+  @override
+  String searchPhotoMainColours(String colours) {
+    return 'मुख्य रंग: $colours';
+  }
+
+  @override
+  String get searchPhotoSentNote =>
+      'यह पता करने के लिए कि इसमें क्या है, एक छोटी कॉपी Google Cloud Vision को भेजी गई। वह सेव नहीं होती।';
+
+  @override
+  String get searchPhotoGuestNote => 'सिर्फ़ रंग के आधार पर मिलान। फ़ोटो में जो है उससे मिलान के लिए साइन इन करें।';
+
+  @override
+  String searchPhotoCappedNote(int count) {
+    return 'आप आज के $count फ़ोटो सर्च इस्तेमाल कर चुके हैं। कल तक सिर्फ़ रंग से मिलान होगा।';
+  }
+
+  @override
+  String get searchPhotoUnavailableNote => 'फ़ोटो में क्या है, यह पढ़ नहीं पाए। सिर्फ़ रंग से मिलान हो रहा है।';
+
+  @override
+  String get searchPhotoNoMatches => 'इस फ़ोटो से मिलता कोई वॉलपेपर नहीं है';
+
+  @override
+  String get searchPhotoNoMatchesBody => 'ज़्यादा चटख रंगों वाली फ़ोटो आज़माएं।';
+
+  @override
+  String get searchPhotoChooseAnother => 'कोई दूसरी फ़ोटो चुनें';
+
+  @override
+  String get searchPhotoCouldNotOpen => 'वह फ़ोटो खोली नहीं जा सकी। कोई और फ़ोटो आज़माएं।';
+
+  @override
+  String get foldersSaveAll => 'सभी सहेजें';
+
+  @override
+  String get foldersSaveAllTitle => 'सभी वॉलपेपर सहेजें';
+
+  @override
+  String get foldersSaveAllChecking => 'वॉलपेपर जाँचे जा रहे हैं…';
+
+  @override
+  String get foldersSaveAllPlanFailed => 'वॉलपेपर जाँचे नहीं जा सके। फिर कोशिश करें।';
+
+  @override
+  String get foldersSaveAllBusy => 'एक और फ़ोल्डर सहेजा जा रहा है। उसके पूरा होने पर फिर कोशिश करें।';
+
+  @override
+  String foldersSaveAllRowFree(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर मुफ़्त हैं',
+      one: '1 वॉलपेपर मुफ़्त है',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowCoins(int count, int price) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+    final intl.NumberFormat priceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String priceString = priceNumberFormat.format(price);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर, प्रत्येक की कीमत $priceString सिक्के है',
+      one: '1 वॉलपेपर की कीमत $priceString सिक्के है',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowPro(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर के लिए Pro चाहिए',
+      one: '1 वॉलपेपर के लिए Pro चाहिए',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowSaved(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर पहले से डाउनलोड में हैं',
+      one: '1 वॉलपेपर पहले से डाउनलोड में है',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllRowBlocked(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर सहेजने के लिए उपलब्ध नहीं हैं',
+      one: '1 वॉलपेपर सहेजने के लिए उपलब्ध नहीं है',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllAffordable(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आपके सिक्के $countString भुगतान वाले वॉलपेपर के लिए काफ़ी हैं।',
+      one: 'आपके सिक्के 1 भुगतान वाले वॉलपेपर के लिए काफ़ी हैं।',
+      zero: 'आपके सिक्के किसी भुगतान वाले वॉलपेपर के लिए काफ़ी नहीं हैं।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPhotosAlbum(String name) {
+    return 'ये Photos में “$name” एल्बम और डाउनलोड में जाएँगे।';
+  }
+
+  @override
+  String foldersSaveAllGalleryAlbum(String name) {
+    return 'ये आपकी गैलरी में Pictures/Prism/$name और डाउनलोड में जाएँगे।';
+  }
+
+  @override
+  String get foldersSaveAllLeaveNote =>
+      'सहेजते समय आप यह पेज छोड़ सकते हैं। अगर आप Prism बंद करते हैं, तो पूरा करने के लिए फिर से सभी सहेजें पर टैप करें।';
+
+  @override
+  String get foldersSaveAllNothing => 'इस फ़ोल्डर में सहेजने के लिए कुछ नया नहीं है।';
+
+  @override
+  String foldersSaveAllFreeButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString मुफ़्त वॉलपेपर सहेजें',
+      one: 'मुफ़्त वॉलपेपर सहेजें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllPaidButton(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'जो बचा सकूँ, सब सहेजें ($coinsString सिक्के)',
+      one: 'जो बचा सकूँ, सब सहेजें (1 सिक्का)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllCountButton(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर सहेजें',
+      one: '1 वॉलपेपर सहेजें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllProgress(int done, int total) {
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+
+    return '$totalString में से $doneString सहेजे जा रहे हैं';
+  }
+
+  @override
+  String foldersSaveAllProgressSemantics(int total, int done) {
+    final intl.NumberFormat totalNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String totalString = totalNumberFormat.format(total);
+    final intl.NumberFormat doneNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String doneString = doneNumberFormat.format(done);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$totalString वॉलपेपर में से $doneString सहेजे जा रहे हैं',
+      one: '1 वॉलपेपर में से $doneString सहेजे जा रहे हैं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllStopping => 'रोका जा रहा है…';
+
+  @override
+  String get foldersSaveAllCancel => 'रद्द करें';
+
+  @override
+  String get foldersSaveAllCancelHint => 'जो वॉलपेपर शुरू नहीं हुए हैं, वे रुक जाएँगे। उनकी कोई कीमत नहीं लगेगी।';
+
+  @override
+  String foldersSaveAllSavedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर सहेजे गए',
+      one: '1 वॉलपेपर सहेजा गया',
+      zero: 'कोई वॉलपेपर नहीं सहेजा गया',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllStoppedTitle(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'रोका गया। $countString वॉलपेपर सहेजे गए',
+      one: 'रोका गया। 1 वॉलपेपर सहेजा गया',
+      zero: 'रोका गया। कोई वॉलपेपर नहीं सहेजा गया',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllSkipped(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString पहले से डाउनलोड में',
+      one: '1 पहले से डाउनलोड में',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllFailed(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString विफल', one: '1 विफल');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllNotStarted(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString शुरू नहीं हुए',
+      one: '1 शुरू नहीं हुआ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSaveAllRetry => 'विफल वाले फिर से करें';
+
+  @override
+  String get foldersSaveAllDone => 'हो गया';
+
+  @override
+  String foldersSaveAllToast(int count, String name) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$name से $countString वॉलपेपर सहेजे गए।',
+      one: '$name से 1 वॉलपेपर सहेजा गया।',
+      zero: '$name से कोई वॉलपेपर नहीं सहेजा गया।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSaveAllToastFailed(int failed, int saved, String name) {
+    final intl.NumberFormat failedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String failedString = failedNumberFormat.format(failed);
+    final intl.NumberFormat savedNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String savedString = savedNumberFormat.format(saved);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      failed,
+      locale: localeName,
+      other: '$name से $savedString सहेजे गए। $failedString विफल। फिर से कोशिश करने के लिए फ़ोल्डर खोलें।',
+      one: '$name से $savedString सहेजे गए। 1 विफल। फिर से कोशिश करने के लिए फ़ोल्डर खोलें।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersInvite => 'आमंत्रित करें';
+
+  @override
+  String foldersInviteShareText(String name, String link) {
+    return 'Prism पर $name में मेरे साथ वॉलपेपर जोड़ें: $link';
+  }
+
+  @override
+  String foldersInvitePreviewTitle(String name) {
+    return 'Prism पर $name से जुड़ें';
+  }
+
+  @override
+  String get foldersInvitePreviewDescription => 'इस फ़ोल्डर के वॉलपेपर साथ मिलकर जोड़ें और हटाएँ।';
+
+  @override
+  String get foldersInviteFailed => 'आमंत्रण लिंक नहीं बन सका। फिर से कोशिश करें।';
+
+  @override
+  String get foldersInviteFull => 'यह फ़ोल्डर भर गया है। और लोगों को आमंत्रित करने के लिए किसी को हटाएँ।';
+
+  @override
+  String get foldersInviteLimit => 'आपने आज बहुत ज़्यादा आमंत्रण भेज दिए हैं। कल फिर से कोशिश करें।';
+
+  @override
+  String get foldersPeople => 'लोग';
+
+  @override
+  String foldersPeopleHintOwner(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'वॉलपेपर जोड़ने और हटाने के लिए अधिकतम $countString लोगों को आमंत्रित करें। इस फ़ोल्डर का नाम बदलना, इसे साझा करना या हटाना सिर्फ़ आप कर सकते हैं।';
+  }
+
+  @override
+  String get foldersPeopleHintEditor =>
+      'आप वॉलपेपर जोड़ और हटा सकते हैं। इस फ़ोल्डर का नाम बदलना, इसे साझा करना या हटाना सिर्फ़ मालिक कर सकता है।';
+
+  @override
+  String foldersPeopleCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString लोग', one: '1 व्यक्ति');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersPeopleButtonLabel(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'इस फ़ोल्डर में $countString लोग। लोग दिखाएँ',
+      one: 'इस फ़ोल्डर में 1 व्यक्ति। लोग दिखाएँ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersRoleOwner => 'मालिक';
+
+  @override
+  String get foldersRoleEditor => 'जोड़ और हटा सकते हैं';
+
+  @override
+  String foldersPersonYou(String name) {
+    return '$name (आप)';
+  }
+
+  @override
+  String get foldersUnknownPerson => 'Prism उपयोगकर्ता';
+
+  @override
+  String get foldersRemovePerson => 'हटाएँ';
+
+  @override
+  String foldersRemovePersonTitle(String name) {
+    return '$name को हटाएँ?';
+  }
+
+  @override
+  String get foldersRemovePersonMessage =>
+      'ये लोग यहाँ अब वॉलपेपर नहीं जोड़ या हटा सकेंगे। इनके जोड़े गए वॉलपेपर बने रहेंगे।';
+
+  @override
+  String get foldersRemovePersonConfirm => 'व्यक्ति को हटाएँ';
+
+  @override
+  String foldersPersonRemoved(String name) {
+    return '$name को हटा दिया गया।';
+  }
+
+  @override
+  String get foldersLeave => 'फ़ोल्डर छोड़ें';
+
+  @override
+  String foldersLeaveTitle(String name) {
+    return '$name छोड़ें?';
+  }
+
+  @override
+  String get foldersLeaveMessage => 'आप यहाँ अब वॉलपेपर नहीं जोड़ या हटा सकेंगे। आपके जोड़े गए वॉलपेपर बने रहेंगे।';
+
+  @override
+  String get foldersLeft => 'आपने फ़ोल्डर छोड़ दिया।';
+
+  @override
+  String get foldersPeopleFailed => 'इस फ़ोल्डर के लोगों को अपडेट नहीं किया जा सका। फिर से कोशिश करें।';
+
+  @override
+  String get foldersSharedWithYou => 'आपके साथ साझा किए गए';
+
+  @override
+  String get foldersSharedLabel => 'साझा किया गया';
+
+  @override
+  String foldersAddedBy(String name) {
+    return '$name ने जोड़ा';
+  }
+
+  @override
+  String get foldersAddedByYou => 'आपने जोड़ा';
+
+  @override
+  String get foldersRemoveFromFolder => 'फ़ोल्डर से हटाएँ';
+
+  @override
+  String get foldersDeleteSharedMessage =>
+      'आपके आमंत्रित लोग भी इसे खो देंगे। जो वॉलपेपर आपके पसंदीदा में हैं, वे वहीं रहेंगे।';
+
+  @override
+  String get foldersJoinTitle => 'फ़ोल्डर का आमंत्रण';
+
+  @override
+  String foldersJoinHeadline(String name) {
+    return '$name से जुड़ें';
+  }
+
+  @override
+  String foldersJoinInvitedBy(String name) {
+    return '$name ने आपको इस फ़ोल्डर में वॉलपेपर जोड़ने और हटाने के लिए आमंत्रित किया है।';
+  }
+
+  @override
+  String get foldersJoin => 'फ़ोल्डर से जुड़ें';
+
+  @override
+  String get foldersJoinSignIn => 'जुड़ने के लिए साइन इन करें';
+
+  @override
+  String get foldersJoinOpen => 'फ़ोल्डर खोलें';
+
+  @override
+  String get foldersJoinAlreadyIn => 'आप पहले से इस फ़ोल्डर में हैं।';
+
+  @override
+  String foldersJoined(String name) {
+    return 'आप $name से जुड़ गए।';
+  }
+
+  @override
+  String get foldersJoinFailed => 'इस फ़ोल्डर से जुड़ा नहीं जा सका। फिर से कोशिश करें।';
+
+  @override
+  String get foldersJoinLoadFailed => 'यह आमंत्रण लोड नहीं हो सका।';
+
+  @override
+  String get foldersJoinExpiredTitle => 'यह आमंत्रण समाप्त हो गया है';
+
+  @override
+  String get foldersJoinExpiredBody => 'आमंत्रण 7 दिनों तक काम करते हैं। मालिक से नया लिंक माँगें।';
+
+  @override
+  String get foldersJoinUsedTitle => 'यह आमंत्रण पहले ही इस्तेमाल हो चुका है';
+
+  @override
+  String get foldersJoinUsedBody => 'हर आमंत्रण एक बार ही काम करता है। मालिक से नया लिंक माँगें।';
+
+  @override
+  String get foldersJoinFullTitle => 'यह फ़ोल्डर भर गया है';
+
+  @override
+  String get foldersJoinFullBody => 'मालिक से किसी को हटाने को कहें, फिर लिंक दोबारा खोलें।';
+
+  @override
+  String get foldersJoinUnavailableTitle => 'यह आमंत्रण उपलब्ध नहीं है';
+
+  @override
+  String get foldersJoinUnavailableBody => 'हो सकता है यह फ़ोल्डर हटा दिया गया हो, या आप इससे जुड़ नहीं सकते।';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'इसे सिर्फ़ आप और आपके आमंत्रित लोग देखेंगे। इसका लिंक काम करना बंद कर देगा और इसके फ़ॉलोअर इसे खो देंगे।';
 }

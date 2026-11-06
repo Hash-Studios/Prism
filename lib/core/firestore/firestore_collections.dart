@@ -5,6 +5,7 @@ class FirebaseCollections {
   static const String profiles = 'profiles';
   static const String usernames = 'usernames';
   static const String walls = 'walls';
+  static const String webWalls = 'webWalls';
   static const String contentReports = 'contentReports';
   static const String rejectedWalls = 'rejectedWalls';
   static const String notifications = 'notifications';
@@ -23,6 +24,7 @@ class FirebaseCollections {
   static const String folders = 'folders';
   static const String wallRequests = 'wallRequests';
   static const String moods = 'moods';
+  static const String desktopSubmissions = 'desktopSubmissions';
 
   /// `folders/{folderId}/items`, one doc per saved wall.
   static String wallComments(String wallId) => '$walls/$wallId/comments';

@@ -175,7 +175,7 @@ class _TabAction extends StatelessWidget {
   Widget build(BuildContext context) => AnimatedSwitcher(
     duration: context.motion(PrismDurations.fast),
     switchInCurve: PrismCurves.enter,
-    switchOutCurve: PrismCurves.enter,
+    switchOutCurve: PrismCurves.exitReverse,
     child: _action(context),
   );
 }

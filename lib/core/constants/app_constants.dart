@@ -5,8 +5,8 @@ import 'package:Prism/auth/user_model.dart';
 const String defaultProfilePhotoUrl =
     'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4';
 
-const String currentAppVersion = '3.20.0';
-const String currentAppVersionCode = '361';
+const String currentAppVersion = '3.22.0';
+const String currentAppVersionCode = '363';
 const String defaultObsoleteAppVersion = '2.6.0';
 
 // Empty means the UI should use its localized default banner copy.
@@ -34,18 +34,18 @@ const String defaultOnboardingStarterPack = '[]';
 
 const String categoriesRemoteConfigKey = 'categories_v1';
 const String personalizedInterestsRemoteConfigKey = 'personalized_interests_v1';
-const String personalizedInterestsLocalCacheKey = 'personalized_interests_catalog_v1';
+const String personalizedInterestsLocalCacheKey = 'personalized_interests_catalog_v2';
 const String personalizedFeedMixLocalKey = 'personalized_feed_mix';
 const String defaultPersonalizedInterestsJson = '''
 [
-  {"name":"Space","query":"space","imageUrl":"https://images.pexels.com/photos/586059/pexels-photo-586059.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
+  {"name":"Space","query":"space","imageUrl":"https://images.pexels.com/photos/1169754/pexels-photo-1169754.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Scenery","query":"scenery landscape","imageUrl":"https://images.pexels.com/photos/572897/pexels-photo-572897.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Vehicles","query":"cars vehicles","imageUrl":"https://images.pexels.com/photos/358070/pexels-photo-358070.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Animals","query":"animals wildlife","imageUrl":"https://images.pexels.com/photos/247502/pexels-photo-247502.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
-  {"name":"Fantasy","query":"fantasy","imageUrl":"https://images.pexels.com/photos/3075993/pexels-photo-3075993.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
-  {"name":"Anime","query":"anime","imageUrl":"https://images.pexels.com/photos/998641/pexels-photo-998641.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven"]},
+  {"name":"Fantasy","query":"fantasy","imageUrl":"https://images.pexels.com/photos/8415664/pexels-photo-8415664.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
+  {"name":"Anime","query":"anime","imageUrl":"https://images.pexels.com/photos/1049622/pexels-photo-1049622.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven"]},
   {"name":"Nature","query":"nature","imageUrl":"https://images.pexels.com/photos/3244513/pexels-photo-3244513.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
-  {"name":"Aesthetic","query":"aesthetic","imageUrl":"https://images.pexels.com/photos/1458457/pexels-photo-1458457.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
+  {"name":"Aesthetic","query":"aesthetic","imageUrl":"https://images.pexels.com/photos/7354509/pexels-photo-7354509.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Abstract","query":"abstract","imageUrl":"https://images.pexels.com/photos/7130560/pexels-photo-7130560.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Aerial","query":"aerial photography","imageUrl":"https://images.pexels.com/photos/1004409/pexels-photo-1004409.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Artistic","query":"art painting","imageUrl":"https://images.pexels.com/photos/1269968/pexels-photo-1269968.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
@@ -55,15 +55,15 @@ const String defaultPersonalizedInterestsJson = '''
   {"name":"Flowers","query":"flowers","imageUrl":"https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"City","query":"city urban skyline","imageUrl":"https://images.pexels.com/photos/466685/pexels-photo-466685.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Birds","query":"birds","imageUrl":"https://images.pexels.com/photos/326900/pexels-photo-326900.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
-  {"name":"Warriors","query":"warrior fighter","imageUrl":"https://images.pexels.com/photos/3657154/pexels-photo-3657154.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
-  {"name":"Illustration","query":"illustration art","imageUrl":"https://images.pexels.com/photos/1633798/pexels-photo-1633798.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
+  {"name":"Warriors","query":"warrior fighter","imageUrl":"https://images.pexels.com/photos/17499977/pexels-photo-17499977.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
+  {"name":"Illustration","query":"illustration art","imageUrl":"https://images.pexels.com/photos/31120860/pexels-photo-31120860.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Architecture","query":"architecture buildings","imageUrl":"https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Portraits","query":"portrait","imageUrl":"https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels"]},
   {"name":"Under the Sea","query":"underwater ocean","imageUrl":"https://images.pexels.com/photos/10017673/pexels-photo-10017673.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
-  {"name":"Quotes","query":"typography quotes","imageUrl":"https://images.pexels.com/photos/6980830/pexels-photo-6980830.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels"]},
+  {"name":"Quotes","query":"typography quotes","imageUrl":"https://images.pexels.com/photos/3927440/pexels-photo-3927440.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels"]},
   {"name":"Robots","query":"robot technology","imageUrl":"https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Spiritual","query":"spiritual meditation","imageUrl":"https://images.pexels.com/photos/3560044/pexels-photo-3560044.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
-  {"name":"3D Renders","query":"3d render art","imageUrl":"https://images.pexels.com/photos/3165335/pexels-photo-3165335.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
+  {"name":"3D Renders","query":"3d render art","imageUrl":"https://images.pexels.com/photos/31687154/pexels-photo-31687154.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Fashion","query":"fashion style","imageUrl":"https://images.pexels.com/photos/1536619/pexels-photo-1536619.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},
   {"name":"Kawaii","query":"cute kawaii","imageUrl":"https://images.pexels.com/photos/1643457/pexels-photo-1643457.jpeg?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["wallhaven"]},
   {"name":"Sports","query":"sports","imageUrl":"https://images.pexels.com/photos/34563722/pexels-photo-34563722.png?auto=compress&cs=tinysrgb&dpr=1&h=650&w=940","sources":["pexels","wallhaven"]},

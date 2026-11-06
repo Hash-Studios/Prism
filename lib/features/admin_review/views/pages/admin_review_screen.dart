@@ -10,13 +10,16 @@ import 'package:Prism/core/utils/localized_relative_time.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/depth_override.dart';
 import 'package:Prism/features/admin_review/biz/drop_reserve.dart';
+import 'package:Prism/features/admin_review/biz/reject_reasons.dart';
 import 'package:Prism/features/admin_review/biz/wall_moderation.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
+import 'package:Prism/features/admin_review/views/widgets/desktop_submission_queue.dart';
 import 'package:Prism/features/admin_review/views/widgets/moderation_card.dart';
 import 'package:Prism/features/admin_review/views/widgets/notification_sender_tab.dart';
 import 'package:Prism/features/admin_review/views/widgets/reject_reason_sheet.dart';
 import 'package:Prism/features/admin_review/views/widgets/report_cards.dart';
 import 'package:Prism/features/admin_review/views/widgets/wall_resubmission_notice.dart';
+import 'package:Prism/features/desktop_submission/desktop_submission.dart';
 import 'package:Prism/features/editors_choice/biz/editors_choice_cubit.dart';
 import 'package:Prism/features/editors_choice/domain/editors_choice_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -27,9 +30,10 @@ import 'package:rxdart/rxdart.dart';
 
 @RoutePage()
 class AdminReviewScreen extends StatefulWidget {
-  const AdminReviewScreen({super.key, this.repository});
+  const AdminReviewScreen({super.key, this.repository, this.desktopRepository});
 
   final AdminModerationRepository? repository;
+  final DesktopSubmissionRepository? desktopRepository;
 
   @override
   State<AdminReviewScreen> createState() => _AdminReviewScreenState();
@@ -38,9 +42,10 @@ class AdminReviewScreen extends StatefulWidget {
 class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTickerProviderStateMixin {
   late TabController _controller;
   late final AdminModerationRepository _repository;
+  late final DesktopSubmissionRepository _desktopRepository;
   late Stream<List<FirestoreDocument>> _pendingWallsStream;
   late Stream<List<FirestoreDocument>> _openReportsStream;
-  late Stream<(int, int)> _pendingCountsStream;
+  late Stream<(int, int, int)> _pendingCountsStream;
   final Map<String, Future<String?>> _requestTexts = <String, Future<String?>>{};
   EditorsChoiceCubit? _picks;
 
@@ -48,17 +53,19 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
   void initState() {
     super.initState();
     _repository = widget.repository ?? getIt<AdminModerationRepository>();
-    _controller = TabController(length: 3, vsync: this)..addListener(() => setState(() {}));
+    _desktopRepository = widget.desktopRepository ?? getIt<DesktopSubmissionRepository>();
+    _controller = TabController(length: 4, vsync: this)..addListener(() => setState(() {}));
     _subscribeStreams();
   }
 
   void _subscribeStreams() {
     _pendingWallsStream = _repository.watchPendingWalls();
     _openReportsStream = _repository.watchOpenContentReports();
-    _pendingCountsStream = Rx.combineLatest2<int, int, (int, int)>(
+    _pendingCountsStream = Rx.combineLatest3<int, int, int, (int, int, int)>(
       _repository.watchPendingWalls().map((List<FirestoreDocument> list) => list.length),
       _repository.watchOpenContentReports().map((List<FirestoreDocument> list) => list.length),
-      (int a, int b) => (a, b),
+      _desktopRepository.watchReviewQueue().map((List<DesktopSubmission> list) => list.length),
+      (int a, int b, int c) => (a, b, c),
     );
   }
 
@@ -95,9 +102,9 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<(int, int)>(
+    return StreamBuilder<(int, int, int)>(
       stream: _pendingCountsStream,
-      builder: (BuildContext context, AsyncSnapshot<(int, int)> countSnapshot) {
+      builder: (BuildContext context, AsyncSnapshot<(int, int, int)> countSnapshot) {
         final counts = countSnapshot.hasError || countSnapshot.connectionState == ConnectionState.waiting
             ? null
             : countSnapshot.data;
@@ -105,6 +112,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
         final List<String> labels = <String>[
           withCount(context.l10n.adminWalls, counts?.$1),
           withCount(context.l10n.adminReports, counts?.$2),
+          withCount(context.l10n.adminDesktop, counts?.$3),
           context.l10n.adminNotifications,
         ];
         return PrismPage(
@@ -124,7 +132,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           headerBottom: Padding(
             padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxs, PrismSpace.page, PrismSpace.sm),
             child: PrismSegmented<int>(
-              values: const <int>[0, 1, 2],
+              values: const <int>[0, 1, 2, 3],
               selected: _controller.index,
               labelOf: (int i) => labels[i],
               onChanged: _controller.animateTo,
@@ -132,7 +140,12 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
           ),
           body: TabBarView(
             controller: _controller,
-            children: <Widget>[_buildWallTab(), _buildReportsTab(), const NotificationSenderTab()],
+            children: <Widget>[
+              _buildWallTab(),
+              _buildReportsTab(),
+              DesktopSubmissionQueue(repository: _desktopRepository),
+              const NotificationSenderTab(),
+            ],
           ),
         );
       },
@@ -231,7 +244,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
             },
       onReject: () => _confirmReject(
         context,
-        onSubmit: (String reason) async {
+        onSubmit: (String reason, RejectReason? _) async {
           await _repository.rejectWall(wall, reason: reason);
           toasts.success(l10n.adminWallpaperRejected);
         },
@@ -265,12 +278,13 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
             reporterUid: uid,
             timeStr: timeStr,
             repository: _repository,
-            onConfirmRemoveWithReason: ({required Future<void> Function(String reason) onSubmit}) => _confirmReject(
-              context,
-              dialogTitle: context.l10n.adminRemoveWallpaper,
-              confirmButtonLabel: context.l10n.adminRemoveWallpaper,
-              onSubmit: onSubmit,
-            ),
+            onConfirmRemoveWithReason:
+                ({required Future<void> Function(String reason, RejectReason? picked) onSubmit}) => _confirmReject(
+                  context,
+                  dialogTitle: context.l10n.adminRemoveWallpaper,
+                  confirmButtonLabel: context.l10n.adminRemoveWallpaper,
+                  onSubmit: onSubmit,
+                ),
           );
         }
         final int colon = tid.lastIndexOf(':');
@@ -350,7 +364,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
 
   Future<void> _confirmReject(
     BuildContext context, {
-    required Future<void> Function(String reason) onSubmit,
+    required Future<void> Function(String reason, RejectReason? picked) onSubmit,
     String? dialogTitle,
     String? confirmButtonLabel,
   }) {

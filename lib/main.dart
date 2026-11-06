@@ -1008,7 +1008,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
                   theme: context.prismLightTheme(),
                   darkTheme: context.prismDarkTheme(),
                   themeMode: context.prismThemeMode(),
-                  themeAnimationDuration: context.motion(PrismDurations.slow),
+                  themeAnimationDuration: context.motion(PrismDurations.base),
                   themeAnimationCurve: PrismCurves.move,
                 ),
               ),

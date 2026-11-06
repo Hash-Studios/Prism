@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import {PHOTO_SEARCH_RATE} from "./photoSearchLabels";
 import {removeChallengeVotesForAccount} from "./weeklyChallenges";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
@@ -7,10 +8,13 @@ import {closeCreatorProgressForDeletion} from "./creatorProgressDeletion";
 import {verifiedEmailForUid} from "./wallAuthor";
 import {removeUidFollowGraph} from "./profiles";
 import {FOLDERS, FOLDER_ITEMS, isFolderItemPath} from "./folders";
+import {removeAllFolderMemberships} from "./sharedFolders";
 import {removeWallRequestsForAccount, REQUEST_RATE_DAILY, VOTE_RATE_DAILY} from "./wallRequests";
 import {WRAPPED_COLLECTION} from "./wrapped";
 import {FOLLOWED_FOLDERS, removeAllFolderFollows, removeOwnerPublicFolders} from "./publicFolders";
 import {COMMENT_RATE, removeCommentsForAccount} from "./comments";
+import {removeDesktopSubmissionsForAccount} from "./desktopSubmissions";
+import {r2Secrets} from "./r2Storage";
 
 const USERS = "usersv2";
 const COIN_TRANSACTIONS = "coinTransactions";
@@ -95,7 +99,7 @@ async function releaseUsernames(uid: string): Promise<void> {
  * draft setups is read before the profile is anonymized, and any failed delete throws before the profile is
  * anonymized or the auth user is removed. A retry therefore finishes what an earlier call left.
  */
-export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeoutSeconds: 300}, async (request: CallableRequest<unknown>) => {
+export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeoutSeconds: 300, secrets: r2Secrets}, async (request: CallableRequest<unknown>) => {
   const callerUid = request.auth?.uid;
   if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to delete your account.");
 
@@ -116,7 +120,9 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   // The deletion barrier is closed, so no sync can project these folders again.
   await removeOwnerPublicFolders(callerUid);
   await removeAllFolderFollows(callerUid);
+  await removeAllFolderMemberships(callerUid);
   await removeCommentsForAccount(callerUid);
+  await removeDesktopSubmissionsForAccount(callerUid);
 
   // 1. Favourite/private subcollections — same set the client wipes in delete_account_service.dart.
   await db.recursiveDelete(userRef.collection("images"));
@@ -127,6 +133,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   await db.recursiveDelete(userRef.collection("wallActionReceipts"));
   await db.recursiveDelete(userRef.collection(FOLLOWED_FOLDERS));
   await db.recursiveDelete(db.collection(WRAPPED_COLLECTION).doc(callerUid));
+  await db.recursiveDelete(db.collection(PHOTO_SEARCH_RATE).doc(callerUid));
   // Items are found by owner, not through their folder, so items whose folder is already gone are deleted too.
   // The owner filter keeps another owner's items in a reused folder id. Items go before their folders.
   const items = (await db.collectionGroup(FOLDER_ITEMS).where("ownerId", "==", callerUid).get())
