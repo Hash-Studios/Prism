@@ -438,29 +438,58 @@ void main() {
   });
 
   group('winter season revert', () {
-    test('a failed revert marker write can retry the theme reversion', () async {
-      final _FailOnceSetStore flakyStore = _FailOnceSetStore();
-      final ThemeRepositoryImpl flakyRepository = ThemeRepositoryImpl(SettingsLocalDataSource(flakyStore), firestore);
+    test('a revert on load keeps the change time and uploads nothing', () async {
       seasonClock = () => DateTime(2027, 1, 7);
       addTearDown(() => seasonClock = () => DateTime(2027, 2));
-      flakyStore.data['settings.darkThemeID'] = prismWinterDarkThemeId;
-      flakyStore.data['settings.darkAccent'] = prismWinterDarkAccentValue;
-      flakyStore.data['settings.${winterSeason.previousThemeKey(Brightness.dark)}'] = 'kDSky';
-      flakyStore.failKey = 'settings.${winterSeason.revertedKey}';
+      store.data['settings.darkThemeID'] = prismWinterDarkThemeId;
+      store.data['settings.darkAccent'] = prismWinterDarkAccentValue;
+      store.data['settings.${winterSeason.previousThemeKey(Brightness.dark)}'] = 'kDSky';
+      store.data['settings.theme.changed_at'] = 100;
       app_state.prismUser = profileUser();
 
-      expect((await flakyRepository.load()).isFailure, isTrue);
-      expect(flakyStore.data['settings.darkThemeID'], 'kDSky');
-      expect(flakyStore.data.containsKey('settings.${winterSeason.revertedKey}'), isFalse);
-      expect(flakyStore.data['settings.${winterSeason.revertPendingKey}'], isTrue);
-      expect(firestore.writes, isEmpty);
-
-      final ThemePreferences retry = (await flakyRepository.load()).data!;
-      expect(retry.dark.themeId, 'kDSky');
-      expect(flakyStore.data['settings.${winterSeason.revertedKey}'], isTrue);
-      expect(flakyStore.data.containsKey('settings.${winterSeason.revertPendingKey}'), isFalse);
+      final ThemePreferences reverted = (await repository.load()).data!;
       await pumpEventQueue();
-      expect(firestore.writes.single.data!['themePrefs'], containsPair('darkThemeId', 'kDSky'));
+
+      expect(reverted.dark.themeId, 'kDSky');
+      expect(store.data['settings.theme.changed_at'], 100);
+      expect(firestore.writes, isEmpty);
+    });
+
+    test('a newer account choice made after the season wins over a local revert', () async {
+      seasonClock = () => DateTime(2027, 1, 8, 12);
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      store.data['settings.darkThemeID'] = prismWinterDarkThemeId;
+      store.data['settings.${winterSeason.previousThemeKey(Brightness.dark)}'] = 'kDSky';
+      store.data['settings.theme.changed_at'] = 100;
+      firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
+        'u1': <String, dynamic>{
+          'themePrefs': _accountCopy(
+            darkId: 'kDMaterial Dark',
+            changedAt: DateTime(2027, 1, 8, 10).millisecondsSinceEpoch,
+          ),
+        },
+      };
+
+      await repository.syncWithAccount('u1');
+
+      expect(store.data['settings.darkThemeID'], 'kDMaterial Dark');
+      expect(firestore.writes, isEmpty);
+    });
+
+    test('an old Winter copy from the account reverts again on a device that already reverted', () async {
+      seasonClock = () => DateTime(2027, 1, 9);
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      store.data['settings.darkThemeID'] = 'kDSky';
+      store.data['settings.${winterSeason.previousThemeKey(Brightness.dark)}'] = 'kDSky';
+      store.data['settings.theme.changed_at'] = 100;
+      firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
+        'u1': <String, dynamic>{'themePrefs': _accountCopy(darkId: prismWinterDarkThemeId, changedAt: 100)},
+      };
+
+      await repository.syncWithAccount('u1');
+
+      expect(store.data['settings.darkThemeID'], 'kDSky');
+      expect(firestore.writes, isEmpty);
     });
 
     test('a failed previous-theme write does not replace the selected theme', () async {
@@ -503,31 +532,10 @@ void main() {
 
       expect((await flakyRepository.load()).isFailure, isTrue);
       expect(flakyStore.data['settings.darkThemeID'], prismWinterDarkThemeId);
-      expect(flakyStore.data.containsKey('settings.${winterSeason.revertedKey}'), isFalse);
 
       final ThemePreferences retry = (await flakyRepository.load()).data!;
       expect(retry.dark.themeId, 'kDSky');
       expect(retry.dark.accentColorValue, prismThemeById(prismDarkThemes, 'kDSky')!.defaultAccentValue);
-    });
-
-    test('a failed revert timestamp write leaves Winter selected until the timestamp can be saved', () async {
-      final _FailOnceSetStore flakyStore = _FailOnceSetStore();
-      final ThemeRepositoryImpl flakyRepository = ThemeRepositoryImpl(SettingsLocalDataSource(flakyStore), firestore);
-      seasonClock = () => DateTime(2027, 1, 7);
-      addTearDown(() => seasonClock = () => DateTime(2027, 2));
-      flakyStore.data['settings.darkThemeID'] = prismWinterDarkThemeId;
-      flakyStore.data['settings.darkAccent'] = prismWinterDarkAccentValue;
-      flakyStore.data['settings.${winterSeason.previousThemeKey(Brightness.dark)}'] = 'kDSky';
-      flakyStore.data['settings.theme.changed_at'] = 100;
-      flakyStore.failKey = 'settings.theme.changed_at';
-
-      expect((await flakyRepository.load()).isFailure, isTrue);
-      expect(flakyStore.data['settings.darkThemeID'], prismWinterDarkThemeId);
-      expect(flakyStore.data.containsKey('settings.${winterSeason.revertedKey}'), isFalse);
-
-      final ThemePreferences retry = (await flakyRepository.load()).data!;
-      expect(retry.dark.themeId, 'kDSky');
-      expect(flakyStore.data['settings.theme.changed_at'], greaterThan(100));
     });
 
     test('sync remembers the local slots before applying Winter from the account', () async {
@@ -578,11 +586,10 @@ void main() {
 
       expect(store.data['settings.darkThemeID'], prismDefaultDarkThemeId);
       expect(emitted.single.dark.themeId, prismDefaultDarkThemeId);
-      expect(store.data['settings.${winterSeason.revertedKey}'], isTrue);
-      expect(firestore.writes.last.data!['themePrefs'], containsPair('darkThemeId', prismDefaultDarkThemeId));
+      expect(firestore.writes, isEmpty);
     });
 
-    test('sync emits a local seasonal revert when the older account copy loses', () async {
+    test('sync emits the local revert, then the account copy with its old Winter reverted', () async {
       seasonClock = () => DateTime(2027, 1, 8);
       addTearDown(() => seasonClock = () => DateTime(2027, 2));
       store.data['settings.darkThemeID'] = prismWinterDarkThemeId;
@@ -599,7 +606,9 @@ void main() {
       await repository.syncWithAccount('u1');
       await pumpEventQueue();
 
-      expect(emitted.single.dark.themeId, 'kDSky');
+      expect(emitted.map((p) => p.dark.themeId), <String>['kDSky', 'kDSky']);
+      expect(emitted.last.light.themeId, 'kLCoffee');
+      expect(firestore.writes, isEmpty);
     });
 
     test('sync emits the local seasonal revert even when the account read fails', () async {
@@ -623,30 +632,6 @@ void main() {
       expect(emitted.single.dark.themeId, 'kDSky');
     });
 
-    test('sync emits a pending revert completed after a failed marker write', () async {
-      final _FailOnceSetStore flakyStore = _FailOnceSetStore();
-      final ThemeRepositoryImpl flakyRepository = ThemeRepositoryImpl(SettingsLocalDataSource(flakyStore), firestore);
-      seasonClock = () => DateTime(2027, 1, 7);
-      addTearDown(() => seasonClock = () => DateTime(2027, 2));
-      flakyStore.data['settings.darkThemeID'] = prismWinterDarkThemeId;
-      flakyStore.data['settings.darkAccent'] = prismWinterDarkAccentValue;
-      flakyStore.data['settings.${winterSeason.previousThemeKey(Brightness.dark)}'] = 'kDSky';
-      flakyStore.failKey = 'settings.${winterSeason.revertedKey}';
-      expect((await flakyRepository.load()).isFailure, isTrue);
-      final List<ThemePreferences> emitted = <ThemePreferences>[];
-      final StreamSubscription<ThemePreferences> subscription = flakyRepository.accountChanges.listen(emitted.add);
-      addTearDown(subscription.cancel);
-      firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
-        'u1': <String, dynamic>{'themePrefs': _accountCopy(darkId: prismWinterDarkThemeId, changedAt: 100)},
-      };
-
-      await flakyRepository.syncWithAccount('u1');
-      await pumpEventQueue();
-
-      expect(emitted.single.dark.themeId, 'kDSky');
-      expect(flakyStore.data.containsKey('settings.${winterSeason.revertPendingKey}'), isFalse);
-    });
-
     test('a failed revert theme write retries after storing its accent', () async {
       final _FailOnceSetStore flakyStore = _FailOnceSetStore();
       final ThemeRepositoryImpl flakyRepository = ThemeRepositoryImpl(SettingsLocalDataSource(flakyStore), firestore);
@@ -659,7 +644,6 @@ void main() {
 
       expect((await flakyRepository.load()).isFailure, isTrue);
       expect(flakyStore.data['settings.darkThemeID'], prismWinterDarkThemeId);
-      expect(flakyStore.data.containsKey('settings.${winterSeason.revertedKey}'), isFalse);
 
       final ThemePreferences retry = (await flakyRepository.load()).data!;
       expect(retry.dark.themeId, 'kDSky');
@@ -679,7 +663,7 @@ void main() {
 
       expect(preferences.dark.themeId, 'kDDeep Ocean');
       expect(store.data['settings.darkThemeID'], 'kDDeep Ocean');
-      expect(store.data['settings.${winterSeason.revertedKey}'], isTrue);
+      expect(store.data['settings.theme.changed_at'], DateTime(2026, 12, 10).millisecondsSinceEpoch);
     });
 
     test('readSync shows the reverted dark theme on the first frame and writes nothing', () {
@@ -764,7 +748,7 @@ void main() {
       expect(reverted.dark.accentColorValue, 0xff00ff00);
     });
 
-    test('the revert runs once, so a winter theme picked after it stays', () async {
+    test('a winter theme picked after the season end stays', () async {
       seasonClock = () => DateTime(2026, 12, 10);
       addTearDown(() => seasonClock = () => DateTime(2027, 2));
       store.data['settings.darkThemeID'] = 'kDDeep Ocean';
@@ -791,7 +775,6 @@ void main() {
       final ThemePreferences preferences = (await repository.load()).data!;
       expect(preferences.light.themeId, prismWinterLightThemeId);
       expect(preferences.dark.themeId, prismWinterDarkThemeId);
-      expect(store.data['settings.${winterSeason.revertedKey}'], isTrue);
     });
 
     test('a post-season light Winter pick still expires the untouched old dark Winter slot', () async {
@@ -816,7 +799,7 @@ void main() {
       expect(firestore.writes.single.data!['themePrefs'], containsPair('darkThemeId', 'kDSky'));
     });
 
-    test('a failure while reverting both slots retries the unfinished slot before consuming the marker', () async {
+    test('a failure while reverting both slots retries the unfinished slot', () async {
       final _FailOnceSetStore flakyStore = _FailOnceSetStore();
       final ThemeRepositoryImpl flakyRepository = ThemeRepositoryImpl(SettingsLocalDataSource(flakyStore), firestore);
       seasonClock = () => DateTime(2027, 1, 7);
@@ -832,13 +815,10 @@ void main() {
       expect((await flakyRepository.load()).isFailure, isTrue);
       expect(flakyStore.data['settings.lightThemeID'], 'kLCoffee');
       expect(flakyStore.data['settings.darkThemeID'], prismWinterDarkThemeId);
-      expect(flakyStore.data.containsKey('settings.${winterSeason.revertedKey}'), isFalse);
 
       final ThemePreferences retry = (await flakyRepository.load()).data!;
       expect(retry.light.themeId, 'kLCoffee');
       expect(retry.dark.themeId, 'kDSky');
-      expect(flakyStore.data['settings.${winterSeason.revertedKey}'], isTrue);
-      expect(flakyStore.data.containsKey('settings.${winterSeason.revertPendingKey}'), isFalse);
     });
 
     test('sync keeps an ended local winter revert over an older account snapshot', () async {
@@ -866,7 +846,6 @@ void main() {
       final ThemePreferences preferences = (await repository.load()).data!;
 
       expect(preferences.dark.themeId, prismWinterDarkThemeId);
-      expect(store.data.containsKey('settings.${winterSeason.revertedKey}'), isFalse);
     });
   });
 }

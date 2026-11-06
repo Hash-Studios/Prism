@@ -90,9 +90,10 @@ The Themes page lets the user choose the app theme mode (system, light or dark),
 
 - When the user selects a Winter variant, Prism saves the theme they had before in that variant's `winterThemePrevious2026Light` or `winterThemePrevious2026Dark` slot. Account sync also records these previous-theme slots.
 - On the first theme load after 6 January (`ThemeRepository.load`), a user still on Winter goes back to that variant's saved theme. With no saved theme, they go to the default theme (Frost White or Material Dark). The accent follows the normal theme change rule: a default accent becomes the default of the new theme, a custom accent stays.
-- `readSync` resolves an expired Winter theme before showing the first frame. Prism sets the season-scoped `winterThemeReverted2026` completion flag after the revert. A user who picks Winter again later keeps it.
+- `readSync` already shows the reverted theme on the first frame.
+- Only a Winter choice made before the end reverts. Prism reads the last theme change time (`theme.changed_at`). A user who picks Winter after 6 January keeps it.
 - `ThemeBloc` sets a timer for the end of the season, so the revert also happens while the app is open. `ThemeRepository.update` restores both selected Winter slots before applying a manually requested theme pick.
-- Loading an untouched non-Winter device does not consume the completion marker; an expired account Winter can still revert. The reverted selection is uploaded to the account, so older account state does not bring Winter back. A newer remote Winter pick is honored unchanged. A Winter pick made after the season ends is intentional and stays selected.
+- The revert is local. It keeps the change time and uploads nothing, so a newer choice in the account still wins the next sync. If the account still holds the old Winter choice, each device reverts it again after the sync.
 
 ### Analytics
 

@@ -103,18 +103,15 @@ class ThemeRepositoryImpl implements ThemeRepository {
     await _rememberPreviousSeasonTheme(slot, previousThemeId, newThemeId);
     if (accent != storedAccent) await _settingsLocal.set(accentKey, accent);
     await _settingsLocal.set(themeKey, newThemeId);
-    for (final SeasonalTheme season in seasonalThemes) {
-      if (season.revertsAtEnd && season.themeIdFor(slot) == newThemeId && season.window.hasEnded(seasonNow())) {
-        await _settingsLocal.set(season.revertedKey, true);
-      }
-    }
   }
 
-  /// The selection for [slot] once [season] has ended and has not yet reverted here: the theme the user had before the
-  /// season theme, or the default theme. Null when nothing changes.
+  /// The selection for [slot] once [season] has ended: the theme the user had before the season theme, or the default
+  /// theme. Only a choice made before the end reverts. The last theme change time tells, so a season theme picked after
+  /// the end stays, and an old choice that comes back through the account sync reverts again. Null when nothing changes.
   ThemeSelection? _seasonRevert(SeasonalTheme season, Brightness slot, ThemeSelection current, DateTime now) {
     if (!season.revertsAtEnd || !season.window.hasEnded(now) || current.themeId != season.themeIdFor(slot)) return null;
-    if (_settingsLocal.get<bool>(season.revertedKey, defaultValue: false)) return null;
+    final int? changedAt = _settingsLocal.get<int?>(_changedAtKey);
+    if (changedAt != null && !DateTime.fromMillisecondsSinceEpoch(changedAt).isBefore(season.window.end)) return null;
     final bool dark = slot == Brightness.dark;
     final String? previous = _settingsLocal.get<String?>(season.previousThemeKey(slot));
     final String themeId = previous == null || previous == current.themeId
@@ -143,48 +140,20 @@ class ThemeRepositoryImpl implements ThemeRepository {
     return ThemePreferences(light: light, dark: dark, mode: stored.mode);
   }
 
-  /// Saves the reverts of [_readReverted] and marks each reverted season, once per device. A season theme the user picks
-  /// after that stays. An untouched device must still revert an expired theme imported later from the account.
-  Future<ThemePreferences> _revertEndedSeasons({bool upload = true}) async {
-    final DateTime now = seasonNow();
+  /// Saves the reverts of [_readReverted] on this device. It keeps the theme change time and uploads nothing, so a
+  /// newer choice in the account still wins the next sync. The accent goes first, so a failed write retries cleanly.
+  Future<ThemePreferences> _revertEndedSeasons() async {
     final ThemePreferences stored = _read();
-    final ThemePreferences reverted = _readReverted(now);
-    final bool lightChanged = reverted.light.themeId != stored.light.themeId;
-    final bool darkChanged = reverted.dark.themeId != stored.dark.themeId;
-    final List<SeasonalTheme> reverting = seasonalThemes
-        .where(
-          (season) =>
-              _seasonRevert(season, Brightness.light, stored.light, now) != null ||
-              _seasonRevert(season, Brightness.dark, stored.dark, now) != null ||
-              _settingsLocal.get<bool>(season.revertPendingKey, defaultValue: false),
-        )
-        .toList();
-    if (reverting.isEmpty) return stored;
-    final int changedAt = lightChanged || darkChanged
-        ? DateTime.now().millisecondsSinceEpoch
-        : _settingsLocal.get<int>(_changedAtKey);
-    // Save this first: if a later write fails, retries must not lose the change time that beats the old account copy.
-    await _settingsLocal.set(_changedAtKey, changedAt);
-    for (final SeasonalTheme season in reverting) {
-      await _settingsLocal.set(season.revertPendingKey, true);
-    }
-    if (lightChanged) {
+    final ThemePreferences reverted = _readReverted(seasonNow());
+    if (reverted.light.themeId != stored.light.themeId) {
       await _settingsLocal.set('lightAccent', reverted.light.accentColorValue);
       await _settingsLocal.set('lightThemeID', reverted.light.themeId);
     }
-    if (darkChanged) {
+    if (reverted.dark.themeId != stored.dark.themeId) {
       await _settingsLocal.set('darkAccent', reverted.dark.accentColorValue);
       await _settingsLocal.set('darkThemeID', reverted.dark.themeId);
     }
-    for (final SeasonalTheme season in reverting) {
-      await _settingsLocal.set(season.revertedKey, true);
-      await _settingsLocal.delete(season.revertPendingKey);
-    }
-    final ThemePreferences preferences = _read();
-    if (upload && app_state.prismUser.loggedIn) {
-      unawaited(_push(app_state.prismUser.id, AccountTheme(preferences: preferences, changedAt: changedAt)));
-    }
-    return preferences;
+    return _read();
   }
 
   Future<void> _push(String userId, AccountTheme theme) async {
@@ -205,14 +174,11 @@ class ThemeRepositoryImpl implements ThemeRepository {
 
   @override
   Future<void> syncWithAccount(String userId) async {
-    final bool revertWasPending = seasonalThemes.any(
-      (season) => _settingsLocal.get<bool>(season.revertPendingKey, defaultValue: false),
-    );
     final ThemePreferences beforeRevert = _read();
-    final ThemePreferences local = await _revertEndedSeasons(upload: false);
-    if (revertWasPending ||
-        beforeRevert.light.themeId != local.light.themeId ||
-        beforeRevert.dark.themeId != local.dark.themeId) {
+    final ThemePreferences local = await _revertEndedSeasons();
+    final bool revertedHere =
+        beforeRevert.light.themeId != local.light.themeId || beforeRevert.dark.themeId != local.dark.themeId;
+    if (revertedHere) {
       _accountChangesController.add(local);
     }
     final AccountTheme? account = AccountTheme.fromMap(
@@ -239,12 +205,16 @@ class ThemeRepositoryImpl implements ThemeRepository {
       await _settingsLocal.set('darkAccent', merged.dark.accentColorValue);
       await _settingsLocal.set('themeMode', _modeNames[merged.mode]);
       await _settingsLocal.set(_changedAtKey, account.changedAt);
-      final ThemePreferences resolved = await _revertEndedSeasons(upload: false);
-      _accountChangesController.add(resolved);
-      final int resolvedChangedAt = _settingsLocal.get<int>(_changedAtKey);
-      if (resolvedChangedAt != account.changedAt) {
-        await _push(userId, AccountTheme(preferences: resolved, changedAt: resolvedChangedAt));
-      }
+      final ThemePreferences resolved = await _revertEndedSeasons();
+      // An old season copy from the account reverts to what this sync already emitted. Do not emit it twice.
+      final bool sameAsEmitted =
+          revertedHere &&
+          resolved.light.themeId == local.light.themeId &&
+          resolved.dark.themeId == local.dark.themeId &&
+          resolved.light.accentColorValue == local.light.accentColorValue &&
+          resolved.dark.accentColorValue == local.dark.accentColorValue &&
+          resolved.mode == local.mode;
+      if (!sameAsEmitted) _accountChangesController.add(resolved);
     } else if (localChangedAt != null) {
       await _push(userId, AccountTheme(preferences: local, changedAt: localChangedAt));
     }
@@ -268,7 +238,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
     ThemeMode? mode,
   }) async {
     try {
-      await _revertEndedSeasons(upload: false);
+      await _revertEndedSeasons();
       _rememberLegacyThemes();
       if (lightThemeId != null) {
         await _applyThemeChange(
@@ -299,7 +269,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
       if (mode != null) {
         await _settingsLocal.set('themeMode', _modeNames[mode]);
       }
-      final int changedAt = DateTime.now().millisecondsSinceEpoch;
+      final int changedAt = seasonNow().millisecondsSinceEpoch;
       await _settingsLocal.set(_changedAtKey, changedAt);
       final ThemePreferences preferences = _read();
       if (app_state.prismUser.loggedIn) {
