@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:isolate';
 
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/store_adapters/lazy_file_cache.dart';
@@ -8,6 +9,22 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support/guest_store_fixture.dart';
 
 void main() {
+  test('guest snapshots encode outside the caller and serialize concurrent changes', () async {
+    final store = tempGuestStore();
+    await Future.wait([
+      store.put('first', <String, dynamic>{'probe': _BackgroundOnlyJson(Isolate.current.controlPort)}),
+      store.put('second', <String, dynamic>{'id': 'second'}),
+    ]);
+    final items = await store.readAll();
+    expect(items.keys, ['first', 'second']);
+    expect(items['first']?['probe'], 'background');
+    await Future.wait([
+      store.put('third', <String, dynamic>{'id': 'third'}),
+      store.clear(),
+    ]);
+    expect(await store.readAll(), isEmpty);
+  });
+
   test('put keeps the order, turns dates into ISO strings and reports the count', () async {
     final GuestFavouritesStore store = tempGuestStore();
 
@@ -105,4 +122,17 @@ class _FailingDurableStore extends DurableJsonStore {
 
   @override
   Future<void> write(String key, Map<String, Object?> value) async => throw StateError('disk full');
+}
+
+class _BackgroundOnlyJson {
+  _BackgroundOnlyJson(this.caller);
+
+  final SendPort caller;
+
+  String toJson() {
+    if (Isolate.current.controlPort == caller) {
+      throw StateError('Guest snapshot JSON encoded on the calling isolate');
+    }
+    return 'background';
+  }
 }

@@ -93,6 +93,33 @@ void main() {
     expect(await DurableJsonStore('walls', directory: root).readAll(), hasLength(5));
   });
 
+  test('same-key writes commit in call order and a following clear waits for them', () async {
+    final store = DurableJsonStore('walls', directory: root);
+    await Future.wait([
+      store.write('same', <String, Object?>{'value': 'x' * 500000}),
+      store.write('same', <String, Object?>{'value': 'latest'}),
+    ]);
+    expect(await store.read('same'), <String, Object?>{'value': 'latest'});
+    await Future.wait([
+      store.write('same', <String, Object?>{'value': 'x' * 500000}),
+      store.clear(),
+    ]);
+    expect(await store.readAll(), isEmpty);
+  });
+
+  test('write captures nested values before the caller can mutate them', () async {
+    final store = DurableJsonStore('walls', directory: root);
+    final nested = <String, Object?>{'value': 'original'};
+    final value = <String, Object?>{'nested': nested};
+    final write = store.write('captured', value);
+    nested['value'] = 'changed';
+    value.clear();
+    await write;
+    expect(await store.read('captured'), <String, Object?>{
+      'nested': <String, Object?>{'value': 'original'},
+    });
+  });
+
   test('rejects a record over the hard byte cap without creating a partial record', () async {
     final store = DurableJsonStore('walls', directory: root);
 

@@ -77,37 +77,50 @@ class DurableJsonStore {
 
   Future<void> write(String key, Map<String, Object?> value) {
     _validateKey(key);
-    final encoded = jsonEncode(<String, Object?>{'key': key, 'value': value});
-    final encodedBytes = utf8.encode(encoded).length;
-    if (encodedBytes > maxRecordBytes) {
-      return Future<void>.error(const DurableJsonStoreLimitException('The JSON record is too large.'));
-    }
+    final encoded = compute(_encodeRecord, (key, value), debugLabel: 'durableJson.encode');
+    // Observe early encoding failures until this write reaches the front of the queue.
+    unawaited(encoded.then<void>((_) {}, onError: (Object _, StackTrace _) {}));
     return _serialize(() async {
+      final bytes = await encoded;
       final directory = await _directory();
-      await directory.create(recursive: true);
-      final target = File(path.join(directory.path, '${_recordId(key)}.json'));
-      final stats = await _recordStats(directory);
-      final targetExists = await target.exists();
-      final targetBytes = targetExists ? await target.length() : 0;
-      if (!targetExists && stats.count >= maxRecords) {
-        throw const DurableJsonStoreLimitException('The JSON store has reached its record limit.');
-      }
-      if (stats.bytes - targetBytes + encodedBytes > maxStoreBytes) {
-        throw const DurableJsonStoreLimitException('The JSON store has reached its byte limit.');
-      }
-      final temporary = File(path.join(directory.path, '.${_recordId(key)}.${_temporaryId++}.part'));
-      try {
-        await temporary.writeAsString(encoded, flush: true);
-        await temporary.rename(target.path);
-      } catch (_) {
-        try {
-          if (await temporary.exists()) await temporary.delete();
-        } on FileSystemException catch (cleanupError) {
-          if (cleanupError.path != temporary.path) rethrow;
-        }
-        rethrow;
-      }
+      await compute(_writeEncodedRecord, (directory.path, key, bytes, _temporaryId++), debugLabel: 'durableJson.write');
     });
+  }
+
+  static Uint8List _encodeRecord((String, Map<String, Object?>) record) {
+    final bytes = utf8.encode(jsonEncode(<String, Object?>{'key': record.$1, 'value': record.$2}));
+    if (bytes.length > maxRecordBytes) {
+      throw const DurableJsonStoreLimitException('The JSON record is too large.');
+    }
+    return bytes;
+  }
+
+  static Future<void> _writeEncodedRecord((String, String, Uint8List, int) request) async {
+    final (directoryPath, key, bytes, temporaryId) = request;
+    final directory = Directory(directoryPath);
+    await directory.create(recursive: true);
+    final target = File(path.join(directory.path, '${_recordId(key)}.json'));
+    final stats = await _recordStats(directory);
+    final targetExists = await target.exists();
+    final targetBytes = targetExists ? await target.length() : 0;
+    if (!targetExists && stats.count >= maxRecords) {
+      throw const DurableJsonStoreLimitException('The JSON store has reached its record limit.');
+    }
+    if (stats.bytes - targetBytes + bytes.length > maxStoreBytes) {
+      throw const DurableJsonStoreLimitException('The JSON store has reached its byte limit.');
+    }
+    final temporary = File(path.join(directory.path, '.${_recordId(key)}.$temporaryId.part'));
+    try {
+      await temporary.writeAsBytes(bytes, flush: true);
+      await temporary.rename(target.path);
+    } catch (_) {
+      try {
+        if (await temporary.exists()) await temporary.delete();
+      } on FileSystemException catch (cleanupError) {
+        if (cleanupError.path != temporary.path) rethrow;
+      }
+      rethrow;
+    }
   }
 
   Future<void> delete(String key) {
@@ -148,7 +161,7 @@ class DurableJsonStore {
     }
   }
 
-  Future<({int count, int bytes})> _recordStats(Directory directory) async {
+  static Future<({int count, int bytes})> _recordStats(Directory directory) async {
     var count = 0;
     var bytes = 0;
     var scanned = 0;
