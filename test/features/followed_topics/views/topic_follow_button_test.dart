@@ -143,7 +143,8 @@ void main() {
 
     expect(find.bySemanticsLabel('Follow Pastel'), findsOneWidget);
 
-    await tester.tap(find.text('Follow'));
+    // A screen reader activates the button through its semantics tap action.
+    tester.semantics.tap(find.semantics.byLabel('Follow Pastel'));
     await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('Unfollow Pastel'), findsOneWidget);

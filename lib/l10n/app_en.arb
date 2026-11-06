@@ -10450,7 +10450,7 @@
       }
     }
   },
-  "topicFollowedToast": "Following {topic}. You get one push a day when new wallpapers land here.",
+  "topicFollowedToast": "Following {topic}. With topic notifications on, you get at most one push a day about new wallpapers here.",
   "@topicFollowedToast": {
     "description": "Toast after the user follows a category or mood.",
     "placeholders": {
@@ -10519,7 +10519,7 @@
   "@followedTopicsEmptyTitle": {
     "description": "Empty state title of the followed topics sheet."
   },
-  "followedTopicsEmptyBody": "Open a category or a mood and tap Follow. You get one push a day when new wallpapers land there.",
+  "followedTopicsEmptyBody": "Open a category or a mood and tap Follow. With topic notifications on, you get at most one push a day about new wallpapers there.",
   "@followedTopicsEmptyBody": {
     "description": "Empty state body of the followed topics sheet."
   },

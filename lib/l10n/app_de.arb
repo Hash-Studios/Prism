@@ -10276,7 +10276,7 @@
       }
     }
   },
-  "topicFollowedToast": "Du folgst {topic}. Du bekommst einmal am Tag eine Benachrichtigung, wenn hier neue Hintergrundbilder erscheinen.",
+  "topicFollowedToast": "Du folgst {topic}. Wenn Themen-Benachrichtigungen an sind, bekommst du höchstens eine Benachrichtigung am Tag zu neuen Hintergrundbildern hier.",
   "@topicFollowedToast": {
     "description": "Toast after the user follows a category or mood.",
     "placeholders": {
@@ -10345,7 +10345,7 @@
   "@followedTopicsEmptyTitle": {
     "description": "Empty state title of the followed topics sheet."
   },
-  "followedTopicsEmptyBody": "Öffne eine Kategorie oder eine Stimmung und tippe auf Folgen. Du bekommst einmal am Tag eine Benachrichtigung, wenn dort neue Hintergrundbilder erscheinen.",
+  "followedTopicsEmptyBody": "Öffne eine Kategorie oder eine Stimmung und tippe auf Folgen. Wenn Themen-Benachrichtigungen an sind, bekommst du höchstens eine Benachrichtigung am Tag zu neuen Hintergrundbildern dort.",
   "@followedTopicsEmptyBody": {
     "description": "Empty state body of the followed topics sheet."
   },

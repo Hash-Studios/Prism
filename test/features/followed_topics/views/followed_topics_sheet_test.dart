@@ -143,7 +143,7 @@ void main() {
 
       await openSheet(tester);
       await tester.pumpAndSettle();
-      await tester.tap(find.bySemanticsLabel('Unfollow Pastel'));
+      tester.semantics.tap(find.semantics.byLabel('Unfollow Pastel'));
       await tester.pumpAndSettle();
 
       expect(find.text('Pastel'), findsNothing);

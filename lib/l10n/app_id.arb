@@ -10273,7 +10273,7 @@
       }
     }
   },
-  "topicFollowedToast": "Anda mengikuti {topic}. Anda mendapat satu notifikasi per hari saat wallpaper baru hadir di sini.",
+  "topicFollowedToast": "Anda mengikuti {topic}. Jika notifikasi topik aktif, Anda mendapat paling banyak satu notifikasi per hari tentang wallpaper baru di sini.",
   "@topicFollowedToast": {
     "description": "Toast after the user follows a category or mood.",
     "placeholders": {
@@ -10342,7 +10342,7 @@
   "@followedTopicsEmptyTitle": {
     "description": "Empty state title of the followed topics sheet."
   },
-  "followedTopicsEmptyBody": "Buka kategori atau suasana, lalu ketuk Ikuti. Anda mendapat satu notifikasi per hari saat wallpaper baru hadir di sana.",
+  "followedTopicsEmptyBody": "Buka kategori atau suasana, lalu ketuk Ikuti. Jika notifikasi topik aktif, Anda mendapat paling banyak satu notifikasi per hari tentang wallpaper baru di sana.",
   "@followedTopicsEmptyBody": {
     "description": "Empty state body of the followed topics sheet."
   },

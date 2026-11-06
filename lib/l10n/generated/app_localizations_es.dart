@@ -11160,7 +11160,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String topicFollowedToast(String topic) {
-    return 'Ahora sigues $topic. Recibirás una notificación al día cuando haya fondos nuevos aquí.';
+    return 'Ahora sigues $topic. Con las notificaciones de temas activadas, recibirás como máximo una notificación al día sobre fondos nuevos aquí.';
   }
 
   @override
@@ -11178,13 +11178,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get topicKindCategory => 'Categoría';
 
   @override
-  String get topicKindMood => 'Ambiente';
+  String get topicKindMood => 'Estado de ánimo';
 
   @override
   String get followingRowTitle => 'Siguiendo';
 
   @override
-  String get followingRowLabel => 'Categorías y ambientes que sigues';
+  String get followingRowLabel => 'Categorías y estados de ánimo que sigues';
 
   @override
   String topicNewWallpapers(String topic) {
@@ -11214,13 +11214,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get followedTopicsEmptyBody =>
-      'Abre una categoría o un ambiente y toca Seguir. Recibirás una notificación al día cuando haya fondos nuevos ahí.';
+      'Abre una categoría o un estado de ánimo y toca Seguir. Con las notificaciones de temas activadas, recibirás como máximo una notificación al día sobre fondos nuevos ahí.';
 
   @override
   String get notifSettingTopics => 'Temas que sigues';
 
   @override
-  String get notifSettingTopicsDescription => 'Fondos nuevos en categorías y ambientes que sigues, una vez al día';
+  String get notifSettingTopicsDescription =>
+      'Fondos nuevos en categorías y estados de ánimo que sigues, una vez al día';
 
   @override
   String get layoutHomeHeader => 'Inicio';

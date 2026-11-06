@@ -17680,7 +17680,7 @@ abstract class AppLocalizations {
   /// Toast after the user follows a category or mood.
   ///
   /// In en, this message translates to:
-  /// **'Following {topic}. You get one push a day when new wallpapers land here.'**
+  /// **'Following {topic}. With topic notifications on, you get at most one push a day about new wallpapers here.'**
   String topicFollowedToast(String topic);
 
   /// Toast when the user already follows the most topics allowed.
@@ -17752,7 +17752,7 @@ abstract class AppLocalizations {
   /// Empty state body of the followed topics sheet.
   ///
   /// In en, this message translates to:
-  /// **'Open a category or a mood and tap Follow. You get one push a day when new wallpapers land there.'**
+  /// **'Open a category or a mood and tap Follow. With topic notifications on, you get at most one push a day about new wallpapers there.'**
   String get followedTopicsEmptyBody;
 
   /// Notification setting for new wallpapers in followed categories and moods.

@@ -11159,7 +11159,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String topicFollowedToast(String topic) {
-    return 'अब आप $topic को फ़ॉलो कर रहे हैं। जब यहाँ नए वॉलपेपर आएँगे, तो हर दिन आपको एक सूचना मिलेगी।';
+    return 'अब आप $topic को फ़ॉलो कर रहे हैं। विषय सूचनाएँ चालू होने पर, यहाँ नए वॉलपेपर के लिए आपको दिन में ज़्यादा से ज़्यादा एक सूचना मिलेगी।';
   }
 
   @override
@@ -11213,7 +11213,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get followedTopicsEmptyBody =>
-      'कोई श्रेणी या मूड खोलें और फ़ॉलो करें दबाएँ। जब वहाँ नए वॉलपेपर आएँगे, तो हर दिन आपको एक सूचना मिलेगी।';
+      'कोई श्रेणी या मूड खोलें और फ़ॉलो करें दबाएँ। विषय सूचनाएँ चालू होने पर, वहाँ नए वॉलपेपर के लिए आपको दिन में ज़्यादा से ज़्यादा एक सूचना मिलेगी।';
 
   @override
   String get notifSettingTopics => 'आप जिन विषयों को फ़ॉलो करते हैं';

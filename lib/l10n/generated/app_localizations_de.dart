@@ -11183,7 +11183,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String topicFollowedToast(String topic) {
-    return 'Du folgst $topic. Du bekommst einmal am Tag eine Benachrichtigung, wenn hier neue Hintergrundbilder erscheinen.';
+    return 'Du folgst $topic. Wenn Themen-Benachrichtigungen an sind, bekommst du höchstens eine Benachrichtigung am Tag zu neuen Hintergrundbildern hier.';
   }
 
   @override
@@ -11238,7 +11238,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get followedTopicsEmptyBody =>
-      'Öffne eine Kategorie oder eine Stimmung und tippe auf Folgen. Du bekommst einmal am Tag eine Benachrichtigung, wenn dort neue Hintergrundbilder erscheinen.';
+      'Öffne eine Kategorie oder eine Stimmung und tippe auf Folgen. Wenn Themen-Benachrichtigungen an sind, bekommst du höchstens eine Benachrichtigung am Tag zu neuen Hintergrundbildern dort.';
 
   @override
   String get notifSettingTopics => 'Themen, denen du folgst';

@@ -11074,7 +11074,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String topicFollowedToast(String topic) {
-    return 'Anda mengikuti $topic. Anda mendapat satu notifikasi per hari saat wallpaper baru hadir di sini.';
+    return 'Anda mengikuti $topic. Jika notifikasi topik aktif, Anda mendapat paling banyak satu notifikasi per hari tentang wallpaper baru di sini.';
   }
 
   @override
@@ -11128,7 +11128,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get followedTopicsEmptyBody =>
-      'Buka kategori atau suasana, lalu ketuk Ikuti. Anda mendapat satu notifikasi per hari saat wallpaper baru hadir di sana.';
+      'Buka kategori atau suasana, lalu ketuk Ikuti. Jika notifikasi topik aktif, Anda mendapat paling banyak satu notifikasi per hari tentang wallpaper baru di sana.';
 
   @override
   String get notifSettingTopics => 'Topik yang Anda ikuti';

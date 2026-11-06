@@ -11355,7 +11355,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String topicFollowedToast(String topic) {
-    return 'Você está seguindo $topic. Você recebe uma notificação por dia quando há papéis de parede novos aqui.';
+    return 'Você está seguindo $topic. Com as notificações de temas ativadas, você recebe no máximo uma notificação por dia sobre papéis de parede novos aqui.';
   }
 
   @override
@@ -11373,13 +11373,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get topicKindCategory => 'Categoria';
 
   @override
-  String get topicKindMood => 'Clima';
+  String get topicKindMood => 'Humor';
 
   @override
   String get followingRowTitle => 'Seguindo';
 
   @override
-  String get followingRowLabel => 'Categorias e climas que você segue';
+  String get followingRowLabel => 'Categorias e humores que você segue';
 
   @override
   String topicNewWallpapers(String topic) {
@@ -11409,14 +11409,14 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get followedTopicsEmptyBody =>
-      'Abra uma categoria ou um clima e toque em Seguir. Você recebe uma notificação por dia quando há papéis de parede novos ali.';
+      'Abra uma categoria ou um humor e toque em Seguir. Com as notificações de temas ativadas, você recebe no máximo uma notificação por dia sobre papéis de parede novos ali.';
 
   @override
   String get notifSettingTopics => 'Temas que você segue';
 
   @override
   String get notifSettingTopicsDescription =>
-      'Papéis de parede novos em categorias e climas que você segue, uma vez por dia';
+      'Papéis de parede novos em categorias e humores que você segue, uma vez por dia';
 
   @override
   String get layoutHomeHeader => 'Início';
@@ -25995,7 +25995,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String topicFollowedToast(String topic) {
-    return 'Você está seguindo $topic. Você recebe uma notificação por dia quando há papéis de parede novos aqui.';
+    return 'Você está seguindo $topic. Com as notificações de temas ativadas, você recebe no máximo uma notificação por dia sobre papéis de parede novos aqui.';
   }
 
   @override
@@ -26013,13 +26013,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get topicKindCategory => 'Categoria';
 
   @override
-  String get topicKindMood => 'Clima';
+  String get topicKindMood => 'Humor';
 
   @override
   String get followingRowTitle => 'Seguindo';
 
   @override
-  String get followingRowLabel => 'Categorias e climas que você segue';
+  String get followingRowLabel => 'Categorias e humores que você segue';
 
   @override
   String topicNewWallpapers(String topic) {
@@ -26049,14 +26049,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get followedTopicsEmptyBody =>
-      'Abra uma categoria ou um clima e toque em Seguir. Você recebe uma notificação por dia quando há papéis de parede novos ali.';
+      'Abra uma categoria ou um humor e toque em Seguir. Com as notificações de temas ativadas, você recebe no máximo uma notificação por dia sobre papéis de parede novos ali.';
 
   @override
   String get notifSettingTopics => 'Temas que você segue';
 
   @override
   String get notifSettingTopicsDescription =>
-      'Papéis de parede novos em categorias e climas que você segue, uma vez por dia';
+      'Papéis de parede novos em categorias e humores que você segue, uma vez por dia';
 
   @override
   String get layoutHomeHeader => 'Início';

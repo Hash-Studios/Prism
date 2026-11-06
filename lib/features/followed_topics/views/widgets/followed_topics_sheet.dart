@@ -122,6 +122,7 @@ class _TopicRow extends StatelessWidget {
         container: true,
         button: true,
         label: l10n.topicUnfollowHint(name),
+        onTap: () => unawaited(_unfollow(context)),
         excludeSemantics: true,
         child: PrismButton(
           label: l10n.topicUnfollow,

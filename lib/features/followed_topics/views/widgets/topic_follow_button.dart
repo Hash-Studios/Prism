@@ -90,6 +90,7 @@ class _FollowButtonState extends State<_FollowButton> {
           button: true,
           toggled: following,
           label: following ? l10n.topicUnfollowHint(name) : l10n.topicFollowHint(name),
+          onTap: _busy ? null : () => unawaited(_toggle()),
           excludeSemantics: true,
           child: AnimatedSwitcher(
             duration: context.motion(PrismDurations.fast),

@@ -11017,7 +11017,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String topicFollowedToast(String topic) {
-    return 'Following $topic. You get one push a day when new wallpapers land here.';
+    return 'Following $topic. With topic notifications on, you get at most one push a day about new wallpapers here.';
   }
 
   @override
@@ -11071,7 +11071,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get followedTopicsEmptyBody =>
-      'Open a category or a mood and tap Follow. You get one push a day when new wallpapers land there.';
+      'Open a category or a mood and tap Follow. With topic notifications on, you get at most one push a day about new wallpapers there.';
 
   @override
   String get notifSettingTopics => 'Topics you follow';
