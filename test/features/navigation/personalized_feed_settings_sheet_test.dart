@@ -317,8 +317,6 @@ void main() {
     await tester.tap(find.text('Reset'));
     await tester.pumpAndSettle();
     expect(selected(), isFalse);
-    // Nothing was learned, so Reset does not claim it cleared a history.
-    expect(find.text('Learning history cleared'), findsNothing);
 
     await tester.tap(find.text('Hide AI'));
     await tester.pumpAndSettle();
@@ -397,7 +395,7 @@ void main() {
 
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pump();
-    personalizedFeedSettingsRevision.value += 1;
+    await tester.tap(find.text('Clear'));
     await _settle(tester);
     expect(revisionChanges, 1);
 
@@ -636,7 +634,7 @@ void main() {
     await _settle(tester);
     await tester.tap(find.text('Open settings'));
     await _settle(tester);
-    await tester.tap(find.text('Reset'));
+    await tester.tap(find.text('Clear'));
     await _settle(tester);
     await tester.ensureVisible(find.widgetWithText(FilledButton, 'Save'));
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
@@ -710,15 +708,14 @@ void main() {
     expect(savedInterests, unorderedEquals(<String>['Nature', 'Abstract', 'Space']));
   });
 
-  testWidgets('Reset is the only header action and also clears learned terms', (tester) async {
+  testWidgets('learned terms show until cleared', (tester) async {
     await store.record(TasteSignal(action: TasteAction.set, at: DateTime.now(), terms: const <String>['neon']));
     await pumpSheet(tester);
 
     expect(find.text('Neon'), findsOneWidget);
     expect(find.text('Open, save and set walls to teach your feed.'), findsNothing);
-    expect(find.text('Clear'), findsNothing);
 
-    await tester.tap(find.text('Reset'));
+    await tester.tap(find.text('Clear'));
     await tester.pumpAndSettle();
 
     expect(find.text('Neon'), findsNothing);
@@ -732,7 +729,7 @@ void main() {
     await store.record(TasteSignal(action: TasteAction.set, at: DateTime.now(), terms: const <String>['neon']));
     await pumpSheet(tester);
 
-    await tester.tap(find.text('Reset'));
+    await tester.tap(find.text('Clear'));
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);

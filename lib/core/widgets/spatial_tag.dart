@@ -1,5 +1,6 @@
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
@@ -12,77 +13,67 @@ WallSpatial? spatialOf(FeedItemEntity item) => switch (item) {
 
 bool showsSpatialScene(WallSpatialTier? tier) => showSpatialSceneUi && (tier?.suitsSpatialScene ?? false);
 
-/// The Spatial badge at the top end of a grid tile, or null when [showsSpatialScene] is false.
-Widget? spatialTagFor(WallSpatialTier? tier) =>
-    showsSpatialScene(tier) ? const TileBadges(badges: <Widget>[SpatialTag()]) : null;
+/// The "Spatial" tag at the bottom end of a grid tile, or null when [showsSpatialScene] is false.
+Widget? spatialTagFor(WallSpatialTier? tier) => showsSpatialScene(tier) ? const _PositionedSpatialTag() : null;
 
-/// Stacks the tile overlays. Null for none, the layer itself for one, else a [Stack] that fills the tile. All
-/// [TileBadges] layers merge into one row, so a Depth and a Spatial badge sit side by side and never overlap.
+/// Stacks the tile overlays. Null for none, the layer itself for one, else a [Stack] that fills the tile.
 Widget? stackTags(List<Widget?> layers) {
   final List<Widget> present = layers.whereType<Widget>().toList();
-  final List<TileBadges> badgeLayers = present.whereType<TileBadges>().toList();
-  if (badgeLayers.length > 1) {
-    present
-      ..removeWhere((layer) => layer is TileBadges)
-      ..add(TileBadges(badges: <Widget>[for (final layer in badgeLayers) ...layer.badges]));
-  }
   if (present.isEmpty) return null;
   if (present.length == 1) return present.single;
   return Stack(fit: StackFit.expand, children: present);
 }
 
-/// A 24 point icon badge on a wallpaper tile: a black scrim circle with a white 14 point icon, read as [label].
-/// Black and white are fixed on purpose: the badge sits on an image, not on the page. Has no position.
-class TileBadge extends StatelessWidget {
-  const TileBadge({super.key, required this.icon, required this.label});
+/// Below this tile width the tag shows only its icon: the heart (44 target) and the full tag would touch.
+const double spatialTagIconOnlyBelow = 150;
 
-  final IconData icon;
-  final String label;
+/// Has no position. Use [spatialTagFor] to put it on a grid tile.
+class SpatialTag extends StatelessWidget {
+  const SpatialTag({super.key, this.iconOnly = false});
 
-  static const double size = 24;
+  /// Narrow tiles show only the icon, so the tag never runs into the favourite heart at the other corner.
+  final bool iconOnly;
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
     return Semantics(
-      label: label,
+      label: context.l10n.coreSpatialBadgeSemantic,
       child: ExcludeSemantics(
         child: DecoratedBox(
-          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), shape: BoxShape.circle),
-          child: SizedBox.square(
-            dimension: size,
-            child: Icon(icon, size: 14, color: Colors.white),
+          decoration: BoxDecoration(
+            color: cs.surface.withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(PrismRadius.pill),
           ),
+          child: iconOnly
+              ? SizedBox.square(dimension: 24, child: Icon(Icons.view_in_ar_rounded, size: 14, color: cs.onSurface))
+              : PrismTag(label: context.l10n.coreSpatialBadge, icon: Icons.view_in_ar_rounded),
         ),
       ),
     );
   }
 }
 
-/// Puts [badges] in a row at the top end of a tile, 8 points in. Must be a direct child of the tile's [Stack].
-class TileBadges extends StatelessWidget {
-  const TileBadges({super.key, required this.badges});
-
-  final List<Widget> badges;
-
-  static const double inset = 8;
+class _PositionedSpatialTag extends StatelessWidget {
+  const _PositionedSpatialTag();
 
   @override
   Widget build(BuildContext context) {
-    return PositionedDirectional(
-      top: inset,
-      end: inset,
+    return Positioned.fill(
       child: IgnorePointer(
-        child: Row(mainAxisSize: MainAxisSize.min, spacing: 4, children: badges),
+        child: LayoutBuilder(
+          builder: (context, constraints) => Align(
+            alignment: AlignmentDirectional.bottomEnd,
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: SpatialTag(
+                iconOnly:
+                    constraints.maxWidth < spatialTagIconOnlyBelow * MediaQuery.textScalerOf(context).scale(12) / 12,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
-}
-
-/// Has no position. Use [spatialTagFor] to put it on a grid tile.
-class SpatialTag extends StatelessWidget {
-  const SpatialTag({super.key});
-
-  @override
-  Widget build(BuildContext context) =>
-      TileBadge(icon: Icons.view_in_ar_rounded, label: context.l10n.coreSpatialBadgeSemantic);
 }

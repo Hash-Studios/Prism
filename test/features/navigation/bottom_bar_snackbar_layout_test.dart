@@ -134,9 +134,6 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// The docked band starts 8 above the pill. Tab feedback keeps 8 more above the band.
-  double feedbackBottom(WidgetTester tester) => tester.getRect(find.byType(PrismBottomNav)).top - 8 - 8;
-
   Rect cardRect(WidgetTester tester) =>
       tester.getRect(find.descendant(of: find.byKey(cardKey), matching: find.byType(Material)).first);
 
@@ -164,9 +161,9 @@ void main() {
       final Rect fab = tester.getRect(find.byType(PrismFab));
       expect(pill.height, 56);
       expect(fab.height, 56);
-      expect(pill.bottom, closeTo(844 - bottom - 8, 0.01));
+      expect(pill.bottom, closeTo(844 - bottom - 10, 0.01));
       expect(fab.top, pill.top);
-      expect(cardRect(tester).bottom, closeTo(feedbackBottom(tester), 0.01));
+      expect(cardRect(tester).bottom, closeTo(pill.top - 8, 0.01));
       expect(tester.takeException(), isNull);
     });
   }
@@ -176,8 +173,8 @@ void main() {
     await showMessage(tester);
 
     final Rect pill = tester.getRect(find.byType(PrismBottomNav));
-    expect(pill.bottom, closeTo(844 - 300 - 8, 0.01));
-    expect(cardRect(tester).bottom, closeTo(feedbackBottom(tester), 0.01));
+    expect(pill.bottom, closeTo(844 - 300 - 10, 0.01));
+    expect(cardRect(tester).bottom, closeTo(pill.top - 8, 0.01));
     expect(tester.takeException(), isNull);
   });
 
@@ -194,80 +191,63 @@ void main() {
     expect(fade.opacity, 0);
   });
 
-  testWidgets('a docked surface band with a top hairline holds the row and covers the bottom safe area', (
-    tester,
-  ) async {
+  testWidgets('a fade to the page colour sits under the row and lets taps through', (tester) async {
     await pumpBar(tester);
-    final Finder band = find.ancestor(
-      of: find.byType(PrismBottomNav),
-      matching: find.byWidgetPredicate(
-        (widget) =>
-            widget is DecoratedBox &&
-            widget.decoration is BoxDecoration &&
-            (widget.decoration as BoxDecoration).border != null,
-      ),
+    final Finder fade = find.byWidgetPredicate(
+      (widget) =>
+          widget is DecoratedBox &&
+          widget.decoration is BoxDecoration &&
+          (widget.decoration as BoxDecoration).gradient is LinearGradient,
     );
-    expect(band, findsOneWidget);
-    final BoxDecoration decoration = tester.widget<DecoratedBox>(band).decoration as BoxDecoration;
-    expect(decoration.color, kDarkTheme.colorScheme.surface);
-    expect((decoration.border! as Border).top.style, BorderStyle.solid);
-    final Rect pill = tester.getRect(find.byType(PrismBottomNav));
-    expect(tester.getRect(band), Rect.fromLTRB(0, pill.top - 8, 390, 844));
-    expect(tester.getRect(find.byType(PrismFab)).height, pill.height);
-    expect(
-      find.byWidgetPredicate(
-        (widget) =>
-            widget is DecoratedBox &&
-            widget.decoration is BoxDecoration &&
-            (widget.decoration as BoxDecoration).gradient != null,
-      ),
-      findsNothing,
-      reason: 'no fade over the content',
-    );
+    expect(fade, findsOneWidget);
+    expect(tester.getSize(fade).height, 34 + 90);
+    final List<Color> colors = ((tester.widget<DecoratedBox>(fade).decoration as BoxDecoration).gradient!).colors;
+    expect(colors.last, kDarkTheme.colorScheme.surface.withValues(alpha: 0.85));
+    expect(find.ancestor(of: fade, matching: find.byType(IgnorePointer)), findsWidgets);
   });
 
-  testWidgets('deep down there is no floating scroll-to-top button, a second tap on the tab scrolls up', (
-    tester,
-  ) async {
+  testWidgets('a hidden pill leaves feedback above the scroll-to-top action', (tester) async {
     final semantics = tester.ensureSemantics();
     final controller = ScrollController();
     addTearDown(controller.dispose);
     await pumpBar(tester, scrollController: controller);
-    await tester.drag(find.byType(ListView), const Offset(0, -2200));
+    await tester.drag(find.byType(ListView), const Offset(0, -600));
     await tester.pumpAndSettle();
-    expect(find.bySemanticsLabel('Scroll to top'), findsNothing);
-    expect(find.byIcon(Icons.arrow_upward_rounded), findsNothing);
-    expect(find.byType(PrismBottomNav).hitTestable(), findsNothing, reason: 'the band slides away');
+    final Finder scrollToTop = find.bySemanticsLabel('Scroll to top');
+    expect(scrollToTop, findsNothing, reason: 'less than two screens down');
+    await tester.drag(find.byType(ListView), const Offset(0, -1400));
+    await tester.pumpAndSettle();
+    expect(scrollToTop, findsOneWidget);
+    await showMessage(tester);
 
-    await tester.drag(find.byType(ListView), const Offset(0, 200));
-    await tester.pumpAndSettle();
-    expect(controller.offset, greaterThan(1000));
-    await tester.tap(find.byTooltip('Home'));
+    expect(cardRect(tester).bottom, lessThan(tester.getRect(scrollToTop).top));
+    expect(scrollToTop.hitTestable(), findsOneWidget);
+    expect(tester.getSize(scrollToTop).width, greaterThanOrEqualTo(44));
+    expect(controller.offset, greaterThan(0));
+    await tester.tap(scrollToTop);
     await tester.pumpAndSettle();
     expect(controller.offset, 0);
     expect(tester.takeException(), isNull);
     semantics.dispose();
   });
 
-  testWidgets('after a tab switch, a second tap scrolls the list dragged in the new tab', (tester) async {
+  testWidgets('a programmatic tab switch clears the previous tab scroll-to-top action', (tester) async {
+    final semantics = tester.ensureSemantics();
     final deepController = ScrollController();
-    final otherController = ScrollController();
+    final shallowController = ScrollController();
     addTearDown(deepController.dispose);
-    addTearDown(otherController.dispose);
+    addTearDown(shallowController.dispose);
     await pumpBar(tester, scrollController: deepController);
     await tester.drag(find.byType(ListView), const Offset(0, -2200));
     await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Scroll to top'), findsOneWidget);
 
     tabs.setActiveIndex(1);
-    await pumpBar(tester, scrollController: otherController);
-    await tester.drag(find.byType(ListView), const Offset(0, -300));
-    await tester.drag(find.byType(ListView), const Offset(0, 100));
-    await tester.pumpAndSettle();
-    expect(otherController.offset, greaterThan(0));
-    await tester.tap(find.byTooltip('Search'));
-    await tester.pumpAndSettle();
-    expect(otherController.offset, 0);
+    await pumpBar(tester, scrollController: shallowController);
+    expect(shallowController.offset, 0);
+    expect(find.bySemanticsLabel('Scroll to top'), findsNothing);
     expect(tester.takeException(), isNull);
+    semantics.dispose();
   });
 
   testWidgets('a width-constrained wide snackbar retains the vertical pill clearance', (tester) async {
@@ -275,9 +255,10 @@ void main() {
     await showMessage(tester);
 
     final Rect card = cardRect(tester);
+    final Rect pill = tester.getRect(find.byType(PrismBottomNav));
     expect(card.width, 420);
     expect(card.center.dx, 450);
-    expect(card.bottom, closeTo(feedbackBottom(tester), 0.01));
+    expect(card.bottom, closeTo(pill.top - 8, 0.01));
     expect(tester.takeException(), isNull);
   });
 
@@ -288,7 +269,7 @@ void main() {
     final Rect card = cardRect(tester);
     expect(card.width, 560);
     expect(card.center.dx, 720);
-    expect(card.bottom, closeTo(feedbackBottom(tester), 0.01));
+    expect(card.bottom, closeTo(tester.getRect(find.byType(PrismBottomNav)).top - 8, 0.01));
     expect(tester.takeException(), isNull);
   });
 
@@ -343,7 +324,7 @@ void main() {
     expect(card.width, 560);
     expect(card.left, greaterThanOrEqualTo(44));
     expect(card.right, lessThanOrEqualTo(900 - 44));
-    expect(card.bottom, closeTo(feedbackBottom(tester), 0.01));
+    expect(card.bottom, closeTo(tester.getRect(find.byType(PrismBottomNav)).top - 8, 0.01));
     expect(tester.takeException(), isNull);
   });
 
@@ -408,7 +389,7 @@ void main() {
     await showMessage(tester);
 
     expect(find.text('Inside tab'), findsOneWidget);
-    expect(cardRect(tester).bottom, closeTo(feedbackBottom(tester), 0.01));
+    expect(cardRect(tester).bottom, closeTo(tester.getRect(find.byType(PrismBottomNav)).top - 8, 0.01));
     expect(tester.takeException(), isNull);
   });
 }

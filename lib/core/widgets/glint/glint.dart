@@ -7,7 +7,7 @@ import 'package:flutter/widgets.dart';
 
 /// What Glint is feeling, and so which face, motion and details it shows.
 enum GlintMood {
-  /// Idle, empty states. Breathes and blinks.
+  /// Idle, empty states. Breathes, blinks, and a glint sweeps over the crystal.
   calm,
 
   /// A wallpaper saved or set. Bounces while sparkles pop.
@@ -272,6 +272,7 @@ class _GlintPainter extends CustomPainter {
     canvas.restore();
     canvas.drawLine(glintCrystalHighlight[0], glintCrystalHighlight[1], _crystalHighlightPaint);
     canvas.drawPath(glintCrystalPath, _crystalRimPaint);
+    if (spec.parts.containsKey('fx:sheen')) _drawSheen(canvas);
     if (spec.face.cheeks) {
       for (final GlintShape cheek in glintCheeks) {
         _drawShape(canvas, cheek);
@@ -288,6 +289,16 @@ class _GlintPainter extends CustomPainter {
         _drawShape(canvas, s);
       }
     });
+  }
+
+  void _drawSheen(Canvas canvas) {
+    canvas.save();
+    canvas.clipPath(glintCrystalPath);
+    _part(canvas, 'fx:sheen', Offset.zero, () {
+      canvas.drawPath(_sheenWidePath, _sheenWidePaint);
+      canvas.drawPath(_sheenNarrowPath, _sheenNarrowPaint);
+    });
+    canvas.restore();
   }
 
   void _drawFx(Canvas canvas, GlintFx fx) {
@@ -377,6 +388,10 @@ List<Paint> _ringPaints(List<Color> nodeColors) => [
       ]),
 ];
 
+final Path _sheenWidePath = Path()..addPolygon(glintSheenWide, true);
+final Path _sheenNarrowPath = Path()..addPolygon(glintSheenNarrow, true);
+final Paint _sheenWidePaint = Paint()..color = const Color(0xFFBFE6FF).withValues(alpha: .6);
+final Paint _sheenNarrowPaint = Paint()..color = glintWhite.withValues(alpha: .85);
 final Paint _crystalRightPaint = Paint()..color = glintCrystalRight;
 final Paint _crystalLeftPaint = Paint()..color = glintCrystalLeft;
 final Paint _crystalHighlightPaint = Paint()

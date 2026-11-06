@@ -120,8 +120,7 @@ void main() {
   testWidgets('all tiles offer favourite and share while held, never set or fake see less', (tester) async {
     await pumpTile(tester);
     final gesture = await hold(tester);
-    // The tile has no heart, so the menu row is the only Favourite.
-    expect(find.bySemanticsLabel('Favourite'), findsOneWidget);
+    expect(find.bySemanticsLabel('Favourite'), findsNWidgets(2));
     expect(find.bySemanticsLabel('Share link'), findsOneWidget);
     expect(find.text('Set as wallpaper'), findsNothing);
     expect(find.text('Show less like this'), findsNothing);
@@ -179,18 +178,19 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
   });
 
-  testWidgets('a saved tile shows no heart, and the hold menu offers Unfavourite', (tester) async {
+  testWidgets('the labelled interactive heart sits on the image at its bottom-start corner', (tester) async {
     await favourites.setWallFavourite('u', 'wall-1', true);
     current = current.copyWith(items: [FavouriteWallEntity.fromFeedItem(_item)]);
+    final semantics = tester.ensureSemantics();
     await pumpTile(tester);
     final label = AppLocalizationsEn().wallpaperUnfavourite;
-    expect(find.byTooltip(label), findsNothing);
-    expect(find.byIcon(Icons.favorite_rounded), findsNothing);
-    final gesture = await hold(tester);
-    expect(find.bySemanticsLabel(label), findsOneWidget);
-    await gesture.up();
-    await tester.pump(const Duration(milliseconds: 180));
-    await tester.pump();
+    expect(find.byTooltip(label), findsOneWidget);
+    final Rect image = tester.getRect(find.byType(PrismImageTile));
+    final Rect heart = tester.getRect(find.byIcon(Icons.favorite_rounded));
+    expect(image.contains(heart.topLeft) && image.contains(heart.bottomRight), isTrue);
+    expect(heart.center.dx, lessThan(image.center.dx));
+    expect(heart.center.dy, greaterThan(image.center.dy));
+    semantics.dispose();
   });
 
   testWidgets('guest cancelling sign-in does not favourite', (tester) async {

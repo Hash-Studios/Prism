@@ -8,6 +8,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/purchases/annual_trial.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/premium/views/pages/premium_page.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -68,19 +69,12 @@ void main() {
 
     expect(find.text(AppLocalizationsEn().premiumPageTitle), findsOneWidget);
     expect(find.text(AppLocalizationsEn().premiumPageViewPlans), findsOneWidget);
-    // View plans and Restore are pinned at the bottom, below the benefits.
-    final Widget? bar = tester.widget<Scaffold>(find.byType(Scaffold)).bottomNavigationBar;
-    expect(bar, isNotNull);
-    for (final String label in <String>[
-      AppLocalizationsEn().premiumPageViewPlans,
-      AppLocalizationsEn().accountRestorePurchases,
-    ]) {
-      expect(find.descendant(of: find.byWidget(bar!), matching: find.text(label)), findsOneWidget);
-    }
+    // On a short page the action follows the benefits in the content, not in a pinned bottom bar.
     expect(
-      tester.getTopLeft(find.text(AppLocalizationsEn().premiumPageViewPlans)).dy,
+      tester.getTopLeft(find.text(AppLocalizationsEn().premiumPageViewPlans)).dy - PrismSpace.xl,
       greaterThan(tester.getBottomLeft(find.text(AppLocalizationsEn().premiumBenefitAiClean)).dy),
     );
+    expect(tester.widget<Scaffold>(find.byType(Scaffold)).bottomNavigationBar, isNull);
     expect(analytics.events.whereType<PaywallImpressionEvent>(), isEmpty);
   });
 

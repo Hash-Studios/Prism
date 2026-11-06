@@ -207,15 +207,6 @@ abstract final class PrismInk {
   /// Alpha of a secondary icon in the theme foreground colour, such as a row chevron or an external-link glyph.
   /// It keeps the icon at 3:1 or more against the page.
   static const double iconAlpha = 0.5;
-
-  /// Alpha of the theme foreground colour for the fill of a disabled filled button. It still reads as a button.
-  static const double disabledFillAlpha = 0.10;
-
-  /// Alpha of the theme foreground colour for the label of a disabled filled button.
-  static const double disabledLabelAlpha = 0.6;
-
-  /// Width of the outline on an off switch track, so the off state reads on a card.
-  static const double switchOutlineWidth = 1.5;
 }
 
 /// Icon data constants so individual widgets don't scatter icon literals.

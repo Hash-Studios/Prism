@@ -240,7 +240,7 @@ void main() {
       expect(retries, 1);
     });
 
-    testWidgets('recommendations are image-only tiles that keep the image aspect ratio', (tester) async {
+    testWidgets('recommendations use the feed footer without changing image aspect ratio', (tester) async {
       final item = WallhavenFeedItem(
         id: 'stats-wall',
         wallpaper: WallhavenWallpaper(
@@ -257,12 +257,16 @@ void main() {
       final semantics = tester.ensureSemantics();
       await pumpRecommendations(tester, RecommendationState(items: [item], status: RecommendationStatus.exhausted));
       expect(find.byType(FavouriteWallpaperCard), findsOneWidget);
-      // Tiles are image only. Favourite lives in the hold menu, counts on the detail screen.
-      expect(find.byIcon(Icons.favorite_border_rounded), findsNothing);
+      expect(find.byType(FavouriteWallpaperFooter), findsOneWidget);
+      // Tiles show the heart only. Counts live on the detail screen.
       expect(find.text('24'), findsNothing);
       expect(find.text('1.2K'), findsNothing);
       expect(find.bySemanticsLabel(AppLocalizationsEn().wallpaperViewCount(1234)), findsNothing);
       final image = tester.getRect(find.byType(PrismWallTile));
+      final heart = tester.getRect(find.byType(FavouriteWallpaperFooter));
+      // The heart sits on the image at its bottom-start corner.
+      expect(heart.bottomLeft, image.bottomLeft);
+      expect(heart.size, const Size.square(44));
       expect(image.width / image.height, closeTo(0.5, 0.001));
       semantics.dispose();
     });

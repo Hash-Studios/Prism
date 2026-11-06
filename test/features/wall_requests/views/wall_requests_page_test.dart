@@ -123,9 +123,7 @@ void main() {
     expect(find.text('Neon city rain'), findsOneWidget);
   });
 
-  testWidgets('the Request button is pinned for short and long lists; a short list opens with the intro', (
-    tester,
-  ) async {
+  testWidgets('a short list has its Request button in the list and no pinned bar, a long list pins it', (tester) async {
     Future<void> pumpTop(int rows) async {
       await tester.pumpWidget(const SizedBox());
       stub(
@@ -145,17 +143,14 @@ void main() {
         .bottomNavigationBar;
 
     await pumpTop(2);
-    expect(find.descendant(of: find.byWidget(pinnedBar()!), matching: find.text('Request a wall')), findsOneWidget);
+    expect(pinnedBar(), isNull);
     expect(find.text('Request a wall'), findsOneWidget);
     expect(find.text("Ask for the wall you can't find. Others can upvote it."), findsOneWidget);
 
     await pumpTop(4);
-    expect(find.descendant(of: find.byWidget(pinnedBar()!), matching: find.text('Request a wall')), findsOneWidget);
+    expect(pinnedBar(), isNotNull);
     expect(find.text('Request a wall'), findsOneWidget);
     expect(find.text("Ask for the wall you can't find. Others can upvote it."), findsNothing);
-
-    await pumpTop(0);
-    expect(find.text('Request a wall'), findsOneWidget, reason: 'the empty state does not repeat the pinned action');
   });
 
   testWidgets('switching to Filled loads it and shows the filled wall thumbnail', (tester) async {

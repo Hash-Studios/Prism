@@ -70,7 +70,7 @@ StartupConfigEntity _startupConfig({
   onboardingV2Enabled: true,
 );
 
-PrismFeedItem _wall(String id, {List<String>? collections, String? title}) =>
+PrismFeedItem _wall(String id, {List<String>? collections}) =>
     FeedItemEntity.prism(
           id: id,
           wallpaper: PrismWallpaper(
@@ -83,7 +83,6 @@ PrismFeedItem _wall(String id, {List<String>? collections, String? title}) =>
               category: 'Landscapes',
             ),
             collections: collections,
-            title: title,
           ),
         )
         as PrismFeedItem;
@@ -425,35 +424,6 @@ void main() {
     expect(find.text('Landscapes'), findsNothing);
     expect(find.text('by Ana'), findsNothing);
     expect(find.byType(FeedHeroCard), findsOneWidget);
-  });
-
-  testWidgets('a titled wall page shows its title, with the creator as a caption above it, on the scrim', (
-    tester,
-  ) async {
-    await pumpCarousel(tester, <PrismFeedItem>[_wall('a', title: 'Misty peaks')]);
-    while (find.byType(WallpaperImpression).evaluate().isEmpty) {
-      await swipeToNextPage(tester);
-    }
-
-    expect(find.text('Misty peaks'), findsOneWidget);
-    expect(find.text('by Ana'), findsOneWidget);
-    expect(tester.getRect(find.text('by Ana')).bottom, lessThanOrEqualTo(tester.getRect(find.text('Misty peaks')).top));
-    final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
-    final Rect dots = tester.getRect(find.byType(FeedCarouselDots));
-    // The dots sit under the text, in the lower 45% of the card that the scrim covers.
-    expect(dots.top, greaterThan(tester.getRect(find.text('Misty peaks')).bottom));
-    expect(dots.top, greaterThanOrEqualTo(card.top + card.height * 0.55));
-    expect(dots.bottom, lessThanOrEqualTo(card.bottom));
-  });
-
-  testWidgets('an untitled wall page is headed "Wallpaper by" the creator, with no caption', (tester) async {
-    await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
-    while (find.byType(WallpaperImpression).evaluate().isEmpty) {
-      await swipeToNextPage(tester);
-    }
-
-    expect(find.text('Wallpaper by Ana'), findsOneWidget);
-    expect(find.text('by Ana'), findsNothing);
   });
 
   String shownWallId(WidgetTester tester) =>

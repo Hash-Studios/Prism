@@ -74,16 +74,15 @@ tooltips are 12 to 13. Disabled text and icons use `onSurface` at 0.5, never low
 - `PrismSpace`: `xxs 4`, `xs 8`, `sm 12`, `md 16`, `lg 20`, `xl 24`, `xxl 32`, `xxxl 40`. Page margin is
   `PrismSpace.page` (16). Wallpaper grids use the same margin, so every screen has one left edge. The gap between groups is at least twice the gap inside a group.
 - A tab page ends with `SizedBox(height: PrismSpace.bottomBarClearance)` so the last item clears the bottom bar.
-- The bottom bar is docked: an opaque `cs.surface` band, edge to edge, with a 0.5 point `onSurface` 0.08 line on top.
-  It covers the bottom safe area and holds the tab pill and the create button (both 56 tall) with 8 above and below.
-  It slides away on scroll down and back on scroll up. While the keyboard is up, it fades out and takes no taps. There
-  is no fade and no scroll-to-top button: a second tap on the active tab pops to the tab root, or scrolls to the top.
+- The floating bottom row has a fade to `cs.surface` (0 to 85%) under it, `viewPadding.bottom + 90` high, that lets
+  taps through. While the keyboard is up, the row fades out and takes no taps. Its scroll-to-top button is 44 points
+  and shows only while the row is hidden, the list is more than two screens down and the keyboard is down.
 - Bottom-nav tabs show a 10.5 w600 label under a 20 point icon (64 wide slots, text scale capped at 1.2), with a pill
   behind the active tab. Where the labelled pill does not fit the row, the tabs fall back to icons only. The side rail
   is always icons only.
-- A short task page (one main action: invite, set up, unlock, request) pins that action in `PrismPage.bottomBar`, full
-  width, 16 side margins, clear of the home indicator. The content above sits in `PrismCenteredScroll`: centred a
-  little above the middle when short, scrolling when long. The bar's hairline shows only while content scrolls under it.
+- A `PrismPage` bottom bar has a hairline on top. Use `bottomBar` only when the body is taller than the screen. On a
+  short page, put the action in the content flow, `PrismSpace.xl` below the content, so it does not float far from
+  what it acts on.
 - `PrismRadius`: `xs 8`, `sm 12`, `md 16`, `lg 20` (cards), `xl 28` (dialogs), `pill`. A nested surface takes the
   next step down. Bottom sheets use `PrismBottomSheet.topRadius` (32) and the screen's own corner radius at the bottom. Wallpaper tiles in a grid use `PrismRadius.sm`.
 - Tap targets are 44 points or more.
@@ -105,10 +104,10 @@ tooltips are 12 to 13. Disabled text and icons use `onSurface` at 0.5, never low
 | `showPrismSheet(context, builder:, detents:)` + `PrismSheetBody(title:, message:, mood:, child:, actions:, trailingAction:, childScrolls:)` | Every bottom sheet. See "Bottom sheets" below. |
 | `showPrismConfirm(context, title:, message:, confirmLabel:, destructive:)` | Every confirm. It replaces `AlertDialog`. The confirm label names the action. |
 | `PrismSkeleton`, `PrismSkeleton.rows()`, `PrismSkeleton.cards()`, `PrismBone` | Loading lists and cards. `LoadingCards` for wallpaper grids. |
-| `GlintState(kind:, title:, body:, actionLabel:, onAction:, actionVariant:)` | Empty, error, offline, loading and nothing-new states. The action is `primary` by default. Pass `actionVariant: PrismButtonVariant.tonal` when the page already shows a primary action or a bottom bar. On an area 480 points or taller (a short or empty page) it fills the page: Glint 96 on a `GlintHalo` (a 144 point `primaryContainer` disc), a `sectionTitle`, gaps 24 / 8 / 24, a large action at least 220 wide, the group centred at `Alignment(0, -0.12)`. Smaller areas keep Glint 96, a `cardTitle` and a compact action. `glintSize` overrides both. With large text it scrolls instead of overflowing. |
+| `GlintState(kind:, title:, body:, actionLabel:, onAction:, actionVariant:)` | Empty, error, offline, loading and nothing-new states. The action is `primary` by default. Pass `actionVariant: PrismButtonVariant.tonal` when the page already shows a primary action or a bottom bar. On an area 480 points or taller (a short or empty page) it fills the page: Glint 120 on a `GlintHalo` (a 176 point `primaryContainer` disc), a `sectionTitle`, gaps 24 / 8 / 24, a large action at least 220 wide, placed at `Alignment(0, -0.5)`. Smaller areas keep Glint 96, a `cardTitle` and a compact action. `glintSize` overrides both. With large text it scrolls instead of overflowing. |
 | `showGlintToast(context, mood:)` | A success moment: wallpaper set, upload sent, purchase done. |
 | `toasts.success(msg)` / `toasts.error(msg)` | Short feedback. It is themed and sits above the bottom bar. |
-| `PrismWallGrid.delegate(context)`, `PrismWallGrid.padding`, `PrismWallTile(url:, heroTag:, onTap:, onLongPress:, overlay:)` | Every grid of wallpapers. One spacing (8), margin (16, the page margin) and radius (12) app-wide. The home feed grid uses the same values (`PrismFeedLayout.gridSpacing`, `gridPadding`). `LoadingCards()` is its skeleton. `PrismImageTile` draws a 1 point `onSurface` 0.06 hairline so light images do not melt into a white page. Tiles are image-only: no heart and no text pills. Favourite from the hold menu or the detail screen. Depth, Spatial and Boosted show as `TileBadge`s (a 24 point black 0.55 circle with a white 14 point icon) in one `TileBadges` row at the top end, 8 in; combine layers with `stackTags`. A pin badge uses the same `TileBadge` at the top start. Grids keep no footer space (`favouriteFooterHeight` is 0). No counts on tiles; counts live on the detail screen. |
+| `PrismWallGrid.delegate(context)`, `PrismWallGrid.padding`, `PrismWallTile(url:, heroTag:, onTap:, onLongPress:, overlay:)` | Every grid of wallpapers. One spacing (8), margin (16, the page margin) and radius (12) app-wide. The home feed grid uses the same values (`PrismFeedLayout.gridSpacing`, `gridPadding`). `LoadingCards()` is its skeleton. `PrismImageTile` draws a 1 point `onSurface` 0.06 hairline so light images do not melt into a white page. The heart (`FavouriteWallpaperCard`, `FavouriteWallpaperFooter`) sits on the image at the bottom-start corner: a white 18 point glyph on a 32 point black 0.5 circle, in a 44 point target, filled when saved. A tap on it wins over the tile's hold menu. Grids keep no footer space (`favouriteFooterHeight` is 0). No counts on tiles; counts live on the detail screen. |
 | `PrismTag(label:, tone:)` | A status label: Pending, Approved, Pro, New. 12 w700. |
 | `GlintHalo(mood:, glintSize:)` | Glint on a soft accent disc, for the one hero moment of a short page. `GlintState` uses it on tall areas. |
 | `PrismAvatar(url:, name:, size:)` | Every profile picture. |

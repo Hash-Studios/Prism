@@ -1,25 +1,12 @@
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
-import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
-/// The "Boosted" badge on a trending tile, or null when the wall has no live boost. It joins the tile's other badges
-/// in [stackTags].
+/// The "Boosted" tag on a trending tile, or null when the wall has no live boost.
 Widget? boostedTagFor(PrismWallpaper wall, {DateTime? now}) {
   if (!wall.isBoostedAt(now ?? DateTime.now())) return null;
-  return const _BoostedBadge();
-}
-
-class _BoostedBadge extends TileBadges {
-  const _BoostedBadge() : super(badges: const <Widget>[_BoostedIcon()]);
-}
-
-class _BoostedIcon extends StatelessWidget {
-  const _BoostedIcon();
-
-  @override
-  Widget build(BuildContext context) => TileBadge(icon: Icons.bolt_rounded, label: context.l10n.wallpaperBoostedTag);
+  return const _PositionedBoostedTag();
 }
 
 /// The "Boosted" pill. Place it yourself, for example in the tag slot of a hero card.
@@ -35,6 +22,20 @@ class BoostedTag extends StatelessWidget {
         borderRadius: BorderRadius.circular(PrismRadius.pill),
       ),
       child: PrismTag(label: context.l10n.wallpaperBoostedTag, tone: PrismTone.accent, icon: Icons.bolt_rounded),
+    );
+  }
+}
+
+class _PositionedBoostedTag extends StatelessWidget {
+  const _PositionedBoostedTag();
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.directional(
+      textDirection: Directionality.of(context),
+      start: 6,
+      top: 6,
+      child: const IgnorePointer(child: BoostedTag()),
     );
   }
 }

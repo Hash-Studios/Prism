@@ -78,8 +78,15 @@ class WallpaperTile extends StatelessWidget {
         _ => 'home_wallpaper_grid_tile',
       };
 
-  Widget? _overlay() =>
-      stackTags(<Widget?>[overlay, depthTagFor(depthTierOf(item)), spatialTagFor(spatialOf(item)?.tier)]);
+  Widget? _overlay() {
+    final List<Widget> layers = <Widget>[
+      ?overlay,
+      ?depthTagFor(depthTierOf(item)),
+      ?spatialTagFor(spatialOf(item)?.tier),
+    ];
+    if (layers.length < 2) return layers.firstOrNull;
+    return Stack(fit: StackFit.expand, children: layers);
+  }
 
   @override
   Widget build(BuildContext context) {

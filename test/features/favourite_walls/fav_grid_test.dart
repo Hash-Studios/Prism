@@ -26,6 +26,7 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/fav_grid.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_tile_image.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/wallpaper_stats_row.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -369,7 +370,7 @@ void main() {
       await pumpLoaded(tester);
 
       expect(find.byType(WallpaperStatsRow), findsNothing);
-      expect(find.byIcon(Icons.favorite_border_rounded), findsNothing);
+      expect(find.byType(FavouriteWallpaperFooter), findsNothing);
       for (final String id in <String>['a', 'b']) {
         final Size tile = tester.getSize(find.byKey(ValueKey<String>(id)));
         expect(tile.height, closeTo(tile.width / PrismFeedLayout.gridTileAspectRatio, 0.5), reason: id);

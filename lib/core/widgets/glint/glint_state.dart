@@ -26,11 +26,11 @@ enum GlintStateKind {
   final GlintMood mood;
 }
 
-/// Glint on a soft accent disc. The disc is [glintSize] + 48 across (144 for the default 96 Glint).
+/// Glint on a soft accent disc. The disc is [glintSize] + 56 across (176 for the default 120 Glint).
 ///
 /// Use it where a short page has one hero moment: a tall [GlintState], a finished route.
 class GlintHalo extends StatelessWidget {
-  const GlintHalo({super.key, this.mood = GlintMood.calm, this.glintSize = 96});
+  const GlintHalo({super.key, this.mood = GlintMood.calm, this.glintSize = 120});
 
   final GlintMood mood;
   final double glintSize;
@@ -38,8 +38,8 @@ class GlintHalo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: glintSize + 48,
-      height: glintSize + 48,
+      width: glintSize + 56,
+      height: glintSize + 56,
       alignment: Alignment.center,
       decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer, shape: BoxShape.circle),
       child: Glint(mood: mood, size: glintSize),
@@ -49,9 +49,9 @@ class GlintHalo extends StatelessWidget {
 
 /// One widget for empty, error, offline, loading and "nothing new" states, with Glint.
 ///
-/// On a tall area (480 and up) the whole group sits at the optical centre of the area, a little above the middle:
-/// Glint on a [GlintHalo], a section title and a large action. The action is the screen's primary action by default.
-/// A page that already shows a primary action (or a bottom bar) passes [PrismButtonVariant.tonal] as [actionVariant].
+/// On a tall area (480 and up) the state sits above the centre, where the eye lands first, and fills a short page:
+/// Glint on a [GlintHalo], a section title and a large action. The action is the screen's primary action by default. A page that already shows a primary action (or a bottom bar) passes
+/// [PrismButtonVariant.tonal] as [actionVariant].
 ///
 /// When large text makes the state taller than its area, it scrolls instead of overflowing. Below 260 points it scales
 /// down to fit.
@@ -75,7 +75,7 @@ class GlintState extends StatelessWidget {
   final VoidCallback? onAction;
   final PrismButtonVariant actionVariant;
 
-  /// Glint's size. Null is 96 (on a 144 halo on a tall area).
+  /// Glint's size. Null is 120 on a tall area and 96 otherwise.
   final double? glintSize;
   final EdgeInsetsGeometry padding;
 
@@ -94,7 +94,7 @@ class GlintState extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (tall)
-                GlintHalo(mood: kind.mood, glintSize: glintSize ?? 96)
+                GlintHalo(mood: kind.mood, glintSize: glintSize ?? 120)
               else
                 Glint(mood: kind.mood, size: glintSize ?? 96),
               SizedBox(height: tall ? PrismSpace.xl : PrismSpace.md),
@@ -141,7 +141,7 @@ class GlintState extends StatelessWidget {
                 ),
                 child: body,
               );
-        Widget centered = tall ? Align(alignment: const Alignment(0, -0.12), child: animated) : Center(child: animated);
+        Widget centered = tall ? Align(alignment: const Alignment(0, -0.5), child: animated) : Center(child: animated);
         if (kind == GlintStateKind.error || kind == GlintStateKind.offline) {
           centered = Semantics(liveRegion: true, container: true, child: centered);
         }

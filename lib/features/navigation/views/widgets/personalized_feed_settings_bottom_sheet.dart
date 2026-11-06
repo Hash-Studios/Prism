@@ -170,15 +170,12 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
     });
   }
 
-  /// The sheet's one header action: picks, mix and the AI filter go back to defaults, and what the feed learned is
-  /// cleared.
-  Future<void> _resetToDefaults() async {
+  void _resetToDefaults() {
     setState(() {
       _selectedInterests = PersonalizedInterestsCatalog.defaultSelection(widget.catalog).toSet();
       _feedMix = FeedMix.balanced;
       _hideAi = false;
     });
-    if (_learned.topTerms(1).isNotEmpty) await _clearLearned();
   }
 
   Future<void> _clearLearned() async {
@@ -219,10 +216,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
     return PrismSheetBody(
       title: context.l10n.wallpaperFeedTuneTitle,
       message: context.l10n.wallpaperFeedTuneDescription,
-      trailingAction: PrismSheetAction(
-        label: context.l10n.wallpaperReset,
-        onTap: _saving ? null : () => unawaited(_resetToDefaults()),
-      ),
+      trailingAction: PrismSheetAction(label: context.l10n.wallpaperReset, onTap: _saving ? null : _resetToDefaults),
       actions: <Widget>[
         PrismButton(
           label: context.l10n.wallpaperSave,
@@ -269,8 +263,26 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        // Reset in the header also clears this, so the group has no action of its own.
-        _SectionLabel(title: context.l10n.wallpaperFeedLearnedFromYou),
+        _SectionLabel(
+          title: context.l10n.wallpaperFeedLearnedFromYou,
+          // The ghost button takes its colour from onSurface. Clear is secondary, so it reads in onSurfaceVariant.
+          trailing: Builder(
+            builder: (BuildContext context) {
+              final ThemeData theme = Theme.of(context);
+              return Theme(
+                data: theme.copyWith(
+                  colorScheme: theme.colorScheme.copyWith(onSurface: theme.colorScheme.onSurfaceVariant),
+                ),
+                child: PrismButton(
+                  label: context.l10n.wallpaperClear,
+                  variant: PrismButtonVariant.ghost,
+                  size: PrismButtonSize.compact,
+                  onPressed: _clearLearned,
+                ),
+              );
+            },
+          ),
+        ),
         Wrap(
           spacing: PrismBottomSheet.chipSpacing,
           runSpacing: PrismBottomSheet.chipRunSpacing,

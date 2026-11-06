@@ -727,7 +727,7 @@ void main() {
       expect(find.byType(RankInfoChip), findsNothing);
     });
 
-    testWidgets('another profile shows the rank tag, the frame and the name glow as an underline', (tester) async {
+    testWidgets('another profile shows the rank tag, the frame and the glowing name', (tester) async {
       await pumpScreen(tester, identifier: 'u2');
       repository.profiles.add(dressed);
       await tester.pump(const Duration(milliseconds: 400));
@@ -736,11 +736,7 @@ void main() {
       expect(find.byType(RankProgressCard), findsNothing);
       expect(find.byType(RankInfoChip), findsOneWidget);
       expect(find.byKey(ProfileFrame.ringKey), findsOneWidget);
-      // The name stays in ink; the glow is a thin line under it.
-      expect(find.ancestor(of: find.text('Ana Rivera'), matching: find.byType(ShaderMask)), findsNothing);
-      final BuildContext nameContext = tester.element(find.text('Ana Rivera'));
-      expect(tester.widget<Text>(find.text('Ana Rivera')).style?.color, Theme.of(nameContext).colorScheme.onSurface);
-      expect(find.byKey(const ValueKey<String>('name-glow-underline')), findsOneWidget);
+      expect(find.ancestor(of: find.text('Ana Rivera'), matching: find.byType(ShaderMask)), findsOneWidget);
 
       await tester.tap(find.text('Silver'));
       await tester.pump();
@@ -756,7 +752,6 @@ void main() {
       expect(find.text('Bronze'), findsOneWidget);
       expect(find.byKey(ProfileFrame.ringKey), findsNothing);
       expect(find.ancestor(of: find.text('Ana Rivera'), matching: find.byType(ShaderMask)), findsNothing);
-      expect(find.byKey(const ValueKey<String>('name-glow-underline')), findsNothing);
     });
 
     testWidgets('a Pro frame draws only while the profile is premium', (tester) async {

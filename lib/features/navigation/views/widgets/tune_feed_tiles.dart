@@ -57,11 +57,7 @@ class LearnedPill extends StatelessWidget {
   }
 }
 
-const double _selectedRingWidth = 2.5;
-const List<Shadow> _labelShadows = <Shadow>[Shadow(color: Color(0x80000000), blurRadius: 6, offset: Offset(0, 1))];
-
-/// One interest to pick: a photo with its name over a bottom scrim. Selected tiles get a 2.5 point accent ring and a
-/// filled accent tick.
+/// One interest to pick: a photo with its name. Selected tiles get a 2 point accent border and a tick.
 class InterestTile extends StatelessWidget {
   const InterestTile({super.key, required this.interest, required this.selected, required this.onTap});
 
@@ -113,8 +109,9 @@ class InterestTile extends StatelessWidget {
                 DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      begin: Alignment.center,
+                      begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
+                      stops: const <double>[0.3, 1],
                       colors: <Color>[
                         Colors.black.withValues(alpha: 0),
                         Colors.black.withValues(alpha: PrismBottomSheet.interestTileScrimAlpha),
@@ -130,9 +127,7 @@ class InterestTile extends StatelessWidget {
                     displayName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: PrismTextStyles.rowTitle(
-                      context,
-                    ).copyWith(fontSize: 14, color: Colors.white, shadows: _labelShadows),
+                    style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14, color: Colors.white),
                   ),
                 ),
                 AnimatedContainer(
@@ -142,7 +137,7 @@ class InterestTile extends StatelessWidget {
                     borderRadius: radius,
                     border: Border.all(
                       color: selected ? cs.primary : cs.primary.withValues(alpha: 0),
-                      width: _selectedRingWidth,
+                      width: PrismBottomSheet.interestTileSelectedBorderWidth,
                     ),
                   ),
                 ),

@@ -188,45 +188,37 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
   Widget build(BuildContext context) {
     return PrismPage(
       title: context.l10n.wallpaperAutoRotateTitle,
-      bottomBar: _isAndroid
-          ? null
-          : PrismButton(
-              label: context.l10n.autoRotateIosAction,
-              expand: true,
-              onPressed: () => context.router.replace(IosShortcutsGuideRoute(source: 'auto_rotate')),
-            ),
       body: !_isAndroid
-          ? PrismCenteredScroll(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  const Center(child: Glint()),
-                  const SizedBox(height: PrismSpace.md),
-                  Text(
-                    context.l10n.autoRotateIosTitle,
-                    textAlign: TextAlign.center,
-                    style: PrismTextStyles.cardTitle(context),
-                  ),
-                  const SizedBox(height: PrismSpace.xs),
-                  Text(
-                    context.l10n.autoRotateIosBody,
-                    textAlign: TextAlign.center,
-                    style: PrismTextStyles.body(context),
-                  ),
-                  const SizedBox(height: PrismSpace.xl),
-                  PrismGroup(
-                    children: <Widget>[
-                      for (final (int i, String step) in <String>[
-                        context.l10n.shortcutsStepAddTitle,
-                        context.l10n.shortcutsStepAutomationTitle,
-                        context.l10n.shortcutsStepTestTitle,
-                      ].indexed)
-                        PrismRow(leading: _StepNumber(i + 1), title: step, showChevron: false),
-                    ],
-                  ),
-                ],
-              ),
+          ? ListView(
+              padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, PrismSpace.xl),
+              children: <Widget>[
+                const Center(child: Glint()),
+                const SizedBox(height: PrismSpace.md),
+                Text(
+                  context.l10n.autoRotateIosTitle,
+                  textAlign: TextAlign.center,
+                  style: PrismTextStyles.cardTitle(context),
+                ),
+                const SizedBox(height: PrismSpace.xs),
+                Text(context.l10n.autoRotateIosBody, textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
+                const SizedBox(height: PrismSpace.xl),
+                PrismGroup(
+                  children: <Widget>[
+                    for (final (int i, String step) in <String>[
+                      context.l10n.shortcutsStepAddTitle,
+                      context.l10n.shortcutsStepAutomationTitle,
+                      context.l10n.shortcutsStepTestTitle,
+                    ].indexed)
+                      PrismRow(leading: _StepNumber(i + 1), title: step, showChevron: false),
+                  ],
+                ),
+                const SizedBox(height: PrismSpace.xl),
+                PrismButton(
+                  label: context.l10n.autoRotateIosAction,
+                  expand: true,
+                  onPressed: () => context.router.replace(IosShortcutsGuideRoute(source: 'auto_rotate')),
+                ),
+              ],
             )
           : BlocBuilder<AutoRotateBloc, AutoRotateState>(
               builder: (context, state) {

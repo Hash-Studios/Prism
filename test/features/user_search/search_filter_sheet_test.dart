@@ -156,31 +156,6 @@ void main() {
       expect(find.text('My accent'), findsOneWidget);
     });
 
-    testWidgets('every swatch shows its name under it and a thin ring, and the selected one a 2-pt accent ring', (
-      tester,
-    ) async {
-      await openSheet(tester, SearchFilters(color: paletteColorById('red')), (_) {});
-
-      for (final PrismPaletteColor entry in prismPalette) {
-        final Finder name = find.descendant(of: find.byType(PaletteSwatch), matching: find.text(entry.name));
-        expect(name, findsOneWidget, reason: entry.id);
-      }
-      Border ringOf(String id) {
-        final Finder tile = find.byWidgetPredicate((w) => w is PaletteSwatch && w.color.id == id);
-        final AnimatedContainer ring = tester.widget<AnimatedContainer>(
-          find.descendant(of: tile, matching: find.byType(AnimatedContainer)),
-        );
-        return (ring.decoration! as BoxDecoration).border! as Border;
-      }
-
-      final ColorScheme scheme = Theme.of(tester.element(find.byType(PaletteSwatch).first)).colorScheme;
-      expect(ringOf('white').top.width, 1);
-      expect(ringOf('white').top.color, scheme.onSurface.withValues(alpha: 0.15));
-      expect(ringOf('red').top.width, 2);
-      expect(ringOf('red').top.color, scheme.primary);
-      expect(find.descendant(of: find.byType(PaletteSwatch), matching: find.byIcon(Icons.check_rounded)), findsOne);
-    });
-
     testWidgets('a tapped swatch is selected, and Apply returns it', (tester) async {
       SearchFilters? result;
       await openSheet(tester, const SearchFilters(), (value) => result = value);

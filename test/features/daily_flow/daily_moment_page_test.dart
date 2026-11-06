@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/coins/daily_chest.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/features/daily_flow/views/daily_moment_page.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
@@ -112,39 +111,6 @@ void main() {
     expect(action, findsOneWidget);
     expect(tester.getSize(action).height, greaterThan(60));
     expect(repository.calls, <String>['refresh']);
-    await tester.pumpWidget(const SizedBox.shrink());
-  });
-
-  testWidgets('on a page the action is pinned at the bottom and the chest sits in the middle, not the top', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(393, 852);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: MediaQuery(
-          data: const MediaQueryData(size: Size(393, 852), disableAnimations: true),
-          child: Scaffold(
-            body: DailyMomentContent(
-              repository: FakeDailyMomentRepository(),
-              requestedStep: DailyMomentStep.chest,
-              showHeader: false,
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pump();
-    await tester.pump();
-    final Rect action = tester.getRect(find.widgetWithText(FilledButton, 'Open for 20 coins'));
-    expect(852 - action.bottom, closeTo(16, 1), reason: 'pinned 16 above the bottom edge');
-    expect(action.left, 16);
-    expect(action.right, 393 - 16);
-    final Rect glint = tester.getRect(find.byType(GlintHalo));
-    expect(glint.top, greaterThan(852 * 0.2), reason: 'the group is balanced, not stuck in the top half');
     await tester.pumpWidget(const SizedBox.shrink());
   });
   for (final failChest in [false, true]) {

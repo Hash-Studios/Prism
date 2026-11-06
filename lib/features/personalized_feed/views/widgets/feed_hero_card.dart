@@ -3,9 +3,8 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
-/// The card frame for a home carousel page: a clipped image with a scrim over its lower 45%, text at the bottom left
-/// ([caption] above [title], then [subtitle]), and optional [tag] (top left) and [badge] (top right) chips. The scrim is
-/// always drawn, so the carousel's page dots read over any image. The whole card is one tap target.
+/// The card frame for a home carousel page: a clipped image with a bottom scrim, text at the bottom left, and
+/// optional [tag] (top left) and [badge] (top right) chips. The whole card is one tap target.
 class FeedHeroCard extends StatelessWidget {
   const FeedHeroCard({
     super.key,
@@ -13,7 +12,6 @@ class FeedHeroCard extends StatelessWidget {
     required this.semanticLabel,
     required this.onTap,
     this.title,
-    this.caption,
     this.subtitle,
     this.tag,
     this.badge,
@@ -24,9 +22,6 @@ class FeedHeroCard extends StatelessWidget {
   final String semanticLabel;
   final VoidCallback onTap;
   final String? title;
-
-  /// Small line above [title], such as the creator.
-  final String? caption;
   final String? subtitle;
   final Widget? tag;
   final Widget? badge;
@@ -39,9 +34,7 @@ class FeedHeroCard extends StatelessWidget {
     final bool dark = Theme.of(context).brightness == Brightness.dark;
     final BorderRadius radius = BorderRadius.circular(PrismRadius.lg);
     final String? heading = title?.trim().isEmpty ?? true ? null : title!.trim();
-    final String? eyebrow = caption?.trim().isEmpty ?? true ? null : caption!.trim();
     final String? support = subtitle?.trim().isEmpty ?? true ? null : subtitle!.trim();
-    final TextStyle softWhite = PrismTextStyles.body(context).copyWith(color: Colors.white.withValues(alpha: 0.85));
     return PressScale(
       scale: 0.98,
       child: Semantics(
@@ -58,19 +51,20 @@ class FeedHeroCard extends StatelessWidget {
                 children: <Widget>[
                   image,
                   // The scrim and text never take a tap, so the image's own controls (retry) still work.
-                  IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          stops: const <double>[0.55, 1],
-                          colors: <Color>[Colors.transparent, Colors.black.withValues(alpha: 0.6)],
+                  if (heading != null || support != null)
+                    IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: const <double>[0.4, 1],
+                            colors: <Color>[Colors.transparent, Colors.black.withValues(alpha: 0.6)],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  if (heading != null || eyebrow != null || support != null)
+                  if (heading != null || support != null)
                     Positioned(
                       left: PrismSpace.md,
                       right: PrismSpace.md + textEndInset,
@@ -80,22 +74,22 @@ class FeedHeroCard extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            if (eyebrow != null)
-                              Text(
-                                eyebrow,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: PrismTextStyles.caption(context).copyWith(color: softWhite.color),
-                              ),
                             if (heading != null)
                               Text(
                                 heading,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: PrismTextStyles.sectionTitle(context).copyWith(color: Colors.white),
+                                style: PrismTextStyles.cardTitle(context).copyWith(color: Colors.white),
                               ),
                             if (support != null)
-                              Text(support, maxLines: 1, overflow: TextOverflow.ellipsis, style: softWhite),
+                              Text(
+                                support,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: PrismTextStyles.body(
+                                  context,
+                                ).copyWith(color: Colors.white.withValues(alpha: 0.85)),
+                              ),
                           ],
                         ),
                       ),

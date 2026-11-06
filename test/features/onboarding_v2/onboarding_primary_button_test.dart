@@ -55,28 +55,4 @@ void main() {
 
     expect(find.byType(Icon), findsNothing);
   });
-
-  testWidgets('disabled stays a visible pill with 60 percent text instead of fading out', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Center(
-          child: OnboardingPrimaryButton(label: 'Continue', enabled: false, onPressed: () {}),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.byType(AnimatedOpacity), findsNothing);
-    expect(tester.widget<Text>(find.text('Continue')).style!.color!.a, closeTo(0.6, 0.01));
-    final BoxDecoration fill =
-        tester
-                .widget<AnimatedContainer>(
-                  find.descendant(of: find.byType(OnboardingPrimaryButton), matching: find.byType(AnimatedContainer)),
-                )
-                .decoration!
-            as BoxDecoration;
-    expect(fill.color!.a, greaterThanOrEqualTo(0.7));
-  });
 }

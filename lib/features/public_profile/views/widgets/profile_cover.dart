@@ -16,21 +16,15 @@ class ProfileCover extends StatelessWidget {
   final File? file;
 
   /// True when [url] points at a real image, so a custom cover can be shown or removed.
-  /// How much of the accent the default rings keep, from 0 (fill colour) to 1 (full accent).
-  static const double ringStrength = 0.35;
-
   static bool hasCover(String? url) => Uri.tryParse(url?.trim() ?? '')?.hasAuthority ?? false;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    // The rings are a quiet backdrop: the accent mixed most of the way into the fill, so they never compete with the
-    // avatar, its frame or the name.
-    final Color rings = Color.lerp(cs.surfaceContainerHigh, cs.primary, ProfileCover.ringStrength)!;
     final Widget art = SvgPicture.string(
       defaultHeader
           .replaceAll('#181818', '#${cs.surfaceContainerHigh.rgbHex}')
-          .replaceAll('#E77597', '#${rings.rgbHex}'),
+          .replaceAll('#E77597', '#${cs.primary.rgbHex}'),
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,

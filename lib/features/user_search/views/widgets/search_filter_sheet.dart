@@ -189,13 +189,11 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
           Text(context.l10n.accountColour, style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
           const SizedBox(height: 4),
           Wrap(
-            runSpacing: PrismSpace.xs,
             children: <Widget>[
               for (final PrismPaletteColor entry in prismPalette)
                 PaletteSwatch(
                   color: entry,
                   selected: _color == entry,
-                  showName: true,
                   onTap: () => setState(() => _color = _color == entry ? null : entry),
                 ),
             ],

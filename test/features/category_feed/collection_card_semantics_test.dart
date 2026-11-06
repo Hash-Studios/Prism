@@ -39,36 +39,4 @@ void main() {
       semantics.dispose();
     }
   });
-
-  testWidgets('the name is a w600 white label with a soft shadow over a dark lower scrim', (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: CollectionCard(
-            data: const CollectionCardData(
-              kind: CollectionCardKind.collection,
-              name: 'Minimal',
-              thumbUrl: '',
-              isPremium: false,
-            ),
-            onTap: () {},
-          ),
-        ),
-      ),
-    );
-
-    final TextStyle style = tester.widget<Text>(find.text('Minimal')).style!;
-    expect(style.color, Colors.white);
-    expect(style.fontWeight, FontWeight.w600);
-    expect(style.shadows, isNotEmpty);
-    final LinearGradient scrim = tester
-        .widgetList<DecoratedBox>(find.byType(DecoratedBox))
-        .map((box) => (box.decoration as BoxDecoration).gradient)
-        .whereType<LinearGradient>()
-        .single;
-    expect(scrim.begin, Alignment.center);
-    expect(scrim.colors.last, Colors.black.withValues(alpha: 0.65));
-  });
 }

@@ -70,7 +70,6 @@ import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -808,7 +807,7 @@ void main() {
     expect(find.text('This week'), findsNothing);
     expect(find.text('All time'), findsNothing);
     expect(find.byType(WallpaperTile), findsNWidgets(4));
-    expect(_boosted, findsOneWidget);
+    expect(find.text('Boosted'), findsOneWidget);
     expect(find.byType(FeedCarousel), findsNothing);
     final Rect first = tester.getRect(find.byType(WallpaperTile).first);
     final Rect second = tester.getRect(find.byType(WallpaperTile).at(1));
@@ -1386,18 +1385,6 @@ void main() {
     expect(dots.bottom, lessThanOrEqualTo(card.bottom));
   });
 
-  testWidgets('the carousel starts 16 below the tab divider, and the Latest grid 12 below it', (tester) async {
-    await pumpScreen(tester);
-
-    final double tabsBottom = tester.getRect(find.byType(HomeFeedTabBar)).bottom;
-    expect(tester.getRect(find.byType(FeedHeroCard).first).top - tabsBottom, closeTo(16, 0.01));
-
-    await tapTab(tester, 'Latest');
-    await _settle(tester);
-
-    expect(tester.getRect(find.byType(WallpaperTile).first).top - tabsBottom, closeTo(12, 0.01));
-  });
-
   testWidgets('the For you grid has a 16 px side margin, 8 px gaps and rounded tiles', (tester) async {
     await pumpScreen(tester);
 
@@ -1473,18 +1460,18 @@ void main() {
         find.descendant(of: find.byType(CarouselSlider), matching: find.byType(WallpaperImpression)),
         findsNothing,
       );
-      expect(_boosted, findsNothing);
+      expect(find.text('Boosted'), findsNothing);
 
       await nextPage(tester);
 
       expect(shownWallId(tester), 'hot1');
-      expect(_boosted, findsOneWidget);
+      expect(find.text('Boosted'), findsOneWidget);
       expect(find.text('Wall of the day'), findsNothing);
 
       await nextPage(tester);
 
       expect(shownWallId(tester), 'hot2');
-      expect(_boosted, findsOneWidget);
+      expect(find.text('Boosted'), findsOneWidget);
     });
 
     testWidgets('leave out a boost that has ended', (tester) async {
@@ -1528,7 +1515,7 @@ void main() {
       await pumpScreen(tester, disableAnimations: true, wotdEntity: wotd);
 
       expect(find.text('Wall of the day'), findsOneWidget);
-      expect(_boosted, findsNothing);
+      expect(find.text('Boosted'), findsNothing);
       expect(gridWallIds(tester), <String>['e', 'f', 'g', 'h']);
     });
 
@@ -1544,14 +1531,14 @@ void main() {
       await _settle(tester);
 
       expect(find.text('Wall of the day'), findsOneWidget);
-      expect(_boosted, findsNothing);
+      expect(find.text('Boosted'), findsNothing);
       expect(tester.getRect(find.byType(CarouselSlider)), carouselBefore);
       expect(tester.getRect(find.byType(FeedWallTile).first).top, gridTopBefore);
 
       await nextPage(tester);
 
       expect(shownWallId(tester), 'hot1');
-      expect(_boosted, findsOneWidget);
+      expect(find.text('Boosted'), findsOneWidget);
     });
 
     testWidgets('stay out of the other tabs, which have no carousel', (tester) async {
@@ -1564,7 +1551,7 @@ void main() {
       await _settle(tester);
 
       expect(find.byType(FeedCarousel), findsNothing);
-      expect(_boosted, findsNothing);
+      expect(find.text('Boosted'), findsNothing);
     });
   });
 
@@ -1839,8 +1826,3 @@ Future<void> _settle(WidgetTester tester) async {
     await tester.pump(const Duration(milliseconds: 100));
   }
 }
-
-/// The Boosted mark: a text pill on hero cards, an icon badge on grid tiles.
-final Finder _boosted = find.byWidgetPredicate(
-  (widget) => (widget is Text && widget.data == 'Boosted') || (widget is TileBadge && widget.label == 'Boosted'),
-);

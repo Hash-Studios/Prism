@@ -119,7 +119,7 @@ class DropWallTile extends StatelessWidget {
   final bool busy;
   final VoidCallback? onTap;
 
-  /// Set on an unlocked wall: the tile gets the hold menu.
+  /// Set on an unlocked wall: the tile gets the hold menu and the favourite heart.
   final FeedItemEntity? quickActionItem;
   final String? heroTag;
 

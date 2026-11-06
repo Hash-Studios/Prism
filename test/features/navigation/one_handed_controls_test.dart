@@ -408,7 +408,7 @@ void main() {
             expect(target.left, greaterThanOrEqualTo(left + 10));
             expect(target.right, lessThanOrEqualTo(width - right - 10));
             expect(target.top, greaterThanOrEqualTo(0));
-            expect(target.bottom, lessThanOrEqualTo(height - 34 - 8));
+            expect(target.bottom, lessThanOrEqualTo(height - 34 - 10));
           }
           expect(direction == TextDirection.ltr ? pill.right <= create.left : create.right <= pill.left, isTrue);
 
@@ -419,8 +419,7 @@ void main() {
           final Rect feedback = tester.getRect(
             find.descendant(of: find.byType(SnackBar), matching: find.byType(Material)).first,
           );
-          // The band starts 8 above the top control, and feedback keeps 8 more above the band.
-          expect(feedback.bottom, closeTo(top - 8 - 8, 0.01));
+          expect(feedback.bottom, closeTo(top - 8, 0.01));
           expect(tester.takeException(), isNull);
         },
       );

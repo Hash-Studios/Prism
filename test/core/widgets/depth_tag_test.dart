@@ -8,7 +8,6 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
-import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
@@ -75,7 +74,7 @@ void main() {
     });
   }
 
-  Future<void> pumpTile(WidgetTester tester, PrismWallpaper wall, {Widget? overlay, double width = 116}) {
+  Future<void> pumpTile(WidgetTester tester, PrismWallpaper wall, {Widget? overlay}) {
     return tester.pumpWidget(
       MaterialApp(
         builder: favouriteTestBuilder,
@@ -88,7 +87,7 @@ void main() {
             body: Align(
               alignment: Alignment.topLeft,
               child: SizedBox(
-                width: width,
+                width: 116,
                 height: 232,
                 child: WallpaperTile(
                   item: PrismFeedItem(id: wall.id, wallpaper: wall),
@@ -140,8 +139,7 @@ void main() {
         await pumpTile(tester, _wall(tier));
 
         expect(find.byType(DepthTag), findsOneWidget);
-        expect(find.text('Depth'), findsNothing);
-        expect(find.byIcon(Icons.layers_rounded), findsOneWidget);
+        expect(find.text('Depth'), findsOneWidget);
         // The tile merges its badges into one node, so the label is part of what the tile reads out.
         expect(
           tester.getSemantics(find.byType(DepthTag)).label,
@@ -165,41 +163,35 @@ void main() {
       expect(find.byType(DepthTag), findsNothing);
     });
 
-    onPlatform(
-      'the badge sits at the top end clear of the Boosted tag, and a saved wall shows no heart',
-      TargetPlatform.iOS,
-      (tester) async {
-        await favourites.setWallFavourite('u', 'wall-1', true);
-        final PrismWallpaper wall = _wall(
-          WallDepthTier.auto,
-          boostedUntil: DateTime.now().add(const Duration(hours: 1)),
-        );
-        whenListen(
-          bloc,
-          const Stream<FavouriteWallsState>.empty(),
-          initialState: FavouriteWallsState.initial().copyWith(
-            status: LoadStatus.success,
-            userId: 'u',
-            items: [FavouriteWallEntity.fromFeedItem(PrismFeedItem(id: wall.id, wallpaper: wall))],
-          ),
-        );
-        await pumpTile(tester, wall, overlay: boostedTagFor(wall), width: 176);
+    // The test font draws every glyph as a wide square, so the real widths are checked in depth_render_test.dart.
+    onPlatform('the tag stays on the image, above the heart and clear of the Boosted tag', TargetPlatform.iOS, (
+      tester,
+    ) async {
+      await favourites.setWallFavourite('u', 'wall-1', true);
+      final PrismWallpaper wall = _wall(WallDepthTier.auto, boostedUntil: DateTime.now().add(const Duration(hours: 1)));
+      whenListen(
+        bloc,
+        const Stream<FavouriteWallsState>.empty(),
+        initialState: FavouriteWallsState.initial().copyWith(
+          status: LoadStatus.success,
+          userId: 'u',
+          items: [FavouriteWallEntity.fromFeedItem(PrismFeedItem(id: wall.id, wallpaper: wall))],
+        ),
+      );
+      await pumpTile(tester, wall, overlay: boostedTagFor(wall));
 
-        final Rect tile = tester.getRect(find.byType(WallpaperTile));
-        final Rect depth = tester.getRect(find.byType(DepthTag));
-        final Rect boosted = tester.getRect(
-          find.byWidgetPredicate((w) => w is TileBadge && w.icon == Icons.bolt_rounded),
-        );
+      final Rect tile = tester.getRect(find.byType(WallpaperTile));
+      final Rect depth = tester.getRect(find.byType(DepthTag));
+      final Rect boosted = tester.getRect(find.byType(BoostedTag));
+      final Rect heart = tester.getRect(find.byIcon(Icons.favorite_rounded));
 
-        // Depth and Boosted share one badge row at the top end, so they can never overlap.
-        expect(depth.size, const Size(24, 24));
-        expect(boosted.size, const Size(24, 24));
-        expect(depth.top - tile.top, 8);
-        expect(boosted.top, depth.top);
-        expect(depth.overlaps(boosted), isFalse);
-        expect(find.byIcon(Icons.favorite_rounded), findsNothing);
-        expect(find.byIcon(Icons.favorite_border_rounded), findsNothing);
-      },
-    );
+      expect(depth.left - tile.left, 6);
+      expect(tile.bottom - depth.bottom, 44);
+      expect(heart.top, greaterThan(depth.bottom));
+      expect(heart.left, greaterThanOrEqualTo(tile.left));
+      expect(heart.bottom, lessThanOrEqualTo(tile.bottom));
+      expect(depth.height, boosted.height);
+      expect(depth.overlaps(boosted), isFalse);
+    });
   });
 }

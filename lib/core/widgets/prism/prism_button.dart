@@ -103,8 +103,8 @@ class PrismButton extends StatelessWidget {
           foregroundColor: fg,
           disabledBackgroundColor: variant == PrismButtonVariant.ghost
               ? Colors.transparent
-              : cs.onSurface.withValues(alpha: PrismInk.disabledFillAlpha),
-          disabledForegroundColor: cs.onSurface.withValues(alpha: PrismInk.disabledLabelAlpha),
+              : cs.onSurface.withValues(alpha: 0.06),
+          disabledForegroundColor: cs.onSurface.withValues(alpha: 0.5),
           minimumSize: Size(expand ? double.infinity : 0, large ? 52 : 40),
           padding: EdgeInsets.symmetric(horizontal: large ? PrismSpace.xl : PrismSpace.md),
           textStyle: large ? PrismTextStyles.button : PrismTextStyles.button.copyWith(fontSize: 14),

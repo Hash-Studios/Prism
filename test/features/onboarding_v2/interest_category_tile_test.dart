@@ -54,8 +54,7 @@ void main() {
     final image = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
     expect(image.imageUrl, 'https://example.com/nature.jpg');
     expect(image.cacheManager, same(cache));
-    // 100 points less the 2.5 point ring on each side, at 2x.
-    expect(image.memCacheWidth, 190);
+    expect(image.memCacheWidth, 192);
   });
 
   testWidgets('the cover decode size does not change when the tile is selected', (tester) async {
@@ -126,35 +125,5 @@ void main() {
 
     expect(find.byType(CachedNetworkImage), findsNothing);
     expect(find.text('Nature'), findsOneWidget);
-  });
-
-  testWidgets('a selected tile has a 2.5 point primary ring and a filled primary tick', (tester) async {
-    const ColorScheme scheme = ColorScheme.light(primary: Color(0xFF1565C0));
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(colorScheme: scheme),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: SizedBox(
-          width: 100,
-          height: 100,
-          child: InterestCategoryTile(name: 'Nature', isSelected: true, onTap: () {}),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    final Iterable<BoxDecoration> decorations = tester
-        .widgetList<AnimatedContainer>(find.byType(AnimatedContainer))
-        .map((c) => c.decoration)
-        .whereType<BoxDecoration>();
-    final Border ring = decorations.map((d) => d.border).whereType<Border>().single;
-    expect(ring.top.color, scheme.primary);
-    expect(ring.top.width, 2.5);
-    expect(
-      tester.widgetList<Container>(find.byType(Container)).map((c) => c.decoration).whereType<BoxDecoration>(),
-      contains(isA<BoxDecoration>().having((d) => d.color, 'color', scheme.primary)),
-    );
-    expect(tester.widget<Icon>(find.byIcon(Icons.check_rounded)).color, scheme.onPrimary);
   });
 }

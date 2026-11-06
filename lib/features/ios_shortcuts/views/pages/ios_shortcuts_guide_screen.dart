@@ -146,7 +146,6 @@ class _IosShortcutsGuideScreenState extends State<IosShortcutsGuideScreen> {
                     label: l10n.wallpaperShortcutsOpenAction,
                     icon: Icons.open_in_new_rounded,
                     variant: PrismButtonVariant.tonal,
-                    expand: true,
                     onPressed: () => unawaited(_open(Uri.parse('shortcuts://'), 'app')),
                   )
                 : PrismButton(
@@ -170,7 +169,6 @@ class _IosShortcutsGuideScreenState extends State<IosShortcutsGuideScreen> {
               label: l10n.shortcutsStepTestAction,
               icon: Icons.play_arrow_rounded,
               variant: PrismButtonVariant.tonal,
-              expand: true,
               onPressed: () => unawaited(_open(iosRunShortcutUri(), 'run')),
             ),
           ),
@@ -277,79 +275,84 @@ class _Step extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    // One card per step: the number and title, then the text, the note in flow and at most one action at the bottom.
     return Padding(
-      padding: const EdgeInsets.only(bottom: PrismSpace.sm),
-      child: PrismCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                ExcludeSemantics(
-                  child: CircleAvatar(
-                    radius: 14,
-                    backgroundColor: cs.primary,
-                    child: Text(
-                      '$number',
-                      style: PrismTextStyles.caption(
-                        context,
-                      ).copyWith(color: cs.onPrimary, fontWeight: FontWeight.w700),
-                    ),
+      padding: const EdgeInsets.only(bottom: PrismSpace.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              ExcludeSemantics(
+                child: CircleAvatar(
+                  radius: 14,
+                  backgroundColor: cs.primary,
+                  child: Text(
+                    '$number',
+                    style: PrismTextStyles.caption(context).copyWith(color: cs.onPrimary, fontWeight: FontWeight.w700),
                   ),
                 ),
-                const SizedBox(width: PrismSpace.sm),
-                Expanded(
-                  child: Semantics(
-                    header: true,
-                    label: context.l10n.shortcutsStepLabel(number, title),
-                    excludeSemantics: true,
-                    child: Text(title, style: PrismTextStyles.cardTitle(context)),
-                  ),
-                ),
-              ],
-            ),
-            if (body case final String text) ...<Widget>[
-              const SizedBox(height: PrismSpace.sm),
-              Text(text, style: PrismTextStyles.body(context)),
-            ],
-            for (final String line in lines)
-              Padding(
-                padding: const EdgeInsets.only(top: PrismSpace.xs),
-                child: Row(
+              ),
+              const SizedBox(width: PrismSpace.sm),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.only(top: 7),
-                      child: Container(
-                        width: 5,
-                        height: 5,
-                        decoration: BoxDecoration(color: cs.onSurfaceVariant, shape: BoxShape.circle),
+                    Semantics(
+                      header: true,
+                      label: context.l10n.shortcutsStepLabel(number, title),
+                      excludeSemantics: true,
+                      child: Text(title, style: PrismTextStyles.cardTitle(context)),
+                    ),
+                    if (body case final String text) ...<Widget>[
+                      const SizedBox(height: PrismSpace.xxs),
+                      Text(text, style: PrismTextStyles.body(context)),
+                    ],
+                    for (final String line in lines)
+                      Padding(
+                        padding: const EdgeInsets.only(top: PrismSpace.xs),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.only(top: 7),
+                              child: Container(
+                                width: 5,
+                                height: 5,
+                                decoration: BoxDecoration(color: cs.onSurfaceVariant, shape: BoxShape.circle),
+                              ),
+                            ),
+                            const SizedBox(width: PrismSpace.xs),
+                            Expanded(
+                              child: Text(
+                                line,
+                                style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: PrismSpace.xs),
-                    Expanded(
-                      child: Text(line, style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500)),
-                    ),
+                    if (action case final Widget button) ...<Widget>[const SizedBox(height: PrismSpace.sm), button],
                   ],
                 ),
               ),
-            if (note case final String text) ...<Widget>[
-              const SizedBox(height: PrismSpace.md),
-              Divider(height: 1, color: cs.onSurface.withValues(alpha: 0.08)),
-              const SizedBox(height: PrismSpace.sm),
-              Row(
+            ],
+          ),
+          if (note case final String text) ...<Widget>[
+            const SizedBox(height: PrismSpace.sm),
+            PrismCard(
+              padding: const EdgeInsets.all(PrismSpace.sm),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Icon(Icons.info_outline_rounded, size: 18, color: cs.onSurfaceVariant),
+                  Icon(Icons.info_outline_rounded, size: 20, color: cs.onSurfaceVariant),
                   const SizedBox(width: PrismSpace.xs),
-                  Expanded(child: Text(text, style: PrismTextStyles.caption(context))),
+                  Expanded(child: Text(text, style: PrismTextStyles.body(context))),
                 ],
               ),
-            ],
-            if (action case final Widget button) ...<Widget>[const SizedBox(height: PrismSpace.md), button],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }

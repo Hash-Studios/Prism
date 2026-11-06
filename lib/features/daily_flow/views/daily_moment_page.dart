@@ -246,32 +246,48 @@ class _DailyMomentContentState extends State<DailyMomentContent> {
                     ),
                   ),
                 Expanded(
-                  child: PrismCenteredScroll(
-                    padding: const EdgeInsets.fromLTRB(PrismSpace.xl, PrismSpace.md, PrismSpace.xl, PrismSpace.xl),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        GlintHalo(mood: mood),
-                        const SizedBox(height: PrismSpace.xl),
-                        Semantics(
-                          header: true,
-                          child: Text(
-                            title,
-                            textAlign: TextAlign.center,
-                            style: PrismTextStyles.sheetHeadline(context),
+                  // The button sits in the content, right under it; the group rides above the centre and scrolls
+                  // when it is taller than the screen.
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final EdgeInsets padding = EdgeInsets.fromLTRB(
+                        PrismSpace.xl,
+                        PrismSpace.lg,
+                        PrismSpace.xl,
+                        PrismSpace.xl + MediaQuery.paddingOf(context).bottom,
+                      );
+                      return SingleChildScrollView(
+                        padding: padding,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: (constraints.maxHeight - padding.vertical).clamp(0, double.infinity),
+                          ),
+                          child: Align(
+                            alignment: const Alignment(0, -0.5),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                GlintHalo(mood: mood),
+                                const SizedBox(height: PrismSpace.xl),
+                                Semantics(
+                                  header: true,
+                                  child: Text(
+                                    title,
+                                    textAlign: TextAlign.center,
+                                    style: PrismTextStyles.sheetHeadline(context),
+                                  ),
+                                ),
+                                const SizedBox(height: PrismSpace.xs),
+                                details,
+                                const SizedBox(height: PrismSpace.xl),
+                                button,
+                              ],
+                            ),
                           ),
                         ),
-                        const SizedBox(height: PrismSpace.xs),
-                        details,
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                ),
-                // The action is pinned at the bottom, clear of the home indicator, like a page bottom bar.
-                SafeArea(
-                  top: false,
-                  minimum: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.md),
-                  child: button,
                 ),
               ],
             );

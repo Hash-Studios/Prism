@@ -50,10 +50,9 @@ void main() {
       }
     });
 
-    test('an off switch track is the highest container with an outline', () {
+    test('an off switch track is 18 percent ink', () {
       final ColorScheme cs = kLightTheme.colorScheme;
-      expect(kLightTheme.switchTheme.trackColor!.resolve(<WidgetState>{}), cs.surfaceContainerHighest);
-      expect(kLightTheme.switchTheme.trackOutlineColor!.resolve(<WidgetState>{}), cs.outline);
+      expect(kLightTheme.switchTheme.trackColor!.resolve(<WidgetState>{}), cs.onSurface.withValues(alpha: 0.18));
     });
   });
 
@@ -172,15 +171,7 @@ void main() {
   });
 
   group('PrismPage', () {
-    bool hasHairline(WidgetTester tester) => tester
-        .widgetList<DecoratedBox>(find.byType(DecoratedBox))
-        .map((box) => box.decoration)
-        .whereType<BoxDecoration>()
-        .map((d) => d.border)
-        .whereType<Border>()
-        .any((b) => b.top.color == kLightTheme.colorScheme.onSurface.withValues(alpha: 0.08));
-
-    Future<bool> pumpBar(WidgetTester tester, Widget body) async {
+    testWidgets('a bottom bar has a hairline on top', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -188,36 +179,18 @@ void main() {
           theme: kLightTheme,
           home: PrismPage(
             title: 'Title',
-            body: body,
+            body: const SizedBox(),
             bottomBar: PrismButton(label: 'Go', onPressed: () {}),
           ),
         ),
       );
-      await tester.pump();
-      return hasHairline(tester);
-    }
-
-    testWidgets('a bottom bar has a hairline on top only while content scrolls under it', (tester) async {
-      expect(await pumpBar(tester, const PrismCenteredScroll(child: Text('Short'))), isFalse);
-      expect(await pumpBar(tester, ListView(children: <Widget>[for (int i = 0; i < 40; i++) Text('Row $i')])), isTrue);
-      await tester.drag(find.byType(ListView), const Offset(0, -5000));
-      await tester.pumpAndSettle();
-      expect(hasHairline(tester), isFalse, reason: 'at the end of the list nothing is under the bar');
-    });
-
-    testWidgets('PrismCenteredScroll lifts short content a little above the middle and scrolls long content', (
-      tester,
-    ) async {
-      await pumpBar(tester, const PrismCenteredScroll(child: SizedBox(width: 100, height: 100, key: Key('box'))));
-      final Rect area = tester.getRect(find.byType(PrismCenteredScroll));
-      final double middle = tester.getCenter(find.byKey(const Key('box'))).dy;
-      expect(middle, lessThan(area.center.dy));
-      expect(middle, greaterThan(area.center.dy - 60));
-
-      await pumpBar(tester, const PrismCenteredScroll(child: SizedBox(width: 100, height: 3000)));
-      expect(tester.takeException(), isNull);
-      final ScrollableState scrollable = tester.state<ScrollableState>(find.byType(Scrollable).last);
-      expect(scrollable.position.maxScrollExtent, greaterThan(0));
+      final Iterable<Border> borders = tester
+          .widgetList<DecoratedBox>(find.byType(DecoratedBox))
+          .map((box) => box.decoration)
+          .whereType<BoxDecoration>()
+          .map((d) => d.border)
+          .whereType<Border>();
+      expect(borders.any((b) => b.top.color == kLightTheme.colorScheme.onSurface.withValues(alpha: 0.08)), isTrue);
     });
   });
 }

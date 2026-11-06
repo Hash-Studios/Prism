@@ -123,11 +123,7 @@ void main() {
   });
 
   group('OnboardingPrimaryButton', () {
-    Duration fadeDuration(WidgetTester tester) => tester
-        .widget<AnimatedContainer>(
-          find.descendant(of: find.byType(OnboardingPrimaryButton), matching: find.byType(AnimatedContainer)),
-        )
-        .duration;
+    Duration fadeDuration(WidgetTester tester) => tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).duration;
 
     testWidgets('does not animate its state changes when the system asks for less motion', (tester) async {
       await tester.pumpWidget(
