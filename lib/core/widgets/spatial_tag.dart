@@ -24,9 +24,15 @@ Widget? stackTags(List<Widget?> layers) {
   return Stack(fit: StackFit.expand, children: present);
 }
 
+/// Below this tile width the tag shows only its icon: the heart (44 target) and the full tag would touch.
+const double spatialTagIconOnlyBelow = 150;
+
 /// Has no position. Use [spatialTagFor] to put it on a grid tile.
 class SpatialTag extends StatelessWidget {
-  const SpatialTag({super.key});
+  const SpatialTag({super.key, this.iconOnly = false});
+
+  /// Narrow tiles show only the icon, so the tag never runs into the favourite heart at the other corner.
+  final bool iconOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +45,9 @@ class SpatialTag extends StatelessWidget {
             color: cs.surface.withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(PrismRadius.pill),
           ),
-          child: PrismTag(label: context.l10n.coreSpatialBadge, icon: Icons.view_in_ar_rounded),
+          child: iconOnly
+              ? SizedBox.square(dimension: 24, child: Icon(Icons.view_in_ar_rounded, size: 14, color: cs.onSurface))
+              : PrismTag(label: context.l10n.coreSpatialBadge, icon: Icons.view_in_ar_rounded),
         ),
       ),
     );
@@ -51,11 +59,18 @@ class _PositionedSpatialTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned.directional(
-      textDirection: Directionality.of(context),
-      end: 6,
-      bottom: 6,
-      child: const IgnorePointer(child: SpatialTag()),
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: LayoutBuilder(
+          builder: (context, constraints) => Align(
+            alignment: AlignmentDirectional.bottomEnd,
+            child: Padding(
+              padding: const EdgeInsets.all(6),
+              child: SpatialTag(iconOnly: constraints.maxWidth < spatialTagIconOnlyBelow),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

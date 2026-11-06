@@ -45,7 +45,7 @@ void main() {
               body: Center(
                 child: SizedBox(
                   key: tileKey,
-                  width: 116,
+                  width: 180,
                   height: 232,
                   child: Stack(children: <Widget>[spatialTagFor(tier)!]),
                 ),
@@ -62,6 +62,34 @@ void main() {
         expect(tile.bottom - tag.bottom, 6);
       });
     }
+
+    onPlatform(
+      'a narrow tile shows only the icon, so the heart at the other corner never meets it',
+      TargetPlatform.iOS,
+      (tester) async {
+        final AppLocalizationsEn l10n = AppLocalizationsEn();
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 100,
+                  height: 200,
+                  child: Stack(children: <Widget>[spatialTagFor(WallSpatialTier.great)!]),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text(l10n.coreSpatialBadge), findsNothing);
+        expect(find.byIcon(Icons.view_in_ar_rounded), findsOneWidget);
+        expect(tester.getSize(find.byType(SpatialTag)), const Size(24, 24));
+        expect(find.bySemanticsLabel(l10n.coreSpatialBadgeSemantic), findsOneWidget);
+      },
+    );
   });
 
   group('stackTags', () {
