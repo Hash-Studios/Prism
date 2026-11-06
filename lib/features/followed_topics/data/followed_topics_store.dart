@@ -66,7 +66,15 @@ class FollowedTopicsStore extends ChangeNotifier {
   Future<void> refresh() {
     if (!app_state.prismUser.loggedIn) return Future<void>.value();
     final String uid = app_state.prismUser.id;
-    return _enqueueMutation<void>(uid, () => _startLoad(uid));
+    final int generation = _seenGenerations[uid] ?? 0;
+    return _enqueueMutation<void>(uid, () async {
+      if (!app_state.prismUser.loggedIn ||
+          app_state.prismUser.id != uid ||
+          generation != (_seenGenerations[uid] ?? 0)) {
+        return;
+      }
+      await _startLoad(uid);
+    });
   }
 
   Future<void> _startLoad(String uid) {

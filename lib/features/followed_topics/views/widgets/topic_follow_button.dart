@@ -45,14 +45,15 @@ class _FollowButtonState extends State<_FollowButton> {
   }
 
   Future<void> _toggle() async {
+    if (_busy) return;
+    setState(() => _busy = true);
     final AppLocalizations l10n = context.l10n;
     final FollowedTopic topic = widget.topic;
     final String name = topic.title(l10n);
     // Decided before sign-in: an account that already follows the topic must not unfollow it on this tap.
     final bool follow = !_store.isFollowed(topic);
-    if (!await requireSignedInAction(context) || !mounted) return;
-    setState(() => _busy = true);
     try {
+      if (!await requireSignedInAction(context) || !mounted) return;
       await _store.ensureLoaded();
       if (!follow) {
         if (await _store.unfollow(topic)) {
@@ -88,6 +89,7 @@ class _FollowButtonState extends State<_FollowButton> {
         return Semantics(
           container: true,
           button: true,
+          enabled: !_busy,
           toggled: following,
           label: following ? l10n.topicUnfollowHint(name) : l10n.topicFollowHint(name),
           onTap: _busy ? null : () => unawaited(_toggle()),

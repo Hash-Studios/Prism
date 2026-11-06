@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
@@ -14,10 +16,25 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_app_analytics.dart';
-import '../../../support/fake_firestore_client.dart';
 import '../../../support/in_memory_local_store.dart';
 import '../../../support/profile_user_fixture.dart';
 import '../support/transaction_firestore_client.dart';
+
+class _HoldingReadsFirestore extends TransactionFirestoreClient {
+  Completer<void>? sessionGate;
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async {
+    if (sourceTag == 'followed_topics.load') await sessionGate?.future;
+    return super.getById(collection, id, map, sourceTag: sourceTag, preferCacheFirst: preferCacheFirst);
+  }
+}
 
 Widget _app(Widget home, {TextScaler textScaler = TextScaler.noScaling}) => MaterialApp(
   localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -32,7 +49,7 @@ Widget _app(Widget home, {TextScaler textScaler = TextScaler.noScaling}) => Mate
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late FakeFirestoreClient firestore;
+  late _HoldingReadsFirestore firestore;
   late FollowedTopicsStore store;
 
   // The sheet reads the store; the settings row normally loads it, so the tests load it here.
@@ -61,7 +78,7 @@ void main() {
   }
 
   setUp(() {
-    firestore = TransactionFirestoreClient();
+    firestore = _HoldingReadsFirestore();
     store = FollowedTopicsStore(SettingsLocalDataSource(InMemoryLocalStore()), firestore);
     getIt.registerSingleton<FollowedTopicsStore>(store);
     AnalyticsRuntime.instance = FakeAppAnalytics();
@@ -123,6 +140,47 @@ void main() {
   });
 
   group('FollowedTopicsSheet', () {
+    testWidgets('a busy Unfollow tap cannot fall through to topic navigation', (tester) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      app_state.prismUser = profileUser();
+      await seedTopics(<String>['category:Pastel', 'mood:dreamy']);
+      await openSheet(tester);
+      firestore.sessionGate = Completer<void>();
+      final Future<void> refreshing = store.refresh();
+      await tester.pump();
+
+      tester.semantics.tap(find.semantics.byLabel('Unfollow Pastel'));
+      await tester.pump();
+      await tester.tap(find.text('Unfollow').first);
+      await tester.pump();
+      final Object? navigationError = tester.takeException();
+      firestore.sessionGate!.complete();
+      await refreshing;
+      await tester.pumpAndSettle();
+      semantics.dispose();
+
+      expect(navigationError, isNull, reason: 'a disabled Unfollow must not activate the parent row');
+      expect(store.topics, <FollowedTopic>[FollowedTopic.mood(WallMood.dreamy)]);
+      expect(find.text('Dreamy'), findsOneWidget);
+    });
+
+    testWidgets('repeated Unfollow activations report one successful action', (tester) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      final FakeAppAnalytics analytics = FakeAppAnalytics();
+      AnalyticsRuntime.instance = analytics;
+      app_state.prismUser = profileUser();
+      await seedTopics(<String>['category:Pastel', 'mood:dreamy']);
+      await openSheet(tester);
+
+      tester.semantics.tap(find.semantics.byLabel('Unfollow Pastel'));
+      tester.semantics.tap(find.semantics.byLabel('Unfollow Pastel'));
+      await tester.pumpAndSettle();
+
+      expect(store.topics, <FollowedTopic>[FollowedTopic.mood(WallMood.dreamy)]);
+      expect(analytics.events.where((event) => event.eventName == 'topic_unfollowed'), hasLength(1));
+      semantics.dispose();
+    });
+
     testWidgets('lists each topic with its kind, in follow order', (tester) async {
       app_state.prismUser = profileUser();
       await seedTopics(<String>['category:Pastel', 'mood:dreamy']);

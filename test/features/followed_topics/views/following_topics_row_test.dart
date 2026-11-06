@@ -9,10 +9,25 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../../support/fake_firestore_client.dart';
 import '../../../support/in_memory_local_store.dart';
 import '../../../support/profile_user_fixture.dart';
 import '../support/transaction_firestore_client.dart';
+
+class _CountingFirestore extends TransactionFirestoreClient {
+  int sessionReads = 0;
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) {
+    if (sourceTag == 'followed_topics.load') sessionReads++;
+    return super.getById(collection, id, map, sourceTag: sourceTag, preferCacheFirst: preferCacheFirst);
+  }
+}
 
 Widget _app(Widget home, {TextScaler textScaler = TextScaler.noScaling}) => MaterialApp(
   localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -27,12 +42,12 @@ Widget _app(Widget home, {TextScaler textScaler = TextScaler.noScaling}) => Mate
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late FakeFirestoreClient firestore;
+  late _CountingFirestore firestore;
   late SettingsLocalDataSource settings;
   late LayoutPrefsStore layout;
 
   setUp(() {
-    firestore = TransactionFirestoreClient();
+    firestore = _CountingFirestore();
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     layout = LayoutPrefsStore(settings, firestore);
     getIt.registerSingleton<FollowedTopicsStore>(FollowedTopicsStore(settings, firestore));
@@ -93,6 +108,37 @@ void main() {
     expect(find.text('Pastel'), findsOneWidget);
     expect(find.text('Dreamy'), findsOneWidget);
     expect(tester.getTopLeft(find.text('Pastel')).dx, lessThan(tester.getTopLeft(find.text('Dreamy')).dx));
+  });
+
+  testWidgets('resume refreshes mounted rows once and disposed rows stop observing', (tester) async {
+    app_state.prismUser = profileUser();
+    followPastelAndDreamy();
+    await tester.pumpWidget(_app(const FollowingTopicsRow()));
+    await tester.pumpAndSettle();
+    expect(firestore.sessionReads, 1);
+
+    firestore.docs['usersv2/u1/private']!['session']!['followedTopics'] = <String>['mood:dreamy'];
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pumpAndSettle();
+    expect(firestore.sessionReads, 1);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(firestore.sessionReads, 2);
+    expect(find.text('Pastel'), findsNothing);
+    expect(find.text('Dreamy'), findsOneWidget);
+
+    await tester.pumpWidget(_app(const SizedBox.shrink()));
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(firestore.sessionReads, 2, reason: 'a disposed row must not refresh');
+
+    await tester.pumpWidget(_app(const FollowingTopicsRow()));
+    await tester.pumpAndSettle();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(firestore.sessionReads, 3, reason: 'remounting must leave only one observer');
   });
 
   testWidgets('a chip with new walls says so in its semantics label, and a chip without news does not', (tester) async {

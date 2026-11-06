@@ -83,7 +83,10 @@ class FollowedTopicsSheet extends StatelessWidget {
                   ),
                 )
               : PrismGroup(
-                  children: <Widget>[for (final FollowedTopic topic in topics) _TopicRow(topic: topic, store: store)],
+                  children: <Widget>[
+                    for (final FollowedTopic topic in topics)
+                      _TopicRow(key: ValueKey<String>(topic.key), topic: topic, store: store),
+                  ],
                 ),
         );
       },
@@ -91,44 +94,62 @@ class FollowedTopicsSheet extends StatelessWidget {
   }
 }
 
-class _TopicRow extends StatelessWidget {
-  const _TopicRow({required this.topic, required this.store});
+class _TopicRow extends StatefulWidget {
+  const _TopicRow({super.key, required this.topic, required this.store});
 
   final FollowedTopic topic;
   final FollowedTopicsStore store;
 
+  @override
+  State<_TopicRow> createState() => _TopicRowState();
+}
+
+class _TopicRowState extends State<_TopicRow> {
+  bool _busy = false;
+
   Future<void> _unfollow(BuildContext context) async {
+    if (_busy) return;
+    setState(() => _busy = true);
     final String failed = context.l10n.topicFollowFailed;
-    if (await store.unfollow(topic)) {
-      unawaited(analytics.track(TopicUnfollowedEvent(kind: topic.kind.name, topicId: topic.id)));
-    } else {
-      toasts.error(failed);
+    final FollowedTopic topic = widget.topic;
+    try {
+      if (await widget.store.unfollow(topic)) {
+        unawaited(analytics.track(TopicUnfollowedEvent(kind: topic.kind.name, topicId: topic.id)));
+      } else {
+        toasts.error(failed);
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final FollowedTopic topic = widget.topic;
     final String name = topic.title(l10n);
     return PrismRow(
       title: name,
       subtitle: topic.kindLabel(l10n),
-      onTap: () {
-        final StackRouter router = context.router;
-        Navigator.of(context).pop();
-        unawaited(router.push(topic.route(source: 'settings')));
-      },
+      onTap: _busy
+          ? null
+          : () {
+              final StackRouter router = context.router;
+              Navigator.of(context).pop();
+              unawaited(router.push(topic.route(source: 'settings')));
+            },
       trailing: Semantics(
         container: true,
         button: true,
+        enabled: !_busy,
         label: l10n.topicUnfollowHint(name),
-        onTap: () => unawaited(_unfollow(context)),
+        onTap: _busy ? null : () => unawaited(_unfollow(context)),
         excludeSemantics: true,
         child: PrismButton(
           label: l10n.topicUnfollow,
           variant: PrismButtonVariant.ghost,
           size: PrismButtonSize.compact,
-          onPressed: () => unawaited(_unfollow(context)),
+          onPressed: _busy ? null : () => unawaited(_unfollow(context)),
         ),
       ),
     );

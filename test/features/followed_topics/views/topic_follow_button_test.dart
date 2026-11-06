@@ -22,6 +22,7 @@ import 'package:Prism/features/user_blocks/domain/repositories/user_block_reposi
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,13 +30,27 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../support/fake_app_analytics.dart';
 import '../../../support/fake_feed_cache_local_data_source.dart';
-import '../../../support/fake_firestore_client.dart';
 import '../../../support/fake_user_block_repository.dart';
 import '../../../support/in_memory_local_store.dart';
 import '../../../support/profile_user_fixture.dart';
 import '../support/transaction_firestore_client.dart';
 
 class _MockCategoryFeedBloc extends MockBloc<CategoryFeedEvent, CategoryFeedState> implements CategoryFeedBloc {}
+
+class _HoldingFollowFirestore extends TransactionFirestoreClient {
+  Completer<void>? followGate;
+
+  @override
+  Future<T> runTransaction<T>(
+    Future<T> Function(FirestoreTransaction transaction) action, {
+    required String sourceTag,
+    required String collection,
+    String? docId,
+  }) async {
+    if (sourceTag == 'followed_topics.follow') await followGate?.future;
+    return super.runTransaction(action, sourceTag: sourceTag, collection: collection, docId: docId);
+  }
+}
 
 const CategoryEntity _pastelCategory = CategoryEntity(
   name: 'Pastel',
@@ -65,13 +80,14 @@ Widget _app(Widget home, {TextScaler textScaler = TextScaler.noScaling}) => Mate
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late FakeFirestoreClient firestore;
+  late _HoldingFollowFirestore firestore;
   late FollowedTopicsStore store;
   late FollowedTopic pastel;
+  late FakeAppAnalytics analytics;
   final Future<bool> Function(BuildContext) originalSignIn = signedInActionSignIn;
 
   setUp(() {
-    firestore = TransactionFirestoreClient();
+    firestore = _HoldingFollowFirestore();
     final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
     store = FollowedTopicsStore(settings, firestore);
     pastel = FollowedTopic.category('Pastel')!;
@@ -80,7 +96,8 @@ void main() {
     getIt.registerSingleton<FeedCacheLocalDataSource>(FakeFeedCacheLocalDataSource());
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
     getIt.registerSingleton<UserBlockRepository>(FakeUserBlockRepository.pending()..completeInitial(<String>{}));
-    AnalyticsRuntime.instance = FakeAppAnalytics();
+    analytics = FakeAppAnalytics();
+    AnalyticsRuntime.instance = analytics;
     app_state.prismUser = profileUser();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('PonnamKarthik/fluttertoast'),
@@ -110,6 +127,7 @@ void main() {
     expect(find.text('Following'), findsOneWidget);
     expect(find.text('Follow'), findsNothing);
     expect(store.topics, <FollowedTopic>[pastel]);
+    expect(analytics.events.where((event) => event.eventName == 'topic_followed'), hasLength(1));
     // The success toast leaves a one second timer in fluttertoast. Let it finish.
     await tester.pump(const Duration(seconds: 1));
   });
@@ -149,6 +167,71 @@ void main() {
 
     expect(find.bySemanticsLabel('Unfollow Pastel'), findsOneWidget);
     expect(find.bySemanticsLabel('Follow Pastel'), findsNothing);
+    expect(store.topics, <FollowedTopic>[pastel]);
+    expect(analytics.events.where((event) => event.eventName == 'topic_followed'), hasLength(1));
+    await tester.pump(const Duration(seconds: 1));
+    semantics.dispose();
+  });
+
+  testWidgets('repeated activations share one sign-in prompt and stay disabled until it closes', (tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final Completer<bool> signIn = Completer<bool>();
+    int prompts = 0;
+    signedInActionSignIn = (_) {
+      prompts++;
+      return signIn.future;
+    };
+    await tester.pumpWidget(_app(TopicFollowButton(topic: pastel)));
+    await tester.pumpAndSettle();
+
+    tester.semantics.tap(find.semantics.byLabel('Follow Pastel'));
+    tester.semantics.tap(find.semantics.byLabel('Follow Pastel'));
+    await tester.tap(find.text('Follow'));
+    await tester.pump();
+    final int promptsWhilePending = prompts;
+    final bool canTapWhilePending = tester
+        .getSemantics(find.bySemanticsLabel('Follow Pastel'))
+        .getSemanticsData()
+        .hasAction(SemanticsAction.tap);
+    signIn.complete(false);
+    await tester.pumpAndSettle();
+
+    expect(promptsWhilePending, 1);
+    expect(canTapWhilePending, isFalse);
+    expect(store.topics, isEmpty);
+    expect(firestore.writes, isEmpty);
+    tester.semantics.tap(find.semantics.byLabel('Follow Pastel'));
+    await tester.pumpAndSettle();
+    expect(prompts, 2, reason: 'cancelling sign-in releases the busy guard');
+    semantics.dispose();
+  });
+
+  testWidgets('a follow stays busy through its save and ignores the old physical button', (tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    await tester.pumpWidget(_app(TopicFollowButton(topic: pastel)));
+    await tester.pumpAndSettle();
+    firestore.followGate = Completer<void>();
+
+    tester.semantics.tap(find.semantics.byLabel('Follow Pastel'));
+    await tester.tap(find.text('Follow'));
+    await tester.pumpAndSettle();
+    final bool canTapWhileSaving = tester
+        .getSemantics(find.bySemanticsLabel('Unfollow Pastel'))
+        .getSemanticsData()
+        .hasAction(SemanticsAction.tap);
+    expect(analytics.events, isEmpty);
+    firestore.followGate!.complete();
+    await tester.pumpAndSettle();
+
+    expect(canTapWhileSaving, isFalse);
+    expect(store.topics, <FollowedTopic>[pastel]);
+    expect(analytics.events.where((event) => event.eventName == 'topic_followed'), hasLength(1));
+    expect(analytics.events.where((event) => event.eventName == 'topic_unfollowed'), isEmpty);
+    expect(
+      tester.getSemantics(find.bySemanticsLabel('Unfollow Pastel')).getSemanticsData().hasAction(SemanticsAction.tap),
+      isTrue,
+    );
     await tester.pump(const Duration(seconds: 1));
     semantics.dispose();
   });
