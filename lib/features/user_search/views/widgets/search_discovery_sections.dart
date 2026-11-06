@@ -183,7 +183,7 @@ class _CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    final BorderRadius radius = BorderRadius.circular(PrismRadius.md);
+    const BorderRadius radius = PrismWallGrid.tileRadius;
     return PressScale(
       scale: 0.97,
       child: Semantics(
@@ -260,11 +260,11 @@ class ColourSection extends StatelessWidget {
       children: <Widget>[
         PrismSectionHeader(title: context.l10n.accountBrowseByColour, padding: _sectionHeaderPadding),
         _hRow(
-          height: 48,
+          height: 72,
           count: prismPalette.length,
           builder: (context, index) {
             final PrismPaletteColor entry = prismPalette[index];
-            return PaletteSwatch(color: entry, onTap: () => onPressed(entry));
+            return PaletteSwatch(color: entry, showName: true, onTap: () => onPressed(entry));
           },
         ),
       ],

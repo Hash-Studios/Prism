@@ -167,7 +167,7 @@ class _ActivityRow extends StatelessWidget {
       label: l10n.economyCoinActivitySemantics(label, date, amount, entry.delta.abs()),
       excludeSemantics: true,
       child: PrismRow(
-        icon: entry.isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+        leading: _ActivityIcon(credit: entry.isCredit),
         title: label,
         subtitle: date,
         trailing: Text(
@@ -177,6 +177,27 @@ class _ActivityRow extends StatelessWidget {
           ).copyWith(color: entry.isCredit ? scheme.tertiary : scheme.onSurface, fontWeight: FontWeight.w700),
         ),
       ),
+    );
+  }
+}
+
+/// A plus on a green tint for coins earned, a minus on a neutral tint for coins spent.
+class _ActivityIcon extends StatelessWidget {
+  const _ActivityIcon({required this.credit});
+
+  final bool credit;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color fg = credit ? PrismColors.success : Theme.of(context).colorScheme.onSurface;
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: fg.withValues(alpha: credit ? 0.14 : 0.08),
+        borderRadius: BorderRadius.circular(PrismRadius.xs + 2),
+      ),
+      child: Icon(credit ? Icons.add_rounded : Icons.remove_rounded, size: 18, color: fg),
     );
   }
 }

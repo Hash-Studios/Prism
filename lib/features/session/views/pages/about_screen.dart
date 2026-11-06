@@ -365,16 +365,13 @@ class _AboutScreenState extends State<AboutScreen> {
         _trackAction(AnalyticsActionValue.backTapped, sourceContext: 'about_screen_close');
         context.router.maybePop();
       },
-      bottomBar: Padding(
-        padding: const EdgeInsets.only(top: PrismSpace.xs),
-        child: Text(
-          context.l10n.accountMadeWithLoveInIndia,
-          textAlign: TextAlign.center,
-          style: PrismTextStyles.caption(context),
-        ),
-      ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.md, PrismSpace.page, PrismSpace.xl),
+        padding: EdgeInsets.fromLTRB(
+          PrismSpace.page,
+          PrismSpace.md,
+          PrismSpace.page,
+          PrismSpace.xl + MediaQuery.paddingOf(context).bottom,
+        ),
         children: <Widget>[
           _header(context),
           const SizedBox(height: PrismSpace.md),
@@ -418,6 +415,13 @@ class _AboutScreenState extends State<AboutScreen> {
           _hairline(context),
           const SizedBox(height: PrismSpace.md),
           const PrismList(),
+          // The sign-off ends the list instead of a sticky footer that covers rows while scrolling.
+          const SizedBox(height: PrismSpace.xl),
+          Text(
+            context.l10n.accountMadeWithLoveInIndia,
+            textAlign: TextAlign.center,
+            style: PrismTextStyles.caption(context),
+          ),
         ],
       ),
     );

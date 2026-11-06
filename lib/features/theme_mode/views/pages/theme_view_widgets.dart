@@ -1,3 +1,4 @@
+import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 /// Accent colours the user can pick from.
@@ -24,4 +25,30 @@ const List<Color> prismAccentSwatches = <Color>[
   Color(0xFF795548),
   Color(0xFF9e9e9e),
   Color(0xFF607d8b),
+];
+
+/// The colour family name of each swatch in [prismAccentSwatches], in the same order.
+final List<String Function(AppLocalizations)> prismAccentSwatchNames = <String Function(AppLocalizations)>[
+  (l) => l.coreColorPink,
+  (l) => l.coreColorRed,
+  (l) => l.coreColorRed,
+  (l) => l.coreColorPink,
+  (l) => l.coreColorPurple,
+  (l) => l.coreColorPurple,
+  (l) => l.coreColorBlue,
+  (l) => l.coreColorBlue,
+  (l) => l.coreColorBlue,
+  (l) => l.coreColorTeal,
+  (l) => l.coreColorTeal,
+  (l) => l.coreColorGreen,
+  (l) => l.coreColorGreen,
+  (l) => l.coreColorGreen,
+  (l) => l.coreColorGreen,
+  (l) => l.coreColorYellow,
+  (l) => l.coreColorYellow,
+  (l) => l.coreColorOrange,
+  (l) => l.coreColorOrange,
+  (l) => l.coreColorBrown,
+  (l) => l.coreColorGrey,
+  (l) => l.coreColorGrey,
 ];

@@ -6,6 +6,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/drops/drops.dart';
 import 'package:Prism/features/drops/views/widgets/drop_actions.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
@@ -165,7 +166,7 @@ void main() {
       expect(find.descendant(of: tile, matching: find.text('Owned')), findsOneWidget);
     });
 
-    testWidgets('unlocking a wall puts its heart on the tile and keeps the grid spacing', (tester) async {
+    testWidgets('unlocking a wall gives it the hold menu, no heart, and keeps the grid spacing', (tester) async {
       tester.view.physicalSize = const Size(393, 852);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -193,15 +194,10 @@ void main() {
       await tester.pump();
 
       expect(rowGap(), moreOrLessEquals(bare, epsilon: 0.01));
-      final Finder heart = find.byIcon(Icons.favorite_border_rounded);
-      expect(find.descendant(of: find.byKey(const ValueKey<String>('A')), matching: heart), findsOneWidget);
-      expect(heart, findsOneWidget);
-      // The heart sits on the image's bottom-start corner.
-      final Rect tile = tester.getRect(find.byType(PrismWallTile).at(0));
-      final Offset glyph = tester.getCenter(heart);
-      expect(tile.contains(glyph), isTrue);
-      expect(glyph.dx, lessThan(tile.center.dx));
-      expect(glyph.dy, greaterThan(tile.center.dy));
+      final Finder region = find.byType(WallpaperQuickActionRegion);
+      expect(find.descendant(of: find.byKey(const ValueKey<String>('A')), matching: region), findsOneWidget);
+      expect(region, findsOneWidget);
+      expect(find.byIcon(Icons.favorite_border_rounded), findsNothing);
     });
 
     testWidgets('starts the bloc and shows a skeleton while loading', (tester) async {

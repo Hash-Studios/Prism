@@ -347,7 +347,7 @@ void main() {
       final upload = find.text('Upload a wallpaper');
       expect(Theme.of(tester.element(title)).brightness, brightness);
       final glint = tester.getRect(find.byType(Glint));
-      expect(glint.size, const Size.square(120), reason: 'Glint stretched to the list width paints over the copy');
+      expect(glint.size, const Size.square(96), reason: 'Glint stretched to the list width paints over the copy');
       expect(glint.center.dx, 160);
       expect(glint.bottom, lessThan(tester.getRect(title).top));
       expect(title.hitTestable(), findsOneWidget);

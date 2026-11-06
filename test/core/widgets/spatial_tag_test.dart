@@ -1,4 +1,6 @@
+import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
+import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -32,91 +34,77 @@ void main() {
     });
 
     for (final WallSpatialTier tier in <WallSpatialTier>[WallSpatialTier.great, WallSpatialTier.ok]) {
-      onPlatform('a ${tier.name} wall shows the Spatial tag with a label at the bottom end', TargetPlatform.iOS, (
-        tester,
-      ) async {
-        const ValueKey<String> tileKey = ValueKey<String>('tile');
-        final AppLocalizationsEn l10n = AppLocalizationsEn();
-        await tester.pumpWidget(
-          MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            home: Scaffold(
-              body: Center(
-                child: SizedBox(
-                  key: tileKey,
-                  width: 180,
-                  height: 232,
-                  child: Stack(children: <Widget>[spatialTagFor(tier)!]),
+      onPlatform(
+        'a ${tier.name} wall shows a 24 point icon badge at the top end, even with large text',
+        TargetPlatform.iOS,
+        (tester) async {
+          const ValueKey<String> tileKey = ValueKey<String>('tile');
+          final AppLocalizationsEn l10n = AppLocalizationsEn();
+          await tester.pumpWidget(
+            MaterialApp(
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: MediaQuery(
+                data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+                child: Scaffold(
+                  body: Center(
+                    child: SizedBox(
+                      key: tileKey,
+                      width: 180,
+                      height: 232,
+                      child: Stack(children: <Widget>[spatialTagFor(tier)!]),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        );
+          );
 
-        expect(find.byType(SpatialTag), findsOneWidget);
-        expect(find.text(l10n.coreSpatialBadge), findsOneWidget);
-        final Rect tile = tester.getRect(find.byKey(tileKey));
-        final Rect tag = tester.getRect(find.byType(SpatialTag));
-        expect(tile.right - tag.right, 6);
-        expect(tile.bottom - tag.bottom, 6);
-      });
+          expect(find.byType(SpatialTag), findsOneWidget);
+          expect(find.text(l10n.coreSpatialBadge), findsNothing);
+          expect(find.byIcon(Icons.view_in_ar_rounded), findsOneWidget);
+          expect(find.bySemanticsLabel(l10n.coreSpatialBadgeSemantic), findsOneWidget);
+          final Rect tile = tester.getRect(find.byKey(tileKey));
+          final Rect tag = tester.getRect(find.byType(SpatialTag));
+          expect(tag.size, const Size(24, 24));
+          expect(tile.right - tag.right, 8);
+          expect(tag.top - tile.top, 8);
+          expect(tester.takeException(), isNull);
+        },
+      );
     }
-
-    onPlatform(
-      'a narrow tile shows only the icon, so the heart at the other corner never meets it',
-      TargetPlatform.iOS,
-      (tester) async {
-        final AppLocalizationsEn l10n = AppLocalizationsEn();
-        await tester.pumpWidget(
-          MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            home: Scaffold(
-              body: Center(
-                child: SizedBox(
-                  width: 100,
-                  height: 200,
-                  child: Stack(children: <Widget>[spatialTagFor(WallSpatialTier.great)!]),
-                ),
-              ),
-            ),
-          ),
-        );
-
-        expect(find.text(l10n.coreSpatialBadge), findsNothing);
-        expect(find.byIcon(Icons.view_in_ar_rounded), findsOneWidget);
-        expect(tester.getSize(find.byType(SpatialTag)), const Size(24, 24));
-        expect(find.bySemanticsLabel(l10n.coreSpatialBadgeSemantic), findsOneWidget);
-      },
-    );
   });
 
-  onPlatform('large text keeps the Spatial tag clear of the heart target', TargetPlatform.iOS, (tester) async {
+  onPlatform('Depth and Spatial badges share one row at the top end and never overlap', TargetPlatform.iOS, (
+    tester,
+  ) async {
+    const ValueKey<String> tileKey = ValueKey<String>('tile');
+    final Widget? tags = stackTags(<Widget?>[depthTagFor(WallDepthTier.auto), spatialTagFor(WallSpatialTier.great)]);
+    expect(tags, isA<TileBadges>());
     await tester.pumpWidget(
       MaterialApp(
-        locale: const Locale('de'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: MediaQuery(
-          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
-          child: Scaffold(
-            body: Center(
-              child: SizedBox(
-                key: const ValueKey('tile'),
-                width: 160,
-                height: 280,
-                child: Stack(children: [spatialTagFor(WallSpatialTier.great)!]),
-              ),
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              key: tileKey,
+              width: 180,
+              height: 232,
+              child: Stack(children: <Widget>[tags!]),
             ),
           ),
         ),
       ),
     );
-    final tile = tester.getRect(find.byKey(const ValueKey('tile')));
-    final tag = tester.getRect(find.byType(SpatialTag));
-    expect(tag.left, greaterThanOrEqualTo(tile.left + 44));
-    expect(tester.takeException(), isNull);
+
+    final Rect tile = tester.getRect(find.byKey(tileKey));
+    final Rect depth = tester.getRect(find.byType(DepthTag));
+    final Rect spatial = tester.getRect(find.byType(SpatialTag));
+    expect(depth.overlaps(spatial), isFalse);
+    expect(depth.top, spatial.top);
+    expect(tile.right - spatial.right, 8);
+    expect(spatial.left - depth.right, 4);
   });
 
   group('stackTags', () {
@@ -132,6 +120,20 @@ void main() {
 
     testWidgets('gives a stack for two layers', (tester) async {
       expect(stackTags(<Widget?>[const Text('a'), const Text('b')]), isA<Stack>());
+    });
+
+    testWidgets('keeps other layers beside the merged badges', (tester) async {
+      const Text other = Text('other');
+      final Widget? stacked = stackTags(<Widget?>[
+        other,
+        const TileBadges(badges: <Widget>[SizedBox()]),
+        const TileBadges(badges: <Widget>[SizedBox()]),
+      ]);
+      expect(stacked, isA<Stack>());
+      final List<Widget> children = (stacked! as Stack).children;
+      expect(children, hasLength(2));
+      expect(children.first, same(other));
+      expect((children.last as TileBadges).badges, hasLength(2));
     });
   });
 }

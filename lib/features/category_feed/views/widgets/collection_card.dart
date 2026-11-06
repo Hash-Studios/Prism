@@ -78,17 +78,13 @@ class CollectionCard extends StatelessWidget {
               children: <Widget>[
                 ColoredBox(color: cs.surfaceContainerHighest),
                 if (url.isNotEmpty) _Cover(url: url),
+                // The lower half darkens to 0.65 black so the white name reads on pale covers too.
                 DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      begin: const Alignment(0, -0.2),
+                      begin: Alignment.center,
                       end: Alignment.bottomCenter,
-                      stops: const <double>[0, 0.55, 1],
-                      colors: <Color>[
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.3),
-                        Colors.black.withValues(alpha: 0.82),
-                      ],
+                      colors: <Color>[Colors.black.withValues(alpha: 0), Colors.black.withValues(alpha: 0.65)],
                     ),
                   ),
                 ),
@@ -106,7 +102,11 @@ class CollectionCard extends StatelessWidget {
                     data.title(context.l10n),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: PrismTextStyles.cardTitle(context).copyWith(color: Colors.white),
+                    style: PrismTextStyles.cardTitle(context).copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      shadows: const <Shadow>[Shadow(color: Color(0x80000000), blurRadius: 6, offset: Offset(0, 1))],
+                    ),
                   ),
                 ),
                 if (data.isPremium)

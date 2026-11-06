@@ -474,6 +474,12 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                                   isRefreshing: state.isRefreshing,
                                 ),
                               ),
+                              // Room under the tab divider: 16 above the For you carousel, 12 above the other grids.
+                              SliverToBoxAdapter(
+                                child: SizedBox(
+                                  height: state.chip == HomeFeedChip.forYou ? PrismSpace.md : PrismSpace.sm,
+                                ),
+                              ),
                               ..._contentSlivers(context, state, crossAxisCount, tileMemCacheHeight),
                               const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
                             ],

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_max_width.dart';
@@ -5,6 +7,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 /// The header of every page: an optional back button, a large title and trailing actions.
 class PrismHeader extends StatelessWidget {
@@ -98,7 +101,7 @@ class PrismPage extends StatefulWidget {
   /// Pinned under the header, for example a tab bar or a filter row.
   final Widget? headerBottom;
 
-  /// Pinned at the bottom, for example the page's main action.
+  /// Pinned at the bottom, for example the page's main action. A hairline shows on top while content scrolls under it.
   final Widget? bottomBar;
   final bool resizeToAvoidBottomInset;
 
@@ -112,36 +115,69 @@ class PrismPage extends StatefulWidget {
 
 class _PrismPageState extends State<PrismPage> {
   bool _scrolled = false;
+
+  /// The body has more content below the fold, under the bottom bar.
+  bool _moreBelow = false;
   TabController? _tabController;
   List<bool> _tabScroll = <bool>[];
+  List<bool> _tabMore = <bool>[];
 
   void _setTabController(TabController? controller, int length) {
     if (identical(controller, _tabController) && _tabScroll.length == length) return;
     _tabController?.removeListener(_onTabChanged);
     _tabController = controller;
     _tabScroll = List<bool>.filled(length, false);
+    _tabMore = List<bool>.filled(length, false);
     controller?.addListener(_onTabChanged);
   }
 
   void _onTabChanged() {
     final int index = _tabController!.index;
     final bool scrolled = index < _tabScroll.length && _tabScroll[index];
-    if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
+    final bool more = index < _tabMore.length && _tabMore[index];
+    if (scrolled != _scrolled || more != _moreBelow) {
+      setState(() {
+        _scrolled = scrolled;
+        _moreBelow = more;
+      });
+    }
   }
 
   bool _onTabScroll(int index, ScrollMetrics metrics) {
     if (metrics.axis != Axis.vertical) return false;
     final bool scrolled = metrics.pixels > 2;
+    final bool more = metrics.extentAfter > 2;
     _tabScroll[index] = scrolled;
-    if (_tabController?.index == index && scrolled != _scrolled) setState(() => _scrolled = scrolled);
+    _tabMore[index] = more;
+    if (_tabController?.index == index) _setScrollState(scrolled, more);
     return false;
   }
 
   bool _onScroll(ScrollMetrics metrics) {
     if (metrics.axis != Axis.vertical) return false;
     final bool scrolled = metrics.pixels > 2;
-    if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
+    final bool more = metrics.extentAfter > 2;
+    _setScrollState(scrolled, more);
     return false;
+  }
+
+  /// Scroll metrics notifications also arrive during layout, where setState is not allowed. Then the change waits for
+  /// the end of the frame.
+  void _setScrollState(bool scrolled, bool more) {
+    if (scrolled == _scrolled && more == _moreBelow) return;
+    void apply() {
+      if (!mounted || (scrolled == _scrolled && more == _moreBelow)) return;
+      setState(() {
+        _scrolled = scrolled;
+        _moreBelow = more;
+      });
+    }
+
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => apply());
+    } else {
+      apply();
+    }
   }
 
   Widget _buildBody() {
@@ -151,6 +187,7 @@ class _PrismPageState extends State<PrismPage> {
       _setTabController(controller, body.children.length);
       final int activeIndex = controller?.index ?? 0;
       _scrolled = activeIndex < _tabScroll.length && _tabScroll[activeIndex];
+      _moreBelow = activeIndex < _tabMore.length && _tabMore[activeIndex];
       return TabBarView(
         key: body.key,
         controller: body.controller,
@@ -194,10 +231,13 @@ class _PrismPageState extends State<PrismPage> {
           ? null
           : Padding(
               padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-              // A hairline on top separates the pinned action from the content that scrolls under it.
+              // A hairline on top separates the pinned action from content that scrolls under it. With nothing under
+              // it, the action sits on the page with no line.
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: cs.onSurface.withValues(alpha: 0.08))),
+                  border: Border(
+                    top: BorderSide(color: _moreBelow ? cs.onSurface.withValues(alpha: 0.08) : Colors.transparent),
+                  ),
                 ),
                 child: SafeArea(
                   minimum: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.md),
@@ -227,6 +267,32 @@ class _PrismPageState extends State<PrismPage> {
               Expanded(child: body),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The body of a short task page. [child] sits at the optical centre of the space (a little above the middle) when it
+/// fits, and scrolls when it does not. Put the page's main action in [PrismPage.bottomBar].
+class PrismCenteredScroll extends StatelessWidget {
+  const PrismCenteredScroll({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.md, PrismSpace.page, PrismSpace.xl),
+  });
+
+  final Widget child;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: padding,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: math.max(0, constraints.maxHeight - padding.vertical)),
+          child: Align(alignment: const Alignment(0, -0.12), child: child),
         ),
       ),
     );

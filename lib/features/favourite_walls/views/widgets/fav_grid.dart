@@ -591,25 +591,12 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                       ),
                     ),
                   ),
-                if (wall.pinned && !isSelected)
+                // The pin sits top-start, opposite the Depth and Spatial badges. The sync label takes that corner first.
+                if (wall.pinned && !isSelected && wall.syncStatus == FavouriteSyncStatus.synced)
                   PositionedDirectional(
-                    end: PrismSpace.xs,
-                    top: PrismSpace.xs,
-                    child: Semantics(
-                      label: context.l10n.favouritePinnedBadge,
-                      child: ExcludeSemantics(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: cs.surfaceContainerHigh.withValues(alpha: 0.94),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(PrismSpace.xxs + 1),
-                            child: Icon(Icons.push_pin_rounded, size: 14, color: cs.onSurface),
-                          ),
-                        ),
-                      ),
-                    ),
+                    start: TileBadges.inset,
+                    top: TileBadges.inset,
+                    child: TileBadge(icon: Icons.push_pin_rounded, label: context.l10n.favouritePinnedBadge),
                   ),
                 // A pure white or black hairline keeps dark images from melting into the page.
                 IgnorePointer(

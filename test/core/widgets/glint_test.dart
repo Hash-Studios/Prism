@@ -371,12 +371,13 @@ void main() {
     }
   });
 
-  testWidgets('the sheen uses its linear keyframe displacement from origin zero', (WidgetTester tester) async {
-    final _GlintPaintTrace sheen = await trace(tester, GlintMood.calm, .64);
-    final typed_data.Float64List transform = sheen.sheenTransform!;
-    final typed_data.Float64List body = sheen.crystalTransform!;
-    expect((transform[12] - body[12]) / body[0], closeTo(-8.5, .001));
-    expect(transform[13] - body[13], closeTo(0, .001));
+  testWidgets('no mood paints a glare band across the crystal', (WidgetTester tester) async {
+    // Calm and proud used to sweep a pale cyan band over the face; a still capture read it as a glare stripe.
+    for (final GlintMood mood in GlintMood.values) {
+      for (double fraction = 0; fraction < 1; fraction += .04) {
+        expect((await trace(tester, mood, fraction)).sheenTransform, isNull, reason: '$mood at $fraction');
+      }
+    }
   });
 
   testWidgets('ring junction colours follow the SVG segment gradients and love palette', (WidgetTester tester) async {

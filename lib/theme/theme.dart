@@ -314,8 +314,8 @@ extension PrismThemeData on ThemeData {
           style: FilledButton.styleFrom(
             backgroundColor: cs.primary,
             foregroundColor: cs.onPrimary,
-            disabledBackgroundColor: cs.onSurface.withValues(alpha: 0.08),
-            disabledForegroundColor: cs.onSurface.withValues(alpha: 0.5),
+            disabledBackgroundColor: cs.onSurface.withValues(alpha: PrismInk.disabledFillAlpha),
+            disabledForegroundColor: cs.onSurface.withValues(alpha: PrismInk.disabledLabelAlpha),
             minimumSize: buttonSize,
             padding: buttonPadding,
             shape: pill,
@@ -422,13 +422,17 @@ extension PrismThemeData on ThemeData {
           contentPadding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),
         ),
         switchTheme: SwitchThemeData(
+          // Off: an outlined track with an outline thumb, so the off state reads on a card fill as well as on the page.
           thumbColor: WidgetStateProperty.resolveWith(
-            (states) => states.contains(WidgetState.selected) ? cs.onPrimary : cs.onSurface.withValues(alpha: 0.7),
+            (states) => states.contains(WidgetState.selected) ? cs.onPrimary : cs.outline,
           ),
           trackColor: WidgetStateProperty.resolveWith(
-            (states) => states.contains(WidgetState.selected) ? cs.primary : cs.onSurface.withValues(alpha: 0.18),
+            (states) => states.contains(WidgetState.selected) ? cs.primary : cs.surfaceContainerHighest,
           ),
-          trackOutlineColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+          trackOutlineColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected) ? Colors.transparent : cs.outline,
+          ),
+          trackOutlineWidth: const WidgetStatePropertyAll<double>(PrismInk.switchOutlineWidth),
         ),
         sliderTheme: SliderThemeData(
           activeTrackColor: cs.primary,

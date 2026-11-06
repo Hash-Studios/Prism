@@ -263,6 +263,12 @@ void main() {
         top(find.text('Made with ❤ in India with Flutter!')),
       ];
       expect(order, orderedEquals(<double>[...order]..sort()), reason: "sections follow master's order");
+      // The sign-off ends the list; no sticky footer covers rows.
+      expect(tester.widget<Scaffold>(find.byType(Scaffold).first).bottomNavigationBar, isNull);
+      expect(
+        find.descendant(of: find.byType(ListView), matching: find.text('Made with ❤ in India with Flutter!')),
+        findsOneWidget,
+      );
       expect(find.text('1 commit'), findsOneWidget);
       expect(find.text('7 commits'), findsOneWidget);
     });

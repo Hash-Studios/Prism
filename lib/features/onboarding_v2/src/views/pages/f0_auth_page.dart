@@ -76,9 +76,12 @@ class _F0AuthPageState extends State<F0AuthPage> {
     final bool ios = defaultTargetPlatform == TargetPlatform.iOS;
     final OnboardingRecovery? recovery = OnboardingRecoveryScope.maybeOf(context);
     final TextStyle headline = PrismTextStyles.display(context).copyWith(color: Colors.white);
-    final TextStyle body = PrismTextStyles.body(
-      context,
-    ).copyWith(color: Colors.white.withValues(alpha: 0.85), fontSize: 16);
+    final TextStyle body = PrismTextStyles.body(context).copyWith(
+      color: Colors.white.withValues(alpha: 0.95),
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+      shadows: <Shadow>[Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 6, offset: const Offset(0, 1))],
+    );
     return BlocListener<OnboardingV2Bloc, OnboardingV2State>(
       listenWhen: (prev, curr) =>
           prev.interestsData.categoryImages.isEmpty && curr.interestsData.categoryImages.isNotEmpty,
@@ -100,10 +103,11 @@ class _F0AuthPageState extends State<F0AuthPage> {
                     Colors.black.withValues(alpha: 0.32),
                     Colors.transparent,
                     Colors.transparent,
-                    Colors.black.withValues(alpha: 0.55),
-                    Colors.black.withValues(alpha: 0.7),
+                    Colors.black.withValues(alpha: 0.6),
+                    Colors.black.withValues(alpha: 0.85),
                   ],
-                  stops: const <double>[0, 0.16, 0.34, 0.58, 1],
+                  // The pitch, buttons and legal row sit on the lower half, so it carries the dark end of the scrim.
+                  stops: const <double>[0, 0.16, 0.3, 0.55, 1],
                 ),
               ),
             ),

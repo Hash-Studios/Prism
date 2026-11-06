@@ -191,17 +191,28 @@ void main() {
     }
   });
 
-  testWidgets('the automation note is a full-width card with an info icon, outside the step indent', (tester) async {
+  testWidgets('each step is a full-width card and the automation note sits in flow inside its card', (tester) async {
     await _pump(tester, folders: _foldersState());
     final AppLocalizations l10n = _l10n(tester);
 
     final Finder icon = find.byIcon(Icons.info_outline_rounded);
     expect(icon, findsOneWidget);
-    final Finder card = find.ancestor(of: icon, matching: find.byType(PrismCard));
-    final double stepTitleLeft = tester.getTopLeft(find.text(l10n.shortcutsStepAutomationTitle)).dx;
-    expect(tester.getTopLeft(card).dx, lessThan(stepTitleLeft));
+    final Finder noteCard = find.ancestor(of: icon, matching: find.byType(PrismCard));
+    expect(noteCard, findsOneWidget);
+    final Finder stepCard = find.ancestor(
+      of: find.text(l10n.shortcutsStepAutomationTitle),
+      matching: find.byType(PrismCard),
+    );
+    expect(tester.widget(noteCard), same(tester.widget(stepCard)));
     final Finder rotationCard = find.byType(PrismCard).first;
-    expect(tester.getTopLeft(card).dx, tester.getTopLeft(rotationCard).dx);
-    expect(tester.getSize(card).width, tester.getSize(rotationCard).width);
+    for (final String title in <String>[
+      l10n.shortcutsStepAddTitle,
+      l10n.shortcutsStepAutomationTitle,
+      l10n.shortcutsStepTestTitle,
+    ]) {
+      final Finder card = find.ancestor(of: find.text(title), matching: find.byType(PrismCard));
+      expect(tester.getTopLeft(card).dx, tester.getTopLeft(rotationCard).dx);
+      expect(tester.getSize(card).width, tester.getSize(rotationCard).width);
+    }
   });
 }

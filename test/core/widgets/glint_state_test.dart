@@ -71,29 +71,36 @@ void main() {
     expect(tester.widget<PrismButton>(find.byType(PrismButton)).variant, PrismButtonVariant.tonal);
   });
 
-  testWidgets('sits above the centre on a tall area and in the centre on a short one', (tester) async {
-    await tester.pumpWidget(
-      host(
-        const GlintState(kind: GlintStateKind.empty, title: 'T'),
-        size: const Size(360, 600),
-      ),
-    );
-    await tester.pump(const Duration(milliseconds: 300));
-    final Rect tall = tester.getRect(find.byType(GlintState));
-    final double tallMiddle = (tester.getTopLeft(find.byType(Glint)).dy + tester.getBottomLeft(find.text('T')).dy) / 2;
-    expect(tallMiddle, lessThan(tall.center.dy - 60), reason: 'biased towards the top');
+  testWidgets(
+    'sits at the optical centre (a little above the middle) on a tall area and in the centre on a short one',
+    (tester) async {
+      await tester.pumpWidget(
+        host(
+          const GlintState(kind: GlintStateKind.empty, title: 'T'),
+          size: const Size(360, 600),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      final Rect tall = tester.getRect(find.byType(GlintState));
+      final double tallMiddle =
+          (tester.getTopLeft(find.byType(GlintHalo)).dy + tester.getBottomLeft(find.text('T')).dy) / 2;
+      // Not in the top half with an empty bottom half: only a small optical lift above the middle.
+      expect(tallMiddle, lessThan(tall.center.dy - 5), reason: 'lifted a little');
+      expect(tallMiddle, greaterThan(tall.center.dy - 40), reason: 'not pushed into the top half');
 
-    await tester.pumpWidget(
-      host(
-        const GlintState(kind: GlintStateKind.empty, title: 'T'),
-        size: const Size(360, 400),
-      ),
-    );
-    await tester.pump(const Duration(milliseconds: 300));
-    final Rect short = tester.getRect(find.byType(GlintState));
-    final double shortMiddle = (tester.getTopLeft(find.byType(Glint)).dy + tester.getBottomLeft(find.text('T')).dy) / 2;
-    expect(shortMiddle, closeTo(short.center.dy, 1));
-  });
+      await tester.pumpWidget(
+        host(
+          const GlintState(kind: GlintStateKind.empty, title: 'T'),
+          size: const Size(360, 400),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      final Rect short = tester.getRect(find.byType(GlintState));
+      final double shortMiddle =
+          (tester.getTopLeft(find.byType(Glint)).dy + tester.getBottomLeft(find.text('T')).dy) / 2;
+      expect(shortMiddle, closeTo(short.center.dy, 1));
+    },
+  );
 
   testWidgets('a tall area gets the halo, a section title and a large wide action; a short one stays compact', (
     tester,
@@ -117,12 +124,13 @@ void main() {
 
     await pumpAt(const Size(390, 700));
     expect(find.byType(GlintHalo), findsOneWidget);
-    expect(tester.getSize(find.byType(GlintHalo)), const Size.square(176));
-    expect(tester.widget<Glint>(find.byType(Glint)).size, 120);
+    expect(tester.getSize(find.byType(GlintHalo)), const Size.square(144));
+    expect(tester.widget<Glint>(find.byType(Glint)).size, 96);
     expect(tester.widget<Text>(find.text('T')).style!.fontSize, 20);
     expect(tester.widget<PrismButton>(find.byType(PrismButton)).size, PrismButtonSize.large);
     expect(tester.getSize(find.byType(FilledButton)).width, greaterThanOrEqualTo(220));
     expect(tester.getTopLeft(find.text('T')).dy - tester.getBottomLeft(find.byType(GlintHalo)).dy, 24);
+    expect(tester.getTopLeft(find.text('B')).dy - tester.getBottomLeft(find.text('T')).dy, 8);
     expect(tester.getTopLeft(find.byType(FilledButton)).dy - tester.getBottomLeft(find.text('B')).dy, 24);
 
     await pumpAt(const Size(390, 400));
@@ -132,7 +140,7 @@ void main() {
 
     await pumpAt(const Size(390, 700), glintSize: 64);
     expect(tester.widget<Glint>(find.byType(Glint)).size, 64);
-    expect(tester.getSize(find.byType(GlintHalo)), const Size.square(120));
+    expect(tester.getSize(find.byType(GlintHalo)), const Size.square(112));
   });
 
   testWidgets('does not overflow at 320x200', (tester) async {

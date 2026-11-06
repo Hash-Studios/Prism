@@ -100,68 +100,71 @@ class _PremiumPageState extends State<PremiumPage> {
     ];
     return PrismPage(
       title: l10n.premiumPageTitle,
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(
-          PrismSpace.page,
-          PrismSpace.xs,
-          PrismSpace.page,
-          PrismSpace.xl + (trial == null ? MediaQuery.paddingOf(context).bottom : 0),
-        ),
-        children: <Widget>[
-          Text(l10n.premiumPageHeadline, style: PrismTextStyles.display(context)),
-          if (trial != null) ...<Widget>[
-            const SizedBox(height: PrismSpace.sm),
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: PrismTag(
-                label: l10n.premiumTrialEnds(DateFormat.yMMMd(l10n.localeName).format(trial.endsAt.toLocal())),
-                tone: PrismTone.accent,
-                icon: Icons.schedule_rounded,
-              ),
-            ),
-            if (!trial.willRenew) ...<Widget>[
-              const SizedBox(height: PrismSpace.xs),
-              Text(l10n.premiumTrialAutoRenewOff, style: PrismTextStyles.body(context)),
-            ],
-          ],
-          const SizedBox(height: PrismSpace.xl),
-          PrismGroup(
-            children: <Widget>[
-              for (final (IconData icon, String title) in benefits) PrismRow(icon: icon, title: title),
-            ],
-          ),
-          // The page is short, so the actions follow the benefits instead of sitting in a bottom bar.
-          if (trial == null) ...<Widget>[
-            const SizedBox(height: PrismSpace.xl),
-            if (_unavailable) ...<Widget>[
-              Text(l10n.premiumPagePlansUnavailable, textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
+      body: PrismCenteredScroll(
+        padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Text(l10n.premiumPageHeadline, style: PrismTextStyles.display(context)),
+            if (trial != null) ...<Widget>[
               const SizedBox(height: PrismSpace.sm),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: PrismTag(
+                  label: l10n.premiumTrialEnds(DateFormat.yMMMd(l10n.localeName).format(trial.endsAt.toLocal())),
+                  tone: PrismTone.accent,
+                  icon: Icons.schedule_rounded,
+                ),
+              ),
+              if (!trial.willRenew) ...<Widget>[
+                const SizedBox(height: PrismSpace.xs),
+                Text(l10n.premiumTrialAutoRenewOff, style: PrismTextStyles.body(context)),
+              ],
             ],
-            PrismButton(
-              label: _unavailable ? l10n.premiumPageTryAgain : l10n.premiumPageViewPlans,
-              loading: _presenting,
-              expand: true,
-              onPressed: _viewPlans,
-            ),
-            const SizedBox(height: PrismSpace.xxs),
-            PrismButton(
-              label: l10n.accountRestorePurchases,
-              variant: PrismButtonVariant.ghost,
-              loading: _restoring,
-              expand: true,
-              onPressed: _restore,
+            const SizedBox(height: PrismSpace.xl),
+            PrismGroup(
+              children: <Widget>[
+                for (final (IconData icon, String title) in benefits) PrismRow(icon: icon, title: title),
+              ],
             ),
           ],
-        ],
+        ),
       ),
-      bottomBar: trial == null
-          ? null
-          : PrismButton(
+      bottomBar: trial != null
+          ? PrismButton(
               label: l10n.accountManageSubscription,
               variant: PrismButtonVariant.tonal,
               expand: true,
               trailing: const Icon(Icons.open_in_new_rounded, size: 18),
               onPressed: () => openManageSubscription(l10n),
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (_unavailable) ...<Widget>[
+                  Text(
+                    l10n.premiumPagePlansUnavailable,
+                    textAlign: TextAlign.center,
+                    style: PrismTextStyles.body(context),
+                  ),
+                  const SizedBox(height: PrismSpace.sm),
+                ],
+                PrismButton(
+                  label: _unavailable ? l10n.premiumPageTryAgain : l10n.premiumPageViewPlans,
+                  loading: _presenting,
+                  expand: true,
+                  onPressed: _viewPlans,
+                ),
+                const SizedBox(height: PrismSpace.xxs),
+                PrismButton(
+                  label: l10n.accountRestorePurchases,
+                  variant: PrismButtonVariant.ghost,
+                  loading: _restoring,
+                  expand: true,
+                  onPressed: _restore,
+                ),
+              ],
             ),
     );
   }

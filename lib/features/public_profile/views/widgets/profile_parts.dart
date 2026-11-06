@@ -1,4 +1,6 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/shop/domain/cosmetic_styles.dart';
+import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
@@ -54,6 +56,31 @@ class ProfileSkeleton extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The equipped name glow as a short gradient line under the profile name. Nothing when no glow is equipped.
+class NameGlowUnderline extends StatelessWidget {
+  const NameGlowUnderline({super.key, required this.glowId});
+
+  final String? glowId;
+
+  @override
+  Widget build(BuildContext context) {
+    final String? id = glowId;
+    if (id == null || shopItem(id)?.kind != ShopItemKind.nameGlow) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: PrismSpace.xxs),
+      child: Container(
+        key: const ValueKey<String>('name-glow-underline'),
+        width: 40,
+        height: 3,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(PrismRadius.pill),
+          gradient: LinearGradient(colors: glowStyle(id).colors),
+        ),
       ),
     );
   }

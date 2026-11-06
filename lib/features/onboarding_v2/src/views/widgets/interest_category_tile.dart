@@ -8,6 +8,10 @@ import 'package:Prism/features/onboarding_v2/src/theme/onboarding_theme.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+const double _ringWidth = 2.5;
+
+/// One category to pick on the interests step: a photo with its name over a bottom scrim. Selected tiles get a 2.5
+/// point accent ring and a filled accent tick.
 class InterestCategoryTile extends StatelessWidget {
   const InterestCategoryTile({
     super.key,
@@ -26,8 +30,8 @@ class InterestCategoryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final String displayName = categoryDisplayName(name, context.l10n);
     const tileRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile));
-    const innerRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile - 2));
-    final accent = Theme.of(context).colorScheme.primary;
+    const innerRadius = BorderRadius.all(Radius.circular(OnboardingRadius.tile - _ringWidth));
+    final ColorScheme cs = Theme.of(context).colorScheme;
     final shortMotion = context.motion(OnboardingMotion.short);
     return AnimatedContainer(
       duration: shortMotion,
@@ -35,7 +39,7 @@ class InterestCategoryTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: OnboardingColors.surfaceGlass.withValues(alpha: OnboardingOpacity.cardBase),
         borderRadius: tileRadius,
-        border: Border.all(color: isSelected ? accent : OnboardingColors.transparent, width: 2),
+        border: Border.all(color: isSelected ? cs.primary : OnboardingColors.transparent, width: _ringWidth),
       ),
       child: Material(
         color: OnboardingColors.transparent,
@@ -76,6 +80,18 @@ class InterestCategoryTile extends StatelessWidget {
                         : OnboardingColors.transparent,
                   ),
                 ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.center,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        OnboardingColors.black.withValues(alpha: 0),
+                        OnboardingColors.black.withValues(alpha: 0.65),
+                      ],
+                    ),
+                  ),
+                ),
                 Positioned(
                   left: 8,
                   right: 8,
@@ -87,7 +103,7 @@ class InterestCategoryTile extends StatelessWidget {
                       color: Colors.white,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      shadows: [Shadow(blurRadius: 4, color: Colors.black54)],
+                      shadows: [Shadow(color: Color(0x80000000), blurRadius: 6, offset: Offset(0, 1))],
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -104,10 +120,10 @@ class InterestCategoryTile extends StatelessWidget {
                       curve: OnboardingMotion.emphasized,
                       scale: isSelected ? 1.0 : 0.5,
                       child: Container(
-                        width: 20,
-                        height: 20,
-                        decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
-                        child: const Icon(Icons.check_rounded, color: Colors.white, size: 14),
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(color: cs.primary, shape: BoxShape.circle),
+                        child: Icon(Icons.check_rounded, color: cs.onPrimary, size: 14),
                       ),
                     ),
                   ),

@@ -19,17 +19,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
 
-/// True while the scroll-to-top button is not offered: hidden behind the bar, or not built at all because the list is
-/// less than two screens down.
-bool _scrollToTopExcluded(WidgetTester tester) {
-  final Finder label = find.byWidgetPredicate(
-    (Widget widget) => widget is Semantics && widget.properties.label == AppLocalizationsEn().navigationScrollToTop,
-  );
-  if (label.evaluate().isEmpty) return true;
-  return tester
-      .widget<ExcludeSemantics>(find.ancestor(of: label, matching: find.byType(ExcludeSemantics)).first)
-      .excluding;
-}
+/// True while the docked band is on screen and takes taps.
+bool _bandShown(WidgetTester tester) => find.byType(PrismBottomNav).hitTestable().evaluate().isNotEmpty;
 
 /// Moves the list without leaving a fling, so a later pump does not scroll it back.
 Future<void> _dragList(WidgetTester tester, Offset offset) async {
@@ -282,78 +273,67 @@ void main() {
     expect(circleBehind(Icons.search_rounded), isNot(Colors.transparent));
   });
 
-  testWidgets('scrolling down hides the bar and shows a scroll to top button that scrolls up', (tester) async {
+  Widget list(ScrollController controller) => ListView.builder(
+    controller: controller,
+    itemCount: 100,
+    itemBuilder: (_, int i) => SizedBox(height: 80, child: Text('row $i')),
+  );
+
+  testWidgets('scrolling down slides the whole band away and offers no floating scroll-to-top button', (tester) async {
     final handle = tester.ensureSemantics();
-    final router = _FakeTabsRouter();
     final controller = ScrollController();
     addTearDown(controller.dispose);
-    await tester.pumpWidget(
-      _host(
-        router,
-        BottomBar(
-          child: ListView.builder(
-            controller: controller,
-            itemCount: 100,
-            itemBuilder: (_, i) => SizedBox(height: 80, child: Text('row $i')),
-          ),
-        ),
-        reduceMotion: true,
-      ),
-    );
-    final Finder toTop = find.bySemanticsLabel(AppLocalizationsEn().navigationScrollToTop);
-    expect(toTop, findsNothing);
+    await tester.pumpWidget(_host(_FakeTabsRouter(), BottomBar(child: list(controller)), reduceMotion: true));
+    expect(_bandShown(tester), isTrue);
 
-    await tester.drag(find.byType(ListView), const Offset(0, -600));
-    await tester.pumpAndSettle();
-    expect(controller.offset, greaterThan(0));
-    expect(toTop, findsNothing, reason: 'the bar hides at once, the button waits for two screens');
-
-    await tester.drag(find.byType(ListView), const Offset(0, -1000));
-    await tester.pumpAndSettle();
+    await _dragList(tester, const Offset(0, -1600));
     expect(controller.offset, greaterThan(1200));
-    expect(toTop, findsOneWidget);
-
-    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
-    await tester.pumpAndSettle();
-    expect(controller.offset, 0);
+    expect(_bandShown(tester), isFalse);
+    expect(find.bySemanticsLabel(AppLocalizationsEn().navigationScrollToTop), findsNothing);
+    expect(find.byIcon(Icons.arrow_upward_rounded), findsNothing);
     handle.dispose();
   });
 
-  testWidgets('scrolling back up brings the bar back', (tester) async {
-    final SemanticsHandle handle = tester.ensureSemantics();
+  testWidgets('scrolling back up brings the band back', (tester) async {
     final ScrollController controller = ScrollController();
     addTearDown(controller.dispose);
-    await tester.pumpWidget(
-      _host(
-        _FakeTabsRouter(),
-        BottomBar(
-          child: ListView.builder(
-            controller: controller,
-            itemCount: 100,
-            itemBuilder: (_, int i) => SizedBox(height: 80, child: Text('row $i')),
-          ),
-        ),
-        reduceMotion: true,
-      ),
-    );
+    await tester.pumpWidget(_host(_FakeTabsRouter(), BottomBar(child: list(controller)), reduceMotion: true));
 
     await _dragList(tester, const Offset(0, -1500));
     expect(controller.offset, greaterThan(0));
     // Issue #543: hiding on the way down must not stick after the user scrolls back.
-    expect(_scrollToTopExcluded(tester), isFalse);
+    expect(_bandShown(tester), isFalse);
 
-    await _dragList(tester, const Offset(0, 1500));
-    expect(controller.offset, lessThan(100));
-    expect(_scrollToTopExcluded(tester), isTrue);
+    await _dragList(tester, const Offset(0, 300));
+    expect(controller.offset, greaterThan(0));
+    expect(_bandShown(tester), isTrue);
+  });
+
+  testWidgets('tapping the active tab again scrolls its list to the top and says so to screen readers', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+    final ScrollController controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(_host(_FakeTabsRouter(), BottomBar(child: list(controller)), reduceMotion: true));
+    expect(
+      tester.getSemantics(find.bySemanticsLabel('Home')),
+      isSemantics(isSelected: true, isButton: true, hint: AppLocalizationsEn().navigationScrollToTop),
+    );
+    expect(tester.getSemantics(find.bySemanticsLabel('Search')).hint, isEmpty);
+
+    await _dragList(tester, const Offset(0, -1500));
+    await _dragList(tester, const Offset(0, 300));
+    expect(controller.offset, greaterThan(900));
+
+    await tester.tap(find.byTooltip('Home'));
+    await tester.pumpAndSettle();
+    expect(controller.offset, 0);
+    expect(analytics.events.whereType<NavTabSelectedEvent>(), isEmpty);
     handle.dispose();
   });
 
   // A route pop notifies MediaQuery, and Scrollable replaces its position.
-  // The bar must drive that new position. Animating the disposed one crashes
-  // (ValueNotifier / ScrollPosition used after dispose) and leaves the bar
-  // hidden. See GitHub issue #543.
+  // The tap must drive that new position, not the disposed one. See GitHub issue #543.
   testWidgets('scroll to top after the scroll position is replaced does not use the disposed position', (tester) async {
-    final SemanticsHandle handle = tester.ensureSemantics();
     final ScrollController controller = ScrollController();
     addTearDown(controller.dispose);
 
@@ -365,13 +345,7 @@ void main() {
             builder: (BuildContext context) {
               return MediaQuery(
                 data: MediaQuery.of(context).copyWith(devicePixelRatio: devicePixelRatio),
-                child: BottomBar(
-                  child: ListView.builder(
-                    controller: controller,
-                    itemCount: 100,
-                    itemBuilder: (_, int i) => SizedBox(height: 80, child: Text('row $i')),
-                  ),
-                ),
+                child: BottomBar(child: list(controller)),
               );
             },
           ),
@@ -382,24 +356,19 @@ void main() {
 
     await pumpAt(1);
     await _dragList(tester, const Offset(0, -1500));
+    await _dragList(tester, const Offset(0, 300));
     expect(controller.offset, greaterThan(0));
-    expect(_scrollToTopExcluded(tester), isFalse);
 
     await pumpAt(3);
     await tester.pump();
-    expect(_scrollToTopExcluded(tester), isFalse);
-
-    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+    await tester.tap(find.byTooltip('Home'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 800));
     expect(tester.takeException(), isNull);
     expect(controller.offset, 0);
-    expect(_scrollToTopExcluded(tester), isTrue);
-    handle.dispose();
   });
 
   testWidgets('navigating away during scroll to top does not use a disposed position', (tester) async {
-    final SemanticsHandle handle = tester.ensureSemantics();
     final ScrollController controller = ScrollController();
     addTearDown(controller.dispose);
 
@@ -407,31 +376,22 @@ void main() {
       return tester.pumpWidget(
         _host(
           _FakeTabsRouter(),
-          BottomBar(
-            child: showList
-                ? ListView.builder(
-                    controller: controller,
-                    itemCount: 100,
-                    itemBuilder: (_, int i) => SizedBox(height: 80, child: Text('row $i')),
-                  )
-                : const SizedBox.expand(key: Key('left-the-list')),
-          ),
-          reduceMotion: true,
+          BottomBar(child: showList ? list(controller) : const SizedBox.expand(key: Key('left-the-list'))),
         ),
       );
     }
 
     await pumpBody(showList: true);
     await _dragList(tester, const Offset(0, -1500));
-    expect(_scrollToTopExcluded(tester), isFalse);
+    await _dragList(tester, const Offset(0, 300));
+    expect(_bandShown(tester), isTrue);
 
-    await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+    await tester.tap(find.byTooltip('Home'));
     await tester.pump();
     await pumpBody(showList: false);
     await tester.pump(const Duration(milliseconds: 800));
     expect(tester.takeException(), isNull);
-    expect(_scrollToTopExcluded(tester), isTrue);
-    handle.dispose();
+    expect(_bandShown(tester), isTrue);
   });
 
   group('iOS right safe column (iPhone Duo outer screen)', () {

@@ -30,7 +30,7 @@ class WallRequestsPage extends StatelessWidget implements AutoRouteWrapper {
   Widget build(BuildContext context) => _WallRequestsView(initialTab: WallRequestTab.fromWire(tab));
 }
 
-/// A list shorter than this puts its intro and its Request button in the list. A longer one pins the button.
+/// A list shorter than this opens with an intro line, so a short page does not look empty.
 const int _shortListRows = 4;
 
 const List<WallRequestTab> _tabOrder = <WallRequestTab>[
@@ -115,71 +115,59 @@ class _WallRequestsViewState extends State<_WallRequestsView> with SingleTickerP
         toasts.error(wallRequestErrorText(context, error));
         context.read<WallRequestsCubit>().clearError();
       },
-      child: ListenableBuilder(
-        listenable: _tabs,
-        builder: (BuildContext context, _) => BlocBuilder<WallRequestsCubit, WallRequestsState>(
-          builder: (BuildContext context, WallRequestsState state) => PrismPage(
-            title: l10n.wallRequestsTitle,
-            headerBottom: TabBar(
-              controller: _tabs,
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
-              padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
-              labelPadding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm),
-              labelColor: cs.primary,
-              unselectedLabelColor: cs.onSurfaceVariant,
-              labelStyle: label,
-              unselectedLabelStyle: label,
-              indicator: UnderlineTabIndicator(
-                borderSide: BorderSide(color: cs.primary, width: 3),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
-              ),
-              indicatorSize: TabBarIndicatorSize.label,
-              dividerColor: Colors.transparent,
-              tabs: <Widget>[
-                Tab(text: l10n.wallRequestsTabTop),
-                Tab(text: l10n.wallRequestsTabNew),
-                Tab(text: l10n.wallRequestsTabFilled),
-              ],
-            ),
-            body: TabBarView(
-              controller: _tabs,
-              children: <Widget>[
-                for (final WallRequestTab tab in _tabOrder)
-                  _TabBody(
-                    tab: tab,
-                    isAdmin: isAdmin,
-                    onVote: (WallRequest request) => _vote(context.read<WallRequestsCubit>(), request, tab),
-                    onAsk: () => unawaited(_ask()),
-                  ),
-              ],
-            ),
-            bottomBar: _listIsShort(state.tab(_tabOrder[_tabs.index]))
-                ? null
-                : PrismButton(
-                    label: l10n.wallRequestsAsk,
-                    icon: Icons.add_rounded,
-                    expand: true,
-                    onPressed: () => unawaited(_ask()),
-                  ),
+      child: PrismPage(
+        title: l10n.wallRequestsTitle,
+        headerBottom: TabBar(
+          controller: _tabs,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
+          labelPadding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm),
+          labelColor: cs.primary,
+          unselectedLabelColor: cs.onSurfaceVariant,
+          labelStyle: label,
+          unselectedLabelStyle: label,
+          indicator: UnderlineTabIndicator(
+            borderSide: BorderSide(color: cs.primary, width: 3),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
           ),
+          indicatorSize: TabBarIndicatorSize.label,
+          dividerColor: Colors.transparent,
+          tabs: <Widget>[
+            Tab(text: l10n.wallRequestsTabTop),
+            Tab(text: l10n.wallRequestsTabNew),
+            Tab(text: l10n.wallRequestsTabFilled),
+          ],
+        ),
+        body: TabBarView(
+          controller: _tabs,
+          children: <Widget>[
+            for (final WallRequestTab tab in _tabOrder)
+              _TabBody(
+                tab: tab,
+                isAdmin: isAdmin,
+                onVote: (WallRequest request) => _vote(context.read<WallRequestsCubit>(), request, tab),
+              ),
+          ],
+        ),
+        // The page's one primary action, pinned at the bottom on every tab and list length.
+        bottomBar: PrismButton(
+          label: l10n.wallRequestsAsk,
+          icon: Icons.add_rounded,
+          expand: true,
+          onPressed: () => unawaited(_ask()),
         ),
       ),
     );
   }
 }
 
-/// A loaded list of one to three rows. It has its Request button in the list, not pinned.
-bool _listIsShort(WallRequestsTabState state) =>
-    state is WallRequestsTabLoaded && state.requests.isNotEmpty && state.requests.length < _shortListRows;
-
 class _TabBody extends StatelessWidget {
-  const _TabBody({required this.tab, required this.isAdmin, required this.onVote, required this.onAsk});
+  const _TabBody({required this.tab, required this.isAdmin, required this.onVote});
 
   final WallRequestTab tab;
   final bool isAdmin;
   final void Function(WallRequest request) onVote;
-  final VoidCallback onAsk;
 
   @override
   Widget build(BuildContext context) {
@@ -205,13 +193,11 @@ class _TabBody extends StatelessWidget {
               title: l10n.wallRequestsEmptyFilledTitle,
               body: l10n.wallRequestsEmptyFilledBody,
             ),
+            // The pinned Request button is the action, so the state does not repeat it.
             _ => GlintState(
               kind: GlintStateKind.empty,
               title: l10n.wallRequestsEmptyTopTitle,
               body: l10n.wallRequestsEmptyTopBody,
-              actionLabel: l10n.wallRequestsAsk,
-              actionVariant: PrismButtonVariant.tonal,
-              onAction: onAsk,
             ),
           },
           WallRequestsTabLoaded(:final List<WallRequest> requests) => RefreshIndicator(
@@ -219,25 +205,14 @@ class _TabBody extends StatelessWidget {
             child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xl),
-              // A short list opens with the intro and ends with the Request button, so the page does not look empty.
-              itemCount: requests.length + (short(requests) ? 2 : 0),
+              // A short list opens with the intro, so the page does not look empty.
+              itemCount: requests.length + (short(requests) ? 1 : 0),
               itemBuilder: (BuildContext context, int index) {
                 final bool isShort = short(requests);
                 if (isShort && index == 0) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: PrismSpace.xs),
                     child: Text(l10n.wallRequestsEmptyTopBody, style: PrismTextStyles.caption(context)),
-                  );
-                }
-                if (isShort && index == requests.length + 1) {
-                  return Padding(
-                    padding: const EdgeInsets.only(top: PrismSpace.lg),
-                    child: PrismButton(
-                      label: l10n.wallRequestsAsk,
-                      icon: Icons.add_rounded,
-                      expand: true,
-                      onPressed: onAsk,
-                    ),
                   );
                 }
                 final int rowIndex = isShort ? index - 1 : index;

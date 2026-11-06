@@ -29,7 +29,8 @@ class OnboardingTermsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextStyle text = PrismTextStyles.body(context).copyWith(
-      color: Colors.white.withValues(alpha: 0.92),
+      color: Colors.white.withValues(alpha: 0.95),
+      fontWeight: FontWeight.w500,
       shadows: <Shadow>[Shadow(color: Colors.black.withValues(alpha: 0.45), blurRadius: 6, offset: const Offset(0, 1))],
     );
     final AppLocalizations l10n = context.l10n;
@@ -84,7 +85,7 @@ class OnboardingTermsRow extends StatelessWidget {
           onTap: toggle,
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.35),
+              color: Colors.black.withValues(alpha: 0.45),
               borderRadius: BorderRadius.circular(PrismRadius.sm),
             ),
             child: ConstrainedBox(

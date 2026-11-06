@@ -6,12 +6,13 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
 import 'package:Prism/features/layout_prefs/views/layout_prefs_scope.dart';
 import 'package:Prism/features/layout_prefs/views/nav_tab_view.dart';
+import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
-/// The floating pill with the visible tab destinations, in the user's order, and a More entry for hidden tabs. Each tab
+/// The pill with the visible tab destinations, in the user's order, and a More entry for hidden tabs. Each tab
 /// shows its icon over a short label, and a filled pill sits behind the active one. [axis] is vertical in the side rail.
 /// The rail, and a row without [labels], shows icons only, with a filled circle behind the active one.
 class PrismBottomNav extends StatefulWidget {
@@ -58,12 +59,15 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
     super.dispose();
   }
 
+  /// Like an iOS tab bar: a pushed page pops back to the tab root, and the root scrolls back to the top.
   void _resetActiveTab(int index) {
     PrismHaptics.selection();
     final StackRouter? stack = _tabsRouter!.stackRouterOfIndex(index);
     if (stack != null && stack.canPop()) {
       stack.popUntilRoot();
+      return;
     }
+    BottomBar.scrollActiveTabToTop(context);
   }
 
   /// The dashboard keeps one route per [NavTab] in enum order, so a tab's index is its router index.
@@ -122,9 +126,12 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
       height: vertical ? null : 56,
       decoration: BoxDecoration(
         color: Theme.of(context).primaryColor,
-        boxShadow: <BoxShadow>[
-          BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 4, offset: const Offset(0, 4)),
-        ],
+        // The row sits flat in the docked band. The rail still floats beside the content.
+        boxShadow: vertical
+            ? <BoxShadow>[
+                BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 4, offset: const Offset(0, 4)),
+              ]
+            : null,
         borderRadius: BorderRadius.circular(PrismRadius.pill),
       ),
       child: Flex(
@@ -180,6 +187,8 @@ class _TabButton extends StatelessWidget {
         button: true,
         selected: isActive,
         label: label,
+        // Tapping the active tab again takes its list back to the top.
+        hint: isActive ? context.l10n.navigationScrollToTop : null,
         excludeSemantics: true,
         onTap: onPressed,
         child: Tooltip(

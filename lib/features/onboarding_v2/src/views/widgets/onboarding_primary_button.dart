@@ -25,20 +25,29 @@ class OnboardingPrimaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEnabled = enabled && onPressed != null && !loading;
+    final Duration short = context.motion(OnboardingMotion.short);
+    final BorderRadius radius = BorderRadius.circular(OnboardingRadius.cta);
+    // Disabled stays a visible pill with 60% text, not a faded-out button.
+    final Color fill = isEnabled
+        ? OnboardingColors.buttonBackground
+        : OnboardingColors.buttonBackground.withValues(alpha: OnboardingOpacity.disabledButtonFill);
+    final Color ink = isEnabled
+        ? OnboardingColors.buttonText
+        : OnboardingColors.buttonText.withValues(alpha: OnboardingOpacity.disabledButtonText);
     return Semantics(
       button: true,
       enabled: isEnabled,
       label: label,
       child: PressScale(
         enabled: isEnabled,
-        child: AnimatedOpacity(
-          duration: context.motion(OnboardingMotion.short),
-          opacity: isEnabled ? 1 : OnboardingOpacity.disabledButton,
+        child: AnimatedContainer(
+          duration: short,
+          decoration: BoxDecoration(color: fill, borderRadius: radius),
           child: Material(
-            color: OnboardingColors.buttonBackground,
-            borderRadius: BorderRadius.circular(OnboardingRadius.cta),
+            type: MaterialType.transparency,
+            borderRadius: radius,
             child: InkWell(
-              borderRadius: BorderRadius.circular(OnboardingRadius.cta),
+              borderRadius: radius,
               onTap: isEnabled
                   ? () {
                       PrismHaptics.tap();
@@ -47,7 +56,7 @@ class OnboardingPrimaryButton extends StatelessWidget {
                   : null,
               child: Center(
                 child: AnimatedSwitcher(
-                  duration: context.motion(OnboardingMotion.short),
+                  duration: short,
                   child: loading
                       ? const SizedBox(
                           width: OnboardingLayout.loadingIndicatorSize,
@@ -63,13 +72,13 @@ class OnboardingPrimaryButton extends StatelessWidget {
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: icon == null
-                                  ? Text(label, style: OnboardingTypography.cta)
+                                  ? Text(label, style: OnboardingTypography.cta.copyWith(color: ink))
                                   : Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(icon, size: 18, color: OnboardingColors.buttonText),
+                                        Icon(icon, size: 18, color: ink),
                                         const SizedBox(width: 8),
-                                        Text(label, style: OnboardingTypography.cta),
+                                        Text(label, style: OnboardingTypography.cta.copyWith(color: ink)),
                                       ],
                                     ),
                             ),

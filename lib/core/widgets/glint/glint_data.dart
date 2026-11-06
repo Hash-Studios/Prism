@@ -179,10 +179,6 @@ final Path glintCrystalPath = Path()
   ..arcToPoint(const Offset(48.4, 100.76), radius: const Radius.circular(3))
   ..close();
 
-/// The glint that sweeps over the crystal: a wide pale band with a narrow white one inside it.
-const List<Offset> glintSheenWide = [Offset(70, 40), Offset(82, 40), Offset(64, 125), Offset(52, 125)];
-const List<Offset> glintSheenNarrow = [Offset(74.5, 40), Offset(77.5, 40), Offset(59.5, 125), Offset(56.5, 125)];
-
 /// Where the parts turn, scale and rotate from.
 const Map<String, Offset> glintPartOrigin = {
   'scene': Offset(80, 80),
@@ -243,14 +239,6 @@ final GlintMoodSpec glintCalm = GlintMoodSpec(
       GlintKey(0.89, GlintEase.inOut, sy: 0.08),
       GlintKey(0.94, GlintEase.inOut),
       GlintKey(1, GlintEase.inOut),
-    ],
-    'fx:sheen': [
-      GlintKey(0, GlintEase.inOut, tx: -46, op: 0),
-      GlintKey(0.56, GlintEase.inOut, tx: -46, op: 0),
-      GlintKey(0.6, GlintEase.linear, tx: -32),
-      GlintKey(0.76, GlintEase.inOut, tx: 62),
-      GlintKey(0.79, GlintEase.inOut, tx: 70, op: 0),
-      GlintKey(1, GlintEase.inOut, tx: 70, op: 0),
     ],
   },
 );
@@ -767,14 +755,6 @@ final GlintMoodSpec glintProud = GlintMoodSpec(
       GlintKey(0.3, GlintEase.inOut),
       GlintKey(0.8, GlintEase.inOut),
       GlintKey(1, GlintEase.inOut, op: 0.9),
-    ],
-    'fx:sheen': [
-      GlintKey(0, GlintEase.inOut, tx: -46, op: 0),
-      GlintKey(0.34, GlintEase.inOut, tx: -46, op: 0),
-      GlintKey(0.38, GlintEase.linear, tx: -32),
-      GlintKey(0.58, GlintEase.inOut, tx: 62),
-      GlintKey(0.62, GlintEase.inOut, tx: 70, op: 0),
-      GlintKey(1, GlintEase.inOut, tx: 70, op: 0),
     ],
     'fx:s1': [
       GlintKey(0, GlintEase.inOut, s: 0, op: 0),

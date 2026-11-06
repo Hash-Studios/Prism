@@ -27,6 +27,7 @@ import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/trending/views/widgets/boosted_tag.dart';
 import 'package:Prism/features/wall_of_the_day/wall_of_the_day.dart';
+import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart' show wallpaperTitle;
 import 'package:Prism/features/wrapped/biz/bloc/wrapped_bloc.j.dart';
 import 'package:Prism/features/wrapped/domain/wrapped.dart';
 import 'package:Prism/features/wrapped/views/widgets/wrapped_home_card.dart';
@@ -61,8 +62,8 @@ double feedCarouselCardHeight(BuildContext context) =>
     math.max(0, (_carouselWidth(context) / _carouselColumns(context) - PrismFeedLayout.gridPadding.horizontal) * 0.6);
 
 /// The home carousel: Wall of the Day, the user's Wrapped (in its window), the live Drop, boosted walls, a card for each seasonal theme (in its season,
-/// while the theme is off), the promo banner and the first wallpapers as rounded pages, with page dots over the bottom right of the
-/// image.
+/// while the theme is off), the promo banner and the first wallpapers as rounded pages, with page dots on the scrim at the bottom right,
+/// under the card text.
 class FeedCarousel extends StatefulWidget {
   const FeedCarousel({
     super.key,
@@ -361,7 +362,7 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
         if (moving)
           Positioned(
             right: width - width / columns + PrismFeedLayout.gridPadding.right + PrismSpace.sm,
-            bottom: PrismSpace.sm,
+            bottom: PrismSpace.xs,
             child: FeedCarouselDots(current: current, count: pages.length),
           ),
       ],
@@ -400,6 +401,9 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
       feedCarouselCardHeight(context),
     );
     final Widget image = ProgressiveWallpaperImage(display: WallpaperDisplaySource.of(wall), decodeBox: decodeBox);
+    // An untitled wall's headline is already "Wallpaper by" the creator, so the creator caption shows only over a title.
+    final String creator = wall.wallpaperCore.authorName?.trim() ?? '';
+    final bool titled = (wall.wallpaper.title?.trim() ?? '').isNotEmpty;
     return WallpaperImpression(
       itemId: wall.id,
       provider: wall.source.name,
@@ -414,6 +418,10 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
               ? image
               : Hero(tag: heroTag, createRectTween: wallpaperHeroRectTween, child: image),
           semanticLabel: wall.semanticLabel(context.l10n),
+          title: wallpaperTitle(context.l10n, wall),
+          caption: titled && creator.isNotEmpty && !creator.contains('@')
+              ? context.l10n.wallpaperWotdByline(creator)
+              : null,
           tag: tag,
           badge: isPremiumFeedItem(wall) ? const PremiumStarBadge() : null,
           onTap: () => _openWall(wall, index, source, heroTag),

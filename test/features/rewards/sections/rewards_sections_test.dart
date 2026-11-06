@@ -173,6 +173,42 @@ void main() {
     expect(find.text('Wallpaper download'), findsNothing);
   });
 
+  testWidgets('activity marks earned coins with a green plus and spent coins with a minus', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    final firestore = CoinsTestFirestore();
+    firestore.transactions = <Map<String, dynamic>>[
+      <String, dynamic>{
+        'id': 'tx-earn',
+        'userId': 'user-1',
+        'action': 'dailyStreak',
+        'delta': 10,
+        'createdAt': DateTime.now(),
+      },
+      <String, dynamic>{
+        'id': 'tx-spend',
+        'userId': 'user-1',
+        'action': 'streakFreeze',
+        'delta': -50,
+        'createdAt': DateTime.now(),
+      },
+    ];
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    await tester.binding.setSurfaceSize(const Size(400, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_host(const RewardsActivitySection(), Brightness.light));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text('+10'), findsOneWidget);
+    expect(find.text('-50'), findsOneWidget);
+    expect(tester.widget<Icon>(find.byIcon(Icons.add_rounded)).color, PrismColors.success);
+    expect(find.byIcon(Icons.remove_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.arrow_downward_rounded), findsNothing);
+    expect(find.byIcon(Icons.arrow_upward_rounded), findsNothing);
+  });
+
   testWidgets('earn section lists the free daily spin and the Pro streak multiplier only for Pro users', (
     tester,
   ) async {
@@ -527,12 +563,11 @@ void main() {
         expect(find.text('Streak collection'), findsOneWidget);
         expect(find.text(AppLocalizationsEn().economyCollectionUnlockedAtDays(7)), findsOneWidget);
         expect(find.text(AppLocalizationsEn().economyCollectionUnlocksAtDays(30)), findsOneWidget);
-        final heart = find.ancestor(of: find.byIcon(Icons.favorite_border_rounded), matching: find.byType(InkWell));
-        expect(find.bySemanticsLabel('Favourite'), findsOneWidget);
+        // Tiles are image only: favourite lives in the hold menu.
+        expect(find.byIcon(Icons.favorite_border_rounded), findsNothing);
         final image = find.byType(PrismWallTile).first;
-        expect(tester.getBottomLeft(heart), tester.getBottomLeft(image));
         expect(
-          tester.getBottomLeft(heart).dy,
+          tester.getBottomLeft(image).dy,
           lessThan(tester.getTopLeft(find.text(AppLocalizationsEn().economyCollectionUnlockedAtDays(7))).dy),
         );
 

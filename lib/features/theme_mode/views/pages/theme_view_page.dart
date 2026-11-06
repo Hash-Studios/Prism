@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -201,7 +203,7 @@ class _ThemeViewState extends State<ThemeView> {
   }
 }
 
-/// A row of themes that scrolls sideways, each shown as a small app in its own colours with its name below.
+/// The themes in a grid of three per row, each shown as a small app in its own colours with its name below.
 class _ThemeGrid extends StatelessWidget {
   const _ThemeGrid({
     super.key,
@@ -222,13 +224,8 @@ class _ThemeGrid extends StatelessWidget {
   final Set<String> legacyThemes;
   final ValueChanged<PrismThemeOption> onSelect;
 
-  static const double _cardWidth = 104;
+  static const int _columns = 3;
   static const double _gap = PrismSpace.md;
-
-  /// A 104 point card: the preview with its ring (170 with the gap under it), then the name, which grows with the
-  /// text size. The Locked tag sits on the preview.
-  static const double _fixedHeight = 170;
-  static const double _textHeight = 28;
 
   /// A shop theme the user neither bought nor already uses. The selected theme is never locked.
   bool _locked(PrismThemeOption option, Inventory inventory) {
@@ -243,35 +240,36 @@ class _ThemeGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<Inventory>(
       valueListenable: CoinsService.instance.inventoryNotifier,
-      builder: (context, inventory, _) => SizedBox(
-        height: _fixedHeight + MediaQuery.textScalerOf(context).scale(_textHeight),
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          // The row starts at the page margin and scrolls out to the screen edge.
-          clipBehavior: Clip.none,
-          itemCount: themes.length,
-          separatorBuilder: (_, _) => const SizedBox(width: _gap),
-          itemBuilder: (context, index) {
-            final PrismThemeOption option = themes[index];
-            return SizedBox(
-              width: _cardWidth,
-              child: _ThemeTile(
-                option: option,
-                accent: accent,
-                selected: option.id == selectedId,
-                locked: _locked(option, inventory),
-                onTap: () {
-                  PrismHaptics.selection();
-                  if (_locked(option, inventory)) {
-                    showShopItemSheet(context, shopItem(option.shopItemId!)!);
-                  } else {
-                    onSelect(option);
-                  }
-                },
-              ),
-            );
-          },
-        ),
+      // Every theme is on screen at once, so no name is clipped at the edge of a sideways row.
+      builder: (context, inventory, _) => LayoutBuilder(
+        builder: (context, constraints) {
+          // Floored, so rounding never pushes the third tile onto the next row.
+          final double width = ((constraints.maxWidth - _gap * (_columns - 1)) / _columns).floorToDouble();
+          return Wrap(
+            spacing: _gap,
+            runSpacing: PrismSpace.md,
+            children: <Widget>[
+              for (final PrismThemeOption option in themes)
+                SizedBox(
+                  width: width,
+                  child: _ThemeTile(
+                    option: option,
+                    accent: accent,
+                    selected: option.id == selectedId,
+                    locked: _locked(option, inventory),
+                    onTap: () {
+                      PrismHaptics.selection();
+                      if (_locked(option, inventory)) {
+                        showShopItemSheet(context, shopItem(option.shopItemId!)!);
+                      } else {
+                        onSelect(option);
+                      }
+                    },
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -430,30 +428,50 @@ class _AccentPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isCustom = !prismAccentSwatches.contains(selected);
-    return Wrap(
-      spacing: PrismSpace.sm,
-      runSpacing: PrismSpace.sm,
-      children: <Widget>[
-        _Swatch(
-          label: context.l10n.coreCustomAccent,
-          selected: isCustom,
-          fill: isCustom ? selected : null,
-          ring: const SweepGradient(colors: _hues),
-          onTap: () => _pickCustom(context),
-        ),
-        for (int i = 0; i < prismAccentSwatches.length; i++)
-          _Swatch(
-            label: context.l10n.coreThemeAccentSemanticLabel(i + 1, prismAccentSwatches.length),
-            selected: selected == prismAccentSwatches[i],
-            fill: prismAccentSwatches[i],
-            onTap: () {
-              PrismHaptics.selection();
-              onSelect(prismAccentSwatches[i]);
-            },
-          ),
-      ],
+    final int index = prismAccentSwatches.indexOf(selected);
+    final bool isCustom = index < 0;
+    final String name = isCustom ? context.l10n.coreCustomAccent : prismAccentSwatchNames[index](context.l10n);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // As many circles as fit with at least a 12 point gap, spread so each row fills the page width.
+        final int columns = math.max(1, ((constraints.maxWidth + PrismSpace.sm) / (_size + PrismSpace.sm)).floor());
+        final double gap = columns > 1
+            ? ((constraints.maxWidth - columns * _size) / (columns - 1)).floorToDouble()
+            : PrismSpace.sm;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Wrap(spacing: gap, runSpacing: PrismSpace.sm, children: _swatches(context)),
+            const SizedBox(height: PrismSpace.sm),
+            // The swatches are colour only, so the selected one is named here.
+            Text(name, key: const ValueKey<String>('accent-name'), style: PrismTextStyles.caption(context)),
+          ],
+        );
+      },
     );
+  }
+
+  List<Widget> _swatches(BuildContext context) {
+    final bool isCustom = !prismAccentSwatches.contains(selected);
+    return <Widget>[
+      _Swatch(
+        label: context.l10n.coreCustomAccent,
+        selected: isCustom,
+        fill: isCustom ? selected : null,
+        ring: const SweepGradient(colors: _hues),
+        onTap: () => _pickCustom(context),
+      ),
+      for (int i = 0; i < prismAccentSwatches.length; i++)
+        _Swatch(
+          label: context.l10n.coreThemeAccentSemanticLabel(i + 1, prismAccentSwatches.length),
+          selected: selected == prismAccentSwatches[i],
+          fill: prismAccentSwatches[i],
+          onTap: () {
+            PrismHaptics.selection();
+            onSelect(prismAccentSwatches[i]);
+          },
+        ),
+    ];
   }
 }
 

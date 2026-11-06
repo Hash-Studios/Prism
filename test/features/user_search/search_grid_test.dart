@@ -109,8 +109,8 @@ void main() {
     );
 
     expect(find.bySemanticsLabel('Wallpaper by Author 23'), findsOneWidget);
-    expect(find.byIcon(Icons.favorite_border_rounded), findsWidgets);
-    expect(find.byTooltip('Favourite'), findsWidgets);
+    expect(find.byIcon(Icons.favorite_border_rounded), findsNothing);
+    expect(find.byTooltip('Favourite'), findsNothing);
     expect(find.byType(SeeMoreButton), findsOneWidget);
     semantics.dispose();
   });

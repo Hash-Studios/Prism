@@ -5,6 +5,7 @@ import 'package:Prism/core/platform/system_color_schemes.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
+import 'package:Prism/features/theme_mode/views/pages/theme_view_widgets.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
@@ -85,16 +86,12 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       final Finder gridFinder = find.byKey(ValueKey<String>(grid.key));
-      // The row scrolls sideways and builds only the cards near the screen, so check each theme as it comes into view.
+      // The grid wraps, so every theme is built at once with no sideways scroll.
+      expect(find.descendant(of: gridFinder, matching: find.byType(Scrollable)), findsNothing);
       for (final PrismThemeOption option in grid.value) {
         final Finder name = find.descendant(
           of: gridFinder,
           matching: find.text(prismThemeDisplayName(option, AppLocalizationsEn())),
-        );
-        await tester.scrollUntilVisible(
-          name,
-          200,
-          scrollable: find.descendant(of: gridFinder, matching: find.byType(Scrollable)),
         );
         expect(name, findsOneWidget);
         final Finder card = find.ancestor(of: name, matching: find.byType(SizedBox)).first;
@@ -199,6 +196,34 @@ void main() {
 
     final accent = find.byWidgetPredicate((w) => w is Semantics && w.properties.label == 'Accent colour 2 of 22');
     expect(tester.widget<Semantics>(accent).properties.selected, isTrue);
+    // The swatches are colour only, so the selected one is named under the grid.
+    expect(tester.widget<Text>(find.byKey(const ValueKey<String>('accent-name'))).data, 'Red');
+  });
+
+  test('every accent swatch has a colour name', () {
+    expect(prismAccentSwatchNames, hasLength(prismAccentSwatches.length));
+  });
+
+  testWidgets('a custom accent is named Custom color under the grid', (tester) async {
+    when(() => themeBloc.state).thenReturn(
+      ThemeState.initial().copyWith(light: const ThemeSelection(themeId: 'kLRose', accentColorValue: 0xff123456)),
+    );
+    await pumpPage(tester, ThemeMode.light);
+
+    expect(tester.widget<Text>(find.byKey(const ValueKey<String>('accent-name'))).data, 'Custom color');
+  });
+
+  testWidgets('themes sit three per row in a grid, not a sideways row', (tester) async {
+    await pumpPage(tester, ThemeMode.light);
+
+    final List<Offset> tops = <Offset>[
+      for (final PrismThemeOption option in prismLightThemes.take(4))
+        tester.getTopLeft(find.text(prismThemeDisplayName(option, AppLocalizationsEn()))),
+    ];
+    expect(tops[1].dy, tops[0].dy);
+    expect(tops[2].dy, tops[0].dy);
+    expect(tops[3].dy, greaterThan(tops[0].dy));
+    expect(tops[3].dx, closeTo(tops[0].dx, 0.5));
   });
 
   testWidgets('accent targets stay at least 44 points tall on a short screen and remain selectable', (tester) async {

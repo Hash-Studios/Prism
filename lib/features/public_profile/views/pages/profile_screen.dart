@@ -16,7 +16,6 @@ import 'package:Prism/core/utils/side_safe_column.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/string_extensions.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
-import 'package:Prism/core/widgets/cosmetics/glow_text.dart';
 import 'package:Prism/core/widgets/cosmetics/profile_frame.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
@@ -749,8 +748,9 @@ class _ProfileChildState extends State<_ProfileChild> {
                                   : Container(
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        // The accent ring follows the theme, like the camera badge in the edit panel.
-                                        border: Border.all(color: cs.primary, width: 4),
+                                        // A page-coloured ring lifts the photo off the cover without adding a colour
+                                        // that fights the photo.
+                                        border: Border.all(color: cs.surface, width: 4),
                                         color: cs.onSurface,
                                       ),
                                       child: photo,
@@ -784,9 +784,10 @@ class _ProfileChildState extends State<_ProfileChild> {
                   children: <Widget>[
                     SizedBox(
                       width: headerWidth * 0.7,
-                      child: GlowText(
+                      // The name stays in ink so it never competes with the frame and the cover. An equipped glow
+                      // shows as a thin underline instead.
+                      child: Text(
                         displayName,
-                        glowId: cosmetics.glow,
                         textAlign: TextAlign.center,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -799,6 +800,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                         ),
                       ),
                     ),
+                    NameGlowUnderline(glowId: cosmetics.glow),
                     const SizedBox(height: 3),
                     SizedBox(
                       width: headerWidth * 0.7,
