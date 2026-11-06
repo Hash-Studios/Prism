@@ -55,8 +55,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:path_provider/path_provider.dart';
 
-import '../support/fake_app_analytics.dart';
 import '../features/followed_topics/support/transaction_firestore_client.dart';
+import '../support/fake_app_analytics.dart';
 import '../support/fake_feed_cache_local_data_source.dart';
 import '../support/fake_user_block_repository.dart';
 import '../support/in_memory_local_store.dart';
