@@ -2365,6 +2365,36 @@ events:
       - name: folder_count
         key: folder_count
         type: int
+  - id: folder_save_started
+    fields:
+      - name: wall_count
+        key: wall_count
+        type: int
+      - name: coin_cost
+        key: coin_cost
+        type: int
+      - name: pro
+        key: pro
+        type: bool
+  - id: folder_save_finished
+    fields:
+      - name: saved
+        key: saved
+        type: int
+      - name: skipped
+        key: skipped
+        type: int
+      - name: failed
+        key: failed
+        type: int
+  - id: folder_save_cancelled
+    fields:
+      - name: saved
+        key: saved
+        type: int
+      - name: not_saved
+        key: not_saved
+        type: int
   - id: mood_chip_tapped
     fields:
       - name: mood_id

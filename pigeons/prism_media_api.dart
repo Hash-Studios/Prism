@@ -7,6 +7,8 @@ abstract class PrismMediaHostApi {
   @async
   OperationResult enqueueDownload(DownloadRequest request);
   @async
+  OperationResult prepareAlbumSave(String album);
+  @async
   DownloadItemsResult listDownloads();
   @async
   OperationResult clearDownloads();
@@ -30,11 +32,13 @@ class DownloadRequest {
   final String link;
   final String filenameWithoutExtension;
   final bool isLocalFile;
+  final String? album;
 
   DownloadRequest({
     required this.link,
     required this.filenameWithoutExtension,
     required this.isLocalFile,
+    this.album,
   });
 }
 

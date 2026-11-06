@@ -3145,6 +3145,53 @@ class FolderPushOpenedEvent extends AnalyticsEvent {
   }
 }
 
+class FolderSaveStartedEvent extends AnalyticsEvent {
+  const FolderSaveStartedEvent({required this.wallCount, required this.coinCost, required this.pro});
+
+  final int wallCount;
+  final int coinCost;
+  final bool pro;
+
+  @override
+  String get eventName => 'folder_save_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_count': wallCount, 'coin_cost': coinCost, 'pro': pro ? 1 : 0};
+  }
+}
+
+class FolderSaveFinishedEvent extends AnalyticsEvent {
+  const FolderSaveFinishedEvent({required this.saved, required this.skipped, required this.failed});
+
+  final int saved;
+  final int skipped;
+  final int failed;
+
+  @override
+  String get eventName => 'folder_save_finished';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'saved': saved, 'skipped': skipped, 'failed': failed};
+  }
+}
+
+class FolderSaveCancelledEvent extends AnalyticsEvent {
+  const FolderSaveCancelledEvent({required this.saved, required this.notSaved});
+
+  final int saved;
+  final int notSaved;
+
+  @override
+  String get eventName => 'folder_save_cancelled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'saved': saved, 'not_saved': notSaved};
+  }
+}
+
 class MoodChipTappedEvent extends AnalyticsEvent {
   const MoodChipTappedEvent({required this.moodId, required this.position});
 

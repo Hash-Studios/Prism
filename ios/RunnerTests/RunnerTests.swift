@@ -6,12 +6,19 @@ import Testing
 
 @MainActor
 struct RunnerTests {
+  @Test func onlyFullPhotosAccessAllowsAlbumManagement() {
+    #expect(PrismMediaHostApiImpl.canManagePhotoAlbums(with: .authorized))
+    for status in [PHAuthorizationStatus.limited, .denied, .restricted, .notDetermined] {
+      #expect(!PrismMediaHostApiImpl.canManagePhotoAlbums(with: status))
+    }
+  }
+
   @Test func downloadSavesRealImageAndReadableCacheAfterPhotosCompletes() async throws {
     let fixture = try MediaFixture()
     let imageBytes = try Data(contentsOf: fixture.source)
     var saved: [Data] = []
     let files = PrismMediaFiles(downloadsDirectory: fixture.downloads, download: fixture.downloader())
-    let api = PrismMediaHostApiImpl(files: files, savePhoto: { saved.append(try Data(contentsOf: $0.url)) })
+    let api = PrismMediaHostApiImpl(files: files, savePhoto: { image, _ in saved.append(try Data(contentsOf: image.url)) })
 
     let result = try await download(api)
     #expect(result.success)
@@ -24,7 +31,7 @@ struct RunnerTests {
   @Test func photosDenialLeavesNoCachedDownload() async throws {
     let fixture = try MediaFixture()
     let files = PrismMediaFiles(downloadsDirectory: fixture.downloads, download: fixture.downloader())
-    let api = PrismMediaHostApiImpl(files: files, savePhoto: { _ in throw PrismMediaError.photoPermissionDenied })
+    let api = PrismMediaHostApiImpl(files: files, savePhoto: { _, _ in throw PrismMediaError.photoPermissionDenied })
 
     let result = try await download(api)
     #expect(!result.success)
@@ -37,7 +44,7 @@ struct RunnerTests {
     var photosCalled = false
     let api = PrismMediaHostApiImpl(
       files: PrismMediaFiles(downloadsDirectory: fixture.downloads, download: fixture.downloader()),
-      savePhoto: { _ in photosCalled = true }
+      savePhoto: { _, _ in photosCalled = true }
     )
     let result = try await withCheckedThrowingContinuation { continuation in
       let request = DownloadRequest(link: "https://example.com/image", filenameWithoutExtension: "../escape", isLocalFile: false)
@@ -54,7 +61,7 @@ struct RunnerTests {
   @Test func localSourceStillExistsWhenSaveMediaCompletes() async throws {
     let fixture = try MediaFixture()
     var photosCalled = false
-    let api = PrismMediaHostApiImpl(savePhoto: { image in
+    let api = PrismMediaHostApiImpl(savePhoto: { image, _ in
       #expect(FileManager.default.fileExists(atPath: image.url.path))
       #expect(image.uniformTypeIdentifier == "public.png")
       photosCalled = true
@@ -75,7 +82,7 @@ struct RunnerTests {
     let fixture = try MediaFixture()
     let photos = PausedPhotos()
     let files = PrismMediaFiles(downloadsDirectory: fixture.downloads, download: fixture.downloader())
-    let api = PrismMediaHostApiImpl(files: files, savePhoto: photos.save)
+    let api = PrismMediaHostApiImpl(files: files, savePhoto: { image, _ in try await photos.save(image) })
     var callbacks: [String] = []
 
     let downloadTask = Task { try await download(api, onComplete: { callbacks.append("download") }) }
@@ -102,7 +109,7 @@ struct RunnerTests {
     let fixture = try MediaFixture()
     var api: PrismMediaHostApiImpl? = PrismMediaHostApiImpl(
       files: PrismMediaFiles(downloadsDirectory: fixture.downloads, download: fixture.downloader()),
-      savePhoto: { _ in }
+      savePhoto: { _, _ in }
     )
     weak let owner = api
     #expect(try await download(#require(api)).success)

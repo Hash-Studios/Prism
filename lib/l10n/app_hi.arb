@@ -13870,5 +13870,273 @@
   "searchPhotoCouldNotOpen": "वह फ़ोटो खोली नहीं जा सकी। कोई और फ़ोटो आज़माएं।",
   "@searchPhotoCouldNotOpen": {
     "description": "Toast when the picked photo cannot be decoded."
+  },
+  "foldersSaveAll": "सभी सहेजें",
+  "@foldersSaveAll": {
+    "description": "Button label that starts saving all wallpapers in a folder."
+  },
+  "foldersSaveAllTitle": "सभी वॉलपेपर सहेजें",
+  "@foldersSaveAllTitle": {
+    "description": "Title of the Save all plan sheet."
+  },
+  "foldersSaveAllChecking": "वॉलपेपर जाँचे जा रहे हैं…",
+  "@foldersSaveAllChecking": {
+    "description": "Shown while the app checks which wallpapers in the folder can be saved."
+  },
+  "foldersSaveAllPlanFailed": "वॉलपेपर जाँचे नहीं जा सके। फिर कोशिश करें।",
+  "@foldersSaveAllPlanFailed": {
+    "description": "Message when the Save all check fails."
+  },
+  "foldersSaveAllBusy": "एक और फ़ोल्डर सहेजा जा रहा है। उसके पूरा होने पर फिर कोशिश करें।",
+  "@foldersSaveAllBusy": {
+    "description": "Message when another folder is already saving."
+  },
+  "foldersSaveAllRowFree": "{count, plural, =1{1 वॉलपेपर मुफ़्त है} other{{count} वॉलपेपर मुफ़्त हैं}}",
+  "@foldersSaveAllRowFree": {
+    "description": "Plan sheet row: number of free wallpapers.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowCoins": "{count, plural, =1{1 वॉलपेपर की कीमत {price} सिक्के है} other{{count} वॉलपेपर, प्रत्येक की कीमत {price} सिक्के है}}",
+  "@foldersSaveAllRowCoins": {
+    "description": "Plan sheet row: number of paid wallpapers and their coin price.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "price": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowPro": "{count, plural, =1{1 वॉलपेपर के लिए Pro चाहिए} other{{count} वॉलपेपर के लिए Pro चाहिए}}",
+  "@foldersSaveAllRowPro": {
+    "description": "Plan sheet row: number of wallpapers that need Pro.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowSaved": "{count, plural, =1{1 वॉलपेपर पहले से डाउनलोड में है} other{{count} वॉलपेपर पहले से डाउनलोड में हैं}}",
+  "@foldersSaveAllRowSaved": {
+    "description": "Plan sheet row: number of wallpapers already in Downloads.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRowBlocked": "{count, plural, =1{1 वॉलपेपर सहेजने के लिए उपलब्ध नहीं है} other{{count} वॉलपेपर सहेजने के लिए उपलब्ध नहीं हैं}}",
+  "@foldersSaveAllRowBlocked": {
+    "description": "Plan sheet row: number of wallpapers that cannot be saved.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllAffordable": "{count, plural, =0{आपके सिक्के किसी भुगतान वाले वॉलपेपर के लिए काफ़ी नहीं हैं।} =1{आपके सिक्के 1 भुगतान वाले वॉलपेपर के लिए काफ़ी हैं।} other{आपके सिक्के {count} भुगतान वाले वॉलपेपर के लिए काफ़ी हैं।}}",
+  "@foldersSaveAllAffordable": {
+    "description": "Plan sheet line: how many paid wallpapers the user's coins cover.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllPhotosAlbum": "ये Photos में “{name}” एल्बम और डाउनलोड में जाएँगे।",
+  "@foldersSaveAllPhotosAlbum": {
+    "description": "Plan sheet note on iOS: where saved wallpapers go. {name} is the album name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllGalleryAlbum": "ये आपकी गैलरी में Pictures/Prism/{name} और डाउनलोड में जाएँगे।",
+  "@foldersSaveAllGalleryAlbum": {
+    "description": "Plan sheet note on Android: where saved wallpapers go. {name} is the folder name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllLeaveNote": "सहेजते समय आप यह पेज छोड़ सकते हैं। अगर आप Prism बंद करते हैं, तो पूरा करने के लिए फिर से सभी सहेजें पर टैप करें।",
+  "@foldersSaveAllLeaveNote": {
+    "description": "Plan sheet note: saving continues when the user leaves the page, and what to do if Prism closes."
+  },
+  "foldersSaveAllNothing": "इस फ़ोल्डर में सहेजने के लिए कुछ नया नहीं है।",
+  "@foldersSaveAllNothing": {
+    "description": "Shown when no wallpaper in the folder can be saved."
+  },
+  "foldersSaveAllFreeButton": "{count, plural, =1{मुफ़्त वॉलपेपर सहेजें} other{{count} मुफ़्त वॉलपेपर सहेजें}}",
+  "@foldersSaveAllFreeButton": {
+    "description": "Primary button when only free wallpapers can be saved.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllPaidButton": "{coins, plural, =1{जो बचा सकूँ, सब सहेजें (1 सिक्का)} other{जो बचा सकूँ, सब सहेजें ({coins} सिक्के)}}",
+  "@foldersSaveAllPaidButton": {
+    "description": "Primary button that saves as many paid wallpapers as the coins allow.",
+    "placeholders": {
+      "coins": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllCountButton": "{count, plural, =1{1 वॉलपेपर सहेजें} other{{count} वॉलपेपर सहेजें}}",
+  "@foldersSaveAllCountButton": {
+    "description": "Primary button that saves a set number of wallpapers.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllProgress": "{total} में से {done} सहेजे जा रहे हैं",
+  "@foldersSaveAllProgress": {
+    "description": "Progress row text while wallpapers are saving.",
+    "placeholders": {
+      "done": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllProgressSemantics": "{total, plural, =1{1 वॉलपेपर में से {done} सहेजे जा रहे हैं} other{{total} वॉलपेपर में से {done} सहेजे जा रहे हैं}}",
+  "@foldersSaveAllProgressSemantics": {
+    "description": "Screen reader label for the save progress row.",
+    "placeholders": {
+      "total": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "done": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllStopping": "रोका जा रहा है…",
+  "@foldersSaveAllStopping": {
+    "description": "Progress row text after the user taps Cancel."
+  },
+  "foldersSaveAllCancel": "रद्द करें",
+  "@foldersSaveAllCancel": {
+    "description": "Button that stops a Save all run."
+  },
+  "foldersSaveAllCancelHint": "जो वॉलपेपर शुरू नहीं हुए हैं, वे रुक जाएँगे। उनकी कोई कीमत नहीं लगेगी।",
+  "@foldersSaveAllCancelHint": {
+    "description": "Hint under the Cancel button: wallpapers that have not started cost nothing."
+  },
+  "foldersSaveAllSavedTitle": "{count, plural, =0{कोई वॉलपेपर नहीं सहेजा गया} =1{1 वॉलपेपर सहेजा गया} other{{count} वॉलपेपर सहेजे गए}}",
+  "@foldersSaveAllSavedTitle": {
+    "description": "Summary card title after a Save all run finishes.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllStoppedTitle": "{count, plural, =0{रोका गया। कोई वॉलपेपर नहीं सहेजा गया} =1{रोका गया। 1 वॉलपेपर सहेजा गया} other{रोका गया। {count} वॉलपेपर सहेजे गए}}",
+  "@foldersSaveAllStoppedTitle": {
+    "description": "Summary card title after the user stops a Save all run.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllSkipped": "{count, plural, =1{1 पहले से डाउनलोड में} other{{count} पहले से डाउनलोड में}}",
+  "@foldersSaveAllSkipped": {
+    "description": "Summary card row: wallpapers skipped because they were already in Downloads.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllFailed": "{count, plural, =1{1 विफल} other{{count} विफल}}",
+  "@foldersSaveAllFailed": {
+    "description": "Summary card row: wallpapers that failed to save.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllNotStarted": "{count, plural, =1{1 शुरू नहीं हुआ} other{{count} शुरू नहीं हुए}}",
+  "@foldersSaveAllNotStarted": {
+    "description": "Summary card row: wallpapers that did not start because the run stopped.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSaveAllRetry": "विफल वाले फिर से करें",
+  "@foldersSaveAllRetry": {
+    "description": "Summary card button that retries the wallpapers that failed."
+  },
+  "foldersSaveAllDone": "हो गया",
+  "@foldersSaveAllDone": {
+    "description": "Summary card button that closes the summary."
+  },
+  "foldersSaveAllToast": "{count, plural, =0{{name} से कोई वॉलपेपर नहीं सहेजा गया।} =1{{name} से 1 वॉलपेपर सहेजा गया।} other{{name} से {count} वॉलपेपर सहेजे गए।}}",
+  "@foldersSaveAllToast": {
+    "description": "Toast after a Save all run. {name} is the folder name.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSaveAllToastFailed": "{failed, plural, =1{{name} से {saved} सहेजे गए। 1 विफल। फिर से कोशिश करने के लिए फ़ोल्डर खोलें।} other{{name} से {saved} सहेजे गए। {failed} विफल। फिर से कोशिश करने के लिए फ़ोल्डर खोलें।}}",
+  "@foldersSaveAllToastFailed": {
+    "description": "Toast after a Save all run with failures. {saved} is the number saved, {failed} the number failed, {name} the folder name.",
+    "placeholders": {
+      "failed": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "saved": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
   }
 }

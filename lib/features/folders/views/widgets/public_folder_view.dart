@@ -10,9 +10,11 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/folders/biz/public_folder_cubit.dart';
+import 'package:Prism/features/folders/domain/entities/folder_save_run.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/folder_share.dart';
+import 'package:Prism/features/folders/views/widgets/folder_save_views.dart';
 import 'package:Prism/features/moods/views/widgets/wall_ids_grid.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
@@ -123,7 +125,21 @@ class _PublicFolderViewState extends State<PublicFolderView> with WidgetsBinding
         return PrismPage(
           title: ready ? folder.name : l10n.foldersTitle,
           maxContentWidth: double.infinity,
+          headerBottom: FolderSaveStatus(folderId: widget.folderId),
           actions: <Widget>[
+            if (ready && state.following && state.walls.isNotEmpty)
+              PrismIconButton(
+                key: const ValueKey<String>('folder-save-open'),
+                icon: Icons.download_rounded,
+                tooltip: l10n.foldersSaveAll,
+                onPressed: () => unawaited(
+                  openFolderSave(
+                    context,
+                    target: FolderSaveTarget(folderId: folder.id, name: folder.name, ownerId: app_state.prismUser.id),
+                    walls: folderSaveWallsOfPrism(l10n, state.walls),
+                  ),
+                ),
+              ),
             if (ready)
               PopupMenuButton<_PublicFolderMenuAction>(
                 tooltip: l10n.foldersMoreOptions,
