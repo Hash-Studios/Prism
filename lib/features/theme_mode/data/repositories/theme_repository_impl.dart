@@ -166,6 +166,15 @@ class ThemeRepositoryImpl implements ThemeRepository {
     }
   }
 
+  Future<void> _queue = Future<void>.value();
+
+  /// Runs [operation] after every earlier load, update and sync step, so their reads and writes never interleave.
+  Future<T> _serialized<T>(Future<T> Function() operation) {
+    final Future<T> result = _queue.then((_) => operation());
+    _queue = result.then<void>((_) {}, onError: (Object _) {});
+    return result;
+  }
+
   @override
   ThemePreferences readSync() => _readReverted(seasonNow());
 
@@ -174,13 +183,13 @@ class ThemeRepositoryImpl implements ThemeRepository {
 
   @override
   Future<void> syncWithAccount(String userId) async {
-    final ThemePreferences beforeRevert = _read();
-    final ThemePreferences local = await _revertEndedSeasons();
-    final bool revertedHere =
-        beforeRevert.light.themeId != local.light.themeId || beforeRevert.dark.themeId != local.dark.themeId;
-    if (revertedHere) {
-      _accountChangesController.add(local);
-    }
+    final ThemePreferences? revertedHere = await _serialized(() async {
+      final ThemePreferences before = _read();
+      final ThemePreferences after = await _revertEndedSeasons();
+      if (before.light.themeId == after.light.themeId && before.dark.themeId == after.dark.themeId) return null;
+      _accountChangesController.add(after);
+      return after;
+    });
     final AccountTheme? account = AccountTheme.fromMap(
       await _firestoreClient.getById<Object?>(
         FirebaseCollections.usersV2,
@@ -189,8 +198,13 @@ class ThemeRepositoryImpl implements ThemeRepository {
         sourceTag: 'theme_mode.read_account_theme',
       ),
     );
-    final int? localChangedAt = _settingsLocal.get<int?>(_changedAtKey);
-    if (account != null && (localChangedAt == null || account.changedAt >= localChangedAt)) {
+    // Decide on the local state after the read, so a theme change made while it ran is not lost.
+    final AccountTheme? upload = await _serialized(() async {
+      final ThemePreferences local = _read();
+      final int? localChangedAt = _settingsLocal.get<int?>(_changedAtKey);
+      if (account == null || (localChangedAt != null && account.changedAt < localChangedAt)) {
+        return localChangedAt == null ? null : AccountTheme(preferences: local, changedAt: localChangedAt);
+      }
       final ThemePreferences merged = mergeAccountTheme(
         account: account.preferences,
         local: local,
@@ -208,26 +222,26 @@ class ThemeRepositoryImpl implements ThemeRepository {
       final ThemePreferences resolved = await _revertEndedSeasons();
       // An old season copy from the account reverts to what this sync already emitted. Do not emit it twice.
       final bool sameAsEmitted =
-          revertedHere &&
-          resolved.light.themeId == local.light.themeId &&
-          resolved.dark.themeId == local.dark.themeId &&
-          resolved.light.accentColorValue == local.light.accentColorValue &&
-          resolved.dark.accentColorValue == local.dark.accentColorValue &&
-          resolved.mode == local.mode;
+          revertedHere != null &&
+          resolved.light.themeId == revertedHere.light.themeId &&
+          resolved.dark.themeId == revertedHere.dark.themeId &&
+          resolved.light.accentColorValue == revertedHere.light.accentColorValue &&
+          resolved.dark.accentColorValue == revertedHere.dark.accentColorValue &&
+          resolved.mode == revertedHere.mode;
       if (!sameAsEmitted) _accountChangesController.add(resolved);
-    } else if (localChangedAt != null) {
-      await _push(userId, AccountTheme(preferences: local, changedAt: localChangedAt));
-    }
+      return null;
+    });
+    if (upload != null) await _push(userId, upload);
   }
 
   @override
-  Future<Result<ThemePreferences>> load() async {
+  Future<Result<ThemePreferences>> load() => _serialized(() async {
     try {
       return Result.success(await _revertEndedSeasons());
     } catch (error) {
       return Result.error(CacheFailure('Unable to read theme: $error'));
     }
-  }
+  });
 
   @override
   Future<Result<ThemePreferences>> update({
@@ -236,7 +250,7 @@ class ThemeRepositoryImpl implements ThemeRepository {
     String? darkThemeId,
     int? darkAccentColorValue,
     ThemeMode? mode,
-  }) async {
+  }) => _serialized(() async {
     try {
       await _revertEndedSeasons();
       _rememberLegacyThemes();
@@ -279,5 +293,5 @@ class ThemeRepositoryImpl implements ThemeRepository {
     } catch (error) {
       return Result.error(CacheFailure('Unable to update theme: $error'));
     }
-  }
+  });
 }

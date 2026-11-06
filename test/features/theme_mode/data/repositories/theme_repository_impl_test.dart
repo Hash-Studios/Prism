@@ -46,6 +46,27 @@ class _FailingAccountReadFirestoreClient extends FakeFirestoreClient {
   }) => throw StateError('account read failed');
 }
 
+/// Holds the account read until [release], so a test can change the theme while a sync waits on the network.
+class _GatedAccountReadFirestoreClient extends FakeFirestoreClient {
+  final Completer<void> gate = Completer<void>();
+  final Completer<void> reading = Completer<void>();
+
+  void release() => gate.complete();
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async {
+    reading.complete();
+    await gate.future;
+    return super.getById(collection, id, map, sourceTag: sourceTag, preferCacheFirst: preferCacheFirst);
+  }
+}
+
 /// The `usersv2/{uid}.themePrefs` wire shape.
 Map<String, Object> _accountCopy({
   String mode = 'light',
@@ -483,13 +504,56 @@ void main() {
       store.data['settings.${winterSeason.previousThemeKey(Brightness.dark)}'] = 'kDSky';
       store.data['settings.theme.changed_at'] = 100;
       firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
-        'u1': <String, dynamic>{'themePrefs': _accountCopy(darkId: prismWinterDarkThemeId, changedAt: 100)},
+        'u1': <String, dynamic>{
+          'themePrefs': _accountCopy(
+            darkId: prismWinterDarkThemeId,
+            darkAccent: prismWinterDarkAccentValue,
+            changedAt: 100,
+          ),
+        },
       };
 
       await repository.syncWithAccount('u1');
 
       expect(store.data['settings.darkThemeID'], 'kDSky');
+      expect(store.data['settings.darkAccent'], prismThemeById(prismDarkThemes, 'kDSky')!.defaultAccentValue);
       expect(firestore.writes, isEmpty);
+    });
+
+    test('a theme picked while the account read is in flight is not overwritten by the older account copy', () async {
+      final _GatedAccountReadFirestoreClient gated = _GatedAccountReadFirestoreClient();
+      final ThemeRepositoryImpl gatedRepository = ThemeRepositoryImpl(SettingsLocalDataSource(store), gated);
+      seasonClock = () => DateTime(2027, 1, 9);
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      app_state.prismUser = profileUser(loggedIn: false);
+      store.data['settings.darkThemeID'] = 'kDSky';
+      store.data['settings.theme.changed_at'] = 100;
+      gated.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
+        'u1': <String, dynamic>{'themePrefs': _accountCopy(darkId: 'kDAMOLED', changedAt: 1000)},
+      };
+
+      final Future<void> sync = gatedRepository.syncWithAccount('u1');
+      await gated.reading.future;
+      await gatedRepository.update(darkThemeId: 'kDOlive');
+      gated.release();
+      await sync;
+
+      expect(store.data['settings.darkThemeID'], 'kDOlive');
+      expect(gated.writes.single.data!['themePrefs'], containsPair('darkThemeId', 'kDOlive'));
+    });
+
+    test('a sync and an update in flight together run one after the other', () async {
+      seasonClock = () => DateTime(2027, 1, 9);
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      store.data['settings.darkThemeID'] = prismWinterDarkThemeId;
+      store.data['settings.darkAccent'] = prismWinterDarkAccentValue;
+      store.data['settings.${winterSeason.previousThemeKey(Brightness.dark)}'] = 'kDSky';
+      store.data['settings.theme.changed_at'] = 100;
+
+      await Future.wait(<Future<Object?>>[repository.load(), repository.update(darkThemeId: 'kDOlive')]);
+
+      expect(store.data['settings.darkThemeID'], 'kDOlive');
+      expect(repository.readSync().dark.themeId, 'kDOlive');
     });
 
     test('a failed previous-theme write does not replace the selected theme', () async {
