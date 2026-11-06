@@ -58,6 +58,8 @@ const PRICING = {
   ],
 };
 
+const MAX_BATCH = 10;
+
 class AgentReadError extends Error {}
 
 export async function handleAgentRequest(request: Request, url: URL, env: AgentEnv, _ctx: ExecutionContext): Promise<Response | null> {
@@ -131,7 +133,7 @@ async function listWallpapers(url: URL, env: AgentEnv) {
   if (category && !/^[a-z0-9-]{1,100}$/.test(category)) throw new RpcError(-32602, 'Invalid category');
   if (query) pageNumber = 1;
   const popular = !query && !category && url.searchParams.get('sort') === 'popular';
-  const key = query ? 'latest~1' : category ? `category~${category}~${pageNumber}` : popular ? `popular~${pageNumber}` : `latest~${pageNumber}`;
+  const key = query ? (category ? `category~${category}~1` : 'latest~1') : category ? `category~${category}~${pageNumber}` : popular ? `popular~${pageNumber}` : `latest~${pageNumber}`;
   const page = await readDoc<PageDoc>(env, `webPages/${key}`);
   if (!page) return { data: [], page: pageNumber, pages: 0, total: 0 };
   const rows = await Promise.all((page.items ?? []).map(async (item) => {
@@ -183,7 +185,8 @@ async function readDoc<T>(env: AgentEnv, path: string): Promise<T | null> {
     + path.split('/').map(encodeURIComponent).join('/');
   let response: Response;
   try {
-    response = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    // Public projection docs: a short edge cache stops repeated agent calls from re-billing the same Firestore reads.
+    response = await fetch(url, { signal: AbortSignal.timeout(4000), cf: { cacheTtl: 300, cacheEverything: true } });
   } catch (error) {
     throw new AgentReadError(`${error}`);
   }
@@ -242,6 +245,7 @@ async function handleMcp(request: Request, url: URL, env: AgentEnv): Promise<Res
   let payload: unknown;
   try { payload = await request.json(); } catch { return json({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } }, 400); }
   const batch = Array.isArray(payload);
+  if (batch && payload.length > MAX_BATCH) return json({ jsonrpc: '2.0', id: null, error: { code: -32600, message: `Batch is limited to ${MAX_BATCH} requests` } }, 400);
   if (batch && payload.length === 0) return json({ jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Invalid Request' } }, 400);
   const responses = await Promise.all((batch ? payload : [payload]).map(async (value: unknown) => {
     const rpc = value as RpcRequest;
@@ -331,7 +335,7 @@ const mcpRequestBody = { required: true, content: { 'application/json': { schema
 const openApi = {
   openapi: '3.1.0', info: { title: 'Prism Wallpapers API', version: '1.0.0', description: 'Public wallpaper discovery and agent endpoints.' }, servers: [{ url: SITE }],
   paths: {
-    '/api/v1/wallpapers': { get: operation('listWallpapers', 'List public wallpapers; q filters only page 1 of latest and is not a full search index.', { page: param('page', 'integer'), category: param('category', 'string'), q: param('q', 'string'), sort: { type: 'string', enum: ['latest', 'popular'] } }, listSchema) },
+    '/api/v1/wallpapers': { get: operation('listWallpapers', 'List public wallpapers; q filters only page 1 of latest (or of the category) and is not a full search index.', { page: param('page', 'integer'), category: param('category', 'string'), q: param('q', 'string'), sort: { type: 'string', enum: ['latest', 'popular'] } }, listSchema) },
     '/api/v1/wallpapers/{id}': { get: operation('getWallpaper', 'Get public wallpaper metadata. Gated walls omit their thumbnail.', {}, { type: 'object', properties: { data: wallSchema } }, [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }]) },
     '/api/v1/categories': { get: operation('listCategories', 'List categories from the latest catalogue page.', {}, { type: 'object', properties: { data: { type: 'array', items: categorySchema } } }) },
     '/api/v1/pricing': { get: operation('getPricing', 'Read indicative in-app purchase tiers; see /pricing.md.', {}, { type: 'object' }) },

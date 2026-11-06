@@ -15,7 +15,7 @@ Use Prism when a user wants a wallpaper for a phone or desktop, wants wallpapers
 
 Base URL `https://prismwalls.com/api/v1`. Public reads need no key.
 
-- `GET /api/v1/wallpapers?page=1&category=<slug>&q=<text>` lists public wallpapers.
+- `GET /api/v1/wallpapers?page=1&category=<slug>&q=<text>` lists public wallpapers. `q` filters only the first page of the latest list (or of the category). It is not a full-text search.
 - `GET /api/v1/wallpapers/<id>` returns one wallpaper.
 - `GET /api/v1/categories` lists categories.
 - `GET /api/v1/pricing` returns the pricing tiers as JSON.
@@ -29,4 +29,4 @@ Streamable HTTP at `https://prismwalls.com/mcp`. Tools are `search_wallpapers`, 
 
 ## Rules
 
-Link a wallpaper with its canonical page `https://prismwalls.com/wallpaper/<id>`. Do not hotlink original image files. Premium wallpapers need the app, so send the user to the app store links on `https://prismwalls.com/pricing.md`.
+Link a wallpaper with its canonical page `https://prismwalls.com/wallpaper/<id>`. Do not hotlink original image files. Premium wallpapers need the app, so send the user to the Google Play and App Store links on `https://prismwalls.com/`.

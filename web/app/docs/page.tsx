@@ -12,10 +12,10 @@ export default function DocsPage() {
     <p>The Prism Wallpapers API exposes public catalog information for apps, websites, and agent workflows. The base URL is <code className="rounded bg-white px-2 py-1 text-black">https://prismwalls.com/api/v1</code>. Public read requests do not require authentication. Responses use JSON; clients should handle pagination and service errors rather than assuming a fixed catalog size.</p>
     <h2 className="pt-4 text-2xl font-semibold text-black">Endpoints</h2>
     <div className="overflow-x-auto rounded-xl bg-white p-4"><table className="w-full text-left"><thead><tr><th className="p-2">Method and path</th><th className="p-2">Purpose</th></tr></thead><tbody>
-      <tr><td className="p-2"><code>GET /api/v1/wallpapers</code></td><td className="p-2">Browse or search wallpapers; accepts query parameter <code>q</code>.</td></tr>
+      <tr><td className="p-2"><code>GET /api/v1/wallpapers</code></td><td className="p-2">Browse wallpapers. <code>q</code> filters only the first page of the latest list (or of a <code>category</code>); it is not a full-text search.</td></tr>
       <tr><td className="p-2"><code>GET /api/v1/wallpapers/&#123;id&#125;</code></td><td className="p-2">Retrieve one wallpaper by identifier.</td></tr>
       <tr><td className="p-2"><code>GET /api/v1/categories</code></td><td className="p-2">List available wallpaper categories.</td></tr>
-      <tr><td className="p-2"><code>GET /api/v1/pricing</code></td><td className="p-2">Read current plan and feature information.</td></tr>
+      <tr><td className="p-2"><code>GET /api/v1/pricing</code></td><td className="p-2">List the plan tiers. Prices are set per store; check the app.</td></tr>
       <tr><td className="p-2"><code>GET /api/v1/sandbox/wallpapers</code></td><td className="p-2">Try the catalog response with sandbox data.</td></tr>
     </tbody></table></div>
     <h2 className="pt-4 text-2xl font-semibold text-black">Quick requests</h2>

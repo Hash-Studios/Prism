@@ -15,7 +15,7 @@ pattern = "prismwalls.com/ask*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "prismwalls.com/openapi.json"
+pattern = "prismwalls.com/openapi.json*"
 zone_name = "prismwalls.com"
 
 [[routes]]
@@ -387,7 +387,7 @@ pattern = "www.prismwalls.com/ask*"
 zone_name = "prismwalls.com"
 
 [[routes]]
-pattern = "www.prismwalls.com/openapi.json"
+pattern = "www.prismwalls.com/openapi.json*"
 zone_name = "prismwalls.com"
 
 [[routes]]

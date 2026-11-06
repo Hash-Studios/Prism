@@ -1,6 +1,6 @@
 # Prism Wallpapers pricing
 
-Prism is free to download on Android and iOS. The free experience supports wallpaper discovery and browsing. Optional Prism Premium features are offered through in-app purchases; exact availability, price, billing period, and local currency can vary by platform and storefront. Check the purchase screen in the app or the public pricing endpoint for current terms before subscribing.
+Prism is free to download on Android and iOS. The free experience supports wallpaper discovery and browsing. Optional Prism Premium features are offered through in-app purchases; exact availability, price, billing period, and local currency can vary by platform and storefront. Check the purchase screen in the app for current price and terms before subscribing. The public pricing endpoint lists the tiers only, with no prices.
 
 ## Plans and features
 

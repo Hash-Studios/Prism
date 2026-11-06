@@ -11,4 +11,4 @@ routes = [
 [assets]
 directory = "./out"
 binding = "ASSETS"
-run_worker_first = true
+run_worker_first = ["/"]

@@ -317,3 +317,24 @@ test('projection outages produce controlled unavailable responses', async (t) =>
   const mcp = await h.post('/mcp', { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'get_wallpaper', arguments: { id: 'W1' } } });
   assert.deepEqual(await mcp.json(), { jsonrpc: '2.0', id: 1, error: { code: -32603, message: 'Internal error.' } });
 });
+
+test('search with a category filters that category page, not the latest page', async (t) => {
+  const h = setup(t);
+  h.docs['webPages/category~space~1'] = { items: [{ id: 'S1' }], page: 1, pages: 1, total: 1 };
+  h.docs['webWalls/S1'] = { state: 'live', title: 'Sunset Nebula', category: 'Space', categorySlug: 'space', tags: [] };
+  const body = await (await h.get('/api/v1/wallpapers?category=space&q=sunset')).json();
+  assert.deepEqual(body.data.map((wall) => wall.id), ['S1']);
+});
+
+test('MCP batches above the limit are refused before any catalogue read', async (t) => {
+  const h = setup(t);
+  const originalFetch = globalThis.fetch;
+  let reads = 0;
+  globalThis.fetch = async (...args) => { reads++; return originalFetch(...args); };
+  const call = { jsonrpc: '2.0', method: 'tools/call', params: { name: 'search_wallpapers', arguments: {} } };
+  const response = await h.post('/mcp', Array.from({ length: 11 }, (_, id) => ({ ...call, id })));
+  assert.equal(response.status, 400);
+  assert.equal((await response.json()).error.code, -32600);
+  assert.equal(reads, 0);
+  assert.equal((await h.post('/mcp', Array.from({ length: 10 }, (_, id) => ({ jsonrpc: '2.0', id, method: 'ping' })))).status, 200);
+});

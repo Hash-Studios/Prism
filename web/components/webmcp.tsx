@@ -6,7 +6,7 @@ type ToolDefinition = {
   name: string;
   description: string;
   inputSchema: { type: "object"; properties: Record<string, { type: string; description?: string }>; required?: string[] };
-  execute: (input: Record<string, unknown>) => Promise<{ content: Array<{ type: "text"; text: string }> }>;
+  execute: (input: Record<string, unknown>) => Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }>;
 };
 
 type ModelContext = {
@@ -15,9 +15,12 @@ type ModelContext = {
 };
 
 async function fetchAsText(path: string) {
-  const response = await fetch(path);
-  const body = await response.text();
-  return { content: [{ type: "text" as const, text: body }] };
+  try {
+    const response = await fetch(path);
+    return { content: [{ type: "text" as const, text: await response.text() }], isError: !response.ok };
+  } catch (error) {
+    return { content: [{ type: "text" as const, text: `Request failed: ${error}` }], isError: true };
+  }
 }
 
 export function WebMcp() {
