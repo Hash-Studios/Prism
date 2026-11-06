@@ -4,6 +4,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/share/share_card.dart';
+import 'package:Prism/core/share/share_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
@@ -44,9 +45,9 @@ Future<ShareCardContent> _shareContent(
           creator: creator,
           palette: palette,
           createLink: (id, source, url, thumbUrl) async => 'https://prismwalls.com/share?id=$id',
-          openSheet: (context, content, sourceContext) async {
+          openSheet: _resolved((context, content, sourceContext) {
             shared = content;
-          },
+          }),
         ),
       ),
     ),
@@ -96,10 +97,10 @@ void main() {
               linkThumbnail = thumbUrl;
               return 'https://prismwalls.com/share?id=wall-1';
             },
-            openSheet: (context, content, source) async {
+            openSheet: _resolved((context, content, source) {
               shared = content;
               sourceContext = source;
-            },
+            }),
           ),
         ),
       ),
@@ -133,7 +134,7 @@ void main() {
               linkThumbnail = thumbUrl;
               return 'https://prismwalls.com/share?id=$id';
             },
-            openSheet: (context, content, sourceContext) async => shared = content,
+            openSheet: _resolved((context, content, sourceContext) => shared = content),
           ),
         ),
       ),
@@ -186,7 +187,7 @@ void main() {
                 linkThumbnail = thumbUrl;
                 return 'https://prismwalls.com/share?id=$id';
               },
-              openSheet: (context, content, sourceContext) async => shared = content,
+              openSheet: _resolved((context, content, sourceContext) => shared = content),
             ),
           ),
         ),
@@ -222,7 +223,7 @@ void main() {
                   linkThumbnails.add(thumbUrl);
                   return 'https://prismwalls.com/share?id=$id';
                 },
-                openSheet: (context, content, sourceContext) async => imageUrls.add(content.imageUrl),
+                openSheet: _resolved((context, content, sourceContext) => imageUrls.add(content.imageUrl)),
               ),
               ShareButton(
                 webCatalogueCheck: (_) async => false,
@@ -234,7 +235,7 @@ void main() {
                   linkThumbnails.add(thumbUrl);
                   return 'https://prismwalls.com/share?id=$id';
                 },
-                openSheet: (context, content, sourceContext) async => imageUrls.add(content.imageUrl),
+                openSheet: _resolved((context, content, sourceContext) => imageUrls.add(content.imageUrl)),
               ),
             ],
           ),
@@ -276,10 +277,10 @@ void main() {
             thumbUrl: 'https://img.test/thumb.jpg',
             contextLine: 'by Akshay',
             createLink: (id, source, url, thumbUrl) async => 'https://prismwalls.com/share?id=$id',
-            openSheet: (BuildContext context, ShareCardContent content, String source) async {
+            openSheet: _resolved((BuildContext context, ShareCardContent content, String source) {
               shared = content;
               sourceContext = source;
-            },
+            }),
           ),
         ),
       ),
@@ -318,10 +319,10 @@ void main() {
               linkCalls++;
               return link.future;
             },
-            openSheet: (BuildContext context, ShareCardContent content, String sourceContext) {
+            openSheet: _resolved((BuildContext context, ShareCardContent content, String sourceContext) {
               shareCalls++;
               return Future<void>.value();
-            },
+            }),
           ),
         ),
       ),
@@ -382,12 +383,12 @@ void main() {
                 contextLine: contextLine,
                 duoReveal: duoReveal,
                 createLink: (id, source, url, thumbUrl) => link.future,
-                openSheet: (BuildContext context, ShareCardContent content, String sourceContext) {
+                openSheet: _resolved((BuildContext context, ShareCardContent content, String sourceContext) {
                   currentCalls.addAll(<String?>[content.imageUrl, content.link, content.contextLine]);
                   firstDuoReveal.add(content.duoReveal);
                   opened.add(content);
                   return Future<void>.value();
-                },
+                }),
               ),
             );
           },
@@ -442,10 +443,10 @@ void main() {
             url: 'https://private.test/premium-original.jpg',
             thumbUrl: '',
             createLink: (id, source, url, thumbUrl) => link.future,
-            openSheet: (BuildContext context, ShareCardContent content, String sourceContext) {
+            openSheet: _resolved((BuildContext context, ShareCardContent content, String sourceContext) {
               sharedImageUrl = content.imageUrl;
               return Future<void>.value();
-            },
+            }),
           ),
         ),
       ),
@@ -475,10 +476,10 @@ void main() {
             url: 'https://img.test/full.jpg',
             thumbUrl: 'https://img.test/thumb.jpg',
             createLink: (id, source, url, thumbUrl) async => null,
-            openSheet: (BuildContext context, ShareCardContent content, String sourceContext) {
+            openSheet: _resolved((BuildContext context, ShareCardContent content, String sourceContext) {
               sharedLink = content.link;
               return Future<void>.value();
-            },
+            }),
           ),
         ),
       ),
@@ -509,10 +510,10 @@ void main() {
             url: null,
             thumbUrl: '',
             createLink: (id, source, url, thumbUrl) => link.future,
-            openSheet: (BuildContext context, ShareCardContent content, String sourceContext) {
+            openSheet: _resolved((BuildContext context, ShareCardContent content, String sourceContext) {
               sharedLink = content.link;
               return Future<void>.value();
-            },
+            }),
           ),
         ),
       ),
@@ -546,10 +547,10 @@ void main() {
             url: 'https://img.test/full.jpg',
             thumbUrl: 'https://img.test/thumb.jpg',
             createLink: (id, source, url, thumbUrl) => link.future,
-            openSheet: (BuildContext context, ShareCardContent content, String sourceContext) {
+            openSheet: _resolved((BuildContext context, ShareCardContent content, String sourceContext) {
               sharedLink = content.link;
               return Future<void>.value();
-            },
+            }),
           ),
         ),
       ),
@@ -588,11 +589,11 @@ void main() {
               createLinkCalls++;
               return Future<String?>.value('https://prismwalls.com/share?id=$id');
             },
-            openSheet: (BuildContext context, ShareCardContent content, String sourceContext) {
+            openSheet: _resolved((BuildContext context, ShareCardContent content, String sourceContext) {
               sharedImageUrl = content.imageUrl;
               sharedLink = content.link;
               return Future<void>.value();
-            },
+            }),
           ),
         ),
       ),
@@ -712,6 +713,48 @@ void main() {
     expect(opened, hasLength(1));
     expect(opened.single.computerLink.toString(), 'https://prismwalls.com/wallpaper/wall-1?view=desktop');
   });
+
+  testWidgets('the sheet opens on the tap, before the short link arrives', (tester) async {
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    const List<Color> palette = <Color>[Color(0xFF0066CC)];
+    final Completer<String?> link = Completer<String?>();
+    ShareCardContent? draft;
+    Future<ShareCardContent?>? ready;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: ShareButton(
+            webCatalogueCheck: (_) async => false,
+            id: 'wall-1',
+            source: WallpaperSource.prism,
+            url: 'https://img.test/full.jpg',
+            thumbUrl: 'https://img.test/thumb.jpg',
+            palette: palette,
+            createLink: (id, source, url, thumbUrl) => link.future,
+            openSheet: (context, opened, pending, sourceContext) async {
+              draft = opened;
+              ready = pending;
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.bySemanticsLabel('Share'));
+    await tester.pump();
+
+    expect(draft, isNotNull, reason: 'the sheet must not wait for the short link');
+    expect(draft!.link, startsWith('https://prismwalls.com/share?'));
+    expect(draft!.palette, palette);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    link.complete('https://prismwalls.com/l/short123');
+    await tester.pump();
+    expect((await ready)?.link, 'https://prismwalls.com/l/short123');
+  });
 }
 
 /// Taps Share once and returns every ShareCardContent the fake sheet received.
@@ -737,9 +780,9 @@ Future<List<ShareCardContent>> _pumpShare(
           url: 'https://img.test/full.jpg',
           thumbUrl: 'https://img.test/thumb.jpg',
           createLink: createLink,
-          openSheet: (BuildContext context, ShareCardContent content, String sourceContext) async {
+          openSheet: _resolved((BuildContext context, ShareCardContent content, String sourceContext) {
             opened.add(content);
-          },
+          }),
         ),
       ),
     ),
@@ -748,3 +791,11 @@ Future<List<ShareCardContent>> _pumpShare(
   await tester.pumpAndSettle();
   return opened;
 }
+
+/// Hands a fake sheet the final content once the pending share resolves, as the real sheet shows it.
+PendingShareSheetOpen _resolved(
+  FutureOr<void> Function(BuildContext context, ShareCardContent content, String sourceContext) open,
+) => (BuildContext context, ShareCardContent draft, Future<ShareCardContent?> ready, String sourceContext) async {
+  final ShareCardContent? content = await ready;
+  if (content != null && context.mounted) await open(context, content, sourceContext);
+};

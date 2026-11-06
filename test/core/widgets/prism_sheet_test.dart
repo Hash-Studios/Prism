@@ -1,4 +1,5 @@
-import 'package:Prism/core/motion/prism_motion.dart';
+import 'dart:math' as math;
+
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
@@ -23,6 +24,9 @@ Future<void> _open(WidgetTester tester) async {
   await tester.tap(find.text('open'));
   await tester.pumpAndSettle();
 }
+
+double _dim(WidgetTester tester) =>
+    tester.widgetList<ModalBarrier>(find.byType(ModalBarrier)).map((b) => b.color?.a ?? 0).reduce(math.max);
 
 BorderRadius _surfaceRadius(WidgetTester tester) {
   final DecoratedBox box = tester
@@ -54,9 +58,31 @@ void main() {
     final double height = tester.view.physicalSize.height / tester.view.devicePixelRatio;
     Navigator.of(tester.element(find.text('Sort by'))).pop();
     await tester.pump();
-    await tester.pump(PrismDurations.sheet * 0.25);
+    await tester.pump(const Duration(milliseconds: 50));
     expect(tester.getTopLeft(find.text('Sort by')).dy - rest, greaterThan(height * 0.15));
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('opens in 280 ms, closes faster in 200 ms, and the dim fades on the same curves', (tester) async {
+    await tester.pumpWidget(
+      _app((context) => showPrismSheet<void>(context, builder: (_) => const PrismSheetBody(title: 'Sort by'))),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(_dim(tester), inExclusiveRange(0, PrismBottomSheet.barrier.a));
+    await tester.pump(const Duration(milliseconds: 181));
+    final ModalRoute<Object?> route = ModalRoute.of(tester.element(find.text('Sort by')))!;
+    expect(route.animation!.status, AnimationStatus.completed);
+    expect(_dim(tester), closeTo(PrismBottomSheet.barrier.a, 0.001));
+
+    Navigator.of(tester.element(find.text('Sort by'))).pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+    // An ease-out exit: most of the dim is gone in the first third.
+    expect(_dim(tester), lessThan(PrismBottomSheet.barrier.a * 0.5));
+    await tester.pump(const Duration(milliseconds: 141));
+    expect(find.text('Sort by'), findsNothing);
   });
 
   testWidgets('a released swipe settles from the finger position without a jump', (tester) async {

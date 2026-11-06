@@ -3,6 +3,7 @@ import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/utils/side_safe_column.dart';
 import 'package:Prism/features/layout_prefs/views/layout_prefs_scope.dart';
 import 'package:Prism/features/navigation/views/widgets/account_controls.dart';
+import 'package:Prism/features/navigation/views/widgets/nav_glass.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_bottom_nav.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_fab.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -23,8 +24,9 @@ const double _barInset = 10;
 
 const double _compactRow = _controlSize + PrismSpace.xxs + _createGap + _createSize;
 
-/// Height of the fade under the floating row, above the bottom safe area.
-const double _fadeHeight = 90;
+/// Height of the fade under the floating row, above the bottom safe area. Short and light, so the glass row, not the
+/// fade, separates the content from the controls.
+const double _fadeHeight = 64;
 
 /// Size of the scroll-to-top button that takes the row's place while it hides.
 const double _scrollTopSize = 44;
@@ -61,7 +63,8 @@ bool oneHandedAvatarAbove(BuildContext context) => _oneHandedRowSpace(context) <
 ///
 /// With one-handed controls on, the profile and the notifications join the row, so they hide and show with it.
 ///
-/// A fade to the page colour sits under the row, so content that scrolls under it does not fight the pill. While the
+/// The pill, the create button and the floating controls are glass ([NavGlass]) that share one backdrop read. A light
+/// fade to the page colour sits under the row, so content that scrolls under it does not fight the pill. While the
 /// keyboard is up, the row fades out and stops taking taps.
 class BottomBar extends StatefulWidget {
   final Widget? child;
@@ -75,6 +78,9 @@ class _BottomBarState extends State<BottomBar> {
   /// More than two screens down the active vertical scroll view. Only then is scroll-to-top worth a button.
   bool _deep = false;
   int? _activeTabIndex;
+
+  /// One key for the life of the bar, so the glass controls keep sharing the same backdrop layer across rebuilds.
+  final BackdropKey _backdropKey = BackdropKey();
 
   bool _onScroll(ScrollNotification notification) {
     final ScrollMetrics metrics = notification.metrics;
@@ -99,142 +105,148 @@ class _BottomBarState extends State<BottomBar> {
     final bool oneHanded = LayoutPrefsScope.oneHandedOf(context);
     final bool avatarAbove = oneHanded && oneHandedAvatarAbove(context);
     if (railWidth > 0) {
-      return ColoredBox(
-        color: theme.scaffoldBackgroundColor,
-        child: Row(
-          textDirection: oneHanded ? TextDirection.ltr : null,
-          children: [
-            Expanded(
-              child: SideSafeColumnScope(
-                nativeWidth: railWidth,
-                child: MediaQuery.removePadding(context: context, removeRight: true, child: child ?? const SizedBox()),
+      return BackdropGroup(
+        backdropKey: _backdropKey,
+        child: ColoredBox(
+          color: theme.scaffoldBackgroundColor,
+          child: Row(
+            textDirection: oneHanded ? TextDirection.ltr : null,
+            children: [
+              Expanded(
+                child: SideSafeColumnScope(
+                  nativeWidth: railWidth,
+                  child: MediaQuery.removePadding(
+                    context: context,
+                    removeRight: true,
+                    child: child ?? const SizedBox(),
+                  ),
+                ),
               ),
-            ),
-            SizedBox(
-              width: railWidth,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final double bottomPadding = MediaQuery.viewPaddingOf(context).bottom + 12;
-                  return SingleChildScrollView(
-                    primary: false,
-                    reverse: true,
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: bottomPadding),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minHeight: (constraints.maxHeight - bottomPadding).clamp(0.0, double.infinity),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            if (oneHanded) ...const [
-                              ProfileAvatarButton(floating: true),
-                              SizedBox(height: PrismSpace.xxs),
-                              NotificationBell(source: NotificationsEntrySourceValue.bottom),
-                              SizedBox(height: 12),
+              SizedBox(
+                width: railWidth,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final double bottomPadding = MediaQuery.viewPaddingOf(context).bottom + 12;
+                    return SingleChildScrollView(
+                      primary: false,
+                      reverse: true,
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: bottomPadding),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: (constraints.maxHeight - bottomPadding).clamp(0.0, double.infinity),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              if (oneHanded) ...const [
+                                ProfileAvatarButton(floating: true),
+                                SizedBox(height: PrismSpace.xxs),
+                                NotificationBell(source: NotificationsEntrySourceValue.bottom),
+                                SizedBox(height: 12),
+                              ],
+                              const PrismBottomNav(axis: Axis.vertical),
+                              const SizedBox(height: 12),
+                              const PrismFab(),
                             ],
-                            const PrismBottomNav(axis: Axis.vertical),
-                            const SizedBox(height: 12),
-                            const PrismFab(),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }
-    return floating.BottomBar(
-      layout: floating.BottomBarLayout(
-        width: MediaQuery.sizeOf(context).width,
-        borderRadius: BorderRadius.circular(500),
-        fit: StackFit.expand,
-      ),
-      theme: floating.BottomBarThemeData(
-        barDecoration: BoxDecoration(color: Colors.transparent, borderRadius: BorderRadius.circular(500)),
-        // The circle is drawn by [icon], so it can fade and scale in. The package clips the icon to an oval, so a
-        // shadow would be cut off.
-        iconDecoration: const BoxDecoration(),
-        iconWidth: _scrollTopSize,
-        iconHeight: _scrollTopSize,
-      ),
-      showIcon: _deep && !keyboardUp,
-      iconTooltip: context.l10n.navigationScrollToTop,
-      icon: (width, height) => TweenAnimationBuilder<double>(
-        tween: Tween<double>(begin: 0, end: 1),
-        duration: context.motion(PrismDurations.fast),
-        curve: PrismCurves.enter,
-        builder: (context, t, child) => Opacity(
-          opacity: t,
-          child: Transform.scale(scale: 0.95 + 0.05 * t, child: child),
+    return BackdropGroup(
+      backdropKey: _backdropKey,
+      child: floating.BottomBar(
+        layout: floating.BottomBarLayout(
+          width: MediaQuery.sizeOf(context).width,
+          borderRadius: BorderRadius.circular(500),
+          fit: StackFit.expand,
         ),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: cs.surface,
-            shape: BoxShape.circle,
-            border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
+        theme: floating.BottomBarThemeData(
+          barDecoration: BoxDecoration(color: Colors.transparent, borderRadius: BorderRadius.circular(500)),
+          // The circle is drawn by [icon], so it can fade and scale in. The package clips the icon to an oval, so a
+          // shadow would be cut off.
+          iconDecoration: const BoxDecoration(),
+          iconWidth: _scrollTopSize,
+          iconHeight: _scrollTopSize,
+        ),
+        showIcon: _deep && !keyboardUp,
+        iconTooltip: context.l10n.navigationScrollToTop,
+        icon: (width, height) => TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 0, end: 1),
+          duration: context.motion(PrismDurations.fast),
+          curve: PrismCurves.enter,
+          builder: (context, t, child) => Opacity(
+            opacity: t,
+            child: Transform.scale(scale: 0.95 + 0.05 * t, child: child),
           ),
-          child: Center(child: Icon(Icons.arrow_upward_rounded, color: cs.onSurface, size: 20)),
-        ),
-      ),
-      // The tab Scaffolds do not know about the pill, so lift their floating snackbars above it.
-      body: Theme(
-        data: theme.copyWith(
-          snackBarTheme: theme.snackBarTheme.copyWith(
-            insetPadding: (theme.snackBarTheme.insetPadding ?? const EdgeInsets.fromLTRB(15, 5, 15, 10)).copyWith(
-              bottom: _snackBarBottomInset + (avatarAbove ? _controlSize + PrismSpace.xs : 0),
-            ),
+          child: NavGlass(
+            circle: true,
+            child: Center(child: Icon(Icons.arrow_upward_rounded, color: cs.onSurface, size: 20)),
           ),
         ),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: NotificationListener<ScrollNotification>(
-                onNotification: _onScroll,
-                child: child ?? const SizedBox.shrink(),
+        // The tab Scaffolds do not know about the pill, so lift their floating snackbars above it.
+        body: Theme(
+          data: theme.copyWith(
+            snackBarTheme: theme.snackBarTheme.copyWith(
+              insetPadding: (theme.snackBarTheme.insetPadding ?? const EdgeInsets.fromLTRB(15, 5, 15, 10)).copyWith(
+                bottom: _snackBarBottomInset + (avatarAbove ? _controlSize + PrismSpace.xs : 0),
               ),
             ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: MediaQuery.viewPaddingOf(context).bottom + _fadeHeight,
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [cs.surface.withValues(alpha: 0), cs.surface.withValues(alpha: 0.85)],
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: _onScroll,
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: MediaQuery.viewPaddingOf(context).bottom + _fadeHeight,
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [cs.surface.withValues(alpha: 0), cs.surface.withValues(alpha: 0.6)],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      child: IgnorePointer(
-        ignoring: keyboardUp,
-        child: AnimatedOpacity(
-          opacity: keyboardUp ? 0 : 1,
-          duration: context.motion(PrismDurations.fast),
-          child: Align(
-            heightFactor: 1.0,
-            child: oneHanded
-                ? _OneHandedRow(avatarAbove: avatarAbove, roomy: oneHandedRowHasRoom(context))
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IntrinsicWidth(child: PrismBottomNav(labels: navLabelsFit(context))),
-                      const SizedBox(width: _createGap),
-                      const PrismFab(),
-                    ],
-                  ),
+        child: IgnorePointer(
+          ignoring: keyboardUp,
+          child: AnimatedOpacity(
+            opacity: keyboardUp ? 0 : 1,
+            duration: context.motion(PrismDurations.fast),
+            child: Align(
+              heightFactor: 1.0,
+              child: oneHanded
+                  ? _OneHandedRow(avatarAbove: avatarAbove, roomy: oneHandedRowHasRoom(context))
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IntrinsicWidth(child: PrismBottomNav(labels: navLabelsFit(context))),
+                        const SizedBox(width: _createGap),
+                        const PrismFab(),
+                      ],
+                    ),
+            ),
           ),
         ),
       ),

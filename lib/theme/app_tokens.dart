@@ -269,7 +269,7 @@ abstract final class PrismBottomSheet {
   static const double dragHandleRadius = 99;
 
   /// Gap between a floating sheet and the screen edges. It goes to 0 as the sheet is dragged to full height.
-  static const double inset = 16;
+  static const double inset = 8;
 
   /// Gap between the status bar and the top of a full-height sheet.
   static const double topInset = 6;

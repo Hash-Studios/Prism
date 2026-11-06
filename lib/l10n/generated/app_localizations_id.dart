@@ -14705,4 +14705,10 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get foldersMakePrivateMessageShared =>
       'Hanya Anda dan orang yang Anda undang yang bisa melihatnya. Tautannya berhenti berfungsi dan pengikutnya kehilangan folder ini.';
+
+  @override
+  String get gestureHintHoldToSave => 'Tahan untuk menyimpan';
+
+  @override
+  String get gestureHintSwipeForSimilar => 'Geser ke atas untuk wallpaper serupa';
 }

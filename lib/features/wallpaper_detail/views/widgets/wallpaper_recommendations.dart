@@ -1,3 +1,4 @@
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
@@ -72,6 +73,7 @@ class WallpaperRecommendations extends StatelessWidget {
                   url: item.thumbnailUrl,
                   fallbackUrl: item.source == WallpaperSource.prism ? null : item.fullUrl,
                   heroTag: hero,
+                  placeholderColor: placeholderColorOf(item, Theme.of(context).scaffoldBackgroundColor),
                   semanticLabel: item.semanticLabel(context.l10n),
                   onTap: () => onOpen(
                     item,

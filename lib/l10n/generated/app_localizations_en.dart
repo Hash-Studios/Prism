@@ -14644,4 +14644,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get foldersMakePrivateMessageShared =>
       'Only you and the people you invited will see it. Its link stops working and its followers lose it.';
+
+  @override
+  String get gestureHintHoldToSave => 'Hold to save';
+
+  @override
+  String get gestureHintSwipeForSimilar => 'Swipe up for similar walls';
 }

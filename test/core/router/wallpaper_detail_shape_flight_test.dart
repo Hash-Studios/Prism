@@ -221,6 +221,8 @@ void main() {
         await tester.pump(const Duration(milliseconds: 16));
       }
       await tester.pump();
+      // The chrome lands over 120 ms after the route settles. A 240 ms morph would still be running past it.
+      await tester.pump(const Duration(milliseconds: 130));
       expect(
         tester.binding.transientCallbackCount,
         0,

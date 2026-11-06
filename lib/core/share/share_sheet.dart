@@ -58,11 +58,49 @@ Future<void> _copyText(String text) => Clipboard.setData(ClipboardData(text: tex
 
 typedef ShareSheetOpen = Future<void> Function(BuildContext context, ShareCardContent content, String sourceContext);
 
+/// Opens the sheet at once with [draft] while [ready] still loads the final content (the short link). Null from
+/// [ready] closes the sheet.
+typedef PendingShareSheetOpen =
+    Future<void> Function(
+      BuildContext context,
+      ShareCardContent draft,
+      Future<ShareCardContent?> ready,
+      String sourceContext,
+    );
+
+/// [showShareSheet] with content that is still loading. See [PendingShareSheetOpen].
+Future<void> showPendingShareSheet(
+  BuildContext context,
+  ShareCardContent draft,
+  Future<ShareCardContent?> ready,
+  String sourceContext,
+) => showShareSheet(context, draft, sourceContext, ready: ready);
+
+ShareCardContent _shareSafe(ShareCardContent content) => ShareCardContent(
+  imageUrl: content.imageUrl,
+  link: content.link,
+  brandName: content.brandName,
+  contextLine: shareSafeText(content.contextLine),
+  creator: shareSafeText(content.creator),
+  creatorLine: shareSafeText(content.creatorLine),
+  palette: content.palette,
+  duoReveal: content.duoReveal,
+  contentId: content.contentId,
+  foldedLabel: shareSafeText(content.foldedLabel),
+  unfoldedLabel: shareSafeText(content.unfoldedLabel),
+  cta: shareSafeText(content.cta),
+  computerLink: content.computerLink,
+);
+
 /// The Prism share sheet: a carousel of card formats on top, one row of targets below.
+///
+/// With [ready], the sheet opens at once on [content] (formats and the wall colour) and makes no card until [ready]
+/// gives the final content. A target tapped before then waits for it.
 Future<void> showShareSheet(
   BuildContext context,
   ShareCardContent content,
   String sourceContext, {
+  Future<ShareCardContent?>? ready,
   ShareSheetServices services = const ShareSheetServices(),
   VoidCallback? onShared,
   List<ShareCardFormat>? formats,
@@ -73,21 +111,8 @@ Future<void> showShareSheet(
   return showPrismSheet<void>(
     context,
     builder: (_) => ShareSheet(
-      content: ShareCardContent(
-        imageUrl: content.imageUrl,
-        link: content.link,
-        brandName: content.brandName,
-        contextLine: shareSafeText(content.contextLine),
-        creator: shareSafeText(content.creator),
-        creatorLine: shareSafeText(content.creatorLine),
-        palette: content.palette,
-        duoReveal: content.duoReveal,
-        contentId: content.contentId,
-        foldedLabel: shareSafeText(content.foldedLabel),
-        unfoldedLabel: shareSafeText(content.unfoldedLabel),
-        cta: shareSafeText(content.cta),
-        computerLink: content.computerLink,
-      ),
+      content: _shareSafe(content),
+      ready: ready?.then((ShareCardContent? content) => content == null ? null : _shareSafe(content)),
       sourceContext: sourceContext,
       services: services,
       onShared: onShared,
@@ -103,6 +128,7 @@ class ShareSheet extends StatefulWidget {
   const ShareSheet({
     required this.content,
     required this.sourceContext,
+    this.ready,
     this.services = const ShareSheetServices(),
     this.onShared,
     this.formats,
@@ -113,6 +139,9 @@ class ShareSheet extends StatefulWidget {
   });
 
   final ShareCardContent content;
+
+  /// The final content, when [content] is a draft still waiting for its link. Null closes the sheet.
+  final Future<ShareCardContent?>? ready;
   final String sourceContext;
   final ShareSheetServices services;
   final VoidCallback? onShared;
@@ -137,11 +166,22 @@ class _ShareSheetState extends State<ShareSheet> {
   final PageController _pages = PageController(viewportFraction: 0.62);
   final Map<ShareCardFormat, Future<File>> _renders = <ShareCardFormat, Future<File>>{};
   final Set<ShareCardFormat> _failedRenders = <ShareCardFormat>{};
+  late ShareCardContent _content = widget.content;
+  late bool _ready = widget.ready == null;
+  late final Future<bool> _whenReady = widget.ready == null
+      ? Future<bool>.value(true)
+      : widget.ready!.then(
+          _arrive,
+          onError: (Object error, StackTrace stackTrace) {
+            logger.w('Share content failed to load', error: error, stackTrace: stackTrace);
+            return _arrive(null);
+          },
+        );
   late ShareCardFormat _format = _formats.first;
   List<ShareCardFormat> get _formats =>
       widget.formats ??
       <ShareCardFormat>[
-        if (widget.content.duoReveal) ShareCardFormat.duoReveal,
+        if (_content.duoReveal) ShareCardFormat.duoReveal,
         ShareCardFormat.story,
         ShareCardFormat.post,
         ShareCardFormat.clean,
@@ -174,6 +214,20 @@ class _ShareSheetState extends State<ShareSheet> {
       });
     }
     unawaited(_checkInstagram());
+    unawaited(_whenReady);
+  }
+
+  bool _arrive(ShareCardContent? content) {
+    if (!mounted) return false;
+    if (content == null) {
+      Navigator.of(context).maybePop();
+      return false;
+    }
+    setState(() {
+      _content = content;
+      _ready = true;
+    });
+    return true;
   }
 
   Future<void> _checkInstagram() async {
@@ -223,10 +277,10 @@ class _ShareSheetState extends State<ShareSheet> {
     return _renders.putIfAbsent(
       format,
       () => widget.services
-          .render(format, widget.content)
+          .render(format, _content)
           .then((file) {
             if (format == ShareCardFormat.duoReveal) {
-              analytics.track(DuoShareCardMadeEvent(contentId: widget.content.contentId));
+              analytics.track(DuoShareCardMadeEvent(contentId: _content.contentId));
             }
             return file;
           })
@@ -237,7 +291,7 @@ class _ShareSheetState extends State<ShareSheet> {
     );
   }
 
-  String get _text => context.l10n.coreShareCardClipboard(widget.content.link);
+  String get _text => context.l10n.coreShareCardClipboard(_content.link);
 
   void _track(ShareTargetValue target, EventResultValue result, {ShareFormatValue? format}) {
     analytics.track(
@@ -266,7 +320,7 @@ class _ShareSheetState extends State<ShareSheet> {
     setState(() => _busy = target);
     bool done = false;
     try {
-      done = await action();
+      done = await _whenReady && mounted && await action();
     } finally {
       _actionUserId = null;
       if (mounted) {
@@ -287,7 +341,7 @@ class _ShareSheetState extends State<ShareSheet> {
     if (!mounted || !_actionSessionValid) return false;
     final AppLocalizations l10n = context.l10n;
     try {
-      await widget.services.copyText(widget.content.link);
+      await widget.services.copyText(_content.link);
       _track(ShareTargetValue.copyLink, EventResultValue.success, format: ShareFormatValue.text);
       if (mounted) toasts.success(l10n.coreShareLinkCopied);
       return true;
@@ -403,7 +457,7 @@ class _ShareSheetState extends State<ShareSheet> {
   Widget build(BuildContext context) {
     if (widget.ownerUserId != null && !_ownerSessionValid) return const SizedBox.shrink();
     final AppLocalizations l10n = context.l10n;
-    final Uri? computerLink = widget.content.computerLink;
+    final Uri? computerLink = _content.computerLink;
     final double height = (MediaQuery.sizeOf(context).height * 0.46).clamp(240.0, 440.0);
     return PrismSheetBody(
       title: l10n.coreShare,
@@ -430,7 +484,10 @@ class _ShareSheetState extends State<ShareSheet> {
                   format: format,
                   label: _formatLabel(l10n, format),
                   selected: selected,
-                  render: _ownerSessionValid && (near || _renders.containsKey(format)) ? _render(format) : null,
+                  placeholder: _content.palette.firstOrNull,
+                  render: _ready && _ownerSessionValid && (near || _renders.containsKey(format))
+                      ? _render(format)
+                      : null,
                   onTap: selected
                       ? null
                       : () => _pages.animateOrJumpToPage(
@@ -506,6 +563,7 @@ class _FormatPreview extends StatelessWidget {
     required this.format,
     required this.label,
     required this.selected,
+    required this.placeholder,
     required this.render,
     required this.onTap,
     super.key,
@@ -514,6 +572,9 @@ class _FormatPreview extends StatelessWidget {
   final ShareCardFormat format;
   final String label;
   final bool selected;
+
+  /// The wall's main colour, shown until the card is ready. Null shows a loading skeleton.
+  final Color? placeholder;
   final Future<File>? render;
   final VoidCallback? onTap;
 
@@ -544,7 +605,8 @@ class _FormatPreview extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(PrismRadius.md),
                         child: ColoredBox(
-                          color: cs.surfaceContainerHigh,
+                          key: ValueKey<String>('share-preview-placeholder-${format.name}'),
+                          color: placeholder ?? cs.surfaceContainerHigh,
                           child: FutureBuilder<File>(
                             future: render,
                             builder: (BuildContext context, AsyncSnapshot<File> snapshot) {
@@ -555,9 +617,19 @@ class _FormatPreview extends StatelessWidget {
                                   fit: BoxFit.cover,
                                   gaplessPlayback: true,
                                   excludeFromSemantics: true,
+                                  // The card fades in over the wall colour instead of popping.
+                                  frameBuilder: (BuildContext context, Widget child, int? frame, bool sync) => sync
+                                      ? child
+                                      : AnimatedOpacity(
+                                          opacity: frame == null ? 0 : 1,
+                                          duration: context.motion(PrismDurations.fast),
+                                          curve: PrismCurves.enter,
+                                          child: child,
+                                        ),
                                 );
                               }
                               if (snapshot.hasError) return _PreviewFallback(format: format);
+                              if (placeholder != null) return const SizedBox.expand();
                               return const PrismSkeleton(
                                 child: PrismBone(width: double.infinity, height: double.infinity, radius: 0),
                               );

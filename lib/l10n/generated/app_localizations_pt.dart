@@ -15021,6 +15021,12 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get foldersMakePrivateMessageShared =>
       'Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso.';
+
+  @override
+  String get gestureHintHoldToSave => 'Toque e segure para salvar';
+
+  @override
+  String get gestureHintSwipeForSimilar => 'Deslize para cima para ver papéis de parede parecidos';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -30038,4 +30044,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get foldersMakePrivateMessageShared =>
       'Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso.';
+
+  @override
+  String get gestureHintHoldToSave => 'Toque e segure para salvar';
+
+  @override
+  String get gestureHintSwipeForSimilar => 'Deslize para cima para ver papéis de parede parecidos';
 }

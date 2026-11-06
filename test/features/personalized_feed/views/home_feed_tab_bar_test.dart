@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/personalized_feed/views/widgets/home_feed_tab_bar.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -33,6 +34,7 @@ class _HostState extends State<_Host> with SingleTickerProviderStateMixin {
     length: HomeFeedChip.values.length,
     vsync: this,
     initialIndex: widget.initial.index,
+    animationDuration: PrismDurations.fast,
   );
   late HomeFeedChip selected = widget.initial;
 
@@ -191,7 +193,13 @@ void main() {
     expect(tester.getTopLeft(find.text('For you')).dx, 14);
   });
 
-  testWidgets('every label is 15 pt bold, the chosen one in the text colour and the others in 62% ink', (tester) async {
+  FontWeight? weightOf(WidgetTester tester, String label) => tester
+      .widget<RichText>(find.descendant(of: tab(label), matching: find.byType(RichText)).first)
+      .text
+      .style!
+      .fontWeight;
+
+  testWidgets('every label is 15 pt, the chosen one bold in full ink and the others medium in 60% ink', (tester) async {
     await pumpBar(tester, initial: HomeFeedChip.latest);
 
     for (final String label in <String>['For you', 'Following', 'Trending', 'Latest', 'Popular']) {
@@ -200,15 +208,34 @@ void main() {
           .text
           .style!;
       expect(style.fontSize, 15, reason: label);
-      expect(style.fontWeight, FontWeight.w700, reason: label);
     }
+    expect(weightOf(tester, 'Latest'), FontWeight.w700);
     expect(inkOf(tester, 'Latest'), cs.onSurface);
     for (final String label in <String>['For you', 'Following', 'Trending', 'Popular']) {
-      expect(inkOf(tester, label), cs.onSurface.withValues(alpha: 0.62), reason: label);
+      expect(weightOf(tester, label), FontWeight.w500, reason: label);
+      expect(inkOf(tester, label), cs.onSurface.withValues(alpha: 0.6), reason: label);
     }
   });
 
-  testWidgets('the underline is a 4 px accent bar as wide as the chosen label, over a hairline at 10% ink', (
+  testWidgets('a new choice eases its weight and ink in over 160 ms', (tester) async {
+    await pumpBar(tester);
+
+    await tester.tap(tab('Latest'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+
+    final double midAlpha = inkOf(tester, 'Latest').a;
+    expect(midAlpha, greaterThan(0.6));
+    expect(midAlpha, lessThan(1));
+    expect(weightOf(tester, 'Latest')!.value, inExclusiveRange(500, 700));
+
+    await tester.pump(const Duration(milliseconds: 110));
+    expect(inkOf(tester, 'Latest'), cs.onSurface);
+    expect(weightOf(tester, 'Latest'), FontWeight.w700);
+    expect(weightOf(tester, 'For you'), FontWeight.w500);
+  });
+
+  testWidgets('the underline is a 2 px ink line as wide as the chosen label, over a hairline at 10% ink', (
     tester,
   ) async {
     await pumpBar(tester, initial: HomeFeedChip.latest);
@@ -222,9 +249,9 @@ void main() {
       paints..something(
         (Symbol method, List<Object?> arguments) =>
             method == #drawRRect &&
-            (arguments[0]! as RRect).height == 4 &&
+            (arguments[0]! as RRect).height == 2 &&
             ((arguments[0]! as RRect).width - labelWidth).abs() < 0.01 &&
-            (arguments[1]! as Paint).color.toARGB32() == cs.primary.toARGB32(),
+            (arguments[1]! as Paint).color.toARGB32() == cs.onSurface.toARGB32(),
       ),
     );
     final Finder hairline = find.byWidgetPredicate(

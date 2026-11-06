@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -50,6 +51,9 @@ Future<void> showFolderItemSheet(BuildContext context, FolderEntity folder, Favo
             child: PrismWallTile(
               url: wall.thumbnailUrl,
               fallbackUrl: wall.source == WallpaperSource.prism ? null : wall.fullUrl,
+              placeholderColor: wall is LegacyFavouriteWall
+                  ? null
+                  : placeholderColorOf(wall.toFeedItem(), Theme.of(sheetContext).colorScheme.surface),
               semanticLabel: wallpaperSemanticLabel(wall.authorName, sheetContext.l10n),
             ),
           ),

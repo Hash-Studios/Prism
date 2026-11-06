@@ -7,6 +7,7 @@ import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -397,13 +398,7 @@ class _DownloadsBodyState extends State<DownloadsBody> {
           else if (showToolbar)
             _toolbar(context),
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: () {
-                PrismHaptics.impact();
-                return refreshList();
-              },
-              child: _content(context),
-            ),
+            child: PrismRefresh(onRefresh: refreshList, child: _content(context)),
           ),
           if (_selecting)
             SelectionActionBar(

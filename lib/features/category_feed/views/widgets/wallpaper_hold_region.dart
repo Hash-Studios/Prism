@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/widgets/gesture_hint.dart';
+import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -200,6 +202,7 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
     _pinned = widget.pinLabel == null ? null : widget.readIsPinned?.call();
     final OverlayState overlay = Overlay.of(context, rootOverlay: true);
     PrismHaptics.impact();
+    GestureHints.markSeen(GestureHint.holdToSave);
     final RenderBox overlayBox = overlay.context.findRenderObject()! as RenderBox;
     final RenderBox box = context.findRenderObject()! as RenderBox;
     final Offset origin = overlayBox.globalToLocal(box.localToGlobal(Offset.zero));
@@ -285,16 +288,27 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
   };
 
   Widget _buildOverlay(Rect lifted, Rect safe, List<WallpaperQuickAction> actions) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
     final bool reduceMotion = _reduceMotion;
-    final TextStyle? labelStyle = Theme.of(context).textTheme.titleMedium?.copyWith(color: cs.onSurface);
+    // Light themes wash the rest of the screen toward the page, so the lifted wall reads as the one thing left. Dark
+    // themes keep a dark scrim: a light wash there would glare.
+    final bool wash = theme.brightness == Brightness.light;
+    final TextStyle? labelStyle = theme.textTheme.titleLarge?.copyWith(
+      color: cs.onSurface,
+      fontWeight: FontWeight.w700,
+    );
     final TextPainter labelPainter = TextPainter(
       text: TextSpan(text: _hovered == null ? '' : _label(_hovered!), style: labelStyle),
       textDirection: Directionality.of(context),
       textScaler: MediaQuery.textScalerOf(context),
     )..layout(maxWidth: safe.width - 32);
-    final double labelHeight = labelPainter.height + 16;
+    final double labelHeight = labelPainter.height + 20;
     labelPainter.dispose();
+    // The label sits above the ring, where the finger does not cover it. Below only when the top has no room.
+    final double ringTop = _centres.values.map((p) => p.dy).reduce(math.min) - 24;
+    final double ringBottom = _centres.values.map((p) => p.dy).reduce(math.max) + 24;
+    final double labelTop = ringTop - 12 - labelHeight >= safe.top ? ringTop - 12 - labelHeight : ringBottom + 12;
     return TickerMode(
       enabled: true,
       child: _HoldMotion(
@@ -317,7 +331,9 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
                         onTap: _close,
                         child: ColoredBox(
                           key: const ValueKey<String>('wallpaper-hold-scrim'),
-                          color: cs.scrim.withValues(alpha: 0.72 * progress),
+                          color: wash
+                              ? cs.surface.withValues(alpha: 0.82 * progress)
+                              : cs.scrim.withValues(alpha: 0.72 * progress),
                         ),
                       ),
                     ),
@@ -331,7 +347,20 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
                               angle: reduceMotion ? 0 : -0.025 * progress,
                               child: Transform.scale(
                                 scale: reduceMotion ? 1 : 1 + 0.025 * progress,
-                                child: widget.preview,
+                                child: DecoratedBox(
+                                  key: const ValueKey<String>('wallpaper-hold-lift-shadow'),
+                                  decoration: BoxDecoration(
+                                    borderRadius: PrismWallGrid.tileRadius,
+                                    boxShadow: <BoxShadow>[
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.18 * progress),
+                                        offset: const Offset(0, 12),
+                                        blurRadius: 28,
+                                      ),
+                                    ],
+                                  ),
+                                  child: widget.preview,
+                                ),
                               ),
                             ),
                           ),
@@ -348,19 +377,17 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
                       Positioned(
                         left: safe.left,
                         width: safe.width,
-                        top: (_centres.values.map((p) => p.dy).reduce(math.max) + 44).clamp(
-                          safe.top,
-                          math.max(safe.top, safe.bottom - labelHeight),
-                        ),
+                        top: labelTop.clamp(safe.top, math.max(safe.top, safe.bottom - labelHeight)),
                         child: IgnorePointer(
                           child: Center(
                             child: DecoratedBox(
+                              key: const ValueKey<String>('wallpaper-hold-label'),
                               decoration: BoxDecoration(
                                 color: cs.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(24),
                               ),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                                 child: Text(_label(action), textAlign: TextAlign.center, style: labelStyle),
                               ),
                             ),

@@ -19,6 +19,7 @@ import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/cosmetics/glow_text.dart';
 import 'package:Prism/core/widgets/cosmetics/profile_frame.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
 import 'package:Prism/features/creator_directory/views/widgets/followed_by_line.dart';
@@ -562,7 +563,7 @@ class _ProfileChildState extends State<_ProfileChild> {
       key: _scaffoldKey,
       backgroundColor: cs.surface,
       endDrawer: ownProfile ? const ProfileDrawer() : null,
-      body: RefreshIndicator(
+      body: PrismRefresh(
         onRefresh: _refresh,
         edgeOffset: topInset + kToolbarHeight,
         child: CustomScrollView(

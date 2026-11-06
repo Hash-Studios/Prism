@@ -14885,4 +14885,10 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get foldersMakePrivateMessageShared =>
       'Nur du und die Personen, die du eingeladen hast, sehen ihn. Sein Link funktioniert nicht mehr und seine Follower verlieren ihn.';
+
+  @override
+  String get gestureHintHoldToSave => 'Gedrückt halten zum Speichern';
+
+  @override
+  String get gestureHintSwipeForSimilar => 'Nach oben wischen für ähnliche Wallpaper';
 }

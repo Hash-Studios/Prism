@@ -11,11 +11,14 @@ import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -152,7 +155,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
     final List<Map<String, dynamic>> walls = _visibleWalls();
     if (walls.isNotEmpty || !hideAi) _emptyPagesLoaded = 0;
     if (walls.isEmpty && hideAi && loaded.isNotEmpty) {
-      if (seeMoreLoader) return const Center(child: CircularProgressIndicator());
+      if (seeMoreLoader) return const Center(child: PrismLoader());
       if (_loadMoreFailed) {
         return PrismInlineState(
           icon: Icons.error_outline_rounded,
@@ -180,7 +183,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
             }
           });
         }
-        return const Center(child: CircularProgressIndicator());
+        return const Center(child: PrismLoader());
       }
       if (collectionHasMore) {
         return PrismInlineState(
@@ -227,8 +230,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final int columns = PrismWallGrid.columns(context);
     final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns, aspectRatio: 0.6625);
-    return RefreshIndicator(
-      backgroundColor: cs.surfaceContainerHigh,
+    return PrismRefresh(
       onRefresh: _refresh,
       child: NotificationListener<ScrollNotification>(
         onNotification: (ScrollNotification notification) {
@@ -318,6 +320,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
                   fallbackUrl: wallpaperUrl,
                   memCacheHeight: decodeHeight,
                   heroTag: prismHeroTag(this, index, wallId),
+                  placeholderColor: placeholderColorOf(entity, Theme.of(context).colorScheme.surface),
                   semanticLabel: wallpaperSemanticLabel(_wallString(wall, 'by'), context.l10n),
                   overlay: stackTags(<Widget?>[
                     depthTagFor(depthTierOf(entity)),

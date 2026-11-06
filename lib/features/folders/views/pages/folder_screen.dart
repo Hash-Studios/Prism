@@ -8,6 +8,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -348,6 +349,9 @@ class _FolderScreenState extends State<FolderScreen> {
           key: ValueKey<String>(folderItemKey(wall)),
           url: wall.thumbnailUrl,
           fallbackUrl: wall.source == WallpaperSource.prism ? null : wall.fullUrl,
+          placeholderColor: wall is LegacyFavouriteWall
+              ? null
+              : placeholderColorOf(wall.toFeedItem(), Theme.of(grid).colorScheme.surface),
           heroTag: _heroTag(wall),
           semanticLabel: wallpaperSemanticLabel(wall.authorName, l10n),
           onTap: wall is LegacyFavouriteWall ? null : () => _openWall(grid, walls, index),

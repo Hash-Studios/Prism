@@ -3967,5 +3967,7 @@
   "foldersJoinFullBody": "Peça ao dono para remover alguém e depois abra o link de novo.",
   "foldersJoinUnavailableTitle": "Este convite não está disponível",
   "foldersJoinUnavailableBody": "Talvez a pasta tenha sido excluída, ou você não pode entrar nela.",
-  "foldersMakePrivateMessageShared": "Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso."
+  "foldersMakePrivateMessageShared": "Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso.",
+  "gestureHintHoldToSave": "Toque e segure para salvar",
+  "gestureHintSwipeForSimilar": "Deslize para cima para ver papéis de parede parecidos"
 }

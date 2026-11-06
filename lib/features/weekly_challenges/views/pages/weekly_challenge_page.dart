@@ -10,6 +10,7 @@ import 'package:Prism/core/share/share_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
@@ -207,7 +208,7 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
             final challenge = detail.challenge;
             final open = challenge.isOpenAt(DateTime.now().toUtc());
             final l10n = context.l10n;
-            return RefreshIndicator(
+            return PrismRefresh(
               onRefresh: () => _cubit.load(widget.challengeId),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),

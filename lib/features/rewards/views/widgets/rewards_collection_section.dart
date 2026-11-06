@@ -3,6 +3,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/prism/prism_bits.dart';
@@ -239,6 +240,10 @@ class _CollectionCard extends StatelessWidget {
                   child: ExcludeSemantics(
                     child: PrismWallTile(
                       url: wallpaper.thumbnailUrl,
+                      placeholderColor: placeholderColorOf(
+                        PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper),
+                        Theme.of(context).colorScheme.surface,
+                      ),
                       heroTag: unlocked ? heroTag : null,
                       overlay: unlocked
                           ? null

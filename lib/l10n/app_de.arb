@@ -14072,5 +14072,7 @@
   "foldersMakePrivateMessageShared": "Nur du und die Personen, die du eingeladen hast, sehen ihn. Sein Link funktioniert nicht mehr und seine Follower verlieren ihn.",
   "@foldersMakePrivateMessageShared": {
     "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
-  }
+  },
+  "gestureHintHoldToSave": "Gedrückt halten zum Speichern",
+  "gestureHintSwipeForSimilar": "Nach oben wischen für ähnliche Wallpaper"
 }

@@ -9,11 +9,13 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
@@ -286,17 +288,13 @@ class _SearchGridState extends State<SearchGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
     final List<FeedItemEntity> results = _visibleResults;
     final List<FeedItemEntity> prismResults = _visiblePrismResults;
     final bool showFooter = _hasMore && results.length >= 24;
     final int columns = PrismWallGrid.columns(context);
     final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns);
-    return RefreshIndicator(
-      color: cs.primary,
-      backgroundColor: cs.surfaceContainerHigh,
+    return PrismRefresh(
       onRefresh: () {
-        PrismHaptics.impact();
         return refreshList();
       },
       child: NotificationListener<ScrollNotification>(
@@ -365,6 +363,7 @@ class _SearchGridState extends State<SearchGrid> {
                         key: ValueKey<String>(wallpaper.id),
                         url: wallpaper.thumbnailUrl,
                         fallbackUrl: wallpaper.fullUrl,
+                        placeholderColor: placeholderColorOf(wallpaper, Theme.of(context).colorScheme.surface),
                         memCacheHeight: decodeHeight,
                         heroTag: prismHeroTag(this, index, wallpaper.id),
                         semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),
@@ -438,6 +437,7 @@ class _FromPrismRow extends StatelessWidget {
                     key: ValueKey<String>('prism-${wallpaper.id}'),
                     url: wallpaper.thumbnailUrl,
                     fallbackUrl: wallpaper.fullUrl,
+                    placeholderColor: placeholderColorOf(wallpaper, Theme.of(context).colorScheme.surface),
                     memCacheHeight: 400,
                     heroTag: prismHeroTag(results, index, wallpaper.id),
                     semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),

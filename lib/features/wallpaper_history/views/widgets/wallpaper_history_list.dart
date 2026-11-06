@@ -10,6 +10,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/features/wallpaper_history/biz/bloc/wallpaper_history_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
@@ -276,7 +277,7 @@ class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
       ),
     );
     if (rows.isEmpty) {
-      return RefreshIndicator(
+      return PrismRefresh(
         onRefresh: refresh,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -301,7 +302,7 @@ class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
     };
     final DateTime today = (widget.now ?? DateTime.now)();
     final double footer = appliedWallpaperFooterHeight(context);
-    return RefreshIndicator(
+    return PrismRefresh(
       onRefresh: refresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),

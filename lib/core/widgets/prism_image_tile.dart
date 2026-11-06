@@ -24,7 +24,11 @@ int gridTileDecodeHeight(BuildContext context, {required int crossAxisCount, dou
   return (tileWidth / aspectRatio * MediaQuery.devicePixelRatioOf(context)).round();
 }
 
-/// A grid image that fades in over the [PulseFill] skeleton. Fills its parent.
+/// How long a tile's picture takes to fade in over its [PrismImageTile.placeholderColor].
+const Duration _colourFade = Duration(milliseconds: 200);
+
+/// A grid image that fades in over the [PulseFill] skeleton, or over [placeholderColor] when the wall's colour is
+/// known. Fills its parent.
 class PrismImageTile extends StatefulWidget {
   const PrismImageTile({
     super.key,
@@ -34,6 +38,7 @@ class PrismImageTile extends StatefulWidget {
     this.memCacheWidth,
     this.heroTag,
     this.borderRadius,
+    this.placeholderColor,
   });
 
   final String url;
@@ -44,6 +49,10 @@ class PrismImageTile extends StatefulWidget {
   final int? memCacheWidth;
   final String? heroTag;
   final BorderRadius? borderRadius;
+
+  /// The wall's own colour (see `placeholderColorOf`). When set, the tile is a still block of it until the picture
+  /// decodes, instead of the grey pulse.
+  final Color? placeholderColor;
 
   @override
   State<PrismImageTile> createState() => _PrismImageTileState();
@@ -152,7 +161,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
     imageUrl: url,
     cacheManager: PrismImageCache.instance,
     fit: BoxFit.cover,
-    fadeInDuration: context.motion(PrismDurations.fast),
+    fadeInDuration: context.motion(widget.placeholderColor == null ? PrismDurations.fast : _colourFade),
     fadeInCurve: PrismCurves.enter,
     fadeOutDuration: context.motion(PrismDurations.fast),
     memCacheHeight: decodeHeight,
@@ -168,7 +177,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
               height: double.infinity,
             );
           },
-    placeholder: (_, _) => PulseFill(borderRadius: widget.borderRadius),
+    placeholder: (_, _) => _placeholder(),
     errorWidget: (context, _, _) {
       _reportImage('error', success: false);
       return _offlineOrNetworkFallback(context, url: url, decodeHeight: decodeHeight, fallback: fallback);
@@ -185,7 +194,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
     builder: (context, snapshot) {
       final File? localFile = snapshot.data;
       if (localFile != null) return _fileImage(localFile, decodeHeight);
-      if (snapshot.connectionState != ConnectionState.done) return PulseFill(borderRadius: widget.borderRadius);
+      if (snapshot.connectionState != ConnectionState.done) return _placeholder();
       if (fallback != null && fallback.isNotEmpty && fallback != url) {
         return _network(context, fallback, decodeHeight);
       }
@@ -203,6 +212,10 @@ class _PrismImageTileState extends State<PrismImageTile> {
       );
     },
   );
+
+  /// The colour block shows through from under the tile, so it needs nothing here.
+  Widget _placeholder() =>
+      widget.placeholderColor == null ? PulseFill(borderRadius: widget.borderRadius) : const SizedBox.expand();
 
   Widget _fileImage(File file, int? decodeHeight) => Image.file(
     file,
@@ -235,13 +248,14 @@ class _PrismImageTileState extends State<PrismImageTile> {
     final String url = _effectiveUrl;
     Widget tile;
     if (url.isEmpty) {
-      tile = PulseFill(borderRadius: widget.borderRadius);
+      tile = _placeholder();
     } else if (_isLocalSource(url)) {
       tile = _localImage(context, url);
     } else {
       tile = _retainedOrNetworkImage(context, url);
     }
     tile = SizedBox.expand(child: tile);
+    if (widget.placeholderColor case final Color colour) tile = ColoredBox(color: colour, child: tile);
     if (widget.borderRadius != null) tile = ClipRRect(borderRadius: widget.borderRadius!, child: tile);
     // A faint hairline keeps a light image from melting into a white page, and a dark one into a black page.
     tile = DecoratedBox(

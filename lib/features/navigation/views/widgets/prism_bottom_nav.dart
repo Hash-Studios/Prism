@@ -6,13 +6,14 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
 import 'package:Prism/features/layout_prefs/views/layout_prefs_scope.dart';
 import 'package:Prism/features/layout_prefs/views/nav_tab_view.dart';
+import 'package:Prism/features/navigation/views/widgets/nav_glass.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
-/// The floating pill with the visible tab destinations, in the user's order, and a More entry for hidden tabs. Each tab
-/// shows its icon over a short label, and a filled pill sits behind the active one. [axis] is vertical in the side rail.
+/// The floating glass pill with the visible tab destinations, in the user's order, and a More entry for hidden tabs. Each
+/// tab shows its icon over a short label, and a tinted pill sits behind the active one. [axis] is vertical in the side rail.
 /// The rail, and a row without [labels], shows icons only, with a filled circle behind the active one.
 class PrismBottomNav extends StatefulWidget {
   const PrismBottomNav({this.axis = Axis.horizontal, this.labels = true, super.key});
@@ -116,38 +117,33 @@ class _PrismBottomNavState extends State<PrismBottomNav> {
 
     final bool vertical = widget.axis == Axis.vertical;
     final bool iconOnly = vertical || !widget.labels;
-    return Container(
-      padding: const EdgeInsets.all(4),
-      width: vertical ? 56 : null,
-      height: vertical ? null : 56,
-      decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor,
-        boxShadow: <BoxShadow>[
-          BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 4, offset: const Offset(0, 4)),
-        ],
-        borderRadius: BorderRadius.circular(PrismRadius.pill),
-      ),
-      child: Flex(
-        direction: widget.axis,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          for (final NavTab tab in prefs.visibleTabs)
-            _TabButton(
-              icon: tab.icon,
-              label: tab.label(context),
-              isActive: active == tab,
-              iconOnly: iconOnly,
-              onPressed: () => _switchTab(tab),
-            ),
-          if (hidden.isNotEmpty)
-            _TabButton(
-              icon: JamIcons.more_horizontal_f,
-              label: context.l10n.navMore,
-              isActive: hidden.contains(active),
-              iconOnly: iconOnly,
-              onPressed: () => _openMore(hidden),
-            ),
-        ],
+    return NavGlass(
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        width: vertical ? 56 : null,
+        height: vertical ? null : 56,
+        child: Flex(
+          direction: widget.axis,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            for (final NavTab tab in prefs.visibleTabs)
+              _TabButton(
+                icon: tab.icon,
+                label: tab.label(context),
+                isActive: active == tab,
+                iconOnly: iconOnly,
+                onPressed: () => _switchTab(tab),
+              ),
+            if (hidden.isNotEmpty)
+              _TabButton(
+                icon: JamIcons.more_horizontal_f,
+                label: context.l10n.navMore,
+                isActive: hidden.contains(active),
+                iconOnly: iconOnly,
+                onPressed: () => _openMore(hidden),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -194,9 +190,8 @@ class _TabButton extends StatelessWidget {
                 curve: PrismCurves.enter,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: isActive
-                      ? Color.alphaBlend(secondary.withValues(alpha: 0.15), theme.primaryColor)
-                      : Colors.transparent,
+                  // Translucent, so the active pill tints with the glass behind it.
+                  color: isActive ? secondary.withValues(alpha: 0.12) : Colors.transparent,
                   shape: iconOnly ? BoxShape.circle : BoxShape.rectangle,
                   borderRadius: iconOnly ? null : BorderRadius.circular(PrismRadius.pill),
                 ),

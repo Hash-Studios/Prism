@@ -6,6 +6,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/features/leaderboard/biz/bloc/leaderboard_bloc.j.dart';
 import 'package:Prism/features/leaderboard/domain/entities/leaderboard_entry.dart';
 import 'package:Prism/features/leaderboard/domain/week_key.dart';
@@ -145,10 +146,7 @@ class _Content extends StatelessWidget {
   Widget build(BuildContext context) {
     final List<LeaderboardEntry> entries = state.entries;
     final LoadStatus status = state.status;
-    final ColorScheme cs = Theme.of(context).colorScheme;
-    Widget withCaption(Widget child) => RefreshIndicator(
-      color: cs.primary,
-      backgroundColor: cs.surfaceContainerHigh,
+    Widget withCaption(Widget child) => PrismRefresh(
       notificationPredicate: (notification) =>
           status != LoadStatus.initial && status != LoadStatus.loading && notification.depth == 0,
       onRefresh: onRefresh,
@@ -215,9 +213,7 @@ class _Content extends StatelessWidget {
         ),
       ],
     ];
-    return RefreshIndicator(
-      color: cs.primary,
-      backgroundColor: cs.surfaceContainerHigh,
+    return PrismRefresh(
       onRefresh: onRefresh,
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),

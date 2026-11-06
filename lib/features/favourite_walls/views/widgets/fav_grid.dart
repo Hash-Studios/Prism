@@ -18,6 +18,7 @@ import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/core/widgets/selection_action_bar.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
@@ -764,7 +765,6 @@ class _FavouriteGridState extends State<FavouriteGrid> {
             },
           );
         }
-        final ColorScheme cs = Theme.of(context).colorScheme;
         final List<FavouriteWallEntity> selectedWalls = _selectedWalls(state.items);
         final bool selecting = _selecting;
         return PopScope(
@@ -788,11 +788,8 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                 if (state.items.isNotEmpty) _toolbar(context, state),
               ],
               Expanded(
-                child: RefreshIndicator(
-                  color: cs.primary,
-                  backgroundColor: cs.surfaceContainerHigh,
+                child: PrismRefresh(
                   onRefresh: () {
-                    PrismHaptics.impact();
                     return refreshList();
                   },
                   child: _content(context, state, loaded),

@@ -6,6 +6,7 @@ import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -116,6 +117,10 @@ class _TrendingList extends StatelessWidget {
             child: PrismWallTile(
               url: wall.thumbnailUrl,
               fallbackUrl: wall.core.fullUrl,
+              placeholderColor: placeholderColorOf(
+                WallhavenFeedItem(id: wall.id, wallpaper: wall),
+                Theme.of(context).colorScheme.surface,
+              ),
               memCacheHeight: _decodeHeight(context, _trendingWidth),
               heroTag: heroTag,
               semanticLabel: wallpaperSemanticLabel(wall.core.authorName, context.l10n),

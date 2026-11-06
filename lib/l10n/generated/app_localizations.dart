@@ -23412,6 +23412,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Only you and the people you invited will see it. Its link stops working and its followers lose it.'**
   String get foldersMakePrivateMessageShared;
+
+  /// One-time hint over a wallpaper tile: long-press it for quick actions such as save.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to save'**
+  String get gestureHintHoldToSave;
+
+  /// One-time hint over the wallpaper detail image: swipe up to see similar wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe up for similar walls'**
+  String get gestureHintSwipeForSimilar;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

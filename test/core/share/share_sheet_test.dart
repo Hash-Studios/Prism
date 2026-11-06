@@ -136,6 +136,7 @@ Future<void> _openSheet(
   WidgetTester tester,
   ShareSheetServices services, {
   ShareCardContent content = _content,
+  Future<ShareCardContent?>? ready,
   VoidCallback? onShared,
   bool disableAnimations = false,
   Locale locale = const Locale('en'),
@@ -179,7 +180,8 @@ Future<void> _openSheet(
         builder: (BuildContext context) => Scaffold(
           body: Center(
             child: TextButton(
-              onPressed: () => showShareSheet(context, content, 'wall_detail', services: services, onShared: onShared),
+              onPressed: () =>
+                  showShareSheet(context, content, 'wall_detail', ready: ready, services: services, onShared: onShared),
               child: const Text('open'),
             ),
           ),
@@ -236,6 +238,69 @@ void main() {
   tearDown(() {
     AnalyticsRuntime.reset();
     app_state.prismUser = app_constants.createGuestPrismUser();
+  });
+
+  testWidgets('a pending share opens on the wall colour, renders once ready, and a target waits for it', (
+    tester,
+  ) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(400, 900);
+    addTearDown(tester.view.reset);
+    _mockChannels(tester);
+    const Color wall = Color(0xFF0066CC);
+    const String shortLink = 'https://prismwalls.com/l/short123';
+    final Completer<ShareCardContent?> ready = Completer<ShareCardContent?>();
+    final _Fake fake = _Fake(await _writeCards(tester));
+    await _openSheet(
+      tester,
+      fake.services,
+      content: const ShareCardContent(
+        imageUrl: 'https://img.test/full.jpg',
+        link: _link,
+        brandName: 'Prism',
+        palette: <Color>[wall],
+      ),
+      ready: ready.future,
+    );
+
+    expect(find.text('Story'), findsOneWidget);
+    expect(fake.renders, isEmpty);
+    expect(
+      tester.widget<ColoredBox>(find.byKey(const ValueKey<String>('share-preview-placeholder-story'))).color,
+      wall,
+    );
+
+    await tester.tap(_target(ShareTargetValue.copyLink));
+    await tester.pump();
+    expect(fake.copied, isEmpty);
+
+    ready.complete(
+      const ShareCardContent(
+        imageUrl: 'https://img.test/full.jpg',
+        link: shortLink,
+        brandName: 'Prism',
+        palette: <Color>[wall],
+      ),
+    );
+    await _settle(tester);
+
+    expect(fake.copied, <String>[shortLink]);
+    expect(fake.renders, contains(ShareCardFormat.story));
+  });
+
+  testWidgets('a pending share that cannot load closes the sheet', (tester) async {
+    _mockChannels(tester);
+    final Completer<ShareCardContent?> ready = Completer<ShareCardContent?>();
+    final _Fake fake = _Fake(await _writeCards(tester));
+    await _openSheet(tester, fake.services, ready: ready.future);
+    expect(find.text('Story'), findsOneWidget);
+
+    ready.complete(null);
+    await _settle(tester);
+
+    expect(find.text('Story'), findsNothing);
+    expect(fake.renders, isEmpty);
   });
 
   testWidgets('cancelling sign-in does not copy or save a share card', (tester) async {
@@ -1082,7 +1147,7 @@ void main() {
         }
       }
     }
-    expect(oneXShrinks, <String>{'es/openOnComputer', 'pt/openOnComputer', 'pt-BR/openOnComputer'});
+    expect(oneXShrinks, <String>{'pt/openOnComputer', 'pt-BR/openOnComputer'});
     semantics.dispose();
   });
 

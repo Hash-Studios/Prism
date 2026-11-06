@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/side_safe_column.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
+import 'package:Prism/features/navigation/views/widgets/nav_glass.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_bottom_nav.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -571,7 +572,7 @@ void main() {
 
   for (final PrismThemeOption option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes]) {
     testWidgets(
-      '${prismThemeDisplayName(option, AppLocalizationsEn())}: active and inactive icons are readable with the real theme',
+      '${prismThemeDisplayName(option, AppLocalizationsEn())}: icons stay readable on the glass over dark and light walls',
       (tester) async {
         final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
         await tester.pumpWidget(
@@ -584,7 +585,6 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        final Color pill = theme.primaryColor;
         final Icon active = tester.widget<Icon>(
           find.descendant(of: find.byTooltip('Home'), matching: find.byType(Icon)),
         );
@@ -592,8 +592,16 @@ void main() {
           find.descendant(of: find.byTooltip('Search'), matching: find.byType(Icon)),
         );
 
-        expect(contrastRatio(active.color!, pill), greaterThanOrEqualTo(4.5));
-        expect(contrastRatio(Color.alphaBlend(inactive.color!, pill), pill), greaterThanOrEqualTo(3));
+        // The glass tints whatever is behind it, so check the darkest and lightest walls it can blur.
+        for (final Color wall in const <Color>[Colors.black, Colors.white]) {
+          final Color pill = Color.alphaBlend(theme.primaryColor.withValues(alpha: NavGlass.tintOf(theme)), wall);
+          expect(contrastRatio(active.color!, pill), greaterThanOrEqualTo(4.5), reason: 'over $wall');
+          expect(
+            contrastRatio(Color.alphaBlend(inactive.color!, pill), pill),
+            greaterThanOrEqualTo(3),
+            reason: '$wall',
+          );
+        }
       },
     );
   }

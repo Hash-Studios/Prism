@@ -30,6 +30,7 @@ import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wallstore;
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
@@ -1325,9 +1326,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   Widget _composeBody() {
     final bool busy = _loadingGeneration;
     const EdgeInsets page = PrismSpace.pageInsets;
-    return RefreshIndicator(
+    return PrismRefresh(
       onRefresh: () {
-        PrismHaptics.impact();
         return _loadHistory(userInitiated: true);
       },
       child: SingleChildScrollView(

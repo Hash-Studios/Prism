@@ -14796,4 +14796,10 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get foldersMakePrivateMessageShared =>
       'इसे सिर्फ़ आप और आपके आमंत्रित लोग देखेंगे। इसका लिंक काम करना बंद कर देगा और इसके फ़ॉलोअर इसे खो देंगे।';
+
+  @override
+  String get gestureHintHoldToSave => 'सेव करने के लिए दबाकर रखें';
+
+  @override
+  String get gestureHintSwipeForSimilar => 'मिलते-जुलते वॉलपेपर के लिए ऊपर स्वाइप करें';
 }

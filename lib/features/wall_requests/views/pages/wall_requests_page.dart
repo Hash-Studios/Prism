@@ -6,6 +6,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/features/wall_requests/biz/wall_requests_cubit.dart';
 import 'package:Prism/features/wall_requests/domain/entities/wall_request.dart';
 import 'package:Prism/features/wall_requests/views/widgets/wall_request_row.dart';
@@ -214,7 +215,7 @@ class _TabBody extends StatelessWidget {
               onAction: onAsk,
             ),
           },
-          WallRequestsTabLoaded(:final List<WallRequest> requests) => RefreshIndicator(
+          WallRequestsTabLoaded(:final List<WallRequest> requests) => PrismRefresh(
             onRefresh: () => cubit.load(tab),
             child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),

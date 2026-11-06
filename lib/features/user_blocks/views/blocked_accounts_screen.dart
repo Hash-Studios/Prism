@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -94,9 +94,8 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
               ),
             );
           }
-          return RefreshIndicator(
+          return PrismRefresh(
             onRefresh: () {
-              PrismHaptics.impact();
               return _refresh();
             },
             child: ListView.separated(
@@ -168,9 +167,8 @@ class _Message extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
+    return PrismRefresh(
       onRefresh: () {
-        PrismHaptics.impact();
         return onRefresh();
       },
       child: LayoutBuilder(

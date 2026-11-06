@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/features/promo_codes/data/promo_code_repository.dart';
 import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
 import 'package:Prism/features/promo_codes/views/store_code_redemption.dart';
@@ -148,7 +149,7 @@ class _PromoCodesAdminPageState extends State<PromoCodesAdminPage> {
     final AppLocalizations l10n = context.l10n;
     return PrismPage(
       title: l10n.promoAdminTitle,
-      body: RefreshIndicator(
+      body: PrismRefresh(
         onRefresh: _reload,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.page, PrismSpace.xxl),

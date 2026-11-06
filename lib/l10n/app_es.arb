@@ -4111,5 +4111,7 @@
   "foldersJoinFullBody": "Pide al propietario que quite a alguien y luego vuelve a abrir el enlace.",
   "foldersJoinUnavailableTitle": "Esta invitación no está disponible",
   "foldersJoinUnavailableBody": "Es posible que la carpeta se haya eliminado o que no puedas unirte a ella.",
-  "foldersMakePrivateMessageShared": "Solo tú y las personas que invitaste la verán. Su enlace dejará de funcionar y sus seguidores la perderán."
+  "foldersMakePrivateMessageShared": "Solo tú y las personas que invitaste la verán. Su enlace dejará de funcionar y sus seguidores la perderán.",
+  "gestureHintHoldToSave": "Mantén pulsado para guardar",
+  "gestureHintSwipeForSimilar": "Desliza hacia arriba para ver fondos similares"
 }

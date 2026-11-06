@@ -1,11 +1,16 @@
 import 'dart:async';
 
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/widgets/gesture_hint.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_hold_region.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/in_memory_local_store.dart';
 
 void main() {
   Future<void> pumpRegion(
@@ -22,8 +27,10 @@ void main() {
     Size tileSize = const Size(160, 200),
     double textScale = 1,
     String? dayNightLabel,
+    Brightness brightness = Brightness.light,
   }) => tester.pumpWidget(
     MaterialApp(
+      theme: ThemeData(brightness: brightness),
       home: MediaQuery(
         data: MediaQueryData(
           size: tester.view.physicalSize,
@@ -109,7 +116,7 @@ void main() {
     );
     expect(outerSemanticsVisible(), isTrue);
     final gesture = await hold(tester);
-    final barrier = find.byWidgetPredicate((widget) => widget is ColoredBox && widget.color.a == 0.72);
+    final barrier = find.byKey(const ValueKey<String>('wallpaper-hold-scrim'));
     expect(tester.getRect(barrier), const Rect.fromLTWH(0, 0, 800, 600));
     expect(outerSemanticsVisible(), isFalse);
     await gesture.moveTo(tester.getCenter(find.bySemanticsLabel('Share')));
@@ -122,6 +129,59 @@ void main() {
     expect(actions, [WallpaperQuickAction.share]);
     expect(outerSemanticsVisible(), isTrue);
     semantics.dispose();
+  });
+
+  testWidgets('opening the hold menu marks the hold hint as seen', (tester) async {
+    GestureHints.resetForTest();
+    getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+    addTearDown(() async {
+      GestureHints.resetForTest();
+      await getIt.unregister<SettingsLocalDataSource>();
+    });
+    expect(GestureHints.seen(GestureHint.holdToSave).value, isFalse);
+    await pumpRegion(tester, []);
+    final gesture = await hold(tester);
+    expect(GestureHints.seen(GestureHint.holdToSave).value, isTrue);
+    await gesture.up();
+    await tester.pumpAndSettle();
+  });
+
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      '${brightness.name} theme ${brightness == Brightness.light ? 'washes toward the page' : 'keeps a dark scrim'}',
+      (tester) async {
+        await pumpRegion(tester, [], brightness: brightness);
+        final gesture = await hold(tester);
+        final ColorScheme cs = Theme.of(tester.element(find.byType(Scaffold))).colorScheme;
+        final Color scrim = tester.widget<ColoredBox>(find.byKey(const ValueKey<String>('wallpaper-hold-scrim'))).color;
+        final Color expected = brightness == Brightness.light ? cs.surface : cs.scrim;
+        expect(scrim.withValues(alpha: 1), expected.withValues(alpha: 1));
+        expect(scrim.a, brightness == Brightness.light ? closeTo(0.82, 0.01) : closeTo(0.72, 0.01));
+        await gesture.up();
+        await tester.pumpAndSettle();
+      },
+    );
+  }
+
+  testWidgets('the lifted tile casts a soft shadow and the hovered label sits large above the ring', (tester) async {
+    await pumpRegion(tester, []);
+    final gesture = await hold(tester);
+    final DecoratedBox lift = tester.widget(find.byKey(const ValueKey<String>('wallpaper-hold-lift-shadow')));
+    expect((lift.decoration as BoxDecoration).boxShadow!.single.color.a, greaterThan(0.1));
+
+    final double ringTop = <String>[
+      'Favourite',
+      'Share',
+      'See less',
+    ].map((label) => tester.getRect(find.bySemanticsLabel(label)).top).reduce((a, b) => a < b ? a : b);
+    await gesture.moveTo(tester.getCenter(find.bySemanticsLabel('Share')));
+    await tester.pump();
+    final Rect label = tester.getRect(find.byKey(const ValueKey<String>('wallpaper-hold-label')));
+    expect(label.bottom, lessThanOrEqualTo(ringTop));
+    final Text text = tester.widget(find.text('Share'));
+    expect(text.style!.fontSize, greaterThanOrEqualTo(20));
+    await gesture.up();
+    await tester.pumpAndSettle();
   });
 
   for (final size in [const Size(390, 844), const Size(844, 390)]) {

@@ -34,6 +34,10 @@ class _LargeOffset implements SheetOffset {
 const double _flushBegin = 0.6;
 const double _flushEnd = 0.9;
 
+// A sheet opens a little slower than it closes: the arrival is watched, the exit is not.
+const Duration _openDuration = Duration(milliseconds: 280);
+const Duration _closeDuration = Duration(milliseconds: 200);
+
 /// Where the change from floating to flush starts and ends. Both move up by the keyboard height, so a keyboard that
 /// lifts the sheet does not make it flush.
 ///
@@ -103,7 +107,8 @@ Future<T?> showPrismSheet<T>(
       barrierColor: PrismBottomSheet.barrier,
       barrierDismissible: barrierDismissible,
       swipeDismissible: swipeDismissible,
-      transitionDuration: context.motion(PrismDurations.sheet),
+      transitionDuration: context.motion(_openDuration),
+      reverseTransitionDuration: context.motion(_closeDuration),
       transitionCurve: PrismCurves.sheet,
       viewportBuilder: (_, child) => _PrismSheetViewport(controller: controller, fromFit: hasFit, child: child),
       builder: (_) {
@@ -138,14 +143,23 @@ class _PrismSheetRoute<T> extends ModalSheetRoute<T> {
     super.barrierDismissible,
     super.swipeDismissible,
     super.transitionDuration,
+    required this.reverseTransitionDuration,
     super.transitionCurve,
   });
 
   final SheetController sheetController;
 
+  @override
+  final Duration reverseTransitionDuration;
+
   static int open = 0;
 
   CurvedAnimation? _curved;
+
+  // The dim fades on the sheet's own curves. During a swipe the package ties it to how much of the sheet shows, so
+  // the dim lightens as the sheet is dragged down.
+  @override
+  Curve get barrierCurve => animation?.status == AnimationStatus.reverse ? PrismCurves.exitReverse : transitionCurve;
 
   // smooth_sheets runs the close with the open curve backwards, so an ease-out holds still and then drops. Ease out
   // on the way down too. A swipe-to-dismiss keeps the package's own linear follow.
@@ -161,7 +175,7 @@ class _PrismSheetRoute<T> extends ModalSheetRoute<T> {
     }
     if (_curved?.parent != animation) {
       _curved?.dispose();
-      _curved = CurvedAnimation(parent: animation, curve: transitionCurve, reverseCurve: FlippedCurve(transitionCurve));
+      _curved = CurvedAnimation(parent: animation, curve: transitionCurve, reverseCurve: PrismCurves.exitReverse);
     }
     return SlideTransition(
       position: Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(_curved!),

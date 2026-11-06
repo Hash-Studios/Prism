@@ -4,6 +4,7 @@ import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
@@ -197,6 +198,7 @@ class CreatorWallStrip extends StatelessWidget {
                   ? PrismWallTile(
                       url: tiles[i].item.thumbnailUrl,
                       fallbackUrl: tiles[i].item.fullUrl,
+                      placeholderColor: placeholderColorOf(tiles[i].item, Theme.of(context).colorScheme.surface),
                       heroTag: tiles[i].heroTag,
                       semanticLabel: label,
                       onTap: () {

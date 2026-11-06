@@ -15004,5 +15004,9 @@
   "foldersMakePrivateMessageShared": "Only you and the people you invited will see it. Its link stops working and its followers lose it.",
   "@foldersMakePrivateMessageShared": {
     "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
-  }
+  },
+  "gestureHintHoldToSave": "Hold to save",
+  "@gestureHintHoldToSave": {"description": "One-time hint over a wallpaper tile: long-press it for quick actions such as save."},
+  "gestureHintSwipeForSimilar": "Swipe up for similar walls",
+  "@gestureHintSwipeForSimilar": {"description": "One-time hint over the wallpaper detail image: swipe up to see similar wallpapers."}
 }

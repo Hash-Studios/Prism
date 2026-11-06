@@ -191,7 +191,7 @@ void main() {
     expect(fade.opacity, 0);
   });
 
-  testWidgets('a fade to the page colour sits under the row and lets taps through', (tester) async {
+  testWidgets('a short, light fade to the page colour sits under the row and lets taps through', (tester) async {
     await pumpBar(tester);
     final Finder fade = find.byWidgetPredicate(
       (widget) =>
@@ -200,10 +200,25 @@ void main() {
           (widget.decoration as BoxDecoration).gradient is LinearGradient,
     );
     expect(fade, findsOneWidget);
-    expect(tester.getSize(fade).height, 34 + 90);
+    expect(tester.getSize(fade).height, 34 + 64);
     final List<Color> colors = ((tester.widget<DecoratedBox>(fade).decoration as BoxDecoration).gradient!).colors;
-    expect(colors.last, kDarkTheme.colorScheme.surface.withValues(alpha: 0.85));
+    expect(colors.last, kDarkTheme.colorScheme.surface.withValues(alpha: 0.6));
     expect(find.ancestor(of: fade, matching: find.byType(IgnorePointer)), findsWidgets);
+  });
+
+  testWidgets('the pill and the create button are glass that share one backdrop read', (tester) async {
+    await pumpBar(tester);
+    final List<RenderBackdropFilter> glass = tester
+        .renderObjectList<RenderBackdropFilter>(
+          find.descendant(
+            of: find.byWidgetPredicate((widget) => widget is PrismBottomNav || widget is PrismFab),
+            matching: find.byType(BackdropFilter),
+          ),
+        )
+        .toList();
+    expect(glass, hasLength(2));
+    expect(glass.first.backdropKey, isNotNull);
+    expect(glass.last.backdropKey, same(glass.first.backdropKey));
   });
 
   testWidgets('a hidden pill leaves feedback above the scroll-to-top action', (tester) async {

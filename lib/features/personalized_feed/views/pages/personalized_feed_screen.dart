@@ -15,6 +15,7 @@ import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/ads/data/ad_experiment_config.dart';
 import 'package:Prism/features/ads/views/widgets/experimental_inline_ad.dart';
@@ -428,9 +429,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                   child: SizedBox(width: double.infinity, height: MediaQuery.paddingOf(context).top),
                 ),
                 Expanded(
-                  child: RefreshIndicator(
-                    color: cs.primary,
-                    backgroundColor: cs.surfaceContainerHigh,
+                  child: PrismRefresh(
                     edgeOffset: PrismTopAppBar.height + HomeFeedTabBar.height,
                     onRefresh: _refresh,
                     child: NotificationListener<ScrollNotification>(
