@@ -105,3 +105,56 @@ class UnreadDot extends StatelessWidget {
     );
   }
 }
+
+/// A faint accent fill behind an unread row, so the state does not rest on the dot alone.
+class UnreadRowTint extends StatelessWidget {
+  const UnreadRowTint({super.key, required this.unread, required this.child});
+
+  final bool unread;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) =>
+      unread ? ColoredBox(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.04), child: child) : child;
+}
+
+/// The count and Show all / Hide of a group, drawn as a small tonal pill so it reads as a control. The whole group row
+/// takes the tap; this is its visible handle.
+class NotificationGroupToggle extends StatelessWidget {
+  const NotificationGroupToggle({super.key, required this.label, required this.expanded});
+
+  final String label;
+  final bool expanded;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(10, 4, 6, 4),
+      decoration: BoxDecoration(
+        color: cs.onSurface.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(PrismRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: PrismTextStyles.caption(context).copyWith(fontWeight: FontWeight.w600, color: cs.onSurface),
+            ),
+          ),
+          const SizedBox(width: 2),
+          AnimatedRotation(
+            turns: expanded ? 0.5 : 0,
+            duration: context.motion(PrismDurations.fast),
+            curve: PrismCurves.move,
+            child: Icon(Icons.expand_more_rounded, size: 18, color: cs.onSurface),
+          ),
+        ],
+      ),
+    );
+  }
+}

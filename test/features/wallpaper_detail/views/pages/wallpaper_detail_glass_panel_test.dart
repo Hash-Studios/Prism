@@ -103,8 +103,8 @@ void main() {
     await pump(tester);
     final image = tester.getRect(find.byType(ShakeOnce));
     final actions = tester.getRect(find.byType(WallpaperActionBar));
-    // A 9:16 wall fills a rounded card under the status bar, 4 points in from each side, up to 66% of the screen.
-    expect(image, const Rect.fromLTRB(4, 47, 386, 47 + 844 * 0.66));
+    // A 9:16 wall fills a rounded card under the status bar, on the 16 point page margin, up to 66% of the screen.
+    expect(image, const Rect.fromLTRB(16, 47, 374, 47 + 844 * 0.66));
     expect(actions.top, image.bottom);
     expect(tester.getRect(find.byType(PrismWallTile).first).top, lessThan(844));
     expect(find.byType(CustomScrollView), findsOneWidget);
@@ -192,6 +192,44 @@ void main() {
     await tester.pumpAndSettle();
     expect(header(), 0);
     expect(clockButton.hitTestable(), findsOneWidget);
+  });
+
+  testWidgets('under the header a 32 point thumbnail of the wall sits beside Back, so the header action has context', (
+    tester,
+  ) async {
+    final FeedItemEntity item = PexelsFeedItem(
+      id: 'thumbed',
+      wallpaper: PexelsWallpaper(
+        core: WallpaperCore(
+          id: 'thumbed',
+          source: WallpaperSource.pexels,
+          fullUrl: '',
+          thumbnailUrl: 'https://images.pexels.com/photos/1/thumb.jpeg',
+          width: 1080,
+          height: 1920,
+        ),
+      ),
+    );
+    await pump(
+      tester,
+      state: WallpaperDetailLoaded(
+        entity: item,
+        paletteLoading: false,
+        recommendations: _loaded('parent').recommendations,
+      ),
+    );
+    final scroll = tester.widget<CustomScrollView>(find.byType(CustomScrollView)).controller!;
+    final Finder thumb = find.byKey(const ValueKey<String>('detail-header-thumb'));
+    expect(thumb, findsNothing);
+
+    scroll.jumpTo(tester.getRect(find.byType(ShakeOnce)).height);
+    await tester.pumpAndSettle();
+    expect(thumb, findsOneWidget);
+    final Rect rect = tester.getRect(thumb);
+    final Rect back = tester.getRect(find.byTooltip('Back'));
+    expect(rect.size, const Size.square(32));
+    expect(rect.center.dy, closeTo(back.center.dy, 0.5));
+    expect(rect.left, greaterThanOrEqualTo(back.right));
   });
 
   for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS]) {

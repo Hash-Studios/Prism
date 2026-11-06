@@ -502,7 +502,8 @@ class _ProfileChildState extends State<_ProfileChild> {
         unawaited(_openEditProfilePanel(sourceContext: 'profile_screen_header_edit'));
       },
     );
-    final Widget? linkButtons = linkKeys.isEmpty
+    // Another profile lists its links by name in the overflow menu, so the header keeps one action: Follow.
+    final Widget? linkButtons = linkKeys.isEmpty || !ownProfile
         ? null
         : Row(
             mainAxisSize: MainAxisSize.min,
@@ -673,6 +674,18 @@ class _ProfileChildState extends State<_ProfileChild> {
                             ),
                             onSelected: _onMenuSelected,
                             itemBuilder: (BuildContext context) => <PopupMenuEntry<_ProfileMenuAction>>[
+                              for (final String key in linkKeys)
+                                PopupMenuItem<_ProfileMenuAction>(
+                                  onTap: () => unawaited(_openLink(key, _profile.links[key].toString())),
+                                  child: Row(
+                                    children: <Widget>[
+                                      Icon(profileLinkIcon(key), size: 20),
+                                      const SizedBox(width: PrismSpace.sm),
+                                      Flexible(child: Text(key.inCaps)),
+                                    ],
+                                  ),
+                                ),
+                              if (linkKeys.isNotEmpty) const PopupMenuDivider(),
                               if (app_state.prismUser.loggedIn &&
                                   context.read<PublicProfileBloc>().state.walls.isNotEmpty)
                                 PopupMenuItem<_ProfileMenuAction>(
@@ -835,10 +848,11 @@ class _ProfileChildState extends State<_ProfileChild> {
                         ),
                       ),
                     ],
-                    // One meta row: the Pro pill, then the badges.
+                    // One meta row of chips: Pro, the badges, then another member's tier.
                     ProfileBadgeRow(
                       badgeIds: _profile.badges,
                       leading: _profile.proBadge ? const ProProfileBadge() : null,
+                      trailing: ownProfile ? null : RankInfoChip(xp: cosmetics.xp),
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
@@ -885,15 +899,6 @@ class _ProfileChildState extends State<_ProfileChild> {
                               ),
                             ),
                           ),
-                          if (!ownProfile) ...<Widget>[
-                            Container(
-                              width: 1,
-                              height: 16,
-                              margin: const EdgeInsets.symmetric(horizontal: 8),
-                              color: cs.onSurface.withValues(alpha: 0.2),
-                            ),
-                            Flexible(child: RankInfoChip(xp: cosmetics.xp)),
-                          ],
                         ],
                       ),
                     ),
@@ -908,26 +913,16 @@ class _ProfileChildState extends State<_ProfileChild> {
                         buildWhen: (prev, curr) => prev.followOverrides != curr.followOverrides,
                         builder: (context, state) {
                           final bool following = _isFollowing(state);
-                          // Follow and the links share one row; the links wrap under Follow when they do not fit.
-                          return Wrap(
-                            alignment: WrapAlignment.center,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: PrismSpace.xs,
-                            runSpacing: PrismSpace.xs,
-                            children: <Widget>[
-                              SizedBox(
-                                width: 200,
-                                child: PrismButton(
-                                  label: following ? context.l10n.accountFollowing : context.l10n.accountFollow,
-                                  icon: following ? Icons.check_rounded : Icons.person_add_alt_1_rounded,
-                                  variant: following ? PrismButtonVariant.tonal : PrismButtonVariant.primary,
-                                  size: PrismButtonSize.compact,
-                                  expand: true,
-                                  onPressed: () => _toggleFollow(following: following),
-                                ),
-                              ),
-                              ?linkButtons,
-                            ],
+                          return SizedBox(
+                            width: math.min(headerWidth * 0.9, 360),
+                            child: PrismButton(
+                              label: following ? context.l10n.accountFollowing : context.l10n.accountFollow,
+                              icon: following ? Icons.check_rounded : Icons.person_add_alt_1_rounded,
+                              variant: following ? PrismButtonVariant.tonal : PrismButtonVariant.primary,
+                              size: PrismButtonSize.compact,
+                              expand: true,
+                              onPressed: () => _toggleFollow(following: following),
+                            ),
                           );
                         },
                       ),
@@ -936,22 +931,22 @@ class _ProfileChildState extends State<_ProfileChild> {
                 ),
               ),
             ),
+            // XP and profile completion share one slim card, so the gallery header stays near the top.
             if (ownProfile)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(PrismSpace.page, 8, PrismSpace.page, 6),
-                  child: RankProgressCard(onOpenShop: () => context.router.root.push(const ShopRoute())),
-                ),
-              ),
-            if (showProfileCompletenessCard)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(PrismSpace.page, 8, PrismSpace.page, 6),
-                  child: ProfileCompletenessCard(
-                    status: profileCompletenessStatus,
-                    onCompleteNow: () async {
-                      await _openEditProfilePanel(sourceContext: 'profile_completeness_card');
-                    },
+                  child: RankProgressCard(
+                    compact: true,
+                    onOpenShop: () => context.router.root.push(const ShopRoute()),
+                    footer: showProfileCompletenessCard
+                        ? ProfileCompletenessCard(
+                            status: profileCompletenessStatus,
+                            onCompleteNow: () async {
+                              await _openEditProfilePanel(sourceContext: 'profile_completeness_card');
+                            },
+                          )
+                        : null,
                   ),
                 ),
               ),

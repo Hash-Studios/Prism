@@ -9,9 +9,15 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
 class RankProgressCard extends StatelessWidget {
-  const RankProgressCard({super.key, this.onOpenShop});
+  const RankProgressCard({super.key, this.onOpenShop, this.compact = false, this.footer});
 
   final VoidCallback? onOpenShop;
+
+  /// See [XpProgressCard.compact].
+  final bool compact;
+
+  /// See [XpProgressCard.footer].
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -28,19 +34,112 @@ class RankProgressCard extends StatelessWidget {
       ),
       onOpenShop: onOpenShop,
       onUseReward: (ShopItem item) => showShopItemSheet(context, item),
+      compact: compact,
+      footer: footer,
     ),
   );
 }
 
 class XpProgressCard extends StatelessWidget {
-  const XpProgressCard({super.key, required this.progress, this.onOpenShop, this.onUseReward});
+  const XpProgressCard({
+    super.key,
+    required this.progress,
+    this.onOpenShop,
+    this.onUseReward,
+    this.compact = false,
+    this.footer,
+  });
 
   final RankProgress progress;
   final VoidCallback? onOpenShop;
   final ValueChanged<ShopItem>? onUseReward;
 
+  /// One line (rank, XP to the next rank, help) and the bar. The profile uses it so the gallery stays near the top;
+  /// the next reward and Use stay on Rewards and in the help sheet.
+  final bool compact;
+
+  /// Shown under a hairline inside the same card, for example the profile completion row.
+  final Widget? footer;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => compact ? _compact(context) : _full(context);
+
+  Widget _bar(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final RankDef? next = progress.nextRank;
+    return Semantics(
+      label: context.l10n.economyRankProgressSemantics(rankTitle(progress.rank.id, context.l10n)),
+      value: next == null
+          ? context.l10n.economyHighestRankReached(rankTitle(progress.rank.id, context.l10n))
+          : context.l10n.economyXpToRank(
+              groupedXp(progress.remainingXp, context.l10n),
+              rankTitle(next.id, context.l10n),
+            ),
+      excludeSemantics: true,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(PrismRadius.pill),
+        child: LinearProgressIndicator(
+          value: progress.rank.progress,
+          minHeight: 5,
+          color: cs.primary,
+          backgroundColor: cs.onSurface.withValues(alpha: 0.08),
+        ),
+      ),
+    );
+  }
+
+  Widget _helpButton(BuildContext context) => IconButton(
+    tooltip: context.l10n.economyRankRewardsHelp,
+    style: IconButton.styleFrom(minimumSize: const Size.square(48), visualDensity: VisualDensity.standard),
+    onPressed: () => showXpExplanation(context, progress: progress, onOpenShop: onOpenShop),
+    icon: const Icon(Icons.info_outline_rounded, size: 20),
+  );
+
+  Widget _compact(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final RankDef? next = progress.nextRank;
+    return PrismCard(
+      padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.md, PrismSpace.xxs, PrismSpace.xxs, PrismSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Text(rankTitle(progress.rank.id, context.l10n), style: PrismTextStyles.rowTitle(context)),
+              const SizedBox(width: PrismSpace.xs),
+              Expanded(
+                child: Text(
+                  next == null
+                      ? context.l10n.economyHighestRankReachedShort
+                      : context.l10n.economyXpToRank(
+                          groupedXp(progress.remainingXp, context.l10n),
+                          rankTitle(next.id, context.l10n),
+                        ),
+                  textAlign: TextAlign.end,
+                  style: PrismTextStyles.caption(context),
+                ),
+              ),
+              _helpButton(context),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsetsDirectional.only(end: PrismSpace.sm),
+            child: _bar(context),
+          ),
+          if (footer case final Widget footer) ...<Widget>[
+            const SizedBox(height: PrismSpace.sm),
+            Divider(height: 1, endIndent: PrismSpace.sm, color: cs.onSurface.withValues(alpha: 0.08)),
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: PrismSpace.xxs),
+              child: footer,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _full(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final RankDef? next = progress.nextRank;
     final RankRewardProgress? reward = progress.nextReward;
@@ -57,12 +156,7 @@ class XpProgressCard extends StatelessWidget {
               Expanded(
                 child: Text(rankTitle(progress.rank.id, context.l10n), style: PrismTextStyles.cardTitle(context)),
               ),
-              IconButton(
-                tooltip: context.l10n.economyRankRewardsHelp,
-                style: IconButton.styleFrom(minimumSize: const Size.square(48), visualDensity: VisualDensity.standard),
-                onPressed: () => showXpExplanation(context, progress: progress, onOpenShop: onOpenShop),
-                icon: const Icon(Icons.info_outline_rounded, size: 20),
-              ),
+              _helpButton(context),
             ],
           ),
           Text(
@@ -70,25 +164,7 @@ class XpProgressCard extends StatelessWidget {
             style: PrismTextStyles.body(context),
           ),
           const SizedBox(height: PrismSpace.md),
-          Semantics(
-            label: context.l10n.economyRankProgressSemantics(rankTitle(progress.rank.id, context.l10n)),
-            value: next == null
-                ? context.l10n.economyHighestRankReached(rankTitle(progress.rank.id, context.l10n))
-                : context.l10n.economyXpToRank(
-                    groupedXp(progress.remainingXp, context.l10n),
-                    rankTitle(next.id, context.l10n),
-                  ),
-            excludeSemantics: true,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(PrismRadius.pill),
-              child: LinearProgressIndicator(
-                value: progress.rank.progress,
-                minHeight: 5,
-                color: cs.primary,
-                backgroundColor: cs.onSurface.withValues(alpha: 0.08),
-              ),
-            ),
-          ),
+          _bar(context),
           const SizedBox(height: PrismSpace.xs),
           Text(
             next == null
@@ -194,12 +270,49 @@ class RankInfoChip extends StatelessWidget {
     valueListenable: EconomyConfig.notifier,
     builder: (context, config, _) {
       final String title = rankTitle(config.rankFor(xp).id, context.l10n);
-      return TextButton(
-        onPressed: () => showXpExplanation(context),
-        child: Semantics(
-          label: context.l10n.economyRankInfoSemantics(title),
-          excludeSemantics: true,
-          child: Text(title),
+      final ColorScheme cs = Theme.of(context).colorScheme;
+      // The same pill as the Pro and badge chips beside it, with a rank glyph so it reads as a tier.
+      return Semantics(
+        button: true,
+        label: context.l10n.economyRankInfoSemantics(title),
+        excludeSemantics: true,
+        onTap: () => showXpExplanation(context),
+        child: PressScale(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            excludeFromSemantics: true,
+            onTap: () => showXpExplanation(context),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              child: Center(
+                widthFactor: 1,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: cs.primaryContainer,
+                    borderRadius: BorderRadius.circular(PrismRadius.pill),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: PrismSpace.xxs),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(Icons.shield_rounded, size: 14, color: cs.onPrimaryContainer),
+                        const SizedBox(width: PrismSpace.xxs),
+                        Flexible(
+                          child: Text(
+                            title,
+                            style: PrismTextStyles.caption(
+                              context,
+                            ).copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
       );
     },

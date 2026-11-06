@@ -1,6 +1,7 @@
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/shop/biz/bloc/shop_bloc.j.dart';
 import 'package:Prism/features/theme_mode/data/legacy_themes.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
@@ -83,6 +84,15 @@ void main() {
       matching: find.text('Locked'),
     );
     expect(tester.getRect(tag).bottom, lessThan(tester.getRect(rose).top));
+    // In the lower half of the preview, clear of the mock title bar at the top.
+    final Rect preview = tester.getRect(
+      find.descendant(
+        of: find.ancestor(of: rose, matching: find.byType(Column)).first,
+        matching: find.byType(PrismThemePreview),
+      ),
+    );
+    expect(tester.getRect(tag).top, greaterThan(preview.center.dy));
+    expect(tester.getRect(tag).bottom, lessThan(preview.bottom - 20), reason: 'the accent pill stays visible');
   });
 
   testWidgets('tapping a locked theme opens the shop sheet and does not select it', (tester) async {

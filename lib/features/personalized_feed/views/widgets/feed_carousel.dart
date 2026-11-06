@@ -55,15 +55,21 @@ int _carouselColumns(BuildContext context) {
   return duoLandscape ? math.max(2, columns) : columns;
 }
 
-/// Height of one carousel page: the page is as wide as the carousel divided by its columns, less the
-/// [PrismFeedLayout.gridPadding] margin on both sides, and 0.6 times as tall as it is wide. It is 0 while the screen is
-/// narrower than the margins, as on the zero-size first frame on Android.
-double feedCarouselCardHeight(BuildContext context) =>
-    math.max(0, (_carouselWidth(context) / _carouselColumns(context) - PrismFeedLayout.gridPadding.horizontal) * 0.6);
+/// Height over width of a carousel page: a wide banner, so the wallpaper grid under it shows on the first screen.
+const double feedCarouselAspect = 0.45;
 
-/// The home carousel: Wall of the Day, the user's Wrapped (in its window), the live Drop, boosted walls, a card for each seasonal theme (in its season,
-/// while the theme is off), the promo banner and the first wallpapers as rounded pages, with page dots on the scrim at the bottom right,
-/// under the card text.
+/// Height of one carousel page: the page is as wide as the carousel divided by its columns, less the
+/// [PrismFeedLayout.gridPadding] margin on both sides, and [feedCarouselAspect] times as tall as it is wide. It is 0
+/// while the screen is narrower than the margins, as on the zero-size first frame on Android.
+double feedCarouselCardHeight(BuildContext context) => math.max(
+  0,
+  (_carouselWidth(context) / _carouselColumns(context) - PrismFeedLayout.gridPadding.horizontal) * feedCarouselAspect,
+);
+
+/// The home carousel. Wallpapers come first: Wall of the Day, boosted walls and the first feed wallpapers. The promos
+/// follow: the user's Wrapped (in its window), the live Drop, a card for each seasonal theme (in its season, while the
+/// theme is off) and the promo banner. Each is a rounded page, with page dots on the scrim at the bottom right, under
+/// the card text.
 class FeedCarousel extends StatefulWidget {
   const FeedCarousel({
     super.key,
@@ -78,7 +84,7 @@ class FeedCarousel extends StatefulWidget {
   /// Walls with a live boost. They follow the Wall of the Day, so a boost buys one of the first views of the home.
   final List<PrismWallpaper> boostedWalls;
 
-  /// The live Drop. It gets a page right after the Wall of the Day while the Drops flag is on.
+  /// The live Drop. It gets the first promo page, after the wallpapers, while the Drops flag is on.
   final DropEntity? liveDrop;
 
   /// Called after a preview wallpaper meets the visibility and dwell threshold.
@@ -284,12 +290,12 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
         .toList();
     final List<String> pageIds = <String>[
       if (hasWotd) 'wotd',
-      if (wrapped != null) 'wrapped',
-      if (_showsDrop(widget.liveDrop)) 'drop',
       for (final PrismWallpaper wall in widget.boostedWalls) 'boosted:${wall.core.id}',
+      for (final PrismFeedItem wall in widget.previewWalls) 'preview:${wall.id}',
+      if (_showsDrop(widget.liveDrop)) 'drop',
+      if (wrapped != null) 'wrapped',
       for (final SeasonalTheme season in seasons) season.name,
       if (bannerImage.trim().isNotEmpty) 'banner',
-      for (final PrismFeedItem wall in widget.previewWalls) 'preview:${wall.id}',
     ];
     if (_pageIds.isNotEmpty && _current < _pageIds.length) {
       final int preservedPage = pageIds.indexOf(_pageIds[_current]);
@@ -300,9 +306,13 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
       }
     }
     _pageIds = pageIds;
+    // Same order as [pageIds].
     final List<Widget Function(int realIndex)> pages = <Widget Function(int)>[
       if (hasWotd) (_) => const WallOfTheDayCard(),
-      if (wrapped != null) (_) => WrappedHomeCard(year: wrapped, memCacheHeight: memCacheHeight),
+      for (int i = 0; i < widget.boostedWalls.length; i++)
+        (int realIndex) => _boostedCard(widget.boostedWalls[i], i, realIndex),
+      for (int i = 0; i < widget.previewWalls.length; i++)
+        (int realIndex) => _previewCard(widget.previewWalls[i], i, realIndex),
       if (_showsDrop(widget.liveDrop))
         (_) => DropCarouselSlide(
           drop: widget.liveDrop!,
@@ -310,8 +320,7 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
           memCacheHeight: memCacheHeight,
           onTap: _openDrop,
         ),
-      for (int i = 0; i < widget.boostedWalls.length; i++)
-        (int realIndex) => _boostedCard(widget.boostedWalls[i], i, realIndex),
+      if (wrapped != null) (_) => WrappedHomeCard(year: wrapped, memCacheHeight: memCacheHeight),
       for (final SeasonalTheme season in seasons)
         (_) => FeedHeroCard(
           image: season.bannerArt,
@@ -327,8 +336,6 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
           title: bannerTitle,
           onTap: _openBanner,
         ),
-      for (int i = 0; i < widget.previewWalls.length; i++)
-        (int realIndex) => _previewCard(widget.previewWalls[i], i, realIndex),
     ];
     if (pages.isEmpty) {
       _current = 0;

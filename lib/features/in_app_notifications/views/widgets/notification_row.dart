@@ -109,11 +109,16 @@ class NotificationRow extends StatelessWidget {
     return Semantics(
       button: true,
       label: l10n.notifSemanticsRow(semanticLine, timeStr, notification.read ? l10n.notifRead : l10n.notifUnread),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: () => _onTap(context),
-          child: ExcludeSemantics(child: compactInGroup ? _compact(context, timeStr) : _full(context, timeStr, title)),
+      child: UnreadRowTint(
+        unread: !notification.read,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: () => _onTap(context),
+            child: ExcludeSemantics(
+              child: compactInGroup ? _compact(context, timeStr) : _full(context, timeStr, title),
+            ),
+          ),
         ),
       ),
     );
@@ -134,7 +139,7 @@ class NotificationRow extends StatelessWidget {
           Expanded(
             child: Text(
               glueTrailingEmoji(displayBody),
-              maxLines: 3,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: PrismTextStyles.body(context),
             ),

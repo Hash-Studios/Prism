@@ -56,7 +56,7 @@ void main() {
     expect(find.byType(Icon), findsNothing);
   });
 
-  testWidgets('disabled stays a visible pill with 60 percent text instead of fading out', (WidgetTester tester) async {
+  testWidgets('disabled stays a solid pill with 55 percent text instead of fading out', (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -69,7 +69,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(AnimatedOpacity), findsNothing);
-    expect(tester.widget<Text>(find.text('Continue')).style!.color!.a, closeTo(0.6, 0.01));
+    expect(tester.widget<Text>(find.text('Continue')).style!.color!.a, closeTo(0.55, 0.01));
     final BoxDecoration fill =
         tester
                 .widget<AnimatedContainer>(
@@ -77,6 +77,6 @@ void main() {
                 )
                 .decoration!
             as BoxDecoration;
-    expect(fill.color!.a, greaterThanOrEqualTo(0.7));
+    expect(fill.color!.a, greaterThanOrEqualTo(0.85));
   });
 }

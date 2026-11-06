@@ -119,6 +119,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
     return PrismPage(
       title: context.l10n.accountInviteFriends,
       body: PrismCenteredScroll(
+        action: PrismButton(label: context.l10n.accountShareInvite, expand: true, loading: _loading, onPressed: _share),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
           child: Column(
@@ -152,12 +153,6 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
             ],
           ),
         ),
-      ),
-      bottomBar: PrismButton(
-        label: context.l10n.accountShareInvite,
-        expand: true,
-        loading: _loading,
-        onPressed: _share,
       ),
     );
   }

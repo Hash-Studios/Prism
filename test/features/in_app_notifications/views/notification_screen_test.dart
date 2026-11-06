@@ -102,6 +102,55 @@ void main() {
     expect(find.text('Kim'), findsOneWidget);
   });
 
+  testWidgets('only unread rows and groups get the faint tint', (tester) async {
+    final DateTime now = DateTime.now();
+    await pump(
+      tester,
+      loaded(<Object>[
+        notification('a', title: 'Wall approved', body: 'Your wall is live.', createdAt: now),
+        notification('b', title: 'Your streak is about to break!', body: 'Open Prism.', createdAt: now, read: true),
+        notification('c', title: 'You have a new follower!', body: 'Sam is now following you.', createdAt: now),
+        notification('d', title: 'You have a new follower!', body: 'Kim is now following you.', createdAt: now),
+      ]),
+    );
+
+    bool tinted(String title) =>
+        tester.widget<UnreadRowTint>(find.ancestor(of: find.text(title), matching: find.byType(UnreadRowTint))).unread;
+    expect(tinted('Wall approved'), isTrue);
+    expect(tinted('Your streak is about to break!'), isFalse);
+    expect(tinted('You have a new follower!'), isTrue);
+    final Color tint = Theme.of(tester.element(find.text('Wall approved'))).colorScheme.primary.withValues(alpha: 0.04);
+    expect(
+      find.ancestor(
+        of: find.text('Wall approved'),
+        matching: find.byWidgetPredicate((w) => w is ColoredBox && w.color == tint),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a group shows its count and Show all as a chip that turns to Hide', (tester) async {
+    final DateTime now = DateTime.now();
+    await pump(
+      tester,
+      loaded(<Object>[
+        notification('a', title: 'You have a new follower!', body: 'Sam is now following you.', createdAt: now),
+        notification('b', title: 'You have a new follower!', body: 'Kim is now following you.', createdAt: now),
+      ]),
+    );
+
+    expect(
+      find.descendant(of: find.byType(NotificationGroupToggle), matching: find.text('2 new followers · Show all')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byType(NotificationGroupToggle));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(tester.widget<NotificationGroupToggle>(find.byType(NotificationGroupToggle)).expanded, isTrue);
+    expect(find.text('2 new followers · Hide'), findsOneWidget);
+    expect(find.text('Sam'), findsOneWidget);
+  });
+
   testWidgets('a group collapse drops its rows at once instead of holding their height', (tester) async {
     final DateTime now = DateTime.now();
     await pump(

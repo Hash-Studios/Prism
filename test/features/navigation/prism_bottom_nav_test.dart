@@ -222,9 +222,9 @@ void main() {
     );
     expect(tester.takeException(), isNull);
     expect(tester.getSize(find.byType(PrismBottomNav)), Size(PrismBottomNav.maxLength(labels: true), 56));
-    expect(tester.getSize(find.byTooltip('Home')), const Size(64, 48));
+    expect(tester.getSize(find.byTooltip('Home')), const Size(68, 48));
     final Text home = tester.widget<Text>(find.text('Home'));
-    expect(home.style!.fontSize, 10.5);
+    expect(home.style!.fontSize, 12);
     expect(home.maxLines, 1);
     expect(
       MediaQuery.textScalerOf(tester.element(find.text('Home'))).scale(10),
@@ -531,7 +531,7 @@ void main() {
 
   for (final PrismThemeOption option in <PrismThemeOption>[...prismLightThemes, ...prismDarkThemes]) {
     testWidgets(
-      '${prismThemeDisplayName(option, AppLocalizationsEn())}: active and inactive icons are readable with the real theme',
+      '${prismThemeDisplayName(option, AppLocalizationsEn())}: active and inactive tabs are readable with the real theme',
       (tester) async {
         final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
         await tester.pumpWidget(
@@ -553,7 +553,8 @@ void main() {
         );
 
         expect(contrastRatio(active.color!, pill), greaterThanOrEqualTo(4.5));
-        expect(contrastRatio(Color.alphaBlend(inactive.color!, pill), pill), greaterThanOrEqualTo(3));
+        // The inactive icon and label share one colour, so it must read as text.
+        expect(contrastRatio(Color.alphaBlend(inactive.color!, pill), pill), greaterThanOrEqualTo(4.5));
       },
     );
   }

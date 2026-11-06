@@ -565,6 +565,21 @@ void main() {
       expect(find.text('Sign in to keep these on a new phone.'), findsNothing);
     });
 
+    testWidgets('the note sits alone under the segments, and Clear sits on the first day header', (tester) async {
+      await recordAll(<AppliedWallpaper>[item('a', DateTime(2026, 10, 28, 14)), item('b', DateTime(2026, 10, 27, 9))]);
+      await pumpList(tester, signedIn: true);
+
+      final Finder note = find.text('Saved to your account, so these come back on a new phone.');
+      final Finder clear = find.byKey(const ValueKey<String>('history-clear-setAndDownloaded'));
+      final Rect segments = tester.getRect(find.text('Set and downloaded'));
+      expect(tester.getTopLeft(note).dy - segments.bottom, greaterThanOrEqualTo(16));
+      expect(tester.getSize(note).width, greaterThan(700), reason: 'the note takes the full width, no Clear beside it');
+      expect(clear, findsOneWidget);
+      expect(tester.getTopLeft(clear).dy, greaterThan(tester.getBottomLeft(note).dy));
+      expect(tester.getCenter(clear).dy, closeTo(tester.getCenter(find.text('Today')).dy, 1));
+      expect(tester.getTopRight(find.byType(AppliedWallpaperTile).first).dx, lessThan(tester.getTopRight(clear).dx));
+    });
+
     testWidgets('a guest sees the sign-in note', (tester) async {
       await pumpList(tester);
 

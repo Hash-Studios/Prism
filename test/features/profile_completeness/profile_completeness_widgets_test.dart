@@ -15,7 +15,7 @@ Widget _wrap(Widget child) {
 }
 
 void main() {
-  testWidgets('card renders percent, reward line and the missing steps by name', (tester) async {
+  testWidgets('card is one row: title, reward line and percent; the editor lists the missing steps', (tester) async {
     const status = ProfileCompletenessStatus(
       missingSteps: <ProfileCompletenessStep>[ProfileCompletenessStep.bio, ProfileCompletenessStep.socialLink],
     );
@@ -24,24 +24,23 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('Complete your profile'), findsOneWidget);
-    expect(find.text('Complete profile'), findsOneWidget);
     expect(find.text('50%'), findsOneWidget);
     expect(find.text('Earn 25 coins when you finish'), findsOneWidget);
-    expect(find.text('Write bio'), findsOneWidget);
-    expect(find.text('Add one social link'), findsOneWidget);
-    expect(find.text('Add profile photo'), findsNothing);
+    expect(find.text('Write bio'), findsNothing);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
+    expect(find.bySemanticsLabel('Complete profile'), findsOneWidget);
   });
 
-  testWidgets('card fills its progress bar to the completed share', (tester) async {
+  testWidgets('card fills its progress ring to the completed share', (tester) async {
     const status = ProfileCompletenessStatus(missingSteps: <ProfileCompletenessStep>[ProfileCompletenessStep.bio]);
 
     await tester.pumpWidget(_wrap(ProfileCompletenessCard(status: status, onCompleteNow: () async {})));
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator)).value, 0.75);
+    expect(tester.widget<CircularProgressIndicator>(find.byType(CircularProgressIndicator)).value, 0.75);
   });
 
-  testWidgets('card CTA invokes edit action callback', (tester) async {
+  testWidgets('tapping the row invokes the edit action callback', (tester) async {
     bool tapped = false;
     const status = ProfileCompletenessStatus(
       missingSteps: <ProfileCompletenessStep>[
@@ -62,7 +61,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Complete profile'));
+    await tester.tap(find.text('Complete your profile'));
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(tapped, isTrue);

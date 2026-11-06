@@ -678,7 +678,11 @@ void main() {
     );
     final Rect bar = tester.getRect(find.byType(WallpaperActionBar));
     expect(bar.top, card.bottom);
-    expect(left(find.byType(FavouriteWallpaperButton)), card.left);
+    // The heart's 53 point target starts in the gutter, so its 30 point glyph box sits on the card's left edge.
+    expect(
+      left(find.descendant(of: find.byType(FavouriteWallpaperButton), matching: find.byType(Icon))),
+      closeTo(card.left, 0.5),
+    );
     expect(tester.getRect(primary).right, bar.right - 8);
   }, variant: const TargetPlatformVariant(<TargetPlatform>{TargetPlatform.iOS, TargetPlatform.android}));
 

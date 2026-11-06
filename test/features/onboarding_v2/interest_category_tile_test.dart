@@ -54,8 +54,8 @@ void main() {
     final image = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
     expect(image.imageUrl, 'https://example.com/nature.jpg');
     expect(image.cacheManager, same(cache));
-    // 100 points less the 2.5 point ring on each side, at 2x.
-    expect(image.memCacheWidth, 190);
+    // 100 points less the 3 point ring on each side, at 2x.
+    expect(image.memCacheWidth, 188);
   });
 
   testWidgets('the cover decode size does not change when the tile is selected', (tester) async {
@@ -128,8 +128,8 @@ void main() {
     expect(find.text('Nature'), findsOneWidget);
   });
 
-  testWidgets('a selected tile has a 2.5 point primary ring and a filled primary tick', (tester) async {
-    const ColorScheme scheme = ColorScheme.light(primary: Color(0xFF1565C0));
+  testWidgets('a selected tile has a 3 point white ring and a white tick disc, whatever the accent', (tester) async {
+    const ColorScheme scheme = ColorScheme.light(primary: Color(0xFFE91E63));
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData(colorScheme: scheme),
@@ -149,12 +149,39 @@ void main() {
         .map((c) => c.decoration)
         .whereType<BoxDecoration>();
     final Border ring = decorations.map((d) => d.border).whereType<Border>().single;
-    expect(ring.top.color, scheme.primary);
-    expect(ring.top.width, 2.5);
-    expect(
-      tester.widgetList<Container>(find.byType(Container)).map((c) => c.decoration).whereType<BoxDecoration>(),
-      contains(isA<BoxDecoration>().having((d) => d.color, 'color', scheme.primary)),
+    expect(ring.top.color, Colors.white);
+    expect(ring.top.width, 3);
+    final Iterable<Color?> fills = tester
+        .widgetList<Container>(find.byType(Container))
+        .map((c) => c.decoration)
+        .whereType<BoxDecoration>()
+        .map((d) => d.color);
+    expect(fills, contains(Colors.white));
+    expect(fills, isNot(contains(scheme.primary)));
+    expect(tester.widget<Icon>(find.byIcon(Icons.check_rounded)).color, Colors.black);
+  });
+
+  testWidgets('the label scrim darkens the lower part of the tile to 0.75', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: SizedBox(
+          width: 100,
+          height: 100,
+          child: InterestCategoryTile(name: 'Nature', isSelected: false, onTap: () {}),
+        ),
+      ),
     );
-    expect(tester.widget<Icon>(find.byIcon(Icons.check_rounded)).color, scheme.onPrimary);
+
+    final LinearGradient scrim = tester
+        .widgetList<DecoratedBox>(find.byType(DecoratedBox))
+        .map((b) => b.decoration)
+        .whereType<BoxDecoration>()
+        .map((d) => d.gradient)
+        .whereType<LinearGradient>()
+        .single;
+    expect(scrim.colors.last.a, closeTo(0.75, 0.01));
+    expect(scrim.begin, const Alignment(0, -0.1));
   });
 }

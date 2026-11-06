@@ -1381,7 +1381,7 @@ void main() {
     final Rect dots = tester.getRect(find.byType(FeedCarouselDots));
     expect(card.left, 16);
     expect(card.width, 568);
-    expect(card.height, closeTo(340.8, 0.01));
+    expect(card.height, closeTo(255.6, 0.01));
     expect(dots.top, greaterThanOrEqualTo(card.top));
     expect(dots.bottom, lessThanOrEqualTo(card.bottom));
   });
@@ -1620,14 +1620,18 @@ void main() {
 
     testWidgets('decodes its banner tile at the carousel height', (tester) async {
       await pumpScreen(tester);
+      // The banner is the last page, so one swipe back from the first page reaches it.
+      await tester.fling(find.byType(CarouselSlider), const Offset(300, 0), 1500);
+      await _settle(tester);
+      await _settle(tester);
 
       final Iterable<PrismImageTile> tiles = tester.widgetList<PrismImageTile>(
         find.descendant(of: find.byType(CarouselSlider), matching: find.byType(PrismImageTile)),
       );
 
-      // 600 px wide at a pixel ratio of 1, so the page is 568 px wide and 0.6 as tall: 340.8 px.
+      // 600 px wide at a pixel ratio of 1, so the page is 568 px wide and 0.45 as tall: 255.6 px.
       expect(tiles, isNotEmpty);
-      expect(tiles.map((tile) => tile.memCacheHeight), everyElement(341));
+      expect(tiles.map((tile) => tile.memCacheHeight), everyElement(256));
     });
   });
 
@@ -1651,16 +1655,16 @@ void main() {
     final Finder bone = find.descendant(of: find.byType(PrismSkeleton), matching: find.byType(PrismBone));
     expect(tester.getRect(bone).left, 16);
     expect(tester.getSize(bone).width, 568);
-    expect(tester.getSize(bone).height, closeTo(340.8, 0.01));
+    expect(tester.getSize(bone).height, closeTo(255.6, 0.01));
   });
 
   for (final viewport in <({String name, Size size, double cardWidth, double cardHeight})>[
-    (name: 'narrow phone', size: const Size(320, 480), cardWidth: 288, cardHeight: 172.8),
+    (name: 'narrow phone', size: const Size(320, 480), cardWidth: 288, cardHeight: 129.6),
     (
       name: 'Android emulator',
       size: const Size(1080 / 2.625, 2400 / 2.625),
       cardWidth: 379.428571,
-      cardHeight: 227.657143,
+      cardHeight: 170.742857,
     ),
   ]) {
     for (final bool emptyMedia in <bool>[true, false]) {

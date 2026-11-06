@@ -78,12 +78,14 @@ tooltips are 12 to 13. Disabled text and icons use `onSurface` at 0.5, never low
   It covers the bottom safe area and holds the tab pill and the create button (both 56 tall) with 8 above and below.
   It slides away on scroll down and back on scroll up. While the keyboard is up, it fades out and takes no taps. There
   is no fade and no scroll-to-top button: a second tap on the active tab pops to the tab root, or scrolls to the top.
-- Bottom-nav tabs show a 10.5 w600 label under a 20 point icon (64 wide slots, text scale capped at 1.2), with a pill
+- Bottom-nav tabs show a 12 w600 label under a 20 point icon (68 wide slots, text scale capped at 1.2); inactive tabs
+  use ink at 0.7, raised until they reach 4.5:1 on the pill, with a pill
   behind the active tab. Where the labelled pill does not fit the row, the tabs fall back to icons only. The side rail
   is always icons only.
-- A short task page (one main action: invite, set up, unlock, request) pins that action in `PrismPage.bottomBar`, full
-  width, 16 side margins, clear of the home indicator. The content above sits in `PrismCenteredScroll`: centred a
-  little above the middle when short, scrolling when long. The bar's hairline shows only while content scrolls under it.
+- A short task page (one main action: invite, set up, unlock, request) uses `PrismCenteredScroll(action:)`. When the
+  content and the action fit, the action sits 24 below the content and the group is centred a little above the middle,
+  so no dead band separates a message from its action. When they do not fit, the content scrolls and the action pins to
+  the bottom, clear of the home indicator. The pinned bar's hairline shows only while content scrolls under it.
 - `PrismRadius`: `xs 8`, `sm 12`, `md 16`, `lg 20` (cards), `xl 28` (dialogs), `pill`. A nested surface takes the
   next step down. Bottom sheets use `PrismBottomSheet.topRadius` (32) and the screen's own corner radius at the bottom. Wallpaper tiles in a grid use `PrismRadius.sm`.
 - Tap targets are 44 points or more.

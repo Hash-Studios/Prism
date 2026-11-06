@@ -203,7 +203,8 @@ class _ThemeViewState extends State<ThemeView> {
   }
 }
 
-/// The themes in a grid of three per row, each shown as a small app in its own colours with its name below.
+/// The themes in a grid, each shown as a small app in its own colours with its name below. Three per row, or four when
+/// three would leave one theme alone in the last row.
 class _ThemeGrid extends StatelessWidget {
   const _ThemeGrid({
     super.key,
@@ -224,8 +225,8 @@ class _ThemeGrid extends StatelessWidget {
   final Set<String> legacyThemes;
   final ValueChanged<PrismThemeOption> onSelect;
 
-  static const int _columns = 3;
-  static const double _gap = PrismSpace.md;
+  /// Columns for [count] themes: 3, or 4 when 3 would strand one theme in its own row.
+  static int columnsFor(int count) => count > 3 && count % 3 == 1 && count % 4 != 1 ? 4 : 3;
 
   /// A shop theme the user neither bought nor already uses. The selected theme is never locked.
   bool _locked(PrismThemeOption option, Inventory inventory) {
@@ -243,10 +244,12 @@ class _ThemeGrid extends StatelessWidget {
       // Every theme is on screen at once, so no name is clipped at the edge of a sideways row.
       builder: (context, inventory, _) => LayoutBuilder(
         builder: (context, constraints) {
-          // Floored, so rounding never pushes the third tile onto the next row.
-          final double width = ((constraints.maxWidth - _gap * (_columns - 1)) / _columns).floorToDouble();
+          final int columns = columnsFor(themes.length);
+          final double gap = columns > 3 ? PrismSpace.xs : PrismSpace.md;
+          // Floored, so rounding never pushes the last tile of a row onto the next row.
+          final double width = ((constraints.maxWidth - gap * (columns - 1)) / columns).floorToDouble();
           return Wrap(
-            spacing: _gap,
+            spacing: gap,
             runSpacing: PrismSpace.md,
             children: <Widget>[
               for (final PrismThemeOption option in themes)
@@ -331,12 +334,13 @@ class _ThemeTile extends StatelessWidget {
                         child: Icon(Icons.check_rounded, size: 14, color: cs.onPrimary),
                       ),
                     ),
-                  // A locked theme is never the selected one, so this never meets the check badge.
+                  // At the lower start of the preview, over the wallpaper tiles: clear of the mock title bar and the
+                  // accent pill. The offset is the ring (5), the preview padding (8), the pill (10) and its gap (8).
                   if (locked)
                     PositionedDirectional(
-                      top: PrismSpace.xs + 1,
-                      start: PrismSpace.xs + 1,
-                      end: PrismSpace.xs + 1,
+                      bottom: 5 + PrismSpace.xs + 10 + PrismSpace.xs + PrismSpace.xxs,
+                      start: 5 + PrismSpace.xxs,
+                      end: 5 + PrismSpace.xxs,
                       child: Align(
                         alignment: AlignmentDirectional.centerStart,
                         child: _LockedTag(label: l10n.coreThemeLocked),
@@ -376,21 +380,22 @@ class _LockedTag extends StatelessWidget {
         borderRadius: BorderRadius.circular(PrismRadius.pill),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs, vertical: 3),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const Icon(Icons.lock_rounded, size: 12, color: Colors.white),
-            const SizedBox(width: PrismSpace.xxs),
-            Flexible(
-              child: Text(
+        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xxs + 2, vertical: 3),
+        // Scales down in a narrow tile rather than cutting the word.
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Icon(Icons.lock_rounded, size: 12, color: Colors.white),
+              const SizedBox(width: PrismSpace.xxs),
+              Text(
                 label,
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: PrismTextStyles.caption(context).copyWith(fontWeight: FontWeight.w700, color: Colors.white),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

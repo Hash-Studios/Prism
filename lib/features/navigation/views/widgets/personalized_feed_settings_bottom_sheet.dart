@@ -239,12 +239,13 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
             child: KeyedSubtree(key: ValueKey<bool>(_learned.topTerms(1).isEmpty), child: _buildLearned(context)),
           ),
           const SizedBox(height: PrismSpace.md),
-          // Save is the one strong action in the sheet, so Retake is a quiet text action at the start edge.
+          // Save is the one strong action in the sheet, so Retake is a quiet tonal pill. Its fill starts on the same
+          // edge as the learned pills above.
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: PrismButton(
               label: context.l10n.tasteQuizRetake,
-              variant: PrismButtonVariant.ghost,
+              variant: PrismButtonVariant.tonal,
               size: PrismButtonSize.compact,
               icon: Icons.compare_rounded,
               loading: _loadingQuiz,

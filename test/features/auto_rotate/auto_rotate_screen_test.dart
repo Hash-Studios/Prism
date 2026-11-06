@@ -121,10 +121,12 @@ void main() {
 
     expect(find.text('Change wallpapers with Shortcuts'), findsOneWidget);
     expect(find.text('Set up Shortcuts'), findsOneWidget);
-    // The setup action is pinned at the bottom, under content that sits at the optical centre.
-    final Widget? bar = tester.widget<Scaffold>(find.byType(Scaffold)).bottomNavigationBar;
-    expect(find.descendant(of: find.byWidget(bar!), matching: find.text('Set up Shortcuts')), findsOneWidget);
-    expect(find.byType(PrismCenteredScroll), findsOneWidget);
+    // The setup action is part of the centred group under the steps, not pinned far below them.
+    expect(tester.widget<Scaffold>(find.byType(Scaffold)).bottomNavigationBar, isNull);
+    expect(
+      find.descendant(of: find.byType(PrismCenteredScroll), matching: find.text('Set up Shortcuts')),
+      findsOneWidget,
+    );
     verifyNever(() => autoRotateBloc.add(any()));
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 

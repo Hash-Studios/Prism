@@ -35,12 +35,18 @@ void main() {
     expect(feedCarouselColumns(1920), 3);
   });
 
-  testWidgets('feedCarouselCardHeight is unchanged on a phone', (WidgetTester tester) async {
-    expect(await _heightAt(tester, const Size(393, 852)), (393 - PrismFeedLayout.gridPadding.horizontal) * 0.6);
+  testWidgets('feedCarouselCardHeight is a wide banner on a phone', (WidgetTester tester) async {
+    expect(
+      await _heightAt(tester, const Size(393, 852)),
+      (393 - PrismFeedLayout.gridPadding.horizontal) * feedCarouselAspect,
+    );
   });
 
   testWidgets('feedCarouselCardHeight uses half the width on a tablet', (WidgetTester tester) async {
-    expect(await _heightAt(tester, const Size(1032, 1376)), (1032 / 2 - PrismFeedLayout.gridPadding.horizontal) * 0.6);
+    expect(
+      await _heightAt(tester, const Size(1032, 1376)),
+      (1032 / 2 - PrismFeedLayout.gridPadding.horizontal) * feedCarouselAspect,
+    );
   });
 
   testWidgets('feedCarouselCardHeight is 0, not negative, before the screen has a width', (WidgetTester tester) async {
@@ -85,7 +91,7 @@ void main() {
         size: const Size(951, 669),
         padding: const EdgeInsets.only(right: 84, bottom: 34),
       );
-      expect(height, ((951 - 84) / 2 - PrismFeedLayout.gridPadding.horizontal) * 0.6);
+      expect(height, ((951 - 84) / 2 - PrismFeedLayout.gridPadding.horizontal) * feedCarouselAspect);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('the unfolded screen in portrait keeps one card', (WidgetTester tester) async {
@@ -94,7 +100,7 @@ void main() {
         size: const Size(669, 951),
         padding: const EdgeInsets.only(top: 82, bottom: 34),
       );
-      expect(height, (669 - PrismFeedLayout.gridPadding.horizontal) * 0.6);
+      expect(height, (669 - PrismFeedLayout.gridPadding.horizontal) * feedCarouselAspect);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('an Android screen of the same size keeps one card', (WidgetTester tester) async {
@@ -103,7 +109,7 @@ void main() {
         size: const Size(951, 669),
         padding: const EdgeInsets.only(right: 84, bottom: 34),
       );
-      expect(height, (951 - PrismFeedLayout.gridPadding.horizontal) * 0.6);
+      expect(height, (951 - PrismFeedLayout.gridPadding.horizontal) * feedCarouselAspect);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
   });
 }

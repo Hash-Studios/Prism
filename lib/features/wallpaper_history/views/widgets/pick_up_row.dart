@@ -84,12 +84,7 @@ class _PickUpRowState extends State<PickUpRow> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(
-            PrismFeedLayout.gridSpacing + 4,
-            PrismSpace.md,
-            PrismFeedLayout.gridSpacing + 4,
-            PrismSpace.sm,
-          ),
+          padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.md, PrismSpace.page, PrismSpace.sm),
           child: Semantics(
             header: true,
             child: Text(

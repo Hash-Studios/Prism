@@ -321,22 +321,11 @@ abstract final class PrismBottomSheet {
   static const double interestTileLabelInset = 8;
   static const double interestTileSelectedBorderWidth = 2;
 
-  /// Selected tiles sink slightly, like a pressed card.
-  static const double interestTileSelectedScale = 0.96;
-
-  /// Strongest alpha of the [ColorScheme.scrim] gradient under the tile name.
-  static const double interestTileScrimAlpha = 0.65;
-
   static const double interestCheckBadgeSize = 22;
   static const double interestCheckIconSize = 14;
 
   static const int learnedTermCount = 6;
   static const EdgeInsets learnedPillPadding = EdgeInsets.symmetric(horizontal: 14, vertical: 10);
-
-  /// Fixed track width so strengths compare across pills.
-  static const double learnedBarWidth = 48;
-  static const double learnedBarHeight = 3;
-  static const double learnedBarTrackAlpha = 0.18;
 }
 
 /// Dimensions and opacities shared by all text-input fields across the app.

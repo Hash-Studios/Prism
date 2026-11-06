@@ -10,6 +10,7 @@ import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_row.dart';
 import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/creator_directory/views/widgets/creator_directory_card.dart';
 import 'package:Prism/features/user_search/domain/entities/user_search_user.dart';
 import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -19,11 +20,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../creator_directory/creator_directory_test_support.dart';
 
 class _MockUserSearchBloc extends MockBloc<UserSearchEvent, UserSearchState> implements UserSearchBloc {}
 
 void main() {
   late _MockUserSearchBloc bloc;
+  late FakeCreatorDirectoryRepository directory;
 
   void stubState(UserSearchState state) {
     when(() => bloc.state).thenReturn(state);
@@ -37,6 +40,8 @@ void main() {
   setUp(() {
     bloc = _MockUserSearchBloc();
     getIt.registerFactory<UserSearchBloc>(() => bloc);
+    directory = FakeCreatorDirectoryRepository();
+    registerCreatorDirectoryFakes(repository: directory);
     AnalyticsRuntime.instance = FakeAppAnalytics();
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'user_1'
@@ -70,6 +75,24 @@ void main() {
     expect(find.byType(Glint), findsOneWidget);
     expect(find.text('Search creators by name'), findsOneWidget);
     expect(find.widgetWithText(PrismButton, 'Creators to follow'), findsOneWidget);
+  });
+
+  testWidgets('before typing: creators to follow under a section header, not the empty hint', (tester) async {
+    directory.pages[(null, null)] = creatorPage(<DirectoryCreator>[
+      directoryCreator('a', name: 'Ana Silva'),
+      directoryCreator('b', name: 'Ben Ito'),
+    ]);
+    await pumpPage(tester);
+    await tester.pump();
+
+    expect(find.text('Creators to follow'), findsOneWidget);
+    expect(find.text('See all'), findsOneWidget);
+    expect(find.byType(CreatorFollowRow), findsNWidgets(2));
+    expect(find.text('Ana Silva'), findsOneWidget);
+    expect(find.text('Ben Ito'), findsOneWidget);
+    expect(find.widgetWithText(PrismButton, 'Follow'), findsNWidgets(2));
+    expect(find.byType(Glint), findsNothing);
+    expect(find.text('Search creators by name'), findsNothing);
   });
 
   testWidgets('submitting asks the bloc to search and clearing resets it', (tester) async {

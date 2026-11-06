@@ -11,6 +11,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/cosmetics/profile_frame.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
+import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
@@ -527,7 +528,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text(longProfile.name), findsOneWidget);
-    expect(find.byTooltip('github'), findsOneWidget);
+    expect(find.byTooltip('More options'), findsOneWidget);
     final Finder emptyState = find.text('No wallpapers yet');
     final Finder galleryScrollable = find
         .descendant(of: find.byType(CustomScrollView), matching: find.byType(Scrollable))
@@ -611,7 +612,7 @@ void main() {
     expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Following')).variant, PrismButtonVariant.tonal);
   });
 
-  testWidgets('the first three links show as buttons and the rest open from a More links button', (tester) async {
+  testWidgets('another profile lists its links by name in the overflow menu, and Follow stands alone', (tester) async {
     await pumpScreen(tester, identifier: 'u2');
     repository.profiles.add(
       const PublicProfileEntity(
@@ -632,16 +633,20 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.byTooltip('github'), findsOneWidget);
-    expect(find.byTooltip('twitter'), findsOneWidget);
-    expect(find.byTooltip('instagram'), findsOneWidget);
-    expect(find.byTooltip('telegram'), findsNothing);
-    await tester.tap(find.byTooltip('More links'));
+    // No icon-only link buttons in the header.
+    expect(find.byTooltip('github'), findsNothing);
+    expect(find.byTooltip('More links'), findsNothing);
+    expect(find.text('Follow'), findsOneWidget);
+    // The tier sits in the chip row with the badges.
+    expect(find.descendant(of: find.byType(ProfileBadgeRow), matching: find.byType(RankInfoChip)), findsOneWidget);
+
+    await tester.tap(find.byTooltip('More options'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-
-    expect(find.text('More links'), findsOneWidget);
-    expect(find.byTooltip('Telegram'), findsOneWidget);
+    for (final String name in <String>['Github', 'Twitter', 'Instagram', 'Telegram']) {
+      expect(find.text(name), findsOneWidget);
+    }
+    expect(find.text('Report user'), findsOneWidget);
   });
 
   testWidgets('another profile that has been deleted says it is not available', (tester) async {
@@ -714,16 +719,20 @@ void main() {
       CoinsService.instance.xpNotifier.value = XpStatus.empty();
     });
 
-    testWidgets('own profile shows full lifetime XP progress and confirmed reward state', (tester) async {
+    testWidgets('own profile shows XP and profile completion in one slim card', (tester) async {
       CoinsService.instance.xpNotifier.value = XpStatus.fromUserData(<String, dynamic>{'xp': 1240});
       CoinsService.instance.inventoryNotifier.value = const Inventory(owned: <String>{'glow_aurora'});
       await pumpScreen(tester);
 
       expect(find.byType(RankProgressCard), findsOneWidget);
       final AppLocalizationsEn l10n = AppLocalizationsEn();
-      expect(find.text(l10n.economyLifetimeXp('1,240')), findsOneWidget);
       expect(find.text(l10n.economyXpToRank('760', l10n.economyRankGold)), findsOneWidget);
-      expect(find.text(l10n.economyNextReward('Gold frame')), findsOneWidget);
+      // The next reward and Use live on Rewards; the profile keeps one line and the bar.
+      expect(find.text(l10n.economyNextReward('Gold frame')), findsNothing);
+      expect(
+        find.descendant(of: find.byType(RankProgressCard), matching: find.byType(ProfileCompletenessCard)),
+        findsOneWidget,
+      );
       expect(find.byType(RankInfoChip), findsNothing);
     });
 

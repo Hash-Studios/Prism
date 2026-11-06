@@ -259,29 +259,22 @@ class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
       bloc.add(const WallpaperHistoryEvent.started());
     }
 
-    final Widget header = Padding(
-      padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.sm, 0),
-      child: Row(
-        children: <Widget>[
-          Expanded(child: note == null ? const SizedBox.shrink() : Text(note, style: PrismTextStyles.caption(context))),
-          if (rows.isNotEmpty)
-            PrismButton(
-              key: ValueKey<String>('history-clear-${_segment.name}'),
-              label: context.l10n.wallpaperClear,
-              variant: PrismButtonVariant.ghost,
-              size: PrismButtonSize.compact,
-              onPressed: () => unawaited(confirmClearHistory(context, _segment)),
+    // One full-width caption under the segmented control. Clear sits on the first day header instead.
+    final Widget? noteSliver = note == null
+        ? null
+        : SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.md, PrismSpace.page, 0),
+              child: Text(note, style: PrismTextStyles.caption(context)),
             ),
-        ],
-      ),
-    );
+          );
     if (rows.isEmpty) {
       return RefreshIndicator(
         onRefresh: refresh,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: <Widget>[
-            SliverToBoxAdapter(child: header),
+            ?noteSliver,
             // Centred in the space left, and free to grow taller than it at large text sizes.
             SliverLayoutBuilder(
               builder: (context, constraints) => SliverToBoxAdapter(
@@ -301,24 +294,53 @@ class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
     };
     final DateTime today = (widget.now ?? DateTime.now)();
     final double footer = appliedWallpaperFooterHeight(context);
+    final List<HistoryDay> days = groupHistoryByDay(rows);
     return RefreshIndicator(
       onRefresh: refresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: <Widget>[
-          SliverToBoxAdapter(child: header),
-          for (final HistoryDay group in groupHistoryByDay(rows)) ...<Widget>[
+          ?noteSliver,
+          for (final HistoryDay group in days) ...<Widget>[
             SliverToBoxAdapter(
-              child: PrismSectionHeader(
-                title: historyDayLabel(context.l10n, group.day, today),
-                small: true,
-                padding: const EdgeInsets.fromLTRB(
-                  PrismWallGrid.margin + PrismSpace.xxs,
-                  PrismSpace.md,
-                  PrismWallGrid.margin,
-                  PrismSpace.xs,
-                ),
-              ),
+              child: identical(group, days.first)
+                  // The ghost button's own 16 point inset puts its label on the grid's end edge.
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        PrismWallGrid.margin + PrismSpace.xxs,
+                        PrismSpace.xxs,
+                        PrismWallGrid.margin - PrismSpace.md,
+                        0,
+                      ),
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: PrismSectionHeader(
+                              title: historyDayLabel(context.l10n, group.day, today),
+                              small: true,
+                              padding: EdgeInsets.zero,
+                            ),
+                          ),
+                          PrismButton(
+                            key: ValueKey<String>('history-clear-${_segment.name}'),
+                            label: context.l10n.wallpaperClear,
+                            variant: PrismButtonVariant.ghost,
+                            size: PrismButtonSize.compact,
+                            onPressed: () => unawaited(confirmClearHistory(context, _segment)),
+                          ),
+                        ],
+                      ),
+                    )
+                  : PrismSectionHeader(
+                      title: historyDayLabel(context.l10n, group.day, today),
+                      small: true,
+                      padding: const EdgeInsets.fromLTRB(
+                        PrismWallGrid.margin + PrismSpace.xxs,
+                        PrismSpace.md,
+                        PrismWallGrid.margin,
+                        PrismSpace.xs,
+                      ),
+                    ),
             ),
             SliverPadding(
               padding: PrismWallGrid.padding,

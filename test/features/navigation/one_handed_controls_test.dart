@@ -362,9 +362,9 @@ void main() {
           expect(tester.takeException(), isNull);
           final Rect pill = tester.getRect(find.byType(PrismBottomNav));
           final Rect create = tester.getRect(find.byType(PrismFab));
-          // Labels widen the pill to 264. They show only where the avatar, the bell and the labelled pill all fit.
-          final bool labelled = width - left - right - 20 >= 116 + 264 + 4 + 44;
-          expect(pill.size, Size(labelled ? 264 : 200, 56));
+          // Labels widen the pill to 280. They show only where the avatar, the bell and the labelled pill all fit.
+          final bool labelled = width - left - right - 20 >= 116 + 280 + 4 + 44;
+          expect(pill.size, Size(labelled ? 280 : 200, 56));
           expect(create.size, const Size(56, 56));
           expect(find.bySemanticsLabel('Upload').hitTestable(), findsOneWidget);
           final bool stacked = width - left - right < 336;

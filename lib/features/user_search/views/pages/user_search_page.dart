@@ -10,6 +10,11 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/creator_directory/biz/creator_directory_cubit.dart';
+import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
+import 'package:Prism/features/creator_directory/views/widgets/creator_directory_card.dart';
+import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
 import 'package:Prism/features/user_search/domain/entities/user_search_user.dart';
 import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/features/user_search/views/widgets/prism_search_field.dart';
@@ -87,9 +92,18 @@ class _UserSearchState extends State<UserSearch> {
             )
           : null,
       body: loggedIn
-          ? BlocProvider.value(
-              value: _bloc,
-              child: _UserSearchLoader(searchId: _searchId),
+          ? MultiBlocProvider(
+              providers: <BlocProvider<dynamic>>[
+                BlocProvider<UserSearchBloc>.value(value: _bloc),
+                // Creators to follow, shown before the first search. Loaded once per page.
+                BlocProvider<CreatorDirectoryCubit>(create: (_) => getIt<CreatorDirectoryCubit>()..loadRow()),
+                BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
+              ],
+              child: BlocListener<PublicProfileBloc, PublicProfileState>(
+                listenWhen: (prev, curr) => curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
+                listener: (context, state) => showFollowOutcomeToast(context, state.followOutcome!),
+                child: _UserSearchLoader(searchId: _searchId),
+              ),
             )
           : SignInPrompt(feature: context.l10n.coreSignInCreatorSearchFeature),
     );
@@ -139,8 +153,53 @@ void _openCreators(BuildContext context) {
   context.router.push(CreatorsRoute(source: 'user_search'));
 }
 
+/// Before the first search: creators to follow under a section header. While they load, row skeletons. When there
+/// are none, a Glint with a hint and a link to the directory.
 class _SearchHint extends StatelessWidget {
   const _SearchHint();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CreatorDirectoryCubit, CreatorDirectoryState>(
+      builder: (context, state) => switch (state.status) {
+        CreatorDirectoryStatus.loading => PrismSkeleton.rows(),
+        CreatorDirectoryStatus.loaded when state.creators.isNotEmpty => _SuggestedCreators(creators: state.creators),
+        _ => const _EmptyHint(),
+      },
+    );
+  }
+}
+
+class _SuggestedCreators extends StatelessWidget {
+  const _SuggestedCreators({required this.creators});
+
+  final List<DirectoryCreator> creators;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md),
+      children: <Widget>[
+        PrismSectionHeader(
+          title: context.l10n.creatorsToFollow,
+          actionLabel: context.l10n.creatorsSeeAll,
+          onAction: () => _openCreators(context),
+          padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxs),
+        ),
+        for (final DirectoryCreator creator in creators)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page, vertical: PrismSpace.xs),
+            // The row load drops creators the viewer already follows.
+            child: CreatorFollowRow(creator: creator.entry, followed: false, source: 'search'),
+          ),
+      ],
+    );
+  }
+}
+
+class _EmptyHint extends StatelessWidget {
+  const _EmptyHint();
 
   @override
   Widget build(BuildContext context) {

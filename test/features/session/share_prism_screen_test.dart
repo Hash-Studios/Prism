@@ -5,6 +5,7 @@ import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_button.dart';
+import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism/prism_page.dart';
 import 'package:Prism/features/session/views/pages/share_prism_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -68,11 +69,13 @@ void main() {
     expect(find.text('Give 100, get 100'), findsOneWidget);
     expect(find.text('Your friend gets 100 coins when they join. You get 100 too.'), findsOneWidget);
     expect(find.text('Share invite'), findsOneWidget);
-    // The share action is pinned at the bottom, and the content above it is not left in the top half.
-    final Widget? bar = tester.widget<Scaffold>(find.byType(Scaffold)).bottomNavigationBar;
-    expect(bar, isNotNull);
-    expect(find.descendant(of: find.byWidget(bar!), matching: find.text('Share invite')), findsOneWidget);
-    expect(find.byType(PrismCenteredScroll), findsOneWidget);
+    // The share action sits just under the link card, in one centred group with no empty band between them.
+    expect(tester.widget<Scaffold>(find.byType(Scaffold)).bottomNavigationBar, isNull);
+    expect(find.descendant(of: find.byType(PrismCenteredScroll), matching: find.text('Share invite')), findsOneWidget);
+    final double gap =
+        tester.getTopLeft(find.widgetWithText(PrismButton, 'Share invite')).dy -
+        tester.getBottomLeft(find.byType(PrismCard)).dy;
+    expect(gap, moreOrLessEquals(24, epsilon: 1));
     expect(tester.getSize(find.text('Give 100, get 100')).width, lessThanOrEqualTo(300));
   });
 

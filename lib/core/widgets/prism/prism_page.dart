@@ -7,6 +7,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 
 /// The header of every page: an optional back button, a large title and trailing actions.
@@ -274,27 +275,130 @@ class _PrismPageState extends State<PrismPage> {
 }
 
 /// The body of a short task page. [child] sits at the optical centre of the space (a little above the middle) when it
-/// fits, and scrolls when it does not. Put the page's main action in [PrismPage.bottomBar].
-class PrismCenteredScroll extends StatelessWidget {
+/// fits, and scrolls when it does not.
+///
+/// Give the page's main action as [action], not as [PrismPage.bottomBar]. When [child] and [action] fit together, the
+/// action sits [PrismSpace.xl] below [child] and the two are centred as one group, so no empty band separates a short
+/// message from its action. When they do not fit, [child] scrolls and [action] pins at the bottom, clear of the home
+/// indicator.
+class PrismCenteredScroll extends StatefulWidget {
   const PrismCenteredScroll({
     super.key,
     required this.child,
+    this.action,
     this.padding = const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.md, PrismSpace.page, PrismSpace.xl),
+    this.physics,
   });
 
   final Widget child;
+  final Widget? action;
   final EdgeInsets padding;
+
+  /// For example [AlwaysScrollableScrollPhysics] under a [RefreshIndicator].
+  final ScrollPhysics? physics;
+
+  @override
+  State<PrismCenteredScroll> createState() => _PrismCenteredScrollState();
+}
+
+class _PrismCenteredScrollState extends State<PrismCenteredScroll> {
+  /// Natural heights of the child and the action. They do not depend on where the action sits, so the choice between
+  /// the centred group and the pinned action is stable.
+  double? _childHeight;
+  double? _actionHeight;
+
+  void _setChildHeight(double height) {
+    if (mounted && height != _childHeight) setState(() => _childHeight = height);
+  }
+
+  void _setActionHeight(double height) {
+    if (mounted && height != _actionHeight) setState(() => _actionHeight = height);
+  }
+
+  Widget _scroll(BoxConstraints constraints, EdgeInsets padding, Widget content) => SingleChildScrollView(
+    physics: widget.physics,
+    padding: padding,
+    child: ConstrainedBox(
+      constraints: BoxConstraints(minHeight: math.max(0, constraints.maxHeight - padding.vertical)),
+      child: Align(alignment: const Alignment(0, -0.12), child: content),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
+    final Widget? action = widget.action;
     return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        padding: padding,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: math.max(0, constraints.maxHeight - padding.vertical)),
-          child: Align(alignment: const Alignment(0, -0.12), child: child),
-        ),
-      ),
+      builder: (context, constraints) {
+        if (action == null) return _scroll(constraints, widget.padding, widget.child);
+        final EdgeInsets padding = widget.padding.copyWith(
+          bottom: widget.padding.bottom + MediaQuery.paddingOf(context).bottom,
+        );
+        final Widget child = _HeightReporter(onHeight: _setChildHeight, child: widget.child);
+        final Widget reported = _HeightReporter(onHeight: _setActionHeight, child: action);
+        // Until both heights are known, assume the group fits.
+        final bool fits =
+            _childHeight == null ||
+            _actionHeight == null ||
+            padding.vertical + _childHeight! + PrismSpace.xl + _actionHeight! <= constraints.maxHeight;
+        if (fits) {
+          return _scroll(
+            constraints,
+            padding,
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Center(child: child),
+                const SizedBox(height: PrismSpace.xl),
+                reported,
+              ],
+            ),
+          );
+        }
+        return Column(
+          children: <Widget>[
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, inner) => _scroll(inner, widget.padding.copyWith(bottom: PrismSpace.md), child),
+              ),
+            ),
+            SafeArea(
+              top: false,
+              minimum: EdgeInsets.fromLTRB(widget.padding.left, PrismSpace.xs, widget.padding.right, PrismSpace.md),
+              child: reported,
+            ),
+          ],
+        );
+      },
     );
+  }
+}
+
+/// Reports the height of [child] after each layout that changes it.
+class _HeightReporter extends SingleChildRenderObjectWidget {
+  const _HeightReporter({required this.onHeight, required super.child});
+
+  final ValueChanged<double> onHeight;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderHeightReporter(onHeight);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderHeightReporter renderObject) => renderObject.onHeight = onHeight;
+}
+
+class _RenderHeightReporter extends RenderProxyBox {
+  _RenderHeightReporter(this.onHeight);
+
+  ValueChanged<double> onHeight;
+  double? _reported;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    final double height = size.height;
+    if (height == _reported) return;
+    _reported = height;
+    SchedulerBinding.instance.addPostFrameCallback((_) => onHeight(height));
   }
 }
