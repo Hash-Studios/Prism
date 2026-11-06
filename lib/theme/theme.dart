@@ -208,7 +208,7 @@ ThemeData kLightTheme4 = _lightTheme(
 
 ThemeData kLightTheme5 = _lightTheme(
   background: const Color(0xFFE8F0F7),
-  accent: const Color(0xFF2A649C),
+  accent: const Color(0xFF265D92),
   tint: const Color(0xFF1B3550),
 );
 

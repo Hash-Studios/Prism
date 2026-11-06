@@ -31,7 +31,7 @@ The Themes page lets the user choose the app theme mode (system, light or dark),
 ### Accent and contrast
 
 - The user accent goes through `withPrismAccent` in `lib/features/theme_mode/views/theme_mode_bloc_utils.dart`. Every screen reads the result from `Theme.of(context).colorScheme`.
-- `withPrismAccent` sets `onPrimary` and `onError` with `onColor(accent)`. Text on the accent is black or white, whichever has more contrast. The check is at least 4.5:1 for all 12 themes and all 22 picker colours.
+- `withPrismAccent` sets `onPrimary` and `onError` with `onColor(accent)`. Text on the accent is black or white, whichever has more contrast. The check is at least 4.5:1 for all themes and all 22 picker colours.
 - If the accent is almost the same as the theme background, the contrast ratio is below 1.5. Prism then uses the accent of the theme itself. This only catches colours such as black on black.
 - The limit is 1.5 and not 3. Four stock dark themes (Pepper, Steel, Sky, Jungle) use accents below 3:1 against their own background. The limit must keep them.
 - `onColor` and `contrastRatio(a, b)` are in `lib/theme/contrast.dart`. The old import `features/wallpaper_detail/views/widgets/accent_contrast.dart` still works. It re-exports the new file.
@@ -72,9 +72,9 @@ The Themes page lets the user choose the app theme mode (system, light or dark),
 
 ### Winter
 
-- Light: background `#E8F0F7`, accent `#2A649C`. Dark: background `#0A1521`, accent `#8CC4EE`, text `#E3EDF7`. Body text contrast is 17.3:1 (light) and 15.5:1 (dark). The accent on the background is 5.4:1 (light) and 9.9:1 (dark).
-- The user accent applies, as on every other theme with `usesAccent`. `test/features/theme_mode/prism_theme_contrast_test.dart` checks all 22 picker colours on both variants.
-- The home card shows from 2 December. Wrapped launches on 1 December with its own card and push, so Winter waits one day. In the carousel the Wrapped card always comes first. Where 2 or more cards show side by side (tablets), the Winter card moves to the end of the carousel. If it is still near the Wrapped card, it does not show.
+- Light: background `#E8F0F7`, accent `#265D92`. Dark: background `#0A1521`, accent `#8CC4EE`, text `#E3EDF7`. Body text contrast is 17.3:1 (light) and 15.5:1 (dark).
+- The user accent applies, as on every other theme with `usesAccent`. For Winter only, Prism adjusts a user accent until it reaches at least 4.5:1 against all Winter surfaces. `test/theme/winter_contrast_test.dart` checks all 22 picker colours on both variants. Other themes keep the existing 1.5:1 fallback when the accent is too close to the background.
+- The home card shows from 2 December. Wrapped launches on 1 December with its own card and push, so Winter waits one day. In the carousel the Wrapped card always comes first. Where 2 or more cards show side by side (tablets), the Winter card moves to the end of the carousel. The guard includes partial cards visible during a swipe; with the current page order, Winter is hidden whenever Wrapped shows in a layout of 2 or more columns.
 - A tap on the card selects the variant for the current brightness: Winter light in light mode, Winter dark in dark mode.
 - An app update before 2 December keeps the Winter announcement pending. The first launch on or after 2 December writes the inbox item and shows the local push. The push payload is `{"route": "/theme", "seasonal_announcement": "winter"}`.
 
@@ -88,12 +88,11 @@ The Themes page lets the user choose the app theme mode (system, light or dark),
 
 ### End of a season
 
-- When the user selects a Winter variant, Prism saves the theme they had before under `winterThemePrevious2026Light` or `winterThemePrevious2026Dark`.
-- On the first theme load after 6 January (`ThemeRepository.load`), a user still on Winter goes back to that theme. With no saved theme, they go to the default theme (Frost White or Material Dark). The accent follows the normal theme change rule: a default accent becomes the default of the new theme, a custom accent stays.
-- `readSync` already shows the reverted theme on the first frame.
-- Prism sets `winterThemeReverted2026` after that load. A user who picks Winter again later keeps it.
-- `ThemeBloc` sets a timer for the end of the season, so the revert also happens while the app is open.
-- The reverted theme is uploaded to the account, so other devices do not bring Winter back.
+- When the user selects a Winter variant, Prism saves the theme they had before in that variant's `winterThemePrevious2026Light` or `winterThemePrevious2026Dark` slot. Account sync also records these previous-theme slots.
+- On the first theme load after 6 January (`ThemeRepository.load`), a user still on Winter goes back to that variant's saved theme. With no saved theme, they go to the default theme (Frost White or Material Dark). The accent follows the normal theme change rule: a default accent becomes the default of the new theme, a custom accent stays.
+- `readSync` resolves an expired Winter theme before showing the first frame. Prism sets the season-scoped `winterThemeReverted2026` completion flag after the revert. A user who picks Winter again later keeps it.
+- `ThemeBloc` sets a timer for the end of the season, so the revert also happens while the app is open. `ThemeRepository.update` restores both selected Winter slots before applying a manually requested theme pick.
+- Loading an untouched non-Winter device does not consume the completion marker; an expired account Winter can still revert. The reverted selection is uploaded to the account, so older account state does not bring Winter back. A newer remote Winter pick is honored unchanged. A Winter pick made after the season ends is intentional and stays selected.
 
 ### Analytics
 
@@ -117,10 +116,9 @@ Do not change the system clock on a shared device.
 
 - Prism reads the system colour only when the Themes page opens. If the system wallpaper changes while the switch is on, the app shows the new colour after the user opens the page again.
 - The Kotlin channel was not compiled or run on a device. CI compiles it.
-- The 1.5 limit lets low contrast accents through. An accent can be hard to see on a theme and still pass. The text on the accent always passes.
+- Outside Winter, the 1.5 limit lets low contrast accents through. An accent can be hard to see on a theme and still pass. The text on the accent always passes.
 - The migration for the black AMOLED accent runs when the app reads the theme. It was tested with an in-memory store, not on a device.
 - The switch needs a device with Material You colours. Some Android 12 builds from other makers return the same colour for every wallpaper.
-- A Winter theme that comes from another device through the account sync has no saved previous theme on this device. At the end of the season it goes to the default theme.
 - The power state is read only when Home opens and when the app comes back to the front. If the user turns on battery saver while Home is open, the snow stops at the next resume.
 
 ## How to test
@@ -147,6 +145,7 @@ Automated tests:
 - `test/features/navigation/offline_banner_test.dart`
 
 - `test/features/theme_mode/winter_season_test.dart`
+- `test/theme/winter_contrast_test.dart`
 - `test/features/theme_mode/winter_decor_test.dart`
 - `test/features/personalized_feed/views/feed_carousel_test.dart`
 

@@ -57,8 +57,8 @@ int _carouselColumns(BuildContext context) {
 double feedCarouselCardHeight(BuildContext context) =>
     math.max(0, (_carouselWidth(context) / _carouselColumns(context) - 2 * PrismFeedLayout.gridSpacing) * 0.6);
 
-/// True when [seasonCards] placed after [otherPages] stay at least [columns] pages from the Wrapped card at
-/// [wrappedIndex] in both directions of the looping carousel, so the two never show on the same screen.
+/// True when [seasonCards] placed after [otherPages] stay more than [columns] pages from the Wrapped card at
+/// [wrappedIndex] in both directions of the loop. A swipe can show partial cards at both viewport edges.
 @visibleForTesting
 bool seasonCardsClearOfWrapped({
   required int otherPages,
@@ -68,7 +68,7 @@ bool seasonCardsClearOfWrapped({
 }) {
   final int total = otherPages + seasonCards;
   for (int at = otherPages; at < total; at++) {
-    if (math.min(at - wrappedIndex, total - at + wrappedIndex) < columns) return false;
+    if (math.min(at - wrappedIndex, total - at + wrappedIndex) <= columns) return false;
   }
   return true;
 }
@@ -164,7 +164,10 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _refreshWrapped();
+    if (state == AppLifecycleState.resumed) {
+      _scheduleSeasonEnd();
+      _refreshWrapped();
+    }
   }
 
   @override
@@ -307,7 +310,7 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
         .where((season) => season.inSeason() && !season.isActive(context))
         .toList();
     final bool showsDrop = _showsDrop(widget.liveDrop);
-    // Where cards sit side by side, the season cards go last, so they never share the screen with Wrapped.
+    // Place seasons last on multi-column layouts, and omit them if the loop still brings them alongside Wrapped.
     final bool seasonsLast = wrapped != null && columns > 1;
     if (seasonsLast &&
         !seasonCardsClearOfWrapped(

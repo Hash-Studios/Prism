@@ -1034,6 +1034,8 @@ void main() {
       List<PrismFeedItem> walls, {
       ThemeBloc? themeBloc,
       StackRouter? router,
+      Size size = screen,
+      WallOfTheDayEntity? wotdEntity,
     }) async {
       final previousUser = app_state.prismUser;
       addTearDown(() => app_state.prismUser = previousUser);
@@ -1054,16 +1056,71 @@ void main() {
       // Load before the first frame, so the carousel's first build already has the Wrapped page.
       bloc.add(const WrappedEvent.load('heavy'));
       await tester.runAsync(() => bloc.stream.firstWhere((WrappedState state) => state is WrappedReady));
-      await pumpCarousel(tester, walls, router: router, themeBloc: themeBloc);
+      await pumpCarousel(tester, walls, router: router, themeBloc: themeBloc, size: size, wotdEntity: wotdEntity);
       await tester.pumpAndSettle();
     }
 
-    test('seasonCardsClearOfWrapped needs two pages of gap on a phone and a full column gap on a grid', () {
-      expect(seasonCardsClearOfWrapped(otherPages: 12, seasonCards: 1, wrappedIndex: 1, columns: 2), isTrue);
-      expect(seasonCardsClearOfWrapped(otherPages: 3, seasonCards: 1, wrappedIndex: 1, columns: 2), isTrue);
+    test('seasonCardsClearOfWrapped leaves room for partially visible cards during a swipe in either direction', () {
+      expect(seasonCardsClearOfWrapped(otherPages: 5, seasonCards: 1, wrappedIndex: 2, columns: 2), isTrue);
+      expect(seasonCardsClearOfWrapped(otherPages: 12, seasonCards: 1, wrappedIndex: 1, columns: 2), isFalse);
+      expect(seasonCardsClearOfWrapped(otherPages: 3, seasonCards: 1, wrappedIndex: 1, columns: 2), isFalse);
       expect(seasonCardsClearOfWrapped(otherPages: 2, seasonCards: 1, wrappedIndex: 1, columns: 2), isFalse);
       expect(seasonCardsClearOfWrapped(otherPages: 12, seasonCards: 1, wrappedIndex: 1, columns: 3), isFalse);
-      expect(seasonCardsClearOfWrapped(otherPages: 12, seasonCards: 1, wrappedIndex: 0, columns: 1), isTrue);
+    });
+
+    for (final bool acrossLoop in <bool>[false, true]) {
+      for (final int direction in <int>[-1, 1]) {
+        testWidgets('Winter stays clear of Wrapped mid-swipe (loop: $acrossLoop, direction: $direction)', (
+          tester,
+        ) async {
+          seasonClock = () => DateTime(2026, 12, 5);
+          final List<PrismFeedItem> walls = acrossLoop ? <PrismFeedItem>[_wall('a'), _wall('b'), _wall('c')] : [];
+          await pumpWithWrapped(
+            tester,
+            walls,
+            size: const Size(1024, 768),
+            wotdEntity: const WallOfTheDayEntity(wallId: 'today', url: '', thumbnailUrl: '', photographer: 'Ana'),
+          );
+          final PageController controller = tester.widget<PageView>(find.byType(PageView)).controller!;
+          final int start = (acrossLoop ? 3 + walls.length : 1) + (direction > 0 ? 1 : 0);
+          controller.jumpToPage(controller.initialPage + start);
+          await tester.pump();
+          final Rect viewport = tester.getRect(find.byType(CarouselSlider));
+          final TestGesture gesture = await tester.startGesture(viewport.center);
+          // Cross touch slop first, then hold the viewport between two settled pages.
+          await gesture.moveBy(Offset(direction * 20, 0));
+          await tester.pump();
+          await gesture.moveBy(Offset(direction * viewport.width / 4, 0));
+          await tester.pump();
+
+          bool visible(Finder cards) =>
+              cards.evaluate().any((element) => tester.getRect(find.byWidget(element.widget)).overlaps(viewport));
+          final Finder winter = find.byWidgetPredicate(
+            (widget) => widget is FeedHeroCard && widget.title == 'The Winter theme is here',
+          );
+          expect(visible(find.byType(WrappedHomeCard)), isTrue);
+          expect(visible(winter), isFalse);
+          await gesture.up();
+        });
+      }
+    }
+
+    testWidgets('resuming after a local date change reschedules the season boundary', (tester) async {
+      DateTime now = DateTime(2026, 12);
+      seasonClock = () => now;
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      await pumpCarousel(tester, <PrismFeedItem>[_wall('a')]);
+
+      expect(find.text('The Winter theme is here'), findsNothing);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      now = DateTime(2026, 12, 1, 23, 59);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      now = DateTime(2026, 12, 2, 0, 0, 1);
+      await tester.pump(const Duration(minutes: 1));
+
+      expect(find.text('The Winter theme is here'), findsOneWidget);
     });
 
     testWidgets('on a phone the Wrapped card comes before the Winter card and each shows on its own page', (

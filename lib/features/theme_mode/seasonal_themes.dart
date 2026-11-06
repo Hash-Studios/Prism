@@ -86,6 +86,7 @@ class SeasonalTheme {
   String previousThemeKey(Brightness brightness) =>
       '${name}ThemePrevious2026${brightness == Brightness.dark ? 'Dark' : 'Light'}';
   String get revertedKey => '${name}ThemeReverted2026';
+  String get revertPendingKey => '${name}ThemeRevertPending2026';
 
   DateTime get seasonEnd => window.end;
 

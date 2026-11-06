@@ -88,6 +88,49 @@ void main() {
     ]);
   });
 
+  test('an update before Winter waits for the promo and writes one real inbox item and push', () async {
+    DateTime now = DateTime(2026, 11, 25);
+    await settings.set('lastSeenVersion', '1.0.0');
+    Future<bool> launch() => checkSeasonalAnnouncementOnAppUpdate(
+      currentVersion: '1.1.0',
+      currentBuild: '348',
+      settings: settings,
+      seasons: <SeasonalTheme>[winterSeason],
+      now: now,
+      announce: (season) => announceSeasonalTheme(
+        season: season,
+        now: now,
+        l10n: l10n,
+        settings: settings,
+        inbox: inbox,
+        showPush: showPush,
+      ),
+    );
+
+    expect(await launch(), isTrue);
+    now = DateTime(2026, 12, 1, 23, 59, 59);
+    expect(await launch(), isFalse);
+    expect(pushes, isEmpty);
+    expect(await inbox.readAll(), isEmpty);
+    expect(settings.get<bool>(winterSeason.pendingKey, defaultValue: false), isTrue);
+
+    now = DateTime(2026, 12, 2);
+    expect(await launch(), isFalse);
+    expect(await launch(), isFalse);
+
+    final List<InAppNotificationEntity> items = await inbox.readAll();
+    expect(items.single.id, winterSeason.announcementId);
+    expect(items.single.route, '/theme');
+    expect(pushes, <(String, String)>[(l10n.winterAnnouncementTitle, l10n.winterAnnouncementBody)]);
+    expect(settings.get<bool>(winterSeason.pendingKey, defaultValue: false), isFalse);
+    expect(settings.get<bool>(winterSeason.announcedKey, defaultValue: false), isTrue);
+
+    now = winterSeason.promo.end;
+    await launch();
+    expect(pushes, hasLength(1));
+    expect(await inbox.readAll(), hasLength(1));
+  });
+
   test('a second call does not announce again', () async {
     await announceSeasonalTheme(
       season: spookySeason,

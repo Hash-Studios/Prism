@@ -47,6 +47,20 @@ void main() {
       expect(winterSeason.window.contains(DateTime(2026, 12, 15).toUtc()), isTrue);
     });
 
+    test('actual UTC inputs use local start and end instants exactly', () {
+      final DateTime start = winterSeason.window.start.toUtc();
+      final DateTime end = winterSeason.window.end.toUtc();
+
+      expect(winterSeason.window.isUpcoming(start.subtract(const Duration(microseconds: 1))), isTrue);
+      expect(winterSeason.window.contains(start.subtract(const Duration(microseconds: 1))), isFalse);
+      expect(winterSeason.window.contains(start), isTrue);
+      expect(winterSeason.window.isUpcoming(start), isFalse);
+      expect(winterSeason.window.contains(end.subtract(const Duration(microseconds: 1))), isTrue);
+      expect(winterSeason.window.hasEnded(end.subtract(const Duration(microseconds: 1))), isFalse);
+      expect(winterSeason.window.contains(end), isFalse);
+      expect(winterSeason.window.hasEnded(end), isTrue);
+    });
+
     test('promo starts one day after the window and ends with it', () {
       expect(winterSeason.inSeason(DateTime(2026, 12, 1, 12)), isFalse);
       expect(winterSeason.inSeason(DateTime(2026, 12, 2)), isTrue);
@@ -55,6 +69,16 @@ void main() {
   });
 
   group('New Year window', () {
+    test('actual UTC inputs use the local greeting boundaries', () {
+      final DateTime start = newYearWindow.start.toUtc();
+      final DateTime end = newYearWindow.end.toUtc();
+
+      expect(newYearWindow.contains(start.subtract(const Duration(microseconds: 1))), isFalse);
+      expect(newYearWindow.contains(start), isTrue);
+      expect(newYearWindow.contains(end.subtract(const Duration(microseconds: 1))), isTrue);
+      expect(newYearWindow.contains(end), isFalse);
+    });
+
     test('starts on 31 December and ends on 1 January, local time', () {
       expect(newYearWindow.contains(DateTime(2026, 12, 30, 23, 59, 59)), isFalse);
       expect(newYearWindow.contains(DateTime(2026, 12, 31)), isTrue);

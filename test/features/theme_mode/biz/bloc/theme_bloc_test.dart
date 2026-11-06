@@ -9,6 +9,7 @@ import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
 import 'package:Prism/features/theme_mode/domain/repositories/theme_repository.dart';
 import 'package:Prism/features/theme_mode/domain/usecases/theme_usecases.dart';
+import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -66,6 +67,37 @@ void main() {
   tearDown(() => accountChanges.close());
 
   ThemeBloc buildBloc() => ThemeBloc(loadUseCase, updateUseCase, repository, systemColors);
+
+  test('the season-end timer reloads the preferences when Winter ends', () async {
+    final DateTime Function() originalClock = seasonClock;
+    final DateTime start = DateTime.now();
+    final DateTime fakeStart = winterSeason.window.end.subtract(const Duration(milliseconds: 80));
+    seasonClock = () => fakeStart.add(DateTime.now().difference(start));
+    addTearDown(() => seasonClock = originalClock);
+    final ThemeBloc bloc = buildBloc();
+    addTearDown(bloc.close);
+
+    verifyNever(() => loadUseCase(const NoParams()));
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+
+    verify(() => loadUseCase(const NoParams())).called(1);
+    expect(bloc.state.dark.themeId, _dark.themeId);
+    expect(bloc.state.status, LoadStatus.success);
+  });
+
+  test('closing the bloc cancels the season-end timer', () async {
+    final DateTime Function() originalClock = seasonClock;
+    final DateTime start = DateTime.now();
+    final DateTime fakeStart = winterSeason.window.end.subtract(const Duration(milliseconds: 80));
+    seasonClock = () => fakeStart.add(DateTime.now().difference(start));
+    addTearDown(() => seasonClock = originalClock);
+    final ThemeBloc bloc = buildBloc();
+
+    await bloc.close();
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+
+    verifyNever(() => loadUseCase(const NoParams()));
+  });
 
   test('the first state carries the schemes the source already holds', () async {
     systemValue = schemes;

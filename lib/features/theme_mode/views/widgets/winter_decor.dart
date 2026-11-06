@@ -13,15 +13,15 @@ import 'package:flutter/material.dart';
 const Color _ice = Color(0xFFE3EDF7);
 const Color _gold = Color(0xFFFFD27A);
 
-/// One flake. Every value is a fraction or a rate, so the painter allocates nothing per frame.
+/// One flake. Its fixed fractions and rates are generated once and reused by the painter.
 class _Flake {
-  const _Flake(this.x, this.y, this.speed, this.radius, this.sway, this.phase);
+  const _Flake(this.x, this.y, this.fallsPerLoop, this.radius, this.sway, this.phase);
 
   final double x;
   final double y;
 
-  /// Logical pixels a second.
-  final double speed;
+  /// Whole falls per clock loop keep the motion continuous when the clock resets.
+  final int fallsPerLoop;
   final double radius;
   final double sway;
   final double phase;
@@ -34,7 +34,7 @@ final List<_Flake> _flakes = () {
     (_) => _Flake(
       random.nextDouble(),
       random.nextDouble(),
-      10 + random.nextDouble() * 14,
+      3 + random.nextInt(4),
       0.9 + random.nextDouble() * 1.5,
       4 + random.nextDouble() * 8,
       random.nextDouble() * math.pi * 2,
@@ -51,17 +51,16 @@ class _SnowPainter extends CustomPainter {
   /// Every third flake is a gold spark on New Year's Eve and New Year's Day.
   final bool sparkles;
 
-  static const double _loopSeconds = 60;
   final Paint _paint = Paint();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double t = clock.value * _loopSeconds;
+    final double progress = clock.value;
     final double fall = size.height + 8;
     for (int i = 0; i < _flakes.length; i++) {
       final _Flake flake = _flakes[i];
-      final double y = (flake.y * fall + flake.speed * t) % fall - 4;
-      final double x = flake.x * size.width + math.sin(t * 0.6 + flake.phase) * flake.sway;
+      final double y = ((flake.y + flake.fallsPerLoop * progress) % 1) * fall - 4;
+      final double x = flake.x * size.width + math.sin(progress * math.pi * 12 + flake.phase) * flake.sway;
       final double fade = 1 - (y / size.height).clamp(0.0, 1.0);
       final bool spark = sparkles && i % 3 == 0;
       _paint.color = (spark ? _gold : color).withValues(alpha: (spark ? 0.9 : 0.7) * fade * fade);
@@ -119,7 +118,10 @@ class _WinterSnowfallState extends State<WinterSnowfall> with SingleTickerProvid
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) unawaited(_readPowerSaver());
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_readPowerSaver());
+      setState(_scheduleNewYear);
+    }
   }
 
   Future<void> _readPowerSaver() async {
