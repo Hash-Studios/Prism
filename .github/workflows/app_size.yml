@@ -85,6 +85,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          persist-credentials: false
 
       # The base commit may predate the script, so run the head copy.
       - name: Compute the base APK cache key

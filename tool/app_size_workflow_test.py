@@ -48,6 +48,9 @@ class AppSizeWorkflowTest(unittest.TestCase):
                        if step.get('name') == 'Upsert app-size PR comment')
         self.assertEqual(comment['with']['number'], '${{ needs.request.outputs.pr_number }}')
         self.assertNotIn('write', config['jobs']['app_size']['permissions'].values())
+        checkout = next(step for step in config['jobs']['app_size']['steps']
+                        if step.get('uses', '').startswith('actions/checkout@'))
+        self.assertIs(checkout['with']['persist-credentials'], False)
         self.assertFalse(any('checkout' in step.get('uses', '') or 'run' in step
                              for step in config['jobs']['app_size_comment']['steps']))
 
