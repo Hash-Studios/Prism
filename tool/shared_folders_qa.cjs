@@ -249,7 +249,14 @@ function withBuildInputs(pairs, build) {
       originals.push({target, original, replacement});
       fs.writeFileSync(target, replacement);
     }
-    build();
+    // Ctrl-C reaches the build child too. Without a listener Node exits here and leaves the QA inputs in place.
+    const keepRunning = () => {};
+    process.on('SIGINT', keepRunning);
+    try {
+      build();
+    } finally {
+      process.off('SIGINT', keepRunning);
+    }
   } catch (error) {
     errors.push(error);
   }
