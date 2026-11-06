@@ -41,7 +41,7 @@ RELEASE_JOBS = (('testflight.yml', 'build-and-upload'), ('sentry_release_android
 
 def scheduled(job, outputs):
     """Evaluate this job's simple changes-output condition without eval."""
-    return any(all((outputs.get(key, 'false') == value) == (operator == '==')
+    return any(all((outputs[key] == value) == (operator == '==')
                    for key, operator, value in re.findall(
                        r"needs\.changes\.outputs\.(\w+) (==|!=) '(true|false)'", term))
                for term in job['if'].split(' || '))

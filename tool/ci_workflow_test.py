@@ -100,7 +100,16 @@ class CiWorkflowTest(unittest.TestCase):
         self.assertEqual(reader['with']['key'], lookup['with']['key'])
         self.assertEqual(reader['with']['path'], writer['with']['path'])
         self.assertEqual(writer['with']['key'], '${{ steps.cached.outputs.cache-primary-key }}')
+        size_reader = next(step for step in workflow('app_size.yml')['jobs']['app_size']['steps']
+                           if step.get('name') == 'Cache Gradle')
+        self.assertEqual(size_reader['with'], reader['with'])
         self.assertNotIn('app_size_base', self.jobs)
+
+    def test_unknown_change_outputs_fail_instead_of_silently_skipping_jobs(self):
+        for operator in ('==', '!='):
+            job = {'if': f"needs.changes.outputs.fluttre {operator} 'true'"}
+            with self.subTest(operator=operator), self.assertRaises(KeyError):
+                scheduled(job, {'flutter': 'true'})
 
     def test_web_uses_the_installed_browser_and_keeps_e2e_and_build_typechecking(self):
         job = self.jobs['web']

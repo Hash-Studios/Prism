@@ -423,10 +423,11 @@ duo-check:
 	@node tool/generate_duo_web_copy.mjs --check
 	@node --test tool/generate_duo_reveal.test.mjs tool/generate_duo_web_copy.test.mjs
 
-.PHONY: ci-static test-shard test-release
+.PHONY: ci-static test-shard
 ci-static: get format-check l10n-check guard-test env-guard secrets-guard version-guard analytics-schema-check duo-check analyze no-dynamic-guard firestore-guard no-shape-parse-guard find-unused-ci cloudflare-worker-check
 
 # Local CI remains complete. Hosted CI runs these three parts in separate jobs.
+# Keep secrets-guard explicit for doppler_guard.sh. Make runs it only once.
 ci: ci-static secrets-guard repo-assets-check store-listings-check test
 
 .PHONY: native-android-check native-ios-check ios-strip-test
@@ -465,9 +466,6 @@ test: get
 test-shard: get
 	@python3 tool/run_flutter_test_shard.py --total-shards=$(TEST_TOTAL_SHARDS) --shard-index=$(TEST_SHARD_INDEX) -- $(FLUTTER) test --no-pub $(TEST_FLAGS)
 	@if [ "$(TEST_SHARD_INDEX)" = 0 ]; then $(RELEASE_TEST_COMMAND); fi
-
-test-release: ensure-fvm
-	@$(RELEASE_TEST_COMMAND)
 
 .PHONY: test-qa-render
 test-qa-render: ensure-fvm

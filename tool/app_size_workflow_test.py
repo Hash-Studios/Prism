@@ -51,34 +51,47 @@ class AppSizeWorkflowTest(unittest.TestCase):
         self.assertFalse(any('checkout' in step.get('uses', '') or 'run' in step
                              for step in config['jobs']['app_size_comment']['steps']))
 
-    def test_manual_request_resolves_exact_pr_shas_and_rejects_invalid_or_closed_prs(self):
+    def test_request_resolves_exact_shas_and_rejects_invalid_closed_or_manual_fork_prs(self):
         config = yaml_data((ROOT / '.github/workflows/app_size.yml').read_text())
         command = config['jobs']['request']['steps'][0]['with']['script']
-        for number, state, expected in (('827', 'open', 0), ('0', 'open', 1),
-                                         ('827; touch OWNED', 'open', 1), ('827', 'closed', 1)):
-            with self.subTest(number=number, state=state):
+        cases = (
+            ('827', 'open', 'workflow_dispatch', 'Hash-Studios/Prism', ''),
+            ('0', 'open', 'workflow_dispatch', 'Hash-Studios/Prism', 'positive integer'),
+            ('827; touch OWNED', 'open', 'workflow_dispatch', 'Hash-Studios/Prism', 'positive integer'),
+            ('827', 'closed', 'workflow_dispatch', 'Hash-Studios/Prism', 'must be open'),
+            ('827', 'open', 'workflow_dispatch', 'contributor/Prism', 'same repository'),
+            ('827', 'open', 'workflow_dispatch', '', 'same repository'),
+            ('827', 'open', 'pull_request', 'contributor/Prism', ''),
+        )
+        for number, state, event, repository, error in cases:
+            with self.subTest(number=number, state=state, event=event, repository=repository):
                 script = '''
 const output = {};
-const context = {repo: {owner: 'Hash-Studios', repo: 'Prism'}};
+const context = {repo: {owner: 'Hash-Studios', repo: 'Prism'}, eventName: process.env.EVENT_NAME};
 const github = {rest: {pulls: {get: async input => {
   if (input.pull_number !== 827 || input.owner !== 'Hash-Studios' || input.repo !== 'Prism') {
     throw new Error('Wrong PR requested');
   }
-  return {data: {state: process.env.PR_STATE, base: {sha: 'base827'}, head: {sha: 'head827'}}};
+  return {data: {state: process.env.PR_STATE, base: {sha: 'base827'}, head: {
+    sha: 'head827', repo: process.env.PR_REPO ? {full_name: process.env.PR_REPO} : null
+  }}};
 }}}};
 const core = {setOutput: (key, value) => output[key] = value};
 (async () => {COMMAND})().then(() => console.log(JSON.stringify(output))).catch(error => {
+  console.log(JSON.stringify(output));
   console.error(error.message); process.exitCode = 1;
 });
 '''.replace('COMMAND', command)
                 result = subprocess.run(['node', '-e', script], capture_output=True, text=True,
-                                        env={**os.environ, 'PR_NUMBER': number, 'PR_STATE': state})
-                self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
-                if expected == 0:
+                                        env={**os.environ, 'PR_NUMBER': number, 'PR_STATE': state,
+                                             'EVENT_NAME': event, 'PR_REPO': repository})
+                self.assertEqual(result.returncode, 1 if error else 0, result.stdout + result.stderr)
+                if not error:
                     self.assertEqual(json.loads(result.stdout),
                                      {'base_sha': 'base827', 'head_sha': 'head827', 'pr_number': '827'})
                 else:
-                    self.assertIn('must be', result.stderr)
+                    self.assertIn(error, result.stderr)
+                    self.assertEqual(json.loads(result.stdout), {})
 
     def test_base_cache_miss_uses_base_sdk_then_head_sdk(self):
         steps = workflow()

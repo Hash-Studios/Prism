@@ -59,6 +59,12 @@ jobs:
               ...context.repo, pull_number: number
             });
             if (pull.state !== 'open') throw new Error('The pull request must be open.');
+            // Dispatch uses branch-scoped cache credentials, not a PR cache scope.
+            // Reject fork code before any checkout or action can execute it.
+            const repository = `${context.repo.owner}/${context.repo.repo}`;
+            if (context.eventName === 'workflow_dispatch' && pull.head.repo?.full_name !== repository) {
+              throw new Error('Manual requests must be for the same repository. For forks, use the ci:app-size label.');
+            }
             core.setOutput('base_sha', pull.base.sha);
             core.setOutput('head_sha', pull.head.sha);
             core.setOutput('pr_number', String(number));
@@ -144,8 +150,7 @@ jobs:
           "$RUNNER_TEMP/build_size_apk.sh" build/size/base
           ./android/gradlew --stop || true
 
-      # PR-scoped only: reuse the baseline on subsequent pushes, without
-      # allowing a manually requested fork head to write default-branch caches.
+      # PR-scoped only: reuse the baseline on subsequent pushes.
       - name: Cache base APK for this PR
         if: github.event_name == 'pull_request' && steps.base_apk.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
@@ -191,7 +196,7 @@ jobs:
           name: app-size-report
           path: build/size
 
-  # Builds run PR-controlled code, including manually requested fork heads.
+  # Builds run PR-controlled code. Manual fork requests are rejected above.
   # Keep the write token in a job that only downloads and comments on the report.
   app_size_comment:
     name: Report app size

@@ -103,7 +103,7 @@ make setup-dev          # fvm + pub get + Doppler check
 make run                # flutter run with Doppler dart-defines (DOPPLER_CONFIG=dev by default)
 make test               # fvm flutter test
 make format-check       # dart format at 120 columns
-make ci                 # get, format-check, env/secrets/version guards, analytics-check, analyze, no-dynamic-guard, find-unused-ci
+make ci                 # full local gate: static checks, guards, and the complete Flutter suite
 make file-gen           # build_runner (freezed, json, injectable, auto_route), then format
 make pigeon-gen         # regenerate Pigeon host APIs
 make find-unused        # dead-code report (allowlist: tool/find_unused_allowlist.json)
@@ -142,7 +142,7 @@ Top-level `functions/src/*.ts` changes require the notification-channel contract
 
 `ci` is the only required status on `master`. It aggregates the static job, both test shards, applicable native/backend/web/rules jobs, and repository guards. Failed or cancelled jobs block it; intentionally skipped jobs pass. Master pushes warm native dependency caches only when their keys change, rather than rebuilding an app-size baseline for every app-code merge.
 
-App-size comparisons are optional in `.github/workflows/app_size.yml`. Add the `ci:app-size` PR label to run on the current and subsequent pushes, or run `gh workflow run app_size.yml -f pr_number=<number>` once the workflow is on the default branch. Removing the label clears the old report. A missing base APK is built on demand, so an opted-in run can build two APKs. This compares profile APKs, not the shipping AAB size, and never changes the required `ci` result. Codacy "action required" is not a gate.
+App-size comparisons are optional in `.github/workflows/app_size.yml`. Add the `ci:app-size` PR label to run on the current and subsequent pushes. Once the workflow is on the default branch, `gh workflow run app_size.yml -f pr_number=<number>` supports same-repository PRs only. Fork PRs must use the label, so their code runs in a PR cache scope. Removing the label clears the old report. A missing base APK is built on demand, so an opted-in run can build two APKs. This compares profile APKs, not the shipping AAB size, and never changes the required `ci` result. Codacy "action required" is not a gate.
 
 ---
 
@@ -169,7 +169,7 @@ Use the `prism-create-feature` skill to scaffold one. Older code in `lib/data/`,
 - **Routing:** `auto_route` 11 (`lib/core/router/app_router.dart`, generated `app_router.gr.dart`). Deep links: `deep_link_parser.dart` then `deep_link_navigation.dart`.
 - **Firestore:** go through `FirestoreClient` (`lib/core/firestore/`) with a `sourceTag` on every call. Permission-denied logs name the `sourceTag`. `make firestore-guard` blocks raw `FirebaseFirestore` use.
 - **Coins, premium, uploads, account deletion:** server-owned. The client calls callables (`awardCoins`, `spendCoins`, `processReferral`, `syncSubscription`, `githubPutFile`, `githubDeleteFile`, `deleteAccount`). Firestore rules refuse direct client writes to `coins`, `premium`, `subscriptionTier`, `coinTransactions`, and coinState award flags.
-- **Analytics:** typed events in `lib/core/analytics/events/`. Regenerate the schema with `make analytics-gen`; CI runs `make analytics-check`.
+- **Analytics:** typed events in `lib/core/analytics/events/`. Regenerate the schema with `make analytics-gen`. Hosted CI runs `make analytics-schema-check`, and the test shards cover the schema contract. `make analytics-check` runs both checks locally.
 - **Monitoring:** Sentry (`sentry_flutter`), Mixpanel.
 - **Purchases:** RevenueCat (`purchases_flutter`, `lib/core/purchases/`).
 
