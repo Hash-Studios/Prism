@@ -1,0 +1,68 @@
+{
+  "method": "Five most recent successful pre-change app PR runs with both Flutter verify and Android app size successful, versus both successful completed PR 833 runs, all on 6 Nov 2026. Run created_at to successful required ci completed_at. Flutter stage: earliest Flutter job start to latest Flutter job completion; parallel jobs are not summed. Different code/cache/load: observational, not controlled. Cancelled and failed runs excluded; no failed runs relabeled successful.",
+  "records": [
+    {
+      "id": 42208980986,
+      "sha": "167ceea48e294085d74344e5bb5bb17632da9afe",
+      "conclusion": "success",
+      "ciSeconds": 1210,
+      "flutterSeconds": 1190,
+      "appSizeSeconds": 867,
+      "totalJobSeconds": 3204
+    },
+    {
+      "id": 42187777032,
+      "sha": "a82d91d2e7b1a80670e2b6059d5213d730a5a7d3",
+      "conclusion": "success",
+      "ciSeconds": 1202,
+      "flutterSeconds": 1185,
+      "appSizeSeconds": 352,
+      "totalJobSeconds": 1551
+    },
+    {
+      "id": 42178823844,
+      "sha": "6b7b5059572c11b2359a326f8dc9cbb3d0fcd99e",
+      "conclusion": "success",
+      "ciSeconds": 1125,
+      "flutterSeconds": 1107,
+      "appSizeSeconds": 352,
+      "totalJobSeconds": 3349
+    },
+    {
+      "id": 42165919955,
+      "sha": "c952f1851e0e3a388a53e8abbec986543f642166",
+      "conclusion": "success",
+      "ciSeconds": 1169,
+      "flutterSeconds": 1112,
+      "appSizeSeconds": 282,
+      "totalJobSeconds": 3152
+    },
+    {
+      "id": 42160669868,
+      "sha": "21ec3d1a5bb3867b8f3967d8dfb83e960c3baaf9",
+      "conclusion": "success",
+      "ciSeconds": 1207,
+      "flutterSeconds": 1190,
+      "appSizeSeconds": 336,
+      "totalJobSeconds": 3261
+    },
+    {
+      "id": 42211059730,
+      "sha": "e3e91c223329b8a7d7ed7d3481452e05225764af",
+      "conclusion": "success",
+      "ciSeconds": 857,
+      "flutterSeconds": 603,
+      "appSizeSeconds": 0,
+      "totalJobSeconds": 3214
+    },
+    {
+      "id": 42203468804,
+      "sha": "8f3cec54468cd5233b4f5bfb98f27c5f6b98ffd0",
+      "conclusion": "success",
+      "ciSeconds": 825,
+      "flutterSeconds": 653,
+      "appSizeSeconds": 0,
+      "totalJobSeconds": 3311
+    }
+  ]
+}
