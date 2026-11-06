@@ -2567,6 +2567,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreDepthEffectAutoTip => 'डेप्थ इफ़ेक्ट अपने-आप चालू हो जाता है।';
 
   @override
+  String get coreDepthEffectBadge => 'डेप्थ';
+
+  @override
   String get coreDepthEffectBadgeSemantic => 'डेप्थ इफ़ेक्ट के साथ काम करता है';
 
   @override
@@ -2574,6 +2577,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get coreDepthEffectMenuTip => 'लॉक स्क्रीन एडिटर में ••• पर टैप करें, फिर डेप्थ इफ़ेक्ट चुनें।';
+
+  @override
+  String get coreSpatialBadge => 'स्पेशियल';
 
   @override
   String get coreSpatialBadgeSemantic => 'स्पेशियल सीन के रूप में काम करता है';

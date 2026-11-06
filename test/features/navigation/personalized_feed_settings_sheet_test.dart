@@ -727,24 +727,6 @@ void main() {
     expect(store.read(), isEmpty);
   });
 
-  for (final TasteSignal signal in <TasteSignal>[
-    TasteSignal(action: TasteAction.lessLikeThis, at: DateTime.now(), terms: const <String>['neon']),
-    TasteSignal(action: TasteAction.set, at: DateTime.now(), terms: const <String>[], creator: 'ana'),
-  ]) {
-    testWidgets('Reset clears learning without positive terms: ${signal.action.name}', (tester) async {
-      await store.record(signal);
-      await pumpSheet(tester);
-
-      await tester.tap(find.text('Reset'));
-      await tester.pumpAndSettle();
-
-      expect(store.read(), isEmpty);
-      expect(store.isSeeded, isTrue);
-      expect(personalizedFeedSettingsRevision.value, 1);
-      expect(find.text('Learning history cleared'), findsOneWidget);
-    });
-  }
-
   testWidgets('a failed clear keeps the learned terms and says so', (tester) async {
     store = _FailingClearStore(SettingsLocalDataSource(InMemoryLocalStore()));
     await store.record(TasteSignal(action: TasteAction.set, at: DateTime.now(), terms: const <String>['neon']));

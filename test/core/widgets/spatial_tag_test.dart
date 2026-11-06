@@ -61,7 +61,7 @@ void main() {
           );
 
           expect(find.byType(SpatialTag), findsOneWidget);
-          expect(find.byType(Text), findsNothing);
+          expect(find.text(l10n.coreSpatialBadge), findsNothing);
           expect(find.byIcon(Icons.view_in_ar_rounded), findsOneWidget);
           expect(find.bySemanticsLabel(l10n.coreSpatialBadgeSemantic), findsOneWidget);
           final Rect tile = tester.getRect(find.byKey(tileKey));

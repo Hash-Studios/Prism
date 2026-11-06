@@ -22,6 +22,10 @@ class WallpaperActionBar extends StatelessWidget {
   /// Height of the row, including the space above the buttons and the captions under them.
   static const double height = 68;
 
+  /// How far the caption hangs below the button. The rest of it sits in the button's own bottom padding, so a tap on
+  /// the caption still reaches the button.
+  static const double _captionDrop = 6;
+
   final WallpaperBarAction primary;
   final List<WallpaperBarAction> actions;
 
@@ -41,7 +45,7 @@ class WallpaperActionBar extends StatelessWidget {
               constraints: BoxConstraints(minWidth: constraints.maxWidth),
               child: FlatMenuButtons(
                 iconSize: 24,
-                padding: const EdgeInsets.fromLTRB(13, 13, 13, 19),
+                padding: const EdgeInsets.all(13),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
@@ -73,7 +77,10 @@ class WallpaperActionBar extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: <Widget>[
-          action.child,
+          Padding(
+            padding: const EdgeInsets.only(bottom: _captionDrop),
+            child: action.child,
+          ),
           Positioned(
             left: -PrismSpace.xs,
             right: -PrismSpace.xs,
@@ -89,7 +96,7 @@ class WallpaperActionBar extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
                     style: PrismTextStyles.caption(context).copyWith(
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                       height: 1.2,
                       color: prismSoftInk(Theme.of(context)),

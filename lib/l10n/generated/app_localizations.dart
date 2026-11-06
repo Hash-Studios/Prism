@@ -4545,6 +4545,12 @@ abstract class AppLocalizations {
   /// **'Depth Effect turns on by itself.'**
   String get coreDepthEffectAutoTip;
 
+  /// No description provided for @coreDepthEffectBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Depth'**
+  String get coreDepthEffectBadge;
+
   /// No description provided for @coreDepthEffectBadgeSemantic.
   ///
   /// In en, this message translates to:
@@ -4562,6 +4568,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'In the Lock Screen editor, tap ••• then Depth Effect.'**
   String get coreDepthEffectMenuTip;
+
+  /// Spatial Scene text: coreSpatialBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Spatial'**
+  String get coreSpatialBadge;
 
   /// Spatial Scene text: coreSpatialBadgeSemantic.
   ///

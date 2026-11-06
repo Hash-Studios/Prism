@@ -2612,9 +2612,14 @@
   },
   "coreDepthEffectAutoLongTip": "Depth Effect turns on by itself. On iOS 18 or older, keep widgets off the space under the clock.",
   "coreDepthEffectAutoTip": "Depth Effect turns on by itself.",
+  "coreDepthEffectBadge": "Depth",
   "coreDepthEffectBadgeSemantic": "Works with Depth Effect",
   "coreDepthEffectMenuShortTip": "Tap ••• then Depth Effect.",
   "coreDepthEffectMenuTip": "In the Lock Screen editor, tap ••• then Depth Effect.",
+  "coreSpatialBadge": "Spatial",
+  "@coreSpatialBadge": {
+    "description": "Spatial Scene text: coreSpatialBadge."
+  },
   "coreSpatialBadgeSemantic": "Works as a Spatial Scene",
   "@coreSpatialBadgeSemantic": {
     "description": "Spatial Scene text: coreSpatialBadgeSemantic."

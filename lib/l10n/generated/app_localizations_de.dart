@@ -2593,6 +2593,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get coreDepthEffectAutoTip => 'Der Tiefeneffekt wird automatisch aktiviert.';
 
   @override
+  String get coreDepthEffectBadge => 'Tiefe';
+
+  @override
   String get coreDepthEffectBadgeSemantic => 'Funktioniert mit Tiefeneffekt';
 
   @override
@@ -2600,6 +2603,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get coreDepthEffectMenuTip => 'Tippe im Sperrbildschirm-Editor auf ••• und dann auf Tiefeneffekt.';
+
+  @override
+  String get coreSpatialBadge => 'Räumlich';
 
   @override
   String get coreSpatialBadgeSemantic => 'Funktioniert als räumliche Szene';

@@ -406,13 +406,11 @@ class _FolderScreenState extends State<FolderScreen> {
               if (folder != null)
                 Padding(
                   padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
-                  child: Wrap(
-                    spacing: PrismSpace.sm,
-                    runSpacing: PrismSpace.xxs,
-                    crossAxisAlignment: WrapCrossAlignment.center,
+                  child: Row(
                     children: <Widget>[
                       Text(context.l10n.foldersItemCount(folder.itemCount), style: PrismTextStyles.caption(context)),
-                      if (rotating)
+                      if (rotating) ...<Widget>[
+                        const SizedBox(width: PrismSpace.sm),
                         Tooltip(
                           message: context.l10n.foldersRotatingDescription,
                           excludeFromSemantics: true,
@@ -426,6 +424,7 @@ class _FolderScreenState extends State<FolderScreen> {
                             ),
                           ),
                         ),
+                      ],
                     ],
                   ),
                 ),

@@ -2565,6 +2565,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreDepthEffectAutoTip => 'Efek Kedalaman aktif secara otomatis.';
 
   @override
+  String get coreDepthEffectBadge => 'Kedalaman';
+
+  @override
   String get coreDepthEffectBadgeSemantic => 'Mendukung Efek Kedalaman';
 
   @override
@@ -2572,6 +2575,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get coreDepthEffectMenuTip => 'Di editor Layar Kunci, ketuk ••• lalu Efek Kedalaman.';
+
+  @override
+  String get coreSpatialBadge => 'Spasial';
 
   @override
   String get coreSpatialBadgeSemantic => 'Berfungsi sebagai Adegan Spasial';

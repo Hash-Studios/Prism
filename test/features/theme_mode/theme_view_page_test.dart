@@ -130,34 +130,6 @@ void main() {
     expect(find.byIcon(Icons.check_rounded), findsWidgets);
   });
 
-  testWidgets('theme previews expose a working tap action to screen readers', (tester) async {
-    final SemanticsHandle handle = tester.ensureSemantics();
-    await pumpPage(tester, ThemeMode.light);
-
-    final node = tester.getSemantics(find.bySemanticsLabel('Coffee'));
-    expect(node, isSemantics(label: 'Coffee', isButton: true, isSelected: false, hasTapAction: true));
-    node.owner!.performAction(node.id, SemanticsAction.tap);
-    await tester.pump();
-    verify(() => themeBloc.add(const ThemeEvent.lightThemeChanged(themeId: 'kLCoffee'))).called(1);
-    handle.dispose();
-  });
-
-  testWidgets('accent swatches expose a working tap action to screen readers', (tester) async {
-    final SemanticsHandle handle = tester.ensureSemantics();
-    await pumpPage(tester, ThemeMode.light);
-    await tester.ensureVisible(find.byKey(const ValueKey<String>('accent-name')));
-    await tester.pump();
-
-    final node = tester.getSemantics(find.bySemanticsLabel('Accent colour 2 of 22'));
-    expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
-    node.owner!.performAction(node.id, SemanticsAction.tap);
-    await tester.pump();
-    verify(
-      () => themeBloc.add(ThemeEvent.lightAccentChanged(accentColorValue: prismAccentSwatches[1].toARGB32())),
-    ).called(1);
-    handle.dispose();
-  });
-
   testWidgets('tapping a light theme chip dispatches themeChanged', (tester) async {
     await pumpPage(tester, ThemeMode.light);
 

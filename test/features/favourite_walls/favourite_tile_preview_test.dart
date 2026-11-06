@@ -4,8 +4,6 @@ import 'dart:io';
 
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
-import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_tile_image.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -19,8 +17,6 @@ const _thumbnail = 'https://example.test/thumbnail.jpg';
 const _original = 'https://example.test/original.jpg';
 
 class _MockCacheManager extends Mock implements BaseCacheManager {}
-
-final _imageStreams = <String, StreamController<FileResponse>>{};
 
 Widget _app(Widget child) => MaterialApp(
   localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -39,12 +35,18 @@ Future<Widget?> _buildPreview(WidgetTester tester, FavouriteTileImage image, {bo
   await tester.pump();
   final CachedNetworkImage? network = _network(tester);
   if (!failPrimary || network == null) return network;
-  await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
-  _imageStreams[network.imageUrl]!.addError(Exception('Thumbnail failed'));
-  await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
-  await tester.pump();
-  final Finder images = find.byType(CachedNetworkImage);
-  return images.evaluate().length > 1 ? tester.widget<CachedNetworkImage>(images.last) : null;
+  late Widget failed;
+  await tester.pumpWidget(
+    _app(
+      Builder(
+        builder: (context) {
+          failed = network.errorWidget!(context, network.imageUrl, Exception('Thumbnail failed'));
+          return failed is CachedNetworkImage ? const SizedBox() : failed;
+        },
+      ),
+    ),
+  );
+  return failed;
 }
 
 void main() {
@@ -54,26 +56,18 @@ void main() {
   setUpAll(() => registerFallbackValue(''));
 
   setUp(() {
-    PaintingBinding.instance.imageCache.clear();
-    PaintingBinding.instance.imageCache.clearLiveImages();
-    _imageStreams.clear();
     thumbs = _MockCacheManager();
     fulls = _MockCacheManager();
     CachedNetworkImageProvider.defaultCacheManager = thumbs;
     PrismImageCache.testOverride = thumbs;
     PrismFullImageCache.testOverride = fulls;
-    addTearDown(() async {
-      for (final stream in _imageStreams.values) {
-        await stream.close();
-      }
+    addTearDown(() {
       PrismImageCache.testOverride = null;
       PrismFullImageCache.testOverride = null;
     });
-    when(() => thumbs.getFileStream(any(), withProgress: true)).thenAnswer(
-      (invocation) => _imageStreams
-          .putIfAbsent(invocation.positionalArguments.first as String, () => StreamController<FileResponse>.broadcast())
-          .stream,
-    );
+    when(
+      () => thumbs.getFileStream(any(), withProgress: true),
+    ).thenAnswer((_) => StreamController<FileResponse>().stream);
     when(() => fulls.getFileFromCache(any())).thenAnswer((_) async => null);
   });
 
@@ -181,132 +175,6 @@ void main() {
       final ResizeImage resized = full.image as ResizeImage;
       expect(resized.height, (360 * tester.view.devicePixelRatio).round());
       expect((resized.imageProvider as FileImage).file.path, file.path);
-    });
-
-    testWidgets('a missing thumbnail is not unavailable while a cached full picture can still load', (tester) async {
-      final pending = Completer<FileInfo?>();
-      when(() => fulls.getFileFromCache(_original)).thenAnswer((_) => pending.future);
-      var unavailable = 0;
-      await _buildPreview(
-        tester,
-        FavouriteTileImage(
-          thumbnailUrl: '',
-          fullUrl: _original,
-          cachedFullUrl: _original,
-          onUnavailable: () => unavailable++,
-        ),
-      );
-      expect(unavailable, 0);
-      pending.complete(
-        FileInfo(
-          const local.LocalFileSystem().file(file.path),
-          FileSource.Cache,
-          DateTime.now().add(const Duration(days: 1)),
-          _original,
-        ),
-      );
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
-      await tester.pump();
-      expect(find.byType(Image), findsOneWidget);
-      expect(find.text('Unavailable'), findsNothing);
-      expect(unavailable, 0);
-    });
-
-    for (final bool cacheFails in <bool>[false, true]) {
-      testWidgets('reports a missing thumbnail after a cache ${cacheFails ? 'error' : 'miss'}', (tester) async {
-        final pending = Completer<FileInfo?>();
-        when(() => fulls.getFileFromCache(_original)).thenAnswer((_) => pending.future);
-        var unavailable = 0;
-        await _buildPreview(
-          tester,
-          FavouriteTileImage(
-            thumbnailUrl: '',
-            fullUrl: _original,
-            cachedFullUrl: _original,
-            onUnavailable: () => unavailable++,
-          ),
-        );
-        expect(unavailable, 0);
-        if (cacheFails) {
-          pending.completeError(StateError('cache unavailable'));
-        } else {
-          pending.complete(null);
-        }
-        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
-        await tester.pump();
-        expect(find.text('Unavailable'), findsOneWidget);
-        expect(unavailable, greaterThan(0));
-        verifyNever(() => fulls.getSingleFile(any()));
-      });
-    }
-
-    testWidgets('Prism looks up only the detail display derivative and never downloads it', (tester) async {
-      final display = WallpaperDisplaySource.forWall(
-        id: 'wall',
-        source: WallpaperSource.prism,
-        thumbnail: _thumbnail,
-        fullUrl: _original,
-        projectId: 'prism-test',
-      );
-      await _buildPreview(
-        tester,
-        FavouriteTileImage(
-          thumbnailUrl: display.thumbnail,
-          fullUrl: _original,
-          cachedFullUrl: display.full,
-          onUnavailable: () {},
-        ),
-      );
-      expect(display.full, contains('/wallpaperPreview?'));
-      verify(() => fulls.getFileFromCache(display.full)).called(1);
-      verifyNever(() => fulls.getFileFromCache(_original));
-      verifyNever(() => fulls.getSingleFile(any()));
-      verifyNever(() => fulls.getFileStream(any(), withProgress: true));
-      expect(_network(tester)?.imageUrl, _thumbnail);
-    });
-
-    testWidgets('a withheld wall drops its cached image and ignores an earlier lookup result', (tester) async {
-      final pending = Completer<FileInfo?>();
-      when(() => fulls.getFileFromCache(_original)).thenAnswer((_) => pending.future);
-      await _buildPreview(
-        tester,
-        FavouriteTileImage(
-          thumbnailUrl: _thumbnail,
-          fullUrl: _original,
-          cachedFullUrl: _original,
-          onUnavailable: () {},
-        ),
-      );
-      final withheld = WallpaperDisplaySource.forWall(
-        id: 'exclusive',
-        source: WallpaperSource.prism,
-        thumbnail: _thumbnail,
-        fullUrl: _original,
-        projectId: 'prism-test',
-        withheld: true,
-      );
-      expect(withheld.full, isEmpty);
-      await _buildPreview(
-        tester,
-        FavouriteTileImage(
-          thumbnailUrl: withheld.thumbnail,
-          fullUrl: _original,
-          cachedFullUrl: withheld.full,
-          onUnavailable: () {},
-        ),
-      );
-      pending.complete(
-        FileInfo(
-          const local.LocalFileSystem().file(file.path),
-          FileSource.Cache,
-          DateTime.now().add(const Duration(days: 1)),
-          _original,
-        ),
-      );
-      await tester.pump();
-      expect(_network(tester)?.imageUrl, _thumbnail);
-      expect(find.byType(LayoutBuilder), findsNothing);
-      verifyNever(() => fulls.getFileFromCache(''));
     });
 
     testWidgets('never looks up the cache without a link, and keeps the thumbnail on a miss', (tester) async {

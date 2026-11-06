@@ -2584,6 +2584,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get coreDepthEffectAutoTip => 'El efecto de profundidad se activa automáticamente.';
 
   @override
+  String get coreDepthEffectBadge => 'Profundidad';
+
+  @override
   String get coreDepthEffectBadgeSemantic => 'Compatible con el efecto de profundidad';
 
   @override
@@ -2592,6 +2595,9 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get coreDepthEffectMenuTip =>
       'En el editor de la pantalla de bloqueo, toca ••• y luego Efecto de profundidad.';
+
+  @override
+  String get coreSpatialBadge => 'Espacial';
 
   @override
   String get coreSpatialBadgeSemantic => 'Funciona como escena espacial';
