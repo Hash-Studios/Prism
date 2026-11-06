@@ -6,7 +6,6 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart' as cupertino;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart' show Ticker, TickerCallback;
 
 /// Matches [CustomRouteBuilder] without depending on the generated detail route or its arguments.
 Route<T> wallpaperDetailRouteBuilder<T>(BuildContext context, Widget child, AutoRoutePage<T> page) =>
@@ -143,14 +142,6 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
 
   @override
   Widget buildContent(BuildContext context) => child;
-
-  @override
-  AnimationController createAnimationController() => AnimationController(
-    duration: transitionDuration,
-    reverseDuration: reverseTransitionDuration,
-    debugLabel: debugLabel,
-    vsync: _FirstFrameFree(navigator!),
-  );
 
   @override
   Duration get transitionDuration => duration;
@@ -381,29 +372,4 @@ class _WindowClipper extends CustomClipper<RRect> {
 
   @override
   bool shouldReclip(_WindowClipper oldClipper) => oldClipper.window != window;
-}
-
-/// Gives each run of a route's clock a free first frame. The opening's first frame builds the whole detail page
-/// offstage; on a slow device that takes as long as the zoom, and the zoom would show only its end. Between a run's
-/// first two ticks the clock moves at most one frame, then keeps real time.
-class _FirstFrameFree implements TickerProvider {
-  const _FirstFrameFree(this.parent);
-
-  final TickerProvider parent;
-
-  static const Duration _frame = Duration(microseconds: 16667);
-
-  @override
-  Ticker createTicker(TickerCallback onTick) {
-    // Null until the run's second tick.
-    Duration? skipped;
-    return parent.createTicker((elapsed) {
-      if (elapsed == Duration.zero) {
-        skipped = null;
-      } else {
-        skipped ??= elapsed > _frame ? elapsed - _frame : Duration.zero;
-      }
-      onTick(elapsed - (skipped ?? Duration.zero));
-    });
-  }
 }

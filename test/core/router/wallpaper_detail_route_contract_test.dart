@@ -115,8 +115,20 @@ void main() {
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
-    testWidgets('$platform controller runs 260 ms each way, and a slow first frame does not use it up', (tester) async {
-      const double frame = 16.667;
+    testWidgets('$platform navigating to the grid while a detail is open closes the detail', (tester) async {
+      // A deep link to Home while a wallpaper is open navigates the router under the detail; the detail must finish
+      // its closing animation and leave, not stay on screen over the grid.
+      final router = await _pumpRouter(tester);
+      await _openDetail(tester, router);
+      unawaited(router.navigate(const PageRouteInfo<void>('Grid')));
+      await tester.pumpAndSettle();
+      expect(router.current.name, 'Grid');
+      expect(find.byKey(_detailKey), findsNothing);
+    }, variant: TargetPlatformVariant({platform}));
+  }
+
+  for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
+    testWidgets('$platform controller runs 260 ms each way', (tester) async {
       final router = await _pumpRouter(tester);
       final result = router.push<int>(const PageRouteInfo<void>('Detail'));
       await tester.pump();
@@ -125,20 +137,15 @@ void main() {
       expect(detail.transitionDuration, wallpaperDetailZoomDuration);
       expect(detail.reverseTransitionDuration, wallpaperDetailZoomDuration);
       expect(wallpaperDetailZoomDuration, const Duration(milliseconds: 260));
-      // The first frame builds the whole page. A 200 ms stall there moves the clock by one frame only.
-      await tester.pump(const Duration(milliseconds: 200));
-      expect(detail.animation!.value, closeTo(frame / 260, 0.001));
-      await tester.pump(const Duration(milliseconds: 113));
-      expect(detail.animation!.value, closeTo(0.5, 0.01));
+      await tester.pump(const Duration(milliseconds: 130));
+      expect(detail.animation!.value, closeTo(0.5, 0.02));
       await tester.pump(const Duration(milliseconds: 131));
       expect(detail.animation!.isCompleted, isTrue);
 
       await router.maybePop<int>(42);
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
-      expect(detail.animation!.value, closeTo(1 - frame / 260, 0.001));
-      await tester.pump(const Duration(milliseconds: 113));
-      expect(detail.animation!.value, closeTo(0.5, 0.01));
+      await tester.pump(const Duration(milliseconds: 130));
+      expect(detail.animation!.value, closeTo(0.5, 0.02));
       await tester.pump(const Duration(milliseconds: 131));
       expect(await result, 42);
       expect(router.current.name, 'Grid');
