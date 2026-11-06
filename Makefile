@@ -144,7 +144,7 @@ analytics-check: analytics-schema-check
 	@$(FLUTTER) test --no-pub test/core/analytics/analytics_schema_contract_test.dart
 
 # The full Flutter suite owns the contract test in CI. Keep the generator check separate.
-analytics-schema-check: ensure-fvm analytics-guard
+analytics-schema-check: get analytics-guard
 	@$(DART) run tool/generate_analytics_schema.dart
 	@$(DART) format --line-length $(DART_FORMAT_LINE_LENGTH) lib/core/analytics/events/generated/analytics_events.g.dart
 	@git diff --exit-code -- lib/core/analytics/events/generated/analytics_events.g.dart

@@ -142,6 +142,50 @@ sys.exit('Unexpected typecheck command')
 
 
 class MakeTestCommandsTest(unittest.TestCase):
+    def test_analytics_checks_refresh_dependencies_before_using_packages(self):
+        for target in ('analytics-schema-check', 'analytics-check'):
+            for fail_get in (False, True):
+                with self.subTest(target=target, fail_get=fail_get), tempfile.TemporaryDirectory() as directory:
+                    work = Path(directory)
+                    (work / 'Makefile').symlink_to(ROOT / 'Makefile')
+                    (work / 'tool').mkdir()
+                    guard = work / 'tool/analytics_raw_usage_guard.sh'
+                    guard.write_text('#!/bin/sh\nexit 0\n')
+                    guard.chmod(0o755)
+                    compiler = work / 'compiler'
+                    compiler.write_text('''#!/usr/bin/env python3
+import os, sys
+from pathlib import Path
+args = sys.argv[1:]
+if args == ['pub', 'get']:
+    if os.environ['FAIL_GET'] == '1':
+        sys.exit(23)
+    Path('packages-current').touch()
+elif args[:1] in (['run'], ['test']):
+    if not Path('packages-current').exists():
+        sys.exit('Cannot resolve packages from stale configuration')
+    Path('generated' if args[0] == 'run' else 'tested').touch()
+elif args[:1] != ['format']:
+    sys.exit('Unexpected compiler command')
+''')
+                    compiler.chmod(0o755)
+                    git = work / 'git'
+                    git.write_text('#!/bin/sh\nexit 0\n')
+                    git.chmod(0o755)
+                    result = subprocess.run(
+                        ['make', '-s', target, 'CI=true', f'FLUTTER={compiler}', f'DART={compiler}'],
+                        cwd=work, capture_output=True, text=True,
+                        env={**os.environ, 'PATH': str(work) + os.pathsep + os.environ['PATH'],
+                             'FAIL_GET': str(int(fail_get))})
+                    if fail_get:
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertFalse((work / 'generated').exists())
+                        self.assertFalse((work / 'tested').exists())
+                    else:
+                        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                        self.assertTrue((work / 'generated').exists())
+                        self.assertEqual((work / 'tested').exists(), target == 'analytics-check')
+
     def run_make(self, target, index=None, fail=False, dry_run=False, total=2):
         with tempfile.TemporaryDirectory() as directory:
             work = Path(directory)
