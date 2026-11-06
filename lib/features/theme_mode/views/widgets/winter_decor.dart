@@ -93,7 +93,7 @@ class WinterSnowfall extends StatefulWidget {
 }
 
 class _WinterSnowfallState extends State<WinterSnowfall> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  static bool _reducedMotionTracked = false;
+  bool _reducedMotionTracked = false;
 
   late final AnimationController _clock = AnimationController(vsync: this, duration: const Duration(seconds: 60));
   bool _scrolling = false;

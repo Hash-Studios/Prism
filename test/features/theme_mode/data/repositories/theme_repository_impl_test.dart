@@ -8,6 +8,8 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/theme_mode/data/legacy_themes.dart';
 import 'package:Prism/features/theme_mode/data/repositories/theme_repository_impl.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
+import 'package:Prism/features/theme_mode/seasonal_themes.dart';
+import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -409,5 +411,114 @@ void main() {
     final Map<String, Object?> pushed = firestore.writes.single.data!['themePrefs'] as Map<String, Object?>;
     expect(pushed['lightThemeId'], 'kLMaterial You');
     expect(pushed['darkThemeId'], 'kDAMOLED');
+  });
+
+  group('winter season revert', () {
+    test('a dark season theme reverts to the previous theme on the first load after it ends', () async {
+      seasonClock = () => DateTime(2026, 12, 10);
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      store.data['settings.darkThemeID'] = 'kDDeep Ocean';
+
+      await repository.update(darkThemeId: prismWinterDarkThemeId);
+      expect(store.data['settings.${winterSeason.previousThemeKey(Brightness.dark)}'], 'kDDeep Ocean');
+
+      seasonClock = () => DateTime(2027, 1, 7, 0, 0, 1);
+      final ThemePreferences preferences = (await repository.load()).data!;
+
+      expect(preferences.dark.themeId, 'kDDeep Ocean');
+      expect(store.data['settings.darkThemeID'], 'kDDeep Ocean');
+      expect(store.data['settings.${winterSeason.revertedKey}'], isTrue);
+    });
+
+    test('readSync shows the reverted dark theme on the first frame and writes nothing', () async {
+      seasonClock = () => DateTime(2027, 1, 8);
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      store.data['settings.darkThemeID'] = prismWinterDarkThemeId;
+      store.data['settings.${winterSeason.previousThemeKey(Brightness.dark)}'] = 'kDSky';
+
+      final ThemePreferences preferences = repository.readSync();
+
+      expect(preferences.dark.themeId, 'kDSky');
+      expect(store.data['settings.darkThemeID'], prismWinterDarkThemeId);
+    });
+
+    test('the light slot reverts to its previous theme', () async {
+      seasonClock = () => DateTime(2027, 1, 10);
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      store.data['settings.lightThemeID'] = prismWinterLightThemeId;
+      store.data['settings.${winterSeason.previousThemeKey(Brightness.light)}'] = 'kLCoffee';
+
+      final ThemePreferences preferences = (await repository.load()).data!;
+
+      expect(preferences.light.themeId, 'kLCoffee');
+    });
+
+    test('with no previous theme recorded, the dark slot reverts to the default dark theme', () async {
+      seasonClock = () => DateTime(2027, 1, 7);
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      store.data['settings.darkThemeID'] = prismWinterDarkThemeId;
+
+      final ThemePreferences preferences = (await repository.load()).data!;
+
+      expect(preferences.dark.themeId, prismDefaultDarkThemeId);
+      expect(preferences.dark.themeId, 'kDMaterial Dark');
+    });
+
+    test('the default accent follows the revert, and a custom accent stays', () async {
+      seasonClock = () => DateTime(2026, 12, 10);
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      store.data['settings.darkThemeID'] = 'kDMaterial Dark';
+
+      final ThemePreferences switched = (await repository.update(darkThemeId: prismWinterDarkThemeId)).data!;
+      expect(switched.dark.accentColorValue, prismWinterDarkAccentValue);
+
+      seasonClock = () => DateTime(2027, 1, 7);
+      final ThemePreferences reverted = (await repository.load()).data!;
+      expect(reverted.dark.themeId, 'kDMaterial Dark');
+      expect(reverted.dark.accentColorValue, prismDefaultAccentValue);
+      expect(prismDefaultAccentValue, 0xffe57697);
+    });
+
+    test('a custom accent survives the revert', () async {
+      seasonClock = () => DateTime(2026, 12, 10);
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      store.data['settings.darkThemeID'] = 'kDMaterial Dark';
+      store.data['settings.darkAccent'] = 0xff00ff00;
+
+      await repository.update(darkThemeId: prismWinterDarkThemeId);
+      seasonClock = () => DateTime(2027, 1, 7);
+      final ThemePreferences reverted = (await repository.load()).data!;
+
+      expect(reverted.dark.themeId, 'kDMaterial Dark');
+      expect(reverted.dark.accentColorValue, 0xff00ff00);
+    });
+
+    test('the revert runs once, so a winter theme picked after it stays', () async {
+      seasonClock = () => DateTime(2026, 12, 10);
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      store.data['settings.darkThemeID'] = 'kDDeep Ocean';
+      await repository.update(darkThemeId: prismWinterDarkThemeId);
+
+      seasonClock = () => DateTime(2027, 1, 7);
+      expect((await repository.load()).data!.dark.themeId, 'kDDeep Ocean');
+
+      seasonClock = () => DateTime(2027, 1, 20);
+      await repository.update(darkThemeId: prismWinterDarkThemeId);
+      final ThemePreferences preferences = (await repository.load()).data!;
+
+      expect(preferences.dark.themeId, prismWinterDarkThemeId);
+    });
+
+    test('nothing reverts before the season ends', () async {
+      seasonClock = () => DateTime(2027, 1, 6, 23, 59);
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      store.data['settings.darkThemeID'] = prismWinterDarkThemeId;
+      store.data['settings.${winterSeason.previousThemeKey(Brightness.dark)}'] = 'kDSky';
+
+      final ThemePreferences preferences = (await repository.load()).data!;
+
+      expect(preferences.dark.themeId, prismWinterDarkThemeId);
+      expect(store.data.containsKey('settings.${winterSeason.revertedKey}'), isFalse);
+    });
   });
 }

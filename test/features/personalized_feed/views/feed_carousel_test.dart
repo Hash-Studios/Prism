@@ -4,6 +4,7 @@ import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -20,6 +21,10 @@ import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/domain/entities/wall_of_the_day_entity.dart';
+import 'package:Prism/features/wrapped/biz/bloc/wrapped_bloc.j.dart';
+import 'package:Prism/features/wrapped/domain/wrapped.dart';
+import 'package:Prism/features/wrapped/views/widgets/wrapped_home_card.dart';
+import 'package:Prism/features/wrapped/wrapped_config.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:Prism/theme/theme.dart';
@@ -32,9 +37,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../support/fake_app_analytics.dart';
+import '../../../support/profile_user_fixture.dart';
 import '../../drops/drop_fixtures.dart';
+import '../../wrapped/wrapped_fixture.dart';
 
 class _MockWotdBloc extends MockBloc<WotdEvent, WotdState> implements WotdBloc {}
+
+class _WrappedRepository implements WrappedRepository {
+  @override
+  Future<WrappedYear?> fetch(String uid, int year) async => fixtureWrappedYear();
+}
 
 class _MockThemeBloc extends MockBloc<ThemeEvent, ThemeState> implements ThemeBloc {}
 
@@ -1012,6 +1024,89 @@ void main() {
       expect(centeredCarouselTitle(tester), 'The Diwali theme is here');
       expect(find.text('The Spooky theme is here'), findsNothing);
       expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
+    });
+  });
+
+  group('winter card', () {
+    /// Signs in a user and opens the Wrapped window around today, with a loaded Wrapped bloc registered in getIt.
+    Future<void> pumpWithWrapped(
+      WidgetTester tester,
+      List<PrismFeedItem> walls, {
+      ThemeBloc? themeBloc,
+      StackRouter? router,
+    }) async {
+      final previousUser = app_state.prismUser;
+      addTearDown(() => app_state.prismUser = previousUser);
+      app_state.prismUser = profileUser(id: 'heavy');
+      final DateTime today = DateTime.now();
+      WrappedConfig.override = (
+        enabled: true,
+        start: DateTime(today.year, today.month, today.day - 1),
+        end: DateTime(today.year, today.month, today.day + 1),
+      );
+      addTearDown(() => WrappedConfig.override = null);
+      final WrappedBloc bloc = WrappedBloc(_WrappedRepository());
+      getIt.registerSingleton<WrappedBloc>(bloc);
+      addTearDown(() async {
+        if (getIt.isRegistered<WrappedBloc>()) await getIt.unregister<WrappedBloc>();
+        await bloc.close();
+      });
+      // Load before the first frame, so the carousel's first build already has the Wrapped page.
+      bloc.add(const WrappedEvent.load('heavy'));
+      await tester.runAsync(() => bloc.stream.firstWhere((WrappedState state) => state is WrappedReady));
+      await pumpCarousel(tester, walls, router: router, themeBloc: themeBloc);
+      await tester.pumpAndSettle();
+    }
+
+    test('seasonCardsClearOfWrapped needs two pages of gap on a phone and a full column gap on a grid', () {
+      expect(seasonCardsClearOfWrapped(otherPages: 12, seasonCards: 1, wrappedIndex: 1, columns: 2), isTrue);
+      expect(seasonCardsClearOfWrapped(otherPages: 3, seasonCards: 1, wrappedIndex: 1, columns: 2), isTrue);
+      expect(seasonCardsClearOfWrapped(otherPages: 2, seasonCards: 1, wrappedIndex: 1, columns: 2), isFalse);
+      expect(seasonCardsClearOfWrapped(otherPages: 12, seasonCards: 1, wrappedIndex: 1, columns: 3), isFalse);
+      expect(seasonCardsClearOfWrapped(otherPages: 12, seasonCards: 1, wrappedIndex: 0, columns: 1), isTrue);
+    });
+
+    testWidgets('on a phone the Wrapped card comes before the Winter card and each shows on its own page', (
+      tester,
+    ) async {
+      seasonClock = () => DateTime(2026, 12, 5);
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      await pumpWithWrapped(tester, <PrismFeedItem>[_wall('a')]);
+
+      expect(find.byType(WrappedHomeCard), findsOneWidget);
+      expect(find.text('The Winter theme is here'), findsNothing);
+      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
+
+      await swipeToNextPage(tester);
+
+      expect(find.text('The Winter theme is here'), findsOneWidget);
+      expect(find.byType(WrappedHomeCard), findsNothing);
+      expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 1);
+    });
+
+    testWidgets('on 1 December the Winter card is absent while Wrapped shows', (tester) async {
+      seasonClock = () => DateTime(2026, 12, 1, 12);
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      await pumpWithWrapped(tester, <PrismFeedItem>[_wall('a')]);
+
+      expect(find.text('The Winter theme is here'), findsNothing);
+      expect(find.byType(WrappedHomeCard), findsOneWidget);
+    });
+
+    testWidgets('tapping the Winter card in a light theme selects the Winter light theme', (tester) async {
+      seasonClock = () => DateTime(2026, 12, 5);
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      final _MockThemeBloc themeBloc = _MockThemeBloc();
+      when(() => themeBloc.state).thenReturn(ThemeState.initial());
+      registerFallbackValue(const ThemeViewRoute());
+      final _MockStackRouter router = _MockStackRouter();
+      when(() => router.push(any())).thenAnswer((_) async => null);
+      await pumpWithWrapped(tester, <PrismFeedItem>[_wall('a')], router: router, themeBloc: themeBloc);
+      await swipeToNextPage(tester);
+
+      await tester.tap(find.text('The Winter theme is here'));
+
+      verify(() => themeBloc.add(const ThemeEvent.lightThemeChanged(themeId: prismWinterLightThemeId))).called(1);
     });
   });
 }
