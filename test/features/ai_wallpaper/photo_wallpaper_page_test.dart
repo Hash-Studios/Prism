@@ -121,11 +121,9 @@ Future<void> _dragFrameUp(WidgetTester tester) async {
 }
 
 Future<void> _pickPhoto(WidgetTester tester) async {
-  // At 2x text the empty state list is taller than the screen. Scroll it to the end so the button is on screen.
-  if (find.text('Choose a photo').evaluate().isNotEmpty) {
-    await tester.drag(find.byType(ListView), const Offset(0, -600));
-    await tester.pump(const Duration(milliseconds: 300));
-  }
+  // At 2x text the empty state list is taller than the screen. Scroll until the button is on screen.
+  await tester.ensureVisible(find.text('Choose a photo'));
+  await tester.pump(const Duration(milliseconds: 300));
   await tester.tap(find.text('Choose a photo'));
   await _waitUntilGone(tester, find.text('Choose a photo'));
 }
@@ -224,9 +222,8 @@ void main() {
 
   testWidgets('an unrecognized job response keeps the same request ID for retry', (tester) async {
     final _Harness harness = _Harness();
-    harness.onCall = (Map<String, Object?> _) async => harness.payloads.length == 1
-        ? <String, Object?>{'state': 'running'}
-        : _successMap;
+    harness.onCall = (Map<String, Object?> _) async =>
+        harness.payloads.length == 1 ? <String, Object?>{'state': 'running'} : _successMap;
     await _pumpPage(tester, harness);
     await _pickPhoto(tester);
 

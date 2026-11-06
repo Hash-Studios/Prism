@@ -562,3 +562,16 @@ export const sweepStalePhotoJobs = onSchedule({
   const refunded = await sweepStalePhotoJobsOnce();
   if (refunded > 0) logger.info("photoWallpaper: refunded stale jobs.", {refunded});
 });
+
+/**
+ * Account deletion: removes every stored result of the user's photo jobs, then the job records. A result that fails
+ * to delete stops the run, so the job record that names it stays for a retry. The daily count is in `UID_KEYED`.
+ */
+export async function removePhotoJobsForAccount(uid: string, deps: PhotoDeps = photoDeps): Promise<void> {
+  const jobs = await db.collection(PHOTO_JOBS).where("userId", "==", uid).get();
+  for (const doc of jobs.docs) {
+    const key = (doc.data() as PhotoJob).resultKey;
+    if (key) await deps.remove(key);
+    await doc.ref.delete();
+  }
+}

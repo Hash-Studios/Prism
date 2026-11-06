@@ -14622,7 +14622,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get photoWallPrivacyNote =>
-      'Your photo goes to our AI provider, fal.ai, for this job only. Prism deletes it when the job ends.';
+      'Your photo goes to our AI provider, fal.ai, and to Google Cloud Vision for this job only. Prism does not keep it and asks fal.ai to delete it after the job.';
 
   @override
   String get photoWallTargetLabel => 'Make it for';

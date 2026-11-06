@@ -14,6 +14,7 @@ import {WRAPPED_COLLECTION} from "./wrapped";
 import {FOLLOWED_FOLDERS, removeAllFolderFollows, removeOwnerPublicFolders} from "./publicFolders";
 import {COMMENT_RATE, removeCommentsForAccount} from "./comments";
 import {removeDesktopSubmissionsForAccount} from "./desktopSubmissions";
+import {PHOTO_JOB_DAILY, removePhotoJobsForAccount} from "./photoWallpaper";
 import {r2Secrets} from "./r2Storage";
 
 const USERS = "usersv2";
@@ -26,7 +27,8 @@ const DRAW_TICKETS = "drawTickets";
 const BOOSTS = "boosts";
 const DELETED_NAME = "Deleted Account";
 /** Docs keyed by the bare uid. The last two are legacy collections. */
-const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens", "rewardedAdUsers", "creatorTips", COMMENT_RATE];
+const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens", "rewardedAdUsers", "creatorTips", COMMENT_RATE,
+  PHOTO_JOB_DAILY];
 /** Docs keyed `<uid>_<day>`. */
 const UID_PREFIX_KEYED = [
   "coinAdRateDaily", "coinRefundDaily", "contentReportRateDaily", "userBlockRateDaily", REQUEST_RATE_DAILY, VOTE_RATE_DAILY,
@@ -123,6 +125,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   await removeAllFolderMemberships(callerUid);
   await removeCommentsForAccount(callerUid);
   await removeDesktopSubmissionsForAccount(callerUid);
+  await removePhotoJobsForAccount(callerUid);
 
   // 1. Favourite/private subcollections — same set the client wipes in delete_account_service.dart.
   await db.recursiveDelete(userRef.collection("images"));

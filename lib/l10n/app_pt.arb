@@ -3955,7 +3955,7 @@
   "photoWallEntrySubtitle": "Adapte qualquer fotografia ao seu ecrã",
   "photoWallPickPhoto": "Escolha uma fotografia",
   "photoWallPickAnother": "Escolha outra fotografia",
-  "photoWallPrivacyNote": "A sua fotografia é enviada ao nosso fornecedor de IA, o fal.ai, apenas para este trabalho. A Prism apaga-a quando o trabalho terminar.",
+  "photoWallPrivacyNote": "A sua fotografia é enviada ao nosso fornecedor de IA, o fal.ai, e ao Google Cloud Vision apenas para este trabalho. A Prism não a guarda e pede ao fal.ai que a apague depois do trabalho.",
   "photoWallTargetLabel": "Criar para",
   "photoWallTargetPhone": "Telemóvel",
   "photoWallTargetDesktop": "Versão para computador",

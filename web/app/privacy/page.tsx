@@ -113,7 +113,7 @@ const PROVIDERS: Array<{ name: string; purpose: string; href: string; label: str
   {
     name: "fal.ai",
     purpose:
-      "AI wallpapers and Photo to wallpaper: makes the images. For Photo to wallpaper, Prism sends a copy of the photo you pick, with no location or other metadata, for that one job. Prism asks fal.ai not to store the request and deletes the request data from fal.ai when the job ends.",
+      "AI wallpapers and Photo to wallpaper: makes the images. For Photo to wallpaper, Prism sends a copy of the photo you pick, with no location or other metadata, for that one job. Prism asks fal.ai not to store the request, and asks fal.ai to delete the request data when the job ends.",
     href: "https://fal.ai/privacy",
     label: "fal.ai/privacy",
   },
@@ -227,7 +227,8 @@ export default function PrivacyPage() {
                   you pick, with no location or other metadata, goes to fal.ai to extend or upscale
                   it, and to Google Cloud Vision to check it. Prism does not keep the photo after the
                   job. Prism keeps the result at a random link that the app shows only to you, the
-                  job details (mode, target, cost, state) and a daily count of your jobs
+                  job details (mode, target, cost, state) and a daily count of your jobs. Deleting
+                  your account deletes the results and the job details
                 </li>
                 <li>
                   <strong className="text-black">Search by photo</strong> - the app reads the

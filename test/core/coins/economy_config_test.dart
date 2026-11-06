@@ -24,7 +24,9 @@ void main() {
       expect(c.flags.drawEnabled, isFalse);
       expect(c.flags.legacyPricingUntil, '2027-01-31T00:00:00Z');
       expect(c.proBypassActions, contains('wallpaperDownload'));
-      expect(c.proDiscountActions, <String>['aiGeneration', 'dropWall', 'dropPack']);
+      expect(c.proDiscountActions, <String>['aiGeneration', 'dropWall', 'dropPack', 'photoWallpaper']);
+      expect(c.spend.photoExtend, 75);
+      expect(c.spend.photoUpscale, 10);
       expect(c.spend.dropPack, 150);
       expect(c.award.referral, 100);
     }

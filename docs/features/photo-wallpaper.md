@@ -65,7 +65,7 @@ A refused job (bad input, cap reached, not enough coins) does not count. A job t
 8. The result page shows before and after with a slider. The actions are "Set as wallpaper", "Download" (Android only, because on iOS Set saves to Photos), "Save to folder" and "Use another photo".
 9. When the job fails, the page tells the user why and if the coins came back.
 
-The privacy note under the picker says: "Your photo goes to our AI provider, fal.ai, for this job only. Prism deletes it when the job ends."
+The privacy note under the picker says: "Your photo goes to our AI provider, fal.ai, and to Google Cloud Vision for this job only. Prism does not keep it and asks fal.ai to delete it after the job."
 
 ## How it works
 
@@ -121,6 +121,7 @@ The app reads exact source dimensions from decoder metadata; its smaller preview
 
 - The photo goes to fal.ai for the job and to Google Cloud Vision for the check. The server keeps the input photo only in memory. The app reads the gallery picker's temporary copy, then deletes that copy; it does not delete the user's original gallery photo.
 - Prism asks fal.ai not to store the request (`X-Fal-Store-IO: 0`), requests the result inline (`sync_mode`), and attempts to delete the request data at fal.ai after the job. A provider outage or missing key permissions can prevent deletion.
+- Account deletion (`deleteAccount`) deletes the stored results, the job records and the daily count.
 - Prism keeps the result, the job record (mode, target, model, cost, state, result key, provider request ID and cleanup markers) and the daily count. Both result transfer paths reject images larger than 30 MB.
 - The privacy policy (`web/app/privacy/page.tsx`) lists fal.ai and this use.
 
@@ -129,9 +130,7 @@ The app reads exact source dimensions from decoder metadata; its smaller preview
 - The results do not show in the "Recent" strip of the AI tab. The result shows on the page after the job. "Save to folder" keeps it.
 - A desktop version is one fixed size, 2560 x 1600.
 - The models and prices are from the fal model pages. They were not checked against the Prism fal account before the change.
-- Account deletion does not yet remove photo-job records or their stored results. This lifecycle gap needs resolving before release.
 - The app keeps its pending request ID only on the page. After an app restart it cannot recover a completed photo job. Durable result recovery needs a product decision.
-- The picker privacy string still promises deletion when the job ends. It must be revised before release to name Vision and distinguish Prism's input cleanup from best-effort provider deletion.
 
 ## Deploy order
 

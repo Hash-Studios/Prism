@@ -14999,7 +14999,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get photoWallPrivacyNote =>
-      'A sua fotografia é enviada ao nosso fornecedor de IA, o fal.ai, apenas para este trabalho. A Prism apaga-a quando o trabalho terminar.';
+      'A sua fotografia é enviada ao nosso fornecedor de IA, o fal.ai, e ao Google Cloud Vision apenas para este trabalho. A Prism não a guarda e pede ao fal.ai que a apague depois do trabalho.';
 
   @override
   String get photoWallTargetLabel => 'Criar para';
@@ -30147,7 +30147,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get photoWallPrivacyNote =>
-      'Sua foto é enviada ao nosso provedor de IA, o fal.ai, apenas para este trabalho. O Prism a apaga quando o trabalho termina.';
+      'Sua foto é enviada ao nosso provedor de IA, o fal.ai, e ao Google Cloud Vision apenas para este trabalho. O Prism não a guarda e pede ao fal.ai que a apague depois do trabalho.';
 
   @override
   String get photoWallTargetLabel => 'Criar para';

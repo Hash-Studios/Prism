@@ -126,8 +126,7 @@ class PhotoWallpaperRepository {
     try {
       final ui.Image small = (await codec.getNextFrame()).image;
       try {
-        final bool turned =
-            small.width != small.height && (storedWidth > storedHeight) != (small.width > small.height);
+        final bool turned = small.width != small.height && (storedWidth > storedHeight) != (small.width > small.height);
         return turned ? PhotoSize(storedHeight, storedWidth) : PhotoSize(storedWidth, storedHeight);
       } finally {
         small.dispose();

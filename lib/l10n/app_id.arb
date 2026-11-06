@@ -14184,7 +14184,7 @@
   "@photoWallPickAnother": {
     "description": "Button that replaces the picked photo."
   },
-  "photoWallPrivacyNote": "Fotomu dikirim ke penyedia AI kami, fal.ai, hanya untuk tugas ini. Prism menghapusnya saat tugas selesai.",
+  "photoWallPrivacyNote": "Fotomu dikirim ke penyedia AI kami, fal.ai, dan ke Google Cloud Vision hanya untuk tugas ini. Prism tidak menyimpannya dan meminta fal.ai menghapusnya setelah tugas selesai.",
   "@photoWallPrivacyNote": {
     "description": "Privacy note under the photo picker."
   },

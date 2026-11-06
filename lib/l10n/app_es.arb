@@ -4099,7 +4099,7 @@
   "photoWallEntrySubtitle": "Ajusta cualquier foto a tu pantalla",
   "photoWallPickPhoto": "Elige una foto",
   "photoWallPickAnother": "Elige otra foto",
-  "photoWallPrivacyNote": "Tu foto se envía a nuestro proveedor de IA, fal.ai, solo para este trabajo. Prism la elimina cuando termina el trabajo.",
+  "photoWallPrivacyNote": "Tu foto se envía a nuestro proveedor de IA, fal.ai, y a Google Cloud Vision solo para este trabajo. Prism no la guarda y pide a fal.ai que la elimine después del trabajo.",
   "photoWallTargetLabel": "Hacerlo para",
   "photoWallTargetPhone": "Teléfono",
   "photoWallTargetDesktop": "Versión para escritorio",

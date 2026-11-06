@@ -14056,7 +14056,7 @@
   "@photoWallPickAnother": {
     "description": "Button that replaces the picked photo."
   },
-  "photoWallPrivacyNote": "Dein Foto wird nur für diesen Auftrag an unseren KI-Anbieter fal.ai gesendet. Prism löscht es, wenn der Auftrag endet.",
+  "photoWallPrivacyNote": "Dein Foto wird nur für diesen Auftrag an unseren KI-Anbieter fal.ai und an Google Cloud Vision gesendet. Prism speichert es nicht und bittet fal.ai, es nach dem Auftrag zu löschen.",
   "@photoWallPrivacyNote": {
     "description": "Privacy note under the photo picker."
   },

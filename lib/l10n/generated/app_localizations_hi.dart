@@ -14774,7 +14774,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get photoWallPrivacyNote =>
-      'आपकी फ़ोटो इस काम के लिए ही हमारे AI प्रदाता fal.ai को भेजी जाती है। काम खत्म होने पर Prism उसे हटा देता है।';
+      'आपकी फ़ोटो इस काम के लिए ही हमारे AI प्रदाता fal.ai और Google Cloud Vision को भेजी जाती है। Prism उसे नहीं रखता और काम के बाद fal.ai से उसे हटाने को कहता है।';
 
   @override
   String get photoWallTargetLabel => 'इसके लिए बनाएँ';

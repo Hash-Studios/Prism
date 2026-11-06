@@ -23368,7 +23368,7 @@ abstract class AppLocalizations {
   /// Privacy note under the photo picker.
   ///
   /// In en, this message translates to:
-  /// **'Your photo goes to our AI provider, fal.ai, for this job only. Prism deletes it when the job ends.'**
+  /// **'Your photo goes to our AI provider, fal.ai, and to Google Cloud Vision for this job only. Prism does not keep it and asks fal.ai to delete it after the job.'**
   String get photoWallPrivacyNote;
 
   /// Label of the phone or desktop choice.

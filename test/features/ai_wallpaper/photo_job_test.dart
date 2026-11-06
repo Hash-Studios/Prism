@@ -41,15 +41,13 @@ void main() {
       final ByteData? png = await image.toByteData(format: ui.ImageByteFormat.png);
       final Uint8List bytes = png!.buffer.asUint8List();
       final List<int> sides = <int>[];
-      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
-        () async => bytes,
-        null,
-        (Uint8List bytes, int side) async {
-          sides.add(side);
-          return Uint8List.fromList(<int>[1, 2, 3]);
-        },
-        (Map<String, Object?> payload) async => _successMap,
-      );
+      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(() async => bytes, null, (
+        Uint8List bytes,
+        int side,
+      ) async {
+        sides.add(side);
+        return Uint8List.fromList(<int>[1, 2, 3]);
+      }, (Map<String, Object?> payload) async => _successMap);
 
       final PhotoSource? source = await repo.pick();
       expect(source?.size, size);
@@ -89,10 +87,11 @@ void main() {
     final Link alias = await Link(p.join(fixture.path, 'cache-alias')).create(temp.path);
     final File cachedCopy = File(p.join(temp.path, 'picked.jpg'))..writeAsBytesSync(<int>[1, 2, 3]);
 
-    expect(
-      await readAndCleanupPickedPhoto(XFile(cachedCopy.path), temporaryDirectory: Directory(alias.path)),
-      <int>[1, 2, 3],
-    );
+    expect(await readAndCleanupPickedPhoto(XFile(cachedCopy.path), temporaryDirectory: Directory(alias.path)), <int>[
+      1,
+      2,
+      3,
+    ]);
     expect(await cachedCopy.exists(), isFalse);
     expect(await alias.exists(), isTrue);
   });
@@ -105,10 +104,11 @@ void main() {
     final File source = File(p.join(outside.path, 'picked.jpg'))..writeAsBytesSync(<int>[4, 5, 6]);
     final Link alias = await Link(p.join(temp.path, 'source-alias')).create(outside.path);
 
-    expect(
-      await readAndCleanupPickedPhoto(XFile(p.join(alias.path, 'picked.jpg')), temporaryDirectory: temp),
-      <int>[4, 5, 6],
-    );
+    expect(await readAndCleanupPickedPhoto(XFile(p.join(alias.path, 'picked.jpg')), temporaryDirectory: temp), <int>[
+      4,
+      5,
+      6,
+    ]);
     expect(await source.exists(), isTrue);
     expect(await alias.exists(), isTrue);
   });
@@ -353,15 +353,10 @@ void main() {
   group('PhotoWallpaperRepository.run', () {
     test('extend upload preserves the server minimum short side for a supported desktop panorama', () async {
       final List<int> sides = <int>[];
-      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
-        null,
-        null,
-        (Uint8List bytes, int side) async {
-          sides.add(side);
-          return Uint8List.fromList(<int>[1, 2, 3]);
-        },
-        (Map<String, Object?> payload) async => _successMap,
-      );
+      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(null, null, (Uint8List bytes, int side) async {
+        sides.add(side);
+        return Uint8List.fromList(<int>[1, 2, 3]);
+      }, (Map<String, Object?> payload) async => _successMap);
 
       await repo.run(
         PhotoJob(

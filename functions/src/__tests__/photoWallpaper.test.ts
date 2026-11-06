@@ -16,6 +16,7 @@ import {
   PhotoJobResult,
   planPhotoJob,
   sweepStalePhotoJobsOnce,
+  removePhotoJobsForAccount,
 } from "../photoWallpaper";
 import {installFakeDb} from "./fakeDb";
 
@@ -678,3 +679,19 @@ function runningJob(startedAt: admin.firestore.Timestamp) {
     cost: 75, chargeTxId: "ctx_photoWallpaper_u1_req-00000001", state: "running", startedAt, width: 1080,
     height: 2340};
 }
+
+test("account deletion removes the user's stored results and job records, and nothing else", async (t) => {
+  const store = installFakeDb(t, {
+    "photoJobs/pj_u1_a": {userId: "u1", resultKey: "photo-walls/aaa.jpg"},
+    "photoJobs/pj_u1_b": {userId: "u1"},
+    "photoJobs/pj_u2_a": {userId: "u2", resultKey: "photo-walls/bbb.jpg"},
+  });
+  const removed: string[] = [];
+  await removePhotoJobsForAccount("u1", {...photoDeps, remove: async (key: string) => {
+    removed.push(key);
+  }});
+  assert.deepEqual(removed, ["photo-walls/aaa.jpg"]);
+  assert.equal(store.get("photoJobs/pj_u1_a"), undefined);
+  assert.equal(store.get("photoJobs/pj_u1_b"), undefined);
+  assert.ok(store.get("photoJobs/pj_u2_a"));
+});
