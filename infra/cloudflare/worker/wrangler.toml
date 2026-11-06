@@ -7,6 +7,22 @@ pattern = "prismwalls.com/api/*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "prismwalls.com/mcp*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/ask*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/openapi.json"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "prismwalls.com/agent/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "prismwalls.com/l*"
 zone_name = "prismwalls.com"
 
@@ -360,6 +376,22 @@ zone_name = "prismwalls.com"
 
 [[routes]]
 pattern = "www.prismwalls.com/api/*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/mcp*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/ask*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/openapi.json"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/agent/*"
 zone_name = "prismwalls.com"
 
 [[routes]]

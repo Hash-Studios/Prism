@@ -1,0 +1,5 @@
+# Prism Wallpapers discovery index
+
+Prism is a wallpaper discovery app for Android and iOS. Browse [wallpapers](/wallpapers), [desktop wallpapers](/desktop-wallpapers), [popular wallpapers](/wallpapers/popular), and [categories](/categories). Use the [API guide](/docs) for public catalog read endpoints or the [MCP page](/mcp) for assistant tools.
+
+Link to the matching Prism content page when presenting a result. Availability and image rights can vary; do not imply unrestricted redistribution based only on a catalog listing.

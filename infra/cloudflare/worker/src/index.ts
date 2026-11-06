@@ -1,6 +1,7 @@
 import { AiQuotaCoordinator, type AiEnvBindings, bumpRateLimit, handleAiApiRequest } from './ai';
 import { maybeHandleAssociationRequest } from './association_files';
 import { handleCatalogRequest } from './catalog';
+import { handleAgentRequest } from './agent';
 import { handleLegacyThumbRequest } from './legacy_thumbs';
 import { formatCount, type OgCard, type OgChip, type OgStat, renderOgCardHtml } from './og_card';
 import { buildAndroidIntentUrl, detectPlatform, escapeAttribute, escapeHtml, iosUniversalLinkUrl, screenshotCard } from './page_kit';
@@ -199,6 +200,21 @@ export default {
     const aiResponse = await handleAiApiRequest(request, url, env);
     if (aiResponse != null) {
       return aiResponse;
+    }
+
+    if ((request.method === 'GET' || request.method === 'HEAD')
+      && (url.pathname === '/about' || url.pathname === '/mcp')
+      && request.headers.get('accept')?.includes('text/html')) {
+      return fetch(request);
+    }
+
+    const agentResponse = await handleAgentRequest(request, url, env, ctx);
+    if (agentResponse != null) {
+      return agentResponse;
+    }
+
+    if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/wallpapers/llms.txt') {
+      return fetch(request);
     }
 
     const catalogResponse = await handleCatalogRequest(request, url, env, ctx, () => renderDirectLanding(url, request, env),

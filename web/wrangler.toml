@@ -1,6 +1,7 @@
 name = "prismwalls"
 account_id = "bc455bbb5c1264123e8565e360dd6da9"
 compatibility_date = "2026-03-04"
+main = "edge-worker.mjs"
 
 routes = [
   { pattern = "www.prismwalls.com", custom_domain = true },
@@ -9,3 +10,5 @@ routes = [
 
 [assets]
 directory = "./out"
+binding = "ASSETS"
+run_worker_first = true

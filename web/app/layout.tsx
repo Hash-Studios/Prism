@@ -16,6 +16,7 @@ export const metadata: Metadata = {
     "Prism Wallpapers - Premium Wallpaper App for Android and iOS",
   description:
     "Discover high-quality wallpapers and curated collections with Prism Wallpapers, a premium wallpaper app for Android and iOS. Download on Google Play or the App Store.",
+  keywords: ["Prism Wallpapers", "wallpaper app", "4K wallpapers", "AMOLED wallpapers", "Android wallpapers", "iPhone wallpapers"],
   alternates: {
     canonical: "/",
   },

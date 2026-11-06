@@ -6,6 +6,8 @@ import { duoIsIndexable, duoRoute, duoWalls } from "@/lib/duo-wallpapers";
 export const dynamic = "force-static";
 
 const routes = ["/", ...seoRouteOrder.map((slug) => `/${slug}`), "/changelog", "/download",
+  "/about", "/contact", "/docs", "/developers", "/mcp", "/privacy", "/terms", "/wallpapers",
+  "/desktop-wallpapers", "/matching-sets",
   ...(duoIsIndexable(duoWalls) ? [duoRoute] : [])];
 
 export default function sitemap(): MetadataRoute.Sitemap {
