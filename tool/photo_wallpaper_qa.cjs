@@ -73,6 +73,10 @@ const photo = require('./lib/photoWallpaper.js');
 (${installPhotoSeams.toString()})(photo, require('node:path').resolve(__dirname, '..'));
 exports.createPhotoWallpaper = photo.createPhotoWallpaper;
 `);
+  // The callable declares secrets. Without local values the emulator asks Secret Manager, which this runtime blocks.
+  // The seams above replace every use of them, so these placeholders never leave the emulator.
+  fs.writeFileSync(file('functions/.secret.local'),
+    ['FAL_API_KEY', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY'].map((name) => `${name}=local-qa-placeholder\n`).join(''));
   writeJson('ledger.json', []);
   console.log(`Prepared ${runtime}. Next: serve, emulators, seed, photos.`);
 }
