@@ -542,6 +542,25 @@ void main() {
       expect(gated.writes.single.data!['themePrefs'], containsPair('darkThemeId', 'kDOlive'));
     });
 
+    test('sync uploads a local revert with its original change time when the account copy is older', () async {
+      seasonClock = () => DateTime(2027, 1, 9);
+      addTearDown(() => seasonClock = () => DateTime(2027, 2));
+      store.data['settings.darkThemeID'] = prismWinterDarkThemeId;
+      store.data['settings.darkAccent'] = prismWinterDarkAccentValue;
+      store.data['settings.${winterSeason.previousThemeKey(Brightness.dark)}'] = 'kDSky';
+      store.data['settings.theme.changed_at'] = 100;
+      firestore.docs[FirebaseCollections.usersV2] = <String, Map<String, dynamic>>{
+        'u1': <String, dynamic>{'themePrefs': _accountCopy(darkId: prismWinterDarkThemeId, changedAt: 50)},
+      };
+
+      await repository.syncWithAccount('u1');
+
+      final Map<String, dynamic> pushed = firestore.writes.single.data!['themePrefs'] as Map<String, dynamic>;
+      expect(pushed['darkThemeId'], 'kDSky');
+      expect(pushed['changedAt'], 100);
+      expect(store.data['settings.theme.changed_at'], 100);
+    });
+
     test('a sync and an update in flight together run one after the other', () async {
       seasonClock = () => DateTime(2027, 1, 9);
       addTearDown(() => seasonClock = () => DateTime(2027, 2));
