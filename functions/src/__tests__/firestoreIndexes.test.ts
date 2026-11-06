@@ -112,9 +112,14 @@ test("quest event rate docs expire through a TTL policy on expireAt", () => {
 });
 
 test("folders have the owner index: ownerId, newest update first", () => {
-  const index = config.indexes.find((i) => i.collectionGroup === "folders");
+  assert.ok(hasIndex("folders", [["ownerId", "ASCENDING"], ["updatedAt", "DESCENDING"]]));
+});
+
+test("folders have the shared-with-you index: memberIds contains, newest update first", () => {
+  const index = config.indexes.find((i) => i.collectionGroup === "folders" && i.fields[0]?.fieldPath === "memberIds");
   assert.ok(index);
-  assert.deepEqual(index.fields.map((f) => [f.fieldPath, f.order]), [["ownerId", "ASCENDING"], ["updatedAt", "DESCENDING"]]);
+  assert.deepEqual(index.fields.map((f) => [f.fieldPath, f.order ?? (f as {arrayConfig?: string}).arrayConfig]),
+    [["memberIds", "CONTAINS"], ["updatedAt", "DESCENDING"]]);
 });
 
 test("folder items: account deletion finds them by owner across folders, repair reads the newest by owner", () => {

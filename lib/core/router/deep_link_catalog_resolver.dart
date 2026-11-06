@@ -88,6 +88,7 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.downloads => const DownloadRoute(),
     DeepLinkPageTarget.library => LibraryRoute(initialTab: _libraryTab(query['tab'])),
     DeepLinkPageTarget.folder => FolderRoute(folderId: path['folderId']!),
+    DeepLinkPageTarget.folderInvite => FolderInviteRoute(code: path['code']!),
     DeepLinkPageTarget.mood => MoodRoute(moodId: path['moodId']!),
     DeepLinkPageTarget.editorsChoice => EditorsChoiceRoute(),
     DeepLinkPageTarget.gallery => GalleryRoute(ids: query['ids']!, source: query['source'] ?? 'link'),

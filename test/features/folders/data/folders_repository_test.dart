@@ -37,6 +37,15 @@ class _Batch implements FirestoreBatch {
 }
 
 class _Client extends FakeFirestoreClient {
+  _Client()
+    : super(
+        docs: <String, Map<String, Map<String, dynamic>>>{
+          FirebaseCollections.folders: <String, Map<String, dynamic>>{
+            'a': <String, dynamic>{'ownerId': 'u1'},
+          },
+        },
+      );
+
   final List<({String tag, _Batch batch})> batches = [];
   Future<void> Function(int)? onCommit;
   Object? membershipError;
@@ -210,7 +219,7 @@ void main() {
     expect(item.data?['ownerId'], 'u1');
     expect(item.data?['addedAt'], FieldValue.serverTimestamp());
 
-    await repository.addItem(_folder(), result.data!.single);
+    await repository.addItem(_folder(), result.data!.single, userId: _folder().ownerId);
     final addedItem = client.batches.last.batch.writes.first;
     expect(addedItem.collection, FirebaseCollections.folderItems('a'));
     expect(addedItem.data?['ownerId'], 'u1');
@@ -230,7 +239,7 @@ void main() {
     final createItem = client.batches.single.batch.writes.last;
     expect(createItem.data, isNot(contains('pinnedAt')));
 
-    await repository.addItem(_folder(), wall);
+    await repository.addItem(_folder(), wall, userId: _folder().ownerId);
     final addItem = client.batches.last.batch.writes.first;
     expect(addItem.data, isNot(contains('pinnedAt')));
   });
@@ -273,12 +282,56 @@ void main() {
     expect(result.data?.map((wall) => wall.id), <String>['new', 'middle']);
   });
 
-  test('an empty item query succeeds with an empty list', () async {
+  test("an editor reads the owner's items, newest first", () async {
     final client = _Client()..onQuery = (spec) => _queryItems(spec, _itemRows());
     final result = await FoldersRepositoryImpl(client).fetchItems('a', userId: 'u3');
 
+    expect(result.data?.map((wall) => wall.id), <String>['new', 'middle', 'old']);
+  });
+
+  test('an item read of a folder that is gone returns null without a query', () async {
+    final client = _Client()..onQuery = (_) => throw StateError('queried a missing folder');
+    final result = await FoldersRepositoryImpl(client).fetchItems('missing', userId: 'u1');
+
     expect(result.isSuccess, isTrue);
-    expect(result.data, isEmpty);
+    expect(result.data, isNull);
+  });
+
+  test("an editor writes only the item, as the folder owner's item added by the editor", () async {
+    final client = _Client()
+      ..onQuery = (_) => <FakeDocRow>[
+        (id: 'prism_wall', data: {'id': 'wall', 'provider': 'Prism'}),
+      ];
+    final repository = FoldersRepositoryImpl(client);
+    final wall = (await repository.fetchItems('a', userId: 'u1')).data!.single;
+
+    await repository.addItem(_folder(), wall, userId: 'editor');
+    expect(client.batches.last.batch.writes.map((write) => (write.op, write.collection, write.id)), [
+      ('set', FirebaseCollections.folderItems('a'), 'prism_wall'),
+    ]);
+    expect(client.batches.last.batch.writes.single.data?['ownerId'], 'u1');
+    expect(client.batches.last.batch.writes.single.data?['addedBy'], 'editor');
+
+    await repository.removeItem(_folder(), wall, userId: 'editor');
+    expect(client.batches.last.batch.writes.map((write) => (write.op, write.collection, write.id)), [
+      ('delete', FirebaseCollections.folderItems('a'), 'prism_wall'),
+    ]);
+  });
+
+  test('the owner writes the item with addedBy and the folder counts in one batch', () async {
+    final client = _Client()
+      ..onQuery = (_) => <FakeDocRow>[
+        (id: 'prism_wall', data: {'id': 'wall', 'provider': 'Prism'}),
+      ];
+    final repository = FoldersRepositoryImpl(client);
+    final wall = (await repository.fetchItems('a', userId: 'u1')).data!.single;
+
+    await repository.addItem(_folder(), wall, userId: 'u1');
+    expect(client.batches.last.batch.writes.map((write) => (write.op, write.collection, write.id)), [
+      ('set', FirebaseCollections.folderItems('a'), 'prism_wall'),
+      ('update', FirebaseCollections.folders, 'a'),
+    ]);
+    expect(client.batches.last.batch.writes.first.data?['addedBy'], 'u1');
   });
 
   test('item mapping preserves SDK-supplied order when pending addedAt maps to null', () async {

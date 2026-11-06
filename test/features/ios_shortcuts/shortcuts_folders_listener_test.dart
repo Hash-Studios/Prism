@@ -82,10 +82,12 @@ class _FakeFoldersRepository implements FoldersRepository {
       throw UnimplementedError();
 
   @override
-  Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall) => throw UnimplementedError();
+  Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId}) =>
+      throw UnimplementedError();
 
   @override
-  Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall) => throw UnimplementedError();
+  Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId}) =>
+      throw UnimplementedError();
 }
 
 FavouriteWallEntity _wall(String id) => LegacyFavouriteWall(

@@ -8,6 +8,7 @@ import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_member.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
@@ -73,10 +74,12 @@ class _FakeFoldersRepository implements FoldersRepository {
       Result.success<void>(null);
 
   @override
-  Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall) async => Result.success<void>(null);
+  Future<Result<void>> addItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId}) async =>
+      Result.success<void>(null);
 
   @override
-  Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall) async => Result.success<void>(null);
+  Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId}) async =>
+      Result.success<void>(null);
 }
 
 class _FakePublicFoldersRepository implements PublicFoldersRepository {
@@ -114,7 +117,7 @@ class _FakePublicFoldersRepository implements PublicFoldersRepository {
 
 final DateTime _at = DateTime.utc(2026, 10);
 
-FolderEntity _folder({bool isPublic = false}) => FolderEntity(
+FolderEntity _folder({bool isPublic = false, List<FolderMember> editors = const <FolderMember>[]}) => FolderEntity(
   id: 'f1',
   ownerId: 'u1',
   name: 'Night Owl',
@@ -123,6 +126,7 @@ FolderEntity _folder({bool isPublic = false}) => FolderEntity(
   itemCount: 0,
   covers: const <String>[],
   isPublic: isPublic,
+  editors: editors,
 );
 
 late _MockStackRouter _router;
@@ -216,6 +220,34 @@ void main() {
 
     expect(find.text('Make this folder private?'), findsOneWidget);
     expect(find.text('Only you will see it. Its link stops working and its followers lose it.'), findsOneWidget);
+  });
+
+  testWidgets('making a shared folder private says the invited people keep it', (tester) async {
+    _publicRepo.folder = const PublicFolderEntity(
+      id: 'f1',
+      ownerId: 'u1',
+      name: 'Night Owl',
+      itemCount: 0,
+      covers: <String>[],
+      followerCount: 0,
+    );
+    await _pumpFolder(
+      tester,
+      _folder(
+        isPublic: true,
+        editors: <FolderMember>[FolderMember(uid: 'e1', role: FolderRole.editor, addedBy: 'u1', addedAt: _at)],
+      ),
+    );
+
+    await tester.tap(find.byTooltip('More options'));
+    await _settle(tester);
+    await tester.tap(find.text('Make private'));
+    await _settle(tester);
+
+    expect(
+      find.text('Only you and the people you invited will see it. Its link stops working and its followers lose it.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('cancelling the visibility dialog does not call setPublic', (tester) async {

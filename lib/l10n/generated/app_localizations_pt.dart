@@ -14503,6 +14503,207 @@ class AppLocalizationsPt extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get foldersInvite => 'Convidar';
+
+  @override
+  String foldersInviteShareText(String name, String link) {
+    return 'Adicione papéis de parede comigo em $name no Prism: $link';
+  }
+
+  @override
+  String foldersInvitePreviewTitle(String name) {
+    return 'Junte-se a $name no Prism';
+  }
+
+  @override
+  String get foldersInvitePreviewDescription =>
+      'Adicione e remova papéis de parede desta pasta junto com outras pessoas.';
+
+  @override
+  String get foldersInviteFailed => 'Não foi possível criar o link de convite. Tente novamente.';
+
+  @override
+  String get foldersInviteFull => 'Esta pasta está cheia. Remova alguém para convidar mais pessoas.';
+
+  @override
+  String get foldersInviteLimit => 'Você fez convites demais hoje. Tente novamente amanhã.';
+
+  @override
+  String get foldersPeople => 'Pessoas';
+
+  @override
+  String foldersPeopleHintOwner(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Convide até $countString pessoas para adicionar e remover papéis de parede. Só você pode renomear, compartilhar ou excluir esta pasta.';
+  }
+
+  @override
+  String get foldersPeopleHintEditor =>
+      'Você pode adicionar e remover papéis de parede. Só o dono pode renomear, compartilhar ou excluir esta pasta.';
+
+  @override
+  String foldersPeopleCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString pessoas', one: '1 pessoa');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersPeopleButtonLabel(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString pessoas nesta pasta. Mostrar pessoas',
+      one: '1 pessoa nesta pasta. Mostrar pessoas',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersRoleOwner => 'Dono';
+
+  @override
+  String get foldersRoleEditor => 'Pode adicionar e remover';
+
+  @override
+  String foldersPersonYou(String name) {
+    return '$name (você)';
+  }
+
+  @override
+  String get foldersUnknownPerson => 'Usuário do Prism';
+
+  @override
+  String get foldersRemovePerson => 'Remover';
+
+  @override
+  String foldersRemovePersonTitle(String name) {
+    return 'Remover $name?';
+  }
+
+  @override
+  String get foldersRemovePersonMessage =>
+      'Essa pessoa não poderá mais adicionar nem remover papéis de parede aqui. Os papéis de parede que ela adicionou continuam na pasta.';
+
+  @override
+  String get foldersRemovePersonConfirm => 'Remover pessoa';
+
+  @override
+  String foldersPersonRemoved(String name) {
+    return '$name foi removido(a).';
+  }
+
+  @override
+  String get foldersLeave => 'Sair da pasta';
+
+  @override
+  String foldersLeaveTitle(String name) {
+    return 'Sair de $name?';
+  }
+
+  @override
+  String get foldersLeaveMessage =>
+      'Você não poderá mais adicionar nem remover papéis de parede aqui. Os papéis de parede que você adicionou continuam na pasta.';
+
+  @override
+  String get foldersLeft => 'Você saiu da pasta.';
+
+  @override
+  String get foldersPeopleFailed => 'Não foi possível atualizar as pessoas desta pasta. Tente novamente.';
+
+  @override
+  String get foldersSharedWithYou => 'Compartilhadas com você';
+
+  @override
+  String get foldersSharedLabel => 'Compartilhada';
+
+  @override
+  String foldersAddedBy(String name) {
+    return 'Adicionado por $name';
+  }
+
+  @override
+  String get foldersAddedByYou => 'Adicionado por você';
+
+  @override
+  String get foldersRemoveFromFolder => 'Remover da pasta';
+
+  @override
+  String get foldersDeleteSharedMessage =>
+      'As pessoas que você convidou também vão perdê-la. Os papéis de parede que estão nos seus favoritos continuam lá.';
+
+  @override
+  String get foldersJoinTitle => 'Convite para pasta';
+
+  @override
+  String foldersJoinHeadline(String name) {
+    return 'Entre em $name';
+  }
+
+  @override
+  String foldersJoinInvitedBy(String name) {
+    return '$name convidou você para adicionar e remover papéis de parede nesta pasta.';
+  }
+
+  @override
+  String get foldersJoin => 'Entrar na pasta';
+
+  @override
+  String get foldersJoinSignIn => 'Entrar para participar';
+
+  @override
+  String get foldersJoinOpen => 'Abrir pasta';
+
+  @override
+  String get foldersJoinAlreadyIn => 'Você já está nesta pasta.';
+
+  @override
+  String foldersJoined(String name) {
+    return 'Você entrou em $name.';
+  }
+
+  @override
+  String get foldersJoinFailed => 'Não foi possível entrar nesta pasta. Tente novamente.';
+
+  @override
+  String get foldersJoinLoadFailed => 'Não foi possível carregar este convite.';
+
+  @override
+  String get foldersJoinExpiredTitle => 'Este convite expirou';
+
+  @override
+  String get foldersJoinExpiredBody => 'Os convites funcionam por 7 dias. Peça um novo link ao dono.';
+
+  @override
+  String get foldersJoinUsedTitle => 'Este convite já foi usado';
+
+  @override
+  String get foldersJoinUsedBody => 'Cada convite funciona uma vez. Peça um novo link ao dono.';
+
+  @override
+  String get foldersJoinFullTitle => 'Esta pasta está cheia';
+
+  @override
+  String get foldersJoinFullBody => 'Peça ao dono para remover alguém e depois abra o link de novo.';
+
+  @override
+  String get foldersJoinUnavailableTitle => 'Este convite não está disponível';
+
+  @override
+  String get foldersJoinUnavailableBody => 'Talvez a pasta tenha sido excluída, ou você não pode entrar nela.';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -29002,4 +29203,205 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
     );
     return '$_temp0';
   }
+
+  @override
+  String get foldersInvite => 'Convidar';
+
+  @override
+  String foldersInviteShareText(String name, String link) {
+    return 'Adicione papéis de parede comigo em $name no Prism: $link';
+  }
+
+  @override
+  String foldersInvitePreviewTitle(String name) {
+    return 'Junte-se a $name no Prism';
+  }
+
+  @override
+  String get foldersInvitePreviewDescription =>
+      'Adicione e remova papéis de parede desta pasta junto com outras pessoas.';
+
+  @override
+  String get foldersInviteFailed => 'Não foi possível criar o link de convite. Tente novamente.';
+
+  @override
+  String get foldersInviteFull => 'Esta pasta está cheia. Remova alguém para convidar mais pessoas.';
+
+  @override
+  String get foldersInviteLimit => 'Você fez convites demais hoje. Tente novamente amanhã.';
+
+  @override
+  String get foldersPeople => 'Pessoas';
+
+  @override
+  String foldersPeopleHintOwner(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Convide até $countString pessoas para adicionar e remover papéis de parede. Só você pode renomear, compartilhar ou excluir esta pasta.';
+  }
+
+  @override
+  String get foldersPeopleHintEditor =>
+      'Você pode adicionar e remover papéis de parede. Só o dono pode renomear, compartilhar ou excluir esta pasta.';
+
+  @override
+  String foldersPeopleCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString pessoas', one: '1 pessoa');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersPeopleButtonLabel(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString pessoas nesta pasta. Mostrar pessoas',
+      one: '1 pessoa nesta pasta. Mostrar pessoas',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersRoleOwner => 'Dono';
+
+  @override
+  String get foldersRoleEditor => 'Pode adicionar e remover';
+
+  @override
+  String foldersPersonYou(String name) {
+    return '$name (você)';
+  }
+
+  @override
+  String get foldersUnknownPerson => 'Usuário do Prism';
+
+  @override
+  String get foldersRemovePerson => 'Remover';
+
+  @override
+  String foldersRemovePersonTitle(String name) {
+    return 'Remover $name?';
+  }
+
+  @override
+  String get foldersRemovePersonMessage =>
+      'Essa pessoa não poderá mais adicionar nem remover papéis de parede aqui. Os papéis de parede que ela adicionou continuam na pasta.';
+
+  @override
+  String get foldersRemovePersonConfirm => 'Remover pessoa';
+
+  @override
+  String foldersPersonRemoved(String name) {
+    return '$name foi removido(a).';
+  }
+
+  @override
+  String get foldersLeave => 'Sair da pasta';
+
+  @override
+  String foldersLeaveTitle(String name) {
+    return 'Sair de $name?';
+  }
+
+  @override
+  String get foldersLeaveMessage =>
+      'Você não poderá mais adicionar nem remover papéis de parede aqui. Os papéis de parede que você adicionou continuam na pasta.';
+
+  @override
+  String get foldersLeft => 'Você saiu da pasta.';
+
+  @override
+  String get foldersPeopleFailed => 'Não foi possível atualizar as pessoas desta pasta. Tente novamente.';
+
+  @override
+  String get foldersSharedWithYou => 'Compartilhadas com você';
+
+  @override
+  String get foldersSharedLabel => 'Compartilhada';
+
+  @override
+  String foldersAddedBy(String name) {
+    return 'Adicionado por $name';
+  }
+
+  @override
+  String get foldersAddedByYou => 'Adicionado por você';
+
+  @override
+  String get foldersRemoveFromFolder => 'Remover da pasta';
+
+  @override
+  String get foldersDeleteSharedMessage =>
+      'As pessoas que você convidou também vão perdê-la. Os papéis de parede que estão nos seus favoritos continuam lá.';
+
+  @override
+  String get foldersJoinTitle => 'Convite para pasta';
+
+  @override
+  String foldersJoinHeadline(String name) {
+    return 'Entre em $name';
+  }
+
+  @override
+  String foldersJoinInvitedBy(String name) {
+    return '$name convidou você para adicionar e remover papéis de parede nesta pasta.';
+  }
+
+  @override
+  String get foldersJoin => 'Entrar na pasta';
+
+  @override
+  String get foldersJoinSignIn => 'Entrar para participar';
+
+  @override
+  String get foldersJoinOpen => 'Abrir pasta';
+
+  @override
+  String get foldersJoinAlreadyIn => 'Você já está nesta pasta.';
+
+  @override
+  String foldersJoined(String name) {
+    return 'Você entrou em $name.';
+  }
+
+  @override
+  String get foldersJoinFailed => 'Não foi possível entrar nesta pasta. Tente novamente.';
+
+  @override
+  String get foldersJoinLoadFailed => 'Não foi possível carregar este convite.';
+
+  @override
+  String get foldersJoinExpiredTitle => 'Este convite expirou';
+
+  @override
+  String get foldersJoinExpiredBody => 'Os convites funcionam por 7 dias. Peça um novo link ao dono.';
+
+  @override
+  String get foldersJoinUsedTitle => 'Este convite já foi usado';
+
+  @override
+  String get foldersJoinUsedBody => 'Cada convite funciona uma vez. Peça um novo link ao dono.';
+
+  @override
+  String get foldersJoinFullTitle => 'Esta pasta está cheia';
+
+  @override
+  String get foldersJoinFullBody => 'Peça ao dono para remover alguém e depois abra o link de novo.';
+
+  @override
+  String get foldersJoinUnavailableTitle => 'Este convite não está disponível';
+
+  @override
+  String get foldersJoinUnavailableBody => 'Talvez a pasta tenha sido excluída, ou você não pode entrar nela.';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso.';
 }

@@ -14191,4 +14191,205 @@ class AppLocalizationsId extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get foldersInvite => 'Undang';
+
+  @override
+  String foldersInviteShareText(String name, String link) {
+    return 'Tambahkan wallpaper bersama saya di $name di Prism: $link';
+  }
+
+  @override
+  String foldersInvitePreviewTitle(String name) {
+    return 'Gabung ke $name di Prism';
+  }
+
+  @override
+  String get foldersInvitePreviewDescription => 'Tambahkan dan hapus wallpaper di folder ini bersama-sama.';
+
+  @override
+  String get foldersInviteFailed => 'Tidak dapat membuat tautan undangan. Coba lagi.';
+
+  @override
+  String get foldersInviteFull => 'Folder ini sudah penuh. Hapus seseorang untuk mengundang lebih banyak orang.';
+
+  @override
+  String get foldersInviteLimit => 'Anda sudah membuat terlalu banyak undangan hari ini. Coba lagi besok.';
+
+  @override
+  String get foldersPeople => 'Orang';
+
+  @override
+  String foldersPeopleHintOwner(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return 'Undang hingga $countString orang untuk menambah dan menghapus wallpaper. Hanya Anda yang bisa mengganti nama, membagikan, atau menghapus folder ini.';
+  }
+
+  @override
+  String get foldersPeopleHintEditor =>
+      'Anda bisa menambah dan menghapus wallpaper. Hanya pemilik yang bisa mengganti nama, membagikan, atau menghapus folder ini.';
+
+  @override
+  String foldersPeopleCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString orang', one: '1 orang');
+    return '$_temp0';
+  }
+
+  @override
+  String foldersPeopleButtonLabel(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString orang di folder ini. Tampilkan orang',
+      one: '1 orang di folder ini. Tampilkan orang',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersRoleOwner => 'Pemilik';
+
+  @override
+  String get foldersRoleEditor => 'Bisa menambah dan menghapus';
+
+  @override
+  String foldersPersonYou(String name) {
+    return '$name (Anda)';
+  }
+
+  @override
+  String get foldersUnknownPerson => 'Pengguna Prism';
+
+  @override
+  String get foldersRemovePerson => 'Hapus';
+
+  @override
+  String foldersRemovePersonTitle(String name) {
+    return 'Hapus $name?';
+  }
+
+  @override
+  String get foldersRemovePersonMessage =>
+      'Mereka tidak bisa lagi menambah atau menghapus wallpaper di sini. Wallpaper yang mereka tambahkan tetap ada.';
+
+  @override
+  String get foldersRemovePersonConfirm => 'Hapus orang';
+
+  @override
+  String foldersPersonRemoved(String name) {
+    return '$name dihapus.';
+  }
+
+  @override
+  String get foldersLeave => 'Keluar dari folder';
+
+  @override
+  String foldersLeaveTitle(String name) {
+    return 'Keluar dari $name?';
+  }
+
+  @override
+  String get foldersLeaveMessage =>
+      'Anda tidak bisa lagi menambah atau menghapus wallpaper di sini. Wallpaper yang Anda tambahkan tetap ada.';
+
+  @override
+  String get foldersLeft => 'Anda keluar dari folder.';
+
+  @override
+  String get foldersPeopleFailed => 'Tidak dapat memperbarui orang di folder ini. Coba lagi.';
+
+  @override
+  String get foldersSharedWithYou => 'Dibagikan kepada Anda';
+
+  @override
+  String get foldersSharedLabel => 'Dibagikan';
+
+  @override
+  String foldersAddedBy(String name) {
+    return 'Ditambahkan oleh $name';
+  }
+
+  @override
+  String get foldersAddedByYou => 'Ditambahkan oleh Anda';
+
+  @override
+  String get foldersRemoveFromFolder => 'Hapus dari folder';
+
+  @override
+  String get foldersDeleteSharedMessage =>
+      'Orang yang Anda undang juga akan kehilangannya. Wallpaper yang ada di favorit Anda tetap di sana.';
+
+  @override
+  String get foldersJoinTitle => 'Undangan folder';
+
+  @override
+  String foldersJoinHeadline(String name) {
+    return 'Gabung ke $name';
+  }
+
+  @override
+  String foldersJoinInvitedBy(String name) {
+    return '$name mengundang Anda untuk menambah dan menghapus wallpaper di folder ini.';
+  }
+
+  @override
+  String get foldersJoin => 'Gabung ke folder';
+
+  @override
+  String get foldersJoinSignIn => 'Masuk untuk bergabung';
+
+  @override
+  String get foldersJoinOpen => 'Buka folder';
+
+  @override
+  String get foldersJoinAlreadyIn => 'Anda sudah ada di folder ini.';
+
+  @override
+  String foldersJoined(String name) {
+    return 'Anda bergabung ke $name.';
+  }
+
+  @override
+  String get foldersJoinFailed => 'Tidak dapat bergabung ke folder ini. Coba lagi.';
+
+  @override
+  String get foldersJoinLoadFailed => 'Tidak dapat memuat undangan ini.';
+
+  @override
+  String get foldersJoinExpiredTitle => 'Undangan ini sudah kedaluwarsa';
+
+  @override
+  String get foldersJoinExpiredBody => 'Undangan berlaku selama 7 hari. Minta tautan baru kepada pemilik.';
+
+  @override
+  String get foldersJoinUsedTitle => 'Undangan ini sudah pernah digunakan';
+
+  @override
+  String get foldersJoinUsedBody => 'Setiap undangan hanya berlaku sekali. Minta tautan baru kepada pemilik.';
+
+  @override
+  String get foldersJoinFullTitle => 'Folder ini sudah penuh';
+
+  @override
+  String get foldersJoinFullBody => 'Minta pemilik untuk menghapus seseorang, lalu buka tautan lagi.';
+
+  @override
+  String get foldersJoinUnavailableTitle => 'Undangan ini tidak tersedia';
+
+  @override
+  String get foldersJoinUnavailableBody =>
+      'Mungkin folder ini sudah dihapus, atau Anda tidak bisa bergabung dengannya.';
+
+  @override
+  String get foldersMakePrivateMessageShared =>
+      'Hanya Anda dan orang yang Anda undang yang bisa melihatnya. Tautannya berhenti berfungsi dan pengikutnya kehilangan folder ini.';
 }
