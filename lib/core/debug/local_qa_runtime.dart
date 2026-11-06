@@ -53,22 +53,30 @@ class LocalQaRuntime {
     PersistenceRuntime.store = store;
   }
 
-  static Future<void> initializeFirebase() async {
-    for (final app in Firebase.apps) {
-      if (app.options.projectId != project) throw StateError('A non-demo Firebase app already exists.');
+  /// False when iOS already configured the demo app from the synthetic plist; a second init throws duplicate-app.
+  @visibleForTesting
+  static bool shouldInitializeFirebase(Iterable<String> existingProjectIds) {
+    for (final String id in existingProjectIds) {
+      if (id != project) throw StateError('A non-demo Firebase app already exists.');
     }
-    await Firebase.initializeApp(
-      options: FirebaseOptions(
-        apiKey: 'AIzaSy000000000000000000000000000000000',
-        appId: defaultTargetPlatform == TargetPlatform.iOS
-            ? '1:1234567890:ios:0123456789abcdef'
-            : '1:1234567890:android:0123456789abcdef',
-        messagingSenderId: '1234567890',
-        projectId: project,
-        storageBucket: 'demo-prism.appspot.com',
-        iosBundleId: 'com.hash.prism',
-      ),
-    );
+    return existingProjectIds.isEmpty;
+  }
+
+  static Future<void> initializeFirebase() async {
+    if (shouldInitializeFirebase(Firebase.apps.map((app) => app.options.projectId))) {
+      await Firebase.initializeApp(
+        options: FirebaseOptions(
+          apiKey: 'AIzaSy000000000000000000000000000000000',
+          appId: defaultTargetPlatform == TargetPlatform.iOS
+              ? '1:1234567890:ios:0123456789abcdef'
+              : '1:1234567890:android:0123456789abcdef',
+          messagingSenderId: '1234567890',
+          projectId: project,
+          storageBucket: 'demo-prism.appspot.com',
+          iosBundleId: 'com.hash.prism',
+        ),
+      );
+    }
     if (Firebase.app().options.projectId != project) throw StateError('Wrong Firebase project.');
     await FirebaseAuth.instance.useAuthEmulator('localhost', 19371, automaticHostMapping: false);
     configureLocalQaFirestore();

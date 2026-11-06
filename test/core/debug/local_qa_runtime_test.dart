@@ -40,4 +40,14 @@ void main() {
       await expectLater(() => client.getUrl(Uri.parse(url)), throwsStateError);
     }
   });
+
+  test('QA Firebase init runs once, reuses the demo app iOS configured, and refuses any other project', () {
+    expect(LocalQaRuntime.shouldInitializeFirebase(const <String>[]), isTrue);
+    expect(LocalQaRuntime.shouldInitializeFirebase(const <String>['demo-prism']), isFalse);
+    expect(() => LocalQaRuntime.shouldInitializeFirebase(const <String>['prism-wallpapers']), throwsStateError);
+    expect(
+      () => LocalQaRuntime.shouldInitializeFirebase(const <String>['demo-prism', 'prism-wallpapers']),
+      throwsStateError,
+    );
+  });
 }

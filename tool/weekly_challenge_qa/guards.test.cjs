@@ -50,3 +50,20 @@ test('helper rejects an explicit production project before preflight or filesyst
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /refusing other projects/);
 });
+test('CLI child networking allows the emulator socket in the OS temp folder, as on macOS', () => {
+  const guard = path.join(__dirname, 'cli_network_guard.cjs');
+  const tmp = require('node:fs').mkdtempSync('/tmp/qa-guard-tmpdir-');
+  const result = probe(`
+    require(${JSON.stringify(guard)});
+    const net = require('node:net');
+    const assert = require('node:assert/strict');
+    const tmp = ${JSON.stringify(tmp)};
+    const emulator = new net.Socket();
+    emulator.on('error', () => {});
+    assert.doesNotThrow(() => emulator.connect({path: tmp + '/fire_emu_0123456789abcdef.sock', port: 80}));
+    assert.throws(() => new net.Socket().connect({path: tmp + '/peer.sock'}), /denied nonlocal TCP/);
+    assert.throws(() => new net.Socket().connect('/var/elsewhere/fire_emu_0123456789abcdef.sock'), /denied nonlocal TCP/);
+  `, {TMPDIR: tmp});
+  require('node:fs').rmSync(tmp, {recursive: true, force: true});
+  assert.equal(result.status, 0, result.stderr);
+});
