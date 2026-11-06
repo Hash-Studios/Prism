@@ -363,8 +363,10 @@ jobs:
           node --test test/changelog.test.mjs
       - name: Run browser tests
         run: npm run test:e2e
-      # Next.js performs the TypeScript check as part of this build.
-      - name: Typecheck and build
+      # Next.js filters diagnostics from test/spec files; Playwright does not typecheck.
+      - name: Typecheck all TypeScript
+        run: npx tsc --noEmit
+      - name: Build
         run: npm run build
 
   rules:

@@ -111,15 +111,34 @@ class CiWorkflowTest(unittest.TestCase):
             with self.subTest(operator=operator), self.assertRaises(KeyError):
                 scheduled(job, {'flutter': 'true'})
 
-    def test_web_uses_the_installed_browser_and_keeps_e2e_and_build_typechecking(self):
+    def test_web_uses_the_installed_browser_and_keeps_e2e_and_full_typechecking(self):
         job = self.jobs['web']
         self.assertEqual(job['env']['PLAYWRIGHT_CHROMIUM_CHANNEL'], 'chrome')
         commands = '\n'.join(step.get('run', '') for step in job['steps'])
         self.assertIn('npm run test:e2e', commands)
         self.assertIn('npm run build', commands)
         self.assertNotIn('playwright install', commands)
-        self.assertNotIn('tsc --noEmit', commands)
+        self.assertIn('tsc --noEmit', commands)
         self.assertNotIn('ignoreBuildErrors', (ROOT / 'web/next.config.ts').read_text())
+
+    def test_web_type_errors_fail_the_ci_step(self):
+        step = next(step for step in self.jobs['web']['steps']
+                    if step.get('name') == 'Typecheck all TypeScript')
+        with tempfile.TemporaryDirectory() as directory:
+            npx = Path(directory) / 'npx'
+            npx.write_text('''#!/usr/bin/env python3
+import sys
+if sys.argv[1:] == ['tsc', '--noEmit']:
+    print('TS2322: invalid types in a Playwright spec', file=sys.stderr)
+    sys.exit(2)
+sys.exit('Unexpected typecheck command')
+''')
+            npx.chmod(0o755)
+            result = subprocess.run(['bash', '-e', '-c', step['run']], cwd=directory,
+                                    env={**os.environ, 'PATH': directory + os.pathsep + os.environ['PATH']},
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn('TS2322: invalid types in a Playwright spec', result.stderr)
 
 
 class MakeTestCommandsTest(unittest.TestCase):
