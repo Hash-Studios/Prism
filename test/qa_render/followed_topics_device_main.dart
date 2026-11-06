@@ -13,6 +13,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -30,12 +31,16 @@ import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart'
 import 'package:Prism/features/category_feed/domain/entities/category_entity.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/pages/collection_view_screen.dart';
+import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/features/favourite_walls/biz/favourite_counts_cubit.dart';
+import 'package:Prism/features/favourite_walls/domain/repositories/favourite_counts_repository.dart';
 import 'package:Prism/features/followed_topics/data/followed_topics_store.dart';
 import 'package:Prism/features/followed_topics/views/widgets/followed_topics_sheet.dart';
 import 'package:Prism/features/followed_topics/views/widgets/following_topics_row.dart';
 import 'package:Prism/features/in_app_notifications/domain/notification_copy.dart';
 import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
 import 'package:Prism/features/moods/biz/mood_walls_cubit.dart';
+import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/views/pages/mood_screen.dart';
 import 'package:Prism/features/moods/views/widgets/wall_ids_grid.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
@@ -114,6 +119,10 @@ class _QaCategoryBloc extends MockBloc<CategoryFeedEvent, CategoryFeedState> imp
 class _QaMoodWalls extends MockCubit<MoodWallsState> implements MoodWallsCubit {}
 
 class _QaRouter extends Mock implements StackRouter {}
+
+class _QaFavouriteCounts extends MockCubit<Map<String, PrismWallpaperStats>> implements FavouriteCountsCubit {}
+
+class _QaFavouriteWalls extends MockBloc<FavouriteWallsEvent, FavouriteWallsState> implements FavouriteWallsBloc {}
 
 final GlobalKey<NavigatorState> _navigator = GlobalKey<NavigatorState>();
 final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
@@ -201,8 +210,18 @@ Future<void> main() async {
       },
     },
   );
+  final _QaFavouriteCounts favouriteCounts = _QaFavouriteCounts();
+  whenListen(
+    favouriteCounts,
+    const Stream<Map<String, PrismWallpaperStats>>.empty(),
+    initialState: const <String, PrismWallpaperStats>{},
+  );
+  final _QaFavouriteWalls favouriteWalls = _QaFavouriteWalls();
+  whenListen(favouriteWalls, const Stream<FavouriteWallsState>.empty(), initialState: FavouriteWallsState.initial());
   getIt
     ..registerSingleton<FirestoreClient>(firestore)
+    ..registerSingleton<FavoritesLocalDataSource>(FavoritesLocalDataSource(InMemoryLocalStore()))
+    ..registerSingleton<FavouriteCountsCubit>(favouriteCounts)
     ..registerSingleton<SettingsLocalDataSource>(settings)
     ..registerSingleton<FeedCacheLocalDataSource>(FakeFeedCacheLocalDataSource())
     ..registerSingleton<UserBlockRepository>(FakeUserBlockRepository.pending()..completeInitial(<String>{}))
@@ -241,6 +260,7 @@ Future<void> main() async {
   );
   registerFallbackValue(const CategoryFeedEvent.started());
   registerFallbackValue(MoodRoute(moodId: 'dreamy'));
+  registerFallbackValue(WallMood.dreamy);
 
   final _QaRouter router = _QaRouter();
   when(() => router.push<Object?>(any())).thenAnswer((Invocation invocation) async {
@@ -265,8 +285,11 @@ Future<void> main() async {
     StackRouterScope(
       controller: router,
       stateHash: 0,
-      child: BlocProvider<CategoryFeedBloc>.value(
-        value: categories,
+      child: MultiBlocProvider(
+        providers: <BlocProvider<dynamic>>[
+          BlocProvider<FavouriteWallsBloc>.value(value: favouriteWalls),
+          BlocProvider<CategoryFeedBloc>.value(value: categories),
+        ],
         child: MaterialApp(
           navigatorKey: _navigator,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -276,7 +299,9 @@ Future<void> main() async {
           darkTheme: kDarkTheme,
           themeMode: _dark ? ThemeMode.dark : ThemeMode.light,
           builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(_largeText ? 2 : 1)),
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: _largeText ? const TextScaler.linear(2) : TextScaler.noScaling),
             child: child!,
           ),
           home: const _QaHome(),
