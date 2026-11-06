@@ -197,68 +197,66 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           if (_permissionGranted == false) ...<Widget>[_permissionBanner(), const SizedBox(height: PrismSpace.sm)],
-          // The switches stay live: turning one on asks the system for permission. Half opacity shows they do nothing yet.
-          Opacity(
-            opacity: _permissionGranted == false ? 0.5 : 1,
-            child: PrismGroup(
-              children: <Widget>[
-                _toggle(
-                  icon: Icons.wb_sunny_rounded,
-                  title: context.l10n.notifSettingWotd,
-                  subtitle: context.l10n.notifSettingWotdDescription,
-                  value: _wotd,
-                  onChanged: (bool value) => _change(value, () => _setWotd(value)),
-                ),
-                _toggle(
-                  icon: Icons.auto_awesome_rounded,
-                  title: context.l10n.notifSettingDrops,
-                  subtitle: context.l10n.notifSettingDropsDescription,
-                  value: _drops,
-                  onChanged: (bool value) => _change(value, () => _setDrops(value)),
-                ),
-                _toggle(
-                  icon: Icons.person_add_rounded,
-                  title: context.l10n.notifSettingFollowers,
-                  subtitle: context.l10n.notifSettingFollowersDescription,
-                  value: _followers,
-                  needsSignIn: true,
-                  onChanged: (bool value) => _change(value, () => _setFollowers(value), needsSignIn: true),
-                ),
-                _toggle(
-                  icon: Icons.photo_library_rounded,
-                  title: context.l10n.notifSettingPosts,
-                  subtitle: context.l10n.notifSettingPostsDescription,
-                  value: _posts,
-                  needsSignIn: true,
-                  onChanged: _followers
-                      ? (bool value) => _change(value, () => _setPosts(value), needsSignIn: true)
-                      : null,
-                ),
-                _toggle(
-                  icon: Icons.folder_special_rounded,
-                  title: context.l10n.notifSettingFolders,
-                  subtitle: context.l10n.notifSettingFoldersDescription,
-                  value: _folders,
-                  needsSignIn: true,
-                  onChanged: (bool value) => _change(value, () => _setFolders(value), needsSignIn: true),
-                ),
-                _toggle(
-                  icon: Icons.lightbulb_rounded,
-                  title: context.l10n.notifSettingRecommendations,
-                  subtitle: context.l10n.notifSettingRecommendationsDescription,
-                  value: _recommendations,
-                  onChanged: (bool value) => _change(value, () => _setRecommendations(value)),
-                ),
-                _toggle(
-                  icon: Icons.local_fire_department_rounded,
-                  title: context.l10n.notifSettingStreaks,
-                  subtitle: context.l10n.notifSettingStreaksDescription,
-                  value: _streakReminders,
-                  needsSignIn: true,
-                  onChanged: (bool value) => _change(value, () => _setStreakReminders(value), needsSignIn: true),
-                ),
-              ],
-            ),
+          // The switches stay at full contrast: the banner above says notifications are off, and turning a switch on
+          // asks the system for permission. Dimmed rows read as disabled and fail contrast.
+          PrismGroup(
+            children: <Widget>[
+              _toggle(
+                icon: Icons.wb_sunny_rounded,
+                title: context.l10n.notifSettingWotd,
+                subtitle: context.l10n.notifSettingWotdDescription,
+                value: _wotd,
+                onChanged: (bool value) => _change(value, () => _setWotd(value)),
+              ),
+              _toggle(
+                icon: Icons.auto_awesome_rounded,
+                title: context.l10n.notifSettingDrops,
+                subtitle: context.l10n.notifSettingDropsDescription,
+                value: _drops,
+                onChanged: (bool value) => _change(value, () => _setDrops(value)),
+              ),
+              _toggle(
+                icon: Icons.person_add_rounded,
+                title: context.l10n.notifSettingFollowers,
+                subtitle: context.l10n.notifSettingFollowersDescription,
+                value: _followers,
+                needsSignIn: true,
+                onChanged: (bool value) => _change(value, () => _setFollowers(value), needsSignIn: true),
+              ),
+              _toggle(
+                icon: Icons.photo_library_rounded,
+                title: context.l10n.notifSettingPosts,
+                subtitle: context.l10n.notifSettingPostsDescription,
+                value: _posts,
+                needsSignIn: true,
+                onChanged: _followers
+                    ? (bool value) => _change(value, () => _setPosts(value), needsSignIn: true)
+                    : null,
+              ),
+              _toggle(
+                icon: Icons.folder_special_rounded,
+                title: context.l10n.notifSettingFolders,
+                subtitle: context.l10n.notifSettingFoldersDescription,
+                value: _folders,
+                needsSignIn: true,
+                onChanged: (bool value) => _change(value, () => _setFolders(value), needsSignIn: true),
+              ),
+              _toggle(
+                icon: Icons.lightbulb_rounded,
+                title: context.l10n.notifSettingRecommendations,
+                subtitle: context.l10n.notifSettingRecommendationsDescription,
+                value: _recommendations,
+                onChanged: (bool value) => _change(value, () => _setRecommendations(value)),
+              ),
+              _toggle(
+                icon: Icons.local_fire_department_rounded,
+                title: context.l10n.notifSettingStreaks,
+                subtitle: context.l10n.notifSettingStreaksDescription,
+                value: _streakReminders,
+                needsSignIn: true,
+                onChanged: (bool value) => _change(value, () => _setStreakReminders(value), needsSignIn: true),
+              ),
+            ],
           ),
         ],
       ),

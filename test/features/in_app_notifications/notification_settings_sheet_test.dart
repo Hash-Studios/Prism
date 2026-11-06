@@ -133,10 +133,8 @@ void main() {
     await pumpSheet(tester, permissions);
 
     expect(find.text('Notifications are off for Prism.'), findsOneWidget);
-    final Opacity rows = tester.widget<Opacity>(
-      find.ancestor(of: find.byType(PrismGroup), matching: find.byType(Opacity)).first,
-    );
-    expect(rows.opacity, 0.5);
+    // The rows stay at full contrast; the banner carries the off state.
+    expect(find.ancestor(of: find.byType(PrismGroup), matching: find.byType(Opacity)), findsNothing);
     await tester.tap(find.text('Open settings'));
     expect(permissions.settingsOpened, 1);
   });
