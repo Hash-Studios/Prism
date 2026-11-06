@@ -22,17 +22,17 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     this._clearFavouriteWallsUseCase,
     this._setFavouritePinUseCase,
   ) : super(FavouriteWallsState.initial()) {
-    on<_Started>((event, emit) => _serial(() => _onStarted(event, emit)));
+    on<_Started>((event, emit) => _serial(() => _onStarted(event, emit), emit, event.operationId));
     on<_Synced>(_onSynced);
-    on<_RefreshRequested>((event, emit) => _serial(() => _onRefreshRequested(event, emit)));
-    on<_ToggleRequested>((event, emit) => _serial(() => _onToggleRequested(event, emit)));
-    on<_ClearRequested>((event, emit) => _serial(() => _onClearRequested(event, emit)));
+    on<_RefreshRequested>((event, emit) => _serial(() => _onRefreshRequested(event, emit), emit, event.operationId));
+    on<_ToggleRequested>((event, emit) => _serial(() => _onToggleRequested(event, emit), emit, event.operationId));
+    on<_ClearRequested>((event, emit) => _serial(() => _onClearRequested(event, emit), emit, event.operationId));
     on<_SortChanged>((event, emit) => emit(state.copyWith(sort: event.sort)));
     on<_SourceFilterChanged>((event, emit) => emit(state.copyWith(sourceFilter: event.source)));
     on<_QueryChanged>((event, emit) => emit(state.copyWith(query: event.query)));
-    on<_RemoveRequested>((event, emit) => _serial(() => _onRemoveRequested(event, emit)));
-    on<_RestoreRequested>((event, emit) => _serial(() => _onRestoreRequested(event, emit)));
-    on<_PinRequested>((event, emit) => _serial(() => _onPinRequested(event, emit)));
+    on<_RemoveRequested>((event, emit) => _serial(() => _onRemoveRequested(event, emit), emit, event.operationId));
+    on<_RestoreRequested>((event, emit) => _serial(() => _onRestoreRequested(event, emit), emit, event.operationId));
+    on<_PinRequested>((event, emit) => _serial(() => _onPinRequested(event, emit), emit, event.operationId));
   }
 
   final FetchFavouriteWallsUseCase _fetchFavouriteWallsUseCase;
@@ -44,13 +44,25 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   int _accountGeneration = 0;
 
   /// Loads and mutations share one queue, so a refresh cannot interleave with a removal or an undo.
-  Future<void> _serial(Future<void> Function() action) async {
+  /// A handler that throws still completes [operationId], so a caller that waits for it does not wait forever.
+  Future<void> _serial(Future<void> Function() action, Emitter<FavouriteWallsState> emit, int operationId) async {
     final Future<void> previous = _queueTail;
     final Completer<void> done = Completer<void>();
     _queueTail = done.future;
     await previous;
     try {
       await action();
+    } catch (error, stackTrace) {
+      addError(error, stackTrace);
+      if (!emit.isDone) {
+        emit(
+          state.copyWith(
+            actionStatus: ActionStatus.failure,
+            completedOperationId: operationId,
+            failure: UnknownFailure('Favourite update failed: $error'),
+          ),
+        );
+      }
     } finally {
       done.complete();
     }

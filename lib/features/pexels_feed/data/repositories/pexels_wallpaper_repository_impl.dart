@@ -140,6 +140,17 @@ class PexelsWallpaperRepositoryImpl implements PexelsWallpaperRepository, Pagina
 
       final List<PexelsWallpaper> walls = payload.photos.map((item) => item.toDomain()).toList(growable: false);
       if (!identical(_feedCaches[pageKey], cache)) return Result.success(walls);
+      // A rate-limited Pexels can answer 200 with no photos. Keep the cached walls instead of an empty feed.
+      if (refresh && walls.isEmpty) {
+        final cached = await _readCached(pageKey: pageKey, scope: scope, cache: cache);
+        if (cached != null && cached.isNotEmpty) {
+          logger.w(
+            '[PexelsWallpaperRepository] empty first page; returning cached snapshot',
+            fields: <String, Object?>{'category': categoryName},
+          );
+          return Result.success(cached);
+        }
+      }
       _remember(walls);
       try {
         await cache.write(

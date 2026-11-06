@@ -31,7 +31,6 @@ void main() {
   late _MockClear clear;
   late FavouriteWallsBloc bloc;
   late FavouriteWallsAdapter adapter;
-  final List<Object> handlerErrors = <Object>[];
 
   setUpAll(() {
     registerFallbackValue(const FetchFavouriteWallsParams(userId: 'u'));
@@ -51,10 +50,7 @@ void main() {
   tearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
   Future<void> pumpAdapter(WidgetTester tester) async {
-    bloc = runZonedGuarded(
-      () => FavouriteWallsBloc(fetch, toggle, clear, _MockSetFavouritePinUseCase()),
-      (Object error, StackTrace stack) => handlerErrors.add(error),
-    )!;
+    bloc = FavouriteWallsBloc(fetch, toggle, clear, _MockSetFavouritePinUseCase());
     addTearDown(bloc.close);
     await tester.pumpWidget(
       BlocProvider<FavouriteWallsBloc>.value(
@@ -74,8 +70,10 @@ void main() {
     when(() => toggle(any())).thenThrow(StateError('boom'));
     await pumpAdapter(tester);
 
-    await tester.runAsync(
-      () => expectLater(adapter.favCheck(legacyFav('x')).timeout(const Duration(seconds: 5)), completion(isFalse)),
-    );
+    bool? favourited;
+    unawaited(adapter.favCheck(legacyFav('x')).then((bool value) => favourited = value));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(favourited, isFalse);
   });
 }
