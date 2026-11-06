@@ -11,11 +11,16 @@ import 'package:injectable/injectable.dart';
 
 @lazySingleton
 class FavoritesLocalDataSource {
-  FavoritesLocalDataSource(this._store, {@ignoreParam DurableJsonStore? durableStore})
-    : _durable = durableStore ?? DurableJsonStore('favourites');
+  FavoritesLocalDataSource(
+    this._store, {
+    @ignoreParam DurableJsonStore? durableStore,
+    @ignoreParam Future<List<List<Map<String, Object?>>>> Function(List<Map<String, Object?>> docs)? snapshotChunker,
+  }) : _durable = durableStore ?? DurableJsonStore('favourites'),
+       _snapshotChunker = snapshotChunker;
 
   final LocalStore _store;
   final DurableJsonStore _durable;
+  final Future<List<List<Map<String, Object?>>>> Function(List<Map<String, Object?>> docs)? _snapshotChunker;
   final Map<String, Future<void>> _writeTails = <String, Future<void>>{};
   final Map<String, Future<void>> _sendTails = <String, Future<void>>{};
   static int _snapshotGeneration = 0;
@@ -148,7 +153,7 @@ class FavoritesLocalDataSource {
       if (wall.id.isEmpty || !seen.add(wall.id)) continue;
       docs.add(_jsonFavouriteDoc(wall));
     }
-    final chunks = await compute(_chunkWallSnapshot, docs, debugLabel: 'favourites.snapshot');
+    final chunks = await _chunkDocs(docs);
 
     final String generation = '${DateTime.now().microsecondsSinceEpoch}-${_snapshotGeneration++}';
     for (int index = 0; index < chunks.length; index++) {
@@ -160,6 +165,16 @@ class FavoritesLocalDataSource {
     for (final key in records.keys.where((key) => key.startsWith(prefix) && !key.startsWith('$prefix$generation:'))) {
       await _durable.delete(key);
     }
+  }
+
+  Future<List<List<Map<String, Object?>>>> _chunkDocs(List<Map<String, Object?>> docs) {
+    if (_snapshotChunker != null) {
+      return _snapshotChunker(docs);
+    }
+    if (_durable.runtimeType != DurableJsonStore) {
+      return Future<List<List<Map<String, Object?>>>>.value(_chunkWallSnapshot(docs));
+    }
+    return compute(_chunkWallSnapshot, docs, debugLabel: 'favourites.snapshot');
   }
 
   static List<List<Map<String, Object?>>> _chunkWallSnapshot(List<Map<String, Object?>> docs) {

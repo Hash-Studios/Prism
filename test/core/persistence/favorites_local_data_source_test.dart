@@ -105,6 +105,20 @@ void main() {
     expect((await source.readWallSnapshot('owner')).map((wall) => wall.id), unorderedEquals(['saved', 'next']));
   });
 
+  test('custom snapshot chunker is used when provided', () async {
+    var chunkerCalled = false;
+    final customSource = FavoritesLocalDataSource(
+      InMemoryLocalStore(),
+      durableStore: DurableJsonStore('favorites-chunker-test', directory: directory),
+      snapshotChunker: (docs) async {
+        chunkerCalled = true;
+        return [docs];
+      },
+    );
+    await customSource.updateWallSnapshot('owner', (_) => [prismFav('w1')]);
+    expect(chunkerCalled, isTrue);
+  });
+
   test('a stalled send does not block local reads or newer intent writes', () async {
     const String owner = 'favorites-lock-owner';
     final Map<String, Object?> oldOperation = await source.createFavouriteOperation(
