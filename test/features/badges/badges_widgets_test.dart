@@ -89,6 +89,7 @@ void main() {
   testWidgets('profile row counts known badges only, and is empty with none', (tester) async {
     await tester.pumpWidget(_app(const ProfileBadgeRow(badgeIds: <String>['creator', 'creator', 'from_the_future'])));
     expect(find.text('1 badge'), findsOneWidget);
+    expect(tester.widget<Text>(find.text('1 badge')).style!.fontSize, 13);
     expect(find.byIcon(Icons.military_tech_rounded), findsOneWidget);
 
     await tester.pumpWidget(_app(const ProfileBadgeRow(badgeIds: <String>[])));

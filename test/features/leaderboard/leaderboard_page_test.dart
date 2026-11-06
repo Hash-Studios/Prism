@@ -144,9 +144,18 @@ void main() {
   });
 
   testWidgets('an empty friends tab asks the user to follow creators', (tester) async {
-    await pumpPage(tester, loaded(tab: LeaderboardTab.friends));
+    await pumpPage(tester, loaded(tab: LeaderboardTab.friends, global: const <LeaderboardEntry>[]));
 
     expect(find.text('Follow creators to see them here.'), findsOneWidget);
+  });
+
+  testWidgets('an empty following list still shows the fetched global suggestions', (tester) async {
+    await pumpPage(tester, loaded(tab: LeaderboardTab.friends));
+
+    expect(find.text('Find creators'), findsOneWidget);
+    expect(find.text('Top this week'), findsOneWidget);
+    expect(find.text('Ana'), findsOneWidget);
+    expect(find.text('Me'), findsOneWidget);
   });
 
   testWidgets('following cold start keeps my score and explains how to add comparisons', (tester) async {

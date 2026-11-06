@@ -83,10 +83,9 @@ class ProfileBadgeRow extends StatelessWidget {
                               Flexible(
                                 child: Text(
                                   label,
-                                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                    color: cs.onPrimaryContainer,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                  style: PrismTextStyles.caption(
+                                    context,
+                                  ).copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w700),
                                 ),
                               ),
                             ],

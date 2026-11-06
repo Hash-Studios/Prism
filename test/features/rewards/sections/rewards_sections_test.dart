@@ -527,6 +527,14 @@ void main() {
         expect(find.text('Streak collection'), findsOneWidget);
         expect(find.text(AppLocalizationsEn().economyCollectionUnlockedAtDays(7)), findsOneWidget);
         expect(find.text(AppLocalizationsEn().economyCollectionUnlocksAtDays(30)), findsOneWidget);
+        final heart = find.ancestor(of: find.byIcon(Icons.favorite_border_rounded), matching: find.byType(InkWell));
+        expect(find.bySemanticsLabel('Favourite'), findsOneWidget);
+        final image = find.byType(PrismWallTile).first;
+        expect(tester.getBottomLeft(heart), tester.getBottomLeft(image));
+        expect(
+          tester.getBottomLeft(heart).dy,
+          lessThan(tester.getTopLeft(find.text(AppLocalizationsEn().economyCollectionUnlockedAtDays(7))).dy),
+        );
 
         await tester.tap(find.text(AppLocalizationsEn().economyCollectionUnlocksAtDays(30)));
         await tester.pump();

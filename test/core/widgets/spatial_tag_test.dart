@@ -92,6 +92,33 @@ void main() {
     );
   });
 
+  onPlatform('large text keeps the Spatial tag clear of the heart target', TargetPlatform.iOS, (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('de'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+          child: Scaffold(
+            body: Center(
+              child: SizedBox(
+                key: const ValueKey('tile'),
+                width: 160,
+                height: 280,
+                child: Stack(children: [spatialTagFor(WallSpatialTier.great)!]),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final tile = tester.getRect(find.byKey(const ValueKey('tile')));
+    final tag = tester.getRect(find.byType(SpatialTag));
+    expect(tag.left, greaterThanOrEqualTo(tile.left + 44));
+    expect(tester.takeException(), isNull);
+  });
+
   group('stackTags', () {
     testWidgets('gives null for no layers', (tester) async {
       expect(stackTags(<Widget?>[]), isNull);

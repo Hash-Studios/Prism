@@ -56,6 +56,7 @@ class LeaderboardBloc extends Bloc<LeaderboardEvent, LeaderboardState> {
 
   /// Loads the global board. It changes only [LeaderboardState.global] and [LeaderboardState.globalStatus].
   Future<void> _loadGlobal(Emitter<LeaderboardState> emit) async {
+    if (state.globalStatus == LoadStatus.loading) return;
     emit(state.copyWith(globalStatus: LoadStatus.loading));
     final Result<List<LeaderboardEntry>> result = await _repository.fetchGlobal();
     result.fold(

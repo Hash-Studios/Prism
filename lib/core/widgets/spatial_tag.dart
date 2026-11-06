@@ -66,7 +66,10 @@ class _PositionedSpatialTag extends StatelessWidget {
             alignment: AlignmentDirectional.bottomEnd,
             child: Padding(
               padding: const EdgeInsets.all(6),
-              child: SpatialTag(iconOnly: constraints.maxWidth < spatialTagIconOnlyBelow),
+              child: SpatialTag(
+                iconOnly:
+                    constraints.maxWidth < spatialTagIconOnlyBelow * MediaQuery.textScalerOf(context).scale(12) / 12,
+              ),
             ),
           ),
         ),

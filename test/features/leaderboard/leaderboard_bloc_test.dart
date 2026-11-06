@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -26,6 +28,24 @@ void main() {
     repository = _MockRepository();
     when(() => repository.fetchFriends(any(), any())).thenAnswer((_) async => Result.success(const [_ana]));
     when(() => repository.fetchGlobal()).thenAnswer((_) async => Result.success(const <LeaderboardEntry>[]));
+  });
+
+  test('refresh joins the automatic global load instead of fetching twice', () async {
+    final pending = Completer<Result<List<LeaderboardEntry>>>();
+    when(() => repository.fetchGlobal()).thenAnswer((_) => pending.future);
+    final bloc = LeaderboardBloc(repository);
+    bloc.add(const LeaderboardEvent.started());
+    await bloc.stream.firstWhere((state) => state.globalStatus == LoadStatus.loading);
+    bloc.add(const LeaderboardEvent.tabChanged(LeaderboardTab.global));
+    await bloc.stream.firstWhere((state) => state.tab == LeaderboardTab.global);
+    bloc.add(const LeaderboardEvent.refreshed());
+    await Future<void>.delayed(Duration.zero);
+    pending.complete(Result.success(const [_ana]));
+    await bloc.stream.firstWhere((state) => state.globalStatus == LoadStatus.success);
+    expect(bloc.state.tab, LeaderboardTab.global);
+    expect(bloc.state.global, const [_ana]);
+    await bloc.close();
+    verify(() => repository.fetchGlobal()).called(1);
   });
 
   blocTest<LeaderboardBloc, LeaderboardState>(

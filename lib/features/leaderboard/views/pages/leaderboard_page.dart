@@ -167,7 +167,12 @@ class _Content extends StatelessWidget {
     if (entries.isEmpty && (status == LoadStatus.initial || status == LoadStatus.loading)) {
       return withCaption(PrismSkeleton.rows());
     }
-    if (entries.isEmpty) {
+    final bool hasGlobalSuggestions =
+        state.tab == LeaderboardTab.friends &&
+        status == LoadStatus.success &&
+        state.globalStatus == LoadStatus.success &&
+        state.global.isNotEmpty;
+    if (entries.isEmpty && !hasGlobalSuggestions) {
       final bool failed = status == LoadStatus.failure;
       final bool friends = state.tab == LeaderboardTab.friends;
       return withCaption(
