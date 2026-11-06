@@ -30,13 +30,26 @@ class _FollowingRow extends StatefulWidget {
   State<_FollowingRow> createState() => _FollowingRowState();
 }
 
-class _FollowingRowState extends State<_FollowingRow> {
+class _FollowingRowState extends State<_FollowingRow> with WidgetsBindingObserver {
   final FollowedTopicsStore _store = getIt<FollowedTopicsStore>();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     unawaited(_store.ensureLoaded());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Home stays alive for the whole session: pick up new walls, other devices' follows and a time zone change.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(_store.refresh());
   }
 
   @override

@@ -58,7 +58,18 @@ class FollowedTopicsStore extends ChangeNotifier {
   Future<void> ensureLoaded() {
     if (!app_state.prismUser.loggedIn) return Future<void>.value();
     if (_loadedFor == app_state.prismUser.id) return Future<void>.value();
+    return _startLoad(app_state.prismUser.id);
+  }
+
+  /// Reads the account list and the topic news again, for example when the app comes back to the front. It waits
+  /// for a follow or unfollow in flight, so it never replaces that change with an older copy.
+  Future<void> refresh() {
+    if (!app_state.prismUser.loggedIn) return Future<void>.value();
     final String uid = app_state.prismUser.id;
+    return _enqueueMutation<void>(uid, () => _startLoad(uid));
+  }
+
+  Future<void> _startLoad(String uid) {
     final Future<void>? pending = _loading[uid];
     if (pending != null) return pending;
     late final Future<void> loading;

@@ -359,6 +359,38 @@ void main() {
     expect(later.hasNew(pastel), isFalse);
   });
 
+  test('refresh reads the list and the news again: another device follow and a newer wall show up', () async {
+    final FollowedTopic pastel = FollowedTopic.category('Pastel')!;
+    final FollowedTopic dreamy = FollowedTopic.mood(WallMood.dreamy);
+    firestore.docs['topicNews'] = <String, Map<String, dynamic>>{
+      'current': <String, dynamic>{
+        'latest': <String, int>{'category:Pastel': 2000},
+      },
+    };
+    firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
+      'session': <String, dynamic>{
+        'followedTopics': <String>['category:Pastel'],
+      },
+    };
+    final FollowedTopicsStore store = newStore();
+    await store.ensureLoaded();
+    expect(store.hasNew(pastel), isFalse);
+
+    firestore.docs['usersv2/u1/private']!['session'] = <String, dynamic>{
+      'followedTopics': <String>['category:Pastel', 'mood:dreamy'],
+    };
+    firestore.docs['topicNews']!['current'] = <String, dynamic>{
+      'latest': <String, int>{'category:Pastel': 3000},
+    };
+    await store.ensureLoaded();
+    expect(store.topics, <FollowedTopic>[pastel], reason: 'ensureLoaded does not read again');
+
+    await store.refresh();
+
+    expect(store.topics, <FollowedTopic>[pastel, dreamy]);
+    expect(store.hasNew(pastel), isTrue);
+  });
+
   test('after the signed-in user changes, ensureLoaded reads the new user list', () async {
     firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
       'session': <String, dynamic>{
