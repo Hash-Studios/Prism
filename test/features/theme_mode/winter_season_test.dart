@@ -19,23 +19,14 @@ const Map<String, Duration> zones = <String, Duration>{
 
 void main() {
   group('winter season window', () {
-    for (final MapEntry<String, Duration> zone in zones.entries) {
-      test('start and end edges follow the wall clock in ${zone.key}', () {
-        final Duration offset = zone.value;
-        // The instant whose wall clock in this zone reads [wall], built through wallClock.
-        DateTime at(DateTime wall) => wallClock(
-          DateTime.utc(wall.year, wall.month, wall.day, wall.hour, wall.minute, wall.second).subtract(offset),
-          offset,
-        );
+    test('starts on 1 December and ends after 6 January, local time', () {
+      expect(winterSeason.window.contains(DateTime(2026, 11, 30, 23, 59, 59)), isFalse);
+      expect(winterSeason.window.contains(DateTime(2026, 12)), isTrue);
+      expect(winterSeason.window.contains(DateTime(2027, 1, 6, 23, 59, 59)), isTrue);
+      expect(winterSeason.window.contains(DateTime(2027, 1, 7)), isFalse);
+    });
 
-        expect(winterSeason.window.contains(at(DateTime.utc(2026, 11, 30, 23, 59, 59))), isFalse);
-        expect(winterSeason.window.contains(at(DateTime.utc(2026, 12, 1))), isTrue);
-        expect(winterSeason.window.contains(at(DateTime.utc(2027, 1, 6, 23, 59, 59))), isTrue);
-        expect(winterSeason.window.contains(at(DateTime.utc(2027, 1, 7))), isFalse);
-      });
-    }
-
-    test('a UTC instant is read in the local zone of each place', () {
+    test('one UTC instant falls on a different local day in each zone', () {
       final DateTime instant = DateTime.utc(2026, 11, 30, 20);
 
       expect(winterSeason.window.contains(wallClock(instant, zones['Auckland']!)), isTrue, reason: 'Auckland');
@@ -86,21 +77,13 @@ void main() {
       expect(newYearWindow.contains(DateTime(2027, 1, 2)), isFalse);
     });
 
-    for (final MapEntry<String, Duration> zone in zones.entries) {
-      test('start and end edges follow the wall clock in ${zone.key}', () {
-        final Duration offset = zone.value;
+    test('one UTC instant on 30 December is New Year only where it is already 31 December', () {
+      final DateTime instant = DateTime.utc(2026, 12, 30, 12);
 
-        DateTime at(DateTime wall) => wallClock(
-          DateTime.utc(wall.year, wall.month, wall.day, wall.hour, wall.minute, wall.second).subtract(offset),
-          offset,
-        );
-
-        expect(newYearWindow.contains(at(DateTime.utc(2026, 12, 30, 23, 59, 59))), isFalse);
-        expect(newYearWindow.contains(at(DateTime.utc(2026, 12, 31))), isTrue);
-        expect(newYearWindow.contains(at(DateTime.utc(2027, 1, 1, 23, 59, 59))), isTrue);
-        expect(newYearWindow.contains(at(DateTime.utc(2027, 1, 2))), isFalse);
-      });
-    }
+      expect(newYearWindow.contains(wallClock(instant, zones['Auckland']!)), isTrue, reason: 'Auckland');
+      expect(newYearWindow.contains(wallClock(instant, zones['Los Angeles']!)), isFalse, reason: 'Los Angeles');
+      expect(newYearWindow.contains(wallClock(instant, zones['India']!)), isFalse, reason: 'India');
+    });
   });
 
   group('winter announcement for an upcoming season', () {

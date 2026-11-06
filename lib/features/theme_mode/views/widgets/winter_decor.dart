@@ -120,7 +120,9 @@ class _WinterSnowfallState extends State<WinterSnowfall> with SingleTickerProvid
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(_readPowerSaver());
-      setState(_scheduleNewYear);
+      final bool wasNewYear = _newYear;
+      _scheduleNewYear();
+      if (_newYear != wasNewYear) setState(() {});
     }
   }
 

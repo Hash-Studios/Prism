@@ -25,20 +25,49 @@ final Duration _debugSeasonOffset = () {
 DateTime _defaultSeasonClock() => DateTime.now().add(_debugSeasonOffset);
 
 /// A span of local wall-clock time, [start] inclusive and [end] exclusive. A UTC instant is read in the phone's zone.
+/// The bounds keep their wall-clock fields, so a change of time zone while the app runs does not move them.
 @immutable
 class SeasonWindow {
-  const SeasonWindow(this.start, this.end);
+  SeasonWindow(DateTime start, DateTime end) : _start = _fields(start), _end = _fields(end);
 
-  final DateTime start;
-  final DateTime end;
+  final DateTime _start;
+  final DateTime _end;
 
-  bool contains(DateTime now) => !_wall(now).isBefore(start) && _wall(now).isBefore(end);
+  /// [_start] and [_end] as instants in the phone's current zone, for timers.
+  DateTime get start => _local(_start);
+  DateTime get end => _local(_end);
 
-  bool isUpcoming(DateTime now) => _wall(now).isBefore(start);
+  bool contains(DateTime now) => !_fields(now).isBefore(_start) && _fields(now).isBefore(_end);
 
-  bool hasEnded(DateTime now) => !_wall(now).isBefore(end);
+  bool isUpcoming(DateTime now) => _fields(now).isBefore(_start);
 
-  static DateTime _wall(DateTime now) => now.isUtc ? now.toLocal() : now;
+  bool hasEnded(DateTime now) => !_fields(now).isBefore(_end);
+
+  /// The local wall-clock fields of [time], held in a UTC DateTime so comparisons ignore the zone.
+  static DateTime _fields(DateTime time) {
+    final DateTime local = time.toLocal();
+    return DateTime.utc(
+      local.year,
+      local.month,
+      local.day,
+      local.hour,
+      local.minute,
+      local.second,
+      local.millisecond,
+      local.microsecond,
+    );
+  }
+
+  static DateTime _local(DateTime fields) => DateTime(
+    fields.year,
+    fields.month,
+    fields.day,
+    fields.hour,
+    fields.minute,
+    fields.second,
+    fields.millisecond,
+    fields.microsecond,
+  );
 }
 
 /// A free theme with a season. Its home card and its update announcement run in [promo], a span of local time.
