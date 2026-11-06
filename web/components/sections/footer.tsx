@@ -27,6 +27,14 @@ export function Footer({ adaptive = false }: { adaptive?: boolean }) {
 
         <div className="flex gap-24">
           <div className="flex flex-col gap-2">
+            <h3 className="mb-1 text-base font-semibold text-black">Company</h3>
+            <a href="/about" className="text-neutral-400 hover:text-black transition-all">About</a>
+            <a href="/contact" className="text-neutral-400 hover:text-black transition-all">Contact</a>
+            <a href="/docs" className="text-neutral-400 hover:text-black transition-all">Docs</a>
+            <a href="/developers" className="text-neutral-400 hover:text-black transition-all">Developers</a>
+            <a href="/mcp" className="text-neutral-400 hover:text-black transition-all">MCP</a>
+          </div>
+          <div className="flex flex-col gap-2">
             <h3 className="mb-1 text-base font-semibold text-black">Socials</h3>
             <a
               href={GITHUB_URL}

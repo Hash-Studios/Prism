@@ -1,0 +1,12 @@
+# Prism Wallpapers documentation index
+
+Use these first-party resources for Prism integration details:
+
+- [API guide](/docs): endpoints, examples, errors, and sandbox notes.
+- [API summary](/api.md): compact endpoint overview.
+- [OpenAPI](/openapi.json): machine-readable API description.
+- [Developers](/developers): integration links and repository.
+- [MCP guide](/mcp): Streamable HTTP endpoint and tool configuration.
+- [Authentication guide](/auth.md): public access and why agent authentication is not supported.
+
+Public API catalog reads do not require authentication. Check source docs for current service behavior.
