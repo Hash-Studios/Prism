@@ -6,6 +6,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
@@ -22,9 +23,11 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     this._clearFavouriteWallsUseCase,
     this._setFavouritePinUseCase,
   ) : super(FavouriteWallsState.initial()) {
-    on<_Started>((event, emit) => _serial(() => _onStarted(event, emit), emit, event.operationId));
+    on<_Started>((event, emit) => _serial(() => _onStarted(event, emit), emit, event.operationId, isLoad: true));
     on<_Synced>(_onSynced);
-    on<_RefreshRequested>((event, emit) => _serial(() => _onRefreshRequested(event, emit), emit, event.operationId));
+    on<_RefreshRequested>(
+      (event, emit) => _serial(() => _onRefreshRequested(event, emit), emit, event.operationId, isLoad: true),
+    );
     on<_ToggleRequested>((event, emit) => _serial(() => _onToggleRequested(event, emit), emit, event.operationId));
     on<_ClearRequested>((event, emit) => _serial(() => _onClearRequested(event, emit), emit, event.operationId));
     on<_SortChanged>((event, emit) => emit(state.copyWith(sort: event.sort)));
@@ -44,8 +47,12 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   int _accountGeneration = 0;
 
   /// Loads and mutations share one queue, so a refresh cannot interleave with a removal or an undo.
-  /// A handler that throws still completes [operationId], so a caller that waits for it does not wait forever.
-  Future<void> _serial(Future<void> Function() action, Emitter<FavouriteWallsState> emit, int operationId) async {
+  Future<void> _serial(
+    Future<void> Function() action,
+    Emitter<FavouriteWallsState> emit,
+    int operationId, {
+    bool isLoad = false,
+  }) async {
     final Future<void> previous = _queueTail;
     final Completer<void> done = Completer<void>();
     _queueTail = done.future;
@@ -54,9 +61,11 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
       await action();
     } catch (error, stackTrace) {
       addError(error, stackTrace);
+      logger.e('FavouriteWallsBloc handler failed', error: error, stackTrace: stackTrace);
       if (!emit.isDone) {
         emit(
           state.copyWith(
+            status: isLoad ? LoadStatus.failure : state.status,
             actionStatus: ActionStatus.failure,
             completedOperationId: operationId,
             failure: UnknownFailure('Favourite update failed: $error'),
