@@ -1,0 +1,48 @@
+Launching lib/main.dart on Prism QA Photo Wall iPhone 17 Pro in debug mode...
+The following plugins do not support Swift Package Manager for ios:
+  - image_editor_common
+  - screen_corner_radius
+This will become an error in a future version of Flutter. Please contact the plugin maintainers to request Swift Package Manager adoption.
+Running Xcode build...                                          
+Xcode build done.                                           37.0s
+[IMPORTANT:flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.mm(45)] Using the Impeller rendering backend (Metal).
+Syncing files to device Prism QA Photo Wall iPhone 17 Pro...     
+flutter: PRISM_PERF {"kind":"mark","name":"startup.binding_ready","ms":0,"ok":true,"since_start_ms":0,"ts":"2026-11-07T14:04:23.128296Z"}
+flutter: PRISM_PERF {"kind":"cold_launch","name":"pre_main","ms":3804,"ok":true,"since_start_ms":6,"ts":"2026-11-07T14:04:23.134549Z"}
+Syncing files to device Prism QA Photo Wall iPhone 17 Pro...        274ms
+
+Flutter run key commands.
+r Hot reload. 🔥🔥🔥
+R Hot restart.
+h List all available interactive commands.
+d Detach (terminate "flutter run" but leave application running).
+c Clear the screen
+q Quit (terminate the application on the device).
+
+A Dart VM Service on Prism QA Photo Wall iPhone 17 Pro is available at: http://127.0.0.1:59796/6vrJ7CsAf14=/
+The Flutter DevTools debugger and profiler on Prism QA Photo Wall iPhone 17 Pro is available at: http://127.0.0.1:59796/6vrJ7CsAf14=/devtools/?uri=ws://127.0.0.1:59796/6vrJ7CsAf14=/ws
+-[WFIsolatedShortcutRunner init] Taking sandbox extensions for execution
+-[WFIsolatedShortcutRunner init]_block_invoke Sandbox extensions acquired
+Indexing for request: <WFToolKitIndexingRequest: 0x1060500c0>, changeset: .partial(updatedCount: 1 removedCount: 1 updated: ["com.hash.prism"], removed: ["com.apple.siri.SiriCrisisAppIntentsExtension"], provenance: [VoiceShortcutClient.ToolKitIndexingReason.Changeset.Provenance.launchServicesSnapshot(<LaunchServicesSnapshot uuid=1291729F-215C-463C-8967-6AFE53CC4DB4, v=744)> ["com.apple.Maps.MapsSettingsAppIntents", "com.apple.HomeAppIntentsExtension", "com.apple.SupportFlow", "com.apple.Maps", "com.apple.SystemIntents", "com.apple.AAUIViewService", "com.apple.compass.CompassSettingsAppIntents", "com.apple.TVRemoteApp", "com.apple.GradientPoster", "com.apple.CarPlaySettings", "com.apple.AccessoryNotifications.SourceSelection", "com.apple.siri.SiriGeo.SiriGeoAppIntentExtension", "com.apple.mobilesms.compose", "com.apple.AdaptiveMusicApp", "com.apple.avkit.AVKitRoutingService", "com.apple.GameCenterRemoteAlert", "com.apple.EmojiPoster", "com.apple.AMSUIAuthenticationViewService", "com.apple.AuthenticationServicesUI", "com.apple.ct<…>, priority: <decode: missing data>
+flutter: 19:34:24.582 ERR #1 [ZoneError] Uncaught zone error
+flutter: ↳ error=[core/duplicate-app] A Firebase App named "[DEFAULT]" already exists
+flutter: ↳ stack=#0      MethodChannelFirebase.initializeApp (package:firebase_core_platform_interface/src/method_channel/method_channel_firebase.dart:131:11)
+flutter: <asynchronous suspension>
+flutter: #1      Firebase.initializeApp (package:firebase_core/src/firebase.dart:79:31)
+flutter: <asynchronous suspension>
+flutter: #2      LocalQaRuntime.initializeFirebase (package:Prism/core/debug/local_qa_runtime.dart:67:7)
+flutter: <asynchronous suspension>
+flutter: #3      main.<anonymous closure> (package:Prism/main.dart:245:9)
+flutter: <asynchronous suspension>
+flutter: #4      main (package:Prism/main.dart:200:3)
+flutter: <asynchronous suspension>
+flutter:
+Type indexing (params + content items) took 0.344681s
+Action indexing took 0.030367s
+Indexed: 1
+Errored: 0
+Skipped: [:]
+Bundle cache: 15 hits, 1 misses
+Finished in 0.873924s
+-[WFIsolatedShortcutRunner unaliveProcess] Releasing sandbox extensions
+Lost connection to device.
