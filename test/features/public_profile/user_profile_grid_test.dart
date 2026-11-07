@@ -52,6 +52,7 @@ void main() {
   setUpFavouriteCounts();
   setUpAll(() {
     registerFallbackValue(const PublicProfileEvent.refreshRequested());
+    registerFallbackValue(const FavouriteWallsEvent.refreshRequested());
     registerFallbackValue(WallpaperDetailRoute());
     registerFallbackValue(const FetchPublicProfileWallsParams(userId: '', refresh: false));
   });
@@ -136,14 +137,22 @@ void main() {
       when(() => router.push(any())).thenAnswer((_) async => null);
     });
 
-    Future<void> pumpOwn(WidgetTester tester, PublicProfileState state, List<FavouriteWallEntity> items) async {
+    Future<void> pumpOwn(
+      WidgetTester tester,
+      PublicProfileState state,
+      List<FavouriteWallEntity> items, {
+      String? userId,
+      LoadStatus status = LoadStatus.success,
+      Stream<FavouriteWallsState> stream = const Stream<FavouriteWallsState>.empty(),
+      bool ownProfile = true,
+    }) async {
       when(() => bloc.state).thenReturn(state);
       whenListen(
         favourites,
-        const Stream<FavouriteWallsState>.empty(),
+        stream,
         initialState: FavouriteWallsState.initial().copyWith(
-          status: LoadStatus.success,
-          userId: app_state.prismUser.id,
+          status: status,
+          userId: userId ?? app_state.prismUser.id,
           items: items,
         ),
       );
@@ -161,7 +170,7 @@ void main() {
                   BlocProvider<FavouriteWallsBloc>.value(value: favourites),
                   BlocProvider<PublicProfileBloc>.value(value: bloc),
                 ],
-                child: const CustomScrollView(slivers: <Widget>[UserProfileGrid(ownProfile: true)]),
+                child: CustomScrollView(slivers: <Widget>[UserProfileGrid(ownProfile: ownProfile)]),
               ),
             ),
           ),
@@ -206,6 +215,66 @@ void main() {
 
       expect(find.byType(PrismWallTile), findsNWidgets(12));
       expect(find.text('See all'), findsOneWidget);
+    });
+
+    testWidgets('does not show favourites cached for another account', (tester) async {
+      await pumpOwn(tester, PublicProfileState.initial().copyWith(status: LoadStatus.success), <FavouriteWallEntity>[
+        favourite('private'),
+      ], userId: 'another-account');
+      expect(find.byType(PrismWallTile), findsNothing);
+      verify(() => favourites.add(FavouriteWallsEvent.started(userId: app_state.prismUser.id))).called(1);
+    });
+
+    testWidgets('failed favourites load offers retry without hiding the upload prompt', (tester) async {
+      await pumpOwn(
+        tester,
+        PublicProfileState.initial().copyWith(status: LoadStatus.success),
+        const <FavouriteWallEntity>[],
+        status: LoadStatus.failure,
+      );
+      expect(find.widgetWithText(PrismButton, 'Upload wallpaper'), findsOneWidget);
+      expect(find.text('Try again'), findsOneWidget);
+      await tester.tap(find.text('Try again'));
+      verify(() => favourites.add(FavouriteWallsEvent.started(userId: app_state.prismUser.id))).called(1);
+    });
+
+    testWidgets('status-only loading and failure changes rebuild the preview', (tester) async {
+      final states = StreamController<FavouriteWallsState>();
+      addTearDown(states.close);
+      await pumpOwn(
+        tester,
+        PublicProfileState.initial().copyWith(status: LoadStatus.success),
+        const <FavouriteWallEntity>[],
+        stream: states.stream,
+      );
+      states.add(favourites.state.copyWith(status: LoadStatus.loading));
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(LoadingCards), findsOneWidget);
+      states.add(favourites.state.copyWith(status: LoadStatus.failure));
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(LoadingCards), findsNothing);
+      expect(find.text('Try again'), findsOneWidget);
+    });
+
+    testWidgets('another user profile never shows viewer favourites', (tester) async {
+      await pumpOwn(tester, PublicProfileState.initial().copyWith(status: LoadStatus.success), <FavouriteWallEntity>[
+        favourite('private'),
+      ], ownProfile: false);
+      expect(find.byType(PrismWallTile), findsNothing);
+      expect(find.text('Favourites'), findsNothing);
+      verifyNever(() => favourites.add(any()));
+    });
+
+    testWidgets('upload prompt uses the shared body typography', (tester) async {
+      await pumpOwn(
+        tester,
+        PublicProfileState.initial().copyWith(status: LoadStatus.success),
+        const <FavouriteWallEntity>[],
+      );
+      final prompt = find.text('No wallpapers yet');
+      expect(tester.widget<Text>(prompt).style, PrismTextStyles.body(tester.element(prompt)));
     });
 
     testWidgets('uploads present: the gallery shows and favourites do not', (tester) async {

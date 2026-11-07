@@ -216,7 +216,9 @@ class _PrismSheetRoute<T> extends ModalSheetRoute<T> {
   @override
   void install() {
     super.install();
-    _curved = CurvedAnimation(parent: animation!, curve: transitionCurve, reverseCurve: PrismCurves.exitReverse);
+    // The close eases in and out: a flipped strong ease-out moved most of the sheet in the first two frames, which
+    // read as the sheet vanishing.
+    _curved = CurvedAnimation(parent: animation!, curve: transitionCurve, reverseCurve: Curves.easeInOutCubic);
     open += 1;
   }
 

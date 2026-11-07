@@ -208,7 +208,9 @@ class _UserProfileGridState extends State<UserProfileGrid> {
             ),
           );
         }
-        if (walls.isEmpty && ownProfile && !failed) return const _OwnEmptyGallery();
+        if (walls.isEmpty && ownProfile && !failed) {
+          return _OwnEmptyGallery(key: ValueKey<String>(app_state.prismUser.id), userId: app_state.prismUser.id);
+        }
         if (walls.isEmpty) {
           return SliverToBoxAdapter(
             child: Padding(
@@ -294,7 +296,9 @@ class _UserProfileGridState extends State<UserProfileGrid> {
 /// The owner's empty gallery: one line with an Upload button, then the owner's favourites, so the profile shows
 /// wallpapers before any upload exists.
 class _OwnEmptyGallery extends StatefulWidget {
-  const _OwnEmptyGallery();
+  const _OwnEmptyGallery({super.key, required this.userId});
+
+  final String userId;
 
   // ponytail: a fixed preview; See all opens Favourites for the rest.
   static const int _maxFavourites = 12;
@@ -309,7 +313,7 @@ class _OwnEmptyGalleryState extends State<_OwnEmptyGallery> {
     super.initState();
     // The same cached load the Favourites tab and the wallpaper screen start. Nothing happens when it ran already.
     final FavouriteWallsBloc favourites = context.read<FavouriteWallsBloc>();
-    final String userId = app_state.prismUser.id;
+    final String userId = widget.userId;
     if (favourites.state.status == LoadStatus.initial || favourites.state.userId != userId) {
       favourites.add(FavouriteWallsEvent.started(userId: userId));
     }
@@ -317,12 +321,11 @@ class _OwnEmptyGalleryState extends State<_OwnEmptyGallery> {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     return BlocBuilder<FavouriteWallsBloc, FavouriteWallsState>(
-      buildWhen: (previous, current) => previous.items != current.items || previous.sort != current.sort,
       builder: (context, state) {
+        final bool matchesAccount = state.userId == widget.userId;
         final List<FavouriteWallEntity> walls = applyFavouritesView(
-          state.items,
+          matchesAccount ? state.items : const <FavouriteWallEntity>[],
           sort: state.sort,
         ).where((wall) => wall is! LegacyFavouriteWall).toList(growable: false);
         final int shown = walls.length.clamp(0, _OwnEmptyGallery._maxFavourites);
@@ -339,10 +342,7 @@ class _OwnEmptyGalleryState extends State<_OwnEmptyGallery> {
                   spacing: PrismSpace.sm,
                   runSpacing: PrismSpace.xs,
                   children: <Widget>[
-                    Text(
-                      context.l10n.accountNoWallpapersYet,
-                      style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                    ),
+                    Text(context.l10n.accountNoWallpapersYet, style: PrismTextStyles.body(context)),
                     PrismButton(
                       label: context.l10n.wallpaperUploadTitle,
                       variant: PrismButtonVariant.tonal,
@@ -353,6 +353,18 @@ class _OwnEmptyGalleryState extends State<_OwnEmptyGallery> {
                 ),
               ),
             ),
+            if (!matchesAccount || (state.status == LoadStatus.loading && shown == 0))
+              const SliverToBoxAdapter(child: LoadingCards())
+            else if (state.status == LoadStatus.failure)
+              SliverToBoxAdapter(
+                child: PrismInlineState(
+                  icon: Icons.cloud_off_rounded,
+                  title: context.l10n.accountCouldNotLoadWallpapers,
+                  actionLabel: context.l10n.accountTryAgain,
+                  onAction: () =>
+                      context.read<FavouriteWallsBloc>().add(FavouriteWallsEvent.started(userId: widget.userId)),
+                ),
+              ),
             if (shown > 0) ...<Widget>[
               SliverPadding(
                 padding: PrismWallGrid.padding,

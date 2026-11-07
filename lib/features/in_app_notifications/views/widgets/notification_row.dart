@@ -209,25 +209,40 @@ class NotificationTitleLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Expanded(
-          child: Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: unread ? FontWeight.w700 : FontWeight.w500),
-          ),
-        ),
-        const SizedBox(width: PrismSpace.xs),
-        Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Text(time, style: PrismTextStyles.caption(context)),
-        ),
-        // A fixed end column keeps the time at the same place in every row. Only a group fills it, with its chevron.
-        SizedBox(width: 24, child: trailing),
-      ],
+    final Widget heading = Text(
+      title,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: unread ? FontWeight.w700 : FontWeight.w500),
+    );
+    final Widget timestamp = Text(time, style: PrismTextStyles.caption(context));
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < MediaQuery.textScalerOf(context).scale(220)) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              heading,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Expanded(child: timestamp),
+                  if (trailing != null) SizedBox(width: 24, child: trailing),
+                ],
+              ),
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(child: heading),
+            const SizedBox(width: PrismSpace.xs),
+            Padding(padding: const EdgeInsets.only(top: 2), child: timestamp),
+            SizedBox(width: 24, child: trailing),
+          ],
+        );
+      },
     );
   }
 }

@@ -888,6 +888,27 @@ void main() {
     expect(page(), isNot(start));
   });
 
+  testWidgets('a touch released between frames still pauses the carousel', (tester) async {
+    await pumpScreen(tester);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+    bool autoPlay() => tester.widget<CarouselSlider>(find.byType(CarouselSlider)).options.autoPlay;
+    expect(autoPlay(), isTrue);
+
+    final TestGesture touch = await tester.startGesture(
+      Offset(4, tester.getRect(find.byType(FeedCarousel)).bottom + 200),
+    );
+    await touch.up();
+    await tester.pump();
+    await tester.pump();
+    expect(autoPlay(), isFalse);
+    await tester.pump(const Duration(milliseconds: 900));
+    expect(autoPlay(), isFalse);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump();
+    expect(autoPlay(), isTrue);
+  });
+
   testWidgets('a swipe on the carousel still turns its page while the touch holds the auto-advance', (tester) async {
     await pumpScreen(tester);
     int page() => tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current;

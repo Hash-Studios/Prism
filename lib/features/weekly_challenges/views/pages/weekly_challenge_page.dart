@@ -408,7 +408,12 @@ class _LastWeekState extends State<_LastWeek> {
                     image: true,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: CachedNetworkImage(imageUrl: entry.thumbUrl, fit: BoxFit.cover),
+                      child: CachedNetworkImage(
+                        imageUrl: entry.thumbUrl,
+                        fit: BoxFit.cover,
+                        errorWidget: (context, _, _) =>
+                            ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                      ),
                     ),
                   ),
                 ),

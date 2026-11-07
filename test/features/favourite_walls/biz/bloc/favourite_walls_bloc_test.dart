@@ -75,6 +75,31 @@ void main() {
   FavouriteWallsBloc build() =>
       FavouriteWallsBloc(fetchUseCase, toggleUseCase, clearUseCase, _MockSetFavouritePinUseCase());
 
+  test('switching accounts clears cached favourites even when the new load fails', () async {
+    final bloc = build()..add(const FavouriteWallsEvent.started(userId: 'user_1'));
+    await bloc.stream.firstWhere((state) => state.status == LoadStatus.success);
+    when(() => fetchUseCase(any())).thenAnswer((_) async => Result.error(const ServerFailure('offline')));
+    bloc.add(const FavouriteWallsEvent.started(userId: 'user_2'));
+    final loading = await bloc.stream.firstWhere((state) => state.status == LoadStatus.loading);
+    expect(loading.items, isEmpty);
+    await bloc.stream.firstWhere((state) => state.status == LoadStatus.failure);
+    expect(bloc.state.items, isEmpty);
+    await bloc.close();
+  });
+
+  test('an old fetch cannot overwrite favourites synced for a new account', () async {
+    final pending = Completer<Result<List<FavouriteWallEntity>>>();
+    when(() => fetchUseCase(any())).thenAnswer((_) => pending.future);
+    final bloc = build()..add(const FavouriteWallsEvent.started(userId: 'user_1'));
+    await bloc.stream.firstWhere((state) => state.status == LoadStatus.loading);
+    bloc.add(FavouriteWallsEvent.synced(userId: 'user_2', items: <FavouriteWallEntity>[prismFav('new-account')]));
+    await bloc.stream.firstWhere((state) => state.userId == 'user_2');
+    pending.complete(Result.success(<FavouriteWallEntity>[prismFav('old-account')]));
+    await bloc.close();
+    expect(bloc.state.userId, 'user_2');
+    expect(bloc.state.items.single.id, 'new-account');
+  });
+
   ToggleFavouriteWallParams lastToggle() =>
       verify(() => toggleUseCase(captureAny())).captured.last as ToggleFavouriteWallParams;
 

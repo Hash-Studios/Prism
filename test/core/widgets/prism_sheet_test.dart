@@ -49,7 +49,7 @@ void main() {
     expect(find.text('Sort by'), findsNothing);
   });
 
-  testWidgets('closing moves the sheet at once instead of holding still', (tester) async {
+  testWidgets('closing slides the sheet away over its whole duration', (tester) async {
     await tester.pumpWidget(
       _app((context) => showPrismSheet<void>(context, builder: (_) => const PrismSheetBody(title: 'Sort by'))),
     );
@@ -58,9 +58,13 @@ void main() {
     final double height = tester.view.physicalSize.height / tester.view.devicePixelRatio;
     Navigator.of(tester.element(find.text('Sort by'))).pop();
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
     // The sheet travels its own height, so measure against the way to the bottom of the screen.
-    expect(tester.getTopLeft(find.text('Sort by')).dy - rest, greaterThan((height - rest) * 0.5));
+    double travelled() => (tester.getTopLeft(find.text('Sort by')).dy - rest) / (height - rest);
+    await tester.pump(const Duration(milliseconds: 80));
+    expect(travelled(), greaterThan(0.1), reason: 'the sheet is visibly on its way');
+    expect(travelled(), lessThan(0.5), reason: 'not front-loaded into one frame, which reads as a cut');
+    await tester.pump(const Duration(milliseconds: 80));
+    expect(travelled(), greaterThan(0.5));
     await tester.pumpAndSettle();
   });
 
@@ -79,11 +83,9 @@ void main() {
 
     Navigator.of(tester.element(find.text('Sort by'))).pop();
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 60));
-    // An ease-out exit: most of the dim is gone in the first third.
-    expect(_dim(tester), lessThan(PrismBottomSheet.barrier.a * 0.5));
-    // The sheet is still sliding at 120 ms, not already gone: the close reads as a slide, not a cut.
-    await tester.pump(const Duration(milliseconds: 60));
+    await tester.pump(const Duration(milliseconds: 120));
+    // Halfway through an ease-in-out exit, about half the dim is left, and the sheet is still sliding.
+    expect(_dim(tester), inInclusiveRange(PrismBottomSheet.barrier.a * 0.35, PrismBottomSheet.barrier.a * 0.65));
     expect(find.text('Sort by'), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 121));
     expect(find.text('Sort by'), findsNothing);

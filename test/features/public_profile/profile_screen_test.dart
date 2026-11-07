@@ -11,6 +11,7 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/cosmetics/profile_frame.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
+import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/folders/views/widgets/profile_folders_row.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
@@ -31,17 +32,40 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/fake_user_block_repository.dart';
 import '../../support/favourite_test_scope.dart';
-import '../../support/profile_user_fixture.dart';
 import '../../support/in_memory_local_store.dart';
+import '../../support/profile_user_fixture.dart';
 import '../creator_directory/creator_directory_test_support.dart';
 
 class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
+
+class _MockFavouriteWallsBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState>
+    implements FavouriteWallsBloc {}
+
+Widget profileFavouriteBuilder(BuildContext context, Widget? child) => favouriteTestBuilder(
+  context,
+  BlocProvider<FavouriteWallsBloc>(
+    create: (_) {
+      final bloc = _MockFavouriteWallsBloc();
+      whenListen(
+        bloc,
+        const Stream<FavouriteWallsState>.empty(),
+        initialState: FavouriteWallsState.initial().copyWith(
+          status: LoadStatus.success,
+          userId: app_state.prismUser.id,
+        ),
+      );
+      return bloc;
+    },
+    child: child,
+  ),
+);
 
 class _FakeProfileRepository implements PublicProfileRepository {
   final StreamController<PublicProfileEntity?> profiles = StreamController<PublicProfileEntity?>.broadcast();
@@ -170,7 +194,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: ProfileScreen(profileIdentifier: identifier),
-        builder: favouriteTestBuilder,
+        builder: profileFavouriteBuilder,
       ),
     );
     // Glint and skeletons loop, so pump a bounded time instead of settling.
@@ -244,7 +268,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: ProfileScreen(profileIdentifier: 'u2'),
-        builder: favouriteTestBuilder,
+        builder: profileFavouriteBuilder,
       ),
     );
     await tester.pump(const Duration(milliseconds: 400));
@@ -263,7 +287,7 @@ void main() {
   });
 
   testWidgets('own profile collapsed: flat header buttons, and Stats and Edit give way to the title', (tester) async {
-    tester.view.physicalSize = const Size(390, 844);
+    tester.view.physicalSize = const Size(390, 600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -271,7 +295,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: ProfileScreen(),
-        builder: favouriteTestBuilder,
+        builder: profileFavouriteBuilder,
       ),
     );
     await tester.pump(const Duration(milliseconds: 400));
@@ -459,7 +483,7 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           routerConfig: router.config(),
-          builder: favouriteTestBuilder,
+          builder: profileFavouriteBuilder,
         ),
       );
       await router.navigatePath('/');
@@ -557,7 +581,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: ProfileScreen(),
-        builder: favouriteTestBuilder,
+        builder: profileFavouriteBuilder,
       ),
     );
     await tester.pump(const Duration(milliseconds: 400));
@@ -594,7 +618,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: ProfileScreen(),
-        builder: favouriteTestBuilder,
+        builder: profileFavouriteBuilder,
       ),
     );
     await tester.pump(const Duration(milliseconds: 400));
@@ -648,7 +672,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: ProfileScreen(profileIdentifier: 'u2'),
-        builder: favouriteTestBuilder,
+        builder: profileFavouriteBuilder,
       ),
     );
     await tester.pump(const Duration(milliseconds: 400));

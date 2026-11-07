@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
@@ -15,6 +16,7 @@ import 'package:Prism/features/weekly_challenges/views/widgets/weekly_challenge_
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -220,6 +222,41 @@ void main() {
     expect(find.byType(GridView), findsOneWidget);
     expect(find.text('Approved entries will appear here.', skipOffstage: false), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('last-week thumbnail failures show a themed fallback without an image error', (tester) async {
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+    final cubit = MockChallengeCubit();
+    final past = WeeklyChallenge(
+      id: '2026-10-19',
+      theme: 'Morning light',
+      state: ChallengeState.archived,
+      opensAt: DateTime.utc(2026, 10, 19),
+      closesAt: DateTime.utc(2026, 10, 26),
+    );
+    when(() => cubit.state).thenReturn(
+      WeeklyChallengesState(
+        loading: false,
+        detail: ChallengeDetail(challenge: challenge(), entries: [], myEntryCount: 0),
+        past: [past],
+      ),
+    );
+    when(() => cubit.load(any(), sort: any(named: 'sort'))).thenAnswer((_) async {});
+    when(() => cubit.topEntries(past.id)).thenAnswer((_) async => [entry()]);
+    final imageLoad = Completer<ImageInfo>();
+    final imageKey = await const CachedNetworkImageProvider('').obtainKey(ImageConfiguration.empty);
+    PaintingBinding.instance.imageCache.putIfAbsent(imageKey, () => OneFrameImageStreamCompleter(imageLoad.future));
+    await tester.pumpWidget(app(WeeklyChallengePage(challengeId: '2026-10-26', cubit: cubit)));
+    await tester.pump();
+    imageLoad.completeError(const SocketException('offline'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.takeException(), isNull);
+    expect(find.descendant(of: find.byType(CachedNetworkImage), matching: find.byType(ColoredBox)), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
   });
 
   for (final state in [ChallengeState.open, ChallengeState.votingClosed, ChallengeState.archived]) {

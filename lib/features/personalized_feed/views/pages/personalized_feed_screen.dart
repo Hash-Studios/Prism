@@ -299,7 +299,11 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
 
   void _onPointerUp(PointerEvent _) {
     _pointersDown = math.max(0, _pointersDown - 1);
-    if (_pointersDown == 0) _carouselHeld.value = false;
+    if (_pointersDown != 0) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _pointersDown == 0) _carouselHeld.value = false;
+    });
+    WidgetsBinding.instance.scheduleFrame();
   }
 
   /// Holds the carousel for one frame, which restarts its countdown.

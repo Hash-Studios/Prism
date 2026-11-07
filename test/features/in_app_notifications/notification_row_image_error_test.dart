@@ -58,6 +58,26 @@ void main() {
     });
   }
 
+  testWidgets('image notifications fit a small screen with large text', (tester) async {
+    tester.view.physicalSize = const Size(320, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      host(
+        MediaQuery(
+          data: const MediaQueryData(size: Size(320, 900), textScaler: TextScaler.linear(3)),
+          child: NotificationRow(
+            notification: notification(
+              'large',
+            ).copyWith(imageUrl: 'https://example.test/wall.jpg', createdAt: DateTime.utc(2023)),
+          ),
+        ),
+      ),
+    );
+    expect(find.byType(NotificationThumbs), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('a gallery strip shows at most three phone-ratio thumbnails', (tester) async {
     await tester.pumpWidget(
       host(
