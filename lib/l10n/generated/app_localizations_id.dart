@@ -14835,4 +14835,60 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get photoWallTryAgain => 'Coba lagi';
+
+  @override
+  String get shareInImageTitle => 'Gunakan gambar ini';
+
+  @override
+  String get shareInSet => 'Jadikan wallpaper';
+
+  @override
+  String get shareInSetDetail => 'Potong dulu, lalu atur di layarmu.';
+
+  @override
+  String shareInFit(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Buat pas · $coins koin',
+      one: 'Buat pas · 1 koin',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shareInFitTitle => 'Buat pas';
+
+  @override
+  String get shareInFitDetail => 'AI memperluas atau mempertajamnya agar pas dengan layarmu.';
+
+  @override
+  String get shareInFitNotNeeded => 'Sudah pas dengan layarmu';
+
+  @override
+  String get shareInUpload => 'Unggah ke Prism';
+
+  @override
+  String get shareInUploadDetail => 'Orang lain bisa melihatnya setelah ditinjau.';
+
+  @override
+  String get shareInSignInDetail => 'Masuk untuk menggunakan ini.';
+
+  @override
+  String get shareInLooking => 'Mencari gambar di tautan ini';
+
+  @override
+  String get shareInLinkUnusable => 'Prism tidak dapat menggunakan tautan ini.';
+
+  @override
+  String get shareInLinkUnusableDetail => 'Bagikan gambar, atau tautan ke halaman yang berisi gambar.';
+
+  @override
+  String get shareInImageUnreadable => 'Prism tidak dapat membuka gambar ini.';
+
+  @override
+  String get shareInImageUnreadableDetail => 'Bagikan lagi, atau bagikan gambar lain.';
+
+  @override
+  String get shareInPreviewSemantics => 'Gambar yang dibagikan';
 }

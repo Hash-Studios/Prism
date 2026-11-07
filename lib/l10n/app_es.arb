@@ -4180,5 +4180,29 @@
     }
   },
   "photoWallRefundPending": "Tus monedas se devolverán.",
-  "photoWallTryAgain": "Inténtalo de nuevo"
+  "photoWallTryAgain": "Inténtalo de nuevo",
+  "shareInImageTitle": "Usar esta imagen",
+  "shareInSet": "Establecer como fondo de pantalla",
+  "shareInSetDetail": "Recórtala y luego ponla en tu pantalla.",
+  "shareInFit": "{coins, plural, =1{Ajustar · 1 moneda} other{Ajustar · {coins} monedas}}",
+  "@shareInFit": {
+    "description": "Action on the share sheet: AI extends or upscales the image. Shows the coin cost.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "shareInFitTitle": "Ajustar",
+  "shareInFitDetail": "La IA la amplía o la afina para que quepa en tu pantalla.",
+  "shareInFitNotNeeded": "Ya se ajusta a tu pantalla",
+  "shareInUpload": "Subir a Prism",
+  "shareInUploadDetail": "Otros podrán verla después de una revisión.",
+  "shareInSignInDetail": "Inicia sesión para usar esto.",
+  "shareInLooking": "Buscando la imagen en este enlace",
+  "shareInLinkUnusable": "Prism no puede usar este enlace.",
+  "shareInLinkUnusableDetail": "Comparte una imagen o un enlace a una página con una imagen.",
+  "shareInImageUnreadable": "Prism no puede abrir esta imagen.",
+  "shareInImageUnreadableDetail": "Compártela de nuevo o comparte otra imagen.",
+  "shareInPreviewSemantics": "Imagen compartida"
 }

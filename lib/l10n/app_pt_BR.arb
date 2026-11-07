@@ -4036,5 +4036,29 @@
     }
   },
   "photoWallRefundPending": "Suas moedas serão devolvidas.",
-  "photoWallTryAgain": "Tentar novamente"
+  "photoWallTryAgain": "Tentar novamente",
+  "shareInImageTitle": "Usar esta imagem",
+  "shareInSet": "Definir como papel de parede",
+  "shareInSetDetail": "Recorte e depois defina na sua tela.",
+  "shareInFit": "{coins, plural, =1{Ajustar · 1 moeda} other{Ajustar · {coins} moedas}}",
+  "@shareInFit": {
+    "description": "Action on the share sheet: AI extends or upscales the image. Shows the coin cost.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "shareInFitTitle": "Ajustar",
+  "shareInFitDetail": "A IA estende ou aprimora a imagem para caber na sua tela.",
+  "shareInFitNotNeeded": "Já cabe na sua tela",
+  "shareInUpload": "Enviar para o Prism",
+  "shareInUploadDetail": "Outras pessoas podem vê-la depois de uma análise.",
+  "shareInSignInDetail": "Entre na sua conta para usar isto.",
+  "shareInLooking": "Procurando a imagem neste link",
+  "shareInLinkUnusable": "O Prism não pode usar este link.",
+  "shareInLinkUnusableDetail": "Compartilhe uma imagem ou um link para uma página com imagem.",
+  "shareInImageUnreadable": "O Prism não pode abrir esta imagem.",
+  "shareInImageUnreadableDetail": "Compartilhe de novo ou compartilhe outra imagem.",
+  "shareInPreviewSemantics": "Imagem compartilhada"
 }
