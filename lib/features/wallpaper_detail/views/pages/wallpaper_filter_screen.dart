@@ -173,9 +173,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
 
   bool get _isEdited => _isFiltered || _isCropped;
 
-  /// Filters and adjustments cost coins. A crop alone does not: the source already took the same grant as Download.
-  bool get _selectedFilterNeedsPremiumSpend => _isFiltered;
-
   bool get _editorReady =>
       !_loadFailed && _previewLoaded && _previewPixelsPerSourcePixel != null && _pendingRender == null;
 
@@ -322,6 +319,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
     SetWallpaperChoice choice, {
     bool offerPhoneScreen = true,
   }) async {
+    final String filterLabel = _editLabel;
     final AppLocalizations l10n = context.l10n;
     final PlacedWallpaper? placed = choice.placed;
     final WallpaperSetResult result = await WallpaperService.setWallpaper(
@@ -342,7 +340,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
             entryPoint: 'wallpaper_filter',
             targetChanged: choice.targetChanged,
           ),
-          onSystemSet: offerPhoneScreen ? (_) => unawaited(_setWithPhone(path)) : null,
+          onSystemSet: offerPhoneScreen ? (_) => unawaited(_setWithPhone(path, filterLabel)) : null,
         );
       } catch (error) {
         logger.w('Wallpaper set outcome follow-up failed', error: error);
@@ -352,18 +350,22 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   }
 
   /// [action] is the export. It runs inside the coin gate and returns false when it failed, so the gate attempts a refund.
-  Future<void> _runWithPremiumFilterGate(Future<bool> Function() action, {required String sourceTag}) async {
+  Future<void> _runWithPremiumFilterGate(
+    Future<bool> Function() action, {
+    required String sourceTag,
+    String? filterLabel,
+  }) async {
     final int sourceGeneration = _sourceLoadGeneration;
     bool sourceIsCurrent() => mounted && sourceGeneration == _sourceLoadGeneration;
     if (!await requireSignedInAction(context) || !mounted) return;
     if (!sourceIsCurrent()) return;
     final String owner = app_state.prismUser.id;
-    if (!_selectedFilterNeedsPremiumSpend || app_state.prismUser.premium || _premiumFilterUnlockedForSession) {
+    final String filter = filterLabel ?? _editLabel;
+    if (filter.isEmpty || app_state.prismUser.premium || _premiumFilterUnlockedForSession) {
       await action();
       return;
     }
 
-    final String filter = _editLabel;
     // Spend tags end in `.spend`. The filter events log the tag without it.
     String eventTag(String spendTag) => spendTag.substring(0, spendTag.length - '.spend'.length);
     CoinGateSpec spec(String attemptSourceTag) {
@@ -548,22 +550,26 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
     }
   }
 
-  Future<void> _setWithPhone(String path) async {
+  Future<void> _setWithPhone(String path, String filterLabel) async {
     if (!mounted || !app_state.prismUser.loggedIn || _phoneSetInProgress || _busy) return;
     _phoneSetInProgress = true;
     _busy = true;
     try {
       if (mounted) setState(() {});
       // The failed set refunded a premium filter, so this set pays for it again like any other set.
-      await _runWithPremiumFilterGate(() async {
-        final WallpaperSetResult result = await _setWallpaper(
-          path,
-          const SetWallpaperChoice(WallpaperTarget.lock, useSystemCropper: true),
-          offerPhoneScreen: false,
-        );
-        if ((result.isSuccess || result.isInfo) && mounted) Navigator.of(context).pop();
-        return !result.isFailure;
-      }, sourceTag: 'coins.filter.set');
+      await _runWithPremiumFilterGate(
+        () async {
+          final WallpaperSetResult result = await _setWallpaper(
+            path,
+            const SetWallpaperChoice(WallpaperTarget.lock, useSystemCropper: true),
+            offerPhoneScreen: false,
+          );
+          if ((result.isSuccess || result.isInfo) && mounted) Navigator.of(context).pop();
+          return !result.isFailure;
+        },
+        sourceTag: 'coins.filter.set',
+        filterLabel: filterLabel,
+      );
     } finally {
       _phoneSetInProgress = false;
       _busy = false;
