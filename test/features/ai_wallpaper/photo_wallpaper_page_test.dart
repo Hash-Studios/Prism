@@ -693,7 +693,7 @@ void main() {
       await _settle(tester);
 
       final Object? stored = jsonDecode(savedDuringCall!);
-      final PendingPhotoJob? saved = PendingPhotoJob.fromJson(stored is List<dynamic> ? stored.single : stored);
+      final PendingPhotoJob? saved = PendingPhotoJob.fromJson(stored is List<Object?> ? stored.single : stored);
       expect(saved?.requestId, harness.payloads.single['requestId']);
       expect(saved?.mode, PhotoJobMode.extend);
       expect(harness.pendingJson, isNull);
