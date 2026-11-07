@@ -39,7 +39,8 @@ class PurchasesService {
       _getCustomerInfo = Purchases.getCustomerInfo,
       _apiKey = _resolveApiKey,
       _onCustomerInfo = TrialReminder.instance.apply,
-      _resetTrialState = TrialReminder.instance.clear;
+      _resetTrialState = TrialReminder.instance.clear,
+      _syncPurchases = Purchases.syncPurchases;
 
   @visibleForTesting
   PurchasesService.forTesting({
@@ -54,6 +55,7 @@ class PurchasesService {
     String Function()? apiKey,
     Future<void> Function(CustomerInfo info, {required String userId})? onCustomerInfo,
     Future<void> Function({String? keepUserId})? resetTrialState,
+    Future<void> Function()? syncPurchases,
   }) : _addCustomerInfoListener = addCustomerInfoListener,
        _syncSubscriptionOverride = syncSubscription,
        _syncRetryBackoff = syncRetryBackoff,
@@ -64,7 +66,8 @@ class PurchasesService {
        _getCustomerInfo = getCustomerInfo ?? Purchases.getCustomerInfo,
        _apiKey = apiKey ?? _resolveApiKey,
        _onCustomerInfo = onCustomerInfo ?? _ignoreCustomerInfo,
-       _resetTrialState = resetTrialState ?? _ignoreTrialStateReset;
+       _resetTrialState = resetTrialState ?? _ignoreTrialStateReset,
+       _syncPurchases = syncPurchases;
 
   static Future<void> _ignoreCustomerInfo(CustomerInfo info, {required String userId}) async {}
   static Future<void> _ignoreTrialStateReset({String? keepUserId}) async {}
@@ -92,6 +95,10 @@ class PurchasesService {
   /// Keeps the trial reminder and trial analytics in step with each CustomerInfo the app applies.
   final Future<void> Function(CustomerInfo info, {required String userId}) _onCustomerInfo;
   final Future<void> Function({String? keepUserId}) _resetTrialState;
+
+  /// Sends the store's purchases to RevenueCat for the signed-in account, with no store sign-in prompt. Null in tests
+  /// that do not ask for it.
+  final Future<void> Function()? _syncPurchases;
   Future<void> _setupQueue = Future<void>.value();
   bool _configured = false;
   bool _customerInfoListenerRegistered = false;

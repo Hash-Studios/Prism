@@ -145,7 +145,9 @@ void main() {
     Future<CustomerInfo> Function()? getCustomerInfo,
     String Function()? apiKey,
     Future<void> Function({String? keepUserId})? resetTrialState,
+    Future<void> Function()? syncPurchases,
   }) => PurchasesService.forTesting(
+    syncPurchases: syncPurchases,
     addCustomerInfoListener: listeners.add,
     syncSubscription: () async {
       syncCalls += 1;
@@ -486,6 +488,66 @@ void main() {
       await service.ensureConfigured('');
 
       expect(nativeCalls, <String>['logOut']);
+    });
+  });
+
+  group('a paid account that RevenueCat shows as free (#526)', () {
+    late int storeSyncs;
+
+    setUp(() {
+      storeSyncs = 0;
+      app_state.prismUser = profileUser(premium: true)..subscriptionTier = 'pro';
+    });
+
+    test('syncs the store purchases once and keeps Pro the sync brings back', () async {
+      final PurchasesService service = buildService(
+        getCustomerInfo: () async => storeSyncs == 0 ? _freeCustomer : _proCustomer,
+        syncPurchases: () async => storeSyncs++,
+      );
+
+      expect(await service.checkAndPersistPremium(), isTrue);
+
+      expect(storeSyncs, 1);
+      expect(app_state.prismUser.premium, isTrue);
+      expect(app_state.prismUser.subscriptionTier, 'pro');
+    });
+
+    test('removes Pro when the store has no purchase either, and syncs only once', () async {
+      final PurchasesService service = buildService(
+        getCustomerInfo: () async => _freeCustomer,
+        syncPurchases: () async => storeSyncs++,
+      );
+
+      expect(await service.checkAndPersistPremium(), isFalse);
+      app_state.prismUser
+        ..premium = true
+        ..subscriptionTier = 'pro';
+      expect(await service.checkAndPersistPremium(), isFalse);
+
+      expect(storeSyncs, 1);
+      expect(app_state.prismUser.premium, isFalse);
+    });
+
+    test('a failed store sync still applies the RevenueCat answer', () async {
+      final PurchasesService service = buildService(
+        getCustomerInfo: () async => _freeCustomer,
+        syncPurchases: () async => throw PlatformException(code: 'offline'),
+      );
+
+      expect(await service.checkAndPersistPremium(), isFalse);
+      expect(app_state.prismUser.premium, isFalse);
+    });
+
+    test('a free account never syncs the store', () async {
+      app_state.prismUser = profileUser();
+      final PurchasesService service = buildService(
+        getCustomerInfo: () async => _freeCustomer,
+        syncPurchases: () async => storeSyncs++,
+      );
+
+      await service.checkAndPersistPremium();
+
+      expect(storeSyncs, 0);
     });
   });
 
