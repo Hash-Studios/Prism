@@ -271,8 +271,11 @@ async function relayDelete(route, res) {
     const response = await fetch(`https://api.fal.ai/v1/models/requests/${requestId}/payloads`,
       {method: 'DELETE', headers: {'Authorization': `Key ${process.env.FAL_API_KEY}`}, signal: AbortSignal.timeout(10000)});
     const body = await response.text();
-    entry.payloadDelete = response.status;
-    writeJson('ledger.json', ledger);
+    // Re-read: a job can reserve a real-call slot while this delete waits on fal.
+    const fresh = readJson('ledger.json', []);
+    const current = fresh.find((e) => e.requestId === requestId);
+    if (current) current.payloadDelete = response.status;
+    writeJson('ledger.json', fresh);
     res.writeHead(response.status, {'content-type': 'application/json'});
     res.end(body);
     return;

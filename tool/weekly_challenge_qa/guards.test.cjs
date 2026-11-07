@@ -365,3 +365,23 @@ test('photo relay reserves the last real fal slot before the call, so two jobs c
   assert.equal(ledger.filter((entry) => entry.kind === 'real').length, 2);
   assert.ok(ledger.every((entry) => entry.status !== 'pending'));
 });
+test('a payload delete that finishes after a new reservation keeps that reservation', async (t) => {
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const qa = photoFixture(t, {env: {FAL_API_KEY: 'fixture-key'}, fetch: async () => {
+    await gate;
+    return Response.json({cdn_delete_results: []});
+  }});
+  qa.put('ledger.json', JSON.stringify([{kind: 'real', requestId: 'req-abcdef12'}]));
+  const response = {writeHead(code) { this.status = code; }, end(body) { this.body = body; }};
+  const deletion = qa.relayDelete('/fal-payloads/v1/models/requests/req-abcdef12/payloads', response);
+  const ledgerPath = path.join(qa.runtime, 'ledger.json');
+  const reserved = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+  reserved.push({kind: 'real', model: 'fal-ai/bria/expand', status: 'pending'});
+  fs.writeFileSync(ledgerPath, JSON.stringify(reserved));
+  release();
+  await deletion;
+  const ledger = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+  assert.equal(ledger.filter((entry) => entry.kind === 'real').length, 2);
+  assert.equal(ledger.find((entry) => entry.requestId === 'req-abcdef12').payloadDelete, 200);
+});
