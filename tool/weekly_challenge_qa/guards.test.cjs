@@ -385,3 +385,15 @@ test('a payload delete that finishes after a new reservation keeps that reservat
   assert.equal(ledger.filter((entry) => entry.kind === 'real').length, 2);
   assert.equal(ledger.find((entry) => entry.requestId === 'req-abcdef12').payloadDelete, 200);
 });
+test('a real fal call that throws marks its reserved slot as an error, not pending', async (t) => {
+  const qa = photoFixture(t, {env: {FAL_API_KEY: 'fixture-key'}, fetch: async () => {
+    throw Object.assign(Error('aborted'), {name: 'TimeoutError'});
+  }});
+  qa.put('ledger.json', '[]');
+  const response = {writeHead(code) { this.status = code; }, end(body) { this.body = body; }};
+  await assert.rejects(qa.relayFal('fal-ai/bria/expand', '{}', response), /aborted/);
+  const ledger = JSON.parse(fs.readFileSync(path.join(qa.runtime, 'ledger.json'), 'utf8'));
+  assert.equal(ledger.length, 1);
+  assert.equal(ledger[0].kind, 'real');
+  assert.equal(ledger[0].status, 'error');
+});

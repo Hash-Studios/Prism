@@ -230,9 +230,24 @@ async function relayFal(model, raw, res) {
     const slot = {at: new Date().toISOString(), model, kind: 'real', status: 'pending'};
     ledger.push(slot);
     writeJson('ledger.json', ledger);
-    const response = await fetch(`https://fal.run/${model}`, {method: 'POST', body: raw, signal: AbortSignal.timeout(160000),
-      headers: {'Authorization': `Key ${process.env.FAL_API_KEY}`, 'content-type': 'application/json', 'X-Fal-Store-IO': '0'}});
-    const text = await response.text();
+    const settleSlot = (fields) => {
+      const fresh = readJson('ledger.json', []);
+      const entry = fresh.find((e) => e.kind === 'real' && e.at === slot.at && e.model === model && e.status === 'pending');
+      if (entry) Object.assign(entry, fields);
+      else fresh.push({...slot, ...fields});
+      writeJson('ledger.json', fresh);
+    };
+    let response;
+    let text;
+    try {
+      response = await fetch(`https://fal.run/${model}`, {method: 'POST', body: raw, signal: AbortSignal.timeout(160000),
+        headers: {'Authorization': `Key ${process.env.FAL_API_KEY}`, 'content-type': 'application/json', 'X-Fal-Store-IO': '0'}});
+      text = await response.text();
+    } catch (error) {
+      // fal may have billed the job before the abort, so the slot stays counted, with an unknown cost.
+      settleSlot({status: 'error', error: String(error?.name ?? 'Error'), costUsd: null});
+      throw error;
+    }
     const requestId = response.headers.get('x-fal-request-id') || '';
     let size = null;
     try {
@@ -242,10 +257,7 @@ async function relayFal(model, raw, res) {
       size = null;
     }
     const costUsd = size ? Math.round(FAL_PRICES[model](size.width, size.height) * 10000) / 10000 : null;
-    const fresh = readJson('ledger.json', []);
-    const entry = fresh.find((e) => e.kind === 'real' && e.at === slot.at && e.model === model && e.status === 'pending');
-    Object.assign(entry ?? (fresh[fresh.push({}) - 1]), {...slot, status: response.status, requestId, size, costUsd});
-    writeJson('ledger.json', fresh);
+    settleSlot({status: response.status, requestId, size, costUsd});
     res.writeHead(response.status, {'content-type': 'application/json', 'x-fal-request-id': requestId});
     res.end(text);
     return;
@@ -361,7 +373,9 @@ async function ledger() {
   const entries = readJson('ledger.json', []);
   const real = entries.filter((e) => e.kind === 'real');
   console.log(JSON.stringify(entries, null, 2));
-  console.log(`Real fal jobs: ${real.length}. Cost: $${real.reduce((sum, e) => sum + (e.costUsd ?? 0), 0).toFixed(4)}.`);
+  const unknown = real.filter((e) => e.costUsd == null).length;
+  console.log(`Real fal jobs: ${real.length}. Cost: $${real.reduce((sum, e) => sum + (e.costUsd ?? 0), 0).toFixed(4)}` +
+    `${unknown ? `, plus ${unknown} with an unknown cost (errored or no size)` : ''}.`);
 }
 
 /** Runs [flutterArgs] with the synthetic iOS config swapped in, then restores the real files, also on Ctrl-C. */
