@@ -428,6 +428,20 @@ void main() {
       });
     }
 
+    testWidgets('a lock screen that needs Prism in front keeps its message and Try again', (tester) async {
+      const WallpaperSetResult result = WallpaperSetResult(
+        WallpaperSetStatus.foregroundRequired,
+        'foreground_required',
+        errorCode: 'foreground-required',
+      );
+      await report(tester, result, target: WallpaperTarget.lock, onRetry: (_) {}, onSystemSet: (_) {});
+
+      expect(find.text(_l10n.coreKeepPrismOpen), findsOneWidget);
+      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text(_l10n.coreWallpaperSetWithPhone), findsNothing);
+      await tester.pump(const Duration(seconds: 10));
+    });
+
     testWidgets('a home screen failure keeps Try again', (tester) async {
       await report(
         tester,
