@@ -488,7 +488,8 @@ sys.exit(23)
         install = next(step for step in steps if step.get('name') == 'Install provisioning profiles')
         cleanup = next(step for step in steps if step.get('name') == 'Cleanup keychain & keys')
         self.assertLessEqual({'IOS_PROVISIONING_PROFILE_BASE64', 'IOS_LIVE_ACTIVITIES_PROVISIONING_PROFILE_BASE64',
-                              'IOS_NOTIFICATION_SERVICE_PROVISIONING_PROFILE_BASE64'},
+                              'IOS_NOTIFICATION_SERVICE_PROVISIONING_PROFILE_BASE64',
+                              'IOS_SHARE_EXTENSION_PROVISIONING_PROFILE_BASE64'},
                              set(install['env']))
         for name, value in install['env'].items():
             self.assertTrue(name.endswith('PROVISIONING_PROFILE_BASE64'), name)

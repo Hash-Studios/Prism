@@ -154,7 +154,7 @@ The text is at most 2048 characters.
 1. In the Apple Developer portal, register the App ID `com.hash.prism.ShareExtension`.
 2. Enable the App Groups capability on that App ID. Select `group.com.hash.prism`.
 3. Create App Store and development provisioning profiles for it. Or let Xcode automatic signing make them, with the same team as Runner.
-4. Make sure the release export options or CI signing include the new profile.
+4. Encode the App Store profile with base64. Save it as the GitHub secret `IOS_SHARE_EXTENSION_PROVISIONING_PROFILE_BASE64`. TestFlight stops with "no provisioning profile for PrismShareExtension" until this secret exists.
 5. Archive the app. Check that `Prism.app/PlugIns/PrismShareExtension.appex` is in the archive.
 
 ## Release order
