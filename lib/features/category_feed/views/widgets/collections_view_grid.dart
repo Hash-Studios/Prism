@@ -77,12 +77,16 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
       AiContentFilter.isAi(PrismWallDocDto.fromJson(wall).toDomain(docId: _wallString(wall, 'id')));
 
   Future<void> _showAiAgain() async {
-    await setShowAiWallpapers(getIt<SettingsLocalDataSource>(), true);
+    try {
+      await setShowAiWallpapers(getIt<SettingsLocalDataSource>(), true);
+    } catch (_) {
+      if (mounted) toasts.error(context.l10n.wallpaperFeedSaveError);
+      return;
+    }
     if (mounted) await _refresh();
   }
 
   Future<void> _refresh() async {
-    PrismHaptics.impact();
     try {
       await refreshCollectionWithName();
     } catch (error, stackTrace) {

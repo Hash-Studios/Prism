@@ -316,7 +316,7 @@ class _SearchGridState extends State<SearchGrid> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(PrismSpace.md, PrismSpace.sm, PrismSpace.md, PrismSpace.xs),
-                  child: Text(context.l10n.accountSavedOnThisDevice, style: Theme.of(context).textTheme.labelMedium),
+                  child: Text(context.l10n.accountSavedOnThisDevice, style: PrismTextStyles.caption(context)),
                 ),
               ),
             if (prismResults.isNotEmpty)

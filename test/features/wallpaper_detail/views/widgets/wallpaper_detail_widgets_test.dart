@@ -3,9 +3,11 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -19,6 +21,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../support/favourite_test_scope.dart';
@@ -225,18 +228,18 @@ void main() {
     testWidgets('successful exhausted empty results leave no orphan heading or footer', (tester) async {
       await pumpRecommendations(tester, const RecommendationState.exhausted());
       expect(find.byType(Text), findsNothing);
-      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(PrismLoader), findsNothing);
     });
 
     testWidgets('initial loading shows tile placeholders and failed empty results can retry', (tester) async {
       await pumpRecommendations(tester, const RecommendationState.initial());
       expect(find.byType(PulseFill), findsWidgets);
-      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(PrismLoader), findsNothing);
       var retries = 0;
       await pumpRecommendations(tester, const RecommendationState.initial().failure(), onLoadMore: () => retries++);
       expect(find.byType(PulseFill), findsNothing);
-      expect(find.byType(CircularProgressIndicator), findsNothing);
-      await tester.tap(find.byType(TextButton));
+      expect(find.byType(PrismLoader), findsNothing);
+      await tester.tap(find.byType(PrismButton));
       expect(retries, 1);
     });
 
@@ -290,9 +293,31 @@ void main() {
         onLoadMore: () => retries++,
       );
       expect(tester.widget<PrismWallTile>(find.byType(PrismWallTile)).fallbackUrl, isNull);
-      await tester.tap(find.byType(TextButton));
+      await tester.tap(find.byType(PrismButton));
       expect(retries, 1);
       expect(find.byKey(ValueKey((WallpaperSource.prism, 'protected'))), findsOneWidget);
+    });
+
+    testWidgets('opening a recommended wall plays one tap haptic, like every other grid', (tester) async {
+      final List<Object?> haptics = <Object?>[];
+      const MethodChannel hapticsChannel = MethodChannel('prism/haptics');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(hapticsChannel, (MethodCall call) async {
+        haptics.add(call.arguments);
+        return null;
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(hapticsChannel, null));
+      const item = PrismFeedItem(
+        id: 'open-me',
+        wallpaper: PrismWallpaper(
+          core: WallpaperCore(id: 'open-me', source: WallpaperSource.prism, thumbnailUrl: '', fullUrl: ''),
+        ),
+      );
+      await pumpRecommendations(
+        tester,
+        RecommendationState(items: const [item], status: RecommendationStatus.exhausted),
+      );
+      await tester.tap(find.byType(PrismWallTile));
+      expect(haptics, <Object?>['tap']);
     });
   });
 

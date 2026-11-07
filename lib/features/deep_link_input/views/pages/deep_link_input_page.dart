@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/deep_link_input/biz/deep_link_input_service.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
@@ -31,7 +32,10 @@ class _DeepLinkInputPageState extends State<DeepLinkInputPage> {
       if (!mounted) return;
       if (destination != null) await context.router.replace<void>(destination);
     } catch (_) {
-      if (mounted) setState(() => _error = context.l10n.deepLinkInputGalleryError);
+      if (mounted) {
+        PrismHaptics.error();
+        setState(() => _error = context.l10n.deepLinkInputGalleryError);
+      }
     } finally {
       if (mounted) setState(() => _choosing = false);
     }

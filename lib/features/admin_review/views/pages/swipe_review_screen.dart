@@ -395,6 +395,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
           label: context.l10n.adminList,
           semanticLabel: context.l10n.adminBackToReviewList,
           onTap: () {
+            PrismHaptics.tap();
             context.router.maybePop();
           },
         ),
@@ -431,6 +432,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   void _showFullImage(FirestoreDocument wall) {
     final url = wall.wallpaperUrl.isNotEmpty ? wall.wallpaperUrl : wall.wallpaperThumb;
     if (url.isEmpty) return;
+    PrismHaptics.tap();
     FullScreenImageView.show(context, url);
   }
 }

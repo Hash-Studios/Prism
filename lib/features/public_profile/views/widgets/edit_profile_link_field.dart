@@ -88,7 +88,7 @@ class EditProfileLinkField extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         Icon(kind.icon, size: 20, color: cs.onSurface),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: PrismSpace.xxs),
                         Icon(Icons.expand_more_rounded, size: 18, color: cs.onSurfaceVariant),
                       ],
                     ),

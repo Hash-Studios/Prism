@@ -20,7 +20,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Opens the actions for one wallpaper in a shared folder: who added it, and removing it.
 Future<void> showFolderItemSheet(BuildContext context, FolderEntity folder, FavouriteWallEntity wall) async {
-  PrismHaptics.tap();
+  PrismHaptics.impact(); // Its only caller is a long press on a folder tile.
   final FoldersBloc bloc = context.read<FoldersBloc>();
   final String userId = bloc.state.userId;
   final Future<Result<String?>> addedBy = getIt<SharedFoldersRepository>().addedBy(folder.id, folderItemKey(wall));
@@ -92,7 +92,6 @@ Future<void> _removeFromFolder(
   FolderEntity folder,
   FavouriteWallEntity wall,
 ) async {
-  PrismHaptics.impact();
   final AppLocalizations l10n = context.l10n;
   final bool confirmed = await showPrismConfirm(
     context,

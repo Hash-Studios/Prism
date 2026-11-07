@@ -50,6 +50,7 @@ class _FakeAuth extends FirebaseAuthPlatform {
 
 class _Reports implements ContentReportRepository {
   final List<({String type, String id, String reason, String details})> sent = [];
+  bool throws = false;
 
   @override
   Future<Result<void>> submitReport({
@@ -59,6 +60,7 @@ class _Reports implements ContentReportRepository {
     String details = '',
     String appVersion = '',
   }) async {
+    if (throws) throw StateError('network down');
     sent.add((type: contentType, id: targetFirestoreDocId, reason: reason, details: details));
     return Result.success(null);
   }
@@ -176,6 +178,30 @@ void main() {
     await tester.pump(const Duration(seconds: 10));
   });
 
+  testWidgets('the Report sent snackbar plays one tap and one success haptic', (tester) async {
+    final bool previousHapticsEnabled = PrismHaptics.enabled;
+    PrismHaptics.enabled = true;
+    addTearDown(() => PrismHaptics.enabled = previousHapticsEnabled);
+    final List<Object?> played = <Object?>[];
+    const MethodChannel haptics = MethodChannel('prism/haptics');
+    messenger.setMockMethodCallHandler(haptics, (call) async {
+      played.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(haptics, null));
+
+    await open(tester, onBlockCreator: () {});
+    await tester.tap(find.text('Spam or misleading'));
+    await tester.pump();
+    played.clear();
+    await tester.tap(find.text('Send report'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Also block this creator'), findsOneWidget);
+    expect(played, <Object?>['tap', 'success']);
+    await tester.pump(const Duration(seconds: 10));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
   testWidgets('without a block action the report ends with the plain toast', (tester) async {
     await open(tester);
 
@@ -284,6 +310,25 @@ void main() {
       toasts.any((call) => call.method == 'showToast' && (call.arguments as Map)['msg'] == 'Choose a reason'),
       isTrue,
     );
+    await tester.pump(const Duration(seconds: 5));
+  });
+
+  testWidgets('a repository that throws ends the spinner and shows the error', (tester) async {
+    reports.throws = true;
+    await open(tester);
+
+    await submit(tester);
+
+    expect(
+      toasts.any(
+        (call) =>
+            call.method == 'showToast' &&
+            (call.arguments as Map)['msg'] == 'Could not submit your report. Please try again.',
+      ),
+      isTrue,
+    );
+    final PrismButton send = tester.widget(find.widgetWithText(PrismButton, 'Send report'));
+    expect(send.loading, isFalse);
     await tester.pump(const Duration(seconds: 5));
   });
 }

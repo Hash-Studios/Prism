@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
@@ -56,7 +57,7 @@ Future<FolderEntity?> pickFolder(BuildContext context, String? current) async {
                 ),
             ],
           ),
-          _ => const Center(child: CircularProgressIndicator()),
+          _ => const Center(child: PrismLoader()),
         };
         return PrismSheetBody(title: l10n.wallpaperAutoRotatePickFolder, child: body);
       },

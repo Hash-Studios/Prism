@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/constants/app_constants.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -244,5 +245,30 @@ void main() {
     await settle(tester);
     expect(opened, isEmpty);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a failed gallery open plays one error haptic and a cancel plays none', (tester) async {
+    const channel = MethodChannel('prism/haptics');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final played = <Object?>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      played.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    PrismHaptics.enabled = true;
+
+    picker.choose = () async => null;
+    await showChooser(tester, DeepLinkInputWorkflow.wallpaperFilter);
+    await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
+    await settle(tester);
+    // PrismButton plays its own tap, and a cancel adds nothing on top.
+    expect(played, <Object?>['tap']);
+
+    played.clear();
+    picker.choose = () async => throw PlatformException(code: 'photo_access_denied');
+    await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
+    await settle(tester);
+    expect(played, <Object?>['tap', 'error']);
   });
 }

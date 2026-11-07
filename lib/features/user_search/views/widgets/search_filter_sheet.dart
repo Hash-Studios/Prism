@@ -2,6 +2,7 @@ import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_chip.dart';
+import 'package:Prism/core/widgets/prism/prism_row.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/views/widgets/palette_swatch.dart';
@@ -96,13 +97,9 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    final TextStyle heading = TextStyle(
-      color: scheme.secondary,
-      fontFamily: PrismFonts.proximaNova,
-      fontWeight: FontWeight.bold,
-    );
+    final TextStyle heading = PrismTextStyles.caption(context);
     Widget chip({required String label, required bool selected, required VoidCallback onSelected}) =>
-        ChoiceChip(label: Text(label), selected: selected, onSelected: (_) => onSelected());
+        PrismChip(label: label, selected: selected, onTap: onSelected);
     final PrismPaletteColor accentMatch = nearestPaletteColor(scheme.primary);
     return PrismSheetBody(
       title: context.l10n.accountSearchFilters,
@@ -130,38 +127,25 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(
-              context.l10n.accountPortraitOnly,
-              style: TextStyle(color: scheme.secondary, fontFamily: PrismFonts.proximaNova, fontSize: 16),
-            ),
+          PrismSwitchRow(
+            padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
+            title: context.l10n.accountPortraitOnly,
             value: _portraitOnly,
             onChanged: (value) => setState(() => _portraitOnly = value),
           ),
           if (showDepthEffectUi)
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                context.l10n.accountDepthEffect,
-                style: TextStyle(color: scheme.secondary, fontFamily: PrismFonts.proximaNova, fontSize: 16),
-              ),
-              subtitle: Text(
-                context.l10n.accountSubjectCanSitInFrontOfClock,
-                style: TextStyle(
-                  color: scheme.secondary.withValues(alpha: 0.7),
-                  fontFamily: PrismFonts.proximaNova,
-                  fontSize: 13,
-                ),
-              ),
+            PrismSwitchRow(
+              padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
+              title: context.l10n.accountDepthEffect,
+              subtitle: context.l10n.accountSubjectCanSitInFrontOfClock,
               value: _depthOnly,
               onChanged: (value) => setState(() => _depthOnly = value),
             ),
-          const SizedBox(height: 8),
-          Text(context.l10n.accountMinResolution, style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
-          const SizedBox(height: 8),
+          const SizedBox(height: PrismSpace.xs),
+          Text(context.l10n.accountMinResolution, style: heading),
+          const SizedBox(height: PrismSpace.xs),
           Wrap(
-            spacing: 8,
+            spacing: PrismSpace.xs,
             children: <Widget>[
               for (final int? shortSide in searchResolutionChoices)
                 chip(
@@ -171,11 +155,11 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                 ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(context.l10n.accountSort, style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
-          const SizedBox(height: 8),
+          const SizedBox(height: PrismSpace.md),
+          Text(context.l10n.accountSort, style: heading),
+          const SizedBox(height: PrismSpace.xs),
           Wrap(
-            spacing: 8,
+            spacing: PrismSpace.xs,
             children: <Widget>[
               for (final sort in SearchSort.values)
                 chip(
@@ -185,9 +169,9 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                 ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(context.l10n.accountColour, style: heading.copyWith(fontSize: 13, fontWeight: FontWeight.w500)),
-          const SizedBox(height: 4),
+          const SizedBox(height: PrismSpace.md),
+          Text(context.l10n.accountColour, style: heading),
+          const SizedBox(height: PrismSpace.xxs),
           Wrap(
             children: <Widget>[
               for (final PrismPaletteColor entry in prismPalette)
@@ -198,7 +182,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                 ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: PrismSpace.xxs),
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: PrismChip(

@@ -68,6 +68,7 @@ import 'package:Prism/features/wallpaper_history/views/widgets/pick_up_row.dart'
 import 'package:Prism/features/weekly_challenges/biz/weekly_challenges_cubit.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/foundation.dart';
@@ -1360,6 +1361,9 @@ void main() {
 
   testWidgets('Show less like this gives an Undo that brings the wallpaper back', (tester) async {
     await pumpScreen(tester);
+    // The Undo lives on the in-app toast, which needs the app's overlay.
+    toasts.overlayResolver = () => tester.state<OverlayState>(find.byType(Overlay).first);
+    addTearDown(() => toasts.overlayResolver = null);
     final int before = find.byType(WallpaperTile).evaluate().length;
     final gesture = await tester.startGesture(tester.getCenter(find.byType(WallpaperTile).first));
     await tester.pump(const Duration(milliseconds: 600));

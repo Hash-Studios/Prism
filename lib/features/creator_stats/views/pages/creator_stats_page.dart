@@ -90,19 +90,19 @@ class CreatorStatsView extends StatelessWidget {
           );
         }
         return ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(PrismSpace.lg),
           children: [
             Text(context.l10n.statsWeekNote, style: PrismTextStyles.caption(context)),
             for (final metric in StatsMetric.values)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
                 child: _MetricSummary(metric: metric, weeks: data.weeks, total: data.totals[metric]),
               ),
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
               child: _TipsSummary(tips: data.tips, walls: data.walls),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: PrismSpace.xl),
             _Selector(
               metric: state.metric,
               onSelected: (metric) {
@@ -112,15 +112,15 @@ class CreatorStatsView extends StatelessWidget {
             ),
             StatsChart(weeks: data.weeks, metric: state.metric),
             Text(context.l10n.statsHistoryNote, style: PrismTextStyles.caption(context)),
-            const SizedBox(height: 24),
+            const SizedBox(height: PrismSpace.xl),
             Text(context.l10n.statsTopWalls, style: PrismTextStyles.sectionTitle(context)),
             for (final wall in data.ranked(state.metric))
               PrismRow(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
                 leading: wall.thumbnailUrl.isEmpty
                     ? null
                     : ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(PrismRadius.xs),
                         child: Image.network(
                           wall.thumbnailUrl,
                           width: 48,
@@ -225,7 +225,7 @@ class _MetricSummary extends StatelessWidget {
                 size: 16,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: PrismSpace.xxs),
               Flexible(
                 child: Text(
                   context.l10n.statsChange('${delta > 0 ? '+' : ''}${statsNumber(context, delta)}'),
@@ -276,7 +276,7 @@ class _WallStatsPageState extends State<WallStatsPage> {
         : PrismPage(
             title: widget.wall.title.isEmpty ? context.l10n.statsUntitled : widget.wall.title,
             body: ListView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(PrismSpace.lg),
               children: [
                 _Selector(
                   metric: metric,
@@ -314,7 +314,7 @@ class StatsChart extends StatelessWidget {
       label: context.l10n.statsChartSummary(statsLabel(context, metric), summary),
       child: ExcludeSemantics(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
+          padding: const EdgeInsets.symmetric(vertical: PrismSpace.lg),
           child: Column(
             children: [
               SizedBox(
@@ -328,10 +328,10 @@ class StatsChart extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: PrismSpace.xs),
               for (final week in weeks)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(vertical: PrismSpace.xxs),
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
                     child: Text(

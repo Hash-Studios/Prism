@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
@@ -146,11 +147,23 @@ void main() {
     expect(find.textContaining('Sign in'), findsNothing);
     expect(toasts.where((m) => m.contains('Sign in')), isEmpty);
 
+    final List<Object?> played = <Object?>[];
+    const MethodChannel haptics = MethodChannel('prism/haptics');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(haptics, (call) async {
+      played.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(haptics, null));
+    PrismHaptics.enabled = true;
+
     await tester.tap(find.byTooltip('Try again'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('https://prismwalls.com/s/abc'), findsOneWidget);
     expect(calls, 2);
+    // PrismIconButton plays nothing itself, so the retry plays exactly one tap.
+    expect(played, <Object?>['tap']);
   });
 
   testWidgets('a signed out user is asked to sign in and no link is requested', (tester) async {

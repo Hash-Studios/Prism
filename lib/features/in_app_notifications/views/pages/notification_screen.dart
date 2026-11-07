@@ -6,6 +6,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/prism/prism_toast.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
@@ -114,22 +115,19 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
     PrismHaptics.tap();
     analytics.track(NotificationClearAllConfirmedEvent(count: removed.length));
     bloc.add(const InAppNotificationsEvent.clearRequested());
-    _showUndoSnackBar(context, l10n.notifInboxCleared, removed);
+    _showUndoToast(context, l10n.notifInboxCleared, removed);
   }
 
-  void _showUndoSnackBar(BuildContext context, String message, List<InAppNotificationEntity> removed) {
+  void _showUndoToast(BuildContext context, String message, List<InAppNotificationEntity> removed) {
     final InAppNotificationsBloc bloc = context.read<InAppNotificationsBloc>();
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          action: SnackBarAction(
-            label: context.l10n.notifUndo,
-            onPressed: () => bloc.add(InAppNotificationsEvent.restoreRequested(items: removed)),
-          ),
-        ),
-      );
+    showPrismToast(
+      Overlay.of(context),
+      message,
+      action: (
+        label: context.l10n.notifUndo,
+        onPressed: () => bloc.add(InAppNotificationsEvent.restoreRequested(items: removed)),
+      ),
+    );
   }
 
   @override
@@ -280,7 +278,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
           NotificationItemDismissedEvent(type: notificationTypeFor(notification), dismissMode: DismissModeValue.swipe),
         );
         context.read<InAppNotificationsBloc>().add(InAppNotificationsEvent.deleteRequested(id: notification.id));
-        _showUndoSnackBar(context, context.l10n.notifRemoved, <InAppNotificationEntity>[notification]);
+        _showUndoToast(context, context.l10n.notifRemoved, <InAppNotificationEntity>[notification]);
       },
       dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
       secondaryBackground: _dismissBackground(cs, Alignment.centerRight),
@@ -319,7 +317,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
             ids: group.items.map((InAppNotificationEntity e) => e.id).toList(),
           ),
         );
-        _showUndoSnackBar(context, l10n.notifGroupNotificationsRemoved(group.items.length), group.items);
+        _showUndoToast(context, l10n.notifGroupNotificationsRemoved(group.items.length), group.items);
       },
       dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
       secondaryBackground: _dismissBackground(cs, Alignment.centerRight),

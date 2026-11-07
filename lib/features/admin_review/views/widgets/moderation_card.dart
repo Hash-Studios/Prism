@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/wall_moderation.dart';
 import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view.dart';
@@ -84,6 +85,7 @@ class _ModerationCardState extends State<ModerationCard> {
       if (mounted) setState(() => _isApproved = true);
     } catch (error, stackTrace) {
       logger.e('Admin approval failed', tag: 'AdminReview', error: error, stackTrace: stackTrace);
+      PrismHaptics.error();
       if (mounted) {
         setState(() => _approvalError = context.l10n.adminApprovalFailed);
       }
@@ -160,7 +162,12 @@ class _ModerationCardState extends State<ModerationCard> {
                 icon: Icons.open_in_full_rounded,
                 tooltip: context.l10n.adminViewFullWallpaper,
                 filled: true,
-                onPressed: openFull,
+                onPressed: openFull == null
+                    ? null
+                    : () {
+                        PrismHaptics.tap();
+                        openFull();
+                      },
               ),
               const SizedBox(width: PrismSpace.xs),
               Expanded(

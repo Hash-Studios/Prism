@@ -1453,9 +1453,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                     liveRegion: true,
                     child: Text(
                       context.l10n.economyCoinsEarned(_uploadAwards[hero.id]!),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.primary),
+                      style: PrismTextStyles.body(context).copyWith(color: Theme.of(context).colorScheme.primary),
                     ),
                   ),
                 if (hasUnconfirmedSubmission) AiUnconfirmedNotice(onCheck: () => context.router.push(ReviewRoute())),

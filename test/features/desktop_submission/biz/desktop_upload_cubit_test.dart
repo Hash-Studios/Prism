@@ -52,6 +52,18 @@ void main() {
     await cubit.close();
   });
 
+  test('an unexpected error ends sending with the generic failure', () async {
+    final _FakeRepo repo = _FakeRepo()..submitError = StateError('boom');
+    final DesktopUploadCubit cubit = DesktopUploadCubit(repo);
+
+    await cubit.submit(wallDocId: 'wall_1', bytes: _bytes);
+
+    expect(cubit.state.failure, DesktopSubmitFailure.failed);
+    expect(cubit.state.sending, isFalse);
+    expect(cubit.state.sent, isFalse);
+    await cubit.close();
+  });
+
   test('clearFailure removes the server failure', () async {
     final _FakeRepo repo = _FakeRepo()..submitError = const DesktopSubmitException(DesktopSubmitFailure.failed);
     final DesktopUploadCubit cubit = DesktopUploadCubit(repo);

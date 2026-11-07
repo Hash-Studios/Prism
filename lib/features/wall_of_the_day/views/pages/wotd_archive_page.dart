@@ -37,8 +37,10 @@ class WotdArchivePage extends StatelessWidget implements AutoRouteWrapper {
 
   Future<void> _refresh(BuildContext context) {
     final WotdArchiveBloc bloc = context.read<WotdArchiveBloc>();
-    PrismHaptics.impact();
-    final Future<WotdArchiveState> settled = bloc.stream.firstWhere((state) => state.status != LoadStatus.loading);
+    final Future<WotdArchiveState> settled = bloc.stream.firstWhere(
+      (state) => state.status != LoadStatus.loading,
+      orElse: () => bloc.state,
+    );
     bloc.add(const WotdArchiveEvent.refreshRequested());
     return settled;
   }

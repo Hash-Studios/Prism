@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/share/share_card.dart';
@@ -215,16 +216,18 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
                 padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xl),
                 children: [
                   Text(challenge.theme, style: PrismTextStyles.sectionTitle(context)),
-                  const SizedBox(height: 12),
-                  Text(l10n.challengeRules),
+                  const SizedBox(height: PrismSpace.sm),
+                  Text(l10n.challengeRules, style: PrismTextStyles.body(context)),
                   Text(
                     l10n.challengeVotingRules(
                       DateFormat.MMMEd(l10n.localeName).add_jm().format(challenge.closesAt.toLocal()),
                     ),
+                    style: PrismTextStyles.body(context),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: PrismSpace.md),
                   if (open) ...[
-                    if (detail.myEntryCount >= _maxChallengeEntries) Text(l10n.challengeLimit),
+                    if (detail.myEntryCount >= _maxChallengeEntries)
+                      Text(l10n.challengeLimit, style: PrismTextStyles.body(context)),
                     Row(
                       children: [
                         Expanded(
@@ -236,7 +239,7 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
                                 : () => _upload(challenge, detail.myEntryCount),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: PrismSpace.sm),
                         Expanded(
                           child: PrismButton(
                             label: l10n.challengeAi,
@@ -258,19 +261,19 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
                       ChallengeState.votingClosed || ChallengeState.open => l10n.challengeWaiting,
                       ChallengeState.scheduled => l10n.challengeScheduled,
                       _ => challenge.noWinner ? l10n.challengeNoWinner : l10n.challengeClosed,
-                    }),
+                    }, style: PrismTextStyles.body(context)),
                   if (challenge.winner case final winner?) ...[
                     Text(l10n.challengeWinner(winner.creatorName), style: PrismTextStyles.rowTitle(context)),
                     _entry(winner, [winner], 0, false),
                   ],
-                  const SizedBox(height: 12),
+                  const SizedBox(height: PrismSpace.sm),
                   PrismSegmented<ChallengeSort>(
                     values: const [ChallengeSort.top, ChallengeSort.newest],
                     selected: state.sort,
                     labelOf: (sort) => sort == ChallengeSort.top ? l10n.challengeTop : l10n.challengeNew,
                     onChanged: (sort) => _cubit.load(widget.challengeId, sort: sort),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: PrismSpace.md),
                   if (detail.entries.isEmpty) ...[
                     if (_lastWeek(state.past, challenge.id) case final last?)
                       _LastWeek(
@@ -286,8 +289,11 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
                   ],
                   for (final (i, entry) in detail.entries.indexed) _entry(entry, detail.entries, i, open),
                   if (state.past.isNotEmpty) ...[
-                    const SizedBox(height: 24),
-                    PrismSectionHeader(title: l10n.challengePast, padding: const EdgeInsets.only(bottom: 12)),
+                    const SizedBox(height: PrismSpace.xl),
+                    PrismSectionHeader(
+                      title: l10n.challengePast,
+                      padding: const EdgeInsets.only(bottom: PrismSpace.sm),
+                    ),
                     PrismGroup(
                       children: [
                         for (final past in state.past)
@@ -323,15 +329,18 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
   Widget _entry(ChallengeEntry entry, List<ChallengeEntry> entries, int index, bool open) {
     final l10n = context.l10n;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: PrismSpace.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (entry.thumbUrl.isNotEmpty)
             InkWell(
-              onTap: () => _open(entries, index),
+              onTap: () {
+                PrismHaptics.tap();
+                unawaited(_open(entries, index));
+              },
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(PrismRadius.sm),
                 child: AspectRatio(
                   aspectRatio: 4 / 3,
                   child: CachedNetworkImage(imageUrl: entry.thumbUrl, fit: BoxFit.cover),
@@ -339,16 +348,16 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
               ),
             ),
           PrismRow(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
             onTap: () => _open(entries, index),
             title: entry.title.isEmpty ? entry.creatorName : entry.title,
             subtitle: entry.creatorName,
           ),
           Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 12,
+            spacing: PrismSpace.sm,
             children: [
-              Text(l10n.challengeVotes(entry.voteCount)),
+              Text(l10n.challengeVotes(entry.voteCount), style: PrismTextStyles.caption(context)),
               if (open && !entry.mine)
                 PrismButton(
                   icon: entry.voted ? Icons.favorite_rounded : Icons.favorite_border_rounded,
@@ -402,12 +411,15 @@ class _LastWeekState extends State<_LastWeek> {
             children: [
               for (final (i, entry) in entries.indexed)
                 InkWell(
-                  onTap: () => widget.onOpen(entries, i),
+                  onTap: () {
+                    PrismHaptics.tap();
+                    unawaited(widget.onOpen(entries, i));
+                  },
                   child: Semantics(
                     label: entry.title.isEmpty ? entry.creatorName : entry.title,
                     image: true,
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(PrismRadius.sm),
                       child: CachedNetworkImage(
                         imageUrl: entry.thumbUrl,
                         fit: BoxFit.cover,

@@ -9,7 +9,9 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
+import 'package:Prism/core/widgets/prism/prism_toast.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/live_wallpaper/biz/bloc/live_wallpaper_bloc.j.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome.dart';
@@ -213,18 +215,17 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
       case LiveApplyStatus.confirmInPreview:
       case LiveApplyStatus.failed:
       case LiveApplyStatus.unsupported:
-        final ColorScheme scheme = Theme.of(context).colorScheme;
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              content: Text(
-                _liveOutcomeMessage(context.l10n, outcome, bloc.state.capabilities.supportsPerScreen),
-                style: TextStyle(color: outcome.isError ? scheme.onError : null),
-              ),
-              backgroundColor: outcome.isError ? scheme.error : null,
-            ),
-          );
+        if (outcome.status == LiveApplyStatus.applied) PrismHaptics.success();
+        if (outcome.isError) PrismHaptics.error();
+        showPrismToast(
+          Overlay.of(context),
+          _liveOutcomeMessage(context.l10n, outcome, bloc.state.capabilities.supportsPerScreen),
+          kind: outcome.isError
+              ? PrismToastKind.error
+              : outcome.status == LiveApplyStatus.applied
+              ? PrismToastKind.success
+              : PrismToastKind.plain,
+        );
     }
   }
 
@@ -263,7 +264,6 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
   Future<void> _apply(BuildContext context) async {
     if (!await requireSignedInAction(context) || !context.mounted) return;
     final LiveWallpaperBloc bloc = context.read<LiveWallpaperBloc>();
-    PrismHaptics.tap();
     setState(() => _screensSet = null);
     switch (_mode) {
       case _LiveMode.photo:
@@ -288,7 +288,7 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
         builder: (context, state) {
           switch (state.status) {
             case LiveWallpaperStatus.loading:
-              return const Center(child: CircularProgressIndicator());
+              return const Center(child: PrismLoader());
             case LiveWallpaperStatus.unsupported:
               return GlintState(
                 kind: GlintStateKind.empty,
@@ -321,13 +321,10 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
               for (final _LiveMode mode in modes)
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(_liveModeLabel(context.l10n, mode)),
+                  child: PrismChip(
+                    label: _liveModeLabel(context.l10n, mode),
                     selected: mode == _mode,
-                    onSelected: (_) {
-                      PrismHaptics.selection();
-                      setState(() => _mode = mode);
-                    },
+                    onTap: () => setState(() => _mode = mode),
                   ),
                 ),
             ],
@@ -577,16 +574,15 @@ class _VideoSection extends StatelessWidget {
             p.basename(path),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.secondary),
+            style: PrismTextStyles.rowTitle(context),
           ),
           const SizedBox(height: 8),
         ],
-        OutlinedButton.icon(
+        PrismButton(
+          label: path == null ? context.l10n.wallpaperLiveChooseVideo : context.l10n.wallpaperLiveChooseAnotherVideo,
+          variant: PrismButtonVariant.tonal,
+          icon: Icons.video_file_outlined,
           onPressed: state.applying ? null : onChoose,
-          icon: const Icon(Icons.video_file_outlined),
-          label: Text(
-            path == null ? context.l10n.wallpaperLiveChooseVideo : context.l10n.wallpaperLiveChooseAnotherVideo,
-          ),
         ),
         const SizedBox(height: 8),
         _Description(text: context.l10n.wallpaperLiveVideoDescription),
@@ -602,12 +598,7 @@ class _Description extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return Text(
-      text,
-      textAlign: TextAlign.center,
-      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.secondary.withValues(alpha: 0.7)),
-    );
+    return Text(text, textAlign: TextAlign.center, style: PrismTextStyles.body(context));
   }
 }
 
@@ -618,11 +609,10 @@ class _BatterySaver extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    return SwitchListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(context.l10n.wallpaperLiveBatterySaver, style: TextStyle(color: theme.colorScheme.secondary)),
-      subtitle: Text(context.l10n.wallpaperLiveFps(state.batterySaver ? 15 : 30)),
+    return PrismSwitchRow(
+      padding: EdgeInsets.zero,
+      title: context.l10n.wallpaperLiveBatterySaver,
+      subtitle: context.l10n.wallpaperLiveFps(state.batterySaver ? 15 : 30),
       value: state.batterySaver,
       onChanged: (value) => context.read<LiveWallpaperBloc>().add(LiveWallpaperEvent.batterySaverChanged(value)),
     );
@@ -638,7 +628,6 @@ class _ScreensSetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
-    final ThemeData theme = Theme.of(context);
     final LiveScreens screens = outcome.screens!;
     final WallpaperTarget? other = switch (outcome.target) {
       WallpaperTarget.home => WallpaperTarget.lock,
@@ -661,7 +650,7 @@ class _ScreensSetCard extends StatelessWidget {
                     _liveScreenLabel(l10n, screens.home),
                     _liveScreenLabel(l10n, screens.lock),
                   ),
-                  style: theme.textTheme.bodyMedium,
+                  style: PrismTextStyles.body(context),
                 ),
               ),
               if (other != null) ...[
@@ -702,7 +691,6 @@ class _ApplyBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     return SafeArea(
       top: false,
       child: Padding(
@@ -725,22 +713,15 @@ class _ApplyBar extends StatelessWidget {
             ],
             SizedBox(
               width: double.infinity,
-              child: FilledButton(
+              child: PrismButton(
+                label: label,
+                expand: true,
+                loading: busy,
                 onPressed: enabled && !busy ? onPressed : null,
-                child: busy
-                    ? SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.onPrimary),
-                      )
-                    : Text(label),
               ),
             ),
             const SizedBox(height: 6),
-            Text(
-              context.l10n.wallpaperLivePreviewInstruction,
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.secondary.withValues(alpha: 0.6)),
-            ),
+            Text(context.l10n.wallpaperLivePreviewInstruction, style: PrismTextStyles.caption(context)),
           ],
         ),
       ),

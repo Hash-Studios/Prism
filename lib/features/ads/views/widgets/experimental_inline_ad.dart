@@ -6,6 +6,7 @@ import 'package:Prism/features/ads/data/ad_experiment_config.dart';
 import 'package:Prism/features/ads/data/ad_experiment_service.dart';
 import 'package:Prism/features/ads/data/ad_experiment_telemetry.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -262,8 +263,8 @@ class _ExperimentalInlineAdState extends State<ExperimentalInlineAd> with Widget
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-          child: Text(context.l10n.economyAd, style: Theme.of(context).textTheme.labelSmall),
+          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.lg, vertical: PrismSpace.xxs),
+          child: Text(context.l10n.economyAd, style: PrismTextStyles.caption(context)),
         ),
         view,
       ],

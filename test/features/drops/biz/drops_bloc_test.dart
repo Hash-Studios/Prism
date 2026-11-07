@@ -266,6 +266,18 @@ void main() {
       expect(calls, hasLength(1));
     });
 
+    test('a callable that throws ends as a failed result and clears busy', () async {
+      stubLoad(live: dropEntity());
+      await loaded();
+      backend.onCall = (name, params) async => throw StateError('boom');
+
+      bloc.add(const DropsEvent.unlockRequested(wallId: 'A'));
+      final state = await bloc.stream.firstWhere((s) => s.lastResult != null);
+
+      expect(state.lastResult!.outcome, DropUnlockOutcome.failed);
+      expect(state.busyKey, isNull);
+    });
+
     test('is ignored with no Drop loaded', () async {
       bloc.add(const DropsEvent.unlockRequested(wallId: 'A'));
       await Future<void>.delayed(Duration.zero);

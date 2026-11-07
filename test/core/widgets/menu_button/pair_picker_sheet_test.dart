@@ -13,6 +13,7 @@ void main() {
     List<PairCandidate> favourites = const <PairCandidate>[],
     List<PairCandidate> history = const <PairCandidate>[],
     List<PairCandidate> downloads = const <PairCandidate>[],
+    Future<List<PairCandidate>> Function()? loadDownloads,
     required Future<void> Function() act,
   }) async {
     PairPick? picked;
@@ -27,8 +28,11 @@ void main() {
               picked = await showPrismSheet<PairPick>(
                 context,
                 detents: const <PrismSheetDetent>[PrismSheetDetent.large],
-                builder: (_) =>
-                    PairPickerSheet(favourites: favourites, history: history, loadDownloads: () async => downloads),
+                builder: (_) => PairPickerSheet(
+                  favourites: favourites,
+                  history: history,
+                  loadDownloads: loadDownloads ?? () async => downloads,
+                ),
               );
             },
             child: const Text('open'),
@@ -115,5 +119,18 @@ void main() {
 
     expect(pick?.source, PairSource.favourites);
     expect(pick?.candidate.fullUrl, 'https://images.example/wall.jpg');
+  });
+
+  testWidgets('a downloads list that fails to load shows the empty text, not a spinner', (tester) async {
+    await open(
+      tester,
+      loadDownloads: () async => throw StateError('no storage'),
+      act: () async {
+        await tester.tap(find.text('Downloads'));
+        await tester.pumpAndSettle();
+      },
+    );
+
+    expect(find.text('No downloads yet.'), findsOneWidget);
   });
 }

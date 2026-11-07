@@ -1072,7 +1072,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       toasts.error(context.l10n.coreCustomAccentLowContrast);
       return;
     }
-    PrismHaptics.selection();
     await getIt<SettingsLocalDataSource>().set(SystemAccentChannel.settingsKey, false);
     if (!context.mounted) return;
     if (dark) {
@@ -1750,8 +1749,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                     onAction: () => _loadWallpaper(context),
                   ),
                 ),
-                TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.wallpaperGoBack)),
-                const SizedBox(height: 16),
+                PrismButton(
+                  label: context.l10n.wallpaperGoBack,
+                  variant: PrismButtonVariant.ghost,
+                  onPressed: () => Navigator.pop(context),
+                ),
+                const SizedBox(height: PrismSpace.md),
               ],
             ),
           ),
@@ -2050,6 +2053,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                     onClock: canonicalLoading
                         ? null
                         : () async {
+                            PrismHaptics.tap();
                             // iOS opens a passive preview; its Save button has its own sign-in guard.
                             if (!hideSetWallpaperUi && (!await requireSignedInAction(context) || !context.mounted)) {
                               return;
@@ -2408,6 +2412,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   void _toggleDetails(BuildContext context, WallpaperDetailLoaded state) {
     if (state.panelScrollInProgress) return;
+    PrismHaptics.selection();
     _trackAction(state, AnalyticsActionValue.panelCollapseTapped);
     state.panelCollapsed ? _handlePanelOpened(context, state) : _handlePanelClosed(context, state);
   }
@@ -2952,7 +2957,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             _setAwardCoins > 0)
           Text(
             context.l10n.economyCoinsEarned(_setAwardCoins),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.primary),
+            style: PrismTextStyles.caption(context).copyWith(color: Theme.of(context).colorScheme.primary),
           ),
       ],
     );
@@ -3326,7 +3331,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
               Icon(Icons.error_outline_rounded, size: 18, color: theme.colorScheme.error),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(note, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.secondary)),
+                child: Text(note, style: PrismTextStyles.body(context).copyWith(color: theme.colorScheme.secondary)),
               ),
             ],
           ),
@@ -3387,34 +3392,43 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
               children: [
                 if (tipWall != null)
                   TextButton.icon(
-                    onPressed: () => showTipSheet(
-                      context,
-                      creatorUid: tipWall.core.authorUid!.trim(),
-                      creatorName: creatorLabel(
-                        name: tipWall.core.authorName ?? '',
-                        username: '',
-                        fallback: context.l10n.accountCreatorFallback,
-                      ),
-                      source: 'wall',
-                      wallId: reportWallDocId,
-                    ),
+                    onPressed: () {
+                      PrismHaptics.tap();
+                      showTipSheet(
+                        context,
+                        creatorUid: tipWall.core.authorUid!.trim(),
+                        creatorName: creatorLabel(
+                          name: tipWall.core.authorName ?? '',
+                          username: '',
+                          fallback: context.l10n.accountCreatorFallback,
+                        ),
+                        source: 'wall',
+                        wallId: reportWallDocId,
+                      );
+                    },
                     icon: const PrismCoinIcon(),
                     label: Text(context.l10n.tipAction, style: TextStyle(color: theme.colorScheme.secondary)),
                   ),
                 TextButton.icon(
-                  onPressed: () => showContentReportSheet(
-                    context,
-                    contentType: 'wall',
-                    targetFirestoreDocId: reportWallDocId,
-                    subtitle: entity.id,
-                    onBlockCreator: canBlock ? () => unawaited(blockWallCreator(context, entity)) : null,
-                  ),
+                  // showContentReportSheet plays the tap haptic.
+                  onPressed: () {
+                    showContentReportSheet(
+                      context,
+                      contentType: 'wall',
+                      targetFirestoreDocId: reportWallDocId,
+                      subtitle: entity.id,
+                      onBlockCreator: canBlock ? () => unawaited(blockWallCreator(context, entity)) : null,
+                    );
+                  },
                   icon: Icon(Icons.outlined_flag_rounded, size: 20, color: theme.colorScheme.secondary),
                   label: Text(context.l10n.wallpaperReport, style: TextStyle(color: theme.colorScheme.secondary)),
                 ),
                 if (canBlock)
                   TextButton.icon(
-                    onPressed: () => unawaited(blockWallCreator(context, entity)),
+                    onPressed: () {
+                      PrismHaptics.tap();
+                      unawaited(blockWallCreator(context, entity));
+                    },
                     icon: Icon(Icons.person_remove_rounded, size: 20, color: theme.colorScheme.secondary),
                     label: Text(
                       context.l10n.wallpaperBlockCreator,

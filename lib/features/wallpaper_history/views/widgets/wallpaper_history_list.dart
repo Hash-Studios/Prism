@@ -68,7 +68,6 @@ Future<void> confirmClearHistory(BuildContext context, HistorySegment segment) a
     destructive: true,
   );
   if (!confirmed) return;
-  PrismHaptics.tap();
   if (viewed) {
     bloc.add(const WallpaperHistoryEvent.viewedCleared());
     unawaited(analytics.track(RecentlyViewedClearedEvent(count: count)));
@@ -167,17 +166,20 @@ class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
   }
 
   void _remove(BuildContext context, AppliedWallpaper item) {
-    PrismHaptics.tap();
+    PrismHaptics.impact();
     final WallpaperHistoryBloc bloc = context.read<WallpaperHistoryBloc>();
     bloc.add(WallpaperHistoryEvent.removed(item.id));
-    ScaffoldMessenger.maybeOf(context)
-      ?..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(context.l10n.wallpaperRemovedFromHistory),
-          action: SnackBarAction(label: context.l10n.coreUndo, onPressed: () => unawaited(bloc.restore(item))),
-        ),
-      );
+    toasts.success(
+      context.l10n.wallpaperRemovedFromHistory,
+      haptic: false,
+      action: (
+        label: context.l10n.coreUndo,
+        onPressed: () {
+          PrismHaptics.tap();
+          unawaited(bloc.restore(item));
+        },
+      ),
+    );
   }
 
   @override
@@ -193,7 +195,6 @@ class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
             labelOf: (segment) => _segmentLabel(context.l10n, segment),
             onChanged: (segment) {
               if (segment == _segment) return;
-              PrismHaptics.selection();
               setState(() => _segment = segment);
             },
           ),
@@ -237,7 +238,6 @@ class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
                           body: context.l10n.historyViewedOffBody,
                           actionLabel: context.l10n.historyViewedOffAction,
                           onAction: () {
-                            PrismHaptics.tap();
                             context.read<WallpaperHistoryBloc>().add(const WallpaperHistoryEvent.viewingTurnedOn());
                             unawaited(analytics.track(const ViewingHistoryToggledEvent(value: true)));
                           },

@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/features/wrapped/domain/wrapped.dart';
 import 'package:Prism/features/wrapped/views/pages/wrapped_page.dart';
 import 'package:Prism/features/wrapped/views/wrapped_copy.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
@@ -144,6 +146,68 @@ void main() {
     await tester.pump(wrappedCardDuration + const Duration(milliseconds: 100));
 
     expect(find.text('You saved 12 walls in 2026.'), findsOneWidget);
+  });
+
+  testWidgets('a tap plays one haptic and the timer advance plays none', (tester) async {
+    final List<Object?> haptics = <Object?>[];
+    const MethodChannel channel = MethodChannel('prism/haptics');
+    PrismHaptics.enabled = true;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+      haptics.add(call.arguments);
+      return null;
+    });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null),
+    );
+    await _pumpStory(tester, share: _FakeShare());
+
+    await tester.pump(wrappedCardDuration + const Duration(milliseconds: 100));
+    expect(find.text('You saved 12 walls in 2026.'), findsOneWidget);
+    expect(haptics, isEmpty);
+
+    await _tapRight(tester);
+    expect(haptics, <Object?>['selection']);
+  });
+
+  testWidgets('a second share tap while the sheet is open is ignored', (tester) async {
+    final Completer<void> sheet = Completer<void>();
+    int calls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('en'),
+        home: Scaffold(
+          body: WrappedStory(
+            year: fixtureWrappedYear(),
+            source: WrappedSourceValue.home,
+            ownerUserId: 'test-user',
+            share:
+                (
+                  BuildContext context, {
+                  required WrappedCard card,
+                  required WrappedCopy copy,
+                  required Color accent,
+                  required String ownerUserId,
+                  Stream<String>? ownerChanges,
+                }) {
+                  calls++;
+                  return sheet.future;
+                },
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 1));
+
+    await tester.tap(find.byTooltip('Share this card'));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Share this card'), warnIfMissed: false);
+    await tester.pump();
+    expect(calls, 1);
+
+    sheet.complete();
+    await tester.pump();
   });
 
   testWidgets('holding pauses the story and releasing resumes it', (tester) async {

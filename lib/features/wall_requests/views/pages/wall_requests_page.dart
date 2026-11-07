@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
@@ -55,11 +56,13 @@ class _WallRequestsViewState extends State<_WallRequestsView> with SingleTickerP
 
   /// Tabs that already asked for their list. Each tab loads the first time it shows.
   final Set<WallRequestTab> _requested = <WallRequestTab>{};
+  int _hapticIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _tabs = TabController(length: _tabOrder.length, vsync: this, initialIndex: _tabOrder.indexOf(widget.initialTab));
+    _hapticIndex = _tabs.index;
     _tabs.addListener(_onTabChanged);
     _ensureLoaded(widget.initialTab);
     // Short Top and New lists show filled walls under the rows, so the Filled list loads at once.
@@ -74,6 +77,10 @@ class _WallRequestsViewState extends State<_WallRequestsView> with SingleTickerP
   }
 
   void _onTabChanged() {
+    if (_tabs.index != _hapticIndex) {
+      _hapticIndex = _tabs.index;
+      PrismHaptics.selection();
+    }
     if (_tabs.indexIsChanging) return;
     _ensureLoaded(_tabOrder[_tabs.index]);
   }
@@ -205,12 +212,15 @@ class _FilledWalls extends StatelessWidget {
           children: <Widget>[
             for (final WallRequest wall in walls)
               InkWell(
-                onTap: () => context.router.pushPath('/gallery?ids=${wall.filledWallId}&source=request'),
+                onTap: () {
+                  PrismHaptics.tap();
+                  unawaited(context.router.pushPath('/gallery?ids=${wall.filledWallId}&source=request'));
+                },
                 child: Semantics(
                   label: wall.text,
                   image: true,
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(PrismRadius.sm),
                     child: CachedNetworkImage(
                       imageUrl: wall.filledWallThumb,
                       fit: BoxFit.cover,

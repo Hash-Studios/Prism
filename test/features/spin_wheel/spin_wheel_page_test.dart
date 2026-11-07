@@ -208,6 +208,7 @@ void main() {
       expect(find.textContaining('A spin costs 10 coins. You have 4. Watch a video to earn more.'), findsOneWidget);
       expect(find.textContaining('Watch ad for'), findsOneWidget);
       expect(maxCosts, isEmpty, reason: 'No spin is sent while the balance is short');
+      expect(haptics, <String>['tap'], reason: 'Get coins taps once, like Spin');
 
       await tester.tap(find.text('Not now'));
       await pumpFor(tester, const Duration(milliseconds: 500));
@@ -480,6 +481,7 @@ void main() {
 
       expect(find.text('Get coins'), findsOneWidget);
       expect(find.text('SPIN'), findsNothing);
+      expect(haptics.where((String h) => h != 'selection'), <String>['tap', 'warning']);
     });
 
     testWidgets('a changed price shows the new price and says so', (tester) async {

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
@@ -48,7 +49,10 @@ class ShopItemTile extends StatelessWidget {
     final String name = shopItemName(item, context.l10n);
     return PrismCard(
       padding: const EdgeInsets.all(PrismSpace.sm),
-      onTap: onTap,
+      onTap: () {
+        PrismHaptics.tap();
+        onTap();
+      },
       semanticLabel: context.l10n.economyShopItemSemantics(name, tag?.$1 ?? context.l10n.economyCoins(price)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,7 +74,7 @@ class ShopItemTile extends StatelessWidget {
               children: <Widget>[
                 if (showPrice) ...<Widget>[
                   const PrismCoinIcon(size: 16),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: PrismSpace.xxs),
                   Text(
                     formatLocalizedNumber(price, context.l10n),
                     style: PrismTextStyles.rowTitle(

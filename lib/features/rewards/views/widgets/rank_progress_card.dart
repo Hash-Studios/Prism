@@ -58,11 +58,12 @@ class XpProgressCard extends StatelessWidget {
               Expanded(
                 child: Text(rankTitle(progress.rank.id, context.l10n), style: PrismTextStyles.cardTitle(context)),
               ),
-              IconButton(
+              PrismIconButton(
+                icon: Icons.info_outline_rounded,
                 tooltip: context.l10n.economyRankRewardsHelp,
-                style: IconButton.styleFrom(minimumSize: const Size.square(48), visualDensity: VisualDensity.standard),
+                size: 48,
+                iconSize: 20,
                 onPressed: () => showXpExplanation(context, progress: progress, onOpenShop: onOpenShop),
-                icon: const Icon(Icons.info_outline_rounded, size: 20),
               ),
             ],
           ),

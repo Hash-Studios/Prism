@@ -1,9 +1,11 @@
 import 'package:Prism/core/coins/spin_wheel.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/features/spin_wheel/views/widgets/spin_wheel_card.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../qa_render/qa_harness.dart' show loadFonts;
@@ -70,8 +72,17 @@ void main() {
     expect(find.text('Free spin'), findsNothing);
   });
 
-  testWidgets('tapping the card or the button opens the machine', (tester) async {
+  testWidgets('tapping the card or the button opens the machine, with one tap haptic each', (tester) async {
     int opened = 0;
+    final List<String> haptics = <String>[];
+    PrismHaptics.enabled = true;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), (call) async {
+      haptics.add(call.arguments as String);
+      return null;
+    });
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), null),
+    );
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -91,8 +102,10 @@ void main() {
 
     await tester.tap(find.text('Spin the wheel'));
     expect(opened, 1);
+    expect(haptics, <String>['tap']);
     await tester.tap(find.text(AppLocalizationsEn().economySpin));
     expect(opened, 2);
+    expect(haptics, <String>['tap', 'tap']);
   });
 
   testWidgets('with no spins left, the card still opens the machine', (tester) async {

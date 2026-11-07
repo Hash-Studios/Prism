@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -226,6 +227,27 @@ void main() {
     expect(find.text('Forest cabin'), findsOneWidget);
     expect(find.bySemanticsLabel('Open the wall'), findsOneWidget);
     semantics.dispose();
+  });
+
+  testWidgets('changing tab plays one selection haptic, tapping the same tab plays none', (tester) async {
+    const MethodChannel channel = MethodChannel('prism/haptics');
+    final List<String> played = <String>[];
+    PrismHaptics.enabled = true;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (MethodCall call) async {
+      played.add(call.arguments as String);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null));
+    stub(_state());
+    await pumpPage(tester);
+
+    await tester.tap(find.text('Top'));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(played, isEmpty);
+
+    await tester.tap(find.text('New'));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(played, <String>['selection']);
   });
 
   testWidgets('a failed tab shows a retry that loads it again', (tester) async {

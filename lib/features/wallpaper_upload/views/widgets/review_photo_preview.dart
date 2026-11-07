@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -70,7 +71,10 @@ class ReviewPhotoPreview extends StatelessWidget {
                   icon: Icons.close_rounded,
                   tooltip: context.l10n.actionClose,
                   onImage: true,
-                  onPressed: () => Navigator.of(context).maybePop(),
+                  onPressed: () {
+                    PrismHaptics.tap();
+                    Navigator.of(context).maybePop();
+                  },
                 ),
               ),
             ),

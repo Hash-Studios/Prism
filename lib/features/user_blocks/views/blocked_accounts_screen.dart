@@ -133,7 +133,7 @@ class _BlockedAccountsScreenState extends State<BlockedAccountsScreen> {
                                 row.syncStatus == 'pending'
                                     ? context.l10n.accountWaitingToSync
                                     : context.l10n.accountNotSynced,
-                                style: Theme.of(context).textTheme.bodySmall,
+                                style: PrismTextStyles.caption(context),
                               ),
                           ],
                         ),

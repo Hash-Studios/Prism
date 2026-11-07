@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -96,7 +97,14 @@ class _WotdWidgetCardState extends State<WotdWidgetCard> {
                 ),
               ),
             ),
-            PrismIconButton(icon: Icons.close_rounded, tooltip: l10n.widgetsCardDismiss, onPressed: _dismiss),
+            PrismIconButton(
+              icon: Icons.close_rounded,
+              tooltip: l10n.widgetsCardDismiss,
+              onPressed: () {
+                PrismHaptics.impact();
+                _dismiss();
+              },
+            ),
           ],
         ),
       ),

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/string_extensions.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -157,10 +156,7 @@ class _CategoryFeedContent extends StatelessWidget {
         body: context.l10n.wallpaperCheckConnection,
         actionLabel: context.l10n.wallpaperTryAgain,
         onAction: () => unawaited(onRetry()),
-        onRefresh: () {
-          PrismHaptics.impact();
-          return onRetry();
-        },
+        onRefresh: onRetry,
       );
     }
     final source = state.selectedCategory?.source ?? WallpaperSource.prism;

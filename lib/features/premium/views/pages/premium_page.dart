@@ -55,13 +55,22 @@ class _PremiumPageState extends State<PremiumPage> {
 
   // Same outcomes and messages as Restore purchases in Settings.
   Future<void> _restore() async {
-    if (_restoring || !await requireSignedInAction(context) || !mounted) return;
+    if (_restoring) return;
+    setState(() => _restoring = true);
+    try {
+      if (!await requireSignedInAction(context) || !mounted) return;
+      await _restoreSignedIn();
+    } finally {
+      if (mounted) setState(() => _restoring = false);
+    }
+  }
+
+  Future<void> _restoreSignedIn() async {
     final String requestedUserId = app_state.prismUser.id.trim();
     final bool requestedLoggedIn = app_state.prismUser.loggedIn;
     bool isCurrentAccount() =>
         requestedUserId == app_state.prismUser.id.trim() && requestedLoggedIn == app_state.prismUser.loggedIn;
     final AppLocalizations l10n = context.l10n;
-    setState(() => _restoring = true);
     try {
       final PurchaseEntitlementStatus status = await PurchasesService.instance.restore();
       if (!mounted || !isCurrentAccount()) return;
@@ -76,8 +85,6 @@ class _PremiumPageState extends State<PremiumPage> {
       }
     } catch (_) {
       if (mounted && isCurrentAccount()) toasts.error(l10n.accountCouldNotRestorePurchases);
-    } finally {
-      if (mounted) setState(() => _restoring = false);
     }
   }
 

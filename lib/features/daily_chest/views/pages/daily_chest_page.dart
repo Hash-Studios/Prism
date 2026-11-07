@@ -195,6 +195,7 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
       case null || ChestAction.spent:
         return;
       case ChestAction.getCoins:
+        PrismHaptics.tap();
         unawaited(_getCoins(status!));
         return;
       case ChestAction.open:
@@ -272,6 +273,7 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
   }
 
   void _onRefused(ChestRefused refused) {
+    PrismHaptics.warning();
     setState(() {
       _readQuests();
       _balance = _balanceSource.value;

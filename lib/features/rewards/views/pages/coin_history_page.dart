@@ -7,9 +7,9 @@ import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/coin_transaction_label.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/features/rewards/data/coin_history_repository.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -178,7 +178,6 @@ class _CoinHistoryPageState extends State<CoinHistoryPage> {
     final _HistoryFilter? filter = _filter;
     final List<CoinTransactionEntry> shown = _visible(_items);
     void select(_HistoryFilter? next) {
-      PrismHaptics.selection();
       setState(() => _filter = next);
     }
 
@@ -258,14 +257,11 @@ class _CoinHistoryPageState extends State<CoinHistoryPage> {
                           size: PrismButtonSize.compact,
                         )
                       : _loadingMore
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      ? const PrismLoader(size: 20)
                       : _hasMore
                       ? PrismButton(
                           label: l10n.economyShowMore,
-                          onPressed: () {
-                            PrismHaptics.tap();
-                            _load();
-                          },
+                          onPressed: _load,
                           variant: PrismButtonVariant.ghost,
                           size: PrismButtonSize.compact,
                         )

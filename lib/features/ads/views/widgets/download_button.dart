@@ -294,7 +294,7 @@ class _DownloadButtonState extends State<DownloadButton> {
         button,
         Text(
           context.l10n.economyCoinsEarned(_awardCoins),
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.primary),
+          style: PrismTextStyles.caption(context).copyWith(color: Theme.of(context).colorScheme.primary),
         ),
       ],
     );
@@ -937,6 +937,7 @@ class _DownloadButtonState extends State<DownloadButton> {
             adsAllowed: prompt.adsAllowed,
             adsRemaining: prompt.adsRemaining,
           );
+          if (!mounted) return CoinGateChoice.cancel;
           if (originalAccess && actualPrompt.canSpend) {
             return await showCoinGateSheet<CoinGateChoice>(
                   context,

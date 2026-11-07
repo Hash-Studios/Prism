@@ -4,6 +4,7 @@ import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/coins/economy_state.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
@@ -193,7 +194,10 @@ class _DrawBody extends StatelessWidget {
             PrismRow(
               icon: Icons.gavel_rounded,
               title: context.l10n.economyDrawOfficialRules,
-              onTap: () => unawaited(openPrismLink(context, drawRulesUrl)),
+              onTap: () {
+                PrismHaptics.tap();
+                unawaited(openPrismLink(context, drawRulesUrl));
+              },
             ),
           ],
         ),

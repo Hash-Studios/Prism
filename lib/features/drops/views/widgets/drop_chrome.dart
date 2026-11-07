@@ -50,12 +50,12 @@ class DropTileBadge extends StatelessWidget {
         boxShadow: const <BoxShadow>[BoxShadow(color: Color(0x1F000000), blurRadius: 6, offset: Offset(0, 1))],
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs, vertical: PrismSpace.xxs),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Icon(icon, size: 12, color: cs.onSurface),
-            const SizedBox(width: 4),
+            const SizedBox(width: PrismSpace.xxs),
             Text(
               label,
               style: PrismTextStyles.caption(context).copyWith(

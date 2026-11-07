@@ -13,6 +13,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/prism/prism_bits.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
@@ -132,14 +133,13 @@ class _WotdCardContent extends StatelessWidget {
         color: cs.surfaceContainerHighest,
         child: Align(
           alignment: AlignmentDirectional.bottomEnd,
-          child: IconButton(
+          child: PrismIconButton(
             tooltip: context.l10n.coreRetryImage,
             onPressed: () {
               PrismHaptics.tap();
               retry();
             },
-            icon: const Icon(Icons.refresh_rounded),
-            color: cs.onSurface,
+            icon: Icons.refresh_rounded,
           ),
         ),
       ),

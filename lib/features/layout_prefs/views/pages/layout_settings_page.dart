@@ -45,7 +45,6 @@ class LayoutSettingsPage extends StatelessWidget {
                 selected: prefs.density,
                 onChanged: (density) {
                   if (density == prefs.density) return;
-                  PrismHaptics.selection();
                   layout.update(prefs.copyWith(density: density));
                   analytics.track(
                     LayoutDensityChangedEvent(density: density, source: LayoutChangeSourceValue.settings),
@@ -90,7 +89,6 @@ class LayoutSettingsPage extends StatelessWidget {
                 onPressed: prefs.isDefaultLayout
                     ? null
                     : () {
-                        PrismHaptics.selection();
                         layout.update(prefs.resetLayout());
                         analytics.track(const LayoutResetEvent());
                       },
@@ -147,7 +145,11 @@ class _DensityPicker extends StatelessWidget {
             child: PrismRow(
               icon: density.icon,
               title: density.label(context),
-              onTap: () => onChanged(density),
+              onTap: () {
+                // PrismSegmented plays its own haptic. A row does not.
+                if (density != selected) PrismHaptics.selection();
+                onChanged(density);
+              },
               trailing: density == selected ? Icon(Icons.check_rounded, color: cs.primary) : const SizedBox.shrink(),
             ),
           ),

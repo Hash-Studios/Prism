@@ -103,7 +103,7 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     PrismHaptics.tap();
     try {
       final pickedFile = await picker2.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
+      if (pickedFile != null && mounted) {
         setState(() => onPicked(File(pickedFile.path)));
       }
     } on PlatformException catch (error) {

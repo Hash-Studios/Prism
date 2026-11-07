@@ -91,7 +91,7 @@ class _SignalPill extends StatelessWidget {
   }
 
   void _open(BuildContext context) {
-    PrismHaptics.selection();
+    PrismHaptics.tap();
     showModerationSignalsSheet(context, moderation);
   }
 }

@@ -1,4 +1,3 @@
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -42,24 +41,19 @@ class PlacementPanel extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.lg, vertical: PrismSpace.sm),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               Wrap(
-                spacing: 8,
+                spacing: PrismSpace.xs,
                 children: <Widget>[
                   for (final PlacementFit fit in PlacementFit.values)
-                    ChoiceChip(
-                      label: Text(_fitLabel(context.l10n, fit)),
+                    PrismChip(
+                      label: _fitLabel(context.l10n, fit),
                       selected: placement.fit == fit,
-                      onSelected: busy
-                          ? null
-                          : (_) {
-                              PrismHaptics.selection();
-                              onFit(fit);
-                            },
+                      onTap: busy ? null : () => onFit(fit),
                     ),
                 ],
               ),
@@ -87,7 +81,12 @@ class PlacementPanel extends StatelessWidget {
               ),
               Align(
                 alignment: Alignment.centerLeft,
-                child: TextButton(onPressed: busy ? null : onReset, child: Text(context.l10n.wallpaperReset)),
+                child: PrismButton(
+                  label: context.l10n.wallpaperReset,
+                  variant: PrismButtonVariant.ghost,
+                  size: PrismButtonSize.compact,
+                  onPressed: busy ? null : onReset,
+                ),
               ),
               if (onSystemEditor != null) ...<Widget>[
                 PrismButton(

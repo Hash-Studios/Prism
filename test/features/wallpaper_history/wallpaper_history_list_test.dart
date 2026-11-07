@@ -4,6 +4,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -21,6 +22,7 @@ import 'package:Prism/features/wallpaper_history/views/widgets/applied_wallpaper
 import 'package:Prism/features/wallpaper_history/views/widgets/wallpaper_history_list.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -299,8 +301,22 @@ void main() {
   });
 
   testWidgets('a long press removes the tile and Undo restores it', (tester) async {
+    final List<Object?> haptics = <Object?>[];
+    const MethodChannel androidHaptics = MethodChannel('prism/haptics');
+    PrismHaptics.enabled = true;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(androidHaptics, (
+      call,
+    ) async {
+      haptics.add(call.arguments);
+      return null;
+    });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(androidHaptics, null);
+      toasts.overlayResolver = null;
+    });
     await recordAll(<AppliedWallpaper>[item('a', DateTime(2026, 10, 28, 14)), item('b', DateTime(2026, 10, 28, 9))]);
     await pumpList(tester);
+    toasts.overlayResolver = () => tester.state<OverlayState>(find.byType(Overlay).first);
 
     await tester.longPress(find.byType(AppliedWallpaperTile).last);
     await tester.pump();
@@ -308,6 +324,8 @@ void main() {
 
     expect(find.byType(AppliedWallpaperTile), findsOneWidget);
     expect(find.text('Removed from history'), findsOneWidget);
+    // One impact for the long press, and no success haptic from the toast.
+    expect(haptics, <Object?>['impact']);
 
     await tester.tap(find.text('Undo'));
     await tester.pump();
@@ -320,14 +338,16 @@ void main() {
   testWidgets('Undo restores the store after its history bloc closes', (tester) async {
     await recordAll(<AppliedWallpaper>[item('a', DateTime(2026, 10, 28, 14))]);
     await pumpList(tester);
+    toasts.overlayResolver = () => tester.state<OverlayState>(find.byType(Overlay).first);
+    addTearDown(() => toasts.overlayResolver = null);
     await tester.longPress(find.byType(AppliedWallpaperTile).first);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    final SnackBarAction undo = tester.widget<SnackBarAction>(find.byType(SnackBarAction));
+    final VoidCallback undo = tester.widget<TextButton>(find.widgetWithText(TextButton, 'Undo')).onPressed!;
     await tester.runAsync(() => bloc!.close());
     expect(bloc!.isClosed, isTrue);
-    await tester.runAsync(() async => undo.onPressed());
+    await tester.runAsync(() async => undo());
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));
     await tester.pump();
 

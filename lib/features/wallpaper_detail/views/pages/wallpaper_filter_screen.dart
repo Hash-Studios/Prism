@@ -17,6 +17,7 @@ import 'package:Prism/core/platform/wallpaper_set_feedback.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/crop_spec.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart';
@@ -586,7 +587,12 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
           PrismIconButton(
             icon: Icons.refresh_rounded,
             tooltip: context.l10n.wallpaperReset,
-            onPressed: _isEdited && !_busy ? _reset : null,
+            onPressed: _isEdited && !_busy
+                ? () {
+                    PrismHaptics.tap();
+                    _reset();
+                  }
+                : null,
           ),
           AnimatedSwitcher(
             duration: context.motion(PrismDurations.fast),
@@ -594,12 +600,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
                 ? SizedBox.square(
                     key: const ValueKey('busy'),
                     dimension: 44,
-                    child: Center(
-                      child: SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary),
-                      ),
-                    ),
+                    child: const Center(child: PrismLoader(size: 20)),
                   )
                 : PrismIconButton(
                     key: const ValueKey('download'),
@@ -666,7 +667,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
                       crop: _crop,
                       onCropPreset: _pickCropPreset,
                       onRotate: _rotateCrop,
-                      onCropReset: _resetCrop,
+                      onCropReset: () {
+                        PrismHaptics.tap();
+                        _resetCrop();
+                      },
                     ),
                   ),
                 ],

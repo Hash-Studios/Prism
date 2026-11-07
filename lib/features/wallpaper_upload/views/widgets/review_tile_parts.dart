@@ -59,6 +59,7 @@ class ReviewDownloadButton extends StatelessWidget {
     return PrismIconButton(
       icon: Icons.download_rounded,
       tooltip: context.l10n.wallpaperDownloadWallpaper,
+      // Starting a download is quiet; its outcome plays the haptic.
       onPressed: () => _download(context),
     );
   }

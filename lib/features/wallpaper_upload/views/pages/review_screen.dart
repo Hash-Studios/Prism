@@ -34,7 +34,7 @@ class ReviewScreen extends StatelessWidget {
               padding: const EdgeInsets.all(PrismSpace.md),
               child: Text(
                 context.l10n.economyCoinsEarned(earnedCoins),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.primary),
+                style: PrismTextStyles.body(context).copyWith(color: Theme.of(context).colorScheme.primary),
               ),
             ),
           const Expanded(child: _WallReview()),

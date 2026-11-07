@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/deep_link_dispatcher.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -168,7 +171,10 @@ class _WallContentReportCardState extends State<WallContentReportCard> {
                 icon: Icons.open_in_new_rounded,
                 tooltip: context.l10n.adminOpenWallpaper,
                 filled: true,
-                onPressed: () => _openWallpaperDetail(context),
+                onPressed: () {
+                  PrismHaptics.tap();
+                  unawaited(_openWallpaperDetail(context));
+                },
               ),
               const SizedBox(width: PrismSpace.xs),
               Expanded(

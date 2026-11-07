@@ -122,6 +122,8 @@ class _PromoCodesAdminPageState extends State<PromoCodesAdminPage> {
     } on cf.FirebaseFunctionsException catch (error) {
       if (!mounted) return;
       toasts.error(context.l10n.promoAdminCreateFailed(error.message ?? error.code));
+    } on Object {
+      if (mounted) toasts.error(context.l10n.coreSomethingWentWrong);
     } finally {
       if (mounted) setState(() => _creating = false);
     }
@@ -134,6 +136,8 @@ class _PromoCodesAdminPageState extends State<PromoCodesAdminPage> {
       await _reload();
     } on cf.FirebaseFunctionsException catch (error) {
       if (mounted) toasts.error(error.message ?? error.code);
+    } on Object {
+      if (mounted) toasts.error(context.l10n.coreSomethingWentWrong);
     } finally {
       if (mounted) setState(() => _busyCodes.remove(code.code));
     }

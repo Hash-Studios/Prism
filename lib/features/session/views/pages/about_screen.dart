@@ -13,6 +13,7 @@ import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/core/widgets/popup/contri_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism/prism_toast.dart';
 import 'package:Prism/features/public_profile/views/widgets/prism_list.dart';
 import 'package:Prism/features/session/data/report_problem_service.dart' show ReportTrigger, supportEmail;
 import 'package:Prism/features/session/views/widgets/report_problem_sheet.dart';
@@ -79,17 +80,15 @@ Future<bool> _openOrExplain(BuildContext context, String target, {required Strin
     logger.w('Opening $target failed.', error: error, stackTrace: stackTrace);
   }
   if (!launched && context.mounted) {
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(context.l10n.accountCouldNotOpenAddress(address)),
-        action: SnackBarAction(
-          label: context.l10n.accountCopy,
-          onPressed: () => Clipboard.setData(ClipboardData(text: address)),
-        ),
-      ),
-    );
+    final OverlayState? overlay = Overlay.maybeOf(context);
+    if (overlay != null) {
+      showPrismToast(
+        overlay,
+        context.l10n.accountCouldNotOpenAddress(address),
+        kind: PrismToastKind.error,
+        action: (label: context.l10n.accountCopy, onPressed: () => Clipboard.setData(ClipboardData(text: address))),
+      );
+    }
   }
   return launched;
 }
@@ -549,6 +548,7 @@ class ActionButton extends StatelessWidget {
             )
           : null,
       onTap: () async {
+        PrismHaptics.tap();
         unawaited(
           analytics.track(
             SurfaceActionTappedEvent(

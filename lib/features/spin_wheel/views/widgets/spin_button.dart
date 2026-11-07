@@ -101,7 +101,7 @@ class _SpinButtonState extends State<SpinButton> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Opacity(opacity: flat ? 0.6 : 1, child: const PrismCoinIcon(size: 16)),
-              const SizedBox(width: 4),
+              const SizedBox(width: PrismSpace.xxs),
               Text(formatLocalizedNumber(widget.price!, context.l10n), style: captionStyle.copyWith(fontSize: 14)),
             ],
           )
@@ -113,7 +113,10 @@ class _SpinButtonState extends State<SpinButton> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Text(widget.label, style: labelStyle),
-              if (widget.price != null || widget.caption != null) ...<Widget>[const SizedBox(width: 8), caption],
+              if (widget.price != null || widget.caption != null) ...<Widget>[
+                const SizedBox(width: PrismSpace.xs),
+                caption,
+              ],
             ],
           )
         : Column(

@@ -55,7 +55,7 @@ class DropHeader extends StatelessWidget {
                 ),
               ),
               if (rename != null)
-                IconButton(tooltip: l10n.economyDropRename, icon: const Icon(Icons.edit_rounded), onPressed: rename),
+                PrismIconButton(tooltip: l10n.economyDropRename, icon: Icons.edit_rounded, onPressed: rename),
             ],
           ),
           const SizedBox(height: PrismSpace.xxs),

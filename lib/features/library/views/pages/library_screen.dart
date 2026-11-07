@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/fav_grid.dart';
 import 'package:Prism/features/folders/folders.dart';
@@ -113,6 +114,7 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
       headerBottom: _ClampedTabBar(
         TabBar(
           controller: _controller,
+          onTap: (_) => PrismHaptics.selection(),
           isScrollable: true,
           tabAlignment: TabAlignment.start,
           padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),

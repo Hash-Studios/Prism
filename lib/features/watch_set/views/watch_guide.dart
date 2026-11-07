@@ -1,4 +1,3 @@
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/watch_set/domain/entities/watch_format.dart';
@@ -43,7 +42,6 @@ class WatchGuide extends StatelessWidget {
   ];
 
   Future<void> _openPhotos() async {
-    PrismHaptics.tap();
     try {
       await launchUrl(Uri.parse('photos-redirect://'), mode: LaunchMode.externalApplication);
     } catch (error, stackTrace) {

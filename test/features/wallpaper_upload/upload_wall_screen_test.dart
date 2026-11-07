@@ -827,7 +827,7 @@ void main() {
 
     expect(uploadedThumbnails, <bool>[false, true]);
     expect(saveCalls, 1);
-    expect(haptics, <String>['HapticFeedbackType.lightImpact']);
+    expect(haptics, <String>['HapticFeedbackType.lightImpact', 'HapticFeedbackType.successNotification']);
     expect(find.text('review-stub'), findsOneWidget);
     expect(tester.takeException(), isNull);
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
@@ -1344,13 +1344,13 @@ void main() {
     await tester.tap(find.text('Upload'));
     await tester.pumpAndSettle();
     expect(find.text('Upload did not finish'), findsOneWidget);
-    expect(haptics, <String>['HapticFeedbackType.lightImpact']);
+    expect(haptics, <String>['HapticFeedbackType.lightImpact', 'HapticFeedbackType.errorNotification']);
 
     haptics.clear();
     await tester.ensureVisible(find.text('Try again'));
     await tester.tap(find.text('Try again'));
     await tester.pumpAndSettle();
-    expect(haptics, <String>['HapticFeedbackType.lightImpact']);
+    expect(haptics, <String>['HapticFeedbackType.lightImpact', 'HapticFeedbackType.successNotification']);
 
     expect(wallpaperCalls, 1);
     expect(thumbnailCalls, 2);
@@ -1765,14 +1765,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Retry submit'), findsOneWidget);
     expect(uploadCalls, 2);
-    expect(haptics, <String>['HapticFeedbackType.lightImpact']);
+    expect(haptics, <String>['HapticFeedbackType.lightImpact', 'HapticFeedbackType.errorNotification']);
 
     haptics.clear();
     await tester.ensureVisible(find.text('Retry submit'));
     await tester.tap(find.text('Retry submit'));
     await tester.pumpAndSettle();
 
-    expect(haptics, <String>['HapticFeedbackType.lightImpact']);
+    expect(haptics, <String>['HapticFeedbackType.lightImpact', 'HapticFeedbackType.successNotification']);
     expect(saveCalls, 2);
     expect(uploadCalls, 2);
     expect(find.text('review-stub'), findsOneWidget);

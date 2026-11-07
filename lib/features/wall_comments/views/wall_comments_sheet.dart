@@ -10,6 +10,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/localized_relative_time.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/features/favourite_walls/biz/favourite_counts_cubit.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
@@ -144,9 +145,7 @@ class _CommentList extends StatelessWidget {
           itemBuilder: (BuildContext context, int i) => i == shown.length
               ? const Padding(
                   padding: EdgeInsets.symmetric(vertical: PrismSpace.md),
-                  child: Center(
-                    child: SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                  ),
+                  child: Center(child: PrismLoader(size: 20)),
                 )
               : CommentRow(key: ValueKey<String>(shown[i].id), comment: shown[i], wall: wall),
         ),
@@ -173,6 +172,7 @@ class CommentRow extends StatelessWidget {
         ? null
         : () {
             final StackRouter router = context.router;
+            PrismHaptics.tap();
             Navigator.of(context).pop();
             unawaited(router.push(ProfileRoute(profileIdentifier: comment.authorUid)));
           };
@@ -265,7 +265,7 @@ Future<void> showCommentMenu(BuildContext context, WallComment comment, Comments
       : null;
   final bool mine = me.isNotEmpty && comment.authorUid == me;
   final String name = comment.authorName.trim().isEmpty ? l10n.commentAuthorFallback : comment.authorName.trim();
-  PrismHaptics.tap();
+  PrismHaptics.impact();
   final String? choice = await showPrismSheet<String>(
     context,
     detents: const <PrismSheetDetent>[PrismSheetDetent.fit],
@@ -359,16 +359,17 @@ class _CommentComposerState extends State<CommentComposer> {
     final AppLocalizations l10n = context.l10n;
     final String text = _text.text;
     cubit.updateViewer(_viewer());
-    PrismHaptics.tap();
     _text.clear();
     setState(() => _error = null);
     final CommentRefusal? refusal = await cubit.send(text);
     // The post lands even when the sheet closed meanwhile, so the event and the count refresh come first.
     if (refusal == null) {
+      PrismHaptics.success();
       unawaited(analytics.track(const CommentPostedEvent()));
       getIt<FavouriteCountsCubit>().request(widget.wall.statsId, force: true);
       return;
     }
+    PrismHaptics.error();
     unawaited(analytics.track(CommentRefusedEvent(reason: refusal.wire.isEmpty ? 'failed' : refusal.wire)));
     if (!mounted) return;
     if (_text.text.isEmpty) _text.text = text;

@@ -6,6 +6,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
@@ -18,6 +19,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/wallpaper_detail/biz/top_third_text_color.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_scheme.dart';
@@ -990,6 +992,11 @@ class _SpatialToggle extends StatelessWidget {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final String tooltip = on ? context.l10n.wallpaperSpatialPreviewOff : context.l10n.wallpaperSpatialPreviewOn;
     final Color foreground = on ? scheme.onPrimary : scheme.onSurface;
+    void toggle() {
+      PrismHaptics.selection();
+      onChanged(!on);
+    }
+
     return Tooltip(
       message: tooltip,
       child: Semantics(
@@ -997,10 +1004,10 @@ class _SpatialToggle extends StatelessWidget {
         toggled: on,
         excludeSemantics: true,
         label: tooltip,
-        onTap: () => onChanged(!on),
+        onTap: toggle,
         child: PressScale(
           child: TextButton.icon(
-            onPressed: () => onChanged(!on),
+            onPressed: toggle,
             style: TextButton.styleFrom(
               foregroundColor: foreground,
               backgroundColor: on ? scheme.primary : scheme.onSurface.withValues(alpha: 0.08),
@@ -1051,13 +1058,18 @@ class _RememberCheck extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    void change(bool next) {
+      PrismHaptics.selection();
+      onChanged(next);
+    }
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         MergeSemantics(
           child: InkWell(
             borderRadius: BorderRadius.circular(PrismRadius.pill),
-            onTap: () => onChanged(!value),
+            onTap: () => change(!value),
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 48),
               child: Row(
@@ -1065,7 +1077,7 @@ class _RememberCheck extends StatelessWidget {
                 children: <Widget>[
                   Checkbox(
                     value: value,
-                    onChanged: (checked) => onChanged(checked ?? false),
+                    onChanged: (checked) => change(checked ?? false),
                     activeColor: scheme.primary,
                     checkColor: scheme.onPrimary,
                     side: BorderSide(color: scheme.onSurfaceVariant, width: 1.5),
@@ -1180,8 +1192,14 @@ class _QuietButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    final VoidCallback? press = onPressed;
     return TextButton.icon(
-      onPressed: onPressed,
+      onPressed: press == null
+          ? null
+          : () {
+              PrismHaptics.tap();
+              press();
+            },
       style: TextButton.styleFrom(
         foregroundColor: scheme.onSurface,
         minimumSize: const Size(48, 48),
@@ -1189,9 +1207,7 @@ class _QuietButton extends StatelessWidget {
         textStyle: PrismTextStyles.button,
         shape: const StadiumBorder(),
       ),
-      icon: loading
-          ? SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2, color: scheme.onSurface))
-          : Icon(icon, size: 20),
+      icon: loading ? const PrismLoader(size: 20) : Icon(icon, size: 20),
       label: Text(label),
     );
   }

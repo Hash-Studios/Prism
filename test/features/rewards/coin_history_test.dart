@@ -8,6 +8,7 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/rewards/data/coin_history_repository.dart';
@@ -15,6 +16,7 @@ import 'package:Prism/features/rewards/views/pages/coin_history_page.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
@@ -247,6 +249,28 @@ void main() {
       expect(find.text('-9'), findsOneWidget);
       expect(find.text('-5'), findsOneWidget);
       expect(find.text('Try again'), findsNothing);
+    });
+
+    testWidgets('a filter chip plays one selection haptic', (tester) async {
+      final List<String> haptics = <String>[];
+      final TestDefaultBinaryMessenger messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), (call) async {
+        haptics.add(call.arguments! as String);
+        return null;
+      });
+      final bool previous = PrismHaptics.enabled;
+      PrismHaptics.enabled = true;
+      addTearDown(() {
+        PrismHaptics.enabled = previous;
+        messenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), null);
+      });
+      firestore.onQuery = (_) => <FakeDocRow>[_row(0)];
+      await pumpPage(tester);
+
+      await tester.tap(find.widgetWithText(PrismChip, 'Spent'));
+      await tester.pump();
+
+      expect(haptics, <String>['selection']);
     });
 
     testWidgets('retained history refreshes newest rows and keeps the selected filter', (tester) async {

@@ -8,6 +8,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
@@ -17,8 +18,8 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
 /// Opens an unlocked wall in the wallpaper detail page. The full url comes from the unlock, not from the Drop doc.
-void openDropWall(BuildContext context, DropWall wall, DropUnlock unlock, {String? heroTag}) {
-  PrismHaptics.tap();
+void openDropWall(BuildContext context, DropWall wall, DropUnlock unlock, {String? heroTag, bool haptic = true}) {
+  if (haptic) PrismHaptics.tap();
   final entity = dropWallFeedItem(wall, unlock);
   unawaited(context.router.push(WallpaperDetailRoute(entity: entity, heroTag: heroTag)));
 }
@@ -161,16 +162,13 @@ class DropWallTile extends StatelessWidget {
             ),
           ),
           if (busy)
-            const Center(
+            Center(
               child: DecoratedBox(
-                decoration: BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                child: Padding(
-                  padding: EdgeInsets.all(PrismSpace.sm),
-                  child: SizedBox.square(
-                    dimension: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.92),
+                  shape: BoxShape.circle,
                 ),
+                child: const Padding(padding: EdgeInsets.all(PrismSpace.sm), child: PrismLoader(size: 24)),
               ),
             ),
         ],

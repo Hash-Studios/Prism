@@ -6,7 +6,6 @@ import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -357,7 +356,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   Future<void> _refresh() async {
     final int refreshVersion = ++_refreshVersion;
     final WallpaperImpressionSession impressions = _impressions;
-    PrismHaptics.impact();
     final HomeFeedChip chip = _bloc.state.chip;
     if (chip == HomeFeedChip.trending) {
       final Future<TrendingState> settled = _trending.stream.firstWhere((s) => s.status != LoadStatus.loading);
@@ -419,18 +417,13 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   void _lessLikeThis(FeedItemEntity item) {
     final int index = _bloc.state.items.indexOf(item);
     _bloc.add(PersonalizedFeedEvent.lessLikeThisRequested(item));
-    PrismHaptics.success();
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(context.l10n.wallpaperGotItFewerLikeThis),
-          action: SnackBarAction(
-            label: context.l10n.wallpaperFewerLikeThisUndo,
-            onPressed: () => _bloc.add(PersonalizedFeedEvent.lessLikeThisUndone(item, index: index)),
-          ),
-        ),
-      );
+    toasts.success(
+      context.l10n.wallpaperGotItFewerLikeThis,
+      action: (
+        label: context.l10n.wallpaperFewerLikeThisUndo,
+        onPressed: () => _bloc.add(PersonalizedFeedEvent.lessLikeThisUndone(item, index: index)),
+      ),
+    );
   }
 
   /// Starts loading the images of a new page below the first screen, so they are ready when the user scrolls to them.

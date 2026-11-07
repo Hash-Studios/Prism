@@ -248,9 +248,9 @@ class _DailyMomentContentState extends State<DailyMomentContent> {
                     child: Row(
                       children: <Widget>[
                         Expanded(child: Text(l10n.dailyMomentTitle, style: PrismTextStyles.caption(context))),
-                        IconButton(
+                        PrismIconButton(
                           tooltip: l10n.dailyMomentClose,
-                          icon: const Icon(Icons.close_rounded),
+                          icon: Icons.close_rounded,
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ],

@@ -254,6 +254,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     unawaited(analytics.track(SettingsRowTappedEvent(row: row)));
   }
 
+  /// PrismRow plays no haptic, so every row that opens something plays one tap.
+  VoidCallback _tap(VoidCallback onTap) => () {
+    PrismHaptics.tap();
+    onTap();
+  };
+
   Widget _group(String title, List<Widget> rows, {String? footnote}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -289,13 +295,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.fact_check_rounded,
       title: context.l10n.accountReviewStatus,
       subtitle: context.l10n.accountTrackSubmittedWallpapers,
-      onTap: () => context.router.push(ReviewRoute()),
+      onTap: _tap(() => context.router.push(ReviewRoute())),
     ),
     PrismRow(
       icon: Icons.person_off_rounded,
       title: context.l10n.accountBlockedAccounts,
       subtitle: context.l10n.accountManageBlockedPeople,
-      onTap: () => context.router.push(const BlockedAccountsRoute()),
+      onTap: _tap(() => context.router.push(const BlockedAccountsRoute())),
     ),
     const CreatorDirectoryOptOutRow(),
     if (app_state.prismUser.premium) const ShowProBadgeRow(),
@@ -303,7 +309,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.ios_share_rounded,
       title: context.l10n.accountShareYourProfile,
       subtitle: context.l10n.accountSendProfileLink,
-      onTap: _shareProfile,
+      onTap: _tap(_shareProfile),
     ),
   ];
 
@@ -330,25 +336,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.palette_rounded,
       title: context.l10n.accountThemes,
       subtitle: context.l10n.accountLightDarkAccentColour,
-      onTap: () => context.router.push(const ThemeViewRoute()),
+      onTap: _tap(() => context.router.push(const ThemeViewRoute())),
     ),
     PrismRow(
       icon: Icons.dashboard_customize_rounded,
       title: context.l10n.layoutTitle,
       subtitle: context.l10n.layoutRowSubtitle,
-      onTap: () {
+      onTap: _tap(() {
         _trackRow('layout');
         context.router.push(const LayoutSettingsRoute());
-      },
+      }),
     ),
     PrismRow(
       icon: Icons.storefront_rounded,
       title: context.l10n.accountShop,
       subtitle: context.l10n.accountThemesIconsFrames,
-      onTap: () {
+      onTap: _tap(() {
         _trackRow('shop');
         context.router.push(const ShopRoute());
-      },
+      }),
     ),
     // Not a PrismSwitchRow: turning haptics off must stay silent, and turning them on plays one selection.
     MergeSemantics(
@@ -376,21 +382,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
         icon: Icons.widgets_rounded,
         title: context.l10n.widgetsSettingsTitle,
         subtitle: context.l10n.widgetsSettingsSubtitle,
-        onTap: () => showWidgetGuideSheet(context, source: WidgetGuideSourceValue.settings),
+        onTap: _tap(() => showWidgetGuideSheet(context, source: WidgetGuideSourceValue.settings)),
       ),
     if (_iosShortcuts)
       PrismRow(
         icon: Icons.autorenew_rounded,
         title: context.l10n.accountChangeAutomatically,
         subtitle: context.l10n.accountUseShortcutsAutomation,
-        onTap: () => context.router.push(IosShortcutsGuideRoute()),
+        onTap: _tap(() => context.router.push(IosShortcutsGuideRoute())),
       ),
     if (_dayNight)
       PrismRow(
         icon: Icons.contrast_rounded,
         title: context.l10n.dayNightTitle,
         subtitle: context.l10n.dayNightSettingsSubtitle,
-        onTap: () => openDayNightScreen(context),
+        onTap: _tap(() => openDayNightScreen(context)),
       ),
     if (_isAndroid) ..._androidPersonaliseRows(),
   ];
@@ -400,31 +406,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.autorenew_rounded,
       title: context.l10n.accountAutoRotateWallpapers,
       subtitle: context.l10n.accountChangeWallpaperOnTimer,
-      onTap: () => context.router.push(AutoRotateRoute()),
+      onTap: _tap(() => context.router.push(AutoRotateRoute())),
     ),
     PrismRow(
       icon: Icons.motion_photos_on_outlined,
       title: context.l10n.accountLiveWallpapers,
       subtitle: context.l10n.accountMovingGradientsMotionVideo,
-      onTap: () => context.router.push(LiveWallpaperRoute()),
+      onTap: _tap(() => context.router.push(LiveWallpaperRoute())),
     ),
     PrismRow(
       icon: Icons.grid_view_rounded,
       title: context.l10n.accountQuickTiles,
       subtitle: context.l10n.accountSetUpQuickTiles,
-      onTap: () => context.router.push(const QuickTileSettingsRoute()),
+      onTap: _tap(() => context.router.push(const QuickTileSettingsRoute())),
     ),
     PrismRow(
       icon: Icons.history_rounded,
       title: context.l10n.accountWallpaperHistory,
       subtitle: context.l10n.accountWallpapersSetBefore,
-      onTap: () => context.router.push(LibraryRoute(initialTab: LibraryTab.history)),
+      onTap: _tap(() => context.router.push(LibraryRoute(initialTab: LibraryTab.history))),
     ),
     PrismRow(
       icon: Icons.wallpaper_rounded,
       title: context.l10n.accountDefaultActionForSet,
       value: _applyTargetLabels(context.l10n)[_defaultApplyTarget],
-      onTap: _showDefaultApplyTargetSheet,
+      onTap: _tap(_showDefaultApplyTargetSheet),
     ),
   ];
 
@@ -520,7 +526,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.notifications_none_rounded,
       title: context.l10n.accountNotificationPreferences,
       subtitle: context.l10n.accountNotificationTypes,
-      onTap: () => showNotificationSettingsSheet(context),
+      onTap: _tap(() => showNotificationSettingsSheet(context)),
     ),
     const FollowedTopicsSettingsRow(),
   ];
@@ -551,7 +557,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ? context.l10n.accountClearCachedImages
           : context.l10n.accountCachedImageSize(formatStorageBytes(context.l10n, _imageCacheSize!)),
       showChevron: false,
-      onTap: _clearCache,
+      onTap: _tap(_clearCache),
     ),
     PrismRow(
       icon: Icons.download_done_rounded,
@@ -560,7 +566,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ? context.l10n.accountRemoveFilesDownloadsOfflineStay
           : context.l10n.accountDownloadedWallpaperCount(_downloads ?? 0),
       showChevron: false,
-      onTap: _confirmClearDownloads,
+      onTap: _tap(_confirmClearDownloads),
     ),
     PrismRow(
       icon: Icons.offline_pin_rounded,
@@ -572,7 +578,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _savedOfflineLimitBytes ~/ (1024 * 1024),
             ),
       showChevron: false,
-      onTap: _confirmClearSavedOffline,
+      onTap: _tap(_confirmClearSavedOffline),
     ),
     if (app_state.prismUser.loggedIn)
       PrismRow(
@@ -580,10 +586,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: context.l10n.accountClearFavouriteWallpapers,
         subtitle: context.l10n.accountRemoveAllFavouriteWallpapers,
         showChevron: false,
-        onTap: () {
+        onTap: _tap(() {
           _trackSettingsAction(AnalyticsActionValue.clearFavouriteWallsTapped);
           unawaited(_confirmClearFavourites());
-        },
+        }),
       ),
   ];
 
@@ -749,13 +755,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         icon: Icons.redeem_rounded,
         title: context.l10n.promoSettingsRedeemTitle,
         subtitle: ios ? context.l10n.promoSettingsRedeemSubtitleIos : context.l10n.promoSettingsRedeemSubtitle,
-        onTap: () => showRedeemCodeSheet(context, source: RedeemSheetSource.settings),
+        onTap: _tap(() => showRedeemCodeSheet(context, source: RedeemSheetSource.settings)),
       ),
       PrismRow(
         icon: ios ? Icons.apple_rounded : Icons.shop_rounded,
         title: ios ? context.l10n.promoAppStoreCodeTitle : context.l10n.promoPlayCodeTitle,
         subtitle: ios ? context.l10n.promoAppStoreCodeSubtitle : context.l10n.promoPlayCodeSubtitle,
-        onTap: () => openStoreCodeRedemption(context),
+        onTap: _tap(() => openStoreCodeRedemption(context)),
       ),
     ];
   }
@@ -766,20 +772,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
         icon: Icons.workspace_premium_rounded,
         title: context.l10n.accountBuyPremium,
         subtitle: context.l10n.accountUnlimitedUploadsFilters,
-        onTap: () {
+        onTap: _tap(() {
           _trackSettingsAction(AnalyticsActionValue.buyPremiumTapped);
           PaywallOrchestrator.instance.presentOrRequireSignIn(
             context,
             placement: PaywallPlacement.mainUpsell,
             source: 'settings_buy_premium',
           );
-        },
+        }),
       ),
     PrismRow(
       icon: Icons.restore_rounded,
       title: context.l10n.accountRestorePurchases,
       subtitle: context.l10n.accountBringBackSubscription,
       showChevron: false,
+      // No tap haptic: restore stays silent until its outcome plays success or error.
       onTap: _restoring ? null : _restorePurchases,
     ),
     if (app_state.prismUser.premium)
@@ -792,7 +799,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           size: 18,
           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: PrismInk.iconAlpha),
         ),
-        onTap: _openManageSubscription,
+        onTap: _tap(_openManageSubscription),
       ),
   ];
 
@@ -839,39 +846,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.privacy_tip_outlined,
       title: context.l10n.accountPrivacyPolicy,
       trailing: _external(context),
-      onTap: () => _openLink(_privacyUrl, 'privacy_policy'),
+      onTap: _tap(() => _openLink(_privacyUrl, 'privacy_policy')),
     ),
     PrismRow(
       icon: Icons.description_outlined,
       title: context.l10n.accountTermsOfUse,
       trailing: _external(context),
-      onTap: () => _openLink(_termsUrl, 'terms'),
+      onTap: _tap(() => _openLink(_termsUrl, 'terms')),
     ),
     if (_adPrivacyChoices)
       PrismRow(
         icon: Icons.tune_rounded,
         title: context.l10n.accountAdPrivacyChoices,
         subtitle: context.l10n.accountReviewOrChangeAdConsent,
-        onTap: () {
+        onTap: _tap(() {
           _trackRow('ad_privacy_choices');
           unawaited(AdConsent.instance.showPrivacyOptions());
-        },
+        }),
       ),
     PrismRow(
       icon: Icons.auto_awesome_outlined,
       title: context.l10n.accountClearLearnedTaste,
       subtitle: context.l10n.accountForgetFeedLearned,
       showChevron: true,
-      onTap: _clearLearnedTaste,
+      onTap: _tap(_clearLearnedTaste),
     ),
     PrismRow(
       icon: Icons.file_download_outlined,
       title: context.l10n.accountExportFavourites,
       subtitle: context.l10n.accountSaveFavouritesAsFile,
-      onTap: () {
+      onTap: _tap(() {
         _trackRow('export_favourites');
         context.router.push(LibraryRoute());
-      },
+      }),
     ),
   ];
 
@@ -920,19 +927,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.bug_report_rounded,
       title: context.l10n.accountDebugPanel,
       subtitle: context.l10n.accountLogsNetworkToolsStorage,
-      onTap: () => context.router.pushPath('/debug-panel'),
+      onTap: _tap(() => context.router.pushPath('/debug-panel')),
     ),
     PrismRow(
       icon: Icons.shield_rounded,
       title: context.l10n.accountAdminModeration,
       subtitle: context.l10n.accountReviewSubmittedContent,
-      onTap: () => context.router.push(AdminReviewRoute()),
+      onTap: _tap(() => context.router.push(AdminReviewRoute())),
     ),
     PrismRow(
       icon: Icons.analytics_rounded,
       title: context.l10n.accountFirestoreTelemetry,
       subtitle: context.l10n.accountDatabaseUsageStats,
-      onTap: () => context.router.push(const FirestoreTelemetryRoute()),
+      onTap: _tap(() => context.router.push(const FirestoreTelemetryRoute())),
     ),
   ];
 
@@ -941,10 +948,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       icon: Icons.report_problem_outlined,
       title: context.l10n.accountReportAProblem,
       subtitle: context.l10n.accountReportProblemSubtitle,
-      onTap: () {
+      onTap: _tap(() {
         _trackRow('report_a_problem');
         unawaited(showReportProblemSheet(context, source: 'settings', trigger: ReportTrigger.settings));
-      },
+      }),
     ),
     PrismSwitchRow(
       icon: Icons.vibration_rounded,
@@ -959,18 +966,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     PrismRow(
       icon: Icons.info_rounded,
       title: context.l10n.accountAboutPrism,
-      onTap: () => context.router.push(AboutRoute()),
+      onTap: _tap(() => context.router.push(AboutRoute())),
     ),
   ];
 
   List<Widget> _sessionRows() => <Widget>[
-    PrismRow(icon: Icons.logout_rounded, title: context.l10n.accountLogOut, showChevron: false, onTap: _confirmLogOut),
+    PrismRow(
+      icon: Icons.logout_rounded,
+      title: context.l10n.accountLogOut,
+      showChevron: false,
+      onTap: _tap(_confirmLogOut),
+    ),
     PrismRow(
       icon: Icons.delete_forever_rounded,
       title: context.l10n.accountDeleteAccount,
       destructive: true,
       showChevron: false,
-      onTap: _confirmDeleteAccount,
+      onTap: _tap(_confirmDeleteAccount),
     ),
   ];
 
@@ -1051,7 +1063,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 textAlign: TextAlign.center,
                 style: PrismTextStyles.body(sheetContext).copyWith(height: 1.4),
               ),
-              TextButton(onPressed: _openManageSubscription, child: Text(sheetContext.l10n.accountManageSubscription)),
+              PrismButton(
+                label: sheetContext.l10n.accountManageSubscription,
+                variant: PrismButtonVariant.ghost,
+                size: PrismButtonSize.compact,
+                onPressed: _openManageSubscription,
+              ),
             ],
           ],
         ),
@@ -1114,7 +1131,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: <Widget>[
               SettingsAccountCard(
                 onSignIn: _signIn,
-                onOpenProfile: () => context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.id)),
+                onOpenProfile: _tap(() => context.router.push(ProfileRoute(profileIdentifier: app_state.prismUser.id))),
               ),
               if (loggedIn) _group(context.l10n.accountAccount, _accountRows()),
               _group(context.l10n.accountAppearance, _appearanceRows()),

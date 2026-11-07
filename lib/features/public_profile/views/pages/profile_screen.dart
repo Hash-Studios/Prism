@@ -439,7 +439,8 @@ class _ProfileChildState extends State<_ProfileChild> {
   Future<void> _refresh() async {
     final PublicProfileBloc bloc = context.read<PublicProfileBloc>();
     bloc.add(const PublicProfileEvent.refreshRequested());
-    await bloc.stream.firstWhere((PublicProfileState s) => s.status != LoadStatus.loading);
+    // orElse: a closed bloc (screen left mid refresh) must not throw StateError out of the refresh.
+    await bloc.stream.firstWhere((PublicProfileState s) => s.status != LoadStatus.loading, orElse: () => bloc.state);
   }
 
   /// The rest of the links, when the header shows only the first three.
@@ -850,7 +851,7 @@ class _ProfileChildState extends State<_ProfileChild> {
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, PrismSpace.md),
+                padding: const EdgeInsets.fromLTRB(PrismSpace.sm, PrismSpace.xxs, PrismSpace.sm, PrismSpace.md),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
@@ -862,13 +863,8 @@ class _ProfileChildState extends State<_ProfileChild> {
                         textAlign: TextAlign.center,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: PrismFonts.proximaNova,
-                          color: cs.onSurface,
-                          fontSize: 22,
-                          // w600 gives the name more presence over the muted username below.
-                          fontWeight: FontWeight.w600,
-                        ),
+                        // rowTitle is w600, which gives the name more presence over the muted username below.
+                        style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 22),
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -879,28 +875,18 @@ class _ProfileChildState extends State<_ProfileChild> {
                         textAlign: TextAlign.center,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: PrismFonts.proximaNova,
-                          color: cs.onSurfaceVariant,
-                          fontSize: 14,
-                          fontWeight: FontWeight.normal,
-                          letterSpacing: 0.2,
-                        ),
+                        style: PrismTextStyles.caption(
+                          context,
+                        ).copyWith(fontSize: 14, fontWeight: FontWeight.normal, letterSpacing: 0.2),
                       ),
                     ),
                     if (_profile.bio.isNotEmpty) ...<Widget>[
-                      const SizedBox(height: 8),
+                      const SizedBox(height: PrismSpace.xs),
                       SizedBox(
                         width: headerWidth * 0.72,
                         child: ProfileBioText(
                           bio: _profile.bio,
-                          style: TextStyle(
-                            fontFamily: PrismFonts.proximaNova,
-                            color: cs.onSurfaceVariant,
-                            fontSize: 13,
-                            fontWeight: FontWeight.normal,
-                            height: 1.45,
-                          ),
+                          style: PrismTextStyles.caption(context).copyWith(fontWeight: FontWeight.normal, height: 1.45),
                           onOpenLink: _openBioLink,
                         ),
                       ),
@@ -910,7 +896,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                       badgeIds: _profile.badges,
                       leading: _profile.proBadge ? const ProProfileBadge() : null,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: PrismSpace.sm),
                     SizedBox(
                       width: headerWidth * 0.9,
                       child: Row(
@@ -934,7 +920,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                           Container(
                             width: 1,
                             height: 16,
-                            margin: const EdgeInsets.symmetric(horizontal: 16),
+                            margin: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
                             color: cs.onSurface.withValues(alpha: 0.2),
                           ),
                           Flexible(
@@ -959,7 +945,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                             Container(
                               width: 1,
                               height: 16,
-                              margin: const EdgeInsets.symmetric(horizontal: 8),
+                              margin: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
                               color: cs.onSurface.withValues(alpha: 0.2),
                             ),
                             Flexible(child: RankInfoChip(xp: cosmetics.xp)),
@@ -1090,28 +1076,17 @@ class _StatPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
     return RichText(
       textAlign: TextAlign.center,
       textScaler: MediaQuery.textScalerOf(context),
       text: TextSpan(
         // Bold count — larger optical weight draws the eye first.
         text: _compactCount(context, count),
-        style: TextStyle(
-          fontFamily: PrismFonts.proximaNova,
-          color: cs.onSurface,
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-        ),
+        style: PrismTextStyles.cardTitle(context),
         children: <TextSpan>[
           TextSpan(
             text: ' $label',
-            style: TextStyle(
-              fontFamily: PrismFonts.proximaNova,
-              color: cs.onSurfaceVariant,
-              fontSize: 13,
-              fontWeight: FontWeight.normal,
-            ),
+            style: PrismTextStyles.caption(context).copyWith(fontWeight: FontWeight.normal),
           ),
         ],
       ),

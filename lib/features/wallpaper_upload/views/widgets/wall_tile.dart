@@ -4,6 +4,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/upload/wallpaper/wall_files.dart';
@@ -152,6 +153,7 @@ class _WallTileState extends State<WallTile> {
                             icon: Icons.delete_outline_rounded,
                             tooltip: rejected ? context.l10n.wallUploadDeleteHistory : context.l10n.wallUploadWithdraw,
                             color: cs.error,
+                            // The confirm sheet's own button plays the tap.
                             onPressed: _deleting ? null : _confirmDelete,
                           ),
                         ],
@@ -239,8 +241,10 @@ class _Thumbnail extends StatelessWidget {
     );
   }
 
-  void _open(BuildContext context) =>
-      showReviewPhotoPreview(context, url: wallpaper.wallpaperUrl, thumbUrl: wallpaper.wallpaperThumb);
+  void _open(BuildContext context) {
+    PrismHaptics.tap();
+    showReviewPhotoPreview(context, url: wallpaper.wallpaperUrl, thumbUrl: wallpaper.wallpaperThumb);
+  }
 }
 
 /// "1440x3200" and "2MB" become "1440 x 3200 · 2 MB". A part that is empty is left out.

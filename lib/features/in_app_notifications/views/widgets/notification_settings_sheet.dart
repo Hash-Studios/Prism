@@ -274,7 +274,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
 
   Future<void> _setFollowers(bool value) async {
     await _settingsLocal.set(NotificationPrefKeys.followers, value);
-    setState(() => _followers = value);
+    if (mounted) setState(() => _followers = value);
     unawaited(FcmTokenService.instance.saveFollowerAlerts(userId: app_state.prismUser.id, enabled: value));
     analytics.track(
       NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.followers, value: value),
@@ -297,7 +297,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
       );
     } else {
       await _settingsLocal.set(NotificationPrefKeys.posts, false);
-      setState(() => _posts = false);
+      if (mounted) setState(() => _posts = false);
       analytics.track(
         const NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.posts, value: false),
       );
@@ -307,28 +307,28 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
 
   Future<void> _setPosts(bool value) async {
     await _settingsLocal.set(NotificationPrefKeys.posts, value);
-    setState(() => _posts = value);
+    if (mounted) setState(() => _posts = value);
     analytics.track(NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.posts, value: value));
     unawaited(FcmTokenService.instance.savePostAlerts(userId: app_state.prismUser.id, enabled: value));
   }
 
   Future<void> _setFolders(bool value) async {
     await _settingsLocal.set(NotificationPrefKeys.folders, value);
-    setState(() => _folders = value);
+    if (mounted) setState(() => _folders = value);
     analytics.track(NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.folders, value: value));
     unawaited(FcmTokenService.instance.saveFolderAlerts(userId: app_state.prismUser.id, enabled: value));
   }
 
   Future<void> _setTopics(bool value) async {
     await _settingsLocal.set(NotificationPrefKeys.topics, value);
-    setState(() => _topics = value);
+    if (mounted) setState(() => _topics = value);
     analytics.track(NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.topics, value: value));
     unawaited(FcmTokenService.instance.saveTopicAlerts(userId: app_state.prismUser.id, enabled: value));
   }
 
   Future<void> _setWotd(bool value) async {
     await _settingsLocal.set(PersistenceKeys.notifWotd, value);
-    setState(() => _wotd = value);
+    if (mounted) setState(() => _wotd = value);
     await setWotdTopics(
       widget.permissions.messaging,
       _settingsLocal,
@@ -341,7 +341,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
 
   Future<void> _setDrops(bool value) async {
     await _settingsLocal.set(NotificationPrefKeys.drops, value);
-    setState(() => _drops = value);
+    if (mounted) setState(() => _drops = value);
     if (value) {
       await subscribeToTopicSafely(
         widget.permissions.messaging,
@@ -359,7 +359,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
 
   Future<void> _setRecommendations(bool value) async {
     await _settingsLocal.set(NotificationPrefKeys.recommendations, value);
-    setState(() => _recommendations = value);
+    if (mounted) setState(() => _recommendations = value);
     analytics.track(
       NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.recommendations, value: value),
     );
@@ -381,7 +381,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
 
   Future<void> _setStreakReminders(bool value) async {
     await _settingsLocal.set(NotificationPrefKeys.streakReminders, value);
-    setState(() => _streakReminders = value);
+    if (mounted) setState(() => _streakReminders = value);
     analytics.track(
       NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.streakReminders, value: value),
     );

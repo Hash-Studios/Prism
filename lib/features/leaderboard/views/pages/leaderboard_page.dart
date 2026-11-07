@@ -47,7 +47,10 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
 
   Future<void> _refresh(BuildContext context) {
     final LeaderboardBloc bloc = context.read<LeaderboardBloc>();
-    final Future<LeaderboardState> settled = bloc.stream.firstWhere((s) => s.status != LoadStatus.loading);
+    final Future<LeaderboardState> settled = bloc.stream.firstWhere(
+      (s) => s.status != LoadStatus.loading,
+      orElse: () => bloc.state,
+    );
     bloc.add(const LeaderboardEvent.refreshed());
     return settled;
   }

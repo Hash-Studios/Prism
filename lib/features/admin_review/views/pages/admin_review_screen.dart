@@ -121,12 +121,18 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
             PrismIconButton(
               icon: Icons.swipe_rounded,
               tooltip: context.l10n.adminSwipeReview,
-              onPressed: () => context.router.push(const SwipeReviewRoute()),
+              onPressed: () {
+                PrismHaptics.tap();
+                unawaited(context.router.push(const SwipeReviewRoute()));
+              },
             ),
             PrismIconButton(
               icon: Icons.redeem_rounded,
               tooltip: context.l10n.promoAdminEntry,
-              onPressed: () => context.router.push(PromoCodesAdminRoute()),
+              onPressed: () {
+                PrismHaptics.tap();
+                unawaited(context.router.push(PromoCodesAdminRoute()));
+              },
             ),
           ],
           headerBottom: Padding(

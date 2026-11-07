@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/views/mood_copy.dart';
@@ -139,7 +140,7 @@ class WallRequestRow extends StatelessWidget {
             PopupMenuButton<VoidCallback>(
               tooltip: l10n.wallRequestMoreActions,
               icon: Icon(Icons.more_vert_rounded, color: soft),
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(PrismSpace.sm),
               onSelected: (VoidCallback action) => action(),
               itemBuilder: (_) => menu,
             ),
@@ -174,7 +175,12 @@ class _VoteButton extends StatelessWidget {
           type: MaterialType.transparency,
           child: InkWell(
             borderRadius: BorderRadius.circular(PrismRadius.pill),
-            onTap: onPressed,
+            onTap: onPressed == null
+                ? null
+                : () {
+                    PrismHaptics.impact();
+                    onPressed!();
+                  },
             child: AnimatedContainer(
               duration: context.motion(PrismDurations.fast),
               curve: PrismCurves.enter,
@@ -226,7 +232,12 @@ class _Thumb extends StatelessWidget {
         type: MaterialType.transparency,
         child: InkWell(
           borderRadius: BorderRadius.circular(PrismRadius.sm),
-          onTap: onTap,
+          onTap: onTap == null
+              ? null
+              : () {
+                  PrismHaptics.tap();
+                  onTap!();
+                },
           child: ClipRRect(
             borderRadius: BorderRadius.circular(PrismRadius.sm),
             child: SizedBox.square(dimension: 56, child: image),

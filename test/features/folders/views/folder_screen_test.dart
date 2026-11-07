@@ -28,6 +28,7 @@ import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -494,10 +495,18 @@ void main() {
       folder: _teamFolder(ownerId: 'owner', editors: <FolderMember>[_editor('me', 'owner')]),
       walls: <FavouriteWallEntity>[_wall('w1')],
     );
+    final List<Object?> haptics = <Object?>[];
+    const MethodChannel hapticsChannel = MethodChannel('prism/haptics');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(hapticsChannel, (MethodCall call) async {
+      haptics.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(hapticsChannel, null));
 
     await tester.longPress(find.byType(PrismWallTile));
     await settle(tester);
 
+    expect(haptics, <Object?>['impact'], reason: 'a long press plays impact once');
     expect(find.text('Remove from folder'), findsOneWidget);
     expect(find.text('Added by Ana'), findsOneWidget);
   });

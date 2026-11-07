@@ -60,7 +60,7 @@ class CreatorFollowButton extends StatelessWidget {
   }
 
   void _toggle(BuildContext context, {required bool follow}) {
-    PrismHaptics.selection();
+    // PrismButton plays the tap haptic, so none here.
     if (follow) {
       analytics.track(
         source == 'similar'

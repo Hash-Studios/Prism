@@ -29,6 +29,7 @@ import 'package:Prism/features/weekly_challenges/biz/challenge_admission_tracker
 import 'package:Prism/features/weekly_challenges/biz/confirm_challenge_submission.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -460,7 +461,7 @@ void main() {
     expect(sharedImageUrl, 'https://cdn/watermarked.png');
     expect(sharedSourceContext, 'ai_wallpaper');
     expect(find.byTooltip('Share'), findsOneWidget);
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(PrismLoader), findsOneWidget);
     expect(analytics.events.whereType<InviteShareTappedEvent>(), hasLength(1));
     expect(analytics.events.whereType<InviteShareResultEvent>(), isEmpty);
 

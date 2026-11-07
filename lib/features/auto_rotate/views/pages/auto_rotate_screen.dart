@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -702,7 +703,10 @@ Future<void> _pickCategory(BuildContext context, String current) async {
               title: name,
               showChevron: false,
               trailing: name == current ? const Icon(Icons.check_rounded, size: 20) : null,
-              onTap: () => Navigator.of(sheetContext).pop(name),
+              onTap: () {
+                PrismHaptics.selection();
+                Navigator.of(sheetContext).pop(name);
+              },
             ),
         ],
       ),

@@ -6,7 +6,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
-import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/material.dart';
@@ -135,14 +135,12 @@ class IosWallpaperGuideSheet extends StatelessWidget {
       title: duoReveal ? l10n.duoGuideTitle : l10n.coreSetItAsWallpaper,
       message: duoReveal ? l10n.duoPresetNotice : l10n.coreIosWallpaperGuideBody,
       actions: <Widget>[
-        FilledButton(
-          onPressed: () {
-            PrismHaptics.tap();
-            _launch('photos-redirect://');
-          },
-          child: Text(l10n.coreOpenPhotos),
+        PrismButton(label: l10n.coreOpenPhotos, onPressed: () => _launch('photos-redirect://')),
+        PrismButton(
+          label: l10n.coreDone,
+          variant: PrismButtonVariant.ghost,
+          onPressed: () => Navigator.of(context).maybePop(),
         ),
-        TextButton(onPressed: () => Navigator.of(context).maybePop(), child: Text(l10n.coreDone)),
       ],
       child: GuideNumberedSteps(steps: steps),
     );
@@ -164,7 +162,13 @@ class SpatialSceneGuideSheet extends StatelessWidget {
     return PrismSheetBody(
       title: l10n.wallpaperSpatialGuideTitle,
       message: l10n.wallpaperSpatialGuideBody,
-      actions: <Widget>[TextButton(onPressed: () => Navigator.of(context).maybePop(), child: Text(l10n.coreDone))],
+      actions: <Widget>[
+        PrismButton(
+          label: l10n.coreDone,
+          variant: PrismButtonVariant.ghost,
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+      ],
       child: GuideNumberedSteps(steps: SpatialSceneGuideSheet.steps(l10n)),
     );
   }

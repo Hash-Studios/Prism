@@ -1,4 +1,5 @@
 import 'package:Prism/core/color/prism_palette.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/views/widgets/palette_swatch.dart';
 import 'package:Prism/features/user_search/views/widgets/search_filter_sheet.dart';
@@ -257,7 +258,7 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    final Finder depthSwitch = find.widgetWithText(SwitchListTile, 'Depth Effect');
+    final Finder depthSwitch = find.widgetWithText(PrismSwitchRow, 'Depth Effect');
 
     test('the sheet choices carry the depth filter, and it is off unless asked for', () {
       expect(buildSearchFilters(portraitOnly: true, shortSide: null, sort: SearchSort.relevance).depthOnly, isFalse);
@@ -273,11 +274,11 @@ void main() {
 
       expect(depthSwitch, findsOneWidget);
       expect(find.text('Subject can sit in front of the clock'), findsOneWidget);
-      expect(tester.widget<SwitchListTile>(depthSwitch).value, isFalse);
+      expect(tester.widget<PrismSwitchRow>(depthSwitch).value, isFalse);
 
       await tester.tap(depthSwitch);
       await tester.pump();
-      expect(tester.widget<SwitchListTile>(depthSwitch).value, isTrue);
+      expect(tester.widget<PrismSwitchRow>(depthSwitch).value, isTrue);
       await tester.tap(find.text('Apply'));
       await tester.pumpAndSettle();
 
@@ -288,7 +289,7 @@ void main() {
       SearchFilters? result;
       await openSheet(tester, const SearchFilters(depthOnly: true), (picked) => result = picked);
 
-      expect(tester.widget<SwitchListTile>(depthSwitch).value, isTrue);
+      expect(tester.widget<PrismSwitchRow>(depthSwitch).value, isTrue);
       await tester.tap(find.text('Reset'));
       await tester.pumpAndSettle();
 

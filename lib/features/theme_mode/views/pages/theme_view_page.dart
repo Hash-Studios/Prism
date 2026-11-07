@@ -67,6 +67,7 @@ class _ThemeViewState extends State<ThemeView> {
   Future<void> _setMatchSystemAccent(bool enabled) async {
     setState(() => _matchSystemAccent = enabled);
     await getIt<SettingsLocalDataSource>().set(SystemAccentChannel.settingsKey, enabled);
+    if (!mounted) return;
     final SystemAccent? accent = _systemAccent;
     if (enabled && accent != null) _applySystemAccent(accent);
   }
@@ -268,10 +269,11 @@ class _ThemeGrid extends StatelessWidget {
                 selected: option.id == selectedId,
                 locked: _locked(option, inventory),
                 onTap: () {
-                  PrismHaptics.selection();
                   if (_locked(option, inventory)) {
+                    PrismHaptics.tap();
                     showShopItemSheet(context, shopItem(option.shopItemId!)!);
                   } else {
+                    PrismHaptics.selection();
                     onSelect(option);
                   }
                 },
@@ -430,7 +432,7 @@ class _AccentPicker extends StatelessWidget {
   ];
 
   Future<void> _pickCustom(BuildContext context) async {
-    PrismHaptics.selection();
+    PrismHaptics.tap();
     final Color? picked = await showCustomAccentSheet(context, initial: selected, surface: surface);
     if (picked != null && context.mounted) onSelect(picked);
   }

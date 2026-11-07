@@ -36,7 +36,7 @@ class _BadgesBody extends StatelessWidget {
           ...badgeCatalog.where((BadgeInfo b) => !earned.contains(b.id)),
         ];
         return Padding(
-          padding: const EdgeInsets.only(top: 32),
+          padding: const EdgeInsets.only(top: PrismSpace.xxl),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -44,11 +44,11 @@ class _BadgesBody extends StatelessWidget {
                 header: true,
                 child: Text(context.l10n.economyBadges, style: PrismTextStyles.sectionTitle(context)),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: PrismSpace.xxs),
               Text(context.l10n.economyBadgeEarnedCount(count, badges.length), style: PrismTextStyles.caption(context)),
-              const SizedBox(height: 12),
+              const SizedBox(height: PrismSpace.sm),
               for (int i = 0; i < badges.length; i += 2) ...<Widget>[
-                if (i > 0) const SizedBox(height: 12),
+                if (i > 0) const SizedBox(height: PrismSpace.sm),
                 // Both tiles in a row take the taller one's height.
                 IntrinsicHeight(
                   child: Row(
@@ -57,7 +57,7 @@ class _BadgesBody extends StatelessWidget {
                       Expanded(
                         child: _BadgeTile(info: badges[i], earned: earned.contains(badges[i].id)),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: PrismSpace.sm),
                       Expanded(
                         child: i + 1 < badges.length
                             ? _BadgeTile(info: badges[i + 1], earned: earned.contains(badges[i + 1].id))
@@ -93,7 +93,7 @@ class _BadgeTile extends StatelessWidget {
       excludeSemantics: true,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(PrismRadius.md),
           border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
         ),
         clipBehavior: Clip.antiAlias,
@@ -154,7 +154,7 @@ class _BadgeTile extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(PrismSpace.sm),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[

@@ -16,6 +16,7 @@ import 'package:Prism/core/share/share_card_renderer.dart';
 import 'package:Prism/core/share/share_text.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -751,14 +752,7 @@ class _ShareTarget extends StatelessWidget {
                   dimension: 56,
                   child: DecoratedBox(
                     decoration: BoxDecoration(color: cs.onSurface.withValues(alpha: 0.08), shape: BoxShape.circle),
-                    child: Center(
-                      child: busy
-                          ? SizedBox.square(
-                              dimension: 22,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary),
-                            )
-                          : Icon(icon, color: cs.onSurface),
-                    ),
+                    child: Center(child: busy ? const PrismLoader(size: 22) : Icon(icon, color: cs.onSurface)),
                   ),
                 ),
                 const SizedBox(height: PrismSpace.xs),

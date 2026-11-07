@@ -9,6 +9,7 @@ import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism/prism_row.dart';
 import 'package:Prism/core/widgets/prism/prism_section.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
@@ -182,17 +183,12 @@ class _EarnRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
     final bool tappable = onTap != null && !done && !loading;
     final Widget trailing;
     if (done) {
       trailing = const Icon(Icons.check_rounded, key: ValueKey<String>('done'), size: 22, color: PrismColors.success);
     } else if (loading) {
-      trailing = SizedBox.square(
-        key: const ValueKey<String>('loading'),
-        dimension: 20,
-        child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary),
-      );
+      trailing = const PrismLoader(key: ValueKey<String>('loading'), size: 20);
     } else if (reward == null) {
       trailing = const SizedBox.shrink(key: ValueKey<String>('no-reward'));
     } else {

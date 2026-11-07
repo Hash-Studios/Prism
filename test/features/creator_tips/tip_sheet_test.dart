@@ -4,6 +4,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
@@ -80,7 +81,21 @@ void main() {
     await settle(tester);
   }
 
+  final List<String> haptics = <String>[];
+  void recordHaptics() {
+    haptics.clear();
+    PrismHaptics.enabled = true;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('prism/haptics'),
+      (call) async {
+        haptics.add(call.arguments as String);
+        return null;
+      },
+    );
+  }
+
   setUp(() async {
+    recordHaptics();
     calls = <(String, Map<String, dynamic>)>[];
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
@@ -114,11 +129,14 @@ void main() {
 
   testWidgets('picking an amount changes the cost', (WidgetTester tester) async {
     await pumpSheet(tester);
+    haptics.clear();
 
     await tester.tap(find.text('50'));
     await tester.pump();
 
     expect(find.text('Tip 50 coins'), findsOneWidget);
+    // PrismChip plays the selection haptic: the sheet must not add a second one.
+    expect(haptics, <String>['selection']);
   });
 
   testWidgets('a short balance disables the tip and links to earn coins', (WidgetTester tester) async {
@@ -166,11 +184,14 @@ void main() {
   testWidgets('a failure records tip_failed', (WidgetTester tester) async {
     reply((_, _) => _refused('tip_pair_limit'));
     await pumpSheet(tester);
+    haptics.clear();
 
     await tester.tap(find.text('Tip 25 coins'));
     await settle(tester);
 
     expect(analytics.events.map((AnalyticsEvent e) => e.eventName), contains('tip_failed'));
+    // A limit refusal is a calm info toast, not an error: only the button tap.
+    expect(haptics, <String>['tap']);
   });
 
   group('canTipCreator', () {

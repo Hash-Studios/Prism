@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
@@ -73,10 +72,7 @@ class _CollectionScreenState extends State<CollectionScreen> with AutomaticKeepA
                         title: context.l10n.wallpaperServerUnavailable,
                         body: context.l10n.wallpaperCheckConnection,
                         actionLabel: context.l10n.wallpaperTryAgain,
-                        onAction: () {
-                          PrismHaptics.tap();
-                          unawaited(retry());
-                        },
+                        onAction: () => unawaited(retry()),
                       ),
                     ),
                   ],

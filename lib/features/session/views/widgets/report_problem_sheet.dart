@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/session/data/report_problem_service.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -169,6 +170,7 @@ class _ReportProblemBodyState extends State<_ReportProblemBody> {
     );
     if (!mounted) return;
     if (reference == null) {
+      PrismHaptics.error();
       setState(() => _phase = _Phase.failed);
       return;
     }
@@ -416,7 +418,10 @@ class _ScreenshotCard extends StatelessWidget {
               button: true,
               label: bytes == null ? l10n.reportAddScreenshot : l10n.reportViewScreenshot,
               child: GestureDetector(
-                onTap: bytes == null ? onAdd : onPreview,
+                onTap: () {
+                  PrismHaptics.tap();
+                  (bytes == null ? onAdd : onPreview)?.call();
+                },
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(PrismRadius.xs),
                   child: SizedBox(
@@ -481,7 +486,7 @@ class _DiagnosticsPreview extends StatelessWidget {
             child: SelectableText(
               report,
               key: const Key('report_problem_preview'),
-              style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace', fontSize: 11),
+              style: PrismTextStyles.body(context).copyWith(fontFamily: 'monospace', fontSize: 11),
             ),
           ),
         ),

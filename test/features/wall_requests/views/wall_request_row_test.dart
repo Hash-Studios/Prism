@@ -1,9 +1,11 @@
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/wall_requests/domain/entities/wall_request.dart';
 import 'package:Prism/features/wall_requests/views/widgets/wall_request_row.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 WallRequest _request({
@@ -100,5 +102,24 @@ void main() {
       wallRequestErrorText(context, WallRequestError.accountTooNew),
       "Your account can request walls and vote once it's 10 days old.",
     );
+  });
+
+  testWidgets('tapping Upvote plays one impact haptic and calls onVote once', (tester) async {
+    const MethodChannel channel = MethodChannel('prism/haptics');
+    final List<String> played = <String>[];
+    PrismHaptics.enabled = true;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (MethodCall call) async {
+      played.add(call.arguments as String);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null));
+    int votes = 0;
+    await _pumpRow(tester, _request(), onVote: () => votes++);
+
+    await tester.tap(find.byTooltip('Upvote'));
+    await tester.pump();
+
+    expect(votes, 1);
+    expect(played, <String>['impact']);
   });
 }

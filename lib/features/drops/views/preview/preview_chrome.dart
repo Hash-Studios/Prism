@@ -22,9 +22,9 @@ class PreviewHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
       child: Row(
         children: <Widget>[
-          IconButton(
+          PrismIconButton(
             tooltip: l10n.economyClosePreview,
-            icon: const Icon(Icons.close_rounded),
+            icon: Icons.close_rounded,
             onPressed: () => Navigator.of(context).maybePop(),
           ),
           Expanded(
@@ -64,7 +64,7 @@ class PreviewHeader extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 48),
+          const SizedBox(width: 44),
         ],
       ),
     );
