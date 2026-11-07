@@ -271,11 +271,19 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
                     onChanged: (sort) => _cubit.load(widget.challengeId, sort: sort),
                   ),
                   const SizedBox(height: 16),
-                  if (detail.entries.isEmpty)
+                  if (detail.entries.isEmpty) ...[
+                    if (_lastWeek(state.past, challenge.id) case final last?)
+                      _LastWeek(
+                        key: ValueKey(last.id),
+                        challenge: last,
+                        load: () => _cubit.topEntries(last.id),
+                        onOpen: _open,
+                      ),
                     SizedBox(
                       height: 240,
                       child: GlintState(kind: GlintStateKind.empty, title: l10n.challengeEmpty),
                     ),
+                  ],
                   for (final (i, entry) in detail.entries.indexed) _entry(entry, detail.entries, i, open),
                   if (state.past.isNotEmpty) ...[
                     const SizedBox(height: 24),
@@ -305,6 +313,13 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
       );
     },
   );
+
+  /// The most recent finished challenge that is not this one.
+  WeeklyChallenge? _lastWeek(List<WeeklyChallenge> past, String currentId) {
+    final rows = past.where((row) => row.id != currentId).toList()..sort((a, b) => b.closesAt.compareTo(a.closesAt));
+    return rows.firstOrNull;
+  }
+
   Widget _entry(ChallengeEntry entry, List<ChallengeEntry> entries, int index, bool open) {
     final l10n = context.l10n;
     return Padding(
@@ -350,4 +365,57 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
       ),
     );
   }
+}
+
+/// The top entries of the last challenge, under its theme. It shows nothing until entries load.
+class _LastWeek extends StatefulWidget {
+  const _LastWeek({super.key, required this.challenge, required this.load, required this.onOpen});
+  final WeeklyChallenge challenge;
+  final Future<List<ChallengeEntry>> Function() load;
+  final Future<void> Function(List<ChallengeEntry> entries, int index) onOpen;
+  @override
+  State<_LastWeek> createState() => _LastWeekState();
+}
+
+class _LastWeekState extends State<_LastWeek> {
+  late final Future<List<ChallengeEntry>> _entries = widget.load();
+  @override
+  Widget build(BuildContext context) => FutureBuilder<List<ChallengeEntry>>(
+    future: _entries,
+    builder: (context, snapshot) {
+      final entries = snapshot.data ?? const <ChallengeEntry>[];
+      if (entries.isEmpty) return const SizedBox.shrink();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          PrismSectionHeader(
+            title: widget.challenge.theme,
+            padding: const EdgeInsets.only(bottom: PrismSpace.sm),
+          ),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: PrismSpace.sm,
+            crossAxisSpacing: PrismSpace.sm,
+            childAspectRatio: 3 / 4,
+            children: [
+              for (final (i, entry) in entries.indexed)
+                InkWell(
+                  onTap: () => widget.onOpen(entries, i),
+                  child: Semantics(
+                    label: entry.title.isEmpty ? entry.creatorName : entry.title,
+                    image: true,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: CachedNetworkImage(imageUrl: entry.thumbUrl, fit: BoxFit.cover),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      );
+    },
+  );
 }

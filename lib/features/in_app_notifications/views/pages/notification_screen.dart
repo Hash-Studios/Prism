@@ -304,6 +304,12 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
     final String groupTitle = group.displayTitle(l10n);
     final String title = cleanNotificationTitle(groupTitle);
     final InAppNotificationEntity first = group.items.first;
+    final List<String> groupThumbs = group.items
+        .map((InAppNotificationEntity e) => e.imageUrl)
+        .where((String u) => u.isNotEmpty)
+        .toSet()
+        .take(3)
+        .toList(growable: false);
     return Dismissible(
       key: ValueKey<String>('grp:${group.items.map((InAppNotificationEntity e) => e.id).join('|')}'),
       onDismissed: (_) {
@@ -385,6 +391,10 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                             ],
                           ),
                         ),
+                        if (!expanded && groupThumbs.isNotEmpty) ...<Widget>[
+                          const SizedBox(width: PrismSpace.sm),
+                          NotificationThumbs(urls: groupThumbs),
+                        ],
                       ],
                     ),
                   ),

@@ -187,6 +187,8 @@ class CreatorWallStrip extends StatelessWidget {
     final List<WallpaperFeedTile> tiles = <WallpaperFeedTile>[
       for (final (i, item) in items.indexed) (item: item, index: i, heroTag: prismHeroTag(heroScope, i, item.id)),
     ];
+    // Every card keeps [count] equal slots so cards in a row share one height; a slot with no wall stays empty
+    // instead of showing a grey box.
     return Row(
       children: <Widget>[
         for (int i = 0; i < count; i++) ...<Widget>[
@@ -194,8 +196,9 @@ class CreatorWallStrip extends StatelessWidget {
           Expanded(
             child: AspectRatio(
               aspectRatio: PrismFeedLayout.gridTileAspectRatio,
-              child: i < tiles.length
-                  ? PrismWallTile(
+              child: i >= tiles.length
+                  ? const SizedBox.shrink()
+                  : PrismWallTile(
                       url: tiles[i].item.thumbnailUrl,
                       fallbackUrl: tiles[i].item.fullUrl,
                       placeholderColor: placeholderColorOf(tiles[i].item, Theme.of(context).colorScheme.surface),
@@ -211,12 +214,6 @@ class CreatorWallStrip extends StatelessWidget {
                           ),
                         );
                       },
-                    )
-                  : DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(PrismRadius.sm),
-                      ),
                     ),
             ),
           ),

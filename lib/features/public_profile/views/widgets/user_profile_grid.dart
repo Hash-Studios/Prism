@@ -13,6 +13,8 @@ import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
+import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
@@ -206,6 +208,7 @@ class _UserProfileGridState extends State<UserProfileGrid> {
             ),
           );
         }
+        if (walls.isEmpty && ownProfile && !failed) return const _OwnEmptyGallery();
         if (walls.isEmpty) {
           return SliverToBoxAdapter(
             child: Padding(
@@ -216,11 +219,6 @@ class _UserProfileGridState extends State<UserProfileGrid> {
                   : GlintState(
                       kind: GlintStateKind.empty,
                       title: context.l10n.accountNoWallpapersYet,
-                      body: ownProfile ? context.l10n.accountUploadFirstWallpaper : null,
-                      actionLabel: ownProfile ? context.l10n.wallpaperUploadTitle : null,
-                      onAction: ownProfile
-                          ? () => showPrismSheet<void>(context, builder: (_) => const UploadBottomPanel())
-                          : null,
                       actionVariant: PrismButtonVariant.tonal,
                     ),
             ),
@@ -286,6 +284,117 @@ class _UserProfileGridState extends State<UserProfileGrid> {
                 },
               ),
             ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// The owner's empty gallery: one line with an Upload button, then the owner's favourites, so the profile shows
+/// wallpapers before any upload exists.
+class _OwnEmptyGallery extends StatefulWidget {
+  const _OwnEmptyGallery();
+
+  // ponytail: a fixed preview; See all opens Favourites for the rest.
+  static const int _maxFavourites = 12;
+
+  @override
+  State<_OwnEmptyGallery> createState() => _OwnEmptyGalleryState();
+}
+
+class _OwnEmptyGalleryState extends State<_OwnEmptyGallery> {
+  @override
+  void initState() {
+    super.initState();
+    // The same cached load the Favourites tab and the wallpaper screen start. Nothing happens when it ran already.
+    final FavouriteWallsBloc favourites = context.read<FavouriteWallsBloc>();
+    final String userId = app_state.prismUser.id;
+    if (favourites.state.status == LoadStatus.initial || favourites.state.userId != userId) {
+      favourites.add(FavouriteWallsEvent.started(userId: userId));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return BlocBuilder<FavouriteWallsBloc, FavouriteWallsState>(
+      buildWhen: (previous, current) => previous.items != current.items || previous.sort != current.sort,
+      builder: (context, state) {
+        final List<FavouriteWallEntity> walls = applyFavouritesView(
+          state.items,
+          sort: state.sort,
+        ).where((wall) => wall is! LegacyFavouriteWall).toList(growable: false);
+        final int shown = walls.length.clamp(0, _OwnEmptyGallery._maxFavourites);
+        final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: PrismWallGrid.columns(context));
+        return SliverMainAxisGroup(
+          slivers: <Widget>[
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.page, PrismSpace.sm),
+                // One line on a phone; with large text the button wraps below instead of overflowing.
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: PrismSpace.sm,
+                  runSpacing: PrismSpace.xs,
+                  children: <Widget>[
+                    Text(
+                      context.l10n.accountNoWallpapersYet,
+                      style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                    PrismButton(
+                      label: context.l10n.wallpaperUploadTitle,
+                      variant: PrismButtonVariant.tonal,
+                      size: PrismButtonSize.compact,
+                      onPressed: () => showPrismSheet<void>(context, builder: (_) => const UploadBottomPanel()),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (shown > 0) ...<Widget>[
+              SliverPadding(
+                padding: PrismWallGrid.padding,
+                sliver: SliverToBoxAdapter(
+                  child: PrismSectionHeader(
+                    title: context.l10n.wallpaperFavouritesTitle,
+                    actionLabel: walls.length > shown ? context.l10n.economySeeAll : null,
+                    onAction: walls.length > shown ? () => context.router.push(const FavouriteWallpaperRoute()) : null,
+                    padding: const EdgeInsets.only(top: PrismSpace.md, bottom: PrismSpace.sm),
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: PrismWallGrid.padding,
+                sliver: SliverGrid.builder(
+                  gridDelegate: PrismWallGrid.delegate(context),
+                  itemCount: shown,
+                  itemBuilder: (context, index) {
+                    final FavouriteWallEntity wall = walls[index];
+                    final String heroTag = prismHeroTag(this, index, '${wall.source.name}:${wall.id}');
+                    return PrismWallTile(
+                      key: ValueKey<String>('${wall.source.name}:${wall.id}'),
+                      memCacheHeight: decodeHeight,
+                      url: wall.thumbnailUrl,
+                      fallbackUrl: wall.fullUrl,
+                      heroTag: heroTag,
+                      semanticLabel: wallpaperSemanticLabel(wall.authorName, context.l10n),
+                      onTap: () {
+                        PrismHaptics.tap();
+                        context.router.push(
+                          WallpaperDetailRoute(
+                            entity: wall.toFeedItem(),
+                            analyticsSurface: AnalyticsSurfaceValue.favouriteWallpaperView,
+                            heroTag: heroTag,
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
           ],
         );
       },

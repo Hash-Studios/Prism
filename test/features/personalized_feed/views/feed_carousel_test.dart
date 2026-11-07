@@ -129,6 +129,7 @@ void main() {
     ThemeData? theme,
     ThemeBloc? themeBloc,
     GlobalKey<NavigatorState>? navigatorKey,
+    bool tickers = true,
   }) async {
     addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
     tester.view
@@ -163,7 +164,10 @@ void main() {
             stateHash: 0,
             child: FeedCarousel(previewWalls: walls, boostedWalls: boosted, liveDrop: liveDrop),
           );
-    Widget carouselWithBloc = BlocProvider<WotdBloc>.value(value: wotd, child: carousel);
+    Widget carouselWithBloc = BlocProvider<WotdBloc>.value(
+      value: wotd,
+      child: TickerMode(enabled: tickers, child: carousel),
+    );
     if (themeBloc != null) {
       carouselWithBloc = BlocProvider<ThemeBloc>.value(value: themeBloc, child: carouselWithBloc);
     }
@@ -678,6 +682,37 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current, 0);
     expect(tester.getRect(find.byType(FeedHeroCard).first).left, 16);
+  });
+
+  testWidgets('a touch or tab change pauses autoplay for 1 s, then a full interval passes before a page turn', (
+    tester,
+  ) async {
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], reduceMotion: false);
+    bool autoPlay() => tester.widget<CarouselSlider>(find.byType(CarouselSlider)).options.autoPlay;
+    int current() => tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current;
+    expect(autoPlay(), isFalse, reason: 'a carousel that just showed, as after a return to For you, settles first');
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+    expect(autoPlay(), isTrue);
+    await tester.pump(const Duration(milliseconds: 4500));
+
+    // The Home screen turns TickerMode off for a touch or a tab change, here for one frame.
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], reduceMotion: false, tickers: false);
+    expect(autoPlay(), isFalse);
+    await pumpCarousel(tester, <PrismFeedItem>[_wall('a')], reduceMotion: false);
+    expect(autoPlay(), isFalse, reason: 'still for 1 s after the pause ends');
+    await tester.pump(const Duration(milliseconds: 900));
+    expect(autoPlay(), isFalse);
+    expect(current(), 0, reason: 'the old 5 s countdown did not fire');
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(autoPlay(), isTrue);
+
+    await tester.pump(const Duration(milliseconds: 4800));
+    await tester.pumpAndSettle();
+    expect(current(), 0, reason: 'a full 5 s interval starts after the settle');
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+    expect(current(), 1);
   });
 
   testWidgets('a single page has no dots', (tester) async {

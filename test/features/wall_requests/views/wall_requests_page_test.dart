@@ -15,6 +15,7 @@ import 'package:Prism/features/wall_requests/views/widgets/wall_request_row.dart
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -32,6 +33,7 @@ WallRequest _request({
   String text = 'dark minimal mountains',
   WallRequestStatus status = WallRequestStatus.open,
   String filledWallId = '',
+  String filledWallThumb = '',
   WallRequestFiller? filledBy,
 }) => WallRequest(
   id: id,
@@ -46,6 +48,7 @@ WallRequest _request({
   voted: false,
   hidden: false,
   filledWallId: filledWallId,
+  filledWallThumb: filledWallThumb,
   filledBy: filledBy,
 );
 
@@ -151,6 +154,49 @@ void main() {
     expect(pinnedBar(), isNotNull);
     expect(find.text('Request a wall'), findsOneWidget);
     expect(find.text("Ask for the wall you can't find. Others can upvote it."), findsNothing);
+  });
+
+  testWidgets('a short list shows filled walls under it and See all opens the Filled tab', (tester) async {
+    stub(
+      _state(
+        tabs: <WallRequestTab, WallRequestsTabState>{
+          WallRequestTab.top: WallRequestsTabLoaded(<WallRequest>[_request()]),
+          WallRequestTab.filled: WallRequestsTabLoaded(<WallRequest>[
+            for (int i = 0; i < 8; i++)
+              _request(
+                id: 'f$i',
+                status: WallRequestStatus.filled,
+                filledWallId: 'w$i',
+                filledWallThumb: 'https://example.com/$i.jpg',
+              ),
+          ]),
+        },
+      ),
+    );
+    await pumpPage(tester);
+    await tester.scrollUntilVisible(find.text('See all'), 200, scrollable: find.byType(Scrollable).last);
+
+    expect(find.text('Filled'), findsNWidgets(2));
+    expect(find.byType(CachedNetworkImage, skipOffstage: false), findsNWidgets(6));
+    await tester.tap(find.text('See all'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(WallRequestRow), findsAtLeastNWidgets(4));
+  });
+
+  testWidgets('a short list with no filled walls shows no extra section', (tester) async {
+    stub(
+      _state(
+        tabs: <WallRequestTab, WallRequestsTabState>{
+          WallRequestTab.top: WallRequestsTabLoaded(<WallRequest>[_request()]),
+          WallRequestTab.filled: const WallRequestsTabLoaded(<WallRequest>[]),
+        },
+      ),
+    );
+    await pumpPage(tester);
+
+    expect(find.text('See all'), findsNothing);
+    expect(find.byType(CachedNetworkImage), findsNothing);
   });
 
   testWidgets('switching to Filled loads it and shows the filled wall thumbnail', (tester) async {

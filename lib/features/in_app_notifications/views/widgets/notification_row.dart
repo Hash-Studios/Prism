@@ -12,9 +12,7 @@ import 'package:Prism/features/in_app_notifications/domain/notification_copy.dar
 import 'package:Prism/features/in_app_notifications/domain/notification_grouping.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_visuals.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 /// Left inset of the text column: page margin, icon tile and gap. Grouped children line up with it.
@@ -153,10 +151,7 @@ class NotificationRow extends StatelessWidget {
   }
 
   Widget _full(BuildContext context, String timeStr, String title) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
     final bool showImage = _hasValidImageUrl(notification.imageUrl);
-    final double width = MediaQuery.sizeOf(context).width;
-    final int memCacheWidth = (width * MediaQuery.devicePixelRatioOf(context)).round().clamp(1, 4096);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page, vertical: PrismSpace.xs),
       child: Row(
@@ -182,29 +177,13 @@ class NotificationRow extends StatelessWidget {
                     style: PrismTextStyles.body(context),
                   ),
                 ],
-                if (showImage) ...<Widget>[
-                  const SizedBox(height: PrismSpace.sm),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(PrismRadius.md),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: ((width - notificationTextInset - PrismSpace.page) * 9 / 16).clamp(0, 180),
-                      child: CachedNetworkImage(
-                        imageUrl: notification.imageUrl,
-                        fit: BoxFit.cover,
-                        memCacheWidth: memCacheWidth,
-                        placeholder: (_, _) => ColoredBox(color: cs.surfaceContainerHigh),
-                        errorWidget: (_, _, _) => ColoredBox(
-                          color: cs.surfaceContainerHigh,
-                          child: Center(child: Icon(JamIcons.picture, color: cs.onSurfaceVariant, size: 24)),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
+          if (showImage) ...<Widget>[
+            const SizedBox(width: PrismSpace.sm),
+            NotificationThumbs(urls: <String>[notification.imageUrl]),
+          ],
         ],
       ),
     );

@@ -204,4 +204,19 @@ void main() {
     expect(tester.getTopLeft(card).dx, tester.getTopLeft(rotationCard).dx);
     expect(tester.getSize(card).width, tester.getSize(rotationCard).width);
   });
+
+  testWidgets('a 9:19.5 phone frame shows a bundled cover above the steps', (tester) async {
+    await _pump(tester, folders: _foldersState());
+
+    final Finder cover = find.byWidgetPredicate(
+      (Widget w) => w is Image && w.image is AssetImage && (w.image as AssetImage).assetName.contains('covers/'),
+    );
+    expect(cover, findsOneWidget);
+    final Size frame = tester.getSize(find.byType(AspectRatio).first);
+    expect(frame.width / frame.height, closeTo(9 / 19.5, 0.01));
+    expect(
+      tester.getTopLeft(cover).dy,
+      lessThan(tester.getTopLeft(find.text(_l10n(tester).shortcutsGuideHeadline)).dy),
+    );
+  });
 }

@@ -63,6 +63,11 @@ double feedCarouselCardHeight(BuildContext context) =>
 /// The home carousel: Wall of the Day, the user's Wrapped (in its window), the live Drop, boosted walls, a card for each seasonal theme (in its season,
 /// while the theme is off), the promo banner and the first wallpapers as rounded pages, with page dots over the bottom right of the
 /// image.
+///
+/// Auto-advance runs only while the carousel's [TickerMode] is on and its route is current. To pause it, turn
+/// [TickerMode] off around it, as the Home screen does while a finger is down and when the tab changes. After any such
+/// pause, and when it first shows, it stays still for one more second, then waits a full interval before it turns a
+/// page.
 class FeedCarousel extends StatefulWidget {
   const FeedCarousel({
     super.key,
@@ -97,6 +102,16 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
 
   Timer? _dropEndTimer;
   Timer? _seasonEndTimer;
+
+  /// Whether the carousel can be seen: its tickers run and its route is on top. False until the first build, so a
+  /// carousel that mounts visible (as For you does when its tab comes back) settles before it turns a page.
+  bool _visible = false;
+
+  /// True for [_settleAfterPause] after the carousel becomes visible again, so a touch or a tab change is never
+  /// followed at once by an unrelated page turn.
+  bool _settling = false;
+  Timer? _settleTimer;
+  static const Duration _settleAfterPause = Duration(seconds: 1);
 
   /// Looked up only once the Wrapped window opens, so Home never touches Wrapped outside it.
   WrappedBloc? _wrapped;
@@ -150,6 +165,20 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final bool visible = TickerMode.valuesOf(context).enabled && (ModalRoute.of(context)?.isCurrent ?? true);
+    if (visible == _visible) return;
+    _visible = visible;
+    _settleTimer?.cancel();
+    _settling = true;
+    if (!visible) return;
+    _settleTimer = Timer(_settleAfterPause, () {
+      if (mounted) setState(() => _settling = false);
+    });
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) _refreshWrapped();
   }
@@ -165,6 +194,7 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
   void dispose() {
     _dropEndTimer?.cancel();
     _seasonEndTimer?.cancel();
+    _settleTimer?.cancel();
     _wrappedWindowTimer?.cancel();
     unawaited(_wrappedChanges?.cancel());
     unawaited(_wrappedUserChanges?.cancel());
@@ -335,8 +365,6 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
     }
     final int current = _current.clamp(0, pages.length - 1);
     final bool moving = pages.length > 1;
-    // The Home tab stays built under other tabs and pushed routes. Only turn pages that someone can see.
-    final bool visible = TickerMode.valuesOf(context).enabled && (ModalRoute.of(context)?.isCurrent ?? true);
     return Stack(
       children: <Widget>[
         CarouselSlider.builder(
@@ -346,7 +374,9 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
             height: height,
             viewportFraction: 1 / columns,
             padEnds: columns == 1,
-            autoPlay: moving && !context.reduceMotion && visible,
+            // The Home tab stays built under other tabs and pushed routes. Only turn pages that someone can see, and
+            // not while they settle after a touch or a tab change.
+            autoPlay: moving && !context.reduceMotion && _visible && !_settling,
             autoPlayInterval: const Duration(seconds: 5),
             autoPlayCurve: PrismCurves.move,
             autoPlayAnimationDuration: PrismDurations.base,

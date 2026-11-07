@@ -1,4 +1,6 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 final RegExp _trailingEmoji = RegExp(r'[\s\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}‍️]+$', unicode: true);
@@ -101,6 +103,55 @@ class UnreadDot extends StatelessWidget {
         color: cs.primary,
         shape: BoxShape.circle,
         border: ring ? Border.all(color: cs.surface, width: 2) : null,
+      ),
+    );
+  }
+}
+
+/// Wallpaper previews at the end of a notification row. One url gives a 44x78 phone-ratio thumbnail. Two or three
+/// (a gallery or a group) give a strip of smaller thumbnails with the same ratio.
+class NotificationThumbs extends StatelessWidget {
+  const NotificationThumbs({super.key, required this.urls});
+
+  final List<String> urls;
+
+  static const double thumbWidth = 44;
+  static const double thumbHeight = 78;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final List<String> shown = urls.take(3).toList(growable: false);
+    if (shown.isEmpty) return const SizedBox.shrink();
+    final bool strip = shown.length > 1;
+    final double w = strip ? 30 : thumbWidth;
+    final double h = strip ? 54 : thumbHeight;
+    final int cacheWidth = (w * MediaQuery.devicePixelRatioOf(context)).round();
+    return ExcludeSemantics(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          for (int i = 0; i < shown.length; i++) ...<Widget>[
+            if (i > 0) const SizedBox(width: 3),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(strip ? PrismRadius.sm : PrismRadius.md),
+              child: SizedBox(
+                width: w,
+                height: h,
+                child: CachedNetworkImage(
+                  imageUrl: shown[i],
+                  fit: BoxFit.cover,
+                  memCacheWidth: cacheWidth,
+                  placeholder: (_, _) => ColoredBox(color: cs.surfaceContainerHigh),
+                  errorWidget: (_, _, _) => ColoredBox(
+                    color: cs.surfaceContainerHigh,
+                    child: Center(child: Icon(JamIcons.picture, color: cs.onSurfaceVariant, size: 16)),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

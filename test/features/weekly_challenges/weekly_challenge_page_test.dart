@@ -196,6 +196,32 @@ void main() {
       ], expected[locale.toString()]);
     }
   });
+  testWidgets('an empty week shows last week top entries above the empty message', (tester) async {
+    final cubit = MockChallengeCubit();
+    final past = WeeklyChallenge(
+      id: '2026-10-19',
+      theme: 'Morning light',
+      state: ChallengeState.archived,
+      opensAt: DateTime.utc(2026, 10, 19),
+      closesAt: DateTime.utc(2026, 10, 26),
+    );
+    when(() => cubit.state).thenReturn(
+      WeeklyChallengesState(
+        loading: false,
+        detail: ChallengeDetail(challenge: challenge(), entries: [], myEntryCount: 0),
+        past: [past],
+      ),
+    );
+    when(() => cubit.load(any(), sort: any(named: 'sort'))).thenAnswer((_) async {});
+    when(() => cubit.topEntries('2026-10-19')).thenAnswer((_) async => [entry(), entry()]);
+    await tester.pumpWidget(app(WeeklyChallengePage(challengeId: '2026-10-26', cubit: cubit)));
+    await tester.pump();
+    expect(find.text('Morning light'), findsWidgets);
+    expect(find.byType(GridView), findsOneWidget);
+    expect(find.text('Approved entries will appear here.', skipOffstage: false), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   for (final state in [ChallengeState.open, ChallengeState.votingClosed, ChallengeState.archived]) {
     testWidgets('page renders $state with empty entries and past winners', (tester) async {
       final cubit = MockChallengeCubit();
@@ -220,6 +246,7 @@ void main() {
         ),
       );
       when(() => cubit.load(any(), sort: any(named: 'sort'))).thenAnswer((_) async {});
+      when(() => cubit.topEntries(any())).thenAnswer((_) async => const []);
       await tester.pumpWidget(app(WeeklyChallengePage(challengeId: '2026-10-26', cubit: cubit)));
       expect(find.text('Quiet oceans'), findsOneWidget);
       expect(find.text('Upload an entry'), state == ChallengeState.open ? findsOneWidget : findsNothing);

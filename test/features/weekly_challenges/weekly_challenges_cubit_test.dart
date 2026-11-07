@@ -92,6 +92,15 @@ void main() {
       expect(repo.requestedIds, ['2026-10-26', replacement.id]);
     });
   }
+  test('topEntries gives an empty list when the load fails or entries have no wall', () async {
+    final repo = Repository();
+    final cubit = WeeklyChallengesCubit(repo);
+    expect(await cubit.topEntries('2026-10-19'), isEmpty);
+    repo.fail = true;
+    expect(await cubit.topEntries('2026-10-19'), isEmpty);
+    await cubit.close();
+  });
+
   test('replacement suppresses an older load and its viewed analytics', () async {
     final analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;

@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
@@ -125,6 +126,8 @@ class _IosShortcutsGuideScreenState extends State<IosShortcutsGuideScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxl),
         children: <Widget>[
+          const _PhoneHero(),
+          const SizedBox(height: PrismSpace.lg),
           Text(l10n.shortcutsGuideHeadline, style: PrismTextStyles.sectionTitle(context)),
           const SizedBox(height: PrismSpace.xs),
           Text(l10n.shortcutsGuideBody, style: PrismTextStyles.body(context)),
@@ -353,6 +356,88 @@ class _Step extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// A phone-shaped frame (9:19.5) that slowly crossfades 3 bundled covers: a new wallpaper every day. It is art, so
+/// screen readers skip it, and under reduce motion it holds on the first cover.
+class _PhoneHero extends StatefulWidget {
+  const _PhoneHero();
+
+  @override
+  State<_PhoneHero> createState() => _PhoneHeroState();
+}
+
+class _PhoneHeroState extends State<_PhoneHero> {
+  static const double _height = 200;
+  Timer? _timer;
+  int _index = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (context.reduceMotion) {
+      _timer?.cancel();
+      _timer = null;
+    } else {
+      _timer ??= Timer.periodic(CoverMosaic.interval, (_) {
+        if (mounted && TickerMode.valuesOf(context).enabled) setState(() => _index = (_index + 1) % 3);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final String asset = kCoverMosaicAssets[_index];
+    final Widget image = Image.asset(
+      asset,
+      key: ValueKey<String>(asset),
+      fit: BoxFit.cover,
+      excludeFromSemantics: true,
+      gaplessPlayback: true,
+      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+    );
+    return ExcludeSemantics(
+      child: Center(
+        child: SizedBox(
+          height: _height,
+          child: AspectRatio(
+            aspectRatio: 9 / 19.5,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(PrismRadius.lg),
+                border: Border.all(color: cs.outlineVariant, width: 3),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(PrismRadius.lg - 3),
+                child: ColoredBox(
+                  color: cs.surfaceContainerHighest,
+                  child: context.reduceMotion
+                      ? image
+                      : AnimatedSwitcher(
+                          duration: CoverMosaic.crossfade,
+                          switchInCurve: Curves.easeInOut,
+                          switchOutCurve: Curves.easeInOut,
+                          layoutBuilder: (Widget? current, List<Widget> previous) => Stack(
+                            fit: StackFit.expand,
+                            children: <Widget>[...previous, if (current != null) current],
+                          ),
+                          child: image,
+                        ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

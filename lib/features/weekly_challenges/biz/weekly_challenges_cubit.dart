@@ -121,6 +121,16 @@ class WeeklyChallengesCubit extends Cubit<WeeklyChallengesState> {
     }
   }
 
+  /// The top entries of a finished challenge, for the empty state of a new one. A failure gives an empty list.
+  Future<List<ChallengeEntry>> topEntries(String id, {int count = 4}) async {
+    try {
+      final detail = await _repository.get(id, ChallengeSort.top);
+      return detail.entries.where((entry) => entry.wall != null).take(count).toList(growable: false);
+    } catch (_) {
+      return const [];
+    }
+  }
+
   Future<void> toggleVote(ChallengeEntry entry) async {
     final detail = state.detail;
     final current = detail?.entries.where((row) => row.id == entry.id).firstOrNull;

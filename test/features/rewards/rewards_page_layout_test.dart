@@ -125,6 +125,9 @@ void main() {
     expect(find.byIcon(badgeCatalog.first.icon), findsWidgets);
     expect(find.byIcon(Icons.lock_rounded), findsNWidgets(badgeCatalog.length - 1));
     expect(find.byIcon(Icons.lock_outline_rounded), findsNothing);
+    // Every badge card carries bundled wallpaper art; locked ones are greyed.
+    expect(find.byType(Image), findsNWidgets(badgeCatalog.length));
+    expect(find.byType(ColorFiltered), findsNWidgets(badgeCatalog.length));
   });
 
   testWidgets('daily moment places Today, Earn, Spend and More in order', (tester) async {

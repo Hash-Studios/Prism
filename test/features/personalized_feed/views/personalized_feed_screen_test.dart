@@ -862,10 +862,10 @@ void main() {
       }
     }
 
-    // Count from the last rebuild of the carousel: the next turn is due in 5 s.
-    await wait(const Duration(seconds: 5));
+    // Count from the last rebuild of the carousel: it settles 1 s, then the next turn is due in 5 s.
+    await wait(const Duration(milliseconds: 5800));
     final int start = page();
-    await wait(const Duration(seconds: 4));
+    await wait(const Duration(milliseconds: 3500));
     expect(page(), start);
 
     // Below the carousel: a touch on the carousel already pauses it by itself.
@@ -877,7 +877,8 @@ void main() {
     await wait(const Duration(milliseconds: 4500));
     expect(page(), start, reason: 'the touch restarted the countdown');
 
-    await wait(const Duration(seconds: 1));
+    // 1 s of settle after the lift, then the 5 s interval.
+    await wait(const Duration(seconds: 2));
     expect(page(), isNot(start));
   });
 
@@ -1704,6 +1705,9 @@ void main() {
 
     testWidgets('turns pages by itself while the feed is on screen', (tester) async {
       await pumpScreen(tester);
+      // A carousel that just showed settles for 1 s first.
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
 
       expect(autoPlay(tester), isTrue);
     });

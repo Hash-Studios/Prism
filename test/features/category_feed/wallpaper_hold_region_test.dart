@@ -436,11 +436,11 @@ void main() {
       final double early = readArc(tester)!.$1;
       expect(early, greaterThan(0));
       expect(tester.renderObject(ring), paints..circle(x: 80, y: 100));
-      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump(const Duration(milliseconds: 200));
       expect(readArc(tester)!.$1, greaterThan(early));
       expect(scrim, findsNothing);
 
-      await tester.pump(const Duration(milliseconds: 250));
+      await tester.pump(const Duration(milliseconds: 50));
       await tester.pump(const Duration(milliseconds: 20));
       expect(scrim, findsOneWidget);
       expect(readArc(tester), isNull, reason: 'the open menu replaces the ring');
@@ -457,7 +457,7 @@ void main() {
         await pumpRegion(tester, actions);
         final gesture = await tester.startGesture(tester.getCenter(find.byKey(const ValueKey('source'))));
         await tester.pump();
-        await tester.pump(const Duration(milliseconds: 250));
+        await tester.pump(const Duration(milliseconds: 200));
         final double held = readArc(tester)!.$1;
         if (drag) {
           await gesture.moveBy(const Offset(0, 40));
@@ -502,7 +502,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
       expect(tester.renderObject(ring), paints..circle(radius: 24));
-      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 200));
       expect(tester.renderObject(ring), paints..circle(radius: 24));
       await gesture.up();
       await tester.pump(const Duration(milliseconds: 200));
@@ -601,14 +601,14 @@ void main() {
     final Offset position = tester.getCenter(find.byKey(const ValueKey('source')));
     await tester.startGesture(position, pointer: 499);
     var released = false;
-    Timer(const Duration(milliseconds: 501), () {
+    Timer(const Duration(milliseconds: 301), () {
       GestureBinding.instance.handlePointerEvent(
-        PointerUpEvent(pointer: 499, position: position, timeStamp: const Duration(milliseconds: 501)),
+        PointerUpEvent(pointer: 499, position: position, timeStamp: const Duration(milliseconds: 301)),
       );
       released = true;
     });
 
-    // The long-press timer inserts the overlay at 500 ms; release at 501 ms, before that frame builds it.
+    // The hold timer inserts the overlay at 300 ms; release at 301 ms, before that frame builds it.
     await tester.pump(const Duration(milliseconds: 600));
     await tester.pump(const Duration(milliseconds: 180));
 
@@ -724,6 +724,41 @@ void main() {
     expect(actions, isEmpty);
     expect(find.byKey(const ValueKey<String>('wallpaper-hold-scrim')), findsNothing);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  });
+
+  testWidgets('the menu opens with an impact 300 ms after touch-down, not before', (tester) async {
+    final calls = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), (call) async {
+      calls.add(call.arguments);
+      return null;
+    });
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), null),
+    );
+    await pumpRegion(tester, []);
+    final gesture = await tester.startGesture(tester.getCenter(find.byKey(const ValueKey('source'))));
+    await tester.pump(const Duration(milliseconds: 290));
+    expect(find.byKey(const ValueKey<String>('wallpaper-hold-scrim')), findsNothing);
+    expect(calls, isEmpty);
+    await tester.pump(const Duration(milliseconds: 10));
+    await tester.pump();
+    expect(find.byKey(const ValueKey<String>('wallpaper-hold-scrim')), findsOneWidget);
+    expect(calls, ['impact']);
+    await gesture.up();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('a tap held for 250 ms still opens the wallpaper', (tester) async {
+    final actions = <WallpaperQuickAction>[];
+    var taps = 0;
+    await pumpRegion(tester, actions, onTap: () => taps++);
+    final gesture = await tester.startGesture(tester.getCenter(find.byKey(const ValueKey('source'))));
+    await tester.pump(const Duration(milliseconds: 250));
+    await gesture.up();
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(taps, 1);
+    expect(find.byKey(const ValueKey<String>('wallpaper-hold-scrim')), findsNothing);
+    expect(actions, isEmpty);
   });
 
   testWidgets('ordinary tap and pre-hold drag stay with child and scroll', (tester) async {
@@ -924,6 +959,23 @@ void main() {
       await tester.pump(const Duration(milliseconds: 600));
       expect(controller.offset, greaterThan(0));
       expect(find.byIcon(Icons.ios_share_rounded), findsNothing);
+      controller.jumpTo(0);
+      await tester.pump();
+
+      // A finger that rests 200 ms and then scrolls is a scroll: the menu never opens, even past 300 ms.
+      final Offset step = axis == Axis.vertical ? const Offset(0, -8) : const Offset(-8, 0);
+      final slow = await tester.startGesture(tester.getCenter(find.byKey(const ValueKey('source'))));
+      await tester.pump(const Duration(milliseconds: 200));
+      for (int i = 0; i < 6; i++) {
+        await slow.moveBy(step);
+        await tester.pump(const Duration(milliseconds: 40));
+      }
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(controller.offset, greaterThan(0));
+      expect(find.byKey(const ValueKey<String>('wallpaper-hold-scrim')), findsNothing);
+      await slow.up();
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(actions, isEmpty);
       controller.jumpTo(0);
       await tester.pump();
       final gesture = await hold(tester);

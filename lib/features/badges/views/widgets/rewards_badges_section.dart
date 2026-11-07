@@ -1,4 +1,5 @@
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/features/badges/biz/bloc/badges_bloc.dart';
 import 'package:Prism/features/badges/domain/badge_catalog.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -91,54 +92,97 @@ class _BadgeTile extends StatelessWidget {
       ),
       excludeSemantics: true,
       child: Container(
-        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
         ),
+        clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // A locked badge shows its own glyph, muted, with a small lock at the bottom end.
-            Stack(
-              clipBehavior: Clip.none,
-              children: <Widget>[
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: earned ? cs.primary : cs.onSurface.withValues(alpha: 0.06),
-                  ),
-                  child: Icon(info.icon, size: 22, color: earned ? cs.onPrimary : cs.onSurfaceVariant),
-                ),
-                if (!earned)
-                  PositionedDirectional(
-                    end: -2,
-                    bottom: -2,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: cs.surfaceContainerHighest,
-                        border: Border.all(color: cs.surface, width: 1.5),
-                      ),
-                      child: Icon(Icons.lock_rounded, size: 10, color: cs.onSurfaceVariant),
+            // Bundled wallpaper art. Earned: full colour. Locked: grey and dim, plus the lock, so colour is not the
+            // only cue.
+            SizedBox(
+              height: 72,
+              child: Stack(
+                fit: StackFit.expand,
+                children: <Widget>[
+                  ColorFiltered(
+                    colorFilter: earned ? _identity : _grey,
+                    child: Image.asset(
+                      kCoverMosaicAssets[_coverIndex(info.id)],
+                      fit: BoxFit.cover,
+                      excludeFromSemantics: true,
+                      errorBuilder: (_, _, _) => ColoredBox(color: cs.surfaceContainerHighest),
                     ),
                   ),
-              ],
+                  if (!earned) ColoredBox(color: Colors.black.withValues(alpha: 0.5)),
+                  PositionedDirectional(
+                    start: 12,
+                    bottom: 8,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: <Widget>[
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: earned ? 0.92 : 0.7),
+                          ),
+                          child: Icon(info.icon, size: 20, color: earned ? Colors.black87 : Colors.black45),
+                        ),
+                        if (!earned)
+                          PositionedDirectional(
+                            end: -4,
+                            bottom: -4,
+                            child: Container(
+                              width: 18,
+                              height: 18,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: cs.surfaceContainerHighest,
+                                border: Border.all(color: cs.surface, width: 1.5),
+                              ),
+                              child: Icon(Icons.lock_rounded, size: 11, color: cs.onSurfaceVariant),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              info.name(context.l10n),
-              style: PrismTextStyles.rowTitle(context).copyWith(color: earned ? null : cs.onSurfaceVariant),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    info.name(context.l10n),
+                    style: PrismTextStyles.rowTitle(context).copyWith(color: earned ? null : cs.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(info.description(context.l10n), style: PrismTextStyles.caption(context)),
+                ],
+              ),
             ),
-            const SizedBox(height: 2),
-            Text(info.description(context.l10n), style: PrismTextStyles.caption(context)),
           ],
         ),
       ),
     );
   }
 }
+
+int _coverIndex(String id) {
+  final int i = badgeCatalog.indexWhere((BadgeInfo b) => b.id == id);
+  return (i < 0 ? 0 : i) % kCoverMosaicAssets.length;
+}
+
+const ColorFilter _identity = ColorFilter.mode(Colors.transparent, BlendMode.dst);
+const ColorFilter _grey = ColorFilter.matrix(<double>[
+  0.2126, 0.7152, 0.0722, 0, 0, //
+  0.2126, 0.7152, 0.0722, 0, 0,
+  0.2126, 0.7152, 0.0722, 0, 0,
+  0, 0, 0, 1, 0,
+]);

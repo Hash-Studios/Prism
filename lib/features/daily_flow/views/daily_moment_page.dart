@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/daily_chest/views/widgets/chest_odds_sheet.dart';
 import 'package:Prism/features/daily_flow/biz/daily_moment_cubit.dart';
@@ -220,13 +221,23 @@ class _DailyMomentContentState extends State<DailyMomentContent> {
                 PrismTag(label: l10n.dailyMomentBalance(state.balance), icon: Icons.toll_rounded),
               ],
             );
+            final Widget headline = Semantics(
+              header: true,
+              child: Text(title, textAlign: TextAlign.center, style: PrismTextStyles.sheetHeadline(context)),
+            );
             if (widget.sheet) {
+              // No sheet mood: the mosaic carries Glint, so the hero, headline and details read as one group.
               return PrismSheetBody(
-                mood: mood,
-                title: title,
-                centered: true,
                 actions: <Widget>[button],
-                child: details,
+                child: Column(
+                  children: <Widget>[
+                    _MomentHero(mood: mood, seed: title, height: 188),
+                    const SizedBox(height: PrismSpace.md),
+                    headline,
+                    const SizedBox(height: PrismSpace.xs),
+                    details,
+                  ],
+                ),
               );
             }
             return Column(
@@ -267,16 +278,9 @@ class _DailyMomentContentState extends State<DailyMomentContent> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
-                                GlintHalo(mood: mood),
+                                _MomentHero(mood: mood, seed: title, height: 220),
                                 const SizedBox(height: PrismSpace.xl),
-                                Semantics(
-                                  header: true,
-                                  child: Text(
-                                    title,
-                                    textAlign: TextAlign.center,
-                                    style: PrismTextStyles.sheetHeadline(context),
-                                  ),
-                                ),
+                                headline,
                                 const SizedBox(height: PrismSpace.xs),
                                 details,
                                 const SizedBox(height: PrismSpace.xl),
@@ -293,4 +297,23 @@ class _DailyMomentContentState extends State<DailyMomentContent> {
             );
           },
         );
+}
+
+/// Wallpaper covers with Glint on the corner, in the step's mood. Seeded by the title so each step has its own art.
+class _MomentHero extends StatelessWidget {
+  const _MomentHero({required this.mood, required this.seed, required this.height});
+
+  final GlintMood mood;
+  final String seed;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 240,
+    height: height,
+    child: CoverMosaic(
+      seed: seed,
+      badge: Glint(mood: mood, size: 56),
+    ),
+  );
 }

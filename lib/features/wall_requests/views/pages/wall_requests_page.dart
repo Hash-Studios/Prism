@@ -14,6 +14,7 @@ import 'package:Prism/features/wall_requests/views/widgets/wall_request_sheet.da
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -61,6 +62,8 @@ class _WallRequestsViewState extends State<_WallRequestsView> with SingleTickerP
     _tabs = TabController(length: _tabOrder.length, vsync: this, initialIndex: _tabOrder.indexOf(widget.initialTab));
     _tabs.addListener(_onTabChanged);
     _ensureLoaded(widget.initialTab);
+    // Short Top and New lists show filled walls under the rows, so the Filled list loads at once.
+    _ensureLoaded(WallRequestTab.filled);
   }
 
   @override
@@ -152,6 +155,7 @@ class _WallRequestsViewState extends State<_WallRequestsView> with SingleTickerP
                     isAdmin: isAdmin,
                     onVote: (WallRequest request) => _vote(context.read<WallRequestsCubit>(), request, tab),
                     onAsk: () => unawaited(_ask()),
+                    onSeeAllFilled: () => _tabs.animateTo(_tabOrder.indexOf(WallRequestTab.filled)),
                   ),
               ],
             ),
@@ -174,13 +178,70 @@ class _WallRequestsViewState extends State<_WallRequestsView> with SingleTickerP
 bool _listIsShort(WallRequestsTabState state) =>
     state is WallRequestsTabLoaded && state.requests.isNotEmpty && state.requests.length < _shortListRows;
 
+const int _filledTiles = 6;
+
+/// Walls that filled earlier requests. It shows under a short list so the page has pictures on it.
+class _FilledWalls extends StatelessWidget {
+  const _FilledWalls({required this.walls, required this.onSeeAll});
+
+  final List<WallRequest> walls;
+  final VoidCallback onSeeAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        PrismSectionHeader(title: l10n.wallRequestsTabFilled, actionLabel: l10n.moodSeeAll, onAction: onSeeAll),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: PrismSpace.sm,
+          crossAxisSpacing: PrismSpace.sm,
+          childAspectRatio: 3 / 4,
+          children: <Widget>[
+            for (final WallRequest wall in walls)
+              InkWell(
+                onTap: () => context.router.pushPath('/gallery?ids=${wall.filledWallId}&source=request'),
+                child: Semantics(
+                  label: wall.text,
+                  image: true,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: CachedNetworkImage(
+                      imageUrl: wall.filledWallThumb,
+                      fit: BoxFit.cover,
+                      placeholder: (BuildContext context, String _) => ColoredBox(color: cs.surfaceContainerHighest),
+                      errorWidget: (BuildContext context, String _, Object _) =>
+                          ColoredBox(color: cs.surfaceContainerHighest),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 class _TabBody extends StatelessWidget {
-  const _TabBody({required this.tab, required this.isAdmin, required this.onVote, required this.onAsk});
+  const _TabBody({
+    required this.tab,
+    required this.isAdmin,
+    required this.onVote,
+    required this.onAsk,
+    required this.onSeeAllFilled,
+  });
 
   final WallRequestTab tab;
   final bool isAdmin;
   final void Function(WallRequest request) onVote;
   final VoidCallback onAsk;
+  final VoidCallback onSeeAllFilled;
 
   @override
   Widget build(BuildContext context) {
@@ -188,6 +249,15 @@ class _TabBody extends StatelessWidget {
     final WallRequestsCubit cubit = context.read<WallRequestsCubit>();
     final ColorScheme cs = Theme.of(context).colorScheme;
     bool short(List<WallRequest> requests) => requests.length < _shortListRows;
+    final WallRequestsTabState filledState = context.select<WallRequestsCubit, WallRequestsTabState>(
+      (WallRequestsCubit c) => c.state.tab(WallRequestTab.filled),
+    );
+    final List<WallRequest> filled = tab == WallRequestTab.filled || filledState is! WallRequestsTabLoaded
+        ? const <WallRequest>[]
+        : filledState.requests
+              .where((WallRequest r) => r.filledWallId.isNotEmpty && r.filledWallThumb.isNotEmpty)
+              .take(_filledTiles)
+              .toList(growable: false);
     return BlocSelector<WallRequestsCubit, WallRequestsState, WallRequestsTabState>(
       selector: (WallRequestsState state) => state.tab(tab),
       builder: (BuildContext context, WallRequestsTabState state) {
@@ -221,7 +291,7 @@ class _TabBody extends StatelessWidget {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xl),
               // A short list opens with the intro and ends with the Request button, so the page does not look empty.
-              itemCount: requests.length + (short(requests) ? 2 : 0),
+              itemCount: requests.length + (short(requests) ? (filled.isEmpty ? 2 : 3) : 0),
               itemBuilder: (BuildContext context, int index) {
                 final bool isShort = short(requests);
                 if (isShort && index == 0) {
@@ -229,6 +299,9 @@ class _TabBody extends StatelessWidget {
                     padding: const EdgeInsets.only(bottom: PrismSpace.xs),
                     child: Text(l10n.wallRequestsEmptyTopBody, style: PrismTextStyles.caption(context)),
                   );
+                }
+                if (isShort && index == requests.length + 2) {
+                  return _FilledWalls(walls: filled, onSeeAll: onSeeAllFilled);
                 }
                 if (isShort && index == requests.length + 1) {
                   return Padding(

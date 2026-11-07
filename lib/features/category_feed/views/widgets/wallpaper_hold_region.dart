@@ -11,6 +11,10 @@ enum WallpaperQuickAction { favourite, share, showLess, resetOriginal, saveToFol
 
 enum _HoldPhase { idle, entering, open, exiting }
 
+/// How long a finger rests on a tile before the menu opens. Shorter than [kLongPressTimeout] so the menu feels quick;
+/// a scroll still wins once the finger moves past [kTouchSlop], and a tap still wins on a lift before this.
+const Duration _holdTimeout = Duration(milliseconds: 300);
+
 /// Owns the hold without navigation so the source recognizer keeps its pointer.
 class WallpaperHoldRegion extends StatefulWidget {
   const WallpaperHoldRegion({
@@ -62,8 +66,8 @@ class WallpaperHoldRegion extends StatefulWidget {
 
 class _WallpaperHoldRegionState extends State<WallpaperHoldRegion>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
-  /// Fills over the long-press timeout from touch-down, so the hold shows progress before the menu opens.
-  late final AnimationController _ring = AnimationController(vsync: this, duration: kLongPressTimeout);
+  /// Fills over [_holdTimeout] from touch-down, so the hold shows progress and the menu opens as it closes.
+  late final AnimationController _ring = AnimationController(vsync: this, duration: _holdTimeout);
   Offset _touch = Offset.zero;
   Offset? _ringDown;
   OverlayEntry? _entry;
@@ -534,28 +538,36 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion>
         final RenderBox box = context.findRenderObject()! as RenderBox;
         _open(box.localToGlobal(box.size.center(Offset.zero)));
       },
-      child: GestureDetector(
+      child: RawGestureDetector(
         excludeFromSemantics: true,
         behavior: HitTestBehavior.opaque,
-        onLongPressDown: (details) {
-          if (_entry != null) return;
-          _ringDown = details.globalPosition;
-          setState(() => _touch = details.localPosition);
-          _ring.forward(from: 0);
+        gestures: <Type, GestureRecognizerFactory>{
+          LongPressGestureRecognizer: GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+            () => LongPressGestureRecognizer(duration: _holdTimeout, debugOwner: this),
+            (recognizer) => recognizer
+              ..onLongPressDown = (details) {
+                if (_entry != null) return;
+                _ringDown = details.globalPosition;
+                setState(() => _touch = details.localPosition);
+                _ring.forward(from: 0);
+              }
+              ..onLongPressStart = ((details) => _open(details.globalPosition))
+              ..onLongPressMoveUpdate = (details) {
+                final RenderBox overlayBox =
+                    Overlay.of(context, rootOverlay: true).context.findRenderObject()! as RenderBox;
+                _move(overlayBox.globalToLocal(details.globalPosition));
+              }
+              ..onLongPressEnd = (details) {
+                if (_entry == null) return;
+                final RenderBox overlayBox =
+                    Overlay.of(context, rootOverlay: true).context.findRenderObject()! as RenderBox;
+                _move(overlayBox.globalToLocal(details.globalPosition));
+                _close(action: _hovered);
+              }
+              // Before the menu opens there is nothing to close. After, only a cancelled pointer gets here.
+              ..onLongPressCancel = _close,
+          ),
         },
-        onLongPressStart: (details) => _open(details.globalPosition),
-        onLongPressMoveUpdate: (details) {
-          final RenderBox overlayBox = Overlay.of(context, rootOverlay: true).context.findRenderObject()! as RenderBox;
-          _move(overlayBox.globalToLocal(details.globalPosition));
-        },
-        onLongPressEnd: (details) {
-          if (_entry == null) return;
-          final RenderBox overlayBox = Overlay.of(context, rootOverlay: true).context.findRenderObject()! as RenderBox;
-          _move(overlayBox.globalToLocal(details.globalPosition));
-          _close(action: _hovered);
-        },
-        // Before the menu opens there is nothing to close. After, only a cancelled pointer gets here.
-        onLongPressCancel: _close,
         child: CustomPaint(
           key: const ValueKey<String>('wallpaper-hold-ring'),
           foregroundPainter: _buildRingPainter(context),
@@ -566,7 +578,7 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion>
   );
 }
 
-/// A light disc under the finger with a 2 pt ring that sweeps once over the long-press timeout.
+/// A light disc under the finger with a 2 pt ring that sweeps once over [_holdTimeout].
 class _HoldRingPainter extends CustomPainter {
   _HoldRingPainter({
     required this.progress,
@@ -586,7 +598,7 @@ class _HoldRingPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final double t = progress.value;
     if (t <= 0) return;
-    // Fades in over the first 100 ms, so a quick tap or a scroll start barely shows it.
+    // Fades in over the first 60 ms, so a quick tap or a scroll start barely shows it.
     final double alpha = (t / 0.2).clamp(0.0, 1.0);
     final double radius = grow ? 16 + 8 * PrismCurves.enter.transform(t) : 24;
     canvas.drawCircle(centre, radius, Paint()..color = wash.withValues(alpha: wash.a * alpha));

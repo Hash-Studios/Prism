@@ -1006,11 +1006,15 @@ class _ProfileChildState extends State<_ProfileChild> {
                 ),
               ),
             ),
+            // Content first: folders and wallpapers (uploads, or favourites when there are none), then the cards.
+            SliverToBoxAdapter(
+              child: ProfileFoldersRow(ownerId: _profile.id, ownProfile: ownProfile),
+            ),
+            UserProfileLoader(userId: _profile.id, ownProfile: ownProfile),
             if (ownProfile)
               SliverToBoxAdapter(
                 child: Padding(
-                  // Tight gaps around the cards, so the gallery starts higher.
-                  padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xxs, PrismSpace.page, PrismSpace.xxs),
+                  padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.lg, PrismSpace.page, PrismSpace.xxs),
                   child: RankProgressCard(onOpenShop: () => context.router.root.push(const ShopRoute())),
                 ),
               ),
@@ -1026,10 +1030,6 @@ class _ProfileChildState extends State<_ProfileChild> {
                   ),
                 ),
               ),
-            SliverToBoxAdapter(
-              child: ProfileFoldersRow(ownerId: _profile.id, ownProfile: ownProfile),
-            ),
-            UserProfileLoader(userId: _profile.id, ownProfile: ownProfile),
             SliverToBoxAdapter(child: SizedBox(height: PrismSpace.xxl + MediaQuery.paddingOf(context).bottom)),
           ],
         ),

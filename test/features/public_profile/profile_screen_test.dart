@@ -207,15 +207,18 @@ void main() {
     // The redesign body.
     expect(find.text('Complete your profile'), findsOneWidget);
     expect(find.text('No wallpapers yet'), findsOneWidget);
-    expect(find.text('Upload your first wallpaper to start your gallery.'), findsOneWidget);
+    expect(find.widgetWithText(PrismButton, 'Upload wallpaper'), findsOneWidget);
+    expect(find.text('Upload your first wallpaper to start your gallery.'), findsNothing);
     expect(repository.watchedIdentifiers, <String>['me']);
   });
 
-  testWidgets('own profile: the XP card follows the header with no empty gap', (tester) async {
+  testWidgets('own profile: the gallery follows the header, and the XP card comes after it', (tester) async {
     await pumpScreen(tester);
 
     final double statsBottom = tester.getRect(find.textContaining('Followers', findRichText: true)).bottom;
-    expect(tester.getRect(find.byType(RankProgressCard)).top - statsBottom, lessThan(48));
+    final Rect prompt = tester.getRect(find.text('No wallpapers yet'));
+    expect(prompt.top - statsBottom, lessThan(48));
+    expect(tester.getRect(find.byType(RankProgressCard)).top, greaterThan(prompt.bottom));
   });
 
   testWidgets('own profile: tight gaps around the cards, so the gallery starts higher', (tester) async {
@@ -226,7 +229,10 @@ void main() {
     expect(completeness.top - rank.bottom, lessThanOrEqualTo(PrismSpace.xs));
     // The folders row is empty (zero height) while it loads, so the finder must look offstage too.
     final double foldersBottom = tester.getRect(find.byType(ProfileFoldersRow, skipOffstage: false)).bottom;
-    expect(tester.getRect(find.byType(GlintState)).top - foldersBottom, lessThanOrEqualTo(PrismSpace.md));
+    expect(
+      tester.getRect(find.widgetWithText(PrismButton, 'Upload wallpaper')).top - foldersBottom,
+      lessThanOrEqualTo(PrismSpace.md),
+    );
   });
 
   testWidgets('scrolled profile pins the header: back stays and the name shows as the title', (tester) async {
@@ -234,10 +240,10 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const ProfileScreen(profileIdentifier: 'u2'),
+        home: ProfileScreen(profileIdentifier: 'u2'),
         builder: favouriteTestBuilder,
       ),
     );
@@ -261,10 +267,10 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const ProfileScreen(),
+        home: ProfileScreen(),
         builder: favouriteTestBuilder,
       ),
     );
@@ -453,6 +459,7 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           routerConfig: router.config(),
+          builder: favouriteTestBuilder,
         ),
       );
       await router.navigatePath('/');
@@ -550,6 +557,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: ProfileScreen(),
+        builder: favouriteTestBuilder,
       ),
     );
     await tester.pump(const Duration(milliseconds: 400));
@@ -586,6 +594,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: ProfileScreen(),
+        builder: favouriteTestBuilder,
       ),
     );
     await tester.pump(const Duration(milliseconds: 400));
@@ -639,6 +648,7 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: ProfileScreen(profileIdentifier: 'u2'),
+        builder: favouriteTestBuilder,
       ),
     );
     await tester.pump(const Duration(milliseconds: 400));

@@ -175,6 +175,16 @@ void main() {
     }
   });
 
+  testWidgets('a creator with fewer walls than slots shows only the walls it has', (tester) async {
+    repo.pages[(null, null)] = creatorPage(<DirectoryCreator>[directoryCreator('a', wallCount: 2)]);
+    await _pumpSection(tester, repo: repo, bloc: publicProfileBlocWith());
+
+    final Finder strip = find.descendant(of: _cardFor('Creator a'), matching: find.byType(CreatorWallStrip));
+    // Two walls, two tiles; the other two slots stay empty so the card keeps the shared row height.
+    expect(find.descendant(of: strip, matching: find.byType(PrismWallTile)), findsNWidgets(2));
+    expect(find.descendant(of: strip, matching: find.byType(AspectRatio)), findsNWidgets(4));
+  });
+
   testWidgets('shows an error with Try again, and Try again fetches once more', (tester) async {
     repo.fetchError = StateError('network down');
     await _pumpSection(tester, repo: repo, bloc: publicProfileBlocWith());
