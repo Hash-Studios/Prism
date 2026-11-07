@@ -78,6 +78,7 @@ The callable runs the full job. The app does not spend coins or ask for a refund
 3. It decodes the photo with `sharp`, turns it upright, and writes a new JPEG. The new JPEG has no EXIF, GPS or other metadata. The photo must be 256 to 4096 px on each side and at most 6 MB.
 4. It makes the plan again from the photo size. When the plan is not the requested mode, it refuses the job (`plan_mismatch`).
 5. In one transaction it:
+   - Refuses new or replayed claims after the account-deletion barrier closes.
    - Replays the job when `photoJobs/pj_{uid}_{requestId}` exists. A finished job returns its stored result. A running job returns `aborted`. A running job older than 10 minutes is ended as `timeout` and refunded.
    - Checks the caps (10 for each user each day, 400 for all users each day).
    - Checks the balance.
@@ -88,9 +89,11 @@ The callable runs the full job. The app does not spend coins or ask for a refund
 9. It checks the result with SafeSearch.
 10. It stores the result in the public R2 bucket at the random key recorded before the provider call (`photo-walls/{32 hex}.jpg`), the same way AI results are stored: a link that is hard to guess, shown only to its owner. The job gets state `succeeded` and the link, and its cleanup marker is cleared.
 
-Every failure after step 5 calls `failPhotoJob`. It marks the job `failed` and returns the coins in the same transaction, with the credit `coinTransactions/ctx_photoWallpaperRefund_{uid}_{requestId}`. Only the claim that started the job can end it, so a refund happens one time only.
+Every failure after step 5 calls `failPhotoJob`. It marks the job `failed` and returns the coins in the same transaction, with the credit `coinTransactions/ctx_photoWallpaperRefund_{uid}_{requestId}`. Only the claim that started the job can end it, so a refund happens one time only. Once the account-deletion barrier closes, failure handling does not write refunds or change the account's coins.
 
-The scheduled function `sweepStalePhotoJobs` runs every 15 minutes. It pages through all running jobs and refunds jobs older than 10 minutes, for example when the instance stopped. It also deletes failed jobs' recorded result keys and retries pending fal payload deletions after jobs end. Failed deletions stay pending for later sweeps. The callable has a 180-second hard timeout, below the 10-minute stale cutoff. A late worker that loses to the sweeper removes its own result too. An ambiguous success commit is read back before deciding to delete, so the successful image is kept.
+The scheduled function `sweepStalePhotoJobs` runs every 15 minutes. It pages through all running jobs and refunds jobs older than 10 minutes, for example when the instance stopped. It also deletes failed jobs' recorded result keys and retries pending fal payload deletions after jobs end. Failed deletions stay pending for later sweeps.
+
+The callable has a 180-second request timeout; this does not prove its handler stopped. Before calling fal and before storage, the worker checks its live claim and the deletion barrier, then refuses to start either operation after its 180-second deadline. R2 writes have a 15-second timeout. Account deletion refuses to finish while a job is running and not yet stale; the caller retries after completion or the 10-minute stale cutoff. A late worker that loses to the sweeper removes its own result too. An ambiguous success commit is read back before deciding to delete, so the successful image is kept.
 
 Refunds run before cleanup. Each cleanup queue processes at most 10 records per sweep and stops starting new attempts after its own 20-second budget. The document-ID cursor is saved after every attempt in `photoJobBudget/cleanup`, even when deletion fails, and resets at the queue's end. Slow failures at the front therefore cannot starve later records or the other queue. The scheduled function has a 180-second timeout to allow active attempts to finish.
 
@@ -121,7 +124,7 @@ The app reads exact source dimensions from decoder metadata; its smaller preview
 
 - The photo goes to fal.ai for the job and to Google Cloud Vision for the check. The server keeps the input photo only in memory. The app reads the gallery picker's temporary copy, then deletes that copy; it does not delete the user's original gallery photo.
 - Prism asks fal.ai not to store the request (`X-Fal-Store-IO: 0`), requests the result inline (`sync_mode`), and attempts to delete the request data at fal.ai after the job. A provider outage or missing key permissions can prevent deletion.
-- Account deletion (`deleteAccount`) deletes the stored results, the job records and the daily count.
+- Account deletion (`deleteAccount`) closes the claim barrier and refuses to finish while a job is running and not stale. The caller retries after completion or the 10-minute stale cutoff. It deletes the stored results, the job records and the daily count before anonymizing the profile and deleting Auth. A failed R2 or pending fal-payload cleanup keeps the job record and stops account deletion for a retry.
 - Prism keeps the result, the job record (mode, target, model, cost, state, result key, provider request ID and cleanup markers) and the daily count. Both result transfer paths reject images larger than 30 MB.
 - The privacy policy (`web/app/privacy/page.tsx`) lists fal.ai and this use.
 

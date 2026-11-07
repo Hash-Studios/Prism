@@ -12,6 +12,7 @@ import {
   isPhotoSafe,
   normalizePhoto,
   PHOTO_JOBS,
+  STALE_RUNNING_MS,
   photoDeps,
   PhotoJobResult,
   planPhotoJob,
@@ -422,13 +423,13 @@ test("replaying a failed requestId returns the same failure and refunds once", a
 
 test("a job that is still running is not run twice", async (t) => {
   const store = installFakeDb(t, {
-    "usersv2/u1": {coins: 125},
+    "usersv2/u1": {coins: 200},
     [JOB]: runningJob(admin.firestore.Timestamp.now()),
   });
   const deps = mockDeps(t);
   await assert.rejects(async () => run(await extendData()), {code: "aborted"});
   assert.equal(deps.fal().length, 0);
-  assert.equal(store.get("usersv2/u1")?.coins, 125);
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
 });
 
 test("concurrent replays charge once while the original job is running", async (t) => {
@@ -469,6 +470,20 @@ test("racing failures and a stale claim cannot refund the same job twice", async
   assert.equal(store.get("usersv2/u1")?.coins, 200);
   assert.equal(store.get(REFUND)?.delta, 75);
   assert.equal(coinTxCount(store), 1);
+});
+
+test("a failure after the deletion barrier does not refund or create a refund transaction", async (t) => {
+  const startedAt = admin.firestore.Timestamp.now();
+  const store = installFakeDb(t, {
+    "usersv2/u1": {coins: 0, deleted: true},
+    "creatorDeletionState/u1": {closed: true},
+    [JOB]: runningJob(startedAt),
+  });
+  const failed = await failPhotoJob(JOB_ID, startedAt.toMillis(), "timeout");
+  assert.equal(failed?.state, "failed");
+  assert.equal(failed?.refunded, false);
+  assert.equal(store.get("usersv2/u1")?.coins, 0);
+  assert.equal(store.has(REFUND), false);
 });
 
 test("finish acknowledgement and follow-up read failures preserve the committed outcome", async (t) => {
@@ -642,6 +657,32 @@ test("another user with the same requestId gets a separate job and its own charg
   assert.equal(store.get("coinTransactions/ctx_photoWallpaper_u2_req-00000001")?.delta, -75);
 });
 
+test("a closed account deletion barrier refuses a new photo job before charging", async (t) => {
+  const store = installFakeDb(t, {
+    "usersv2/u1": {coins: 200},
+    "creatorDeletionState/u1": {closed: true},
+  });
+  mockDeps(t);
+  await assert.rejects(async () => run(await extendData()), {code: "failed-precondition"});
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(store.has(JOB), false);
+  assert.equal(store.has("photoJobDaily/u1"), false);
+  assert.equal(coinTxCount(store), 0);
+});
+
+test("a closed account deletion barrier refuses replay of a stored photo result", async (t) => {
+  const store = installFakeDb(t, {
+    "usersv2/u1": {coins: 200},
+    "creatorDeletionState/u1": {closed: true},
+    [JOB]: {...runningJob(admin.firestore.Timestamp.now()), state: "succeeded", imageUrl: OUT_URL},
+  });
+  const deps = mockDeps(t);
+  await assert.rejects(async () => run(await extendData()), {code: "failed-precondition"});
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(coinTxCount(store), 0);
+  assert.equal(deps.fal().length, 0);
+});
+
 test("normalizePhoto strips EXIF and GPS metadata from the JPEG it returns", async () => {
   const withExif = await sharp({create: {width: 300, height: 300, channels: 3, background: BLUE}})
     .withExif({IFD0: {Copyright: "secret-owner"}, IFD3: {GPSLatitudeRef: "N"}}).jpeg().toBuffer();
@@ -694,4 +735,234 @@ test("account deletion removes the user's stored results and job records, and no
   assert.equal(store.get("photoJobs/pj_u1_a"), undefined);
   assert.equal(store.get("photoJobs/pj_u1_b"), undefined);
   assert.ok(store.get("photoJobs/pj_u2_a"));
+});
+
+test("account deletion waits for a fresh photo job, then cleans it after the stale-job horizon", async (t) => {
+  const startedAt = admin.firestore.Timestamp.now();
+  const store = installFakeDb(t, {
+    [JOB]: {...runningJob(startedAt), resultKey: "photo-walls/result.jpg", cleanupPending: true},
+  });
+  const removed: string[] = [];
+  const deps = {...photoDeps, remove: async (key: string) => { removed.push(key); }};
+  await assert.rejects(() => removePhotoJobsForAccount("u1", deps), {code: "internal"});
+  assert.equal(store.get(JOB)?.state, "running");
+  assert.deepEqual(removed, []);
+
+  t.mock.method(Date, "now", () => startedAt.toMillis() + STALE_RUNNING_MS + 1);
+  await removePhotoJobsForAccount("u1", deps);
+  assert.deepEqual(removed, ["photo-walls/result.jpg"]);
+  assert.equal(store.get(JOB), undefined);
+});
+
+test("account deletion keeps the job when fal payload cleanup is still pending", async (t) => {
+  const store = installFakeDb(t, {
+    [JOB]: {...runningJob(admin.firestore.Timestamp.fromMillis(Date.now() - 11 * MINUTE)), state: "failed",
+      falRequestId: "req-abcdef12", falCleanupPending: true},
+  });
+  mockDeps(t, {deleteStatus: 500});
+  await assert.rejects(() => removePhotoJobsForAccount("u1"), {code: "internal"});
+  assert.equal(store.get(JOB)?.falCleanupPending, true);
+});
+
+test("account deletion tolerates a concurrent deletion during successful fal cleanup", async (t) => {
+  const store = installFakeDb(t, {
+    [JOB]: {...runningJob(admin.firestore.Timestamp.fromMillis(Date.now() - 11 * MINUTE)), state: "failed",
+      falRequestId: "req-abcdef12", falCleanupPending: true},
+  });
+  mockDeps(t);
+  t.mock.method(photoDeps, "fetch", async (url: string) => {
+    assert.equal(url, FAL_DELETE);
+    store.delete(JOB);
+    return Response.json({cdn_delete_results: []});
+  });
+  await assert.doesNotReject(() => removePhotoJobsForAccount("u1"));
+  assert.equal(store.get(JOB), undefined);
+});
+
+test("account deletion retains a result record after storage removal fails, then retries it", async (t) => {
+  const store = installFakeDb(t, {
+    [JOB]: {...runningJob(admin.firestore.Timestamp.now()), state: "succeeded", resultKey: "photo-walls/result.jpg"},
+  });
+  await assert.rejects(() => removePhotoJobsForAccount("u1", {...photoDeps, remove: async () => {
+    throw new Error("storage unavailable");
+  }}));
+  assert.ok(store.get(JOB));
+
+  const removed: string[] = [];
+  await removePhotoJobsForAccount("u1", {...photoDeps, remove: async (key: string) => { removed.push(key); }});
+  assert.deepEqual(removed, ["photo-walls/result.jpg"]);
+  assert.equal(store.get(JOB), undefined);
+});
+
+test("a photo paused in output SafeSearch cannot store after deletion begins", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  const deps = mockDeps(t);
+  let releaseOutput!: () => void;
+  let markPaused!: () => void;
+  const outputGate = new Promise<void>((resolve) => { releaseOutput = resolve; });
+  const outputPaused = new Promise<void>((resolve) => { markPaused = resolve; });
+  let checks = 0;
+  t.mock.method(photoDeps, "safeSearch", async () => {
+    if (++checks === 2) {
+      markPaused();
+      await outputGate;
+    }
+    return SAFE;
+  });
+  const pending = run(await extendData()) as Promise<Succeeded | Failed>;
+  await outputPaused;
+  const job = store.get(JOB) as {startedAt: admin.firestore.Timestamp};
+  store.set("creatorDeletionState/u1", {closed: true});
+  t.mock.method(Date, "now", () => job.startedAt.toMillis() + 181_000);
+  await assert.rejects(() => removePhotoJobsForAccount("u1"), {code: "internal"});
+  assert.equal(store.get(JOB)?.state, "running");
+
+  releaseOutput();
+  const result = await pending;
+  assert.equal(result.state, "failed");
+  assert.equal(store.get(JOB)?.state, "failed");
+  assert.equal(store.get("usersv2/u1")?.coins, 125);
+  assert.equal(store.has(REFUND), false);
+  assert.equal(deps.stored.length, 0);
+});
+
+test("an output SafeSearch result arriving after the work deadline cannot start storage", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  const deps = mockDeps(t);
+  let releaseOutput!: () => void;
+  let markPaused!: () => void;
+  const outputGate = new Promise<void>((resolve) => { releaseOutput = resolve; });
+  const outputPaused = new Promise<void>((resolve) => { markPaused = resolve; });
+  let checks = 0;
+  t.mock.method(photoDeps, "safeSearch", async () => {
+    if (++checks === 2) {
+      markPaused();
+      await outputGate;
+    }
+    return SAFE;
+  });
+  const pending = run(await extendData()) as Promise<Succeeded | Failed>;
+  await outputPaused;
+  const job = store.get(JOB) as {startedAt: admin.firestore.Timestamp};
+  t.mock.method(Date, "now", () => job.startedAt.toMillis() + 181_000);
+  releaseOutput();
+  const result = await pending;
+  assert.equal(result.state, "failed");
+  assert.equal(result.reason, "timeout");
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(store.get(REFUND)?.delta, 75);
+  assert.equal(deps.stored.length, 0);
+});
+
+test("a stale deletion retry leaves no row for a paused worker to recreate", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  const deps = mockDeps(t);
+  let releaseOutput!: () => void;
+  let markPaused!: () => void;
+  const outputGate = new Promise<void>((resolve) => { releaseOutput = resolve; });
+  const outputPaused = new Promise<void>((resolve) => { markPaused = resolve; });
+  let checks = 0;
+  t.mock.method(photoDeps, "safeSearch", async () => {
+    if (++checks === 2) {
+      markPaused();
+      await outputGate;
+    }
+    return SAFE;
+  });
+  const pending = run(await extendData()) as Promise<Succeeded | Failed>;
+  await outputPaused;
+  const job = store.get(JOB) as {startedAt: admin.firestore.Timestamp};
+  store.set("creatorDeletionState/u1", {closed: true});
+  t.mock.method(Date, "now", () => job.startedAt.toMillis() + STALE_RUNNING_MS + 1);
+  await removePhotoJobsForAccount("u1");
+  assert.equal(store.get(JOB), undefined);
+
+  releaseOutput();
+  const result = await pending;
+  assert.equal(result.state, "failed");
+  assert.equal(store.get(JOB), undefined);
+  assert.equal(store.get("usersv2/u1")?.coins, 125);
+  assert.equal(store.has(REFUND), false);
+  assert.equal(deps.stored.length, 0);
+});
+
+test("a photo paused in input SafeSearch cannot call fal after stale account cleanup", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  const deps = mockDeps(t);
+  let releaseInput!: () => void;
+  let markPaused!: () => void;
+  const inputGate = new Promise<void>((resolve) => { releaseInput = resolve; });
+  const inputPaused = new Promise<void>((resolve) => { markPaused = resolve; });
+  t.mock.method(photoDeps, "safeSearch", async () => {
+    markPaused();
+    await inputGate;
+    return SAFE;
+  });
+  const pending = run(await extendData()) as Promise<Succeeded | Failed>;
+  await inputPaused;
+  const job = store.get(JOB) as {startedAt: admin.firestore.Timestamp};
+  store.set("creatorDeletionState/u1", {closed: true});
+  t.mock.method(Date, "now", () => job.startedAt.toMillis() + STALE_RUNNING_MS + 1);
+  await removePhotoJobsForAccount("u1");
+  assert.equal(store.get(JOB), undefined);
+
+  releaseInput();
+  const result = await pending;
+  assert.equal(result.state, "failed");
+  assert.equal(deps.fal().length, 0);
+  assert.equal(deps.stored.length, 0);
+  assert.equal(store.get(JOB), undefined);
+  assert.equal(store.get("usersv2/u1")?.coins, 125);
+  assert.equal(store.has(REFUND), false);
+});
+
+test("deletion during an admitted storage write waits for the worker and can retry cleanup", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  mockDeps(t);
+  let releaseStore!: () => void;
+  let markStoreStarted!: (key: string) => void;
+  let releaseOutput!: () => void;
+  let markOutputPaused!: () => void;
+  const storeGate = new Promise<void>((resolve) => { releaseStore = resolve; });
+  const storeStarted = new Promise<string>((resolve) => { markStoreStarted = resolve; });
+  const outputGate = new Promise<void>((resolve) => { releaseOutput = resolve; });
+  const outputPaused = new Promise<void>((resolve) => { markOutputPaused = resolve; });
+  let checks = 0;
+  t.mock.method(photoDeps, "safeSearch", async () => {
+    if (++checks === 2) {
+      markOutputPaused();
+      await outputGate;
+    }
+    return SAFE;
+  });
+  t.mock.method(photoDeps, "store", async (_jpeg: Buffer, key: string) => {
+    markStoreStarted(key);
+    await storeGate;
+    return {url: OUT_URL, key};
+  });
+  let removals = 0;
+  t.mock.method(photoDeps, "remove", async () => {
+    if (++removals === 1) throw new Error("storage unavailable");
+  });
+  const pending = run(await extendData()) as Promise<Succeeded | Failed>;
+  await outputPaused;
+  const job = store.get(JOB) as {startedAt: admin.firestore.Timestamp};
+  t.mock.method(Date, "now", () => job.startedAt.toMillis() + 179_000);
+  releaseOutput();
+  const key = await storeStarted;
+  store.set("creatorDeletionState/u1", {closed: true});
+  t.mock.method(Date, "now", () => job.startedAt.toMillis() + 200_000);
+  await assert.rejects(() => removePhotoJobsForAccount("u1"), {code: "internal"});
+  assert.equal(store.get(JOB)?.state, "running");
+
+  releaseStore();
+  const result = await pending;
+  assert.equal(result.state, "failed");
+  assert.equal(store.get(JOB)?.state, "failed");
+  assert.equal(store.get("usersv2/u1")?.coins, 125);
+  assert.equal(store.has(REFUND), false);
+  assert.equal(store.get(JOB)?.resultKey, key);
+  await removePhotoJobsForAccount("u1");
+  assert.equal(store.get(JOB), undefined);
+  assert.ok(key.startsWith("photo-walls/"));
 });

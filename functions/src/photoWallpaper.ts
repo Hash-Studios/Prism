@@ -65,6 +65,7 @@ const INPUT_MAX_EDGE = 4096;
 const MAX_UPSCALE_FACTOR = 4;
 const MIN_PLACEMENT_SHARE = 0.1;
 const FAL_TIMEOUT_MS = 100_000;
+const PHOTO_CALL_TIMEOUT_MS = 180_000;
 const MAX_RESULT_BYTES = 30 * 1024 * 1024;
 const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
 const DATA_URI = /^data:image\/[\w.+-]+;base64,([A-Za-z0-9+/]+={0,2})$/;
@@ -322,9 +323,11 @@ export async function failPhotoJob(jobId: string, startedAtMs: number, reason: P
     if (!job || job.state !== "running" || job.startedAt.toMillis() !== startedAtMs) return job ?? null;
     const userRef = db.collection("usersv2").doc(job.userId);
     const refundRef = db.collection("coinTransactions").doc(`ctx_photoWallpaperRefund_${job.userId}_${job.requestId}`);
-    const [user, refund] = await tx.getAll(userRef, refundRef);
-    const failed: PhotoJob = {...job, state: "failed", reason, refunded: refund.exists || user.exists};
-    if (!refund.exists && user.exists) {
+    const deletionRef = db.collection("creatorDeletionState").doc(job.userId);
+    const [user, refund, deletion] = await tx.getAll(userRef, refundRef, deletionRef);
+    const mayRefund = deletion.data()?.closed !== true && user.data()?.deleted !== true;
+    const failed: PhotoJob = {...job, state: "failed", reason, refunded: mayRefund && (refund.exists || user.exists)};
+    if (mayRefund && !refund.exists && user.exists) {
       const balance = Math.trunc(Number(user.data()?.coins) || 0);
       tx.update(userRef, {coins: balance + job.cost});
       tx.set(refundRef, coinTransactionDoc({
@@ -358,8 +361,12 @@ async function claimJob(uid: string, requestId: string, mode: PhotoJobMode, targ
     const userRef = db.collection("usersv2").doc(uid);
     const dailyRef = db.collection(PHOTO_JOB_DAILY).doc(uid);
     const budgetRef = db.collection(PHOTO_JOB_BUDGET).doc(day);
+    const deletionRef = db.collection("creatorDeletionState").doc(uid);
     const chargeRef = db.collection("coinTransactions").doc(`ctx_photoWallpaper_${uid}_${requestId}`);
-    const [jobSnap, user, daily, budget] = await tx.getAll(jobRef, userRef, dailyRef, budgetRef);
+    const [jobSnap, user, daily, budget, deletion] = await tx.getAll(jobRef, userRef, dailyRef, budgetRef, deletionRef);
+    if (deletion.data()?.closed === true || user.data()?.deleted === true) {
+      throw new HttpsError("failed-precondition", "Account deletion is in progress.");
+    }
     if (jobSnap.exists) {
       const job = jobSnap.data() as PhotoJob;
       if (job.userId !== uid) throw new HttpsError("permission-denied", "This job belongs to another account.");
@@ -398,11 +405,20 @@ async function claimJob(uid: string, requestId: string, mode: PhotoJobMode, targ
   });
 }
 
-/** Runs a claimed job. Every failure path ends in `failPhotoJob`, which returns the coins. */
 export async function runPhotoJob(jobId: string, job: PhotoJob, jpeg: Buffer, photo: Size, placement: Placement | null,
   isPro: boolean, deps: PhotoDeps = photoDeps): Promise<PhotoJobResult> {
   const startedAtMs = job.startedAt.toMillis();
   const size = {width: job.width, height: job.height};
+  const jobRef = db.collection(PHOTO_JOBS).doc(jobId);
+  const withActiveJob = async <T>(start: () => Promise<T>): Promise<T | null> => {
+    const [currentSnap, deletion] = await Promise.all([
+      jobRef.get(), db.collection("creatorDeletionState").doc(job.userId).get(),
+    ]);
+    const current = currentSnap.data() as PhotoJob | undefined;
+    if (!current || current.state !== "running" || current.startedAt.toMillis() !== startedAtMs ||
+      deletion.data()?.closed === true || Date.now() - startedAtMs >= PHOTO_CALL_TIMEOUT_MS) return null;
+    return start();
+  };
   const fail = async (reason: PhotoJobFailure): Promise<PhotoJobResult> => {
     try {
       const failed = await failPhotoJob(jobId, startedAtMs, reason);
@@ -422,7 +438,9 @@ export async function runPhotoJob(jobId: string, job: PhotoJob, jpeg: Buffer, ph
   }
   let output: Buffer;
   try {
-    output = await finishImage(await runFal(jobId, job.mode, jpeg, photo, size, placement, deps), size, !isPro);
+    const generated = await withActiveJob(() => runFal(jobId, job.mode, jpeg, photo, size, placement, deps));
+    if (!generated) return fail("timeout");
+    output = await finishImage(generated, size, !isPro);
   } catch (error) {
     logger.warn("photoWallpaper: model run failed.", {jobId, timeout: (error as Error)?.name === "TimeoutError"});
     return fail((error as Error)?.name === "TimeoutError" ? "timeout" : "provider_error");
@@ -434,18 +452,22 @@ export async function runPhotoJob(jobId: string, job: PhotoJob, jpeg: Buffer, ph
     return fail("provider_error");
   }
   let stored: {url: string; key: string};
-  if (!job.resultKey) return fail("storage_error");
+  const resultKey = job.resultKey;
+  if (!resultKey) return fail("storage_error");
   try {
-    stored = await deps.store(output, job.resultKey);
+    const storedResult = await withActiveJob(() => deps.store(output, resultKey));
+    if (!storedResult) return fail("timeout");
+    stored = storedResult;
   } catch {
-    logger.warn("photoWallpaper: store failed.", {jobId});
+    logger.warn("photoWallpaper: storage stage failed.", {jobId});
     return fail("storage_error");
   }
-  const jobRef = db.collection(PHOTO_JOBS).doc(jobId);
   let done: PhotoJob | null = null;
   try {
     done = await db.runTransaction(async (tx) => {
-      const current = (await tx.get(jobRef)).data() as PhotoJob | undefined;
+      const [currentSnap, deletion] = await tx.getAll(jobRef, db.collection("creatorDeletionState").doc(job.userId));
+      const current = currentSnap.data() as PhotoJob | undefined;
+      if (deletion.data()?.closed === true) return null;
       if (!current || current.state !== "running" || current.startedAt.toMillis() !== startedAtMs) return null;
       const update = {state: "succeeded" as const, imageUrl: stored.url, watermarked: !isPro,
         finishedAt: admin.firestore.Timestamp.now(), cleanupPending: false};
@@ -479,8 +501,9 @@ export async function runPhotoJob(jobId: string, job: PhotoJob, jpeg: Buffer, ph
 
 /**
  * Photo to wallpaper. Charges the coins, runs Extend or Upscale on the photo, checks the photo and the result with
- * SafeSearch, and stores the result. Any failure after the charge returns the coins. The same requestId replays the
- * stored outcome and never charges twice. The photo is held only in memory and sent to fal inline.
+ * SafeSearch, and stores the result. Most failures after the charge return the coins. The same requestId replays the
+ * stored outcome while the account is active and never charges twice. The photo is held only in memory and sent to
+ * fal inline. Account deletion closes the UID barrier; jobs that fail after that point do not refund.
  */
 export const createPhotoWallpaper = onCall({
   region: CALLABLE_REGIONS,
@@ -570,8 +593,25 @@ export const sweepStalePhotoJobs = onSchedule({
 export async function removePhotoJobsForAccount(uid: string, deps: PhotoDeps = photoDeps): Promise<void> {
   const jobs = await db.collection(PHOTO_JOBS).where("userId", "==", uid).get();
   for (const doc of jobs.docs) {
-    const key = (doc.data() as PhotoJob).resultKey;
+    let job = doc.data() as PhotoJob;
+    if (job.state === "running") {
+      if (Date.now() - job.startedAt.toMillis() < STALE_RUNNING_MS) {
+        throw new HttpsError("internal", "A photo job is still running. Retry account deletion.");
+      }
+      job = (await failPhotoJob(doc.id, job.startedAt.toMillis(), "timeout")) ?? job;
+      if (job.state === "running") throw new HttpsError("internal", "Could not stop a photo job. Retry account deletion.");
+    }
+    const key = job.resultKey;
     if (key) await deps.remove(key);
+    if (job.falCleanupPending && job.falRequestId) {
+      await cleanupFalPayload(doc.id, job.falRequestId, deps);
+      const refreshedJob = (await doc.ref.get()).data() as PhotoJob | undefined;
+      if (!refreshedJob) continue;
+      job = refreshedJob;
+      if (job.falCleanupPending) throw new HttpsError("internal", "Could not delete a photo provider payload. Retry account deletion.");
+    } else if (job.falCleanupPending) {
+      throw new HttpsError("internal", "Could not identify a photo provider payload. Retry account deletion.");
+    }
     await doc.ref.delete();
   }
 }
