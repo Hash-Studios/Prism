@@ -154,7 +154,7 @@ Future<File> _startLockFailure(WidgetTester tester, _LockRefusingClient client) 
   });
   await tester.pumpWidget(_screenHost(source.path));
   await _waitForReady(tester);
-  await tester.tap(find.text('AddictiveBlue'));
+  await tester.tap(find.text('Addictive Blue'));
   await tester.pump();
   await tester.tap(find.byTooltip('Set as wallpaper'));
   await waitForRealIo(tester, () => client.requests.isNotEmpty, reason: 'initial native lock screen request');
@@ -504,7 +504,7 @@ void main() {
 
     await tester.pumpWidget(_screenHost(source.path));
     await _waitForReady(tester);
-    await tester.tap(find.text('AddictiveBlue'));
+    await tester.tap(find.text('Addictive Blue'));
     await tester.pump();
     await tester.tap(find.byTooltip('Set as wallpaper'));
     await waitForRealIo(
