@@ -74,8 +74,10 @@ tooltips are 12 to 13. Disabled text and icons use `onSurface` at 0.5, never low
 - `PrismSpace`: `xxs 4`, `xs 8`, `sm 12`, `md 16`, `lg 20`, `xl 24`, `xxl 32`, `xxxl 40`. Page margin is
   `PrismSpace.page` (16). Wallpaper grids use the same margin, so every screen has one left edge. The gap between groups is at least twice the gap inside a group.
 - A tab page ends with `SizedBox(height: PrismSpace.bottomBarClearance)` so the last item clears the bottom bar.
-- The floating bottom row has a fade to `cs.surface` (0 to 85%) under it, `viewPadding.bottom + 90` high, that lets
-  taps through. While the keyboard is up, the row fades out and takes no taps. Its scroll-to-top button is 44 points
+- The floating bottom row is glass (`NavGlass`: backdrop blur 24 over the pill colour at about 0.72, raised per theme
+  until icons reach 4.5:1, a 0.5 point hairline and a soft shadow), with a light fade to `cs.surface` (0 to 60%, 64
+  points) under it that lets taps through. While the keyboard is up, the row fades out, takes no taps and stays at the
+  bottom (it never rides up on the keyboard). Its scroll-to-top button is 44 points
   and shows only while the row is hidden, the list is more than two screens down and the keyboard is down.
 - Bottom-nav tabs show a 10.5 w600 label under a 20 point icon (64 wide slots, text scale capped at 1.2), with a pill
   behind the active tab. Where the labelled pill does not fit the row, the tabs fall back to icons only. The side rail
@@ -104,10 +106,10 @@ tooltips are 12 to 13. Disabled text and icons use `onSurface` at 0.5, never low
 | `showPrismSheet(context, builder:, detents:)` + `PrismSheetBody(title:, message:, mood:, child:, actions:, trailingAction:, childScrolls:)` | Every bottom sheet. See "Bottom sheets" below. |
 | `showPrismConfirm(context, title:, message:, confirmLabel:, destructive:)` | Every confirm. It replaces `AlertDialog`. The confirm label names the action. |
 | `PrismSkeleton`, `PrismSkeleton.rows()`, `PrismSkeleton.cards()`, `PrismBone` | Loading lists and cards. `LoadingCards` for wallpaper grids. |
-| `GlintState(kind:, title:, body:, actionLabel:, onAction:, actionVariant:)` | Empty, error, offline, loading and nothing-new states. The action is `primary` by default. Pass `actionVariant: PrismButtonVariant.tonal` when the page already shows a primary action or a bottom bar. On an area 480 points or taller (a short or empty page) it fills the page: Glint 120 on a `GlintHalo` (a 176 point `primaryContainer` disc), a `sectionTitle`, gaps 24 / 8 / 24, a large action at least 220 wide, placed at `Alignment(0, -0.5)`. Smaller areas keep Glint 96, a `cardTitle` and a compact action. `glintSize` overrides both. With large text it scrolls instead of overflowing. |
+| `GlintState(kind:, title:, body:, actionLabel:, onAction:, actionVariant:, covers:)` | Empty, error, offline, loading and nothing-new states. The action is `primary` by default. Pass `actionVariant: PrismButtonVariant.tonal` when the page already shows a primary action or a bottom bar. On an area 480 points or taller (a short or empty page) it fills the page: an empty state shows a `CoverMosaic` of bundled wallpaper art with a 56 point Glint on its corner (seeded by the title; `covers: false` opts out); other kinds show Glint 120 on a `GlintHalo`. Then a `sectionTitle`, gaps 24 / 8 / 24, a large action at least 220 wide, placed at `Alignment(0, -0.5)`. Smaller areas keep Glint 96, a `cardTitle` and a compact action. `glintSize` overrides both. With large text it scrolls instead of overflowing. |
 | `showGlintToast(context, mood:)` | A success moment: wallpaper set, upload sent, purchase done. |
 | `toasts.success(msg)` / `toasts.error(msg)` | Short feedback. It is themed and sits above the bottom bar. |
-| `PrismWallGrid.delegate(context)`, `PrismWallGrid.padding`, `PrismWallTile(url:, heroTag:, onTap:, onLongPress:, overlay:)` | Every grid of wallpapers. One spacing (8), margin (16, the page margin) and radius (12) app-wide. The home feed grid uses the same values (`PrismFeedLayout.gridSpacing`, `gridPadding`). `LoadingCards()` is its skeleton. `PrismImageTile` draws a 1 point `onSurface` 0.06 hairline so light images do not melt into a white page. The heart (`FavouriteWallpaperCard`, `FavouriteWallpaperFooter`) sits on the image at the bottom-start corner: a white 18 point glyph on a 32 point black 0.5 circle, in a 44 point target, filled when saved. A tap on it wins over the tile's hold menu. Grids keep no footer space (`favouriteFooterHeight` is 0). No counts on tiles; counts live on the detail screen. |
+| `PrismWallGrid.delegate(context)`, `PrismWallGrid.padding`, `PrismWallTile(url:, heroTag:, onTap:, onLongPress:, overlay:)` | Every grid of wallpapers. One spacing (8), margin (16, the page margin) and radius (12) app-wide. The home feed grid uses the same values (`PrismFeedLayout.gridSpacing`, `gridPadding`). `LoadingCards()` is its skeleton. `PrismImageTile` draws a 1 point `onSurface` 0.06 hairline so light images do not melt into a white page. A tile with a known wall colour (`placeholderColorOf`) paints that colour, muted toward the page, until its image fades in over 200 ms; it shows the full picture instead of the thumbnail when that is already on disk (`cachedFullUrl`, never downloaded for a grid). Lists drop repeated walls with `distinctWalls`. The heart (`FavouriteWallpaperCard`, `FavouriteWallpaperFooter`) sits on the image at the bottom-start corner: a white 18 point glyph on a 32 point black 0.5 circle, in a 44 point target, filled when saved. A tap on it wins over the tile's hold menu. Grids keep no footer space (`favouriteFooterHeight` is 0). No counts on tiles; counts live on the detail screen. |
 | `PrismTag(label:, tone:)` | A status label: Pending, Approved, Pro, New. 12 w700. |
 | `GlintHalo(mood:, glintSize:)` | Glint on a soft accent disc, for the one hero moment of a short page. `GlintState` uses it on tall areas. |
 | `PrismAvatar(url:, name:, size:)` | Every profile picture. |
@@ -187,3 +189,17 @@ what happened. Only celebrate is loud.
 
 Short and plain. A button names its action ("Set wallpaper", "Delete account"). An error says what went wrong and
 what to do. Sentence case everywhere. No "Oops", no exclamation marks on errors.
+
+## Motion and loading (Pinterest and Cosmos pass)
+
+- Pull to refresh is `PrismRefresh` (never `RefreshIndicator`): on iOS the `PrismLoader` mark builds in steps with the
+  pull, with a selection haptic per step and an impact at the trigger, and the gap is held on the scroll position so
+  headers never move. Android keeps a styled `RefreshIndicator` inside it. `PrismLoader` is the one loading mark.
+- Sheets open in 280 ms and close in 240 ms; the dim is driven by the same animation as the sheet.
+- Grid to detail zooms over 260 ms with the grid stepping back to 0.94 behind the growing tile; the detail's chrome
+  lands last. On the detail, a swipe up past 18 % (or a fling) snaps to "More like this" with one spring from the
+  release speed; the wall docks as a 28 point thumbnail beside Back, and a glass "^" button returns.
+- The tile hold menu opens after a 300 ms hold; a ring under the finger fills over the hold.
+- One-time gesture hints (`GestureHintOverlay`, `GestureHints.markSeen`) teach hold and swipe up in place, on real
+  content, and never show again once used.
+
