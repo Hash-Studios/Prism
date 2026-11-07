@@ -18,9 +18,11 @@ import 'package:Prism/features/folders/domain/repositories/public_folders_reposi
 import 'package:Prism/features/folders/views/pages/folder_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -140,16 +142,17 @@ const Map<String, String> _sectionOf = <String, String>{'prism_l1': 'lock', 'pri
 /// Newest first. u1 and u2 are Unsorted, l1 is in Lock screens, d1 is in Dark.
 final List<FavouriteWallEntity> _walls = <FavouriteWallEntity>[_wall('u1'), _wall('u2'), _wall('l1'), _wall('d1')];
 
-FolderEntity _folder({String ownerId = _me, List<FolderSection> sections = _sections}) => FolderEntity(
-  id: 'work',
-  ownerId: ownerId,
-  name: 'Work',
-  createdAt: _at,
-  updatedAt: _at,
-  itemCount: 4,
-  covers: const <String>[],
-  sections: sections,
-);
+FolderEntity _folder({String id = 'work', String ownerId = _me, List<FolderSection> sections = _sections}) =>
+    FolderEntity(
+      id: id,
+      ownerId: ownerId,
+      name: 'Work',
+      createdAt: _at,
+      updatedAt: _at,
+      itemCount: 4,
+      covers: const <String>[],
+      sections: sections,
+    );
 
 PrismFavouriteWall _wall(String id) => PrismFavouriteWall(
   id: id,
@@ -198,12 +201,17 @@ Future<_RecordingFoldersRepository> _pump(
   List<FavouriteWallEntity> walls = const <FavouriteWallEntity>[],
   Map<String, String> sectionOf = const <String, String>{},
   TextScaler? textScaler,
+  ValueNotifier<String>? route,
+  List<FolderEntity> otherFolders = const <FolderEntity>[],
 }) async {
   app_state.prismUser = app_constants.createGuestPrismUser()..id = _me;
   getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
   final _RecordingFoldersRepository repo = _RecordingFoldersRepository(
-    folders: <FolderEntity>[folder],
-    items: <String, List<FavouriteWallEntity>>{folder.id: walls},
+    folders: <FolderEntity>[folder, ...otherFolders],
+    items: <String, List<FavouriteWallEntity>>{
+      folder.id: walls,
+      for (final FolderEntity other in otherFolders) other.id: walls,
+    },
     sectionOf: sectionOf,
   );
   final FoldersBloc bloc = FoldersBloc(repo, _NoPublicFolders());
@@ -228,7 +236,12 @@ Future<_RecordingFoldersRepository> _pump(
           value: bloc,
           child: BlocProvider<AutoRotateBloc>.value(
             value: _rotationBloc(),
-            child: FolderScreen(folderId: folder.id),
+            child: route == null
+                ? FolderScreen(folderId: folder.id)
+                : ValueListenableBuilder<String>(
+                    valueListenable: route,
+                    builder: (context, id, _) => FolderScreen(folderId: id),
+                  ),
           ),
         ),
       ),
@@ -308,6 +321,110 @@ void main() {
     await _settle(tester);
 
     expect(_onScreen(tester, dark, chip), isTrue);
+  });
+
+  _test('section strip chips expose their jump action to screen readers', (tester) async {
+    _setView(tester, const Size(390, 600));
+    await _pump(tester, folder: _folder(), walls: _walls, sectionOf: _sectionOf);
+
+    expect(
+      tester.getSemantics(find.bySemanticsLabel('Go to Lock screens, 1 wallpaper')),
+      matchesSemantics(label: 'Go to Lock screens, 1 wallpaper', isButton: true, hasTapAction: true),
+    );
+  });
+
+  _test('a strip jump reaches a section after a long group', (tester) async {
+    _setView(tester, const Size(390, 600));
+    await _pump(
+      tester,
+      folder: _folder(),
+      walls: <FavouriteWallEntity>[for (int i = 0; i < 100; i++) _wall('u$i'), _wall('d1')],
+      sectionOf: const <String, String>{'prism_d1': 'dark'},
+    );
+    final Finder strip = find.byWidgetPredicate((w) => w is ListView && w.scrollDirection == Axis.horizontal);
+    await tester.drag(strip, const Offset(-300, 0));
+    await _settle(tester);
+    final Finder chip = find.bySemanticsLabel('Go to Dark, 1 wallpaper');
+    await tester.tap(chip);
+    await _settle(tester);
+
+    expect(_onScreen(tester, find.bySemanticsLabel('Dark, 1 wallpaper'), chip), isTrue);
+  });
+
+  _test('reusing a folder route does not carry selection mode into the next folder', (tester) async {
+    _setView(tester, const Size(390, 1400));
+    final ValueNotifier<String> route = ValueNotifier<String>('work');
+    addTearDown(route.dispose);
+    await _pump(
+      tester,
+      folder: _folder(),
+      walls: _walls,
+      sectionOf: _sectionOf,
+      route: route,
+      otherFolders: <FolderEntity>[_folder(id: 'other')],
+    );
+    await tester.tap(find.byTooltip('More options'));
+    await _settle(tester);
+    await tester.tap(_menuItem('Select wallpapers'));
+    await _settle(tester);
+    expect(_button('Move to section'), findsOneWidget);
+
+    route.value = 'other';
+    await _settle(tester);
+
+    expect(_button('Move to section'), findsNothing);
+  });
+
+  _test('reusing a folder route does not carry collapsed groups into a cached folder', (tester) async {
+    _setView(tester, const Size(390, 1400));
+    final ValueNotifier<String> route = ValueNotifier<String>('work');
+    addTearDown(route.dispose);
+    await _pump(
+      tester,
+      folder: _folder(),
+      walls: _walls,
+      sectionOf: _sectionOf,
+      route: route,
+      otherFolders: <FolderEntity>[_folder(id: 'other')],
+    );
+    final FoldersBloc bloc = tester.element(find.byType(FolderScreen)).read<FoldersBloc>();
+    await bloc.run((id) => FoldersEvent.folderOpened(folderId: 'other', operationId: id));
+    await _settle(tester);
+    await tester.tap(find.bySemanticsLabel('Lock screens, 1 wallpaper'));
+    await _settle(tester);
+    expect(find.byKey(const ValueKey<String>('prism_l1')), findsNothing);
+
+    route.value = 'other';
+    await _settle(tester);
+
+    expect(find.byKey(const ValueKey<String>('prism_l1')), findsOneWidget);
+  });
+
+  _test('an empty folder still shows its sections and their actions', (tester) async {
+    _setView(tester, const Size(390, 1000));
+    await _pump(tester, folder: _folder());
+
+    expect(find.bySemanticsLabel('Lock screens, no wallpapers'), findsOneWidget);
+    expect(find.byTooltip('More options for Lock screens'), findsOneWidget);
+    expect(find.bySemanticsLabel('Dark, no wallpapers'), findsOneWidget);
+  });
+
+  _test('selection controls fit on a narrow screen with large text', (tester) async {
+    _setView(tester, const Size(320, 800));
+    await _pump(
+      tester,
+      folder: _folder(),
+      walls: _walls,
+      sectionOf: _sectionOf,
+      textScaler: const TextScaler.linear(2),
+    );
+    await tester.tap(find.byTooltip('More options'));
+    await _settle(tester);
+    await tester.tap(_menuItem('Select wallpapers'));
+    await _settle(tester);
+
+    expect(tester.takeException(), isNull);
+    expect(_button('Move to section'), findsOneWidget);
   });
 
   _test('tapping a section header collapses and expands its walls', (tester) async {
@@ -459,6 +576,53 @@ void main() {
     expect(repo.organizeCalls.single.moves, const <String, String?>{'prism_u1': 'dark'});
     expect(repo.organizeCalls.single.sections, isNull);
     expect(find.bySemanticsLabel('Dark, 2 wallpapers'), findsOneWidget);
+  });
+
+  _test('a screen reader can open the wall menu and move it without a drag gesture', (tester) async {
+    _setView(tester, const Size(390, 1400));
+    final _RecordingFoldersRepository repo = await _pump(
+      tester,
+      folder: _folder(),
+      walls: _walls,
+      sectionOf: _sectionOf,
+    );
+    final SemanticsNode wall = tester.getSemantics(find.byKey(const ValueKey<String>('prism_u1')));
+    wall.owner!.performAction(wall.id, SemanticsAction.longPress);
+    await _settle(tester);
+    await tester.tap(_button('Move to section'));
+    await _settle(tester);
+    await tester.tap(find.widgetWithText(PrismRow, 'Dark'));
+    await _settle(tester);
+
+    expect(repo.organizeCalls.single.moves, const <String, String?>{'prism_u1': 'dark'});
+  });
+
+  _test('moving to a new section names the new section in the success message', (tester) async {
+    _setView(tester, const Size(390, 1400));
+    final _RecordingFoldersRepository repo = await _pump(
+      tester,
+      folder: _folder(),
+      walls: _walls,
+      sectionOf: _sectionOf,
+    );
+    toasts.overlayResolver = () => tester.state<OverlayState>(find.byType(Overlay).first);
+    addTearDown(() => toasts.overlayResolver = null);
+
+    await tester.longPress(find.byKey(const ValueKey<String>('prism_u1')));
+    await _settle(tester);
+    await tester.tap(_button('Move to section'));
+    await _settle(tester);
+    await tester.tap(find.widgetWithText(PrismRow, 'New section'));
+    await _settle(tester);
+    await tester.enterText(find.byType(EditableText), 'Desktop');
+    await _settle(tester);
+    await tester.tap(_button('Add section'));
+    await _settle(tester);
+
+    expect(repo.organizeCalls, hasLength(2));
+    expect(find.text('Moved 1 wallpaper to Desktop.'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 5));
+    await _settle(tester);
   });
 
   _test('dragging a wall onto the Dark header records the move to Dark', (tester) async {

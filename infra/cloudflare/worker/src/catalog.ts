@@ -552,7 +552,7 @@ function parseFolderPage(value: unknown, env: CatalogEnv): FolderPage {
 
 /** Groups that do not add up to the item count are dropped, so a bad page still shows every wall in one grid. */
 function parseFolderGroups(value: unknown, itemCount: number): FolderPage['groups'] {
-  if (!Array.isArray(value)) return [];
+  if (!Array.isArray(value) || value.some((raw) => raw == null || typeof raw !== 'object' || Array.isArray(raw))) return [];
   const groups = value.map((raw) => {
     const group = record(raw);
     return { name: typeof group.name === 'string' ? group.name : '', count: Number(group.count) };

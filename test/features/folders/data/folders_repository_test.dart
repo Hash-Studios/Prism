@@ -8,6 +8,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/data/repositories/folders_repository_impl.dart';
+import 'package:Prism/features/folders/domain/entities/folder_edit.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
@@ -174,6 +175,107 @@ class _NoPublicFolders implements PublicFoldersRepository {
 }
 
 void main() {
+  test('a failed second organize commit retains committed progress and retries without losing sections', () async {
+    List<FolderSection> storedSections = const <FolderSection>[FolderSection(id: 'existing', name: 'Existing')];
+    final Map<String, String> storedSectionOf = <String, String>{};
+    final client = _Client()
+      ..onQuery = (spec) => spec.collection == FirebaseCollections.folders
+          ? <FakeDocRow>[
+              (
+                id: 'a',
+                data: <String, dynamic>{
+                  'ownerId': 'u1',
+                  'itemCount': 401,
+                  'sections': storedSections.map((section) => section.toDoc()).toList(),
+                },
+              ),
+            ]
+          : <FakeDocRow>[
+              for (int i = 0; i < 401; i++)
+                (
+                  id: 'prism_$i',
+                  data: <String, dynamic>{
+                    'id': '$i',
+                    'provider': 'Prism',
+                    'ownerId': 'u1',
+                    if (storedSectionOf['prism_$i'] case final String sectionId) 'sectionId': sectionId,
+                  },
+                ),
+            ];
+    client.onCommit = (number) async {
+      if (number == 2) throw StateError('Second commit failed');
+      for (final write in client.batches.last.batch.writes) {
+        if (write.collection == FirebaseCollections.folders) {
+          storedSections = folderSectionsFromDoc(write.data!['sections']);
+        } else {
+          storedSectionOf[write.id] = write.data!['sectionId'] as String;
+        }
+      }
+    };
+    final bloc = FoldersBloc(FoldersRepositoryImpl(client), _NoPublicFolders());
+    addTearDown(bloc.close);
+    await bloc.run((id) => FoldersEvent.started(userId: 'u1', operationId: id));
+    await bloc.run((id) => FoldersEvent.folderOpened(folderId: 'a', operationId: id));
+    final edit = SuggestionsAccepted(<AcceptedGroup>[
+      AcceptedGroup(sectionId: 's1', name: 'Dark', itemKeys: <String>[for (int i = 0; i < 401; i++) 'prism_$i']),
+    ]);
+
+    expect(await bloc.run((id) => FoldersEvent.organizeRequested(folderId: 'a', edit: edit, operationId: id)), isFalse);
+    expect(storedSections, const <FolderSection>[
+      FolderSection(id: 'existing', name: 'Existing'),
+      FolderSection(id: 's1', name: 'Dark'),
+    ]);
+    expect(storedSectionOf, <String, String>{for (int i = 0; i < 399; i++) 'prism_$i': 's1'});
+    expect(bloc.state.folder('a')!.sections, storedSections);
+    expect(bloc.state.itemSections['a'], storedSectionOf);
+
+    expect(await bloc.run((id) => FoldersEvent.organizeRequested(folderId: 'a', edit: edit, operationId: id)), isTrue);
+    expect(storedSections, const <FolderSection>[
+      FolderSection(id: 'existing', name: 'Existing'),
+      FolderSection(id: 's1', name: 'Dark'),
+    ]);
+    expect(storedSectionOf, <String, String>{for (int i = 0; i < 401; i++) 'prism_$i': 's1'});
+    expect(bloc.state.folder('a')!.sections, storedSections);
+    expect(bloc.state.itemSections['a'], storedSectionOf);
+  });
+
+  test('sign-out stops organizing after the pending chunk', () async {
+    final gate = Completer<void>();
+    final client = _Client()
+      ..onQuery = (spec) => spec.collection == FirebaseCollections.folders
+          ? <FakeDocRow>[
+              (id: 'a', data: <String, dynamic>{'ownerId': 'u1', 'itemCount': 401}),
+            ]
+          : <FakeDocRow>[
+              for (int i = 0; i < 401; i++)
+                (id: 'prism_$i', data: <String, dynamic>{'id': '$i', 'provider': 'Prism', 'ownerId': 'u1'}),
+            ];
+    final bloc = FoldersBloc(FoldersRepositoryImpl(client), _NoPublicFolders());
+    addTearDown(bloc.close);
+    await bloc.run((id) => FoldersEvent.started(userId: 'u1', operationId: id));
+    await bloc.run((id) => FoldersEvent.folderOpened(folderId: 'a', operationId: id));
+    client.onCommit = (_) => gate.future;
+    final organizing = bloc.run(
+      (id) => FoldersEvent.organizeRequested(
+        folderId: 'a',
+        edit: SuggestionsAccepted(<AcceptedGroup>[
+          AcceptedGroup(sectionId: 's1', name: 'Dark', itemKeys: <String>[for (int i = 0; i < 401; i++) 'prism_$i']),
+        ]),
+        operationId: id,
+      ),
+    );
+    await pumpEventQueue();
+    expect(client.batches, hasLength(1));
+
+    bloc.add(const FoldersEvent.cleared());
+    await pumpEventQueue();
+    gate.complete();
+    expect(await organizing, isFalse);
+    await pumpEventQueue();
+    expect(client.batches, hasLength(1));
+    expect(bloc.state, FoldersState.initial());
+  });
+
   for (final holdQuery in <bool>[true, false]) {
     test('sign-out stops delete after the pending ${holdQuery ? 'query' : 'chunk'}', () async {
       final gate = Completer<void>();

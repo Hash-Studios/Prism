@@ -602,6 +602,23 @@ test("buildPages keeps maximum-length wall URLs under Firestore's document size 
   }
 });
 
+test("a 60-wall folder with 20 maximum-length sections stays within one document", (t) => {
+  const sections = Array.from({length: 20}, (_, i) => ({id: String(i).padStart(32, "s"), name: "\u754c".repeat(160)}));
+  const walls = new Map(Array.from({length: 60}, (_, i): [string, WebWall] => {
+    const id = String(i).padStart(200, "W");
+    return [id, liveCard(i, {title: "\u754c".repeat(90), thumb: `https://img.prismwalls.com/previews/${id}.img`})];
+  }));
+  const wallIds = [...walls.keys()];
+  const folders = [{id: "F1", name: "Faves", owner: null, wallIds, updatedAt: NOW, sections,
+    sectionOf: Object.fromEntries(wallIds.map((id, i) => [id, sections[i % 20].id]))}];
+  const folder = buildPages(walls, [], folders, new Map()).get("folder~F1");
+  assert.ok(folder);
+  assert.equal((folder.items as WebCard[]).length, 60);
+  assert.equal((folder.groups as unknown[]).length, 20);
+  assert.ok(Buffer.byteLength(JSON.stringify(folder)) < 64_000);
+  t.diagnostic(`20-section, 60-wall page JSON bytes: ${Buffer.byteLength(JSON.stringify(folder))}`);
+});
+
 test("rebuildWebCatalog writes the catalogue once, then writes nothing on a second run", async (t) => {
   stubDeps(t);
   const writes = {reads: 0, writes: 0, outsideWrites: 0};

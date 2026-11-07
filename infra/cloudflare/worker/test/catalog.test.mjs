@@ -408,6 +408,17 @@ test('folder page escapes a section name', async (t) => {
   assert.equal(body.includes('<b>x</b>'), false);
 });
 
+test('folder page with malformed group entries still renders every wall in one grid', async (t) => {
+  const h = setup(t);
+  h.state.docs['webPages/folder~F1'].groups = [null, { name: 'Dark', count: 2 }];
+  const response = await h.get('/folder/F1');
+  assert.equal(response.status, 200);
+  const body = await response.text();
+  assert.equal(body.includes('class="folder-section"'), false);
+  assert.ok(body.includes('/wallpaper/W1'));
+  assert.ok(body.includes('/wallpaper/N2'));
+});
+
 test('folder page with groups still reads only its own document', async (t) => {
   const h = setup(t);
   h.state.docs['webPages/folder~F1'].groups = [{ name: '', count: 1 }, { name: 'Dark', count: 1 }];

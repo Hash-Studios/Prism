@@ -87,13 +87,15 @@ Future<bool> moveFolderWalls(
   required WallMoveMethod method,
 }) async {
   final AppLocalizations l10n = context.l10n;
-  final String name = folder.sections.where((s) => s.id == sectionId).firstOrNull?.name ?? l10n.foldersSectionUnsorted;
+  final FoldersBloc bloc = context.read<FoldersBloc>();
   final bool ok = await organizeFolder(
     context,
     folder.id,
     WallsMoved(itemKeys: itemKeys, sectionId: sectionId, method: method),
   );
   if (!ok) return false;
+  final List<FolderSection> sections = bloc.state.folder(folder.id)?.sections ?? folder.sections;
+  final String name = sections.where((s) => s.id == sectionId).firstOrNull?.name ?? l10n.foldersSectionUnsorted;
   PrismHaptics.success();
   unawaited(analytics.track(FolderWallMovedEvent(method: method.name, wallCount: itemKeys.length)));
   toasts.success(l10n.foldersSectionMoved(itemKeys.length, name));

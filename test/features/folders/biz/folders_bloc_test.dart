@@ -19,6 +19,7 @@ import 'package:flutter_test/flutter_test.dart';
 class _FakeFoldersRepository implements FoldersRepository {
   List<FolderEntity> folders = <FolderEntity>[];
   Map<String, List<FavouriteWallEntity>> items = <String, List<FavouriteWallEntity>>{};
+  Map<String, String> sectionOf = <String, String>{};
   final List<String> calls = <String>[];
   final List<int?> fetchItemLimits = <int?>[];
   final List<String> writers = <String>[];
@@ -49,7 +50,7 @@ class _FakeFoldersRepository implements FoldersRepository {
     if (folders.every((folder) => folder.id != folderId)) return Result.success(null);
     final List<FavouriteWallEntity> list = items[folderId] ?? <FavouriteWallEntity>[];
     final List<FavouriteWallEntity> walls = limit == null ? list : list.take(limit).toList();
-    return Result.success(walls.map((w) => FolderItem(w)).toList());
+    return Result.success(walls.map((w) => FolderItem(w, sectionId: sectionOf[folderItemKey(w)])).toList());
   }
 
   @override
@@ -226,6 +227,70 @@ class _NoPublicFolders implements PublicFoldersRepository {
 }
 
 void main() {
+  test('re-adding a wall removed by another member clears its old local section assignment', () async {
+    final repo = _FakeFoldersRepository()
+      ..folders = <FolderEntity>[
+        folder('a', count: 1).copyWith(
+          sections: const <FolderSection>[FolderSection(id: 's1', name: 'Dark')],
+        ),
+      ]
+      ..items = <String, List<FavouriteWallEntity>>{
+        'a': <FavouriteWallEntity>[wall('w1')],
+      }
+      ..sectionOf = <String, String>{'prism_w1': 's1'};
+    final bloc = _blocFor(repo);
+    await _started(bloc);
+    await bloc.run((id) => FoldersEvent.folderOpened(folderId: 'a', operationId: id));
+    expect(bloc.state.itemSections['a'], <String, String>{'prism_w1': 's1'});
+    repo.items['a'] = <FavouriteWallEntity>[];
+    repo.sectionOf.clear();
+    await bloc.run((id) => FoldersEvent.membershipRequested(wall: wall('w1'), operationId: id));
+
+    expect(
+      await bloc.run((id) => FoldersEvent.saveRequested(wall: wall('w1'), folderIds: <String>{'a'}, operationId: id)),
+      isTrue,
+    );
+    expect(bloc.state.itemSections['a'], isEmpty);
+  });
+
+  test('opening refreshes cached membership before Save can overwrite an externally added item', () async {
+    final repo = _FakeFoldersRepository()..folders = <FolderEntity>[folder('a')];
+    final bloc = _blocFor(repo);
+    await _started(bloc);
+    await bloc.run((id) => FoldersEvent.membershipRequested(wall: wall('w1'), operationId: id));
+    repo.folders = <FolderEntity>[folder('a', count: 1)];
+    repo.items['a'] = <FavouriteWallEntity>[wall('w1')];
+
+    await bloc.run((id) => FoldersEvent.folderOpened(folderId: 'a', operationId: id));
+    expect(
+      await bloc.run((id) => FoldersEvent.saveRequested(wall: wall('w1'), folderIds: <String>{'a'}, operationId: id)),
+      isTrue,
+    );
+    expect(repo.calls, isEmpty);
+    expect(bloc.state.folder('a')!.itemCount, 1);
+  });
+
+  test('opening refreshes cached membership when another member removes an item', () async {
+    final repo = _FakeFoldersRepository()
+      ..folders = <FolderEntity>[folder('a', count: 1)]
+      ..items = <String, List<FavouriteWallEntity>>{
+        'a': <FavouriteWallEntity>[wall('w1')],
+      };
+    final bloc = _blocFor(repo);
+    await _started(bloc);
+    await bloc.run((id) => FoldersEvent.membershipRequested(wall: wall('w1'), operationId: id));
+    repo.folders = <FolderEntity>[folder('a')];
+    repo.items['a'] = <FavouriteWallEntity>[];
+
+    await bloc.run((id) => FoldersEvent.folderOpened(folderId: 'a', operationId: id));
+    expect(
+      await bloc.run((id) => FoldersEvent.saveRequested(wall: wall('w1'), folderIds: <String>{'a'}, operationId: id)),
+      isTrue,
+    );
+    expect(repo.calls, <String>['addItem:a:1:${thumb('w1')}']);
+    expect(bloc.state.items['a'], hasLength(1));
+  });
+
   test('sign-out between completed Save steps does not start the next write', () async {
     final repo = _FakeFoldersRepository()..folders = <FolderEntity>[folder('a'), folder('b')];
     final bloc = _blocFor(repo);

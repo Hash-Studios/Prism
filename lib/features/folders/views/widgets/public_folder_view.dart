@@ -193,7 +193,7 @@ class _PublicFolderViewState extends State<PublicFolderView> with WidgetsBinding
       onFollow: app_state.prismUser.id == folder.ownerId ? null : () => unawaited(_toggleFollow()),
       source: 'folder_page',
     );
-    if (state.walls.isEmpty) {
+    if (state.walls.isEmpty && folder.sections.isEmpty) {
       return ListView(
         children: <Widget>[
           header,

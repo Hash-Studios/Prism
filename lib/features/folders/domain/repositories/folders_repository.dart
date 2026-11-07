@@ -6,6 +6,8 @@ import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 
 typedef FolderWriteFailure = ({String ownerId, int revision, Failure failure});
 
+const int folderOrganizeMaxWrites = 400;
+
 abstract class FoldersRepository {
   /// A session records this boundary so late failures from earlier sessions are ignored.
   int get writeRevision;

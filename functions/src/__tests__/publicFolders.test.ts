@@ -431,11 +431,38 @@ test("a sync writes the sanitized sections to the header and an item follows its
 
   assert.deepEqual(store.get("publicFolders/f1")?.sections, [{id: "lock", name: "Lock screens"}]);
   assert.equal(store.get("publicFolders/f1/items/prism_w1")?.sectionId, "lock");
+  const originalProjection = store.get("publicFolders/f1/items/prism_w1");
+  const originalHeader = store.get("publicFolders/f1");
 
   store.set("folders/f1/items/prism_w1", {...item, sectionId: "dark"});
   await syncPublicFolderItem("f1", "prism_w1");
 
   assert.equal(store.get("publicFolders/f1/items/prism_w1")?.sectionId, "dark");
+  for (const key of ["addedAt", "projectedAt"]) {
+    assert.deepEqual(store.get("publicFolders/f1/items/prism_w1")?.[key], originalProjection?.[key]);
+  }
+  for (const key of ["lastAddedAt", "itemCount", "covers"]) {
+    assert.deepEqual(store.get("publicFolders/f1")?.[key], originalHeader?.[key]);
+  }
+
+  store.set("folders/f1/items/prism_w1", item);
+  await syncPublicFolderItem("f1", "prism_w1");
+  assert.equal("sectionId" in (store.get("publicFolders/f1/items/prism_w1") ?? {}), false);
+  assert.deepEqual(store.get("publicFolders/f1/items/prism_w1")?.projectedAt, originalProjection?.projectedAt);
+});
+
+test("20 maximum-length sections remain bounded in the private and projected headers", async (t) => {
+  const store = setup(t);
+  const sections = Array.from({length: 20}, (_, i) => ({id: String(i).padStart(32, "s"), name: "\u754c".repeat(160)}));
+  store.set("folders/f1", {...store.get("folders/f1"), sections});
+  await syncPublicFolder("f1");
+  for (const path of ["folders/f1", "publicFolders/f1"]) {
+    const header = store.get(path);
+    assert.deepEqual(header?.sections, sections);
+    const bytes = Buffer.byteLength(JSON.stringify(header));
+    assert.ok(bytes < 16_000);
+    t.diagnostic(`${path} JSON bytes: ${bytes}`);
+  }
 });
 
 test("gated items are left out of the projection", async (t) => {

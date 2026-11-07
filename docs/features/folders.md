@@ -363,7 +363,7 @@ The app reads the folder again each time a member opens it, so a join, a leave o
 
 A folder can have up to 20 sections. Sections split the wallpapers of a folder into named groups. A section is not a folder. It has no privacy of its own.
 
-Each section has an id, a name and an order. The name has 1 to 40 graphemes. A grapheme is one character as the user sees it.
+Each section has an id, a name and an order. The app accepts 1 to 40 graphemes and at most 160 UTF-16 units for a name. A grapheme is one character as the user sees it. The UTF-16 cap keeps names compatible with the rules.
 
 Each wallpaper is in one section, or in **Unsorted**. **Unsorted** is the group at the top. It holds the wallpapers that have no section. It also holds the wallpapers whose section was deleted. It shows only when it has wallpapers, or while the user drags a wallpaper.
 
@@ -435,7 +435,7 @@ Open **Reorder sections** from the overflow menu. Drag the handle of a section t
 
 ### Data
 
-The `sections` field is in the folder doc, not in a subcollection. At most 20 sections take about 7 KB (20 × (32-character id + 160 UTF-16 units)). Every reader of the folder already reads that doc.
+The `sections` field is in the folder doc, not in a subcollection. At most 20 sections take roughly 11 KB, allowing for 32 ASCII id characters, 160 three-byte BMP name characters and entry overhead per section. Every reader of the folder already reads that doc.
 
 | Path | Writer | Contents |
 |---|---|---|
@@ -452,7 +452,7 @@ The `sections` field is in the folder doc, not in a subcollection. At most 20 se
 - An editor can update only `sections` in the folder doc.
 - A member can update an item when only `sectionId` changes. This includes an item that another member added.
 - A stranger and a public viewer can write neither.
-- `sections` has at most 20 entries. Each entry has only `id` and `name`. The name is a string of 1 to 160 UTF-16 units.
+- `sections` has at most 20 entries. Each entry has only `id` and `name`. Ids use 1 to 32 ASCII letters, digits, underscores or hyphens. The name is a string of 1 to 160 UTF-16 units.
 - The rules cannot count graphemes. The app caps names at 40 graphemes.
 - Rules allow 1000 expressions for each request, so each entry gets only these checks. The app trims names and drops entries with a bad id when it reads them.
 - `sectionId` matches `^[A-Za-z0-9_-]{1,32}$`.

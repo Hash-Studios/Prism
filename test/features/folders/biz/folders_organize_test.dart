@@ -1,5 +1,6 @@
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -24,6 +25,7 @@ class _FakeOrganizeRepository extends Fake implements FoldersRepository {
   Map<String, String> sectionOfWall = <String, String>{};
   Future<Result<List<FolderEntity>>> Function(String userId)? fetchFoldersOverride;
   Result<void> organizeResult = Result.success<void>(null);
+  bool failItems = false;
   final List<_OrganizeCall> organizeCalls = <_OrganizeCall>[];
   @override
   int writeRevision = 0;
@@ -39,6 +41,7 @@ class _FakeOrganizeRepository extends Fake implements FoldersRepository {
 
   @override
   Future<Result<List<FolderItem>?>> fetchItems(String folderId, {required String userId, int? limit}) async {
+    if (failItems) return Result.error(const ServerFailure('read failed'));
     if (folders.every((folder) => folder.id != folderId)) return Result.success(null);
     final List<FavouriteWallEntity> list = items[folderId] ?? <FavouriteWallEntity>[];
     return Result.success(list.map((w) => FolderItem(w, sectionId: sectionOfWall[folderItemKey(w)])).toList());
@@ -105,6 +108,23 @@ Future<bool> _organize(FoldersBloc bloc, FolderEdit edit) =>
     bloc.run((id) => FoldersEvent.organizeRequested(folderId: 'a', edit: edit, operationId: id));
 
 void main() {
+  test('a failed item reload prevents section edits from using stale items', () async {
+    final repo = _FakeOrganizeRepository()
+      ..folders = <FolderEntity>[_folder()]
+      ..items = <String, List<FavouriteWallEntity>>{
+        'a': <FavouriteWallEntity>[_wall('a')],
+      };
+    final bloc = _blocFor(repo);
+    await _started(bloc);
+    await _opened(bloc, 'a');
+    repo.failItems = true;
+
+    expect(await _opened(bloc, 'a'), isFalse);
+    expect(bloc.state.itemsStatus['a'], LoadStatus.failure);
+    expect(await _organize(bloc, const SectionAdded(id: 's2', name: 'Light')), isFalse);
+    expect(repo.organizeCalls, isEmpty);
+  });
+
   test('owner adds a section and it is written with no moves', () async {
     final repo = _FakeOrganizeRepository()
       ..folders = <FolderEntity>[_folder().copyWith(sections: const <FolderSection>[])];

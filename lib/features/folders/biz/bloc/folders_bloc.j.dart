@@ -222,6 +222,9 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
       return;
     }
     final List<FolderItem>? items = result.data;
+    final Set<String> present = <String>{
+      for (final FolderItem item in items ?? const <FolderItem>[]) folderItemKey(item.wall),
+    };
     emit(
       items == null
           ? _forgetFolder(id)
@@ -238,6 +241,9 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
                 },
               },
               itemsStatus: <String, LoadStatus>{...state.itemsStatus, id: LoadStatus.success},
+              membership: state.membership.map(
+                (key, ids) => MapEntry(key, present.contains(key) ? <String>{...ids, id} : (ids.toSet()..remove(id))),
+              ),
             ),
     );
     _finish(emit, event.operationId);
@@ -398,6 +404,12 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
                 ...state.items,
                 folderId: <FavouriteWallEntity>[wall, ...loaded.where((item) => folderItemKey(item) != key)],
               },
+        itemSections: state.itemSections[folderId]?.containsKey(key) ?? false
+            ? <String, Map<String, String>>{
+                ...state.itemSections,
+                folderId: <String, String>{...state.itemSections[folderId]!}..remove(key),
+              }
+            : state.itemSections,
         membership: _withMembership(key, folderId, member: true),
       ),
     );
@@ -519,7 +531,11 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
     final FolderEntity? folder = state.folder(event.folderId);
     final List<FavouriteWallEntity>? walls = state.items[event.folderId];
     final Map<String, String> known = state.itemSections[event.folderId] ?? const <String, String>{};
-    final FolderEditResult? change = folder == null || walls == null || folder.roleOf(state.userId) == null
+    final FolderEditResult? change =
+        folder == null ||
+            walls == null ||
+            state.itemsStatus[event.folderId] != LoadStatus.success ||
+            folder.roleOf(state.userId) == null
         ? null
         : applyFolderEdit(folder.sections, <String, String?>{
             for (final FavouriteWallEntity wall in walls) folderItemKey(wall): known[folderItemKey(wall)],
@@ -532,23 +548,32 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
       _finish(emit, event.operationId);
       return;
     }
-    final Result<void> result = await session.wait(
-      _repository.organize(folder, userId: state.userId, sections: change.sections, moves: change.moves),
-    );
-    final FolderEntity? current = state.folder(folder.id);
-    if (result.isSuccess) {
+    final List<MapEntry<String, String?>> entries = change.moves.entries.toList();
+    int start = 0;
+    do {
+      session.ensureActive();
+      final List<FolderSection>? sections = start == 0 ? change.sections : null;
+      final int end = (start + folderOrganizeMaxWrites - (sections == null ? 0 : 1)).clamp(0, entries.length);
+      final Map<String, String?> moves = Map<String, String?>.fromEntries(entries.sublist(start, end));
+      final Result<void> result = await session.wait(
+        _repository.organize(folder, userId: state.userId, sections: sections, moves: moves),
+      );
+      if (result.isFailure) {
+        _finish(emit, event.operationId, failure: result.failure);
+        return;
+      }
+      final FolderEntity? current = state.folder(folder.id);
       final Map<String, String> next = <String, String>{...?state.itemSections[folder.id]};
-      change.moves.forEach((key, sectionId) => sectionId == null ? next.remove(key) : next[key] = sectionId);
+      moves.forEach((key, sectionId) => sectionId == null ? next.remove(key) : next[key] = sectionId);
       emit(
         state.copyWith(
-          folders: change.sections == null || current == null
-              ? state.folders
-              : _replace(current.copyWith(sections: change.sections)),
+          folders: sections == null || current == null ? state.folders : _replace(current.copyWith(sections: sections)),
           itemSections: <String, Map<String, String>>{...state.itemSections, folder.id: next},
         ),
       );
-    }
-    _finish(emit, event.operationId, failure: result.failure);
+      start = end;
+    } while (start < entries.length);
+    _finish(emit, event.operationId);
   }
 }
 

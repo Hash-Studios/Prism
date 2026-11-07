@@ -165,8 +165,7 @@ class _FolderSectionsViewState extends State<FolderSectionsView> {
         : <FolderGroup>[FolderGroup(section: null, walls: widget.walls)];
     final List<FavouriteWallEntity> order = <FavouriteWallEntity>[for (final group in groups) ...group.walls];
     final double stripHeight = _stripHeight(context);
-    // The selection bar covers the bottom of the grid, so the last row scrolls above it.
-    final double bottom = MediaQuery.paddingOf(context).bottom + PrismSpace.md + (widget.selecting ? 88 : 0);
+    final double bottom = MediaQuery.paddingOf(context).bottom + PrismSpace.md;
     int start = 0;
     final List<Widget> slivers = <Widget>[
       if (widget.top case final Widget top) SliverToBoxAdapter(child: top),
@@ -227,18 +226,13 @@ class _FolderSectionsViewState extends State<FolderSectionsView> {
     slivers.add(SliverToBoxAdapter(child: SizedBox(height: bottom)));
     final Widget scroll = CustomScrollView(controller: _scroll, slivers: slivers);
     if (!widget.selecting) return scroll;
-    return Stack(
+    return Column(
       children: <Widget>[
-        Positioned.fill(child: scroll),
-        PositionedDirectional(
-          start: 0,
-          end: 0,
-          bottom: 0,
-          child: _SelectionBar(
-            count: _selected.length,
-            onMove: _selected.isEmpty ? null : () => unawaited(_moveSelected()),
-            onDone: () => widget.onSelectingDone?.call(),
-          ),
+        Expanded(child: scroll),
+        _SelectionBar(
+          count: _selected.length,
+          onMove: _selected.isEmpty ? null : () => unawaited(_moveSelected()),
+          onDone: () => widget.onSelectingDone?.call(),
         ),
       ],
     );
@@ -449,6 +443,7 @@ class _SectionStrip extends StatelessWidget {
             button: true,
             label: l10n.foldersSectionJumpTo(name, group.walls.length),
             excludeSemantics: true,
+            onTap: () => onJump(group.key),
             child: PressScale(
               child: Material(
                 color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
@@ -676,17 +671,24 @@ class _SelectionBar extends StatelessWidget {
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(PrismSpace.xs, PrismSpace.xs, PrismSpace.md, PrismSpace.xs),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              PrismIconButton(icon: Icons.close_rounded, tooltip: l10n.coreCancel, onPressed: onDone),
-              const SizedBox(width: PrismSpace.xs),
-              Expanded(
-                child: Semantics(
-                  liveRegion: true,
-                  child: Text(l10n.foldersSectionSelected(count), style: PrismTextStyles.rowTitle(context)),
-                ),
+              Row(
+                children: <Widget>[
+                  PrismIconButton(icon: Icons.close_rounded, tooltip: l10n.coreCancel, onPressed: onDone),
+                  const SizedBox(width: PrismSpace.xs),
+                  Expanded(
+                    child: Semantics(
+                      liveRegion: true,
+                      child: Text(l10n.foldersSectionSelected(count), style: PrismTextStyles.rowTitle(context)),
+                    ),
+                  ),
+                ],
               ),
-              PrismButton(label: l10n.foldersSectionMoveTo, maxLines: 2, onPressed: onMove),
+              const SizedBox(height: PrismSpace.xs),
+              PrismButton(label: l10n.foldersSectionMoveTo, expand: true, maxLines: null, onPressed: onMove),
             ],
           ),
         ),

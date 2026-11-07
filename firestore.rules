@@ -464,16 +464,12 @@ service cloud.firestore {
         return id is string && id.matches('^[A-Za-z0-9_-]{1,32}$');
       }
 
-      // A folder can have 20 sections, and rules allow 1000 expressions per request, so each entry gets only its
-      // keys and a name of 1 to 160 UTF-16 units. The app caps a name at 40 graphemes, and it trims names and drops
-      // entries with a bad id when it reads them.
-      function validSectionAt(sections, index) {
-        return index >= sections.size() || validSection(sections[index]);
-      }
-
+      // Keep validation within the 1000-expression budget for 20 sections. The app also caps names at 40 graphemes
+      // and trims them on read. Inline the id check to avoid another function call for every section.
       function validSection(section) {
-        return section.keys().hasOnly(['id', 'name']) && section.name is string && section.name.size() > 0
-            && section.name.size() <= 160;
+        // Reading both required fields plus size == 2 excludes extra keys without building a key list.
+        return section.size() == 2 && section.name is string && section.name.size() > 0
+            && section.name.size() <= 160 && section.id.matches('^[A-Za-z0-9_-]{1,32}$');
       }
 
       function validSections(data) {
@@ -482,14 +478,18 @@ service cloud.firestore {
 
       // Rules have no loops, so each index is checked.
       function validSectionList(sections) {
-        return sections is list && sections.size() <= 20
-            && validSectionAt(sections, 0) && validSectionAt(sections, 1) && validSectionAt(sections, 2)
-            && validSectionAt(sections, 3) && validSectionAt(sections, 4) && validSectionAt(sections, 5)
-            && validSectionAt(sections, 6) && validSectionAt(sections, 7) && validSectionAt(sections, 8)
-            && validSectionAt(sections, 9) && validSectionAt(sections, 10) && validSectionAt(sections, 11)
-            && validSectionAt(sections, 12) && validSectionAt(sections, 13) && validSectionAt(sections, 14)
-            && validSectionAt(sections, 15) && validSectionAt(sections, 16) && validSectionAt(sections, 17)
-            && validSectionAt(sections, 18) && validSectionAt(sections, 19);
+        let count = sections.size();
+        return sections is list && count <= 20
+            && (count < 1 || validSection(sections[0])) && (count < 2 || validSection(sections[1]))
+            && (count < 3 || validSection(sections[2])) && (count < 4 || validSection(sections[3]))
+            && (count < 5 || validSection(sections[4])) && (count < 6 || validSection(sections[5]))
+            && (count < 7 || validSection(sections[6])) && (count < 8 || validSection(sections[7]))
+            && (count < 9 || validSection(sections[8])) && (count < 10 || validSection(sections[9]))
+            && (count < 11 || validSection(sections[10])) && (count < 12 || validSection(sections[11]))
+            && (count < 13 || validSection(sections[12])) && (count < 14 || validSection(sections[13]))
+            && (count < 15 || validSection(sections[14])) && (count < 16 || validSection(sections[15]))
+            && (count < 17 || validSection(sections[16])) && (count < 18 || validSection(sections[17]))
+            && (count < 19 || validSection(sections[18])) && (count < 20 || validSection(sections[19]));
       }
 
       // A folder item is a favourite doc plus ownerId and addedAt. Its id is "<provider lowercased>_<wall id>".

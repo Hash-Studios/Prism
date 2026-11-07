@@ -342,10 +342,10 @@ class FoldersRepositoryImpl implements FoldersRepository {
   }) => _guard('organize folder', () async {
     final List<MapEntry<String, String?>> entries = moves.entries.toList();
     // The batch that writes the sections carries the first moves, so a new section and its walls land together.
-    final int firstChunk = sections == null ? _maxBatchWrites : _maxBatchWrites - 1;
+    final int firstChunk = sections == null ? folderOrganizeMaxWrites : folderOrganizeMaxWrites - 1;
     int start = 0;
     do {
-      final int end = math.min(start + (start == 0 ? firstChunk : _maxBatchWrites), entries.length);
+      final int end = math.min(start + (start == 0 ? firstChunk : folderOrganizeMaxWrites), entries.length);
       final List<MapEntry<String, String?>> chunk = entries.sublist(start, end);
       final bool withSections = start == 0 && sections != null;
       await _write(

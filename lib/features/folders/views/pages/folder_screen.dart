@@ -91,6 +91,7 @@ class _FolderScreenState extends State<FolderScreen> {
     // The router can reuse this page for another folder, for example a link opened from a folder.
     if (oldWidget.folderId == widget.folderId) return;
     _tracked = false;
+    _selecting = false;
     _projection = null;
     unawaited(_load());
   }
@@ -364,7 +365,7 @@ class _FolderScreenState extends State<FolderScreen> {
       );
     }
     if (walls == null) return const LoadingCards();
-    if (walls.isEmpty) {
+    if (walls.isEmpty && (folder?.sections.isEmpty ?? true)) {
       return _message(
         GlintState(
           kind: GlintStateKind.empty,
@@ -377,6 +378,7 @@ class _FolderScreenState extends State<FolderScreen> {
     }
     if (folder == null) return const LoadingCards();
     return FolderSectionsView(
+      key: ValueKey<String>('${state.userId}/${folder.id}'),
       sections: folder.sections,
       folder: folder,
       walls: walls,
