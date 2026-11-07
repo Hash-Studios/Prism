@@ -32,9 +32,9 @@ typedef PhotoLabels = ({PhotoLabelsStatus status, List<String> labels, String? c
 /// Builds two copies of [original] from its decoded pixels. Neither copy holds the EXIF, location or other metadata
 /// of [original], because a PNG made from raw pixels has nowhere to carry it.
 Future<PreparedPhoto> preparePhoto(Uint8List original) async {
-  final ui.Image large = await _decode(original, photoUploadSize);
+  final ui.Image large = await decodePhotoAtMost(original, photoUploadSize);
   try {
-    final ui.Image small = await _decode(original, photoPaletteSampleSize);
+    final ui.Image small = await decodePhotoAtMost(original, photoPaletteSampleSize);
     try {
       final ByteData? png = await large.toByteData(format: ui.ImageByteFormat.png);
       final ByteData? rgba = await small.toByteData(format: ui.ImageByteFormat.rawStraightRgba);
@@ -48,7 +48,8 @@ Future<PreparedPhoto> preparePhoto(Uint8List original) async {
   }
 }
 
-Future<ui.Image> _decode(Uint8List bytes, int longSide) async {
+/// Decodes [bytes] upright, with a long side of at most [longSide]. The pixels carry no EXIF or other metadata.
+Future<ui.Image> decodePhotoAtMost(Uint8List bytes, int longSide) async {
   final ui.Codec codec = await ui.instantiateImageCodecWithSize(
     await ui.ImmutableBuffer.fromUint8List(bytes),
     getTargetSize: (width, height) => width <= longSide && height <= longSide

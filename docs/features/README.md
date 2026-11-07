@@ -46,6 +46,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [promo-codes.md](promo-codes.md) | Redeem a code for coins or Pro days, limits, rate limits, admin codes, store offer codes, `/redeem` link |
 | [streak-rescue.md](streak-rescue.md) | Restore a broken streak for coins |
 | [ai-wallpaper.md](ai-wallpaper.md) | AI tab errors, charge id, Try another |
+| [photo-wallpaper.md](photo-wallpaper.md) | Photo to wallpaper: extend or upscale a photo, prices, caps, privacy |
 | [ai-charge.md](ai-charge.md) | AI charge check on the worker, refund evidence |
 | [remix.md](remix.md) | Remix an AI wallpaper: prompt and style, `remixOf`, remix count, Remixes row, inbox notice |
 | [studio.md](studio.md) | Prism Studio: daily AI wallpapers, checks, review queue, setup (backend) |

@@ -93,6 +93,20 @@ enum AiStylePickSource {
   String get wireValue => _snakeCase(name);
 }
 
+enum PhotoJobModeValue {
+  extend,
+  upscale;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum PhotoJobTargetValue {
+  phone,
+  desktop;
+
+  String get wireValue => _snakeCase(name);
+}
+
 enum ImmersiveToggleSourceValue {
   tap,
   semantics;

@@ -53,10 +53,14 @@ class LocalQaRuntime {
     PersistenceRuntime.store = store;
   }
 
-  static Future<void> initializeFirebase() async {
+  static void _assertDemoFirebaseApps() {
     for (final app in Firebase.apps) {
       if (app.options.projectId != project) throw StateError('A non-demo Firebase app already exists.');
     }
+  }
+
+  static Future<void> initializeFirebase() async {
+    _assertDemoFirebaseApps();
     await Firebase.initializeApp(
       options: FirebaseOptions(
         apiKey: 'AIzaSy000000000000000000000000000000000',
@@ -65,11 +69,10 @@ class LocalQaRuntime {
             : '1:1234567890:android:0123456789abcdef',
         messagingSenderId: '1234567890',
         projectId: project,
-        storageBucket: 'demo-prism.appspot.com',
         iosBundleId: 'com.hash.prism',
       ),
     );
-    if (Firebase.app().options.projectId != project) throw StateError('Wrong Firebase project.');
+    _assertDemoFirebaseApps();
     await FirebaseAuth.instance.useAuthEmulator('localhost', 19371, automaticHostMapping: false);
     configureLocalQaFirestore();
     for (final region in const <String>['us-central1', 'asia-south1']) {
