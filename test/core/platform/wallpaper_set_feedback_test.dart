@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
@@ -31,6 +32,7 @@ class _Client implements WallpaperClient {
   _Client({this.status = aw.WallpaperOperationStatus.applied});
 
   aw.WallpaperOperationStatus status;
+  Completer<void>? hold;
   final List<aw.StaticWallpaperRequest> requests = <aw.StaticWallpaperRequest>[];
 
   @override
@@ -39,6 +41,7 @@ class _Client implements WallpaperClient {
   @override
   Future<aw.WallpaperOperationResult> applyWallpaper(aw.StaticWallpaperRequest request) async {
     requests.add(request);
+    await hold?.future;
     return aw.WallpaperOperationResult(status: status, requestedTarget: request.target);
   }
 
@@ -225,6 +228,34 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
   });
 
+  testWidgets('an Undo that is still setting keeps the history row and is not reported as restored', (tester) async {
+    final _Client client = _Client()..hold = Completer<void>();
+    aw.AsyncWallpaper.debugSetClient(client);
+    WallpaperService.applyTimeout = const Duration(milliseconds: 10);
+    addTearDown(() => WallpaperService.applyTimeout = const Duration(seconds: 30));
+    await store.record(_row('2', '/new.png', 'home'));
+    await report(
+      tester,
+      _success(
+        restore: <WallpaperRestore>[WallpaperRestore(WallpaperTarget.home, _row('1', previousFilePath, 'home'))],
+        ids: <String>['2'],
+      ),
+    );
+
+    await tester.tap(find.text('Undo'));
+    for (int i = 0; i < 5; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    client.hold!.complete();
+
+    expect(client.requests, hasLength(1));
+    expect(store.items().map((item) => item.id), ['2']);
+    expect(analytics.events.whereType<SetWallUndoneEvent>().single.result, BinaryResultValue.failure);
+    expect(toastSaid('Previous wallpaper restored'), isFalse);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
   testWidgets('Undo rejects a legacy Prism original without canonical identity', (tester) async {
     final client = _Client();
     aw.AsyncWallpaper.debugSetClient(client);
@@ -384,6 +415,18 @@ void main() {
       expect(find.text(_l10n.coreWallpaperSetWithPhone), findsNothing);
       await tester.pump(const Duration(seconds: 10));
     });
+
+    for (final String code in <String>['timeout', 'offline_unavailable', 'load_failed']) {
+      testWidgets('a lock screen image that failed to load ($code) keeps its message and Try again', (tester) async {
+        final WallpaperSetResult result = WallpaperSetResult(WallpaperSetStatus.failed, code, errorCode: code);
+        await report(tester, result, target: WallpaperTarget.lock, onRetry: (_) {}, onSystemSet: (_) {});
+
+        expect(find.text(result.localizedMessage(_l10n)), findsOneWidget);
+        expect(find.text('Try again'), findsOneWidget);
+        expect(find.text(_l10n.coreWallpaperSetWithPhone), findsNothing);
+        await tester.pump(const Duration(seconds: 10));
+      });
+    }
 
     testWidgets('a home screen failure keeps Try again', (tester) async {
       await report(

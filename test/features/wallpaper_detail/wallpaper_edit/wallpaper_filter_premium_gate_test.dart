@@ -503,11 +503,14 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  for (final String editAfterFailure in <String>['unchanged', 'reset', 'add']) {
+  for (final String editAfterFailure in <String>['unchanged', 'reset', 'add', 'tap during refund']) {
     final bool resetAfterFailure = editAfterFailure == 'reset';
     final bool addAfterFailure = editAfterFailure == 'add';
+    final bool tapDuringRefund = editAfterFailure == 'tap during refund';
     testWidgets(
-      addAfterFailure
+      tapDuringRefund
+          ? 'a Set with phone tap while the failed set is refunded runs after the refund (#545)'
+          : addAfterFailure
           ? 'a free set with the phone does not charge a filter added after export'
           : resetAfterFailure
           ? 'a premium filter set with the phone charges the exported filter after reset (#545)'
@@ -531,6 +534,8 @@ void main() {
         var refundCalls = 0;
         var setCalls = 0;
         var balance = 20;
+        final Completer<void> refundGate = Completer<void>();
+        if (!tapDuringRefund) refundGate.complete();
         const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
         final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
         messenger.setMockMethodCallHandler(_toastChannel, (_) async => true);
@@ -551,6 +556,7 @@ void main() {
           }
           if (!spend && call['functionName'] != 'awardCoins') fail('Unexpected callable: ${call['functionName']}');
           spend ? spendCalls++ : refundCalls++;
+          if (!spend) await refundGate.future;
           final int previous = balance;
           balance += spend ? -CoinPolicy.premiumFilter : CoinPolicy.premiumFilter;
           return _codec.encodeMessage(<Object?>[
@@ -596,6 +602,19 @@ void main() {
           reason: 'Set with phone action',
         );
         await tester.pump(const Duration(milliseconds: 500));
+        if (tapDuringRefund) {
+          await tester.tap(find.text('Set with phone'));
+          await tester.pump();
+          expect(setCalls, 2, reason: 'the phone set waits for the refund');
+          refundGate.complete();
+          await _waitForCount(tester, () => setCalls, 3, 'phone wallpaper screen request after the refund');
+          await tester.pump(const Duration(milliseconds: 100));
+          expect(spendCalls, 2);
+          expect(refundCalls, 1);
+          expect(CoinsService.instance.balanceNotifier.value, 15);
+          await tester.pump(const Duration(seconds: 2));
+          return;
+        }
 
         await _waitForEditorReady(tester);
         if (addAfterFailure) {
