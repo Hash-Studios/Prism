@@ -554,12 +554,16 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
     _busy = true;
     try {
       if (mounted) setState(() {});
-      final WallpaperSetResult result = await _setWallpaper(
-        path,
-        const SetWallpaperChoice(WallpaperTarget.lock, useSystemCropper: true),
-        offerPhoneScreen: false,
-      );
-      if ((result.isSuccess || result.isInfo) && mounted) Navigator.of(context).pop();
+      // The failed set refunded a premium filter, so this set pays for it again like any other set.
+      await _runWithPremiumFilterGate(() async {
+        final WallpaperSetResult result = await _setWallpaper(
+          path,
+          const SetWallpaperChoice(WallpaperTarget.lock, useSystemCropper: true),
+          offerPhoneScreen: false,
+        );
+        if ((result.isSuccess || result.isInfo) && mounted) Navigator.of(context).pop();
+        return !result.isFailure;
+      }, sourceTag: 'coins.filter.set');
     } finally {
       _phoneSetInProgress = false;
       _busy = false;
