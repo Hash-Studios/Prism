@@ -323,6 +323,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
     bool offerPhoneScreen = true,
   }) async {
     final String filterLabel = _editLabel;
+    final String owner = app_state.prismUser.id;
+    final int sourceGeneration = _sourceLoadGeneration;
     final AppLocalizations l10n = context.l10n;
     final PlacedWallpaper? placed = choice.placed;
     final WallpaperSetResult result = await WallpaperService.setWallpaper(
@@ -343,7 +345,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
             entryPoint: 'wallpaper_filter',
             targetChanged: choice.targetChanged,
           ),
-          onSystemSet: offerPhoneScreen ? (_) => unawaited(_setWithPhone(path, filterLabel)) : null,
+          onSystemSet: offerPhoneScreen
+              ? (_) => unawaited(_setWithPhone(path, filterLabel, owner: owner, sourceGeneration: sourceGeneration))
+              : null,
         );
       } catch (error) {
         logger.w('Wallpaper set outcome follow-up failed', error: error);
@@ -556,10 +560,21 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
     }
   }
 
-  Future<void> _setWithPhone(String path, String filterLabel) async {
-    if (!mounted || !app_state.prismUser.loggedIn || _phoneSetInProgress) return;
+  Future<void> _setWithPhone(
+    String path,
+    String filterLabel, {
+    required String owner,
+    required int sourceGeneration,
+  }) async {
+    bool isCurrent() =>
+        mounted &&
+        app_state.prismUser.loggedIn &&
+        owner == app_state.prismUser.id &&
+        sourceGeneration == _sourceLoadGeneration;
+    if (!isCurrent() || _phoneSetInProgress) return;
     if (_busy) {
-      _pendingPhoneSet = () => unawaited(_setWithPhone(path, filterLabel));
+      _pendingPhoneSet = () =>
+          unawaited(_setWithPhone(path, filterLabel, owner: owner, sourceGeneration: sourceGeneration));
       return;
     }
     _phoneSetInProgress = true;
@@ -569,6 +584,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
       // The failed set refunded a premium filter, so this set pays for it again like any other set.
       await _runWithPremiumFilterGate(
         () async {
+          if (!isCurrent()) return false;
           final WallpaperSetResult result = await _setWallpaper(
             path,
             const SetWallpaperChoice(WallpaperTarget.lock, useSystemCropper: true),

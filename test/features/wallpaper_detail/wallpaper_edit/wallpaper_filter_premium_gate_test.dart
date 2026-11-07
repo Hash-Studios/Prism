@@ -503,12 +503,23 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  for (final String editAfterFailure in <String>['unchanged', 'reset', 'add', 'tap during refund']) {
+  for (final String editAfterFailure in <String>[
+    'unchanged',
+    'reset',
+    'add',
+    'tap during refund',
+    'switch account during refund',
+    'replace source during refund',
+    'close during refund',
+  ]) {
     final bool resetAfterFailure = editAfterFailure == 'reset';
     final bool addAfterFailure = editAfterFailure == 'add';
-    final bool tapDuringRefund = editAfterFailure == 'tap during refund';
+    final bool tapDuringRefund = editAfterFailure.endsWith('during refund');
+    final bool cancelPending = tapDuringRefund && editAfterFailure != 'tap during refund';
     testWidgets(
-      tapDuringRefund
+      cancelPending
+          ? 'cancels queued Set with phone on $editAfterFailure'
+          : tapDuringRefund
           ? 'a Set with phone tap while the failed set is refunded runs after the refund (#545)'
           : addAfterFailure
           ? 'a free set with the phone does not charge a filter added after export'
@@ -592,6 +603,7 @@ void main() {
           await tester.tap(_iconButton('Reset'));
           await tester.pump();
         }
+        final VoidCallback downloadAction = tester.widget<IconButton>(_iconButton('Download')).onPressed!;
         await tester.tap(_iconButton('Set as wallpaper'));
         if (!addAfterFailure) {
           await _waitForCount(tester, () => refundCalls, 1, 'refund of the failed lock screen set');
@@ -603,16 +615,74 @@ void main() {
         );
         await tester.pump(const Duration(milliseconds: 500));
         if (tapDuringRefund) {
-          await tester.tap(find.text('Set with phone'));
+          final VoidCallback phoneSet = tester.widget<SnackBarAction>(find.byType(SnackBarAction)).onPressed;
+          phoneSet();
+          phoneSet();
+          downloadAction();
           await tester.pump();
+          expect(spendCalls, 1, reason: 'duplicate phone taps and another action wait for the refund');
           expect(setCalls, 2, reason: 'the phone set waits for the refund');
+          if (editAfterFailure == 'switch account during refund') {
+            app_state.prismUser = app_constants.createGuestPrismUser()
+              ..id = 'another-user'
+              ..loggedIn = true
+              ..coins = 20;
+          } else if (editAfterFailure == 'replace source during refund') {
+            final File replacement = File('${directory.path}/replacement.png')
+              ..writeAsBytesSync(source.readAsBytesSync());
+            await tester.pumpWidget(_screenHost(replacement.path));
+          } else if (editAfterFailure == 'close during refund') {
+            await tester.pumpWidget(const SizedBox());
+          }
           refundGate.complete();
+          if (cancelPending) {
+            if (editAfterFailure != 'close during refund') {
+              await waitForRealIo(
+                tester,
+                () => tester.widget<PopScope>(find.byType(PopScope)).canPop,
+                reason: 'original coin gate finishes without a phone set',
+              );
+            }
+            await tester.pump(const Duration(seconds: 2));
+            expect(setCalls, 2);
+            expect(spendCalls, 1);
+            expect(refundCalls, 1);
+            if (editAfterFailure == 'switch account during refund') {
+              app_state.prismUser = app_constants.createGuestPrismUser()
+                ..id = 'test'
+                ..loggedIn = true;
+              bool retried = false;
+              final Future<void> retry = CoinsService.instance.retryPendingRefunds().then((_) => retried = true);
+              await waitForRealIo(tester, () => retried, reason: 'payer refund retry completes');
+              await retry;
+              await tester.pump(const Duration(seconds: 2));
+            }
+            await tester.pumpWidget(const SizedBox());
+            await waitForRealIo(
+              tester,
+              () => directory
+                  .listSync(recursive: true)
+                  .whereType<File>()
+                  .every((file) => !file.path.endsWith('/edited.png')),
+              reason: 'retained phone export removed after disposal',
+            );
+            return;
+          }
           await _waitForCount(tester, () => setCalls, 3, 'phone wallpaper screen request after the refund');
           await tester.pump(const Duration(milliseconds: 100));
           expect(spendCalls, 2);
           expect(refundCalls, 1);
           expect(CoinsService.instance.balanceNotifier.value, 15);
           await tester.pump(const Duration(seconds: 2));
+          await tester.pumpWidget(const SizedBox());
+          await waitForRealIo(
+            tester,
+            () => directory
+                .listSync(recursive: true)
+                .whereType<File>()
+                .every((file) => !file.path.endsWith('/edited.png')),
+            reason: 'phone export removed after successful phone set and disposal',
+          );
           return;
         }
 

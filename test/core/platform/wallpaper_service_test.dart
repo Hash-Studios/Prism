@@ -567,24 +567,27 @@ void main() {
       expect(client.requests, hasLength(1));
     });
 
-    test('an apply that outlasts the wait is still setting, not a failure to retry (#555)', () async {
-      final _GatedClient client = _GatedClient();
-      aw.AsyncWallpaper.debugSetClient(client);
-      WallpaperService.applyTimeout = const Duration(milliseconds: 10);
-      addTearDown(() => WallpaperService.applyTimeout = const Duration(seconds: 30));
+    for (final WallpaperTarget target in WallpaperTarget.values) {
+      test('a slow ${target.name} apply is still setting, not a load timeout (#555)', () async {
+        final _GatedClient client = _GatedClient();
+        aw.AsyncWallpaper.debugSetClient(client);
+        WallpaperService.applyTimeout = const Duration(milliseconds: 10);
+        addTearDown(() => WallpaperService.applyTimeout = const Duration(seconds: 30));
 
-      final WallpaperSetResult result = await WallpaperService.setWallpaper(
-        '/tmp/wall.png',
-        WallpaperTarget.home,
-        recordHistory: false,
-      );
-      client.finish.complete();
+        final WallpaperSetResult result = await WallpaperService.setWallpaper(
+          '/tmp/wall.png',
+          target,
+          recordHistory: false,
+        );
+        client.finish.complete();
 
-      expect(result.isFailure, isFalse);
-      expect(result.canRetry, isFalse);
-      expect(result.localizedMessage(_l10n), _l10n.coreWallpaperStillSetting);
-      expect(client.requests, hasLength(1));
-    });
+        expect(result.status, WallpaperSetStatus.pending);
+        expect(result.errorCode, 'still-setting');
+        expect(result.canRetry, isFalse);
+        expect(result.localizedMessage(_l10n), _l10n.coreWallpaperStillSetting);
+        expect(client.requests, hasLength(1));
+      });
+    }
 
     test('partial-apply with only the lock screen changed says so', () async {
       final WallpaperSetResult result = await set(
