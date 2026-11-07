@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_cover.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -38,6 +40,15 @@ void main() {
 
     final Finder clipInCover = find.descendant(of: find.byType(ProfileCover), matching: find.byType(ClipRect));
     expect(find.ancestor(of: find.byType(ImageFiltered), matching: clipInCover), findsOneWidget);
+    expect(tester.widget<ClipRect>(clipInCover).clipBehavior, isNot(Clip.none));
+    expect(tester.getRect(clipInCover), tester.getRect(find.byType(ProfileCover)));
+  });
+
+  testWidgets('a picked cover is not blurred', (tester) async {
+    await pumpCover(tester, ProfileCover(file: File(kCoverMosaicAssets.first)));
+
+    expect(tester.widget<Image>(find.byType(Image)).image, isA<FileImage>());
+    expect(find.byType(ImageFiltered), findsNothing);
   });
 
   testWidgets('a user-set cover shows as it is, not blurred', (tester) async {
