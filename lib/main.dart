@@ -576,6 +576,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   final AnalyticsIdentitySync _analyticsIdentitySync = AnalyticsIdentitySync();
   final DeepLinkParser _deepLinkParser = const DeepLinkParser();
   late final DeepLinkDispatcher _deepLinkDispatcher;
+  final SharedInbox _sharedInbox = SharedInbox();
   late final AuthNavigationContinuation _authContinuation;
   final Map<String, (ShortCodeIntent, DeepLinkSourceValue)> _shortLinkRetries =
       <String, (ShortCodeIntent, DeepLinkSourceValue)>{};
@@ -751,21 +752,25 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       if (_launchLinkHandled) return DeepLink.defaultPath;
       _launchLinkHandled = true;
     }
+    if (defaultTargetPlatform == TargetPlatform.iOS && _isShareIn(platformDeepLink.uri)) {
+      unawaited(_openPendingShare(arriving: platformDeepLink.uri));
+      if (!_sharedInbox.claimLink(platformDeepLink.uri)) {
+        return platformDeepLink.initial ? DeepLink.defaultPath : DeepLink.none;
+      }
+    }
     unawaited(_deepLinkDispatcher.openUri(platformDeepLink.uri, source: DeepLinkSourceValue.appLinks));
-    if (_isShareIn(platformDeepLink.uri)) unawaited(_openPendingShare(arriving: platformDeepLink.uri));
     return platformDeepLink.initial ? DeepLink.defaultPath : DeepLink.none;
   }
 
-  static bool _isShareIn(Uri uri) =>
-      uri.scheme == 'prism' && (uri.host == 'share-in' || uri.path == '/share-in' || uri.path == 'share-in');
+  static bool _isShareIn(Uri uri) => SharedInbox.isShareLink(uri);
 
   /// Opens the share the iOS Share Extension left in the App Group. The system can drop the URL it hands over while
   /// Prism starts, so Prism also takes the share itself at start, on resume and when a share URL arrives.
   Future<void> _openPendingShare({Uri? arriving}) async {
     if (defaultTargetPlatform != TargetPlatform.iOS) return;
     try {
-      final Uri? link = await SharedInbox().takePendingLink(arriving: arriving);
-      if (link != null && mounted) {
+      final Uri? link = await _sharedInbox.takePendingLink(arriving: arriving);
+      if (link != null && mounted && _sharedInbox.claimLink(link)) {
         unawaited(_deepLinkDispatcher.openUri(link, source: DeepLinkSourceValue.appLinks));
       }
     } catch (error) {

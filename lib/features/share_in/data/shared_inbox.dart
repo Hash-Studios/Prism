@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:Prism/core/router/deep_link_action_entity.dart';
+import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -21,6 +23,7 @@ class SharedInbox {
   final MethodChannel _channel;
   final Future<Directory> Function()? _inboxDirectory;
   final Future<Directory> Function()? _handOffDirectory;
+  final Set<String> _deliveredLinks = <String>{};
 
   Future<Directory> inboxDirectory() async =>
       _inboxDirectory?.call() ?? Directory((await _channel.invokeMethod<String>('directory'))!);
@@ -40,12 +43,41 @@ class SharedInbox {
   Future<Uri?> takePendingLink({Uri? arriving}) async {
     final String? link = await _channel.invokeMethod<String>('takePendingLink');
     final Uri? uri = link == null ? null : Uri.tryParse(link);
-    if (uri == null || arriving != null && _sameShare(uri, arriving)) return null;
+    if (uri == null || !isShareLink(uri) || arriving != null && isShareLink(arriving) && _sameShare(uri, arriving)) {
+      return null;
+    }
     return uri;
   }
 
+  static bool isShareLink(Uri uri) {
+    if (uri.scheme != 'prism' || uri.userInfo.isNotEmpty || uri.hasPort) return false;
+    if (!(uri.host == 'share-in' && uri.path.isEmpty || uri.host.isEmpty && uri.path == '/share-in')) return false;
+    try {
+      return uri.queryParametersAll.values.every((List<String> values) => values.length == 1) &&
+          const DeepLinkParser().parse(uri) is ShareInIntent;
+    } on FormatException {
+      return false;
+    }
+  }
+
+  /// One owner across the system URL and pending-link paths, even after navigation has completed. Keep this inbox
+  /// instance for the app's lifetime. Untagged external text links still use the dispatcher's normal deduplication.
+  bool claimLink(Uri uri) {
+    if (!isShareLink(uri)) return false;
+    final action = const DeepLinkParser().parse(uri);
+    if (action is! ShareInIntent) return false;
+    final String? id = action.inboxId;
+    if (id != null) return _deliveredLinks.add('id:$id');
+    if (!RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$').hasMatch(uri.fragment)) {
+      return true;
+    }
+    return _deliveredLinks.add('text:${uri.fragment}');
+  }
+
   static bool _sameShare(Uri a, Uri b) =>
-      a.queryParameters['id'] == b.queryParameters['id'] && a.queryParameters['text'] == b.queryParameters['text'];
+      a.queryParameters['id'] == b.queryParameters['id'] &&
+      a.queryParameters['text'] == b.queryParameters['text'] &&
+      a.fragment == b.fragment;
 
   /// A new file in the hand-off folder for an image that Prism downloads itself.
   Future<File> newHandOffFile(String extension) async {

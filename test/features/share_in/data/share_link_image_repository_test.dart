@@ -219,7 +219,14 @@ void main() {
   });
 
   test('isPublicAddress accepts public addresses and refuses private, reserved and embedded private ones', () {
-    for (final String ip in <String>['8.8.8.8', '151.101.1.1', '2606:4700::1111', '::ffff:8.8.8.8']) {
+    for (final String ip in <String>[
+      '8.8.8.8',
+      '151.101.1.1',
+      '2606:4700::1111',
+      '2001:200::1',
+      '3ffd::1',
+      '3fff:1000::1',
+    ]) {
       expect(isPublicAddress(InternetAddress(ip)), isTrue, reason: ip);
     }
     for (final String ip in <String>[
@@ -244,6 +251,13 @@ void main() {
       '2002:c0a8:101::1',
       '::ffff:127.0.0.1',
       '64:ff9b::a00:1',
+      '::ffff:8.8.8.8',
+      '0:0:0:0:0:ffff:808:808',
+      '64:ff9b::808:808',
+      '3ffe::1',
+      '3fff:fff:ffff::1',
+      '2606:4700::5efe:8.8.8.8',
+      '2606:4700:0:0:200:5efe:808:808',
     ]) {
       expect(isPublicAddress(InternetAddress(ip)), isFalse, reason: ip);
     }
@@ -262,8 +276,13 @@ void main() {
     }
 
     test('refuses a host that resolves to a private address', () async {
-      final HttpClient client = publicOnlyHttpClient((_) async => <InternetAddress>[InternetAddress('10.0.0.1')]);
+      int lookups = 0;
+      final HttpClient client = publicOnlyHttpClient((_) async {
+        lookups++;
+        return <InternetAddress>[InternetAddress('10.0.0.1')];
+      });
       expect(await connectError(client, 'https://cdn.example.com/a.png'), isA<SocketException>());
+      expect(lookups, 1, reason: 'an unrelated HTTP override or DNS failure must not make this test pass');
     });
 
     test('refuses a host with one private address among public ones', () async {
@@ -287,5 +306,147 @@ void main() {
       expect(await connectError(client, 'http://cdn.example.com/a.png'), isA<SocketException>());
       expect(lookups, 0);
     });
+
+    test('DNS refusal happens before any socket attempt', () async {
+      int lookups = 0;
+      int connections = 0;
+      await IOOverrides.runZoned(
+        () async {
+          for (final List<String> answers in <List<String>>[
+            <String>[],
+            <String>['10.0.0.1'],
+            <String>['8.8.8.8', '192.168.0.2'],
+          ]) {
+            final HttpClient client = publicOnlyHttpClient((_) async {
+              lookups++;
+              return answers.map(InternetAddress.new).toList();
+            });
+            expect(await connectError(client, 'https://cdn.example.com/a.png'), isA<SocketException>());
+          }
+        },
+        socketStartConnect: (Object? host, int port, {Object? sourceAddress, int sourcePort = 0}) {
+          connections++;
+          throw const SocketException('An OS refusal must not make the policy test pass.');
+        },
+      );
+      expect(lookups, 3);
+      expect(connections, 0);
+    });
+
+    test('an IPv6 literal is resolved without brackets and pins its raw address', () async {
+      const String ip = '2606:4700::1111';
+      final List<String> lookups = <String>[];
+      int connections = 0;
+      await IOOverrides.runZoned(
+        () async {
+          final HttpClient client = publicOnlyHttpClient((String host) async {
+            lookups.add(host);
+            return <InternetAddress>[InternetAddress(host)];
+          });
+          expect(await connectError(client, 'https://[$ip]/image'), isA<SocketException>());
+        },
+        socketStartConnect: (Object? host, int port, {Object? sourceAddress, int sourcePort = 0}) {
+          connections++;
+          expect(host, isA<InternetAddress>());
+          expect((host! as InternetAddress).rawAddress, InternetAddress(ip).rawAddress);
+          expect(port, 443);
+          throw const SocketException('Stop after checking the pinned address.');
+        },
+      );
+      expect(lookups, <String>[ip]);
+      expect(connections, 1);
+    });
+
+    test('does not replace an installed network policy, including local QA', () {
+      int clients = 0;
+      expect(
+        () => HttpOverrides.runZoned(
+          () => publicOnlyHttpClient((_) async => <InternetAddress>[InternetAddress('8.8.8.8')]).close(force: true),
+          createHttpClient: (SecurityContext? context) {
+            clients++;
+            return _DirectHttp().createHttpClient(context);
+          },
+        ),
+        throwsA(isA<SocketException>()),
+      );
+      expect(clients, 0);
+    });
+
+    test('closing during DNS prevents a late answer from opening a socket', () async {
+      final Completer<List<InternetAddress>> dns = Completer<List<InternetAddress>>();
+      final Completer<void> resolving = Completer<void>();
+      int connections = 0;
+      await IOOverrides.runZoned(
+        () async {
+          final HttpClient client = publicOnlyHttpClient((_) {
+            resolving.complete();
+            return dns.future;
+          });
+          final Future<Object?> error = connectError(client, 'https://cdn.example.com/a.png');
+          await resolving.future;
+          await Future<void>.delayed(Duration.zero);
+          client.close(force: true);
+          dns.complete(<InternetAddress>[InternetAddress('8.8.8.8')]);
+          expect(await error, isA<SocketException>());
+          expect(connections, 0);
+        },
+        socketStartConnect: (Object? host, int port, {Object? sourceAddress, int sourcePort = 0}) {
+          connections++;
+          throw const SocketException('The test must not open a real socket.');
+        },
+      );
+    });
+    test('closing during stalled TLS closes the peer', () async {
+      final ServerSocket server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      final Completer<Socket> accepted = Completer<Socket>();
+      final Completer<void> hello = Completer<void>();
+      final Completer<void> closed = Completer<void>();
+      final StreamSubscription<Socket> listener = server.listen((Socket peer) {
+        accepted.complete(peer);
+        peer.listen(
+          (_) {
+            if (!hello.isCompleted) hello.complete();
+          },
+          onDone: () => closed.complete(),
+          onError: (Object _) {},
+        );
+      });
+      Socket? peer;
+      final _DirectIo nativeIo = _DirectIo();
+      try {
+        await IOOverrides.runZoned(
+          () async {
+            final HttpClient client = publicOnlyHttpClient((_) async => <InternetAddress>[InternetAddress('8.8.8.8')]);
+            final Future<void> request = client
+                .getUrl(Uri.parse('https://cdn.example.com/image'))
+                .then<void>((_) {}, onError: (Object _) {});
+            try {
+              peer = await accepted.future.timeout(const Duration(seconds: 2));
+              await hello.future.timeout(const Duration(seconds: 2));
+              client.close(force: true);
+              final bool didClose = await closed.future
+                  .then((_) => true)
+                  .timeout(const Duration(milliseconds: 500), onTimeout: () => false);
+              expect(didClose, isTrue, reason: 'the peer never replies to ClientHello; cancellation must close it');
+            } finally {
+              client.close(force: true);
+              peer?.destroy();
+              await request.timeout(const Duration(seconds: 2));
+            }
+          },
+          socketStartConnect: (Object? host, int port, {Object? sourceAddress, int sourcePort = 0}) {
+            return nativeIo.socketStartConnect(InternetAddress.loopbackIPv4, server.port);
+          },
+        );
+      } finally {
+        peer?.destroy();
+        await listener.cancel();
+        await server.close();
+      }
+    }, skip: 'Known SDK ownership gap: SecureSocket.secure detaches the raw socket before its handshake completes.');
   });
 }
+
+class _DirectHttp extends HttpOverrides {}
+
+final class _DirectIo extends IOOverrides {}

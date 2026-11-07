@@ -86,10 +86,12 @@ prism://share-in?text=<url-encoded text>&src=<package>
 The text is at most 2048 characters.
 
 - `src` is Android only. It holds the sending app's package from `Activity.referrer`.
+- iOS text-share links have a UUID fragment, for example `prism://share-in?text=...#<uuid>`. It identifies one share delivery, not the shared text. Sharing the same text again creates a new UUID. The fragment is not part of the shared web URL.
 - Only the `prism:` scheme carries a share. A web link to `/share-in` is not a share.
 - Method channel `prism/shared_inbox`:
   - `take(id)` returns the file path. Errors: `invalid-id`, `missing`, `too-large`, `unreadable`.
   - `directory()` returns the inbox folder.
+  - iOS only: `takePendingLink()` claims and removes the extension's pending link. It returns a share URL or null. Invalid payloads, links older than 5 minutes (a share whose open failed), and image IDs without a usable inbox file return null.
 - Image limit: 50 MB.
 
 ### Android
@@ -113,7 +115,10 @@ The text is at most 2048 characters.
 - It copies the image file into the App Group folder `shared-inbox/<id>.<ext>` without decoding it. A large photo uses little extension memory.
 - Image providers must supply a file representation. There is no `Data` or `UIImage` fallback. A copy checks the 50 MB limit while reading and publishes only a completed file.
 - A provider that never replies closes the extension request after 30 s. Late copies are discarded.
-- Then it opens Prism with the link and closes.
+- Before opening Prism, it atomically stores the link in the App Group's `shared-inbox/pending-link`. This is a single slot; a later share replaces a still-pending share. The system can drop the URL while Prism starts, so Prism also takes the pending link at startup and on resume. A received share URL also drains the slot.
+- Taking the link first renames it to a unique claim file, then validates and removes it. Concurrent takes have one owner and cannot delete a newer stored link. An abandoned claim file expires with the normal inbox sweep.
+- Prism uses one delivery tracker for both paths for the app's lifetime. Image IDs and iOS text-delivery UUIDs are claimed once, even if the second delivery arrives after navigation finishes or the share sheet closes. The dispatcher's pending/visible-text dedupe alone does not cover that case, especially for a Prism link that opens a wall or folder instead of the share sheet.
+- Then the extension opens Prism with the same link and closes.
 - Code: `ios/PrismShareExtension/ShareViewController.swift`, `ios/ShareInboxShared/ShareInbox.swift` (shared with Runner), `ios/Runner/PrismSharedInboxChannel.swift`.
 - Target script: `ruby ios/scripts/add_share_extension_target.rb`. It is safe to run again.
 
@@ -129,7 +134,10 @@ The text is at most 2048 characters.
 
 - Prism never sends a shared image anywhere unless the user picks Make it fit or Upload to Prism.
 - For a web link, the server reads only the page HTML. It does not read or store the image or store the URL. It stores pseudonymous quota counters, with the retention and hash limitations above.
-- The app downloads the image itself. Each redirect must remain https on port 443 without credentials. The download is at most 25 MB, with one 20 s deadline across redirects, headers, and body.
+- The app downloads the image itself. Each redirect must remain https on port 443 without credentials. Each new connection resolves all addresses and refuses the host if any address is not public. The address exclusions match `functions/src/shareLinkImage.ts`, including mapped, NAT64, ISATAP, 6to4 and reserved IPv6 ranges. The socket connects to the checked address without another DNS lookup; TLS validates the original URL host. The client uses no proxy, and redirects use that same client.
+- Downloads fail closed when an `HttpOverrides` network policy is installed. The downloader must not replace the local-QA fixture allowlist with public internet access. Local QA therefore cannot download these page images through the production downloader.
+- The download is at most 25 MB, with one 20 s result deadline across redirects, headers, and body. Closing the client during DNS prevents a late answer from opening a socket.
+- Known transport limitation: cancellation during a stalled TLS handshake can leave the connection open until the peer closes. In the pinned Dart SDK, `SecureSocket.secure` detaches the raw socket before it returns the secure socket; destroying the original socket or cancelling the completed TCP task does not close that in-progress handshake. The result deadline is not a socket-lifetime guarantee. The skipped `closing during stalled TLS closes the peer` regression records this unresolved case.
 - Make it fit sends the photo to fal.ai and Google Cloud Vision. See [photo-wallpaper.md](photo-wallpaper.md).
 - Make it fit checks the account again before preparing the upload, after preparation, and before a retry. Signing out or changing accounts prevents another send.
 
@@ -189,3 +197,6 @@ No Worker change and no rules change are needed.
 2. `cd functions && npm run build && node --test 'lib/__tests__/shareLinkImage*.test.js'`
 3. Android: `android/app/src/test/kotlin/com/hash/prism/SharedInboxLinksTest.kt`, and `verifySharedIntent` in `PrismNativeInstrumentation.kt`.
 4. On macOS with Swift 6.2 or later: `swift test --package-path ios`. The `PrismShareInbox` target builds `ios/ShareInboxShared/ShareInbox.swift`, and the test target imports it to run `ios/RunnerTests/ShareInboxTests.swift`. This is native package proof, not an iOS app or extension build.
+5. On a device, share a web page whose og:image is on a public CDN and confirm the image sheet opens. That proves a successful pinned download; the unit tests prove the refusals without opening sockets.
+6. Known failing transport regression: `fvm flutter test --no-pub --run-skipped --plain-name 'closing during stalled TLS closes the peer' test/features/share_in/data/share_link_image_repository_test.dart`.
+7. On iOS, share an image and a Prism link with the app terminated, then with it already running. Close the resulting sheet or page, background and resume, and confirm it does not reopen. Share the same text again and confirm the new delivery opens. Also test a dropped system URL so only the pending-link path delivers it. Native package and Dart tests do not prove the extension-to-app OS handoff.

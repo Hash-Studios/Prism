@@ -114,6 +114,8 @@ enum ShareInbox {
   }
 
   private static let pendingLinkName = "pending-link"
+  /// A pending link older than this was for a share whose open failed. Prism ignores it rather than show an old share.
+  static let pendingLinkMaxAge: TimeInterval = 5 * 60
 
   /// Leaves [url] for the app, which takes it when it is ready. The system can drop a URL it hands over while the
   /// app starts, so the app does not depend on that delivery.
@@ -126,9 +128,23 @@ enum ShareInbox {
   /// The share link the extension left, once. Anything that is not a share link is deleted and ignored.
   static func takePendingLink(container: URL) -> String? {
     let file = folder(in: container).appendingPathComponent(pendingLinkName)
-    guard let data = try? Data(contentsOf: file) else { return nil }
-    try? FileManager.default.removeItem(at: file)
-    guard let link = String(data: data, encoding: .utf8), link.hasPrefix("prism://share-in?") else { return nil }
+    // Claim before reading. A concurrent take cannot open it twice, and a new store cannot be deleted by this take.
+    let claimed = folder(in: container).appendingPathComponent("\(newId()).pending")
+    do { try FileManager.default.moveItem(at: file, to: claimed) } catch { return nil }
+    defer { try? FileManager.default.removeItem(at: claimed) }
+    guard let modified = try? claimed.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
+      Date().timeIntervalSince(modified) <= pendingLinkMaxAge,
+      let data = try? Data(contentsOf: claimed), let link = String(data: data, encoding: .utf8),
+      let url = URLComponents(string: link), url.scheme == "prism", url.host == "share-in", url.path.isEmpty,
+      url.user == nil, url.password == nil, url.port == nil,
+      let items = url.queryItems, items.count == 1, let item = items.first, let value = item.value else { return nil }
+    switch item.name {
+    case "id":
+      guard Self.file(forId: value, container: container) != nil else { return nil }
+    case "text":
+      guard !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, value.utf16.count <= maxTextLength else { return nil }
+    default: return nil
+    }
     return link
   }
 
@@ -150,7 +166,8 @@ enum ShareInbox {
     }
     let unreserved = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
     guard let encoded = capped.addingPercentEncoding(withAllowedCharacters: unreserved) else { return nil }
-    return URL(string: "prism://share-in?text=\(encoded)")
+    // Identify this delivery, not its text. The user can share the same link again after closing its page.
+    return URL(string: "prism://share-in?text=\(encoded)#\(newId())")
   }
 
   private static func prepare(id: String, ext: String, container: URL) throws -> URL {

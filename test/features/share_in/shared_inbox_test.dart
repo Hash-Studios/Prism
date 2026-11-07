@@ -217,5 +217,58 @@ void main() {
       );
       expect(link?.queryParameters['text'], 'https://example.com/');
     });
+
+    test('does not dispatch non-share or malformed pending links', () async {
+      for (final String link in <String>[
+        'prism://settings',
+        'https://example.com/share-in?text=x',
+        'prism://share-in?text=',
+        'prism://share-in?id=missing',
+        'prism://share-in?text=%FF',
+        'prism://share-in?text=x&text=y',
+        'prism://other.example/share-in?text=x',
+        'prism://user@share-in?text=x',
+        'prism://share-in:42?text=x',
+      ]) {
+        stored = link;
+        expect(await SharedInbox(channel: channel).takePendingLink(), isNull, reason: link);
+      }
+    });
+
+    test('same text from a new share is not mistaken for the arriving delivery', () async {
+      stored = 'prism://share-in?text=x#123e4567-e89b-12d3-a456-426614174000';
+      expect(
+        await SharedInbox(
+          channel: channel,
+        ).takePendingLink(arriving: Uri.parse('prism://share-in?text=x#123e4567-e89b-12d3-a456-426614174001')),
+        isNotNull,
+      );
+    });
+  });
+
+  test('pending and system deliveries are claimed once in either order, even after navigation', () async {
+    for (final bool pendingFirst in <bool>[true, false]) {
+      final SharedInbox delivery = SharedInbox();
+      final Uri pending = Uri.parse(
+        'prism://share-in?text=https%3A%2F%2Fprismwalls.com%2Fl%2Fa'
+        '#123e4567-e89b-12d3-a456-426614174000',
+      );
+      final Uri system = pending.replace(host: '', path: '/share-in');
+      expect(delivery.claimLink(pendingFirst ? pending : system), isTrue);
+      await Future<void>.delayed(Duration.zero);
+      expect(delivery.claimLink(pendingFirst ? system : pending), isFalse);
+      expect(delivery.claimLink(pending.replace(fragment: '123e4567-e89b-12d3-a456-426614174001')), isTrue);
+    }
+  });
+
+  test('a duplicate image never claims a second owner, while untagged external text may be shared again', () {
+    final SharedInbox delivery = SharedInbox();
+    final Uri image = Uri.parse('prism://share-in?id=123e4567-e89b-12d3-a456-426614174000');
+    expect(delivery.claimLink(image), isTrue);
+    expect(delivery.claimLink(image.replace(host: '', path: '/share-in')), isFalse);
+    final Uri external = Uri.parse('prism://share-in?text=x');
+    expect(delivery.claimLink(external), isTrue);
+    expect(delivery.claimLink(external), isTrue);
+    expect(delivery.claimLink(Uri.parse('prism://settings')), isFalse);
   });
 }

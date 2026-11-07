@@ -115,23 +115,55 @@ class ShareLinkImageRepository {
 /// An [HttpClient] that connects only to a checked public address of the URL's host, so a shared link cannot send the
 /// device to a private service, also not through a redirect or a second DNS answer. TLS still checks the host name.
 HttpClient publicOnlyHttpClient(Future<List<InternetAddress>> Function(String host) resolve) {
+  // An override can enforce a stricter network policy, such as the local-QA fixture allowlist. There is no getter
+  // for its connectionFactory, so replacing it would silently bypass that policy. Refuse this download instead.
+  if (HttpOverrides.current != null) throw const SocketException('Downloads cannot replace an HTTP override.');
   final HttpClient client = HttpClient()..findProxy = (_) => 'DIRECT';
-  client.connectionFactory = (Uri uri, String? proxyHost, int? proxyPort) async {
+  client.connectionFactory = (Uri uri, String? proxyHost, int? proxyPort) {
     if (proxyHost != null || uri.scheme != 'https') throw const SocketException('Only direct https is allowed.');
-    final List<InternetAddress> addresses = await resolve(uri.host);
-    if (addresses.isEmpty || !addresses.every(isPublicAddress)) {
-      throw SocketException('${uri.host} does not resolve to a public address.');
+    bool cancelled = false;
+    ConnectionTask<Socket>? task;
+    Socket? connected;
+    Future<Socket> connect() async {
+      final List<InternetAddress> addresses = await resolve(uri.host);
+      if (cancelled) throw const SocketException('The download was cancelled.');
+      if (addresses.isEmpty || !addresses.every(isPublicAddress)) {
+        throw SocketException('${uri.host} does not resolve to a public address.');
+      }
+      final ConnectionTask<Socket> tcp = await Socket.startConnect(addresses.first, uri.port);
+      task = tcp;
+      if (cancelled) tcp.cancel();
+      final Socket socket = await tcp.socket;
+      connected = socket;
+      if (cancelled) {
+        socket.destroy();
+        throw const SocketException('The download was cancelled.');
+      }
+      final SecureSocket secure = await SecureSocket.secure(socket, host: uri.host);
+      connected = secure;
+      if (cancelled) {
+        secure.destroy();
+        throw const SocketException('The download was cancelled.');
+      }
+      return secure;
     }
-    final ConnectionTask<Socket> task = await Socket.startConnect(addresses.first, uri.port);
-    return ConnectionTask.fromSocket(
-      task.socket.then((Socket socket) => SecureSocket.secure(socket, host: uri.host)),
-      task.cancel,
+
+    // Return the task before DNS completes, so closing HttpClient also cancels a still-pending lookup.
+    final Future<Socket> socket = connect();
+    // HttpClient installs its listener after awaiting the factory result. An immediate DNS refusal can precede it.
+    socket.ignore();
+    return Future<ConnectionTask<Socket>>.value(
+      ConnectionTask.fromSocket(socket, () {
+        cancelled = true;
+        task?.cancel();
+        connected?.destroy();
+      }),
     );
   };
   return client;
 }
 
-/// True for an address on the public internet. Mapped and NAT64 IPv6 forms are checked as their IPv4 address.
+/// True for an address on the public internet, with the same exclusions as the shareLinkImage callable.
 bool isPublicAddress(InternetAddress address) {
   final List<int> b = address.rawAddress;
   if (b.length == 4) return _isPublicV4(b);
@@ -139,10 +171,12 @@ bool isPublicAddress(InternetAddress address) {
   final bool mapped = b.sublist(0, 10).every((int it) => it == 0) && b[10] == 0xff && b[11] == 0xff;
   final bool nat64 =
       b[0] == 0x00 && b[1] == 0x64 && b[2] == 0xff && b[3] == 0x9b && b.sublist(4, 12).every((int it) => it == 0);
-  if (mapped || nat64) return _isPublicV4(b.sublist(12));
+  if (mapped || nat64) return false;
+  if ((b[8] == 0 || b[8] == 2) && b[9] == 0 && b[10] == 0x5e && b[11] == 0xfe) return false;
   if (b[0] & 0xe0 != 0x20) return false;
   if (b[0] == 0x20 && b[1] == 0x02) return false;
   if (b[0] == 0x20 && b[1] == 0x01 && (b[2] < 0x02 || b[2] == 0x0d && b[3] == 0xb8)) return false;
+  if (b[0] == 0x3f && (b[1] == 0xfe || b[1] == 0xff && b[2] < 0x10)) return false;
   return true;
 }
 

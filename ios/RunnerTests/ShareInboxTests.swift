@@ -91,7 +91,9 @@ struct ShareInboxTests {
   @Test func openURLForTextEncodesQueryValue() {
     let url = ShareInbox.openURL(text: "https://example.com/a?b=1&c=d+e")
 
-    #expect(url?.absoluteString == "prism://share-in?text=https%3A%2F%2Fexample.com%2Fa%3Fb%3D1%26c%3Dd%2Be")
+    #expect(url?.query == "text=https%3A%2F%2Fexample.com%2Fa%3Fb%3D1%26c%3Dd%2Be")
+    #expect(ShareInbox.isValidId(url?.fragment ?? ""))
+    #expect(url?.fragment != ShareInbox.openURL(text: "https://example.com/a?b=1&c=d+e")?.fragment)
   }
 
   @Test func openURLForTextKeepsAtMostMaxLength() throws {
@@ -255,5 +257,65 @@ struct ShareInboxTests {
     ShareInbox.storePendingLink(try #require(URL(string: "prism://settings")), container: container)
     #expect(ShareInbox.takePendingLink(container: container) == nil)
     #expect(!FileManager.default.fileExists(atPath: ShareInbox.folder(in: container).appendingPathComponent("pending-link").path))
+  }
+
+  @Test func pendingLinkRejectsMalformedSharePayloads() throws {
+    let container = makeContainer()
+    defer { try? FileManager.default.removeItem(at: container) }
+    for link in [
+      "prism://share-in?text=", "prism://share-in?text=%20", "prism://share-in?id=not-an-id",
+      "prism://share-in?text=x&id=123e4567-e89b-12d3-a456-426614174000",
+      "prism://share-in?text=x&text=y", "prism://share-in?text=x&extra=y",
+      "prism://share-in?text=" + String(repeating: "a", count: 2049),
+    ] {
+      ShareInbox.storePendingLink(try #require(URL(string: link)), container: container)
+      #expect(ShareInbox.takePendingLink(container: container) == nil, "\(link.prefix(100))")
+      #expect(ShareInbox.takePendingLink(container: container) == nil)
+    }
+  }
+
+  @Test func pendingImageMustStillExist() throws {
+    let container = makeContainer()
+    defer { try? FileManager.default.removeItem(at: container) }
+    let id = try storeImage(in: container)
+    let url = try #require(ShareInbox.openURL(id: id))
+    ShareInbox.storePendingLink(url, container: container)
+    #expect(ShareInbox.takePendingLink(container: container) == url.absoluteString)
+    ShareInbox.storePendingLink(url, container: container)
+    try FileManager.default.removeItem(at: #require(ShareInbox.file(forId: id, container: container)))
+    #expect(ShareInbox.takePendingLink(container: container) == nil)
+  }
+
+  @Test func pendingLinkExpiresEvenWithoutASweep() throws {
+    let container = makeContainer()
+    defer { try? FileManager.default.removeItem(at: container) }
+    ShareInbox.storePendingLink(try #require(ShareInbox.openURL(text: "https://example.com")), container: container)
+    let file = ShareInbox.folder(in: container).appendingPathComponent("pending-link")
+    try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSinceNow: -6 * 60)], ofItemAtPath: file.path)
+    #expect(ShareInbox.takePendingLink(container: container) == nil)
+  }
+
+  @Test func recentPendingLinkIsStillTaken() throws {
+    let container = makeContainer()
+    defer { try? FileManager.default.removeItem(at: container) }
+    let url = try #require(ShareInbox.openURL(text: "https://example.com"))
+    ShareInbox.storePendingLink(url, container: container)
+    let file = ShareInbox.folder(in: container).appendingPathComponent("pending-link")
+    try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSinceNow: -4 * 60)], ofItemAtPath: file.path)
+    #expect(ShareInbox.takePendingLink(container: container) == url.absoluteString)
+  }
+
+  @Test func concurrentTakesHaveOnlyOneOwner() async throws {
+    let container = makeContainer()
+    defer { try? FileManager.default.removeItem(at: container) }
+    let url = try #require(ShareInbox.openURL(text: "https://example.com"))
+    ShareInbox.storePendingLink(url, container: container)
+    let links = await withTaskGroup(of: String?.self) { group in
+      for _ in 0..<20 { group.addTask { ShareInbox.takePendingLink(container: container) } }
+      var links: [String] = []
+      for await link in group { if let link { links.append(link) } }
+      return links
+    }
+    #expect(links == [url.absoluteString])
   }
 }
