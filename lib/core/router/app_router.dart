@@ -170,7 +170,7 @@ class AppRouter extends RootStackRouter {
     ),
     AutoRoute(path: '/wotd-archive', page: WotdArchiveRoute.page),
     AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page, guards: [WallpaperFilterGuard()]),
+    AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page, guards: const [WallpaperFilterGuard()]),
     AutoRoute(path: '/choose-wallpaper', page: DeepLinkInputRoute.page, guards: [_signedInGuard]),
     CustomRoute(
       path: '/share-in',

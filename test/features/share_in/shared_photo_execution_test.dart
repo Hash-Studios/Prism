@@ -172,12 +172,10 @@ void main() {
   test('signing out after a failed request prevents a retry with the photo', () async {
     bool mayUpload = true;
     int calls = 0;
-    final PhotoWallpaperRepository repository = PhotoWallpaperRepository(null, null, (bytes, _) async => bytes, (
-      _,
-    ) async {
+    final PhotoWallpaperRepository repository = PhotoWallpaperRepository(null, null, (bytes, _) async => bytes, (_) {
       calls++;
       mayUpload = false;
-      throw StateError('connection lost');
+      return Future<Object?>.error(StateError('connection lost'));
     });
     final PhotoJobState result = await repository.run(
       PhotoJob(source: _photo, mode: PhotoJobMode.extend, target: PhotoJobTarget.phone, cost: 75),

@@ -55,9 +55,9 @@ void main() {
       int handOffLookups = 0;
       final SharedInbox isolated = SharedInbox(
         inboxDirectory: () async => inboxDir,
-        handOffDirectory: () async {
+        handOffDirectory: () {
           handOffLookups++;
-          throw PlatformException(code: 'unavailable');
+          return Future<Directory>.error(PlatformException(code: 'unavailable'));
         },
       );
 

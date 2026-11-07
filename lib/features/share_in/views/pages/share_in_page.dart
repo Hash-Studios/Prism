@@ -118,12 +118,11 @@ class _ShareInPageState extends State<ShareInPage> {
         }
       case ShareInAction.upload:
         final File file = await _handOff(choice.path);
+        // Edit replaces itself with Upload, so the replace future never completes. Wait for the stack instead.
+        final Future<void> released = _untilReleased(router, file.path);
+        unawaited(router.replace(EditWallRoute(image: file)));
         try {
-          await router.replace(EditWallRoute(image: file));
-          for (final RouteData route in router.stackData) {
-            final Object? args = route.args;
-            if (args is UploadWallRouteArgs && args.image.path == file.path) await route.popped;
-          }
+          await released;
         } finally {
           await _inbox.discard(file.path);
         }
@@ -140,6 +139,30 @@ class _ShareInPageState extends State<ShareInPage> {
           ),
         );
     }
+  }
+
+  /// Completes once Edit or Upload held [path] and no route on [router] holds it now.
+  static Future<void> _untilReleased(StackRouter router, String path) {
+    bool holds() => router.stackData.any(
+      (RouteData route) => switch (route.args) {
+        EditWallRouteArgs(:final File image) || UploadWallRouteArgs(:final File image) => image.path == path,
+        _ => false,
+      },
+    );
+    final Completer<void> released = Completer<void>();
+    bool held = false;
+    void check() {
+      final bool now = holds();
+      held = held || now;
+      if (held && !now && !released.isCompleted) released.complete();
+    }
+
+    router.addListener(check);
+    router.navigationHistory.addListener(check);
+    return released.future.whenComplete(() {
+      router.removeListener(check);
+      router.navigationHistory.removeListener(check);
+    });
   }
 
   Future<File> _handOff(String path) async {

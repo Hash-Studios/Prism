@@ -283,6 +283,19 @@ class SharedInboxLinksTest {
     }
 
     @Test
+    fun nativeTakeAcceptsAnInboxReachedThroughASymlinkedParent() {
+        val root = Files.createTempDirectory("shared-inbox-root").toFile()
+        try {
+            val data = File(root, "data").apply { mkdirs() }
+            val user = File(root, "user").also { Files.createSymbolicLink(it.toPath(), data.toPath()) }
+            val folder = File(user, "shared_inbox").apply { mkdirs() }
+            val image = File(folder, "$id.png").apply { writeBytes(byteArrayOf(1)) }
+            assertEquals(image, SharedInboxLinks.takeFile(folder, id))
+            assertTrue(image.exists())
+        } finally { root.deleteRecursively() }
+    }
+
+    @Test
     fun sweepRemovesAbandonedPartsAndOldFilesButNotActiveCopies() {
         val folder = Files.createTempDirectory("shared-inbox-test").toFile()
         try {

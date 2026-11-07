@@ -96,7 +96,7 @@ internal object SharedInboxLinks {
         val file = folder.listFiles()?.firstOrNull { it.nameWithoutExtension == id && it.extension != "part" }
             ?: throw SharedInboxException("missing")
         val code = when {
-            file.extension !in imageExtensions || !file.isFile || file.canonicalFile != file.absoluteFile ||
+            file.extension !in imageExtensions || !file.isFile || file.canonicalFile != File(folder.canonicalFile, file.name) ||
                 !file.canRead() || file.length() == 0L -> "unreadable"
             file.length() > MAX_BYTES -> "too-large"
             else -> null
