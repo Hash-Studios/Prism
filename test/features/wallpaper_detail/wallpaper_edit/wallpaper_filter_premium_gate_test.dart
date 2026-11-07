@@ -13,7 +13,9 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/ads/biz/bloc/ads_bloc.j.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/data/repositories/ads_repository_impl.dart';
@@ -500,6 +502,219 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     expect(tester.takeException(), isNull);
   });
+
+  for (final String editAfterFailure in <String>[
+    'unchanged',
+    'reset',
+    'add',
+    'tap during refund',
+    'switch account during refund',
+    'replace source during refund',
+    'close during refund',
+  ]) {
+    final bool resetAfterFailure = editAfterFailure == 'reset';
+    final bool addAfterFailure = editAfterFailure == 'add';
+    final bool tapDuringRefund = editAfterFailure.endsWith('during refund');
+    final bool cancelPending = tapDuringRefund && editAfterFailure != 'tap during refund';
+    testWidgets(
+      cancelPending
+          ? 'cancels queued Set with phone on $editAfterFailure'
+          : tapDuringRefund
+          ? 'a Set with phone tap while the failed set is refunded runs after the refund (#545)'
+          : addAfterFailure
+          ? 'a free set with the phone does not charge a filter added after export'
+          : resetAfterFailure
+          ? 'a premium filter set with the phone charges the exported filter after reset (#545)'
+          : 'a premium filter set with the phone after a refused lock screen is charged again (#545)',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1000);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final Directory directory = Directory.systemTemp.createTempSync('wallpaper_filter_set_phone_');
+        addTearDown(() => directory.deleteSync(recursive: true));
+        final File source = File('${directory.path}/source.png');
+        source.writeAsBytesSync((await tester.runAsync(_smallPng))!);
+        app_state.prismUser.coins = 20;
+        CoinsService.instance.balanceNotifier.value = 20;
+        final originalOpener = SetWallpaperFlow.screenOpener;
+        SetWallpaperFlow.screenOpener = (context, request) async => const SetWallpaperChoice(WallpaperTarget.lock);
+        addTearDown(() => SetWallpaperFlow.screenOpener = originalOpener);
+
+        var spendCalls = 0;
+        var refundCalls = 0;
+        var setCalls = 0;
+        var balance = 20;
+        final Completer<void> refundGate = Completer<void>();
+        if (!tapDuringRefund) refundGate.complete();
+        const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
+        final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+        messenger.setMockMethodCallHandler(_toastChannel, (_) async => true);
+        messenger.setMockMethodCallHandler(_pathProviderChannel, (_) async => directory.path);
+        messenger.setMockMethodCallHandler(
+          cropChannel,
+          (_) async => 'content://com.hash.prism.wallpaper_crop/edit.png',
+        );
+        addTearDown(() => messenger.setMockMethodCallHandler(cropChannel, null));
+        messenger.setMockMessageHandler(_functionsChannel, (message) async {
+          final List<Object?> arguments = _codec.decodeMessage(message)! as List<Object?>;
+          final Map<Object?, Object?> call = arguments.single! as Map<Object?, Object?>;
+          final bool spend = call['functionName'] == 'spendCoins';
+          if (spend) {
+            final parameters = call['parameters']! as Map<Object?, Object?>;
+            expect(parameters['sourceTag'], 'coins.filter.set.spend');
+            if (!addAfterFailure) expect(parameters['reason'], 'filter_Invert');
+          }
+          if (!spend && call['functionName'] != 'awardCoins') fail('Unexpected callable: ${call['functionName']}');
+          spend ? spendCalls++ : refundCalls++;
+          if (!spend) await refundGate.future;
+          final int previous = balance;
+          balance += spend ? -CoinPolicy.premiumFilter : CoinPolicy.premiumFilter;
+          return _codec.encodeMessage(<Object?>[
+            <String, Object?>{
+              'success': true,
+              'changed': true,
+              'previousBalance': previous,
+              'currentBalance': balance,
+              'delta': spend ? -CoinPolicy.premiumFilter : CoinPolicy.premiumFilter,
+              if (spend) 'transactionId': 'phone-filter-spend-$spendCalls',
+            },
+          ]);
+        });
+        const MessageCodec<Object?> wallpaperCodec = wallpaper_api.WallpaperApi.pigeonChannelCodec;
+        messenger.setMockMessageHandler(_setWallpaperChannel, (_) async {
+          setCalls++;
+          final bool phoneScreen = setCalls > 2;
+          return wallpaperCodec.encodeMessage(<Object?>[
+            wallpaper_api.OperationResultData(
+              status: phoneScreen
+                  ? wallpaper_api.OperationStatusData.awaitingUserConfirmation
+                  : wallpaper_api.OperationStatusData.failed,
+              requestedTarget: wallpaper_api.WallpaperTargetData.lock,
+              errorCode: phoneScreen ? null : 'wallpaper-apply-failed',
+            ),
+          ]);
+        });
+
+        await tester.pumpWidget(_screenHost(source.path));
+        await _waitForEditorReady(tester);
+        await _tapInvert(tester);
+        if (addAfterFailure) {
+          await tester.tap(_iconButton('Reset'));
+          await tester.pump();
+        }
+        final VoidCallback downloadAction = tester.widget<IconButton>(_iconButton('Download')).onPressed!;
+        await tester.tap(_iconButton('Set as wallpaper'));
+        if (!addAfterFailure) {
+          await _waitForCount(tester, () => refundCalls, 1, 'refund of the failed lock screen set');
+        }
+        await waitForRealIo(
+          tester,
+          () => find.text('Set with phone').evaluate().isNotEmpty,
+          reason: 'Set with phone action',
+        );
+        await tester.pump(const Duration(milliseconds: 500));
+        if (tapDuringRefund) {
+          final VoidCallback phoneSet = tester.widget<SnackBarAction>(find.byType(SnackBarAction)).onPressed;
+          phoneSet();
+          phoneSet();
+          downloadAction();
+          await tester.pump();
+          expect(spendCalls, 1, reason: 'duplicate phone taps and another action wait for the refund');
+          expect(setCalls, 2, reason: 'the phone set waits for the refund');
+          if (editAfterFailure == 'switch account during refund') {
+            app_state.prismUser = app_constants.createGuestPrismUser()
+              ..id = 'another-user'
+              ..loggedIn = true
+              ..coins = 20;
+          } else if (editAfterFailure == 'replace source during refund') {
+            final File replacement = File('${directory.path}/replacement.png')
+              ..writeAsBytesSync(source.readAsBytesSync());
+            await tester.pumpWidget(_screenHost(replacement.path));
+          } else if (editAfterFailure == 'close during refund') {
+            await tester.pumpWidget(const SizedBox());
+          }
+          refundGate.complete();
+          if (cancelPending) {
+            if (editAfterFailure != 'close during refund') {
+              await waitForRealIo(
+                tester,
+                () => tester.widget<PopScope>(find.byType(PopScope)).canPop,
+                reason: 'original coin gate finishes without a phone set',
+              );
+            }
+            await tester.pump(const Duration(seconds: 2));
+            expect(setCalls, 2);
+            expect(spendCalls, 1);
+            expect(refundCalls, 1);
+            if (editAfterFailure == 'switch account during refund') {
+              app_state.prismUser = app_constants.createGuestPrismUser()
+                ..id = 'test'
+                ..loggedIn = true;
+              bool retried = false;
+              final Future<void> retry = CoinsService.instance.retryPendingRefunds().then((_) => retried = true);
+              await waitForRealIo(tester, () => retried, reason: 'payer refund retry completes');
+              await retry;
+              await tester.pump(const Duration(seconds: 2));
+            }
+            await tester.pumpWidget(const SizedBox());
+            await waitForRealIo(
+              tester,
+              () => directory
+                  .listSync(recursive: true)
+                  .whereType<File>()
+                  .every((file) => !file.path.endsWith('/edited.png')),
+              reason: 'retained phone export removed after disposal',
+            );
+            return;
+          }
+          await _waitForCount(tester, () => setCalls, 3, 'phone wallpaper screen request after the refund');
+          await tester.pump(const Duration(milliseconds: 100));
+          expect(spendCalls, 2);
+          expect(refundCalls, 1);
+          expect(CoinsService.instance.balanceNotifier.value, 15);
+          await tester.pump(const Duration(seconds: 2));
+          await tester.pumpWidget(const SizedBox());
+          await waitForRealIo(
+            tester,
+            () => directory
+                .listSync(recursive: true)
+                .whereType<File>()
+                .every((file) => !file.path.endsWith('/edited.png')),
+            reason: 'phone export removed after successful phone set and disposal',
+          );
+          return;
+        }
+
+        await _waitForEditorReady(tester);
+        if (addAfterFailure) {
+          await tester.tap(find.text('Adjust'));
+          await tester.pumpAndSettle();
+          await tester.drag(find.byType(Slider).first, const Offset(80, 0));
+          await tester.pump();
+          expect(tester.widget<IconButton>(_iconButton('Reset')).onPressed, isNotNull);
+        }
+        if (resetAfterFailure) {
+          await tester.tap(_iconButton('Reset'));
+          await tester.pump();
+          expect(tester.widget<IconButton>(_iconButton('Reset')).onPressed, isNull);
+        }
+
+        await tester.tap(find.text('Set with phone'));
+        await _waitForCount(tester, () => setCalls, 3, 'phone wallpaper screen request');
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(
+          spendCalls,
+          addAfterFailure ? 0 : 2,
+          reason: resetAfterFailure ? 'charge the exported filtered image after reset' : 'charge fallback',
+        );
+        expect(refundCalls, addAfterFailure ? 0 : 1);
+        expect(CoinsService.instance.balanceNotifier.value, addAfterFailure ? 20 : 15);
+        await tester.pump(const Duration(seconds: 2));
+      },
+    );
+  }
 
   testWidgets('reports a failure, not success, when the account changes while set options are open', (tester) async {
     tester.view.physicalSize = const Size(800, 1000);

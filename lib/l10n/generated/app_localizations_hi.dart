@@ -3349,6 +3349,20 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreWallpaperErrorTextureDimensions => 'यह इमेज लाइव वॉलपेपर के लिए बहुत बड़ी है।';
 
   @override
+  String get coreWallpaperStillSetting => 'आपका वॉलपेपर अभी लग रहा है। कुछ फ़ोन पर इसमें थोड़ा समय लग सकता है।';
+
+  @override
+  String get coreWallpaperLockFailedUsePhone =>
+      'लॉक स्क्रीन पर नहीं लग सका। आपके फ़ोन की अपनी वॉलपेपर स्क्रीन इसे लगा सकती है।';
+
+  @override
+  String get coreWallpaperHomeSetLockFailedUsePhone =>
+      'होम स्क्रीन पर लग गया। लॉक स्क्रीन पर नहीं लग सका। आपके फ़ोन की अपनी वॉलपेपर स्क्रीन इसे लगा सकती है।';
+
+  @override
+  String get coreWallpaperSetWithPhone => 'फ़ोन से लगाएँ';
+
+  @override
   String get coreWallpaperErrorTimeout => 'समय सीमा समाप्त हुई। अपना कनेक्शन जाँचें और फिर कोशिश करें।';
 
   @override
@@ -7950,6 +7964,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get premiumPurchasePending => 'आपकी खरीद दर्ज हो गई है। Pro अनलॉक होने में एक मिनट लग सकता है।';
+
+  @override
+  String get premiumPaymentPending =>
+      'आपके भुगतान की प्रक्रिया अभी पूरी नहीं हुई है। भुगतान पूरा होते ही Pro अनलॉक हो जाएगा।';
 
   @override
   String get premiumPurchaseUnconfirmed =>

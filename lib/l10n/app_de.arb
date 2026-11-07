@@ -3018,6 +3018,22 @@
   "coreWallpaperErrorStyle": "Dieses Gerät konnte diesen Stil nicht starten. Versuch es mit einem anderen.",
   "coreWallpaperErrorSystemPreview": "Die Systemvorschau konnte nicht geöffnet werden.",
   "coreWallpaperErrorTextureDimensions": "Dieses Bild ist zu groß für ein Live-Hintergrundbild.",
+  "coreWallpaperStillSetting": "Dein Hintergrund wird noch gesetzt. Das kann auf manchen Handys einen Moment dauern.",
+  "@coreWallpaperStillSetting": {
+    "description": "Shown when the phone has not finished setting the wallpaper after 30 seconds. The set can still finish, so this is not an error."
+  },
+  "coreWallpaperLockFailedUsePhone": "Der Sperrbildschirm konnte nicht gesetzt werden. Der Hintergrund-Bildschirm deines Handys kann ihn setzen.",
+  "@coreWallpaperLockFailedUsePhone": {
+    "description": "Snackbar when the lock screen set failed. Its action opens the phone's own wallpaper screen, which some phones (Xiaomi, MIUI) require for the lock screen."
+  },
+  "coreWallpaperHomeSetLockFailedUsePhone": "Startbildschirm gesetzt. Der Sperrbildschirm konnte nicht gesetzt werden. Der Hintergrund-Bildschirm deines Handys kann ihn setzen.",
+  "@coreWallpaperHomeSetLockFailedUsePhone": {
+    "description": "Snackbar when a Both set changed only the home screen. Its action opens the phone's own wallpaper screen for the lock screen."
+  },
+  "coreWallpaperSetWithPhone": "Mit Handy setzen",
+  "@coreWallpaperSetWithPhone": {
+    "description": "Snackbar action. Opens the phone's own wallpaper screen with this wallpaper. Keep it short."
+  },
   "coreWallpaperErrorTimeout": "Zeitüberschreitung. Prüfe deine Verbindung und versuch es erneut.",
   "coreWallpaperHomeScreen": "Startbildschirm",
   "coreWallpaperHomeSetLockFailed": "Hintergrundbild für den Startbildschirm festgelegt. Das Festlegen für den Sperrbildschirm ist fehlgeschlagen.",
@@ -6621,6 +6637,10 @@
   "premiumPurchasePending": "Dein Kauf wurde gespeichert. Es kann eine Minute dauern, bis Pro freigeschaltet wird.",
   "@premiumPurchasePending": {
     "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
+  },
+  "premiumPaymentPending": "Deine Zahlung ist noch ausstehend. Pro wird freigeschaltet, sobald die Zahlung durch ist.",
+  "@premiumPaymentPending": {
+    "description": "Toast when the store holds a purchase as pending (for example a slow UPI or card payment). Pro unlocks later."
   },
   "premiumPurchaseUnconfirmed": "Dein Kauf konnte nicht bestätigt werden. Versuche es in den Einstellungen mit „Käufe wiederherstellen“.",
   "@premiumPurchaseUnconfirmed": {

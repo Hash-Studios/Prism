@@ -143,6 +143,7 @@ enum PaywallResultValue {
   restored,
   guestSignInRequired,
   rcError,
+  paymentPending,
   unknown;
 
   String get wireValue => _snakeCase(name);

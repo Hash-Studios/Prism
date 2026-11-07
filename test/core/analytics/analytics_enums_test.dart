@@ -53,6 +53,7 @@ void main() {
         'restored',
         'guest_sign_in_required',
         'rc_error',
+        'payment_pending',
         'unknown',
       ],
       'SubscriptionEntitlementRefreshResultValue': <String>['success', 'failure'],

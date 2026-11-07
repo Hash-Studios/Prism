@@ -3148,6 +3148,22 @@
   "coreWallpaperErrorStyle": "यह डिवाइस उस शैली को शुरू नहीं कर सका। कोई और आज़माएँ।",
   "coreWallpaperErrorSystemPreview": "सिस्टम प्रीव्यू नहीं खुल सका।",
   "coreWallpaperErrorTextureDimensions": "यह इमेज लाइव वॉलपेपर के लिए बहुत बड़ी है।",
+  "coreWallpaperStillSetting": "आपका वॉलपेपर अभी लग रहा है। कुछ फ़ोन पर इसमें थोड़ा समय लग सकता है।",
+  "@coreWallpaperStillSetting": {
+    "description": "Shown when the phone has not finished setting the wallpaper after 30 seconds. The set can still finish, so this is not an error."
+  },
+  "coreWallpaperLockFailedUsePhone": "लॉक स्क्रीन पर नहीं लग सका। आपके फ़ोन की अपनी वॉलपेपर स्क्रीन इसे लगा सकती है।",
+  "@coreWallpaperLockFailedUsePhone": {
+    "description": "Snackbar when the lock screen set failed. Its action opens the phone's own wallpaper screen, which some phones (Xiaomi, MIUI) require for the lock screen."
+  },
+  "coreWallpaperHomeSetLockFailedUsePhone": "होम स्क्रीन पर लग गया। लॉक स्क्रीन पर नहीं लग सका। आपके फ़ोन की अपनी वॉलपेपर स्क्रीन इसे लगा सकती है।",
+  "@coreWallpaperHomeSetLockFailedUsePhone": {
+    "description": "Snackbar when a Both set changed only the home screen. Its action opens the phone's own wallpaper screen for the lock screen."
+  },
+  "coreWallpaperSetWithPhone": "फ़ोन से लगाएँ",
+  "@coreWallpaperSetWithPhone": {
+    "description": "Snackbar action. Opens the phone's own wallpaper screen with this wallpaper. Keep it short."
+  },
   "coreWallpaperErrorTimeout": "समय सीमा समाप्त हुई। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
   "coreWallpaperHomeScreen": "होम स्क्रीन",
   "coreWallpaperHomeSetLockFailed": "होम स्क्रीन सेट हो गई। लॉक स्क्रीन सेट नहीं हो सकी।",
@@ -6731,6 +6747,10 @@
   "premiumPurchasePending": "आपकी खरीद दर्ज हो गई है। Pro अनलॉक होने में एक मिनट लग सकता है।",
   "@premiumPurchasePending": {
     "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
+  },
+  "premiumPaymentPending": "आपके भुगतान की प्रक्रिया अभी पूरी नहीं हुई है। भुगतान पूरा होते ही Pro अनलॉक हो जाएगा।",
+  "@premiumPaymentPending": {
+    "description": "Toast when the store holds a purchase as pending (for example a slow UPI or card payment). Pro unlocks later."
   },
   "premiumPurchaseUnconfirmed": "आपकी खरीद की पुष्टि नहीं हो सकी। सेटिंग्स में ‘खरीदारियाँ वापस पाएँ’ आज़माएँ।",
   "@premiumPurchaseUnconfirmed": {
