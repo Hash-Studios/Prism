@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 /// Takes one image or one link from another app, leaves it for Prism, and opens Prism.
 final class ShareViewController: UIViewController {
   private var started = false
+  private var completed = false
   private let request = ShareInboxRequest()
   private var loading: Progress?
 
@@ -77,27 +78,36 @@ final class ShareViewController: UIViewController {
     DispatchQueue.main.async {
       guard self.request.finish(discardingIfLate: storedFile) else { return }
       self.loading?.cancel()
-      if let url {
-        if let container = ShareInbox.containerURL() { ShareInbox.storePendingLink(url, container: container) }
-        self.open(url)
-      }
-      self.extensionContext?.completeRequest(returningItems: nil)
+      guard let url else { return self.complete() }
+      if let container = ShareInbox.containerURL() { ShareInbox.storePendingLink(url, container: container) }
+      // Completing the request before the open finishes keeps Prism in the background.
+      self.open(url)
+      DispatchQueue.main.asyncAfter(deadline: .now() + 3) { self.complete() }
     }
   }
 
+  private func complete() {
+    guard !completed else { return }
+    completed = true
+    extensionContext?.completeRequest(returningItems: nil)
+  }
+
   /// Extensions cannot call UIApplication.open directly. Find the app object in the responder chain and send it
-  /// the same message.
+  /// the same message, then complete the request. The window scene comes first and has a method with the same
+  /// selector, but it takes a different options type, so only UIApplication may receive it.
   private func open(_ url: URL) {
     let selector = sel_registerName("openURL:options:completionHandler:")
+    typealias Completion = @convention(block) (Bool) -> Void
+    typealias OpenURL = @convention(c) (AnyObject, Selector, URL, NSDictionary, Completion?) -> Void
     var responder: UIResponder? = self
     while let current = responder {
-      if current.responds(to: selector), current !== self {
-        typealias OpenURL = @convention(c) (AnyObject, Selector, URL, NSDictionary, Any?) -> Void
+      if current is UIApplication, current.responds(to: selector) {
         let method = unsafeBitCast(current.method(for: selector), to: OpenURL.self)
-        method(current, selector, url, NSDictionary(), nil)
+        method(current, selector, url, NSDictionary()) { _ in DispatchQueue.main.async { self.complete() } }
         return
       }
       responder = current.next
     }
+    complete()
   }
 }
