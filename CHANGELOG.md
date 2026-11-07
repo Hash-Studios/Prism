@@ -6,6 +6,8 @@
 - Swipe up on a wallpaper for More like this
 - Hold a wallpaper to open quick actions
 - Split a folder into named sections
+- A free Winter theme with snow on Home
+- Prism opens faster and scrolls more smoothly
 - Setting a wallpaper, downloads and restoring Pro recover better when something goes wrong
 - Security and stability fixes
 

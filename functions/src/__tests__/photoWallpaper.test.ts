@@ -1211,8 +1211,9 @@ const lookup = (data: Record<string, unknown>, auth: unknown = USER) =>
   getPhotoWallpaper.run({auth, data} as unknown as Parameters<typeof getPhotoWallpaper.run>[0]);
 
 test("lookup after an app restart returns a finished job, and never charges", async (t) => {
-  const store = installFakeDb(t, {"usersv2/u1": {coins: 125}, [JOB]: {...runningJob(admin.firestore.Timestamp.now()),
-    state: "succeeded", imageUrl: OUT_URL, watermarked: true}});
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 125}, [`${PHOTO_JOB_CLOSURES}/u1`]: {day: today(), count: 20},
+    [JOB]: {...runningJob(admin.firestore.Timestamp.now()),
+      state: "succeeded", imageUrl: OUT_URL, watermarked: true}});
   const result = await lookup({requestId: "req-00000001"}) as Succeeded;
   assert.equal(result.state, "succeeded");
   assert.equal(result.imageUrl, OUT_URL);
@@ -1258,13 +1259,16 @@ test("an unknown lookup closes the request, so a create that arrives later charg
 });
 
 test("lookup reports a running job as running, and ends a stale one with a refund", async (t) => {
-  const store = installFakeDb(t, {"usersv2/u1": {coins: 125}, [JOB]: runningJob(admin.firestore.Timestamp.now())});
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 125}, [JOB]: runningJob(admin.firestore.Timestamp.now()),
+    [`${PHOTO_JOB_CLOSURES}/u1`]: {day: today(), count: 20}});
   assert.deepEqual(await lookup({requestId: "req-00000001"}), {jobId: JOB_ID, state: "running", balance: 125});
   store.set(JOB, runningJob(admin.firestore.Timestamp.fromMillis(Date.now() - 11 * MINUTE)));
   const failed = await lookup({requestId: "req-00000001"}) as Failed;
   assert.equal(failed.state, "failed");
   assert.equal(failed.refunded, true);
   assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal((await lookup({requestId: "req-00000001"})).state, "failed");
+  assert.equal(store.get(`${PHOTO_JOB_CLOSURES}/u1`)?.count, 20);
 });
 
 test("lookup during a claimed create reports running, then replays its single completed charge", async (t) => {
@@ -1474,7 +1478,64 @@ test("an account can close at most 20 unknown request ids a day, so lookups cann
   assert.deepEqual(await lookup({requestId: "req-00000101"}), {state: "unknown"});
   assert.equal(store.get(`${PHOTO_JOBS}/pj_u1_req-00000101`)?.state, "closed");
   assert.equal(store.get(`${PHOTO_JOB_CLOSURES}/u1`)?.count, 20);
-  assert.deepEqual(await lookup({requestId: "req-00000102"}), {state: "unknown"});
+  assert.deepEqual(await lookup({requestId: "req-00000101"}), {state: "unknown"});
+  await assert.rejects(() => lookup({requestId: "req-00000102"}), {code: "resource-exhausted"});
   assert.equal(store.has(`${PHOTO_JOBS}/pj_u1_req-00000102`), false);
   assert.equal(store.get(`${PHOTO_JOB_CLOSURES}/u1`)?.count, 20);
+});
+
+test("a capped lookup stays retryable until a delayed create can be recovered", async (t) => {
+  const store = installFakeDb(t, {
+    "usersv2/u1": {coins: 200},
+    [`${PHOTO_JOB_CLOSURES}/u1`]: {day: today(), count: 20},
+  });
+  let release!: () => void;
+  let claimReached!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const entered = new Promise<void>((resolve) => {
+    claimReached = resolve;
+  });
+  mockDeps(t);
+  const transaction = db.runTransaction.bind(db);
+  let first = true;
+  t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+    if (first) {
+      first = false;
+      claimReached();
+      await gate;
+    }
+    return transaction(callback);
+  });
+  const creating = run(await extendData());
+  await entered;
+  try {
+    await assert.rejects(() => lookup({requestId: "req-00000001"}), {code: "resource-exhausted"});
+    assert.equal(store.has(JOB), false);
+  } finally {
+    release();
+    await creating;
+  }
+  const recovered = await lookup({requestId: "req-00000001"}) as Succeeded;
+  assert.equal(recovered.state, "succeeded");
+  assert.equal(recovered.imageUrl, OUT_URL);
+  assert.equal(store.get("usersv2/u1")?.coins, 125);
+  assert.equal(coinTxCount(store), 1);
+  assert.equal(store.get(`${PHOTO_JOB_CLOSURES}/u1`)?.count, 20);
+});
+
+test("the closure cap rolls over by the server UTC day, not client-supplied fields", async (t) => {
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  const store = installFakeDb(t, {[`${PHOTO_JOB_CLOSURES}/u1`]: {day: yesterday, count: 20}});
+  assert.deepEqual(await lookup({requestId: "req-00000101"}), {state: "unknown"});
+  assert.equal(store.get(`${PHOTO_JOB_CLOSURES}/u1`)?.day, today());
+  assert.equal(store.get(`${PHOTO_JOB_CLOSURES}/u1`)?.count, 1);
+
+  store.set(`${PHOTO_JOB_CLOSURES}/u1`, {day: today(), count: 20});
+  await assert.rejects(() => lookup({requestId: "req-00000102", day: yesterday, count: 0, uid: "u2"}),
+    {code: "resource-exhausted"});
+  assert.equal(store.get(`${PHOTO_JOB_CLOSURES}/u1`)?.count, 20);
+  assert.equal(store.has(`${PHOTO_JOB_CLOSURES}/u2`), false);
+  assert.equal(store.has(`${PHOTO_JOBS}/pj_u1_req-00000102`), false);
 });
