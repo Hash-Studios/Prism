@@ -122,6 +122,7 @@ Future<void> runAppWithRuntimeVersion(Future<void> versionReady, Widget app) asy
   await versionReady;
   PerformanceProbe.mark('startup.run_app');
   if (!kReleaseMode) {
+    PerformanceProbe.startFrameStats();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       PerformanceProbe.mark('startup.first_frame');
     });

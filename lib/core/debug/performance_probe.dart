@@ -4,6 +4,7 @@ import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -61,6 +62,46 @@ class PerformanceProbe {
     } catch (_) {
       return null;
     }
+  }
+
+  static String _phase = 'startup';
+  static final List<FrameTiming> _frames = <FrameTiming>[];
+
+  /// Collects frame timings. [phase] emits one `frames` sample for the frames since the previous phase.
+  static void startFrameStats() {
+    if (kReleaseMode) return;
+    SchedulerBinding.instance.addTimingsCallback(_frames.addAll);
+  }
+
+  /// Starts a named frame window. Wait about 1 s before a change: the engine reports timings in batches.
+  static void phase(String name) {
+    if (kReleaseMode) return;
+    if (_frames.isNotEmpty) {
+      List<int> sorted(Duration Function(FrameTiming) of) =>
+          _frames.map((FrameTiming t) => of(t).inMicroseconds).toList()..sort();
+      int pct(List<int> v, double q) => v[((v.length - 1) * q).round()];
+      final List<int> build = sorted((FrameTiming t) => t.buildDuration);
+      final List<int> raster = sorted((FrameTiming t) => t.rasterDuration);
+      final List<int> total = sorted((FrameTiming t) => t.totalSpan);
+      emit(
+        kind: 'frames',
+        name: _phase,
+        durationMs: total.last ~/ 1000,
+        extra: <String, Object?>{
+          'count': total.length,
+          'build_p50_us': pct(build, 0.5),
+          'build_p90_us': pct(build, 0.9),
+          'build_p99_us': pct(build, 0.99),
+          'raster_p90_us': pct(raster, 0.9),
+          'raster_p99_us': pct(raster, 0.99),
+          'total_p90_us': pct(total, 0.9),
+          'over_16ms': total.where((int v) => v > 16667).length,
+          'over_33ms': total.where((int v) => v > 33333).length,
+        },
+      );
+      _frames.clear();
+    }
+    _phase = name;
   }
 
   /// Marks [name] once per process, after the frame that is being built paints.
