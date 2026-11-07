@@ -111,7 +111,11 @@ const photo = require('./lib/photoWallpaper.js');
 exports.createPhotoWallpaper = photo.createPhotoWallpaper;
 const share = require('./lib/shareLinkImage.js');
 (${installLinkSeams.toString()})(share, require('node:path').resolve(__dirname, '..'));
-exports.shareLinkImage = share.shareLinkImage;
+// The emulator sends no X-Forwarded-For, which Cloud Run always sets. Supply the loopback caller so the quota runs.
+exports.shareLinkImage = Object.assign((req, res) => {
+  req.headers['x-forwarded-for'] = req.headers['x-forwarded-for'] || '127.0.0.1';
+  return share.shareLinkImage(req, res);
+}, share.shareLinkImage);
 `);
   // The callable declares secrets. Without local values the emulator asks Secret Manager, which this runtime blocks.
   // The seams above replace every use of them, so these placeholders never leave the emulator.
