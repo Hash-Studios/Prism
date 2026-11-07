@@ -97,6 +97,8 @@ The callable has a 180-second request timeout; this does not prove its handler s
 
 Refunds run before cleanup. Each cleanup queue processes at most 10 records per sweep and stops starting new attempts after its own 20-second budget. The document-ID cursor is saved after every attempt in `photoJobBudget/cleanup`, even when deletion fails, and resets at the queue's end. Slow failures at the front therefore cannot starve later records or the other queue. The scheduled function has a 180-second timeout to allow active attempts to finish.
 
+Every job result from `createPhotoWallpaper` and `getPhotoWallpaper` carries the user's coin balance (`balance`) after the charge or the refund. The app shows that number, so the coin chip never shows a stale cached balance.
+
 ### After an app restart
 
 The app saves pending jobs on the device (`ai.photoWallPendingJob`: user id, request id, mode, target), with one slot for each account. A failed save stops the job before the paid callable. Picking a photo waits for the account's saved-job lookup.

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -38,19 +39,30 @@ class PhotoWallpaperRepository {
     PhotoJobCall? lookup,
     Future<String?> Function()? readPending,
     Future<void> Function(String? json)? writePending,
+    void Function(int balance)? onBalance,
   ]) : _pick = pick ?? _pickFromGallery,
        _measure = measure ?? _uprightSize,
        _toUploadJpeg = toUploadJpeg ?? _uploadJpegOf,
        _call = call ?? _callCallable,
        _lookup = lookup ?? _lookupCallable,
        _readPending = readPending ?? _readPendingSetting,
-       _writePending = writePending ?? _writePendingSetting;
+       _writePending = writePending ?? _writePendingSetting,
+       _onBalance = onBalance ?? _applyServerBalance;
 
   final Future<Uint8List?> Function() _pick;
   final Future<PhotoSize> Function(Uint8List bytes) _measure;
   final Future<Uint8List> Function(Uint8List bytes, int longSide) _toUploadJpeg;
   final PhotoJobCall _call;
   final PhotoJobCall _lookup;
+  final void Function(int balance) _onBalance;
+
+  /// Applies the coin balance a job result carries, then returns [data] unchanged.
+  Object? _withBalance(Object? data) {
+    if (data is Map && data['balance'] is int) _onBalance(data['balance'] as int);
+    return data;
+  }
+
+  static void _applyServerBalance(int balance) => CoinsService.instance.applyServerBalance(balance);
   final Future<String?> Function() _readPending;
   final Future<void> Function(String? json) _writePending;
 
@@ -115,7 +127,7 @@ class PhotoWallpaperRepository {
   /// The server state of a job started before the app restarted. Null when the server has no such job.
   Future<PhotoJobState?> recover(String requestId) async {
     try {
-      final Object? data = await _lookup(<String, Object?>{'requestId': requestId});
+      final Object? data = _withBalance(await _lookup(<String, Object?>{'requestId': requestId}));
       if (data is Map && data['state'] == 'unknown') return null;
       if (data is Map && data['state'] == 'running') return PhotoJobRunning(requestId);
       return parsePhotoJobResult(data);
@@ -170,7 +182,7 @@ class PhotoWallpaperRepository {
     };
     for (int attempt = 0; ; attempt++) {
       try {
-        return parsePhotoJobResult(await _call(payload));
+        return parsePhotoJobResult(_withBalance(await _call(payload)));
       } on FirebaseFunctionsException catch (error) {
         logger.w('[PhotoWallpaper] job call failed: ${error.code}');
         final bool dropped = const <String>{'deadline-exceeded', 'unavailable', 'internal'}.contains(error.code);

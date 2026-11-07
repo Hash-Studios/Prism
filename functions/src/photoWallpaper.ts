@@ -518,13 +518,23 @@ export async function runPhotoJob(jobId: string, job: PhotoJob, jpeg: Buffer, ph
  * stored outcome while the account is active and never charges twice. The photo is held only in memory and sent to
  * fal inline. Account deletion closes the UID barrier; jobs that fail after that point do not refund.
  */
+/** [result] with the user's coin balance, so the app shows the server's number instead of a cached one. */
+async function withBalance<T extends object>(uid: string, result: T): Promise<T & {balance?: number}> {
+  try {
+    const coins = (await db.collection("usersv2").doc(uid).get()).data()?.coins;
+    return typeof coins === "number" ? {...result, balance: Math.trunc(coins)} : result;
+  } catch {
+    return result;
+  }
+}
+
 export const createPhotoWallpaper = onCall({
   region: CALLABLE_REGIONS,
   timeoutSeconds: 180,
   memory: "1GiB",
   maxInstances: 10,
   secrets: [falKey, ...r2Secrets],
-}, async (request): Promise<PhotoJobResult> => {
+}, async (request): Promise<PhotoJobResult & {balance?: number}> => {
   const uid = request.auth?.uid;
   if (!uid || request.auth?.token.firebase?.sign_in_provider === "anonymous") {
     throw new HttpsError("unauthenticated", "Sign in to make a wallpaper from a photo.");
@@ -544,10 +554,10 @@ export const createPhotoWallpaper = onCall({
   const claim = await claimJob(uid, data.requestId, mode, target, size);
   if ("replay" in claim) {
     const job = claim.replay;
-    if (job.state !== "running") return jobResult(jobId, job);
-    return jobResult(jobId, (await failPhotoJob(jobId, job.startedAt.toMillis(), "timeout")) ?? job);
+    if (job.state !== "running") return withBalance(uid, jobResult(jobId, job));
+    return withBalance(uid, jobResult(jobId, (await failPhotoJob(jobId, job.startedAt.toMillis(), "timeout")) ?? job));
   }
-  return runPhotoJob(jobId, claim.job, jpeg, photo, placement, claim.isPro);
+  return withBalance(uid, await runPhotoJob(jobId, claim.job, jpeg, photo, placement, claim.isPro));
 });
 
 async function sweepCleanupQueue(field: "cleanupPending" | "falCleanupPending", nowMs: number): Promise<void> {
@@ -594,9 +604,9 @@ export const getPhotoWallpaper = onCall({region: CALLABLE_REGIONS, timeoutSecond
       return null;
     });
     if (!job || job.userId !== uid || job.state === "closed") return {state: "unknown"};
-    if (job.state !== "running") return jobResult(jobId, job);
+    if (job.state !== "running") return withBalance(uid, jobResult(jobId, job));
     if (Date.now() - job.startedAt.toMillis() < STALE_RUNNING_MS) return {jobId, state: "running"};
-    return jobResult(jobId, (await failPhotoJob(jobId, job.startedAt.toMillis(), "timeout")) ?? job);
+    return withBalance(uid, jobResult(jobId, (await failPhotoJob(jobId, job.startedAt.toMillis(), "timeout")) ?? job));
   });
 
 /** Refunds jobs that stopped while they ran, for example when the instance died. */

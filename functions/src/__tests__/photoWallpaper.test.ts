@@ -1323,3 +1323,20 @@ test("lookup needs a signed-in, non-anonymous user and a valid requestId", async
     {uid: "a", token: {firebase: {sign_in_provider: "anonymous"}}}), {code: "unauthenticated"});
   await assert.rejects(() => lookup({requestId: "x"}), {code: "invalid-argument"});
 });
+
+test("job results carry the user's coin balance after the charge or refund", async (t) => {
+  installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  mockDeps(t);
+  const done = await run(await extendData()) as Succeeded & {balance?: number};
+  assert.equal(done.balance, 125);
+  const replayed = await lookup({requestId: "req-00000001"}) as Succeeded & {balance?: number};
+  assert.equal(replayed.balance, 125);
+});
+
+test("a refunded failure carries the balance after the refund", async (t) => {
+  installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  mockDeps(t, {falStatus: 500});
+  const failed = await run(await extendData()) as Failed & {balance?: number};
+  assert.equal(failed.state, "failed");
+  assert.equal(failed.balance, 200);
+});

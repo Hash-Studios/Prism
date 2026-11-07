@@ -788,4 +788,39 @@ void main() {
       expect(await repo.readPending(userId: 'u1'), isNull);
     });
   });
+
+  test('a job result with a balance hands it to the coin service, so the chip shows the server number', () async {
+    final List<int> balances = <int>[];
+    final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+      null,
+      null,
+      (Uint8List bytes, int longSide) async => Uint8List.fromList(<int>[1, 2, 3]),
+      (Map<String, Object?> payload) async => <String, Object?>{
+        'jobId': 'pj_x',
+        'state': 'succeeded',
+        'imageUrl': 'https://x/a.jpg',
+        'width': 1080,
+        'height': 2340,
+        'balance': 275,
+      },
+      (Map<String, Object?> payload) async => <String, Object?>{
+        'state': 'failed',
+        'reason': 'timeout',
+        'refunded': true,
+        'balance': 350,
+      },
+      null,
+      null,
+      balances.add,
+    );
+    final PhotoJob job = PhotoJob(
+      source: PhotoSource(bytes: Uint8List(4), size: const PhotoSize(540, 1170)),
+      mode: PhotoJobMode.upscale,
+      target: PhotoJobTarget.phone,
+      cost: 10,
+    );
+    await repo.run(job, requestId: 'req-00000077', targetSize: const PhotoSize(1080, 2340));
+    await repo.recover('req-00000078');
+    expect(balances, <int>[275, 350]);
+  });
 }

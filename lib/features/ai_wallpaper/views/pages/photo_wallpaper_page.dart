@@ -174,7 +174,6 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       };
       final bool cleared = (result == null || _isFinal(shown)) && await _clearPending(userId, pending.requestId);
       if (!_isCurrent(revision)) return;
-      unawaited(CoinsService.instance.refreshBalance().then<void>((_) {}, onError: (Object _) {}));
       setState(() {
         _state = shown;
         if (result == null) _recoveredMode = null;
@@ -324,7 +323,6 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       await activity?.cancel();
       return;
     }
-    unawaited(CoinsService.instance.refreshBalance().then<void>((_) {}, onError: (Object _) {}));
     switch (result) {
       case PhotoJobSucceeded(:final String imageUrl):
         PrismHaptics.success();
@@ -690,6 +688,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
             label: l10n.photoWallStartOver,
             variant: PrismButtonVariant.ghost,
             expand: true,
+            maxLines: null,
             onPressed: _startOver,
           ),
         ],
@@ -725,6 +724,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
               label: l10n.photoWallPickAnother,
               variant: mode == null ? PrismButtonVariant.primary : PrismButtonVariant.ghost,
               expand: true,
+              maxLines: null,
               loading: _picking,
               onPressed: _pendingRequestId != null || _checkingPending ? null : _pick,
             ),

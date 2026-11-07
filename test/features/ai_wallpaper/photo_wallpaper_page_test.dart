@@ -632,6 +632,15 @@ void main() {
     expect(find.text('Extend · 75 coins'), findsOneWidget);
   });
 
+  testWidgets('at the largest iOS text size the photo buttons wrap instead of truncating', (tester) async {
+    await _pumpPage(tester, _Harness(), size: const Size(750, 1334), devicePixelRatio: 2, textScale: 3.1);
+    await _pickPhoto(tester);
+
+    expect(tester.takeException(), isNull);
+    final RenderParagraph label = tester.renderObject<RenderParagraph>(find.text('Choose another photo'));
+    expect(label.didExceedMaxLines, isFalse);
+  });
+
   testWidgets('the placement frame and the compare view expose their semantics', (tester) async {
     final SemanticsHandle handle = tester.ensureSemantics();
     await _pumpPage(tester, _Harness());
