@@ -45,6 +45,7 @@ class PerfAutodrive {
             PerformanceProbe.emit(kind: 'resume', name: 'resume_to_frame', durationMs: sinceResume.elapsedMilliseconds);
           }),
         );
+        afterResume?.cancel();
         afterResume = Timer(const Duration(seconds: 4), () => PerformanceProbe.phase('after_resume'));
       },
       onPause: () => PerformanceProbe.phase('paused'),
