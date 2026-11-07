@@ -39,7 +39,6 @@ void main() {
   });
 
   group('distinctWalls', () {
-    // Real Wallhaven pairs: 7jmgk3/6l7j1q are one picture uploaded twice; jer9jm/5y6l53 are two pictures.
     FeedItemEntity upload(String id, int bytes, List<String> colours) => FeedItemEntity.wallhaven(
       id: id,
       wallpaper: WallhavenWallpaper(
@@ -58,14 +57,23 @@ void main() {
     const List<String> red = <String>['#cccccc', '#000000', '#660000', '#990000', '#424153'];
     const List<String> gold = <String>['#663300', '#000000', '#996633', '#424153', '#cc6633'];
 
-    test('drops a Wallhaven re-upload of a kept wall and keeps the first copy', () {
+    test('keeps distinct Wallhaven uploads even when metadata suggests a re-upload', () {
       final List<FeedItemEntity> walls = distinctWalls(<FeedItemEntity>[
         upload('7jmgk3', 17913092, red),
         upload('6l7j1q', 17905666, red),
         upload('jer9jm', 19445274, gold),
         upload('5y6l53', 20870143, gold),
       ]);
-      expect(walls.map((FeedItemEntity wall) => wall.id), <String>['7jmgk3', 'jer9jm', '5y6l53']);
+      expect(walls.map((FeedItemEntity wall) => wall.id), <String>['7jmgk3', '6l7j1q', 'jer9jm', '5y6l53']);
+    });
+
+    test('keeps different uploads when metadata happens to match', () {
+      final List<FeedItemEntity> walls = distinctWalls(<FeedItemEntity>[
+        upload('first', 17913092, red),
+        upload('second', 17913092, red),
+      ]);
+
+      expect(walls.map((FeedItemEntity wall) => wall.id), <String>['first', 'second']);
     });
 
     test('drops a repeated source and id, and every wall in exclude', () {
@@ -79,7 +87,11 @@ void main() {
         ],
         exclude: <FeedItemEntity>[item(WallpaperSource.prism, 'current', ''), upload('7jmgk3', 17913092, red)],
       );
-      expect(walls.map((FeedItemEntity wall) => '${wall.source.name}:${wall.id}'), <String>['prism:a', 'wallhaven:a']);
+      expect(walls.map((FeedItemEntity wall) => '${wall.source.name}:${wall.id}'), <String>[
+        'prism:a',
+        'wallhaven:a',
+        'wallhaven:6l7j1q',
+      ]);
     });
   });
 }

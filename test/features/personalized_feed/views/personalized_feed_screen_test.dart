@@ -70,6 +70,7 @@ import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -279,6 +280,7 @@ void main() {
   Future<void> pumpScreen(
     WidgetTester tester, {
     bool disableAnimations = false,
+    ValueListenable<bool>? reduceMotionSignal,
     bool tickersEnabled = true,
     WallOfTheDayEntity? wotdEntity,
     VoidCallback? onTuneTap,
@@ -311,10 +313,16 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(size: mediaSize, disableAnimations: disableAnimations),
-          child: favouriteTestBuilder(context, child),
-        ),
+        builder: (context, child) {
+          Widget withMotion(bool reduceMotion) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(size: mediaSize, disableAnimations: reduceMotion),
+            child: favouriteTestBuilder(context, child),
+          );
+          final ValueListenable<bool>? signal = reduceMotionSignal;
+          return signal == null
+              ? withMotion(disableAnimations)
+              : ValueListenableBuilder<bool>(valueListenable: signal, builder: (_, value, _) => withMotion(value));
+        },
         home: Scaffold(
           body: TickerMode(
             enabled: tickersEnabled,
@@ -1178,6 +1186,20 @@ void main() {
 
     expect(find.byType(WallpaperTile), findsOneWidget);
     verify(() => feedRepository.fetchPopular()).called(3);
+  });
+
+  testWidgets('turning on reduce motion ends an in-progress tab transition', (tester) async {
+    final ValueNotifier<bool> reduceMotion = ValueNotifier<bool>(false);
+    addTearDown(reduceMotion.dispose);
+    await pumpScreen(tester, reduceMotionSignal: reduceMotion);
+
+    await tapTab(tester, 'Latest');
+    await tester.pump(const Duration(milliseconds: 40));
+    expect(find.byKey(const ValueKey<String>('home-tab-outgoing')), findsOneWidget);
+
+    reduceMotion.value = true;
+    await tester.pump();
+    expect(find.byKey(const ValueKey<String>('home-tab-outgoing')), findsNothing);
   });
 
   testWidgets('a tab is loaded once, however often the user comes back to it', (tester) async {

@@ -1583,13 +1583,19 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           height: _chromeSize,
           // Built only under the header, so the page never holds two primary actions.
           child: _hiddenWhenImmersive(
-            AnimatedSwitcher(
-              duration: context.motion(PrismDurations.fast),
-              switchInCurve: PrismCurves.enter,
-              switchOutCurve: PrismCurves.exitReverse,
-              child: header
-                  ? Center(key: const ValueKey<String>('detail-header-action'), child: headerAction)
-                  : const SizedBox.shrink(),
+            IgnorePointer(
+              ignoring: !header,
+              child: ExcludeSemantics(
+                excluding: !header,
+                child: AnimatedSwitcher(
+                  duration: context.motion(PrismDurations.fast),
+                  switchInCurve: PrismCurves.enter,
+                  switchOutCurve: PrismCurves.exitReverse,
+                  child: header
+                      ? Center(key: const ValueKey<String>('detail-header-action'), child: headerAction)
+                      : const SizedBox.shrink(),
+                ),
+              ),
             ),
           ),
         ),
@@ -1597,11 +1603,17 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   /// [child] once the opening has landed: it fades in over [_chromeFade] after the card settles.
-  Widget _landed(Widget child) => AnimatedOpacity(
-    opacity: _chromeLanded ? 1 : 0,
-    duration: context.motion(_chromeFade),
-    curve: PrismCurves.enter,
-    child: child,
+  Widget _landed(Widget child) => IgnorePointer(
+    ignoring: !_chromeLanded,
+    child: ExcludeSemantics(
+      excluding: !_chromeLanded,
+      child: AnimatedOpacity(
+        opacity: _chromeLanded ? 1 : 0,
+        duration: context.motion(_chromeFade),
+        curve: PrismCurves.enter,
+        child: child,
+      ),
+    ),
   );
 
   /// The wall as a small rounded square for the solid header, or null with no picture to show.

@@ -21,28 +21,63 @@ enum GestureHint {
 /// again. Without local settings (tests, early startup) no hint shows.
 abstract final class GestureHints {
   static final Map<GestureHint, ValueNotifier<bool>> _seen = <GestureHint, ValueNotifier<bool>>{};
+  static final Set<GestureHint> _hydrated = <GestureHint>{};
+  static final Set<GestureHint> _pendingWrites = <GestureHint>{};
+  static final Set<GestureHint> _userSeen = <GestureHint>{};
 
-  static ValueNotifier<bool> seen(GestureHint hint) => _seen.putIfAbsent(hint, () {
-    bool value = true;
-    if (getIt.isRegistered<SettingsLocalDataSource>()) {
-      final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
-      if (settings.isOpen) value = settings.get<bool>(hint._settingsKey, defaultValue: false);
+  static ValueNotifier<bool> seen(GestureHint hint) {
+    final SettingsLocalDataSource? settings = getIt.isRegistered<SettingsLocalDataSource>()
+        ? getIt<SettingsLocalDataSource>()
+        : null;
+    final bool ready = settings?.isOpen ?? false;
+    final ValueNotifier<bool> notifier = _seen.putIfAbsent(
+      hint,
+      () => ValueNotifier<bool>(!ready || settings!.get<bool>(hint._settingsKey, defaultValue: false)),
+    );
+    if (ready) {
+      if (_pendingWrites.remove(hint)) {
+        settings!.set(hint._settingsKey, true);
+      }
+      if (_hydrated.add(hint) && !_userSeen.contains(hint)) {
+        final bool persisted = settings!.get<bool>(hint._settingsKey, defaultValue: false);
+        if (notifier.value != persisted) {
+          scheduleMicrotask(() {
+            if (_seen[hint] == notifier && !_userSeen.contains(hint)) notifier.value = persisted;
+          });
+        }
+      }
     }
-    return ValueNotifier<bool>(value);
-  });
+    return notifier;
+  }
 
   /// Call when the user performs the gesture.
   static void markSeen(GestureHint hint) {
     final ValueNotifier<bool> notifier = seen(hint);
-    if (notifier.value) return;
+    if (!_userSeen.add(hint)) return;
     notifier.value = true;
     if (getIt.isRegistered<SettingsLocalDataSource>()) {
-      getIt<SettingsLocalDataSource>().set(hint._settingsKey, true);
+      final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+      if (settings.isOpen) {
+        settings.set(hint._settingsKey, true);
+        _hydrated.add(hint);
+      } else {
+        _pendingWrites.add(hint);
+      }
+    } else {
+      _pendingWrites.add(hint);
     }
   }
 
   @visibleForTesting
-  static void resetForTest() => _seen.clear();
+  static void resetForTest() {
+    for (final ValueNotifier<bool> notifier in _seen.values) {
+      notifier.dispose();
+    }
+    _seen.clear();
+    _hydrated.clear();
+    _pendingWrites.clear();
+    _userSeen.clear();
+  }
 }
 
 /// A one-time hint drawn over an image: a hand glyph and a few words on a soft dark scrim. It fades in after [delay]

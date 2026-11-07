@@ -186,6 +186,11 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     super.didChangeDependencies();
     final Duration duration = context.motion(PrismDurations.fast);
     final TabController? old = _tabsOrNull;
+    if (old != null && context.reduceMotion && _tabSwitch.isAnimating) {
+      _tabSwitch.value = 1;
+      _outgoing?.image.dispose();
+      _outgoing = null;
+    }
     if (old != null && old.animationDuration == duration) return;
     _tabsOrNull = TabController(
       length: HomeFeedChip.values.length,

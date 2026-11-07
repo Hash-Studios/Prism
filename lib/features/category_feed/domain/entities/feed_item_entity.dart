@@ -48,16 +48,12 @@ sealed class FeedItemEntity with _$FeedItemEntity {
 }
 
 /// [items] in order, with repeats dropped and the first copy kept. A repeat has the same source and id as a wall kept
-/// before it or listed in [exclude], or is a Wallhaven re-upload of one: Wallhaven gives each upload a new id.
+/// before it or listed in [exclude]. Identity uses source and ID; similar image metadata is not proof that two uploads
+/// are the same picture.
 List<FeedItemEntity> distinctWalls(Iterable<FeedItemEntity> items, {Iterable<FeedItemEntity> exclude = const []}) {
   final Set<(WallpaperSource, String)> ids = <(WallpaperSource, String)>{};
-  final List<WallhavenWallpaper> uploads = <WallhavenWallpaper>[];
   bool isNew(FeedItemEntity item) {
     if (!ids.add((item.source, item.id.trim()))) return false;
-    if (item case WallhavenFeedItem(:final WallhavenWallpaper wallpaper)) {
-      if (uploads.any((WallhavenWallpaper kept) => _sameUpload(kept, wallpaper))) return false;
-      uploads.add(wallpaper);
-    }
     return true;
   }
 
@@ -68,21 +64,4 @@ List<FeedItemEntity> distinctWalls(Iterable<FeedItemEntity> items, {Iterable<Fee
     for (final FeedItemEntity item in items)
       if (isNew(item)) item,
   ];
-}
-
-// ponytail: Wallhaven sends no picture hash, so a re-upload is the same pixel size and palette with a file size within
-// 1%. Match on a hash if the API ever sends one.
-bool _sameUpload(WallhavenWallpaper a, WallhavenWallpaper b) {
-  final int? sizeA = a.core.sizeBytes;
-  final int? sizeB = b.core.sizeBytes;
-  final List<String>? colours = a.colors;
-  return a.dimensionX != null &&
-      a.dimensionX == b.dimensionX &&
-      a.dimensionY == b.dimensionY &&
-      sizeA != null &&
-      sizeB != null &&
-      (sizeA - sizeB).abs() * 100 <= (sizeA > sizeB ? sizeA : sizeB) &&
-      colours != null &&
-      colours.isNotEmpty &&
-      colours.join(',') == b.colors?.join(',');
 }

@@ -141,4 +141,18 @@ void main() {
     await tester.pumpAndSettle();
     expect(swatches(tester), 1);
   });
+  testWidgets('outgoing header action stops taking taps as soon as the header closes', (tester) async {
+    final ScrollController scroll = await pump(tester);
+    final action = find.byKey(const ValueKey<String>('detail-header-action'));
+    scroll.jumpTo(scroll.position.maxScrollExtent / 2);
+    await tester.pumpAndSettle();
+    expect(action.hitTestable(), findsOneWidget);
+
+    scroll.jumpTo(0);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
+    expect(action, findsOneWidget, reason: 'the outgoing action still paints during the crossfade');
+    expect(action.hitTestable(), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }

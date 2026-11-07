@@ -85,7 +85,7 @@ class _SearchGridState extends State<SearchGrid> {
 
   bool get _showAi =>
       !getIt.isRegistered<SettingsLocalDataSource>() || AiContentFilter.showsAi(getIt<SettingsLocalDataSource>());
-  // Re-uploads of the same picture show once, as on Home and in More like this.
+  // Drop repeated source/ID pairs, matching Home and More like this.
   List<FeedItemEntity> get _visibleResults => distinctWalls(AiContentFilter.filterFeedItems(_results, showAi: _showAi));
   List<FeedItemEntity> get _visiblePrismResults =>
       AiContentFilter.filterFeedItems(widget.prismResults, showAi: _showAi);
@@ -292,7 +292,7 @@ class _SearchGridState extends State<SearchGrid> {
   Widget build(BuildContext context) {
     final List<FeedItemEntity> results = _visibleResults;
     final List<FeedItemEntity> prismResults = _visiblePrismResults;
-    final bool showFooter = _hasMore && results.length >= 24;
+    final bool showFooter = _hasMore && _results.length >= 24;
     final int columns = PrismWallGrid.columns(context);
     final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns);
     return PrismRefresh(

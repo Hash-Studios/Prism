@@ -7,6 +7,7 @@ import 'package:Prism/core/share/share_card.dart';
 import 'package:Prism/core/share/share_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
 import 'package:Prism/features/pexels_feed/data/dtos/pexels_dtos.dart';
 import 'package:Prism/features/pexels_feed/data/mappers/pexels_dto_mapper.dart';
@@ -712,6 +713,39 @@ void main() {
 
     expect(opened, hasLength(1));
     expect(opened.single.computerLink.toString(), 'https://prismwalls.com/wallpaper/wall-1?view=desktop');
+  });
+
+  testWidgets('two taps while sign-in checks settle open only one sheet', (tester) async {
+    final Completer<String?> link = Completer<String?>();
+    int opens = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: ShareButton(
+            webCatalogueCheck: (_) async => false,
+            id: 'wall-1',
+            source: WallpaperSource.prism,
+            url: 'https://img.test/full.jpg',
+            thumbUrl: 'https://img.test/thumb.jpg',
+            createLink: (id, source, url, thumbUrl) => link.future,
+            openSheet: (context, draft, ready, sourceContext) async {
+              opens++;
+            },
+          ),
+        ),
+      ),
+    );
+
+    final VoidCallback onTap = tester.widget<CircularMenuButton>(find.byType(CircularMenuButton)).onTap!;
+    onTap();
+    onTap();
+    await tester.pump();
+    expect(opens, 1);
+
+    link.complete(null);
+    await tester.pumpAndSettle();
   });
 
   testWidgets('the sheet opens on the tap, before the short link arrives', (tester) async {

@@ -46,6 +46,17 @@ Future<void> _pumpUntilRetainedImage(WidgetTester tester) async {
   await tester.pump();
 }
 
+Future<void> _pumpUntil(WidgetTester tester, Finder finder) async {
+  final Stopwatch timeout = Stopwatch()..start();
+  while (finder.evaluate().isEmpty && timeout.elapsed < const Duration(seconds: 2)) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)).timeout(const Duration(seconds: 2)),
+    );
+    await tester.pump();
+  }
+  await tester.pump();
+}
+
 void main() {
   late Directory directory;
   late _MockCacheManager cache;
@@ -112,6 +123,8 @@ void main() {
     late _MockCacheManager fullCache;
 
     setUp(() {
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
       fullCache = _MockCacheManager();
       PrismFullImageCache.testOverride = fullCache;
       OfflineAssetStore.testOverride = _PendingOfflineAssetStore('', Future<File?>.value());
@@ -120,22 +133,23 @@ void main() {
       ).thenAnswer((_) => const Stream<FileResponse>.empty());
     });
 
-    Future<void> pumpTile(WidgetTester tester) => tester.pumpWidget(
-      const MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: MediaQuery(
-          data: MediaQueryData(devicePixelRatio: 3, disableAnimations: true),
-          child: Center(
-            child: SizedBox(
-              width: 120,
-              height: 240,
-              child: PrismImageTile(url: thumbnail, cachedFullUrl: full, placeholderColor: Colors.teal),
+    Future<void> pumpTile(WidgetTester tester, {String imageUrl = thumbnail, String fullImageUrl = full}) =>
+        tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: MediaQuery(
+              data: MediaQueryData(devicePixelRatio: 3, disableAnimations: true),
+              child: Center(
+                child: SizedBox(
+                  width: 120,
+                  height: 240,
+                  child: PrismImageTile(url: imageUrl, cachedFullUrl: fullImageUrl, placeholderColor: Colors.teal),
+                ),
+              ),
             ),
           ),
-        ),
-      ),
-    );
+        );
 
     testWidgets('shows the full picture from the disk cache, decoded at tile height times pixel ratio', (tester) async {
       final File fullFile = File('${directory.path}/full.gif')
@@ -159,6 +173,80 @@ void main() {
       expect(find.byType(CachedNetworkImage), findsNothing);
       verifyNever(() => fullCache.getFileStream(any(), withProgress: any(named: 'withProgress')));
       verifyNever(() => fullCache.getSingleFile(any()));
+    });
+
+    testWidgets('does not keep the previous cached full image while the next lookup is pending', (tester) async {
+      const String nextThumbnail = 'https://example.com/next-small.jpg';
+      const String nextFull = 'https://example.com/next-full.jpg';
+      final File previous = File('${directory.path}/previous.gif')
+        ..writeAsBytesSync(base64Decode('R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='));
+      final Completer<FileInfo?> nextLookup = Completer<FileInfo?>();
+      when(() => fullCache.getFileFromCache(full)).thenAnswer(
+        (_) async => FileInfo(
+          const local.LocalFileSystem().file(previous.path),
+          FileSource.Cache,
+          DateTime.now().add(const Duration(days: 7)),
+          full,
+        ),
+      );
+      when(() => fullCache.getFileFromCache(nextFull)).thenAnswer((_) => nextLookup.future);
+
+      await pumpTile(tester);
+      await _pumpUntilRetainedImage(tester);
+      expect(
+        (tester.widget<Image>(find.byWidgetPredicate(_isRetainedFileImage)).image as ResizeImage).imageProvider,
+        isA<FileImage>().having((FileImage image) => image.file.path, 'file path', previous.path),
+      );
+
+      await pumpTile(tester, imageUrl: nextThumbnail, fullImageUrl: nextFull);
+      expect(find.byWidgetPredicate(_isRetainedFileImage), findsNothing);
+
+      nextLookup.complete(null);
+    });
+
+    testWidgets('falls back to the thumbnail when a cached full image is corrupt', (tester) async {
+      final File corrupt = File('${directory.path}/corrupt.jpg')..writeAsStringSync('not an image');
+      when(() => fullCache.getFileFromCache(full)).thenAnswer(
+        (_) async => FileInfo(
+          const local.LocalFileSystem().file(corrupt.path),
+          FileSource.Cache,
+          DateTime.now().add(const Duration(days: 7)),
+          full,
+        ),
+      );
+
+      await pumpTile(tester);
+      await _pumpUntilRetainedImage(tester);
+      expect(find.byType(CachedNetworkImage), findsNothing);
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await tester.pumpAndSettle();
+      await _pumpUntil(tester, find.byType(CachedNetworkImage));
+
+      expect(find.byType(CachedNetworkImage), findsOneWidget);
+      verify(() => cache.getFileStream(thumbnail, withProgress: true)).called(1);
+    });
+
+    testWidgets('offers retry if the corrupt cached full and thumbnail both fail', (tester) async {
+      final File corrupt = File('${directory.path}/corrupt.jpg')..writeAsStringSync('not an image');
+      when(() => fullCache.getFileFromCache(full)).thenAnswer(
+        (_) async => FileInfo(
+          const local.LocalFileSystem().file(corrupt.path),
+          FileSource.Cache,
+          DateTime.now().add(const Duration(days: 7)),
+          full,
+        ),
+      );
+      when(
+        () => cache.getFileStream(thumbnail, withProgress: true),
+      ).thenAnswer((_) => Stream<FileResponse>.error(const SocketException('offline')));
+
+      await pumpTile(tester);
+      await _pumpUntilRetainedImage(tester);
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await tester.pumpAndSettle();
+      await _pumpUntil(tester, find.byIcon(Icons.refresh_rounded));
+
+      expect(find.byIcon(Icons.refresh_rounded), findsOneWidget);
     });
 
     testWidgets('keeps the small picture and never downloads the full one when it is not cached', (tester) async {

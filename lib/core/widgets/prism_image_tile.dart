@@ -70,6 +70,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
   int _attempt = 0;
   bool _retrying = false;
   bool _loadReported = false;
+  bool _localFileFailed = false;
   final Stopwatch? _loadWatch = kReleaseMode ? null : (Stopwatch()..start());
   late Future<File?> _localFileFuture;
 
@@ -88,6 +89,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
       _attempt = 0;
       _retrying = false;
       _loadReported = false;
+      _localFileFailed = false;
       _loadWatch
         ?..reset()
         ..start();
@@ -211,10 +213,14 @@ class _PrismImageTileState extends State<PrismImageTile> {
     required int? decodeHeight,
     String? fallback,
   }) => FutureBuilder<File?>(
+    key: ValueKey((url, fallback)),
     future: _localFileFuture,
     builder: (context, snapshot) {
       final File? localFile = snapshot.data;
-      if (localFile != null) return _fileImage(localFile, decodeHeight);
+      if (localFile != null && !_localFileFailed) {
+        final String? fallbackUrl = fallback != null && fallback != url ? fallback : url;
+        return _fileImage(localFile, decodeHeight, fallbackUrl: fallbackUrl);
+      }
       if (snapshot.connectionState != ConnectionState.done) return _placeholder();
       if (fallback != null && fallback.isNotEmpty && fallback != url) {
         return _network(context, fallback, decodeHeight);
@@ -238,7 +244,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
   Widget _placeholder() =>
       widget.placeholderColor == null ? PulseFill(borderRadius: widget.borderRadius) : const SizedBox.expand();
 
-  Widget _fileImage(File file, int? decodeHeight) => Image.file(
+  Widget _fileImage(File file, int? decodeHeight, {String? fallbackUrl}) => Image.file(
     file,
     fit: BoxFit.cover,
     cacheHeight: decodeHeight,
@@ -251,8 +257,12 @@ class _PrismImageTileState extends State<PrismImageTile> {
             curve: PrismCurves.enter,
             child: child,
           ),
-    errorBuilder: (context, _, _) =>
-        ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest, child: const SizedBox.expand()),
+    errorBuilder: (context, _, _) {
+      _localFileFailed = true;
+      return fallbackUrl != null && isValidNetworkUrl(fallbackUrl)
+          ? _network(context, fallbackUrl, decodeHeight)
+          : ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest, child: const SizedBox.expand());
+    },
   );
 
   Widget _localImage(BuildContext context, String source) => LayoutBuilder(
@@ -260,12 +270,14 @@ class _PrismImageTileState extends State<PrismImageTile> {
   );
 
   Widget _retainedOrNetworkImage(BuildContext context, String url) => FutureBuilder<File?>(
+    key: ValueKey((url, widget.fallbackUrl, widget.cachedFullUrl)),
     future: _localFileFuture,
     builder: (context, snapshot) {
       final File? localFile = snapshot.data;
-      if (localFile != null) {
+      if (localFile != null && !_localFileFailed) {
         return LayoutBuilder(
-          builder: (context, constraints) => _fileImage(localFile, _decodeHeight(context, constraints)),
+          builder: (context, constraints) =>
+              _fileImage(localFile, _decodeHeight(context, constraints), fallbackUrl: url),
         );
       }
       return _image(context, url, fallback: widget.fallbackUrl);

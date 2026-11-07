@@ -6,7 +6,7 @@ import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_p
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// A Wallhaven wall. Walls with the same [picture] are one picture uploaded under different ids.
+/// A Wallhaven wall. Each ID represents a distinct upload; picture metadata is not identity.
 FeedItemEntity _wall(String id, {String picture = ''}) => FeedItemEntity.wallhaven(
   id: id,
   wallpaper: WallhavenWallpaper(
@@ -24,7 +24,7 @@ FeedItemEntity _wall(String id, {String picture = ''}) => FeedItemEntity.wallhav
 );
 
 void main() {
-  test('More like this drops the open wall, repeats and re-uploads on every page, the first copy kept', () {
+  test('More like this drops the open ID and repeated IDs, but keeps distinct uploads', () {
     final FeedItemEntity current = _wall('open', picture: 'samurai');
     final RecommendationState first = const RecommendationState.initial().append(
       RecommendationPage(
@@ -40,7 +40,7 @@ void main() {
       ),
       current,
     );
-    expect(first.items.map((FeedItemEntity wall) => wall.id), <String>['a', 'b']);
+    expect(first.items.map((FeedItemEntity wall) => wall.id), <String>['a', 'open-again', 'b', 'b2']);
 
     final RecommendationState next = first.loadingPage().append(
       RecommendationPage(
@@ -54,7 +54,7 @@ void main() {
       ),
       current,
     );
-    expect(next.items.map((FeedItemEntity wall) => wall.id), <String>['a', 'b', 'c']);
+    expect(next.items.map((FeedItemEntity wall) => wall.id), <String>['a', 'open-again', 'b', 'b2', 'b3', 'c']);
     expect(next.status, RecommendationStatus.exhausted);
   });
 }

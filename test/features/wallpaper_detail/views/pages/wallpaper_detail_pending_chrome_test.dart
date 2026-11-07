@@ -90,4 +90,46 @@ void main() {
     expect(find.text('136'), findsOneWidget);
     expect(tester.getRect(find.text('Ana')).top, nameTop);
   });
+  testWidgets('opening chrome cannot take taps before the route lands', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final bloc = _DetailBloc();
+    whenListen(
+      bloc,
+      const Stream<WallpaperDetailState>.empty(),
+      initialState: const WallpaperDetailLoaded(entity: _wall, paletteLoading: false),
+    );
+    final navigator = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: navigator,
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const Scaffold(),
+      ),
+    );
+    unawaited(
+      navigator.currentState!.push<void>(
+        PageRouteBuilder<void>(
+          transitionDuration: const Duration(milliseconds: 260),
+          pageBuilder: (_, _, _) => BlocProvider<WallpaperDetailBloc>.value(
+            value: bloc,
+            child: const WallpaperDetailScreen(entity: _wall),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 40));
+    final back = find.byKey(const ValueKey<String>('detail-card-back'));
+    expect(back, findsOneWidget);
+    expect(back.hitTestable(), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(back.hitTestable(), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }

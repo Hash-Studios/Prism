@@ -284,8 +284,8 @@ void main() {
     expect(bloc.state.hasMore, isFalse);
   });
 
-  test('a Home grid drops repeats and Wallhaven re-uploads on the first page and on later pages', () async {
-    // One picture uploaded under several ids shares its pixel size, palette and file size.
+  test('a Home grid drops repeated walls on the first page and on later pages, and keeps look-alikes', () async {
+    // Walls with matching size and palette but different ids stay: metadata cannot prove they are the same picture.
     FeedItemEntity upload(String id, String picture) => FeedItemEntity.wallhaven(
       id: id,
       wallpaper: WallhavenWallpaper(
@@ -322,11 +322,11 @@ void main() {
 
     bloc.add(const CategoryFeedEvent.categorySelected(category: _home));
     await Future<void>.delayed(const Duration(milliseconds: 10));
-    expect(bloc.state.items.map((e) => e.id), <String>['a', 'b']);
+    expect(bloc.state.items.map((e) => e.id), <String>['a', 'a2', 'b']);
 
     bloc.add(const CategoryFeedEvent.fetchMoreRequested());
     await Future<void>.delayed(const Duration(milliseconds: 10));
-    expect(bloc.state.items.map((e) => e.id), <String>['a', 'b', 'c']);
+    expect(bloc.state.items.map((e) => e.id), <String>['a', 'a2', 'b', 'a3', 'c']);
   });
 
   test('selecting another category clears the old items, and a same-category refresh keeps them', () async {

@@ -87,25 +87,28 @@ class _CoverMosaicState extends State<CoverMosaic> {
   Widget _tile(int tile) {
     final String asset = _asset(tile);
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    final Widget image = Image.asset(
+      asset,
+      key: ValueKey<String>(asset),
+      fit: BoxFit.cover,
+      excludeFromSemantics: true,
+      gaplessPlayback: true,
+      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+    );
     return ClipRRect(
       borderRadius: BorderRadius.circular(PrismRadius.sm),
       child: ColoredBox(
         color: scheme.surfaceContainerHighest,
-        child: AnimatedSwitcher(
-          duration: CoverMosaic.crossfade,
-          switchInCurve: Curves.easeInOut,
-          switchOutCurve: Curves.easeInOut,
-          layoutBuilder: (Widget? current, List<Widget> previous) =>
-              Stack(fit: StackFit.expand, children: <Widget>[...previous, if (current != null) current]),
-          child: Image.asset(
-            asset,
-            key: ValueKey<String>(asset),
-            fit: BoxFit.cover,
-            excludeFromSemantics: true,
-            gaplessPlayback: true,
-            errorBuilder: (_, _, _) => const SizedBox.shrink(),
-          ),
-        ),
+        child: context.reduceMotion
+            ? image
+            : AnimatedSwitcher(
+                duration: CoverMosaic.crossfade,
+                switchInCurve: Curves.easeInOut,
+                switchOutCurve: Curves.easeInOut,
+                layoutBuilder: (Widget? current, List<Widget> previous) =>
+                    Stack(fit: StackFit.expand, children: <Widget>[...previous, if (current != null) current]),
+                child: image,
+              ),
       ),
     );
   }

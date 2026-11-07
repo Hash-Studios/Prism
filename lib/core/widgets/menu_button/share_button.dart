@@ -94,7 +94,7 @@ class _ShareButtonState extends State<ShareButton> {
   /// inside the open sheet, so the tap never waits on the network.
   Future<void> onShare() async {
     if (_sharing) return;
-    if (!await requireSignedInAction(context) || !mounted) return;
+    if (!await requireSignedInAction(context) || !mounted || _sharing) return;
 
     final String? id = widget.id;
     final WallpaperSource source = widget.source;

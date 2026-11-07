@@ -66,6 +66,20 @@ void main() {
     }
   });
 
+  testWidgets('switches an in-progress crossfade to zero duration when reduce motion turns on', (tester) async {
+    await tester.pumpWidget(host());
+    await tester.pump(CoverMosaic.interval);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.widget<AnimatedSwitcher>(find.byType(AnimatedSwitcher).first).duration, CoverMosaic.crossfade);
+
+    await tester.pumpWidget(host(reduceMotion: true));
+    expect(
+      find.byType(AnimatedSwitcher),
+      findsNothing,
+      reason: 'an active fade is removed, not just prevented from restarting',
+    );
+  });
+
   testWidgets('holds still under reduce motion', (tester) async {
     await tester.pumpWidget(host(reduceMotion: true));
     final List<String> before = shownAssets(tester);

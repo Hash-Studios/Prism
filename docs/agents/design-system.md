@@ -129,7 +129,7 @@ Rules:
 
 `lib/core/widgets/prism_sheet/` is built on `smooth_sheets`.
 
-- The sheet floats 16 px in from the screen edges, with a shadow and a light dim behind it. Its bottom corners are
+- The sheet floats 8 px in from the screen edges, with a shadow and a light dim behind it. Its bottom corners are
   the screen corner radius minus the inset, so the curve sits concentric inside the bezel.
 - `detents` default to `[fit, large]`: the sheet opens at its content height and the user can drag it up to full
   height. There it goes flush with the screen edges. Add `medium` for a half-height stop. Use `[fit]` for short
@@ -150,7 +150,7 @@ Rules:
 Tokens live in `lib/core/motion/prism_motion.dart`.
 
 - Durations: `PrismDurations.press` 100, `fast` 160, `base` 240, `slow` 320, `stagger` 40. UI motion stays under
-  300 ms. Bottom sheets use `PrismDurations.sheet` (360) because the sheet travels the full screen height.
+  300 ms. Bottom sheets open in 280 ms and close in 240 ms. Their route uses separate timings rather than the 360 ms `PrismDurations.sheet` token.
 - Curves: `PrismCurves.enter` (strong ease-out) for things that arrive or leave, `move` for things that change place,
   `sheet` for sheets, `pop` for a small overshoot on a badge or a tick. Never `Curves.easeIn`.
 - `reverseCurve` and `AnimatedSwitcher.switchOutCurve` run from 1 to 0 without a flip. Use `PrismCurves.exitReverse`
