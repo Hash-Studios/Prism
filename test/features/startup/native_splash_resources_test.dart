@@ -85,6 +85,14 @@ void main() {
     }
   });
 
+  test('the Android 12+ splash icon has the launch colour, so no square shows on the splash', () {
+    final String? fill = RegExp(
+      'android:fillColor="([^"]+)"',
+    ).firstMatch(readResource('drawable/splash_icon_transparent.xml'))?.group(1);
+    expect(color(fill!, night: false), '#FFFFFF');
+    expect(color(fill, night: true), '#000000');
+  });
+
   test('native launch background is white by day and black at night', () {
     final String? drawableColor = RegExp(
       'android:drawable="([^"]+)"',
