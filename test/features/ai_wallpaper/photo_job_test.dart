@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/ai_wallpaper/data/repositories/photo_wallpaper_repository.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/photo_job.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -790,6 +794,13 @@ void main() {
   });
 
   test('a job result with a balance hands it to the coin service, so the chip shows the server number', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'balance-owner'
+      ..loggedIn = true;
+    addTearDown(() {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      CoinsService.instance.resetSession();
+    });
     final List<int> balances = <int>[];
     final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
       null,
@@ -822,5 +833,262 @@ void main() {
     await repo.run(job, requestId: 'req-00000077', targetSize: const PhotoSize(1080, 2340));
     await repo.recover('req-00000078');
     expect(balances, <int>[275, 350]);
+  });
+
+  for (final bool recover in <bool>[false, true]) {
+    test('a ${recover ? 'recovered' : 'running'} balance is ignored after the owner session changes', () async {
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'balance-owner'
+        ..loggedIn = true;
+      addTearDown(() {
+        app_state.prismUser = app_constants.createGuestPrismUser();
+        CoinsService.instance.resetSession();
+      });
+      final Completer<Object?> reply = Completer<Object?>();
+      final List<int> balances = <int>[];
+      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+        null,
+        null,
+        (Uint8List bytes, int longSide) async => Uint8List.fromList(<int>[1, 2, 3]),
+        (Map<String, Object?> payload) => reply.future,
+        (Map<String, Object?> payload) => reply.future,
+        null,
+        null,
+        balances.add,
+      );
+      final Future<Object?> pending = recover
+          ? repo.recover('req-00000079')
+          : repo.run(
+              _job(mode: PhotoJobMode.upscale),
+              requestId: 'req-00000079',
+              targetSize: _phone,
+            );
+      await Future<void>.delayed(Duration.zero);
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'other-owner'
+        ..loggedIn = true;
+      CoinsService.instance.resetSession();
+      reply.complete(<String, Object?>{
+        'state': 'succeeded',
+        'imageUrl': 'https://x/a.jpg',
+        'width': 1080,
+        'height': 2340,
+        'balance': 999,
+      });
+      await pending;
+      expect(balances, isEmpty);
+    });
+  }
+
+  test('a late reply is ignored after sign-out and sign-in to the same account', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'balance-owner'
+      ..loggedIn = true;
+    addTearDown(() {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      CoinsService.instance.resetSession();
+    });
+    final Completer<Object?> reply = Completer<Object?>();
+    final List<int> balances = <int>[];
+    final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+      null,
+      null,
+      (Uint8List bytes, int longSide) async => Uint8List.fromList(<int>[1, 2, 3]),
+      (Map<String, Object?> payload) => reply.future,
+      null,
+      null,
+      null,
+      balances.add,
+    );
+    final Future<PhotoJobState> pending = repo.run(
+      _job(mode: PhotoJobMode.upscale),
+      requestId: 'req-00000085',
+      targetSize: _phone,
+    );
+    await Future<void>.delayed(Duration.zero);
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    CoinsService.instance.resetSession();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'balance-owner'
+      ..loggedIn = true;
+    CoinsService.instance.resetSession();
+    reply.complete(<String, Object?>{..._successMap, 'balance': 999});
+
+    await pending;
+    expect(balances, isEmpty);
+  });
+
+  test('a balance is ignored for a signed-out session', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final List<int> balances = <int>[];
+    final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+      null,
+      null,
+      (Uint8List bytes, int longSide) async => Uint8List.fromList(<int>[1, 2, 3]),
+      (Map<String, Object?> payload) async => <String, Object?>{..._successMap, 'balance': 999},
+      null,
+      null,
+      null,
+      balances.add,
+    );
+    await repo.run(
+      _job(mode: PhotoJobMode.upscale),
+      requestId: 'req-00000080',
+      targetSize: _phone,
+    );
+    expect(balances, isEmpty);
+  });
+
+  test('a session switch during encoding does not dispatch the old paid job', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'balance-owner'
+      ..loggedIn = true;
+    addTearDown(() {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      CoinsService.instance.resetSession();
+    });
+    int calls = 0;
+    final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+      null,
+      null,
+      (Uint8List bytes, int longSide) async {
+        app_state.prismUser = app_constants.createGuestPrismUser()
+          ..id = 'other-owner'
+          ..loggedIn = true;
+        CoinsService.instance.resetSession();
+        return Uint8List.fromList(<int>[1, 2, 3]);
+      },
+      (Map<String, Object?> payload) async {
+        calls++;
+        return _successMap;
+      },
+    );
+
+    final PhotoJobState result = await repo.run(
+      _job(mode: PhotoJobMode.upscale),
+      requestId: 'req-00000081',
+      targetSize: _phone,
+    );
+    expect(result, isA<PhotoJobFailed>());
+    expect(calls, 0);
+  });
+
+  test('a switch before retry does not dispatch a second paid call', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'balance-owner'
+      ..loggedIn = true;
+    addTearDown(() {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      CoinsService.instance.resetSession();
+    });
+    int calls = 0;
+    final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+      null,
+      null,
+      (Uint8List bytes, int longSide) async => Uint8List.fromList(<int>[1, 2, 3]),
+      (Map<String, Object?> payload) {
+        calls++;
+        app_state.prismUser = app_constants.createGuestPrismUser()
+          ..id = 'other-owner'
+          ..loggedIn = true;
+        CoinsService.instance.resetSession();
+        throw StateError('connection dropped');
+      },
+    );
+
+    await repo.run(
+      _job(mode: PhotoJobMode.upscale),
+      requestId: 'req-00000082',
+      targetSize: _phone,
+    );
+    expect(calls, 1);
+  });
+
+  test('a balance callback failure does not change a definitive job result', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'balance-owner'
+      ..loggedIn = true;
+    addTearDown(() {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      CoinsService.instance.resetSession();
+    });
+    final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+      null,
+      null,
+      (Uint8List bytes, int longSide) async => Uint8List.fromList(<int>[1, 2, 3]),
+      (Map<String, Object?> payload) async => <String, Object?>{..._successMap, 'balance': 275},
+      null,
+      null,
+      null,
+      (int balance) => throw StateError('notifier failed'),
+    );
+
+    final PhotoJobState result = await repo.run(
+      _job(mode: PhotoJobMode.upscale),
+      requestId: 'req-00000083',
+      targetSize: _phone,
+    );
+    expect(result, isA<PhotoJobSucceeded>());
+  });
+
+  test('the signed-in owner receives the server balance through CoinsService', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'balance-owner'
+      ..loggedIn = true
+      ..coins = 500;
+    CoinsService.instance.resetSession();
+    addTearDown(() {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      CoinsService.instance.resetSession();
+    });
+    final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+      null,
+      null,
+      (Uint8List bytes, int longSide) async => Uint8List.fromList(<int>[1, 2, 3]),
+      (Map<String, Object?> payload) async => <String, Object?>{..._successMap, 'balance': 275},
+    );
+
+    await repo.run(
+      _job(mode: PhotoJobMode.upscale),
+      requestId: 'req-00000084',
+      targetSize: _phone,
+    );
+    expect(app_state.prismUser.coins, 275);
+    expect(CoinsService.instance.balanceNotifier.value, 275);
+  });
+
+  test('an old owner reply cannot change the new owner balance in CoinsService', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'balance-owner'
+      ..loggedIn = true
+      ..coins = 500;
+    CoinsService.instance.resetSession();
+    addTearDown(() {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      CoinsService.instance.resetSession();
+    });
+    final Completer<Object?> reply = Completer<Object?>();
+    final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+      null,
+      null,
+      (Uint8List bytes, int longSide) async => Uint8List.fromList(<int>[1, 2, 3]),
+      (Map<String, Object?> payload) => reply.future,
+    );
+    final Future<PhotoJobState> pending = repo.run(
+      _job(mode: PhotoJobMode.upscale),
+      requestId: 'req-00000086',
+      targetSize: _phone,
+    );
+    await Future<void>.delayed(Duration.zero);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'new-owner'
+      ..loggedIn = true
+      ..coins = 900;
+    CoinsService.instance.resetSession();
+    reply.complete(<String, Object?>{..._successMap, 'balance': 275});
+
+    await pending;
+    expect(app_state.prismUser.coins, 900);
+    expect(CoinsService.instance.balanceNotifier.value, 900);
   });
 }

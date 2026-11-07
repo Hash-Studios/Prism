@@ -9,6 +9,7 @@ import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/ai_wallpaper/domain/entities/photo_job.dart';
 import 'package:Prism/features/user_search/data/photo_search_service.dart';
 import 'package:Prism/logger/logger.dart';
@@ -57,10 +58,29 @@ class PhotoWallpaperRepository {
   final void Function(int balance) _onBalance;
 
   /// Applies the coin balance a job result carries, then returns [data] unchanged.
-  Object? _withBalance(Object? data) {
-    if (data is Map && data['balance'] is int) _onBalance(data['balance'] as int);
+  Object? _withBalance(Object? data, ({String userId, int session})? owner) {
+    if (data is Map && data['balance'] is int && _owns(owner)) {
+      try {
+        _onBalance(data['balance'] as int);
+      } catch (error) {
+        logger.w('[PhotoWallpaper] balance update failed (${error.runtimeType})');
+      }
+    }
     return data;
   }
+
+  ({String userId, int session})? _currentOwner() =>
+      app_state.prismUser.loggedIn && app_state.prismUser.id.trim().isNotEmpty
+      ? (userId: app_state.prismUser.id, session: CoinsService.instance.economySession)
+      : null;
+
+  bool _owns(({String userId, int session})? owner) =>
+      owner != null &&
+      app_state.prismUser.loggedIn &&
+      app_state.prismUser.id == owner.userId &&
+      CoinsService.instance.economySession == owner.session;
+
+  bool _ownerChanged(({String userId, int session})? owner) => owner != null && !_owns(owner);
 
   static void _applyServerBalance(int balance) => CoinsService.instance.applyServerBalance(balance);
   final Future<String?> Function() _readPending;
@@ -126,8 +146,9 @@ class PhotoWallpaperRepository {
 
   /// The server state of a job started before the app restarted. Null when the server has no such job.
   Future<PhotoJobState?> recover(String requestId) async {
+    final ({String userId, int session})? owner = _currentOwner();
     try {
-      final Object? data = _withBalance(await _lookup(<String, Object?>{'requestId': requestId}));
+      final Object? data = _withBalance(await _lookup(<String, Object?>{'requestId': requestId}), owner);
       if (data is Map && data['state'] == 'unknown') return null;
       if (data is Map && data['state'] == 'running') return PhotoJobRunning(requestId);
       return parsePhotoJobResult(data);
@@ -157,10 +178,8 @@ class PhotoWallpaperRepository {
     required String requestId,
     required PhotoSize targetSize,
     PhotoPlacement? placement,
-    bool Function()? mayUpload,
   }) async {
-    const PhotoJobFailed signedOut = PhotoJobFailed(reason: PhotoJobFailure.signIn, charged: false, refunded: false);
-    if (mayUpload?.call() == false) return signedOut;
+    final ({String userId, int session})? owner = _currentOwner();
     final Uint8List jpeg;
     try {
       final PhotoSize size = job.source.size;
@@ -187,9 +206,11 @@ class PhotoWallpaperRepository {
       'image': base64Encode(jpeg),
     };
     for (int attempt = 0; ; attempt++) {
-      if (mayUpload?.call() == false) return signedOut;
+      if (_ownerChanged(owner)) {
+        return const PhotoJobFailed(reason: PhotoJobFailure.network, charged: false, refunded: false);
+      }
       try {
-        return parsePhotoJobResult(_withBalance(await _call(payload)));
+        return parsePhotoJobResult(_withBalance(await _call(payload), owner));
       } on FirebaseFunctionsException catch (error) {
         logger.w('[PhotoWallpaper] job call failed: ${error.code}');
         final bool dropped = const <String>{'deadline-exceeded', 'unavailable', 'internal'}.contains(error.code);

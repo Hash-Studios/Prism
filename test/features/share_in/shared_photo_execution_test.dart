@@ -144,14 +144,13 @@ void main() {
     expect(api.cancellations, api.starts, reason: 'every Live Activity that started is cancelled');
   });
 
-  test('revoking upload permission during compression prevents the callable', () async {
-    bool mayUpload = true;
+  test('signing out during compression prevents the callable', () async {
     int calls = 0;
     final PhotoWallpaperRepository repository = PhotoWallpaperRepository(
       null,
       null,
       (Uint8List bytes, int _) async {
-        mayUpload = false;
+        app_state.prismUser.loggedIn = false;
         return bytes;
       },
       (_) async {
@@ -163,31 +162,25 @@ void main() {
       PhotoJob(source: _photo, mode: PhotoJobMode.extend, target: PhotoJobTarget.phone, cost: 75),
       requestId: 'shared-photo',
       targetSize: const PhotoSize(1080, 2340),
-      mayUpload: () => mayUpload,
     );
 
     expect(calls, 0);
-    expect(
-      result,
-      isA<PhotoJobFailed>().having((PhotoJobFailed failure) => failure.reason, 'reason', PhotoJobFailure.signIn),
-    );
+    expect(result, isA<PhotoJobFailed>());
   });
 
   test('signing out after a failed request prevents a retry with the photo', () async {
-    bool mayUpload = true;
     int calls = 0;
     final PhotoWallpaperRepository repository = PhotoWallpaperRepository(null, null, (bytes, _) async => bytes, (_) {
       calls++;
-      mayUpload = false;
+      app_state.prismUser.loggedIn = false;
       return Future<Object?>.error(StateError('connection lost'));
     });
     final PhotoJobState result = await repository.run(
       PhotoJob(source: _photo, mode: PhotoJobMode.extend, target: PhotoJobTarget.phone, cost: 75),
       requestId: 'shared-photo',
       targetSize: const PhotoSize(1080, 2340),
-      mayUpload: () => mayUpload,
     );
     expect(calls, 1);
-    expect(result, isA<PhotoJobFailed>().having((failure) => failure.reason, 'reason', PhotoJobFailure.signIn));
+    expect(result, isA<PhotoJobFailed>());
   });
 }

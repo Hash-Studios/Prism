@@ -49,6 +49,9 @@ export type PhotoJobResult =
 
 export const PHOTO_JOBS = "photoJobs";
 export const PHOTO_JOB_DAILY = "photoJobDaily";
+/** Per-account daily count of request ids a lookup closed. Bounds the closed records one account can create. */
+export const PHOTO_JOB_CLOSURES = "photoJobClosures";
+export const MAX_PHOTO_JOB_CLOSURES_PER_DAY = 20;
 export const PHOTO_JOB_BUDGET = "photoJobBudget";
 /** fal payload deletes left over after account deletion. Holds only the fal request id, never the user. */
 export const PHOTO_FAL_CLEANUP = "photoFalCleanup";
@@ -512,12 +515,6 @@ export async function runPhotoJob(jobId: string, job: PhotoJob, jpeg: Buffer, ph
   return current && current.state !== "running" ? jobResult(jobId, current) : fail("storage_error");
 }
 
-/**
- * Photo to wallpaper. Charges the coins, runs Extend or Upscale on the photo, checks the photo and the result with
- * SafeSearch, and stores the result. Most failures after the charge return the coins. The same requestId replays the
- * stored outcome while the account is active and never charges twice. The photo is held only in memory and sent to
- * fal inline. Account deletion closes the UID barrier; jobs that fail after that point do not refund.
- */
 /** [result] with the user's coin balance, so the app shows the server's number instead of a cached one. */
 async function withBalance<T extends object>(uid: string, result: T): Promise<T & {balance?: number}> {
   try {
@@ -528,6 +525,12 @@ async function withBalance<T extends object>(uid: string, result: T): Promise<T 
   }
 }
 
+/**
+ * Photo to wallpaper. Charges the coins, runs Extend or Upscale on the photo, checks the photo and the result with
+ * SafeSearch, and stores the result. Most failures after the charge return the coins. The same requestId replays the
+ * stored outcome while the account is active and never charges twice. The photo is held only in memory and sent to
+ * fal inline. Account deletion closes the UID barrier; jobs that fail after that point do not refund.
+ */
 export const createPhotoWallpaper = onCall({
   region: CALLABLE_REGIONS,
   timeoutSeconds: 180,
@@ -586,7 +589,8 @@ async function sweepCleanupQueue(field: "cleanupPending" | "falCleanupPending", 
  * that stopped while it ran is ended and refunded, the same as a replay of its requestId.
  */
 export const getPhotoWallpaper = onCall({region: CALLABLE_REGIONS, timeoutSeconds: 30},
-  async (request): Promise<PhotoJobResult | {jobId: string; state: "running"} | {state: "unknown"}> => {
+  async (request): Promise<(PhotoJobResult & {balance?: number}) | {jobId: string; state: "running"; balance?: number} |
+    {state: "unknown"}> => {
     const uid = request.auth?.uid;
     if (!uid || request.auth?.token.firebase?.sign_in_provider === "anonymous") {
       throw new HttpsError("unauthenticated", "Sign in to see your photo wallpaper.");
@@ -595,17 +599,27 @@ export const getPhotoWallpaper = onCall({region: CALLABLE_REGIONS, timeoutSecond
     if (!isValidRequestId(requestId)) throw bad("requestId is invalid.");
     const jobId = `pj_${uid}_${requestId}`;
     const jobRef = db.collection(PHOTO_JOBS).doc(jobId);
+    const deletionRef = db.collection("creatorDeletionState").doc(uid);
     // No job yet: close the request id in a transaction, so "unknown" is final. A create still on its way then finds
     // the closed record at its claim and charges nothing.
+    const closuresRef = db.collection(PHOTO_JOB_CLOSURES).doc(uid);
     const job = await db.runTransaction(async (tx) => {
-      const snap = await tx.get(jobRef);
+      const [snap, deletion, closures] = await tx.getAll(jobRef, deletionRef, closuresRef);
       if (snap.exists) return snap.data() as PhotoJob;
+      if (deletion.data()?.closed === true) return null;
+      const day = utcDateString();
+      const closedToday = readDailyCount(closures, day);
+      if (closedToday >= MAX_PHOTO_JOB_CLOSURES_PER_DAY) return null;
       tx.set(jobRef, {userId: uid, requestId, state: "closed", closedAt: admin.firestore.Timestamp.now()});
+      tx.set(closuresRef, {day, count: closedToday + 1,
+        expireAt: admin.firestore.Timestamp.fromMillis(Date.now() + 2 * DAY_MS)});
       return null;
     });
     if (!job || job.userId !== uid || job.state === "closed") return {state: "unknown"};
     if (job.state !== "running") return withBalance(uid, jobResult(jobId, job));
-    if (Date.now() - job.startedAt.toMillis() < STALE_RUNNING_MS) return {jobId, state: "running"};
+    if (Date.now() - job.startedAt.toMillis() < STALE_RUNNING_MS) {
+      return withBalance(uid, {jobId, state: "running" as const});
+    }
     return withBalance(uid, jobResult(jobId, (await failPhotoJob(jobId, job.startedAt.toMillis(), "timeout")) ?? job));
   });
 

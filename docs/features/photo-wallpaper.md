@@ -97,7 +97,7 @@ The callable has a 180-second request timeout; this does not prove its handler s
 
 Refunds run before cleanup. Each cleanup queue processes at most 10 records per sweep and stops starting new attempts after its own 20-second budget. The document-ID cursor is saved after every attempt in `photoJobBudget/cleanup`, even when deletion fails, and resets at the queue's end. Slow failures at the front therefore cannot starve later records or the other queue. The scheduled function has a 180-second timeout to allow active attempts to finish.
 
-Every job result from `createPhotoWallpaper` and `getPhotoWallpaper` carries the user's coin balance (`balance`) after the charge or the refund. The app shows that number, so the coin chip never shows a stale cached balance.
+Known job replies from `createPhotoWallpaper` and `getPhotoWallpaper`, including a running lookup, include the user's current coin balance (`balance`) when the profile read succeeds. This read happens after the charge or refund. A missing profile or failed balance read leaves the job outcome unchanged and omits the balance. The app applies a returned balance only while the account and sign-in session that started the call are still current.
 
 ### After an app restart
 
@@ -105,7 +105,7 @@ The app saves pending jobs on the device (`ai.photoWallPendingJob`: user id, req
 
 An uncertain job keeps its request id and cannot be replaced by a different photo or target. Retry looks up that request without uploading the photo again. Clears match both the account and request id, so an old completion cannot remove another job. Storage failures keep recovery available.
 
-When the page opens and finds a saved job of the signed-in user, it calls `getPhotoWallpaper(requestId)`. That callable never charges or runs a job. Signing out or switching accounts clears the page's photo and result actions. A late response from an earlier session cannot restore them, even after switching back to that account.
+When the page opens and finds a saved job of the signed-in user, it calls `getPhotoWallpaper(requestId)`. This is a status lookup, not a pure read. It never charges or runs a job, but it has two side effects: it ends and refunds a job that stopped while it ran, and it closes an unknown request id so that a create still on its way cannot charge later (at most 20 closures for each account each day). Signing out or switching accounts clears the page's photo and result actions. A late response from an earlier session cannot restore them, even after switching back to that account.
 
 - A finished job returns its result. The page shows the wallpaper alone (the photo is not kept, so there is no before and after) with Set, Download and Save to folder.
 - A failed job returns its refund state. The page shows the error and "Choose a photo".
@@ -113,7 +113,7 @@ When the page opens and finds a saved job of the signed-in user, it calls `getPh
 - A job that stopped while it ran (older than 10 minutes) is ended and refunded, the same as a replay.
 - An unknown id, or another user's id, returns `unknown`, and the page clears the saved job.
 
-`unknown` is final. When the lookup finds no job, it writes a closed record for that request id (user id and request id only) in a transaction. A create for the same request id that reaches its claim later refuses with `request_closed` and charges nothing, so the app can safely clear the saved job.
+`unknown` is final. When the lookup finds no job, it writes a closed record for that request id in a transaction. The record holds the user id, request id, closed state and timestamp, but no photo or charge. A create for the same request id that reaches its claim later refuses with `request_closed` and charges nothing, so the app can safely clear the saved job. Once the account-deletion barrier closes, an unknown lookup writes no closed record; the barrier already prevents a later claim.
 
 ### Content filter
 
@@ -127,7 +127,7 @@ SafeSearch blocks an image when `adult` or `violence` is LIKELY or more, or `rac
 
 The upload copy is decoded to raw pixels on the phone and then written as a JPEG (the same method as Search by photo). It has no metadata. Extend normally limits the long side to 2560 px, but raises this limit, up to 4096 px, when needed to preserve the server's 256 px minimum short side. Upscale sends the photo at full size, because it is smaller than the screen.
 
-The app reads exact source dimensions from decoder metadata; its smaller preview determines orientation only. While the page remains open, it retains the request ID for uncertain jobs and jobs whose refund is not confirmed. Retry uses the read-only lookup even when the remaining balance is below the price. Refund copy uses the authoritative cost returned by the server.
+The app reads exact source dimensions from decoder metadata; its smaller preview determines orientation only. While the page remains open, it retains the request ID for uncertain jobs and jobs whose refund is not confirmed. Retry uses the status lookup, not a second create, even when the remaining balance is below the price. Refund copy uses the authoritative cost returned by the server.
 
 ### Analytics
 

@@ -95,24 +95,29 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
     if (getIt.isRegistered<SessionRepository>()) {
       _session = getIt<SessionRepository>().watchCurrentUser().listen((user) {
         final String owner = user.loggedIn ? user.id : '';
-        if (owner == _owner) return;
-        _sessionRevision++;
-        setState(() {
-          _owner = owner;
-          _source = null;
-          _placement = null;
-          _recoveredMode = null;
-          _pendingRequestId = null;
-          _state = const PhotoJobDraft();
-          _picking = false;
-          _acting = false;
-          _checkingPending = true;
-          _pendingStorageReady = false;
-        });
-        unawaited(_recoverPending());
+        if (owner != _owner) _switchOwner(owner);
       });
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _recoverPending());
+  }
+
+  /// Resets the page for [owner] and looks up that account's own saved job.
+  void _switchOwner(String owner) {
+    _sessionRevision++;
+    _activeRecoveryRevision = null;
+    setState(() {
+      _owner = owner;
+      _source = null;
+      _placement = null;
+      _recoveredMode = null;
+      _pendingRequestId = null;
+      _state = const PhotoJobDraft();
+      _picking = false;
+      _acting = false;
+      _checkingPending = true;
+      _pendingStorageReady = false;
+    });
+    unawaited(_recoverPending());
   }
 
   @override
@@ -192,6 +197,9 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       if (_isCurrent(revision)) {
         setState(() => _checkingPending = false);
         _activeRecoveryRevision = null;
+      } else if (mounted && revision == _sessionRevision && _owner != _userId) {
+        // The account changed without a session event (its persist failed), so nothing else resets the page.
+        _switchOwner(_userId);
       }
     }
   }
@@ -332,7 +340,6 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       requestId: requestId,
       targetSize: canvas,
       placement: placement,
-      mayUpload: () => _isCurrent(revision),
     );
     if (!_isCurrent(revision)) {
       await activity?.cancel();

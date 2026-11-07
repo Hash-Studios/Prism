@@ -166,7 +166,7 @@ test("deleting an account removes every per-user doc, anonymizes, then deletes t
     "recursive:usersv2/u1/blockedUsers", "recursive:usersv2/u1/private", "recursive:usersv2/u1/history", "recursive:wrapped/u1",
     "delete:referralStats/u1", "delete:subscriptionSync/u1", "delete:githubUploadStats/u1",
     "delete:badgeCheckRate/u1", "delete:coinAdRateDaily/d1", "delete:coinTransactions/d1",
-    "delete:aiGenerations/d1", "delete:draftSetups/d1", "delete:photoJobDaily/u1", "query:photoJobs.userId==u1",
+    "delete:aiGenerations/d1", "delete:draftSetups/d1", "delete:photoJobDaily/u1", "delete:photoJobClosures/u1", "query:photoJobs.userId==u1",
   ]) {
     assert.ok(log.includes(path), path);
   }
