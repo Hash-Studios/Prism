@@ -59,7 +59,10 @@ class PhotoWallpaperRepository {
     required String requestId,
     required PhotoSize targetSize,
     PhotoPlacement? placement,
+    bool Function()? mayUpload,
   }) async {
+    const PhotoJobFailed signedOut = PhotoJobFailed(reason: PhotoJobFailure.signIn, charged: false, refunded: false);
+    if (mayUpload?.call() == false) return signedOut;
     final Uint8List jpeg;
     try {
       final PhotoSize size = job.source.size;
@@ -86,6 +89,7 @@ class PhotoWallpaperRepository {
       'image': base64Encode(jpeg),
     };
     for (int attempt = 0; ; attempt++) {
+      if (mayUpload?.call() == false) return signedOut;
       try {
         return parsePhotoJobResult(await _call(payload));
       } on FirebaseFunctionsException catch (error) {

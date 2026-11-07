@@ -10,6 +10,11 @@ import org.junit.Test
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.net.URLDecoder
+import java.io.File
+import java.io.InputStream
+import java.nio.file.Files
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class SharedInboxLinksTest {
     private val id = "123e4567-e89b-12d3-a456-426614174000"
@@ -21,6 +26,14 @@ class SharedInboxLinksTest {
         assertFalse(SharedInboxLinks.isValidId("../x"))
         assertFalse(SharedInboxLinks.isValidId(""))
         assertFalse(SharedInboxLinks.isValidId("123e4567-e89b-12d3-a456-4266141740001"))
+        assertFalse(SharedInboxLinks.isValidId("-".repeat(36)))
+    }
+
+    @Test
+    fun ownProviderAuthorityStripsAndroidUserIdPrefix() {
+        assertEquals("com.hash.prism.wallpaper_crop", SharedInboxLinks.normalizedAuthority("0@com.hash.prism.wallpaper_crop"))
+        assertEquals("com.hash.prism.wallpaper_crop", SharedInboxLinks.normalizedAuthority("-2@com.hash.prism.wallpaper_crop"))
+        assertEquals("photos.example", SharedInboxLinks.normalizedAuthority("photos.example"))
     }
 
     @Test
@@ -91,5 +104,198 @@ class SharedInboxLinksTest {
             SharedInboxLinks.copyLimited(ByteArrayInputStream(ByteArray(0)), ByteArrayOutputStream())
         }
         assertEquals("unreadable", error.code)
+    }
+
+    @Test
+    fun canceledCopyDoesNotWriteMoreBytes() {
+        val output = ByteArrayOutputStream()
+        Thread.currentThread().interrupt()
+        try {
+            val error = assertThrows(SharedInboxException::class.java) {
+                SharedInboxLinks.copyLimited(ByteArrayInputStream(byteArrayOf(1)), output)
+            }
+            assertEquals("unreadable", error.code)
+            assertEquals(0, output.size())
+        } finally {
+            Thread.interrupted()
+        }
+    }
+
+    @Test
+    fun timeoutRemovesPartialAndRefusesLateProviderResult() {
+        val folder = Files.createTempDirectory("shared-inbox-test").toFile()
+        val opened = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        var closed = false
+        val copy = SharedInboxCopy(folder, id, "png") {
+            opened.countDown()
+            // Simulate a provider that ignores thread interruption while fetching a cloud image.
+            while (release.count > 0) {
+                try { release.await() } catch (_: InterruptedException) { }
+            }
+            object : ByteArrayInputStream(byteArrayOf(1)) {
+                override fun close() { closed = true; super.close() }
+            }
+        }
+        val worker = Thread(copy.task)
+        try {
+            worker.start()
+            assertTrue(opened.await(2, TimeUnit.SECONDS))
+            assertEquals("unreadable", assertThrows(SharedInboxException::class.java) { copy.take(1) }.code)
+            release.countDown()
+            worker.join(2000)
+            assertFalse(worker.isAlive)
+            assertTrue(closed)
+            assertTrue(folder.listFiles()!!.isEmpty())
+        } finally {
+            release.countDown()
+            worker.join(2000)
+            folder.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun timeoutDuringReadRemovesPartBeforeLateReadReturns() {
+        val folder = Files.createTempDirectory("shared-inbox-test").toFile()
+        val reading = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val copy = SharedInboxCopy(folder, id, "png") {
+            object : InputStream() {
+                override fun read(): Int = error("Uses bulk reads")
+                override fun read(buffer: ByteArray): Int {
+                    reading.countDown()
+                    while (release.count > 0) {
+                        try { release.await() } catch (_: InterruptedException) { }
+                    }
+                    buffer[0] = 1
+                    return 1
+                }
+            }
+        }
+        val worker = Thread(copy.task)
+        try {
+            worker.start()
+            assertTrue(reading.await(2, TimeUnit.SECONDS))
+            assertTrue(File(folder, "$id.part").exists())
+            assertThrows(SharedInboxException::class.java) { copy.take(1) }
+            assertTrue(folder.listFiles()!!.isEmpty())
+            release.countDown()
+            worker.join(2000)
+            assertFalse(worker.isAlive)
+            assertTrue(folder.listFiles()!!.isEmpty())
+        } finally {
+            release.countDown()
+            worker.interrupt()
+            worker.join(2000)
+            folder.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun timeoutClosesBlockedReadAndAllowsAnotherShare() {
+        val folder = Files.createTempDirectory("shared-inbox-test").toFile()
+        val reading = CountDownLatch(1)
+        val closed = CountDownLatch(1)
+        val workerFinished = CountDownLatch(1)
+        val copy = SharedInboxCopy(folder, id, "png") {
+            object : InputStream() {
+                override fun read(): Int = error("Uses bulk reads")
+                override fun read(buffer: ByteArray): Int {
+                    reading.countDown()
+                    while (closed.count > 0) {
+                        try { closed.await() } catch (_: InterruptedException) { }
+                    }
+                    return -1
+                }
+                override fun close() { closed.countDown() }
+            }
+        }
+        val worker = Thread { try { copy.task.run() } finally { workerFinished.countDown() } }
+        try {
+            worker.start()
+            assertTrue(reading.await(2, TimeUnit.SECONDS))
+            assertThrows(SharedInboxException::class.java) { copy.take(1) }
+            assertTrue("Timeout must close the provider, not just cancel its Future", closed.await(2, TimeUnit.SECONDS))
+            assertTrue(workerFinished.await(2, TimeUnit.SECONDS))
+            val retry = SharedInboxCopy(folder, id, "png") { ByteArrayInputStream(byteArrayOf(2)) }
+            Thread(retry.task).start()
+            assertArrayEquals(byteArrayOf(2), retry.take(2000).readBytes())
+        } finally {
+            closed.countDown()
+            worker.join(2000)
+            folder.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun blockedProviderDoesNotQueueTheNextShare() {
+        val folder = Files.createTempDirectory("shared-inbox-test").toFile()
+        val opening = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val finished = CountDownLatch(1)
+        val blocked = SharedInboxCopy(folder, id, "png") {
+            opening.countDown()
+            while (release.count > 0) {
+                try { release.await() } catch (_: InterruptedException) { }
+            }
+            object : ByteArrayInputStream(byteArrayOf(1)) {
+                override fun close() { super.close(); finished.countDown() }
+            }
+        }
+        try {
+            blocked.start()
+            assertTrue(opening.await(2, TimeUnit.SECONDS))
+            assertThrows(SharedInboxException::class.java) { blocked.take(1) }
+            val next = SharedInboxCopy(folder, "123e4567-e89b-12d3-a456-426614174001", "png") {
+                ByteArrayInputStream(byteArrayOf(2))
+            }
+            next.start()
+            assertArrayEquals(byteArrayOf(2), next.take(2000).readBytes())
+        } finally {
+            release.countDown()
+            assertTrue(finished.await(2, TimeUnit.SECONDS))
+            folder.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun nativeTakeRejectsAndDeletesInvalidFiles() {
+        val folder = Files.createTempDirectory("shared-inbox-test").toFile()
+        try {
+            val image = File(folder, "$id.png").apply { writeBytes(byteArrayOf(1)) }
+            assertEquals(image, SharedInboxLinks.takeFile(folder, id))
+            image.writeBytes(byteArrayOf())
+            assertEquals("unreadable", assertThrows(SharedInboxException::class.java) { SharedInboxLinks.takeFile(folder, id) }.code)
+            assertFalse(image.exists())
+            File(folder, "$id.txt").writeBytes(byteArrayOf(1))
+            assertEquals("unreadable", assertThrows(SharedInboxException::class.java) { SharedInboxLinks.takeFile(folder, id) }.code)
+            assertTrue(folder.listFiles()!!.isEmpty())
+            image.mkdir()
+            assertEquals("unreadable", assertThrows(SharedInboxException::class.java) { SharedInboxLinks.takeFile(folder, id) }.code)
+            assertFalse(image.exists())
+            val outside = File(folder.parentFile, "${folder.name}-outside").apply { writeBytes(byteArrayOf(1)) }
+            try {
+                Files.createSymbolicLink(image.toPath(), outside.toPath())
+                assertThrows(SharedInboxException::class.java) { SharedInboxLinks.takeFile(folder, id) }
+                assertTrue(outside.exists())
+            } finally { outside.delete() }
+        } finally { folder.deleteRecursively() }
+    }
+
+    @Test
+    fun sweepRemovesAbandonedPartsAndOldFilesButNotActiveCopies() {
+        val folder = Files.createTempDirectory("shared-inbox-test").toFile()
+        try {
+            val partial = File(folder, "$id.part").apply { writeBytes(byteArrayOf(1)) }
+            val activeId = "123e4567-e89b-12d3-a456-426614174001"
+            val active = File(folder, "$activeId.part").apply { writeBytes(byteArrayOf(1)) }
+            val old = File(folder, "old.png").apply { writeBytes(byteArrayOf(1)); setLastModified(1) }
+            val recent = File(folder, "recent.png").apply { writeBytes(byteArrayOf(1)) }
+            SharedInboxLinks.sweep(folder, setOf(activeId))
+            assertFalse(partial.exists())
+            assertFalse(old.exists())
+            assertTrue(active.exists())
+            assertTrue(recent.exists())
+        } finally { folder.deleteRecursively() }
     }
 }

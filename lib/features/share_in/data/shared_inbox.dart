@@ -62,14 +62,18 @@ class SharedInbox {
 
   /// Deletes [path] when it is in one of the share folders. Any other path stays.
   Future<void> discard(String path) async {
-    for (final Directory folder in <Directory>[await inboxDirectory(), await handOffDirectory()]) {
-      if (await _isInside(path, folder)) {
-        try {
+    for (final Future<Directory> Function() directory in <Future<Directory> Function()>[
+      inboxDirectory,
+      handOffDirectory,
+    ]) {
+      try {
+        final Directory folder = await directory();
+        if (await _isInside(path, folder)) {
           await File(path).delete();
-        } on FileSystemException {
-          // Already gone.
+          return;
         }
-        return;
+      } on Object {
+        // One unavailable folder must not prevent cleanup in the other.
       }
     }
   }
@@ -78,18 +82,26 @@ class SharedInbox {
   Future<int> sweep({DateTime? now}) async {
     final DateTime cutoff = (now ?? DateTime.now()).subtract(maxAge);
     int deleted = 0;
-    for (final Directory folder in <Directory>[await inboxDirectory(), await handOffDirectory()]) {
-      if (!await folder.exists()) continue;
-      await for (final FileSystemEntity entity in folder.list(followLinks: false)) {
-        if (entity is! File) continue;
-        try {
-          if ((await entity.lastModified()).isBefore(cutoff)) {
-            await entity.delete();
-            deleted++;
+    for (final Future<Directory> Function() directory in <Future<Directory> Function()>[
+      inboxDirectory,
+      handOffDirectory,
+    ]) {
+      try {
+        final Directory folder = await directory();
+        if (!await folder.exists()) continue;
+        await for (final FileSystemEntity entity in folder.list(followLinks: false)) {
+          if (entity is! File) continue;
+          try {
+            if ((await entity.lastModified()).isBefore(cutoff)) {
+              await entity.delete();
+              deleted++;
+            }
+          } on FileSystemException {
+            // Deleted by another sweep.
           }
-        } on FileSystemException {
-          // Deleted by another sweep.
         }
+      } on Object {
+        // One unavailable folder must not prevent cleanup in the other.
       }
     }
     return deleted;

@@ -9,6 +9,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/photo_wallpaper_repository.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/photo_job.dart';
+import 'package:Prism/features/share_in/data/shared_inbox.dart';
 import 'package:Prism/features/share_in/domain/shared_item.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
@@ -44,7 +45,9 @@ class ShareInSheet extends StatefulWidget {
     super.key,
     required this.item,
     required this.findLinkImage,
+    this.kind,
     this.onPathChanged,
+    this.discardPath,
     this.readPhoto,
     this.signIn,
     this.isGuest,
@@ -54,12 +57,14 @@ class ShareInSheet extends StatefulWidget {
 
   /// A [SharedImage] or a [SharedUrl]. Null shows the failed state.
   final SharedItem? item;
+  final SharedItemKind? kind;
 
   /// The local path of a web page's image, or null when it has none.
   final Future<String?> Function(Uri page) findLinkImage;
 
   /// Called when the sheet gets a new local image, so its owner can delete it later.
   final ValueChanged<String>? onPathChanged;
+  final Future<void> Function(String path)? discardPath;
 
   /// Test seams. Null reads the file and measures it, asks the signed-in check, and reads the user and screen.
   final Future<PhotoSource> Function(String path)? readPhoto;
@@ -78,6 +83,7 @@ class _ShareInSheetState extends State<ShareInSheet> {
 
   bool get _isGuest => widget.isGuest ?? !app_state.prismUser.loggedIn;
   bool get _isPro => widget.isPro ?? app_state.prismUser.premium;
+  SharedItemKind get _kind => widget.item?.kind ?? widget.kind ?? SharedItemKind.url;
 
   @override
   void initState() {
@@ -86,17 +92,22 @@ class _ShareInSheetState extends State<ShareInSheet> {
   }
 
   Future<void> _load() async {
-    final SharedItem? item = widget.item;
-    String? path = switch (item) {
-      SharedImage(:final String path) => path,
-      _ => null,
-    };
-    if (item is SharedUrl) {
-      path = await widget.findLinkImage(item.uri);
-      if (path != null) widget.onPathChanged?.call(path);
-    }
-    if (path == null) return _fail();
     try {
+      final SharedItem? item = widget.item;
+      String? path = switch (item) {
+        SharedImage(:final String path) => path,
+        _ => null,
+      };
+      if (item is SharedUrl) {
+        path = await widget.findLinkImage(item.uri);
+        if (path != null && !mounted) {
+          await (widget.discardPath ?? SharedInbox().discard)(path);
+          return;
+        }
+        if (path != null) widget.onPathChanged?.call(path);
+      }
+      if (!mounted) return;
+      if (path == null) return _fail();
       final PhotoSource photo = await (widget.readPhoto ?? _readPhoto)(path);
       if (mounted) setState(() => _state = _Ready(path!, photo));
     } catch (_) {
@@ -106,9 +117,7 @@ class _ShareInSheetState extends State<ShareInSheet> {
 
   void _fail() {
     if (!mounted) return;
-    analytics.track(
-      ShareActionEvent(action: ShareActionValue.failed, kind: (widget.item?.kind ?? SharedItemKind.url).analytics),
-    );
+    analytics.track(ShareActionEvent(action: ShareActionValue.failed, kind: _kind.analytics));
     setState(() => _state = const _Failed());
   }
 
@@ -152,8 +161,8 @@ class _ShareInSheetState extends State<ShareInSheet> {
       _Failed() => PrismSheetBody(
         child: GlintState(
           kind: GlintStateKind.error,
-          title: widget.item is SharedImage ? l10n.shareInImageUnreadable : l10n.shareInLinkUnusable,
-          body: widget.item is SharedImage ? l10n.shareInImageUnreadableDetail : l10n.shareInLinkUnusableDetail,
+          title: _kind == SharedItemKind.image ? l10n.shareInImageUnreadable : l10n.shareInLinkUnusable,
+          body: _kind == SharedItemKind.image ? l10n.shareInImageUnreadableDetail : l10n.shareInLinkUnusableDetail,
         ),
       ),
       final _Ready ready => _ready(context, ready),

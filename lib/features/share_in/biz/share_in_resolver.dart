@@ -9,6 +9,7 @@ import 'package:Prism/features/share_in/data/shared_inbox.dart';
 import 'package:Prism/features/share_in/domain/shared_item.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:flutter/widgets.dart';
 
 /// Turns a share into where Prism goes. A Prism link opens its page (a wall opens with Save to Folder); an image or
 /// another link opens the share sheet. A share Prism cannot read opens the sheet in its failed state.
@@ -27,7 +28,7 @@ Future<DeepLinkRouteResolution> resolveShareIn(
   switch (item) {
     case null:
       record(ShareActionEvent(action: ShareActionValue.failed, kind: expected.analytics));
-      return DeepLinkRouteResolution.route(ShareInRoute(kind: expected));
+      return DeepLinkRouteResolution.route(ShareInRoute(key: UniqueKey(), kind: expected));
     case SharedPrismLink(:final DeepLinkActionEntity action):
       final DeepLinkRouteResolution resolution = await navigation.resolveAction(action);
       final PageRouteInfo? route = resolution.route;
@@ -39,7 +40,7 @@ Future<DeepLinkRouteResolution> resolveShareIn(
       record(const ShareActionEvent(action: ShareActionValue.save, kind: SharedItemKindValue.prismLink));
       return DeepLinkRouteResolution.route(withFolderSheet(route));
     case SharedImage() || SharedUrl():
-      return DeepLinkRouteResolution.route(ShareInRoute(kind: item.kind, item: item));
+      return DeepLinkRouteResolution.route(ShareInRoute(key: UniqueKey(), kind: item.kind, item: item));
   }
 }
 
@@ -58,7 +59,7 @@ Future<SharedItem?> _item(ShareInIntent action, SharedInbox inbox, DeepLinkNavig
 WallpaperDetailRoute withFolderSheet(WallpaperDetailRoute route) {
   final WallpaperDetailRouteArgs args = route.args!;
   return WallpaperDetailRoute(
-    key: args.key,
+    key: UniqueKey(),
     entity: args.entity,
     wallId: args.wallId,
     source: args.source,

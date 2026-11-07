@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -64,6 +65,75 @@ void main() {
 
     expect(await repository.imageFor(_page), isNull);
     expect(calls, 0);
+  });
+
+  test('redirects are followed manually and never downgrade to HTTP', () async {
+    final List<Uri> requests = <Uri>[];
+    final ShareLinkImageRepository repository = ShareLinkImageRepository(
+      inbox: sharedInbox(),
+      lookup: lookupReturning(imageLookup('https://cdn.example.com/start')),
+      client: MockClient((http.Request request) async {
+        requests.add(request.url);
+        expect(request.followRedirects, isFalse);
+        return http.Response('', 302, headers: <String, String>{'location': 'http://cdn.example.com/image.png'});
+      }),
+    );
+
+    expect(await repository.imageFor(_page), isNull);
+    expect(requests, <Uri>[Uri.parse('https://cdn.example.com/start')]);
+    expect(handOffFiles(), isEmpty);
+  });
+
+  test('a relative HTTPS redirect downloads the image', () async {
+    int calls = 0;
+    final ShareLinkImageRepository repository = ShareLinkImageRepository(
+      inbox: sharedInbox(),
+      lookup: lookupReturning(imageLookup('https://cdn.example.com/start')),
+      client: MockClient((http.Request request) async {
+        calls++;
+        if (calls == 1) return http.Response('', 302, headers: <String, String>{'location': '/image.png'});
+        expect(request.url.toString(), 'https://cdn.example.com/image.png');
+        return http.Response.bytes(_pngBytes, 200, headers: <String, String>{'content-type': 'image/png'});
+      }),
+    );
+
+    final String? path = await repository.imageFor(_page);
+    expect(path, isNotNull);
+    expect(File(path!).readAsBytesSync(), _pngBytes);
+    expect(calls, 2);
+  });
+
+  test('continuous chunks cannot extend the total download deadline', () async {
+    bool cancelled = false;
+    final StreamController<List<int>> chunks = StreamController<List<int>>();
+    Timer? producer;
+    chunks.onListen = () {
+      int sent = 0;
+      producer = Timer.periodic(const Duration(milliseconds: 10), (Timer timer) {
+        chunks.add(_pngBytes);
+        if (++sent == 30) {
+          timer.cancel();
+          unawaited(chunks.close());
+        }
+      });
+    };
+    chunks.onCancel = () {
+      cancelled = true;
+      producer?.cancel();
+    };
+    addTearDown(() => producer?.cancel());
+    final ShareLinkImageRepository repository = ShareLinkImageRepository(
+      inbox: sharedInbox(),
+      lookup: lookupReturning(imageLookup('https://cdn.example.com/a.png')),
+      timeout: const Duration(milliseconds: 50),
+      client: MockClient.streaming((http.BaseRequest request, http.ByteStream body) async {
+        return http.StreamedResponse(chunks.stream, 200, headers: <String, String>{'content-type': 'image/png'});
+      }),
+    );
+
+    expect(await repository.imageFor(_page), isNull);
+    expect(cancelled, isTrue);
+    expect(handOffFiles(), isEmpty);
   });
 
   test('a lookup with no imageUrl returns null', () async {

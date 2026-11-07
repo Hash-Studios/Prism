@@ -9,6 +9,7 @@ enum PrismSharedInboxChannel {
         result(FlutterError(code: "missing", message: "No App Group container", details: nil))
         return
       }
+      ShareInbox.sweep(container: container)
       switch call.method {
       case "directory":
         result(ShareInbox.folder(in: container).path)
@@ -17,10 +18,17 @@ enum PrismSharedInboxChannel {
           result(FlutterError(code: "invalid-id", message: "The shared item id is not valid", details: nil))
           return
         }
-        if let file = ShareInbox.file(forId: id, container: container) {
+        do {
+          let file = try ShareInbox.takeFile(forId: id, container: container)
           result(file.path)
-        } else {
-          result(FlutterError(code: "missing", message: "The shared image is not in the inbox", details: nil))
+        } catch {
+          let code: String
+          switch error as? ShareInbox.Failure {
+          case .tooLarge: code = "too-large"
+          case .missing: code = "missing"
+          default: code = "unreadable"
+          }
+          result(FlutterError(code: code, message: "The shared image is not available", details: nil))
         }
       default:
         // Swift 6 rejects Flutter's FlutterMethodNotImplemented global. Dart only sends the two methods above.

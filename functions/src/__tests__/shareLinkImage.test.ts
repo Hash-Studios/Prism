@@ -1,15 +1,17 @@
 import assert from "node:assert/strict";
 import type {IncomingHttpHeaders} from "node:http";
-import {isIPv6} from "node:net";
+import {createServer, getDefaultAutoSelectFamily, isIPv6, setDefaultAutoSelectFamily} from "node:net";
 import test from "node:test";
 import {HttpsError} from "firebase-functions/v2/https";
 import {
   findLinkImage,
   isPublicAddress,
+  linkDeps,
   LinkDeps,
   LinkResponse,
   MAX_HTML_BYTES,
   MAX_REDIRECTS,
+  metaImage,
   parseHttpsUrl,
   shareLinkImage,
 } from "../shareLinkImage";
@@ -128,6 +130,13 @@ test("returns no_image when the HTML has no image meta tag", async () => {
   const page = html("<title>No image</title>");
   const {deps} = fakeDeps(PUBLIC_DNS, {[PAGE]: () => page});
   assert.deepEqual(await findLinkImage(PAGE, deps), {status: "none", reason: "no_image"});
+});
+
+test("malformed meta tags cannot monopolize the callable deadline", () => {
+  const started = performance.now();
+  assert.equal(metaImage("<meta " + "a".repeat(64 * 1024) + ">"), undefined);
+  assert.equal(metaImage("<meta ".repeat(64 * 1024)), undefined);
+  assert.ok(performance.now() - started < 1000, "malformed tags must be scanned without repeated backtracking");
 });
 
 test("returns no_image and closes the response for a non-HTML content type", async () => {
@@ -257,6 +266,20 @@ test("times out when DNS never answers", async () => {
   assert.ok(Date.now() - started < 1000);
 });
 
+test("closes the response when the body stalls past the total deadline", async () => {
+  const page = probed(200, {"content-type": "text/html"}, []);
+  const stalled: LinkResponse = {
+    ...page,
+    body: (async function* () {
+      yield await new Promise<Buffer>(() => undefined);
+    })(),
+  };
+  const {deps: dns} = fakeDeps(PUBLIC_DNS);
+  const deps: LinkDeps = {resolve: dns.resolve, get: async () => stalled};
+  assert.deepEqual(await findLinkImage(PAGE, deps, 50), {status: "none", reason: "timeout"});
+  assert.equal(page.closed, true);
+});
+
 test("stops reading an oversize page when the og tag is after the limit", async () => {
   const tag = og("https://cdn.example.com/a.jpg");
   const text = "x".repeat(MAX_HTML_BYTES) + tag + "x".repeat(100 * 1024);
@@ -293,6 +316,67 @@ test("isPublicAddress rejects private, reserved and malformed addresses", () => 
   for (const address of [...PRIVATE_ADDRESSES, "not-an-ip", "2001:db8::1"]) {
     assert.equal(isPublicAddress(address), false, address);
   }
+});
+
+test("isPublicAddress checks embedded IPv4 in expanded mapped and NAT64 forms", () => {
+  for (const address of [
+    "0:0:0:0:0:ffff:7f00:1",
+    "64:ff9b:0:0:0:0:a00:1",
+    "64:ff9b::10.0.0.1",
+    "::ffff:8.8.8.8",
+    "::ffff:808:808",
+    "0:0:0:0:0:ffff:0808:0808",
+    "64:ff9b::8.8.8.8",
+    "64:ff9b:0:0:0:0:0808:0808",
+    "64:ff9b:1::808:808",
+    "::ffff:0:808:808",
+    "2002:0808:0808::1",
+    "2001:0:4136:e378:8000:63bf:3fff:fdd2",
+    "2001:4860:0:0:0:5efe:0808:0808",
+    "2001:4860:0:0:200:5efe:7f00:1",
+    "3fff:0::1",
+    "3ffe::1",
+  ]) {
+    assert.equal(isPublicAddress(address), false, address);
+  }
+  assert.equal(isPublicAddress("2606:4700::1111"), true);
+});
+
+test("https.get connects to the pinned address with scalar and all-address lookup callbacks", async () => {
+  const original = getDefaultAutoSelectFamily();
+  let connections = 0;
+  const server = createServer((socket) => {
+    connections++;
+    socket.destroy();
+  });
+  try {
+    await new Promise<void>((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(0, "127.0.0.1", resolve);
+    });
+    const address = server.address();
+    assert.ok(address && typeof address !== "string");
+    for (const all of [false, true]) {
+      setDefaultAutoSelectFamily(all);
+      const before = connections;
+      await assert.rejects(linkDeps.get(
+        new URL(`https://must-not-resolve.invalid:${address.port}/`),
+        {address: "127.0.0.1", family: 4},
+        AbortSignal.timeout(2000),
+      ));
+      assert.equal(connections, before + 1, `pinned socket must connect with autoSelectFamily=${all}`);
+    }
+  } finally {
+    setDefaultAutoSelectFamily(original);
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+});
+
+test("callable allows a guest without fetching an invalid URL", async () => {
+  assert.deepEqual(
+    await shareLinkImage.run({data: {url: "http://example.com/"}} as Parameters<typeof shareLinkImage.run>[0]),
+    {imageUrl: null, reason: "invalid_url"},
+  );
 });
 
 test("parseHttpsUrl rejects a URL longer than 2048 characters", () => {

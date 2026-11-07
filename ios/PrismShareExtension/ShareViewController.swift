@@ -4,6 +4,8 @@ import UniformTypeIdentifiers
 /// Takes one image or one link from another app, leaves it for Prism, and opens Prism.
 final class ShareViewController: UIViewController {
   private var started = false
+  private let request = ShareInboxRequest()
+  private var loading: Progress?
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -33,6 +35,8 @@ final class ShareViewController: UIViewController {
     super.viewDidAppear(animated)
     guard !started else { return }
     started = true
+    request.startTimeout { [weak self] in self?.finish(opening: nil) }
+    if let container = ShareInbox.containerURL() { ShareInbox.sweep(container: container) }
     let providers = (extensionContext?.inputItems as? [NSExtensionItem] ?? []).flatMap { $0.attachments ?? [] }
     if let image = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.image.identifier) }) {
       loadImage(image)
@@ -50,28 +54,15 @@ final class ShareViewController: UIViewController {
     let type = provider.registeredTypeIdentifiers.first { UTType($0)?.conforms(to: .image) == true }
       ?? UTType.image.identifier
     let ext = ShareInbox.fileExtension(forTypeIdentifier: type)
-    provider.loadFileRepresentation(forTypeIdentifier: type) { [weak self] url, _ in
+    loading = provider.loadFileRepresentation(forTypeIdentifier: type) { [weak self] url, _ in
+      guard let self, !self.request.isFinished else { return }
       // The temporary file exists only until this handler returns, so copy it here.
-      if let url, let id = try? ShareInbox.store(fileAt: url, ext: ext, container: container) {
-        self?.finish(opening: ShareInbox.openURL(id: id))
-        return
-      }
-      self?.loadImageItem(provider, type: type, ext: ext, container: container)
-    }
-  }
-
-  /// Some apps give only an in-memory image. This path can use more memory, so it is the fallback.
-  private func loadImageItem(_ provider: NSItemProvider, type: String, ext: String, container: URL) {
-    provider.loadItem(forTypeIdentifier: type, options: nil) { [weak self] item, _ in
-      var id: String?
-      if let url = item as? URL, url.isFileURL {
-        id = try? ShareInbox.store(fileAt: url, ext: ext, container: container)
-      } else if let data = item as? Data {
-        id = try? ShareInbox.store(data: data, ext: ext, container: container)
-      } else if let image = item as? UIImage, let data = image.jpegData(compressionQuality: 0.92) {
-        id = try? ShareInbox.store(data: data, ext: "jpg", container: container)
-      }
-      self?.finish(opening: id.flatMap(ShareInbox.openURL(id:)))
+      // Do not ask for UIImage/Data if the provider has no file representation.
+      let id = url.flatMap { try? ShareInbox.store(
+        fileAt: $0, ext: ext, container: container, isCanceled: { self.request.isFinished }
+      ) }
+      let file = id.map { ShareInbox.folder(in: container).appendingPathComponent("\($0).\(ext)") }
+      self.finish(opening: id.flatMap(ShareInbox.openURL(id:)), storedFile: file)
     }
   }
 
@@ -82,8 +73,10 @@ final class ShareViewController: UIViewController {
     }
   }
 
-  private func finish(opening url: URL?) {
+  private func finish(opening url: URL?, storedFile: URL? = nil) {
     DispatchQueue.main.async {
+      guard self.request.finish(discardingIfLate: storedFile) else { return }
+      self.loading?.cancel()
       if let url { self.open(url) }
       self.extensionContext?.completeRequest(returningItems: nil)
     }

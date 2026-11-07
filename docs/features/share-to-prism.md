@@ -36,7 +36,7 @@ From another app, the user shares one image or one link to Prism. Sending apps i
 
 The sheet has three actions.
 
-- **Set as wallpaper** opens the editor with crop (`WallpaperFilterRoute`). Then the normal Set flow runs. On iOS, Set saves the image to Photos.
+- **Set as wallpaper** opens the editor with crop (`WallpaperFilterRoute`). Then the normal Set flow runs. On iOS, Set saves the image to Photos. The editor hides Share for these images, including when the user has an account.
 - **Make it fit** opens the photo job page from From your photo (`PhotoWallpaperPage(initialSource:)`). The row shows the coin cost from `photoJobCost`. When the photo already fits the screen, the row is disabled and says "Already fits your screen."
 - **Upload to Prism** opens Edit wallpaper (`EditWallRoute`). Then the normal upload runs, with review.
 
@@ -57,9 +57,11 @@ Input: `{url}`. Output: `{imageUrl}` or `{imageUrl: null, reason}`.
 - Each redirect (at most 3) is checked again.
 - A 5 s timeout covers the whole lookup.
 - At most 512 KB of HTML is read.
+- Malformed meta tags are scanned without repeated regex backtracking.
 - The og:image URL must also be https and public.
 - Guests may call it, because Set needs no account.
 - `maxInstances` is 10.
+- There is no per-caller quota or App Check enforcement. The instance cap limits capacity, not request volume. An abuse policy remains a release decision.
 
 ### Native handoff
 
@@ -92,6 +94,8 @@ The text is at most 2048 characters.
 - MainActivity gets the link like any deep link. A cold start uses the initial route. A warm start uses `onNewIntent`.
 - The copy runs off the main thread into `filesDir/shared_inbox/<id>.<ext>`. It writes `<id>.part` first.
 - Dart waits up to 30 s in `take`.
+- A timeout cancels the copy, removes its partial file, and prevents a late provider result from publishing a file. Provider reads use at most four workers so one blocked provider does not hold up every later share.
+- The VIEW intent forwards the content URI read grant to MainActivity before the share activity finishes.
 - Prism refuses `file://` streams and content from its own providers. A share cannot point Prism at its private files.
 - Code: `android/app/src/main/kotlin/com/hash/prism/SharedInbox.kt`, `ShareTargetActivity.kt`.
 
@@ -101,6 +105,8 @@ The text is at most 2048 characters.
 - It accepts one image, one web URL or text.
 - Its only UI is "Opening Prism".
 - It copies the image file into the App Group folder `shared-inbox/<id>.<ext>` without decoding it. A large photo uses little extension memory.
+- Image providers must supply a file representation. There is no `Data` or `UIImage` fallback. A copy checks the 50 MB limit while reading and publishes only a completed file.
+- A provider that never replies closes the extension request after 30 s. Late copies are discarded.
 - Then it opens Prism with the link and closes.
 - Code: `ios/PrismShareExtension/ShareViewController.swift`, `ios/ShareInboxShared/ShareInbox.swift` (shared with Runner), `ios/Runner/PrismSharedInboxChannel.swift`.
 - Target script: `ruby ios/scripts/add_share_extension_target.rb`. It is safe to run again.
@@ -117,16 +123,20 @@ The text is at most 2048 characters.
 
 - Prism never sends a shared image anywhere unless the user picks Make it fit or Upload to Prism.
 - For a web link, the server reads only the page HTML. It does not read the image. It stores nothing.
-- The app downloads the image itself. Only https is allowed. The download is at most 25 MB, with a 20 s timeout.
+- The app downloads the image itself. Each redirect must remain https on port 443 without credentials. The download is at most 25 MB, with one 20 s deadline across redirects, headers, and body.
 - Make it fit sends the photo to fal.ai and Google Cloud Vision. See [photo-wallpaper.md](photo-wallpaper.md).
+- Make it fit checks the account again before preparing the upload, after preparation, and before a retry. Signing out or changing accounts prevents another send.
 
 ## Cleanup
 
 - Native code puts an image in the inbox.
 - When the user picks Set or Upload, the file moves to the hand-off folder `<temp>/share_in`. That flow owns the file.
+- Set deletes its source when the editor closes. Upload keeps it through Edit and Upload, then deletes it when that flow closes.
 - When the user closes the sheet, Prism deletes the file.
 - Make it fit reads the file into memory and deletes it.
 - At app start and at each share, `SharedInbox.sweep` deletes files older than 24 hours. It checks the inbox and the hand-off folder.
+- Native sweeps also remove abandoned partial copies. If the OS stops the app and extension, cleanup runs on their next activation. Deletion at exactly 24 hours while both processes are stopped is not guaranteed.
+- Duplicate delivery of an image id does not open a second owner of the same file. A new share replaces the previous share sheet and deletes its copy. A download that finishes after its sheet closes is deleted.
 
 ## Guests (iOS only)
 

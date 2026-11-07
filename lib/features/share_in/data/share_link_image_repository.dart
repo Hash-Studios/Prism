@@ -13,6 +13,7 @@ class ShareLinkImageRepository {
     required SharedInbox inbox,
     Future<Object?> Function(String url)? lookup,
     http.Client? client,
+    this.timeout = downloadTimeout,
   }) : _inbox = inbox,
        _lookup = lookup ?? _callLookup,
        _client = client;
@@ -23,6 +24,7 @@ class ShareLinkImageRepository {
   final SharedInbox _inbox;
   final Future<Object?> Function(String url) _lookup;
   final http.Client? _client;
+  final Duration timeout;
 
   /// The local path of the page's image, or null when the page has none Prism can use.
   Future<String?> imageFor(Uri page) async {
@@ -30,7 +32,7 @@ class ShareLinkImageRepository {
       final Object? data = await _lookup(page.toString());
       final Object? imageUrl = data is Map ? data['imageUrl'] : null;
       final Uri? image = imageUrl is String ? Uri.tryParse(imageUrl) : null;
-      if (image == null || image.scheme != 'https' || image.host.isEmpty) return null;
+      if (image == null || !_isHttps(image)) return null;
       return await _download(image);
     } catch (error) {
       logger.w('[ShareIn] link image failed (${error.runtimeType})');
@@ -40,22 +42,45 @@ class ShareLinkImageRepository {
 
   Future<String?> _download(Uri image) async {
     final http.Client client = _client ?? http.Client();
+    final Stopwatch elapsed = Stopwatch()..start();
+    Duration remaining() {
+      final Duration left = timeout - elapsed.elapsed;
+      if (left <= Duration.zero) throw TimeoutException('The image download timed out.');
+      return left;
+    }
+
     File? file;
     try {
-      final http.StreamedResponse response = await client.send(http.Request('GET', image)).timeout(downloadTimeout);
+      http.StreamedResponse response;
+      Uri current = image;
+      for (int redirects = 0; ; redirects++) {
+        final http.Request request = http.Request('GET', current)..followRedirects = false;
+        response = await client.send(request).timeout(remaining());
+        if (!const <int>{301, 302, 303, 307, 308}.contains(response.statusCode)) break;
+        await response.stream.listen(null).cancel();
+        final String? location = response.headers['location'];
+        if (redirects == 3 || location == null) return null;
+        current = current.resolve(location);
+        if (!_isHttps(current)) return null;
+      }
       final String type = response.headers['content-type']?.toLowerCase() ?? '';
-      if (response.statusCode != 200 || !type.startsWith('image/')) return null;
-      if ((response.contentLength ?? 0) > maxImageBytes) return null;
+      if (response.statusCode != 200 || !type.startsWith('image/') || (response.contentLength ?? 0) > maxImageBytes) {
+        await response.stream.listen(null).cancel();
+        return null;
+      }
       file = await _inbox.newHandOffFile(_extensionFor(type));
       final IOSink sink = file.openWrite();
+      final StreamIterator<List<int>> chunks = StreamIterator<List<int>>(response.stream);
       int total = 0;
       try {
-        await for (final List<int> chunk in response.stream.timeout(downloadTimeout)) {
+        while (await chunks.moveNext().timeout(remaining())) {
+          final List<int> chunk = chunks.current;
           total += chunk.length;
           if (total > maxImageBytes) throw const FileSystemException('The image is too large.');
           sink.add(chunk);
         }
       } finally {
+        await chunks.cancel();
         await sink.close();
       }
       if (total == 0) throw const FileSystemException('The image is empty.');
@@ -67,6 +92,9 @@ class ShareLinkImageRepository {
       if (_client == null) client.close();
     }
   }
+
+  static bool _isHttps(Uri uri) =>
+      uri.scheme == 'https' && uri.host.isNotEmpty && uri.userInfo.isEmpty && uri.port == 443;
 
   static String _extensionFor(String type) => switch (type.split(';').first.trim()) {
     'image/png' => 'png',

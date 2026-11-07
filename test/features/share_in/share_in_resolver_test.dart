@@ -131,4 +131,15 @@ void main() {
     expect(result.args!.source, WallpaperSource.prism);
     expect(result.args!.openFolderSheet, isTrue);
   });
+
+  test('successive shares create fresh page identities instead of reusing init-only state', () async {
+    const ShareInIntent intent = ShareInIntent(text: 'https://example.com/x', rawUri: 'prism://share-in?text=x');
+    final ShareInRoute first = (await resolve(intent)).route! as ShareInRoute;
+    final ShareInRoute second = (await resolve(intent)).route! as ShareInRoute;
+
+    expect(first.args!.key, isNotNull);
+    expect(second.args!.key, isNot(first.args!.key));
+    final WallpaperDetailRoute original = WallpaperDetailRoute(wallId: 'a', source: WallpaperSource.prism);
+    expect(withFolderSheet(original).args!.key, isNot(withFolderSheet(original).args!.key));
+  });
 }

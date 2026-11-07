@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/guest_browsing_policy.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
@@ -351,7 +352,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   Future<void> _runWithPremiumFilterGate(Future<bool> Function() action, {required String sourceTag}) async {
     final int sourceGeneration = _sourceLoadGeneration;
     bool sourceIsCurrent() => mounted && sourceGeneration == _sourceLoadGeneration;
-    final bool freeGuestAction = widget.guestShare && !_selectedFilterNeedsPremiumSpend;
+    final bool freeGuestAction = widget.guestShare && guestBrowsingAllowed && !_selectedFilterNeedsPremiumSpend;
     if (!freeGuestAction && !await requireSignedInAction(context) || !mounted) return;
     if (!sourceIsCurrent()) return;
     final String owner = app_state.prismUser.id;
@@ -432,7 +433,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
     return choice ?? CoinGateChoice.cancel;
   }
 
-  bool get _mayAct => app_state.prismUser.loggedIn || widget.guestShare;
+  bool get _mayAct => app_state.prismUser.loggedIn || (widget.guestShare && guestBrowsingAllowed);
 
   Future<bool> _handleDownloadAction() async {
     if (!mounted || !_mayAct) return false;
@@ -613,16 +614,17 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
                           },
                   ),
           ),
-          PrismIconButton(
-            icon: Icons.ios_share_rounded,
-            tooltip: context.l10n.wallpaperShare,
-            onPressed: !_editorReady || _busy
-                ? null
-                : () {
-                    PrismHaptics.tap();
-                    unawaited(_startActionWithPremiumFilterGate(_handleShareAction, sourceTag: 'coins.filter.share'));
-                  },
-          ),
+          if (!widget.guestShare)
+            PrismIconButton(
+              icon: Icons.ios_share_rounded,
+              tooltip: context.l10n.wallpaperShare,
+              onPressed: !_editorReady || _busy
+                  ? null
+                  : () {
+                      PrismHaptics.tap();
+                      unawaited(_startActionWithPremiumFilterGate(_handleShareAction, sourceTag: 'coins.filter.share'));
+                    },
+            ),
           if (!hideSetWallpaperUi)
             PrismIconButton(
               icon: Icons.check_rounded,

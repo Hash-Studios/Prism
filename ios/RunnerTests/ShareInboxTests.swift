@@ -12,6 +12,13 @@ struct ShareInboxTests {
     return url
   }
 
+  private func storeImage(in container: URL, ext: String = "png") throws -> String {
+    let source = container.appendingPathComponent("fixture.png")
+    try Data([1]).write(to: source)
+    defer { try? FileManager.default.removeItem(at: source) }
+    return try ShareInbox.store(fileAt: source, ext: ext, container: container)
+  }
+
   @Test func storeCopiesFileIntoInboxAndKeepsSource() throws {
     let container = makeContainer()
     defer { try? FileManager.default.removeItem(at: container) }
@@ -91,5 +98,142 @@ struct ShareInboxTests {
     let value = try #require(components.queryItems?.first(where: { $0.name == "text" })?.value)
 
     #expect(value.count == 2048)
+  }
+
+  @Test func malformedUuidIsRejected() {
+    #expect(!ShareInbox.isValidId(String(repeating: "-", count: 36)))
+  }
+
+  @Test func textLimitCountsUtf16WithoutSplittingEmoji() throws {
+    let text = String(repeating: "a", count: 2047) + "😀tail"
+    let url = try #require(ShareInbox.openURL(text: text))
+    let query = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.first?.value)
+    #expect(query == String(repeating: "a", count: 2047))
+  }
+
+  @Test func storeRejectsExtensionTraversal() throws {
+    let container = makeContainer()
+    defer { try? FileManager.default.removeItem(at: container) }
+    #expect(throws: ShareInbox.Failure.unreadable) {
+      try storeImage(in: container, ext: "png/../../outside")
+    }
+  }
+
+  @Test func nativeTakeRejectsInvalidFileTypesAndDeletesOnlyTheLink() throws {
+    let container = makeContainer()
+    defer { try? FileManager.default.removeItem(at: container) }
+    let inbox = ShareInbox.folder(in: container)
+    try FileManager.default.createDirectory(at: inbox, withIntermediateDirectories: true)
+    let id = ShareInbox.newId()
+    let image = inbox.appendingPathComponent("\(id).png")
+    let outside = container.appendingPathComponent("outside.png")
+    try Data([1]).write(to: outside)
+    try FileManager.default.createSymbolicLink(at: image, withDestinationURL: outside)
+    #expect(throws: ShareInbox.Failure.unreadable) { try ShareInbox.takeFile(forId: id, container: container) }
+    #expect(FileManager.default.fileExists(atPath: outside.path))
+    #expect(!FileManager.default.fileExists(atPath: image.path))
+    try FileManager.default.createDirectory(at: image, withIntermediateDirectories: false)
+    #expect(throws: ShareInbox.Failure.unreadable) { try ShareInbox.takeFile(forId: id, container: container) }
+    #expect(!FileManager.default.fileExists(atPath: image.path))
+    try Data().write(to: image)
+    #expect(throws: ShareInbox.Failure.unreadable) { try ShareInbox.takeFile(forId: id, container: container) }
+    #expect(!FileManager.default.fileExists(atPath: image.path))
+    try Data([1]).write(to: inbox.appendingPathComponent("\(id).txt"))
+    #expect(throws: ShareInbox.Failure.unreadable) { try ShareInbox.takeFile(forId: id, container: container) }
+  }
+
+  @Test func growingSourceCannotBypassCopyLimit() throws {
+    let container = makeContainer()
+    defer { try? FileManager.default.removeItem(at: container) }
+    let source = container.appendingPathComponent("growing.png")
+    try Data([1]).write(to: source)
+    var grew = false
+    #expect(throws: ShareInbox.Failure.tooLarge) {
+      try ShareInbox.store(fileAt: source, ext: "png", container: container, isCanceled: {
+        if !grew {
+          let handle = try! FileHandle(forWritingTo: source)
+          try! handle.truncate(atOffset: UInt64(ShareInbox.maxBytes + 1))
+          try! handle.close()
+          grew = true
+        }
+        return false
+      })
+    }
+    let entries = try FileManager.default.contentsOfDirectory(atPath: ShareInbox.folder(in: container).path)
+    #expect(entries.isEmpty)
+  }
+
+  @Test func canceledCopyLeavesNoPartialOrFinishedFile() throws {
+    let container = makeContainer()
+    defer { try? FileManager.default.removeItem(at: container) }
+    let source = container.appendingPathComponent("source.png")
+    try Data(repeating: 1, count: 128 * 1024).write(to: source)
+    var checks = 0
+    #expect(throws: ShareInbox.Failure.unreadable) {
+      try ShareInbox.store(fileAt: source, ext: "png", container: container, isCanceled: {
+        checks += 1
+        return checks >= 2
+      })
+    }
+    let entries = try FileManager.default.contentsOfDirectory(atPath: ShareInbox.folder(in: container).path)
+    #expect(entries.isEmpty)
+  }
+
+  @Test func sweepRemovesOldPartialAndFinalFilesButKeepsFreshCopies() throws {
+    let container = makeContainer()
+    defer { try? FileManager.default.removeItem(at: container) }
+    let id = try storeImage(in: container)
+    let final = try #require(ShareInbox.file(forId: id, container: container))
+    let part = final.deletingPathExtension().appendingPathExtension("part")
+    let freshPart = ShareInbox.folder(in: container).appendingPathComponent("fresh.part")
+    try Data([1]).write(to: part)
+    try Data([1]).write(to: freshPart)
+    let old = Date(timeIntervalSinceNow: -25 * 60 * 60)
+    try FileManager.default.setAttributes([.modificationDate: old], ofItemAtPath: final.path)
+    try FileManager.default.setAttributes([.modificationDate: old], ofItemAtPath: part.path)
+    ShareInbox.sweep(container: container)
+    #expect(!FileManager.default.fileExists(atPath: final.path))
+    #expect(!FileManager.default.fileExists(atPath: part.path))
+    #expect(FileManager.default.fileExists(atPath: freshPart.path))
+  }
+
+  @Test func copyingOldPhotoStartsANewRetentionWindow() throws {
+    let container = makeContainer()
+    defer { try? FileManager.default.removeItem(at: container) }
+    let source = container.appendingPathComponent("old.png")
+    try Data([1]).write(to: source)
+    try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSince1970: 1)], ofItemAtPath: source.path)
+    let id = try ShareInbox.store(fileAt: source, ext: "png", container: container)
+    ShareInbox.sweep(container: container)
+    #expect(ShareInbox.file(forId: id, container: container) != nil)
+  }
+
+  @Test func requestCompletesOnlyOnceAndSignalsLateCopiesToCancel() {
+    let request = ShareInboxRequest()
+    #expect(!request.isFinished)
+    #expect(request.finish())
+    #expect(request.isFinished)
+    #expect(!request.finish())
+  }
+
+  @Test @MainActor func requestTimesOutWhenProviderNeverCallsBack() async {
+    let request = ShareInboxRequest()
+    let didFinish = await withCheckedContinuation { continuation in
+      request.startTimeout(after: 0.01) { continuation.resume(returning: request.finish()) }
+    }
+    #expect(didFinish)
+    #expect(request.isFinished)
+    #expect(!request.finish())
+  }
+
+  @Test func lateProviderResultDeletesItsCompletedFile() throws {
+    let container = makeContainer()
+    defer { try? FileManager.default.removeItem(at: container) }
+    let request = ShareInboxRequest()
+    let id = try storeImage(in: container)
+    let file = try #require(ShareInbox.file(forId: id, container: container))
+    #expect(request.finish())
+    #expect(!request.finish(discardingIfLate: file))
+    #expect(!FileManager.default.fileExists(atPath: file.path))
   }
 }

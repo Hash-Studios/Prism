@@ -135,6 +135,20 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
     final PhotoSource? source = _source;
     final PhotoJobMode? mode = _mode;
     if (source == null || mode == null || _running) return;
+    final String owner = app_state.prismUser.id;
+    bool mayUpload() => mounted && app_state.prismUser.loggedIn && owner.isNotEmpty && app_state.prismUser.id == owner;
+    void signedOut() {
+      if (!mounted) return;
+      setState(() {
+        _state = const PhotoJobFailed(reason: PhotoJobFailure.signIn, charged: false, refunded: false);
+        _pendingRequestId = null;
+      });
+    }
+
+    if (!mayUpload()) {
+      signedOut();
+      return;
+    }
     if (mode == PhotoJobMode.extend && !(_placement?.validForServer ?? false)) {
       setState(() {
         _state = const PhotoJobFailed(reason: PhotoJobFailure.unreadable, charged: false, refunded: false);
@@ -164,12 +178,23 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
         openLabel: l10n.aiLiveActivityOpen,
       ),
     );
+    if (!mayUpload()) {
+      await activity?.cancel();
+      signedOut();
+      return;
+    }
     final PhotoJobState result = await widget.repository.run(
       job,
       requestId: requestId,
       targetSize: canvas,
       placement: _placement,
+      mayUpload: mayUpload,
     );
+    if (!mayUpload()) {
+      await activity?.cancel();
+      signedOut();
+      return;
+    }
     unawaited(CoinsService.instance.refreshBalance().then<void>((_) {}, onError: (Object _) {}));
     switch (result) {
       case PhotoJobSucceeded(:final String imageUrl):

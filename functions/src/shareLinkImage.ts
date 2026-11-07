@@ -47,28 +47,43 @@ for (const [network, prefix] of [
 }
 for (const [network, prefix] of [
   ["::", 128], ["::1", 128], ["100::", 64], ["2001::", 23], ["2001:db8::", 32], ["2002::", 16], ["fc00::", 7],
-  ["fe80::", 10], ["fec0::", 10], ["ff00::", 8],
+  ["3ffe::", 16], ["3fff::", 20], ["fe80::", 10], ["fec0::", 10], ["ff00::", 8],
 ] as const) {
   blocked.addSubnet(network, prefix, "ipv6");
 }
 
-/** True for an address on the public internet. Mapped and NAT64 IPv6 forms are checked as their IPv4 address. */
+/** True for a globally routable address, excluding IPv4 transition forms. */
 export function isPublicAddress(address: string): boolean {
   if (isIPv4(address)) return !blocked.check(address, "ipv4");
   if (!isIPv6(address)) return false;
-  const lower = address.toLowerCase();
-  const embedded = /^(?:::ffff:|64:ff9b::)(\d+\.\d+\.\d+\.\d+)$/.exec(lower)?.[1] ?? embeddedHexV4(lower);
-  if (embedded !== undefined) return isPublicAddress(embedded);
-  if (!/^[23][0-9a-f]{3}:/.test(lower)) return false;
+  const words = ipv6Words(address);
+  if (!words) return false;
+  const mapped = words.slice(0, 5).every((word) => word === 0) && words[5] === 0xffff;
+  const nat64 = words[0] === 0x64 && words[1] === 0xff9b && words.slice(2, 6).every((word) => word === 0);
+  // Do not allow transition addresses: their effective route can be an embedded IPv4 endpoint.
+  if (mapped || nat64) return false;
+  // ISATAP encodes IPv4 in its interface identifier; block the transition form altogether.
+  if ((words[4] === 0 || words[4] === 0x0200) && words[5] === 0x5efe) return false;
+  if (words[0] < 0x2000 || words[0] > 0x3fff) return false;
   return !blocked.check(address, "ipv6");
 }
 
-function embeddedHexV4(address: string): string | undefined {
-  const match = /^(?:::ffff:|64:ff9b::)([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(address);
-  if (!match) return undefined;
-  const high = parseInt(match[1], 16);
-  const low = parseInt(match[2], 16);
-  return [high >> 8, high & 255, low >> 8, low & 255].join(".");
+function ipv6Words(address: string): number[] | null {
+  let normalized = address.toLowerCase();
+  const dotted = /(\d+\.\d+\.\d+\.\d+)$/.exec(normalized);
+  if (dotted) {
+    const octets = dotted[1].split(".").map(Number);
+    normalized = normalized.slice(0, -dotted[1].length) +
+      `${((octets[0] << 8) | octets[1]).toString(16)}:${((octets[2] << 8) | octets[3]).toString(16)}`;
+  }
+  const halves = normalized.split("::");
+  if (halves.length > 2) return null;
+  const left = halves[0] ? halves[0].split(":") : [];
+  const right = halves.length === 2 && halves[1] ? halves[1].split(":") : [];
+  const missing = 8 - left.length - right.length;
+  if ((halves.length === 1 && missing !== 0) || (halves.length === 2 && missing < 1)) return null;
+  const words = [...left, ...Array(missing).fill("0"), ...right].map((word) => parseInt(word, 16));
+  return words.length === 8 && words.every(Number.isFinite) ? words : null;
 }
 
 /** Accepts only `https:` on the default port, with no user name or password. */
@@ -127,9 +142,14 @@ const IMAGE_KEYS = ["og:image:secure_url", "og:image", "og:image:url", "twitter:
 /** The first image named by the page's meta tags, in [IMAGE_KEYS] order. */
 export function metaImage(html: string): string | undefined {
   const found = new Map<string, string>();
-  for (const tag of html.match(/<meta\b[^>]*>/gi) ?? []) {
+  const starts = /<meta\b/gi;
+  for (let start = starts.exec(html); start; start = starts.exec(html)) {
+    const end = html.indexOf(">", starts.lastIndex);
+    if (end < 0) break;
+    const tag = html.slice(starts.lastIndex, end);
+    starts.lastIndex = end + 1;
     const attributes = new Map<string, string>();
-    for (const match of tag.matchAll(/([a-z:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/gi)) {
+    for (const match of tag.matchAll(/(?:^|\s)([a-z:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/gi)) {
       attributes.set(match[1].toLowerCase(), match[2] ?? match[3] ?? match[4] ?? "");
     }
     const key = (attributes.get("property") ?? attributes.get("name") ?? "").toLowerCase();
@@ -180,8 +200,12 @@ export async function findLinkImage(raw: string, deps: LinkDeps = linkDeps, time
         response.close();
         return {status: "none", reason: "too_large"};
       }
-      const page = await Promise.race([readLimited(response.body, MAX_HTML_BYTES), timeout]);
-      response.close();
+      let page: {text: string; cut: boolean};
+      try {
+        page = await Promise.race([readLimited(response.body, MAX_HTML_BYTES), timeout]);
+      } finally {
+        response.close();
+      }
       const named = metaImage(page.text);
       const image = named ? parseHttpsUrl(new URL(named, url).toString()) : null;
       if (!image) return {status: "none", reason: page.cut ? "too_large" : "no_image"};

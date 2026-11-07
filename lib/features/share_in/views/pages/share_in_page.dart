@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/photo_wallpaper_repository.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/photo_wallpaper_page.dart';
@@ -34,7 +33,7 @@ class ShareInPage extends StatefulWidget {
 class _ShareInPageState extends State<ShareInPage> {
   final SharedInbox _inbox = SharedInbox();
   final Set<String> _paths = <String>{};
-  bool _handedOff = false;
+  ModalRoute<ShareInChoice>? _sheetRoute;
 
   @override
   void initState() {
@@ -45,8 +44,20 @@ class _ShareInPageState extends State<ShareInPage> {
 
   @override
   void dispose() {
-    if (!_handedOff) _discardAll();
+    _discardAll();
+    final ModalRoute<ShareInChoice>? sheet = _sheetRoute;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (sheet?.isActive ?? false) sheet!.navigator?.removeRoute(sheet);
+    });
     super.dispose();
+  }
+
+  void _trackPath(String path) {
+    if (mounted) {
+      _paths.add(path);
+    } else {
+      unawaited(_inbox.discard(path).catchError((Object _) {}));
+    }
   }
 
   void _discardAll() {
@@ -60,11 +71,16 @@ class _ShareInPageState extends State<ShareInPage> {
     if (!mounted) return;
     final ShareInChoice? choice = await showPrismSheet<ShareInChoice>(
       context,
-      builder: (_) => ShareInSheet(
-        item: widget.item,
-        findLinkImage: ShareLinkImageRepository(inbox: _inbox).imageFor,
-        onPathChanged: _paths.add,
-      ),
+      builder: (BuildContext sheetContext) {
+        _sheetRoute = ModalRoute.of<ShareInChoice>(sheetContext);
+        return ShareInSheet(
+          item: widget.item,
+          kind: widget.kind,
+          findLinkImage: ShareLinkImageRepository(inbox: _inbox).imageFor,
+          onPathChanged: _trackPath,
+          discardPath: _inbox.discard,
+        );
+      },
     );
     if (!mounted) return;
     if (choice == null) {
@@ -95,10 +111,22 @@ class _ShareInPageState extends State<ShareInPage> {
     switch (choice.action) {
       case ShareInAction.set:
         final File file = await _handOff(choice.path);
-        await router.replace(WallpaperFilterRoute(filePath: file.path, guestShare: !app_state.prismUser.loggedIn));
+        try {
+          await router.replace(WallpaperFilterRoute(filePath: file.path, guestShare: true));
+        } finally {
+          await _inbox.discard(file.path);
+        }
       case ShareInAction.upload:
         final File file = await _handOff(choice.path);
-        await router.replace(EditWallRoute(image: file));
+        try {
+          await router.replace(EditWallRoute(image: file));
+          for (final RouteData route in router.stackData) {
+            final Object? args = route.args;
+            if (args is UploadWallRouteArgs && args.image.path == file.path) await route.popped;
+          }
+        } finally {
+          await _inbox.discard(file.path);
+        }
       case ShareInAction.fit:
         // The photo is in memory now, so the shared copy can go.
         _discardAll();
@@ -116,7 +144,10 @@ class _ShareInPageState extends State<ShareInPage> {
 
   Future<File> _handOff(String path) async {
     final File file = await _inbox.handOff(path);
-    _handedOff = true;
+    if (!mounted) {
+      await _inbox.discard(file.path);
+      throw StateError('The share was closed before hand-off completed.');
+    }
     _paths.remove(path);
     _discardAll();
     return file;

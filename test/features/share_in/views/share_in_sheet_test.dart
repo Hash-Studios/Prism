@@ -34,6 +34,7 @@ class _Probe {
   bool signInResult = true;
   final List<String> readPaths = <String>[];
   final List<String> pathChanges = <String>[];
+  final List<String> discardedPaths = <String>[];
   bool readThrows = false;
   PhotoSize photo = const PhotoSize(1000, 1000);
 }
@@ -79,6 +80,7 @@ Future<void> _pump(
                     item: item,
                     findLinkImage: findLinkImage ?? (Uri page) async => null,
                     onPathChanged: probe.pathChanges.add,
+                    discardPath: (String path) async => probe.discardedPaths.add(path),
                     readPhoto: (String path) async {
                       probe.readPaths.add(path);
                       if (probe.readThrows) throw const FileSystemException('The file is gone.');
@@ -248,6 +250,53 @@ void main() {
   });
 
   group('link sheet', () {
+    testWidgets('guest can Set the image downloaded from a link without sign-in', (tester) async {
+      _phoneView(tester);
+      final _Probe probe = _Probe()..signInResult = false;
+      await _pump(
+        tester,
+        item: SharedUrl(_page),
+        probe: probe,
+        isGuest: true,
+        findLinkImage: (_) async => '/tmp/link.png',
+      );
+
+      await _tap(tester, 'Set as wallpaper');
+
+      expect(probe.signInCalls, 0);
+      expect(probe.choice?.action, ShareInAction.set);
+      expect(probe.choice?.path, '/tmp/link.png');
+    });
+
+    testWidgets('an image found after the sheet closes is discarded without reading it', (tester) async {
+      _phoneView(tester);
+      final Completer<String?> found = Completer<String?>();
+      final _Probe probe = _Probe();
+      await _pump(tester, item: SharedUrl(_page), probe: probe, findLinkImage: (_) => found.future);
+      await tester.pumpWidget(const SizedBox());
+
+      found.complete('/tmp/late.png');
+      await tester.pump();
+
+      expect(probe.discardedPaths, <String>['/tmp/late.png']);
+      expect(probe.pathChanges, isEmpty);
+      expect(probe.readPaths, isEmpty);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('a thrown link lookup shows the failed state', (tester) async {
+      _phoneView(tester);
+      final _Probe probe = _Probe();
+      await _pump(
+        tester,
+        item: SharedUrl(_page),
+        probe: probe,
+        findLinkImage: (_) async => throw StateError('lookup unavailable'),
+      );
+
+      expect(find.text('Prism cannot use this link.'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
     testWidgets('shows the finding state until the image is found, then the three actions', (tester) async {
       _phoneView(tester);
       final Completer<String?> found = Completer<String?>();

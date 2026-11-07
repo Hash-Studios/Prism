@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:Prism/features/share_in/data/shared_inbox.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 
@@ -49,6 +50,22 @@ void main() {
   });
 
   group('discard', () {
+    test('does not start an unused hand-off lookup when the inbox owns the file', () async {
+      final File file = writeFile(inboxDir, 'owned.png');
+      int handOffLookups = 0;
+      final SharedInbox isolated = SharedInbox(
+        inboxDirectory: () async => inboxDir,
+        handOffDirectory: () async {
+          handOffLookups++;
+          throw PlatformException(code: 'unavailable');
+        },
+      );
+
+      await isolated.discard(file.path);
+
+      expect(file.existsSync(), isFalse);
+      expect(handOffLookups, 0);
+    });
     test('deletes a file in the inbox', () async {
       final File file = writeFile(inboxDir, 'a.png');
 
@@ -84,9 +101,33 @@ void main() {
 
       expect(target.existsSync(), isTrue);
     });
+
+    test('deletes a hand-off file even when the native inbox is unavailable', () async {
+      final File file = writeFile(handOffDir, 'offline.png');
+      final SharedInbox offline = SharedInbox(
+        inboxDirectory: () => Future<Directory>.error(PlatformException(code: 'unavailable')),
+        handOffDirectory: () async => handOffDir,
+      );
+
+      await offline.discard(file.path);
+
+      expect(file.existsSync(), isFalse);
+    });
   });
 
   group('sweep', () {
+    test('an unavailable hand-off folder does not prevent sweeping the inbox', () async {
+      final DateTime now = DateTime.now();
+      final File file = writeFile(inboxDir, 'old_owned.png')
+        ..setLastModifiedSync(now.subtract(const Duration(hours: 25)));
+      final SharedInbox isolated = SharedInbox(
+        inboxDirectory: () async => inboxDir,
+        handOffDirectory: () async => throw PlatformException(code: 'unavailable'),
+      );
+
+      expect(await isolated.sweep(now: now), 1);
+      expect(file.existsSync(), isFalse);
+    });
     test('deletes files older than 24 hours in both folders and keeps recent ones', () async {
       final DateTime now = DateTime.now();
       final File oldInbox = writeFile(inboxDir, 'old_inbox.png')
@@ -114,6 +155,19 @@ void main() {
       );
 
       expect(await missing.sweep(), 0);
+    });
+
+    test('sweeps the hand-off folder even when the native inbox is unavailable', () async {
+      final DateTime now = DateTime.now();
+      final File oldHandOff = writeFile(handOffDir, 'old_offline.png')
+        ..setLastModifiedSync(now.subtract(const Duration(hours: 25)));
+      final SharedInbox offline = SharedInbox(
+        inboxDirectory: () => Future<Directory>.error(PlatformException(code: 'unavailable')),
+        handOffDirectory: () async => handOffDir,
+      );
+
+      expect(await offline.sweep(now: now), 1);
+      expect(oldHandOff.existsSync(), isFalse);
     });
   });
 

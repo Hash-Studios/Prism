@@ -205,6 +205,9 @@ internal class PrismNativeInstrumentation : Instrumentation() {
             check(link != null && link.action == Intent.ACTION_VIEW && link.`package` == context.packageName) {
                 "Shared image did not become a VIEW intent for Prism"
             }
+            check(link.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION != 0 && link.clipData?.getItemAt(0)?.uri == uri) {
+                "MainActivity must retain the read grant after ShareTargetActivity finishes"
+            }
             val match = Regex("^prism://share-in\\?id=([0-9a-f-]{36})&src=com\\.example\\.source$")
                 .find(link.dataString.orEmpty())
             check(match != null) { "Shared image link has the wrong shape: ${link.dataString}" }
@@ -229,6 +232,10 @@ internal class PrismNativeInstrumentation : Instrumentation() {
                 .putExtra(Intent.EXTRA_STREAM, Uri.parse("content://${context.packageName}.wallpaper_crop/cache/x.png"))
             check(SharedInbox.linkIntent(context, ownProvider, "com.example.source") == null) {
                 "Prism's own provider was accepted as a share"
+            }
+            ownProvider.putExtra(Intent.EXTRA_STREAM, Uri.parse("content://0@${context.packageName}.wallpaper_crop/cache/x.png"))
+            check(SharedInbox.linkIntent(context, ownProvider, "com.example.source") == null) {
+                "Prism's own provider with an Android user prefix was accepted as a share"
             }
             val fileStream = Intent(Intent.ACTION_SEND).setType("image/png")
                 .putExtra(Intent.EXTRA_STREAM, Uri.parse("file://${context.cacheDir}/x.png"))
