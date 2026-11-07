@@ -228,7 +228,7 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
   });
 
-  testWidgets('an Undo that is still setting keeps the history row and is not reported as restored', (tester) async {
+  testWidgets('an Undo that is still setting keeps the history row and says it is still setting', (tester) async {
     final _Client client = _Client()..hold = Completer<void>();
     aw.AsyncWallpaper.debugSetClient(client);
     WallpaperService.applyTimeout = const Duration(milliseconds: 10);
@@ -251,8 +251,10 @@ void main() {
 
     expect(client.requests, hasLength(1));
     expect(store.items().map((item) => item.id), ['2']);
-    expect(analytics.events.whereType<SetWallUndoneEvent>().single.result, BinaryResultValue.failure);
+    expect(analytics.events.whereType<SetWallUndoneEvent>(), isEmpty);
     expect(toastSaid('Previous wallpaper restored'), isFalse);
+    expect(toastSaid(_l10n.coreRestorePreviousWallpaperFailed), isFalse);
+    expect(toastSaid(_l10n.coreWallpaperStillSetting), isTrue);
     await tester.pump(const Duration(seconds: 2));
   });
 
