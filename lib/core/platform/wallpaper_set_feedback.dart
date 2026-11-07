@@ -130,7 +130,9 @@ const Set<String> _notAppliedCodes = <String>{'wallpaper-not-allowed', 'timeout'
 /// True when a lock screen set failed in a way the phone's own wallpaper screen can still do (#545). A work profile
 /// that forbids wallpapers forbids that screen too.
 bool offersPhoneWallpaperScreen(WallpaperSetResult result, WallpaperTarget target) =>
+    // A set that needs Prism in front keeps Keep Prism open and Try again: the phone's screen needs it in front too.
     result.isFailure &&
+    result.status != WallpaperSetStatus.foregroundRequired &&
     !_notAppliedCodes.contains(result.errorCode) &&
     (result.failedTarget == WallpaperTarget.lock || (!result.isPartial && target == WallpaperTarget.lock));
 
