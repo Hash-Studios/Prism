@@ -23509,10 +23509,10 @@ abstract class AppLocalizations {
   /// **'No wallpapers yet.'**
   String get foldersSectionEmpty;
 
-  /// Text under an empty section for the owner and editors. Move to section is the name of a button.
+  /// Text under an empty section for the owner and editors. Only the section name (the header) and its chip in the strip accept a drop, not this text. Move to section is the name of a button.
   ///
   /// In en, this message translates to:
-  /// **'Drag wallpapers here, or use Move to section.'**
+  /// **'Drag wallpapers onto the section name, or use Move to section.'**
   String get foldersSectionEmptyHint;
 
   /// Folder page menu item. Prism groups the Unsorted wallpapers by mood, category or colour on the device.

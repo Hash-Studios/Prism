@@ -15131,7 +15131,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get foldersSectionEmpty => 'Ainda não há papéis de parede.';
 
   @override
-  String get foldersSectionEmptyHint => 'Arraste papéis de parede para cá ou use Mover para seção.';
+  String get foldersSectionEmptyHint => 'Arraste papéis de parede para o nome da seção ou use Mover para seção.';
 
   @override
   String get foldersSectionSuggest => 'Sugerir seções';
@@ -30326,7 +30326,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get foldersSectionEmpty => 'Ainda não há papéis de parede.';
 
   @override
-  String get foldersSectionEmptyHint => 'Arraste papéis de parede para cá ou use Mover para seção.';
+  String get foldersSectionEmptyHint => 'Arraste papéis de parede para o nome da seção ou use Mover para seção.';
 
   @override
   String get foldersSectionSuggest => 'Sugerir seções';

@@ -14950,7 +14950,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get foldersSectionEmpty => 'Aún no hay fondos de pantalla.';
 
   @override
-  String get foldersSectionEmptyHint => 'Arrastra fondos de pantalla aquí o usa Mover a sección.';
+  String get foldersSectionEmptyHint => 'Arrastra fondos de pantalla al nombre de la sección o usa Mover a sección.';
 
   @override
   String get foldersSectionSuggest => 'Sugerir secciones';

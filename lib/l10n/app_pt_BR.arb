@@ -3979,7 +3979,7 @@
   "foldersSectionSelected": "{count, plural, =0{Toque nos papéis de parede para selecioná-los} =1{1 selecionado} other{{count} selecionados}}",
   "foldersSectionsFull": "Uma pasta pode ter até {max} seções.",
   "foldersSectionEmpty": "Ainda não há papéis de parede.",
-  "foldersSectionEmptyHint": "Arraste papéis de parede para cá ou use Mover para seção.",
+  "foldersSectionEmptyHint": "Arraste papéis de parede para o nome da seção ou use Mover para seção.",
   "foldersSectionSuggest": "Sugerir seções",
   "foldersSuggestTitle": "Seções sugeridas",
   "foldersSuggestBody": "Grupos dos seus papéis de parede não organizados. Mantenha os que você quiser.",

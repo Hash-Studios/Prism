@@ -14754,7 +14754,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get foldersSectionEmpty => 'No wallpapers yet.';
 
   @override
-  String get foldersSectionEmptyHint => 'Drag wallpapers here, or use Move to section.';
+  String get foldersSectionEmptyHint => 'Drag wallpapers onto the section name, or use Move to section.';
 
   @override
   String get foldersSectionSuggest => 'Suggest sections';

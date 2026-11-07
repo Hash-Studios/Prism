@@ -14193,9 +14193,9 @@
   "@foldersSectionEmpty": {
     "description": "Text under an empty section for a reader who cannot organize the folder."
   },
-  "foldersSectionEmptyHint": "Ziehe Hintergrundbilder hierher oder nutze „In Abschnitt verschieben“.",
+  "foldersSectionEmptyHint": "Ziehe Hintergrundbilder auf den Namen des Abschnitts oder nutze „In Abschnitt verschieben“.",
   "@foldersSectionEmptyHint": {
-    "description": "Text under an empty section for the owner and editors. Move to section is the name of a button."
+    "description": "Text under an empty section for the owner and editors. Only the section name (the header) and its chip in the strip accept a drop, not this text. Move to section is the name of a button."
   },
   "foldersSectionSuggest": "Abschnitte vorschlagen",
   "@foldersSectionSuggest": {

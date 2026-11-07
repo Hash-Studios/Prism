@@ -14908,7 +14908,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get foldersSectionEmpty => 'अभी कोई वॉलपेपर नहीं है।';
 
   @override
-  String get foldersSectionEmptyHint => 'वॉलपेपर यहाँ खींचें, या “सेक्शन में ले जाएँ” इस्तेमाल करें।';
+  String get foldersSectionEmptyHint => 'वॉलपेपर सेक्शन के नाम पर खींचें, या “सेक्शन में ले जाएँ” इस्तेमाल करें।';
 
   @override
   String get foldersSectionSuggest => 'सेक्शन सुझाएँ';

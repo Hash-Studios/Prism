@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 // Seeds the folder sections proof on top of tool/shared_folders_qa.cjs. Run `shared_folders_qa.cjs prepare`,
-// `emulators`, `serve` and `seed` first, then `node tool/folder_sections_qa.cjs seed`, then `assert` after the
+// `emulators`, `serve` and `seed` first, then `node tool/folder_sections_qa.cjs seed`, then `report` after the
 // device steps. Local emulators only: the shared helper's guard refuses any other project.
 const fs = require('node:fs');
 const path = require('node:path');

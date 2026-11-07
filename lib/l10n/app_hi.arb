@@ -14942,9 +14942,9 @@
   "@foldersSectionEmpty": {
     "description": "Text under an empty section for a reader who cannot organize the folder."
   },
-  "foldersSectionEmptyHint": "वॉलपेपर यहाँ खींचें, या “सेक्शन में ले जाएँ” इस्तेमाल करें।",
+  "foldersSectionEmptyHint": "वॉलपेपर सेक्शन के नाम पर खींचें, या “सेक्शन में ले जाएँ” इस्तेमाल करें।",
   "@foldersSectionEmptyHint": {
-    "description": "Text under an empty section for the owner and editors. Move to section is the name of a button."
+    "description": "Text under an empty section for the owner and editors. Only the section name (the header) and its chip in the strip accept a drop, not this text. Move to section is the name of a button."
   },
   "foldersSectionSuggest": "सेक्शन सुझाएँ",
   "@foldersSectionSuggest": {

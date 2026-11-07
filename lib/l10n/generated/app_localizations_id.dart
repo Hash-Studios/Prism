@@ -14816,7 +14816,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get foldersSectionEmpty => 'Belum ada wallpaper.';
 
   @override
-  String get foldersSectionEmptyHint => 'Seret wallpaper ke sini, atau gunakan Pindahkan ke bagian.';
+  String get foldersSectionEmptyHint => 'Seret wallpaper ke nama bagian, atau gunakan Pindahkan ke bagian.';
 
   @override
   String get foldersSectionSuggest => 'Sarankan bagian';

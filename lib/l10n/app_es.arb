@@ -4123,7 +4123,7 @@
   "foldersSectionSelected": "{count, plural, =0{Toca los fondos de pantalla para seleccionarlos} =1{1 seleccionado} other{{count} seleccionados}}",
   "foldersSectionsFull": "Una carpeta puede tener hasta {max} secciones.",
   "foldersSectionEmpty": "Aún no hay fondos de pantalla.",
-  "foldersSectionEmptyHint": "Arrastra fondos de pantalla aquí o usa Mover a sección.",
+  "foldersSectionEmptyHint": "Arrastra fondos de pantalla al nombre de la sección o usa Mover a sección.",
   "foldersSectionSuggest": "Sugerir secciones",
   "foldersSuggestTitle": "Secciones sugeridas",
   "foldersSuggestBody": "Grupos de tus fondos de pantalla sin ordenar. Conserva los que quieras.",

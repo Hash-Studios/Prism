@@ -14991,7 +14991,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get foldersSectionEmpty => 'Noch keine Hintergrundbilder.';
 
   @override
-  String get foldersSectionEmptyHint => 'Ziehe Hintergrundbilder hierher oder nutze „In Abschnitt verschieben“.';
+  String get foldersSectionEmptyHint =>
+      'Ziehe Hintergrundbilder auf den Namen des Abschnitts oder nutze „In Abschnitt verschieben“.';
 
   @override
   String get foldersSectionSuggest => 'Abschnitte vorschlagen';
