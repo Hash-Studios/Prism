@@ -10,6 +10,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/features/wallpaper_history/biz/bloc/wallpaper_history_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/applied_wallpaper.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
@@ -67,7 +68,6 @@ Future<void> confirmClearHistory(BuildContext context, HistorySegment segment) a
     destructive: true,
   );
   if (!confirmed) return;
-  PrismHaptics.tap();
   if (viewed) {
     bloc.add(const WallpaperHistoryEvent.viewedCleared());
     unawaited(analytics.track(RecentlyViewedClearedEvent(count: count)));
@@ -166,17 +166,20 @@ class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
   }
 
   void _remove(BuildContext context, AppliedWallpaper item) {
-    PrismHaptics.tap();
+    PrismHaptics.impact();
     final WallpaperHistoryBloc bloc = context.read<WallpaperHistoryBloc>();
     bloc.add(WallpaperHistoryEvent.removed(item.id));
-    ScaffoldMessenger.maybeOf(context)
-      ?..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(context.l10n.wallpaperRemovedFromHistory),
-          action: SnackBarAction(label: context.l10n.coreUndo, onPressed: () => unawaited(bloc.restore(item))),
-        ),
-      );
+    toasts.success(
+      context.l10n.wallpaperRemovedFromHistory,
+      haptic: false,
+      action: (
+        label: context.l10n.coreUndo,
+        onPressed: () {
+          PrismHaptics.tap();
+          unawaited(bloc.restore(item));
+        },
+      ),
+    );
   }
 
   @override
@@ -185,14 +188,13 @@ class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
     return Column(
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(PrismWallGrid.margin, PrismSpace.sm, PrismWallGrid.margin, 0),
+          padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.page, 0),
           child: PrismSegmented<HistorySegment>(
             values: HistorySegment.values,
             selected: _segment,
             labelOf: (segment) => _segmentLabel(context.l10n, segment),
             onChanged: (segment) {
               if (segment == _segment) return;
-              PrismHaptics.selection();
               setState(() => _segment = segment);
             },
           ),
@@ -236,7 +238,6 @@ class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
                           body: context.l10n.historyViewedOffBody,
                           actionLabel: context.l10n.historyViewedOffAction,
                           onAction: () {
-                            PrismHaptics.tap();
                             context.read<WallpaperHistoryBloc>().add(const WallpaperHistoryEvent.viewingTurnedOn());
                             unawaited(analytics.track(const ViewingHistoryToggledEvent(value: true)));
                           },
@@ -260,12 +261,7 @@ class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
     }
 
     final Widget header = Padding(
-      padding: const EdgeInsets.fromLTRB(
-        PrismWallGrid.margin + PrismSpace.xxs,
-        PrismSpace.xs,
-        PrismWallGrid.margin - PrismSpace.xs,
-        0,
-      ),
+      padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.sm, 0),
       child: Row(
         children: <Widget>[
           Expanded(child: note == null ? const SizedBox.shrink() : Text(note, style: PrismTextStyles.caption(context))),
@@ -281,7 +277,7 @@ class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
       ),
     );
     if (rows.isEmpty) {
-      return RefreshIndicator(
+      return PrismRefresh(
         onRefresh: refresh,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -306,7 +302,7 @@ class _WallpaperHistoryListState extends State<WallpaperHistoryList> {
     };
     final DateTime today = (widget.now ?? DateTime.now)();
     final double footer = appliedWallpaperFooterHeight(context);
-    return RefreshIndicator(
+    return PrismRefresh(
       onRefresh: refresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),

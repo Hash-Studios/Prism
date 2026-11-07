@@ -6,6 +6,7 @@ import 'package:Prism/core/content_reports/content_report_repository.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -142,13 +143,22 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
     }
 
     final ContentReportRepository repo = getIt<ContentReportRepository>();
-    final result = await repo.submitReport(
-      contentType: widget.contentType,
-      targetFirestoreDocId: widget.targetFirestoreDocId,
-      reason: reason,
-      details: _details.text,
-      appVersion: appVersion,
-    );
+    final Result<void> result;
+    try {
+      result = await repo.submitReport(
+        contentType: widget.contentType,
+        targetFirestoreDocId: widget.targetFirestoreDocId,
+        reason: reason,
+        details: _details.text,
+        appVersion: appVersion,
+      );
+    } catch (error, stackTrace) {
+      logger.w('Content report submit threw', error: error, stackTrace: stackTrace);
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      toasts.error(l10n.coreReportCouldNotSubmit);
+      return;
+    }
 
     if (!mounted) {
       return;
@@ -177,6 +187,8 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
           toasts.success(l10n.coreReportSent);
           return;
         }
+        // The snackbar plays no haptic, unlike toasts.success.
+        PrismHaptics.success();
         messenger
           ..hideCurrentSnackBar()
           ..showSnackBar(
@@ -200,7 +212,7 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
           ? l10n.coreContentReportWhy(label)
           : l10n.coreContentReportWhyWithDetails(label, subtitle),
       actions: <Widget>[
-        PrismButton(label: l10n.coreSendReport, expand: true, loading: _submitting, onPressed: _submit),
+        PrismButton(label: l10n.coreSendReport, expand: true, haptic: false, loading: _submitting, onPressed: _submit),
       ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

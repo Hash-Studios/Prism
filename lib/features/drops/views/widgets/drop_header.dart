@@ -55,7 +55,7 @@ class DropHeader extends StatelessWidget {
                 ),
               ),
               if (rename != null)
-                IconButton(tooltip: l10n.economyDropRename, icon: const Icon(Icons.edit_outlined), onPressed: rename),
+                PrismIconButton(tooltip: l10n.economyDropRename, icon: Icons.edit_rounded, onPressed: rename),
             ],
           ),
           const SizedBox(height: PrismSpace.xxs),
@@ -66,6 +66,8 @@ class DropHeader extends StatelessWidget {
             runSpacing: PrismSpace.xs,
             children: <Widget>[
               if (live) DropTimeTag(drop: drop, now: now) else PrismTag(label: l10n.economyDropEndedHeadline),
+              if (live && remaining > 1 && unlockAll != null && saving > 0)
+                PrismTag(label: l10n.economyDropSave(saving), tone: PrismTone.success),
               if (owned > 0)
                 PrismTag(
                   label: l10n.economyDropCollected(owned, drop.count),
@@ -80,16 +82,10 @@ class DropHeader extends StatelessWidget {
             PrismButton(
               label: l10n.economyDropUnlockAll(remaining, drop.packPrice(remaining: remaining, isPro: isPro)),
               expand: true,
-              variant: PrismButtonVariant.tonal,
               trailing: const PrismCoinIcon(size: 18),
               loading: busy,
               onPressed: busy ? null : unlockAll,
             ),
-            if (saving > 0)
-              Padding(
-                padding: const EdgeInsets.only(top: PrismSpace.xs),
-                child: Center(child: Text(l10n.economyDropSave(saving), style: PrismTextStyles.caption(context))),
-              ),
           ],
         ],
       ),

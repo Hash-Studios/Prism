@@ -8,6 +8,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/domain/repositories/drops_repository.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:bloc/bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injectable/injectable.dart';
@@ -113,7 +114,13 @@ class DropsBloc extends Bloc<DropsEvent, DropsState> {
         ? drop.packPrice(remaining: state.lockedWalls.length, isPro: isPro)
         : drop.wallPrice(isPro: isPro);
     emit(state.copyWith(busyKey: event.wallId ?? packKey));
-    final DropUnlockResult result = await CoinsService.instance.unlockDrop(weekKey: drop.weekKey, wallId: event.wallId);
+    DropUnlockResult result;
+    try {
+      result = await CoinsService.instance.unlockDrop(weekKey: drop.weekKey, wallId: event.wallId);
+    } catch (error, stackTrace) {
+      logger.w('[DropsBloc] unlock failed', error: error, stackTrace: stackTrace);
+      result = DropUnlockResult(DropUnlockOutcome.failed, reason: 'error');
+    }
     if (result.outcome == DropUnlockOutcome.unlocked && result.unlocked.isNotEmpty) {
       unawaited(
         analytics.track(

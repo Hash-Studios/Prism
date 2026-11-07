@@ -38,8 +38,8 @@ abstract final class PrismSpace {
   static const double xxl = 32;
   static const double xxxl = 40;
 
-  /// Left and right page margin.
-  static const double page = 20;
+  /// Left and right page margin. Grids use the same margin, so every screen has one edge.
+  static const double page = 16;
 
   /// Space to keep clear at the bottom of a tab page, above the floating bottom bar.
   static const double bottomBarClearance = 120;
@@ -130,18 +130,18 @@ abstract final class PrismTextStyles {
   /// Row and tile title (15 w600).
   static TextStyle rowTitle(BuildContext context) => _base(context, 15, FontWeight.w600);
 
-  /// Body copy (14 w500, secondary text colour).
+  /// Body copy (15 w500, line height 1.4, secondary text colour).
   static TextStyle body(BuildContext context) =>
-      _base(context, 14, FontWeight.w500).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
+      _base(context, 15, FontWeight.w500, height: 1.4).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
 
-  /// Small supporting text (12 w500, secondary text colour).
+  /// Small supporting text (13 w500, line height 1.35, secondary text colour).
   static TextStyle caption(BuildContext context) =>
-      _base(context, 12, FontWeight.w500).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
+      _base(context, 13, FontWeight.w500, height: 1.35).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
 
-  /// Small label above a value (11 w700, tracked). The caller upper-cases the text.
+  /// Small label above a value (12 w700, tracked). The caller upper-cases the text.
   static TextStyle eyebrow(BuildContext context) => _base(
     context,
-    11,
+    12,
     FontWeight.w700,
   ).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant, letterSpacing: 1.4);
 
@@ -203,6 +203,10 @@ abstract final class PrismChipMetrics {
 abstract final class PrismInk {
   /// Alpha of secondary text. A theme whose ink falls under [PrismChipMetrics.minLabelContrast] at this alpha keeps full ink.
   static const double softAlpha = 0.8;
+
+  /// Alpha of a secondary icon in the theme foreground colour, such as a row chevron or an external-link glyph.
+  /// It keeps the icon at 3:1 or more against the page.
+  static const double iconAlpha = 0.5;
 }
 
 /// Icon data constants so individual widgets don't scatter icon literals.
@@ -240,10 +244,11 @@ abstract final class PrismFeedLayout {
   /// Minimal spacer appended when the feed still has more pages to load.
   static const double endOfPageSpacerHeight = 22;
 
-  /// Gap between tiles of the home grid, on both axes. The side margin is the same, so the gutters are even.
-  static const double gridSpacing = 4.0;
+  /// Gap between tiles of the home grid, on both axes. The same as the `PrismWallGrid` spacing.
+  static const double gridSpacing = 8.0;
 
-  static const EdgeInsets gridPadding = EdgeInsets.symmetric(horizontal: gridSpacing);
+  /// Side margin of the home grid. The same as the `PrismWallGrid` margin, so every grid lines up.
+  static const EdgeInsets gridPadding = EdgeInsets.symmetric(horizontal: PrismSpace.page);
 }
 
 /// Visual parameters for the `PersonalizedFeedEditorialNote` pattern.
@@ -264,7 +269,7 @@ abstract final class PrismBottomSheet {
   static const double dragHandleRadius = 99;
 
   /// Gap between a floating sheet and the screen edges. It goes to 0 as the sheet is dragged to full height.
-  static const double inset = 16;
+  static const double inset = 8;
 
   /// Gap between the status bar and the top of a full-height sheet.
   static const double topInset = 6;
@@ -317,7 +322,7 @@ abstract final class PrismBottomSheet {
   static const double interestCheckIconSize = 14;
 
   static const int learnedTermCount = 6;
-  static const EdgeInsets learnedPillPadding = EdgeInsets.fromLTRB(14, 8, 14, 10);
+  static const EdgeInsets learnedPillPadding = EdgeInsets.symmetric(horizontal: 14, vertical: 10);
 
   /// Fixed track width so strengths compare across pills.
   static const double learnedBarWidth = 48;

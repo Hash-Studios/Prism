@@ -2,8 +2,11 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 
 typedef FolderWriteFailure = ({String ownerId, int revision, Failure failure});
+
+const int folderOrganizeMaxWrites = 400;
 
 abstract class FoldersRepository {
   /// A session records this boundary so late failures from earlier sessions are ignored.
@@ -13,8 +16,8 @@ abstract class FoldersRepository {
   /// The folders the user owns, then the folders they edit. Each list is most recently updated first.
   Future<Result<List<FolderEntity>>> fetchFolders(String userId);
 
-  /// The folder's walls, newest first. Null when the folder does not exist or is not the user's.
-  Future<Result<List<FavouriteWallEntity>?>> fetchItems(String folderId, {required String userId, int? limit});
+  /// The folder's walls and their sections, newest first. Null when the folder does not exist or is not the user's.
+  Future<Result<List<FolderItem>?>> fetchItems(String folderId, {required String userId, int? limit});
 
   /// The ids in [folderIds] whose folder holds the item [itemKey].
   Future<Result<Set<String>>> foldersContaining(List<String> folderIds, String itemKey);
@@ -33,4 +36,13 @@ abstract class FoldersRepository {
 
   /// Deletes [wall] from [folder]. For the owner, the same batch writes the new count, covers and update time.
   Future<Result<void>> removeItem(FolderEntity folder, FavouriteWallEntity wall, {required String userId});
+
+  /// Writes [sections] when given, and moves each wall in [moves] (item key to section id, or null for Unsorted).
+  /// The owner and the editors can do both. The sections go in the first batch.
+  Future<Result<void>> organize(
+    FolderEntity folder, {
+    required String userId,
+    List<FolderSection>? sections,
+    Map<String, String?> moves = const <String, String?>{},
+  });
 }

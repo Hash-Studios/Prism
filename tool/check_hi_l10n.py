@@ -11,6 +11,7 @@ from pathlib import Path
 # Reviewed messages that are intentionally identical in English and Hindi.
 # Keep values exact so a generic English UI message cannot be added by mistake.
 UNCHANGED_ENGLISH = {
+    'economyCoinReward': '+{count}',
     'wallpaperCropPresetPortrait': '9:16',
     'wallpaperCropPresetSquare': '1:1',
     'wallpaperCropSize': '{width} × {height} px',
@@ -46,10 +47,10 @@ UNCHANGED_ENGLISH = {
     'accountResolution1080': '1080p',
     'accountResolution1440': '1440p',
     'accountResolution4k': '4K',
-    'accountSocialGithub': 'GITHUB',
-    'accountSocialInstagram': 'INSTAGRAM',
-    'accountSocialTelegram': 'TELEGRAM',
-    'accountSocialTwitter': 'TWITTER',
+    'accountSocialGithub': 'GitHub',
+    'accountSocialInstagram': 'Instagram',
+    'accountSocialTelegram': 'Telegram',
+    'accountSocialTwitter': 'Twitter',
     'accountStorageSizeBytes': '{size} B',
     'accountStorageSizeGigabytes': '{size} GB',
     'accountStorageSizeKilobytes': '{size} KB',

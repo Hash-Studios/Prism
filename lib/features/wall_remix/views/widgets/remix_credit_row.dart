@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -83,11 +84,16 @@ class _RemixCreditRowState extends State<RemixCreditRow> {
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(PrismRadius.sm),
-            onTap: () => context.router.push(
-              WallpaperDetailRoute(
-                entity: FeedItemEntity.prism(id: original.id, wallpaper: original),
-              ),
-            ),
+            onTap: () {
+              PrismHaptics.tap();
+              unawaited(
+                context.router.push(
+                  WallpaperDetailRoute(
+                    entity: FeedItemEntity.prism(id: original.id, wallpaper: original),
+                  ),
+                ),
+              );
+            },
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 48),
               child: Row(

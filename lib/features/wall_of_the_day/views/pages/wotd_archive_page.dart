@@ -6,10 +6,12 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
@@ -35,8 +37,10 @@ class WotdArchivePage extends StatelessWidget implements AutoRouteWrapper {
 
   Future<void> _refresh(BuildContext context) {
     final WotdArchiveBloc bloc = context.read<WotdArchiveBloc>();
-    PrismHaptics.impact();
-    final Future<WotdArchiveState> settled = bloc.stream.firstWhere((state) => state.status != LoadStatus.loading);
+    final Future<WotdArchiveState> settled = bloc.stream.firstWhere(
+      (state) => state.status != LoadStatus.loading,
+      orElse: () => bloc.state,
+    );
     bloc.add(const WotdArchiveEvent.refreshRequested());
     return settled;
   }
@@ -62,10 +66,7 @@ class WotdArchivePage extends StatelessWidget implements AutoRouteWrapper {
               onRefresh: () => _refresh(context),
             );
           }
-          final ColorScheme cs = Theme.of(context).colorScheme;
-          return RefreshIndicator(
-            color: cs.primary,
-            backgroundColor: cs.surfaceContainerHigh,
+          return PrismRefresh(
             onRefresh: () => _refresh(context),
             child: _PicksGrid(picks: state.picks),
           );
@@ -93,7 +94,7 @@ class _PicksGrid extends StatelessWidget {
           ),
         ),
         SliverPadding(
-          padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xxs, bottom: PrismSpace.bottomBarClearance),
+          padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xs, bottom: PrismSpace.bottomBarClearance),
           sliver: SliverGrid(
             gridDelegate: PrismWallGrid.delegate(
               context,
@@ -142,12 +143,27 @@ class _PickTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.only(bottom: PrismSpace.xs),
+          child: ExcludeSemantics(
+            child: Text(
+              dateLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: PrismTextStyles.rowTitle(context),
+            ),
+          ),
+        ),
         Expanded(
           child: FavouriteWallpaperCard(
             item: PrismFeedItem(id: pick.wallpaper.id, wallpaper: pick.wallpaper),
             child: PrismWallTile(
               url: pick.wallpaper.thumbnailUrl,
               fallbackUrl: pick.wallpaper.fullUrl,
+              placeholderColor: placeholderColorOf(
+                PrismFeedItem(id: pick.wallpaper.id, wallpaper: pick.wallpaper),
+                Theme.of(context).colorScheme.surface,
+              ),
               memCacheHeight: decodeHeight,
               heroTag: heroTag,
               semanticLabel: context.l10n.wallpaperWotdPickedOn(
@@ -159,17 +175,6 @@ class _PickTile extends StatelessWidget {
                 spatialTagFor(pick.wallpaper.spatial?.tier),
               ]),
               onTap: () => _open(context, heroTag),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: PrismSpace.xs),
-          child: ExcludeSemantics(
-            child: Text(
-              dateLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: PrismTextStyles.rowTitle(context),
             ),
           ),
         ),

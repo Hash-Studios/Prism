@@ -2,6 +2,7 @@
 library;
 
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/quests/domain/quest_board.dart';
 import 'package:Prism/features/quests/domain/quest_catalog.dart';
 import 'package:Prism/features/quests/views/widgets/quest_tile.dart';
@@ -29,9 +30,7 @@ QuestTileModel _quest(
   reward: reward,
 );
 
-Widget _column() => Column(
-  crossAxisAlignment: CrossAxisAlignment.stretch,
-  spacing: 14,
+Widget _column() => PrismGroup(
   children: <Widget>[
     QuestTile(quest: _quest('Download 2 walls', Icons.download_rounded, progress: 0, target: 2)),
     QuestTile(quest: _quest('Favourite 3 walls', Icons.favorite_border_rounded, progress: 1, target: 3)),

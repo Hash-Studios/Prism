@@ -4,6 +4,7 @@ import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/features/onboarding_v2/src/views/widgets/onboarding_primary_button.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
@@ -192,7 +193,7 @@ void main() {
     );
 
     expect(toasts, <String>["Couldn't save your picks. Try again."]);
-    expect(find.text('try again'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
     expect(find.textContaining("couldn't save your picks"), findsOneWidget);
   });
 
@@ -204,7 +205,7 @@ void main() {
     );
 
     expect(toasts, <String>["Couldn't follow these creators. Try again."]);
-    expect(find.text('try again'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
     expect(find.textContaining("couldn't follow these creators"), findsOneWidget);
   });
 
@@ -215,7 +216,7 @@ void main() {
       _interests.copyWith(actionStatus: ActionStatus.failure),
     );
 
-    await tester.tap(find.text('try again'));
+    await tester.tap(find.text('Try again'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
 
@@ -232,7 +233,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('try again'));
+    await tester.tap(find.text('Try again'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
 
@@ -246,7 +247,7 @@ void main() {
       _starterPack.copyWith(actionStatus: ActionStatus.failure),
     );
 
-    await tester.tap(find.text('try again'));
+    await tester.tap(find.text('Try again'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
 
@@ -283,10 +284,10 @@ void main() {
     );
 
     expect(toasts, <String>["Couldn't finish setup. Try again."]);
-    expect(find.text('try again'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
     expect(find.textContaining("couldn't finish setup"), findsOneWidget);
 
-    await tester.tap(find.text('try again'));
+    await tester.tap(find.text('Try again').first);
     await tester.pump();
 
     verify(() => bloc.add(const OnboardingV2Event.completionRetried())).called(1);
@@ -338,7 +339,7 @@ void main() {
     );
 
     expect(toasts, <String>['Your session has expired. Please sign in again.']);
-    expect(find.text('sign in again'), findsOneWidget);
+    expect(find.text('Sign in again'), findsOneWidget);
     expect(find.text('your session has expired. sign in again to continue'), findsOneWidget);
   });
 
@@ -358,7 +359,7 @@ void main() {
         return false;
       },
     );
-    await tester.tap(find.text('sign in again'));
+    await tester.tap(find.text('Sign in again'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
 
@@ -448,8 +449,8 @@ void main() {
       },
     );
 
-    expect(find.text('sign in again'), findsOneWidget);
-    await tester.tap(find.text('sign in again'));
+    expect(find.text('Sign in again'), findsOneWidget);
+    await tester.tap(find.text('Sign in again'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 2));
 
@@ -484,7 +485,7 @@ void main() {
       onMount: () => mountCalls++,
     );
     await tester.runAsync(() async {
-      await tester.tap(find.text('sign in again'));
+      await tester.tap(find.text('Sign in again'));
       expect(await signOut, isFalse);
     });
     await tester.pump();
@@ -496,7 +497,7 @@ void main() {
     expect(settings.get<bool>('onboarded_v2_new'), isTrue);
     expect(settings.get<String>('onboarding_v2_interests'), 'saved interests');
     expect(settings.get<String>('onboarding_v2_followed_creators'), 'saved creators');
-    expect(find.text('sign in again'), findsOneWidget);
+    expect(find.text('Sign in again'), findsOneWidget);
     expect(toasts.last, 'Could not log out. Please try again.');
   });
 
@@ -524,7 +525,7 @@ void main() {
       onMount: () => mountCalls++,
     );
     await tester.runAsync(() async {
-      await tester.tap(find.text('sign in again'));
+      await tester.tap(find.text('Sign in again'));
       expect(await signOut, isTrue);
     });
     await tester.pump();
@@ -551,13 +552,13 @@ void main() {
       },
     );
 
-    await tester.tap(find.text('sign in again'));
+    await tester.tap(find.text('Sign in again'));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 2));
 
     expect(signOutCalls, 1);
-    expect(find.text('sign in again'), findsOneWidget);
+    expect(find.text('Sign in again'), findsOneWidget);
     expect(toasts.last, 'Could not log out. Please try again.');
   });
 
@@ -573,7 +574,7 @@ void main() {
         return pendingSignOut.future;
       },
     );
-    final buttonCenter = tester.getRect(find.text('sign in again')).center;
+    final buttonCenter = tester.getRect(find.text('Sign in again')).center;
 
     await tester.tapAt(buttonCenter);
     await tester.pump();
@@ -602,7 +603,7 @@ void main() {
 
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.text("Couldn't load creators. Check your connection and tap Reload."), findsOneWidget);
-      await tester.tap(find.text('reload'));
+      await tester.tap(find.text('Reload'));
       await tester.pump();
 
       verify(() => bloc.add(const OnboardingV2Event.starterPackReloadRequested())).called(1);
@@ -619,8 +620,8 @@ void main() {
     );
     final bloc = await pumpShell(tester, short, short);
 
-    expect(find.text('reload'), findsNothing);
-    await tester.tap(find.text('continue'));
+    expect(find.text('Reload'), findsNothing);
+    await tester.tap(find.text('Continue'));
     await tester.pump();
 
     verify(() => bloc.add(const OnboardingV2Event.starterPackConfirmed())).called(1);
@@ -637,9 +638,11 @@ void main() {
     );
     final bloc = await pumpShell(tester, failed, failed);
 
-    expect(find.text('try again'), findsOneWidget);
+    // The empty starter pack also shows its own "Try again" (load retry); the CTA is the completion retry.
+    final Finder ctaRetry = find.descendant(of: find.byType(OnboardingPrimaryButton), matching: find.text('Try again'));
+    expect(ctaRetry, findsOneWidget);
     expect(find.text("couldn't finish setup. check your connection and try again"), findsOneWidget);
-    await tester.tap(find.text('try again'));
+    await tester.tap(ctaRetry);
     await tester.pump();
 
     verify(() => bloc.add(const OnboardingV2Event.completionRetried())).called(1);

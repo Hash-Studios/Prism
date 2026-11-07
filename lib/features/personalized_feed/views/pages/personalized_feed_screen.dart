@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -15,6 +15,7 @@ import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/ads/data/ad_experiment_config.dart';
 import 'package:Prism/features/ads/views/widgets/experimental_inline_ad.dart';
@@ -47,6 +48,7 @@ import 'package:Prism/features/trending/biz/bloc/trending_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
 import 'package:Prism/features/wallpaper_history/domain/entities/history_wall.dart';
 import 'package:Prism/features/wallpaper_history/views/widgets/pick_up_row.dart';
+import 'package:Prism/features/weekly_challenges/biz/weekly_challenges_cubit.dart';
 import 'package:Prism/features/weekly_challenges/views/widgets/weekly_challenge_card.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -58,6 +60,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// Grid rows after which a mood row sits in the For you grid. The first mood row follows the fourth row, the second the
 /// twelfth.
 const List<int> _moodRowGridRows = <int>[4, 12];
+
+/// How long a tab change takes. The old content leaves and the new content arrives at the same time. Long enough that
+/// the direction reads: a strong ease-out over a shorter span finishes in a frame or two.
+const Duration _tabSwitchDuration = Duration(milliseconds: 320);
+
+/// How far the old and the new tab's content move sideways during a tab change.
+const double _tabShift = 48;
 
 /// Grid rows before the "Pick up where you left off" row.
 const int _pickUpGridRows = 2;
@@ -124,8 +133,30 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   WallpaperImpressionSession _impressions = WallpaperImpressionSession();
   int _refreshVersion = 0;
   int _moodRowsRevision = 0;
+  final WeeklyChallengesCubit _challenge = getIt<WeeklyChallengesCubit>();
   int _moodLoadVersion = 0;
   bool _moodsReady = false;
+
+  /// The chip whose content shows.
+  late HomeFeedChip _shownChip = _bloc.state.chip;
+
+  /// 0 when a tab change starts, 1 at rest. The new content slides in from the new tab's side and fades in, while a
+  /// picture of the old content slides away from it and fades out on top.
+  late final AnimationController _tabSwitch = AnimationController(vsync: this, duration: _tabSwitchDuration, value: 1)
+    ..addStatusListener(_onTabSwitchStatus);
+  late final CurvedAnimation _tabSwitchCurve = CurvedAnimation(parent: _tabSwitch, curve: Curves.easeOutCubic);
+
+  /// +1 when the new tab is to the right of the old one, -1 when it is to the left.
+  double _tabDirection = 1;
+  _ContentSnapshot? _outgoing;
+  final GlobalKey _contentKey = GlobalKey();
+  final GlobalKey _contentStackKey = GlobalKey();
+
+  /// Stops the carousel's tickers, which also turns its auto-advance off. On while a finger is down, and for one frame
+  /// after a tab change. When it goes off, the auto-advance starts a fresh countdown, so the carousel waits a full
+  /// interval (5 s) after any touch or tab change.
+  final ValueNotifier<bool> _carouselHeld = ValueNotifier<bool>(false);
+  int _pointersDown = 0;
 
   bool get _showAi =>
       !getIt.isRegistered<SettingsLocalDataSource>() || AiContentFilter.showsAi(getIt<SettingsLocalDataSource>());
@@ -155,6 +186,11 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     super.didChangeDependencies();
     final Duration duration = context.motion(PrismDurations.fast);
     final TabController? old = _tabsOrNull;
+    if (old != null && context.reduceMotion && _tabSwitch.isAnimating) {
+      _tabSwitch.value = 1;
+      _outgoing?.image.dispose();
+      _outgoing = null;
+    }
     if (old != null && old.animationDuration == duration) return;
     _tabsOrNull = TabController(
       length: HomeFeedChip.values.length,
@@ -187,6 +223,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
       if (resetImpressions) _impressions = WallpaperImpressionSession();
       _moodRowsRevision++;
     });
+    unawaited(_challenge.loadOpen());
   }
 
   Future<bool> _loadHomeMoods() async {
@@ -203,9 +240,14 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     _viewedHistory?.removeListener(_onHistoryChanged);
     _syncedHistory?.removeListener(_onHistoryChanged);
     _scrollController.dispose();
+    _outgoing?.image.dispose();
+    _tabSwitchCurve.dispose();
+    _tabSwitch.dispose();
+    _carouselHeld.dispose();
     _tabs.dispose();
     unawaited(_bloc.close());
     unawaited(_trending.close());
+    unawaited(_challenge.close());
     unawaited(_latest?.close());
     unawaited(_following?.close());
     unawaited(_popular?.close());
@@ -219,6 +261,65 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     HomeFeedChip.following => _following ??= getIt<FollowingFeedBloc>()..add(const PagedFeedEvent.started()),
     HomeFeedChip.popular => _popular ??= getIt<PopularFeedBloc>()..add(const PagedFeedEvent.started()),
   };
+
+  /// Shows the new tab from the top at once. With motion on, a picture of the old content slides away from the new
+  /// tab and fades out over the new content, which slides in from the new tab's side and fades in.
+  void _switchTab(HomeFeedChip to) {
+    final double direction = to.index >= _shownChip.index ? 1 : -1;
+    _outgoing?.image.dispose();
+    _outgoing = null;
+    if (context.reduceMotion || !TickerMode.valuesOf(context).enabled) {
+      _tabSwitch.value = 1;
+      _showChip(to);
+      return;
+    }
+    final RenderObject? content = _contentKey.currentContext?.findRenderObject();
+    final RenderObject? stack = _contentStackKey.currentContext?.findRenderObject();
+    if (content is _RenderSliverSnapshot && stack is RenderBox) {
+      _outgoing = content.capture(stack, View.of(context).devicePixelRatio);
+    }
+    _tabDirection = direction;
+    _showChip(to);
+    _tabSwitch.forward(from: 0);
+  }
+
+  void _onTabSwitchStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed || _outgoing == null || !mounted) return;
+    setState(() {
+      _outgoing!.image.dispose();
+      _outgoing = null;
+    });
+  }
+
+  void _onPointerDown(PointerDownEvent _) {
+    _pointersDown++;
+    _carouselHeld.value = true;
+  }
+
+  void _onPointerUp(PointerEvent _) {
+    _pointersDown = math.max(0, _pointersDown - 1);
+    if (_pointersDown != 0) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _pointersDown == 0) _carouselHeld.value = false;
+    });
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
+  /// Holds the carousel for one frame, which restarts its countdown.
+  void _restartCarouselCountdown() {
+    if (_carouselHeld.value) return;
+    _carouselHeld.value = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _pointersDown == 0) _carouselHeld.value = false;
+    });
+  }
+
+  void _showChip(HomeFeedChip chip) {
+    if (_scrollController.hasClients && _scrollController.offset > 0) {
+      _scrollController.jumpTo(0);
+    }
+    setState(() => _shownChip = chip);
+  }
 
   bool _showsSignIn(HomeFeedChip chip) => chip == HomeFeedChip.following && !app_state.prismUser.loggedIn;
 
@@ -255,7 +356,6 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   Future<void> _refresh() async {
     final int refreshVersion = ++_refreshVersion;
     final WallpaperImpressionSession impressions = _impressions;
-    PrismHaptics.impact();
     final HomeFeedChip chip = _bloc.state.chip;
     if (chip == HomeFeedChip.trending) {
       final Future<TrendingState> settled = _trending.stream.firstWhere((s) => s.status != LoadStatus.loading);
@@ -317,18 +417,13 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   void _lessLikeThis(FeedItemEntity item) {
     final int index = _bloc.state.items.indexOf(item);
     _bloc.add(PersonalizedFeedEvent.lessLikeThisRequested(item));
-    PrismHaptics.success();
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(context.l10n.wallpaperGotItFewerLikeThis),
-          action: SnackBarAction(
-            label: context.l10n.wallpaperFewerLikeThisUndo,
-            onPressed: () => _bloc.add(PersonalizedFeedEvent.lessLikeThisUndone(item, index: index)),
-          ),
-        ),
-      );
+    toasts.success(
+      context.l10n.wallpaperGotItFewerLikeThis,
+      action: (
+        label: context.l10n.wallpaperFewerLikeThisUndo,
+        onPressed: () => _bloc.add(PersonalizedFeedEvent.lessLikeThisUndone(item, index: index)),
+      ),
+    );
   }
 
   /// Starts loading the images of a new page below the first screen, so they are ready when the user scrolls to them.
@@ -390,9 +485,9 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                   _tabs.animateTo(state.chip.index, duration: PrismDurations.fast, curve: PrismCurves.move);
                 }
               }
-              if (_scrollController.hasClients && _scrollController.offset > 0) {
-                _scrollController.jumpTo(0);
-              }
+              _restartCarouselCountdown();
+              if (!_showsSignIn(state.chip)) _chipBloc(state.chip);
+              _switchTab(state.chip);
               // The quest is daily and the screen outlives a day, so every visit reports it.
               if (state.chip == HomeFeedChip.trending) {
                 CoinsService.instance.reportQuestEvent(QuestEvent.viewTrending);
@@ -417,71 +512,139 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
           builder: (context, state) {
             // The scroll view starts under the status bar, so the floating header slides in right below the strip and
             // never under it.
-            return Column(
-              children: <Widget>[
-                ColoredBox(
-                  color: cs.surface,
-                  child: SizedBox(width: double.infinity, height: MediaQuery.paddingOf(context).top),
-                ),
-                Expanded(
-                  child: RefreshIndicator(
-                    color: cs.primary,
-                    backgroundColor: cs.surfaceContainerHigh,
-                    edgeOffset: PrismTopAppBar.height + HomeFeedTabBar.height,
-                    onRefresh: _refresh,
-                    child: NotificationListener<ScrollNotification>(
-                      onNotification: (notification) {
-                        if (notification.depth == 0) {
-                          _maybeFetchMore(notification.metrics);
-                        }
-                        return false;
-                      },
-                      child: WallpaperImpressionScope(
-                        session: _impressions,
-                        child: PinchDensity(
-                          store: _layout,
-                          controller: _scrollController,
-                          child: CustomScrollView(
-                            controller: _scrollController,
-                            scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
-                            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                            slivers: [
-                              SliverAppBar(
-                                primary: false,
-                                floating: true,
-                                snap: true,
-                                automaticallyImplyLeading: false,
-                                centerTitle: false,
-                                toolbarHeight: PrismTopAppBar.height,
-                                titleSpacing: 0,
-                                backgroundColor: cs.surface,
-                                surfaceTintColor: Colors.transparent,
-                                elevation: 0,
-                                scrolledUnderElevation: 0,
-                                title: const PrismTopAppBar(),
-                                bottom: HomeFeedTabBar(
-                                  controller: _tabs,
-                                  selected: state.chip,
-                                  onSelected: (chip) {
-                                    setState(() => _impressions = WallpaperImpressionSession());
-                                    _bloc.add(PersonalizedFeedEvent.chipSelected(chip));
-                                  },
-                                  onTuneTap: widget.onTuneTap,
-                                  isRefreshing: state.isRefreshing,
+            return Listener(
+              onPointerDown: _onPointerDown,
+              onPointerUp: _onPointerUp,
+              onPointerCancel: _onPointerUp,
+              child: Column(
+                children: <Widget>[
+                  ColoredBox(
+                    color: cs.surface,
+                    child: SizedBox(width: double.infinity, height: MediaQuery.paddingOf(context).top),
+                  ),
+                  Expanded(
+                    child: Stack(
+                      key: _contentStackKey,
+                      fit: StackFit.expand,
+                      children: <Widget>[
+                        PrismRefresh(
+                          edgeOffset: PrismTopAppBar.height + HomeFeedTabBar.height,
+                          onRefresh: _refresh,
+                          child: NotificationListener<ScrollNotification>(
+                            onNotification: (notification) {
+                              if (notification.depth == 0) {
+                                _maybeFetchMore(notification.metrics);
+                              }
+                              return false;
+                            },
+                            child: WallpaperImpressionScope(
+                              session: _impressions,
+                              child: PinchDensity(
+                                store: _layout,
+                                controller: _scrollController,
+                                child: CustomScrollView(
+                                  controller: _scrollController,
+                                  scrollCacheExtent: const ScrollCacheExtent.viewport(1.5),
+                                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                                  slivers: [
+                                    SliverAppBar(
+                                      primary: false,
+                                      floating: true,
+                                      snap: true,
+                                      automaticallyImplyLeading: false,
+                                      centerTitle: false,
+                                      toolbarHeight: PrismTopAppBar.height,
+                                      titleSpacing: 0,
+                                      backgroundColor: cs.surface,
+                                      surfaceTintColor: Colors.transparent,
+                                      elevation: 0,
+                                      scrolledUnderElevation: 0,
+                                      title: const PrismTopAppBar(),
+                                      bottom: HomeFeedTabBar(
+                                        controller: _tabs,
+                                        selected: state.chip,
+                                        onSelected: (chip) {
+                                          setState(() => _impressions = WallpaperImpressionSession());
+                                          _bloc.add(PersonalizedFeedEvent.chipSelected(chip));
+                                        },
+                                        onTuneTap: widget.onTuneTap,
+                                        isRefreshing: state.isRefreshing,
+                                      ),
+                                    ),
+                                    AnimatedBuilder(
+                                      animation: _tabSwitchCurve,
+                                      builder: (context, sliver) => _SliverShift(
+                                        dx: _tabShift * _tabDirection * (1 - _tabSwitchCurve.value),
+                                        sliver: sliver!,
+                                      ),
+                                      child: SliverFadeTransition(
+                                        opacity: _tabSwitchCurve,
+                                        sliver: _SliverSnapshot(
+                                          key: _contentKey,
+                                          sliver: SliverMainAxisGroup(
+                                            slivers: _contentSlivers(
+                                              context,
+                                              state,
+                                              _shownChip,
+                                              crossAxisCount,
+                                              tileMemCacheHeight,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
+                                  ],
                                 ),
                               ),
-                              ..._contentSlivers(context, state, crossAxisCount, tileMemCacheHeight),
-                              const SliverToBoxAdapter(child: SizedBox(height: PrismSpace.bottomBarClearance)),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
+                        if (_outgoing case final _ContentSnapshot outgoing) _outgoingContent(outgoing),
+                      ],
                     ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// The picture of the old tab's content, where it was, under the header. It slides away from the new tab and fades.
+  Widget _outgoingContent(_ContentSnapshot outgoing) {
+    const double header = PrismTopAppBar.height + HomeFeedTabBar.height;
+    return Positioned.fill(
+      top: header,
+      child: IgnorePointer(
+        child: ClipRect(
+          child: AnimatedBuilder(
+            animation: _tabSwitchCurve,
+            builder: (context, image) => Stack(
+              children: <Widget>[
+                Positioned(
+                  left: outgoing.offset.dx,
+                  top: outgoing.offset.dy - header,
+                  width: outgoing.size.width,
+                  height: outgoing.size.height,
+                  child: Transform.translate(
+                    key: const ValueKey<String>('home-tab-outgoing'),
+                    offset: Offset(-_tabShift * _tabDirection * _tabSwitchCurve.value, 0),
+                    child: Opacity(opacity: 1 - _tabSwitchCurve.value, child: image),
                   ),
                 ),
               ],
-            );
-          },
+            ),
+            child: RawImage(
+              image: outgoing.image,
+              width: outgoing.size.width,
+              height: outgoing.size.height,
+              scale: outgoing.pixelRatio,
+              fit: BoxFit.fill,
+            ),
+          ),
         ),
       ),
     );
@@ -490,10 +653,11 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   List<Widget> _contentSlivers(
     BuildContext context,
     PersonalizedFeedState state,
+    HomeFeedChip chip,
     int crossAxisCount,
     int tileMemCacheHeight,
   ) {
-    switch (state.chip) {
+    switch (chip) {
       case HomeFeedChip.forYou:
         return <Widget>[
           BlocBuilder<MoodsCubit, List<MoodList>>(
@@ -600,18 +764,34 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
           sliver: SliverToBoxAdapter(
             child: loadingFirstPage
                 ? const _CarouselSkeleton()
-                : FeedCarousel(
-                    boostedWalls: boostedWalls,
-                    liveDrop: state.liveDrop,
-                    previewWalls: previewWalls,
-                    onWallShown: (wall) => _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[wall.canonicalKey])),
+                : ValueListenableBuilder<bool>(
+                    valueListenable: _carouselHeld,
+                    // FeedCarousel turns pages only while its tickers run. A drag needs no ticker, and its snap starts
+                    // after the finger lifts, so a swipe on the carousel still works.
+                    builder: (context, held, carousel) => TickerMode(enabled: !held, child: carousel!),
+                    child: FeedCarousel(
+                      boostedWalls: boostedWalls,
+                      liveDrop: state.liveDrop,
+                      previewWalls: previewWalls,
+                      onWallShown: (wall) => _bloc.add(PersonalizedFeedEvent.tilesSeen(<String>[wall.canonicalKey])),
+                    ),
                   ),
           ),
         ),
         if (!loadingFirstPage)
-          SliverToBoxAdapter(child: WeeklyChallengeCard(key: ValueKey('challenge-$_moodRowsRevision'))),
+          SliverToBoxAdapter(
+            // The challenge chip leads the mood row. With no open challenge and no moods the row stays out.
+            child: BlocBuilder<WeeklyChallengesCubit, WeeklyChallengesState>(
+              bloc: _challenge,
+              builder: (context, challenge) => MoodChipRow(
+                moods: moods,
+                leading: challenge.current == null
+                    ? null
+                    : WeeklyChallengeCard(key: ValueKey('challenge-$_moodRowsRevision'), cubit: _challenge),
+              ),
+            ),
+          ),
         if (!loadingFirstPage) const SliverToBoxAdapter(child: FollowingTopicsRow()),
-        if (!loadingFirstPage) SliverToBoxAdapter(child: MoodChipRow(moods: moods)),
         ..._forYouGridSlivers(context, visibleState, visibleItems, moods, crossAxisCount, tileMemCacheHeight),
       ],
     );
@@ -802,6 +982,76 @@ class _CarouselSkeleton extends StatelessWidget {
         padding: PrismFeedLayout.gridPadding,
         child: PrismBone(height: feedCarouselCardHeight(context), radius: PrismRadius.lg),
       ),
+    );
+  }
+}
+
+/// Paints its sliver [dy] lower, so new content can rise into place. Layout does not move.
+class _SliverShift extends SingleChildRenderObjectWidget {
+  const _SliverShift({required this.dx, required Widget sliver}) : super(child: sliver);
+
+  final double dx;
+
+  @override
+  _RenderSliverShift createRenderObject(BuildContext context) => _RenderSliverShift(dx);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderSliverShift renderObject) => renderObject.dx = dx;
+}
+
+/// Moves its sliver sideways by [dx] for paint and hit tests. Layout does not change.
+class _RenderSliverShift extends RenderProxySliver {
+  _RenderSliverShift(this._dx);
+
+  double _dx;
+  double get dx => _dx;
+
+  set dx(double value) {
+    if (value == _dx) return;
+    _dx = value;
+    markNeedsPaint();
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) => super.paint(context, offset.translate(_dx, 0));
+
+  @override
+  void applyPaintTransform(RenderObject child, Matrix4 transform) => transform.translateByDouble(_dx, 0, 0, 1);
+
+  @override
+  bool hitTestChildren(
+    SliverHitTestResult result, {
+    required double mainAxisPosition,
+    required double crossAxisPosition,
+  }) => super.hitTestChildren(result, mainAxisPosition: mainAxisPosition, crossAxisPosition: crossAxisPosition - _dx);
+}
+
+/// The old tab's content as a picture, and where it showed in the content stack.
+typedef _ContentSnapshot = ({ui.Image image, Offset offset, Size size, double pixelRatio});
+
+/// Paints the tab content in its own layer, so a tab change can take a picture of it and only moves that layer.
+class _SliverSnapshot extends SingleChildRenderObjectWidget {
+  const _SliverSnapshot({super.key, required Widget sliver}) : super(child: sliver);
+
+  @override
+  _RenderSliverSnapshot createRenderObject(BuildContext context) => _RenderSliverSnapshot();
+}
+
+class _RenderSliverSnapshot extends RenderProxySliver {
+  @override
+  bool get isRepaintBoundary => true;
+
+  /// The visible part of the content as last painted, or null when nothing of it shows.
+  _ContentSnapshot? capture(RenderBox ancestor, double pixelRatio) {
+    final ContainerLayer? painted = layer;
+    final SliverGeometry? shown = geometry;
+    if (!attached || painted is! OffsetLayer || shown == null || shown.paintExtent <= 0) return null;
+    final Size size = Size(constraints.crossAxisExtent, shown.paintExtent);
+    return (
+      image: painted.toImageSync(Offset.zero & size, pixelRatio: pixelRatio),
+      offset: MatrixUtils.transformPoint(getTransformTo(ancestor), Offset.zero),
+      size: size,
+      pixelRatio: pixelRatio,
     );
   }
 }

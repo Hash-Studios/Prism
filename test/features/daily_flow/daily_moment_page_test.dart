@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/coins/daily_chest.dart';
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/daily_flow/views/daily_moment_page.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
@@ -148,6 +150,8 @@ void main() {
         expect(paragraph.maxLines, isNull);
         expect(tester.takeException(), isNull);
         if (index < labels.length - 1) {
+          // The action sits in the content, so at 3x text it can be below the fold.
+          await tester.ensureVisible(label);
           await tester.tap(label);
           await tester.pump();
           await tester.pump(const Duration(seconds: 1));
@@ -156,4 +160,22 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }
+
+  testWidgets('the hero is a cover mosaic carrying Glint, not a bare halo', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: Scaffold(body: DailyMomentContent(repository: FakeDailyMomentRepository())),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(CoverMosaic), findsOneWidget);
+    expect(find.byType(GlintHalo), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }

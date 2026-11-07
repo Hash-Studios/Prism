@@ -248,7 +248,6 @@ class _WatchSetSheetState extends State<WatchSetSheet> {
   Future<void> _share() async {
     final String? copy = _shareCopy;
     if (copy == null) return;
-    PrismHaptics.tap();
     try {
       await ShareService.shareFile(file: File(copy), text: '', context: context);
     } catch (error, stackTrace) {
@@ -352,7 +351,12 @@ class _WatchSetSheetState extends State<WatchSetSheet> {
                         icon: Icons.watch_rounded,
                         title: watchFormatLabel(l10n, format),
                         subtitle: l10n.watchSetChangeWatch,
-                        onTap: _saving ? null : () => setState(() => _step = _Step.pick),
+                        onTap: _saving
+                            ? null
+                            : () {
+                                PrismHaptics.tap();
+                                setState(() => _step = _Step.pick);
+                              },
                       ),
                     ],
                   ),

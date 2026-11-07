@@ -69,6 +69,7 @@ class _WallpaperImpressionState extends State<WallpaperImpression>
   bool _initialized = false;
   Duration? _visibleSince;
   bool _recorded = false;
+  bool _checkScheduled = false;
   late WallpaperImpressionSession _session;
 
   @override
@@ -118,7 +119,7 @@ class _WallpaperImpressionState extends State<WallpaperImpression>
         oldWidget.provider != widget.provider) {
       _visibleSince = null;
       _recorded = false;
-      if (widget.session != null) _session = widget.session!;
+      _session = widget.session ?? WallpaperImpressionSession.forContext(context);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _check();
       });
@@ -146,25 +147,26 @@ class _WallpaperImpressionState extends State<WallpaperImpression>
     return !visible.isEmpty && visible.width * visible.height >= bounds.width * bounds.height * 0.5;
   }
 
+  // One check per frame, after layout: the scroll offset changes before the tiles move.
   void _onScroll() {
-    _check();
+    if (_recorded || _checkScheduled) return;
+    _checkScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkScheduled = false;
       if (mounted) _check();
     });
   }
 
   void _check() {
     if (!mounted || _recorded) return;
+    if (SchedulerBinding.instance.schedulerPhase != SchedulerPhase.postFrameCallbacks) {
+      _onScroll();
+      WidgetsBinding.instance.ensureVisualUpdate();
+      return;
+    }
     if (!_isVisible()) {
       _visibleSince = null;
       _ticker.stop();
-      return;
-    }
-    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.idle) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _check();
-      });
-      WidgetsBinding.instance.ensureVisualUpdate();
       return;
     }
     final Duration now = SchedulerBinding.instance.currentFrameTimeStamp;

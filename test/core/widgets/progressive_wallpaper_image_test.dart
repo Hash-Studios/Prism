@@ -221,6 +221,44 @@ void main() {
     expect(_imageFrom(_thumb), findsNothing);
   });
 
+  testWidgets('paints the wall colour before any picture decodes and keeps it under the pictures', (tester) async {
+    const Color wallColour = Color(0xFF884422);
+    wallCache.gates[_thumb] = Completer<void>();
+    wallCache.gates[_full] = Completer<void>();
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display(), placeholderColor: wallColour)));
+    await tester.pump();
+
+    expect(_visibleImageFrames(tester), 0);
+    final Finder colour = find.byWidgetPredicate((Widget widget) => widget is ColoredBox && widget.color == wallColour);
+    expect(colour, findsOneWidget);
+
+    wallCache.gates[_thumb]!.complete();
+    await _pumpUntil(tester, () => _painted(tester).contains(_thumb));
+    final Stack stack = tester.widget<Stack>(
+      find.descendant(of: find.byType(ProgressiveWallpaperImage), matching: find.byType(Stack)).first,
+    );
+    expect(stack.children.first, isA<ColoredBox>());
+    wallCache.gates[_full]!.complete();
+    await _pumpUntil(tester, () => _painted(tester).contains(_full));
+    await tester.pump(const Duration(milliseconds: 300));
+  });
+
+  testWidgets('without a wall colour paints nothing before a picture decodes', (tester) async {
+    wallCache.gates[_thumb] = Completer<void>();
+    wallCache.gates[_full] = Completer<void>();
+    await tester.pumpWidget(_app(ProgressiveWallpaperImage(display: _display())));
+    await tester.pump();
+
+    expect(
+      find.descendant(of: find.byType(ProgressiveWallpaperImage), matching: find.byType(ColoredBox)),
+      findsNothing,
+    );
+    wallCache.gates[_thumb]!.complete();
+    wallCache.gates[_full]!.complete();
+    await _pumpUntil(tester, () => _painted(tester).contains(_full));
+    await tester.pump(const Duration(milliseconds: 300));
+  });
+
   testWidgets('reports the full picture size once it paints, never the thumbnail size', (tester) async {
     final List<Size> sizes = <Size>[];
     wallCache.responses[_full] = (await tester.runAsync(() => _pngOf(3, 2)))!;

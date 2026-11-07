@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -189,12 +190,36 @@ class _AutoRotateScreenState extends State<AutoRotateScreen> {
     return PrismPage(
       title: context.l10n.wallpaperAutoRotateTitle,
       body: !_isAndroid
-          ? GlintState(
-              kind: GlintStateKind.empty,
-              title: context.l10n.autoRotateIosTitle,
-              body: context.l10n.autoRotateIosBody,
-              actionLabel: context.l10n.autoRotateIosAction,
-              onAction: () => context.router.replace(IosShortcutsGuideRoute(source: 'auto_rotate')),
+          ? ListView(
+              padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, PrismSpace.xl),
+              children: <Widget>[
+                const Center(child: Glint()),
+                const SizedBox(height: PrismSpace.md),
+                Text(
+                  context.l10n.autoRotateIosTitle,
+                  textAlign: TextAlign.center,
+                  style: PrismTextStyles.cardTitle(context),
+                ),
+                const SizedBox(height: PrismSpace.xs),
+                Text(context.l10n.autoRotateIosBody, textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
+                const SizedBox(height: PrismSpace.xl),
+                PrismGroup(
+                  children: <Widget>[
+                    for (final (int i, String step) in <String>[
+                      context.l10n.shortcutsStepAddTitle,
+                      context.l10n.shortcutsStepAutomationTitle,
+                      context.l10n.shortcutsStepTestTitle,
+                    ].indexed)
+                      PrismRow(leading: _StepNumber(i + 1), title: step, showChevron: false),
+                  ],
+                ),
+                const SizedBox(height: PrismSpace.xl),
+                PrismButton(
+                  label: context.l10n.autoRotateIosAction,
+                  expand: true,
+                  onPressed: () => context.router.replace(IosShortcutsGuideRoute(source: 'auto_rotate')),
+                ),
+              ],
             )
           : BlocBuilder<AutoRotateBloc, AutoRotateState>(
               builder: (context, state) {
@@ -678,7 +703,10 @@ Future<void> _pickCategory(BuildContext context, String current) async {
               title: name,
               showChevron: false,
               trailing: name == current ? const Icon(Icons.check_rounded, size: 20) : null,
-              onTap: () => Navigator.of(sheetContext).pop(name),
+              onTap: () {
+                PrismHaptics.selection();
+                Navigator.of(sheetContext).pop(name);
+              },
             ),
         ],
       ),
@@ -739,6 +767,27 @@ class _ProgressRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(PrismRadius.pill),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StepNumber extends StatelessWidget {
+  const _StepNumber(this.number);
+
+  final int number;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return ExcludeSemantics(
+      child: CircleAvatar(
+        radius: 14,
+        backgroundColor: cs.primary.withValues(alpha: 0.14),
+        child: Text(
+          '$number',
+          style: PrismTextStyles.caption(context).copyWith(color: cs.primary, fontWeight: FontWeight.w700),
+        ),
       ),
     );
   }

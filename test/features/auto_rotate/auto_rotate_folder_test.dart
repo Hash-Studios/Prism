@@ -11,6 +11,7 @@ import 'package:Prism/features/auto_rotate/data/repositories/auto_rotate_reposit
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/auto_rotate/domain/repositories/auto_rotate_repository.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/wall_of_the_day/domain/repositories/wall_of_the_day_repository.dart';
@@ -133,23 +134,34 @@ void main() {
 
     test('keeps the safe walls in order and drops the Prism original', () async {
       when(() => folders.fetchItems('f1', userId: 'u1', limit: 100)).thenAnswer(
-        (_) async => Result.success<List<FavouriteWallEntity>?>(<FavouriteWallEntity>[
-          WallhavenFavouriteWall(
-            id: 'wh1',
-            wallpaper: WallhavenWallpaper(
-              core: WallpaperCore(id: 'wh1', source: WallpaperSource.wallhaven, fullUrl: _wallhaven, thumbnailUrl: ''),
+        (_) async => Result.success<List<FolderItem>?>(<FolderItem>[
+          const FolderItem(
+            WallhavenFavouriteWall(
+              id: 'wh1',
+              wallpaper: WallhavenWallpaper(
+                core: WallpaperCore(
+                  id: 'wh1',
+                  source: WallpaperSource.wallhaven,
+                  fullUrl: _wallhaven,
+                  thumbnailUrl: '',
+                ),
+              ),
             ),
           ),
-          PexelsFavouriteWall(
-            id: 'px1',
-            wallpaper: PexelsWallpaper(
-              core: WallpaperCore(id: 'px1', source: WallpaperSource.pexels, fullUrl: _pexels, thumbnailUrl: ''),
+          const FolderItem(
+            PexelsFavouriteWall(
+              id: 'px1',
+              wallpaper: PexelsWallpaper(
+                core: WallpaperCore(id: 'px1', source: WallpaperSource.pexels, fullUrl: _pexels, thumbnailUrl: ''),
+              ),
             ),
           ),
-          PrismFavouriteWall(
-            id: 'p1',
-            wallpaper: PrismWallpaper(
-              core: WallpaperCore(id: 'p1', source: WallpaperSource.prism, fullUrl: _prism, thumbnailUrl: ''),
+          const FolderItem(
+            PrismFavouriteWall(
+              id: 'p1',
+              wallpaper: PrismWallpaper(
+                core: WallpaperCore(id: 'p1', source: WallpaperSource.prism, fullUrl: _prism, thumbnailUrl: ''),
+              ),
             ),
           ),
         ]),
@@ -164,7 +176,7 @@ void main() {
     test('a folder that is gone is found false with no walls', () async {
       when(
         () => folders.fetchItems('f1', userId: 'u1', limit: 100),
-      ).thenAnswer((_) async => Result.success<List<FavouriteWallEntity>?>(null));
+      ).thenAnswer((_) async => Result.success<List<FolderItem>?>(null));
 
       final result = await repository.loadFolderUrls('f1', userId: 'u1');
 
@@ -175,7 +187,7 @@ void main() {
     test('a failed read returns null', () async {
       when(
         () => folders.fetchItems('f1', userId: 'u1', limit: 100),
-      ).thenAnswer((_) async => Result.error<List<FavouriteWallEntity>?>(const NetworkFailure('offline')));
+      ).thenAnswer((_) async => Result.error<List<FolderItem>?>(const NetworkFailure('offline')));
 
       expect(await repository.loadFolderUrls('f1', userId: 'u1'), isNull);
     });
@@ -183,7 +195,7 @@ void main() {
     test('an empty folder is found with no walls', () async {
       when(
         () => folders.fetchItems('f1', userId: 'u1', limit: 100),
-      ).thenAnswer((_) async => Result.success<List<FavouriteWallEntity>?>(<FavouriteWallEntity>[]));
+      ).thenAnswer((_) async => Result.success<List<FolderItem>?>(<FolderItem>[]));
 
       final result = await repository.loadFolderUrls('f1', userId: 'u1');
 

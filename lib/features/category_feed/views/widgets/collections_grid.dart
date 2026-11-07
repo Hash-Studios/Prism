@@ -10,6 +10,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart' as c_data;
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
@@ -231,13 +232,10 @@ class _CollectionsGridState extends State<CollectionsGrid> {
         )
         .toList(growable: false);
 
-    return RefreshIndicator(
+    return PrismRefresh(
       onRefresh: () {
-        PrismHaptics.impact();
         return refreshList();
       },
-      color: Theme.of(context).colorScheme.primary,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       child: CustomScrollView(
         physics: AlwaysScrollableScrollPhysics(parent: ScrollConfiguration.of(context).getScrollPhysics(context)),
         slivers: <Widget>[

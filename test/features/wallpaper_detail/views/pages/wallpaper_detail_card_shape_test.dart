@@ -126,7 +126,7 @@ void main() {
     expect(_aspect(midway), lessThan(16 / 9 - 0.01));
     final Rect imageRect = tester.getRect(find.byType(WallpaperDetailHero));
     final Rect backRect = tester.getRect(find.byTooltip('Back'));
-    expect(backRect.left, closeTo(imageRect.left + 4, 1));
+    expect(backRect.left, closeTo(imageRect.left + 12, 1));
 
     await tester.pump(const Duration(milliseconds: 400));
     expect(_aspect(card(tester)), closeTo(16 / 9, 0.01));
@@ -194,7 +194,7 @@ void main() {
     expect(card(tester), opened);
   });
 
-  testWidgets('status bar fade follows the visible card while its shape eases', (tester) async {
+  testWidgets('the solid header follows the visible card while its shape eases', (tester) async {
     final FeedItemEntity sizeless = _wall();
     final List<FeedItemEntity> recommendations = <FeedItemEntity>[
       for (var i = 0; i < 12; i++) _wall(id: 'recommendation-$i', width: 900, height: 1600),
@@ -213,8 +213,8 @@ void main() {
       ),
     );
     final ScrollPosition position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
-    expect(position.maxScrollExtent, greaterThan(370));
-    position.jumpTo(370);
+    expect(position.maxScrollExtent, greaterThan(300));
+    position.jumpTo(300);
     await tester.pump();
 
     states.add(
@@ -227,21 +227,20 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 16));
-    expect(card(tester).height, greaterThan(position.pixels));
+    // Back and the clock end 48 points under the card top.
+    expect(card(tester).height - 48, greaterThan(position.pixels));
 
-    final AnimatedOpacity fade = tester.widget<AnimatedOpacity>(
-      find.byKey(const ValueKey<String>('detail-status-fade')),
-    );
-    expect(fade.opacity, 0, reason: 'the card still extends below the status bar during its shape morph');
+    final AnimatedOpacity fade = tester.widget<AnimatedOpacity>(find.byKey(const ValueKey<String>('detail-header')));
+    expect(fade.opacity, 0, reason: 'the card still extends below back during its shape morph');
     SystemUiOverlayStyle overlay() =>
         tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(find.byType(AnnotatedRegion<SystemUiOverlayStyle>)).value;
     expect(overlay().statusBarIconBrightness, Brightness.light);
 
     await tester.pump(const Duration(milliseconds: 400));
     final AnimatedOpacity settledFade = tester.widget<AnimatedOpacity>(
-      find.byKey(const ValueKey<String>('detail-status-fade')),
+      find.byKey(const ValueKey<String>('detail-header')),
     );
-    expect(settledFade.opacity, 1, reason: 'the feed is below the now-shorter card');
+    expect(settledFade.opacity, 1, reason: 'the now-shorter card has scrolled past back');
     expect(overlay().statusBarIconBrightness, Brightness.dark);
   });
 

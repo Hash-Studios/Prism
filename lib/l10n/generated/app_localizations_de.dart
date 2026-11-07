@@ -700,7 +700,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get accountSpatialSceneSemanticLabel => 'Räumlich, Walls mit klarer 3D-Tiefe';
 
   @override
-  String get accountDownloadApk => 'APK HERUNTERLADEN';
+  String get accountDownloadApk => 'APK herunterladen';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -744,7 +744,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get accountFavouritesCleared => 'Alle favorisierten Hintergrundbilder entfernt.';
 
   @override
-  String get accountFeedback => 'FEEDBACK';
+  String get accountFeedback => 'Feedback';
 
   @override
   String get accountFeedbackSubject => 'Prism-Feedback';
@@ -1149,7 +1149,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get accountPrismPro => 'Prism Pro';
 
   @override
-  String get accountPrivacyAction => 'DATENSCHUTZ';
+  String get accountPrivacyAction => 'Datenschutzerklärung';
 
   @override
   String get accountPrivacyAndData => 'Datenschutz und Daten';
@@ -1220,7 +1220,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get accountQuickTiles => 'Schnelleinstellungen';
 
   @override
-  String get accountRateApp => 'BEWERTEN';
+  String get accountRateApp => 'Bewerten';
 
   @override
   String get accountRecentSearches => 'Letzte Suchanfragen';
@@ -1288,11 +1288,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get accountRestoringPurchases => 'Käufe werden wiederhergestellt…';
-
-  @override
-  String accountResultsForQuery(String query) {
-    return 'Ergebnisse für $query';
-  }
 
   @override
   String get accountRetry => 'Erneut versuchen';
@@ -1417,16 +1412,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get accountSignInToPrism => 'Bei Prism anmelden';
 
   @override
-  String get accountSocialGithub => 'GITHUB';
+  String get accountSocialGithub => 'GitHub';
 
   @override
-  String get accountSocialInstagram => 'INSTAGRAM';
+  String get accountSocialInstagram => 'Instagram';
 
   @override
-  String get accountSocialTelegram => 'TELEGRAM';
+  String get accountSocialTelegram => 'Telegram';
 
   @override
-  String get accountSocialTwitter => 'TWITTER';
+  String get accountSocialTwitter => 'Twitter';
 
   @override
   String get accountSomethingWentWrongTryAgain => 'Etwas ist schiefgelaufen. Versuche es erneut.';
@@ -1467,7 +1462,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get accountTerms => 'Bedingungen';
 
   @override
-  String get accountTermsAction => 'BEDINGUNGEN';
+  String get accountTermsAction => 'Nutzungsbedingungen';
 
   @override
   String accountTermsAgreementSemanticLabel(String terms, String privacy) {
@@ -1581,7 +1576,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get accountWhatsNew => 'Neuigkeiten';
 
   @override
-  String get accountWhatsNewAction => 'NEUIGKEITEN';
+  String get accountWhatsNewAction => 'Neuigkeiten';
 
   @override
   String get accountWriteBio => 'Biografie schreiben';
@@ -3244,6 +3239,26 @@ class AppLocalizationsDe extends AppLocalizations {
   String get diwaliAnnouncementBody => 'Diyas, Feuerwerk und Gold. Es ist kostenlos. Tippen zum Ausprobieren.';
 
   @override
+  String get coreThemeWinter => 'Winter';
+
+  @override
+  String get winterBannerTitle => 'Das Winter-Theme ist da';
+
+  @override
+  String get winterBannerSubtitle =>
+      'Kühles Blau und sanfter Schnee, hell und dunkel. Kostenlos. Tippen zum Ausprobieren.';
+
+  @override
+  String get winterAnnouncementTitle => 'Neu: das Winter-Theme ❄️';
+
+  @override
+  String get winterAnnouncementBody =>
+      'Kühles Blau und sanfter Schnee für die Feiertage. Es ist kostenlos. Tippen zum Ausprobieren.';
+
+  @override
+  String get winterNewYearGreeting => 'Frohes neues Jahr';
+
+  @override
   String get coreThisPageDoesNotExist => 'Diese Seite gibt es nicht';
 
   @override
@@ -3350,6 +3365,21 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get coreWallpaperErrorTextureDimensions => 'Dieses Bild ist zu groß für ein Live-Hintergrundbild.';
+
+  @override
+  String get coreWallpaperStillSetting =>
+      'Dein Hintergrund wird noch gesetzt. Das kann auf manchen Handys einen Moment dauern.';
+
+  @override
+  String get coreWallpaperLockFailedUsePhone =>
+      'Der Sperrbildschirm konnte nicht gesetzt werden. Der Hintergrund-Bildschirm deines Handys kann ihn setzen.';
+
+  @override
+  String get coreWallpaperHomeSetLockFailedUsePhone =>
+      'Startbildschirm gesetzt. Der Sperrbildschirm konnte nicht gesetzt werden. Der Hintergrund-Bildschirm deines Handys kann ihn setzen.';
+
+  @override
+  String get coreWallpaperSetWithPhone => 'Mit Handy setzen';
 
   @override
   String get coreWallpaperErrorTimeout => 'Zeitüberschreitung. Prüfe deine Verbindung und versuch es erneut.';
@@ -4031,6 +4061,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get deepLinkInputLiveTitle => 'Live-Hintergrundbild';
+
+  @override
+  String get deepLinkInputLiveDescription =>
+      'Wähle ein Foto aus deiner Galerie, um daraus ein Live-Hintergrundbild zu machen.';
 
   @override
   String get deepLinkInputPhotoPreviewTitle => 'Fotovorschau';
@@ -4940,6 +4974,14 @@ class AppLocalizationsDe extends AppLocalizations {
 
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString Coins', one: '1 Coin');
     return '+$_temp0';
+  }
+
+  @override
+  String economyCoinReward(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '+$countString';
   }
 
   @override
@@ -6053,7 +6095,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
     String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '$daysString T.', one: '1 T.');
     String _temp1 = intl.Intl.pluralLogic(hours, locale: localeName, other: '$hoursString Std.', one: '1 Std.');
-    return 'Wird Montag um 00:00 UTC zurückgesetzt · noch $_temp0 $_temp1';
+    return 'Wird in $_temp0 $_temp1 zurückgesetzt';
   }
 
   @override
@@ -6943,7 +6985,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get economyWeekComplete => 'Woche abgeschlossen!';
 
   @override
-  String get economyWeekly => 'WÖCHENTLICH';
+  String get economyWeekly => 'Wöchentlich';
 
   @override
   String get economyWeeklyDraw => 'Wöchentliche Verlosung';
@@ -6953,7 +6995,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String economyWeeklyEndsIn(String time) {
-    return 'WÖCHENTLICH · $time';
+    return 'Wöchentlich · $time';
   }
 
   @override
@@ -7049,9 +7091,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
     return 'Du hast $countString Coins';
   }
-
-  @override
-  String get economyYourXp => 'DEINE XP';
 
   @override
   String get errorGeneric => 'Etwas ist schiefgelaufen. Bitte versuch es erneut.';
@@ -7192,20 +7231,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get notifGenericTitle => 'Benachrichtigung';
-
-  @override
-  String notifGroupAndMore(String message, int otherCount) {
-    final intl.NumberFormat otherCountNumberFormat = intl.NumberFormat.decimalPattern(localeName);
-    final String otherCountString = otherCountNumberFormat.format(otherCount);
-
-    String _temp0 = intl.Intl.pluralLogic(
-      otherCount,
-      locale: localeName,
-      other: '$otherCountString weitere.',
-      one: '1 weitere.',
-    );
-    return '$message und $_temp0';
-  }
 
   @override
   String notifGroupApprovals(int count) {
@@ -7814,7 +7839,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get onboardingRecoverySignIn => 'Erneut anmelden';
 
   @override
-  String get onboardingReloadLower => 'neu laden';
+  String get onboardingReloadLower => 'Neu laden';
 
   @override
   String get onboardingSavePhotos => 'In Fotos speichern';
@@ -7831,19 +7856,19 @@ class AppLocalizationsDe extends AppLocalizations {
   String get onboardingSetWallpaper => 'Als Hintergrundbild festlegen';
 
   @override
-  String get onboardingSignInAgainLower => 'erneut anmelden';
+  String get onboardingSignInAgainLower => 'Erneut anmelden';
 
   @override
   String get onboardingSkip => 'Überspringen';
 
   @override
-  String get onboardingSkipLower => 'überspringen';
+  String get onboardingSkipLower => 'Überspringen';
 
   @override
   String get onboardingTermsRequired => 'Bitte stimme zuerst den Nutzungsbedingungen und der Datenschutzerklärung zu.';
 
   @override
-  String get onboardingTryAgainLower => 'erneut versuchen';
+  String get onboardingTryAgainLower => 'Erneut versuchen';
 
   @override
   String onboardingWallpaperForInterest(String category) {
@@ -7876,12 +7901,37 @@ class AppLocalizationsDe extends AppLocalizations {
   String get premiumPageViewPlans => 'Abos ansehen';
 
   @override
+  String get premiumPageHeadline => 'Die ganze Galerie, freigeschaltet';
+
+  @override
+  String get premiumBenefitWalls => 'Alle Premium-Sammlungen und -Hintergrundbilder';
+
+  @override
+  String get premiumBenefitFree => 'Kostenlose Downloads und keine Werbung';
+
+  @override
+  String get premiumBenefitSpin => 'Jeden Tag ein Gratisdreh';
+
+  @override
+  String get premiumBenefitAutomation => 'Automatischer Wechsel und Tag-und-Nacht-Modus';
+
+  @override
+  String get premiumBenefitLiveStyles => 'Alle Stile für Live-Hintergrundbilder';
+
+  @override
+  String get premiumBenefitAiClean => 'KI-Hintergrundbilder ohne Wasserzeichen, für weniger Coins';
+
+  @override
   String get premiumGuestStorePurchaseActive =>
       'Dein Store-Kauf ist auf diesem Gerät aktiv. Melde dich an, um kontobasierte Pro-Funktionen zu nutzen.';
 
   @override
   String get premiumPurchasePending =>
       'Dein Kauf wurde gespeichert. Es kann eine Minute dauern, bis Pro freigeschaltet wird.';
+
+  @override
+  String get premiumPaymentPending =>
+      'Deine Zahlung ist noch ausstehend. Pro wird freigeschaltet, sobald die Zahlung durch ist.';
 
   @override
   String get premiumPurchaseUnconfirmed =>
@@ -9721,7 +9771,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get wallpaperThemeModeLight => 'Hell';
 
   @override
-  String get wallpaperThemeModeSystem => 'System (hell/dunkel)';
+  String get wallpaperThemeModeSystem => 'System';
 
   @override
   String get wallpaperThemePreference => 'Design-Einstellung';
@@ -12168,7 +12218,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String challengeVotingRules(String date) {
-    return 'Stimme bis $date UTC für andere ab.';
+    return 'Stimme bis $date für andere ab.';
   }
 
   @override
@@ -12894,6 +12944,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get creatorsToFollow => 'Kreative zum Folgen';
+
+  @override
+  String get accountBrowseCreators => 'Kreative entdecken';
 
   @override
   String get creatorsSeeAll => 'Alle ansehen';
@@ -14334,6 +14387,35 @@ class AppLocalizationsDe extends AppLocalizations {
   String get searchPhotoCouldNotOpen => 'Dieses Foto konnte nicht geöffnet werden. Versuch ein anderes.';
 
   @override
+  String get searchMoreWallpapers => 'Weitere Hintergrundbilder';
+
+  @override
+  String get wallpaperPreviewNoEvents => 'Heute keine Termine';
+
+  @override
+  String accountFollowersLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Follower', one: 'Follower');
+    return '$_temp0';
+  }
+
+  @override
+  String profileBadgeCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Abzeichen',
+      one: '1 Abzeichen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get economyLeaderboardTopThisWeek => 'Top dieser Woche';
+
+  @override
   String get foldersSaveAll => 'Alle speichern';
 
   @override
@@ -14842,6 +14924,210 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get foldersMakePrivateMessageShared =>
       'Nur du und die Personen, die du eingeladen hast, sehen ihn. Sein Link funktioniert nicht mehr und seine Follower verlieren ihn.';
+
+  @override
+  String get gestureHintHoldToSave => 'Gedrückt halten zum Speichern';
+
+  @override
+  String get gestureHintSwipeForSimilar => 'Nach oben wischen für ähnliche Wallpaper';
+
+  @override
+  String get foldersSectionAdd => 'Abschnitt hinzufügen';
+
+  @override
+  String get foldersSectionNewTitle => 'Neuer Abschnitt';
+
+  @override
+  String get foldersSectionNameHint => 'Zum Beispiel Sperrbildschirm';
+
+  @override
+  String get foldersSectionRenameTitle => 'Abschnitt umbenennen';
+
+  @override
+  String get foldersSectionDelete => 'Abschnitt löschen';
+
+  @override
+  String foldersSectionDeleteTitle(String name) {
+    return '$name löschen?';
+  }
+
+  @override
+  String foldersSectionDeleteMessage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Seine $count Hintergrundbilder werden nach „Nicht sortiert“ verschoben.',
+      one: 'Sein Hintergrundbild wird nach „Nicht sortiert“ verschoben.',
+      zero: 'Der Abschnitt ist leer.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionUnsorted => 'Nicht sortiert';
+
+  @override
+  String get foldersSectionReorder => 'Abschnitte neu anordnen';
+
+  @override
+  String foldersSectionDragHandle(String name) {
+    return 'Ziehen, um $name zu verschieben';
+  }
+
+  @override
+  String foldersSectionWallCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Hintergrundbilder',
+      one: '1 Hintergrundbild',
+      zero: 'Keine Hintergrundbilder',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionHeaderLabel(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Hintergrundbilder',
+      one: '1 Hintergrundbild',
+      zero: 'keine Hintergrundbilder',
+    );
+    return '$name, $_temp0';
+  }
+
+  @override
+  String foldersSectionJumpTo(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Hintergrundbilder',
+      one: '1 Hintergrundbild',
+      zero: 'keine Hintergrundbilder',
+    );
+    return 'Zu $name gehen, $_temp0';
+  }
+
+  @override
+  String foldersSectionOptions(String name) {
+    return 'Weitere Optionen für $name';
+  }
+
+  @override
+  String get foldersSectionSaveAll => 'Abschnitt speichern';
+
+  @override
+  String get foldersSectionMoveTo => 'In Abschnitt verschieben';
+
+  @override
+  String get foldersSectionMoveTitle => 'Verschieben nach';
+
+  @override
+  String foldersSectionMoved(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Hintergrundbilder nach $name verschoben.',
+      one: '1 Hintergrundbild nach $name verschoben.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionSelect => 'Hintergrundbilder auswählen';
+
+  @override
+  String foldersSectionSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ausgewählt',
+      one: '1 ausgewählt',
+      zero: 'Tippe auf Hintergrundbilder, um sie auszuwählen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionsFull(int max) {
+    return 'Ein Ordner kann bis zu $max Abschnitte haben.';
+  }
+
+  @override
+  String get foldersSectionEmpty => 'Noch keine Hintergrundbilder.';
+
+  @override
+  String get foldersSectionEmptyHint =>
+      'Ziehe Hintergrundbilder auf den Namen des Abschnitts oder nutze „In Abschnitt verschieben“.';
+
+  @override
+  String get foldersSectionSuggest => 'Abschnitte vorschlagen';
+
+  @override
+  String get foldersSuggestTitle => 'Vorgeschlagene Abschnitte';
+
+  @override
+  String get foldersSuggestBody => 'Gruppen deiner nicht sortierten Hintergrundbilder. Behalte die, die du willst.';
+
+  @override
+  String get foldersSuggestByMood => 'Stimmung';
+
+  @override
+  String get foldersSuggestByCategory => 'Kategorie';
+
+  @override
+  String get foldersSuggestByColour => 'Farbe';
+
+  @override
+  String foldersSuggestJoins(String count) {
+    return '$count. Kommt in deinen Abschnitt mit diesem Namen.';
+  }
+
+  @override
+  String foldersSuggestAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Abschnitte hinzufügen',
+      one: '1 Abschnitt hinzufügen',
+      zero: 'Abschnitte hinzufügen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSort(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Hintergrundbilder sortieren',
+      one: '1 Hintergrundbild sortieren',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSorted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Hintergrundbilder sortiert.',
+      one: '1 Hintergrundbild sortiert.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSuggestEmptyTitle => 'Keine Gruppen zum Vorschlagen';
+
+  @override
+  String get foldersSuggestEmptyBody =>
+      'Eine Gruppe braucht 2 oder mehr Prism-Hintergrundbilder in „Nicht sortiert“ mit derselben Stimmung, Kategorie oder Farbe.';
+
+  @override
+  String get foldersSuggestError => 'Vorschläge konnten nicht geladen werden';
 
   @override
   String get photoWallEntryTitle => 'Aus deinem Foto';

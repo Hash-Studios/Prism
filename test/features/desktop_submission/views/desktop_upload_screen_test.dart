@@ -6,6 +6,7 @@ import 'package:Prism/features/desktop_submission/domain/desktop_submit_failure.
 import 'package:Prism/features/desktop_submission/views/pages/desktop_upload_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeRepo implements DesktopSubmissionRepository {
@@ -152,6 +153,30 @@ void main() {
 
     expect(find.text('A desktop version of this wallpaper is already in review.'), findsOneWidget);
   });
+
+  testWidgets('unexpected submit errors show a retryable error and play only the outcome', (tester) async {
+    final _FakeRepo repo = _FakeRepo()..submitError = StateError('offline');
+    final List<Object?> haptics = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') haptics.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await pumpScreen(tester, repo: repo, measured: const Size(2560, 1600));
+    await pick(tester);
+    haptics.clear();
+
+    await tester.tap(find.text('Submit for review'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Unable to submit. Check your connection and try again.'), findsOneWidget);
+    expect(submitButton(tester).onPressed, isNotNull);
+    expect(submitButton(tester).loading, isFalse);
+    expect(haptics, <String>['HapticFeedbackType.errorNotification']);
+    await tester.tap(find.text('Submit for review'));
+    await tester.pumpAndSettle();
+    expect(repo.submitted, hasLength(2));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
   testWidgets('large text keeps both labels visible without an exception', (tester) async {
     await pumpScreen(tester, repo: _FakeRepo(), measured: const Size(2560, 1600), textScale: 2);

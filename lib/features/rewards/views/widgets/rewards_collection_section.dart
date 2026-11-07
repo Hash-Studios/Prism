@@ -3,6 +3,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/prism/prism_bits.dart';
@@ -220,52 +221,64 @@ class _CollectionCard extends StatelessWidget {
         : wallpaper.core.category!;
     final String caption = _caption(l10n);
     final String heroTag = prismHeroTag(context, index, 'rewards-collection-${wallpaper.id}');
-    return FavouriteWallpaperCard(
-      item: PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper),
-      enabled: unlocked,
-      child: Semantics(
-        button: true,
-        label: l10n.economyCollectionItemSemantics(category, unlocked.toString(), caption),
-        excludeSemantics: true,
-        onTap: () => _onTap(context),
-        child: PressScale(
-          scale: unlocked ? 0.96 : 0.98,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => _onTap(context),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Expanded(
-                  child: PrismWallTile(
-                    url: wallpaper.thumbnailUrl,
-                    heroTag: unlocked ? heroTag : null,
-                    overlay: unlocked
-                        ? null
-                        : ClipRRect(
-                            borderRadius: PrismWallGrid.tileRadius,
-                            child: ColoredBox(
-                              color: cs.scrim.withValues(alpha: 0.42),
-                              child: Center(
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: cs.scrim.withValues(alpha: 0.5),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(PrismSpace.xs + 1),
-                                    child: Icon(Icons.lock_outline_rounded, size: 18, color: Colors.white),
+    return Semantics(
+      button: true,
+      label: l10n.economyCollectionItemSemantics(category, unlocked.toString(), caption),
+      onTap: () => _onTap(context),
+      child: PressScale(
+        scale: unlocked ? 0.96 : 0.98,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _onTap(context),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                child: FavouriteWallpaperCard(
+                  item: PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper),
+                  enabled: unlocked,
+                  child: ExcludeSemantics(
+                    child: PrismWallTile(
+                      url: wallpaper.thumbnailUrl,
+                      placeholderColor: placeholderColorOf(
+                        PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper),
+                        Theme.of(context).colorScheme.surface,
+                      ),
+                      heroTag: unlocked ? heroTag : null,
+                      overlay: unlocked
+                          ? null
+                          : ClipRRect(
+                              borderRadius: PrismWallGrid.tileRadius,
+                              child: ColoredBox(
+                                color: cs.scrim.withValues(alpha: 0.42),
+                                child: Center(
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: cs.scrim.withValues(alpha: 0.5),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(PrismSpace.xs + 1),
+                                      child: Icon(Icons.lock_outline_rounded, size: 18, color: Colors.white),
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: PrismSpace.xs - 2),
-                Text(caption, maxLines: 2, overflow: TextOverflow.ellipsis, style: PrismTextStyles.caption(context)),
-              ],
-            ),
+              ),
+              const SizedBox(height: PrismSpace.xs - 2),
+              ExcludeSemantics(
+                child: Text(
+                  caption,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: PrismTextStyles.caption(context),
+                ),
+              ),
+            ],
           ),
         ),
       ),

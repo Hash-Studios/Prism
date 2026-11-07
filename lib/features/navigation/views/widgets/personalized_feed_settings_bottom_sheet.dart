@@ -233,18 +233,23 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
             child: KeyedSubtree(key: ValueKey<bool>(_learned.topTerms(1).isEmpty), child: _buildLearned(context)),
           ),
           const SizedBox(height: PrismSpace.md),
-          PrismButton(
-            label: context.l10n.tasteQuizRetake,
-            variant: PrismButtonVariant.tonal,
-            icon: Icons.compare_rounded,
-            expand: true,
-            loading: _loadingQuiz,
-            onPressed: _saving ? null : _retakeQuiz,
+          // Save is the one strong action in the sheet, so Retake is a quiet text action at the start edge.
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: PrismButton(
+              label: context.l10n.tasteQuizRetake,
+              variant: PrismButtonVariant.ghost,
+              size: PrismButtonSize.compact,
+              icon: Icons.compare_rounded,
+              loading: _loadingQuiz,
+              onPressed: _saving ? null : _retakeQuiz,
+            ),
           ),
           const SizedBox(height: PrismSpace.xl),
           ..._buildStartingPoints(context),
           const SizedBox(height: PrismSpace.xl),
           ..._buildDiscovery(context),
+          const SizedBox(height: PrismSpace.xxxl),
         ],
       ),
     );
@@ -260,11 +265,22 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
       children: <Widget>[
         _SectionLabel(
           title: context.l10n.wallpaperFeedLearnedFromYou,
-          trailing: PrismButton(
-            label: context.l10n.wallpaperClear,
-            variant: PrismButtonVariant.ghost,
-            size: PrismButtonSize.compact,
-            onPressed: _clearLearned,
+          // The ghost button takes its colour from onSurface. Clear is secondary, so it reads in onSurfaceVariant.
+          trailing: Builder(
+            builder: (BuildContext context) {
+              final ThemeData theme = Theme.of(context);
+              return Theme(
+                data: theme.copyWith(
+                  colorScheme: theme.colorScheme.copyWith(onSurface: theme.colorScheme.onSurfaceVariant),
+                ),
+                child: PrismButton(
+                  label: context.l10n.wallpaperClear,
+                  variant: PrismButtonVariant.ghost,
+                  size: PrismButtonSize.compact,
+                  onPressed: _clearLearned,
+                ),
+              );
+            },
           ),
         ),
         Wrap(

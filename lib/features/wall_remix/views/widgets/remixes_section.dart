@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -64,20 +65,23 @@ class _RemixesSectionState extends State<RemixesSection> {
 
   void _open(BuildContext context, List<PrismWallpaper> visible, int index) {
     final PrismWallpaper wall = visible[index];
-    context.router.push(
-      WallpaperDetailRoute(
-        entity: FeedItemEntity.prism(id: wall.id, wallpaper: wall),
-        heroTag: prismHeroTag(this, index, wall.id),
-        feed: WallpaperFeed(
-          grid: context,
-          tiles: [
-            for (final (int i, PrismWallpaper item) in visible.indexed)
-              (
-                item: FeedItemEntity.prism(id: item.id, wallpaper: item),
-                index: i,
-                heroTag: prismHeroTag(this, i, item.id),
-              ),
-          ],
+    PrismHaptics.tap();
+    unawaited(
+      context.router.push(
+        WallpaperDetailRoute(
+          entity: FeedItemEntity.prism(id: wall.id, wallpaper: wall),
+          heroTag: prismHeroTag(this, index, wall.id),
+          feed: WallpaperFeed(
+            grid: context,
+            tiles: [
+              for (final (int i, PrismWallpaper item) in visible.indexed)
+                (
+                  item: FeedItemEntity.prism(id: item.id, wallpaper: item),
+                  index: i,
+                  heroTag: prismHeroTag(this, i, item.id),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -114,7 +118,7 @@ class _RemixesSectionState extends State<RemixesSection> {
         Row(
           children: <Widget>[
             Semantics(header: true, child: Text(l10n.wallRemixesTitle, style: PrismTextStyles.rowTitle(context))),
-            const SizedBox(width: 8),
+            const SizedBox(width: PrismSpace.xs),
             Text(
               l10n.wallRemixesCount(total),
               style: PrismTextStyles.caption(context).copyWith(color: cs.onSurfaceVariant),
@@ -174,7 +178,7 @@ class _RemixesSectionState extends State<RemixesSection> {
             },
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: PrismSpace.sm),
       ],
     );
   }

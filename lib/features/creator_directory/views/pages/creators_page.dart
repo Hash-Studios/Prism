@@ -2,6 +2,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/generated/analytics_events.g.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/features/creator_directory/biz/creator_directory_cubit.dart';
 import 'package:Prism/features/creator_directory/views/widgets/creator_directory_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
@@ -116,7 +117,7 @@ class _Body extends StatelessWidget {
           if (index >= state.creators.length) {
             return const Padding(
               padding: EdgeInsets.all(PrismSpace.md),
-              child: Center(child: CircularProgressIndicator.adaptive()),
+              child: Center(child: PrismLoader()),
             );
           }
           final creator = state.creators[index];

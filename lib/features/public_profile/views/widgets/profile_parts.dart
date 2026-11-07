@@ -27,7 +27,10 @@ class ProfileSkeleton extends StatelessWidget {
                       bottom: -37,
                       child: DecoratedBox(
                         decoration: BoxDecoration(color: cs.surface, shape: BoxShape.circle),
-                        child: const Padding(padding: EdgeInsets.all(4), child: PrismBone.circle(size: 78)),
+                        child: const Padding(
+                          padding: EdgeInsets.all(PrismSpace.xxs),
+                          child: PrismBone.circle(size: 78),
+                        ),
                       ),
                     ),
                   ],

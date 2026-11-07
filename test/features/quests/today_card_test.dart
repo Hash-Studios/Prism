@@ -2,10 +2,12 @@ import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/daily_chest/daily_chest.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/quests/biz/bloc/quests_bloc.j.dart';
 import 'package:Prism/features/quests/views/widgets/chest_banner.dart';
+import 'package:Prism/features/quests/views/widgets/quest_tile.dart';
 import 'package:Prism/features/quests/views/widgets/today_card.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -273,6 +275,8 @@ void main() {
       find.bySemanticsLabel(RegExp('^${RegExp.escape(weeklySemanticsPrefix)}' + r'(\d+d \d+h|\d+h \d+m|\d+m)$')),
       findsOneWidget,
     );
+    // The three daily rows and the weekly row share one group.
+    expect(find.descendant(of: find.byType(PrismGroup), matching: find.byType(QuestTile)), findsNWidgets(4));
     expect(find.text(l10n.economyDailyChestTitle), findsOneWidget);
     expect(find.text(l10n.economyChestPriceFreeAfter(CoinPolicy.dailyChestPrice, 2)), findsOneWidget);
     expect(find.text(l10n.economyChestXpLine(10)), findsOneWidget);

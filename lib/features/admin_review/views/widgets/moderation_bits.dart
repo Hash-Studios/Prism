@@ -85,7 +85,14 @@ class ModerationThumb extends StatelessWidget {
       child: Semantics(
         button: true,
         label: semanticLabel,
-        child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: onTap, child: image),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            PrismHaptics.tap();
+            onTap!();
+          },
+          child: image,
+        ),
       ),
     );
   }

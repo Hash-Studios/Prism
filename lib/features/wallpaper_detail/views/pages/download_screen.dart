@@ -7,6 +7,7 @@ import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -164,7 +165,7 @@ class _DownloadsBodyState extends State<DownloadsBody> {
   }
 
   void _toggleSelected(File file) {
-    PrismHaptics.tap();
+    PrismHaptics.selection();
     setState(() {
       if (!_selected.remove(file.path)) _selected.add(file.path);
     });
@@ -205,29 +206,19 @@ class _DownloadsBodyState extends State<DownloadsBody> {
     if (paths.isEmpty) return;
     if (!await requireSignedInAction(context) || !mounted) return;
     final String userId = app_state.prismUser.id;
-    final bool confirmed =
-        await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(
-              paths.length == 1
-                  ? context.l10n.wallpaperDeleteOneDownloadTitle
-                  : context.l10n.wallpaperDeleteManyDownloadsTitle(paths.length),
-            ),
-            content: Text(
-              paths.length == 1
-                  ? context.l10n.wallpaperDeleteOneDownloadBody
-                  : context.l10n.wallpaperDeleteManyDownloadsBody,
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(context.l10n.actionCancel)),
-              TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(context.l10n.wallpaperDelete)),
-            ],
-          ),
-        ) ??
-        false;
+    final bool confirmed = await showPrismConfirm(
+      context,
+      title: paths.length == 1
+          ? context.l10n.wallpaperDeleteOneDownloadTitle
+          : context.l10n.wallpaperDeleteManyDownloadsTitle(paths.length),
+      message: paths.length == 1
+          ? context.l10n.wallpaperDeleteOneDownloadBody
+          : context.l10n.wallpaperDeleteManyDownloadsBody,
+      confirmLabel: context.l10n.wallpaperDelete,
+      cancelLabel: context.l10n.actionCancel,
+      destructive: true,
+    );
     if (!confirmed || !mounted || !app_state.prismUser.loggedIn || app_state.prismUser.id != userId) return;
-    PrismHaptics.tap();
     final Set<String> deleted = <String>{};
     final api = PrismMediaHostApi();
     for (final String path in paths) {
@@ -397,13 +388,7 @@ class _DownloadsBodyState extends State<DownloadsBody> {
           else if (showToolbar)
             _toolbar(context),
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: () {
-                PrismHaptics.impact();
-                return refreshList();
-              },
-              child: _content(context),
-            ),
+            child: PrismRefresh(onRefresh: refreshList, child: _content(context)),
           ),
           if (_selecting)
             SelectionActionBar(

@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/wallpaper/wall_desktop.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -6,6 +7,7 @@ import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.da
 import 'package:Prism/features/watch_set/views/watch_set_row.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 FeedItemEntity wall({bool hasDesktop = true, List<String>? tags}) => FeedItemEntity.prism(
@@ -65,5 +67,22 @@ void main() {
     await tester.pumpWidget(_host(wall()));
 
     expect(tester.getSize(find.byKey(const ValueKey<String>('watch-set-row'))).height, greaterThanOrEqualTo(44));
+  });
+
+  testWidgets('tapping the row plays one tap haptic', (tester) async {
+    const MethodChannel channel = MethodChannel('prism/haptics');
+    PrismHaptics.enabled = true;
+    final List<String> haptics = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'play') haptics.add(call.arguments! as String);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null));
+    await tester.pumpWidget(_host(wall()));
+
+    await tester.tap(find.byKey(const ValueKey<String>('watch-set-row')));
+    await tester.pump();
+
+    expect(haptics, <String>['tap']);
   });
 }

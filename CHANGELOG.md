@@ -1,5 +1,23 @@
 ## Changelog
 
+### v3.24.0
+- A calmer, more polished Prism: clearer type, steadier spacing and smoother motion on every screen
+- Walls load in their own colours first, then fade in
+- Swipe up on a wallpaper for More like this
+- Hold a wallpaper to open quick actions
+- Split a folder into named sections
+- Setting a wallpaper, downloads and restoring Pro recover better when something goes wrong
+- Security and stability fixes
+
+### v3.23.0
+- Search by photo: find walls that match a photo's colours and subject
+- Share a folder: invite up to 10 people to add walls with you
+- Save every wall in a folder with one tap
+- Follow a category or mood and get a daily push with new walls
+- Creators can add a desktop version to their approved walls
+- Editors' Choice loads again
+- Security and stability fixes
+
 ### v3.22.0
 - Open a wallpaper on your computer: scan the QR code or copy the short link from the share sheet
 - On Android 16, set a different live wallpaper on your Home and Lock screens

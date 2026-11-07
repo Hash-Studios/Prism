@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +21,10 @@ class OddsPill extends StatelessWidget {
         onTap: onTap,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: onTap,
+          onTap: () {
+            PrismHaptics.tap();
+            onTap();
+          },
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: height),
             child: Center(

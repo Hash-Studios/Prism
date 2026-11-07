@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wall_desktop.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
@@ -49,7 +52,10 @@ class WatchSetRow extends StatelessWidget {
       title: l10n.watchSetRowTitle,
       subtitle: wall.desktop == null ? l10n.watchSetRowSubtitle : l10n.watchSetRowSubtitleDesktop,
       padding: EdgeInsets.zero,
-      onTap: () => showWatchSetSheet(context, wall),
+      onTap: () {
+        PrismHaptics.tap();
+        unawaited(showWatchSetSheet(context, wall));
+      },
     );
   }
 }

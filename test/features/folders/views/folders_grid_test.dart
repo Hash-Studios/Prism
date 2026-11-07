@@ -12,6 +12,7 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_member.dart';
+import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
@@ -50,9 +51,20 @@ class _FakeFoldersRepository implements FoldersRepository {
   }
 
   @override
-  Future<Result<List<FavouriteWallEntity>?>> fetchItems(String folderId, {required String userId, int? limit}) async {
+  Future<Result<List<FolderItem>?>> fetchItems(String folderId, {required String userId, int? limit}) async {
     calls.add('fetchItems:$folderId');
-    return Result.success(const <FavouriteWallEntity>[]);
+    return Result.success(const <FolderItem>[]);
+  }
+
+  @override
+  Future<Result<void>> organize(
+    FolderEntity folder, {
+    required String userId,
+    List<FolderSection>? sections,
+    Map<String, String?> moves = const <String, String?>{},
+  }) async {
+    calls.add('organize:${folder.id}');
+    return Result.success<void>(null);
   }
 
   @override
@@ -135,7 +147,7 @@ class _NoPublicFolders implements PublicFoldersRepository {
   Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success<PublicFolderEntity?>(null);
 
   @override
-  Future<Result<List<String>>> fetchWallIds(String folderId) async => Result.success(<String>[]);
+  Future<Result<List<PublicFolderWall>>> fetchWallIds(String folderId) async => Result.success(<PublicFolderWall>[]);
 
   @override
   Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) async =>
@@ -413,7 +425,7 @@ void main() {
     expect(find.text('Could not load your folders'), findsNothing);
   });
 
-  testWidgets('signed in with folders shows a card per folder with its count and no New folder tile', (tester) async {
+  testWidgets('signed in with folders shows a New folder tile and a card per folder with its count', (tester) async {
     final _FakeFoldersRepository repo = _FakeFoldersRepository(
       folders: <FolderEntity>[
         _folder('work', 'Work'),
@@ -430,7 +442,7 @@ void main() {
     expect(find.text('No wallpapers'), findsOneWidget);
     expect(find.text('1 wallpaper'), findsOneWidget);
     expect(find.text('7 wallpapers'), findsOneWidget);
-    expect(find.text('New folder'), findsNothing);
+    expect(find.text('New folder'), findsOneWidget);
   });
 
   testWidgets('each folder card is a button labelled with its name and count', (tester) async {
@@ -461,9 +473,10 @@ void main() {
       ),
     );
 
-    final double workTop = tester.getTopLeft(find.text('Work')).dy;
-    expect(tester.getTopLeft(find.text('Trips')).dy, workTop);
-    expect(tester.getTopLeft(find.text('Gym')).dy, greaterThan(workTop));
+    // The New folder tile takes the first slot, so Work shares the first row with it.
+    final double firstRowTop = tester.getTopLeft(find.text('New folder')).dy;
+    expect(tester.getTopLeft(find.text('Work')).dy, firstRowTop);
+    expect(tester.getTopLeft(find.text('Trips')).dy, greaterThan(firstRowTop));
   });
 
   testWidgets('an 834 px tablet shows four folder columns', (tester) async {
@@ -484,11 +497,11 @@ void main() {
       ),
     );
 
-    final double workTop = tester.getTopLeft(find.text('Work')).dy;
-    for (final String name in <String>['Trips', 'Gym', 'Music']) {
-      expect(tester.getTopLeft(find.text(name)).dy, workTop);
+    final double firstRowTop = tester.getTopLeft(find.text('New folder')).dy;
+    for (final String name in <String>['Work', 'Trips', 'Gym']) {
+      expect(tester.getTopLeft(find.text(name)).dy, firstRowTop);
     }
-    expect(tester.getTopLeft(find.text('Books')).dy, greaterThan(workTop));
+    expect(tester.getTopLeft(find.text('Music')).dy, greaterThan(firstRowTop));
   });
 
   testWidgets('tapping a folder card pushes its folder route', (tester) async {

@@ -109,7 +109,7 @@ void main() {
       notification('a', title: 'News', body: 'Short line one'),
       notification('b', title: 'News', body: 'Line two'),
     ]);
-    expect(collapsedGroupSummaryLine(generic, l10n), 'Short line one and 1 more.');
+    expect(collapsedGroupSummaryLine(generic, l10n), 'Short line one');
   });
 
   test('wallLiveCreatorNameFromBody parses quoted title pattern', () {
@@ -142,36 +142,41 @@ void main() {
       notification('a', title: 'Reminder', body: 'Please update'),
       notification('b', title: 'Reminder', body: 'Please update'),
     ]);
-    expect(collapsedGroupSummaryLine(dup, l10n), 'Same message sent 2 times. Compare timestamps to see when.');
+    expect(collapsedGroupSummaryLine(dup, l10n), 'Please update');
   });
 
   group('time labels', () {
     final now = DateTime(2024, 6, 15, 18);
 
-    test('today shows the time, yesterday adds a prefix', () {
-      expect(
-        notificationTimeLabel(DateTime(2024, 6, 15, 9, 5), l10n: l10n, locale: locale, now: now),
-        DateFormat.jm(locale.toString()).format(DateTime(2024, 6, 15, 9, 5)),
-      );
-      expect(
-        notificationTimeLabel(DateTime(2024, 6, 14, 23, 30), l10n: l10n, locale: locale, now: now),
-        l10n.notifYesterdayAt(DateFormat.jm(locale.toString()).format(DateTime(2024, 6, 14, 23, 30))),
-      );
+    test('every row shows only the time, under its day header', () {
+      for (final DateTime t in <DateTime>[
+        DateTime(2024, 6, 15, 9, 5),
+        DateTime(2024, 6, 14, 23, 30),
+        DateTime(2024, 5, 15, 9, 5),
+        DateTime(2023, 6, 15, 9, 5),
+      ]) {
+        expect(
+          notificationTimeLabel(t, l10n: l10n, locale: locale, now: now),
+          DateFormat.jm(locale.toString()).format(t),
+        );
+      }
+    });
+
+    test('group children include dates relative to the current day', () {
+      for (final (date, expected) in <(DateTime, String)>[
+        (DateTime(2024, 6, 15, 9, 5), '9:05\u202fAM'),
+        (DateTime(2024, 6, 14, 9, 5), 'Yesterday, 9:05\u202fAM'),
+        (DateTime(2024, 5, 15, 9, 5), 'May 15'),
+        (DateTime(2023, 6, 15, 9, 5), 'Jun 15, 2023'),
+      ]) {
+        expect(notificationTimeLabel(date, l10n: l10n, locale: locale, now: now, includeDate: true), expected);
+      }
+    });
+
+    test('day headers stay relative', () {
       expect(wallOfTheDayRowDayLabel(DateTime(2024, 6, 15, 9), l10n: l10n, locale: locale, now: now), 'Today');
       expect(wallOfTheDayRowDayLabel(DateTime(2024, 6, 14, 9), l10n: l10n, locale: locale, now: now), 'Yesterday');
-    });
-
-    test('the same day of an earlier month is a dated label, not a bare time', () {
-      expect(notificationTimeLabel(DateTime(2024, 5, 15, 9, 5), l10n: l10n, locale: locale, now: now), 'May 15');
-      expect(notificationTimeLabel(DateTime(2023, 6, 15, 9, 5), l10n: l10n, locale: locale, now: now), 'Jun 15, 2023');
-    });
-
-    test('yesterday works across a month boundary', () {
-      final firstOfMonth = DateTime(2024, 7, 1, 8);
-      expect(
-        notificationTimeLabel(DateTime(2024, 6, 30, 22), l10n: l10n, locale: locale, now: firstOfMonth),
-        l10n.notifYesterdayAt(DateFormat.jm(locale.toString()).format(DateTime(2024, 6, 30, 22))),
-      );
+      expect(wallOfTheDayRowDayLabel(DateTime(2024, 5, 15, 9), l10n: l10n, locale: locale, now: now), 'May 15');
     });
   });
 }

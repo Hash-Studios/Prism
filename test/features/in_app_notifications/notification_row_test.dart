@@ -91,6 +91,25 @@ void main() {
     expect(find.byType(UnreadDot), findsNothing);
   });
 
+  testWidgets('expanded group children retain their own dates across years', (tester) async {
+    final old = notice().copyWith(createdAt: DateTime(2023, 5, 14, 9));
+    await pump(tester, NotificationRow(notification: old, compactInGroup: true));
+    expect(find.text('May 14, 2023'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('group child dates fit narrow screens with large text', (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final old = notice().copyWith(createdAt: DateTime(2023, 5, 14, 9));
+    await pump(tester, NotificationRow(notification: old, compactInGroup: true));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('valid attachment reserves preview space and failed image keeps notification text usable', (
     tester,
   ) async {

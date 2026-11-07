@@ -127,6 +127,7 @@ enums:
       - restored
       - guest_sign_in_required
       - rc_error
+      - payment_pending
       - unknown
   - name: wrapped_source
     dart_type: WrappedSourceValue
@@ -135,6 +136,21 @@ enums:
       - push
       - inbox
       - deep_link
+  - name: seasonal_theme_source
+    dart_type: SeasonalThemeSourceValue
+    values:
+      - home_card
+      - themes_page
+  - name: seasonal_announcement_surface
+    dart_type: SeasonalAnnouncementSurfaceValue
+    values:
+      - home_card
+      - push
+      - inbox
+  - name: seasonal_decor_disabled_reason
+    dart_type: SeasonalDecorDisabledReasonValue
+    values:
+      - reduced_motion
   - name: subscription_entitlement_refresh_result
     dart_type: SubscriptionEntitlementRefreshResultValue
     values:
@@ -2397,6 +2413,51 @@ events:
       - name: item_count
         key: item_count
         type: int
+  - id: folder_section_created
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: section_count
+        key: section_count
+        type: int
+  - id: folder_section_renamed
+    fields:
+      - name: section_count
+        key: section_count
+        type: int
+  - id: folder_section_deleted
+    fields:
+      - name: wall_count
+        key: wall_count
+        type: int
+  - id: folder_wall_moved
+    fields:
+      - name: method
+        key: method
+        type: string
+      - name: wall_count
+        key: wall_count
+        type: int
+  - id: folder_section_suggestions_shown
+    fields:
+      - name: kind
+        key: kind
+        type: string
+      - name: group_count
+        key: group_count
+        type: int
+  - id: folder_section_suggestions_accepted
+    fields:
+      - name: count
+        key: count
+        type: int
+      - name: offered
+        key: offered
+        type: int
+      - name: kind
+        key: kind
+        type: string
   - id: folder_visibility_changed
     fields:
       - name: is_public
@@ -3376,6 +3437,33 @@ events:
         key: source
         type: enum
         enum: WrappedSourceValue
+  - id: seasonal_theme_applied
+    fields:
+      - name: season
+        key: season
+        type: string
+      - name: source
+        key: source
+        type: enum
+        enum: SeasonalThemeSourceValue
+  - id: seasonal_announcement_opened
+    fields:
+      - name: season
+        key: season
+        type: string
+      - name: surface
+        key: surface
+        type: enum
+        enum: SeasonalAnnouncementSurfaceValue
+  - id: seasonal_decor_disabled
+    fields:
+      - name: season
+        key: season
+        type: string
+      - name: reason
+        key: reason
+        type: enum
+        enum: SeasonalDecorDisabledReasonValue
   - id: trial_timeline_shown
     fields:
       - name: source

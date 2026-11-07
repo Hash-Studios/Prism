@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/quests/domain/quest_board.dart';
 import 'package:Prism/features/quests/domain/quest_catalog.dart';
 import 'package:Prism/features/quests/views/widgets/quest_tile.dart';
@@ -191,40 +192,90 @@ void main() {
   });
 
   group('content', () {
-    testWidgets('shows the title in capitals, the count and both rewards', (WidgetTester tester) async {
+    testWidgets('shows the title once, the count and both rewards', (WidgetTester tester) async {
       await _pump(tester, _daily(reward: const QuestReward(coins: 7, xp: 40)));
-      expect(find.text(AppLocalizationsEn().economyQuestFav3), findsNWidgets(2));
-      expect(find.text('1/3'), findsNWidgets(2));
-      expect(find.text('7'), findsOneWidget);
-      expect(find.text('40'), findsOneWidget);
+      final AppLocalizationsEn l10n = AppLocalizationsEn();
+      expect(find.text(l10n.economyQuestFav3), findsOneWidget);
+      expect(find.text('1/3'), findsOneWidget);
+      expect(find.text(l10n.economyCoinReward(7)), findsOneWidget);
+      expect(find.text(l10n.economyXp(40)), findsOneWidget);
       expect(find.byType(PrismCoinIcon), findsOneWidget);
+      expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
     });
 
-    testWidgets('shows DONE instead of the count when the quest is done', (WidgetTester tester) async {
+    testWidgets('puts the coin after the amount', (WidgetTester tester) async {
+      await _pump(tester, _daily());
+      final double amountEnd = tester.getTopRight(find.text(AppLocalizationsEn().economyCoinReward(2))).dx;
+      expect(tester.getTopLeft(find.byType(PrismCoinIcon)).dx, greaterThan(amountEnd));
+    });
+
+    testWidgets('shows Done and a check when the quest is done', (WidgetTester tester) async {
       await _pump(tester, _daily(progress: 3, done: true));
-      expect(find.text('DONE'), findsNWidgets(2));
+      await tester.pumpAndSettle();
+      expect(find.text(AppLocalizationsEn().actionDone), findsOneWidget);
       expect(find.text('3/3'), findsNothing);
+      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.favorite_border_rounded), findsNothing);
     });
 
-    testWidgets('hides the chip of a reward that pays nothing', (WidgetTester tester) async {
+    testWidgets('hides a reward that pays nothing', (WidgetTester tester) async {
       await _pump(tester, _daily(reward: const QuestReward(coins: 0, xp: 25)));
       expect(find.byType(PrismCoinIcon), findsNothing);
-      expect(find.text('25'), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().economyXp(25)), findsOneWidget);
     });
 
-    testWidgets('shows the weekly ribbon with the countdown', (WidgetTester tester) async {
+    testWidgets('shows the weekly tag with the countdown', (WidgetTester tester) async {
       await _pump(tester, _weekly(), endsIn: '4d 2h');
-      expect(find.text('WEEKLY · 4d 2h'), findsNWidgets(2));
+      expect(
+        find.descendant(
+          of: find.byType(PrismTag),
+          matching: find.text(AppLocalizationsEn().economyWeeklyEndsIn('4d 2h')),
+        ),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('shows the bare weekly ribbon without a countdown', (WidgetTester tester) async {
+    testWidgets('shows the bare weekly tag without a countdown', (WidgetTester tester) async {
       await _pump(tester, _weekly());
-      expect(find.text('WEEKLY'), findsNWidgets(2));
+      expect(
+        find.descendant(of: find.byType(PrismTag), matching: find.text(AppLocalizationsEn().economyWeekly)),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('shows no ribbon on a daily quest', (WidgetTester tester) async {
+    testWidgets('shows no tag on a daily quest', (WidgetTester tester) async {
       await _pump(tester, _daily(), endsIn: '4d 2h');
-      expect(find.textContaining('WEEKLY'), findsNothing);
+      expect(find.byType(PrismTag), findsNothing);
+    });
+  });
+
+  group('progress bar', () {
+    Size fill(WidgetTester tester) => tester.getSize(
+      find.descendant(of: find.byType(FractionallySizedBox), matching: find.byType(DecoratedBox)).first,
+    );
+    Size track(WidgetTester tester) =>
+        tester.getSize(find.ancestor(of: find.byType(FractionallySizedBox), matching: find.byType(Container)).first);
+
+    testWidgets('fills to the progress and is 6 points high', (WidgetTester tester) async {
+      await _pump(tester, _daily(target: 4));
+      await tester.pumpAndSettle();
+      expect(fill(tester).height, 6);
+      expect(fill(tester).width, moreOrLessEquals(track(tester).width / 4, epsilon: 0.01));
+    });
+
+    testWidgets('fills in the accent, and in the success colour when done', (WidgetTester tester) async {
+      Color fillColor() {
+        final DecoratedBox box = tester.widget<DecoratedBox>(
+          find.descendant(of: find.byType(FractionallySizedBox), matching: find.byType(DecoratedBox)).first,
+        );
+        return (box.decoration as BoxDecoration).color!;
+      }
+
+      await _pump(tester, _daily());
+      expect(fillColor(), kLightTheme.colorScheme.primary);
+      await _pump(tester, _daily(progress: 3, done: true));
+      await tester.pumpAndSettle();
+      expect(fillColor(), PrismColors.success);
     });
   });
 
@@ -237,7 +288,7 @@ void main() {
         textScale: 1.3,
       );
       expect(tester.takeException(), isNull);
-      expect(find.text(AppLocalizationsEn().economyQuestWotd), findsNWidgets(2));
+      expect(find.text(AppLocalizationsEn().economyQuestWotd), findsOneWidget);
     });
 
     testWidgets('the weekly tile fits a 320 px surface at 1.3x text', (WidgetTester tester) async {
@@ -250,9 +301,10 @@ void main() {
         WidgetTester tester,
       ) async {
         await _pump(tester, _weekly(done: true), endsIn: '4d 2h', theme: theme, textScale: 2.4);
+        await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
-        expect(find.text('DONE'), findsNWidgets(2));
-        expect(find.text('WEEKLY · 4d 2h'), findsNWidgets(2));
+        expect(find.text(AppLocalizationsEn().actionDone), findsOneWidget);
+        expect(find.text(AppLocalizationsEn().economyWeeklyEndsIn('4d 2h')), findsOneWidget);
       });
     }
 
@@ -263,17 +315,19 @@ void main() {
       expect(tester.getSize(find.byType(QuestTile)), capped);
     });
 
-    testWidgets('the weekly ribbon stops growing at 1.15x text', (WidgetTester tester) async {
-      await _pump(tester, _weekly(), endsIn: '4d 2h', textScale: 1.15);
-      final Size capped = tester.getSize(find.text('WEEKLY · 4d 2h').first);
-      await _pump(tester, _weekly(), endsIn: '4d 2h', textScale: 2.4);
-      expect(tester.getSize(find.text('WEEKLY · 4d 2h').first), capped);
+    testWidgets('the reward column lines up at the row end', (WidgetTester tester) async {
+      await _pump(tester, _daily(reward: const QuestReward(coins: 2, xp: 125)));
+      final double rowEnd = tester.getTopRight(find.byType(QuestTile)).dx;
+      final double xpEnd = tester.getTopRight(find.text(AppLocalizationsEn().economyXp(125))).dx;
+      final double coinEnd = tester.getTopRight(find.byType(PrismCoinIcon)).dx;
+      expect(xpEnd, moreOrLessEquals(coinEnd, epsilon: 0.01));
+      expect(rowEnd - xpEnd, moreOrLessEquals(16, epsilon: 0.01));
     });
 
     testWidgets('the dark theme pumps', (WidgetTester tester) async {
       await _pump(tester, _daily(), theme: kDarkTheme);
       expect(tester.takeException(), isNull);
-      expect(find.text('1/3'), findsNWidgets(2));
+      expect(find.text('1/3'), findsOneWidget);
     });
   });
 }

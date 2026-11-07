@@ -233,6 +233,13 @@ void main() {
       AnalyticsRuntime.instance = analytics;
       addTearDown(AnalyticsRuntime.reset);
       final List<String> copied = <String>[];
+      final List<Object?> haptics = <Object?>[];
+      const MethodChannel hapticsChannel = MethodChannel('prism/haptics');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(hapticsChannel, (MethodCall call) async {
+        haptics.add(call.arguments);
+        return null;
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(hapticsChannel, null));
 
       await _pumpSheet(tester, copyText: (String text) async => copied.add(text));
       await tester.pump();
@@ -241,6 +248,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       expect(copied, <String>[_link]);
+      expect(haptics, <Object?>['tap', 'success'], reason: 'the PrismButton owns the tap; the toast owns the outcome');
       final List<OpenOnComputerLinkCopiedEvent> copies = analytics.events
           .whereType<OpenOnComputerLinkCopiedEvent>()
           .toList();

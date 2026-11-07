@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
+import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/features/session/views/pages/share_prism_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -49,6 +52,10 @@ void main() {
   });
 
   Future<void> pumpPage(WidgetTester tester) async {
+    // A phone screen: the cover mosaic header puts the action below the default 800x600 test view's fold.
+    tester.view.physicalSize = const Size(393, 852);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -67,6 +74,24 @@ void main() {
     expect(find.text('Give 100, get 100'), findsOneWidget);
     expect(find.text('Your friend gets 100 coins when they join. You get 100 too.'), findsOneWidget);
     expect(find.text('Share invite'), findsOneWidget);
+    // A short page: the action follows the link card instead of a pinned bottom bar.
+    expect(tester.widget<Scaffold>(find.byType(Scaffold)).bottomNavigationBar, isNull);
+    expect(tester.getSize(find.text('Give 100, get 100')).width, lessThanOrEqualTo(300));
+  });
+
+  testWidgets('the header is a wallpaper cover mosaic with a happy Glint on its corner', (tester) async {
+    await pumpPage(tester);
+    expect(tester.widget<CoverMosaic>(find.byType(CoverMosaic)).seed, 'Invite friends');
+    final Glint glint = tester.widget<Glint>(
+      find.descendant(of: find.byType(CoverMosaic), matching: find.byType(Glint)),
+    );
+    expect(glint.mood, GlintMood.happy);
+    expect(glint.size, 56);
+    expect(
+      tester.getBottomLeft(find.byType(CoverMosaic)).dy,
+      lessThan(tester.getTopLeft(find.text('Give 100, get 100')).dy),
+    );
+    expect(find.text('Share invite').hitTestable(), findsOneWidget, reason: 'the action stays above the fold');
   });
 
   testWidgets('without an account the link card says to sign in and sharing prompts for sign-in', (tester) async {
@@ -122,11 +147,23 @@ void main() {
     expect(find.textContaining('Sign in'), findsNothing);
     expect(toasts.where((m) => m.contains('Sign in')), isEmpty);
 
+    final List<Object?> played = <Object?>[];
+    const MethodChannel haptics = MethodChannel('prism/haptics');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(haptics, (call) async {
+      played.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(haptics, null));
+    PrismHaptics.enabled = true;
+
     await tester.tap(find.byTooltip('Try again'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('https://prismwalls.com/s/abc'), findsOneWidget);
     expect(calls, 2);
+    // PrismIconButton plays nothing itself, so the retry plays exactly one tap.
+    expect(played, <Object?>['tap']);
   });
 
   testWidgets('a signed out user is asked to sign in and no link is requested', (tester) async {

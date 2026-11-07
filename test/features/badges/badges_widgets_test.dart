@@ -86,13 +86,68 @@ void main() {
     expect(PublicUserDocDto.fromJson(<String, dynamic>{}).badges, isEmpty);
   });
 
-  testWidgets('profile row shows known badges only, and nothing when empty', (tester) async {
+  testWidgets('profile row counts known badges only, and is empty with none', (tester) async {
     await tester.pumpWidget(_app(const ProfileBadgeRow(badgeIds: <String>['creator', 'creator', 'from_the_future'])));
-    expect(find.byType(Tooltip), findsOneWidget);
-    expect(find.bySemanticsLabel('Creator badge'), findsOneWidget);
+    expect(find.text('1 badge'), findsOneWidget);
+    expect(tester.widget<Text>(find.text('1 badge')).style!.fontSize, 13);
+    expect(find.byIcon(Icons.military_tech_rounded), findsOneWidget);
 
     await tester.pumpWidget(_app(const ProfileBadgeRow(badgeIds: <String>[])));
-    expect(find.byType(Tooltip), findsNothing);
+    expect(find.byIcon(Icons.military_tech_rounded), findsNothing);
+    expect(find.byType(Wrap), findsNothing);
+  });
+
+  testWidgets('profile row shows one summary chip that lists every badge by name', (tester) async {
+    final List<String> ids = badgeCatalog.take(7).map((BadgeInfo info) => info.id).toList();
+    await tester.pumpWidget(_app(Center(child: ProfileBadgeRow(badgeIds: ids))));
+
+    expect(find.text('7 badges'), findsOneWidget);
+    expect(find.byIcon(Icons.military_tech_rounded), findsOneWidget);
+    final Size target = tester.getSize(find.bySemanticsLabel('7 badges'));
+    expect(target.height, greaterThanOrEqualTo(44));
+    expect(target.width, greaterThanOrEqualTo(44));
+
+    await tester.tap(find.text('7 badges'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    final AppLocalizations l10n = AppLocalizations.of(tester.element(find.text('7 badges')));
+    expect(find.text(l10n.economyBadges), findsOneWidget);
+    for (final BadgeInfo info in badgeCatalog.take(7)) {
+      expect(find.text(info.name(l10n)), findsOneWidget);
+    }
+  });
+
+  testWidgets('the summary chip hugs its label instead of filling the row', (tester) async {
+    final List<String> ids = badgeCatalog.take(7).map((BadgeInfo info) => info.id).toList();
+    await tester.pumpWidget(_app(SizedBox(width: 390, child: ProfileBadgeRow(badgeIds: ids))));
+
+    expect(tester.getSize(find.bySemanticsLabel('7 badges')).width, lessThan(150));
+  });
+
+  testWidgets('profile row puts the leading item first in the same row, even with no badges', (tester) async {
+    const Key leading = ValueKey<String>('leading');
+    await tester.pumpWidget(
+      _app(
+        ProfileBadgeRow(
+          badgeIds: <String>[badgeCatalog.first.id],
+          leading: const SizedBox(key: leading, width: 40, height: 24),
+        ),
+      ),
+    );
+    final Finder chip = find.text('1 badge');
+    expect(tester.getCenter(find.byKey(leading)).dy, tester.getCenter(chip).dy);
+    expect(tester.getCenter(find.byKey(leading)).dx, lessThan(tester.getCenter(chip).dx));
+
+    await tester.pumpWidget(
+      _app(
+        const ProfileBadgeRow(
+          badgeIds: <String>[],
+          leading: SizedBox(key: leading, width: 40, height: 24),
+        ),
+      ),
+    );
+    expect(find.byKey(leading), findsOneWidget);
+    expect(find.byIcon(Icons.military_tech_rounded), findsNothing);
   });
 
   testWidgets('celebrate sheet shows the badge and its coins, and hides coins at zero', (tester) async {

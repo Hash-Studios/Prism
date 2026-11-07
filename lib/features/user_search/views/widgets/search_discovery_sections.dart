@@ -6,6 +6,7 @@ import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -28,8 +29,14 @@ const EdgeInsets _sectionHeaderPadding = EdgeInsets.fromLTRB(
   PrismSpace.sm,
 );
 
-const double _trendingWidth = 120;
-const double _trendingHeight = _trendingWidth * 2;
+const double _trendingWidth = 104;
+const double _trendingHeight = 184;
+
+/// Two rows of trending tiles, one gap between them.
+const double _trendingGridHeight = _trendingHeight * 2 + PrismSpace.xs;
+
+/// How many trending walls the grid shows: six columns of two.
+const int _trendingCount = 12;
 const double _categoryWidth = 140;
 const double _categoryHeight = 190;
 
@@ -50,7 +57,26 @@ Widget _hRow({required double height, required int count, required IndexedWidget
   );
 }
 
-/// "Trending now": the wallhaven top list as portrait tiles.
+/// A horizontal grid of two rows that starts at the page margin and scrolls off the right edge.
+Widget _trendingGrid({required int count, required IndexedWidgetBuilder builder}) {
+  return SizedBox(
+    height: _trendingGridHeight,
+    child: GridView.builder(
+      scrollDirection: Axis.horizontal,
+      padding: PrismSpace.pageInsets,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: PrismSpace.xs,
+        crossAxisSpacing: PrismSpace.xs,
+        mainAxisExtent: _trendingWidth,
+      ),
+      itemCount: count,
+      itemBuilder: builder,
+    ),
+  );
+}
+
+/// "Trending now": the wallhaven top list as a two-row grid of portrait tiles, the first imagery on the page.
 class TrendingSection extends StatelessWidget {
   const TrendingSection({super.key});
 
@@ -77,9 +103,8 @@ class TrendingSection extends StatelessWidget {
               _TrendingList(walls: state.trendingWalls)
             else
               PrismSkeleton(
-                child: _hRow(
-                  height: _trendingHeight,
-                  count: 6,
+                child: _trendingGrid(
+                  count: 8,
                   builder: (_, _) =>
                       const PrismBone(width: _trendingWidth, height: _trendingHeight, radius: PrismRadius.sm),
                 ),
@@ -98,9 +123,8 @@ class _TrendingList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<WallhavenWallpaper> items = walls.take(10).toList(growable: false);
-    return _hRow(
-      height: _trendingHeight + favouriteFooterHeight,
+    final List<WallhavenWallpaper> items = walls.take(_trendingCount).toList(growable: false);
+    return _trendingGrid(
       count: items.length,
       builder: (context, index) {
         final WallhavenWallpaper wall = items[index];
@@ -116,6 +140,10 @@ class _TrendingList extends StatelessWidget {
             child: PrismWallTile(
               url: wall.thumbnailUrl,
               fallbackUrl: wall.core.fullUrl,
+              placeholderColor: placeholderColorOf(
+                WallhavenFeedItem(id: wall.id, wallpaper: wall),
+                Theme.of(context).colorScheme.surface,
+              ),
               memCacheHeight: _decodeHeight(context, _trendingWidth),
               heroTag: heroTag,
               semanticLabel: wallpaperSemanticLabel(wall.core.authorName, context.l10n),

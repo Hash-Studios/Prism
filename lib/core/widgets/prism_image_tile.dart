@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/router/wallpaper_detail_route.dart';
+import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -24,7 +26,11 @@ int gridTileDecodeHeight(BuildContext context, {required int crossAxisCount, dou
   return (tileWidth / aspectRatio * MediaQuery.devicePixelRatioOf(context)).round();
 }
 
-/// A grid image that fades in over the [PulseFill] skeleton. Fills its parent.
+/// How long a tile's picture takes to fade in over its [PrismImageTile.placeholderColor].
+const Duration _colourFade = Duration(milliseconds: 200);
+
+/// A grid image that fades in over the [PulseFill] skeleton, or over [placeholderColor] when the wall's colour is
+/// known. Fills its parent.
 class PrismImageTile extends StatefulWidget {
   const PrismImageTile({
     super.key,
@@ -34,6 +40,8 @@ class PrismImageTile extends StatefulWidget {
     this.memCacheWidth,
     this.heroTag,
     this.borderRadius,
+    this.placeholderColor,
+    this.cachedFullUrl,
   });
 
   final String url;
@@ -45,6 +53,15 @@ class PrismImageTile extends StatefulWidget {
   final String? heroTag;
   final BorderRadius? borderRadius;
 
+  /// The wall's own colour (see `placeholderColorOf`). When set, the tile is a still block of it until the picture
+  /// decodes, instead of the grey pulse.
+  final Color? placeholderColor;
+
+  /// The wall's full picture, the link the detail page caches (`WallpaperDisplaySource.of(wall).full`). When it is
+  /// already in [PrismFullImageCache], the tile shows it at tile size instead of the small [url]. It is never
+  /// downloaded here. Leave it empty for a wall whose full picture is withheld.
+  final String? cachedFullUrl;
+
   @override
   State<PrismImageTile> createState() => _PrismImageTileState();
 }
@@ -53,6 +70,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
   int _attempt = 0;
   bool _retrying = false;
   bool _loadReported = false;
+  bool _localFileFailed = false;
   final Stopwatch? _loadWatch = kReleaseMode ? null : (Stopwatch()..start());
   late Future<File?> _localFileFuture;
 
@@ -65,10 +83,13 @@ class _PrismImageTileState extends State<PrismImageTile> {
   @override
   void didUpdateWidget(PrismImageTile oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.url != widget.url || oldWidget.fallbackUrl != widget.fallbackUrl) {
+    if (oldWidget.url != widget.url ||
+        oldWidget.fallbackUrl != widget.fallbackUrl ||
+        oldWidget.cachedFullUrl != widget.cachedFullUrl) {
       _attempt = 0;
       _retrying = false;
       _loadReported = false;
+      _localFileFailed = false;
       _loadWatch
         ?..reset()
         ..start();
@@ -85,7 +106,18 @@ class _PrismImageTileState extends State<PrismImageTile> {
     try {
       final File localFile = File(source);
       if (await localFile.exists()) return localFile;
-      return await OfflineAssetStore.instance.lookup(source);
+      final File? retained = await OfflineAssetStore.instance.lookup(source);
+      if (retained != null) return retained;
+    } catch (_) {}
+    return _cachedFull();
+  }
+
+  /// The full picture from the disk cache the detail page fills. Reads the cache only.
+  Future<File?> _cachedFull() async {
+    final String full = widget.cachedFullUrl?.trim() ?? '';
+    if (!isValidNetworkUrl(full)) return null;
+    try {
+      return (await PrismFullImageCache.instance.getFileFromCache(full))?.file;
     } catch (_) {
       return null;
     }
@@ -152,7 +184,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
     imageUrl: url,
     cacheManager: PrismImageCache.instance,
     fit: BoxFit.cover,
-    fadeInDuration: context.motion(PrismDurations.fast),
+    fadeInDuration: context.motion(widget.placeholderColor == null ? PrismDurations.fast : _colourFade),
     fadeInCurve: PrismCurves.enter,
     fadeOutDuration: context.motion(PrismDurations.fast),
     memCacheHeight: decodeHeight,
@@ -168,7 +200,7 @@ class _PrismImageTileState extends State<PrismImageTile> {
               height: double.infinity,
             );
           },
-    placeholder: (_, _) => PulseFill(borderRadius: widget.borderRadius),
+    placeholder: (_, _) => _placeholder(),
     errorWidget: (context, _, _) {
       _reportImage('error', success: false);
       return _offlineOrNetworkFallback(context, url: url, decodeHeight: decodeHeight, fallback: fallback);
@@ -181,11 +213,15 @@ class _PrismImageTileState extends State<PrismImageTile> {
     required int? decodeHeight,
     String? fallback,
   }) => FutureBuilder<File?>(
+    key: ValueKey((url, fallback)),
     future: _localFileFuture,
     builder: (context, snapshot) {
       final File? localFile = snapshot.data;
-      if (localFile != null) return _fileImage(localFile, decodeHeight);
-      if (snapshot.connectionState != ConnectionState.done) return PulseFill(borderRadius: widget.borderRadius);
+      if (localFile != null && !_localFileFailed) {
+        final String? fallbackUrl = fallback != null && fallback != url ? fallback : url;
+        return _fileImage(localFile, decodeHeight, fallbackUrl: fallbackUrl);
+      }
+      if (snapshot.connectionState != ConnectionState.done) return _placeholder();
       if (fallback != null && fallback.isNotEmpty && fallback != url) {
         return _network(context, fallback, decodeHeight);
       }
@@ -204,13 +240,29 @@ class _PrismImageTileState extends State<PrismImageTile> {
     },
   );
 
-  Widget _fileImage(File file, int? decodeHeight) => Image.file(
+  /// The colour block shows through from under the tile, so it needs nothing here.
+  Widget _placeholder() =>
+      widget.placeholderColor == null ? PulseFill(borderRadius: widget.borderRadius) : const SizedBox.expand();
+
+  Widget _fileImage(File file, int? decodeHeight, {String? fallbackUrl}) => Image.file(
     file,
     fit: BoxFit.cover,
     cacheHeight: decodeHeight,
     cacheWidth: widget.memCacheWidth,
-    errorBuilder: (context, _, _) =>
-        ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest, child: const SizedBox.expand()),
+    frameBuilder: (context, child, frame, sync) => sync
+        ? child
+        : AnimatedOpacity(
+            opacity: frame == null ? 0 : 1,
+            duration: context.motion(widget.placeholderColor == null ? PrismDurations.fast : _colourFade),
+            curve: PrismCurves.enter,
+            child: child,
+          ),
+    errorBuilder: (context, _, _) {
+      _localFileFailed = true;
+      return fallbackUrl != null && isValidNetworkUrl(fallbackUrl)
+          ? _network(context, fallbackUrl, decodeHeight)
+          : ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest, child: const SizedBox.expand());
+    },
   );
 
   Widget _localImage(BuildContext context, String source) => LayoutBuilder(
@@ -218,12 +270,14 @@ class _PrismImageTileState extends State<PrismImageTile> {
   );
 
   Widget _retainedOrNetworkImage(BuildContext context, String url) => FutureBuilder<File?>(
+    key: ValueKey((url, widget.fallbackUrl, widget.cachedFullUrl)),
     future: _localFileFuture,
     builder: (context, snapshot) {
       final File? localFile = snapshot.data;
-      if (localFile != null) {
+      if (localFile != null && !_localFileFailed) {
         return LayoutBuilder(
-          builder: (context, constraints) => _fileImage(localFile, _decodeHeight(context, constraints)),
+          builder: (context, constraints) =>
+              _fileImage(localFile, _decodeHeight(context, constraints), fallbackUrl: url),
         );
       }
       return _image(context, url, fallback: widget.fallbackUrl);
@@ -235,14 +289,24 @@ class _PrismImageTileState extends State<PrismImageTile> {
     final String url = _effectiveUrl;
     Widget tile;
     if (url.isEmpty) {
-      tile = PulseFill(borderRadius: widget.borderRadius);
+      tile = _placeholder();
     } else if (_isLocalSource(url)) {
       tile = _localImage(context, url);
     } else {
       tile = _retainedOrNetworkImage(context, url);
     }
     tile = SizedBox.expand(child: tile);
+    if (widget.placeholderColor case final Color colour) tile = ColoredBox(color: colour, child: tile);
     if (widget.borderRadius != null) tile = ClipRRect(borderRadius: widget.borderRadius!, child: tile);
+    // A faint hairline keeps a light image from melting into a white page, and a dark one into a black page.
+    tile = DecoratedBox(
+      position: DecorationPosition.foreground,
+      decoration: BoxDecoration(
+        borderRadius: widget.borderRadius,
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06)),
+      ),
+      child: tile,
+    );
     return widget.heroTag == null || context.reduceMotion
         ? tile
         : Hero(tag: widget.heroTag!, createRectTween: wallpaperHeroRectTween, child: tile);

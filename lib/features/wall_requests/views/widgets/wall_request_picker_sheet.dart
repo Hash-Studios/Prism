@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wall_requests/domain/entities/wall_request.dart';
 import 'package:Prism/features/wall_requests/domain/repositories/wall_requests_repository.dart';
@@ -129,7 +130,10 @@ class _WallRequestPickerBodyState extends State<WallRequestPickerBody> {
         return PrismRow(
           title: request.text,
           subtitle: l10n.wallRequestVotes(request.voteCount),
-          onTap: () => Navigator.of(context).pop(request),
+          onTap: () {
+            PrismHaptics.selection();
+            Navigator.of(context).pop(request);
+          },
         );
       },
     );

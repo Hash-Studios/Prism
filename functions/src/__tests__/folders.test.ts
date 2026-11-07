@@ -80,6 +80,27 @@ test("an item write repairs its folder", async (t) => {
   assert.deepEqual(store.get("folders/f1")?.covers, ["A"]);
 });
 
+test("moving an existing item repairs counts without recording a new-wall activity", async (t) => {
+  const item = {ownerId: "u1", id: "a", provider: "Prism", thumb: "A", addedAt: at(1)};
+  const store = installFakeDb(t, {
+    "folders/f1": {ownerId: "u1", name: "Night", itemCount: 0, covers: [], memberIds: ["u2"],
+      members: {u2: {addedBy: "u1", addedAt: at(0)}}},
+    "folders/f1/items/prism_a": {...item, sectionId: "night"},
+  }, undefined, {createTimes: {"folders/f1": at(0), "folders/f1/items/prism_a": at(1)}});
+  await onFolderItemWritten.run({params: {folderId: "f1", itemKey: "prism_a"}, data: {
+    before: {...folderSnapshot(item), createTime: at(1)},
+    after: {...folderSnapshot({...item, sectionId: "night"}), createTime: at(1)},
+  }} as unknown as Parameters<typeof onFolderItemWritten.run>[0]);
+  assert.equal(store.get("folders/f1")?.itemCount, 1);
+  assert.deepEqual(store.get("folders/f1")?.covers, ["A"]);
+  assert.equal([...store.keys()].some((path) => path.startsWith("folderActivity/")), false);
+
+  await onFolderItemWritten.run({params: {folderId: "f1", itemKey: "prism_a"}, data: {
+    before: folderSnapshot(undefined), after: {...folderSnapshot(item), createTime: at(1)},
+  }} as unknown as Parameters<typeof onFolderItemWritten.run>[0]);
+  assert.ok(store.has("folderActivity/f1"));
+});
+
 test("a stale count decrement repairs the folder even when its item delete was a no-op", async (t) => {
   const store = installFakeDb(t, {
     "folders/f1": {ownerId: "u1", itemCount: 0, covers: []},

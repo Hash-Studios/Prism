@@ -1,5 +1,6 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/promo_codes/data/promo_code_repository.dart';
@@ -137,6 +138,29 @@ void main() {
     expect(find.text('Done'), findsOneWidget);
     expect(redeemed, hasLength(1));
     expect(redeemed.single.coinBalance, 150);
+  });
+
+  testWidgets('a redeemed code plays the success haptic and a refused one plays the error haptic', (tester) async {
+    final List<String> played = <String>[];
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), (call) async {
+      played.add(call.arguments as String);
+      return null;
+    });
+    PrismHaptics.enabled = true;
+    addTearDown(() => messenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), null));
+
+    fake.reply = _failReply('expired');
+    await openSheet(tester);
+    await enterCode(tester, 'ABCDEFGH23');
+    played.clear();
+    await tapRedeem(tester);
+    expect(played, <String>['error']);
+
+    played.clear();
+    fake.reply = _coinsReply(150);
+    await tapRedeem(tester);
+    expect(played, <String>['success']);
   });
 
   testWidgets('a response for an account that signed out is not applied to the next account', (tester) async {

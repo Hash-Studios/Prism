@@ -179,12 +179,8 @@ class _TipSheetState extends State<TipSheet> {
                             label: '$amount',
                             leading: const PrismCoinIcon(size: 16),
                             selected: amount == _amount,
-                            onTap: sending
-                                ? null
-                                : () {
-                                    PrismHaptics.selection();
-                                    setState(() => _amount = amount);
-                                  },
+                            // PrismChip plays the selection haptic itself.
+                            onTap: sending ? null : () => setState(() => _amount = amount),
                           ),
                         ),
                     ],

@@ -6,6 +6,8 @@ import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/platform/share_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/share/create_dynamic_link.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -74,7 +76,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
   Future<void> _share() async {
     final AppLocalizations l10n = context.l10n;
     unawaited(analytics.track(const InviteShareTappedEvent(sourceContext: 'share_prism_screen')));
-    if (!await _authorizeLink()) return;
+    if (!await _authorizeLink() || !mounted) return;
     try {
       await ShareService.shareText(text: link, context: context);
       unawaited(
@@ -102,7 +104,7 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
   }
 
   Future<void> _copy() async {
-    if (!await _authorizeLink()) return;
+    if (!await _authorizeLink() || !mounted) return;
     final AppLocalizations l10n = context.l10n;
     await Clipboard.setData(ClipboardData(text: link));
     toasts.success(l10n.accountLinkCopied);
@@ -118,26 +120,34 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
   Widget build(BuildContext context) {
     return PrismPage(
       title: context.l10n.accountInviteFriends,
-      bottomBar: PrismButton(
-        label: context.l10n.accountShareInvite,
-        expand: true,
-        loading: _loading,
-        onPressed: _share,
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page, vertical: PrismSpace.xl),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          PrismSpace.page,
+          PrismSpace.xxl,
+          PrismSpace.page,
+          PrismSpace.xl + MediaQuery.paddingOf(context).bottom,
+        ),
+        child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                const Glint(mood: GlintMood.happy, size: 120),
+                SizedBox(
+                  height: 220,
+                  child: CoverMosaic(
+                    seed: context.l10n.accountInviteFriends,
+                    badge: const Glint(mood: GlintMood.happy, size: 56),
+                  ),
+                ),
                 const SizedBox(height: PrismSpace.lg),
-                Text(
-                  context.l10n.accountInviteRewardHeadline(CoinPolicy.referral),
-                  textAlign: TextAlign.center,
-                  style: PrismTextStyles.display(context),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 300),
+                  child: Text(
+                    context.l10n.accountInviteRewardHeadline(CoinPolicy.referral),
+                    textAlign: TextAlign.center,
+                    style: PrismTextStyles.display(context),
+                  ),
                 ),
                 const SizedBox(height: PrismSpace.xs),
                 Text(
@@ -152,8 +162,14 @@ class _SharePrismScreenState extends State<SharePrismScreen> {
                   failed: _failed,
                   signedIn: _signedIn,
                   onCopy: () => unawaited(_copy()),
-                  onRetry: () => unawaited(_loadLink()),
+                  onRetry: () {
+                    PrismHaptics.tap();
+                    unawaited(_loadLink());
+                  },
                 ),
+                // The page is short, so the action follows the link instead of sitting in a bottom bar.
+                const SizedBox(height: PrismSpace.xl),
+                PrismButton(label: context.l10n.accountShareInvite, expand: true, loading: _loading, onPressed: _share),
               ],
             ),
           ),

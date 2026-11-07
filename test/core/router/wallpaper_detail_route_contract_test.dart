@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/router/wallpaper_detail_route.dart';
+import 'package:Prism/core/widgets/prism_sheet/prism_sheet_route.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -115,24 +115,38 @@ void main() {
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
-    testWidgets('$platform controller keeps the 160ms entry and exit durations', (tester) async {
+    testWidgets('$platform navigating to the grid while a detail is open closes the detail', (tester) async {
+      // A deep link to Home while a wallpaper is open navigates the router under the detail; the detail must finish
+      // its closing animation and leave, not stay on screen over the grid.
+      final router = await _pumpRouter(tester);
+      await _openDetail(tester, router);
+      unawaited(router.navigate(const PageRouteInfo<void>('Grid')));
+      await tester.pumpAndSettle();
+      expect(router.current.name, 'Grid');
+      expect(find.byKey(_detailKey), findsNothing);
+    }, variant: TargetPlatformVariant({platform}));
+  }
+
+  for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
+    testWidgets('$platform controller runs 260 ms each way', (tester) async {
       final router = await _pumpRouter(tester);
       final result = router.push<int>(const PageRouteInfo<void>('Detail'));
       await tester.pump();
       await tester.pump();
       final detail = router.builtRoutes['Detail']!;
-      await tester.pump(const Duration(milliseconds: 80));
-      expect(detail.animation!.value, closeTo(0.5, 0.01));
-      await tester.pump(const Duration(milliseconds: 81));
+      expect(detail.transitionDuration, wallpaperDetailZoomDuration);
+      expect(detail.reverseTransitionDuration, wallpaperDetailZoomDuration);
+      expect(wallpaperDetailZoomDuration, const Duration(milliseconds: 260));
+      await tester.pump(const Duration(milliseconds: 130));
+      expect(detail.animation!.value, closeTo(0.5, 0.02));
+      await tester.pump(const Duration(milliseconds: 131));
       expect(detail.animation!.isCompleted, isTrue);
-      expect(detail.transitionDuration, PrismDurations.fast);
-      expect(detail.reverseTransitionDuration, PrismDurations.fast);
 
       await router.maybePop<int>(42);
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 80));
-      expect(detail.animation!.value, closeTo(0.5, 0.01));
-      await tester.pump(const Duration(milliseconds: 81));
+      await tester.pump(const Duration(milliseconds: 130));
+      expect(detail.animation!.value, closeTo(0.5, 0.02));
+      await tester.pump(const Duration(milliseconds: 131));
       expect(await result, 42);
       expect(router.current.name, 'Grid');
     }, variant: TargetPlatformVariant({platform}));
@@ -210,5 +224,26 @@ void main() {
         expect(tester.getRect(find.byKey(_detailKey)), before);
       }, variant: TargetPlatformVariant({platform}));
     }
+
+    testWidgets('$platform Sheet does not animate the detail behind it', (tester) async {
+      final router = await _pumpRouter(tester);
+      final detail = await _openDetail(tester, router);
+      final before = tester.getRect(find.byKey(_detailKey));
+      unawaited(
+        showPrismSheet<void>(
+          tester.element(find.byKey(_detailKey)),
+          builder: (_) => const SizedBox(height: 200, child: Text('Sheet')),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(find.text('Sheet'), findsOneWidget);
+      expect(detail.secondaryAnimation!.value, 0);
+      expect(tester.getRect(find.byKey(_detailKey, skipOffstage: false)), before);
+      await tester.pumpAndSettle();
+      expect(detail.secondaryAnimation!.value, 0);
+      expect(tester.getRect(find.byKey(_detailKey)), before);
+    }, variant: TargetPlatformVariant({platform}));
   }
 }

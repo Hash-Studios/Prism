@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class NotificationContractFixtureTest(unittest.TestCase):
     def test_contract_rejects_unregistered_backend_channel(self):
         with tempfile.TemporaryDirectory(prefix='prism-channel-contract-') as directory:
-            work = Path(directory)
+            work = Path(directory).resolve()
             for name in ('pubspec.yaml', 'pubspec.lock', '.fvmrc', 'shorebird.yaml'):
                 shutil.copy(ROOT / name, work)
             for name in ('lib', 'assets', 'fonts', 'shaders'):

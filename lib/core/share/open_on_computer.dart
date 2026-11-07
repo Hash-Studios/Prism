@@ -5,7 +5,6 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_runtime.dart';
 import 'package:Prism/core/firestore/firestore_server_read.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -91,7 +90,6 @@ class _OpenOnComputerSheetState extends State<OpenOnComputerSheet> {
   }
 
   Future<void> _copy() async {
-    PrismHaptics.tap();
     final AppLocalizations l10n = context.l10n;
     try {
       await widget.copyText(widget.link.toString());

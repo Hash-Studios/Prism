@@ -58,7 +58,8 @@ class EditProfileLinkField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.only(left: PrismSpace.xxs, bottom: PrismSpace.xs),
+          // The same inset as the PrismTextField labels above, so every label in the form lines up.
+          padding: const EdgeInsets.only(left: PrismSpace.md, bottom: PrismSpace.xs),
           child: Text(
             context.l10n.accountLink,
             style: PrismTextStyles.caption(context).copyWith(fontSize: 13, fontWeight: FontWeight.w600),
@@ -87,7 +88,7 @@ class EditProfileLinkField extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         Icon(kind.icon, size: 20, color: cs.onSurface),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: PrismSpace.xxs),
                         Icon(Icons.expand_more_rounded, size: 18, color: cs.onSurfaceVariant),
                       ],
                     ),

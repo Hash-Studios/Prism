@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -13,38 +11,16 @@ import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_sheet.dart';
 import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/theme_mode/data/legacy_themes.dart';
+import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_widgets.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/theme_mode/views/widgets/custom_accent_sheet.dart';
-import 'package:Prism/global/svg_assets.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
+import 'package:Prism/theme/prism_color_scheme.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-
-/// The text roles this page used on the current app. The redesign theme sets its own roles, so the page names them.
-TextStyle _titleStyle(Color color) =>
-    TextStyle(fontFamily: PrismFonts.proximaNova, fontSize: 20, fontWeight: FontWeight.w500, color: color);
-
-TextStyle _sectionStyle(Color color) =>
-    TextStyle(fontFamily: PrismFonts.proximaNova, fontSize: 16, fontWeight: FontWeight.w500, color: color);
-
-TextStyle _chipLabelStyle(Color color) => TextStyle(
-  fontFamily: PrismFonts.roboto,
-  fontSize: 14,
-  fontWeight: FontWeight.w500,
-  letterSpacing: 0.1,
-  color: color,
-);
-
-String _themePreviewSvg(ThemeData theme) => themePicture
-    .replaceAll('181818', theme.colorScheme.surface.rgbHex)
-    .replaceAll('E57697', theme.colorScheme.primary.rgbHex)
-    .replaceAll('F0F0F0', theme.colorScheme.secondary.rgbHex)
-    .replaceAll('2F2F2F', theme.colorScheme.surfaceContainerHigh.rgbHex);
 
 @RoutePage(name: 'ThemeViewRoute')
 class ThemeView extends StatefulWidget {
@@ -55,7 +31,6 @@ class ThemeView extends StatefulWidget {
 }
 
 class _ThemeViewState extends State<ThemeView> {
-  late bool changingLight = !context.isDarkMode;
   SystemAccent? _systemAccent;
   bool _matchSystemAccent = false;
   late final Set<String> _legacyThemes = readLegacyThemes(getIt<SettingsLocalDataSource>());
@@ -92,6 +67,7 @@ class _ThemeViewState extends State<ThemeView> {
   Future<void> _setMatchSystemAccent(bool enabled) async {
     setState(() => _matchSystemAccent = enabled);
     await getIt<SettingsLocalDataSource>().set(SystemAccentChannel.settingsKey, enabled);
+    if (!mounted) return;
     final SystemAccent? accent = _systemAccent;
     if (enabled && accent != null) _applySystemAccent(accent);
   }
@@ -100,21 +76,10 @@ class _ThemeViewState extends State<ThemeView> {
     if (_matchSystemAccent) _setMatchSystemAccent(false);
   }
 
-  // Theme and accent taps apply live, so every way out (Back, swipe, the check) keeps them.
+  // Theme and accent taps apply live, so every way out (Back, swipe) keeps them.
   void _trackAccent() {
     final Color accent = Color(context.prismLightAccentValue(listen: false));
     analytics.track(AccentChangedEvent(color: accent.rgbHex));
-  }
-
-  void _selectThemeMode(ThemeMode mode) {
-    context.setPrismThemeMode(mode);
-    setState(() {
-      changingLight = switch (mode) {
-        ThemeMode.light => true,
-        ThemeMode.dark => false,
-        ThemeMode.system => WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.light,
-      };
-    });
   }
 
   void _selectTheme(PrismThemeOption option, {required bool light}) {
@@ -123,12 +88,24 @@ class _ThemeViewState extends State<ThemeView> {
     } else {
       context.setPrismDarkTheme(option.id);
     }
-    setState(() => changingLight = light);
     analytics.track(ThemeChangedEvent(themeId: option.id));
+    final SeasonalTheme? season = seasonalThemes
+        .where((season) => season.themeId == option.id || season.lightThemeId == option.id)
+        .firstOrNull;
+    if (season != null) {
+      analytics.track(SeasonalThemeAppliedEvent(season: season.name, source: SeasonalThemeSourceValue.themesPage));
+    }
   }
+
+  String _modeLabel(ThemeMode mode) => switch (mode) {
+    ThemeMode.system => context.l10n.wallpaperThemeModeSystem,
+    ThemeMode.light => context.l10n.wallpaperThemeModeLight,
+    ThemeMode.dark => context.l10n.wallpaperThemeModeDark,
+  };
 
   @override
   Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
     final ThemeState themeState = context.watch<ThemeBloc>().state;
     final ThemeMode themeMode = context.prismThemeMode();
     final bool showLight = themeMode != ThemeMode.dark;
@@ -140,157 +117,91 @@ class _ThemeViewState extends State<ThemeView> {
     final bool showMaterialYouNote = (showLight && !lightOption.usesAccent) || (showDark && !darkOption.usesAccent);
     final Color lightAccent = Color(context.prismLightAccentValue());
     final Color darkAccent = Color(context.prismDarkAccentValue());
-    final double screenHeight = MediaQuery.of(context).size.height;
-    final double previewHeight =
-        screenHeight * (themeMode == ThemeMode.system ? 0.35 : 0.45) -
-        (_systemAccent == null ? 0 : screenHeight * 0.05);
     return PopScope(
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) _trackAccent();
       },
-      child: Scaffold(
-        appBar: AppBar(
-          actions: <Widget>[
-            IconButton(
-              tooltip: context.l10n.actionDone,
-              icon: Icon(JamIcons.check, size: 30, color: Theme.of(context).colorScheme.onSurface),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
-          elevation: 0,
-          title: Text(context.l10n.wallpaperThemeTitle, style: _titleStyle(Theme.of(context).colorScheme.onSurface)),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        body: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  ListTile(
-                    onTap: () {
-                      showPrismSheet(
-                        context,
-                        builder: (context) => _PreferencePanel(
-                          selected: themeMode,
-                          onSelected: (mode) {
-                            PrismHaptics.selection();
-                            Navigator.pop(context);
-                            _selectThemeMode(mode);
-                          },
-                        ),
-                      );
-                    },
-                    leading: const Icon(JamIcons.brightness),
-                    title: Text(
-                      context.l10n.wallpaperThemePreference,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: 'Proxima Nova',
-                      ),
-                    ),
-                    subtitle: Text(context.prismModeAbs(context.l10n), style: const TextStyle(fontSize: 12)),
-                  ),
-                  Center(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(17),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Theme.of(context).colorScheme.shadow.withValues(alpha: .15),
-                            blurRadius: 38,
-                            offset: const Offset(0, 19),
-                          ),
-                          BoxShadow(
-                            color: Theme.of(context).colorScheme.shadow.withValues(alpha: .10),
-                            blurRadius: 12,
-                            offset: const Offset(0, 15),
-                          ),
-                        ],
-                      ),
-                      width: previewHeight * 0.4993924666,
-                      height: previewHeight,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(17),
-                        child: SvgPicture.string(
-                          showLight && (changingLight || !showDark)
-                              ? _themePreviewSvg(context.prismLightTheme())
-                              : _themePreviewSvg(context.prismDarkTheme()),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const Divider(),
-                  if (showLight) ...[
-                    _SectionTitle(context.l10n.wallpaperThemeLightThemes),
-                    _ThemeChipRow(
-                      themes: prismThemeOptions(Brightness.light, themeState.system),
-                      selectedId: lightOption.id,
-                      legacyThemes: _legacyThemes,
-                      onSelect: (option) => _selectTheme(option, light: true),
-                    ),
-                  ],
-                  if (showDark) ...[
-                    _SectionTitle(context.l10n.wallpaperThemeDarkThemes),
-                    _ThemeChipRow(
-                      themes: prismThemeOptions(Brightness.dark, themeState.system),
-                      selectedId: darkOption.id,
-                      legacyThemes: _legacyThemes,
-                      onSelect: (option) => _selectTheme(option, light: false),
-                    ),
-                  ],
-                  const Divider(),
-                  if (showMaterialYouNote)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        context.l10n.wallpaperThemeMaterialYouNote,
-                        style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      ),
-                    ),
-                  if (_systemAccent != null && (showLightAccent || showDarkAccent))
-                    SwitchListTile(
-                      dense: true,
-                      value: _matchSystemAccent,
-                      onChanged: (enabled) {
-                        PrismHaptics.selection();
-                        _setMatchSystemAccent(enabled);
-                      },
-                      title: Text(context.l10n.wallpaperMatchSystemColour),
-                      subtitle: Text(context.l10n.wallpaperUsePhoneAccent, style: const TextStyle(fontSize: 12)),
-                    ),
-                  if (showLightAccent) ...[
-                    _SectionTitle(context.l10n.wallpaperThemeLightAccent),
-                    _AccentRow(
-                      selected: lightAccent,
-                      surface: context.prismLightTheme().colorScheme.surface,
-                      onSelect: (color) {
-                        setState(() => changingLight = true);
-                        _pickAccent();
-                        context.setPrismLightAccent(color);
-                      },
-                    ),
-                  ],
-                  if (showDarkAccent) ...[
-                    _SectionTitle(context.l10n.wallpaperThemeDarkAccent),
-                    _AccentRow(
-                      selected: darkAccent,
-                      surface: context.prismDarkTheme().colorScheme.surface,
-                      onSelect: (color) {
-                        setState(() => changingLight = false);
-                        _pickAccent();
-                        context.setPrismDarkAccent(color);
-                      },
-                    ),
-                  ],
-                ],
+      child: PrismPage(
+        title: l10n.wallpaperThemeTitle,
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxxl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              PrismSegmented<ThemeMode>(
+                values: const <ThemeMode>[ThemeMode.system, ThemeMode.light, ThemeMode.dark],
+                selected: themeMode,
+                labelOf: _modeLabel,
+                iconOf: (mode) => switch (mode) {
+                  ThemeMode.system => Icons.brightness_auto_rounded,
+                  ThemeMode.light => Icons.light_mode_rounded,
+                  ThemeMode.dark => Icons.dark_mode_rounded,
+                },
+                onChanged: context.setPrismThemeMode,
               ),
-            ),
+              if (showLight) ...<Widget>[
+                PrismSectionHeader(title: l10n.wallpaperThemeLightThemes),
+                _ThemeGrid(
+                  key: const ValueKey<String>('theme-grid-light'),
+                  themes: prismThemeOptions(Brightness.light, themeState.system),
+                  selectedId: lightOption.id,
+                  accent: lightAccent,
+                  legacyThemes: _legacyThemes,
+                  onSelect: (option) => _selectTheme(option, light: true),
+                ),
+              ],
+              if (showDark) ...<Widget>[
+                PrismSectionHeader(title: l10n.wallpaperThemeDarkThemes),
+                _ThemeGrid(
+                  key: const ValueKey<String>('theme-grid-dark'),
+                  themes: prismThemeOptions(Brightness.dark, themeState.system),
+                  selectedId: darkOption.id,
+                  accent: darkAccent,
+                  legacyThemes: _legacyThemes,
+                  onSelect: (option) => _selectTheme(option, light: false),
+                ),
+              ],
+              if (_systemAccent != null && (showLightAccent || showDarkAccent)) ...<Widget>[
+                const SizedBox(height: PrismSpace.xl),
+                PrismGroup(
+                  children: <Widget>[
+                    PrismSwitchRow(
+                      icon: Icons.palette_rounded,
+                      title: l10n.wallpaperMatchSystemColour,
+                      subtitle: l10n.wallpaperUsePhoneAccent,
+                      value: _matchSystemAccent,
+                      onChanged: _setMatchSystemAccent,
+                    ),
+                  ],
+                ),
+              ],
+              if (showLightAccent) ...<Widget>[
+                PrismSectionHeader(title: l10n.wallpaperThemeLightAccent),
+                _AccentPicker(
+                  selected: lightAccent,
+                  surface: context.prismLightTheme().colorScheme.surface,
+                  onSelect: (color) {
+                    _pickAccent();
+                    context.setPrismLightAccent(color);
+                  },
+                ),
+              ],
+              if (showDarkAccent) ...<Widget>[
+                PrismSectionHeader(title: l10n.wallpaperThemeDarkAccent),
+                _AccentPicker(
+                  selected: darkAccent,
+                  surface: context.prismDarkTheme().colorScheme.surface,
+                  onSelect: (color) {
+                    _pickAccent();
+                    context.setPrismDarkAccent(color);
+                  },
+                ),
+              ],
+              if (showMaterialYouNote) ...<Widget>[
+                const SizedBox(height: PrismSpace.xl),
+                Text(l10n.wallpaperThemeMaterialYouNote, style: PrismTextStyles.body(context)),
+              ],
+            ],
           ),
         ),
       ),
@@ -298,25 +209,13 @@ class _ThemeViewState extends State<ThemeView> {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: MediaQuery.of(context).size.width,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Text(text, style: _sectionStyle(Theme.of(context).colorScheme.onSurface)),
-    );
-  }
-}
-
-class _ThemeChipRow extends StatelessWidget {
-  const _ThemeChipRow({
+/// A row of themes that scrolls sideways, each shown as a small app in its own colours with its name below.
+class _ThemeGrid extends StatelessWidget {
+  const _ThemeGrid({
+    super.key,
     required this.themes,
     required this.selectedId,
+    required this.accent,
     required this.legacyThemes,
     required this.onSelect,
   });
@@ -324,9 +223,20 @@ class _ThemeChipRow extends StatelessWidget {
   final List<PrismThemeOption> themes;
   final String selectedId;
 
+  /// The slot's accent, so a preview shows the theme as it will look.
+  final Color accent;
+
   /// Themes this device used before the coin shop sold them. They stay free.
   final Set<String> legacyThemes;
   final ValueChanged<PrismThemeOption> onSelect;
+
+  static const double _cardWidth = 104;
+  static const double _gap = PrismSpace.md;
+
+  /// A 104 point card: the preview with its ring (170 with the gap under it), then the name, which grows with the
+  /// text size. The Locked tag sits on the preview.
+  static const double _fixedHeight = 170;
+  static const double _textHeight = 28;
 
   /// A shop theme the user neither bought nor already uses. The selected theme is never locked.
   bool _locked(PrismThemeOption option, Inventory inventory) {
@@ -341,101 +251,166 @@ class _ThemeChipRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<Inventory>(
       valueListenable: CoinsService.instance.inventoryNotifier,
-      builder: (context, inventory, _) => _buildRow(context, inventory),
-    );
-  }
-
-  Widget _buildRow(BuildContext context, Inventory inventory) {
-    final Size size = MediaQuery.of(context).size;
-    final double textHeight = MediaQuery.textScalerOf(context).scale(16);
-    final bool anyLocked = themes.any((option) => _locked(option, inventory));
-    final double baseChipHeight = size.height * 0.06 > textHeight + 20 ? size.height * 0.06 : textHeight + 20;
-    final double chipHeight = baseChipHeight + (anyLocked ? textHeight + 6 : 0);
-    final double rowHeight = size.height * 0.07 > chipHeight + 8 ? size.height * 0.07 : chipHeight + 8;
-    return SizedBox(
-      width: size.width,
-      height: rowHeight,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: themes.length,
-        padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 8, 0),
-        itemBuilder: (context, index) {
-          final PrismThemeOption option = themes[index];
-          final bool locked = _locked(option, inventory);
-          return Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(8, 4, 8, 4),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: MaterialButton(
-                color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                padding: EdgeInsets.zero,
-                onPressed: () {
-                  PrismHaptics.selection();
-                  if (locked) {
+      builder: (context, inventory, _) => SizedBox(
+        height: _fixedHeight + MediaQuery.textScalerOf(context).scale(_textHeight),
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          // The row starts at the page margin and scrolls out to the screen edge.
+          clipBehavior: Clip.none,
+          itemCount: themes.length,
+          separatorBuilder: (_, _) => const SizedBox(width: _gap),
+          itemBuilder: (context, index) {
+            final PrismThemeOption option = themes[index];
+            return SizedBox(
+              width: _cardWidth,
+              child: _ThemeTile(
+                option: option,
+                accent: accent,
+                selected: option.id == selectedId,
+                locked: _locked(option, inventory),
+                onTap: () {
+                  if (_locked(option, inventory)) {
+                    PrismHaptics.tap();
                     showShopItemSheet(context, shopItem(option.shopItemId!)!);
                   } else {
+                    PrismHaptics.selection();
                     onSelect(option);
                   }
                 },
-                child: Stack(
-                  children: [
-                    Container(
-                      width: math.min(size.width * 0.3, 150),
-                      height: chipHeight,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: option.theme.colorScheme.scrim.withValues(alpha: 0.12)),
-                        borderRadius: BorderRadius.circular(10),
-                        color: option.theme.colorScheme.surfaceContainerHigh,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: Text(
-                              prismThemeDisplayName(option, context.l10n),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: _chipLabelStyle(option.theme.colorScheme.onSurface),
-                            ),
-                          ),
-                          if (locked)
-                            Flexible(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: PrismTag(label: context.l10n.coreThemeLocked, icon: Icons.lock_rounded),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (option.id == selectedId)
-                      Container(
-                        width: math.min(size.width * 0.3, 150),
-                        height: chipHeight,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                          border: Border.all(color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.45)),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [Icon(JamIcons.check, color: Theme.of(context).colorScheme.surface)],
-                        ),
-                      ),
-                  ],
-                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
 }
 
-class _AccentRow extends StatelessWidget {
-  const _AccentRow({required this.selected, required this.surface, required this.onSelect});
+class _ThemeTile extends StatelessWidget {
+  const _ThemeTile({
+    required this.option,
+    required this.accent,
+    required this.selected,
+    required this.locked,
+    required this.onTap,
+  });
+
+  final PrismThemeOption option;
+  final Color accent;
+  final bool selected;
+  final bool locked;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final AppLocalizations l10n = context.l10n;
+    final String name = prismThemeDisplayName(option, l10n);
+    final ThemeData theme = option.usesAccent ? withPrismAccent(option.theme, accent.toARGB32()) : option.theme;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: locked ? '$name, ${l10n.coreThemeLocked}' : name,
+      excludeSemantics: true,
+      child: PressScale(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: Column(
+            children: <Widget>[
+              Stack(
+                children: <Widget>[
+                  // The ring keeps its width when not selected, so selecting a theme never shifts the grid.
+                  AnimatedContainer(
+                    duration: context.motion(PrismDurations.fast),
+                    curve: PrismCurves.move,
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(PrismRadius.sm + 3),
+                      border: Border.all(color: selected ? cs.primary : Colors.transparent, width: 2),
+                    ),
+                    child: PrismThemePreview(theme: theme),
+                  ),
+                  if (selected)
+                    PositionedDirectional(
+                      top: PrismSpace.xs + 1,
+                      end: PrismSpace.xs + 1,
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(color: cs.primary, shape: BoxShape.circle),
+                        child: Icon(Icons.check_rounded, size: 14, color: cs.onPrimary),
+                      ),
+                    ),
+                  // A locked theme is never the selected one, so this never meets the check badge.
+                  if (locked)
+                    PositionedDirectional(
+                      top: PrismSpace.xs + 1,
+                      start: PrismSpace.xs + 1,
+                      end: PrismSpace.xs + 1,
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: _LockedTag(label: l10n.coreThemeLocked),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: PrismSpace.xs),
+              Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: PrismTextStyles.rowTitle(
+                  context,
+                ).copyWith(fontSize: 13, fontWeight: selected ? FontWeight.w700 : FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The Locked tag on a theme preview. It stays readable on any theme, so it is black with white text.
+class _LockedTag extends StatelessWidget {
+  const _LockedTag({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(PrismRadius.pill),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs, vertical: 3),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Icon(Icons.lock_rounded, size: 12, color: Colors.white),
+            const SizedBox(width: PrismSpace.xxs),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: PrismTextStyles.caption(context).copyWith(fontWeight: FontWeight.w700, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The custom colour well first, then the swatches, as 44-point circles that wrap.
+class _AccentPicker extends StatelessWidget {
+  const _AccentPicker({required this.selected, required this.surface, required this.onSelect});
 
   final Color selected;
 
@@ -443,173 +418,103 @@ class _AccentRow extends StatelessWidget {
   final Color surface;
   final ValueChanged<Color> onSelect;
 
+  static const double _size = 44;
+
+  /// The hue wheel on the custom colour well.
+  static const List<Color> _hues = <Color>[
+    Color(0xFFFF3B30),
+    Color(0xFFFFCC00),
+    Color(0xFF34C759),
+    Color(0xFF00C7BE),
+    Color(0xFF007AFF),
+    Color(0xFFAF52DE),
+    Color(0xFFFF3B30),
+  ];
+
   Future<void> _pickCustom(BuildContext context) async {
-    PrismHaptics.selection();
+    PrismHaptics.tap();
     final Color? picked = await showCustomAccentSheet(context, initial: selected, surface: surface);
     if (picked != null && context.mounted) onSelect(picked);
   }
 
   @override
   Widget build(BuildContext context) {
-    final double rowHeight = MediaQuery.of(context).size.height * 0.055;
-    return SizedBox(
-      width: MediaQuery.of(context).size.width,
-      height: rowHeight < 57 ? 57 : rowHeight,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: prismAccentSwatches.length + 1,
-        padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 8, 0),
-        itemBuilder: (context, index) {
-          final bool isCustomSwatch = index == 0;
-          final int swatchIndex = index - 1;
-          final bool isCustom = !prismAccentSwatches.contains(selected);
-          final Color? color = isCustomSwatch ? (isCustom ? selected : null) : prismAccentSwatches[swatchIndex];
-          final bool isSelected = isCustomSwatch ? isCustom : selected == color;
-          final Color fill = color ?? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
-          return Semantics(
-            button: true,
-            selected: isSelected,
-            label: isCustomSwatch
-                ? context.l10n.coreCustomAccent
-                : context.l10n.coreThemeAccentSemanticLabel(swatchIndex + 1, prismAccentSwatches.length),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-                if (isCustomSwatch) {
-                  _pickCustom(context);
-                } else {
-                  PrismHaptics.selection();
-                  onSelect(color!);
-                }
-              },
-              child: Stack(
-                children: [
-                  Container(
-                    margin: const EdgeInsetsDirectional.fromSTEB(8, 8, 0, 8),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.onSurface
-                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
-                      ),
-                      color: fill,
-                      shape: BoxShape.circle,
-                    ),
-                    child: SizedBox(
-                      width: 41,
-                      height: 41,
-                      child: isCustomSwatch && !isCustom
-                          ? Center(
-                              child: Icon(
-                                Icons.colorize_rounded,
-                                size: 20,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                            )
-                          : null,
-                    ),
-                  ),
-                  if (isSelected)
-                    Container(
-                      margin: const EdgeInsetsDirectional.fromSTEB(8, 8, 0, 8),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                        shape: BoxShape.circle,
-                      ),
-                      child: SizedBox(
-                        width: 41,
-                        height: 41,
-                        child: Icon(JamIcons.check, color: Theme.of(context).colorScheme.surface),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+    final bool isCustom = !prismAccentSwatches.contains(selected);
+    return Wrap(
+      spacing: PrismSpace.sm,
+      runSpacing: PrismSpace.sm,
+      children: <Widget>[
+        _Swatch(
+          label: context.l10n.coreCustomAccent,
+          selected: isCustom,
+          fill: isCustom ? selected : null,
+          ring: const SweepGradient(colors: _hues),
+          onTap: () => _pickCustom(context),
+        ),
+        for (int i = 0; i < prismAccentSwatches.length; i++)
+          _Swatch(
+            label: context.l10n.coreThemeAccentSemanticLabel(i + 1, prismAccentSwatches.length),
+            selected: selected == prismAccentSwatches[i],
+            fill: prismAccentSwatches[i],
+            onTap: () {
+              PrismHaptics.selection();
+              onSelect(prismAccentSwatches[i]);
+            },
+          ),
+      ],
     );
   }
 }
 
-class _PreferencePanel extends StatelessWidget {
-  const _PreferencePanel({required this.selected, required this.onSelected});
-
-  final ThemeMode selected;
-  final ValueChanged<ThemeMode> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
-    final String message = context.l10n.wallpaperThemePreferenceDescription;
-    final TextStyle messageStyle = TextStyle(fontSize: 13, color: colors.onSurface);
-    return PrismSheetBody(
-      title: context.l10n.wallpaperThemePreference,
-      child: Column(
-        children: <Widget>[
-          _PreferenceOption(
-            label: context.l10n.wallpaperThemeModeSystem,
-            selected: selected == ThemeMode.system,
-            onTap: () => onSelected(ThemeMode.system),
-          ),
-          _PreferenceOption(
-            label: context.l10n.wallpaperThemeModeLight,
-            selected: selected == ThemeMode.light,
-            onTap: () => onSelected(ThemeMode.light),
-          ),
-          _PreferenceOption(
-            label: context.l10n.wallpaperThemeModeDark,
-            selected: selected == ThemeMode.dark,
-            onTap: () => onSelected(ThemeMode.dark),
-          ),
-          const SizedBox(height: PrismSpace.md),
-          Text(message, textAlign: TextAlign.center, style: messageStyle),
-        ],
-      ),
-    );
-  }
-}
-
-class _PreferenceOption extends StatelessWidget {
-  const _PreferenceOption({required this.label, required this.selected, required this.onTap});
+class _Swatch extends StatelessWidget {
+  const _Swatch({required this.label, required this.selected, required this.fill, required this.onTap, this.ring});
 
   final String label;
   final bool selected;
+
+  /// The colour shown. Null on the custom well before a custom colour is picked.
+  final Color? fill;
+
+  /// Drawn around the custom well so it reads as "any colour".
+  final Gradient? ring;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
-    final double width = MediaQuery.of(context).size.width * 0.85;
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Semantics(
-        container: true,
-        button: true,
-        selected: selected,
-        label: label,
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final Color? color = fill;
+    // Selected: a 2-point ring in the swatch colour with a gap, as on iOS. A swatch near the page colour keeps a
+    // hairline so it does not vanish.
+    final Widget dot = Container(
+      key: ValueKey<String>('accent-dot-$label'),
+      decoration: BoxDecoration(
+        color: color ?? cs.surface,
+        shape: BoxShape.circle,
+        border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
+      ),
+      child: color == null
+          ? Icon(Icons.colorize_rounded, size: 18, color: cs.onSurface)
+          : selected
+          ? Icon(Icons.check_rounded, size: 20, color: prismOnColor(color))
+          : null,
+    );
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        excludeSemantics: true,
-        child: GestureDetector(
-          onTap: onTap,
-          child: SizedBox(
-            width: width - 20,
-            height: 60,
-            child: Container(
-              width: width - 14,
-              height: 60,
-              decoration: BoxDecoration(
-                color: selected ? colors.primary.withValues(alpha: 0.2) : colors.onSurface.withValues(alpha: 0.2),
-                border: Border.all(color: selected ? colors.primary : colors.onSurface, width: 3),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Center(
-                child: Text(
-                  label,
-                  style: TextStyle(fontSize: 16, color: colors.onSurface, fontWeight: FontWeight.bold),
-                ),
-              ),
+        child: SizedBox.square(
+          dimension: _AccentPicker._size,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: ring,
+              border: ring == null && selected ? Border.all(color: color ?? cs.onSurface, width: 2) : null,
             ),
+            child: Padding(padding: EdgeInsets.all(ring != null ? 3 : (selected ? 4 : 0)), child: dot),
           ),
         ),
       ),

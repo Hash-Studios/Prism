@@ -1,12 +1,10 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
-import 'package:Prism/core/widgets/glint/glint.dart';
-import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/badges/domain/badge_catalog.dart';
 import 'package:Prism/features/badges/domain/repositories/badge_repository.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// Shows the sheet for one new badge. [onSeeRewards] runs after the sheet closes with "See badges".
@@ -30,38 +28,26 @@ class BadgeCelebrateSheet extends StatelessWidget {
     return PrismSheetBody(
       title: context.l10n.economyNewBadge,
       actions: <Widget>[
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(52),
-            shape: const StadiumBorder(),
-            textStyle: PrismTextStyles.rowTitle(context),
-          ),
-          child: Text(context.l10n.economyNice),
-        ),
-        TextButton(
-          onPressed: () {
-            PrismHaptics.tap();
-            Navigator.of(context).pop(true);
-          },
-          child: Text(
-            context.l10n.economySeeBadges,
-            style: PrismTextStyles.rowTitle(context).copyWith(color: cs.primary),
-          ),
+        PrismButton(label: context.l10n.economyNice, expand: true, onPressed: () => Navigator.of(context).pop(false)),
+        PrismButton(
+          label: context.l10n.economySeeBadges,
+          expand: true,
+          variant: PrismButtonVariant.ghost,
+          onPressed: () => Navigator.of(context).pop(true),
         ),
       ],
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Glint(mood: inlineApproval ? GlintMood.calm : GlintMood.celebrate, size: small ? 88 : 140),
-          const SizedBox(height: 8),
+          const SizedBox(height: PrismSpace.xs),
           Text(
             info?.name(context.l10n) ?? context.l10n.economyBadgeEarned,
             textAlign: TextAlign.center,
             style: PrismTextStyles.sheetHeadline(context),
           ),
           if (info != null) ...<Widget>[
-            const SizedBox(height: 4),
+            const SizedBox(height: PrismSpace.xxs),
             if (!inlineApproval)
               Text(info.description(context.l10n), textAlign: TextAlign.center, style: PrismTextStyles.body(context))
             else
@@ -88,7 +74,7 @@ class BadgeCelebrateSheet extends StatelessWidget {
               ),
           ],
           if (!inlineApproval && badge.coins > 0) ...<Widget>[
-            const SizedBox(height: 20),
+            const SizedBox(height: PrismSpace.lg),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[

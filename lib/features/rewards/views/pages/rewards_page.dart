@@ -24,9 +24,9 @@ import 'package:Prism/features/rewards/views/widgets/rewards_activity_section.da
 import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_hero.dart';
-import 'package:Prism/features/rewards/views/widgets/streak_details.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_links_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_spend_section.dart';
+import 'package:Prism/features/rewards/views/widgets/streak_details.dart';
 import 'package:Prism/features/spin_wheel/spin_wheel.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -195,10 +195,12 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
                     ),
                   ),
                   const SizedBox(height: PrismSpace.lg),
-                  ExpansionTile(
+                  PrismSectionHeader(
                     key: const ValueKey<String>('rewards-more'),
-                    tilePadding: EdgeInsets.zero,
-                    title: Text(context.l10n.dailyMomentMore, style: PrismTextStyles.sectionTitle(context)),
+                    title: context.l10n.dailyMomentMore,
+                    padding: const EdgeInsets.only(bottom: PrismSpace.sm),
+                  ),
+                  PrismGroup(
                     children: <Widget>[
                       PrismRow(
                         icon: Icons.calendar_today_outlined,
@@ -206,28 +208,27 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
                         showChevron: true,
                         onTap: () => showStreakDetails(context, onEarnCoins: () => _scrollTo(_earnKey)),
                       ),
-                      gap,
-                      const DropCard(),
-                      RankProgressCard(onOpenShop: () => context.router.root.push(const ShopRoute())),
-                      gap,
-                      const CreatorProgressCard(),
-                      gap,
-                      TodayCard(onOpenSpin: () => unawaited(showSpinWheel(context))),
-                      gap,
                       PrismRow(
                         icon: Icons.toll_outlined,
                         title: context.l10n.economySpinTheWheel,
                         showChevron: true,
                         onTap: () => context.router.root.push(SpinWheelRoute()),
                       ),
-                      gap,
-                      FreezeCard(onEarnCoins: () => _scrollTo(_earnKey)),
-                      const RewardsLinksSection(),
-                      const RewardsBadgesSection(),
-                      const RewardsCollectionSection(),
-                      const RewardsActivitySection(),
                     ],
                   ),
+                  gap,
+                  const DropCard(),
+                  RankProgressCard(onOpenShop: () => context.router.root.push(const ShopRoute())),
+                  gap,
+                  const CreatorProgressCard(),
+                  gap,
+                  TodayCard(onOpenSpin: () => unawaited(showSpinWheel(context))),
+                  gap,
+                  FreezeCard(onEarnCoins: () => _scrollTo(_earnKey)),
+                  const RewardsLinksSection(),
+                  const RewardsBadgesSection(),
+                  const RewardsCollectionSection(),
+                  const RewardsActivitySection(),
                 ] else ...<Widget>[
                   const RewardsHero(),
                   gap,

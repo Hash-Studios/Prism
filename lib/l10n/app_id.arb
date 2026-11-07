@@ -933,7 +933,7 @@
   "@accountSpatialSceneSemanticLabel": {
     "description": "Spatial Scene text: accountSpatialSceneSemanticLabel."
   },
-  "accountDownloadApk": "UNDUH APK",
+  "accountDownloadApk": "Unduh APK",
   "@accountDownloadApk": {
     "description": "About page action that opens the APK download page. Shown only on installs that did not come from Google Play."
   },
@@ -981,7 +981,7 @@
   "@accountFavouritesCleared": {
     "description": "Success message after clearing favourite wallpapers."
   },
-  "accountFeedback": "MASUKAN",
+  "accountFeedback": "Masukan",
   "@accountFeedback": {
     "description": "About page action to send feedback."
   },
@@ -1536,7 +1536,7 @@
   "@accountPrismPro": {
     "description": "Prism Pro drawer heading."
   },
-  "accountPrivacyAction": "PRIVASI",
+  "accountPrivacyAction": "Kebijakan privasi",
   "@accountPrivacyAction": {
     "description": "About page action to view the privacy policy."
   },
@@ -1632,7 +1632,7 @@
   "@accountQuickTiles": {
     "description": "Settings item for Quick Settings tiles."
   },
-  "accountRateApp": "NILAI",
+  "accountRateApp": "Nilai",
   "@accountRateApp": {
     "description": "About page action to rate Prism."
   },
@@ -1724,15 +1724,6 @@
   "accountRestoringPurchases": "Memulihkan pembelian…",
   "@accountRestoringPurchases": {
     "description": "Progress toast while restoring purchases."
-  },
-  "accountResultsForQuery": "Hasil untuk {query}",
-  "@accountResultsForQuery": {
-    "description": "Label above wallpaper search results.",
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
   },
   "accountRetry": "Coba lagi",
   "@accountRetry": {
@@ -1897,19 +1888,19 @@
   "@accountSignInToPrism": {
     "description": "Heading for the signed-out settings account card."
   },
-  "accountSocialGithub": "GITHUB",
+  "accountSocialGithub": "GitHub",
   "@accountSocialGithub": {
     "description": "About page social link label for GitHub."
   },
-  "accountSocialInstagram": "INSTAGRAM",
+  "accountSocialInstagram": "Instagram",
   "@accountSocialInstagram": {
     "description": "About page social link label for Instagram."
   },
-  "accountSocialTelegram": "TELEGRAM",
+  "accountSocialTelegram": "Telegram",
   "@accountSocialTelegram": {
     "description": "About page social link label for Telegram."
   },
-  "accountSocialTwitter": "TWITTER",
+  "accountSocialTwitter": "Twitter",
   "@accountSocialTwitter": {
     "description": "About page social link label for Twitter."
   },
@@ -1973,7 +1964,7 @@
   "@accountTerms": {
     "description": "Terms of use link label."
   },
-  "accountTermsAction": "KETENTUAN",
+  "accountTermsAction": "Ketentuan penggunaan",
   "@accountTermsAction": {
     "description": "About page action to view the terms of use."
   },
@@ -2142,7 +2133,7 @@
   "@accountWhatsNew": {
     "description": "Menu item for the release changelog."
   },
-  "accountWhatsNewAction": "YANG BARU",
+  "accountWhatsNewAction": "Yang baru",
   "@accountWhatsNewAction": {
     "description": "About page action to view changes."
   },
@@ -3198,6 +3189,12 @@
   "diwaliBannerSubtitle": "Diya, kembang api, dan emas. Gratis. Ketuk untuk mencoba.",
   "diwaliAnnouncementTitle": "Baru: tema Diwali 🪔",
   "diwaliAnnouncementBody": "Diya, kembang api, dan emas. Gratis. Ketuk untuk mencoba.",
+  "coreThemeWinter": "Musim Dingin",
+  "winterBannerTitle": "Tema Musim Dingin sudah hadir",
+  "winterBannerSubtitle": "Biru sejuk dan salju lembut, dalam mode terang dan gelap. Gratis. Ketuk untuk mencoba.",
+  "winterAnnouncementTitle": "Baru: tema Musim Dingin ❄️",
+  "winterAnnouncementBody": "Biru sejuk dan salju lembut untuk liburan. Gratis. Ketuk untuk mencoba.",
+  "winterNewYearGreeting": "Selamat Tahun Baru",
   "coreThisPageDoesNotExist": "Halaman ini tidak ada",
   "coreTryAgain": "Coba lagi",
   "coreUndo": "Urungkan",
@@ -3247,6 +3244,22 @@
   "coreWallpaperErrorStyle": "Perangkat ini tidak dapat memulai gaya itu. Coba gaya lain.",
   "coreWallpaperErrorSystemPreview": "Pratinjau sistem tidak dapat dibuka.",
   "coreWallpaperErrorTextureDimensions": "Gambar itu terlalu besar untuk dijadikan wallpaper bergerak.",
+  "coreWallpaperStillSetting": "Wallpaper Anda masih dipasang. Di beberapa ponsel, ini bisa butuh waktu sebentar.",
+  "@coreWallpaperStillSetting": {
+    "description": "Shown when the phone has not finished setting the wallpaper after 30 seconds. The set can still finish, so this is not an error."
+  },
+  "coreWallpaperLockFailedUsePhone": "Tidak dapat memasang di layar kunci. Layar wallpaper bawaan ponsel Anda dapat memasangnya.",
+  "@coreWallpaperLockFailedUsePhone": {
+    "description": "Snackbar when the lock screen set failed. Its action opens the phone's own wallpaper screen, which some phones (Xiaomi, MIUI) require for the lock screen."
+  },
+  "coreWallpaperHomeSetLockFailedUsePhone": "Layar utama terpasang. Tidak dapat memasang di layar kunci. Layar wallpaper bawaan ponsel Anda dapat memasangnya.",
+  "@coreWallpaperHomeSetLockFailedUsePhone": {
+    "description": "Snackbar when a Both set changed only the home screen. Its action opens the phone's own wallpaper screen for the lock screen."
+  },
+  "coreWallpaperSetWithPhone": "Pasang lewat ponsel",
+  "@coreWallpaperSetWithPhone": {
+    "description": "Snackbar action. Opens the phone's own wallpaper screen with this wallpaper. Keep it short."
+  },
   "coreWallpaperErrorTimeout": "Waktu habis. Periksa koneksi Anda, lalu coba lagi.",
   "coreWallpaperHomeScreen": "Layar utama",
   "coreWallpaperHomeSetLockFailed": "Wallpaper layar utama terpasang. Layar kunci gagal dipasang.",
@@ -3571,6 +3584,10 @@
   "deepLinkInputLiveTitle": "Wallpaper bergerak",
   "@deepLinkInputLiveTitle": {
     "description": "Page title while choosing an image for a live wallpaper."
+  },
+  "deepLinkInputLiveDescription": "Pilih foto dari galeri untuk dijadikan wallpaper bergerak.",
+  "@deepLinkInputLiveDescription": {
+    "description": "Instructions on the image chooser page when the user makes a live wallpaper."
   },
   "deepLinkInputPhotoPreviewTitle": "Pratinjau foto",
   "@deepLinkInputPhotoPreviewTitle": {
@@ -4277,6 +4294,15 @@
   "economyCoinsAreYoursToSpend": "Koin dapat Anda gunakan",
   "economyCoinsEarned": "+{count, plural, one{1 koin} other{{count} koin}}",
   "@economyCoinsEarned": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "economyCoinReward": "+{count}",
+  "@economyCoinReward": {
     "placeholders": {
       "count": {
         "type": "int",
@@ -5323,7 +5349,7 @@
   "economyLeaderboardNoRankings": "Belum ada peringkat",
   "economyLeaderboardOffline": "Jika Anda offline, skor tersimpan mungkin ditampilkan.",
   "economyLeaderboardRankedByXp": "Diurutkan berdasarkan XP yang diperoleh minggu ini",
-  "economyLeaderboardReset": "Direset Senin pukul 00.00 UTC · tersisa {days, plural, one{1h} other{{days}h}} {hours, plural, one{1j} other{{hours}j}}",
+  "economyLeaderboardReset": "Direset dalam {days, plural, one{1h} other{{days}h}} {hours, plural, one{1j} other{{hours}j}}",
   "@economyLeaderboardReset": {
     "placeholders": {
       "days": {
@@ -6098,10 +6124,10 @@
     }
   },
   "economyWeekComplete": "Minggu selesai!",
-  "economyWeekly": "MINGGUAN",
+  "economyWeekly": "Mingguan",
   "economyWeeklyDraw": "Draw mingguan",
   "economyWeeklyDrop": "Drop mingguan",
-  "economyWeeklyEndsIn": "MINGGUAN · {time}",
+  "economyWeeklyEndsIn": "Mingguan · {time}",
   "@economyWeeklyEndsIn": {
     "placeholders": {
       "time": {
@@ -6214,7 +6240,6 @@
       }
     }
   },
-  "economyYourXp": "XP ANDA",
   "errorGeneric": "Terjadi kesalahan. Coba lagi.",
   "errorNetwork": "Periksa koneksi Anda, lalu coba lagi.",
   "navigationBackOnline": "Kembali online",
@@ -6281,18 +6306,6 @@
   "notifEmptyTitle": "Tidak ada notifikasi",
   "notifExpanded": "Diperluas",
   "notifGenericTitle": "Notifikasi",
-  "notifGroupAndMore": "{message} dan {otherCount, plural, one{1 lainnya.} other{{otherCount} lainnya.}}",
-  "@notifGroupAndMore": {
-    "placeholders": {
-      "message": {
-        "type": "String"
-      },
-      "otherCount": {
-        "type": "int",
-        "format": "decimalPattern"
-      }
-    }
-  },
   "notifGroupApprovals": "{count, plural, one{persetujuan} other{persetujuan}}",
   "@notifGroupApprovals": {
     "placeholders": {
@@ -6767,8 +6780,8 @@
   "onboardingRecoverySetupFailed": "Penyiapan tidak selesai. Coba lagi.",
   "onboardingRecoverySetupFailedHelper": "Penyiapan tidak selesai. Periksa koneksi, lalu coba lagi.",
   "onboardingRecoverySignIn": "Masuk lagi",
-  "onboardingReloadLower": "muat ulang",
-  "onboardingSavePhotos": "simpan ke Foto",
+  "onboardingReloadLower": "Muat ulang",
+  "onboardingSavePhotos": "Simpan ke Foto",
   "onboardingSelectInterestMinimum": "Pilih setidaknya {count} kategori agar beranda Anda sesuai minat.",
   "@onboardingSelectInterestMinimum": {
     "placeholders": {
@@ -6778,12 +6791,12 @@
       }
     }
   },
-  "onboardingSetWallpaper": "pasang sebagai wallpaper",
-  "onboardingSignInAgainLower": "masuk lagi",
+  "onboardingSetWallpaper": "Pasang sebagai wallpaper",
+  "onboardingSignInAgainLower": "Masuk lagi",
   "onboardingSkip": "Lewati",
-  "onboardingSkipLower": "lewati",
+  "onboardingSkipLower": "Lewati",
   "onboardingTermsRequired": "Setujui Ketentuan dan Kebijakan Privasi terlebih dahulu.",
-  "onboardingTryAgainLower": "coba lagi",
+  "onboardingTryAgainLower": "Coba lagi",
   "onboardingWallpaperForInterest": "Wallpaper ini dipilih berdasarkan minat Anda pada {category}",
   "@onboardingWallpaperForInterest": {
     "placeholders": {
@@ -6815,10 +6828,42 @@
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
   },
+  "premiumPageHeadline": "Seluruh galeri, terbuka",
+  "@premiumPageHeadline": {
+    "description": "Large headline at the top of the Prism Premium page."
+  },
+  "premiumBenefitWalls": "Semua koleksi dan wallpaper premium",
+  "@premiumBenefitWalls": {
+    "description": "Premium benefit row: premium collections and walls open without coins or a pass."
+  },
+  "premiumBenefitFree": "Unduhan gratis tanpa iklan",
+  "@premiumBenefitFree": {
+    "description": "Premium benefit row: downloads cost no coins and inline and full-screen ads are off."
+  },
+  "premiumBenefitSpin": "Satu putaran gratis setiap hari",
+  "@premiumBenefitSpin": {
+    "description": "Premium benefit row: one free spin of the coin wheel each day."
+  },
+  "premiumBenefitAutomation": "Putar otomatis dan mode siang-malam",
+  "@premiumBenefitAutomation": {
+    "description": "Premium benefit row: auto-rotate and day and night wallpaper switching."
+  },
+  "premiumBenefitLiveStyles": "Semua gaya wallpaper bergerak",
+  "@premiumBenefitLiveStyles": {
+    "description": "Premium benefit row: every live wallpaper style without coins."
+  },
+  "premiumBenefitAiClean": "Wallpaper AI tanpa tanda air, dengan koin lebih sedikit",
+  "@premiumBenefitAiClean": {
+    "description": "Premium benefit row: AI wallpapers without the watermark, at a lower coin price."
+  },
   "premiumGuestStorePurchaseActive": "Pembelian toko Anda aktif di perangkat ini. Masuk untuk menggunakan fitur Pro berbasis akun.",
   "premiumPurchasePending": "Pembelian Anda tersimpan. Pro mungkin perlu waktu satu menit untuk aktif.",
   "@premiumPurchasePending": {
     "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
+  },
+  "premiumPaymentPending": "Pembayaran Anda masih tertunda. Pro akan aktif setelah pembayaran berhasil.",
+  "@premiumPaymentPending": {
+    "description": "Toast when the store holds a purchase as pending (for example a slow UPI or card payment). Pro unlocks later."
   },
   "premiumPurchaseUnconfirmed": "Pembelian Anda tidak dapat dikonfirmasi. Coba Pulihkan pembelian di Pengaturan.",
   "@premiumPurchaseUnconfirmed": {
@@ -9131,11 +9176,11 @@
   "@wallpaperStartupFailed": {
     "description": "Title shown when app startup fails."
   },
-  "wallpaperThemeDarkAccent": "Warna Aksen Gelap",
+  "wallpaperThemeDarkAccent": "Warna aksen gelap",
   "@wallpaperThemeDarkAccent": {
     "description": "Section title for choosing the dark theme accent colour."
   },
-  "wallpaperThemeDarkThemes": "Tema Gelap",
+  "wallpaperThemeDarkThemes": "Tema gelap",
   "@wallpaperThemeDarkThemes": {
     "description": "Section title for dark theme choices."
   },
@@ -9147,11 +9192,11 @@
   "@wallpaperAppAccentUpdated": {
     "description": "Snackbar message shown after the app accent changes from a wallpaper."
   },
-  "wallpaperThemeLightAccent": "Warna Aksen Terang",
+  "wallpaperThemeLightAccent": "Warna aksen terang",
   "@wallpaperThemeLightAccent": {
     "description": "Section title for choosing the light theme accent colour."
   },
-  "wallpaperThemeLightThemes": "Tema Terang",
+  "wallpaperThemeLightThemes": "Tema terang",
   "@wallpaperThemeLightThemes": {
     "description": "Section title for light theme choices."
   },
@@ -9163,7 +9208,7 @@
   "@wallpaperThemeModeLight": {
     "description": "Light app theme mode option."
   },
-  "wallpaperThemeModeSystem": "Sistem (terang/gelap)",
+  "wallpaperThemeModeSystem": "Sistem",
   "@wallpaperThemeModeSystem": {
     "description": "App theme mode option that follows the system light or dark appearance."
   },
@@ -11293,7 +11338,7 @@
   },
   "challengeTitle": "Tantangan mingguan",
   "challengeRules": "Maksimal 3 karya, ditinjau sebelum ditampilkan.",
-  "challengeVotingRules": "Pilih karya kreator lain hingga {date} UTC.",
+  "challengeVotingRules": "Pilih karya kreator lain hingga {date}.",
   "@challengeVotingRules": {
     "placeholders": {
       "date": {
@@ -12073,6 +12118,10 @@
   "creatorsToFollow": "Kreator untuk diikuti",
   "@creatorsToFollow": {
     "description": "Title of the row of suggested creators on Home and Search."
+  },
+  "accountBrowseCreators": "Jelajahi kreator",
+  "@accountBrowseCreators": {
+    "description": "Action on the empty creator search, opens the creator directory."
   },
   "creatorsSeeAll": "Lihat semua",
   "@creatorsSeeAll": {
@@ -13625,6 +13674,16 @@
   "@searchPhotoCouldNotOpen": {
     "description": "Toast when the picked photo cannot be decoded."
   },
+  "searchMoreWallpapers": "Wallpaper lainnya",
+  "@searchMoreWallpapers": {"description": "Section header for extra wallpaper results in search."},
+  "wallpaperPreviewNoEvents": "Tidak ada acara hari ini",
+  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."},
+  "accountFollowersLabel": "{count, plural, one{Pengikut} other{Pengikut}}",
+  "@accountFollowersLabel": {"description": "Label under a profile's follower count. The number is shown separately.", "placeholders": {"count": {"type": "int"}}},
+  "profileBadgeCount": "{count, plural, one{1 lencana} other{{count} lencana}}",
+  "@profileBadgeCount": {"description": "Chip on a profile that opens the list of earned badges.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyLeaderboardTopThisWeek": "Teratas minggu ini",
+  "@economyLeaderboardTopThisWeek": {"description": "Section heading above the global top 5 on the Following leaderboard."},
   "foldersSaveAll": "Simpan semua",
   "@foldersSaveAll": {
     "description": "Button label that starts saving all wallpapers in a folder."
@@ -14168,213 +14227,321 @@
   "@foldersMakePrivateMessageShared": {
     "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
   },
-  "photoWallEntryTitle": "Dari fotomu",
-  "@photoWallEntryTitle": {
-    "description": "Entry card on the AI tab that opens photo to wallpaper."
+  "gestureHintHoldToSave": "Tahan untuk menyimpan",
+  "gestureHintSwipeForSimilar": "Geser ke atas untuk wallpaper serupa",
+  "foldersSectionAdd": "Tambah bagian",
+  "@foldersSectionAdd": {
+    "description": "Folder page menu item and name sheet button that add a named section to a folder."
   },
-  "photoWallEntrySubtitle": "Sesuaikan foto apa pun dengan layarmu",
-  "@photoWallEntrySubtitle": {
-    "description": "Subtitle of the From your photo entry card."
+  "foldersSectionNewTitle": "Bagian baru",
+  "@foldersSectionNewTitle": {
+    "description": "Title of the sheet where the user types a name for a new folder section. Also a row in the Move to sheet."
   },
-  "photoWallPickPhoto": "Pilih foto",
-  "@photoWallPickPhoto": {
-    "description": "Button that opens the photo gallery."
+  "foldersSectionNameHint": "Misalnya, Layar kunci",
+  "@foldersSectionNameHint": {
+    "description": "Hint in the section name field."
   },
-  "photoWallPickAnother": "Pilih foto lain",
-  "@photoWallPickAnother": {
-    "description": "Button that replaces the picked photo."
+  "foldersSectionRenameTitle": "Ganti nama bagian",
+  "@foldersSectionRenameTitle": {
+    "description": "Title of the sheet that renames a folder section."
   },
-  "photoWallPrivacyNote": "Fotomu dikirim ke penyedia AI kami, fal.ai, dan ke Google Cloud Vision hanya untuk tugas ini. Prism tidak menyimpannya dan meminta fal.ai menghapusnya setelah tugas selesai.",
-  "@photoWallPrivacyNote": {
-    "description": "Privacy note under the photo picker."
+  "foldersSectionDelete": "Hapus bagian",
+  "@foldersSectionDelete": {
+    "description": "Section menu item and confirm button that delete a folder section. Its wallpapers stay in the folder."
   },
-  "photoWallTargetLabel": "Buat untuk",
-  "@photoWallTargetLabel": {
-    "description": "Label of the phone or desktop choice."
-  },
-  "photoWallTargetPhone": "Ponsel",
-  "@photoWallTargetPhone": {
-    "description": "Choice: make a phone wallpaper."
-  },
-  "photoWallTargetDesktop": "Versi desktop",
-  "@photoWallTargetDesktop": {
-    "description": "Choice: make a 16:10 desktop wallpaper."
-  },
-  "photoWallPlanExtend": "Perluas agar pas dengan layarmu",
-  "@photoWallPlanExtend": {
-    "description": "Plan shown when the photo has the wrong shape for a phone."
-  },
-  "photoWallPlanExtendDesktop": "Perluas agar pas dengan layar desktop",
-  "@photoWallPlanExtendDesktop": {
-    "description": "Plan shown when the photo has the wrong shape for a desktop."
-  },
-  "photoWallPlanExtendDetail": "AI mengisi tepi yang kurang di sekitar fotomu.",
-  "@photoWallPlanExtendDetail": {
-    "description": "Detail under the Extend plan."
-  },
-  "photoWallPlanUpscale": "Tingkatkan resolusi",
-  "@photoWallPlanUpscale": {
-    "description": "Plan shown when the photo is too small."
-  },
-  "photoWallPlanUpscaleDetail": "AI menambahkan detail agar fotomu tetap tajam di layarmu.",
-  "@photoWallPlanUpscaleDetail": {
-    "description": "Detail under the Upscale plan."
-  },
-  "photoWallPlanFits": "Foto ini sudah pas dengan layarmu",
-  "@photoWallPlanFits": {
-    "description": "Shown when no AI job is needed for a phone."
-  },
-  "photoWallPlanFitsDesktop": "Foto ini sudah pas dengan layar desktop",
-  "@photoWallPlanFitsDesktop": {
-    "description": "Shown when no AI job is needed for a desktop."
-  },
-  "photoWallPlanFitsDetail": "Bentuk dan ukurannya sudah sesuai. Pilih foto lain atau ubah tujuannya.",
-  "@photoWallPlanFitsDetail": {
-    "description": "Detail when no AI job is needed."
-  },
-  "photoWallRunExtend": "{coins, plural, =1{Perluas · 1 koin} other{Perluas · {coins} koin}}",
-  "@photoWallRunExtend": {
-    "description": "Main button. Starts an Extend job and shows its coin cost.",
+  "foldersSectionDeleteTitle": "Hapus {name}?",
+  "@foldersSectionDeleteTitle": {
+    "description": "Title of the confirm before deleting a folder section. name is the section name.",
     "placeholders": {
-      "coins": {
-        "type": "int"
+      "name": {
+        "type": "String"
       }
     }
   },
-  "photoWallRunUpscale": "{coins, plural, =1{Tingkatkan · 1 koin} other{Tingkatkan · {coins} koin}}",
-  "@photoWallRunUpscale": {
-    "description": "Main button. Starts an Upscale job and shows its coin cost.",
-    "placeholders": {
-      "coins": {
-        "type": "int"
-      }
-    }
-  },
-  "photoWallGetCoins": "Dapatkan koin · perlu {coins}",
-  "@photoWallGetCoins": {
-    "description": "Main button when the balance is too low. Opens Rewards.",
-    "placeholders": {
-      "coins": {
-        "type": "int"
-      }
-    }
-  },
-  "photoWallPlaceTitle": "Atur posisi fotomu",
-  "@photoWallPlaceTitle": {
-    "description": "Header over the placement frame."
-  },
-  "photoWallPlaceHint": "Seret untuk memindahkan. Cubit untuk memperkecil.",
-  "@photoWallPlaceHint": {
-    "description": "Hint under the placement frame."
-  },
-  "photoWallPlaceReset": "Atur ulang posisi",
-  "@photoWallPlaceReset": {
-    "description": "Button that puts the photo back in the centre at full size."
-  },
-  "photoWallPlaceSemantics": "Posisi foto dalam bingkai",
-  "@photoWallPlaceSemantics": {
-    "description": "Screen reader label of the placement frame."
-  },
-  "photoWallPlaceMoveStart": "Pindah ke awal",
-  "@photoWallPlaceMoveStart": {
-    "description": "Screen reader action: move the photo to the top or left edge."
-  },
-  "photoWallPlaceMoveCentre": "Pindah ke tengah",
-  "@photoWallPlaceMoveCentre": {
-    "description": "Screen reader action: move the photo to the centre."
-  },
-  "photoWallPlaceMoveEnd": "Pindah ke akhir",
-  "@photoWallPlaceMoveEnd": {
-    "description": "Screen reader action: move the photo to the bottom or right edge."
-  },
-  "photoWallWorkingExtend": "Memperluas fotomu",
-  "@photoWallWorkingExtend": {
-    "description": "Progress title during an Extend job."
-  },
-  "photoWallWorkingUpscale": "Meningkatkan resolusi fotomu",
-  "@photoWallWorkingUpscale": {
-    "description": "Progress title during an Upscale job."
-  },
-  "photoWallWorkingDetail": "Ini bisa memakan waktu hingga satu menit.",
-  "@photoWallWorkingDetail": {
-    "description": "Progress detail."
-  },
-  "photoWallBefore": "Sebelum",
-  "@photoWallBefore": {
-    "description": "Label on the original side of the compare slider."
-  },
-  "photoWallAfter": "Sesudah",
-  "@photoWallAfter": {
-    "description": "Label on the result side of the compare slider."
-  },
-  "photoWallCompareSemantics": "Sebelum dan sesudah. Geser ke atas atau ke bawah untuk membandingkan.",
-  "@photoWallCompareSemantics": {
-    "description": "Screen reader label of the compare slider."
-  },
-  "photoWallSet": "Atur sebagai wallpaper",
-  "@photoWallSet": {
-    "description": "Result button that sets the wallpaper."
-  },
-  "photoWallDownload": "Unduh",
-  "@photoWallDownload": {
-    "description": "Result button that saves the wallpaper to the device."
-  },
-  "photoWallSaved": "Disimpan ke perangkatmu",
-  "@photoWallSaved": {
-    "description": "Toast after Download."
-  },
-  "photoWallStartOver": "Pakai foto lain",
-  "@photoWallStartOver": {
-    "description": "Result button that returns to the picker."
-  },
-  "photoWallErrorUnsafeInput": "Foto ini tidak dapat digunakan. Pilih foto lain.",
-  "@photoWallErrorUnsafeInput": {
-    "description": "Error when the content filter blocks the input photo."
-  },
-  "photoWallErrorUnsafeOutput": "Hasilnya diblokir. Coba lagi atau pilih foto lain.",
-  "@photoWallErrorUnsafeOutput": {
-    "description": "Error when the content filter blocks the result."
-  },
-  "photoWallErrorLimit": "Kamu sudah mencapai batas hari ini, yaitu {count} wallpaper foto.",
-  "@photoWallErrorLimit": {
-    "description": "Error when the daily cap is reached.",
+  "foldersSectionDeleteMessage": "{count, plural, =0{Bagian ini kosong.} =1{Wallpaper-nya pindah ke Belum disortir.} other{{count} wallpaper-nya pindah ke Belum disortir.}}",
+  "@foldersSectionDeleteMessage": {
+    "description": "Body of the confirm before deleting a folder section. count is the number of wallpapers in it. Unsorted is the group of wallpapers with no section.",
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
   },
-  "photoWallErrorBusy": "Wallpaper foto sedang sangat sibuk. Coba lagi nanti.",
-  "@photoWallErrorBusy": {
-    "description": "Error when the global daily cap is reached."
+  "foldersSectionUnsorted": "Belum disortir",
+  "@foldersSectionUnsorted": {
+    "description": "Name of the group at the top of a folder that holds the wallpapers that are in no section."
   },
-  "photoWallErrorUnreadable": "Foto ini tidak dapat dibuka. Pilih foto lain.",
-  "@photoWallErrorUnreadable": {
-    "description": "Error when the photo does not decode."
+  "foldersSectionReorder": "Atur ulang bagian",
+  "@foldersSectionReorder": {
+    "description": "Folder page menu item and sheet title for changing the order of the sections."
   },
-  "photoWallErrorInProgress": "Fotomu yang terakhir masih diproses.",
-  "@photoWallErrorInProgress": {
-    "description": "Error when the same job is still running."
-  },
-  "photoWallErrorGeneric": "Tidak dapat membuat wallpaper. Coba lagi.",
-  "@photoWallErrorGeneric": {
-    "description": "Error for any other failure."
-  },
-  "photoWallRefunded": "{coins, plural, =1{Koin kamu sudah dikembalikan.} other{{coins} koin kamu sudah dikembalikan.}}",
-  "@photoWallRefunded": {
-    "description": "Added after an error when the server refunded the coins.",
+  "foldersSectionDragHandle": "Seret untuk memindahkan {name}",
+  "@foldersSectionDragHandle": {
+    "description": "Tooltip of the drag handle on a section in the Reorder sections sheet. name is the section name.",
     "placeholders": {
-      "coins": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionWallCount": "{count, plural, =0{Tidak ada wallpaper} =1{1 wallpaper} other{{count} wallpaper}}",
+  "@foldersSectionWallCount": {
+    "description": "Count under a section name.",
+    "placeholders": {
+      "count": {
         "type": "int"
       }
     }
   },
-  "photoWallRefundPending": "Koin kamu akan dikembalikan.",
-  "@photoWallRefundPending": {
-    "description": "Added after an error when the refund is not confirmed yet."
+  "foldersSectionHeaderLabel": "{name}, {count, plural, =0{tidak ada wallpaper} =1{1 wallpaper} other{{count} wallpaper}}",
+  "@foldersSectionHeaderLabel": {
+    "description": "Screen reader label of a section header. Double tap collapses or expands it. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
   },
+  "foldersSectionJumpTo": "Buka {name}, {count, plural, =0{tidak ada wallpaper} =1{1 wallpaper} other{{count} wallpaper}}",
+  "@foldersSectionJumpTo": {
+    "description": "Screen reader label of a chip in the section strip at the top of a folder. Tapping it scrolls to the section.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionOptions": "Opsi lain untuk {name}",
+  "@foldersSectionOptions": {
+    "description": "Tooltip of the menu button on a section header. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionSaveAll": "Simpan bagian",
+  "@foldersSectionSaveAll": {
+    "description": "Section menu item that saves all wallpapers of one section to the device, like Save all for the whole folder."
+  },
+  "foldersSectionMoveTo": "Pindahkan ke bagian",
+  "@foldersSectionMoveTo": {
+    "description": "Button in the wallpaper menu and the selection bar. It opens a list of the sections."
+  },
+  "foldersSectionMoveTitle": "Pindahkan ke",
+  "@foldersSectionMoveTitle": {
+    "description": "Title of the sheet that lists Unsorted and the sections of a folder."
+  },
+  "foldersSectionMoved": "{count, plural, =1{1 wallpaper dipindahkan ke {name}.} other{{count} wallpaper dipindahkan ke {name}.}}",
+  "@foldersSectionMoved": {
+    "description": "Toast after wallpapers move to a section. name is the section name, or Unsorted.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionSelect": "Pilih wallpaper",
+  "@foldersSectionSelect": {
+    "description": "Folder page menu item that starts selecting wallpapers to move them."
+  },
+  "foldersSectionSelected": "{count, plural, =0{Ketuk wallpaper untuk memilihnya} =1{1 dipilih} other{{count} dipilih}}",
+  "@foldersSectionSelected": {
+    "description": "Text in the selection bar at the bottom of a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionsFull": "Folder dapat memiliki hingga {max} bagian.",
+  "@foldersSectionsFull": {
+    "description": "Error toast when the user tries to add a section to a folder that has the most sections.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionEmpty": "Belum ada wallpaper.",
+  "@foldersSectionEmpty": {
+    "description": "Text under an empty section for a reader who cannot organize the folder."
+  },
+  "foldersSectionEmptyHint": "Seret wallpaper ke nama bagian, atau gunakan Pindahkan ke bagian.",
+  "@foldersSectionEmptyHint": {
+    "description": "Text under an empty section for the owner and editors. Only the section name (the header) and its chip in the strip accept a drop, not this text. Move to section is the name of a button."
+  },
+  "foldersSectionSuggest": "Sarankan bagian",
+  "@foldersSectionSuggest": {
+    "description": "Folder page menu item. Prism groups the Unsorted wallpapers by mood, category or colour on the device."
+  },
+  "foldersSuggestTitle": "Bagian yang disarankan",
+  "@foldersSuggestTitle": {
+    "description": "Title of the sheet with the suggested sections."
+  },
+  "foldersSuggestBody": "Kelompok wallpaper Belum disortir Anda. Simpan yang Anda mau.",
+  "@foldersSuggestBody": {
+    "description": "Message under the title of the suggested sections sheet."
+  },
+  "foldersSuggestByMood": "Suasana",
+  "@foldersSuggestByMood": {
+    "description": "Segment in the suggested sections sheet: group by mood."
+  },
+  "foldersSuggestByCategory": "Kategori",
+  "@foldersSuggestByCategory": {
+    "description": "Segment in the suggested sections sheet: group by category."
+  },
+  "foldersSuggestByColour": "Warna",
+  "@foldersSuggestByColour": {
+    "description": "Segment in the suggested sections sheet: group by main colour."
+  },
+  "foldersSuggestJoins": "{count}. Masuk ke bagian Anda dengan nama ini.",
+  "@foldersSuggestJoins": {
+    "description": "Line under a suggested group whose name matches a section that exists. count is a wallpaper count, for example \"3 wallpapers\".",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSuggestAdd": "{count, plural, =0{Tambah bagian} =1{Tambah 1 bagian} other{Tambah {count} bagian}}",
+  "@foldersSuggestAdd": {
+    "description": "Main button of the suggested sections sheet. count is the number of new sections it makes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestSort": "{count, plural, =1{Sortir 1 wallpaper} other{Sortir {count} wallpaper}}",
+  "@foldersSuggestSort": {
+    "description": "Main button of the suggested sections sheet when every kept group goes into a section that exists.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestSorted": "{count, plural, =1{1 wallpaper sudah disortir.} other{{count} wallpaper sudah disortir.}}",
+  "@foldersSuggestSorted": {
+    "description": "Toast after the user keeps suggested sections.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestEmptyTitle": "Tidak ada kelompok untuk disarankan",
+  "@foldersSuggestEmptyTitle": {
+    "description": "Empty state in the suggested sections sheet."
+  },
+  "foldersSuggestEmptyBody": "Kelompok perlu 2 wallpaper Prism atau lebih di Belum disortir dengan suasana, kategori, atau warna yang sama.",
+  "@foldersSuggestEmptyBody": {
+    "description": "Body of the empty state in the suggested sections sheet."
+  },
+  "foldersSuggestError": "Saran tidak dapat dimuat",
+  "@foldersSuggestError": {
+    "description": "Error state in the suggested sections sheet."
+  },
+  "photoWallEntryTitle": "Dari fotomu",
+  "@photoWallEntryTitle": {"description": "Entry card on the AI tab that opens photo to wallpaper."},
+  "photoWallEntrySubtitle": "Sesuaikan foto apa pun dengan layarmu",
+  "@photoWallEntrySubtitle": {"description": "Subtitle of the From your photo entry card."},
+  "photoWallPickPhoto": "Pilih foto",
+  "@photoWallPickPhoto": {"description": "Button that opens the photo gallery."},
+  "photoWallPickAnother": "Pilih foto lain",
+  "@photoWallPickAnother": {"description": "Button that replaces the picked photo."},
+  "photoWallPrivacyNote": "Fotomu dikirim ke penyedia AI kami, fal.ai, dan ke Google Cloud Vision hanya untuk tugas ini. Prism tidak menyimpannya dan meminta fal.ai menghapusnya setelah tugas selesai.",
+  "@photoWallPrivacyNote": {"description": "Privacy note under the photo picker."},
+  "photoWallTargetLabel": "Buat untuk",
+  "@photoWallTargetLabel": {"description": "Label of the phone or desktop choice."},
+  "photoWallTargetPhone": "Ponsel",
+  "@photoWallTargetPhone": {"description": "Choice: make a phone wallpaper."},
+  "photoWallTargetDesktop": "Versi desktop",
+  "@photoWallTargetDesktop": {"description": "Choice: make a 16:10 desktop wallpaper."},
+  "photoWallPlanExtend": "Perluas agar pas dengan layarmu",
+  "@photoWallPlanExtend": {"description": "Plan shown when the photo has the wrong shape for a phone."},
+  "photoWallPlanExtendDesktop": "Perluas agar pas dengan layar desktop",
+  "@photoWallPlanExtendDesktop": {"description": "Plan shown when the photo has the wrong shape for a desktop."},
+  "photoWallPlanExtendDetail": "AI mengisi tepi yang kurang di sekitar fotomu.",
+  "@photoWallPlanExtendDetail": {"description": "Detail under the Extend plan."},
+  "photoWallPlanUpscale": "Tingkatkan resolusi",
+  "@photoWallPlanUpscale": {"description": "Plan shown when the photo is too small."},
+  "photoWallPlanUpscaleDetail": "AI menambahkan detail agar fotomu tetap tajam di layarmu.",
+  "@photoWallPlanUpscaleDetail": {"description": "Detail under the Upscale plan."},
+  "photoWallPlanFits": "Foto ini sudah pas dengan layarmu",
+  "@photoWallPlanFits": {"description": "Shown when no AI job is needed for a phone."},
+  "photoWallPlanFitsDesktop": "Foto ini sudah pas dengan layar desktop",
+  "@photoWallPlanFitsDesktop": {"description": "Shown when no AI job is needed for a desktop."},
+  "photoWallPlanFitsDetail": "Bentuk dan ukurannya sudah sesuai. Pilih foto lain atau ubah tujuannya.",
+  "@photoWallPlanFitsDetail": {"description": "Detail when no AI job is needed."},
+  "photoWallRunExtend": "{coins, plural, =1{Perluas · 1 koin} other{Perluas · {coins} koin}}",
+  "@photoWallRunExtend": {"description": "Main button. Starts an Extend job and shows its coin cost.", "placeholders": {"coins": {"type": "int"}}},
+  "photoWallRunUpscale": "{coins, plural, =1{Tingkatkan · 1 koin} other{Tingkatkan · {coins} koin}}",
+  "@photoWallRunUpscale": {"description": "Main button. Starts an Upscale job and shows its coin cost.", "placeholders": {"coins": {"type": "int"}}},
+  "photoWallGetCoins": "Dapatkan koin · perlu {coins}",
+  "@photoWallGetCoins": {"description": "Main button when the balance is too low. Opens Rewards.", "placeholders": {"coins": {"type": "int"}}},
+  "photoWallPlaceTitle": "Atur posisi fotomu",
+  "@photoWallPlaceTitle": {"description": "Header over the placement frame."},
+  "photoWallPlaceHint": "Seret untuk memindahkan. Cubit untuk memperkecil.",
+  "@photoWallPlaceHint": {"description": "Hint under the placement frame."},
+  "photoWallPlaceReset": "Atur ulang posisi",
+  "@photoWallPlaceReset": {"description": "Button that puts the photo back in the centre at full size."},
+  "photoWallPlaceSemantics": "Posisi foto dalam bingkai",
+  "@photoWallPlaceSemantics": {"description": "Screen reader label of the placement frame."},
+  "photoWallPlaceMoveStart": "Pindah ke awal",
+  "@photoWallPlaceMoveStart": {"description": "Screen reader action: move the photo to the top or left edge."},
+  "photoWallPlaceMoveCentre": "Pindah ke tengah",
+  "@photoWallPlaceMoveCentre": {"description": "Screen reader action: move the photo to the centre."},
+  "photoWallPlaceMoveEnd": "Pindah ke akhir",
+  "@photoWallPlaceMoveEnd": {"description": "Screen reader action: move the photo to the bottom or right edge."},
+  "photoWallWorkingExtend": "Memperluas fotomu",
+  "@photoWallWorkingExtend": {"description": "Progress title during an Extend job."},
+  "photoWallWorkingUpscale": "Meningkatkan resolusi fotomu",
+  "@photoWallWorkingUpscale": {"description": "Progress title during an Upscale job."},
+  "photoWallWorkingDetail": "Ini bisa memakan waktu hingga satu menit.",
+  "@photoWallWorkingDetail": {"description": "Progress detail."},
+  "photoWallBefore": "Sebelum",
+  "@photoWallBefore": {"description": "Label on the original side of the compare slider."},
+  "photoWallAfter": "Sesudah",
+  "@photoWallAfter": {"description": "Label on the result side of the compare slider."},
+  "photoWallCompareSemantics": "Sebelum dan sesudah. Geser ke atas atau ke bawah untuk membandingkan.",
+  "@photoWallCompareSemantics": {"description": "Screen reader label of the compare slider."},
+  "photoWallSet": "Atur sebagai wallpaper",
+  "@photoWallSet": {"description": "Result button that sets the wallpaper."},
+  "photoWallDownload": "Unduh",
+  "@photoWallDownload": {"description": "Result button that saves the wallpaper to the device."},
+  "photoWallSaved": "Disimpan ke perangkatmu",
+  "@photoWallSaved": {"description": "Toast after Download."},
+  "photoWallStartOver": "Pakai foto lain",
+  "@photoWallStartOver": {"description": "Result button that returns to the picker."},
+  "photoWallErrorUnsafeInput": "Foto ini tidak dapat digunakan. Pilih foto lain.",
+  "@photoWallErrorUnsafeInput": {"description": "Error when the content filter blocks the input photo."},
+  "photoWallErrorUnsafeOutput": "Hasilnya diblokir. Coba lagi atau pilih foto lain.",
+  "@photoWallErrorUnsafeOutput": {"description": "Error when the content filter blocks the result."},
+  "photoWallErrorLimit": "Kamu sudah mencapai batas hari ini, yaitu {count} wallpaper foto.",
+  "@photoWallErrorLimit": {"description": "Error when the daily cap is reached.", "placeholders": {"count": {"type": "int"}}},
+  "photoWallErrorBusy": "Wallpaper foto sedang sangat sibuk. Coba lagi nanti.",
+  "@photoWallErrorBusy": {"description": "Error when the global daily cap is reached."},
+  "photoWallErrorUnreadable": "Foto ini tidak dapat dibuka. Pilih foto lain.",
+  "@photoWallErrorUnreadable": {"description": "Error when the photo does not decode."},
+  "photoWallErrorInProgress": "Fotomu yang terakhir masih diproses.",
+  "@photoWallErrorInProgress": {"description": "Error when the same job is still running."},
+  "photoWallErrorGeneric": "Tidak dapat membuat wallpaper. Coba lagi.",
+  "@photoWallErrorGeneric": {"description": "Error for any other failure."},
+  "photoWallRefunded": "{coins, plural, =1{Koin kamu sudah dikembalikan.} other{{coins} koin kamu sudah dikembalikan.}}",
+  "@photoWallRefunded": {"description": "Added after an error when the server refunded the coins.", "placeholders": {"coins": {"type": "int"}}},
+  "photoWallRefundPending": "Koin kamu akan dikembalikan.",
+  "@photoWallRefundPending": {"description": "Added after an error when the refund is not confirmed yet."},
   "photoWallTryAgain": "Coba lagi",
-  "@photoWallTryAgain": {
-    "description": "Button on the error card that runs the same job again."
-  }
+  "@photoWallTryAgain": {"description": "Button on the error card that runs the same job again."}
 }

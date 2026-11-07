@@ -1130,7 +1130,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountPrismPro => 'Prism Pro';
 
   @override
-  String get accountPrivacyAction => 'गोपनीयता';
+  String get accountPrivacyAction => 'गोपनीयता नीति';
 
   @override
   String get accountPrivacyAndData => 'गोपनीयता और डेटा';
@@ -1268,11 +1268,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountRestoringPurchases => 'खरीदारियाँ वापस पाई जा रही हैं…';
 
   @override
-  String accountResultsForQuery(String query) {
-    return '$query के नतीजे';
-  }
-
-  @override
   String get accountRetry => 'फिर कोशिश करें';
 
   @override
@@ -1395,16 +1390,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountSignInToPrism => 'Prism में साइन इन करें';
 
   @override
-  String get accountSocialGithub => 'GITHUB';
+  String get accountSocialGithub => 'GitHub';
 
   @override
-  String get accountSocialInstagram => 'INSTAGRAM';
+  String get accountSocialInstagram => 'Instagram';
 
   @override
-  String get accountSocialTelegram => 'TELEGRAM';
+  String get accountSocialTelegram => 'Telegram';
 
   @override
-  String get accountSocialTwitter => 'TWITTER';
+  String get accountSocialTwitter => 'Twitter';
 
   @override
   String get accountSomethingWentWrongTryAgain => 'कुछ गड़बड़ हुई। फिर कोशिश करें।';
@@ -1445,7 +1440,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountTerms => 'शर्तें';
 
   @override
-  String get accountTermsAction => 'शर्तें';
+  String get accountTermsAction => 'उपयोग की शर्तें';
 
   @override
   String accountTermsAgreementSemanticLabel(String terms, String privacy) {
@@ -3229,6 +3224,26 @@ class AppLocalizationsHi extends AppLocalizations {
   String get diwaliAnnouncementBody => 'दीये, आतिशबाज़ी और सोना। यह मुफ़्त है। आज़माने के लिए टैप करें।';
 
   @override
+  String get coreThemeWinter => 'विंटर';
+
+  @override
+  String get winterBannerTitle => 'विंटर थीम आ गई है';
+
+  @override
+  String get winterBannerSubtitle =>
+      'ठंडे नीले रंग और हल्की बर्फ़, लाइट और डार्क में। मुफ़्त। आज़माने के लिए टैप करें।';
+
+  @override
+  String get winterAnnouncementTitle => 'नया: विंटर थीम ❄️';
+
+  @override
+  String get winterAnnouncementBody =>
+      'छुट्टियों के लिए ठंडे नीले रंग और हल्की बर्फ़। यह मुफ़्त है। आज़माने के लिए टैप करें।';
+
+  @override
+  String get winterNewYearGreeting => 'नया साल मुबारक';
+
+  @override
   String get coreThisPageDoesNotExist => 'यह पेज मौजूद नहीं है';
 
   @override
@@ -3332,6 +3347,20 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get coreWallpaperErrorTextureDimensions => 'यह इमेज लाइव वॉलपेपर के लिए बहुत बड़ी है।';
+
+  @override
+  String get coreWallpaperStillSetting => 'आपका वॉलपेपर अभी लग रहा है। कुछ फ़ोन पर इसमें थोड़ा समय लग सकता है।';
+
+  @override
+  String get coreWallpaperLockFailedUsePhone =>
+      'लॉक स्क्रीन पर नहीं लग सका। आपके फ़ोन की अपनी वॉलपेपर स्क्रीन इसे लगा सकती है।';
+
+  @override
+  String get coreWallpaperHomeSetLockFailedUsePhone =>
+      'होम स्क्रीन पर लग गया। लॉक स्क्रीन पर नहीं लग सका। आपके फ़ोन की अपनी वॉलपेपर स्क्रीन इसे लगा सकती है।';
+
+  @override
+  String get coreWallpaperSetWithPhone => 'फ़ोन से लगाएँ';
 
   @override
   String get coreWallpaperErrorTimeout => 'समय सीमा समाप्त हुई। अपना कनेक्शन जाँचें और फिर कोशिश करें।';
@@ -4010,6 +4039,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get deepLinkInputLiveTitle => 'लाइव वॉलपेपर';
+
+  @override
+  String get deepLinkInputLiveDescription => 'लाइव वॉलपेपर बनाने के लिए अपनी गैलरी से एक तस्वीर चुनें।';
 
   @override
   String get deepLinkInputPhotoPreviewTitle => 'तस्वीर का प्रीव्यू';
@@ -4936,6 +4968,14 @@ class AppLocalizationsHi extends AppLocalizations {
       one: '$countString कॉइन',
     );
     return '+$_temp0';
+  }
+
+  @override
+  String economyCoinReward(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '+$countString';
   }
 
   @override
@@ -6084,7 +6124,7 @@ class AppLocalizationsHi extends AppLocalizations {
       other: '$hoursString घंटे',
       one: '$hoursString घंटा',
     );
-    return 'सोमवार 00:00 UTC पर रीसेट · $_temp0 $_temp1 बाकी';
+    return '$_temp0 $_temp1 में रीसेट';
   }
 
   @override
@@ -7106,9 +7146,6 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String get economyYourXp => 'आपके XP';
-
-  @override
   String get errorGeneric => 'कुछ गड़बड़ हुई। कृपया फिर कोशिश करें।';
 
   @override
@@ -7246,20 +7283,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notifGenericTitle => 'सूचना';
-
-  @override
-  String notifGroupAndMore(String message, int otherCount) {
-    final intl.NumberFormat otherCountNumberFormat = intl.NumberFormat.decimalPattern(localeName);
-    final String otherCountString = otherCountNumberFormat.format(otherCount);
-
-    String _temp0 = intl.Intl.pluralLogic(
-      otherCount,
-      locale: localeName,
-      other: '$otherCountString और।',
-      one: '$otherCountString और।',
-    );
-    return '$message और $_temp0';
-  }
 
   @override
   String notifGroupApprovals(int count) {
@@ -7915,11 +7938,36 @@ class AppLocalizationsHi extends AppLocalizations {
   String get premiumPageViewPlans => 'प्लान देखें';
 
   @override
+  String get premiumPageHeadline => 'पूरी गैलरी, अनलॉक';
+
+  @override
+  String get premiumBenefitWalls => 'सभी प्रीमियम कलेक्शन और वॉलपेपर';
+
+  @override
+  String get premiumBenefitFree => 'मुफ़्त डाउनलोड और कोई विज्ञापन नहीं';
+
+  @override
+  String get premiumBenefitSpin => 'हर दिन एक मुफ़्त स्पिन';
+
+  @override
+  String get premiumBenefitAutomation => 'ऑटो-रोटेशन और दिन-रात मोड';
+
+  @override
+  String get premiumBenefitLiveStyles => 'लाइव वॉलपेपर की सभी स्टाइल';
+
+  @override
+  String get premiumBenefitAiClean => 'बिना वॉटरमार्क वाले AI वॉलपेपर, कम कॉइन्स में';
+
+  @override
   String get premiumGuestStorePurchaseActive =>
       'स्टोर से की गई आपकी खरीद इस डिवाइस पर सक्रिय है। खाते से जुड़ी Pro सुविधाओं का उपयोग करने के लिए साइन इन करें।';
 
   @override
   String get premiumPurchasePending => 'आपकी खरीद दर्ज हो गई है। Pro अनलॉक होने में एक मिनट लग सकता है।';
+
+  @override
+  String get premiumPaymentPending =>
+      'आपके भुगतान की प्रक्रिया अभी पूरी नहीं हुई है। भुगतान पूरा होते ही Pro अनलॉक हो जाएगा।';
 
   @override
   String get premiumPurchaseUnconfirmed =>
@@ -9716,7 +9764,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get wallpaperThemeModeLight => 'हल्का';
 
   @override
-  String get wallpaperThemeModeSystem => 'सिस्टम (हल्का/गहरा)';
+  String get wallpaperThemeModeSystem => 'सिस्टम';
 
   @override
   String get wallpaperThemePreference => 'थीम की पसंद';
@@ -12127,7 +12175,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String challengeVotingRules(String date) {
-    return 'अन्य रचनाकारों के लिए $date UTC तक वोट दें।';
+    return 'अन्य रचनाकारों के लिए $date तक वोट दें।';
   }
 
   @override
@@ -12846,6 +12894,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get creatorsToFollow => 'फ़ॉलो करने लायक क्रिएटर';
+
+  @override
+  String get accountBrowseCreators => 'क्रिएटर देखें';
 
   @override
   String get creatorsSeeAll => 'सभी देखें';
@@ -14262,6 +14313,30 @@ class AppLocalizationsHi extends AppLocalizations {
   String get searchPhotoCouldNotOpen => 'वह फ़ोटो खोली नहीं जा सकी। कोई और फ़ोटो आज़माएं।';
 
   @override
+  String get searchMoreWallpapers => 'और वॉलपेपर';
+
+  @override
+  String get wallpaperPreviewNoEvents => 'आज कोई इवेंट नहीं';
+
+  @override
+  String accountFollowersLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'फ़ॉलोअर्स', one: 'फ़ॉलोअर');
+    return '$_temp0';
+  }
+
+  @override
+  String profileBadgeCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString बैज', one: '1 बैज');
+    return '$_temp0';
+  }
+
+  @override
+  String get economyLeaderboardTopThisWeek => 'इस हफ़्ते के टॉप';
+
+  @override
   String get foldersSaveAll => 'सभी सहेजें';
 
   @override
@@ -14759,6 +14834,209 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get foldersMakePrivateMessageShared =>
       'इसे सिर्फ़ आप और आपके आमंत्रित लोग देखेंगे। इसका लिंक काम करना बंद कर देगा और इसके फ़ॉलोअर इसे खो देंगे।';
+
+  @override
+  String get gestureHintHoldToSave => 'सेव करने के लिए दबाकर रखें';
+
+  @override
+  String get gestureHintSwipeForSimilar => 'मिलते-जुलते वॉलपेपर के लिए ऊपर स्वाइप करें';
+
+  @override
+  String get foldersSectionAdd => 'सेक्शन जोड़ें';
+
+  @override
+  String get foldersSectionNewTitle => 'नया सेक्शन';
+
+  @override
+  String get foldersSectionNameHint => 'उदाहरण के लिए, लॉक स्क्रीन';
+
+  @override
+  String get foldersSectionRenameTitle => 'सेक्शन का नाम बदलें';
+
+  @override
+  String get foldersSectionDelete => 'सेक्शन हटाएँ';
+
+  @override
+  String foldersSectionDeleteTitle(String name) {
+    return '$name हटाएँ?';
+  }
+
+  @override
+  String foldersSectionDeleteMessage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'इसके $count वॉलपेपर “बिना सेक्शन” में चले जाएँगे।',
+      one: 'इसका वॉलपेपर “बिना सेक्शन” में चला जाएगा।',
+      zero: 'सेक्शन खाली है।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionUnsorted => 'बिना सेक्शन';
+
+  @override
+  String get foldersSectionReorder => 'सेक्शन का क्रम बदलें';
+
+  @override
+  String foldersSectionDragHandle(String name) {
+    return '$name को ले जाने के लिए खींचें';
+  }
+
+  @override
+  String foldersSectionWallCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count वॉलपेपर',
+      one: '1 वॉलपेपर',
+      zero: 'कोई वॉलपेपर नहीं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionHeaderLabel(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count वॉलपेपर',
+      one: '1 वॉलपेपर',
+      zero: 'कोई वॉलपेपर नहीं',
+    );
+    return '$name, $_temp0';
+  }
+
+  @override
+  String foldersSectionJumpTo(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count वॉलपेपर',
+      one: '1 वॉलपेपर',
+      zero: 'कोई वॉलपेपर नहीं',
+    );
+    return '$name पर जाएँ, $_temp0';
+  }
+
+  @override
+  String foldersSectionOptions(String name) {
+    return '$name के लिए और विकल्प';
+  }
+
+  @override
+  String get foldersSectionSaveAll => 'सेक्शन सहेजें';
+
+  @override
+  String get foldersSectionMoveTo => 'सेक्शन में ले जाएँ';
+
+  @override
+  String get foldersSectionMoveTitle => 'इसमें ले जाएँ';
+
+  @override
+  String foldersSectionMoved(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count वॉलपेपर $name में ले जाए गए।',
+      one: '1 वॉलपेपर $name में ले जाया गया।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionSelect => 'वॉलपेपर चुनें';
+
+  @override
+  String foldersSectionSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count चुने गए',
+      one: '1 चुना गया',
+      zero: 'वॉलपेपर चुनने के लिए उन पर टैप करें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionsFull(int max) {
+    return 'एक फ़ोल्डर में अधिकतम $max सेक्शन हो सकते हैं।';
+  }
+
+  @override
+  String get foldersSectionEmpty => 'अभी कोई वॉलपेपर नहीं है।';
+
+  @override
+  String get foldersSectionEmptyHint => 'वॉलपेपर सेक्शन के नाम पर खींचें, या “सेक्शन में ले जाएँ” इस्तेमाल करें।';
+
+  @override
+  String get foldersSectionSuggest => 'सेक्शन सुझाएँ';
+
+  @override
+  String get foldersSuggestTitle => 'सुझाए गए सेक्शन';
+
+  @override
+  String get foldersSuggestBody => 'आपके बिना सेक्शन वाले वॉलपेपर के समूह। जो रखना हो, रखें।';
+
+  @override
+  String get foldersSuggestByMood => 'मूड';
+
+  @override
+  String get foldersSuggestByCategory => 'श्रेणी';
+
+  @override
+  String get foldersSuggestByColour => 'रंग';
+
+  @override
+  String foldersSuggestJoins(String count) {
+    return '$count. इस नाम वाले आपके सेक्शन में जाएगा।';
+  }
+
+  @override
+  String foldersSuggestAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count सेक्शन जोड़ें',
+      one: '1 सेक्शन जोड़ें',
+      zero: 'सेक्शन जोड़ें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSort(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count वॉलपेपर सॉर्ट करें',
+      one: '1 वॉलपेपर सॉर्ट करें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSorted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count वॉलपेपर सॉर्ट हो गए।',
+      one: '1 वॉलपेपर सॉर्ट हो गया।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSuggestEmptyTitle => 'सुझाने के लिए कोई समूह नहीं';
+
+  @override
+  String get foldersSuggestEmptyBody =>
+      'समूह बनने के लिए, बिना सेक्शन वाले एक ही मूड, श्रेणी या रंग के कम से कम 2 Prism वॉलपेपर चाहिए।';
+
+  @override
+  String get foldersSuggestError => 'सुझाव लोड नहीं हो सके';
 
   @override
   String get photoWallEntryTitle => 'आपकी फ़ोटो से';

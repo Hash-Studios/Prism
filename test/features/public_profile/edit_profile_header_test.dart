@@ -1,7 +1,6 @@
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/views/widgets/edit_profile_header.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -44,26 +43,26 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
   }
 
-  testWidgets('the change cover control is the current one: a camera and "Edit cover" on a fade over the cover', (
-    tester,
-  ) async {
+  testWidgets('"Edit cover" is a glass pill at the bottom end of the cover, with no grey fade', (tester) async {
     await pumpHeader(tester);
 
     final Finder hint = find.ancestor(of: find.text('Edit cover'), matching: find.byType(IgnorePointer)).first;
-    expect(find.byIcon(JamIcons.camera), findsOneWidget);
+    expect(find.byIcon(Icons.photo_camera_rounded), findsNWidgets(2));
     expect(find.text('Edit cover'), findsOneWidget);
-    // The hint is a full-width strip along the bottom of the cover, centred, and not a pill.
     final Rect cover = tester.getRect(find.byKey(EditProfileHeader.changeCoverKey));
-    final Rect strip = tester.getRect(hint);
-    expect(strip.width, cover.width);
-    expect(strip.height, 52);
-    expect(strip.bottom, cover.bottom);
-    expect(tester.getCenter(find.text('Edit cover')).dx, closeTo(cover.center.dx + 11, 12));
-    final BoxDecoration fade =
-        tester.widget<Container>(find.descendant(of: hint, matching: find.byType(Container)).first).decoration!
+    final Rect pill = tester.getRect(hint);
+    expect(pill.width, lessThan(cover.width / 2));
+    expect(cover.right - pill.right, PrismSpace.xs);
+    expect(cover.bottom - pill.bottom, PrismSpace.xs);
+    final BoxDecoration fill =
+        tester.widget<DecoratedBox>(find.descendant(of: hint, matching: find.byType(DecoratedBox)).first).decoration
             as BoxDecoration;
-    expect(fade.gradient, isA<LinearGradient>());
-    expect(fade.borderRadius, isNull);
+    expect(fill.gradient, isNull);
+    final ColorScheme cs = Theme.of(tester.element(hint)).colorScheme;
+    expect(fill.color, cs.surface.withValues(alpha: 0.92));
+    expect(fill.boxShadow, isNotEmpty);
+    expect(fill.borderRadius, BorderRadius.circular(PrismRadius.pill));
+    expect(tester.widget<Text>(find.text('Edit cover')).style!.color, cs.onSurface);
   });
 
   testWidgets('the whole cover is the tap target and is a labelled button', (tester) async {

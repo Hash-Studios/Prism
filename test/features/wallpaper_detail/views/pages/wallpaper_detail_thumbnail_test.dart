@@ -66,7 +66,7 @@ void main() {
     const String crop = 'https://th.wallhaven.cc/lg/21/wall.jpg';
     await pumpDetail(tester, state: const WallpaperDetailInitial(), thumbnailUrl: crop);
 
-    expect(networkImageUrls(tester), ['https://th.wallhaven.cc/lg/21/wall.jpg']);
+    expect(networkImageUrls(tester), ['https://th.wallhaven.cc/orig/21/wall.jpg']);
   });
 
   testWidgets('normalizes the loading-state URL instead of the route fallback', (tester) async {
@@ -77,7 +77,7 @@ void main() {
       thumbnailUrl: 'https://th.wallhaven.cc/lg/21/route.jpg',
     );
 
-    expect(networkImageUrls(tester), ['https://th.wallhaven.cc/lg/21/state.jpg']);
+    expect(networkImageUrls(tester), ['https://th.wallhaven.cc/orig/21/state.jpg']);
   });
 
   testWidgets('keeps a non-Wallhaven URL unchanged', (tester) async {

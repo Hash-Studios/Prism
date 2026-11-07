@@ -59,17 +59,15 @@ class _AiStylePickerState extends State<AiStylePicker> {
     super.dispose();
   }
 
-  /// Centres the selected tile when any part of it is out of view.
+  /// Puts the selected tile at the leading margin: always on open, and after a pick when it is out of view.
   void _reveal({required bool animate}) {
     if (!mounted || !_scroll.hasClients) return;
     final ScrollPosition position = _scroll.position;
     final double start = widget.padding.left + widget.selected.index * (AiStylePicker.tileWidth + AiStylePicker._gap);
     final double end = start + AiStylePicker.tileWidth;
-    if (start >= position.pixels && end <= position.pixels + position.viewportDimension) return;
-    final double target = (start - (position.viewportDimension - AiStylePicker.tileWidth) / 2).clamp(
-      position.minScrollExtent,
-      position.maxScrollExtent,
-    );
+    // On open the row always starts at the selected tile. Later picks scroll only when the tile is out of view.
+    if (animate && start >= position.pixels && end <= position.pixels + position.viewportDimension) return;
+    final double target = (start - widget.padding.left).clamp(position.minScrollExtent, position.maxScrollExtent);
     if (!animate) {
       position.jumpTo(target);
       return;
@@ -212,7 +210,8 @@ class _StyleTile extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.center,
                         end: Alignment.bottomCenter,
-                        colors: <Color>[Colors.transparent, Colors.black.withValues(alpha: 0.5)],
+                        colors: <Color>[Colors.transparent, Colors.black.withValues(alpha: 0.65)],
+                        stops: const <double>[0.45, 1],
                       ),
                     ),
                   ),

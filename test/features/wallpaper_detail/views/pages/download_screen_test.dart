@@ -6,6 +6,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -15,6 +16,7 @@ import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_screen.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -183,7 +185,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Delete'));
     await tester.pumpAndSettle();
     expect(find.text('Delete this download?'), findsOneWidget);
-    await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+    await tester.tap(find.widgetWithText(PrismButton, 'Delete'));
     await tester.pump();
     await tester.pump();
     await tester.pump();
@@ -191,6 +193,34 @@ void main() {
     expect(deleteCalls, <String>[a.path]);
     expect(find.text('1 selected'), findsNothing);
     expect(find.text('1 download · 3 B'), findsOneWidget);
+  });
+
+  testWidgets('selecting plays one selection haptic and confirming a delete plays one tap', (tester) async {
+    final List<Object?> played = <Object?>[];
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), (call) async {
+      played.add(call.arguments);
+      return null;
+    });
+    final bool hapticsWere = PrismHaptics.enabled;
+    PrismHaptics.enabled = true;
+    addTearDown(() {
+      PrismHaptics.enabled = hapticsWere;
+      messenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), null);
+    });
+    final File a = makeFile('a.png');
+    onList = () async => DownloadItemsResult(success: true, items: <String>[a.path]);
+    await pumpScreen(tester);
+
+    await tester.longPress(find.byKey(ValueKey<String>(a.path)));
+    await tester.pump();
+    await tester.tap(find.bySemanticsLabel('Delete'));
+    await tester.pumpAndSettle();
+    played.clear();
+    await tester.tap(find.widgetWithText(PrismButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    expect(played, <String>['tap']);
   });
 
   testWidgets('guest cancelling sign-in cannot delete a download', (tester) async {
@@ -357,7 +387,7 @@ void main() {
     remaining.remove(b.path);
     await tester.tap(find.bySemanticsLabel('Delete'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+    await tester.tap(find.widgetWithText(PrismButton, 'Delete'));
     await tester.pump();
     await tester.pump();
     await tester.pump();
@@ -389,7 +419,7 @@ void main() {
       await tester.pump();
       await tester.tap(find.bySemanticsLabel('Delete'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Delete'));
+      await tester.tap(find.widgetWithText(PrismButton, 'Delete'));
       await tester.pump();
       expect(deleteCalls, [a.path]);
       app_state.prismUser = app_constants.createGuestPrismUser()

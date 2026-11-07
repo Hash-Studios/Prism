@@ -6,6 +6,7 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:3107",
     browserName: "chromium",
+    channel: process.env.PLAYWRIGHT_CHROMIUM_CHANNEL,
     hasTouch: true,
     trace: "retain-on-failure",
   },

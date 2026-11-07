@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
@@ -87,7 +87,6 @@ class _IosShortcutsGuideScreenState extends State<IosShortcutsGuideScreen> {
   }
 
   Future<void> _open(Uri uri, String kind) async {
-    PrismHaptics.selection();
     final String error = context.l10n.wallpaperShortcutsOpenError;
     bool opened = false;
     try {
@@ -111,7 +110,6 @@ class _IosShortcutsGuideScreenState extends State<IosShortcutsGuideScreen> {
   }
 
   Future<void> _stop() async {
-    PrismHaptics.selection();
     await ShortcutsFoldersStore.setRotationFolder(null);
     if (mounted) setState(() => _rotationId = null);
   }
@@ -125,6 +123,8 @@ class _IosShortcutsGuideScreenState extends State<IosShortcutsGuideScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xxl),
         children: <Widget>[
+          const _PhoneHero(),
+          const SizedBox(height: PrismSpace.lg),
           Text(l10n.shortcutsGuideHeadline, style: PrismTextStyles.sectionTitle(context)),
           const SizedBox(height: PrismSpace.xs),
           Text(l10n.shortcutsGuideBody, style: PrismTextStyles.body(context)),
@@ -277,67 +277,164 @@ class _Step extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: PrismSpace.xl),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          ExcludeSemantics(
-            child: CircleAvatar(
-              radius: 14,
-              backgroundColor: cs.primary.withValues(alpha: 0.14),
-              child: Text(
-                '$number',
-                style: PrismTextStyles.caption(context).copyWith(color: cs.primary, fontWeight: FontWeight.w700),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              ExcludeSemantics(
+                child: CircleAvatar(
+                  radius: 14,
+                  backgroundColor: cs.primary,
+                  child: Text(
+                    '$number',
+                    style: PrismTextStyles.caption(context).copyWith(color: cs.onPrimary, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+              const SizedBox(width: PrismSpace.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Semantics(
+                      header: true,
+                      label: context.l10n.shortcutsStepLabel(number, title),
+                      excludeSemantics: true,
+                      child: Text(title, style: PrismTextStyles.cardTitle(context)),
+                    ),
+                    if (body case final String text) ...<Widget>[
+                      const SizedBox(height: PrismSpace.xxs),
+                      Text(text, style: PrismTextStyles.body(context)),
+                    ],
+                    for (final String line in lines)
+                      Padding(
+                        padding: const EdgeInsets.only(top: PrismSpace.xs),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.only(top: 7),
+                              child: Container(
+                                width: 5,
+                                height: 5,
+                                decoration: BoxDecoration(color: cs.onSurfaceVariant, shape: BoxShape.circle),
+                              ),
+                            ),
+                            const SizedBox(width: PrismSpace.xs),
+                            Expanded(
+                              child: Text(
+                                line,
+                                style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (action case final Widget button) ...<Widget>[const SizedBox(height: PrismSpace.sm), button],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (note case final String text) ...<Widget>[
+            const SizedBox(height: PrismSpace.sm),
+            PrismCard(
+              padding: const EdgeInsets.all(PrismSpace.sm),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Icon(Icons.info_outline_rounded, size: 20, color: cs.onSurfaceVariant),
+                  const SizedBox(width: PrismSpace.xs),
+                  Expanded(child: Text(text, style: PrismTextStyles.body(context))),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// A phone-shaped frame (9:19.5) that slowly crossfades 3 bundled covers: a new wallpaper every day. It is art, so
+/// screen readers skip it, and under reduce motion it holds on the first cover.
+class _PhoneHero extends StatefulWidget {
+  const _PhoneHero();
+
+  @override
+  State<_PhoneHero> createState() => _PhoneHeroState();
+}
+
+class _PhoneHeroState extends State<_PhoneHero> {
+  static const double _height = 200;
+  Timer? _timer;
+  int _index = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (context.reduceMotion) {
+      _timer?.cancel();
+      _timer = null;
+    } else {
+      _timer ??= Timer.periodic(CoverMosaic.interval, (_) {
+        if (mounted && TickerMode.valuesOf(context).enabled) setState(() => _index = (_index + 1) % 3);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final String asset = kCoverMosaicAssets[_index];
+    final Widget image = Image.asset(
+      asset,
+      key: ValueKey<String>(asset),
+      fit: BoxFit.cover,
+      excludeFromSemantics: true,
+      gaplessPlayback: true,
+      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+    );
+    return ExcludeSemantics(
+      child: Center(
+        child: SizedBox(
+          height: _height,
+          child: AspectRatio(
+            aspectRatio: 9 / 19.5,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(PrismRadius.lg),
+                border: Border.all(color: cs.outlineVariant, width: 3),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(PrismRadius.lg - 3),
+                child: ColoredBox(
+                  color: cs.surfaceContainerHighest,
+                  child: context.reduceMotion
+                      ? image
+                      : AnimatedSwitcher(
+                          duration: CoverMosaic.crossfade,
+                          switchInCurve: Curves.easeInOut,
+                          switchOutCurve: Curves.easeInOut,
+                          layoutBuilder: (Widget? current, List<Widget> previous) => Stack(
+                            fit: StackFit.expand,
+                            children: <Widget>[...previous, if (current != null) current],
+                          ),
+                          child: image,
+                        ),
+                ),
               ),
             ),
           ),
-          const SizedBox(width: PrismSpace.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Semantics(
-                  header: true,
-                  label: context.l10n.shortcutsStepLabel(number, title),
-                  excludeSemantics: true,
-                  child: Text(title, style: PrismTextStyles.cardTitle(context)),
-                ),
-                if (body case final String text) ...<Widget>[
-                  const SizedBox(height: PrismSpace.xxs),
-                  Text(text, style: PrismTextStyles.body(context)),
-                ],
-                for (final String line in lines)
-                  Padding(
-                    padding: const EdgeInsets.only(top: PrismSpace.xs),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Padding(
-                          padding: const EdgeInsets.only(top: 7),
-                          child: Container(
-                            width: 5,
-                            height: 5,
-                            decoration: BoxDecoration(color: cs.onSurfaceVariant, shape: BoxShape.circle),
-                          ),
-                        ),
-                        const SizedBox(width: PrismSpace.xs),
-                        Expanded(
-                          child: Text(
-                            line,
-                            style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                if (note case final String text) ...<Widget>[
-                  const SizedBox(height: PrismSpace.xs),
-                  Text(text, style: PrismTextStyles.caption(context)),
-                ],
-                if (action case final Widget button) ...<Widget>[const SizedBox(height: PrismSpace.sm), button],
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -20,6 +20,7 @@ import 'package:Prism/features/ios_shortcuts/data/native_asset_paths_store.dart'
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/core/widgets/prism/prism_toast.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, visibleForTesting;
@@ -68,9 +69,7 @@ class _QuickTileSettingsScreenState extends State<QuickTileSettingsScreen> {
       QuickSettingsAddResult.notAdded => context.l10n.wallpaperQuickTileNotAdded,
       QuickSettingsAddResult.unsupported || QuickSettingsAddResult.error => context.l10n.wallpaperQuickTileAddError,
     };
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    showPrismToast(Overlay.of(context), message);
   }
 
   Future<void> _loadConfig() async {

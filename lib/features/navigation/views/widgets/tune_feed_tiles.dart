@@ -29,7 +29,7 @@ class LearnedPill extends StatelessWidget {
           padding: PrismBottomSheet.learnedPillPadding,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               Text(label, style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14)),
               const SizedBox(height: PrismSpace.xs),
@@ -111,7 +111,7 @@ class InterestTile extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      stops: const <double>[0.4, 1],
+                      stops: const <double>[0.3, 1],
                       colors: <Color>[
                         Colors.black.withValues(alpha: 0),
                         Colors.black.withValues(alpha: PrismBottomSheet.interestTileScrimAlpha),

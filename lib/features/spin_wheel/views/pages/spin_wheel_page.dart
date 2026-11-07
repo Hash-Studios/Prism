@@ -170,6 +170,7 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
       case SpinAction.capped:
         return;
       case SpinAction.getCoins:
+        PrismHaptics.tap();
         unawaited(_getCoins());
         return;
       case SpinAction.spin:
@@ -516,7 +517,10 @@ class _ProRow extends StatelessWidget {
     return PrismCard(
       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: PrismSpace.sm),
       semanticLabel: context.l10n.economyProDailyFreeSpin,
-      onTap: onTap,
+      onTap: () {
+        PrismHaptics.tap();
+        onTap();
+      },
       child: Row(
         children: <Widget>[
           Icon(Icons.workspace_premium_outlined, size: 20, color: cs.onSurface),
@@ -527,7 +531,7 @@ class _ProRow extends StatelessWidget {
               style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 14),
             ),
           ),
-          Icon(Icons.chevron_right_rounded, size: 20, color: cs.onSurface.withValues(alpha: 0.35)),
+          Icon(Icons.chevron_right_rounded, size: 20, color: cs.onSurface.withValues(alpha: PrismInk.iconAlpha)),
         ],
       ),
     );

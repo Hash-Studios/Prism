@@ -405,6 +405,56 @@ class SetWallpaperFlow {
             historyIds: <String>[...priorResult.historyIds, ...serviceResult.historyIds],
           );
     if (placed != null) _trackPlacement(placed, choice.target, result);
+    Future<void> retry(WallpaperTarget retryTarget, {required bool systemScreen}) async {
+      if (!_isSignedInOwner(owner)) return;
+      // The phone's own wallpaper screen does its own placement, so it takes the original.
+      final PlacedWallpaper? retryPlaced = systemScreen ? null : placed;
+      final isLocal = url.startsWith('/') || url.startsWith('file:');
+      if (retryPlaced == null && !isLocal && !context.mounted) return;
+      final retryUrl = retryPlaced != null || isLocal
+          ? url
+          : await resolveOriginalWithConsent(
+              context,
+              url: url,
+              wallpaperId: wallpaperId,
+              wallpaperSource: wallpaperSource,
+              action: OriginalAccessAction.set,
+              label: l10n.coreSetWallpaper,
+              requestId: requestId,
+            ).catchError((Object error, StackTrace stackTrace) {
+              if (_isSignedInOwner(owner)) _reportPreparationFailure(error, stackTrace, l10n);
+              return null;
+            });
+      if (retryUrl == null || !_isSignedInOwner(owner)) return;
+      if (systemScreen && placed != null) unawaited(placed.discard());
+      await apply(
+        // A retry runs after the user leaves; apply then reports through the messenger taken before the first await.
+        // ignore: use_build_context_synchronously
+        context,
+        url: retryUrl,
+        choice: SetWallpaperChoice(
+          retryTarget,
+          useSystemCropper: systemScreen || choice.useSystemCropper,
+          placed: retryPlaced,
+          targetChanged: choice.targetChanged,
+        ),
+        thumbnailUrl: thumbnailUrl,
+        recordHistory: recordHistory,
+        onBusy: onBusy,
+        entryPoint: entryPoint,
+        usedDefault: usedDefault,
+        historyOriginalIdentity: historyOriginalIdentity,
+        historySource: historySource,
+        priorResult: result,
+        requestId: requestId,
+        messenger: host,
+        localizations: l10n,
+        onMatchAccent: onMatchAccent,
+        wallpaperId: wallpaperId,
+        wallpaperSource: wallpaperSource,
+      );
+    }
+
     reportWallpaperSetResult(
       context.mounted ? context : null,
       result,
@@ -423,52 +473,8 @@ class SetWallpaperFlow {
         requestId: requestId,
       ),
       onMatchAccent: onMatchAccent,
-      onRetry: (retryTarget) => unawaited(() async {
-        if (!_isSignedInOwner(owner)) return;
-        final isLocal = url.startsWith('/') || url.startsWith('file:');
-        if (placed == null && !isLocal && !context.mounted) return;
-        final retryUrl = placed != null
-            ? placed.path
-            : isLocal
-            ? url
-            : await resolveOriginalWithConsent(
-                context,
-                url: url,
-                wallpaperId: wallpaperId,
-                wallpaperSource: wallpaperSource,
-                action: OriginalAccessAction.set,
-                label: l10n.coreSetWallpaper,
-                requestId: requestId,
-              ).catchError((Object error, StackTrace stackTrace) {
-                if (_isSignedInOwner(owner)) _reportPreparationFailure(error, stackTrace, l10n);
-                return null;
-              });
-        if (retryUrl == null || !_isSignedInOwner(owner)) return;
-        await apply(
-          context,
-          url: retryUrl,
-          choice: SetWallpaperChoice(
-            retryTarget,
-            useSystemCropper: choice.useSystemCropper,
-            placed: placed,
-            targetChanged: choice.targetChanged,
-          ),
-          thumbnailUrl: thumbnailUrl,
-          recordHistory: recordHistory,
-          onBusy: onBusy,
-          entryPoint: entryPoint,
-          usedDefault: usedDefault,
-          historyOriginalIdentity: historyOriginalIdentity,
-          historySource: historySource,
-          priorResult: result,
-          requestId: requestId,
-          messenger: host,
-          localizations: l10n,
-          onMatchAccent: onMatchAccent,
-          wallpaperId: wallpaperId,
-          wallpaperSource: wallpaperSource,
-        );
-      }()),
+      onRetry: (retryTarget) => unawaited(retry(retryTarget, systemScreen: false)),
+      onSystemSet: (retryTarget) => unawaited(retry(retryTarget, systemScreen: true)),
     );
     if (placed != null && (result.isSuccess || result.isSilent || (result.isFailure && !result.canRetry))) {
       unawaited(placed.discard());

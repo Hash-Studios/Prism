@@ -32,26 +32,26 @@ class OnboardingTypography {
   );
 
   static const TextStyle cta = TextStyle(
-    fontFamily: serif,
-    fontSize: 16,
+    fontFamily: sans,
+    fontSize: 17,
     height: 1.233,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w700,
     color: OnboardingColors.buttonText,
   );
 
   static const TextStyle helper = TextStyle(
     fontFamily: sans,
-    fontSize: 11,
+    fontSize: 13,
     height: 1.35,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w500,
     color: OnboardingColors.textOnDark,
   );
 
   static const TextStyle skip = TextStyle(
-    fontFamily: serif,
+    fontFamily: sans,
     fontSize: 16,
     height: 1.233,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w600,
     color: OnboardingColors.textPrimary,
   );
 }

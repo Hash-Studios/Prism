@@ -38,9 +38,8 @@ final class RecommendationState extends Equatable {
       RecommendationState(items: items, cursor: cursor, kind: kind, status: RecommendationStatus.loading);
 
   RecommendationState append(RecommendationPage page, FeedItemEntity current) {
-    final seen = {(current.source, current.id), for (final item in items) (item.source, item.id)};
     return RecommendationState(
-      items: [...items, ...page.items.where((item) => seen.add((item.source, item.id)))],
+      items: distinctWalls([...items, ...page.items], exclude: [current]),
       cursor: page.nextCursor,
       kind: page.kind,
       status: page.nextCursor == null ? RecommendationStatus.exhausted : RecommendationStatus.ready,

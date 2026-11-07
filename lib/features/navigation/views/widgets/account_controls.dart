@@ -5,6 +5,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
+import 'package:Prism/features/navigation/views/widgets/nav_glass.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -215,25 +216,14 @@ class _AvatarTarget extends StatelessWidget {
   }
 }
 
-/// The bottom bar pill's colour and shadow, so a control there reads over any wallpaper.
+/// The bottom bar pill's glass, so a control there reads over any wallpaper.
 class _FloatingDisc extends StatelessWidget {
   const _FloatingDisc({required this.child});
 
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor,
-        shape: BoxShape.circle,
-        boxShadow: <BoxShadow>[
-          BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 4, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: child,
-    );
-  }
+  Widget build(BuildContext context) => NavGlass(circle: true, child: child);
 }
 
 class _UnreadDot extends StatelessWidget {

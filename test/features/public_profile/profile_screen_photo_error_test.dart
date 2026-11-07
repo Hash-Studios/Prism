@@ -11,7 +11,6 @@ import 'package:Prism/features/public_profile/domain/repositories/public_profile
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -82,7 +81,10 @@ void main() {
       imageError: const HttpExceptionWithStatus(404, 'fixture avatar missing'),
     );
 
-    expect(find.descendant(of: find.byType(CachedNetworkImage), matching: find.byIcon(JamIcons.user)), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(CachedNetworkImage), matching: find.byIcon(Icons.person_rounded)),
+      findsOneWidget,
+    );
     expect(find.byType(Placeholder), findsNothing);
     await tester.pumpWidget(const SizedBox());
   });
@@ -91,7 +93,7 @@ void main() {
     await pumpProfile(tester, '');
 
     expect(find.byType(CachedNetworkImage), findsNothing);
-    expect(find.byIcon(JamIcons.user), findsOneWidget);
+    expect(find.byIcon(Icons.person_rounded), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 }

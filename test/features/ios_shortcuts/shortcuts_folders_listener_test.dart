@@ -10,6 +10,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_folders_store.dart';
 import 'package:Prism/features/ios_shortcuts/views/widgets/shortcuts_folders_listener.dart';
@@ -62,10 +63,19 @@ class _FakeFoldersRepository implements FoldersRepository {
   Future<Result<List<FolderEntity>>> fetchFolders(String userId) => throw UnimplementedError();
 
   @override
-  Future<Result<List<FavouriteWallEntity>?>> fetchItems(String folderId, {required String userId, int? limit}) async {
+  Future<Result<List<FolderItem>?>> fetchItems(String folderId, {required String userId, int? limit}) async {
     fetched.add(folderId);
-    return Result.success<List<FavouriteWallEntity>?>(walls[folderId]);
+    final List<FavouriteWallEntity>? list = walls[folderId];
+    return Result.success<List<FolderItem>?>(list?.map((w) => FolderItem(w)).toList());
   }
+
+  @override
+  Future<Result<void>> organize(
+    FolderEntity folder, {
+    required String userId,
+    List<FolderSection>? sections,
+    Map<String, String?> moves = const <String, String?>{},
+  }) async => Result.success<void>(null);
 
   @override
   Future<Result<Set<String>>> foldersContaining(List<String> folderIds, String itemKey) => throw UnimplementedError();

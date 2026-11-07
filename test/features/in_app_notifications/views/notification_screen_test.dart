@@ -46,7 +46,7 @@ void main() {
     await pump(tester, InAppNotificationsState.initial().copyWith(status: LoadStatus.loading));
 
     expect(find.bySemanticsLabel('Loading'), findsOneWidget);
-    expect(find.byTooltip('Clear inbox'), findsNothing);
+    expect(find.byTooltip('More options'), findsNothing);
     expect(find.byTooltip('Notification preferences'), findsOneWidget);
   });
 
@@ -80,7 +80,7 @@ void main() {
     expect(find.text('Wall approved ✅'), findsNothing);
     expect(find.text('Your wall is live.'), findsOneWidget);
     expect(find.byType(UnreadDot), findsOneWidget);
-    expect(find.byTooltip('Clear inbox'), findsOneWidget);
+    expect(find.byTooltip('More options'), findsOneWidget);
     expect(find.byType(FloatingActionButton), findsNothing);
   });
 
@@ -126,5 +126,11 @@ void main() {
     expect(cleanNotificationTitle('New Premium Wall for review! 🎉'), 'New Premium Wall for review!');
     expect(cleanNotificationTitle('Streak 🔥 alert'), 'Streak 🔥 alert');
     expect(cleanNotificationTitle('🎉'), '🎉');
+  });
+
+  test('glueTrailingEmoji joins a trailing emoji to the last word with a no-break space', () {
+    expect(glueTrailingEmoji('Keep your streak alive 🔥'), 'Keep your streak alive\u00A0🔥');
+    expect(glueTrailingEmoji('Streak 🔥 alert'), 'Streak 🔥 alert');
+    expect(glueTrailingEmoji('No emoji here'), 'No emoji here');
   });
 }

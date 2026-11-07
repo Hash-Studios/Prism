@@ -4,21 +4,30 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_feed_settings.dart';
+import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/features/public_profile/domain/usecases/public_profile_usecases.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_grid.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+
 import '../../support/favourite_test_scope.dart';
 import '../../support/in_memory_local_store.dart';
 
@@ -34,10 +43,17 @@ class _MockSummaries extends Mock implements FetchUserSummariesPageUseCase {}
 
 class _MockSearch extends Mock implements SearchUsersByUsernameUseCase {}
 
+class _MockFavouriteWallsBloc extends MockBloc<FavouriteWallsEvent, FavouriteWallsState>
+    implements FavouriteWallsBloc {}
+
+class _MockStackRouter extends Mock implements StackRouter {}
+
 void main() {
   setUpFavouriteCounts();
   setUpAll(() {
     registerFallbackValue(const PublicProfileEvent.refreshRequested());
+    registerFallbackValue(const FavouriteWallsEvent.refreshRequested());
+    registerFallbackValue(WallpaperDetailRoute());
     registerFallbackValue(const FetchPublicProfileWallsParams(userId: '', refresh: false));
   });
   setUp(() => getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore())));
@@ -83,15 +99,202 @@ void main() {
 
     expect(find.text('No wallpapers yet'), findsOneWidget);
     expect(find.text('Upload your first wallpaper to start your gallery.'), findsNothing);
+    expect(find.text('Upload wallpaper'), findsNothing);
     expect(find.byType(LoadingCards), findsNothing);
     expect(find.byType(SliverGrid), findsNothing);
   });
 
-  testWidgets('invites the owner to upload when their gallery is empty', (tester) async {
+  testWidgets('own empty gallery with no favourites shows only the compact upload prompt', (tester) async {
     await pumpGrid(tester, PublicProfileState.initial().copyWith(status: LoadStatus.success), ownProfile: true);
 
     expect(find.text('No wallpapers yet'), findsOneWidget);
-    expect(find.text('Upload your first wallpaper to start your gallery.'), findsOneWidget);
+    expect(find.widgetWithText(PrismButton, 'Upload wallpaper'), findsOneWidget);
+    expect(find.text('Upload your first wallpaper to start your gallery.'), findsNothing);
+    expect(find.byType(GlintState), findsNothing, reason: 'the tall mascot state is gone on the own profile');
+    expect(find.text('Favourites'), findsNothing);
+    expect(find.byType(SliverGrid), findsNothing);
+  });
+
+  group('own empty gallery shows favourites', () {
+    late _MockFavouriteWallsBloc favourites;
+    late _MockStackRouter router;
+
+    PrismFavouriteWall favourite(String id) => PrismFavouriteWall(
+      id: id,
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(
+          id: id,
+          source: WallpaperSource.prism,
+          fullUrl: 'https://example.com/$id.jpg',
+          thumbnailUrl: 'https://example.com/$id-thumb.jpg',
+        ),
+      ),
+    );
+
+    setUp(() {
+      favourites = _MockFavouriteWallsBloc();
+      router = _MockStackRouter();
+      when(() => router.push(any())).thenAnswer((_) async => null);
+    });
+
+    Future<void> pumpOwn(
+      WidgetTester tester,
+      PublicProfileState state,
+      List<FavouriteWallEntity> items, {
+      String? userId,
+      LoadStatus status = LoadStatus.success,
+      Stream<FavouriteWallsState> stream = const Stream<FavouriteWallsState>.empty(),
+      bool ownProfile = true,
+    }) async {
+      when(() => bloc.state).thenReturn(state);
+      whenListen(
+        favourites,
+        stream,
+        initialState: FavouriteWallsState.initial().copyWith(
+          status: status,
+          userId: userId ?? app_state.prismUser.id,
+          items: items,
+        ),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: StackRouterScope(
+            controller: router,
+            stateHash: 0,
+            child: Scaffold(
+              body: MultiBlocProvider(
+                providers: [
+                  BlocProvider<FavouriteWallsBloc>.value(value: favourites),
+                  BlocProvider<PublicProfileBloc>.value(value: bloc),
+                ],
+                child: CustomScrollView(slivers: <Widget>[UserProfileGrid(ownProfile: ownProfile)]),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+
+    testWidgets('no uploads and favourites: the compact prompt, then a Favourites grid that opens walls', (
+      tester,
+    ) async {
+      await pumpOwn(tester, PublicProfileState.initial().copyWith(status: LoadStatus.success), <FavouriteWallEntity>[
+        favourite('fav-1'),
+        favourite('fav-2'),
+      ]);
+
+      expect(find.widgetWithText(PrismButton, 'Upload wallpaper'), findsOneWidget);
+      expect(find.text('Favourites'), findsOneWidget);
+      expect(find.byType(PrismWallTile), findsNWidgets(2));
+      expect(
+        tester.getRect(find.text('No wallpapers yet')).bottom,
+        lessThan(tester.getRect(find.byType(PrismWallTile).first).top),
+        reason: 'the prompt stays above the favourites',
+      );
+      expect(find.text('See all'), findsNothing, reason: 'every favourite fits in the preview');
+
+      await tester.tap(find.byType(PrismWallTile).at(1));
+      await tester.pump();
+
+      final WallpaperDetailRoute route =
+          verify(() => router.push(captureAny())).captured.single as WallpaperDetailRoute;
+      expect(route.args!.entity!.id, 'fav-2');
+    });
+
+    testWidgets('more favourites than the preview holds: 12 tiles and See all', (tester) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await pumpOwn(tester, PublicProfileState.initial().copyWith(status: LoadStatus.success), <FavouriteWallEntity>[
+        for (int i = 0; i < 15; i++) favourite('fav-$i'),
+      ]);
+
+      expect(find.byType(PrismWallTile), findsNWidgets(12));
+      expect(find.text('See all'), findsOneWidget);
+    });
+
+    testWidgets('does not show favourites cached for another account', (tester) async {
+      await pumpOwn(tester, PublicProfileState.initial().copyWith(status: LoadStatus.success), <FavouriteWallEntity>[
+        favourite('private'),
+      ], userId: 'another-account');
+      expect(find.byType(PrismWallTile), findsNothing);
+      verify(() => favourites.add(FavouriteWallsEvent.started(userId: app_state.prismUser.id))).called(1);
+    });
+
+    testWidgets('failed favourites load offers retry without hiding the upload prompt', (tester) async {
+      await pumpOwn(
+        tester,
+        PublicProfileState.initial().copyWith(status: LoadStatus.success),
+        const <FavouriteWallEntity>[],
+        status: LoadStatus.failure,
+      );
+      expect(find.widgetWithText(PrismButton, 'Upload wallpaper'), findsOneWidget);
+      expect(find.text('Try again'), findsOneWidget);
+      await tester.tap(find.text('Try again'));
+      verify(() => favourites.add(FavouriteWallsEvent.started(userId: app_state.prismUser.id))).called(1);
+    });
+
+    testWidgets('status-only loading and failure changes rebuild the preview', (tester) async {
+      final states = StreamController<FavouriteWallsState>();
+      addTearDown(states.close);
+      await pumpOwn(
+        tester,
+        PublicProfileState.initial().copyWith(status: LoadStatus.success),
+        const <FavouriteWallEntity>[],
+        stream: states.stream,
+      );
+      states.add(favourites.state.copyWith(status: LoadStatus.loading));
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(LoadingCards), findsOneWidget);
+      states.add(favourites.state.copyWith(status: LoadStatus.failure));
+      await tester.pump();
+      await tester.pump();
+      expect(find.byType(LoadingCards), findsNothing);
+      expect(find.text('Try again'), findsOneWidget);
+    });
+
+    testWidgets('another user profile never shows viewer favourites', (tester) async {
+      await pumpOwn(tester, PublicProfileState.initial().copyWith(status: LoadStatus.success), <FavouriteWallEntity>[
+        favourite('private'),
+      ], ownProfile: false);
+      expect(find.byType(PrismWallTile), findsNothing);
+      expect(find.text('Favourites'), findsNothing);
+      verifyNever(() => favourites.add(any()));
+    });
+
+    testWidgets('upload prompt uses the shared body typography', (tester) async {
+      await pumpOwn(
+        tester,
+        PublicProfileState.initial().copyWith(status: LoadStatus.success),
+        const <FavouriteWallEntity>[],
+      );
+      final prompt = find.text('No wallpapers yet');
+      expect(tester.widget<Text>(prompt).style, PrismTextStyles.body(tester.element(prompt)));
+    });
+
+    testWidgets('uploads present: the gallery shows and favourites do not', (tester) async {
+      await pumpOwn(
+        tester,
+        PublicProfileState.initial().copyWith(
+          status: LoadStatus.success,
+          walls: <PublicProfileWallEntity>[
+            const PublicProfileWallEntity(id: 'upload-1', by: 'Me', wallpaperUrl: 'https://example.com/u1.jpg'),
+          ],
+        ),
+        <FavouriteWallEntity>[favourite('fav-1')],
+      );
+
+      expect(find.byType(PrismWallTile), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('upload-1')), findsOneWidget);
+      expect(find.text('Favourites'), findsNothing);
+      expect(find.text('No wallpapers yet'), findsNothing);
+      expect(find.widgetWithText(PrismButton, 'Upload wallpaper'), findsNothing);
+    });
   });
 
   testWidgets('shows an error with a retry that refreshes when the first load failed', (tester) async {
@@ -152,7 +355,7 @@ void main() {
   });
 
   for (final thumbnail in <String, String>{
-    'https://th.wallhaven.cc/small/21/profile.jpg': 'https://th.wallhaven.cc/lg/21/profile.jpg',
+    'https://th.wallhaven.cc/small/21/profile.jpg': 'https://th.wallhaven.cc/orig/21/profile.jpg',
     'https://images.pexels.com/photos/1/tiny.jpg?fit=crop&w=200&h=280':
         'https://images.pexels.com/photos/1/tiny.jpg?fit=max&w=200&h=280',
   }.entries) {
@@ -487,6 +690,9 @@ void main() {
       expect(realBloc.state.isFetchingMoreWalls, isFalse);
       expect(find.text('Try again'), findsOneWidget);
 
+      // The retry state above the grid pushes the See more cell below the fold.
+      await tester.ensureVisible(find.text('See more'));
+      await tester.pump();
       await tester.tap(find.text('See more'));
       await tester.pump();
       await tester.pump();

@@ -167,9 +167,9 @@ void main() {
         await tester.tapAt(tester.getTopLeft(photoPicker) + Offset(tester.getSize(photoPicker).width / 2, 10));
         await tester.pumpAndSettle();
         haptics.clear();
-        await tester.ensureVisible(find.text('Save changes'));
+        await tester.ensureVisible(find.text('Save'));
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Save changes'));
+        await tester.tap(find.text('Save'));
         await tester.pumpAndSettle();
 
         if (stage == 'success') {
@@ -183,7 +183,7 @@ void main() {
           expect(messages, <String>['Could not save your profile. Please try again.']);
           expect(haptics, <String>['HapticFeedbackType.lightImpact', 'HapticFeedbackType.errorNotification']);
           expect(find.text('Edit profile'), findsOneWidget);
-          final save = find.widgetWithText(PrismButton, 'Save changes');
+          final save = find.widgetWithText(PrismButton, 'Save');
           expect(tester.widget<PrismButton>(save).onPressed, isNotNull);
         }
         await tester.pump(const Duration(seconds: 1));

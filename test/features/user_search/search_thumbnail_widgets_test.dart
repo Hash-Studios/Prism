@@ -26,6 +26,9 @@ class _MockSearchDiscoveryBloc extends MockBloc<SearchDiscoveryEvent, SearchDisc
 class _MockWallpaperSearchService extends Mock implements WallpaperSearchService {}
 
 const String _cropUrl = 'https://th.wallhaven.cc/lg/21/21276x.jpg';
+
+/// The grid maps Wallhaven crops to the uncropped orig thumb.
+const String _thumbUrl = 'https://th.wallhaven.cc/orig/21/21276x.jpg';
 const String _fullUrl = 'https://wallhaven.cc/w/21276x';
 
 WallhavenWallpaper _wall(String rawOriginal) => WallhavenWallpaper(
@@ -58,11 +61,11 @@ Future<void> _pumpDiscovery(WidgetTester tester, WallhavenWallpaper wall) async 
 void main() {
   setUpFavouriteCounts();
   for (final rawOriginal in <String>['', ' ']) {
-    testWidgets('discovery keeps the lg crop and ignores cached original thumb $rawOriginal', (tester) async {
+    testWidgets('discovery uses the orig thumb and ignores a blank cached original thumb $rawOriginal', (tester) async {
       await _pumpDiscovery(tester, _wall(rawOriginal));
 
       expect(
-        find.byWidgetPredicate((widget) => widget is CachedNetworkImage && widget.imageUrl == _cropUrl),
+        find.byWidgetPredicate((widget) => widget is CachedNetworkImage && widget.imageUrl == _thumbUrl),
         findsOneWidget,
       );
     });
@@ -83,7 +86,9 @@ void main() {
   });
 
   for (final rawOriginal in <String>['', ' ']) {
-    testWidgets('search grid keeps the lg crop and ignores cached original thumb $rawOriginal', (tester) async {
+    testWidgets('search grid uses the orig thumb and ignores a blank cached original thumb $rawOriginal', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           builder: favouriteTestBuilder,
@@ -102,13 +107,13 @@ void main() {
       );
 
       expect(
-        find.byWidgetPredicate((widget) => widget is CachedNetworkImage && widget.imageUrl == _cropUrl),
+        find.byWidgetPredicate((widget) => widget is CachedNetworkImage && widget.imageUrl == _thumbUrl),
         findsOneWidget,
       );
     });
   }
 
-  testWidgets('a Wallhaven small thumb is requested as lg in the grid, never the original', (tester) async {
+  testWidgets('a Wallhaven small thumb is requested as orig in the grid, never the full wallpaper', (tester) async {
     const String smallUrl = 'https://th.wallhaven.cc/small/21/21276x.jpg';
     await tester.pumpWidget(
       const MaterialApp(
@@ -139,7 +144,7 @@ void main() {
     );
 
     expect(
-      find.byWidgetPredicate((widget) => widget is CachedNetworkImage && widget.imageUrl == _cropUrl),
+      find.byWidgetPredicate((widget) => widget is CachedNetworkImage && widget.imageUrl == _thumbUrl),
       findsOneWidget,
     );
   });

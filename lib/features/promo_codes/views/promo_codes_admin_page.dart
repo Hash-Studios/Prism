@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/features/promo_codes/data/promo_code_repository.dart';
 import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
 import 'package:Prism/features/promo_codes/views/store_code_redemption.dart';
@@ -121,6 +122,8 @@ class _PromoCodesAdminPageState extends State<PromoCodesAdminPage> {
     } on cf.FirebaseFunctionsException catch (error) {
       if (!mounted) return;
       toasts.error(context.l10n.promoAdminCreateFailed(error.message ?? error.code));
+    } on Object {
+      if (mounted) toasts.error(context.l10n.coreSomethingWentWrong);
     } finally {
       if (mounted) setState(() => _creating = false);
     }
@@ -133,6 +136,8 @@ class _PromoCodesAdminPageState extends State<PromoCodesAdminPage> {
       await _reload();
     } on cf.FirebaseFunctionsException catch (error) {
       if (mounted) toasts.error(error.message ?? error.code);
+    } on Object {
+      if (mounted) toasts.error(context.l10n.coreSomethingWentWrong);
     } finally {
       if (mounted) setState(() => _busyCodes.remove(code.code));
     }
@@ -148,7 +153,7 @@ class _PromoCodesAdminPageState extends State<PromoCodesAdminPage> {
     final AppLocalizations l10n = context.l10n;
     return PrismPage(
       title: l10n.promoAdminTitle,
-      body: RefreshIndicator(
+      body: PrismRefresh(
         onRefresh: _reload,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.page, PrismSpace.xxl),
@@ -248,6 +253,7 @@ class _PromoCodesAdminPageState extends State<PromoCodesAdminPage> {
           kind: GlintStateKind.error,
           title: l10n.promoAdminLoadFailed,
           actionLabel: l10n.adminTryAgain,
+          actionVariant: PrismButtonVariant.tonal,
           onAction: _retry,
         );
       }

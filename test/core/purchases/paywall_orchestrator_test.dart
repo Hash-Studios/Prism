@@ -14,6 +14,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
@@ -82,6 +83,9 @@ void main() {
       Future<Object?> Function(Map<String, Object?> customer)? purchaseReply,
       bool purchaseSucceeds = false,
       bool purchaseThrows = false,
+      PlatformException? purchaseException,
+      int? paywallPurchaseErrorCode,
+      List<MethodCall> laterPaywallEvents = const <MethodCall>[],
       String legacyOffering = 'v3_default',
       Map<String, Object?>? annualProduct,
     }) async {
@@ -166,6 +170,7 @@ void main() {
           case 'purchasePackage':
             onPurchaseCall?.call(call);
             if (purchaseThrows) throw StateError('native purchase bridge failed');
+            if (purchaseException != null) throw purchaseException;
             if (purchaseReply != null) return purchaseReply(customer);
             if (!purchaseSucceeds) return null;
             return <String, Object?>{
@@ -182,20 +187,28 @@ void main() {
       });
       messenger.setMockMethodCallHandler(paywallChannel, (call) async {
         onPaywallCall?.call(call);
-        if (emitPurchase) {
-          final id = (call.arguments as Map<Object?, Object?>)['presentationId'];
-          final channel = 'com.revenuecat.purchasesui/PresentedPaywall/$id';
-          const codec = StandardMethodCodec();
-          Future<void> emit(String method, Object? arguments) {
-            final completed = Completer<void>();
-            ServicesBinding.instance.channelBuffers.push(
-              channel,
-              codec.encodeMethodCall(MethodCall(method, arguments)),
-              (_) => completed.complete(),
-            );
-            return completed.future;
-          }
+        final id = (call.arguments as Map<Object?, Object?>?)?['presentationId'];
+        final channel = 'com.revenuecat.purchasesui/PresentedPaywall/$id';
+        const codec = StandardMethodCodec();
+        Future<void> emit(String method, Object? arguments) {
+          final completed = Completer<void>();
+          ServicesBinding.instance.channelBuffers.push(
+            channel,
+            codec.encodeMethodCall(MethodCall(method, arguments)),
+            (_) => completed.complete(),
+          );
+          return completed.future;
+        }
 
+        if (paywallPurchaseErrorCode != null) {
+          await emit('onPurchaseError', <String, Object?>{
+            'code': paywallPurchaseErrorCode,
+            'message': 'The payment is pending.',
+            'underlyingErrorMessage': '',
+            'readableErrorCode': 'PAYMENT_PENDING_ERROR',
+          });
+        }
+        if (emitPurchase) {
           await emit('onPurchaseStarted', <String, Object?>{
             'identifier': 'annual',
             'packageType': 'ANNUAL',
@@ -219,6 +232,9 @@ void main() {
               },
             });
           }
+        }
+        for (final event in laterPaywallEvents) {
+          await emit(event.method, event.arguments);
         }
         return present();
       });
@@ -654,6 +670,66 @@ void main() {
       });
     }
 
+    group('a pending payment (#527)', () {
+      test('says the payment is pending, not that plans are unavailable', () async {
+        var syncCalls = 0;
+        final backend = await installPaywall(
+          present: () async => 'ERROR',
+          paywallPurchaseErrorCode: PurchasesErrorCode.paymentPendingError.index,
+        );
+        backend.onCall = (_, _) async {
+          syncCalls++;
+          return <String, Object?>{'premium': true, 'subscriptionTier': 'pro'};
+        };
+
+        final result = await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test');
+        await AnalyticsRuntime.instance.flush();
+
+        expect(result, PaywallResultValue.paymentPending);
+        expect(toasts, <String>['Your payment is pending. Pro unlocks when the payment goes through.']);
+        expect(syncCalls, 0);
+        expect(fakeAnalytics.events.whereType<PaywallResultEvent>().map((e) => e.result), <PaywallResultValue>[
+          PaywallResultValue.paymentPending,
+        ]);
+      });
+
+      for (final method in <String>['onPurchaseError', 'onRestoreError']) {
+        test('a later $method replaces a pending error in the same paywall', () async {
+          await installPaywall(
+            present: () async => 'ERROR',
+            paywallPurchaseErrorCode: PurchasesErrorCode.paymentPendingError.index,
+            laterPaywallEvents: <MethodCall>[
+              MethodCall(method, <String, Object?>{
+                'code': PurchasesErrorCode.storeProblemError.index,
+                'message': 'The store is unavailable.',
+                'underlyingErrorMessage': '',
+                'readableErrorCode': 'STORE_PROBLEM_ERROR',
+              }),
+            ],
+          );
+
+          final result = await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test');
+          await AnalyticsRuntime.instance.flush();
+
+          expect(result, PaywallResultValue.error);
+          expect(toasts, isEmpty);
+          expect(fakeAnalytics.events.whereType<PaywallResultEvent>().single.result, PaywallResultValue.error);
+        });
+      }
+
+      test('another purchase error stays an error with no pending message', () async {
+        await installPaywall(
+          present: () async => 'ERROR',
+          paywallPurchaseErrorCode: PurchasesErrorCode.storeProblemError.index,
+        );
+
+        final result = await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test');
+
+        expect(result, PaywallResultValue.error);
+        expect(toasts, isEmpty);
+      });
+    });
+
     test('tells the user when no paywall can be shown', () async {
       final result = await orchestrator.present(placement: PaywallPlacement.lowBalance, source: 'test');
       final AppLocalizations messages = await loadAppLocalizations(WidgetsBinding.instance.platformDispatcher.locale);
@@ -875,6 +951,22 @@ void main() {
         await tester.pumpAndSettle();
         await pumpUntil(tester, () => result != null);
         expect(result, PaywallResultValue.cancelled);
+
+        toasts.clear();
+        await installPaywall(
+          annualProduct: annualProductJson(trialDays: 7),
+          purchaseException: PlatformException(code: '${PurchasesErrorCode.paymentPendingError.index}'),
+          present: () async => 'CANCELLED',
+        );
+        result = null;
+        unawaited(orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test').then((v) => result = v));
+        await pumpUntil(tester, () => find.byType(TrialTimelinePage).evaluate().isNotEmpty);
+        await tester.tap(find.text('Start 7-day free trial'));
+        await pumpUntil(tester, () => result != null);
+        expect(toasts, <String>['Your payment is pending. Pro unlocks when the payment goes through.']);
+        expect(result, PaywallResultValue.paymentPending);
+        await tester.pumpAndSettle();
+        expect(find.byType(TrialTimelinePage), findsNothing);
 
         purchaseCalls = 0;
         await installPaywall(

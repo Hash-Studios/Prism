@@ -164,39 +164,34 @@ void main() {
     });
 
     // The test font draws every glyph as a wide square, so the real widths are checked in depth_render_test.dart.
-    onPlatform(
-      'the tag stays on the image, above the favourite footer and clear of the Boosted tag',
-      TargetPlatform.iOS,
-      (tester) async {
-        await favourites.setWallFavourite('u', 'wall-1', true);
-        final PrismWallpaper wall = _wall(
-          WallDepthTier.auto,
-          boostedUntil: DateTime.now().add(const Duration(hours: 1)),
-        );
-        whenListen(
-          bloc,
-          const Stream<FavouriteWallsState>.empty(),
-          initialState: FavouriteWallsState.initial().copyWith(
-            status: LoadStatus.success,
-            userId: 'u',
-            items: [FavouriteWallEntity.fromFeedItem(PrismFeedItem(id: wall.id, wallpaper: wall))],
-          ),
-        );
-        await pumpTile(tester, wall, overlay: boostedTagFor(wall));
+    onPlatform('the tag stays on the image, above the heart and clear of the Boosted tag', TargetPlatform.iOS, (
+      tester,
+    ) async {
+      await favourites.setWallFavourite('u', 'wall-1', true);
+      final PrismWallpaper wall = _wall(WallDepthTier.auto, boostedUntil: DateTime.now().add(const Duration(hours: 1)));
+      whenListen(
+        bloc,
+        const Stream<FavouriteWallsState>.empty(),
+        initialState: FavouriteWallsState.initial().copyWith(
+          status: LoadStatus.success,
+          userId: 'u',
+          items: [FavouriteWallEntity.fromFeedItem(PrismFeedItem(id: wall.id, wallpaper: wall))],
+        ),
+      );
+      await pumpTile(tester, wall, overlay: boostedTagFor(wall));
 
-        final Rect tile = tester.getRect(find.byType(WallpaperTile));
-        final Rect depth = tester.getRect(find.byType(DepthTag));
-        final Rect boosted = tester.getRect(find.byType(BoostedTag));
-        final Rect heart = tester.getRect(find.byIcon(Icons.favorite_rounded));
+      final Rect tile = tester.getRect(find.byType(WallpaperTile));
+      final Rect depth = tester.getRect(find.byType(DepthTag));
+      final Rect boosted = tester.getRect(find.byType(BoostedTag));
+      final Rect heart = tester.getRect(find.byIcon(Icons.favorite_rounded));
 
-        expect(depth.left - tile.left, 6);
-        expect(tile.bottom - depth.bottom, 50);
-        expect(heart.top, greaterThan(depth.bottom));
-        expect(heart.left, greaterThanOrEqualTo(tile.left));
-        expect(heart.bottom, lessThanOrEqualTo(tile.bottom));
-        expect(depth.height, boosted.height);
-        expect(depth.overlaps(boosted), isFalse);
-      },
-    );
+      expect(depth.left - tile.left, 6);
+      expect(tile.bottom - depth.bottom, 44);
+      expect(heart.top, greaterThan(depth.bottom));
+      expect(heart.left, greaterThanOrEqualTo(tile.left));
+      expect(heart.bottom, lessThanOrEqualTo(tile.bottom));
+      expect(depth.height, boosted.height);
+      expect(depth.overlaps(boosted), isFalse);
+    });
   });
 }

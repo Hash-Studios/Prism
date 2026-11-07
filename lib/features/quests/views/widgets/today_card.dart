@@ -164,20 +164,22 @@ class _TodayView extends StatelessWidget {
               ),
             ),
         const SizedBox(height: PrismSpace.sm),
-        for (final QuestTileModel tile in board.daily) ...<Widget>[
-          QuestTile(key: ValueKey<String>(tile.id), quest: tile),
+        PrismGroup(
+          children: <Widget>[
+            for (final QuestTileModel tile in board.daily) QuestTile(key: ValueKey<String>(tile.id), quest: tile),
+            if (weekly != null)
+              QuestTile(
+                key: ValueKey<String>(weekly.id),
+                quest: weekly,
+                endsIn: DailyMomentConfig.enabled
+                    ? null
+                    : formatCountdown(context.l10n, nextWeeklyReset(now).difference(now)),
+              ),
+          ],
+        ),
+        if (!DailyMomentConfig.enabled) ...<Widget>[
           const SizedBox(height: PrismSpace.sm),
-        ],
-        if (!DailyMomentConfig.enabled) ChestBanner(board: board, onOpenSpin: onOpenSpin),
-        if (weekly != null) ...<Widget>[
-          const SizedBox(height: PrismSpace.md),
-          QuestTile(
-            key: ValueKey<String>(weekly.id),
-            quest: weekly,
-            endsIn: DailyMomentConfig.enabled
-                ? null
-                : formatCountdown(context.l10n, nextWeeklyReset(now).difference(now)),
-          ),
+          ChestBanner(board: board, onOpenSpin: onOpenSpin),
         ],
       ],
     );

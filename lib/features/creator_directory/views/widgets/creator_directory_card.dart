@@ -4,6 +4,7 @@ import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
@@ -59,7 +60,7 @@ class CreatorFollowButton extends StatelessWidget {
   }
 
   void _toggle(BuildContext context, {required bool follow}) {
-    PrismHaptics.selection();
+    // PrismButton plays the tap haptic, so none here.
     if (follow) {
       analytics.track(
         source == 'similar'
@@ -186,6 +187,8 @@ class CreatorWallStrip extends StatelessWidget {
     final List<WallpaperFeedTile> tiles = <WallpaperFeedTile>[
       for (final (i, item) in items.indexed) (item: item, index: i, heroTag: prismHeroTag(heroScope, i, item.id)),
     ];
+    // Every card keeps [count] equal slots so cards in a row share one height; a slot with no wall stays empty
+    // instead of showing a grey box.
     return Row(
       children: <Widget>[
         for (int i = 0; i < count; i++) ...<Widget>[
@@ -193,10 +196,12 @@ class CreatorWallStrip extends StatelessWidget {
           Expanded(
             child: AspectRatio(
               aspectRatio: PrismFeedLayout.gridTileAspectRatio,
-              child: i < tiles.length
-                  ? PrismWallTile(
+              child: i >= tiles.length
+                  ? const SizedBox.shrink()
+                  : PrismWallTile(
                       url: tiles[i].item.thumbnailUrl,
                       fallbackUrl: tiles[i].item.fullUrl,
+                      placeholderColor: placeholderColorOf(tiles[i].item, Theme.of(context).colorScheme.surface),
                       heroTag: tiles[i].heroTag,
                       semanticLabel: label,
                       onTap: () {
@@ -209,12 +214,6 @@ class CreatorWallStrip extends StatelessWidget {
                           ),
                         );
                       },
-                    )
-                  : DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(PrismRadius.sm),
-                      ),
                     ),
             ),
           ),

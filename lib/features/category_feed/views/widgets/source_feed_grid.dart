@@ -6,7 +6,6 @@ import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
 import 'package:Prism/core/analytics/trackers/scroll_milestone_tracker.dart';
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -15,6 +14,7 @@ import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/category_feed_refresh.dart';
@@ -139,12 +139,8 @@ class _SourceFeedGridState<T extends FeedItemEntity> extends State<SourceFeedGri
 
     final bool loadFailed = state.actionStatus == ActionStatus.failure;
     final bool refreshFailed = state.status == LoadStatus.failure;
-    final ColorScheme cs = Theme.of(context).colorScheme;
-    return RefreshIndicator(
-      color: cs.primary,
-      backgroundColor: cs.surfaceContainerHigh,
+    return PrismRefresh(
       onRefresh: () {
-        PrismHaptics.impact();
         return _refresh();
       },
       child: NotificationListener<ScrollNotification>(

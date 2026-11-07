@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/widgets/prism/prism_theme_preview.dart';
 import 'package:Prism/features/shop/domain/cosmetic_styles.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -41,10 +42,22 @@ class _ThemeSwatch extends StatelessWidget {
   final ShopItem item;
   final double size;
 
+  /// Below this the preview's tiles are too small to see, so small slots (rewards rows) keep the plain swatch.
+  static const double _fullPreviewSize = 72;
+
   @override
   Widget build(BuildContext context) {
     final PrismThemeOption? option =
         prismThemeById(prismLightThemes, item.themeId ?? '') ?? prismThemeById(prismDarkThemes, item.themeId ?? '');
+    // Big enough to read as the app: the shared theme preview, at its own proportions inside the square.
+    if (option != null && size >= _fullPreviewSize) {
+      return Center(
+        child: SizedBox(
+          width: size * 0.62,
+          child: PrismThemePreview(theme: option.theme),
+        ),
+      );
+    }
     final ColorScheme scheme = option?.theme.colorScheme ?? Theme.of(context).colorScheme;
     return DecoratedBox(
       decoration: BoxDecoration(

@@ -92,6 +92,15 @@ void main() {
       expect(repo.requestedIds, ['2026-10-26', replacement.id]);
     });
   }
+  test('topEntries gives an empty list when the load fails or entries have no wall', () async {
+    final repo = Repository();
+    final cubit = WeeklyChallengesCubit(repo);
+    expect(await cubit.topEntries('2026-10-19'), isEmpty);
+    repo.fail = true;
+    expect(await cubit.topEntries('2026-10-19'), isEmpty);
+    await cubit.close();
+  });
+
   test('replacement suppresses an older load and its viewed analytics', () async {
     final analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
@@ -108,18 +117,42 @@ void main() {
       ['2026-10-26'],
     );
   });
-  test('home refresh clears stale cards and does not restore them after failure', () async {
+  test('home refresh keeps the open card while loading and clears it after failure', () async {
     await cubit.loadOpen(clock: () => DateTime.utc(2026));
     expect(cubit.state.current?.id, '2026-10-26');
     final pending = Completer<List<WeeklyChallenge>>();
     repo.pendingList = pending.future;
     final refresh = cubit.loadOpen(clock: () => DateTime.utc(2026));
-    expect(cubit.state.current, isNull);
+    // The Home chip reloads when it mounts. Clearing here unmounted it and looped the list call.
+    expect(cubit.state.current?.id, '2026-10-26');
+    expect(cubit.state.loading, isTrue);
     pending.completeError(Exception('offline'));
     await refresh;
     expect(cubit.state.current, isNull);
     expect(cubit.state.failed, isTrue);
   });
+  testWidgets('an open challenge expires while its refresh is pending', (tester) async {
+    final now = DateTime.utc(2026);
+    final open = WeeklyChallenge(
+      id: 'closing',
+      theme: 'Ocean',
+      state: ChallengeState.open,
+      opensAt: now.subtract(const Duration(days: 1)),
+      closesAt: now.add(const Duration(seconds: 1)),
+    );
+    repo.pendingList = Future.value([open]);
+    await cubit.loadOpen(clock: () => now);
+    final pending = Completer<List<WeeklyChallenge>>();
+    repo.pendingList = pending.future;
+    final refresh = cubit.loadOpen(clock: () => now);
+    expect(cubit.state.current, open);
+    await tester.pump(const Duration(seconds: 2));
+    expect(cubit.state.current, isNull);
+    expect(cubit.state.loading, isTrue);
+    pending.complete([]);
+    await refresh;
+  });
+
   test('home loader ignores an older response after a newer refresh', () async {
     final pending = Completer<List<WeeklyChallenge>>();
     repo.pendingList = pending.future;

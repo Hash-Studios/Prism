@@ -3,11 +3,10 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/fav_grid.dart';
 import 'package:Prism/features/folders/folders.dart';
-import 'package:Prism/features/folders/views/folders_access.dart';
 import 'package:Prism/features/library/views/widgets/offline_chip.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/download_screen.dart';
 import 'package:Prism/features/wallpaper_history/biz/bloc/wallpaper_history_bloc.j.dart';
@@ -111,16 +110,11 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
     final Widget page = PrismPage(
       title: context.l10n.wallpaperLibraryTitle,
       maxContentWidth: double.infinity,
-      actions: <Widget>[
-        ListenableBuilder(
-          listenable: _controller,
-          builder: (context, _) => _TabAction(tab: _currentTab),
-        ),
-        const OfflineChip(),
-      ],
+      actions: const <Widget>[OfflineChip()],
       headerBottom: _ClampedTabBar(
         TabBar(
           controller: _controller,
+          onTap: (_) => PrismHaptics.selection(),
           isScrollable: true,
           tabAlignment: TabAlignment.start,
           padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
@@ -145,39 +139,6 @@ class _LibraryScreenState extends State<LibraryScreen> with SingleTickerProvider
     );
     return BlocProvider<WallpaperHistoryBloc>.value(value: _history, child: page);
   }
-}
-
-/// The one app bar action of the tab on screen: New folder on Folders. History has a Clear action in each list.
-class _TabAction extends StatelessWidget {
-  const _TabAction({required this.tab});
-
-  final LibraryTab tab;
-
-  Widget _action(BuildContext context) {
-    switch (tab) {
-      case LibraryTab.folders:
-        if (context.read<FoldersBloc?>() == null || app_state.prismUser.id.isEmpty) break;
-        return PrismIconButton(
-          key: const ValueKey<String>('library-new-folder'),
-          icon: Icons.create_new_folder_outlined,
-          tooltip: context.l10n.foldersNewFolder,
-          onPressed: () => unawaited(createFolderFromLibrary(context)),
-        );
-      case LibraryTab.history:
-      case LibraryTab.favourites:
-      case LibraryTab.downloads:
-        break;
-    }
-    return const SizedBox.shrink(key: ValueKey<String>('library-no-action'));
-  }
-
-  @override
-  Widget build(BuildContext context) => AnimatedSwitcher(
-    duration: context.motion(PrismDurations.fast),
-    switchInCurve: PrismCurves.enter,
-    switchOutCurve: PrismCurves.exitReverse,
-    child: _action(context),
-  );
 }
 
 class _ClampedTabBar extends StatelessWidget implements PreferredSizeWidget {

@@ -4,13 +4,9 @@ name: CI
 # push cancels the older run. Draft PRs do not run. The `ci` job at the end is
 # the required check: it is green when every job that ran passed.
 #
-# Pushes to master run no checks. The PR already tested the same tree, so a
-# re-run after the merge was a second copy of every job. Two push jobs warm
-# caches instead. `app_size_base` builds the master APK once so that PRs can
-# compare against it without a second build, and writes the Flutter, pub and
-# Gradle caches. `ios_cache_base` writes the iOS pods and Xcode build cache.
-# PRs read caches in master scope. A cache that a PR writes is visible only to
-# that PR.
+# Push jobs warm dependency caches only when their keys change. PRs can read
+# master-scoped caches; PR writes would be visible only to that PR.
+# Optional app-size comparisons live in app_size.yml and do not affect `ci`.
 
 on:
   pull_request:
@@ -19,18 +15,15 @@ on:
   push:
     branches:
       - master
-    # Keep in sync with tool/build_size_apk.sh --key.
+    # Inputs to the native cache warmers below, not every app-code merge.
     paths:
-      - 'lib/**'
       - 'android/**'
-      - 'assets/**'
-      - 'shaders/**'
       - 'packages/**'
       - 'pubspec.yaml'
       - 'pubspec.lock'
       - '.fvmrc'
-      - 'tool/build_size_apk.sh'
       - 'tool/write_firebase_options_stub.sh'
+      - 'Makefile'
       # ios_cache_base key.
       - 'ios/Podfile.lock'
       - '.github/workflows/ci.yml'
@@ -43,10 +36,6 @@ permissions:
   contents: read
 
 env:
-  APP_SIZE_MAX_DELTA_BYTES: 1572864
-  APP_SIZE_MAX_DELTA_PERCENT: 5
-  APP_SIZE_TARGET_PLATFORM: android-arm64
-  APP_SIZE_BUILD_MODE: profile
   GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Dkotlin.daemon.jvm.options=-Xmx2g -Dorg.gradle.vfs.watch=false
 
 jobs:
@@ -64,7 +53,6 @@ jobs:
       rules: ${{ steps.filter.outputs.rules }}
       android: ${{ steps.filter.outputs.android }}
       ios: ${{ steps.filter.outputs.ios }}
-      app_size: ${{ steps.filter.outputs.app_size }}
       workflow: ${{ steps.filter.outputs.workflow }}
       notification_contract: ${{ steps.filter.outputs.notification_contract }}
     steps:
@@ -116,38 +104,36 @@ jobs:
               - 'tool/firestore_rules_smoke.mjs'
             android:
               - 'android/**'
-              - 'packages/**'
+              - '!**/*.md'
+              - 'packages/**/android/**'
+              - 'packages/**/pubspec.yaml'
+              - 'packages/**/pubspec.lock'
               - 'pigeons/**'
               - 'pubspec.yaml'
               - 'pubspec.lock'
               - '.fvmrc'
               - 'Makefile'
+              - 'tool/write_firebase_options_stub.sh'
             ios:
               - 'ios/**'
-              - 'packages/**'
+              - '!**/*.md'
+              - 'packages/**/ios/**'
+              - 'packages/**/darwin/**'
+              - 'packages/**/native_tests/**'
+              - 'packages/**/pubspec.yaml'
+              - 'packages/**/pubspec.lock'
               - 'pigeons/**'
               - 'pubspec.yaml'
               - 'pubspec.lock'
               - '.fvmrc'
               - 'Makefile'
-            app_size:
-              # The inputs of tool/build_size_apk.sh --key, plus the compare script.
-              - 'lib/**'
-              - 'android/**'
-              - 'assets/**'
-              - 'shaders/**'
-              - 'packages/**'
-              - 'pubspec.yaml'
-              - 'pubspec.lock'
-              - '.fvmrc'
-              - 'tool/build_size_apk.sh'
               - 'tool/write_firebase_options_stub.sh'
-              - 'tool/compare_app_size.py'
             workflow:
               - '.github/workflows/ci.yml'
+              - '.github/workflows/app_size.yml'
 
   flutter:
-    name: Flutter verify
+    name: Flutter static verify
     needs: changes
     if: needs.changes.outputs.flutter == 'true' || needs.changes.outputs.workflow == 'true'
     runs-on: ubuntu-latest
@@ -178,13 +164,42 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Run local CI gate
-        run: make ci CI=true
+      - name: Run static CI gate
+        run: make ci-static CI=true
+      - name: Exercise missing-channel regression fixture
+        if: needs.changes.outputs.notification_contract == 'true' || needs.changes.outputs.workflow == 'true'
+        run: make notification-contract-fixture-test CI=true
+
+  flutter_tests:
+    name: Flutter tests (${{ matrix.shard }})
+    needs: changes
+    if: needs.changes.outputs.flutter == 'true' || needs.changes.outputs.workflow == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read Flutter version
+        id: fvm
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.fvm.outputs.version }}
+          channel: stable
+          cache: true
+          cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+      - run: tool/write_firebase_options_stub.sh
+      - name: Run test shard
+        run: make test-shard CI=true TEST_TOTAL_SHARDS=2 TEST_SHARD_INDEX=${{ matrix.shard }}
 
   notification_contract:
     name: Notification-channel contract
     needs: changes
-    if: needs.changes.outputs.notification_contract == 'true' || needs.changes.outputs.workflow == 'true'
+    if: needs.changes.outputs.notification_contract == 'true' && needs.changes.outputs.flutter != 'true' && needs.changes.outputs.workflow != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -227,7 +242,15 @@ jobs:
           # Share master's Flutter caches on a hit. Misses can still save a PR-scoped copy.
           cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
           pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
-      - uses: gradle/actions/setup-gradle@v4
+      - name: Restore Gradle
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-native-v2-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties', 'packages/**/android/**/*.gradle*', 'pubspec.lock', '.fvmrc') }}
+          restore-keys: |
+            gradle-native-v2-${{ runner.os }}-
       - run: tool/write_firebase_options_stub.sh
       - run: make native-android-check CI=true
 
@@ -312,8 +335,12 @@ jobs:
     name: Web verify
     needs: changes
     if: needs.changes.outputs.web == 'true' || needs.changes.outputs.workflow == 'true'
-    runs-on: ubuntu-latest
+    # This image includes Google Chrome. Playwright uses its supported Chrome
+    # channel, avoiding a browser + OS-font download on every fresh runner.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
+    env:
+      PLAYWRIGHT_CHROMIUM_CHANNEL: chrome
     defaults:
       run:
         working-directory: web
@@ -326,15 +353,21 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: web/package-lock.json
-      - name: Install, test, typecheck and build
+      - name: Install dependencies
+        run: npm ci
+      - name: Check installed browser
+        run: google-chrome --version
+      - name: Run unit tests
         run: |
-          npm ci
           node --test test/analytics.test.cjs
           node --test test/changelog.test.mjs
-          npx playwright install --with-deps chromium
-          npm run test:e2e
-          npx tsc --noEmit
-          npm run build
+      - name: Run browser tests
+        run: npm run test:e2e
+      # Next.js filters diagnostics from test/spec files; Playwright does not typecheck.
+      - name: Typecheck all TypeScript
+        run: npx tsc --noEmit
+      - name: Build
+        run: npm run build
 
   rules:
     name: Firestore rules verify
@@ -372,162 +405,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Check repository assets
-        run: python3 tool/check_repo_assets.py
+        run: make repo-assets-check
       - name: Check store listing limits
-        run: python3 tool/check_store_listings.py && python3 -m unittest tool.check_store_listings_test
-
-  # Not part of the required `ci` check, so the merge does not wait for two
-  # APK builds. A size regression still shows as a red check and a PR comment.
-  app_size:
-    name: Android app size
-    needs: changes
-    if: needs.changes.outputs.app_size == 'true' || needs.changes.outputs.workflow == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    permissions:
-      contents: read
-      pull-requests: write
-    env:
-      BASE_SHA: ${{ github.event.pull_request.base.sha }}
-      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-      PR_NUMBER: ${{ github.event.pull_request.number }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      # The base commit may predate the script, so run the head copy.
-      - name: Compute the base APK cache key
-        id: base
-        run: |
-          git fetch --no-tags --depth=1 origin "$BASE_SHA"
-          if ! git fetch --no-tags --depth=1 origin "$HEAD_SHA"; then
-            git fetch --no-tags --depth=1 origin "refs/pull/$PR_NUMBER/head"
-            test "$(git rev-parse FETCH_HEAD)" = "$HEAD_SHA"
-          fi
-          git checkout --force --detach "$HEAD_SHA"
-          cp tool/build_size_apk.sh "$RUNNER_TEMP/"
-          key=$("$RUNNER_TEMP/build_size_apk.sh" --key "$BASE_SHA")
-          echo "key=app-size-apk-${{ runner.os }}-$APP_SIZE_BUILD_MODE-$APP_SIZE_TARGET_PLATFORM-$key" >> "$GITHUB_OUTPUT"
-
-      # Written by app_size_base when the base commit merged.
-      - name: Restore the base APK
-        id: base_apk
-        uses: actions/cache/restore@v4
-        with:
-          path: build/size/base
-          key: ${{ steps.base.outputs.key }}
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      # pubspec.lock is in the key because Flutter plugins bring their own
-      # Gradle dependencies. A plain actions/cache entry never changes after
-      # it is written, so the key must move when the dependencies move.
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties', 'pubspec.lock') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
-
-      - name: Checkout base for build
-        if: steps.base_apk.outputs.cache-hit != 'true'
-        run: git checkout --force --detach "$BASE_SHA"
-
-      - name: Read base Flutter version from .fvmrc
-        id: base_fvm
-        if: steps.base_apk.outputs.cache-hit != 'true'
-        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
-
-      - name: Setup base Flutter
-        if: steps.base_apk.outputs.cache-hit != 'true'
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ steps.base_fvm.outputs.version }}
-          channel: stable
-          cache: true
-          cache-key: flutter-${{ runner.os }}-${{ steps.base_fvm.outputs.version }}
-          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
-
-      - name: Build base APK
-        if: steps.base_apk.outputs.cache-hit != 'true'
-        run: |
-          "$RUNNER_TEMP/build_size_apk.sh" build/size/base
-          ./android/gradlew --stop || true
-
-      - name: Checkout head for build
-        run: git checkout --force --detach "$HEAD_SHA"
-
-      - name: Read head Flutter version from .fvmrc
-        id: head_fvm
-        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
-
-      - name: Setup head Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ steps.head_fvm.outputs.version }}
-          channel: stable
-          cache: true
-          cache-key: flutter-${{ runner.os }}-${{ steps.head_fvm.outputs.version }}
-          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
-
-      - name: Build head APK
-        run: |
-          "$RUNNER_TEMP/build_size_apk.sh" build/size/head
-
-      - name: Compare app size and enforce thresholds
-        run: |
-          python3 tool/compare_app_size.py \
-            --base-artifact build/size/base/app-"$APP_SIZE_BUILD_MODE".apk \
-            --head-artifact build/size/head/app-"$APP_SIZE_BUILD_MODE".apk \
-            --max-delta-bytes "$APP_SIZE_MAX_DELTA_BYTES" \
-            --max-delta-percent "$APP_SIZE_MAX_DELTA_PERCENT" \
-            --json-out build/size/report.json \
-            --summary-out build/size/report.md
-          cat build/size/report.md >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload app size artifacts
-        if: ${{ always() && !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-size-report
-          path: build/size
-
-      - name: Upsert app-size PR comment
-        if: ${{ always() && !cancelled() && hashFiles('build/size/report.md') != '' }}
-        continue-on-error: true
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: app-size-report
-          path: build/size/report.md
-
-  # Replaces an app-size comment from an earlier push, so it does not go stale.
-  app_size_skipped:
-    name: Android app size skipped
-    needs: changes
-    if: needs.changes.outputs.app_size != 'true' && needs.changes.outputs.workflow != 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      pull-requests: write
-    steps:
-      - name: Upsert skipped app-size PR comment
-        continue-on-error: true
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: app-size-report
-          message: |
-            ## Android App Size Report
-
-            Skipped: no app-size relevant files changed in this PR.
+        run: make store-listings-check
 
   ios_cache_base:
     name: iOS build cache (master)
@@ -573,76 +453,66 @@ jobs:
             build/ios/native-tests
           key: ${{ steps.cached.outputs.cache-primary-key }}
 
-  app_size_base:
-    name: Android app size (master baseline)
+  android_cache_base:
+    name: Android dependency cache (master)
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Compute the APK cache key
-        id: apk
-        run: |
-          key=$(tool/build_size_apk.sh --key HEAD)
-          echo "key=app-size-apk-${{ runner.os }}-$APP_SIZE_BUILD_MODE-$APP_SIZE_TARGET_PLATFORM-$key" >> "$GITHUB_OUTPUT"
-
-      - name: Check for a cached APK
+      - uses: actions/checkout@v4
+      - name: Check for cached Gradle dependencies
         id: cached
         uses: actions/cache/restore@v4
         with:
-          path: build/size/base
-          key: ${{ steps.apk.outputs.key }}
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-native-v2-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties', 'packages/**/android/**/*.gradle*', 'pubspec.lock', '.fvmrc') }}
           lookup-only: true
-
-      - name: Setup Java
+      - name: Restore previous Gradle dependencies
         if: steps.cached.outputs.cache-hit != 'true'
-        uses: actions/setup-java@v4
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.cached.outputs.cache-primary-key }}
+          restore-keys: |
+            gradle-native-v2-${{ runner.os }}-
+      - uses: actions/setup-java@v4
+        if: steps.cached.outputs.cache-hit != 'true'
         with:
           distribution: temurin
-          java-version: '17'
-
-      - name: Read Flutter version from .fvmrc
-        if: steps.cached.outputs.cache-hit != 'true'
+          java-version: '21'
+      - name: Read Flutter version
         id: fvm
-        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
-
-      - name: Setup Flutter
         if: steps.cached.outputs.cache-hit != 'true'
-        uses: subosito/flutter-action@v2
+        run: echo "version=$(jq -r '.flutter' .fvmrc)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2
+        if: steps.cached.outputs.cache-hit != 'true'
         with:
           flutter-version: ${{ steps.fvm.outputs.version }}
           channel: stable
           cache: true
           cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
           pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
-
-      - name: Cache Gradle
+      - name: Warm native dependencies
         if: steps.cached.outputs.cache-hit != 'true'
-        uses: actions/cache@v4
+        run: |
+          make native-android-check CI=true
+          ./android/gradlew --stop
+      - name: Save Gradle
+        if: steps.cached.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties', 'pubspec.lock') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
-
-      - name: Build APK
-        if: steps.cached.outputs.cache-hit != 'true'
-        run: tool/build_size_apk.sh build/size/base
-
-      - name: Save APK
-        if: steps.cached.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: build/size/base
-          key: ${{ steps.apk.outputs.key }}
+          key: ${{ steps.cached.outputs.cache-primary-key }}
 
   ci:
     name: ci
-    needs: [changes, flutter, notification_contract, android, ios, functions, web, rules, repo_assets]
+    needs: [changes, flutter, flutter_tests, notification_contract, android, ios, functions, web, rules, repo_assets]
     # `always()` so a cancelled or failed job reports red. A skipped required
     # check counts as passed, so `ci` must never skip on a non-draft PR.
     if: ${{ always() && github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
@@ -651,9 +521,9 @@ jobs:
     steps:
       - name: Aggregate results
         env:
-          RESULTS: ${{ needs.changes.result }} ${{ needs.flutter.result }} ${{ needs.notification_contract.result }} ${{ needs.android.result }} ${{ needs.ios.result }} ${{ needs.functions.result }} ${{ needs.web.result }} ${{ needs.rules.result }} ${{ needs.repo_assets.result }}
+          RESULTS: ${{ needs.changes.result }} ${{ needs.flutter.result }} ${{ needs.flutter_tests.result }} ${{ needs.notification_contract.result }} ${{ needs.android.result }} ${{ needs.ios.result }} ${{ needs.functions.result }} ${{ needs.web.result }} ${{ needs.rules.result }} ${{ needs.repo_assets.result }}
         run: |
-          echo "changes flutter notification_contract android ios functions web rules repo_assets: $RESULTS"
+          echo "changes flutter flutter_tests notification_contract android ios functions web rules repo_assets: $RESULTS"
           [ "${{ needs.changes.result }}" = success ] || { echo 'Detect changes failed.'; exit 1; }
           for r in $RESULTS; do
             case "$r" in

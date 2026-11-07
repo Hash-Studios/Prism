@@ -22,9 +22,9 @@ class PreviewHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
       child: Row(
         children: <Widget>[
-          IconButton(
+          PrismIconButton(
             tooltip: l10n.economyClosePreview,
-            icon: const Icon(Icons.close_rounded),
+            icon: Icons.close_rounded,
             onPressed: () => Navigator.of(context).maybePop(),
           ),
           Expanded(
@@ -49,7 +49,9 @@ class PreviewHeader extends StatelessWidget {
                           detail,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: PrismTextStyles.caption(context),
+                          style: PrismTextStyles.caption(
+                            context,
+                          ).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                       ),
                       if (owned) ...<Widget>[
@@ -62,7 +64,7 @@ class PreviewHeader extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 48),
+          const SizedBox(width: 44),
         ],
       ),
     );

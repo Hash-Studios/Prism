@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wall_requests/domain/entities/wall_request.dart';
 import 'package:Prism/features/wall_requests/views/widgets/wall_request_picker_sheet.dart';
@@ -28,10 +29,13 @@ class FillsRequestRow extends StatelessWidget {
             if (picked != null) onChanged(picked);
           },
           trailing: hasRequest
-              ? IconButton(
+              ? PrismIconButton(
+                  icon: Icons.close_rounded,
                   tooltip: context.l10n.uploadFillsRequestClear,
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => onChanged(null),
+                  onPressed: () {
+                    PrismHaptics.selection();
+                    onChanged(null);
+                  },
                 )
               : null,
         ),

@@ -195,6 +195,7 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
       case null || ChestAction.spent:
         return;
       case ChestAction.getCoins:
+        PrismHaptics.tap();
         unawaited(_getCoins(status!));
         return;
       case ChestAction.open:

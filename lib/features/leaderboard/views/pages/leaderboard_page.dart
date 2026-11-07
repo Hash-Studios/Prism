@@ -6,6 +6,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/features/leaderboard/biz/bloc/leaderboard_bloc.j.dart';
 import 'package:Prism/features/leaderboard/domain/entities/leaderboard_entry.dart';
 import 'package:Prism/features/leaderboard/domain/week_key.dart';
@@ -39,9 +40,17 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
 
   void _trackViewed(LeaderboardTab tab) => unawaited(analytics.track(LeaderboardViewedEvent(tab: tab.name)));
 
+  void _changeTab(BuildContext context, LeaderboardTab tab) {
+    _trackViewed(tab);
+    context.read<LeaderboardBloc>().add(LeaderboardEvent.tabChanged(tab));
+  }
+
   Future<void> _refresh(BuildContext context) {
     final LeaderboardBloc bloc = context.read<LeaderboardBloc>();
-    final Future<LeaderboardState> settled = bloc.stream.firstWhere((s) => s.status != LoadStatus.loading);
+    final Future<LeaderboardState> settled = bloc.stream.firstWhere(
+      (s) => s.status != LoadStatus.loading,
+      orElse: () => bloc.state,
+    );
     bloc.add(const LeaderboardEvent.refreshed());
     return settled;
   }
@@ -69,14 +78,15 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                 labelOf: (tab) => tab == LeaderboardTab.friends
                     ? context.l10n.economyLeaderboardFollowing
                     : context.l10n.economyLeaderboardGlobal,
-                onChanged: (tab) {
-                  _trackViewed(tab);
-                  context.read<LeaderboardBloc>().add(LeaderboardEvent.tabChanged(tab));
-                },
+                onChanged: (tab) => _changeTab(context, tab),
               ),
             ),
             Expanded(
-              child: _Content(state: state, onRefresh: () => _refresh(context)),
+              child: _Content(
+                state: state,
+                onRefresh: () => _refresh(context),
+                onSeeAllGlobal: () => _changeTab(context, LeaderboardTab.global),
+              ),
             ),
           ],
         ),
@@ -91,28 +101,12 @@ String resetCaption(AppLocalizations l10n, DateTime now) {
 }
 
 class _ScoreCaption extends StatelessWidget {
-  const _ScoreCaption(this.tab);
-
-  final LeaderboardTab tab;
+  const _ScoreCaption();
 
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.sm, PrismSpace.page, PrismSpace.xs),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(context.l10n.economyLeaderboardRankedByXp, style: PrismTextStyles.body(context)),
-        const SizedBox(height: PrismSpace.xxs),
-        Text(resetCaption(context.l10n, DateTime.now()), style: PrismTextStyles.caption(context)),
-        const SizedBox(height: PrismSpace.xs),
-        Text(
-          tab == LeaderboardTab.friends
-              ? context.l10n.economyLeaderboardFriendsCaption
-              : context.l10n.economyLeaderboardGlobalCaption,
-          style: PrismTextStyles.caption(context),
-        ),
-      ],
-    ),
+    child: Text(resetCaption(context.l10n, DateTime.now()), style: PrismTextStyles.caption(context)),
   );
 }
 
@@ -126,6 +120,8 @@ class _ScoringSheet extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
+        Text(context.l10n.economyLeaderboardRankedByXp, style: PrismTextStyles.rowTitle(context)),
+        const SizedBox(height: PrismSpace.xs),
         Text(context.l10n.economyLeaderboardScoringIntro, style: PrismTextStyles.body(context)),
         const SizedBox(height: PrismSpace.lg),
         Text(context.l10n.economyLeaderboardFollowing, style: PrismTextStyles.rowTitle(context)),
@@ -143,26 +139,24 @@ class _ScoringSheet extends StatelessWidget {
 }
 
 class _Content extends StatelessWidget {
-  const _Content({required this.state, required this.onRefresh});
+  const _Content({required this.state, required this.onRefresh, required this.onSeeAllGlobal});
 
   final LeaderboardState state;
   final Future<void> Function() onRefresh;
+  final VoidCallback onSeeAllGlobal;
 
   @override
   Widget build(BuildContext context) {
     final List<LeaderboardEntry> entries = state.entries;
     final LoadStatus status = state.status;
-    final ColorScheme cs = Theme.of(context).colorScheme;
-    Widget withCaption(Widget child) => RefreshIndicator(
-      color: cs.primary,
-      backgroundColor: cs.surfaceContainerHigh,
+    Widget withCaption(Widget child) => PrismRefresh(
       notificationPredicate: (notification) =>
           status != LoadStatus.initial && status != LoadStatus.loading && notification.depth == 0,
       onRefresh: onRefresh,
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: <Widget>[
-          SliverToBoxAdapter(child: _ScoreCaption(state.tab)),
+          const SliverToBoxAdapter(child: _ScoreCaption()),
           SliverLayoutBuilder(
             builder: (context, constraints) => SliverToBoxAdapter(
               child: SizedBox(height: constraints.remainingPaintExtent.clamp(300, double.infinity), child: child),
@@ -174,7 +168,12 @@ class _Content extends StatelessWidget {
     if (entries.isEmpty && (status == LoadStatus.initial || status == LoadStatus.loading)) {
       return withCaption(PrismSkeleton.rows());
     }
-    if (entries.isEmpty) {
+    final bool hasGlobalSuggestions =
+        state.tab == LeaderboardTab.friends &&
+        status == LoadStatus.success &&
+        state.globalStatus == LoadStatus.success &&
+        state.global.isNotEmpty;
+    if (entries.isEmpty && !hasGlobalSuggestions) {
       final bool failed = status == LoadStatus.failure;
       final bool friends = state.tab == LeaderboardTab.friends;
       return withCaption(
@@ -191,26 +190,91 @@ class _Content extends StatelessWidget {
         ),
       );
     }
-    final bool onlyMe = state.tab == LeaderboardTab.friends && entries.length == 1 && entries.single.isMe;
-    return RefreshIndicator(
-      color: cs.primary,
-      backgroundColor: cs.surfaceContainerHigh,
+    final bool fewRows = state.tab == LeaderboardTab.friends && entries.length < shortFriendsList;
+    final List<LeaderboardEntry> top = fewRows && state.globalStatus == LoadStatus.success
+        ? state.global.take(5).toList(growable: false)
+        : const <LeaderboardEntry>[];
+    // A short Following list keeps going: the follow tip, then this week's global top 5.
+    final List<Widget> footer = <Widget>[
+      if (fewRows) _FollowTipCard(onFind: () => unawaited(context.router.push(CreatorsRoute(source: 'leaderboard')))),
+      if (top.isNotEmpty) ...<Widget>[
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),
+          child: PrismSectionHeader(title: context.l10n.economyLeaderboardTopThisWeek),
+        ),
+        for (int i = 0; i < top.length; i++) _EntryRow(entry: top[i], position: i + 1),
+        Padding(
+          padding: const EdgeInsets.only(top: PrismSpace.xs),
+          child: Center(
+            child: PrismButton(
+              label: context.l10n.economySeeAll,
+              variant: PrismButtonVariant.ghost,
+              size: PrismButtonSize.compact,
+              onPressed: onSeeAllGlobal,
+            ),
+          ),
+        ),
+      ],
+    ];
+    return PrismRefresh(
       onRefresh: onRefresh,
       child: ListView.builder(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(PrismSpace.xs, 0, PrismSpace.xs, PrismSpace.bottomBarClearance),
-        itemCount: entries.length + 1 + (onlyMe ? 1 : 0),
+        padding: const EdgeInsets.only(bottom: PrismSpace.bottomBarClearance),
+        itemCount: 1 + entries.length + footer.length,
         itemBuilder: (context, index) {
-          if (index == 0) return _ScoreCaption(state.tab);
+          if (index == 0) return const _ScoreCaption();
           final int entryIndex = index - 1;
-          if (entryIndex == entries.length) {
-            return Padding(
-              padding: const EdgeInsets.all(PrismSpace.page),
-              child: Text(context.l10n.economyLeaderboardFollowTip, style: PrismTextStyles.body(context)),
-            );
-          }
+          if (entryIndex >= entries.length) return footer[entryIndex - entries.length];
           return _EntryRow(entry: entries[entryIndex], position: entryIndex + 1);
         },
+      ),
+    );
+  }
+}
+
+/// "Follow creators to compare": a 40-point icon tile, the tip and the screen's one primary action.
+class _FollowTipCard extends StatelessWidget {
+  const _FollowTipCard({required this.onFind});
+
+  final VoidCallback onFind;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, 0),
+      child: PrismCard(
+        padding: const EdgeInsets.all(PrismSpace.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: cs.primaryContainer,
+                borderRadius: BorderRadius.circular(PrismRadius.sm),
+              ),
+              child: Icon(Icons.group_add_rounded, size: 22, color: cs.onPrimaryContainer),
+            ),
+            const SizedBox(width: PrismSpace.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(context.l10n.economyLeaderboardFollowTip, style: PrismTextStyles.rowTitle(context)),
+                  const SizedBox(height: PrismSpace.sm),
+                  PrismButton(
+                    label: context.l10n.accountFindCreators,
+                    size: PrismButtonSize.compact,
+                    onPressed: onFind,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -236,69 +300,75 @@ class _EntryRow extends StatelessWidget {
       style: PrismTextStyles.rowTitle(context),
     );
     final Widget rankLabel = PrismTag(label: rank, tone: entry.isMe ? PrismTone.accent : PrismTone.neutral);
-    return Semantics(
-      container: true,
-      button: tappable,
-      label: context.l10n.economyLeaderboardEntrySemantics(
-        position,
-        name,
-        entry.isMe ? 'true' : 'false',
-        entry.xp,
-        rank.isEmpty ? 'false' : 'true',
-        rank,
-      ),
-      child: ExcludeSemantics(
-        child: Material(
-          color: entry.isMe ? cs.primary.withValues(alpha: 0.08) : Colors.transparent,
-          borderRadius: BorderRadius.circular(PrismRadius.md),
-          child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),
+      child: Semantics(
+        container: true,
+        button: tappable,
+        label: context.l10n.economyLeaderboardEntrySemantics(
+          position,
+          name,
+          entry.isMe ? 'true' : 'false',
+          entry.xp,
+          rank.isEmpty ? 'false' : 'true',
+          rank,
+        ),
+        child: ExcludeSemantics(
+          child: Material(
+            color: entry.isMe ? cs.primary.withValues(alpha: 0.08) : Colors.transparent,
             borderRadius: BorderRadius.circular(PrismRadius.md),
-            onTap: tappable ? () => context.router.push(ProfileRoute(profileIdentifier: entry.username)) : null,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: PrismSpace.sm),
-              child: Row(
-                children: <Widget>[
-                  SizedBox(
-                    width: 32,
-                    child: Text(
-                      formatLocalizedNumber(position, context.l10n),
-                      style: PrismTextStyles.numeral(context, 18),
-                      textAlign: TextAlign.center,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(PrismRadius.md),
+              onTap: tappable ? () => context.router.push(ProfileRoute(profileIdentifier: entry.username)) : null,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm, vertical: PrismSpace.sm),
+                child: Row(
+                  children: <Widget>[
+                    SizedBox(
+                      width: 32,
+                      child: Text(
+                        formatLocalizedNumber(position, context.l10n),
+                        style: PrismTextStyles.rowTitle(context).copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: PrismSpace.sm),
-                  PrismAvatar(url: entry.photo, name: name, size: 40, frameId: entry.frameId, premium: entry.premium),
-                  const SizedBox(width: PrismSpace.sm),
-                  Expanded(
-                    child: largeText
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              nameLabel,
-                              const SizedBox(height: PrismSpace.xs),
-                              Wrap(
-                                spacing: PrismSpace.xs,
-                                runSpacing: PrismSpace.xs,
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                children: <Widget>[
-                                  if (rank.isNotEmpty) rankLabel,
-                                  Text(context.l10n.economyXp(entry.xp), style: PrismTextStyles.rowTitle(context)),
-                                ],
-                              ),
-                            ],
-                          )
-                        : Row(
-                            children: <Widget>[
-                              Flexible(child: nameLabel),
-                              if (rank.isNotEmpty) ...<Widget>[const SizedBox(width: PrismSpace.xs), rankLabel],
-                            ],
-                          ),
-                  ),
-                  if (!largeText) ...<Widget>[
                     const SizedBox(width: PrismSpace.sm),
-                    Text(context.l10n.economyXp(entry.xp), style: PrismTextStyles.rowTitle(context)),
+                    PrismAvatar(url: entry.photo, name: name, size: 40, frameId: entry.frameId, premium: entry.premium),
+                    const SizedBox(width: PrismSpace.sm),
+                    Expanded(
+                      child: largeText
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                nameLabel,
+                                const SizedBox(height: PrismSpace.xs),
+                                Wrap(
+                                  spacing: PrismSpace.xs,
+                                  runSpacing: PrismSpace.xs,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: <Widget>[
+                                    if (rank.isNotEmpty) rankLabel,
+                                    Text(context.l10n.economyXp(entry.xp), style: PrismTextStyles.rowTitle(context)),
+                                  ],
+                                ),
+                              ],
+                            )
+                          : Row(
+                              children: <Widget>[
+                                Flexible(child: nameLabel),
+                                if (rank.isNotEmpty) ...<Widget>[const SizedBox(width: PrismSpace.xs), rankLabel],
+                              ],
+                            ),
+                    ),
+                    if (!largeText) ...<Widget>[
+                      const SizedBox(width: PrismSpace.sm),
+                      Text(context.l10n.economyXp(entry.xp), style: PrismTextStyles.rowTitle(context)),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),

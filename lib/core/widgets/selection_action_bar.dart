@@ -1,5 +1,6 @@
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/app_tokens.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:flutter/material.dart';
 
 /// Top row shown while a grid is in multi-select mode: a close button and the selected count.
@@ -14,7 +15,7 @@ class SelectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 16, 4),
+      padding: const EdgeInsets.fromLTRB(PrismSpace.xxs, 0, PrismSpace.md, PrismSpace.xxs),
       child: Row(
         children: [
           IconButton(
@@ -28,15 +29,14 @@ class SelectionHeader extends StatelessWidget {
               children: [
                 Text(
                   context.l10n.coreSelectCount(count),
-                  style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.secondary),
+                  style: PrismTextStyles.cardTitle(context).copyWith(color: theme.colorScheme.secondary),
                 ),
                 if (hint != null)
                   Text(
                     hint!,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.secondary.withValues(alpha: 0.75),
-                      fontSize: 14,
-                    ),
+                    style: PrismTextStyles.caption(
+                      context,
+                    ).copyWith(color: theme.colorScheme.secondary.withValues(alpha: 0.75)),
                   ),
               ],
             ),
@@ -58,7 +58,7 @@ class SelectionActionBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
         child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: actions),
       ),
     );
