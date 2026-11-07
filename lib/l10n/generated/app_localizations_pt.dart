@@ -8075,6 +8075,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get premiumPurchasePending => 'Sua compra foi salva. O Pro pode levar um minuto para ser ativado.';
 
   @override
+  String get premiumPaymentPending =>
+      'Seu pagamento está pendente. O Pro será ativado quando o pagamento for concluído.';
+
+  @override
   String get premiumPurchaseUnconfirmed =>
       'Não foi possível confirmar sua compra. Tente usar Restaurar compras nas Configurações.';
 
@@ -23071,6 +23075,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get premiumPurchasePending => 'Sua compra foi salva. O Pro pode levar um minuto para ser ativado.';
+
+  @override
+  String get premiumPaymentPending =>
+      'Seu pagamento está pendente. O Pro será ativado quando o pagamento for concluído.';
 
   @override
   String get premiumPurchaseUnconfirmed =>

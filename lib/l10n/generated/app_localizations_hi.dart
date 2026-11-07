@@ -7942,6 +7942,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get premiumPurchasePending => 'आपकी खरीद दर्ज हो गई है। Pro अनलॉक होने में एक मिनट लग सकता है।';
 
   @override
+  String get premiumPaymentPending => 'आपका भुगतान अभी बाकी है। भुगतान पूरा होते ही Pro अनलॉक हो जाएगा।';
+
+  @override
   String get premiumPurchaseUnconfirmed =>
       'आपकी खरीद की पुष्टि नहीं हो सकी। सेटिंग्स में ‘खरीदारियाँ वापस पाएँ’ आज़माएँ।';
 

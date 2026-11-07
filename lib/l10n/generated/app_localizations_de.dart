@@ -7904,6 +7904,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Dein Kauf wurde gespeichert. Es kann eine Minute dauern, bis Pro freigeschaltet wird.';
 
   @override
+  String get premiumPaymentPending =>
+      'Deine Zahlung ist noch ausstehend. Pro wird freigeschaltet, sobald die Zahlung durch ist.';
+
+  @override
   String get premiumPurchaseUnconfirmed =>
       'Dein Kauf konnte nicht bestätigt werden. Versuche es in den Einstellungen mit „Käufe wiederherstellen“.';
 

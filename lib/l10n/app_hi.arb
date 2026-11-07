@@ -6713,6 +6713,7 @@
   "@premiumPurchasePending": {
     "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
   },
+  "premiumPaymentPending": "आपका भुगतान अभी बाकी है। भुगतान पूरा होते ही Pro अनलॉक हो जाएगा।",
   "premiumPurchaseUnconfirmed": "आपकी खरीद की पुष्टि नहीं हो सकी। सेटिंग्स में ‘खरीदारियाँ वापस पाएँ’ आज़माएँ।",
   "@premiumPurchaseUnconfirmed": {
     "description": "Toast after a purchase that neither the store nor the server could confirm."

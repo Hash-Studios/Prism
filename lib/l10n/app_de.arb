@@ -6603,6 +6603,7 @@
   "@premiumPurchasePending": {
     "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
   },
+  "premiumPaymentPending": "Deine Zahlung ist noch ausstehend. Pro wird freigeschaltet, sobald die Zahlung durch ist.",
   "premiumPurchaseUnconfirmed": "Dein Kauf konnte nicht bestätigt werden. Versuche es in den Einstellungen mit „Käufe wiederherstellen“.",
   "@premiumPurchaseUnconfirmed": {
     "description": "Toast after a purchase that neither the store nor the server could confirm."

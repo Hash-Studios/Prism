@@ -6826,6 +6826,7 @@
   "@premiumPurchasePending": {
     "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
   },
+  "premiumPaymentPending": "Pembayaran Anda masih tertunda. Pro akan aktif setelah pembayaran berhasil.",
   "premiumPurchaseUnconfirmed": "Pembelian Anda tidak dapat dikonfirmasi. Coba Pulihkan pembelian di Pengaturan.",
   "@premiumPurchaseUnconfirmed": {
     "description": "Toast after a purchase that neither the store nor the server could confirm."

@@ -12169,6 +12169,12 @@ abstract class AppLocalizations {
   /// **'Your purchase is saved. Pro can take a minute to unlock.'**
   String get premiumPurchasePending;
 
+  /// Toast when the store holds a purchase as pending (for example a slow UPI or card payment). Pro unlocks later.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payment is pending. Pro unlocks when the payment goes through.'**
+  String get premiumPaymentPending;
+
   /// Toast after a purchase that neither the store nor the server could confirm.
   ///
   /// In en, this message translates to:

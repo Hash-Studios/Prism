@@ -6725,6 +6725,10 @@
   "@premiumPurchasePending": {
     "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
   },
+  "premiumPaymentPending": "Your payment is pending. Pro unlocks when the payment goes through.",
+  "@premiumPaymentPending": {
+    "description": "Toast when the store holds a purchase as pending (for example a slow UPI or card payment). Pro unlocks later."
+  },
   "premiumPurchaseUnconfirmed": "Could not confirm your purchase. Try Restore purchases in Settings.",
   "@premiumPurchaseUnconfirmed": {
     "description": "Toast after a purchase that neither the store nor the server could confirm."

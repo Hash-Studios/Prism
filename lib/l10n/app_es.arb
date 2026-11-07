@@ -2205,6 +2205,7 @@
   "premiumPageViewPlans": "Ver planes",
   "premiumGuestStorePurchaseActive": "Tu compra de la tienda está activa en este dispositivo. Inicia sesión para usar las funciones Pro vinculadas a tu cuenta.",
   "premiumPurchasePending": "Tu compra está guardada. Pro puede tardar un minuto en activarse.",
+  "premiumPaymentPending": "Tu pago está pendiente. Pro se activará cuando se complete el pago.",
   "premiumPurchaseUnconfirmed": "No se pudo confirmar tu compra. Intenta usar «Restaurar compras» en Ajustes.",
   "updatesStoreUpdateAvailable": "Hay una nueva versión de Prism disponible.",
   "wallpaperAccentColor": "Color de acento",

@@ -7837,6 +7837,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get premiumPurchasePending => 'Pembelian Anda tersimpan. Pro mungkin perlu waktu satu menit untuk aktif.';
 
   @override
+  String get premiumPaymentPending => 'Pembayaran Anda masih tertunda. Pro akan aktif setelah pembayaran berhasil.';
+
+  @override
   String get premiumPurchaseUnconfirmed =>
       'Pembelian Anda tidak dapat dikonfirmasi. Coba Pulihkan pembelian di Pengaturan.';
 

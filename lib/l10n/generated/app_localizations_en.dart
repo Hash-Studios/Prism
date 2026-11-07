@@ -7811,6 +7811,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get premiumPurchasePending => 'Your purchase is saved. Pro can take a minute to unlock.';
 
   @override
+  String get premiumPaymentPending => 'Your payment is pending. Pro unlocks when the payment goes through.';
+
+  @override
   String get premiumPurchaseUnconfirmed => 'Could not confirm your purchase. Try Restore purchases in Settings.';
 
   @override

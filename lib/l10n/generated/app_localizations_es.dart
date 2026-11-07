@@ -7901,6 +7901,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get premiumPurchasePending => 'Tu compra está guardada. Pro puede tardar un minuto en activarse.';
 
   @override
+  String get premiumPaymentPending => 'Tu pago está pendiente. Pro se activará cuando se complete el pago.';
+
+  @override
   String get premiumPurchaseUnconfirmed =>
       'No se pudo confirmar tu compra. Intenta usar «Restaurar compras» en Ajustes.';
 
