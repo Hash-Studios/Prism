@@ -227,6 +227,25 @@
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
         </activity>
+        <!-- Receives shares from other apps and opens Prism in its own task with a prism://share-in link. -->
+        <activity
+            android:name=".ShareTargetActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
 
         <!-- Alternate launcher icons. MainActivity is the default icon; PrismAppIconHostApiImpl enables one alias and disables MainActivity. Each alias repeats the deep links so they resolve while it is the active icon. -->
         <activity-alias

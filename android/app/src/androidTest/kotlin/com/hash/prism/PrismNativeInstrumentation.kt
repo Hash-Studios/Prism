@@ -3,7 +3,10 @@ package com.hash.prism
 import android.app.Activity
 import android.app.Instrumentation
 import android.content.ContentUris
+import android.content.ContentValues
+import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -29,6 +32,7 @@ internal class PrismNativeInstrumentation : Instrumentation() {
             verifyWotdWidgetDocuments()
             verifyOfflineTileAssets()
             verifyMediaContract()
+            verifySharedIntent()
             result.putString(OUTPUT_STREAM, "Prism native offline tile and media checks passed\n")
             finish(Activity.RESULT_OK, result)
         } catch (error: Throwable) {
@@ -174,6 +178,72 @@ internal class PrismNativeInstrumentation : Instrumentation() {
             throw failure
         }
         cleanup.getOrThrow()
+    }
+
+    private fun verifySharedIntent() {
+        val context = targetContext
+        val resolver = context.contentResolver
+        val bitmap = Bitmap.createBitmap(3, 3, Bitmap.Config.ARGB_8888)
+        val png = try {
+            ByteArrayOutputStream().also { check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }.toByteArray()
+        } finally {
+            bitmap.recycle()
+        }
+        val uri = resolver.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, "prism-shared-${UUID.randomUUID()}.png")
+                put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+            },
+        ) ?: error("Could not insert shared image fixture")
+        var sharedFile: File? = null
+        try {
+            resolver.openOutputStream(uri)!!.use { it.write(png) }
+
+            val imageIntent = Intent(Intent.ACTION_SEND).setType("image/png").putExtra(Intent.EXTRA_STREAM, uri)
+            val link = SharedInbox.linkIntent(context, imageIntent, "com.example.source")
+            check(link != null && link.action == Intent.ACTION_VIEW && link.`package` == context.packageName) {
+                "Shared image did not become a VIEW intent for Prism"
+            }
+            val match = Regex("^prism://share-in\\?id=([0-9a-f-]{36})&src=com\\.example\\.source$")
+                .find(link.dataString.orEmpty())
+            check(match != null) { "Shared image link has the wrong shape: ${link.dataString}" }
+            val id = match.groupValues[1]
+
+            val file = SharedInbox.take(context, id)
+            sharedFile = file
+            check(file.name == "$id.png") { "Shared image was not stored with its extension" }
+            check(file.readBytes().contentEquals(png)) { "Shared image bytes changed" }
+            check(file.canonicalPath.startsWith(SharedInbox.folder(context).canonicalPath + File.separator)) {
+                "Shared image was stored outside the inbox"
+            }
+
+            val textIntent = Intent(Intent.ACTION_SEND).setType("text/plain")
+                .putExtra(Intent.EXTRA_TEXT, "Look https://example.com/x?a=1&b=2")
+            check(SharedInbox.linkIntent(context, textIntent, "com.example.source")?.dataString ==
+                "prism://share-in?text=Look%20https%3A%2F%2Fexample.com%2Fx%3Fa%3D1%26b%3D2&src=com.example.source") {
+                "Shared text link has the wrong value"
+            }
+
+            val ownProvider = Intent(Intent.ACTION_SEND).setType("image/png")
+                .putExtra(Intent.EXTRA_STREAM, Uri.parse("content://${context.packageName}.wallpaper_crop/cache/x.png"))
+            check(SharedInbox.linkIntent(context, ownProvider, "com.example.source") == null) {
+                "Prism's own provider was accepted as a share"
+            }
+            val fileStream = Intent(Intent.ACTION_SEND).setType("image/png")
+                .putExtra(Intent.EXTRA_STREAM, Uri.parse("file://${context.cacheDir}/x.png"))
+            check(SharedInbox.linkIntent(context, fileStream, "com.example.source") == null) {
+                "File URI was accepted as a share"
+            }
+            val viewIntent = Intent(Intent.ACTION_VIEW).setType("image/png")
+                .putExtra(Intent.EXTRA_STREAM, uri)
+            check(SharedInbox.linkIntent(context, viewIntent, "com.example.source") == null) {
+                "Non-SEND intent was accepted as a share"
+            }
+        } finally {
+            resolver.delete(uri, null, null)
+            sharedFile?.delete()
+        }
     }
 
     private fun verifyRejectedSources(api: PrismMediaHostApiImpl, fixture: File) {
