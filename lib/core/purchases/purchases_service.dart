@@ -108,9 +108,11 @@ class PurchasesService {
 
   /// Prevents an earlier background read from overwriting a restore or purchase-check result.
   int _forcedApplies = 0;
+  int _customerInfoApplies = 0;
 
   /// Accounts whose store purchases this process already synced before removing Pro.
   final Set<String> _storeSyncedUsers = <String>{};
+  final Map<int, Future<CustomerInfo?>> _storeSyncsInFlight = <int, Future<CustomerInfo?>>{};
 
   /// Skip redundant Firestore subscription updates when state unchanged (co-ordinate with coin sync / reduce usersv2 writes).
   static const Duration _subscriptionPersistThrottle = Duration(minutes: 5);
@@ -475,7 +477,13 @@ class PurchasesService {
       return _cachedEntitlementStatus(forceSync);
     }
     if (!isPremium && !forceSync && app_state.prismUser.premium && loggedIn && userId.isNotEmpty) {
+      final int appliesBeforeSync = _customerInfoApplies;
       final CustomerInfo? synced = await _syncStoreBeforeRemovingPro(userId, identityRevision, loggedIn);
+      if (!_matchesSubscriptionIdentity(userId, identityRevision, loggedIn) ||
+          forcedAppliesAtRead != _forcedApplies ||
+          appliesBeforeSync != _customerInfoApplies) {
+        return _cachedEntitlementStatus(forceSync);
+      }
       if (synced != null) {
         return _applyCustomerInfo(
           synced,
@@ -487,6 +495,7 @@ class PurchasesService {
       }
     }
 
+    _customerInfoApplies++;
     app_state.prismUser.premium = isPremium;
     app_state.prismUser.subscriptionTier = tier.name;
     app_state.persistPrismUser();
@@ -541,17 +550,27 @@ class PurchasesService {
   /// A paid purchase can sit on another RevenueCat app user ID, for example one an older build created anonymously.
   /// Before Pro is removed, send the store's purchases to RevenueCat once for this account and read it again (#526).
   /// Null when there is nothing new to apply.
-  Future<CustomerInfo?> _syncStoreBeforeRemovingPro(String userId, int identityRevision, bool loggedIn) async {
+  Future<CustomerInfo?> _syncStoreBeforeRemovingPro(String userId, int identityRevision, bool loggedIn) {
+    final Future<CustomerInfo?>? pending = _storeSyncsInFlight[identityRevision];
+    if (pending != null) return pending;
     final Future<void> Function()? syncPurchases = _syncPurchases;
-    if (syncPurchases == null || !_storeSyncedUsers.add(userId)) return null;
-    try {
-      await syncPurchases().timeout(_customerInfoTimeout);
-      if (!_matchesSubscriptionIdentity(userId, identityRevision, loggedIn)) return null;
-      return await _getCustomerInfo().timeout(_customerInfoTimeout);
-    } catch (error, stackTrace) {
-      logger.w('Store purchase sync before removing Pro failed.', error: error, stackTrace: stackTrace);
-      return null;
-    }
+    if (syncPurchases == null || !_storeSyncedUsers.add(userId)) return Future<CustomerInfo?>.value();
+    final Future<CustomerInfo?> recovery =
+        (() async {
+              await syncPurchases();
+              if (!_matchesSubscriptionIdentity(userId, identityRevision, loggedIn)) return null;
+              return _getCustomerInfo();
+            })()
+            .timeout(_customerInfoTimeout)
+            .catchError((Object error, StackTrace stackTrace) {
+              logger.w('Store purchase sync before removing Pro failed.', error: error, stackTrace: stackTrace);
+              return null;
+            })
+            .whenComplete(() {
+              _storeSyncsInFlight.remove(identityRevision);
+            });
+    _storeSyncsInFlight[identityRevision] = recovery;
+    return recovery;
   }
 
   Future<void> _clearTrialState({String? keepUserId}) async {

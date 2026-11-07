@@ -411,9 +411,7 @@ class SetWallpaperFlow {
       final PlacedWallpaper? retryPlaced = systemScreen ? null : placed;
       final isLocal = url.startsWith('/') || url.startsWith('file:');
       if (retryPlaced == null && !isLocal && !context.mounted) return;
-      final retryUrl = retryPlaced != null
-          ? retryPlaced.path
-          : isLocal
+      final retryUrl = retryPlaced != null || isLocal
           ? url
           : await resolveOriginalWithConsent(
               context,
@@ -428,6 +426,7 @@ class SetWallpaperFlow {
               return null;
             });
       if (retryUrl == null || !_isSignedInOwner(owner)) return;
+      if (systemScreen && placed != null) unawaited(placed.discard());
       await apply(
         // A retry runs after the user leaves; apply then reports through the messenger taken before the first await.
         // ignore: use_build_context_synchronously

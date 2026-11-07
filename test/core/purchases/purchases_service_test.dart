@@ -538,6 +538,168 @@ void main() {
       expect(app_state.prismUser.premium, isFalse);
     });
 
+    for (final bool failSync in <bool>[false, true]) {
+      test('an account switch during recovery cannot revoke the new account (failure: $failSync)', () async {
+        final gate = Completer<void>();
+        final service = buildService(getCustomerInfo: () async => _freeCustomer, syncPurchases: () => gate.future);
+        final pending = service.checkAndPersistPremium();
+        await pumpEventQueue();
+        app_state.prismUser = profileUser(id: 'other-user', premium: true)..subscriptionTier = 'pro';
+        await service.ensureConfigured('other-user');
+        if (failSync) {
+          gate.completeError(PlatformException(code: 'offline'));
+        } else {
+          gate.complete();
+        }
+        await pending;
+        expect(app_state.prismUser.premium, isTrue);
+        expect(app_state.prismUser.subscriptionTier, 'pro');
+        expect(syncCalls, 0);
+      });
+    }
+
+    test('a failed recovery cannot overwrite a newer purchase check', () async {
+      final gate = Completer<void>();
+      bool paid = false;
+      final service = buildService(
+        getCustomerInfo: () async => paid ? _proCustomer : _freeCustomer,
+        syncPurchases: () => gate.future,
+      );
+      final pending = service.checkAndPersistPremium();
+      await pumpEventQueue();
+      paid = true;
+      expect(await service.checkPurchaseEntitlement(), PurchaseEntitlementStatus.serverConfirmed);
+      gate.completeError(PlatformException(code: 'offline'));
+      await pending;
+      expect(app_state.prismUser.premium, isTrue);
+      expect(app_state.prismUser.subscriptionTier, 'pro');
+    });
+
+    test('a free listener waits for recovery before local or server revocation', () async {
+      final gate = Completer<void>();
+      bool recovered = false;
+      final service = buildService(
+        getCustomerInfo: () async => recovered ? _proCustomer : _freeCustomer,
+        syncPurchases: () async {
+          storeSyncs++;
+          await gate.future;
+          recovered = true;
+        },
+      );
+      final pending = service.checkAndPersistPremium();
+      await pumpEventQueue();
+      listeners.single(_freeCustomer);
+      await pumpEventQueue();
+      expect(app_state.prismUser.premium, isTrue);
+      expect(syncCalls, 0);
+      gate.complete();
+      expect(await pending, isTrue);
+      await pumpEventQueue();
+      expect(app_state.prismUser.subscriptionTier, 'pro');
+      expect(storeSyncs, 1);
+    });
+
+    test('a recovery read cannot overwrite a newer paid listener', () async {
+      final gate = Completer<CustomerInfo>();
+      int reads = 0;
+      final service = buildService(
+        getCustomerInfo: () async => ++reads == 1 ? _freeCustomer : gate.future,
+        syncPurchases: () async => storeSyncs++,
+      );
+      final pending = service.checkAndPersistPremium();
+      await pumpEventQueue();
+      listeners.single(_proCustomer);
+      await pumpEventQueue();
+      expect(app_state.prismUser.premium, isTrue);
+      gate.complete(_freeCustomer);
+      await pending;
+      expect(app_state.prismUser.premium, isTrue);
+      expect(app_state.prismUser.subscriptionTier, 'pro');
+    });
+
+    testWidgets('store recovery and its reread share one ten-second deadline', (tester) async {
+      final gate = Completer<void>();
+      final reread = Completer<CustomerInfo>();
+      int reads = 0;
+      bool finished = false;
+      final service = buildService(
+        getCustomerInfo: () async => ++reads == 1 ? _freeCustomer : reread.future,
+        syncPurchases: () => gate.future,
+      );
+      final pending = service.checkAndPersistPremium().then((value) => finished = true);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 9));
+      gate.complete();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(finished, isTrue);
+      expect(app_state.prismUser.premium, isFalse);
+      reread.complete(_proCustomer);
+      await tester.pump();
+      await pending;
+      expect(app_state.prismUser.premium, isFalse);
+    });
+
+    test('logout during recovery cannot overwrite guest access', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('purchases_flutter'),
+        (call) async => call.method == 'logOut' ? _freeCustomerJson : null,
+      );
+      final gate = Completer<void>();
+      final service = buildService(getCustomerInfo: () async => _freeCustomer, syncPurchases: () => gate.future);
+      final pending = service.checkAndPersistPremium();
+      await pumpEventQueue();
+      app_state.prismUser = profileUser(id: '', loggedIn: false, premium: true)..subscriptionTier = 'pro';
+      await service.logOut();
+      gate.complete();
+      await pending;
+      expect(app_state.prismUser.premium, isTrue);
+      expect(app_state.prismUser.subscriptionTier, 'pro');
+      expect(syncCalls, 0);
+    });
+
+    for (final bool restoring in <bool>[false, true]) {
+      test('a successful recovery cannot overwrite a newer forced result (restore: $restoring)', () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+          const MethodChannel('purchases_flutter'),
+          (call) async => call.method == 'restorePurchases' ? _proCustomerJson : null,
+        );
+        final gate = Completer<void>();
+        bool paid = false;
+        final service = buildService(
+          getCustomerInfo: () async => paid ? _proCustomer : _freeCustomer,
+          syncPurchases: () => gate.future,
+        );
+        final pending = service.checkAndPersistPremium();
+        await pumpEventQueue();
+        paid = true;
+        expect(
+          await (restoring ? service.restore() : service.checkPurchaseEntitlement()),
+          PurchaseEntitlementStatus.serverConfirmed,
+        );
+        paid = false;
+        gate.complete();
+        await pending;
+        expect(app_state.prismUser.premium, isTrue);
+        expect(app_state.prismUser.subscriptionTier, 'pro');
+      });
+    }
+
+    test('a paid guest never syncs the store before removing access', () async {
+      app_state.prismUser = profileUser(id: '', loggedIn: false, premium: true)..subscriptionTier = 'pro';
+      final service = buildService(getCustomerInfo: () async => _freeCustomer, syncPurchases: () async => storeSyncs++);
+      expect(await service.checkAndPersistPremium(), isFalse);
+      expect(app_state.prismUser.premium, isFalse);
+      expect(storeSyncs, 0);
+    });
+
+    test('a forced check does not perform automatic store recovery', () async {
+      final service = buildService(getCustomerInfo: () async => _freeCustomer, syncPurchases: () async => storeSyncs++);
+      expect(await service.checkPurchaseEntitlement(), PurchaseEntitlementStatus.none);
+      expect(app_state.prismUser.premium, isFalse);
+      expect(storeSyncs, 0);
+    });
+
     test('a free account never syncs the store', () async {
       app_state.prismUser = profileUser();
       final PurchasesService service = buildService(

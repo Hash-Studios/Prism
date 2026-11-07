@@ -1821,6 +1821,14 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 2));
         await tester.tap(find.text(l10n.coreWallpaperSetWithPhone));
         await tester.pumpAndSettle(const Duration(seconds: 2));
+        if (placedPath != null) {
+          await tester.runAsync(() async {
+            for (int attempt = 0; attempt < 20 && await File(placedPath).exists(); attempt++) {
+              await Future<void>.delayed(const Duration(milliseconds: 10));
+            }
+            expect(await File(placedPath).exists(), isFalse);
+          });
+        }
         expect(find.text(l10n.coreUndo), findsOneWidget);
         await tester.tap(find.text(l10n.coreUndo));
         await settleUndoIo(tester);
@@ -1835,6 +1843,55 @@ void main() {
       },
     );
   }
+
+  testWidgets('a placed Both retry keeps the original for a later phone retry', (tester) async {
+    final placedPath = placedWallFile();
+    final client = _Client()
+      ..scriptedResults.addAll(const <aw.WallpaperOperationResult>[
+        aw.WallpaperOperationResult(
+          status: aw.WallpaperOperationStatus.failed,
+          requestedTarget: aw.WallpaperTarget.both,
+        ),
+        aw.WallpaperOperationResult(
+          status: aw.WallpaperOperationStatus.failed,
+          requestedTarget: aw.WallpaperTarget.both,
+        ),
+        aw.WallpaperOperationResult(
+          status: aw.WallpaperOperationStatus.failed,
+          requestedTarget: aw.WallpaperTarget.both,
+          errorCode: 'partial-apply',
+          home: aw.WallpaperTargetResult(status: aw.WallpaperTargetStatus.applied),
+          lock: aw.WallpaperTargetResult(status: aw.WallpaperTargetStatus.failed),
+        ),
+      ]);
+    aw.AsyncWallpaper.debugSetClient(client);
+    String? cropSource;
+    const cropChannel = MethodChannel('prism/wallpaper_crop');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(cropChannel, (call) async {
+      cropSource = call.arguments as String;
+      return 'content://prism/original';
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(cropChannel, null));
+    SetWallpaperFlow.screenOpener = (_, _) async => SetWallpaperChoice(
+      WallpaperTarget.both,
+      placed: PlacedWallpaper(path: placedPath, placement: const WallpaperPlacement()),
+    );
+    await pumpButton(tester, url: wallFilePath);
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaper));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.coreTryAgain));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.coreWallpaperSetWithPhone));
+    await tester.pumpAndSettle();
+
+    expect(cropSource, wallFilePath);
+    expect(client.requests.last.strategy, aw.WallpaperApplyStrategy.systemCropper);
+    expect(analytics.events.whereType<SetWallEvent>().map((event) => event.result), <BinaryResultValue>[
+      BinaryResultValue.failure,
+      BinaryResultValue.failure,
+      BinaryResultValue.success,
+    ]);
+  });
 
   testWidgets('Match accent shows on the success snackbar when the screen offers it', (tester) async {
     await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
