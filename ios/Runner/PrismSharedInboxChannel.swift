@@ -23,7 +23,8 @@ enum PrismSharedInboxChannel {
           result(FlutterError(code: "missing", message: "The shared image is not in the inbox", details: nil))
         }
       default:
-        result(FlutterMethodNotImplemented)
+        // Swift 6 rejects Flutter's FlutterMethodNotImplemented global. Dart only sends the two methods above.
+        result(FlutterError(code: "unknown-method", message: "Unknown shared inbox method: \(call.method)", details: nil))
       }
     }
   }
