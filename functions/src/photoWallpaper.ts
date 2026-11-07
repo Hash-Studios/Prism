@@ -609,7 +609,10 @@ export const getPhotoWallpaper = onCall({region: CALLABLE_REGIONS, timeoutSecond
       if (deletion.data()?.closed === true) return null;
       const day = utcDateString();
       const closedToday = readDailyCount(closures, day);
-      if (closedToday >= MAX_PHOTO_JOB_CLOSURES_PER_DAY) return null;
+      if (closedToday >= MAX_PHOTO_JOB_CLOSURES_PER_DAY) {
+        // Without a tombstone, a delayed create may still charge. Keep recovery pending instead of saying unknown.
+        throw new HttpsError("resource-exhausted", "lookup_closure_limit");
+      }
       tx.set(jobRef, {userId: uid, requestId, state: "closed", closedAt: admin.firestore.Timestamp.now()});
       tx.set(closuresRef, {day, count: closedToday + 1,
         expireAt: admin.firestore.Timestamp.fromMillis(Date.now() + 2 * DAY_MS)});
