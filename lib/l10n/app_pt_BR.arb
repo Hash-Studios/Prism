@@ -961,6 +961,7 @@
   "coreWallpaperErrorStyle": "Este dispositivo não conseguiu iniciar esse estilo. Tente outro.",
   "coreWallpaperErrorSystemPreview": "Não foi possível abrir a pré-visualização do sistema.",
   "coreWallpaperErrorTextureDimensions": "Essa imagem é grande demais para um papel de parede animado.",
+  "coreWallpaperStillSetting": "Ainda estamos aplicando seu papel de parede. Em alguns celulares isso pode levar um momento.",
   "coreWallpaperErrorTimeout": "Tempo esgotado. Verifique sua conexão e tente novamente.",
   "coreWallpaperHomeScreen": "Tela inicial",
   "coreWallpaperHomeSetLockFailed": "Tela inicial definida. Falha na tela de bloqueio.",

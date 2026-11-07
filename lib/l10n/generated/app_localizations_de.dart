@@ -3372,6 +3372,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get coreWallpaperErrorTextureDimensions => 'Dieses Bild ist zu groß für ein Live-Hintergrundbild.';
 
   @override
+  String get coreWallpaperStillSetting =>
+      'Dein Hintergrund wird noch gesetzt. Das kann auf manchen Handys einen Moment dauern.';
+
+  @override
   String get coreWallpaperErrorTimeout => 'Zeitüberschreitung. Prüfe deine Verbindung und versuch es erneut.';
 
   @override

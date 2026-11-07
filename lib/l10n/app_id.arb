@@ -3253,6 +3253,7 @@
   "coreWallpaperErrorStyle": "Perangkat ini tidak dapat memulai gaya itu. Coba gaya lain.",
   "coreWallpaperErrorSystemPreview": "Pratinjau sistem tidak dapat dibuka.",
   "coreWallpaperErrorTextureDimensions": "Gambar itu terlalu besar untuk dijadikan wallpaper bergerak.",
+  "coreWallpaperStillSetting": "Wallpaper Anda masih dipasang. Di beberapa ponsel, ini bisa butuh waktu sebentar.",
   "coreWallpaperErrorTimeout": "Waktu habis. Periksa koneksi Anda, lalu coba lagi.",
   "coreWallpaperHomeScreen": "Layar utama",
   "coreWallpaperHomeSetLockFailed": "Wallpaper layar utama terpasang. Layar kunci gagal dipasang.",

@@ -5817,6 +5817,12 @@ abstract class AppLocalizations {
   /// **'That image is too large for a live wallpaper.'**
   String get coreWallpaperErrorTextureDimensions;
 
+  /// Shown when the phone has not finished setting the wallpaper after 30 seconds. The set can still finish, so this is not an error.
+  ///
+  /// In en, this message translates to:
+  /// **'Still setting your wallpaper. This can take a moment on some phones.'**
+  String get coreWallpaperStillSetting;
+
   /// No description provided for @coreWallpaperErrorTimeout.
   ///
   /// In en, this message translates to:

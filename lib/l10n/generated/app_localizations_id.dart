@@ -3338,6 +3338,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreWallpaperErrorTextureDimensions => 'Gambar itu terlalu besar untuk dijadikan wallpaper bergerak.';
 
   @override
+  String get coreWallpaperStillSetting =>
+      'Wallpaper Anda masih dipasang. Di beberapa ponsel, ini bisa butuh waktu sebentar.';
+
+  @override
   String get coreWallpaperErrorTimeout => 'Waktu habis. Periksa koneksi Anda, lalu coba lagi.';
 
   @override

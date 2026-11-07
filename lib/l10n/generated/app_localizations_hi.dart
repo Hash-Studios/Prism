@@ -3354,6 +3354,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreWallpaperErrorTextureDimensions => 'यह इमेज लाइव वॉलपेपर के लिए बहुत बड़ी है।';
 
   @override
+  String get coreWallpaperStillSetting => 'आपका वॉलपेपर अभी लग रहा है। कुछ फ़ोन पर इसमें थोड़ा समय लग सकता है।';
+
+  @override
   String get coreWallpaperErrorTimeout => 'समय सीमा समाप्त हुई। अपना कनेक्शन जाँचें और फिर कोशिश करें।';
 
   @override

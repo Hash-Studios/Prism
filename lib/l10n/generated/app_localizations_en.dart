@@ -3331,6 +3331,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreWallpaperErrorTextureDimensions => 'That image is too large for a live wallpaper.';
 
   @override
+  String get coreWallpaperStillSetting => 'Still setting your wallpaper. This can take a moment on some phones.';
+
+  @override
   String get coreWallpaperErrorTimeout => 'Timed out. Check your connection and try again.';
 
   @override

@@ -550,6 +550,42 @@ void main() {
       expect(result.canRetry, isTrue);
     });
 
+    test('a partial apply keeps the screen that changed and is not retried as a whole (#555)', () async {
+      final _ResultClient client = _ResultClient([
+        _result(
+          aw.WallpaperOperationStatus.failed,
+          code: 'partial-apply',
+          home: aw.WallpaperTargetStatus.applied,
+          lock: aw.WallpaperTargetStatus.failed,
+          target: aw.WallpaperTarget.both,
+        ),
+        _result(aw.WallpaperOperationStatus.failed, code: 'wallpaper-apply-failed', target: aw.WallpaperTarget.both),
+      ]);
+      final WallpaperSetResult result = await set(client, target: WallpaperTarget.both);
+      expect(result.appliedTarget, WallpaperTarget.home);
+      expect(result.failedTarget, WallpaperTarget.lock);
+      expect(client.requests, hasLength(1));
+    });
+
+    test('an apply that outlasts the wait is still setting, not a failure to retry (#555)', () async {
+      final _GatedClient client = _GatedClient();
+      aw.AsyncWallpaper.debugSetClient(client);
+      WallpaperService.applyTimeout = const Duration(milliseconds: 10);
+      addTearDown(() => WallpaperService.applyTimeout = const Duration(seconds: 30));
+
+      final WallpaperSetResult result = await WallpaperService.setWallpaper(
+        '/tmp/wall.png',
+        WallpaperTarget.home,
+        recordHistory: false,
+      );
+      client.finish.complete();
+
+      expect(result.isFailure, isFalse);
+      expect(result.canRetry, isFalse);
+      expect(result.localizedMessage(_l10n), _l10n.coreWallpaperStillSetting);
+      expect(client.requests, hasLength(1));
+    });
+
     test('partial-apply with only the lock screen changed says so', () async {
       final WallpaperSetResult result = await set(
         _ResultClient([

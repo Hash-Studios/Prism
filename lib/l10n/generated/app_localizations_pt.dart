@@ -3391,6 +3391,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get coreWallpaperErrorTextureDimensions => 'Essa imagem é grande demais para um papel de parede animado.';
 
   @override
+  String get coreWallpaperStillSetting =>
+      'Ainda estamos aplicando seu papel de parede. Em alguns celulares isso pode levar um momento.';
+
+  @override
   String get coreWallpaperErrorTimeout => 'Tempo esgotado. Verifique sua conexão e tente novamente.';
 
   @override
@@ -18391,6 +18395,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get coreWallpaperErrorTextureDimensions => 'Essa imagem é grande demais para um papel de parede animado.';
+
+  @override
+  String get coreWallpaperStillSetting =>
+      'Ainda estamos aplicando seu papel de parede. Em alguns celulares isso pode levar um momento.';
 
   @override
   String get coreWallpaperErrorTimeout => 'Tempo esgotado. Verifique sua conexão e tente novamente.';

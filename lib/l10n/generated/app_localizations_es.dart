@@ -3362,6 +3362,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get coreWallpaperErrorTextureDimensions => 'Esa imagen es demasiado grande para usarla como fondo animado.';
 
   @override
+  String get coreWallpaperStillSetting => 'Seguimos aplicando tu fondo. En algunos teléfonos puede tardar un momento.';
+
+  @override
   String get coreWallpaperErrorTimeout => 'Se agotó el tiempo de espera. Comprueba tu conexión e inténtalo de nuevo.';
 
   @override

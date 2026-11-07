@@ -3027,6 +3027,7 @@
   "coreWallpaperErrorStyle": "Dieses Gerät konnte diesen Stil nicht starten. Versuch es mit einem anderen.",
   "coreWallpaperErrorSystemPreview": "Die Systemvorschau konnte nicht geöffnet werden.",
   "coreWallpaperErrorTextureDimensions": "Dieses Bild ist zu groß für ein Live-Hintergrundbild.",
+  "coreWallpaperStillSetting": "Dein Hintergrund wird noch gesetzt. Das kann auf manchen Handys einen Moment dauern.",
   "coreWallpaperErrorTimeout": "Zeitüberschreitung. Prüfe deine Verbindung und versuch es erneut.",
   "coreWallpaperHomeScreen": "Startbildschirm",
   "coreWallpaperHomeSetLockFailed": "Hintergrundbild für den Startbildschirm festgelegt. Das Festlegen für den Sperrbildschirm ist fehlgeschlagen.",

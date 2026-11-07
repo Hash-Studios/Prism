@@ -13,6 +13,7 @@ import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -115,6 +116,10 @@ class WallpaperSetResult {
 // ignore: avoid_classes_with_only_static_members
 class WallpaperService {
   static int _historyWriteGeneration = 0;
+
+  /// How long the app waits for the phone to set a wallpaper before it says the set is still running.
+  @visibleForTesting
+  static Duration applyTimeout = const Duration(seconds: 30);
 
   /// Invalidates history writes still waiting on a native set when auth changes.
   static void invalidatePendingHistoryWrites() => _historyWriteGeneration++;
@@ -359,7 +364,7 @@ class WallpaperService {
     return PerformanceProbe.measure(
       'native',
       'set_wallpaper.${target.name}',
-      () => aw.AsyncWallpaper.applyWallpaper(request).timeout(const Duration(seconds: 30)),
+      () => aw.AsyncWallpaper.applyWallpaper(request).timeout(applyTimeout),
     );
   }
 

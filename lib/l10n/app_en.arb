@@ -3143,6 +3143,10 @@
   "coreWallpaperErrorStyle": "This device could not start that style. Try another one.",
   "coreWallpaperErrorSystemPreview": "Couldn't open the system preview.",
   "coreWallpaperErrorTextureDimensions": "That image is too large for a live wallpaper.",
+  "coreWallpaperStillSetting": "Still setting your wallpaper. This can take a moment on some phones.",
+  "@coreWallpaperStillSetting": {
+    "description": "Shown when the phone has not finished setting the wallpaper after 30 seconds. The set can still finish, so this is not an error."
+  },
   "coreWallpaperErrorTimeout": "Timed out. Check your connection and try again.",
   "coreWallpaperHomeScreen": "Home screen",
   "coreWallpaperHomeSetLockFailed": "Home screen set. Lock screen failed.",
