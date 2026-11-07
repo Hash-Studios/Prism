@@ -10,6 +10,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/photo_wallpaper_repository.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/photo_job.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/photo_wallpaper_page.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/photo_wallpaper_widgets.dart';
 import 'package:Prism/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -340,6 +341,24 @@ void main() {
     expect(find.text('Set as wallpaper'), findsOneWidget);
     expect(find.text('Save to folder'), findsOneWidget);
     expect(find.text('Use another photo'), findsOneWidget);
+  });
+
+  testWidgets('the Before side shows the photo where the user placed it, with the empty canvas around it', (
+    tester,
+  ) async {
+    final _Harness harness = _Harness();
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+    await _dragFrameUp(tester);
+
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+
+    final Finder before = find.descendant(of: find.byKey(_compareKey), matching: find.byType(PhotoInCanvas));
+    expect(before, findsOneWidget);
+    final PhotoPlacement placed = tester.widget<PhotoInCanvas>(before).placement;
+    expect(placed.top, 0);
+    expect(placed.toJson(), harness.payloads.single['placement']);
   });
 
   testWidgets('a blocked output shows the refund line and Try again', (tester) async {
