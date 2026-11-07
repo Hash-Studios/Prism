@@ -8,6 +8,7 @@ import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/deep_link_route_catalog.dart';
 import 'package:Prism/core/router/short_link_resolver.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/share_in/biz/share_in_resolver.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -29,11 +30,13 @@ class DeepLinkNavigation {
     this.parser = const DeepLinkParser(),
     this.httpClient,
     this.onReferral = acceptReferralLink,
+    this.onShareIn = resolveShareIn,
   });
 
   final DeepLinkParser parser;
   final http.Client? httpClient;
   final Future<void> Function(String inviterId) onReferral;
+  final Future<DeepLinkRouteResolution> Function(ShareInIntent action, DeepLinkNavigation navigation) onShareIn;
 
   static TargetTypeValue targetType(DeepLinkActionEntity action) => switch (action) {
     ShareLinkIntent() => TargetTypeValue.share,
@@ -49,6 +52,7 @@ class DeepLinkNavigation {
       _ => TargetTypeValue.screen,
     },
     ShortCodeIntent() => TargetTypeValue.shortCode,
+    ShareInIntent() => TargetTypeValue.sharedItem,
     UnknownIntent() => TargetTypeValue.unknown,
   };
 
@@ -74,6 +78,7 @@ class DeepLinkNavigation {
         ),
       };
     }
+    if (action is ShareInIntent) return onShareIn(action, this);
     final PageRouteInfo? route = await mapActionToRoute(action);
     return route == null
         ? const DeepLinkRouteResolution.failure(AnalyticsReasonValue.missingData)
@@ -106,6 +111,7 @@ class DeepLinkNavigation {
           DeepLinkScreen.draw => const DrawRoute(),
         };
       case ShortCodeIntent():
+      case ShareInIntent():
         return (await resolveAction(action)).route;
       case PageLinkIntent():
         return routeForPageLink(action);

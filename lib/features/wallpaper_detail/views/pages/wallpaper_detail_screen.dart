@@ -113,6 +113,7 @@ import 'package:Prism/features/wallpaper_upload/biz/variant_seed.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/wall_metadata_editor.dart';
 import 'package:Prism/features/watch_set/views/watch_set_row.dart';
+import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
@@ -146,6 +147,7 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
     this.requestId,
     this.feed,
     this.desktopDownload = false,
+    this.openFolderSheet = false,
   }) : assert(entity != null || (wallId != null && source != null), 'Either entity or wallId+source must be provided');
 
   final FeedItemEntity? entity;
@@ -171,6 +173,9 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
 
   /// Set from the Desktop category: Download saves the desktop version of a wall that has one.
   final bool desktopDownload;
+
+  /// Set when a Prism link was shared to the app: Save to Folder opens once the wall loads.
+  final bool openFolderSheet;
 
   /// Warms one colour variant's pictures. Tests replace it.
   @visibleForTesting
@@ -941,6 +946,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     toasts.success(context.l10n.wallpaperAppAccentUpdated);
   }
 
+  bool _folderSheetOpened = false;
+
   @override
   void initState() {
     super.initState();
@@ -1233,6 +1240,13 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           _loadMoreRecommendations();
         }
         if (state is WallpaperDetailLoaded) _observeLoaded(state);
+        if (state is WallpaperDetailLoaded && widget.openFolderSheet && !_folderSheetOpened) {
+          _folderSheetOpened = true;
+          final FavouriteWallEntity wall = FavouriteWallEntity.fromFeedItem(state.entity);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) unawaited(showFolderSheet(context, wall));
+          });
+        }
         if (state is WallpaperDetailLoaded && state.variants != null) _warmVariants(state.variants!);
       },
       child: BlocBuilder<WallpaperDetailBloc, WallpaperDetailState>(

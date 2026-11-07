@@ -63,6 +63,18 @@ final class PageLinkIntent extends DeepLinkActionEntity {
   final String source;
 }
 
+/// A share from another app, as `prism://share-in?id=...` (an image in the shared inbox) or `?text=...`.
+final class ShareInIntent extends DeepLinkActionEntity {
+  const ShareInIntent({this.inboxId, this.text, this.sourceApp, required super.rawUri})
+    : assert((inboxId == null) != (text == null), 'A share carries an inbox id or text, not both.');
+
+  final String? inboxId;
+  final String? text;
+
+  /// The sending app's package, when the platform gives it (Android only).
+  final String? sourceApp;
+}
+
 final class UnknownIntent extends DeepLinkActionEntity {
   const UnknownIntent({required super.rawUri});
 }

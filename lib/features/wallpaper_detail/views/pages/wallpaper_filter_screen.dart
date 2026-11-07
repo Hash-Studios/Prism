@@ -34,9 +34,13 @@ import 'package:share_plus/share_plus.dart';
 
 @RoutePage()
 class WallpaperFilterScreen extends StatefulWidget {
-  const WallpaperFilterScreen({required this.filePath, super.key});
+  const WallpaperFilterScreen({required this.filePath, this.guestShare = false, super.key});
 
   final String filePath;
+
+  /// Set for an image shared to Prism from another app: a guest may crop it and set or save it. Premium filters
+  /// still need an account.
+  final bool guestShare;
 
   /// Renders the export. Tests replace it.
   @visibleForTesting
@@ -347,7 +351,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   Future<void> _runWithPremiumFilterGate(Future<bool> Function() action, {required String sourceTag}) async {
     final int sourceGeneration = _sourceLoadGeneration;
     bool sourceIsCurrent() => mounted && sourceGeneration == _sourceLoadGeneration;
-    if (!await requireSignedInAction(context) || !mounted) return;
+    final bool freeGuestAction = widget.guestShare && !_selectedFilterNeedsPremiumSpend;
+    if (!freeGuestAction && !await requireSignedInAction(context) || !mounted) return;
     if (!sourceIsCurrent()) return;
     final String owner = app_state.prismUser.id;
     if (!_selectedFilterNeedsPremiumSpend || app_state.prismUser.premium || _premiumFilterUnlockedForSession) {
@@ -427,8 +432,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
     return choice ?? CoinGateChoice.cancel;
   }
 
+  bool get _mayAct => app_state.prismUser.loggedIn || widget.guestShare;
+
   Future<bool> _handleDownloadAction() async {
-    if (!mounted || !app_state.prismUser.loggedIn) return false;
+    if (!mounted || !_mayAct) return false;
     final String owner = app_state.prismUser.id;
     final int sourceGeneration = _sourceLoadGeneration;
     final AppLocalizations l10n = context.l10n;
@@ -436,10 +443,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
     try {
       toasts.success(l10n.wallpaperProcessing, haptic: false);
       imageFile = await saveFilteredImage();
-      if (!mounted ||
-          _sourceLoadGeneration != sourceGeneration ||
-          !app_state.prismUser.loggedIn ||
-          owner != app_state.prismUser.id) {
+      if (!mounted || _sourceLoadGeneration != sourceGeneration || !_mayAct || owner != app_state.prismUser.id) {
         return false;
       }
       final request = SaveMediaRequest(link: imageFile.path, isLocalFile: true, kind: SaveMediaKind.wallpaper);
@@ -481,7 +485,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   /// Returns false when the render or the wallpaper set failed, or the account changed. Closing the target sheet is
   /// not a failure.
   Future<bool> _handleSetAction() async {
-    if (!mounted || !app_state.prismUser.loggedIn) return false;
+    if (!mounted || !_mayAct) return false;
     final String owner = app_state.prismUser.id;
     final int sourceGeneration = _sourceLoadGeneration;
     final AppLocalizations l10n = context.l10n;
@@ -497,10 +501,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
       toasts.error(l10n.wallpaperGenericError);
       return false;
     }
-    if (!mounted ||
-        _sourceLoadGeneration != sourceGeneration ||
-        !app_state.prismUser.loggedIn ||
-        owner != app_state.prismUser.id) {
+    if (!mounted || _sourceLoadGeneration != sourceGeneration || !_mayAct || owner != app_state.prismUser.id) {
       await _deleteEditedFile(imageFile);
       return false;
     }
@@ -515,10 +516,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
               SetWallpaperFlow.openStudio(screenContext, url: path, entryPoint: 'wallpaper_filter'),
         ),
       );
-      if (!mounted ||
-          _sourceLoadGeneration != sourceGeneration ||
-          !app_state.prismUser.loggedIn ||
-          owner != app_state.prismUser.id) {
+      if (!mounted || _sourceLoadGeneration != sourceGeneration || !_mayAct || owner != app_state.prismUser.id) {
         return false;
       }
       if (choice == null) return true;
@@ -536,7 +534,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
 
   /// Shares the edited file. The file stays until the editor closes, because the receiving app may read it late.
   Future<bool> _handleShareAction() async {
-    if (!mounted || !app_state.prismUser.loggedIn) return false;
+    if (!mounted || !_mayAct) return false;
     final String owner = app_state.prismUser.id;
     final String sourcePath = widget.filePath;
     final int sourceGeneration = _sourceLoadGeneration;
@@ -547,10 +545,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
     try {
       toasts.success(l10n.wallpaperProcessing, haptic: false);
       imageFile = await saveFilteredImage();
-      if (!mounted ||
-          _sourceLoadGeneration != sourceGeneration ||
-          !app_state.prismUser.loggedIn ||
-          owner != app_state.prismUser.id) {
+      if (!mounted || _sourceLoadGeneration != sourceGeneration || !_mayAct || owner != app_state.prismUser.id) {
         await _deleteEditedFile(imageFile);
         return false;
       }

@@ -40,9 +40,12 @@ Future<void> openPhotoWallpaperPage(BuildContext context) => Navigator.of(
 
 /// Make a wallpaper from a photo: pick, plan, place, run, then compare and use the result.
 class PhotoWallpaperPage extends StatefulWidget {
-  const PhotoWallpaperPage({super.key, required this.repository, this.isPro, this.screenSize});
+  const PhotoWallpaperPage({super.key, required this.repository, this.initialSource, this.isPro, this.screenSize});
 
   final PhotoWallpaperRepository repository;
+
+  /// A photo the user already chose, such as one shared from another app. The page opens on its plan.
+  final PhotoSource? initialSource;
 
   /// Test seams. Null reads the signed-in user and the screen.
   final bool? isPro;
@@ -62,8 +65,19 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
   String? _pendingRequestId;
   bool _picking = false;
   bool _acting = false;
+  bool _initialApplied = false;
 
   bool get _isPro => widget.isPro ?? app_state.prismUser.premium;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialApplied && widget.initialSource != null) {
+      _initialApplied = true;
+      _source = widget.initialSource;
+      _replan();
+    }
+  }
 
   PhotoSize get _phone {
     if (widget.screenSize case final PhotoSize size?) return size;

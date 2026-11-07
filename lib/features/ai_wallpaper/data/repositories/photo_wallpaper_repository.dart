@@ -46,8 +46,11 @@ class PhotoWallpaperRepository {
   Future<PhotoSource?> pick() async {
     final Uint8List? bytes = await _pick();
     if (bytes == null) return null;
-    return PhotoSource(bytes: bytes, size: await _measure(bytes));
+    return source(bytes);
   }
+
+  /// [bytes] with its upright size. Throws when they cannot be decoded.
+  Future<PhotoSource> source(Uint8List bytes) async => PhotoSource(bytes: bytes, size: await _measure(bytes));
 
   /// Runs [job] once, and once more with the same [requestId] when the connection drops. The server replays a
   /// finished job for the same requestId, so the retry never charges twice.

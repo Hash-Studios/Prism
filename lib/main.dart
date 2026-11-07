@@ -84,6 +84,7 @@ import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
 import 'package:Prism/features/session/views/widgets/shake_to_report_listener.dart';
+import 'package:Prism/features/share_in/data/shared_inbox.dart';
 import 'package:Prism/features/startup/services/resume_refresh_policy.dart';
 import 'package:Prism/features/startup/startup.dart';
 import 'package:Prism/features/theme_mode/data/theme_mode_migration.dart';
@@ -822,6 +823,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     AnalyticsRuntime.changes.addListener(_onAnalyticsRuntimeChanged);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
+    unawaited(SharedInbox().sweep().catchError((Object _) => 0));
     unawaited(
       CoinsService.instance.restoreLocalEconomyForCurrentUser().catchError((Object error, StackTrace stackTrace) {
         CoinsService.instance.logCoinError(sourceTag: 'coins.main.local_restore', error: error, stackTrace: stackTrace);
