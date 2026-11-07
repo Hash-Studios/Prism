@@ -3342,6 +3342,17 @@ class AppLocalizationsId extends AppLocalizations {
       'Wallpaper Anda masih dipasang. Di beberapa ponsel, ini bisa butuh waktu sebentar.';
 
   @override
+  String get coreWallpaperLockFailedUsePhone =>
+      'Tidak dapat memasang di layar kunci. Layar wallpaper bawaan ponsel Anda dapat memasangnya.';
+
+  @override
+  String get coreWallpaperHomeSetLockFailedUsePhone =>
+      'Layar utama terpasang. Tidak dapat memasang di layar kunci. Layar wallpaper bawaan ponsel Anda dapat memasangnya.';
+
+  @override
+  String get coreWallpaperSetWithPhone => 'Pasang lewat ponsel';
+
+  @override
   String get coreWallpaperErrorTimeout => 'Waktu habis. Periksa koneksi Anda, lalu coba lagi.';
 
   @override

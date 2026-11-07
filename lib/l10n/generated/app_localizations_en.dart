@@ -3334,6 +3334,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreWallpaperStillSetting => 'Still setting your wallpaper. This can take a moment on some phones.';
 
   @override
+  String get coreWallpaperLockFailedUsePhone =>
+      'Couldn\'t set the lock screen. Your phone\'s own wallpaper screen can set it.';
+
+  @override
+  String get coreWallpaperHomeSetLockFailedUsePhone =>
+      'Home screen set. Couldn\'t set the lock screen. Your phone\'s own wallpaper screen can set it.';
+
+  @override
+  String get coreWallpaperSetWithPhone => 'Set with phone';
+
+  @override
   String get coreWallpaperErrorTimeout => 'Timed out. Check your connection and try again.';
 
   @override

@@ -3031,6 +3031,18 @@
   "@coreWallpaperStillSetting": {
     "description": "Shown when the phone has not finished setting the wallpaper after 30 seconds. The set can still finish, so this is not an error."
   },
+  "coreWallpaperLockFailedUsePhone": "Der Sperrbildschirm konnte nicht gesetzt werden. Der Hintergrund-Bildschirm deines Handys kann ihn setzen.",
+  "@coreWallpaperLockFailedUsePhone": {
+    "description": "Snackbar when the lock screen set failed. Its action opens the phone's own wallpaper screen, which some phones (Xiaomi, MIUI) require for the lock screen."
+  },
+  "coreWallpaperHomeSetLockFailedUsePhone": "Startbildschirm gesetzt. Der Sperrbildschirm konnte nicht gesetzt werden. Der Hintergrund-Bildschirm deines Handys kann ihn setzen.",
+  "@coreWallpaperHomeSetLockFailedUsePhone": {
+    "description": "Snackbar when a Both set changed only the home screen. Its action opens the phone's own wallpaper screen for the lock screen."
+  },
+  "coreWallpaperSetWithPhone": "Mit Handy setzen",
+  "@coreWallpaperSetWithPhone": {
+    "description": "Snackbar action. Opens the phone's own wallpaper screen with this wallpaper. Keep it short."
+  },
   "coreWallpaperErrorTimeout": "Zeitüberschreitung. Prüfe deine Verbindung und versuch es erneut.",
   "coreWallpaperHomeScreen": "Startbildschirm",
   "coreWallpaperHomeSetLockFailed": "Hintergrundbild für den Startbildschirm festgelegt. Das Festlegen für den Sperrbildschirm ist fehlgeschlagen.",

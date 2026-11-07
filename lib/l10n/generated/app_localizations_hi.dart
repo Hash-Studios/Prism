@@ -3357,6 +3357,17 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreWallpaperStillSetting => 'आपका वॉलपेपर अभी लग रहा है। कुछ फ़ोन पर इसमें थोड़ा समय लग सकता है।';
 
   @override
+  String get coreWallpaperLockFailedUsePhone =>
+      'लॉक स्क्रीन पर नहीं लग सका। आपके फ़ोन की अपनी वॉलपेपर स्क्रीन इसे लगा सकती है।';
+
+  @override
+  String get coreWallpaperHomeSetLockFailedUsePhone =>
+      'होम स्क्रीन पर लग गया। लॉक स्क्रीन पर नहीं लग सका। आपके फ़ोन की अपनी वॉलपेपर स्क्रीन इसे लगा सकती है।';
+
+  @override
+  String get coreWallpaperSetWithPhone => 'फ़ोन से लगाएँ';
+
+  @override
   String get coreWallpaperErrorTimeout => 'समय सीमा समाप्त हुई। अपना कनेक्शन जाँचें और फिर कोशिश करें।';
 
   @override

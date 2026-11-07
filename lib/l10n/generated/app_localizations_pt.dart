@@ -3395,6 +3395,17 @@ class AppLocalizationsPt extends AppLocalizations {
       'Ainda estamos aplicando seu papel de parede. Em alguns celulares isso pode levar um momento.';
 
   @override
+  String get coreWallpaperLockFailedUsePhone =>
+      'Não foi possível aplicar na tela de bloqueio. A tela de papéis de parede do seu celular pode aplicar.';
+
+  @override
+  String get coreWallpaperHomeSetLockFailedUsePhone =>
+      'Tela inicial aplicada. Não foi possível aplicar na tela de bloqueio. A tela de papéis de parede do seu celular pode aplicar.';
+
+  @override
+  String get coreWallpaperSetWithPhone => 'Usar o celular';
+
+  @override
   String get coreWallpaperErrorTimeout => 'Tempo esgotado. Verifique sua conexão e tente novamente.';
 
   @override
@@ -18399,6 +18410,17 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get coreWallpaperStillSetting =>
       'Ainda estamos aplicando seu papel de parede. Em alguns celulares isso pode levar um momento.';
+
+  @override
+  String get coreWallpaperLockFailedUsePhone =>
+      'Não foi possível aplicar na tela de bloqueio. A tela de papéis de parede do seu celular pode aplicar.';
+
+  @override
+  String get coreWallpaperHomeSetLockFailedUsePhone =>
+      'Tela inicial aplicada. Não foi possível aplicar na tela de bloqueio. A tela de papéis de parede do seu celular pode aplicar.';
+
+  @override
+  String get coreWallpaperSetWithPhone => 'Usar o celular';
 
   @override
   String get coreWallpaperErrorTimeout => 'Tempo esgotado. Verifique sua conexão e tente novamente.';

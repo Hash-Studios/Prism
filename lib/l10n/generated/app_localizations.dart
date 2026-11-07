@@ -5823,6 +5823,24 @@ abstract class AppLocalizations {
   /// **'Still setting your wallpaper. This can take a moment on some phones.'**
   String get coreWallpaperStillSetting;
 
+  /// Snackbar when the lock screen set failed. Its action opens the phone's own wallpaper screen, which some phones (Xiaomi, MIUI) require for the lock screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t set the lock screen. Your phone\'s own wallpaper screen can set it.'**
+  String get coreWallpaperLockFailedUsePhone;
+
+  /// Snackbar when a Both set changed only the home screen. Its action opens the phone's own wallpaper screen for the lock screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Home screen set. Couldn\'t set the lock screen. Your phone\'s own wallpaper screen can set it.'**
+  String get coreWallpaperHomeSetLockFailedUsePhone;
+
+  /// Snackbar action. Opens the phone's own wallpaper screen with this wallpaper. Keep it short.
+  ///
+  /// In en, this message translates to:
+  /// **'Set with phone'**
+  String get coreWallpaperSetWithPhone;
+
   /// No description provided for @coreWallpaperErrorTimeout.
   ///
   /// In en, this message translates to:

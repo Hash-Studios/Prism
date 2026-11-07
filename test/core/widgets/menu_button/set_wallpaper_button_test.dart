@@ -1087,6 +1087,36 @@ void main() {
     expect(client.requests.length, greaterThan(before));
   });
 
+  testWidgets('a lock screen the phone refuses opens the phone own wallpaper screen (#545)', (tester) async {
+    await settings.set(PersistenceKeys.defaultApplyTarget, 'lock');
+    final _Client client = _Client()..statusFor[aw.WallpaperTarget.lock] = aw.WallpaperOperationStatus.failed;
+    aw.AsyncWallpaper.debugSetClient(client);
+    const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      cropChannel,
+      (MethodCall call) async => 'content://com.hash.prism.wallpaper_crop/wallpaper_crop/wallpaper.jpg',
+    );
+    addTearDown(
+      () =>
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(cropChannel, null),
+    );
+    await pumpButton(tester);
+
+    await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreLockScreen)));
+    await tester.pumpAndSettle();
+
+    expect(find.text(l10n.coreWallpaperLockFailedUsePhone), findsOneWidget);
+    final int before = client.requests.length;
+    client.statusFor[aw.WallpaperTarget.lock] = aw.WallpaperOperationStatus.awaitingUserConfirmation;
+    await tester.tap(find.text(l10n.coreWallpaperSetWithPhone));
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+
+    expect(client.requests, hasLength(before + 1));
+    expect(client.requests.last.strategy, aw.WallpaperApplyStrategy.systemCropper);
+    expect(client.requests.last.target, aw.WallpaperTarget.lock);
+    expect(client.requests.last.source.contentUri, startsWith('content://'));
+  });
+
   testWidgets('a cancelled set stays silent', (tester) async {
     await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
     aw.AsyncWallpaper.debugSetClient(_Client(status: aw.WallpaperOperationStatus.cancelled));

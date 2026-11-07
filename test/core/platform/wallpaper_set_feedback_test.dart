@@ -128,6 +128,7 @@ void main() {
     WallpaperTarget target = WallpaperTarget.home,
     WallpaperSetContext setContext = const WallpaperSetContext(),
     ValueChanged<WallpaperTarget>? onRetry,
+    ValueChanged<WallpaperTarget>? onSystemSet,
     VoidCallback? onMatchAccent,
   }) async {
     addTearDown(() async {
@@ -149,6 +150,7 @@ void main() {
                 target: target,
                 setContext: setContext,
                 onRetry: onRetry,
+                onSystemSet: onSystemSet,
                 onMatchAccent: onMatchAccent,
               ),
               child: const Text('go'),
@@ -317,6 +319,84 @@ void main() {
 
     expect(retried, [WallpaperTarget.lock]);
     await tester.pump(const Duration(seconds: 5));
+  });
+
+  group('a lock screen the phone does not set (#545)', () {
+    testWidgets('offers the phone own wallpaper screen for the lock screen', (tester) async {
+      final List<WallpaperTarget> systemSet = <WallpaperTarget>[];
+      await report(
+        tester,
+        const WallpaperSetResult(
+          WallpaperSetStatus.failed,
+          'wallpaper-apply-failed',
+          errorCode: 'wallpaper-apply-failed',
+        ),
+        target: WallpaperTarget.lock,
+        onRetry: (_) {},
+        onSystemSet: systemSet.add,
+      );
+
+      expect(find.text(_l10n.coreWallpaperLockFailedUsePhone), findsOneWidget);
+      await tester.tap(find.text(_l10n.coreWallpaperSetWithPhone));
+      await tester.pump();
+
+      expect(systemSet, [WallpaperTarget.lock]);
+      await tester.pump(const Duration(seconds: 10));
+    });
+
+    testWidgets('after a Both set that changed only home, it names home and offers the lock screen', (tester) async {
+      final List<WallpaperTarget> systemSet = <WallpaperTarget>[];
+      await report(
+        tester,
+        const WallpaperSetResult(
+          WallpaperSetStatus.failed,
+          'partial-apply',
+          errorCode: 'partial-apply',
+          appliedTarget: WallpaperTarget.home,
+          failedTarget: WallpaperTarget.lock,
+        ),
+        target: WallpaperTarget.both,
+        onRetry: (_) {},
+        onSystemSet: systemSet.add,
+      );
+
+      expect(find.text(_l10n.coreWallpaperHomeSetLockFailedUsePhone), findsOneWidget);
+      await tester.tap(find.text(_l10n.coreWallpaperSetWithPhone));
+      await tester.pump();
+
+      expect(systemSet, [WallpaperTarget.lock]);
+      await tester.pump(const Duration(seconds: 10));
+    });
+
+    testWidgets('a work profile that forbids wallpapers gets no phone screen action', (tester) async {
+      await report(
+        tester,
+        const WallpaperSetResult(
+          WallpaperSetStatus.unsupported,
+          'wallpaper-not-allowed',
+          errorCode: 'wallpaper-not-allowed',
+        ),
+        target: WallpaperTarget.lock,
+        onRetry: (_) {},
+        onSystemSet: (_) {},
+      );
+
+      expect(find.text(_l10n.coreWallpaperSetWithPhone), findsNothing);
+      await tester.pump(const Duration(seconds: 10));
+    });
+
+    testWidgets('a home screen failure keeps Try again', (tester) async {
+      await report(
+        tester,
+        const WallpaperSetResult(WallpaperSetStatus.failed, 'boom', errorCode: 'boom'),
+        onRetry: (_) {},
+        onSystemSet: (_) {},
+      );
+
+      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text(_l10n.coreWallpaperSetWithPhone), findsNothing);
+      await tester.pump(const Duration(seconds: 10));
+    });
   });
 
   testWidgets('a permanent failure shows its message without a retry action', (tester) async {

@@ -3365,6 +3365,17 @@ class AppLocalizationsEs extends AppLocalizations {
   String get coreWallpaperStillSetting => 'Seguimos aplicando tu fondo. En algunos teléfonos puede tardar un momento.';
 
   @override
+  String get coreWallpaperLockFailedUsePhone =>
+      'No se pudo poner en la pantalla de bloqueo. La pantalla de fondos de tu teléfono puede ponerlo.';
+
+  @override
+  String get coreWallpaperHomeSetLockFailedUsePhone =>
+      'Pantalla de inicio lista. No se pudo poner en la pantalla de bloqueo. La pantalla de fondos de tu teléfono puede ponerlo.';
+
+  @override
+  String get coreWallpaperSetWithPhone => 'Usar el teléfono';
+
+  @override
   String get coreWallpaperErrorTimeout => 'Se agotó el tiempo de espera. Comprueba tu conexión e inténtalo de nuevo.';
 
   @override

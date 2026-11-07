@@ -3147,6 +3147,18 @@
   "@coreWallpaperStillSetting": {
     "description": "Shown when the phone has not finished setting the wallpaper after 30 seconds. The set can still finish, so this is not an error."
   },
+  "coreWallpaperLockFailedUsePhone": "Couldn't set the lock screen. Your phone's own wallpaper screen can set it.",
+  "@coreWallpaperLockFailedUsePhone": {
+    "description": "Snackbar when the lock screen set failed. Its action opens the phone's own wallpaper screen, which some phones (Xiaomi, MIUI) require for the lock screen."
+  },
+  "coreWallpaperHomeSetLockFailedUsePhone": "Home screen set. Couldn't set the lock screen. Your phone's own wallpaper screen can set it.",
+  "@coreWallpaperHomeSetLockFailedUsePhone": {
+    "description": "Snackbar when a Both set changed only the home screen. Its action opens the phone's own wallpaper screen for the lock screen."
+  },
+  "coreWallpaperSetWithPhone": "Set with phone",
+  "@coreWallpaperSetWithPhone": {
+    "description": "Snackbar action. Opens the phone's own wallpaper screen with this wallpaper. Keep it short."
+  },
   "coreWallpaperErrorTimeout": "Timed out. Check your connection and try again.",
   "coreWallpaperHomeScreen": "Home screen",
   "coreWallpaperHomeSetLockFailed": "Home screen set. Lock screen failed.",

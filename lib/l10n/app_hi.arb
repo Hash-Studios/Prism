@@ -3161,6 +3161,18 @@
   "@coreWallpaperStillSetting": {
     "description": "Shown when the phone has not finished setting the wallpaper after 30 seconds. The set can still finish, so this is not an error."
   },
+  "coreWallpaperLockFailedUsePhone": "लॉक स्क्रीन पर नहीं लग सका। आपके फ़ोन की अपनी वॉलपेपर स्क्रीन इसे लगा सकती है।",
+  "@coreWallpaperLockFailedUsePhone": {
+    "description": "Snackbar when the lock screen set failed. Its action opens the phone's own wallpaper screen, which some phones (Xiaomi, MIUI) require for the lock screen."
+  },
+  "coreWallpaperHomeSetLockFailedUsePhone": "होम स्क्रीन पर लग गया। लॉक स्क्रीन पर नहीं लग सका। आपके फ़ोन की अपनी वॉलपेपर स्क्रीन इसे लगा सकती है।",
+  "@coreWallpaperHomeSetLockFailedUsePhone": {
+    "description": "Snackbar when a Both set changed only the home screen. Its action opens the phone's own wallpaper screen for the lock screen."
+  },
+  "coreWallpaperSetWithPhone": "फ़ोन से लगाएँ",
+  "@coreWallpaperSetWithPhone": {
+    "description": "Snackbar action. Opens the phone's own wallpaper screen with this wallpaper. Keep it short."
+  },
   "coreWallpaperErrorTimeout": "समय सीमा समाप्त हुई। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
   "coreWallpaperHomeScreen": "होम स्क्रीन",
   "coreWallpaperHomeSetLockFailed": "होम स्क्रीन सेट हो गई। लॉक स्क्रीन सेट नहीं हो सकी।",

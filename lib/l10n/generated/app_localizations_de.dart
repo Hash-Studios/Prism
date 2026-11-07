@@ -3376,6 +3376,17 @@ class AppLocalizationsDe extends AppLocalizations {
       'Dein Hintergrund wird noch gesetzt. Das kann auf manchen Handys einen Moment dauern.';
 
   @override
+  String get coreWallpaperLockFailedUsePhone =>
+      'Der Sperrbildschirm konnte nicht gesetzt werden. Der Hintergrund-Bildschirm deines Handys kann ihn setzen.';
+
+  @override
+  String get coreWallpaperHomeSetLockFailedUsePhone =>
+      'Startbildschirm gesetzt. Der Sperrbildschirm konnte nicht gesetzt werden. Der Hintergrund-Bildschirm deines Handys kann ihn setzen.';
+
+  @override
+  String get coreWallpaperSetWithPhone => 'Mit Handy setzen';
+
+  @override
   String get coreWallpaperErrorTimeout => 'Zeitüberschreitung. Prüfe deine Verbindung und versuch es erneut.';
 
   @override
