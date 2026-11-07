@@ -37,9 +37,9 @@ class _AuthBoundary extends FirebaseAuthPlatform {
   FirebaseAuthPlatform setInitialValues({String? languageCode, InternalUserDetails? currentUser}) => this;
 
   @override
-  Future<void> useAuthEmulator(String host, int port) async {
+  Future<void> useAuthEmulator(String host, int port) {
     connects++;
-    throw StateError('emulator transport reached');
+    return Future<void>.error(StateError('emulator transport reached'));
   }
 }
 
