@@ -8,6 +8,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
@@ -22,6 +23,7 @@ import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -237,12 +239,13 @@ void main() {
       expect(find.byIcon(Icons.card_giftcard_rounded), findsOneWidget);
       expect(find.byIcon(Icons.person_add_alt_1_rounded), findsOneWidget);
       expect(find.byWidgetPredicate((Widget widget) => widget is PopupMenuButton), findsOneWidget);
-      // Follow sits under the name since the redesign, not in the app bar, so it is found by its label.
-      await tester.ensureVisible(find.text('Follow'));
+      final Finder follow = find.widgetWithText(PrismButton, 'Follow');
+      await tester.ensureVisible(follow);
       await tester.pump();
       for (final Finder target in <Finder>[
+        find.byTooltip('Back'),
         find.byTooltip('Gift a 24 h pass'),
-        find.text('Follow'),
+        follow,
         find.byTooltip('More options'),
       ]) {
         expect(target.hitTestable(), findsOneWidget, reason: 'must stay tappable: $target');
@@ -250,7 +253,9 @@ void main() {
         expect(rect.left, greaterThanOrEqualTo(0));
         expect(rect.right, lessThanOrEqualTo(320));
       }
-      await tester.tap(find.text('Follow'));
+      final RenderParagraph followLabel = tester.renderObject(find.text('Follow'));
+      expect(followLabel.didExceedMaxLines, isFalse);
+      await tester.tap(follow);
       verify(
         () => bloc.add(
           const PublicProfileEvent.followChangeRequested(
@@ -293,6 +298,13 @@ void main() {
 
       expect(find.text(_longName), findsWidgets);
       expect(find.byIcon(Icons.edit_rounded), findsOneWidget);
+      for (final String tooltip in <String>['Edit profile', 'Stats', 'Menu']) {
+        final Finder target = find.byTooltip(tooltip);
+        expect(target.hitTestable(), findsOneWidget, reason: 'must stay tappable: $tooltip');
+        final Rect rect = tester.getRect(target);
+        expect(rect.left, greaterThanOrEqualTo(0));
+        expect(rect.right, lessThanOrEqualTo(320));
+      }
       expect(tester.takeException(), isNull);
       expectNoOverflow(errors);
     });

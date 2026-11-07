@@ -158,6 +158,7 @@ Future<File> _startLockFailure(WidgetTester tester, _LockRefusingClient client) 
   await tester.pump();
   await tester.tap(find.byTooltip('Set as wallpaper'));
   await waitForRealIo(tester, () => client.requests.isNotEmpty, reason: 'initial native lock screen request');
+  expect(client.requests.first.source.filePath, isNot(source.path), reason: 'the selected filter must be exported');
   return File(client.requests.first.source.filePath!);
 }
 
@@ -516,6 +517,7 @@ void main() {
       reason: 'lock screen fallback snackbar',
     );
     final String exportPath = client.requests.first.source.filePath!;
+    expect(exportPath, isNot(source.path), reason: 'the phone fallback must receive the filtered export');
     expect(File(exportPath).existsSync(), isTrue);
 
     await tester.pump(const Duration(milliseconds: 500));
