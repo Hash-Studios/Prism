@@ -92,6 +92,8 @@ class PerformanceProbe {
           'build_p50_us': pct(build, 0.5),
           'build_p90_us': pct(build, 0.9),
           'build_p99_us': pct(build, 0.99),
+          'build_max_us': build.last,
+          'raster_max_us': raster.last,
           'raster_p90_us': pct(raster, 0.9),
           'raster_p99_us': pct(raster, 0.99),
           'total_p90_us': pct(total, 0.9),
