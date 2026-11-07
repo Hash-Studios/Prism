@@ -40,7 +40,7 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: WallpaperFilterScreen(filePath: image.path, guestShare: shared),
+        home: WallpaperFilterScreen(filePath: image.path, sharedImage: shared),
       ),
     );
     await waitForRealIo(tester, () {
@@ -65,9 +65,7 @@ void main() {
   });
 
   for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.iOS, TargetPlatform.android]) {
-    testWidgets('shared editor requires an account for ${platform == TargetPlatform.iOS ? 'filters' : 'Android Set'}', (
-      tester,
-    ) async {
+    testWidgets('shared editor asks a guest to sign in before it saves, $platform', (tester) async {
       int prompts = 0;
       int saves = 0;
       final Future<bool> Function(BuildContext) original = signedInActionSignIn;
@@ -89,10 +87,6 @@ void main() {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(mediaChannel, null);
       });
       await mount(tester);
-      if (platform == TargetPlatform.iOS) {
-        await tester.tap(find.text('AddictiveBlue'));
-        await tester.pump();
-      }
       await tester.tap(find.byTooltip('Download'));
       await tester.pump();
       expect(prompts, 1);

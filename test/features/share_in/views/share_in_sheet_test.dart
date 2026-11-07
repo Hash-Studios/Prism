@@ -196,23 +196,35 @@ void main() {
       expect(probe.choice?.photo, isNull);
     });
 
-    testWidgets('guest sees the sign-in note on Fit and Upload', (tester) async {
+    testWidgets('guest sees the sign-in note on every action', (tester) async {
       _phoneView(tester);
       final _Probe probe = _Probe();
       await _pump(tester, item: _image, probe: probe, isGuest: true);
 
-      expect(find.text('Sign in to use this.'), findsNWidgets(2));
+      expect(find.text('Sign in to use this.'), findsNWidgets(3));
     });
 
-    testWidgets('guest Set as wallpaper pops set and never asks to sign in', (tester) async {
+    testWidgets('guest Set that is not signed in keeps the sheet open and pops nothing', (tester) async {
       _phoneView(tester);
-      final _Probe probe = _Probe();
+      final _Probe probe = _Probe()..signInResult = false;
       await _pump(tester, item: _image, probe: probe, isGuest: true);
 
       await _tap(tester, 'Set as wallpaper');
 
+      expect(probe.signInCalls, 1);
+      expect(probe.done, isFalse);
+      expect(find.text('Use this image'), findsOneWidget);
+    });
+
+    testWidgets('guest Set that signs in pops set', (tester) async {
+      _phoneView(tester);
+      final _Probe probe = _Probe()..signInResult = true;
+      await _pump(tester, item: _image, probe: probe, isGuest: true);
+
+      await _tap(tester, 'Set as wallpaper');
+
+      expect(probe.signInCalls, 1);
       expect(probe.choice?.action, ShareInAction.set);
-      expect(probe.signInCalls, 0);
     });
 
     testWidgets('guest Upload that is not signed in keeps the sheet open and pops nothing', (tester) async {
@@ -250,9 +262,9 @@ void main() {
   });
 
   group('link sheet', () {
-    testWidgets('guest can Set the image downloaded from a link without sign-in', (tester) async {
+    testWidgets('guest must sign in to Set the image downloaded from a link', (tester) async {
       _phoneView(tester);
-      final _Probe probe = _Probe()..signInResult = false;
+      final _Probe probe = _Probe()..signInResult = true;
       await _pump(
         tester,
         item: SharedUrl(_page),
@@ -263,7 +275,7 @@ void main() {
 
       await _tap(tester, 'Set as wallpaper');
 
-      expect(probe.signInCalls, 0);
+      expect(probe.signInCalls, 1);
       expect(probe.choice?.action, ShareInAction.set);
       expect(probe.choice?.path, '/tmp/link.png');
     });

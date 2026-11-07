@@ -3043,14 +3043,14 @@ class WallpaperDetailRouteArgs {
 class WallpaperFilterRoute extends PageRouteInfo<WallpaperFilterRouteArgs> {
   WallpaperFilterRoute({
     required String filePath,
-    bool guestShare = false,
+    bool sharedImage = false,
     Key? key,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperFilterRoute.name,
          args: WallpaperFilterRouteArgs(
            filePath: filePath,
-           guestShare: guestShare,
+           sharedImage: sharedImage,
            key: key,
          ),
          initialChildren: children,
@@ -3064,7 +3064,7 @@ class WallpaperFilterRoute extends PageRouteInfo<WallpaperFilterRouteArgs> {
       final args = data.argsAs<WallpaperFilterRouteArgs>();
       return WallpaperFilterScreen(
         filePath: args.filePath,
-        guestShare: args.guestShare,
+        sharedImage: args.sharedImage,
         key: args.key,
       );
     },
@@ -3074,19 +3074,19 @@ class WallpaperFilterRoute extends PageRouteInfo<WallpaperFilterRouteArgs> {
 class WallpaperFilterRouteArgs {
   const WallpaperFilterRouteArgs({
     required this.filePath,
-    this.guestShare = false,
+    this.sharedImage = false,
     this.key,
   });
 
   final String filePath;
 
-  final bool guestShare;
+  final bool sharedImage;
 
   final Key? key;
 
   @override
   String toString() {
-    return 'WallpaperFilterRouteArgs{filePath: $filePath, guestShare: $guestShare, key: $key}';
+    return 'WallpaperFilterRouteArgs{filePath: $filePath, sharedImage: $sharedImage, key: $key}';
   }
 
   @override
@@ -3094,12 +3094,12 @@ class WallpaperFilterRouteArgs {
     if (identical(this, other)) return true;
     if (other is! WallpaperFilterRouteArgs) return false;
     return filePath == other.filePath &&
-        guestShare == other.guestShare &&
+        sharedImage == other.sharedImage &&
         key == other.key;
   }
 
   @override
-  int get hashCode => filePath.hashCode ^ guestShare.hashCode ^ key.hashCode;
+  int get hashCode => filePath.hashCode ^ sharedImage.hashCode ^ key.hashCode;
 }
 
 /// generated route for

@@ -167,7 +167,7 @@ void main() {
     await _settleSheet(tester);
     await waitForRealIo(tester, () => router.topRoute.name == WallpaperFilterRoute.name, reason: 'image hand-off');
     final WallpaperFilterRouteArgs args = router.topRoute.argsAs<WallpaperFilterRouteArgs>();
-    expect(args.guestShare, isTrue);
+    expect(args.sharedImage, isTrue);
     final String path = args.filePath;
     expect(file.existsSync(), isFalse);
     expect(File(path).existsSync(), isTrue);

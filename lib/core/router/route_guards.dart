@@ -1,5 +1,4 @@
 import 'package:Prism/core/auth/guest_browsing_policy.dart';
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/auth_navigation_continuation.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:auto_route/auto_route.dart';
@@ -20,21 +19,6 @@ class SignedInGuard extends AutoRouteGuard {
       continuation.defer(resolver, router: router);
     }
     resolver.next(false);
-  }
-}
-
-/// The editor needs an account, except for an image a guest shared to Prism from another app.
-class WallpaperFilterGuard extends AutoRouteGuard {
-  const WallpaperFilterGuard();
-
-  @override
-  void onNavigation(NavigationResolver resolver, StackRouter router) {
-    final Object? args = resolver.route.args;
-    if (args is WallpaperFilterRouteArgs && args.guestShare && guestBrowsingAllowed) {
-      resolver.next();
-      return;
-    }
-    const SignedInGuard().onNavigation(resolver, router);
   }
 }
 

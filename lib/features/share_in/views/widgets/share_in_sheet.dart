@@ -135,7 +135,7 @@ class _ShareInSheetState extends State<ShareInSheet> {
 
   Future<void> _pick(_Ready ready, ShareInAction action) async {
     if (_busy) return;
-    if (action != ShareInAction.set && _isGuest) {
+    if (_isGuest) {
       setState(() => _busy = true);
       final bool signedIn = await (widget.signIn ?? requireSignedInAction)(context);
       if (!mounted) return;
@@ -205,7 +205,7 @@ class _ShareInSheetState extends State<ShareInSheet> {
                 PrismRow(
                   icon: Icons.wallpaper_rounded,
                   title: l10n.shareInSet,
-                  subtitle: l10n.shareInSetDetail,
+                  subtitle: guestNote ?? l10n.shareInSetDetail,
                   onTap: _busy ? null : () => _pick(ready, ShareInAction.set),
                 ),
                 Divider(height: 1, color: cs.onSurface.withValues(alpha: 0.08)),

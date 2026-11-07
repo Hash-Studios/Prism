@@ -112,7 +112,7 @@ class _ShareInPageState extends State<ShareInPage> {
       case ShareInAction.set:
         final File file = await _handOff(choice.path);
         try {
-          await router.replace(WallpaperFilterRoute(filePath: file.path, guestShare: true));
+          await router.replace(WallpaperFilterRoute(filePath: file.path, sharedImage: true));
         } finally {
           await _inbox.discard(file.path);
         }

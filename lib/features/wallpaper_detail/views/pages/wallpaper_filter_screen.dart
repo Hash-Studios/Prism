@@ -34,9 +34,13 @@ import 'package:share_plus/share_plus.dart';
 
 @RoutePage()
 class WallpaperFilterScreen extends StatefulWidget {
-  const WallpaperFilterScreen({required this.filePath, super.key});
+  const WallpaperFilterScreen({required this.filePath, this.sharedImage = false, super.key});
 
   final String filePath;
+
+  /// Set for an image shared to Prism from another app. The editor hides Share, so the image goes nowhere the user
+  /// did not choose.
+  final bool sharedImage;
 
   /// Renders the export. Tests replace it.
   @visibleForTesting
@@ -618,16 +622,17 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
                           },
                   ),
           ),
-          PrismIconButton(
-            icon: Icons.ios_share_rounded,
-            tooltip: context.l10n.wallpaperShare,
-            onPressed: !_editorReady || _busy
-                ? null
-                : () {
-                    PrismHaptics.tap();
-                    unawaited(_startActionWithPremiumFilterGate(_handleShareAction, sourceTag: 'coins.filter.share'));
-                  },
-          ),
+          if (!widget.sharedImage)
+            PrismIconButton(
+              icon: Icons.ios_share_rounded,
+              tooltip: context.l10n.wallpaperShare,
+              onPressed: !_editorReady || _busy
+                  ? null
+                  : () {
+                      PrismHaptics.tap();
+                      unawaited(_startActionWithPremiumFilterGate(_handleShareAction, sourceTag: 'coins.filter.share'));
+                    },
+            ),
           if (!hideSetWallpaperUi)
             PrismIconButton(
               icon: Icons.check_rounded,
