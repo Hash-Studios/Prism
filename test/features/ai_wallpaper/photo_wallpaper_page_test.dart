@@ -1,20 +1,38 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:io';
 
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/offline/offline_asset_store.dart';
+import 'package:Prism/core/platform/live_activity_channel.dart';
+import 'package:Prism/core/platform/pigeon/prism_live_activity_api.g.dart';
+import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/photo_wallpaper_repository.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/photo_job.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/photo_wallpaper_page.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_decoded_image.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/photo_wallpaper_widgets.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
+import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
+import 'package:Prism/features/session/domain/entities/session_entity.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 
@@ -43,6 +61,10 @@ class _Harness {
   final PhotoSize photo;
   final List<Map<String, Object?>> payloads = <Map<String, Object?>>[];
   int picks = 0;
+  int encodes = 0;
+  bool failEncode = false;
+  Future<PhotoSize> Function()? onMeasure;
+  final FakeAppAnalytics analytics = FakeAppAnalytics();
 
   /// Replaces the default success reply for the next job when set.
   Future<Object?> Function(Map<String, Object?> payload)? onCall;
@@ -53,14 +75,21 @@ class _Harness {
 
   /// The pending job saved on the device, as the repository writes it.
   String? pendingJson;
+  Future<String?> Function()? onRead;
+  Future<void> Function(String? json)? onWrite;
+  late _Session session;
 
   late final PhotoWallpaperRepository repository = PhotoWallpaperRepository(
     () async {
       picks++;
       return _png;
     },
-    (Uint8List bytes) async => photo,
-    (Uint8List bytes, int longSide) async => bytes,
+    (Uint8List bytes) async => onMeasure == null ? photo : await onMeasure!(),
+    (Uint8List bytes, int longSide) async {
+      encodes++;
+      if (failEncode) throw const FormatException('photo removed');
+      return bytes;
+    },
     (Map<String, Object?> payload) {
       payloads.add(payload);
       final Future<Object?> Function(Map<String, Object?> payload)? handler = onCall;
@@ -70,9 +99,71 @@ class _Harness {
       lookups++;
       return onLookup?.call(payload) ?? Future<Object?>.value(<String, Object?>{'state': 'unknown'});
     },
-    () async => pendingJson,
-    (String? json) async => pendingJson = json,
+    () async => onRead == null ? pendingJson : await onRead!(),
+    (String? json) async {
+      if (onWrite != null) await onWrite!(json);
+      pendingJson = json;
+    },
   );
+}
+
+class _FoldersBloc extends Mock implements FoldersBloc {
+  _FoldersBloc() {
+    when(() => state).thenReturn(FoldersState.initial().copyWith(status: LoadStatus.success, userId: 'user-1'));
+    when(() => stream).thenAnswer((_) => const Stream<FoldersState>.empty());
+  }
+}
+
+class _Assets extends OfflineAssetStore {
+  final Completer<File> download = Completer<File>();
+  int resolves = 0;
+
+  @override
+  Future<File> resolve(String source, {bool allowNetwork = true}) {
+    resolves++;
+    return download.future;
+  }
+}
+
+class _ActivityApi extends PrismLiveActivityHostApi {
+  final Completer<String?> started = Completer<String?>();
+  int cancels = 0;
+
+  @override
+  Future<String?> startAiGeneration(AiActivityRequest request) => started.future;
+
+  @override
+  Future<void> cancelAiGeneration(String id) async => cancels++;
+}
+
+class _Session implements SessionRepository {
+  PrismUsersV2 user = app_state.prismUser;
+  final StreamController<PrismUsersV2> changes = StreamController<PrismUsersV2>.broadcast(sync: true);
+
+  void switchTo(String? uid) {
+    user = app_constants.createGuestPrismUser()
+      ..id = uid ?? ''
+      ..loggedIn = uid != null;
+    changes.add(user);
+  }
+
+  @override
+  PrismUsersV2 get currentUser => user;
+
+  @override
+  Future<Result<SessionEntity>> replaceCurrentUser(PrismUsersV2 value) async {
+    user = value;
+    changes.add(user);
+    return Result.success(
+      SessionEntity(userId: user.id, loggedIn: user.loggedIn, premium: user.premium, subscriptionTier: 'free'),
+    );
+  }
+
+  @override
+  Stream<PrismUsersV2> watchCurrentUser() => changes.stream;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 int _top(Map<String, Object?> payload) => (payload['placement']! as Map<Object?, Object?>)['top']! as int;
@@ -97,13 +188,15 @@ Future<void> _pumpPage(
   double devicePixelRatio = 3,
   double textScale = 1,
   Brightness brightness = Brightness.light,
+  FoldersBloc? folders,
+  ValueNotifier<PhotoSize>? screenSize,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = devicePixelRatio;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
-  AnalyticsRuntime.instance = FakeAppAnalytics();
+  AnalyticsRuntime.instance = harness.analytics;
   addTearDown(AnalyticsRuntime.reset);
 
   app_state.prismUser = app_constants.createGuestPrismUser()
@@ -112,20 +205,36 @@ Future<void> _pumpPage(
     ..premium = isPro;
   addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
   CoinsService.instance.balanceNotifier.value = balance;
+  harness.session = _Session();
+  getIt.registerSingleton<SessionRepository>(harness.session);
+  addTearDown(() async {
+    await getIt.unregister<SessionRepository>();
+    await harness.session.changes.close();
+  });
 
   await tester.pumpWidget(
-    MaterialApp(
-      theme: ThemeData(brightness: brightness),
-      locale: const Locale('en'),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      builder: (BuildContext context, Widget? child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
-        child: child!,
+    BlocProvider<FoldersBloc>.value(
+      value: folders ?? _FoldersBloc(),
+      child: MaterialApp(
+        theme: ThemeData(brightness: brightness),
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder: (BuildContext context, Widget? child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
+        home: screenSize == null
+            ? PhotoWallpaperPage(repository: harness.repository, isPro: isPro, screenSize: const PhotoSize(1080, 2340))
+            : ValueListenableBuilder<PhotoSize>(
+                valueListenable: screenSize,
+                builder: (_, PhotoSize size, _) =>
+                    PhotoWallpaperPage(repository: harness.repository, isPro: isPro, screenSize: size),
+              ),
       ),
-      home: PhotoWallpaperPage(repository: harness.repository, isPro: isPro, screenSize: const PhotoSize(1080, 2340)),
     ),
   );
+  await tester.pump();
   await tester.pump();
 }
 
@@ -197,6 +306,7 @@ void main() {
   testWidgets('a pending retry stays available when the original charge leaves a short balance', (tester) async {
     final _Harness harness = _Harness()
       ..onCall = (Map<String, Object?> _) async => throw StateError('connection dropped');
+    harness.onLookup = (_) async => _successMap;
     await _pumpPage(tester, harness);
     await _pickPhoto(tester);
 
@@ -211,7 +321,8 @@ void main() {
 
     await tester.tap(find.byKey(_runKey));
     await _waitUntilGone(tester, find.byKey(_runKey));
-    expect(harness.payloads, hasLength(4));
+    expect(harness.payloads, hasLength(2));
+    expect(harness.lookups, 1);
     expect(harness.payloads.map((Map<String, Object?> payload) => payload['requestId']).toSet(), hasLength(1));
   });
 
@@ -220,6 +331,7 @@ void main() {
     harness.onCall = (Map<String, Object?> _) async => harness.payloads.length == 1
         ? <String, Object?>{'state': 'failed', 'reason': 'provider_error', 'refunded': false}
         : _successMap;
+    harness.onLookup = (_) async => _successMap;
     await _pumpPage(tester, harness);
     await _pickPhoto(tester);
 
@@ -231,8 +343,8 @@ void main() {
 
     await tester.tap(find.byKey(_runKey));
     await _waitUntilGone(tester, find.byKey(_runKey));
-    expect(harness.payloads, hasLength(2));
-    expect(harness.payloads[0]['requestId'], harness.payloads[1]['requestId']);
+    expect(harness.payloads, hasLength(1));
+    expect(harness.lookups, 1);
     expect(find.text('Before'), findsOneWidget);
   });
 
@@ -240,6 +352,7 @@ void main() {
     final _Harness harness = _Harness();
     harness.onCall = (Map<String, Object?> _) async =>
         harness.payloads.length == 1 ? <String, Object?>{'state': 'running'} : _successMap;
+    harness.onLookup = (_) async => _successMap;
     await _pumpPage(tester, harness);
     await _pickPhoto(tester);
 
@@ -251,8 +364,8 @@ void main() {
 
     await tester.tap(find.byKey(_runKey));
     await _waitUntilGone(tester, find.byKey(_runKey));
-    expect(harness.payloads, hasLength(2));
-    expect(harness.payloads[0]['requestId'], harness.payloads[1]['requestId']);
+    expect(harness.payloads, hasLength(1));
+    expect(harness.lookups, 1);
     expect(find.text('Before'), findsOneWidget);
   });
 
@@ -341,6 +454,53 @@ void main() {
     await _waitUntilGone(tester, find.text('Extending your photo'));
 
     expect(find.text('Extending your photo'), findsNothing);
+  });
+
+  testWidgets('a stale draft placement callback cannot change a running job or its comparison photo', (tester) async {
+    final _Harness harness = _Harness();
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+    final PhotoPlacementFrame draft = tester.widget<PhotoPlacementFrame>(find.byType(PhotoPlacementFrame));
+    final Completer<void> saved = Completer<void>();
+    harness.onWrite = (_) => saved.future;
+    await tester.tap(find.byKey(_runKey));
+    await tester.pump();
+
+    draft.onChanged(draft.placement.alignedTo(0));
+    await tester.pump();
+    saved.complete();
+    await _settle(tester);
+
+    expect(_top(harness.payloads.single), 765);
+    final PhotoInCanvas before = tester.widget<PhotoInCanvas>(
+      find.descendant(of: find.byKey(_compareKey), matching: find.byType(PhotoInCanvas)),
+    );
+    expect(before.placement.top, 765);
+  });
+
+  testWidgets('a finished upscale keeps its job mode when a new screen size would plan Extend', (tester) async {
+    final _Harness harness = _Harness(photo: const PhotoSize(540, 1170));
+    final ValueNotifier<PhotoSize> size = ValueNotifier<PhotoSize>(const PhotoSize(1080, 2340));
+    addTearDown(size.dispose);
+    final _Assets assets = _Assets();
+    OfflineAssetStore.testOverride = assets;
+    addTearDown(() => OfflineAssetStore.testOverride = null);
+    await _pumpPage(tester, harness, screenSize: size);
+    await _pickPhoto(tester);
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+    size.value = const PhotoSize(720, 1728);
+    await tester.pump();
+    expect(planPhotoJob(harness.photo, size.value), PhotoJobMode.extend);
+
+    await tester.tap(find.text('Set as wallpaper'));
+    await tester.pump();
+
+    final PhotoJobResultSetEvent event = harness.analytics.events.whereType<PhotoJobResultSetEvent>().single;
+    expect(event.toWireParameters()['mode'], 'upscale');
+    await tester.pumpWidget(const SizedBox());
+    assets.download.complete(File('/tmp/unused-result.jpg'));
+    await tester.pump();
   });
 
   testWidgets('a finished job shows Before and After with the result actions', (tester) async {
@@ -433,7 +593,7 @@ void main() {
     harness.onCall = (Map<String, Object?> payload) async => <String, Object?>{
       'state': 'failed',
       'reason': 'unsafe_input',
-      'refunded': false,
+      'refunded': true,
     };
     await _pumpPage(tester, harness);
     await _pickPhoto(tester);
@@ -470,6 +630,15 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('Extend · 75 coins'), findsOneWidget);
+  });
+
+  testWidgets('at the largest iOS text size the photo buttons wrap instead of truncating', (tester) async {
+    await _pumpPage(tester, _Harness(), size: const Size(750, 1334), devicePixelRatio: 2, textScale: 3.1);
+    await _pickPhoto(tester);
+
+    expect(tester.takeException(), isNull);
+    final RenderParagraph label = tester.renderObject<RenderParagraph>(find.text('Choose another photo'));
+    expect(label.didExceedMaxLines, isFalse);
   });
 
   testWidgets('the placement frame and the compare view expose their semantics', (tester) async {
@@ -523,7 +692,8 @@ void main() {
       await tester.tap(find.byKey(_runKey));
       await _settle(tester);
 
-      final PendingPhotoJob? saved = PendingPhotoJob.fromJson(jsonDecode(savedDuringCall!));
+      final Object? stored = jsonDecode(savedDuringCall!);
+      final PendingPhotoJob? saved = PendingPhotoJob.fromJson(stored is List<dynamic> ? stored.single : stored);
       expect(saved?.requestId, harness.payloads.single['requestId']);
       expect(saved?.mode, PhotoJobMode.extend);
       expect(harness.pendingJson, isNull);
@@ -582,6 +752,340 @@ void main() {
 
       expect(harness.lookups, 0);
       expect(find.text('Choose a photo'), findsOneWidget);
+    });
+
+    testWidgets('a recovered result is not shown after the signed-in account changes', (tester) async {
+      final _Harness harness = _Harness()..pendingJson = pending('user-1');
+      final Completer<Object?> lookup = Completer<Object?>();
+      harness.onLookup = (_) => lookup.future;
+      await _pumpPage(tester, harness);
+      await tester.pump();
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'user-2'
+        ..loggedIn = true;
+      lookup.complete(_successMap);
+      await _settle(tester);
+
+      expect(find.text('Set as wallpaper'), findsNothing);
+      expect(harness.pendingJson, isNotNull);
+    });
+
+    for (final String? nextUser in <String?>[null, 'user-2']) {
+      testWidgets('a visible recovered result is removed on session change to $nextUser', (tester) async {
+        final _Harness harness = _Harness()..pendingJson = pending('user-1');
+        harness.onLookup = (_) async => _successMap;
+        await _pumpPage(tester, harness);
+        await _settle(tester);
+        expect(find.text('Set as wallpaper'), findsOneWidget);
+
+        harness.session.switchTo(nextUser);
+        await _settle(tester);
+
+        expect(find.text('Set as wallpaper'), findsNothing);
+        expect(find.text('Save to folder'), findsNothing);
+        if (nextUser != null) expect(find.text('Choose a photo'), findsOneWidget);
+      });
+    }
+
+    testWidgets('an A-B-A session change cannot publish an old recovered result', (tester) async {
+      final _Harness harness = _Harness()..pendingJson = pending('user-1');
+      final Completer<Object?> old = Completer<Object?>();
+      harness.onLookup = (_) =>
+          harness.lookups == 1 ? old.future : Future<Object?>.value(<String, Object?>{'state': 'running'});
+      await _pumpPage(tester, harness);
+      await tester.pump();
+      harness.session.switchTo('user-2');
+      await tester.pump();
+      harness.session.switchTo('user-1');
+      await tester.pump();
+      old.complete(_successMap);
+      await _settle(tester);
+
+      expect(find.text('Set as wallpaper'), findsNothing);
+      expect(harness.pendingJson, isNotNull);
+    });
+
+    testWidgets('picking waits for the saved job read before allowing replacement', (tester) async {
+      final _Harness harness = _Harness();
+      final Completer<String?> read = Completer<String?>();
+      harness.onRead = () => read.future;
+      harness.onLookup = (_) async => <String, Object?>{'state': 'running'};
+      await _pumpPage(tester, harness);
+      expect(tester.widget<GlintState>(find.byType(GlintState)).onAction, isNull);
+      expect(harness.picks, 0);
+
+      harness.pendingJson = pending('user-1');
+      read.complete(harness.pendingJson);
+      await _settle(tester);
+      expect(harness.lookups, 1);
+      expect(find.text('Still working on your last photo.'), findsOneWidget);
+      expect(harness.payloads, isEmpty);
+    });
+
+    testWidgets('a failed pending save stops before the paid callable and permits a safe retry', (tester) async {
+      final _Harness harness = _Harness();
+      await _pumpPage(tester, harness);
+      await _pickPhoto(tester);
+      harness.onWrite = (_) async => throw StateError('disk full');
+      await tester.tap(find.byKey(_runKey));
+      await _settle(tester);
+      expect(harness.payloads, isEmpty);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Extending your photo'), findsNothing);
+
+      harness.onWrite = null;
+      await tester.tap(find.byKey(_runKey));
+      await _settle(tester);
+      await tester.tap(find.byKey(_runKey));
+      await _settle(tester);
+      expect(harness.payloads, hasLength(1));
+      expect(find.text('Set as wallpaper'), findsOneWidget);
+    });
+
+    testWidgets('a refunded network failure is final and clears the saved request', (tester) async {
+      final _Harness harness = _Harness()..pendingJson = pending('user-1');
+      harness.onLookup = (_) async => <String, Object?>{
+        'state': 'failed',
+        'reason': 'network',
+        'charged': true,
+        'refunded': true,
+        'cost': 75,
+      };
+      await _pumpPage(tester, harness);
+      await _settle(tester);
+
+      expect(harness.pendingJson, isNull);
+      expect(find.text('Choose a photo'), findsOneWidget);
+    });
+
+    testWidgets('an uncertain paid job cannot be replaced by another photo or target', (tester) async {
+      final _Harness harness = _Harness()..onCall = (_) async => throw StateError('connection dropped');
+      await _pumpPage(tester, harness);
+      await _pickPhoto(tester);
+      await tester.tap(find.byKey(_runKey));
+      await _settle(tester);
+      final String? saved = harness.pendingJson;
+      await tester.tap(find.text('Choose another photo').last);
+      await _settle(tester);
+      expect(harness.picks, 1);
+      expect(harness.pendingJson, saved);
+      expect(harness.payloads, hasLength(2));
+      expect(find.text('Desktop version'), findsNothing);
+    });
+
+    testWidgets('retry looks up a dispatched request even when the source can no longer be encoded', (tester) async {
+      final _Harness harness = _Harness()..onCall = (_) async => throw StateError('connection dropped');
+      harness.onLookup = (_) async => <String, Object?>{'state': 'running'};
+      await _pumpPage(tester, harness);
+      await _pickPhoto(tester);
+      await tester.tap(find.byKey(_runKey));
+      await _settle(tester);
+      final String? saved = harness.pendingJson;
+      harness.failEncode = true;
+
+      await tester.tap(find.byKey(_runKey));
+      await _settle(tester);
+
+      expect(harness.encodes, 1);
+      expect(harness.lookups, 1);
+      expect(harness.payloads, hasLength(2));
+      expect(harness.pendingJson, saved);
+      expect(find.text('Still working on your last photo.'), findsOneWidget);
+    });
+
+    testWidgets('Run is disabled while a replacement photo is being measured', (tester) async {
+      final _Harness harness = _Harness();
+      await _pumpPage(tester, harness);
+      await _pickPhoto(tester);
+      final Completer<PhotoSize> measured = Completer<PhotoSize>();
+      harness.onMeasure = () => measured.future;
+      final PrismButton originalRun = tester.widget<PrismButton>(find.byKey(_runKey));
+      await tester.tap(find.text('Choose another photo'));
+      await tester.pump();
+      expect(tester.widget<PrismButton>(find.byKey(_runKey)).onPressed, isNull);
+      originalRun.onPressed!();
+      await tester.pump();
+      measured.complete(const PhotoSize(540, 1170));
+      await _settle(tester);
+
+      expect(harness.payloads, isEmpty);
+      expect(harness.pendingJson, isNull);
+      expect(find.text('Upscale · 10 coins'), findsOneWidget);
+    });
+
+    testWidgets('a save conflict recovers the actual stored request rather than the unsent candidate', (tester) async {
+      final _Harness harness = _Harness();
+      await _pumpPage(tester, harness);
+      await _pickPhoto(tester);
+      harness.pendingJson = pending('user-1');
+      harness.onLookup = (payload) async {
+        expect(payload['requestId'], 'req-00000042');
+        return _successMap;
+      };
+      await tester.tap(find.byKey(_runKey));
+      await _settle(tester);
+      expect(harness.payloads, isEmpty);
+
+      await tester.tap(find.byKey(_runKey));
+      await _settle(tester);
+      expect(harness.lookups, 1);
+      expect(harness.payloads, isEmpty);
+      expect(find.text('Before'), findsNothing);
+      expect(find.text('Set as wallpaper'), findsOneWidget);
+    });
+
+    testWidgets('rapid recovery retries start only one lookup and cannot replace the result with a stale reply', (
+      tester,
+    ) async {
+      final _Harness harness = _Harness()..pendingJson = pending('user-1');
+      harness.onLookup = (_) async => <String, Object?>{'state': 'running'};
+      await _pumpPage(tester, harness);
+      await _settle(tester);
+      final VoidCallback retry = tester.widget<GlintState>(find.byType(GlintState)).onAction!;
+      final Completer<Object?> reply = Completer<Object?>();
+      harness.onLookup = (_) => reply.future;
+
+      retry();
+      retry();
+      await tester.pump();
+      expect(harness.lookups, 2);
+      reply.complete(_successMap);
+      await _settle(tester);
+      expect(find.text('Set as wallpaper'), findsOneWidget);
+    });
+
+    testWidgets('a failed final clear is retried before starting over', (tester) async {
+      final _Harness harness = _Harness()..pendingJson = pending('user-1');
+      harness.onLookup = (_) async => _successMap;
+      harness.onWrite = (_) async => throw StateError('disk full');
+      await _pumpPage(tester, harness);
+      await _settle(tester);
+      expect(harness.pendingJson, isNotNull);
+      harness.onWrite = null;
+
+      await tester.tap(find.text('Use another photo'));
+      await _settle(tester);
+      expect(harness.pendingJson, isNull);
+      await tester.tap(find.text('Use another photo'));
+      await _settle(tester);
+      expect(find.text('Choose a photo'), findsOneWidget);
+      expect(harness.payloads, isEmpty);
+    });
+
+    testWidgets('an A-B-A switch during Live Activity startup cannot dispatch the old paid job', (tester) async {
+      final _Harness harness = _Harness();
+      final _ActivityApi activity = _ActivityApi();
+      final PrismLiveActivityHostApi previousApi = LiveActivityChannel.api;
+      final bool Function() previousSupported = LiveActivityChannel.isSupportedPlatform;
+      LiveActivityChannel.api = activity;
+      LiveActivityChannel.isSupportedPlatform = () => true;
+      addTearDown(() {
+        LiveActivityChannel.api = previousApi;
+        LiveActivityChannel.isSupportedPlatform = previousSupported;
+      });
+      await _pumpPage(tester, harness);
+      await _pickPhoto(tester);
+      await tester.tap(find.byKey(_runKey));
+      await tester.pump();
+      harness.session.switchTo('user-2');
+      harness.session.switchTo('user-1');
+      activity.started.complete('activity-1');
+      await _settle(tester);
+
+      expect(harness.payloads, isEmpty);
+      expect(activity.cancels, 1);
+    });
+
+    testWidgets('a restored desktop upscale has all actions and preserves mode, target and folder metadata', (
+      tester,
+    ) async {
+      final _Harness harness = _Harness()
+        ..pendingJson = jsonEncode(
+          const PendingPhotoJob(
+            userId: 'user-1',
+            requestId: 'req-00000042',
+            mode: PhotoJobMode.upscale,
+            target: PhotoJobTarget.desktop,
+          ).toJson(),
+        );
+      harness.onLookup = (_) async => <String, Object?>{..._successMap, 'width': 2560, 'height': 1600};
+      final _Assets assets = _Assets();
+      OfflineAssetStore.testOverride = assets;
+      addTearDown(() => OfflineAssetStore.testOverride = null);
+      await _pumpPage(tester, harness);
+      await _settle(tester);
+      expect(find.text('Before'), findsNothing);
+      expect(find.text('Download'), findsOneWidget);
+      expect(find.text('Save to folder'), findsOneWidget);
+      await tester.tap(find.text('Set as wallpaper'));
+      await tester.pump();
+      final PhotoJobResultSetEvent event = harness.analytics.events.whereType<PhotoJobResultSetEvent>().single;
+      expect(event.toWireParameters(), <String, Object?>{
+        'mode': 'upscale',
+        'target': 'desktop',
+        'platform': 'android',
+      });
+      expect(assets.resolves, 1);
+
+      await tester.tap(find.text('Save to folder'));
+      await tester.pump();
+      await _settle(tester);
+      final FolderSheet folder = tester.widget<FolderSheet>(find.byType(FolderSheet));
+      final PrismFavouriteWall saved = folder.wall as PrismFavouriteWall;
+      expect(saved.wallpaper.aiModel, PhotoJobMode.upscale.model);
+      expect(saved.wallpaper.core.width, 2560);
+      expect(saved.wallpaper.core.height, 1600);
+      await tester.pumpWidget(const SizedBox());
+      assets.download.complete(File('/tmp/unused-result.jpg'));
+      await tester.pump();
+    });
+
+    testWidgets('stale Download and folder callbacks cannot act after an A-B-A session change', (tester) async {
+      int downloads = 0;
+      const BasicMessageChannel<Object?> downloadChannel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.enqueueDownload',
+        PrismMediaHostApi.pigeonChannelCodec,
+      );
+      tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(downloadChannel, (_) async {
+        downloads++;
+        return <Object?>[null];
+      });
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(downloadChannel, null),
+      );
+      final _Harness harness = _Harness()..pendingJson = pending('user-1');
+      harness.onLookup = (_) async => _successMap;
+      final _Assets assets = _Assets();
+      OfflineAssetStore.testOverride = assets;
+      addTearDown(() => OfflineAssetStore.testOverride = null);
+      await _pumpPage(tester, harness);
+      await _settle(tester);
+      final PrismButton folder = tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Save to folder'));
+      await tester.tap(find.text('Download'));
+      await tester.pump();
+      harness.session.switchTo('user-2');
+      harness.session.switchTo('user-1');
+      folder.onPressed!();
+      assets.download.complete(File('/tmp/unused-result.jpg'));
+      await _settle(tester);
+
+      expect(find.byType(FolderSheet), findsNothing);
+      expect(find.text('Set as wallpaper'), findsNothing);
+      expect(tester.takeException(), isNull);
+      expect(downloads, 0);
+    });
+
+    testWidgets('switching accounts removes the old result pixels on the first frame', (tester) async {
+      final _Harness harness = _Harness()..pendingJson = pending('user-1');
+      harness.onLookup = (_) async => _successMap;
+      await _pumpPage(tester, harness);
+      await _settle(tester);
+      expect(find.byType(AiDecodedImage), findsOneWidget);
+
+      harness.session.switchTo('user-2');
+      await tester.pump();
+
+      expect(find.byType(AiDecodedImage), findsNothing);
     });
   });
 }

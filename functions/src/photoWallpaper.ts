@@ -26,7 +26,8 @@ export interface PhotoJob {
   model: string;
   cost: number;
   chargeTxId: string;
-  state: "running" | "succeeded" | "failed";
+  /** "closed": a lookup found no job, so a create that arrives later must not charge. */
+  state: "running" | "succeeded" | "failed" | "closed";
   startedAt: admin.firestore.Timestamp;
   width: number;
   height: number;
@@ -381,6 +382,7 @@ async function claimJob(uid: string, requestId: string, mode: PhotoJobMode, targ
     if (jobSnap.exists) {
       const job = jobSnap.data() as PhotoJob;
       if (job.userId !== uid) throw new HttpsError("permission-denied", "This job belongs to another account.");
+      if (job.state === "closed") throw new HttpsError("failed-precondition", "request_closed");
       if (job.state === "running" && Date.now() - job.startedAt.toMillis() < STALE_RUNNING_MS) {
         throw new HttpsError("aborted", "in_progress");
       }
@@ -516,13 +518,23 @@ export async function runPhotoJob(jobId: string, job: PhotoJob, jpeg: Buffer, ph
  * stored outcome while the account is active and never charges twice. The photo is held only in memory and sent to
  * fal inline. Account deletion closes the UID barrier; jobs that fail after that point do not refund.
  */
+/** [result] with the user's coin balance, so the app shows the server's number instead of a cached one. */
+async function withBalance<T extends object>(uid: string, result: T): Promise<T & {balance?: number}> {
+  try {
+    const coins = (await db.collection("usersv2").doc(uid).get()).data()?.coins;
+    return typeof coins === "number" ? {...result, balance: Math.trunc(coins)} : result;
+  } catch {
+    return result;
+  }
+}
+
 export const createPhotoWallpaper = onCall({
   region: CALLABLE_REGIONS,
   timeoutSeconds: 180,
   memory: "1GiB",
   maxInstances: 10,
   secrets: [falKey, ...r2Secrets],
-}, async (request): Promise<PhotoJobResult> => {
+}, async (request): Promise<PhotoJobResult & {balance?: number}> => {
   const uid = request.auth?.uid;
   if (!uid || request.auth?.token.firebase?.sign_in_provider === "anonymous") {
     throw new HttpsError("unauthenticated", "Sign in to make a wallpaper from a photo.");
@@ -542,10 +554,10 @@ export const createPhotoWallpaper = onCall({
   const claim = await claimJob(uid, data.requestId, mode, target, size);
   if ("replay" in claim) {
     const job = claim.replay;
-    if (job.state !== "running") return jobResult(jobId, job);
-    return jobResult(jobId, (await failPhotoJob(jobId, job.startedAt.toMillis(), "timeout")) ?? job);
+    if (job.state !== "running") return withBalance(uid, jobResult(jobId, job));
+    return withBalance(uid, jobResult(jobId, (await failPhotoJob(jobId, job.startedAt.toMillis(), "timeout")) ?? job));
   }
-  return runPhotoJob(jobId, claim.job, jpeg, photo, placement, claim.isPro);
+  return withBalance(uid, await runPhotoJob(jobId, claim.job, jpeg, photo, placement, claim.isPro));
 });
 
 async function sweepCleanupQueue(field: "cleanupPending" | "falCleanupPending", nowMs: number): Promise<void> {
@@ -582,11 +594,19 @@ export const getPhotoWallpaper = onCall({region: CALLABLE_REGIONS, timeoutSecond
     const requestId = (request.data as Record<string, unknown> | undefined)?.requestId;
     if (!isValidRequestId(requestId)) throw bad("requestId is invalid.");
     const jobId = `pj_${uid}_${requestId}`;
-    const job = (await db.collection(PHOTO_JOBS).doc(jobId).get()).data() as PhotoJob | undefined;
-    if (!job || job.userId !== uid) return {state: "unknown"};
-    if (job.state !== "running") return jobResult(jobId, job);
+    const jobRef = db.collection(PHOTO_JOBS).doc(jobId);
+    // No job yet: close the request id in a transaction, so "unknown" is final. A create still on its way then finds
+    // the closed record at its claim and charges nothing.
+    const job = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(jobRef);
+      if (snap.exists) return snap.data() as PhotoJob;
+      tx.set(jobRef, {userId: uid, requestId, state: "closed", closedAt: admin.firestore.Timestamp.now()});
+      return null;
+    });
+    if (!job || job.userId !== uid || job.state === "closed") return {state: "unknown"};
+    if (job.state !== "running") return withBalance(uid, jobResult(jobId, job));
     if (Date.now() - job.startedAt.toMillis() < STALE_RUNNING_MS) return {jobId, state: "running"};
-    return jobResult(jobId, (await failPhotoJob(jobId, job.startedAt.toMillis(), "timeout")) ?? job);
+    return withBalance(uid, jobResult(jobId, (await failPhotoJob(jobId, job.startedAt.toMillis(), "timeout")) ?? job));
   });
 
 /** Refunds jobs that stopped while they ran, for example when the instance died. */

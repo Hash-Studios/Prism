@@ -24,10 +24,14 @@ final PhotoSource _photo = PhotoSource(bytes: _png, size: const PhotoSize(4000, 
 
 class _ActivityApi extends PrismLiveActivityHostApi {
   final Completer<String?> started = Completer<String?>();
+  int starts = 0;
   int cancellations = 0;
 
   @override
-  Future<String?> startAiGeneration(AiActivityRequest request) => started.future;
+  Future<String?> startAiGeneration(AiActivityRequest request) {
+    starts++;
+    return started.future;
+  }
 
   @override
   Future<void> cancelAiGeneration(String id) async => cancellations++;
@@ -137,7 +141,7 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     expect(uploadsPrepared, 0);
-    expect(api.cancellations, 1);
+    expect(api.cancellations, api.starts, reason: 'every Live Activity that started is cancelled');
   });
 
   test('revoking upload permission during compression prevents the callable', () async {

@@ -291,7 +291,12 @@ class PendingPhotoJob {
     final PhotoJobTarget? target = PhotoJobTarget.values
         .where((PhotoJobTarget t) => t.name == json['target'])
         .firstOrNull;
-    if (userId is! String || userId.isEmpty || requestId is! String || requestId.isEmpty) return null;
+    if (userId is! String ||
+        userId.isEmpty ||
+        requestId is! String ||
+        !RegExp(r'^[A-Za-z0-9_-]{8,64}$').hasMatch(requestId)) {
+      return null;
+    }
     if (mode == null || target == null) return null;
     return PendingPhotoJob(userId: userId, requestId: requestId, mode: mode, target: target);
   }

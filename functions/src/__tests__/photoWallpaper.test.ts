@@ -1219,6 +1219,43 @@ test("lookup after an app restart returns a finished job, and never charges", as
   assert.equal(coinTxCount(store), 0);
 });
 
+test("an unknown lookup closes the request, so a create that arrives later charges nothing", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  const deps = mockDeps(t);
+  const transaction = db.runTransaction.bind(db);
+  let release!: () => void;
+  let claimReached!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const entered = new Promise<void>((resolve) => {
+    claimReached = resolve;
+  });
+  let first = true;
+  t.mock.method(db, "runTransaction", async (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+    if (first) {
+      first = false;
+      claimReached();
+      await gate;
+    }
+    return transaction(callback);
+  });
+  const creating = run(await extendData());
+  await entered;
+  try {
+    assert.deepEqual(await lookup({requestId: "req-00000001"}), {state: "unknown"});
+    assert.equal(store.get(JOB)?.state, "closed");
+    assert.equal(coinTxCount(store), 0);
+  } finally {
+    release();
+  }
+  await assert.rejects(creating, {code: "failed-precondition", message: "request_closed"});
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(coinTxCount(store), 0);
+  assert.equal(deps.fal().length, 0);
+  assert.deepEqual(await lookup({requestId: "req-00000001"}), {state: "unknown"});
+});
+
 test("lookup reports a running job as running, and ends a stale one with a refund", async (t) => {
   const store = installFakeDb(t, {"usersv2/u1": {coins: 125}, [JOB]: runningJob(admin.firestore.Timestamp.now())});
   assert.deepEqual(await lookup({requestId: "req-00000001"}), {jobId: JOB_ID, state: "running"});
@@ -1229,11 +1266,54 @@ test("lookup reports a running job as running, and ends a stale one with a refun
   assert.equal(store.get("usersv2/u1")?.coins, 200);
 });
 
+test("a stale lookup, create replay and sweeper refund once without running a new job", async (t) => {
+  const store = installFakeDb(t, {
+    "usersv2/u1": {coins: 125},
+    [JOB]: runningJob(admin.firestore.Timestamp.fromMillis(Date.now() - 11 * MINUTE)),
+    [CHARGE]: {delta: -75},
+  });
+  const deps = mockDeps(t);
+  const data = await extendData();
+  const [recovered, replayed] = await Promise.all([
+    lookup({requestId: "req-00000001"}),
+    run(data),
+    sweepStalePhotoJobsOnce(),
+  ]);
+  for (const result of [recovered, replayed]) {
+    assert.equal(result.state, "failed");
+    assert.ok("refunded" in result && result.refunded);
+    assert.ok("reason" in result && result.reason === "timeout");
+  }
+  assert.equal(store.get(JOB)?.state, "failed");
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(store.get(CHARGE)?.delta, -75);
+  assert.equal(store.get(REFUND)?.delta, 75);
+  assert.equal(coinTxCount(store), 2);
+  assert.equal(deps.counts.safe, 0);
+  assert.deepEqual(deps.calls, []);
+  assert.deepEqual(deps.stored, []);
+});
+
 test("lookup of an unknown job, or another user's job id, returns unknown", async (t) => {
   installFakeDb(t, {[JOB]: {...runningJob(admin.firestore.Timestamp.now()), state: "succeeded", imageUrl: OUT_URL}});
   assert.deepEqual(await lookup({requestId: "req-99999999"}), {state: "unknown"});
   const other = {uid: "u2", token: {firebase: {sign_in_provider: "google.com"}}};
   assert.deepEqual(await lookup({requestId: "req-00000001"}, other), {state: "unknown"});
+});
+
+test("lookup refuses a mismatched stored owner without revealing or changing that job", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 125}, "usersv2/u2": {coins: 50}});
+  const deps = mockDeps(t);
+  for (const state of ["running", "succeeded"]) {
+    store.set(JOB, {...runningJob(admin.firestore.Timestamp.fromMillis(Date.now() - 11 * MINUTE)),
+      userId: "u2", state, imageUrl: OUT_URL});
+    const before = [...store.entries()];
+    assert.deepEqual(await lookup({requestId: "req-00000001"}), {state: "unknown"});
+    assert.deepEqual([...store.entries()], before);
+  }
+  assert.equal(coinTxCount(store), 0);
+  assert.equal(deps.counts.safe, 0);
+  assert.deepEqual(deps.calls, []);
 });
 
 test("lookup needs a signed-in, non-anonymous user and a valid requestId", async (t) => {
@@ -1242,4 +1322,21 @@ test("lookup needs a signed-in, non-anonymous user and a valid requestId", async
   await assert.rejects(() => lookup({requestId: "req-00000001"},
     {uid: "a", token: {firebase: {sign_in_provider: "anonymous"}}}), {code: "unauthenticated"});
   await assert.rejects(() => lookup({requestId: "x"}), {code: "invalid-argument"});
+});
+
+test("job results carry the user's coin balance after the charge or refund", async (t) => {
+  installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  mockDeps(t);
+  const done = await run(await extendData()) as Succeeded & {balance?: number};
+  assert.equal(done.balance, 125);
+  const replayed = await lookup({requestId: "req-00000001"}) as Succeeded & {balance?: number};
+  assert.equal(replayed.balance, 125);
+});
+
+test("a refunded failure carries the balance after the refund", async (t) => {
+  installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  mockDeps(t, {falStatus: 500});
+  const failed = await run(await extendData()) as Failed & {balance?: number};
+  assert.equal(failed.state, "failed");
+  assert.equal(failed.balance, 200);
 });

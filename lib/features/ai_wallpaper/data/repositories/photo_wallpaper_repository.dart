@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -38,46 +39,95 @@ class PhotoWallpaperRepository {
     PhotoJobCall? lookup,
     Future<String?> Function()? readPending,
     Future<void> Function(String? json)? writePending,
+    void Function(int balance)? onBalance,
   ]) : _pick = pick ?? _pickFromGallery,
        _measure = measure ?? _uprightSize,
        _toUploadJpeg = toUploadJpeg ?? _uploadJpegOf,
        _call = call ?? _callCallable,
        _lookup = lookup ?? _lookupCallable,
        _readPending = readPending ?? _readPendingSetting,
-       _writePending = writePending ?? _writePendingSetting;
+       _writePending = writePending ?? _writePendingSetting,
+       _onBalance = onBalance ?? _applyServerBalance;
 
   final Future<Uint8List?> Function() _pick;
   final Future<PhotoSize> Function(Uint8List bytes) _measure;
   final Future<Uint8List> Function(Uint8List bytes, int longSide) _toUploadJpeg;
   final PhotoJobCall _call;
   final PhotoJobCall _lookup;
+  final void Function(int balance) _onBalance;
+
+  /// Applies the coin balance a job result carries, then returns [data] unchanged.
+  Object? _withBalance(Object? data) {
+    if (data is Map && data['balance'] is int) _onBalance(data['balance'] as int);
+    return data;
+  }
+
+  static void _applyServerBalance(int balance) => CoinsService.instance.applyServerBalance(balance);
   final Future<String?> Function() _readPending;
   final Future<void> Function(String? json) _writePending;
 
-  /// The job that was running when the app last ran, or null.
-  Future<PendingPhotoJob?> readPending() async {
-    try {
-      final String? raw = await _readPending();
-      return raw == null ? null : PendingPhotoJob.fromJson(jsonDecode(raw));
-    } catch (error) {
-      logger.w('[PhotoWallpaper] pending job read failed (${error.runtimeType})');
-      return null;
-    }
+  // Pages share one setting, so their read-modify-write operations must not replace one another.
+  static Future<void>? _pendingOperation;
+
+  static Future<T> _serializePending<T>(Future<T> Function() operation) {
+    final Future<void>? previous = _pendingOperation;
+    final Future<T> result = previous == null ? Future<T>.sync(operation) : previous.then((_) => operation());
+    late final Future<void> tail;
+    tail = result.then<void>((_) {}, onError: (Object error, StackTrace stack) {}).whenComplete(() {
+      if (identical(_pendingOperation, tail)) _pendingOperation = null;
+    });
+    _pendingOperation = tail;
+    return result;
   }
 
-  /// Saves [job] as the running job, or clears it when null.
-  Future<void> savePending(PendingPhotoJob? job) async {
-    try {
-      await _writePending(job == null ? null : jsonEncode(job.toJson()));
-    } catch (error) {
-      logger.w('[PhotoWallpaper] pending job write failed (${error.runtimeType})');
+  /// The owner's job from the previous app run, or null. Storage errors are not an empty slot.
+  Future<PendingPhotoJob?> readPending({required String userId}) =>
+      _serializePending(() async => (await _readPendingJobs())[userId]);
+
+  /// Saves [job] before it can charge coins. An unresolved request cannot be replaced by another one.
+  Future<void> savePending(PendingPhotoJob job) => _serializePending(() async {
+    final Map<String, PendingPhotoJob> jobs = await _readPendingJobs();
+    final PendingPhotoJob? previous = jobs[job.userId];
+    if (previous != null && previous.requestId != job.requestId) {
+      throw StateError('A photo job is still pending for this account.');
     }
+    jobs[job.userId] = job;
+    await _writePending(jsonEncode(jobs.values.map((PendingPhotoJob pending) => pending.toJson()).toList()));
+  });
+
+  /// Removes only the completed request, leaving other accounts and newer requests untouched.
+  Future<void> clearPending({required String userId, required String requestId}) => _serializePending(() async {
+    final Map<String, PendingPhotoJob> jobs = await _readPendingJobs();
+    if (jobs[userId]?.requestId != requestId) return;
+    jobs.remove(userId);
+    await _writePending(
+      jobs.isEmpty ? null : jsonEncode(jobs.values.map((PendingPhotoJob pending) => pending.toJson()).toList()),
+    );
+  });
+
+  Future<Map<String, PendingPhotoJob>> _readPendingJobs() async {
+    final String? raw = await _readPending();
+    if (raw == null) return <String, PendingPhotoJob>{};
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } on FormatException {
+      return <String, PendingPhotoJob>{};
+    }
+    // Read the original single-job format as well as the account-isolated list.
+    final Iterable<Object?> records = decoded is List ? decoded : <Object?>[decoded];
+    final Map<String, PendingPhotoJob> jobs = <String, PendingPhotoJob>{};
+    for (final Object? record in records) {
+      final PendingPhotoJob? job = PendingPhotoJob.fromJson(record);
+      if (job != null) jobs[job.userId] = job;
+    }
+    return jobs;
   }
 
   /// The server state of a job started before the app restarted. Null when the server has no such job.
   Future<PhotoJobState?> recover(String requestId) async {
     try {
-      final Object? data = await _lookup(<String, Object?>{'requestId': requestId});
+      final Object? data = _withBalance(await _lookup(<String, Object?>{'requestId': requestId}));
       if (data is Map && data['state'] == 'unknown') return null;
       if (data is Map && data['state'] == 'running') return PhotoJobRunning(requestId);
       return parsePhotoJobResult(data);
@@ -139,7 +189,7 @@ class PhotoWallpaperRepository {
     for (int attempt = 0; ; attempt++) {
       if (mayUpload?.call() == false) return signedOut;
       try {
-        return parsePhotoJobResult(await _call(payload));
+        return parsePhotoJobResult(_withBalance(await _call(payload)));
       } on FirebaseFunctionsException catch (error) {
         logger.w('[PhotoWallpaper] job call failed: ${error.code}');
         final bool dropped = const <String>{'deadline-exceeded', 'unavailable', 'internal'}.contains(error.code);
