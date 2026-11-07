@@ -32,22 +32,27 @@ class PerfAutodrive {
   }
 
   static Future<void> _run(AppRouter router) async {
+    Timer? afterResume;
+    int resumeGeneration = 0;
     AppLifecycleListener(
       onResume: () {
+        final int generation = ++resumeGeneration;
         PerformanceProbe.phase('resume');
         final Stopwatch sinceResume = Stopwatch()..start();
         unawaited(
-          SchedulerBinding.instance.endOfFrame.then(
-            (_) => PerformanceProbe.emit(
-              kind: 'resume',
-              name: 'resume_to_frame',
-              durationMs: sinceResume.elapsedMilliseconds,
-            ),
-          ),
+          SchedulerBinding.instance.endOfFrame.then((_) {
+            if (generation != resumeGeneration) return;
+            PerformanceProbe.emit(kind: 'resume', name: 'resume_to_frame', durationMs: sinceResume.elapsedMilliseconds);
+          }),
         );
-        unawaited(_wait(const Duration(seconds: 4)).then((_) => PerformanceProbe.phase('after_resume')));
+        afterResume = Timer(const Duration(seconds: 4), () => PerformanceProbe.phase('after_resume'));
       },
       onPause: () => PerformanceProbe.phase('paused'),
+      onStateChange: (AppLifecycleState state) {
+        if (state == AppLifecycleState.resumed) return;
+        resumeGeneration++;
+        afterResume?.cancel();
+      },
     );
     int launch = 0;
     await _step('launch counter', () async {

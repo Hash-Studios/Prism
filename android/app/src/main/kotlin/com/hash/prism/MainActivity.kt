@@ -30,10 +30,23 @@ internal fun copyWallpaperCropFile(source: File, folder: File): File {
     }
 }
 
-internal fun launchNightMode(themeMode: String?): Int = when (themeMode) {
+internal fun launchNightMode(themeMode: Any?): Int? = when (themeMode) {
     "light" -> UiModeManager.MODE_NIGHT_NO
     "dark" -> UiModeManager.MODE_NIGHT_YES
-    else -> UiModeManager.MODE_NIGHT_AUTO
+    "system" -> UiModeManager.MODE_NIGHT_AUTO
+    else -> null
+}
+
+internal fun updateLaunchNightMode(mode: Int, cache: File, legacyMode: Int?, applyMode: (Int) -> Unit) {
+    val cachedMode = runCatching { cache.readText().toIntOrNull() }.getOrNull()
+    if (cachedMode == mode) return
+    val previousMode = cachedMode ?: legacyMode
+    if (mode != UiModeManager.MODE_NIGHT_AUTO ||
+        previousMode == UiModeManager.MODE_NIGHT_NO || previousMode == UiModeManager.MODE_NIGHT_YES
+    ) {
+        applyMode(mode)
+    }
+    runCatching { cache.writeText(mode.toString()) }
 }
 
 class MainActivity : FlutterFragmentActivity() {
@@ -123,17 +136,25 @@ class MainActivity : FlutterFragmentActivity() {
                     result.notImplemented()
                     return@setMethodCallHandler
                 }
-                // The system splash reads the app night mode (Android 12+). Older versions use values-night only.
+                val mode = launchNightMode(call.arguments)
+                if (mode == null) {
+                    result.error("INVALID_THEME_MODE", "Expected system, light, or dark", null)
+                    return@setMethodCallHandler
+                }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val mode = launchNightMode(call.arguments as? String)
-                    val prefs = getSharedPreferences("prism_launch_theme", MODE_PRIVATE)
-                    if (prefs.getInt("night_mode", -1) != mode) {
-                        getSystemService(UiModeManager::class.java)?.setApplicationNightMode(mode)
-                        prefs.edit().putInt("night_mode", mode).apply()
+                    val uiModeManager = getSystemService(UiModeManager::class.java)
+                    if (uiModeManager == null) {
+                        result.error("UNAVAILABLE", "UiModeManager is unavailable", null)
+                        return@setMethodCallHandler
+                    }
+                    val legacyMode = getSharedPreferences("prism_launch_theme", MODE_PRIVATE).getInt("night_mode", -1)
+                    updateLaunchNightMode(mode, File(noBackupFilesDir, "launch_night_mode"), legacyMode) {
+                        uiModeManager.setApplicationNightMode(it)
                     }
                 }
                 result.success(null)
             }
+            invokeMethod("ready", null)
         }
         tiltStream = PrismTiltStream(applicationContext).also { stream ->
             tiltChannel = EventChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/tilt").apply { setStreamHandler(stream) }

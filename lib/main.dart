@@ -131,6 +131,17 @@ Future<void> runAppWithRuntimeVersion(Future<void> versionReady, Widget app) asy
   runApp(app);
 }
 
+@visibleForTesting
+Future<void> prepareStartupSystemColors() async {
+  final Future<void> systemColors = getIt<SystemColorSchemesSource>().refresh().then((_) {
+    PerformanceProbe.mark('startup.system_colors_ready');
+  });
+  final themes = getIt<ThemeRepository>().readSync();
+  if (themes.light.themeId == prismMaterialYouLightThemeId || themes.dark.themeId == prismMaterialYouDarkThemeId) {
+    await systemColors;
+  }
+}
+
 /// Top-level FCM background message handler.
 /// Must be a top-level function annotated with @pragma('vm:entry-point').
 /// Avoid any UI work here — only lightweight processing.
@@ -350,12 +361,7 @@ Future<void> main() async {
       getIt<PersonalizedFeedRepository>().warmCache();
       // A Material You theme needs the system colours for its first frame, or it opens on the fallback theme and then
       // recolours. Other themes do not wait: the channel answers only when the Android main thread is free (#533).
-      final Future<void> systemColors = getIt<SystemColorSchemesSource>().refresh();
-      final themes = getIt<ThemeRepository>().readSync();
-      if (themes.light.themeId == prismMaterialYouLightThemeId || themes.dark.themeId == prismMaterialYouDarkThemeId) {
-        await systemColors;
-      }
-      PerformanceProbe.mark('startup.system_colors_ready');
+      await prepareStartupSystemColors();
       unawaited(
         Future.wait(<Future<void>>[
           SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),

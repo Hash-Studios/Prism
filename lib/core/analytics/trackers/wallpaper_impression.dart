@@ -119,7 +119,7 @@ class _WallpaperImpressionState extends State<WallpaperImpression>
         oldWidget.provider != widget.provider) {
       _visibleSince = null;
       _recorded = false;
-      if (widget.session != null) _session = widget.session!;
+      _session = widget.session ?? WallpaperImpressionSession.forContext(context);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _check();
       });
@@ -159,16 +159,14 @@ class _WallpaperImpressionState extends State<WallpaperImpression>
 
   void _check() {
     if (!mounted || _recorded) return;
+    if (SchedulerBinding.instance.schedulerPhase != SchedulerPhase.postFrameCallbacks) {
+      _onScroll();
+      WidgetsBinding.instance.ensureVisualUpdate();
+      return;
+    }
     if (!_isVisible()) {
       _visibleSince = null;
       _ticker.stop();
-      return;
-    }
-    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.idle) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _check();
-      });
-      WidgetsBinding.instance.ensureVisualUpdate();
       return;
     }
     final Duration now = SchedulerBinding.instance.currentFrameTimeStamp;

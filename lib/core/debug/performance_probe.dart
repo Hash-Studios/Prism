@@ -65,15 +65,24 @@ class PerformanceProbe {
   }
 
   static String _phase = 'startup';
+  static const int _maxFrameSamples = 3600;
   static final List<FrameTiming> _frames = <FrameTiming>[];
+  static int _droppedFrames = 0;
 
-  /// Collects frame timings. [phase] emits one `frames` sample for the frames since the previous phase.
+  /// Retains the latest 3600 received frame samples. [phase] reports retained-sample statistics and dropped count.
   static void startFrameStats() {
     if (kReleaseMode) return;
-    SchedulerBinding.instance.addTimingsCallback(_frames.addAll);
+    SchedulerBinding.instance.addTimingsCallback((List<FrameTiming> timings) {
+      _frames.addAll(timings);
+      final int overflow = _frames.length - _maxFrameSamples;
+      if (overflow > 0) {
+        _frames.removeRange(0, overflow);
+        _droppedFrames += overflow;
+      }
+    });
   }
 
-  /// Starts a named frame window. Wait about 1 s before a change: the engine reports timings in batches.
+  /// Starts a named window for received samples. Delayed engine batches can cross phase boundaries.
   static void phase(String name) {
     if (kReleaseMode) return;
     if (_frames.isNotEmpty) {
@@ -89,6 +98,7 @@ class PerformanceProbe {
         durationMs: total.last ~/ 1000,
         extra: <String, Object?>{
           'count': total.length,
+          'dropped_frames': _droppedFrames,
           'build_p50_us': pct(build, 0.5),
           'build_p90_us': pct(build, 0.9),
           'build_p99_us': pct(build, 0.99),
@@ -102,6 +112,7 @@ class PerformanceProbe {
         },
       );
       _frames.clear();
+      _droppedFrames = 0;
     }
     _phase = name;
   }

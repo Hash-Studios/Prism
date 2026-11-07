@@ -3,16 +3,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 const MethodChannel _channel = MethodChannel('prism/launch_theme');
+ThemeMode? _latestMode;
+int _generation = 0;
 
-/// Android 12 and newer draw the launch splash before Dart runs, from the app night mode. Saves the in-app
-/// theme mode there, so the next cold start shows a light splash for a light theme and a dark one for dark.
+/// Android 12+ use the persisted app night mode for the splash and current Activity configuration.
 Future<void> syncLaunchNightMode(ThemeMode mode) async {
   if (defaultTargetPlatform != TargetPlatform.android) return;
-  try {
-    await _channel.invokeMethod<void>('setNightMode', mode.name);
-  } on PlatformException {
-    return;
-  } on MissingPluginException {
-    return;
+  _latestMode = mode;
+  final int generation = ++_generation;
+  _channel.setMethodCallHandler((call) async {
+    if (call.method != 'ready') throw MissingPluginException();
+    final ThemeMode? latest = _latestMode;
+    if (latest != null) await syncLaunchNightMode(latest);
+  });
+  for (int attempt = 0; attempt < 2; attempt++) {
+    if (generation != _generation) return;
+    try {
+      await _channel.invokeMethod<void>('setNightMode', mode.name);
+      return;
+    } on PlatformException {
+      return;
+    } on MissingPluginException {
+      if (attempt == 0) await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
   }
 }

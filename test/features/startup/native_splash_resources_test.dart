@@ -38,6 +38,53 @@ void main() {
     return null;
   }
 
+  String? boolean(String? value, {required bool night}) {
+    if (value == null) return null;
+    final String? name = RegExp(r'^@bool/(.+)$').firstMatch(value)?.group(1);
+    if (name == null) return value;
+    for (final qualifier in <String>[if (night) 'values-night', 'values']) {
+      final file = File('$resources/$qualifier/bools.xml');
+      if (!file.existsSync()) continue;
+      final match = RegExp('<bool name="$name">(.*?)</bool>').firstMatch(file.readAsStringSync());
+      if (match != null) return match.group(1);
+    }
+    return null;
+  }
+
+  test('native system bar icons contrast with the day and night backgrounds', () {
+    for (final sdk in <int>[24, 25, 26, 27, 29, 30, 31, 37]) {
+      for (final night in <bool>[false, true]) {
+        final qualifiers = <String>[
+          'values',
+          if (sdk >= 26) 'values-v26',
+          if (sdk >= 27) 'values-v27',
+          if (sdk >= 29) 'values-v29',
+          if (sdk >= 31) 'values-v31',
+          if (night) 'values-night',
+        ];
+        for (final theme in <String>['LaunchTheme', 'NormalTheme']) {
+          final reason = '$theme on API $sdk in ${night ? 'night' : 'day'} mode';
+          expect(
+            boolean(styleAttribute(theme, 'android:windowLightStatusBar', qualifiers), night: night),
+            night ? 'false' : 'true',
+            reason: reason,
+          );
+          expect(
+            boolean(styleAttribute(theme, 'android:windowLightNavigationBar', qualifiers), night: night),
+            sdk >= 26 ? (night ? 'false' : 'true') : null,
+            reason: reason,
+          );
+          // Before API 26 the navigation glyphs are always light, so their background must stay dark.
+          expect(
+            styleAttribute(theme, 'android:navigationBarColor', qualifiers),
+            sdk >= 26 ? '@android:color/transparent' : '@android:color/black',
+            reason: reason,
+          );
+        }
+      }
+    }
+  });
+
   test('native launch background is white by day and black at night', () {
     final String? drawableColor = RegExp(
       r'android:drawable="([^"]+)"',
@@ -48,6 +95,7 @@ void main() {
       for (final night in <bool>[false, true]) {
         final qualifiers = <String>[
           'values',
+          if (sdk >= 26) 'values-v26',
           if (sdk >= 27) 'values-v27',
           if (sdk >= 29) 'values-v29',
           if (sdk >= 31) 'values-v31',

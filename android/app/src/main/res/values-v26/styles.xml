@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="PrismBaseWindowTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">@bool/prism_light_system_bars</item>
+        <item name="android:windowLightNavigationBar">@bool/prism_light_system_bars</item>
+    </style>
+</resources>
