@@ -87,7 +87,7 @@ void main() {
 
   test('native launch background is white by day and black at night', () {
     final String? drawableColor = RegExp(
-      r'android:drawable="([^"]+)"',
+      'android:drawable="([^"]+)"',
     ).firstMatch(readResource('drawable/launch_background.xml'))?.group(1);
     expect(color(drawableColor!, night: false), '#FFFFFF');
     expect(color(drawableColor, night: true), '#000000');
