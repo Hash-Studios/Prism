@@ -88,6 +88,7 @@ import 'package:Prism/features/session/views/widgets/shake_to_report_listener.da
 import 'package:Prism/features/startup/services/resume_refresh_policy.dart';
 import 'package:Prism/features/startup/startup.dart';
 import 'package:Prism/features/theme_mode/data/theme_mode_migration.dart';
+import 'package:Prism/features/theme_mode/domain/repositories/theme_repository.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/views/widgets/wotd_quick_tile_listener.dart';
@@ -347,8 +348,14 @@ Future<void> main() async {
       getIt<NotificationsLocalDataSource>().setOwner(notificationOwner);
       getIt<NotificationTombstones>().setOwner(notificationOwner);
       getIt<PersonalizedFeedRepository>().warmCache();
-      // Material You must be ready for the first frame, or the app opens on the fallback theme and then recolours.
-      await getIt<SystemColorSchemesSource>().refresh();
+      // A Material You theme needs the system colours for its first frame, or it opens on the fallback theme and then
+      // recolours. Other themes do not wait: the channel answers only when the Android main thread is free (#533).
+      final Future<void> systemColors = getIt<SystemColorSchemesSource>().refresh();
+      final themes = getIt<ThemeRepository>().readSync();
+      if (themes.light.themeId == prismMaterialYouLightThemeId || themes.dark.themeId == prismMaterialYouDarkThemeId) {
+        await systemColors;
+      }
+      PerformanceProbe.mark('startup.system_colors_ready');
       unawaited(
         Future.wait(<Future<void>>[
           SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),

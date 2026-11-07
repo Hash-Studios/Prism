@@ -69,6 +69,7 @@ class _WallpaperImpressionState extends State<WallpaperImpression>
   bool _initialized = false;
   Duration? _visibleSince;
   bool _recorded = false;
+  bool _checkScheduled = false;
   late WallpaperImpressionSession _session;
 
   @override
@@ -146,9 +147,12 @@ class _WallpaperImpressionState extends State<WallpaperImpression>
     return !visible.isEmpty && visible.width * visible.height >= bounds.width * bounds.height * 0.5;
   }
 
+  // One check per frame, after layout: the scroll offset changes before the tiles move.
   void _onScroll() {
-    _check();
+    if (_recorded || _checkScheduled) return;
+    _checkScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkScheduled = false;
       if (mounted) _check();
     });
   }
