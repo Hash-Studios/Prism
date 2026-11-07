@@ -173,6 +173,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page, guards: [WallpaperFilterGuard()]),
     AutoRoute(path: '/choose-wallpaper', page: DeepLinkInputRoute.page, guards: [_signedInGuard]),
     CustomRoute(
+      path: '/share-in',
       page: ShareInRoute.page,
       opaque: false,
       duration: Duration.zero,
