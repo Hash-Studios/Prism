@@ -83,13 +83,12 @@ final class ShareViewController: UIViewController {
   }
 
   /// Extensions cannot call UIApplication.open directly. Find the app object in the responder chain and send it
-  /// the same message. The window scene comes first in the chain and has a method with the same selector, but it
-  /// takes a different options type and does not hand the link to Prism, so only UIApplication may receive it.
+  /// the same message.
   private func open(_ url: URL) {
     let selector = sel_registerName("openURL:options:completionHandler:")
     var responder: UIResponder? = self
     while let current = responder {
-      if current is UIApplication, current.responds(to: selector) {
+      if current.responds(to: selector), current !== self {
         typealias OpenURL = @convention(c) (AnyObject, Selector, URL, NSDictionary, Any?) -> Void
         let method = unsafeBitCast(current.method(for: selector), to: OpenURL.self)
         method(current, selector, url, NSDictionary(), nil)
