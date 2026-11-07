@@ -1,10 +1,17 @@
 import assert from "node:assert/strict";
+import {createHash} from "node:crypto";
 import type {IncomingHttpHeaders} from "node:http";
 import {createServer, getDefaultAutoSelectFamily, isIPv6, setDefaultAutoSelectFamily} from "node:net";
+import type {TestContext} from "node:test";
 import test from "node:test";
 import {HttpsError} from "firebase-functions/v2/https";
 import {
+  callerAddress,
   findLinkImage,
+  LINK_QUOTA,
+  LINK_QUOTA_PER_WINDOW,
+  LINK_QUOTA_WINDOW_MS,
+  takeLinkQuota,
   isPublicAddress,
   linkDeps,
   LinkDeps,
@@ -15,6 +22,7 @@ import {
   parseHttpsUrl,
   shareLinkImage,
 } from "../shareLinkImage";
+import {installFakeDb} from "./fakeDb";
 
 type Call = {url: string; address: string};
 type Probe = {closed: boolean; pulled: number};
@@ -372,11 +380,57 @@ test("https.get connects to the pinned address with scalar and all-address looku
   }
 });
 
-test("callable allows a guest without fetching an invalid URL", async () => {
+test("callable allows a guest without fetching an invalid URL", async (t: TestContext) => {
+  installFakeDb(t);
   assert.deepEqual(
     await shareLinkImage.run({data: {url: "http://example.com/"}} as Parameters<typeof shareLinkImage.run>[0]),
     {imageUrl: null, reason: "invalid_url"},
   );
+});
+
+const quotaDoc = (address: string, now: number) =>
+  `${LINK_QUOTA}/${createHash("sha256").update(`shareLinkImage:${address}`).digest("hex").slice(0, 32)}_` +
+  `${Math.floor(now / LINK_QUOTA_WINDOW_MS)}`;
+
+test("the quota allows 30 lookups per address in a window, then refuses", async (t: TestContext) => {
+  const store = installFakeDb(t);
+  const now = 1_700_000_000_000;
+  for (let i = 0; i < LINK_QUOTA_PER_WINDOW; i++) assert.equal(await takeLinkQuota("203.0.113.9", now), true);
+  assert.equal(await takeLinkQuota("203.0.113.9", now), false);
+  assert.equal(store.get(quotaDoc("203.0.113.9", now))?.count, LINK_QUOTA_PER_WINDOW);
+  assert.equal(await takeLinkQuota("198.51.100.4", now), true, "another address has its own quota");
+  assert.equal(await takeLinkQuota("203.0.113.9", now + LINK_QUOTA_WINDOW_MS), true, "the next window starts over");
+});
+
+test("the quota stores a hash with a TTL, never the address", async (t: TestContext) => {
+  const store = installFakeDb(t);
+  const now = 1_700_000_000_000;
+  await takeLinkQuota("203.0.113.9", now);
+  const [path] = [...store.keys()];
+  assert.equal(path, quotaDoc("203.0.113.9", now));
+  assert.ok(!path.includes("203.0.113.9"));
+  const expireAt = store.get(path)?.expireAt as {toMillis(): number};
+  assert.equal(expireAt.toMillis(), (Math.floor(now / LINK_QUOTA_WINDOW_MS) + 2) * LINK_QUOTA_WINDOW_MS);
+});
+
+test("callerAddress trusts only the last X-Forwarded-For entry", () => {
+  assert.equal(callerAddress({headers: {"x-forwarded-for": "10.0.0.1, 203.0.113.9"}, ip: "10.9.9.9"}), "203.0.113.9");
+  assert.equal(callerAddress({headers: {"x-forwarded-for": ["1.1.1.1", "203.0.113.9 "]}}), "203.0.113.9");
+  assert.equal(callerAddress({headers: {}, ip: "198.51.100.4"}), "198.51.100.4");
+  assert.equal(callerAddress(undefined), "unknown");
+});
+
+test("callable answers rate_limited without a lookup once the quota is used", async (t: TestContext) => {
+  const now = Date.now();
+  const store = installFakeDb(t, {[quotaDoc("203.0.113.9", now)]: {count: LINK_QUOTA_PER_WINDOW}});
+  const get = t.mock.method(linkDeps, "get");
+  const request = {
+    data: {url: "https://example.com/"},
+    rawRequest: {headers: {"x-forwarded-for": "203.0.113.9"}},
+  } as unknown as Parameters<typeof shareLinkImage.run>[0];
+  assert.deepEqual(await shareLinkImage.run(request), {imageUrl: null, reason: "rate_limited"});
+  assert.equal(get.mock.callCount(), 0);
+  assert.equal(store.get(quotaDoc("203.0.113.9", now))?.count, LINK_QUOTA_PER_WINDOW);
 });
 
 test("parseHttpsUrl rejects a URL longer than 2048 characters", () => {

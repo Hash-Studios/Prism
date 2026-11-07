@@ -59,9 +59,11 @@ Input: `{url}`. Output: `{imageUrl}` or `{imageUrl: null, reason}`.
 - At most 512 KB of HTML is read.
 - Malformed meta tags are scanned without repeated regex backtracking.
 - The og:image URL must also be https and public.
-- Guests may call it, because Set needs no account.
+- Guests may call it, because a guest sees the sheet before sign-in.
+- Each caller address gets 30 lookups in a 10-minute window. Then the callable returns `{imageUrl: null, reason: "rate_limited"}`, and the app shows "Prism cannot use this link."
+- The address is the last `X-Forwarded-For` entry. Google's front end adds that entry, so a client cannot fake it.
+- The counter is in `shareLinkQuota/<hash>_<window>`. The key is a SHA-256 hash, so Prism stores no address. A Firestore TTL policy on `expireAt` deletes each counter about 20 minutes after its window starts.
 - `maxInstances` is 10.
-- There is no per-caller quota or App Check enforcement. The instance cap limits capacity, not request volume. An abuse policy remains a release decision.
 
 ### Native handoff
 
@@ -140,9 +142,8 @@ The text is at most 2048 characters.
 
 ## Guests (iOS only)
 
-- Set as wallpaper works for a shared image. The guest path uses `WallpaperFilterScreen.guestShare` and `WallpaperFilterGuard`.
-- Premium filters still need an account.
-- Make it fit and Upload to Prism ask the user to sign in.
+- A guest sees the share sheet. Every action (Set as wallpaper, Make it fit, Upload to Prism) asks the guest to sign in first, the same as other wallpaper actions.
+- The editor that Set opens has `WallpaperFilterScreen(sharedImage: true)`. It hides Share, so the shared image goes nowhere the user did not choose.
 - Save to Folder on a wall link shows the sign-in prompt to a guest.
 - Android has no guest mode.
 
@@ -171,8 +172,9 @@ The text is at most 2048 characters.
 
 Do not deploy without the owner.
 
-1. Deploy the callable: `firebase deploy --only functions:shareLinkImage`.
-2. Release the app builds. A build without the callable shows "Prism cannot use this link." for web links. Images and Prism links still work.
+1. Deploy the TTL policy for the quota counters: `firebase deploy --only firestore:indexes`.
+2. Deploy the callable: `firebase deploy --only functions:shareLinkImage`.
+3. Release the app builds. A build without the callable shows "Prism cannot use this link." for web links. Images and Prism links still work.
 
 No Worker change and no rules change are needed.
 

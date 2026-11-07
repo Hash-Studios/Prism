@@ -1,11 +1,13 @@
+import {createHash} from "node:crypto";
 import {lookup} from "node:dns/promises";
 import type {IncomingHttpHeaders} from "node:http";
 import * as https from "node:https";
 import {BlockList, isIPv4, isIPv6} from "node:net";
 import type {LookupFunction} from "node:net";
+import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
-import {CALLABLE_REGIONS} from "./common";
+import {CALLABLE_REGIONS, db} from "./common";
 
 /**
  * Finds the og:image of a page that a user shared to Prism. The server reads only the page HTML, never the image,
@@ -16,6 +18,9 @@ export const LINK_TIMEOUT_MS = 5000;
 export const MAX_HTML_BYTES = 512 * 1024;
 export const MAX_REDIRECTS = 3;
 export const MAX_URL_LENGTH = 2048;
+export const LINK_QUOTA = "shareLinkQuota";
+export const LINK_QUOTA_PER_WINDOW = 30;
+export const LINK_QUOTA_WINDOW_MS = 10 * 60 * 1000;
 
 export type LinkImageResult =
   | {status: "found"; imageUrl: string}
@@ -250,7 +255,37 @@ export const linkDeps: LinkDeps = {
   }),
 };
 
-/** Callable: `{url}` to `{imageUrl}` or `{imageUrl: null, reason}`. Guests may call it, because Set needs no account. */
+/**
+ * The address that called. Google's front end appends the address it saw to X-Forwarded-For, so only the last entry is
+ * trusted; earlier entries come from the client.
+ */
+export function callerAddress(raw: {headers?: IncomingHttpHeaders; ip?: string} | undefined): string {
+  const header = raw?.headers?.["x-forwarded-for"];
+  const forwarded = (Array.isArray(header) ? header.join(",") : header ?? "").split(",").map((it) => it.trim());
+  return forwarded.filter(Boolean).at(-1) ?? raw?.ip ?? "unknown";
+}
+
+/**
+ * Counts one lookup for [address] in the current 10-minute window, and returns false once the window has
+ * [LINK_QUOTA_PER_WINDOW]. The counter key is a hash, so no address is stored, and TTL deletes it on `expireAt`.
+ */
+export async function takeLinkQuota(address: string, now = Date.now()): Promise<boolean> {
+  const window = Math.floor(now / LINK_QUOTA_WINDOW_MS);
+  const key = createHash("sha256").update(`shareLinkImage:${address}`).digest("hex").slice(0, 32);
+  const ref = db.collection(LINK_QUOTA).doc(`${key}_${window}`);
+  return db.runTransaction(async (tx) => {
+    const count = (await tx.get(ref)).data()?.count;
+    const used = typeof count === "number" ? count : 0;
+    if (used >= LINK_QUOTA_PER_WINDOW) return false;
+    tx.set(ref, {count: used + 1, expireAt: admin.firestore.Timestamp.fromMillis((window + 2) * LINK_QUOTA_WINDOW_MS)});
+    return true;
+  });
+}
+
+/**
+ * Callable: `{url}` to `{imageUrl}` or `{imageUrl: null, reason}`. Guests may call it, so a quota per caller address
+ * limits abuse.
+ */
 export const shareLinkImage = onCall(
   {region: CALLABLE_REGIONS, cors: true, maxInstances: 10, timeoutSeconds: 15, memory: "256MiB"},
   async (request) => {
@@ -258,6 +293,7 @@ export const shareLinkImage = onCall(
     if (typeof url !== "string" || url.length === 0 || url.length > MAX_URL_LENGTH) {
       throw new HttpsError("invalid-argument", "url must be an https link");
     }
+    if (!(await takeLinkQuota(callerAddress(request.rawRequest)))) return {imageUrl: null, reason: "rate_limited"};
     const result = await findLinkImage(url);
     return result.status === "found" ? {imageUrl: result.imageUrl} : {imageUrl: null, reason: result.reason};
   },
