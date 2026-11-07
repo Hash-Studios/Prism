@@ -97,7 +97,7 @@ The callable has a 180-second request timeout; this does not prove its handler s
 
 Refunds run before cleanup. Each cleanup queue processes at most 10 records per sweep and stops starting new attempts after its own 20-second budget. The document-ID cursor is saved after every attempt in `photoJobBudget/cleanup`, even when deletion fails, and resets at the queue's end. Slow failures at the front therefore cannot starve later records or the other queue. The scheduled function has a 180-second timeout to allow active attempts to finish.
 
-Every job result from `createPhotoWallpaper` and `getPhotoWallpaper` carries the user's coin balance (`balance`) after the charge or the refund. The app shows that number, so the coin chip never shows a stale cached balance.
+Known job replies from `createPhotoWallpaper` and `getPhotoWallpaper`, including a running lookup, include the user's current coin balance (`balance`) when the profile read succeeds. This read happens after the charge or refund. A missing profile or failed balance read leaves the job outcome unchanged and omits the balance. The app applies a returned balance only while the account and sign-in session that started the call are still current.
 
 ### After an app restart
 
@@ -113,7 +113,7 @@ When the page opens and finds a saved job of the signed-in user, it calls `getPh
 - A job that stopped while it ran (older than 10 minutes) is ended and refunded, the same as a replay.
 - An unknown id, or another user's id, returns `unknown`, and the page clears the saved job.
 
-`unknown` is final. When the lookup finds no job, it writes a closed record for that request id (user id and request id only) in a transaction. A create for the same request id that reaches its claim later refuses with `request_closed` and charges nothing, so the app can safely clear the saved job.
+`unknown` is final. When the lookup finds no job, it writes a closed record for that request id in a transaction. The record holds the user id, request id, closed state and timestamp, but no photo or charge. A create for the same request id that reaches its claim later refuses with `request_closed` and charges nothing, so the app can safely clear the saved job. Once the account-deletion barrier closes, an unknown lookup writes no closed record; the barrier already prevents a later claim.
 
 ### Content filter
 

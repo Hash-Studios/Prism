@@ -65,7 +65,7 @@ const upscaleData = async (patch: Record<string, unknown> = {}) => ({
 
 /** Mocks every outside dependency. The fal output is a 1080x2340 JPEG unless `falStatus` makes fal fail. */
 function mockDeps(t: TestContext, opts: {falStatus?: number; deleteStatus?: number; deleteException?: string;
-  deleteTimeout?: () => void; safe?: (call: number) => Record<string, unknown>} = {}) {
+  deleteTimeout?: () => void; safe?: (call: number) => Record<string, unknown> | Promise<Record<string, unknown>>} = {}) {
   const calls: Call[] = [];
   const stored: Buffer[] = [];
   const counts = {safe: 0};
@@ -1258,12 +1258,81 @@ test("an unknown lookup closes the request, so a create that arrives later charg
 
 test("lookup reports a running job as running, and ends a stale one with a refund", async (t) => {
   const store = installFakeDb(t, {"usersv2/u1": {coins: 125}, [JOB]: runningJob(admin.firestore.Timestamp.now())});
-  assert.deepEqual(await lookup({requestId: "req-00000001"}), {jobId: JOB_ID, state: "running"});
+  assert.deepEqual(await lookup({requestId: "req-00000001"}), {jobId: JOB_ID, state: "running", balance: 125});
   store.set(JOB, runningJob(admin.firestore.Timestamp.fromMillis(Date.now() - 11 * MINUTE)));
   const failed = await lookup({requestId: "req-00000001"}) as Failed;
   assert.equal(failed.state, "failed");
   assert.equal(failed.refunded, true);
   assert.equal(store.get("usersv2/u1")?.coins, 200);
+});
+
+test("lookup during a claimed create reports running, then replays its single completed charge", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  let release!: () => void;
+  let checked!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const entered = new Promise<void>((resolve) => {
+    checked = resolve;
+  });
+  mockDeps(t, {safe: async (call) => {
+    if (call === 1) {
+      checked();
+      await gate;
+    }
+    return SAFE;
+  }});
+  const creating = run(await extendData());
+  await entered;
+  try {
+    assert.deepEqual(await lookup({requestId: "req-00000001"}), {jobId: JOB_ID, state: "running", balance: 125});
+  } finally {
+    release();
+  }
+  const completed = await creating as Succeeded & {balance?: number};
+  assert.equal(completed.state, "succeeded");
+  assert.equal(completed.balance, 125);
+  const replayed = await lookup({requestId: "req-00000001"}) as Succeeded & {balance?: number};
+  assert.equal(replayed.state, "succeeded");
+  assert.equal(replayed.balance, 125);
+  assert.equal(store.get("usersv2/u1")?.coins, 125);
+  assert.equal(coinTxCount(store), 1);
+});
+
+test("lookup during a claimed create replays its one refund after provider failure", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  let release!: () => void;
+  let checked!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const entered = new Promise<void>((resolve) => {
+    checked = resolve;
+  });
+  mockDeps(t, {falStatus: 500, safe: async (call) => {
+    if (call === 1) {
+      checked();
+      await gate;
+    }
+    return SAFE;
+  }});
+  const creating = run(await extendData());
+  await entered;
+  try {
+    assert.deepEqual(await lookup({requestId: "req-00000001"}), {jobId: JOB_ID, state: "running", balance: 125});
+  } finally {
+    release();
+  }
+  const failed = await creating as Failed & {balance?: number};
+  assert.equal(failed.state, "failed");
+  assert.equal(failed.refunded, true);
+  assert.equal(failed.balance, 200);
+  const replayed = await lookup({requestId: "req-00000001"}) as Failed & {balance?: number};
+  assert.equal(replayed.refunded, true);
+  assert.equal(replayed.balance, 200);
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(coinTxCount(store), 2);
 });
 
 test("a stale lookup, create replay and sweeper refund once without running a new job", async (t) => {
@@ -1299,6 +1368,40 @@ test("lookup of an unknown job, or another user's job id, returns unknown", asyn
   assert.deepEqual(await lookup({requestId: "req-99999999"}), {state: "unknown"});
   const other = {uid: "u2", token: {firebase: {sign_in_provider: "google.com"}}};
   assert.deepEqual(await lookup({requestId: "req-00000001"}, other), {state: "unknown"});
+});
+
+test("an unknown lookup after account deletion does not recreate a job tombstone", async (t) => {
+  const store = installFakeDb(t, {"creatorDeletionState/u1": {closed: true}});
+  assert.deepEqual(await lookup({requestId: "req-00000001"}), {state: "unknown"});
+  assert.equal(store.has(JOB), false);
+});
+
+test("the stale sweeper ignores closed tombstones, and account deletion removes them", async (t) => {
+  const store = installFakeDb(t, {[JOB]: {userId: "u1", requestId: "req-00000001", state: "closed"}});
+  const deps = mockDeps(t);
+  assert.equal(await sweepStalePhotoJobsOnce(), 0);
+  assert.equal(store.get(JOB)?.state, "closed");
+  assert.deepEqual(deps.calls, []);
+  await removePhotoJobsForAccount("u1", photoDeps);
+  assert.equal(store.has(JOB), false);
+});
+
+test("a closed request tombstone is scoped to its owner, and a fresh request id can still run", async (t) => {
+  const store = installFakeDb(t, {
+    "usersv2/u1": {coins: 200}, "usersv2/u2": {coins: 350},
+    "photoJobs/pj_u1_req-00000001": {userId: "u1", requestId: "req-00000001", state: "closed"},
+  });
+  mockDeps(t);
+  await assert.rejects(async () => run(await extendData()), {code: "failed-precondition", message: "request_closed"});
+  const other = {uid: "u2", token: {firebase: {sign_in_provider: "google.com"}}};
+  const otherResult = await run(await extendData(), other) as Succeeded & {balance?: number};
+  assert.equal(otherResult.state, "succeeded");
+  assert.equal(otherResult.balance, 275);
+  const freshResult = await run(await extendData({requestId: "req-00000002"})) as Succeeded & {balance?: number};
+  assert.equal(freshResult.state, "succeeded");
+  assert.equal(freshResult.balance, 125);
+  assert.equal(store.get("usersv2/u1")?.coins, 125);
+  assert.equal(store.get("usersv2/u2")?.coins, 275);
 });
 
 test("lookup refuses a mismatched stored owner without revealing or changing that job", async (t) => {
@@ -1339,4 +1442,28 @@ test("a refunded failure carries the balance after the refund", async (t) => {
   const failed = await run(await extendData()) as Failed & {balance?: number};
   assert.equal(failed.state, "failed");
   assert.equal(failed.balance, 200);
+});
+
+test("balance lookup is optional when the user record is missing or unreadable", async (t) => {
+  const store = installFakeDb(t, {[JOB]: {...runningJob(admin.firestore.Timestamp.now()), state: "succeeded", imageUrl: OUT_URL}});
+  const missing = await lookup({requestId: "req-00000001"}) as Succeeded & {balance?: number};
+  assert.equal(missing.state, "succeeded");
+  assert.equal(missing.balance, undefined);
+
+  const collection = db.collection.bind(db);
+  t.mock.method(db, "collection", ((name: string) => {
+    const result = collection(name);
+    if (name !== "usersv2") return result;
+    const doc = result.doc.bind(result);
+    return {...result, doc: (id?: string) => {
+      const ref = doc(id ?? "u1");
+      return {...ref, get: async () => {
+        throw new Error("balance read unavailable");
+      }};
+    }};
+  }) as typeof db.collection);
+  const unreadable = await lookup({requestId: "req-00000001"}) as Succeeded & {balance?: number};
+  assert.equal(unreadable.state, "succeeded");
+  assert.equal(unreadable.balance, undefined);
+  assert.equal(store.get(JOB)?.state, "succeeded");
 });
