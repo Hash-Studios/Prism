@@ -1760,14 +1760,13 @@ void main() {
       final String? placedPath = placed ? placedWallFile() : null;
       final client = _Client()
         ..scriptedResults.addAll(<aw.WallpaperOperationResult>[
-          for (int i = 0; i < 2; i++)
-            const aw.WallpaperOperationResult(
-              status: aw.WallpaperOperationStatus.failed,
-              requestedTarget: aw.WallpaperTarget.both,
-              errorCode: 'partial-apply',
-              home: aw.WallpaperTargetResult(status: aw.WallpaperTargetStatus.applied),
-              lock: aw.WallpaperTargetResult(status: aw.WallpaperTargetStatus.failed),
-            ),
+          const aw.WallpaperOperationResult(
+            status: aw.WallpaperOperationStatus.failed,
+            requestedTarget: aw.WallpaperTarget.both,
+            errorCode: 'partial-apply',
+            home: aw.WallpaperTargetResult(status: aw.WallpaperTargetStatus.applied),
+            lock: aw.WallpaperTargetResult(status: aw.WallpaperTargetStatus.failed),
+          ),
         ]);
       aw.AsyncWallpaper.debugSetClient(client);
       if (placedPath != null) {
@@ -1789,11 +1788,11 @@ void main() {
       await settleUndoIo(tester);
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
-      expect(client.requests.skip(3).map((request) => request.target), <aw.WallpaperTarget>[
+      expect(client.requests.skip(2).map((request) => request.target), <aw.WallpaperTarget>[
         aw.WallpaperTarget.home,
         aw.WallpaperTarget.lock,
       ]);
-      expect(client.requests.skip(3).map((request) => request.source.filePath), <String>[wallFilePath, lockFilePath]);
+      expect(client.requests.skip(2).map((request) => request.source.filePath), <String>[wallFilePath, lockFilePath]);
       expect(store.items().map((item) => item.id).toSet(), <String>{'previous-home', 'previous-lock'});
     });
   }
