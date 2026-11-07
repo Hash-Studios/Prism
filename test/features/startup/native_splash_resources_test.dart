@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-// Prism defaults to a dark app theme, so the native launch stays black in both
-// system modes to avoid a white flash before the dark Flutter splash.
+// The native launch follows the system mode, like the default System theme mode: white by day, black at night.
+// Android 12+ also gets the in-app mode through `prism/launch_theme` (#683).
 void main() {
   const String resources = 'android/app/src/main/res';
 
@@ -26,8 +26,24 @@ void main() {
     return null;
   }
 
-  test('native launch background is black in day and night', () {
-    expect(readResource('drawable/launch_background.xml'), contains('@android:color/black'));
+  String? color(String value, {required bool night}) {
+    final String? name = RegExp(r'^@color/(.+)$').firstMatch(value)?.group(1);
+    if (name == null) return value;
+    for (final qualifier in <String>[if (night) 'values-night', 'values']) {
+      final file = File('$resources/$qualifier/colors.xml');
+      if (!file.existsSync()) continue;
+      final match = RegExp('<color name="$name">(.*?)</color>').firstMatch(file.readAsStringSync());
+      if (match != null) return match.group(1);
+    }
+    return null;
+  }
+
+  test('native launch background is white by day and black at night', () {
+    final String? drawableColor = RegExp(
+      r'android:drawable="([^"]+)"',
+    ).firstMatch(readResource('drawable/launch_background.xml'))?.group(1);
+    expect(color(drawableColor!, night: false), '#FFFFFF');
+    expect(color(drawableColor, night: true), '#000000');
     for (final sdk in <int>[24, 27, 29, 31, 37]) {
       for (final night in <bool>[false, true]) {
         final qualifiers = <String>[
@@ -38,9 +54,16 @@ void main() {
           if (night) 'values-night',
         ];
         expect(styleAttribute('LaunchTheme', 'android:windowBackground', qualifiers), '@drawable/launch_background');
+        final String? splash = styleAttribute('LaunchTheme', 'android:windowSplashScreenBackground', qualifiers);
+        expect(splash == null ? null : color(splash, night: night), sdk >= 31 ? (night ? '#000000' : '#FFFFFF') : null);
+        final String? iconBackground = styleAttribute(
+          'LaunchTheme',
+          'android:windowSplashScreenIconBackgroundColor',
+          qualifiers,
+        );
         expect(
-          styleAttribute('LaunchTheme', 'android:windowSplashScreenBackground', qualifiers),
-          sdk >= 31 ? '#000000' : null,
+          iconBackground == null ? null : color(iconBackground, night: night),
+          sdk >= 31 ? (night ? '#000000' : '#FFFFFF') : null,
         );
         expect(
           styleAttribute('LaunchTheme', 'android:windowLayoutInDisplayCutoutMode', qualifiers),
@@ -58,8 +81,8 @@ void main() {
     }
   });
 
-  test('iOS launch screen background is black', () {
+  test('iOS launch screen background follows the system appearance', () {
     final String storyboard = File('ios/Runner/Base.lproj/LaunchScreen.storyboard').readAsStringSync();
-    expect(storyboard, contains('<color key="backgroundColor" red="0" green="0" blue="0" alpha="1"'));
+    expect(storyboard, contains('<color key="backgroundColor" systemColor="systemBackgroundColor"/>'));
   });
 }
