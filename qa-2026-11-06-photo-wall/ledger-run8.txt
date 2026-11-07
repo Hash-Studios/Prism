@@ -1,0 +1,33 @@
+[
+  {
+    "at": "2026-11-07T14:21:09.939Z",
+    "model": "fal-ai/bria/expand",
+    "kind": "stub",
+    "costUsd": 0
+  },
+  {
+    "at": "2026-11-07T14:22:35.871Z",
+    "model": "fal-ai/bria/expand",
+    "kind": "stub",
+    "costUsd": 0
+  },
+  {
+    "at": "2026-11-07T14:23:23.967Z",
+    "model": "fal-ai/bria/expand",
+    "kind": "forced-failure",
+    "costUsd": 0
+  },
+  {
+    "at": "2026-11-07T14:25:57.397Z",
+    "model": "fal-ai/bria/expand",
+    "kind": "stub",
+    "costUsd": 0
+  },
+  {
+    "at": "2026-11-07T14:30:36.468Z",
+    "model": "fal-ai/bria/expand",
+    "kind": "stub",
+    "costUsd": 0
+  }
+]
+Real fal jobs: 0. Cost: $0.0000.
