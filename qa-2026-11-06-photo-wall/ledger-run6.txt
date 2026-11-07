@@ -1,0 +1,41 @@
+[
+  {
+    "at": "2026-11-07T13:35:49.726Z",
+    "model": "fal-ai/seedvr/upscale/image",
+    "kind": "forced-failure",
+    "costUsd": 0
+  },
+  {
+    "at": "2026-11-07T13:49:02.186Z",
+    "model": "fal-ai/bria/expand",
+    "kind": "real",
+    "status": 200,
+    "requestId": "01a1b644-b8e4-75f3-8cce-7fdefb95d200",
+    "size": {
+      "width": 1080,
+      "height": 2400
+    },
+    "costUsd": 0.04,
+    "payloadDelete": 403
+  },
+  {
+    "at": "2026-11-07T13:50:32.615Z",
+    "model": "fal-ai/seedvr/upscale/image",
+    "kind": "real",
+    "status": 200,
+    "requestId": "01a1b646-5a85-7031-b0e1-bce0d51a39e1",
+    "size": {
+      "width": 1136,
+      "height": 2464
+    },
+    "costUsd": 0.0028,
+    "payloadDelete": 403
+  },
+  {
+    "at": "2026-11-07T13:54:19.456Z",
+    "model": "fal-ai/bria/expand",
+    "kind": "stub",
+    "costUsd": 0
+  }
+]
+Real fal jobs: 2. Cost: $0.0428.
