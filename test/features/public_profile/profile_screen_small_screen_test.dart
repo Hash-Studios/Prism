@@ -18,12 +18,10 @@ import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/public_profile/views/widgets/gift_pass_sheet.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -236,17 +234,23 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text(_longName), findsWidgets);
-      expect(find.byIcon(JamIcons.gift), findsOneWidget);
-      expect(find.byIcon(JamIcons.user_plus), findsOneWidget);
+      expect(find.byIcon(Icons.card_giftcard_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.person_add_alt_1_rounded), findsOneWidget);
       expect(find.byWidgetPredicate((Widget widget) => widget is PopupMenuButton), findsOneWidget);
-      for (final String tooltip in <String>['Gift a 24 h pass', 'Follow', 'More options']) {
-        final Finder target = find.byTooltip(tooltip);
-        expect(target.hitTestable(), findsOneWidget);
+      // Follow sits under the name since the redesign, not in the app bar, so it is found by its label.
+      await tester.ensureVisible(find.text('Follow'));
+      await tester.pump();
+      for (final Finder target in <Finder>[
+        find.byTooltip('Gift a 24 h pass'),
+        find.text('Follow'),
+        find.byTooltip('More options'),
+      ]) {
+        expect(target.hitTestable(), findsOneWidget, reason: 'must stay tappable: $target');
         final Rect rect = tester.getRect(target);
         expect(rect.left, greaterThanOrEqualTo(0));
         expect(rect.right, lessThanOrEqualTo(320));
       }
-      await tester.tap(find.byTooltip('Follow'));
+      await tester.tap(find.text('Follow'));
       verify(
         () => bloc.add(
           const PublicProfileEvent.followChangeRequested(
@@ -288,7 +292,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text(_longName), findsWidgets);
-      expect(find.byIcon(JamIcons.pencil), findsOneWidget);
+      expect(find.byIcon(Icons.edit_rounded), findsOneWidget);
       expect(tester.takeException(), isNull);
       expectNoOverflow(errors);
     });
@@ -318,7 +322,7 @@ void main() {
 
     for (final Finder target in <Finder>[
       find.byTooltip('Back'),
-      find.widgetWithText(TextButton, 'Stats'),
+      find.byTooltip('Stats'),
       find.byTooltip('Edit profile'),
       find.byTooltip('Menu'),
     ]) {
@@ -327,13 +331,7 @@ void main() {
       expect(rect.left, greaterThanOrEqualTo(0));
       expect(rect.right, lessThanOrEqualTo(320));
     }
-    final RenderParagraph statsLabel = tester.renderObject(find.text('Stats'));
-    expect(statsLabel.didExceedMaxLines, isFalse);
-    final Rect statsBounds = tester.getRect(find.text('Stats'));
-    final boxes = statsLabel.getBoxesForSelection(const TextSelection(baseOffset: 0, extentOffset: 5));
-    expect(boxes.every((box) => box.left >= 0 && box.right <= statsBounds.width), isTrue);
-
-    await tester.tap(find.text('Stats'));
+    await tester.tap(find.byTooltip('Stats'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Stats destination'), findsOneWidget);
