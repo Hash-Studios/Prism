@@ -361,7 +361,7 @@ void main() {
       expect(app_state.prismUser.premium, isFalse);
       expect(syncCalls, 0);
       app_state.prismUser = profileUser(id: '', loggedIn: false);
-      expect(await service.restore(), PurchaseEntitlementStatus.none);
+      await expectLater(service.restore(), throwsA(isA<PlatformException>()));
       expect(app_state.prismUser.premium, isFalse);
     });
 
@@ -505,8 +505,10 @@ void main() {
   });
 
   test('a cold-start login clears another user reminder but preserves the target user reminder', () async {
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
     final PurchasesService service = buildService(apiKey: () => 'test-key');
     await service.configureEarly();
+    app_state.prismUser = profileUser(id: 'u2');
 
     await service.ensureConfigured('u2');
 
@@ -532,8 +534,9 @@ void main() {
       apiKey: () => 'test-key',
     );
 
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
     await service.configureEarly();
-    app_state.prismUser.subscriptionTier = 'pro';
+    app_state.prismUser = profileUser(premium: true)..subscriptionTier = 'pro';
     final Future<void> login = service.ensureConfigured('u1');
     await Future<void>.delayed(Duration.zero);
 
@@ -1273,12 +1276,13 @@ void main() {
     });
 
     test('a restore that cannot sign in to RevenueCat throws and keeps the stored tier', () async {
-      app_state.prismUser = profileUser(premium: true)..subscriptionTier = 'pro';
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
       final service = buildService(
         apiKey: () => 'test-key',
         logIn: (_) async => throw PlatformException(code: 'login_failed'),
       );
       await service.configureEarly();
+      app_state.prismUser = profileUser(premium: true)..subscriptionTier = 'pro';
 
       await expectLater(service.restore(), throwsA(isA<PlatformException>()));
       expect(restoreCalls, 0);
@@ -1401,7 +1405,7 @@ void main() {
         expect(await service.checkAndPersistPremium(), active);
         expect(app_state.prismUser.premium, active);
         expect(app_state.prismUser.subscriptionTier, active ? 'pro' : 'free');
-        expect(loginCalls, <String>['u1']);
+        expect(loginCalls, isEmpty);
         expect(syncCalls, 1);
       });
     }

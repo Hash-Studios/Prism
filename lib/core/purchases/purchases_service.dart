@@ -184,15 +184,21 @@ class PurchasesService {
 
   /// Configures RevenueCat after the first frame so startup is not blocked.
   /// No-op if already configured or if API key is empty.
+  ///
+  /// A saved account configures as itself. An anonymous ID can take the account's subscription when the SDK posts
+  /// store transactions before `logIn`, and only a store restore brings it back (#526).
   Future<void> configureEarly() async {
     if (kDebugMode && Env.localQa) return;
     if (_apiKey().isEmpty) return;
+    final String savedUserId = app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '';
     try {
       await PerformanceProbe.measure(
         'startup',
         'revenuecat.configure',
         () => _serializeSetup<void>(() async {
-          if (!_configured) await _configure('');
+          if (_configured) return;
+          if (savedUserId.isNotEmpty) await _clearTrialState(keepUserId: savedUserId);
+          await _configure(savedUserId);
         }),
       );
     } catch (error, stackTrace) {
@@ -221,6 +227,8 @@ class PurchasesService {
         } finally {
           _identityTransitionInProgress = false;
         }
+      } else if (targetUserId.isEmpty && _configuredUserId.isNotEmpty) {
+        await _logOutConfigured();
       } else if (targetUserId.isEmpty) {
         await _clearTrialState();
       }
@@ -599,6 +607,10 @@ class PurchasesService {
       await _clearTrialState();
       return;
     }
+    await _logOutConfigured();
+  });
+
+  Future<void> _logOutConfigured() async {
     _identityTransitionInProgress = true;
     _identityRevision++;
     await _clearTrialState();
@@ -619,5 +631,5 @@ class PurchasesService {
     } finally {
       _identityTransitionInProgress = false;
     }
-  });
+  }
 }
