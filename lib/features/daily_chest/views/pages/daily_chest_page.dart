@@ -273,7 +273,6 @@ class _DailyChestPageState extends State<DailyChestPage> with SingleTickerProvid
   }
 
   void _onRefused(ChestRefused refused) {
-    PrismHaptics.warning();
     setState(() {
       _readQuests();
       _balance = _balanceSource.value;

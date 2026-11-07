@@ -155,12 +155,12 @@ void main() {
     await enterCode(tester, 'ABCDEFGH23');
     played.clear();
     await tapRedeem(tester);
-    expect(played, <String>['tap', 'error']);
+    expect(played, <String>['error']);
 
     played.clear();
     fake.reply = _coinsReply(150);
     await tapRedeem(tester);
-    expect(played, <String>['tap', 'success']);
+    expect(played, <String>['success']);
   });
 
   testWidgets('a response for an account that signed out is not applied to the next account', (tester) async {

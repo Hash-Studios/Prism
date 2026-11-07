@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/annual_trial.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
@@ -96,6 +98,40 @@ void main() {
     );
     expect(tester.widget<Scaffold>(find.byType(Scaffold)).bottomNavigationBar, isNull);
     expect(analytics.events.whereType<PaywallImpressionEvent>(), isEmpty);
+  });
+
+  testWidgets('Restore is silent while sign-in is pending or cancelled', (tester) async {
+    phone(tester);
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final originalSignIn = signedInActionSignIn;
+    final pending = Completer<bool>();
+    signedInActionSignIn = (_) => pending.future;
+    addTearDown(() => signedInActionSignIn = originalSignIn);
+    final List<String> played = <String>[];
+    const channel = MethodChannel('prism/haptics');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      played.add(call.arguments as String);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    final previousHaptics = PrismHaptics.enabled;
+    addTearDown(() => PrismHaptics.enabled = previousHaptics);
+    PrismHaptics.enabled = true;
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: PremiumPage(),
+      ),
+    );
+
+    await tester.tap(find.text(AppLocalizationsEn().accountRestorePurchases));
+    await tester.pump();
+    expect(played, isEmpty);
+    pending.complete(false);
+    await tester.pumpAndSettle();
+    expect(played, isEmpty);
   });
 
   testWidgets('Premium lists what Pro unlocks and offers to restore purchases', (tester) async {

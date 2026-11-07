@@ -263,14 +263,28 @@ void main() {
       expect(haptics, <String>['tap']);
     });
 
-    testWidgets('a failed apply plays one error', (tester) async {
+    testWidgets('a failed apply keeps only the button tap', (tester) async {
       repository.outcome = const LiveApplyOutcome.failed(LiveApplyFailure.setFailed);
       final List<String> haptics = record(tester);
       await pump(tester);
       await tester.tap(find.text('Set live wallpaper'));
       await tester.pump();
       await tester.pump();
-      expect(haptics, <String>['tap', 'error']);
+      expect(haptics, <String>['tap']);
+    });
+
+    testWidgets('a rejected video keeps only the Choose button tap', (tester) async {
+      repository.videoProblem = LiveApplyFailure.videoTooLarge;
+      final List<String> haptics = record(tester);
+      await pump(tester, pickVideo: () async => '/tmp/big.mp4');
+      await tester.tap(find.text('Video'));
+      await tester.pump();
+      haptics.clear();
+      await tester.tap(find.text('Choose a video'));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('That video is larger than 256 MB. Pick a shorter clip.'), findsOneWidget);
+      expect(haptics, <String>['tap']);
     });
   });
 

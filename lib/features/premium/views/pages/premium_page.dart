@@ -157,6 +157,7 @@ class _PremiumPageState extends State<PremiumPage> {
             const SizedBox(height: PrismSpace.xxs),
             PrismButton(
               label: l10n.accountRestorePurchases,
+              haptic: false,
               variant: PrismButtonVariant.ghost,
               loading: _restoring,
               expand: true,

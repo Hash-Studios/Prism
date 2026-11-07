@@ -212,7 +212,7 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
           ? l10n.coreContentReportWhy(label)
           : l10n.coreContentReportWhyWithDetails(label, subtitle),
       actions: <Widget>[
-        PrismButton(label: l10n.coreSendReport, expand: true, loading: _submitting, onPressed: _submit),
+        PrismButton(label: l10n.coreSendReport, expand: true, haptic: false, loading: _submitting, onPressed: _submit),
       ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

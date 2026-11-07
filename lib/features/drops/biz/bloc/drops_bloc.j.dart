@@ -119,7 +119,7 @@ class DropsBloc extends Bloc<DropsEvent, DropsState> {
       result = await CoinsService.instance.unlockDrop(weekKey: drop.weekKey, wallId: event.wallId);
     } catch (error, stackTrace) {
       logger.w('[DropsBloc] unlock failed', error: error, stackTrace: stackTrace);
-      result = const DropUnlockResult(DropUnlockOutcome.failed, reason: 'error');
+      result = DropUnlockResult(DropUnlockOutcome.failed, reason: 'error');
     }
     if (result.outcome == DropUnlockOutcome.unlocked && result.unlocked.isNotEmpty) {
       unawaited(

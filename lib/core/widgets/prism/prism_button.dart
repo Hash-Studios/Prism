@@ -39,6 +39,7 @@ class PrismButton extends StatelessWidget {
     this.loading = false,
     this.expand = false,
     this.maxLines = 1,
+    this.haptic = true,
   });
 
   final String label;
@@ -59,6 +60,9 @@ class PrismButton extends StatelessWidget {
   final bool expand;
 
   final int? maxLines;
+
+  /// Disable when the action provides its own outcome feedback.
+  final bool haptic;
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +99,7 @@ class PrismButton extends StatelessWidget {
             : onPressed == null
             ? null
             : () {
-                PrismHaptics.tap();
+                if (haptic) PrismHaptics.tap();
                 onPressed!();
               },
         style: FilledButton.styleFrom(

@@ -6,7 +6,6 @@ import 'dart:typed_data';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -350,7 +349,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
           _stage = _UploadStage.failedProcessing;
           _errorMessage = UploadFailure.oversize.message(context.l10n);
         });
-        _trackFailure('oversize', haptic: false);
+        _trackFailure('oversize');
         return;
       }
       _draftId ??= _idForImage(imgList);
@@ -384,7 +383,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         _stage = _UploadStage.failedProcessing;
         _errorMessage = context.l10n.wallpaperUploadPrepareError;
       });
-      _trackFailure('processing', haptic: false);
+      _trackFailure('processing');
     }
   }
 
@@ -525,11 +524,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
 
   void _trackStage(String stage) => unawaited(analytics.track(UploadStageEvent(stage: stage)));
 
-  /// [haptic] is false for preparation, which runs on its own when the screen opens.
-  void _trackFailure(String reason, {bool haptic = true}) {
-    if (haptic) PrismHaptics.error();
-    unawaited(analytics.track(UploadFailedEvent(reason: reason)));
-  }
+  void _trackFailure(String reason) => unawaited(analytics.track(UploadFailedEvent(reason: reason)));
 
   Future<void> _presentUploadLimitPaywall() async {
     if (widget.presentPaywallForTesting case final presentPaywallForTesting?) {
@@ -710,7 +705,6 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     );
     _trackStage('submitted');
     if (!mounted || _leaving || _activeDraftOwner != _draftOwner) return;
-    PrismHaptics.success();
     widget.batch?.finishCurrent(UploadItemOutcome.submitted);
     await _goToNextOrFinish();
   }

@@ -481,7 +481,7 @@ void main() {
 
       expect(find.text('Get coins'), findsOneWidget);
       expect(find.text('SPIN'), findsNothing);
-      expect(haptics.where((String h) => h != 'selection'), <String>['tap', 'warning']);
+      expect(haptics.where((String h) => h != 'selection'), <String>['tap']);
     });
 
     testWidgets('a changed price shows the new price and says so', (tester) async {

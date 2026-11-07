@@ -229,6 +229,7 @@ class _DesktopUploadScreenState extends State<DesktopUploadScreen> {
                 PrismButton(
                   maxLines: 2,
                   label: l10n.desktopUploadSubmit,
+                  haptic: false,
                   expand: true,
                   loading: upload.sending,
                   onPressed: _ok == null || upload.sending ? null : _submit,

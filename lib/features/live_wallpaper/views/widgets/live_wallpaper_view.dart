@@ -215,8 +215,6 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
       case LiveApplyStatus.confirmInPreview:
       case LiveApplyStatus.failed:
       case LiveApplyStatus.unsupported:
-        if (outcome.status == LiveApplyStatus.applied) PrismHaptics.success();
-        if (outcome.isError) PrismHaptics.error();
         showPrismToast(
           Overlay.of(context),
           _liveOutcomeMessage(context.l10n, outcome, bloc.state.capabilities.supportsPerScreen),

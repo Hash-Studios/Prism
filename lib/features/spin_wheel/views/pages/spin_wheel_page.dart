@@ -252,7 +252,6 @@ class _SpinWheelPageState extends State<SpinWheelPage> with TickerProviderStateM
   }
 
   void _onRefused(SpinRefused result) {
-    PrismHaptics.warning();
     setState(() {
       _stage = _Stage.idle;
       _status = result.status;

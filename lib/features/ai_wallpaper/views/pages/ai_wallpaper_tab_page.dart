@@ -1091,7 +1091,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           sourceContext: 'ai_wallpaper',
         ),
       );
-      if (mounted) toasts.error(context.l10n.economyAiShareFailed);
+      if (mounted) toasts.error(context.l10n.economyAiShareFailed, haptic: false);
     } finally {
       if (mounted) setState(() => _sharing = false);
     }

@@ -564,7 +564,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
       result = await onAdjust(context);
     } catch (error, stackTrace) {
       logger.e('ClockOverlay: Adjust failed', error: error, stackTrace: stackTrace);
-      toasts.error(l10n.coreWallpaperSaveFailed);
+      toasts.error(l10n.coreWallpaperSaveFailed, haptic: false);
     } finally {
       if (mounted) setState(() => _busy = false);
     }

@@ -7,6 +7,7 @@ import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
@@ -1680,6 +1681,37 @@ void main() {
       expect(results, hasLength(1));
       expect(results.single?.placed?.path, placed.path);
       await _expectFileExists(tester, placed, true);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('a failed Adjust launch keeps only the opening tap and allows retry', (tester) async {
+      final haptics = <Object?>[];
+      final previousHaptics = PrismHaptics.enabled;
+      addTearDown(() => PrismHaptics.enabled = previousHaptics);
+      PrismHaptics.enabled = true;
+      const channel = MethodChannel('prism/haptics');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+        haptics.add(call.arguments);
+        return null;
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null));
+      var calls = 0;
+      await _openSetScreen(
+        tester,
+        _request(
+          onAdjust: (_) async {
+            calls++;
+            throw StateError('editor unavailable');
+          },
+        ),
+        <SetWallpaperChoice?>[],
+      );
+      haptics.clear();
+      await tester.tap(find.byKey(_adjustKey));
+      await tester.pumpAndSettle();
+      expect(haptics, <Object?>['tap']);
+      await tester.tap(find.byKey(_adjustKey));
+      await tester.pumpAndSettle();
+      expect(calls, 2);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
     testWidgets('two Adjust taps while the studio is opening call it once', (tester) async {

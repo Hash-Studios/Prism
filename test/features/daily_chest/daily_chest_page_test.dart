@@ -721,7 +721,7 @@ void main() {
 
       expect(phase(tester), ChestPhase.ready);
       expect(find.text('Get coins'), findsOneWidget);
-      expect(haptics, <String>['tap', 'warning']);
+      expect(haptics, <String>['tap']);
       expect(find.text('340'), findsOneWidget);
     });
 

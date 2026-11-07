@@ -47,12 +47,7 @@ class AiResultActions extends StatelessWidget {
     };
     final List<Widget> secondary = <Widget>[
       if (showSave) ...<Widget>[
-        PrismIconButton(
-          icon: Icons.download_rounded,
-          tooltip: l10n.economyAiSave,
-          onPressed: tap(onSave),
-          filled: true,
-        ),
+        PrismIconButton(icon: Icons.download_rounded, tooltip: l10n.economyAiSave, onPressed: onSave, filled: true),
         const SizedBox(width: PrismSpace.xs),
       ],
       Semantics(

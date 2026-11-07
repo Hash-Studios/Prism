@@ -28,7 +28,7 @@ void main() {
     messenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), null);
   });
 
-  testWidgets('each icon action plays exactly one haptic and calls its handler', (tester) async {
+  testWidgets('save defers feedback to its outcome while other icons play one tap', (tester) async {
     final calls = <String>[];
     await tester.pumpWidget(
       MaterialApp(
@@ -54,7 +54,7 @@ void main() {
       haptics.clear();
       await tester.tap(find.byTooltip(tooltip));
       await tester.pump();
-      expect(haptics, hasLength(1), reason: tooltip);
+      expect(haptics, hasLength(tooltip == 'Save' ? 0 : 1), reason: tooltip);
     }
     expect(calls, <String>['save', 'share', 'submit', 'refine']);
   });

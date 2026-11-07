@@ -178,7 +178,7 @@ void main() {
     await tester.pump(const Duration(seconds: 10));
   });
 
-  testWidgets('the Report sent snackbar plays one tap and one success haptic', (tester) async {
+  testWidgets('the Report sent snackbar plays one success haptic', (tester) async {
     final bool previousHapticsEnabled = PrismHaptics.enabled;
     PrismHaptics.enabled = true;
     addTearDown(() => PrismHaptics.enabled = previousHapticsEnabled);
@@ -198,7 +198,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Also block this creator'), findsOneWidget);
-    expect(played, <Object?>['tap', 'success']);
+    expect(played, <Object?>['success']);
     await tester.pump(const Duration(seconds: 10));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
@@ -215,7 +215,7 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
   });
 
-  testWidgets('sending a report submits the exact payload with one tap haptic', (tester) async {
+  testWidgets('sending a report submits the exact payload with one outcome haptic', (tester) async {
     final bool previousHapticsEnabled = PrismHaptics.enabled;
     PrismHaptics.enabled = true;
     addTearDown(() => PrismHaptics.enabled = previousHapticsEnabled);
@@ -239,7 +239,7 @@ void main() {
     expect(reports.sent, <({String type, String id, String reason, String details})>[
       (type: 'wall', id: 'wall-doc', reason: 'spam', details: 'More information'),
     ]);
-    expect(played, <Object?>['tap', 'success']);
+    expect(played, <Object?>['success']);
     await tester.pump(const Duration(seconds: 2));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 

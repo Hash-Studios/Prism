@@ -85,7 +85,6 @@ class _ModerationCardState extends State<ModerationCard> {
       if (mounted) setState(() => _isApproved = true);
     } catch (error, stackTrace) {
       logger.e('Admin approval failed', tag: 'AdminReview', error: error, stackTrace: stackTrace);
-      PrismHaptics.error();
       if (mounted) {
         setState(() => _approvalError = context.l10n.adminApprovalFailed);
       }

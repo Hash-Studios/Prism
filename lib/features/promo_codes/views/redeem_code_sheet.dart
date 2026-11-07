@@ -200,6 +200,7 @@ class _RedeemCodeBodyState extends State<RedeemCodeBody> {
             listenable: _code,
             builder: (context, _) => PrismButton(
               label: l10n.promoRedeemAction,
+              haptic: false,
               loading: busy,
               expand: true,
               maxLines: 2,
