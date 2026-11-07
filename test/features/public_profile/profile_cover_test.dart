@@ -33,6 +33,13 @@ void main() {
     );
   });
 
+  testWidgets('the blur is clipped to the cover, so it cannot spill below the fade', (tester) async {
+    await pumpCover(tester, const ProfileCover(url: '', seed: 'u2'));
+
+    final Finder clipInCover = find.descendant(of: find.byType(ProfileCover), matching: find.byType(ClipRect));
+    expect(find.ancestor(of: find.byType(ImageFiltered), matching: clipInCover), findsOneWidget);
+  });
+
   testWidgets('a user-set cover shows as it is, not blurred', (tester) async {
     await pumpCover(tester, const ProfileCover(url: 'https://example.com/cover.jpg', seed: 'u2'));
 

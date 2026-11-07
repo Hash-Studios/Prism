@@ -47,27 +47,31 @@ class ProfileCover extends StatelessWidget {
       excludeFromSemantics: true,
       errorBuilder: (_, _, _) => ColoredBox(color: cs.surfaceContainerHigh),
     );
+    // ImageFiltered paints past its own bounds by the blur radius. Unclipped, that spill lands below the cover, where
+    // the profile's fade gradient no longer reaches, and shows as a hard-edged band.
     final Widget art = ExcludeSemantics(
-      child: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28, tileMode: TileMode.clamp),
-            child: hasCover(artUrl)
-                ? CachedNetworkImage(
-                    imageUrl: artUrl!.trim(),
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                    memCacheWidth: 240,
-                    fadeInDuration: context.motion(PrismDurations.fast),
-                    placeholder: (_, _) => bundled,
-                    errorWidget: (_, _, _) => bundled,
-                  )
-                : bundled,
-          ),
-          ColoredBox(color: cs.scrim.withValues(alpha: 0.16)),
-        ],
+      child: ClipRect(
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28, tileMode: TileMode.clamp),
+              child: hasCover(artUrl)
+                  ? CachedNetworkImage(
+                      imageUrl: artUrl!.trim(),
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      memCacheWidth: 240,
+                      fadeInDuration: context.motion(PrismDurations.fast),
+                      placeholder: (_, _) => bundled,
+                      errorWidget: (_, _, _) => bundled,
+                    )
+                  : bundled,
+            ),
+            ColoredBox(color: cs.scrim.withValues(alpha: 0.16)),
+          ],
+        ),
       ),
     );
     if (!hasCover(url)) return art;
