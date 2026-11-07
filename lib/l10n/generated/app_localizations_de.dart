@@ -3372,6 +3372,21 @@ class AppLocalizationsDe extends AppLocalizations {
   String get coreWallpaperErrorTextureDimensions => 'Dieses Bild ist zu groß für ein Live-Hintergrundbild.';
 
   @override
+  String get coreWallpaperStillSetting =>
+      'Dein Hintergrund wird noch gesetzt. Das kann auf manchen Handys einen Moment dauern.';
+
+  @override
+  String get coreWallpaperLockFailedUsePhone =>
+      'Der Sperrbildschirm konnte nicht gesetzt werden. Der Hintergrund-Bildschirm deines Handys kann ihn setzen.';
+
+  @override
+  String get coreWallpaperHomeSetLockFailedUsePhone =>
+      'Startbildschirm gesetzt. Der Sperrbildschirm konnte nicht gesetzt werden. Der Hintergrund-Bildschirm deines Handys kann ihn setzen.';
+
+  @override
+  String get coreWallpaperSetWithPhone => 'Mit Handy setzen';
+
+  @override
   String get coreWallpaperErrorTimeout => 'Zeitüberschreitung. Prüfe deine Verbindung und versuch es erneut.';
 
   @override
@@ -7902,6 +7917,10 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get premiumPurchasePending =>
       'Dein Kauf wurde gespeichert. Es kann eine Minute dauern, bis Pro freigeschaltet wird.';
+
+  @override
+  String get premiumPaymentPending =>
+      'Deine Zahlung ist noch ausstehend. Pro wird freigeschaltet, sobald die Zahlung durch ist.';
 
   @override
   String get premiumPurchaseUnconfirmed =>

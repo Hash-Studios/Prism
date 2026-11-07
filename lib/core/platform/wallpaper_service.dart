@@ -13,6 +13,7 @@ import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -80,7 +81,10 @@ class WallpaperSetResult {
     return switch (status) {
       WallpaperSetStatus.applied => l10n.coreWallpaperApplied,
       WallpaperSetStatus.cancelled => '',
-      WallpaperSetStatus.pending => l10n.coreConfirmWallpaperPreview,
+      WallpaperSetStatus.pending =>
+        errorCode == WallpaperService.stillSettingMessage
+            ? l10n.coreWallpaperStillSetting
+            : l10n.coreConfirmWallpaperPreview,
       WallpaperSetStatus.unsupported =>
         errorCode == 'wallpaper-not-allowed'
             ? wallpaperErrorMessage(errorCode, l10n, live: live)
@@ -116,6 +120,10 @@ class WallpaperSetResult {
 class WallpaperService {
   static int _historyWriteGeneration = 0;
 
+  /// How long the app waits for the phone to set a wallpaper before it says the set is still running.
+  @visibleForTesting
+  static Duration applyTimeout = const Duration(seconds: 30);
+
   /// Invalidates history writes still waiting on a native set when auth changes.
   static void invalidatePendingHistoryWrites() => _historyWriteGeneration++;
 
@@ -125,6 +133,7 @@ class WallpaperService {
   static const String foregroundMessage = 'foreground_required';
   static const String failedMessage = 'failed';
   static const String timeoutMessage = 'timeout';
+  static const String stillSettingMessage = 'still-setting';
   static const String offlineUnavailableMessage = 'offline_unavailable';
 
   /// Turns a local file into a content URI. The Android system cropper cannot read a file path.
@@ -246,6 +255,7 @@ class WallpaperService {
           historyOwnerId == app_state.prismUser.id.trim() &&
           !useSystemCropper &&
           result.status == aw.WallpaperOperationStatus.failed &&
+          result.errorCode != 'partial-apply' &&
           canRetryWallpaperError(result.errorCode)) {
         result = await _apply(platformSource, target, scaleMode, aw.WallpaperApplyStrategy.automatic);
       }
@@ -290,7 +300,9 @@ class WallpaperService {
         historyIds: <String>[id],
       );
     } on TimeoutException {
-      return const WallpaperSetResult(WallpaperSetStatus.failed, timeoutMessage, errorCode: 'timeout');
+      // The phone keeps setting the wallpaper after this wait, and the set can still succeed. A failure here would be
+      // false, and Try again would start a second set.
+      return const WallpaperSetResult(WallpaperSetStatus.pending, stillSettingMessage, errorCode: stillSettingMessage);
     } catch (error, stackTrace) {
       logger.e('WallpaperService: apply failed', error: error, stackTrace: stackTrace);
       return const WallpaperSetResult(WallpaperSetStatus.failed, failedMessage, errorCode: 'exception');
@@ -359,7 +371,7 @@ class WallpaperService {
     return PerformanceProbe.measure(
       'native',
       'set_wallpaper.${target.name}',
-      () => aw.AsyncWallpaper.applyWallpaper(request).timeout(const Duration(seconds: 30)),
+      () => aw.AsyncWallpaper.applyWallpaper(request).timeout(applyTimeout),
     );
   }
 

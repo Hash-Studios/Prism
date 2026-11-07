@@ -961,6 +961,22 @@
   "coreWallpaperErrorStyle": "Este dispositivo não conseguiu iniciar esse estilo. Tente outro.",
   "coreWallpaperErrorSystemPreview": "Não foi possível abrir a pré-visualização do sistema.",
   "coreWallpaperErrorTextureDimensions": "Essa imagem é grande demais para um papel de parede animado.",
+  "coreWallpaperStillSetting": "Ainda estamos aplicando seu papel de parede. Em alguns celulares isso pode levar um momento.",
+  "@coreWallpaperStillSetting": {
+    "description": "Shown when the phone has not finished setting the wallpaper after 30 seconds. The set can still finish, so this is not an error."
+  },
+  "coreWallpaperLockFailedUsePhone": "Não foi possível aplicar na tela de bloqueio. A tela de papéis de parede do seu celular pode aplicar.",
+  "@coreWallpaperLockFailedUsePhone": {
+    "description": "Snackbar when the lock screen set failed. Its action opens the phone's own wallpaper screen, which some phones (Xiaomi, MIUI) require for the lock screen."
+  },
+  "coreWallpaperHomeSetLockFailedUsePhone": "Tela inicial aplicada. Não foi possível aplicar na tela de bloqueio. A tela de papéis de parede do seu celular pode aplicar.",
+  "@coreWallpaperHomeSetLockFailedUsePhone": {
+    "description": "Snackbar when a Both set changed only the home screen. Its action opens the phone's own wallpaper screen for the lock screen."
+  },
+  "coreWallpaperSetWithPhone": "Usar o celular",
+  "@coreWallpaperSetWithPhone": {
+    "description": "Snackbar action. Opens the phone's own wallpaper screen with this wallpaper. Keep it short."
+  },
   "coreWallpaperErrorTimeout": "Tempo esgotado. Verifique sua conexão e tente novamente.",
   "coreWallpaperHomeScreen": "Tela inicial",
   "coreWallpaperHomeSetLockFailed": "Tela inicial definida. Falha na tela de bloqueio.",
@@ -2015,6 +2031,10 @@
   "premiumPageViewPlans": "Ver planos",
   "premiumGuestStorePurchaseActive": "Sua compra na loja está ativa neste dispositivo. Entre para usar os recursos Pro vinculados à conta.",
   "premiumPurchasePending": "Sua compra foi salva. O Pro pode levar um minuto para ser ativado.",
+  "premiumPaymentPending": "Seu pagamento está pendente. O Pro será ativado quando o pagamento for concluído.",
+  "@premiumPaymentPending": {
+    "description": "Toast when the store holds a purchase as pending (for example a slow UPI or card payment). Pro unlocks later."
+  },
   "premiumPurchaseUnconfirmed": "Não foi possível confirmar sua compra. Tente usar Restaurar compras nas Configurações.",
   "updatesStoreUpdateAvailable": "Uma nova versão do Prism está disponível.",
   "wallpaperAccentColor": "Cor de destaque",

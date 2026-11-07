@@ -39,7 +39,8 @@ class PurchasesService {
       _getCustomerInfo = Purchases.getCustomerInfo,
       _apiKey = _resolveApiKey,
       _onCustomerInfo = TrialReminder.instance.apply,
-      _resetTrialState = TrialReminder.instance.clear;
+      _resetTrialState = TrialReminder.instance.clear,
+      _syncPurchases = Purchases.syncPurchases;
 
   @visibleForTesting
   PurchasesService.forTesting({
@@ -54,6 +55,7 @@ class PurchasesService {
     String Function()? apiKey,
     Future<void> Function(CustomerInfo info, {required String userId})? onCustomerInfo,
     Future<void> Function({String? keepUserId})? resetTrialState,
+    Future<void> Function()? syncPurchases,
   }) : _addCustomerInfoListener = addCustomerInfoListener,
        _syncSubscriptionOverride = syncSubscription,
        _syncRetryBackoff = syncRetryBackoff,
@@ -64,7 +66,8 @@ class PurchasesService {
        _getCustomerInfo = getCustomerInfo ?? Purchases.getCustomerInfo,
        _apiKey = apiKey ?? _resolveApiKey,
        _onCustomerInfo = onCustomerInfo ?? _ignoreCustomerInfo,
-       _resetTrialState = resetTrialState ?? _ignoreTrialStateReset;
+       _resetTrialState = resetTrialState ?? _ignoreTrialStateReset,
+       _syncPurchases = syncPurchases;
 
   static Future<void> _ignoreCustomerInfo(CustomerInfo info, {required String userId}) async {}
   static Future<void> _ignoreTrialStateReset({String? keepUserId}) async {}
@@ -92,6 +95,10 @@ class PurchasesService {
   /// Keeps the trial reminder and trial analytics in step with each CustomerInfo the app applies.
   final Future<void> Function(CustomerInfo info, {required String userId}) _onCustomerInfo;
   final Future<void> Function({String? keepUserId}) _resetTrialState;
+
+  /// Sends the store's purchases to RevenueCat for the signed-in account, with no store sign-in prompt. Null in tests
+  /// that do not ask for it.
+  final Future<void> Function()? _syncPurchases;
   Future<void> _setupQueue = Future<void>.value();
   bool _configured = false;
   bool _customerInfoListenerRegistered = false;
@@ -101,6 +108,11 @@ class PurchasesService {
 
   /// Prevents an earlier background read from overwriting a restore or purchase-check result.
   int _forcedApplies = 0;
+  int _customerInfoApplies = 0;
+
+  /// Accounts whose store purchases this process already synced before removing Pro.
+  final Set<String> _storeSyncedUsers = <String>{};
+  final Map<int, Future<CustomerInfo?>> _storeSyncsInFlight = <int, Future<CustomerInfo?>>{};
 
   /// Skip redundant Firestore subscription updates when state unchanged (co-ordinate with coin sync / reduce usersv2 writes).
   static const Duration _subscriptionPersistThrottle = Duration(minutes: 5);
@@ -184,15 +196,21 @@ class PurchasesService {
 
   /// Configures RevenueCat after the first frame so startup is not blocked.
   /// No-op if already configured or if API key is empty.
+  ///
+  /// A saved account configures as itself. An anonymous ID can take the account's subscription when the SDK posts
+  /// store transactions before `logIn`, and only a store restore brings it back (#526).
   Future<void> configureEarly() async {
     if (kDebugMode && Env.localQa) return;
     if (_apiKey().isEmpty) return;
+    final String savedUserId = app_state.prismUser.loggedIn ? app_state.prismUser.id.trim() : '';
     try {
       await PerformanceProbe.measure(
         'startup',
         'revenuecat.configure',
         () => _serializeSetup<void>(() async {
-          if (!_configured) await _configure('');
+          if (_configured) return;
+          if (savedUserId.isNotEmpty) await _clearTrialState(keepUserId: savedUserId);
+          await _configure(savedUserId);
         }),
       );
     } catch (error, stackTrace) {
@@ -221,6 +239,8 @@ class PurchasesService {
         } finally {
           _identityTransitionInProgress = false;
         }
+      } else if (targetUserId.isEmpty && _configuredUserId.isNotEmpty) {
+        await _logOutConfigured();
       } else if (targetUserId.isEmpty) {
         await _clearTrialState();
       }
@@ -283,6 +303,18 @@ class PurchasesService {
     if (parts.first != tier.name || syncedAtMs == null) return false;
     final Duration age = now.difference(DateTime.fromMillisecondsSinceEpoch(syncedAtMs));
     return !age.isNegative && age < _subscriptionResyncAfter;
+  }
+
+  /// The daily server check can mark an account free before the app runs. The tier the server last confirmed on this
+  /// phone still shows the account had Pro.
+  bool _lastConfirmedPaid(String userId) {
+    final String saved = _settings?.get<String>('$_lastSyncedKeyPrefix$userId', defaultValue: '') ?? '';
+    final List<String> parts = saved.split('|');
+    final int? syncedAtMs = parts.length == 2 ? int.tryParse(parts[1]) : null;
+    return syncedAtMs != null &&
+        syncedAtMs >= 0 &&
+        syncedAtMs <= DateTime.now().millisecondsSinceEpoch &&
+        SubscriptionTier.fromValue(parts.first).isPaid;
   }
 
   bool _matchesSubscriptionRequest(String userId, int identityRevision, bool loggedIn, SubscriptionTier tier) =>
@@ -456,7 +488,30 @@ class PurchasesService {
     } else if (forcedAppliesAtRead != _forcedApplies) {
       return _cachedEntitlementStatus(forceSync);
     }
+    if (!isPremium &&
+        !forceSync &&
+        (app_state.prismUser.premium || _lastConfirmedPaid(userId)) &&
+        loggedIn &&
+        userId.isNotEmpty) {
+      final int appliesBeforeSync = _customerInfoApplies;
+      final CustomerInfo? synced = await _syncStoreBeforeRemovingPro(userId, identityRevision, loggedIn);
+      if (!_matchesSubscriptionIdentity(userId, identityRevision, loggedIn) ||
+          forcedAppliesAtRead != _forcedApplies ||
+          appliesBeforeSync != _customerInfoApplies) {
+        return _cachedEntitlementStatus(forceSync);
+      }
+      if (synced != null) {
+        return _applyCustomerInfo(
+          synced,
+          userId: userId,
+          identityRevision: identityRevision,
+          forcedAppliesAtRead: forcedAppliesAtRead,
+          loggedIn: loggedIn,
+        );
+      }
+    }
 
+    _customerInfoApplies++;
     app_state.prismUser.premium = isPremium;
     app_state.prismUser.subscriptionTier = tier.name;
     app_state.persistPrismUser();
@@ -506,6 +561,32 @@ class PurchasesService {
     return syncResult == _SubscriptionPersistResult.confirmed
         ? PurchaseEntitlementStatus.serverConfirmed
         : PurchaseEntitlementStatus.pending;
+  }
+
+  /// A paid purchase can sit on another RevenueCat app user ID, for example one an older build created anonymously.
+  /// Before Pro is removed, send the store's purchases to RevenueCat once for this account and read it again (#526).
+  /// Null when there is nothing new to apply.
+  Future<CustomerInfo?> _syncStoreBeforeRemovingPro(String userId, int identityRevision, bool loggedIn) {
+    final Future<CustomerInfo?>? pending = _storeSyncsInFlight[identityRevision];
+    if (pending != null) return pending;
+    final Future<void> Function()? syncPurchases = _syncPurchases;
+    if (syncPurchases == null || !_storeSyncedUsers.add(userId)) return Future<CustomerInfo?>.value();
+    final Future<CustomerInfo?> recovery =
+        (() async {
+              await syncPurchases();
+              if (!_matchesSubscriptionIdentity(userId, identityRevision, loggedIn)) return null;
+              return _getCustomerInfo();
+            })()
+            .timeout(_customerInfoTimeout)
+            .catchError((Object error, StackTrace stackTrace) {
+              logger.w('Store purchase sync before removing Pro failed.', error: error, stackTrace: stackTrace);
+              return null;
+            })
+            .whenComplete(() {
+              _storeSyncsInFlight.remove(identityRevision);
+            });
+    _storeSyncsInFlight[identityRevision] = recovery;
+    return recovery;
   }
 
   Future<void> _clearTrialState({String? keepUserId}) async {
@@ -599,6 +680,10 @@ class PurchasesService {
       await _clearTrialState();
       return;
     }
+    await _logOutConfigured();
+  });
+
+  Future<void> _logOutConfigured() async {
     _identityTransitionInProgress = true;
     _identityRevision++;
     await _clearTrialState();
@@ -606,11 +691,7 @@ class PurchasesService {
       try {
         await Purchases.logOut();
       } on PlatformException catch (e) {
-        final String details = e.details?.toString().toLowerCase() ?? '';
-        final String message = e.message?.toLowerCase() ?? '';
-        if (e.code != '22' &&
-            !details.contains('logout_called_with_anonymous_user') &&
-            !message.contains('anonymous')) {
+        if (e.code != PurchasesErrorCode.logOutWithAnonymousUserError.index.toString()) {
           rethrow;
         }
         logger.w('Skipping RevenueCat logout for anonymous user.');
@@ -619,5 +700,5 @@ class PurchasesService {
     } finally {
       _identityTransitionInProgress = false;
     }
-  });
+  }
 }

@@ -3391,6 +3391,21 @@ class AppLocalizationsPt extends AppLocalizations {
   String get coreWallpaperErrorTextureDimensions => 'Essa imagem é grande demais para um papel de parede animado.';
 
   @override
+  String get coreWallpaperStillSetting =>
+      'Ainda estamos aplicando seu papel de parede. Em alguns celulares isso pode levar um momento.';
+
+  @override
+  String get coreWallpaperLockFailedUsePhone =>
+      'Não foi possível aplicar na tela de bloqueio. A tela de papéis de parede do seu celular pode aplicar.';
+
+  @override
+  String get coreWallpaperHomeSetLockFailedUsePhone =>
+      'Tela inicial aplicada. Não foi possível aplicar na tela de bloqueio. A tela de papéis de parede do seu celular pode aplicar.';
+
+  @override
+  String get coreWallpaperSetWithPhone => 'Usar o celular';
+
+  @override
   String get coreWallpaperErrorTimeout => 'Tempo esgotado. Verifique sua conexão e tente novamente.';
 
   @override
@@ -8073,6 +8088,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get premiumPurchasePending => 'Sua compra foi salva. O Pro pode levar um minuto para ser ativado.';
+
+  @override
+  String get premiumPaymentPending =>
+      'Seu pagamento está pendente. O Pro será ativado quando o pagamento for concluído.';
 
   @override
   String get premiumPurchaseUnconfirmed =>
@@ -18586,6 +18605,21 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get coreWallpaperErrorTextureDimensions => 'Essa imagem é grande demais para um papel de parede animado.';
 
   @override
+  String get coreWallpaperStillSetting =>
+      'Ainda estamos aplicando seu papel de parede. Em alguns celulares isso pode levar um momento.';
+
+  @override
+  String get coreWallpaperLockFailedUsePhone =>
+      'Não foi possível aplicar na tela de bloqueio. A tela de papéis de parede do seu celular pode aplicar.';
+
+  @override
+  String get coreWallpaperHomeSetLockFailedUsePhone =>
+      'Tela inicial aplicada. Não foi possível aplicar na tela de bloqueio. A tela de papéis de parede do seu celular pode aplicar.';
+
+  @override
+  String get coreWallpaperSetWithPhone => 'Usar o celular';
+
+  @override
   String get coreWallpaperErrorTimeout => 'Tempo esgotado. Verifique sua conexão e tente novamente.';
 
   @override
@@ -23268,6 +23302,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get premiumPurchasePending => 'Sua compra foi salva. O Pro pode levar um minuto para ser ativado.';
+
+  @override
+  String get premiumPaymentPending =>
+      'Seu pagamento está pendente. O Pro será ativado quando o pagamento for concluído.';
 
   @override
   String get premiumPurchaseUnconfirmed =>

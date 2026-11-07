@@ -3331,6 +3331,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreWallpaperErrorTextureDimensions => 'That image is too large for a live wallpaper.';
 
   @override
+  String get coreWallpaperStillSetting => 'Still setting your wallpaper. This can take a moment on some phones.';
+
+  @override
+  String get coreWallpaperLockFailedUsePhone =>
+      'Couldn\'t set the lock screen. Your phone\'s own wallpaper screen can set it.';
+
+  @override
+  String get coreWallpaperHomeSetLockFailedUsePhone =>
+      'Home screen set. Couldn\'t set the lock screen. Your phone\'s own wallpaper screen can set it.';
+
+  @override
+  String get coreWallpaperSetWithPhone => 'Set with phone';
+
+  @override
   String get coreWallpaperErrorTimeout => 'Timed out. Check your connection and try again.';
 
   @override
@@ -7809,6 +7823,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get premiumPurchasePending => 'Your purchase is saved. Pro can take a minute to unlock.';
+
+  @override
+  String get premiumPaymentPending => 'Your payment is pending. Pro unlocks when the payment goes through.';
 
   @override
   String get premiumPurchaseUnconfirmed => 'Could not confirm your purchase. Try Restore purchases in Settings.';

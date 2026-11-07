@@ -3338,6 +3338,21 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreWallpaperErrorTextureDimensions => 'Gambar itu terlalu besar untuk dijadikan wallpaper bergerak.';
 
   @override
+  String get coreWallpaperStillSetting =>
+      'Wallpaper Anda masih dipasang. Di beberapa ponsel, ini bisa butuh waktu sebentar.';
+
+  @override
+  String get coreWallpaperLockFailedUsePhone =>
+      'Tidak dapat memasang di layar kunci. Layar wallpaper bawaan ponsel Anda dapat memasangnya.';
+
+  @override
+  String get coreWallpaperHomeSetLockFailedUsePhone =>
+      'Layar utama terpasang. Tidak dapat memasang di layar kunci. Layar wallpaper bawaan ponsel Anda dapat memasangnya.';
+
+  @override
+  String get coreWallpaperSetWithPhone => 'Pasang lewat ponsel';
+
+  @override
   String get coreWallpaperErrorTimeout => 'Waktu habis. Periksa koneksi Anda, lalu coba lagi.';
 
   @override
@@ -7835,6 +7850,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get premiumPurchasePending => 'Pembelian Anda tersimpan. Pro mungkin perlu waktu satu menit untuk aktif.';
+
+  @override
+  String get premiumPaymentPending => 'Pembayaran Anda masih tertunda. Pro akan aktif setelah pembayaran berhasil.';
 
   @override
   String get premiumPurchaseUnconfirmed =>
