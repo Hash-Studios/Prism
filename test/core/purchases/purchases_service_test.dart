@@ -686,6 +686,11 @@ void main() {
     }
 
     test('a paid guest never syncs the store before removing access', () async {
+      await getIt.reset();
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      getIt.registerSingleton<SettingsLocalDataSource>(settings);
+      addTearDown(getIt.reset);
+      await settings.set('lastSyncedSubscription.', 'pro|${DateTime.now().millisecondsSinceEpoch}');
       app_state.prismUser = profileUser(id: '', loggedIn: false, premium: true)..subscriptionTier = 'pro';
       final service = buildService(getCustomerInfo: () async => _freeCustomer, syncPurchases: () async => storeSyncs++);
       expect(await service.checkAndPersistPremium(), isFalse);
@@ -717,6 +722,86 @@ void main() {
       expect(storeSyncs, 1);
       expect(app_state.prismUser.premium, isTrue);
     });
+
+    test('a valid stale paid confirmation triggers recovery after a cold launch', () async {
+      await getIt.reset();
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      getIt.registerSingleton<SettingsLocalDataSource>(settings);
+      addTearDown(getIt.reset);
+      final int old = DateTime.now().subtract(const Duration(days: 30)).millisecondsSinceEpoch;
+      await settings.set('lastSyncedSubscription.u1', 'pro|$old');
+      app_state.prismUser = profileUser();
+      final PurchasesService service = buildService(
+        getCustomerInfo: () async => storeSyncs == 0 ? _freeCustomer : _proCustomer,
+        syncPurchases: () async => storeSyncs++,
+      );
+
+      expect(await service.checkAndPersistPremium(), isTrue);
+      expect(storeSyncs, 1);
+      expect(app_state.prismUser.premium, isTrue);
+    });
+
+    test('saved paid confirmation for another uid does not trigger recovery', () async {
+      await getIt.reset();
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      getIt.registerSingleton<SettingsLocalDataSource>(settings);
+      addTearDown(getIt.reset);
+      await settings.set('lastSyncedSubscription.u2', 'pro|${DateTime.now().millisecondsSinceEpoch}');
+      app_state.prismUser = profileUser();
+      final PurchasesService service = buildService(
+        getCustomerInfo: () async => _freeCustomer,
+        syncPurchases: () async => storeSyncs++,
+      );
+
+      expect(await service.checkAndPersistPremium(), isFalse);
+      expect(storeSyncs, 0);
+    });
+
+    test('a free server confirmation prevents recovery on the next cold launch', () async {
+      await getIt.reset();
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      getIt.registerSingleton<SettingsLocalDataSource>(settings);
+      addTearDown(getIt.reset);
+      await settings.set('lastSyncedSubscription.u1', 'pro|${DateTime.now().millisecondsSinceEpoch}');
+      app_state.prismUser = profileUser();
+      PurchasesService service = buildService(
+        getCustomerInfo: () async => _freeCustomer,
+        syncPurchases: () async => storeSyncs++,
+      );
+
+      expect(await service.checkAndPersistPremium(), isFalse);
+      expect(storeSyncs, 1);
+
+      service = buildService(getCustomerInfo: () async => _freeCustomer, syncPurchases: () async => storeSyncs++);
+      expect(await service.checkAndPersistPremium(), isFalse);
+      expect(storeSyncs, 1);
+    });
+
+    for (final Object? malformed in <Object?>[
+      'pro',
+      'pro|not-a-timestamp',
+      'pro|-1',
+      'pro|9223372036854775807',
+      'pro|1|extra',
+      1,
+    ]) {
+      test('malformed saved subscription state $malformed does not trigger recovery', () async {
+        await getIt.reset();
+        final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+        getIt.registerSingleton<SettingsLocalDataSource>(settings);
+        addTearDown(getIt.reset);
+        await settings.set('lastSyncedSubscription.u1', malformed);
+        app_state.prismUser = profileUser();
+        final PurchasesService service = buildService(
+          getCustomerInfo: () async => _freeCustomer,
+          syncPurchases: () async => storeSyncs++,
+        );
+
+        expect(await service.checkAndPersistPremium(), isFalse);
+        expect(storeSyncs, 0);
+        expect(app_state.prismUser.premium, isFalse);
+      });
+    }
 
     test('a free account never syncs the store', () async {
       app_state.prismUser = profileUser();

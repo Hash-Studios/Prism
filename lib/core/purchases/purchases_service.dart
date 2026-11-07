@@ -309,7 +309,12 @@ class PurchasesService {
   /// phone still shows the account had Pro.
   bool _lastConfirmedPaid(String userId) {
     final String saved = _settings?.get<String>('$_lastSyncedKeyPrefix$userId', defaultValue: '') ?? '';
-    return SubscriptionTier.fromValue(saved.split('|').first).isPaid;
+    final List<String> parts = saved.split('|');
+    final int? syncedAtMs = parts.length == 2 ? int.tryParse(parts[1]) : null;
+    return syncedAtMs != null &&
+        syncedAtMs >= 0 &&
+        syncedAtMs <= DateTime.now().millisecondsSinceEpoch &&
+        SubscriptionTier.fromValue(parts.first).isPaid;
   }
 
   bool _matchesSubscriptionRequest(String userId, int identityRevision, bool loggedIn, SubscriptionTier tier) =>

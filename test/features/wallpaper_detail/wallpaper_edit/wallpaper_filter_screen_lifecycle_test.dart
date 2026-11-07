@@ -118,6 +118,56 @@ class _LockRefusingClient extends _PreviewWallpaperClient {
   }
 }
 
+class _DeferredLockRefusingClient extends _LockRefusingClient {
+  final Completer<void> allowFailure = Completer<void>();
+
+  @override
+  Future<aw.WallpaperOperationResult> applyWallpaper(aw.StaticWallpaperRequest request) async {
+    final Future<aw.WallpaperOperationResult> result = super.applyWallpaper(request);
+    await allowFailure.future;
+    return result;
+  }
+}
+
+Future<File> _startLockFailure(WidgetTester tester, _LockRefusingClient client) async {
+  tester.view.physicalSize = const Size(800, 1200);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+  final Directory directory = Directory.systemTemp.createTempSync('wallpaper_filter_pending_');
+  addTearDown(() => directory.deleteSync(recursive: true));
+  final File source = File('${directory.path}/source.png')..writeAsBytesSync((await tester.runAsync(_smallPng))!);
+  app_state.prismUser = profileUser(premium: true);
+  addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+  aw.AsyncWallpaper.debugSetClient(client);
+  addTearDown(aw.AsyncWallpaper.debugResetClient);
+  final originalOpener = SetWallpaperFlow.screenOpener;
+  SetWallpaperFlow.screenOpener = (context, request) async => const SetWallpaperChoice(WallpaperTarget.lock);
+  addTearDown(() => SetWallpaperFlow.screenOpener = originalOpener);
+  const MethodChannel pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
+  const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(pathProviderChannel, (_) async => directory.path);
+  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+  addTearDown(() {
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(pathProviderChannel, null);
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+  });
+  await tester.pumpWidget(_screenHost(source.path));
+  await _waitForReady(tester);
+  await tester.tap(find.text('AddictiveBlue'));
+  await tester.pump();
+  await tester.tap(find.byTooltip('Set as wallpaper'));
+  await waitForRealIo(tester, () => client.requests.isNotEmpty, reason: 'initial native lock screen request');
+  return File(client.requests.first.source.filePath!);
+}
+
+Future<void> _openPhoneFallback(WidgetTester tester) async {
+  await waitForRealIo(tester, () => find.text('Set with phone').evaluate().isNotEmpty, reason: 'phone fallback action');
+  await tester.pump(const Duration(milliseconds: 500));
+  await tester.tap(find.text('Set with phone'));
+  await tester.pump();
+}
+
 void main() {
   testWidgets('retry recovers a moved image and holding the preview compares the original', (tester) async {
     final directory = Directory.systemTemp.createTempSync('wallpaper_filter_retry_');
@@ -479,6 +529,84 @@ void main() {
     expect(exportExistedAtCrop, <bool>[true]);
     expect(client.requests.last.target, aw.WallpaperTarget.lock);
     expect(client.requests.last.source.contentUri, startsWith('content://'));
+    await tester.pump(const Duration(seconds: 1));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('cleans up when the editor closes before the initial lock failure', (tester) async {
+    final _DeferredLockRefusingClient client = _DeferredLockRefusingClient();
+    final File export = await _startLockFailure(tester, client);
+    expect(export.existsSync(), isTrue);
+    await tester.pumpWidget(const SizedBox());
+    client.allowFailure.complete();
+    await waitForRealIo(
+      tester,
+      () => !export.parent.existsSync(),
+      timeout: const Duration(seconds: 2),
+      reason: 'unmounted editor releases refused export',
+    );
+    await tester.pump(const Duration(seconds: 1));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('keeps the edit until a pending phone crop request finishes after disposal', (tester) async {
+    final _LockRefusingClient client = _LockRefusingClient();
+    final Completer<void> allowCrop = Completer<void>();
+    final Completer<void> cropStarted = Completer<void>();
+    bool? exportExistedAtCrop;
+    const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(cropChannel, (MethodCall call) async {
+      cropStarted.complete();
+      await allowCrop.future;
+      exportExistedAtCrop = File(call.arguments as String).existsSync();
+      return 'content://com.hash.prism.wallpaper_crop/wallpaper_crop/edit.png';
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(cropChannel, null));
+    final File export = await _startLockFailure(tester, client);
+    await _openPhoneFallback(tester);
+    await waitForRealIo(tester, () => cropStarted.isCompleted, reason: 'phone crop begins');
+    await tester.pumpWidget(const SizedBox());
+    // Give any disposal cleanup real I/O time before the native side reads the file.
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    allowCrop.complete();
+    await waitForRealIo(
+      tester,
+      () => client.requests.length == 3 && !export.parent.existsSync(),
+      reason: 'phone request completes and releases export',
+    );
+    expect(exportExistedAtCrop, isTrue);
+    await tester.pump(const Duration(seconds: 1));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('phone retry locks edits and rejects another export while native work is pending', (tester) async {
+    final _LockRefusingClient client = _LockRefusingClient();
+    final Completer<void> allowCrop = Completer<void>();
+    const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(cropChannel, (_) async {
+      await allowCrop.future;
+      return 'content://com.hash.prism.wallpaper_crop/wallpaper_crop/edit.png';
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(cropChannel, null));
+    await _startLockFailure(tester, client);
+    await waitForRealIo(
+      tester,
+      () => find.text('Set with phone').evaluate().isNotEmpty,
+      reason: 'phone fallback action',
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+    final Finder setButton = find.ancestor(of: find.byTooltip('Set as wallpaper'), matching: find.byType(IconButton));
+    final VoidCallback startAnotherExport = tester.widget<IconButton>(setButton).onPressed!;
+    await _openPhoneFallback(tester);
+    final Finder reset = find.ancestor(of: find.byTooltip('Reset'), matching: find.byType(IconButton));
+    final bool editsLocked = tester.widget<IconButton>(reset).onPressed == null;
+    startAnotherExport();
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pump();
+    final int requestsBeforeCrop = client.requests.length;
+    allowCrop.complete();
+    await waitForRealIo(tester, () => client.requests.length >= 3, reason: 'phone retry completes');
+    await tester.pumpWidget(const SizedBox());
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    expect(editsLocked, isTrue);
+    expect(requestsBeforeCrop, 2);
     await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }

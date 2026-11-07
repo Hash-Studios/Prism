@@ -13,7 +13,9 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/features/ads/biz/bloc/ads_bloc.j.dart';
 import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/ads/data/repositories/ads_repository_impl.dart';
@@ -499,6 +501,89 @@ void main() {
     expect(CoinsService.instance.balanceNotifier.value, 15);
     await tester.pump(const Duration(seconds: 2));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a premium filter set with the phone after a refused lock screen is charged again (#545)', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final Directory directory = Directory.systemTemp.createTempSync('wallpaper_filter_set_phone_');
+    addTearDown(() => directory.deleteSync(recursive: true));
+    final File source = File('${directory.path}/source.png');
+    source.writeAsBytesSync((await tester.runAsync(_smallPng))!);
+    app_state.prismUser.coins = 20;
+    CoinsService.instance.balanceNotifier.value = 20;
+    final originalOpener = SetWallpaperFlow.screenOpener;
+    SetWallpaperFlow.screenOpener = (context, request) async => const SetWallpaperChoice(WallpaperTarget.lock);
+    addTearDown(() => SetWallpaperFlow.screenOpener = originalOpener);
+
+    var spendCalls = 0;
+    var refundCalls = 0;
+    var setCalls = 0;
+    var balance = 20;
+    const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(_toastChannel, (_) async => true);
+    messenger.setMockMethodCallHandler(_pathProviderChannel, (_) async => directory.path);
+    messenger.setMockMethodCallHandler(cropChannel, (_) async => 'content://com.hash.prism.wallpaper_crop/edit.png');
+    addTearDown(() => messenger.setMockMethodCallHandler(cropChannel, null));
+    messenger.setMockMessageHandler(_functionsChannel, (message) async {
+      final List<Object?> arguments = _codec.decodeMessage(message)! as List<Object?>;
+      final Map<Object?, Object?> call = arguments.single! as Map<Object?, Object?>;
+      final bool spend = call['functionName'] == 'spendCoins';
+      if (!spend && call['functionName'] != 'awardCoins') fail('Unexpected callable: ${call['functionName']}');
+      spend ? spendCalls++ : refundCalls++;
+      final int previous = balance;
+      balance += spend ? -CoinPolicy.premiumFilter : CoinPolicy.premiumFilter;
+      return _codec.encodeMessage(<Object?>[
+        <String, Object?>{
+          'success': true,
+          'changed': true,
+          'previousBalance': previous,
+          'currentBalance': balance,
+          'delta': spend ? -CoinPolicy.premiumFilter : CoinPolicy.premiumFilter,
+          if (spend) 'transactionId': 'phone-filter-spend-$spendCalls',
+        },
+      ]);
+    });
+    const MessageCodec<Object?> wallpaperCodec = wallpaper_api.WallpaperApi.pigeonChannelCodec;
+    messenger.setMockMessageHandler(_setWallpaperChannel, (_) async {
+      setCalls++;
+      final bool phoneScreen = setCalls > 2;
+      return wallpaperCodec.encodeMessage(<Object?>[
+        wallpaper_api.OperationResultData(
+          status: phoneScreen
+              ? wallpaper_api.OperationStatusData.awaitingUserConfirmation
+              : wallpaper_api.OperationStatusData.failed,
+          requestedTarget: wallpaper_api.WallpaperTargetData.lock,
+          errorCode: phoneScreen ? null : 'wallpaper-apply-failed',
+        ),
+      ]);
+    });
+
+    await tester.pumpWidget(_screenHost(source.path));
+    await _waitForEditorReady(tester);
+    await _tapInvert(tester);
+    await tester.tap(_iconButton('Set as wallpaper'));
+    await _waitForCount(tester, () => refundCalls, 1, 'refund of the failed lock screen set');
+    await waitForRealIo(
+      tester,
+      () => find.text('Set with phone').evaluate().isNotEmpty,
+      reason: 'Set with phone action',
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    await tester.tap(find.text('Set with phone'));
+    await _waitForCount(tester, () => setCalls, 3, 'phone wallpaper screen request');
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(spendCalls, 2);
+    expect(refundCalls, 1);
+    expect(CoinsService.instance.balanceNotifier.value, 15);
+    await tester.pump(const Duration(seconds: 2));
   });
 
   testWidgets('reports a failure, not success, when the account changes while set options are open', (tester) async {

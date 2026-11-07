@@ -81,6 +81,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   bool _effectsAvailable = false;
   bool _comparing = false;
   bool _busy = false;
+  bool _phoneSetInProgress = false;
   bool _premiumFilterUnlockedForSession = false;
   double? _previewPixelsPerSourcePixel;
   Future<Uint8List>? _pendingRender;
@@ -88,8 +89,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   @override
   void dispose() {
     _tabs.dispose();
-    for (final File file in _sharedFiles) {
-      unawaited(_deleteEditedFile(file));
+    if (!_phoneSetInProgress) {
+      for (final File file in _sharedFiles) {
+        unawaited(_deleteEditedFile(file));
+      }
     }
     super.dispose();
   }
@@ -529,7 +532,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
       if (choice == null) return true;
       final WallpaperSetResult result = await _setWallpaper(path, choice);
       // The phone's own wallpaper screen needs the edit after this returns, so it stays until the editor closes.
-      if (offersPhoneWallpaperScreen(result, choice.target) &&
+      if (mounted &&
+          offersPhoneWallpaperScreen(result, choice.target) &&
           _ownedExportDirectories.contains(imageFile.parent.path)) {
         _sharedFiles.add(imageFile);
       }
@@ -545,13 +549,29 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   }
 
   Future<void> _setWithPhone(String path) async {
-    if (!mounted || !app_state.prismUser.loggedIn) return;
-    final WallpaperSetResult result = await _setWallpaper(
-      path,
-      const SetWallpaperChoice(WallpaperTarget.lock, useSystemCropper: true),
-      offerPhoneScreen: false,
-    );
-    if ((result.isSuccess || result.isInfo) && mounted) Navigator.of(context).pop();
+    if (!mounted || !app_state.prismUser.loggedIn || _phoneSetInProgress || _busy) return;
+    _phoneSetInProgress = true;
+    _busy = true;
+    try {
+      if (mounted) setState(() {});
+      final WallpaperSetResult result = await _setWallpaper(
+        path,
+        const SetWallpaperChoice(WallpaperTarget.lock, useSystemCropper: true),
+        offerPhoneScreen: false,
+      );
+      if ((result.isSuccess || result.isInfo) && mounted) Navigator.of(context).pop();
+    } finally {
+      _phoneSetInProgress = false;
+      _busy = false;
+      if (!mounted) {
+        for (final File file in _sharedFiles.toList()) {
+          _sharedFiles.remove(file);
+          await _deleteEditedFile(file);
+        }
+      } else {
+        setState(() {});
+      }
+    }
   }
 
   /// Shares the edited file. The file stays until the editor closes, because the receiving app may read it late.
