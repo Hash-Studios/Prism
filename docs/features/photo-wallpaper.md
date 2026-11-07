@@ -65,7 +65,7 @@ A refused job (bad input, cap reached, not enough coins) does not count. A job t
 8. The result page shows before and after with a slider. The actions are "Set as wallpaper", "Download" (Android only, because on iOS Set saves to Photos), "Save to folder" and "Use another photo".
 9. When the job fails, the page tells the user why and if the coins came back.
 
-The privacy note under the picker says: "Your photo goes to our AI provider, fal.ai, and to Google Cloud Vision for this job only. Prism does not keep it and asks fal.ai to delete it after the job."
+The privacy note under the picker says: "Your photo goes to our AI provider, fal.ai, and to Google Cloud Vision for this job only. Prism keeps the finished wallpaper, not your photo, and asks fal.ai to delete the photo after the job."
 
 ## How it works
 

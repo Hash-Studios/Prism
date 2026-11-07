@@ -321,7 +321,7 @@ void main() {
     await _settle(tester);
 
     expect(find.text('Extending your photo'), findsOneWidget);
-    expect(find.text('This can take up to a minute.'), findsOneWidget);
+    expect(find.text('This usually takes under a minute.'), findsOneWidget);
     expect(find.byKey(_runKey), findsNothing);
 
     pending.complete(_successMap);
@@ -384,13 +384,7 @@ void main() {
   }
 
   testWidgets('result actions wrap their labels on a narrow screen with large text', (tester) async {
-    await _pumpPage(
-      tester,
-      _Harness(),
-      size: const Size(640, 1334),
-      devicePixelRatio: 2,
-      textScale: 2,
-    );
+    await _pumpPage(tester, _Harness(), size: const Size(640, 1334), devicePixelRatio: 2, textScale: 2);
     await _pickPhoto(tester);
     await tester.tap(find.byKey(_runKey));
     await _settle(tester);
