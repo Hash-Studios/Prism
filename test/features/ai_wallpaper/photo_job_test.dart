@@ -80,6 +80,15 @@ void main() {
     expect(await outside.exists(), isTrue);
   });
 
+  test('a failed picker cleanup still returns the photo it read', () async {
+    final Directory temp = await Directory.systemTemp.createTemp('photo-wallpaper-');
+    addTearDown(() => temp.delete(recursive: true));
+    final File cachedCopy = File(p.join(temp.path, 'picked.jpg'))..writeAsBytesSync(<int>[1, 2, 3]);
+    final Directory missing = Directory(p.join(temp.path, 'gone'));
+
+    expect(await readAndCleanupPickedPhoto(XFile(cachedCopy.path), temporaryDirectory: missing), <int>[1, 2, 3]);
+  });
+
   test('picker cleanup resolves a temporary directory alias before checking containment', () async {
     final Directory fixture = await Directory.systemTemp.createTemp('photo-wallpaper-alias-');
     addTearDown(() => fixture.delete(recursive: true));
@@ -163,6 +172,11 @@ void main() {
 
     test('clamps the width to 720 and floors the height', () {
       expect(phoneTargetSize(width: 600, height: 1300), const PhotoSize(720, 1560));
+    });
+
+    test('never drops below the 1.6 ratio the server accepts when the width is not a multiple of 5', () {
+      expect(phoneTargetSize(width: 723, height: 1000), const PhotoSize(723, 1157));
+      expect(1157 / 723, greaterThanOrEqualTo(1.6));
     });
 
     test('clamps the ratio to 2.4', () {

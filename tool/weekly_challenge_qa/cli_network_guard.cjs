@@ -105,7 +105,14 @@ net.Socket.prototype.connect = function (...args) {
     const pending = pendingSockets.get(options.path);
     pending.set(this, args);
     this.connecting = true;
-    this.once('close', () => pending.delete(this));
+    // A child that never attests its socket must not leave this connection waiting forever.
+    const timer = setTimeout(() => this.destroy(Error('Local QA emulator socket was not attested in time')), 30000);
+    timer.unref();
+    this.once('connect', () => clearTimeout(timer));
+    this.once('close', () => {
+      clearTimeout(timer);
+      pending.delete(this);
+    });
     return this;
   }
   if (options.path || !['127.0.0.1', 'localhost', '::1'].includes(host)) {

@@ -67,7 +67,8 @@ PhotoSize phoneTargetSize({required double width, required double height}) {
   final double long = math.max(width, height);
   final double ratio = short > 0 ? (long / short).clamp(1.6, 2.4) : 2.0;
   final int w = short.round().clamp(720, 1600);
-  return PhotoSize(w, (w * ratio).floor());
+  // Rounding down could fall under the server's 1.6 minimum when w * 1.6 is not a whole number.
+  return PhotoSize(w, math.max((w * ratio).floor(), (w * 1.6).ceil()));
 }
 
 PhotoSize targetSizeFor(PhotoJobTarget target, PhotoSize phone) =>

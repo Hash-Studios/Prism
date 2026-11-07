@@ -15276,7 +15276,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get photoWallPrivacyNote =>
-      'Sua foto é enviada ao nosso provedor de IA, o fal.ai, e ao Google Cloud Vision apenas para este trabalho. O Prism não a guarda e pede ao fal.ai que a apague depois do trabalho.';
+      'Sua foto é enviada ao nosso provedor de IA, o fal.ai, e ao Google Cloud Vision apenas para este trabalho. O Prism guarda o papel de parede pronto, não a sua foto, e pede ao fal.ai que apague a foto depois do trabalho.';
 
   @override
   String get photoWallTargetLabel => 'Criar para';
@@ -15366,7 +15366,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get photoWallWorkingUpscale => 'Aumentando a resolução da sua foto';
 
   @override
-  String get photoWallWorkingDetail => 'Isso pode levar até um minuto.';
+  String get photoWallWorkingDetail => 'Isso costuma levar menos de um minuto.';
 
   @override
   String get photoWallBefore => 'Antes';
@@ -30701,7 +30701,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get photoWallPrivacyNote =>
-      'Sua foto é enviada ao nosso provedor de IA, o fal.ai, e ao Google Cloud Vision apenas para este trabalho. O Prism não a guarda e pede ao fal.ai que a apague depois do trabalho.';
+      'Sua foto é enviada ao nosso provedor de IA, o fal.ai, e ao Google Cloud Vision apenas para este trabalho. O Prism guarda o papel de parede pronto, não a sua foto, e pede ao fal.ai que apague a foto depois do trabalho.';
 
   @override
   String get photoWallTargetLabel => 'Criar para';
@@ -30791,7 +30791,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get photoWallWorkingUpscale => 'Aumentando a resolução da sua foto';
 
   @override
-  String get photoWallWorkingDetail => 'Isso pode levar até um minuto.';
+  String get photoWallWorkingDetail => 'Isso costuma levar menos de um minuto.';
 
   @override
   String get photoWallBefore => 'Antes';

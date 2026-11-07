@@ -210,6 +210,11 @@ async function stubResult(model, body) {
 }
 
 async function relayFal(model, raw, res) {
+  if (!Object.hasOwn(FAL_PRICES, model)) {
+    res.writeHead(404, {'content-type': 'application/json'});
+    res.end('{"detail":"unknown model"}');
+    return;
+  }
   const ledger = readJson('ledger.json', []);
   const body = JSON.parse(raw);
   if (fs.existsSync(file('force-fail'))) {
@@ -221,6 +226,10 @@ async function relayFal(model, raw, res) {
   }
   const real = ledger.filter((entry) => entry.kind === 'real').length;
   if (real < REAL_FAL_LIMIT && process.env.FAL_API_KEY) {
+    // Reserve the slot before the first await, so two jobs at once cannot both pass the cap.
+    const slot = {at: new Date().toISOString(), model, kind: 'real', status: 'pending'};
+    ledger.push(slot);
+    writeJson('ledger.json', ledger);
     const response = await fetch(`https://fal.run/${model}`, {method: 'POST', body: raw, signal: AbortSignal.timeout(160000),
       headers: {'Authorization': `Key ${process.env.FAL_API_KEY}`, 'content-type': 'application/json', 'X-Fal-Store-IO': '0'}});
     const text = await response.text();
@@ -233,15 +242,18 @@ async function relayFal(model, raw, res) {
       size = null;
     }
     const costUsd = size ? Math.round(FAL_PRICES[model](size.width, size.height) * 10000) / 10000 : null;
-    ledger.push({at: new Date().toISOString(), model, kind: 'real', status: response.status, requestId, size, costUsd});
-    writeJson('ledger.json', ledger);
+    const fresh = readJson('ledger.json', []);
+    const entry = fresh.find((e) => e.kind === 'real' && e.at === slot.at && e.model === model && e.status === 'pending');
+    Object.assign(entry ?? (fresh[fresh.push({}) - 1]), {...slot, status: response.status, requestId, size, costUsd});
+    writeJson('ledger.json', fresh);
     res.writeHead(response.status, {'content-type': 'application/json', 'x-fal-request-id': requestId});
     res.end(text);
     return;
   }
   const result = await stubResult(model, body);
-  ledger.push({at: new Date().toISOString(), model, kind: 'stub', costUsd: 0});
-  writeJson('ledger.json', ledger);
+  const fresh = readJson('ledger.json', []);
+  fresh.push({at: new Date().toISOString(), model, kind: 'stub', costUsd: 0});
+  writeJson('ledger.json', fresh);
   res.writeHead(200, {'content-type': 'application/json', 'x-fal-request-id': `stub-${Date.now().toString(16)}`});
   res.end(JSON.stringify(result));
 }

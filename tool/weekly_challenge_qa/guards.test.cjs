@@ -114,7 +114,7 @@ function photoFixture(t, options = {}) {
     fetch: options.fetch ?? (() => { throw Error('Unexpected network call'); }), console: {log() {}, error() {}}};
   const source = fs.readFileSync(photoQa, 'utf8')
     .replace("const runtime = '/tmp/prism-weekly-qa-photo-wall';", `const runtime = ${JSON.stringify(runtime)};`);
-  vm.runInNewContext(source + '\nglobalThis.api = {seed, buildIos, prepare, installPhotoSeams, relayDelete};', context);
+  vm.runInNewContext(source + '\nglobalThis.api = {seed, buildIos, prepare, installPhotoSeams, relayDelete, relayFal};', context);
   return {...context.api, root, runtime, put, defines, state, require: localRequire};
 }
 
@@ -336,4 +336,32 @@ test('CLI child networking rejects traversal and symlink substitution of an atte
   `, {TMPDIR: tmp});
   fs.rmSync(tmp, {recursive: true, force: true});
   assert.equal(result.status, 0, result.stderr);
+});
+test('photo relay refuses an unknown model before any fal call', async (t) => {
+  const qa = photoFixture(t, {env: {FAL_API_KEY: 'fixture-key'}});
+  qa.put('ledger.json', '[]');
+  const response = {writeHead(code) { this.status = code; }, end(body) { this.body = body; }};
+  await qa.relayFal('fal-ai/some-other-model', '{}', response);
+  assert.equal(response.status, 404);
+});
+test('photo relay reserves the last real fal slot before the call, so two jobs cannot both spend it', async (t) => {
+  let calls = 0;
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  const qa = photoFixture(t, {env: {FAL_API_KEY: 'fixture-key'}, fetch: async () => {
+    calls++;
+    await gate;
+    return Response.json({image: {width: 10, height: 10}});
+  }});
+  qa.put('ledger.json', JSON.stringify([{kind: 'real', model: 'fal-ai/bria/expand'}]));
+  const response = () => ({writeHead(code) { this.status = code; }, end(body) { this.body = body; }});
+  const first = qa.relayFal('fal-ai/bria/expand', '{}', response());
+  const second = qa.relayFal('fal-ai/bria/expand', JSON.stringify({image_url: 'data:image/jpeg;base64,AAAA'}), response())
+    .catch(() => 'stubbed');
+  release();
+  await Promise.all([first, second]);
+  assert.equal(calls, 1);
+  const ledger = JSON.parse(fs.readFileSync(path.join(qa.runtime, 'ledger.json'), 'utf8'));
+  assert.equal(ledger.filter((entry) => entry.kind === 'real').length, 2);
+  assert.ok(ledger.every((entry) => entry.status !== 'pending'));
 });

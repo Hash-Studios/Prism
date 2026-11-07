@@ -160,13 +160,18 @@ Future<Uint8List> readAndCleanupPickedPhoto(XFile file, {required Directory temp
   try {
     return await file.readAsBytes();
   } finally {
-    final String tempPath = p.normalize(p.absolute(temporaryDirectory.path));
-    final String pickedPath = p.normalize(p.absolute(file.path));
-    final FileSystemEntityType type = await FileSystemEntity.type(pickedPath, followLinks: false);
-    if (type == FileSystemEntityType.file) {
-      final String realTempPath = await Directory(tempPath).resolveSymbolicLinks();
-      final String realPickedPath = await File(pickedPath).resolveSymbolicLinks();
-      if (p.isWithin(realTempPath, realPickedPath)) await File(pickedPath).delete();
+    // Best effort: a cleanup error must not replace the photo that was read.
+    try {
+      final String tempPath = p.normalize(p.absolute(temporaryDirectory.path));
+      final String pickedPath = p.normalize(p.absolute(file.path));
+      final FileSystemEntityType type = await FileSystemEntity.type(pickedPath, followLinks: false);
+      if (type == FileSystemEntityType.file) {
+        final String realTempPath = await Directory(tempPath).resolveSymbolicLinks();
+        final String realPickedPath = await File(pickedPath).resolveSymbolicLinks();
+        if (p.isWithin(realTempPath, realPickedPath)) await File(pickedPath).delete();
+      }
+    } catch (error) {
+      logger.w('[PhotoWallpaper] picker copy cleanup failed (${error.runtimeType})');
     }
   }
 }

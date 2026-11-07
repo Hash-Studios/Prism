@@ -14960,7 +14960,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get photoWallPrivacyNote =>
-      'Fotomu dikirim ke penyedia AI kami, fal.ai, dan ke Google Cloud Vision hanya untuk tugas ini. Prism tidak menyimpannya dan meminta fal.ai menghapusnya setelah tugas selesai.';
+      'Fotomu dikirim ke penyedia AI kami, fal.ai, dan ke Google Cloud Vision hanya untuk tugas ini. Prism menyimpan wallpaper yang sudah jadi, bukan fotomu, dan meminta fal.ai menghapus foto itu setelah tugas selesai.';
 
   @override
   String get photoWallTargetLabel => 'Buat untuk';
@@ -15050,7 +15050,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get photoWallWorkingUpscale => 'Meningkatkan resolusi fotomu';
 
   @override
-  String get photoWallWorkingDetail => 'Ini bisa memakan waktu hingga satu menit.';
+  String get photoWallWorkingDetail => 'Biasanya kurang dari satu menit.';
 
   @override
   String get photoWallBefore => 'Sebelum';

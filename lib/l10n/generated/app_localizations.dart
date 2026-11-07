@@ -23734,7 +23734,7 @@ abstract class AppLocalizations {
   /// Privacy note under the photo picker.
   ///
   /// In en, this message translates to:
-  /// **'Your photo goes to our AI provider, fal.ai, and to Google Cloud Vision for this job only. Prism does not keep it and asks fal.ai to delete it after the job.'**
+  /// **'Your photo goes to our AI provider, fal.ai, and to Google Cloud Vision for this job only. Prism keeps the finished wallpaper, not your photo, and asks fal.ai to delete the photo after the job.'**
   String get photoWallPrivacyNote;
 
   /// Label of the phone or desktop choice.
@@ -23878,7 +23878,7 @@ abstract class AppLocalizations {
   /// Progress detail.
   ///
   /// In en, this message translates to:
-  /// **'This can take up to a minute.'**
+  /// **'This usually takes under a minute.'**
   String get photoWallWorkingDetail;
 
   /// Label on the original side of the compare slider.
