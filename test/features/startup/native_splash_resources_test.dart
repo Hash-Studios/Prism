@@ -56,7 +56,6 @@ void main() {
       for (final night in <bool>[false, true]) {
         final qualifiers = <String>[
           'values',
-          if (sdk >= 26) 'values-v26',
           if (sdk >= 27) 'values-v27',
           if (sdk >= 29) 'values-v29',
           if (sdk >= 31) 'values-v31',
@@ -71,13 +70,14 @@ void main() {
           );
           expect(
             boolean(styleAttribute(theme, 'android:windowLightNavigationBar', qualifiers), night: night),
-            sdk >= 26 ? (night ? 'false' : 'true') : null,
+            sdk >= 27 ? (night ? 'false' : 'true') : null,
             reason: reason,
           );
-          // Before API 26 the navigation glyphs are always light, so their background must stay dark.
+          // windowLightNavigationBar needs API 27. Before it the navigation glyphs are always light, so their
+          // background must stay dark.
           expect(
             styleAttribute(theme, 'android:navigationBarColor', qualifiers),
-            sdk >= 26 ? '@android:color/transparent' : '@android:color/black',
+            sdk >= 27 ? '@android:color/transparent' : '@android:color/black',
             reason: reason,
           );
         }
@@ -103,7 +103,6 @@ void main() {
       for (final night in <bool>[false, true]) {
         final qualifiers = <String>[
           'values',
-          if (sdk >= 26) 'values-v26',
           if (sdk >= 27) 'values-v27',
           if (sdk >= 29) 'values-v29',
           if (sdk >= 31) 'values-v31',
