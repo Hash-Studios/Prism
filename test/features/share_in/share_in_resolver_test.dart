@@ -77,7 +77,7 @@ void main() {
     final ShareInRoute route = resolution.route! as ShareInRoute;
     expect(route.args!.kind, SharedItemKind.image);
     expect(route.args!.item, isNull);
-    expect(events.whereType<ShareActionEvent>().single.action, ShareActionValue.failed);
+    expect(events.whereType<ShareActionEvent>(), isEmpty, reason: 'the share sheet records the failure');
   });
 
   test('a web link opens the share sheet with a URL item', () async {
@@ -98,7 +98,7 @@ void main() {
     final ShareInRoute route = resolution.route! as ShareInRoute;
     expect(route.args!.kind, SharedItemKind.url);
     expect(route.args!.item, isNull);
-    expect(events.whereType<ShareActionEvent>().single.action, ShareActionValue.failed);
+    expect(events.whereType<ShareActionEvent>(), isEmpty, reason: 'the share sheet records the failure');
   });
 
   test('a Prism wall link opens the wall with Save to Folder open', () async {

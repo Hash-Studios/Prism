@@ -69,6 +69,8 @@ end
 end
 strings = ext_group.files.find { |f| f.path == 'Localizable.xcstrings' } || ext_group.new_reference('Localizable.xcstrings')
 ext.resources_build_phase.add_file_reference(strings) unless ext.resources_build_phase.files_references.include?(strings)
+privacy = ext_group.files.find { |f| f.path == 'PrivacyInfo.xcprivacy' } || ext_group.new_reference('PrivacyInfo.xcprivacy')
+ext.resources_build_phase.add_file_reference(privacy) unless ext.resources_build_phase.files_references.include?(privacy)
 sync_sources(ext_group, File.join(ios_dir, NAME), [ext])
 sync_sources(group_for(project, SHARED), File.join(ios_dir, SHARED), [runner, ext])
 

@@ -27,7 +27,6 @@ Future<DeepLinkRouteResolution> resolveShareIn(
   record(ShareReceivedEvent(kind: (item?.kind ?? expected).analytics, sourceApp: action.sourceApp));
   switch (item) {
     case null:
-      record(ShareActionEvent(action: ShareActionValue.failed, kind: expected.analytics));
       return DeepLinkRouteResolution.route(ShareInRoute(key: UniqueKey(), kind: expected));
     case SharedPrismLink(:final DeepLinkActionEntity action):
       final DeepLinkRouteResolution resolution = await navigation.resolveAction(action);

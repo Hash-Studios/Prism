@@ -30,6 +30,7 @@
 		8A08C38E0108F7BB1C02CF07 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B214F81AAFD36B14DFF576AF /* Localizable.xcstrings */; };
 		8D0E75540C2C7F0C27CC937D /* PrismAiGenerationAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A531019312F124499790F0E /* PrismAiGenerationAttributes.swift */; };
 		905157478EC0231A913BB5D5 /* PrismShortcutWallpaperFallback.swift in Sources */ = {isa = PBXBuildFile; fileRef = A22B00142F00000200B2B2B2 /* PrismShortcutWallpaperFallback.swift */; };
+		957BC8598CFA267F41AEA57A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 19F697B24D4B7DAE3DBDB7A3 /* PrivacyInfo.xcprivacy */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
@@ -152,6 +153,7 @@
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
 		155D09353231B7290DE73394 /* PrismNotificationService.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PrismNotificationService.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		19F697B24D4B7DAE3DBDB7A3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		1B4AAFF0A9D8F70D4A85DE8A /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
 		1B6B067CFFF8C340C7D18748 /* UniformTypeIdentifiers.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UniformTypeIdentifiers.framework; path = System/Library/Frameworks/UniformTypeIdentifiers.framework; sourceTree = SDKROOT; };
 		1D096045A87D071EB4DD1A17 /* PrismSharedInboxChannel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PrismSharedInboxChannel.swift; sourceTree = "<group>"; };
@@ -343,6 +345,7 @@
 				3201B58D5427FC4696D50443 /* PrismShareExtension.entitlements */,
 				B214F81AAFD36B14DFF576AF /* Localizable.xcstrings */,
 				4628189A894BF46B5FBE9C14 /* ShareViewController.swift */,
+				19F697B24D4B7DAE3DBDB7A3 /* PrivacyInfo.xcprivacy */,
 			);
 			name = PrismShareExtension;
 			path = PrismShareExtension;
@@ -712,6 +715,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8A08C38E0108F7BB1C02CF07 /* Localizable.xcstrings in Resources */,
+				957BC8598CFA267F41AEA57A /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
