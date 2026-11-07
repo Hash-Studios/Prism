@@ -3028,6 +3028,9 @@
   "coreWallpaperErrorSystemPreview": "Die Systemvorschau konnte nicht geöffnet werden.",
   "coreWallpaperErrorTextureDimensions": "Dieses Bild ist zu groß für ein Live-Hintergrundbild.",
   "coreWallpaperStillSetting": "Dein Hintergrund wird noch gesetzt. Das kann auf manchen Handys einen Moment dauern.",
+  "@coreWallpaperStillSetting": {
+    "description": "Shown when the phone has not finished setting the wallpaper after 30 seconds. The set can still finish, so this is not an error."
+  },
   "coreWallpaperErrorTimeout": "Zeitüberschreitung. Prüfe deine Verbindung und versuch es erneut.",
   "coreWallpaperHomeScreen": "Startbildschirm",
   "coreWallpaperHomeSetLockFailed": "Hintergrundbild für den Startbildschirm festgelegt. Das Festlegen für den Sperrbildschirm ist fehlgeschlagen.",
@@ -6605,6 +6608,9 @@
     "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
   },
   "premiumPaymentPending": "Deine Zahlung ist noch ausstehend. Pro wird freigeschaltet, sobald die Zahlung durch ist.",
+  "@premiumPaymentPending": {
+    "description": "Toast when the store holds a purchase as pending (for example a slow UPI or card payment). Pro unlocks later."
+  },
   "premiumPurchaseUnconfirmed": "Dein Kauf konnte nicht bestätigt werden. Versuche es in den Einstellungen mit „Käufe wiederherstellen“.",
   "@premiumPurchaseUnconfirmed": {
     "description": "Toast after a purchase that neither the store nor the server could confirm."

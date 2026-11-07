@@ -3254,6 +3254,9 @@
   "coreWallpaperErrorSystemPreview": "Pratinjau sistem tidak dapat dibuka.",
   "coreWallpaperErrorTextureDimensions": "Gambar itu terlalu besar untuk dijadikan wallpaper bergerak.",
   "coreWallpaperStillSetting": "Wallpaper Anda masih dipasang. Di beberapa ponsel, ini bisa butuh waktu sebentar.",
+  "@coreWallpaperStillSetting": {
+    "description": "Shown when the phone has not finished setting the wallpaper after 30 seconds. The set can still finish, so this is not an error."
+  },
   "coreWallpaperErrorTimeout": "Waktu habis. Periksa koneksi Anda, lalu coba lagi.",
   "coreWallpaperHomeScreen": "Layar utama",
   "coreWallpaperHomeSetLockFailed": "Wallpaper layar utama terpasang. Layar kunci gagal dipasang.",
@@ -6828,6 +6831,9 @@
     "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
   },
   "premiumPaymentPending": "Pembayaran Anda masih tertunda. Pro akan aktif setelah pembayaran berhasil.",
+  "@premiumPaymentPending": {
+    "description": "Toast when the store holds a purchase as pending (for example a slow UPI or card payment). Pro unlocks later."
+  },
   "premiumPurchaseUnconfirmed": "Pembelian Anda tidak dapat dikonfirmasi. Coba Pulihkan pembelian di Pengaturan.",
   "@premiumPurchaseUnconfirmed": {
     "description": "Toast after a purchase that neither the store nor the server could confirm."

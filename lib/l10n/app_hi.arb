@@ -3158,6 +3158,9 @@
   "coreWallpaperErrorSystemPreview": "सिस्टम प्रीव्यू नहीं खुल सका।",
   "coreWallpaperErrorTextureDimensions": "यह इमेज लाइव वॉलपेपर के लिए बहुत बड़ी है।",
   "coreWallpaperStillSetting": "आपका वॉलपेपर अभी लग रहा है। कुछ फ़ोन पर इसमें थोड़ा समय लग सकता है।",
+  "@coreWallpaperStillSetting": {
+    "description": "Shown when the phone has not finished setting the wallpaper after 30 seconds. The set can still finish, so this is not an error."
+  },
   "coreWallpaperErrorTimeout": "समय सीमा समाप्त हुई। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
   "coreWallpaperHomeScreen": "होम स्क्रीन",
   "coreWallpaperHomeSetLockFailed": "होम स्क्रीन सेट हो गई। लॉक स्क्रीन सेट नहीं हो सकी।",
@@ -6715,6 +6718,9 @@
     "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
   },
   "premiumPaymentPending": "आपका भुगतान अभी बाकी है। भुगतान पूरा होते ही Pro अनलॉक हो जाएगा।",
+  "@premiumPaymentPending": {
+    "description": "Toast when the store holds a purchase as pending (for example a slow UPI or card payment). Pro unlocks later."
+  },
   "premiumPurchaseUnconfirmed": "आपकी खरीद की पुष्टि नहीं हो सकी। सेटिंग्स में ‘खरीदारियाँ वापस पाएँ’ आज़माएँ।",
   "@premiumPurchaseUnconfirmed": {
     "description": "Toast after a purchase that neither the store nor the server could confirm."

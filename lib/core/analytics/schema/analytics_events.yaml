@@ -117,6 +117,7 @@ enums:
       - restored
       - guest_sign_in_required
       - rc_error
+      - payment_pending
       - unknown
   - name: wrapped_source
     dart_type: WrappedSourceValue

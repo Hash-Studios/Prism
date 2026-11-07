@@ -962,6 +962,9 @@
   "coreWallpaperErrorSystemPreview": "Não foi possível abrir a pré-visualização do sistema.",
   "coreWallpaperErrorTextureDimensions": "Essa imagem é grande demais para um papel de parede animado.",
   "coreWallpaperStillSetting": "Ainda estamos aplicando seu papel de parede. Em alguns celulares isso pode levar um momento.",
+  "@coreWallpaperStillSetting": {
+    "description": "Shown when the phone has not finished setting the wallpaper after 30 seconds. The set can still finish, so this is not an error."
+  },
   "coreWallpaperErrorTimeout": "Tempo esgotado. Verifique sua conexão e tente novamente.",
   "coreWallpaperHomeScreen": "Tela inicial",
   "coreWallpaperHomeSetLockFailed": "Tela inicial definida. Falha na tela de bloqueio.",
@@ -2017,6 +2020,9 @@
   "premiumGuestStorePurchaseActive": "Sua compra na loja está ativa neste dispositivo. Entre para usar os recursos Pro vinculados à conta.",
   "premiumPurchasePending": "Sua compra foi salva. O Pro pode levar um minuto para ser ativado.",
   "premiumPaymentPending": "Seu pagamento está pendente. O Pro será ativado quando o pagamento for concluído.",
+  "@premiumPaymentPending": {
+    "description": "Toast when the store holds a purchase as pending (for example a slow UPI or card payment). Pro unlocks later."
+  },
   "premiumPurchaseUnconfirmed": "Não foi possível confirmar sua compra. Tente usar Restaurar compras nas Configurações.",
   "updatesStoreUpdateAvailable": "Uma nova versão do Prism está disponível.",
   "wallpaperAccentColor": "Cor de destaque",
