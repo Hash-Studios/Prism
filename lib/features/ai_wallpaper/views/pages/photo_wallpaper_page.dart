@@ -467,9 +467,9 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
                 Expanded(
                   child: PrismButton(
                     label: l10n.photoWallDownload,
-                    icon: Icons.download_rounded,
                     variant: PrismButtonVariant.tonal,
                     expand: true,
+                    maxLines: 2,
                     onPressed: () => _download(done),
                   ),
                 ),
@@ -478,9 +478,9 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
               Expanded(
                 child: PrismButton(
                   label: l10n.foldersSaveToFolder,
-                  icon: Icons.create_new_folder_rounded,
                   variant: PrismButtonVariant.tonal,
                   expand: true,
+                  maxLines: 2,
                   onPressed: () => _saveToFolder(done, mode),
                 ),
               ),

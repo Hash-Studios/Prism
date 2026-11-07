@@ -361,6 +361,19 @@ void main() {
     expect(placed.toJson(), harness.payloads.single['placement']);
   });
 
+  testWidgets('the Before side is opaque, so the result never shows through its empty canvas', (tester) async {
+    await _pumpPage(tester, _Harness());
+    await _pickPhoto(tester);
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+
+    final Finder canvas = find.descendant(
+      of: find.descendant(of: find.byKey(_compareKey), matching: find.byType(PhotoInCanvas)),
+      matching: find.byType(ColoredBox),
+    );
+    expect(tester.widget<ColoredBox>(canvas.first).color.a, 1.0);
+  });
+
   testWidgets('a blocked output shows the refund line and Try again', (tester) async {
     final _Harness harness = _Harness();
     harness.onCall = (Map<String, Object?> payload) async => <String, Object?>{
