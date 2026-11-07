@@ -49,6 +49,8 @@ export type PhotoJobResult =
 export const PHOTO_JOBS = "photoJobs";
 export const PHOTO_JOB_DAILY = "photoJobDaily";
 export const PHOTO_JOB_BUDGET = "photoJobBudget";
+/** fal payload deletes left over after account deletion. Holds only the fal request id, never the user. */
+export const PHOTO_FAL_CLEANUP = "photoFalCleanup";
 export const MAX_PHOTO_JOBS_PER_USER_PER_DAY = 10;
 export const MAX_PHOTO_JOBS_PER_DAY = 400;
 export const MAX_PHOTO_INPUT_BYTES = 6 * 1024 * 1024;
@@ -252,22 +254,31 @@ async function runFal(jobId: string, mode: PhotoJobMode, jpeg: Buffer, photo: Si
   }
 }
 
-async function cleanupFalPayload(jobId: string, requestId: string, deps: PhotoDeps): Promise<void> {
+/** Asks fal to delete one request's stored data. True only when fal confirms every file was deleted. */
+async function deleteFalPayload(requestId: string, deps: PhotoDeps): Promise<boolean> {
   try {
     const deleted = await deps.fetch(`https://api.fal.ai/v1/models/requests/${requestId}/payloads`, {
       method: "DELETE",
       headers: {"Authorization": `Key ${deps.falKey().trim()}`},
       signal: AbortSignal.timeout(10_000),
     });
-    let failed = !deleted.ok;
-    if (deleted.ok) {
-      const body = await deleted.json() as {cdn_delete_results?: Array<{exception?: unknown}>};
-      failed = !Array.isArray(body.cdn_delete_results) || body.cdn_delete_results.some((r) => r.exception != null);
-    }
-    if (failed) logger.warn("photoWallpaper: fal payload delete failed.", {requestId});
-    else await db.collection(PHOTO_JOBS).doc(jobId).update({falCleanupPending: false});
+    if (!deleted.ok) return false;
+    const body = await deleted.json() as {cdn_delete_results?: Array<{exception?: unknown}>};
+    return Array.isArray(body.cdn_delete_results) && body.cdn_delete_results.every((r) => r.exception == null);
   } catch {
+    return false;
+  }
+}
+
+async function cleanupFalPayload(jobId: string, requestId: string, deps: PhotoDeps): Promise<void> {
+  if (!(await deleteFalPayload(requestId, deps))) {
     logger.warn("photoWallpaper: fal payload delete failed.", {requestId});
+    return;
+  }
+  try {
+    await db.collection(PHOTO_JOBS).doc(jobId).update({falCleanupPending: false});
+  } catch {
+    logger.warn("photoWallpaper: fal cleanup flag update failed.", {jobId});
   }
 }
 
@@ -576,6 +587,11 @@ export async function sweepStalePhotoJobsOnce(nowMs = Date.now()): Promise<numbe
   for (const field of ["cleanupPending", "falCleanupPending"] as const) {
     await sweepCleanupQueue(field, nowMs);
   }
+  const orphans = await db.collection(PHOTO_FAL_CLEANUP).limit(CLEANUP_BATCH_SIZE).get();
+  for (const doc of orphans.docs) {
+    const requestId = doc.data().falRequestId;
+    if (typeof requestId === "string" && await deleteFalPayload(requestId, photoDeps)) await doc.ref.delete();
+  }
   return refunded;
 }
 
@@ -588,7 +604,8 @@ export const sweepStalePhotoJobs = onSchedule({
 
 /**
  * Account deletion: removes every stored result of the user's photo jobs, then the job records. A result that fails
- * to delete stops the run, so the job record that names it stays for a retry. The daily count is in `UID_KEYED`.
+ * to delete stops the run, so the job record that names it stays for a retry. A fal payload delete that fails does
+ * not stop it: it moves to `photoFalCleanup` without the user id. The daily count is in `UID_KEYED`.
  */
 export async function removePhotoJobsForAccount(uid: string, deps: PhotoDeps = photoDeps): Promise<void> {
   const jobs = await db.collection(PHOTO_JOBS).where("userId", "==", uid).get();
@@ -603,14 +620,11 @@ export async function removePhotoJobsForAccount(uid: string, deps: PhotoDeps = p
     }
     const key = job.resultKey;
     if (key) await deps.remove(key);
-    if (job.falCleanupPending && job.falRequestId) {
-      await cleanupFalPayload(doc.id, job.falRequestId, deps);
-      const refreshedJob = (await doc.ref.get()).data() as PhotoJob | undefined;
-      if (!refreshedJob) continue;
-      job = refreshedJob;
-      if (job.falCleanupPending) throw new HttpsError("internal", "Could not delete a photo provider payload. Retry account deletion.");
-    } else if (job.falCleanupPending) {
-      throw new HttpsError("internal", "Could not identify a photo provider payload. Retry account deletion.");
+    // Account deletion never waits on fal: a payload fal has not confirmed deleted moves to an anonymous retry record.
+    if (job.falCleanupPending && job.falRequestId && !(await deleteFalPayload(job.falRequestId, deps))) {
+      await db.collection(PHOTO_FAL_CLEANUP).doc(job.falRequestId).set({
+        falRequestId: job.falRequestId, at: admin.firestore.Timestamp.now(),
+      });
     }
     await doc.ref.delete();
   }

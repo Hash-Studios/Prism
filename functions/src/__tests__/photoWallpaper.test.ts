@@ -17,6 +17,7 @@ import {
   PhotoJobResult,
   planPhotoJob,
   sweepStalePhotoJobsOnce,
+  PHOTO_FAL_CLEANUP,
   removePhotoJobsForAccount,
 } from "../photoWallpaper";
 import {installFakeDb} from "./fakeDb";
@@ -743,7 +744,9 @@ test("account deletion waits for a fresh photo job, then cleans it after the sta
     [JOB]: {...runningJob(startedAt), resultKey: "photo-walls/result.jpg", cleanupPending: true},
   });
   const removed: string[] = [];
-  const deps = {...photoDeps, remove: async (key: string) => { removed.push(key); }};
+  const deps = {...photoDeps, remove: async (key: string) => {
+    removed.push(key);
+  }};
   await assert.rejects(() => removePhotoJobsForAccount("u1", deps), {code: "internal"});
   assert.equal(store.get(JOB)?.state, "running");
   assert.deepEqual(removed, []);
@@ -754,14 +757,35 @@ test("account deletion waits for a fresh photo job, then cleans it after the sta
   assert.equal(store.get(JOB), undefined);
 });
 
-test("account deletion keeps the job when fal payload cleanup is still pending", async (t) => {
+test("account deletion never waits on fal: a failed payload delete moves to an anonymous retry record", async (t) => {
   const store = installFakeDb(t, {
     [JOB]: {...runningJob(admin.firestore.Timestamp.fromMillis(Date.now() - 11 * MINUTE)), state: "failed",
       falRequestId: "req-abcdef12", falCleanupPending: true},
   });
-  mockDeps(t, {deleteStatus: 500});
-  await assert.rejects(() => removePhotoJobsForAccount("u1"), {code: "internal"});
-  assert.equal(store.get(JOB)?.falCleanupPending, true);
+  mockDeps(t, {deleteStatus: 403});
+  await removePhotoJobsForAccount("u1");
+  assert.equal(store.get(JOB), undefined);
+  const retry = store.get(`${PHOTO_FAL_CLEANUP}/req-abcdef12`);
+  assert.deepEqual(Object.keys(retry ?? {}).sort(), ["at", "falRequestId"]);
+  assert.equal(retry?.falRequestId, "req-abcdef12");
+});
+
+test("the sweeper retries anonymous fal cleanup records and removes them once fal confirms", async (t) => {
+  const store = installFakeDb(t, {[`${PHOTO_FAL_CLEANUP}/req-abcdef12`]: {falRequestId: "req-abcdef12",
+    at: admin.firestore.Timestamp.now()}});
+  let status = 403;
+  const calls: string[] = [];
+  t.mock.method(photoDeps, "falKey", () => "test-key");
+  t.mock.method(photoDeps, "fetch", async (url: string) => {
+    calls.push(url);
+    return Response.json({cdn_delete_results: []}, {status});
+  });
+  await sweepStalePhotoJobsOnce();
+  assert.ok(store.get(`${PHOTO_FAL_CLEANUP}/req-abcdef12`));
+  status = 200;
+  await sweepStalePhotoJobsOnce();
+  assert.equal(store.get(`${PHOTO_FAL_CLEANUP}/req-abcdef12`), undefined);
+  assert.deepEqual(calls, [FAL_DELETE, FAL_DELETE]);
 });
 
 test("account deletion tolerates a concurrent deletion during successful fal cleanup", async (t) => {
@@ -789,7 +813,9 @@ test("account deletion retains a result record after storage removal fails, then
   assert.ok(store.get(JOB));
 
   const removed: string[] = [];
-  await removePhotoJobsForAccount("u1", {...photoDeps, remove: async (key: string) => { removed.push(key); }});
+  await removePhotoJobsForAccount("u1", {...photoDeps, remove: async (key: string) => {
+    removed.push(key);
+  }});
   assert.deepEqual(removed, ["photo-walls/result.jpg"]);
   assert.equal(store.get(JOB), undefined);
 });
@@ -799,8 +825,12 @@ test("a photo paused in output SafeSearch cannot store after deletion begins", a
   const deps = mockDeps(t);
   let releaseOutput!: () => void;
   let markPaused!: () => void;
-  const outputGate = new Promise<void>((resolve) => { releaseOutput = resolve; });
-  const outputPaused = new Promise<void>((resolve) => { markPaused = resolve; });
+  const outputGate = new Promise<void>((resolve) => {
+    releaseOutput = resolve;
+  });
+  const outputPaused = new Promise<void>((resolve) => {
+    markPaused = resolve;
+  });
   let checks = 0;
   t.mock.method(photoDeps, "safeSearch", async () => {
     if (++checks === 2) {
@@ -831,8 +861,12 @@ test("an output SafeSearch result arriving after the work deadline cannot start 
   const deps = mockDeps(t);
   let releaseOutput!: () => void;
   let markPaused!: () => void;
-  const outputGate = new Promise<void>((resolve) => { releaseOutput = resolve; });
-  const outputPaused = new Promise<void>((resolve) => { markPaused = resolve; });
+  const outputGate = new Promise<void>((resolve) => {
+    releaseOutput = resolve;
+  });
+  const outputPaused = new Promise<void>((resolve) => {
+    markPaused = resolve;
+  });
   let checks = 0;
   t.mock.method(photoDeps, "safeSearch", async () => {
     if (++checks === 2) {
@@ -859,8 +893,12 @@ test("a stale deletion retry leaves no row for a paused worker to recreate", asy
   const deps = mockDeps(t);
   let releaseOutput!: () => void;
   let markPaused!: () => void;
-  const outputGate = new Promise<void>((resolve) => { releaseOutput = resolve; });
-  const outputPaused = new Promise<void>((resolve) => { markPaused = resolve; });
+  const outputGate = new Promise<void>((resolve) => {
+    releaseOutput = resolve;
+  });
+  const outputPaused = new Promise<void>((resolve) => {
+    markPaused = resolve;
+  });
   let checks = 0;
   t.mock.method(photoDeps, "safeSearch", async () => {
     if (++checks === 2) {
@@ -891,8 +929,12 @@ test("a photo paused in input SafeSearch cannot call fal after stale account cle
   const deps = mockDeps(t);
   let releaseInput!: () => void;
   let markPaused!: () => void;
-  const inputGate = new Promise<void>((resolve) => { releaseInput = resolve; });
-  const inputPaused = new Promise<void>((resolve) => { markPaused = resolve; });
+  const inputGate = new Promise<void>((resolve) => {
+    releaseInput = resolve;
+  });
+  const inputPaused = new Promise<void>((resolve) => {
+    markPaused = resolve;
+  });
   t.mock.method(photoDeps, "safeSearch", async () => {
     markPaused();
     await inputGate;
@@ -923,10 +965,18 @@ test("deletion during an admitted storage write waits for the worker and can ret
   let markStoreStarted!: (key: string) => void;
   let releaseOutput!: () => void;
   let markOutputPaused!: () => void;
-  const storeGate = new Promise<void>((resolve) => { releaseStore = resolve; });
-  const storeStarted = new Promise<string>((resolve) => { markStoreStarted = resolve; });
-  const outputGate = new Promise<void>((resolve) => { releaseOutput = resolve; });
-  const outputPaused = new Promise<void>((resolve) => { markOutputPaused = resolve; });
+  const storeGate = new Promise<void>((resolve) => {
+    releaseStore = resolve;
+  });
+  const storeStarted = new Promise<string>((resolve) => {
+    markStoreStarted = resolve;
+  });
+  const outputGate = new Promise<void>((resolve) => {
+    releaseOutput = resolve;
+  });
+  const outputPaused = new Promise<void>((resolve) => {
+    markOutputPaused = resolve;
+  });
   let checks = 0;
   t.mock.method(photoDeps, "safeSearch", async () => {
     if (++checks === 2) {

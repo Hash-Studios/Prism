@@ -360,7 +360,7 @@ async function withIosQaConfig(flutterArgs) {
   });
   // Ctrl-C goes to flutter, which exits; swapBuildFiles then restores the real files.
   const ignore = () => {};
-  process.on('SIGINT', ignore);
+  process.on?.('SIGINT', ignore);
   try {
     await swapBuildFiles(swaps, async () => {
       const result = cp.spawnSync('fvm', ['flutter', ...flutterArgs, '--no-pub',
@@ -368,7 +368,7 @@ async function withIosQaConfig(flutterArgs) {
       if (result.status !== 0 && result.signal !== 'SIGINT') throw Error(`flutter ${flutterArgs[0]} exited ${result.status}`);
     });
   } finally {
-    process.off('SIGINT', ignore);
+    process.off?.('SIGINT', ignore);
   }
 }
 
