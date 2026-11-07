@@ -6,6 +6,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
@@ -18,6 +19,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/wallpaper_detail/biz/top_third_text_color.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_scheme.dart';
@@ -562,7 +564,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
       result = await onAdjust(context);
     } catch (error, stackTrace) {
       logger.e('ClockOverlay: Adjust failed', error: error, stackTrace: stackTrace);
-      toasts.error(l10n.coreWallpaperSaveFailed);
+      toasts.error(l10n.coreWallpaperSaveFailed, haptic: false);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -693,6 +695,31 @@ class _ClockOverlayState extends State<ClockOverlay> {
     final Widget layers = Stack(
       fit: StackFit.expand,
       children: <Widget>[
+        // On the Lock Screen the date and clock read over a soft shade at the top, as iOS draws it.
+        IgnorePointer(
+          child: AnimatedOpacity(
+            key: const ValueKey<String>('lock-shade'),
+            opacity: lock ? 1 : 0,
+            duration: fade,
+            curve: PrismCurves.enter,
+            child: const Align(
+              alignment: Alignment.topCenter,
+              child: FractionallySizedBox(
+                heightFactor: 0.4,
+                widthFactor: 1,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: <Color>[Color(0x40000000), Color(0x00000000)],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
         AnimatedSwitcher(
           duration: fade,
           switchInCurve: PrismCurves.enter,
@@ -766,32 +793,48 @@ class _ClockOverlayState extends State<ClockOverlay> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            AnimatedSwitcher(
-                              duration: fade,
-                              child: lock || styles.length < 2
-                                  ? const SizedBox.shrink()
-                                  : Padding(
-                                      padding: const EdgeInsets.only(bottom: PrismSpace.xs),
-                                      child: _GlassSegments<PreviewIconStyle>(
-                                        values: styles,
-                                        selected: _iconStyle,
-                                        label: (style) => switch (style) {
-                                          PreviewIconStyle.standard => l10n.wallpaperPreviewIconDefault,
-                                          PreviewIconStyle.dark => l10n.wallpaperPreviewIconDark,
-                                          PreviewIconStyle.clear => l10n.wallpaperPreviewIconClear,
-                                          PreviewIconStyle.tinted => l10n.wallpaperPreviewIconTinted,
-                                          PreviewIconStyle.themed => l10n.wallpaperPreviewIconThemed,
-                                        },
-                                        groupLabel: l10n.wallpaperPreviewIconStyle,
-                                        onChanged: _pickIconStyle,
-                                        compact: true,
-                                      ),
-                                    ),
-                            ),
                             _EnterFromBelow(
                               child: _ControlCard(
                                 maxHeight: _duo ? duoControlsHeight : null,
                                 children: <Widget>[
+                                  // Home icon styles: small chips on top of the card, above the screen choice. The card
+                                  // grows upwards, so Lock, Home and Save never move. The chips only fade.
+                                  AnimatedSwitcher(
+                                    duration: fade,
+                                    switchInCurve: PrismCurves.enter,
+                                    switchOutCurve: PrismCurves.exitReverse,
+                                    child: !lock && styles.length > 1
+                                        ? KeyedSubtree(
+                                            key: const ValueKey<String>('icon-styles'),
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(bottom: PrismSpace.xs),
+                                              child: Semantics(
+                                                container: true,
+                                                label: l10n.wallpaperPreviewIconStyle,
+                                                child: Wrap(
+                                                  alignment: WrapAlignment.center,
+                                                  spacing: PrismSpace.xs,
+                                                  children: <Widget>[
+                                                    for (final PreviewIconStyle style in styles)
+                                                      PrismChip(
+                                                        label: switch (style) {
+                                                          PreviewIconStyle.standard => l10n.wallpaperPreviewIconDefault,
+                                                          PreviewIconStyle.dark => l10n.wallpaperPreviewIconDark,
+                                                          PreviewIconStyle.clear => l10n.wallpaperPreviewIconClear,
+                                                          PreviewIconStyle.tinted => l10n.wallpaperPreviewIconTinted,
+                                                          PreviewIconStyle.themed => l10n.wallpaperPreviewIconThemed,
+                                                        },
+                                                        compact: true,
+                                                        selected: style == _iconStyle,
+                                                        onTap: () => _pickIconStyle(style),
+                                                      ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        : const SizedBox.shrink(),
+                                  ),
                                   if (widget.allowDuo || widget.duoReveal || _wideObserved) ...<Widget>[
                                     PrismSegmented<bool>(
                                       values: const <bool>[false, true],
@@ -852,8 +895,8 @@ class _ClockOverlayState extends State<ClockOverlay> {
                                         _SpatialToggle(on: _spatial, onChanged: (on) => setState(() => _spatial = on)),
                                       ],
                                       if (primary != null) ...<Widget>[
-                                        const SizedBox(width: PrismSpace.xs),
-                                        Expanded(child: Center(child: primary)),
+                                        const SizedBox(width: PrismSpace.sm),
+                                        Expanded(child: primary),
                                       ],
                                     ],
                                   ),
@@ -949,6 +992,11 @@ class _SpatialToggle extends StatelessWidget {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final String tooltip = on ? context.l10n.wallpaperSpatialPreviewOff : context.l10n.wallpaperSpatialPreviewOn;
     final Color foreground = on ? scheme.onPrimary : scheme.onSurface;
+    void toggle() {
+      PrismHaptics.selection();
+      onChanged(!on);
+    }
+
     return Tooltip(
       message: tooltip,
       child: Semantics(
@@ -956,10 +1004,10 @@ class _SpatialToggle extends StatelessWidget {
         toggled: on,
         excludeSemantics: true,
         label: tooltip,
-        onTap: () => onChanged(!on),
+        onTap: toggle,
         child: PressScale(
           child: TextButton.icon(
-            onPressed: () => onChanged(!on),
+            onPressed: toggle,
             style: TextButton.styleFrom(
               foregroundColor: foreground,
               backgroundColor: on ? scheme.primary : scheme.onSurface.withValues(alpha: 0.08),
@@ -1010,13 +1058,18 @@ class _RememberCheck extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    void change(bool next) {
+      PrismHaptics.selection();
+      onChanged(next);
+    }
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         MergeSemantics(
           child: InkWell(
             borderRadius: BorderRadius.circular(PrismRadius.pill),
-            onTap: () => onChanged(!value),
+            onTap: () => change(!value),
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 48),
               child: Row(
@@ -1024,7 +1077,7 @@ class _RememberCheck extends StatelessWidget {
                 children: <Widget>[
                   Checkbox(
                     value: value,
-                    onChanged: (checked) => onChanged(checked ?? false),
+                    onChanged: (checked) => change(checked ?? false),
                     activeColor: scheme.primary,
                     checkColor: scheme.onPrimary,
                     side: BorderSide(color: scheme.onSurfaceVariant, width: 1.5),
@@ -1139,8 +1192,14 @@ class _QuietButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    final VoidCallback? press = onPressed;
     return TextButton.icon(
-      onPressed: onPressed,
+      onPressed: press == null
+          ? null
+          : () {
+              PrismHaptics.tap();
+              press();
+            },
       style: TextButton.styleFrom(
         foregroundColor: scheme.onSurface,
         minimumSize: const Size(48, 48),
@@ -1148,9 +1207,7 @@ class _QuietButton extends StatelessWidget {
         textStyle: PrismTextStyles.button,
         shape: const StadiumBorder(),
       ),
-      icon: loading
-          ? SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2, color: scheme.onSurface))
-          : Icon(icon, size: 20),
+      icon: loading ? const PrismLoader(size: 20) : Icon(icon, size: 20),
       label: Text(label),
     );
   }
@@ -1190,162 +1247,6 @@ class _NoteChips extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-/// Choices as a glass pill. The selected segment is marked by a solid light indicator that slides across.
-/// Every segment is as wide as the widest label, never under the minimum, so large text grows the pill.
-class _GlassSegments<T> extends StatelessWidget {
-  const _GlassSegments({
-    required this.values,
-    required this.selected,
-    required this.label,
-    required this.onChanged,
-    this.groupLabel,
-    this.compact = false,
-  });
-
-  final List<T> values;
-  final T selected;
-  final String Function(T value) label;
-  final ValueChanged<T> onChanged;
-
-  /// Read by screen readers before the choices.
-  final String? groupLabel;
-
-  /// A smaller, quieter pill for a secondary choice.
-  final bool compact;
-
-  static const double _inset = 4;
-  static const Curve _slide = PrismCurves.enter;
-  static const Duration _slideDuration = PrismDurations.fast;
-
-  @override
-  Widget build(BuildContext context) {
-    final Duration duration = context.motion(_slideDuration);
-    const double height = 48;
-    final int index = values.indexOf(selected);
-    final Widget pill = MediaQuery.withClampedTextScaling(
-      maxScaleFactor: 1.5,
-      child: PrismGlass(
-        borderRadius: height / 2,
-        thickness: 16,
-        glassColor: Theme.of(context).colorScheme.scrim.withValues(alpha: compact ? 0.45 : 0.6),
-        child: SizedBox(
-          height: height,
-          child: Stack(
-            children: <Widget>[
-              Positioned.fill(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final double segment = constraints.maxWidth / values.length;
-                    return Stack(
-                      children: <Widget>[
-                        AnimatedPositionedDirectional(
-                          duration: duration,
-                          curve: _slide,
-                          start: segment * index + _inset,
-                          top: _inset,
-                          bottom: _inset,
-                          width: segment - 2 * _inset,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: PrismColors.onPrimary.withValues(alpha: 0.92),
-                              borderRadius: BorderRadius.circular(height / 2 - _inset),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-              IntrinsicWidth(
-                child: Row(
-                  children: <Widget>[
-                    for (final T value in values)
-                      Expanded(
-                        child: _Segment(
-                          label: label(value),
-                          selected: value == selected,
-                          duration: duration,
-                          curve: _slide,
-                          minWidth: compact ? 64 : 84,
-                          style: compact ? PrismTextStyles.caption(context) : PrismTextStyles.rowTitle(context),
-                          onTap: () => onChanged(value),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    final double screenWidth = MediaQuery.sizeOf(context).width;
-    final Widget constrainedPill = ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: screenWidth > 32 ? screenWidth - 32 : double.infinity),
-      child: pill,
-    );
-    if (groupLabel == null) return constrainedPill;
-    return Semantics(container: true, label: groupLabel, child: constrainedPill);
-  }
-}
-
-class _Segment extends StatelessWidget {
-  const _Segment({
-    required this.label,
-    required this.selected,
-    required this.duration,
-    required this.curve,
-    required this.minWidth,
-    required this.style,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final Duration duration;
-  final Curve curve;
-  final double minWidth;
-  final TextStyle style;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      container: true,
-      excludeSemantics: true,
-      inMutuallyExclusiveGroup: true,
-      selected: selected,
-      label: label,
-      onTap: onTap,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minWidth: minWidth),
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: PressScale(
-                child: AnimatedDefaultTextStyle(
-                  duration: duration,
-                  curve: curve,
-                  style: style.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: selected ? Colors.black87 : PrismColors.onPrimary.withValues(alpha: 0.88),
-                  ),
-                  child: FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, softWrap: false)),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

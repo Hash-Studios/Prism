@@ -33,6 +33,7 @@ import 'package:Prism/core/persistence/bootstrap/persistence_bootstrap.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
+import 'package:Prism/core/platform/launch_night_mode.dart';
 import 'package:Prism/core/platform/review_live_activity_sync.dart';
 import 'package:Prism/core/platform/streak_widget_sync.dart';
 import 'package:Prism/core/platform/system_color_schemes.dart';
@@ -88,6 +89,7 @@ import 'package:Prism/features/share_in/data/shared_inbox.dart';
 import 'package:Prism/features/startup/services/resume_refresh_policy.dart';
 import 'package:Prism/features/startup/startup.dart';
 import 'package:Prism/features/theme_mode/data/theme_mode_migration.dart';
+import 'package:Prism/features/theme_mode/domain/repositories/theme_repository.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/views/widgets/wotd_quick_tile_listener.dart';
@@ -122,11 +124,23 @@ Future<void> runAppWithRuntimeVersion(Future<void> versionReady, Widget app) asy
   await versionReady;
   PerformanceProbe.mark('startup.run_app');
   if (!kReleaseMode) {
+    PerformanceProbe.startFrameStats();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       PerformanceProbe.mark('startup.first_frame');
     });
   }
   runApp(app);
+}
+
+@visibleForTesting
+Future<void> prepareStartupSystemColors() async {
+  final Future<void> systemColors = getIt<SystemColorSchemesSource>().refresh().then((_) {
+    PerformanceProbe.mark('startup.system_colors_ready');
+  });
+  final themes = getIt<ThemeRepository>().readSync();
+  if (themes.light.themeId == prismMaterialYouLightThemeId || themes.dark.themeId == prismMaterialYouDarkThemeId) {
+    await systemColors;
+  }
 }
 
 /// Top-level FCM background message handler.
@@ -346,8 +360,9 @@ Future<void> main() async {
       getIt<NotificationsLocalDataSource>().setOwner(notificationOwner);
       getIt<NotificationTombstones>().setOwner(notificationOwner);
       getIt<PersonalizedFeedRepository>().warmCache();
-      // Material You must be ready for the first frame, or the app opens on the fallback theme and then recolours.
-      await getIt<SystemColorSchemesSource>().refresh();
+      // A Material You theme needs the system colours for its first frame, or it opens on the fallback theme and then
+      // recolours. Other themes do not wait: the channel answers only when the Android main thread is free (#533).
+      await prepareStartupSystemColors();
       unawaited(
         Future.wait(<Future<void>>[
           SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge),
@@ -853,6 +868,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     );
     unawaited(_watchSession());
     unawaited(NotificationSignals.instance.onResumed());
+    unawaited(syncLaunchNightMode(context.read<ThemeBloc>().state.mode));
   }
 
   Future<void> _refreshWotdTopics() async {
@@ -951,6 +967,10 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
               getIt<InAppNotificationsBloc>().add(const InAppNotificationsEvent.localReloadRequested());
             }
           },
+        ),
+        BlocListener<ThemeBloc, ThemeState>(
+          listenWhen: (previous, current) => previous.mode != current.mode,
+          listener: (context, state) => unawaited(syncLaunchNightMode(state.mode)),
         ),
         BlocListener<StartupBloc, StartupState>(
           listenWhen: (previous, current) =>

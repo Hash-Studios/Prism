@@ -302,9 +302,9 @@ void main() {
         ),
       ),
     );
-    // The summary under the card names the creator; the credit row in the open details links to them.
+    // The summary under the card names the creator; the source line in the open details links to them.
     expect(find.text('artist'), findsOneWidget);
-    final Finder authorLink = find.ancestor(of: find.text('By artist'), matching: find.byType(InkWell)).first;
+    final Finder authorLink = find.ancestor(of: find.text('From Wallhaven'), matching: find.byType(InkWell)).first;
     await tester.scrollUntilVisible(authorLink, 400, scrollable: find.byType(Scrollable).first);
     await tester.tap(authorLink);
     await tester.pump();
@@ -520,7 +520,7 @@ void main() {
       ),
     );
     await _waitForFilterReady(tester);
-    await tester.tap(find.text('AddictiveBlue'));
+    await tester.tap(find.text('Addictive Blue'));
     await tester.pump();
     await tester.tap(find.byTooltip('Download'));
     // The sign-in sheet mascot loops an animation, so pump a fixed time instead of settling.

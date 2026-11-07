@@ -13,7 +13,8 @@ WallDepthTier? depthTierOf(FeedItemEntity item) => switch (item) {
 
 bool showsDepthEffect(WallDepthTier? tier) => showDepthEffectUi && (tier?.supportsDepth ?? false);
 
-/// The "Depth" tag at the bottom start of a grid tile, or null when [showsDepthEffect] is false.
+/// The "Depth" tag at the bottom start of a grid tile, above the favourite heart, or null when [showsDepthEffect] is
+/// false.
 Widget? depthTagFor(WallDepthTier? tier) => showsDepthEffect(tier) ? const _PositionedDepthTag() : null;
 
 /// Has no position. Use [depthTagFor] to put it on a grid tile.
@@ -46,7 +47,8 @@ class _PositionedDepthTag extends StatelessWidget {
     return Positioned.directional(
       textDirection: Directionality.of(context),
       start: 6,
-      bottom: 6,
+      // Clears the heart's 44 point target in the same corner.
+      bottom: 44,
       child: const IgnorePointer(child: DepthTag()),
     );
   }

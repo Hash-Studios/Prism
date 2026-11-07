@@ -3,6 +3,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/drawer_widget.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -92,12 +93,31 @@ void main() {
     expect(find.text('Downloaded Walls'), findsNothing);
   });
 
-  testWidgets('the drawer has no paywall entry, as on the current app', (tester) async {
+  testWidgets('the Pro card is a button with "See Prism Pro" for members who are not Pro', (tester) async {
     app_state.prismUser = app_constants.createGuestPrismUser();
     await openDrawer(tester);
 
     expect(find.text('Prism Pro'), findsOneWidget);
+    expect(find.text('See Prism Pro'), findsOneWidget);
+    final Finder card = find.ancestor(of: find.text('Prism Pro'), matching: find.byType(PrismCard));
+    expect(tester.widget<PrismCard>(card).onTap, isNotNull);
     expect(find.text('Get Pro'), findsNothing);
+  });
+
+  testWidgets('Pro members see their benefits without an offer', (tester) async {
+    app_state.prismUser.premium = true;
+    await openDrawer(tester);
+
+    expect(find.text('Prism Pro'), findsOneWidget);
+    expect(find.text('See Prism Pro'), findsNothing);
+    final Finder card = find.ancestor(of: find.text('Prism Pro'), matching: find.byType(PrismCard));
+    expect(tester.widget<PrismCard>(card).onTap, isNull);
+  });
+
+  testWidgets('Log out is drawn as a destructive row', (tester) async {
+    await openDrawer(tester);
+
+    expect(tester.widget<PrismRow>(find.widgetWithText(PrismRow, 'Log out')).destructive, isTrue);
   });
 
   testWidgets('tapping Library closes the drawer and opens the Library page', (tester) async {

@@ -5,12 +5,16 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
+import 'package:Prism/core/widgets/gesture_hint.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
+import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -78,11 +82,25 @@ class WallpaperTile extends StatelessWidget {
         _ => 'home_wallpaper_grid_tile',
       };
 
-  Widget? _overlay() {
+  /// The one-time hold hint goes on the first tile of a Home grid (For you, Following, Trending) only. Home's
+  /// horizontal rows and every other grid do not get it.
+  bool _showsHoldHint(BuildContext context, ScrollableState? scrollable) =>
+      index == 0 &&
+      !GestureHints.seen(GestureHint.holdToSave).value &&
+      scrollable != null &&
+      axisDirectionToAxis(scrollable.axisDirection) == Axis.vertical &&
+      context.findAncestorWidgetOfExactType<PersonalizedFeedScreen>() != null;
+
+  Widget? _overlay(BuildContext context, {required bool holdHint}) {
     final List<Widget> layers = <Widget>[
       ?overlay,
       ?depthTagFor(depthTierOf(item)),
       ?spatialTagFor(spatialOf(item)?.tier),
+      if (holdHint)
+        ClipRRect(
+          borderRadius: PrismWallGrid.tileRadius,
+          child: GestureHintOverlay(hint: GestureHint.holdToSave, label: context.l10n.gestureHintHoldToSave),
+        ),
     ];
     if (layers.length < 2) return layers.firstOrNull;
     return Stack(fit: StackFit.expand, children: layers);
@@ -91,7 +109,8 @@ class WallpaperTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final WallpaperImpressionSession session = impressionSession ?? WallpaperImpressionSession.forContext(context);
-    final Object heroScope = Scrollable.maybeOf(context) ?? context;
+    final ScrollableState? scrollable = Scrollable.maybeOf(context);
+    final Object heroScope = scrollable ?? context;
     final String heroTag = prismHeroTag(heroScope, index, item.id);
     final List<FeedItemEntity>? walls = feed;
     final int? columns = crossAxisCount;
@@ -112,10 +131,12 @@ class WallpaperTile extends StatelessWidget {
         child: PrismWallTile(
           url: item.thumbnailUrl,
           fallbackUrl: item.fullUrl,
+          cachedFullUrl: WallpaperDisplaySource.of(item).full,
           heroTag: heroTag,
           semanticLabel: item.semanticLabel(context.l10n),
           memCacheHeight: decodeHeight,
-          overlay: _overlay(),
+          placeholderColor: placeholderColorOf(item, Theme.of(context).colorScheme.surface),
+          overlay: _overlay(context, holdHint: _showsHoldHint(context, scrollable)),
           onTap: () {
             PrismHaptics.tap();
             unawaited(

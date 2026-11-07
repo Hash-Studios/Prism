@@ -178,17 +178,18 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
   });
 
-  testWidgets('the labelled interactive favourite footer stays outside the image', (tester) async {
+  testWidgets('the labelled interactive heart sits on the image at its bottom-start corner', (tester) async {
     await favourites.setWallFavourite('u', 'wall-1', true);
     current = current.copyWith(items: [FavouriteWallEntity.fromFeedItem(_item)]);
     final semantics = tester.ensureSemantics();
     await pumpTile(tester);
     final label = AppLocalizationsEn().wallpaperUnfavourite;
     expect(find.byTooltip(label), findsOneWidget);
-    expect(
-      tester.getRect(find.byIcon(Icons.favorite_rounded)).top,
-      greaterThan(tester.getRect(find.byType(PrismImageTile)).bottom),
-    );
+    final Rect image = tester.getRect(find.byType(PrismImageTile));
+    final Rect heart = tester.getRect(find.byIcon(Icons.favorite_rounded));
+    expect(image.contains(heart.topLeft) && image.contains(heart.bottomRight), isTrue);
+    expect(heart.center.dx, lessThan(image.center.dx));
+    expect(heart.center.dy, greaterThan(image.center.dy));
     semantics.dispose();
   });
 

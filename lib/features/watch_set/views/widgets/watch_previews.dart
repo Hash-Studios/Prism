@@ -134,7 +134,7 @@ class DeviceFramePreview extends StatelessWidget {
             border: Border.all(color: scheme.outlineVariant),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(4),
+            padding: const EdgeInsets.all(PrismSpace.xxs),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(radius),
               child: AspectRatio(
@@ -159,19 +159,14 @@ class SetItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     return MergeSemantics(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           preview,
           const SizedBox(height: PrismSpace.xs),
-          Text(name, style: theme.textTheme.labelLarge, textAlign: TextAlign.center),
-          Text(
-            size,
-            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            textAlign: TextAlign.center,
-          ),
+          Text(name, style: PrismTextStyles.rowTitle(context), textAlign: TextAlign.center),
+          Text(size, style: PrismTextStyles.caption(context), textAlign: TextAlign.center),
         ],
       ),
     );

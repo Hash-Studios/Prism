@@ -8,6 +8,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/features/wrapped/biz/bloc/wrapped_bloc.j.dart';
 import 'package:Prism/features/wrapped/domain/wrapped.dart';
 import 'package:Prism/features/wrapped/views/widgets/wrapped_card_view.dart';
@@ -108,7 +109,14 @@ class _PrismWrappedPageState extends State<PrismWrappedPage> {
                   WrappedFailed(:final uid) when uid == _uid => _Failed(
                     onRetry: () => _bloc.add(WrappedEvent.load(_uid)),
                   ),
-                  _ => const Center(child: CircularProgressIndicator(color: WrappedCardStyle.text)),
+                  _ => Center(
+                    child: Theme(
+                      data: Theme.of(
+                        context,
+                      ).copyWith(colorScheme: Theme.of(context).colorScheme.copyWith(onSurface: WrappedCardStyle.text)),
+                      child: const PrismLoader(),
+                    ),
+                  ),
                 },
         ),
       ),
@@ -132,7 +140,10 @@ class _Failed extends StatelessWidget {
             icon: Icons.close_rounded,
             tooltip: context.l10n.wrappedClose,
             onImage: true,
-            onPressed: () => Navigator.of(context).maybePop(),
+            onPressed: () {
+              PrismHaptics.tap();
+              unawaited(Navigator.of(context).maybePop());
+            },
           ),
         ),
         Center(
@@ -144,7 +155,7 @@ class _Failed extends StatelessWidget {
                 Text(
                   context.l10n.wrappedLoadFailed,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: WrappedCardStyle.text, fontSize: 17),
+                  style: PrismTextStyles.cardTitle(context).copyWith(color: WrappedCardStyle.text),
                 ),
                 const SizedBox(height: PrismSpace.lg),
                 PrismButton(label: context.l10n.coreRetry, onPressed: onRetry),
@@ -198,6 +209,7 @@ class _WrappedStoryState extends State<WrappedStory> with TickerProviderStateMix
   bool _paused = false;
   bool _still = false;
   bool _finished = false;
+  bool _sharing = false;
 
   List<WrappedCard> get _cards => widget.year.cards;
   WrappedCard get _card => _cards[_index];
@@ -233,7 +245,6 @@ class _WrappedStoryState extends State<WrappedStory> with TickerProviderStateMix
       if (index < 0) _enter(0);
       return;
     }
-    PrismHaptics.selection();
     setState(() => _index = index);
     _enter(index);
   }
@@ -269,6 +280,7 @@ class _WrappedStoryState extends State<WrappedStory> with TickerProviderStateMix
   }
 
   void _togglePause() {
+    PrismHaptics.selection();
     setState(() => _paused = !_paused);
     _syncProgress();
   }
@@ -281,15 +293,23 @@ class _WrappedStoryState extends State<WrappedStory> with TickerProviderStateMix
     }
   }
 
+  /// A deliberate step by the user. The timer's own advance calls [_go] without a haptic.
+  void _step(int index) {
+    if (index < 0 || index >= _cards.length || index == _index) return _go(index);
+    PrismHaptics.selection();
+    _go(index);
+  }
+
   void _tap(TapUpDetails details, double width) {
     final bool back = Directionality.of(context) == TextDirection.rtl
         ? details.localPosition.dx > width * 2 / 3
         : details.localPosition.dx < width / 3;
-    _go(back ? _index - 1 : _index + 1);
+    _step(back ? _index - 1 : _index + 1);
   }
 
   void _dragEnd(DragEndDetails details) {
     if (_drag.value > 140 || (details.primaryVelocity ?? 0) > 900) {
+      PrismHaptics.impact();
       unawaited(Navigator.of(context).maybePop());
       return;
     }
@@ -302,6 +322,8 @@ class _WrappedStoryState extends State<WrappedStory> with TickerProviderStateMix
   }
 
   Future<void> _share(WrappedCopy copy) async {
+    if (_sharing) return;
+    _sharing = true;
     _hold(true);
     try {
       await widget.share(
@@ -313,6 +335,7 @@ class _WrappedStoryState extends State<WrappedStory> with TickerProviderStateMix
         ownerChanges: widget.ownerChanges,
       );
     } finally {
+      _sharing = false;
       if (mounted) _hold(false);
     }
   }
@@ -403,9 +426,12 @@ class _WrappedStoryState extends State<WrappedStory> with TickerProviderStateMix
                   still: _still,
                   paused: _paused,
                   onPause: _still || _onSummary ? null : _togglePause,
-                  onShare: () => _share(copy),
-                  onPrevious: () => _go(_index - 1),
-                  onNext: () => _go(_index + 1),
+                  onShare: () {
+                    PrismHaptics.tap();
+                    unawaited(_share(copy));
+                  },
+                  onPrevious: () => _step(_index - 1),
+                  onNext: () => _step(_index + 1),
                 ),
               ),
             ),
@@ -518,7 +544,10 @@ class _Chrome extends StatelessWidget {
               icon: Icons.close_rounded,
               tooltip: l10n.wrappedClose,
               onImage: true,
-              onPressed: () => Navigator.of(context).maybePop(),
+              onPressed: () {
+                PrismHaptics.tap();
+                unawaited(Navigator.of(context).maybePop());
+              },
             ),
           ],
         ),

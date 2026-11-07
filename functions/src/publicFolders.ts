@@ -63,6 +63,34 @@ export function publicFolderName(raw: unknown): string | null {
   return name;
 }
 
+export interface PublicSection {id: string; name: string}
+const MAX_SECTIONS = 20;
+const MAX_SECTION_NAME = 160;
+const SECTION_ID = /^[A-Za-z0-9_-]{1,32}$/;
+
+export const isSectionId = (raw: unknown): raw is string => typeof raw === "string" && SECTION_ID.test(raw);
+
+/**
+ * The sections others see, in order. Entries with a bad id, a repeated id or a name that fails the public name
+ * check are left out, so their walls show as Unsorted.
+ */
+export function publicFolderSections(raw: unknown): PublicSection[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const sections: PublicSection[] = [];
+  for (const entry of raw) {
+    const id = (entry as {id?: unknown})?.id;
+    const rawName = (entry as {name?: unknown})?.name;
+    if (!isSectionId(id) || seen.has(id) || typeof rawName !== "string") continue;
+    const name = rawName.replace(/\s+/g, " ").trim();
+    if (!name || name.length > MAX_SECTION_NAME || /[\p{Cc}\p{Cf}\p{Co}\p{Cn}]/u.test(name)) continue;
+    seen.add(id);
+    sections.push({id, name});
+    if (sections.length === MAX_SECTIONS) break;
+  }
+  return sections;
+}
+
 /** True when the owner may have public folders: not deleted, not in account deletion, not disabled in Auth. */
 async function ownerOpen(uid: string): Promise<boolean> {
   if (!uid) return false;
@@ -74,7 +102,7 @@ async function ownerOpen(uid: string): Promise<boolean> {
   return !(await publicFolderDeps.authDisabled(uid));
 }
 
-interface Wanted {ownerId: string; name: string; sourceCreatedAt: admin.firestore.Timestamp}
+interface Wanted {ownerId: string; name: string; sections: PublicSection[]; sourceCreatedAt: admin.firestore.Timestamp}
 class OwnerChanged extends Error {}
 
 /** Auth is external; all Firestore lifecycle gates and source data belong to the committing transaction. */
@@ -99,7 +127,8 @@ async function folderTransaction<T>(folderId: string, run: (
         const name = publicFolderName(folder?.name);
         const want = enabled && user?.exists && user.data()?.deleted !== true && barrier?.data()?.closed !== true &&
           folder?.public === true && folder.moderationHidden !== true && name ?
-          {ownerId, name, sourceCreatedAt: snapshot.createTime as admin.firestore.Timestamp} : null;
+          {ownerId, name, sections: publicFolderSections(folder?.sections),
+            sourceCreatedAt: snapshot.createTime as admin.firestore.Timestamp} : null;
         const result = await run(tx, want);
         // This write is based on this transaction's name, never a stale invalid-name snapshot.
         if (folder?.public === true && !name) tx.update(source, {public: false});
@@ -163,7 +192,8 @@ export async function projectedItem(
   const now = admin.firestore.Timestamp.now();
   const added = item.addedAt instanceof admin.firestore.Timestamp && item.addedAt.toMillis() <= now.toMillis() ?
     item.addedAt : now;
-  return {id: wallId, provider: "Prism", thumb, wallpaperDocumentId: wall.id, addedAt: added};
+  return {id: wallId, provider: "Prism", thumb, wallpaperDocumentId: wall.id, addedAt: added,
+    ...(isSectionId(item.sectionId) ? {sectionId: item.sectionId} : {})};
 }
 
 const publicRef = (folderId: string) => db.collection(PUBLIC_FOLDERS).doc(folderId);
@@ -279,6 +309,7 @@ async function refreshHeader(folderId: string): Promise<void> {
     const next: Doc = {
       ownerId: want.ownerId,
       name: want.name,
+      sections: want.sections,
       itemCount: count,
       covers: walls.map((w) => w.thumb),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),

@@ -97,7 +97,7 @@ void main() {
   testWidgets('Stats entry follows real own UID and username profile resolution', (tester) async {
     for (final identifier in <String?>[null, 'u1', 'creator']) {
       await pumpProfile(tester, identifier: identifier);
-      expect(find.text('Stats'), findsOneWidget);
+      expect(find.byTooltip('Stats'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
     }
     final blocks = FakeUserBlockRepository.pending()..completeInitial({});
@@ -107,14 +107,14 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.byType(ProfileBadgeRow), findsOneWidget);
-    expect(find.text('Stats'), findsNothing);
+    expect(find.byTooltip('Stats'), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('guests have a sign-in prompt without the private Stats entry', (tester) async {
     app_state.prismUser = createGuestPrismUser();
     await pumpProfile(tester);
-    expect(find.text('Stats'), findsNothing);
+    expect(find.byTooltip('Stats'), findsNothing);
     expect(find.textContaining('Sign in'), findsWidgets);
     expect(tester.takeException(), isNull);
   });

@@ -1434,7 +1434,7 @@
   "@accountPrismPro": {
     "description": "Prism Pro drawer heading."
   },
-  "accountPrivacyAction": "गोपनीयता",
+  "accountPrivacyAction": "गोपनीयता नीति",
   "@accountPrivacyAction": {
     "description": "About page action to view the privacy policy."
   },
@@ -1623,15 +1623,6 @@
   "@accountRestoringPurchases": {
     "description": "Progress toast while restoring purchases."
   },
-  "accountResultsForQuery": "{query} के नतीजे",
-  "@accountResultsForQuery": {
-    "description": "Label above wallpaper search results.",
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
   "accountRetry": "फिर कोशिश करें",
   "@accountRetry": {
     "description": "Retry action label."
@@ -1795,19 +1786,19 @@
   "@accountSignInToPrism": {
     "description": "Heading for the signed-out settings account card."
   },
-  "accountSocialGithub": "GITHUB",
+  "accountSocialGithub": "GitHub",
   "@accountSocialGithub": {
     "description": "About page social link label for GitHub."
   },
-  "accountSocialInstagram": "INSTAGRAM",
+  "accountSocialInstagram": "Instagram",
   "@accountSocialInstagram": {
     "description": "About page social link label for Instagram."
   },
-  "accountSocialTelegram": "TELEGRAM",
+  "accountSocialTelegram": "Telegram",
   "@accountSocialTelegram": {
     "description": "About page social link label for Telegram."
   },
-  "accountSocialTwitter": "TWITTER",
+  "accountSocialTwitter": "Twitter",
   "@accountSocialTwitter": {
     "description": "About page social link label for Twitter."
   },
@@ -1871,7 +1862,7 @@
   "@accountTerms": {
     "description": "Terms of use link label."
   },
-  "accountTermsAction": "शर्तें",
+  "accountTermsAction": "उपयोग की शर्तें",
   "@accountTermsAction": {
     "description": "About page action to view the terms of use."
   },
@@ -3102,6 +3093,12 @@
   "diwaliBannerSubtitle": "दीये, आतिशबाज़ी और सोना। मुफ़्त। आज़माने के लिए टैप करें।",
   "diwaliAnnouncementTitle": "नई: दिवाली थीम 🪔",
   "diwaliAnnouncementBody": "दीये, आतिशबाज़ी और सोना। यह मुफ़्त है। आज़माने के लिए टैप करें।",
+  "coreThemeWinter": "विंटर",
+  "winterBannerTitle": "विंटर थीम आ गई है",
+  "winterBannerSubtitle": "ठंडे नीले रंग और हल्की बर्फ़, लाइट और डार्क में। मुफ़्त। आज़माने के लिए टैप करें।",
+  "winterAnnouncementTitle": "नया: विंटर थीम ❄️",
+  "winterAnnouncementBody": "छुट्टियों के लिए ठंडे नीले रंग और हल्की बर्फ़। यह मुफ़्त है। आज़माने के लिए टैप करें।",
+  "winterNewYearGreeting": "नया साल मुबारक",
   "coreThisPageDoesNotExist": "यह पेज मौजूद नहीं है",
   "coreTryAgain": "फिर कोशिश करें",
   "coreUndo": "वापस लें",
@@ -3151,6 +3148,22 @@
   "coreWallpaperErrorStyle": "यह डिवाइस उस शैली को शुरू नहीं कर सका। कोई और आज़माएँ।",
   "coreWallpaperErrorSystemPreview": "सिस्टम प्रीव्यू नहीं खुल सका।",
   "coreWallpaperErrorTextureDimensions": "यह इमेज लाइव वॉलपेपर के लिए बहुत बड़ी है।",
+  "coreWallpaperStillSetting": "आपका वॉलपेपर अभी लग रहा है। कुछ फ़ोन पर इसमें थोड़ा समय लग सकता है।",
+  "@coreWallpaperStillSetting": {
+    "description": "Shown when the phone has not finished setting the wallpaper after 30 seconds. The set can still finish, so this is not an error."
+  },
+  "coreWallpaperLockFailedUsePhone": "लॉक स्क्रीन पर नहीं लग सका। आपके फ़ोन की अपनी वॉलपेपर स्क्रीन इसे लगा सकती है।",
+  "@coreWallpaperLockFailedUsePhone": {
+    "description": "Snackbar when the lock screen set failed. Its action opens the phone's own wallpaper screen, which some phones (Xiaomi, MIUI) require for the lock screen."
+  },
+  "coreWallpaperHomeSetLockFailedUsePhone": "होम स्क्रीन पर लग गया। लॉक स्क्रीन पर नहीं लग सका। आपके फ़ोन की अपनी वॉलपेपर स्क्रीन इसे लगा सकती है।",
+  "@coreWallpaperHomeSetLockFailedUsePhone": {
+    "description": "Snackbar when a Both set changed only the home screen. Its action opens the phone's own wallpaper screen for the lock screen."
+  },
+  "coreWallpaperSetWithPhone": "फ़ोन से लगाएँ",
+  "@coreWallpaperSetWithPhone": {
+    "description": "Snackbar action. Opens the phone's own wallpaper screen with this wallpaper. Keep it short."
+  },
   "coreWallpaperErrorTimeout": "समय सीमा समाप्त हुई। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
   "coreWallpaperHomeScreen": "होम स्क्रीन",
   "coreWallpaperHomeSetLockFailed": "होम स्क्रीन सेट हो गई। लॉक स्क्रीन सेट नहीं हो सकी।",
@@ -3475,6 +3488,10 @@
   "deepLinkInputLiveTitle": "लाइव वॉलपेपर",
   "@deepLinkInputLiveTitle": {
     "description": "Page title while choosing an image for a live wallpaper."
+  },
+  "deepLinkInputLiveDescription": "लाइव वॉलपेपर बनाने के लिए अपनी गैलरी से एक तस्वीर चुनें।",
+  "@deepLinkInputLiveDescription": {
+    "description": "Instructions on the image chooser page when the user makes a live wallpaper."
   },
   "deepLinkInputPhotoPreviewTitle": "तस्वीर का प्रीव्यू",
   "@deepLinkInputPhotoPreviewTitle": {
@@ -4161,6 +4178,15 @@
   "economyCoinsAreYoursToSpend": "कॉइन खर्च करने के लिए आपके हैं",
   "economyCoinsEarned": "+{count, plural, one{{count} कॉइन} other{{count} कॉइन}}",
   "@economyCoinsEarned": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "economyCoinReward": "+{count}",
+  "@economyCoinReward": {
     "placeholders": {
       "count": {
         "type": "int",
@@ -5207,7 +5233,7 @@
   "economyLeaderboardNoRankings": "अभी कोई रैंकिंग नहीं",
   "economyLeaderboardOffline": "ऑफ़लाइन होने पर सेव किए गए स्कोर दिख सकते हैं।",
   "economyLeaderboardRankedByXp": "इस हफ़्ते कमाए गए XP के आधार पर रैंकिंग",
-  "economyLeaderboardReset": "सोमवार 00:00 UTC पर रीसेट · {days, plural, one{{days} दिन} other{{days} दिन}} {hours, plural, one{{hours} घंटा} other{{hours} घंटे}} बाकी",
+  "economyLeaderboardReset": "{days, plural, one{{days} दिन} other{{days} दिन}} {hours, plural, one{{hours} घंटा} other{{hours} घंटे}} में रीसेट",
   "@economyLeaderboardReset": {
     "placeholders": {
       "days": {
@@ -6098,7 +6124,6 @@
       }
     }
   },
-  "economyYourXp": "आपके XP",
   "errorGeneric": "कुछ गड़बड़ हुई। कृपया फिर कोशिश करें।",
   "errorNetwork": "अपना कनेक्शन जाँचें और फिर कोशिश करें।",
   "navigationBackOnline": "फिर से ऑनलाइन",
@@ -6165,18 +6190,6 @@
   "notifEmptyTitle": "कोई सूचना नहीं",
   "notifExpanded": "खोला गया",
   "notifGenericTitle": "सूचना",
-  "notifGroupAndMore": "{message} और {otherCount, plural, one{{otherCount} और।} other{{otherCount} और।}}",
-  "@notifGroupAndMore": {
-    "placeholders": {
-      "message": {
-        "type": "String"
-      },
-      "otherCount": {
-        "type": "int",
-        "format": "decimalPattern"
-      }
-    }
-  },
   "notifGroupApprovals": "{count, plural, one{मंज़ूरी} other{मंज़ूरियाँ}}",
   "@notifGroupApprovals": {
     "placeholders": {
@@ -6699,6 +6712,34 @@
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
   },
+  "premiumPageHeadline": "पूरी गैलरी, अनलॉक",
+  "@premiumPageHeadline": {
+    "description": "Large headline at the top of the Prism Premium page."
+  },
+  "premiumBenefitWalls": "सभी प्रीमियम कलेक्शन और वॉलपेपर",
+  "@premiumBenefitWalls": {
+    "description": "Premium benefit row: premium collections and walls open without coins or a pass."
+  },
+  "premiumBenefitFree": "मुफ़्त डाउनलोड और कोई विज्ञापन नहीं",
+  "@premiumBenefitFree": {
+    "description": "Premium benefit row: downloads cost no coins and inline and full-screen ads are off."
+  },
+  "premiumBenefitSpin": "हर दिन एक मुफ़्त स्पिन",
+  "@premiumBenefitSpin": {
+    "description": "Premium benefit row: one free spin of the coin wheel each day."
+  },
+  "premiumBenefitAutomation": "ऑटो-रोटेशन और दिन-रात मोड",
+  "@premiumBenefitAutomation": {
+    "description": "Premium benefit row: auto-rotate and day and night wallpaper switching."
+  },
+  "premiumBenefitLiveStyles": "लाइव वॉलपेपर की सभी स्टाइल",
+  "@premiumBenefitLiveStyles": {
+    "description": "Premium benefit row: every live wallpaper style without coins."
+  },
+  "premiumBenefitAiClean": "बिना वॉटरमार्क वाले AI वॉलपेपर, कम कॉइन्स में",
+  "@premiumBenefitAiClean": {
+    "description": "Premium benefit row: AI wallpapers without the watermark, at a lower coin price."
+  },
   "premiumGuestStorePurchaseActive": "स्टोर से की गई आपकी खरीद इस डिवाइस पर सक्रिय है। खाते से जुड़ी Pro सुविधाओं का उपयोग करने के लिए साइन इन करें।",
   "@premiumGuestStorePurchaseActive": {
     "description": "A guest purchase or restore has active store entitlement locally, but account-based features require sign-in and server confirmation."
@@ -6706,6 +6747,10 @@
   "premiumPurchasePending": "आपकी खरीद दर्ज हो गई है। Pro अनलॉक होने में एक मिनट लग सकता है।",
   "@premiumPurchasePending": {
     "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
+  },
+  "premiumPaymentPending": "आपके भुगतान की प्रक्रिया अभी पूरी नहीं हुई है। भुगतान पूरा होते ही Pro अनलॉक हो जाएगा।",
+  "@premiumPaymentPending": {
+    "description": "Toast when the store holds a purchase as pending (for example a slow UPI or card payment). Pro unlocks later."
   },
   "premiumPurchaseUnconfirmed": "आपकी खरीद की पुष्टि नहीं हो सकी। सेटिंग्स में ‘खरीदारियाँ वापस पाएँ’ आज़माएँ।",
   "@premiumPurchaseUnconfirmed": {
@@ -9056,7 +9101,7 @@
   "@wallpaperThemeModeLight": {
     "description": "Light app theme mode option."
   },
-  "wallpaperThemeModeSystem": "सिस्टम (हल्का/गहरा)",
+  "wallpaperThemeModeSystem": "सिस्टम",
   "@wallpaperThemeModeSystem": {
     "description": "App theme mode option that follows the system light or dark appearance."
   },
@@ -11607,7 +11652,7 @@
   },
   "challengeTitle": "साप्ताहिक चुनौती",
   "challengeRules": "अधिकतम 3 प्रविष्टियाँ, दिखाने से पहले समीक्षा होगी।",
-  "challengeVotingRules": "अन्य रचनाकारों के लिए {date} UTC तक वोट दें।",
+  "challengeVotingRules": "अन्य रचनाकारों के लिए {date} तक वोट दें।",
   "@challengeVotingRules": {
     "placeholders": {
       "date": {
@@ -12583,6 +12628,10 @@
   "creatorsToFollow": "फ़ॉलो करने लायक क्रिएटर",
   "@creatorsToFollow": {
     "description": "Title of the row of suggested creators on Home and Search."
+  },
+  "accountBrowseCreators": "क्रिएटर देखें",
+  "@accountBrowseCreators": {
+    "description": "Action on the empty creator search, opens the creator directory."
   },
   "creatorsSeeAll": "सभी देखें",
   "@creatorsSeeAll": {
@@ -14246,6 +14295,16 @@
   "@searchPhotoCouldNotOpen": {
     "description": "Toast when the picked photo cannot be decoded."
   },
+  "searchMoreWallpapers": "और वॉलपेपर",
+  "@searchMoreWallpapers": {"description": "Section header for extra wallpaper results in search."},
+  "wallpaperPreviewNoEvents": "आज कोई इवेंट नहीं",
+  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."},
+  "accountFollowersLabel": "{count, plural, one{फ़ॉलोअर} other{फ़ॉलोअर्स}}",
+  "@accountFollowersLabel": {"description": "Label under a profile's follower count. The number is shown separately.", "placeholders": {"count": {"type": "int"}}},
+  "profileBadgeCount": "{count, plural, one{1 बैज} other{{count} बैज}}",
+  "@profileBadgeCount": {"description": "Chip on a profile that opens the list of earned badges.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyLeaderboardTopThisWeek": "इस हफ़्ते के टॉप",
+  "@economyLeaderboardTopThisWeek": {"description": "Section heading above the global top 5 on the Following leaderboard."},
   "foldersSaveAll": "सभी सहेजें",
   "@foldersSaveAll": {
     "description": "Button label that starts saving all wallpapers in a folder."
@@ -14789,211 +14848,323 @@
   "@foldersMakePrivateMessageShared": {
     "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
   },
-  "photoWallEntryTitle": "आपकी फ़ोटो से",
-  "@photoWallEntryTitle": {
-    "description": "Entry card on the AI tab that opens photo to wallpaper."
+  "gestureHintHoldToSave": "सेव करने के लिए दबाकर रखें",
+  "@gestureHintHoldToSave": {"description": "One-time hint over a wallpaper tile: long-press it for quick actions such as save."},
+  "gestureHintSwipeForSimilar": "मिलते-जुलते वॉलपेपर के लिए ऊपर स्वाइप करें",
+  "@gestureHintSwipeForSimilar": {"description": "One-time hint over the wallpaper detail image: swipe up to see similar wallpapers."},
+  "foldersSectionAdd": "सेक्शन जोड़ें",
+  "@foldersSectionAdd": {
+    "description": "Folder page menu item and name sheet button that add a named section to a folder."
   },
-  "photoWallEntrySubtitle": "कोई भी फ़ोटो अपनी स्क्रीन के हिसाब से सेट करें",
-  "@photoWallEntrySubtitle": {
-    "description": "Subtitle of the From your photo entry card."
+  "foldersSectionNewTitle": "नया सेक्शन",
+  "@foldersSectionNewTitle": {
+    "description": "Title of the sheet where the user types a name for a new folder section. Also a row in the Move to sheet."
   },
-  "photoWallPickPhoto": "कोई फ़ोटो चुनें",
-  "@photoWallPickPhoto": {
-    "description": "Button that opens the photo gallery."
+  "foldersSectionNameHint": "उदाहरण के लिए, लॉक स्क्रीन",
+  "@foldersSectionNameHint": {
+    "description": "Hint in the section name field."
   },
-  "photoWallPickAnother": "कोई और फ़ोटो चुनें",
-  "@photoWallPickAnother": {
-    "description": "Button that replaces the picked photo."
+  "foldersSectionRenameTitle": "सेक्शन का नाम बदलें",
+  "@foldersSectionRenameTitle": {
+    "description": "Title of the sheet that renames a folder section."
   },
-  "photoWallPrivacyNote": "आपकी फ़ोटो इस काम के लिए ही हमारे AI प्रदाता fal.ai और Google Cloud Vision को भेजी जाती है। Prism उसे नहीं रखता और काम के बाद fal.ai से उसे हटाने को कहता है।",
-  "@photoWallPrivacyNote": {
-    "description": "Privacy note under the photo picker."
+  "foldersSectionDelete": "सेक्शन हटाएँ",
+  "@foldersSectionDelete": {
+    "description": "Section menu item and confirm button that delete a folder section. Its wallpapers stay in the folder."
   },
-  "photoWallTargetLabel": "इसके लिए बनाएँ",
-  "@photoWallTargetLabel": {
-    "description": "Label of the phone or desktop choice."
-  },
-  "photoWallTargetPhone": "फ़ोन",
-  "@photoWallTargetPhone": {
-    "description": "Choice: make a phone wallpaper."
-  },
-  "photoWallTargetDesktop": "डेस्कटॉप वर्शन",
-  "@photoWallTargetDesktop": {
-    "description": "Choice: make a 16:10 desktop wallpaper."
-  },
-  "photoWallPlanExtend": "आपकी स्क्रीन के हिसाब से बढ़ाएँ",
-  "@photoWallPlanExtend": {
-    "description": "Plan shown when the photo has the wrong shape for a phone."
-  },
-  "photoWallPlanExtendDesktop": "डेस्कटॉप स्क्रीन के हिसाब से बढ़ाएँ",
-  "@photoWallPlanExtendDesktop": {
-    "description": "Plan shown when the photo has the wrong shape for a desktop."
-  },
-  "photoWallPlanExtendDetail": "AI आपकी फ़ोटो के आसपास के खाली किनारे भर देता है।",
-  "@photoWallPlanExtendDetail": {
-    "description": "Detail under the Extend plan."
-  },
-  "photoWallPlanUpscale": "अपस्केल",
-  "@photoWallPlanUpscale": {
-    "description": "Plan shown when the photo is too small."
-  },
-  "photoWallPlanUpscaleDetail": "AI विवरण जोड़ता है, ताकि आपकी स्क्रीन पर फ़ोटो साफ़ दिखे।",
-  "@photoWallPlanUpscaleDetail": {
-    "description": "Detail under the Upscale plan."
-  },
-  "photoWallPlanFits": "यह फ़ोटो आपकी स्क्रीन में पहले से फ़िट है",
-  "@photoWallPlanFits": {
-    "description": "Shown when no AI job is needed for a phone."
-  },
-  "photoWallPlanFitsDesktop": "यह फ़ोटो डेस्कटॉप स्क्रीन में पहले से फ़िट है",
-  "@photoWallPlanFitsDesktop": {
-    "description": "Shown when no AI job is needed for a desktop."
-  },
-  "photoWallPlanFitsDetail": "इसका आकार और साइज़ सही है। कोई और फ़ोटो चुनें या लक्ष्य बदलें।",
-  "@photoWallPlanFitsDetail": {
-    "description": "Detail when no AI job is needed."
-  },
-  "photoWallRunExtend": "{coins, plural, =1{बढ़ाएँ · 1 कॉइन} other{बढ़ाएँ · {coins} कॉइन}}",
-  "@photoWallRunExtend": {
-    "description": "Main button. Starts an Extend job and shows its coin cost.",
+  "foldersSectionDeleteTitle": "{name} हटाएँ?",
+  "@foldersSectionDeleteTitle": {
+    "description": "Title of the confirm before deleting a folder section. name is the section name.",
     "placeholders": {
-      "coins": {
-        "type": "int"
+      "name": {
+        "type": "String"
       }
     }
   },
-  "photoWallRunUpscale": "{coins, plural, =1{अपस्केल · 1 कॉइन} other{अपस्केल · {coins} कॉइन}}",
-  "@photoWallRunUpscale": {
-    "description": "Main button. Starts an Upscale job and shows its coin cost.",
-    "placeholders": {
-      "coins": {
-        "type": "int"
-      }
-    }
-  },
-  "photoWallGetCoins": "कॉइन पाएँ · {coins} चाहिए",
-  "@photoWallGetCoins": {
-    "description": "Main button when the balance is too low. Opens Rewards.",
-    "placeholders": {
-      "coins": {
-        "type": "int"
-      }
-    }
-  },
-  "photoWallPlaceTitle": "अपनी फ़ोटो सेट करें",
-  "@photoWallPlaceTitle": {
-    "description": "Header over the placement frame."
-  },
-  "photoWallPlaceHint": "हिलाने के लिए खींचें। छोटा करने के लिए पिंच करें।",
-  "@photoWallPlaceHint": {
-    "description": "Hint under the placement frame."
-  },
-  "photoWallPlaceReset": "स्थिति रीसेट करें",
-  "@photoWallPlaceReset": {
-    "description": "Button that puts the photo back in the centre at full size."
-  },
-  "photoWallPlaceSemantics": "फ़्रेम में फ़ोटो की स्थिति",
-  "@photoWallPlaceSemantics": {
-    "description": "Screen reader label of the placement frame."
-  },
-  "photoWallPlaceMoveStart": "शुरुआत तक ले जाएँ",
-  "@photoWallPlaceMoveStart": {
-    "description": "Screen reader action: move the photo to the top or left edge."
-  },
-  "photoWallPlaceMoveCentre": "बीच में ले जाएँ",
-  "@photoWallPlaceMoveCentre": {
-    "description": "Screen reader action: move the photo to the centre."
-  },
-  "photoWallPlaceMoveEnd": "आखिर तक ले जाएँ",
-  "@photoWallPlaceMoveEnd": {
-    "description": "Screen reader action: move the photo to the bottom or right edge."
-  },
-  "photoWallWorkingExtend": "आपकी फ़ोटो बढ़ाई जा रही है",
-  "@photoWallWorkingExtend": {
-    "description": "Progress title during an Extend job."
-  },
-  "photoWallWorkingUpscale": "आपकी फ़ोटो की क्वालिटी बढ़ाई जा रही है",
-  "@photoWallWorkingUpscale": {
-    "description": "Progress title during an Upscale job."
-  },
-  "photoWallWorkingDetail": "इसमें एक मिनट तक लग सकता है।",
-  "@photoWallWorkingDetail": {
-    "description": "Progress detail."
-  },
-  "photoWallBefore": "पहले",
-  "@photoWallBefore": {
-    "description": "Label on the original side of the compare slider."
-  },
-  "photoWallAfter": "बाद में",
-  "@photoWallAfter": {
-    "description": "Label on the result side of the compare slider."
-  },
-  "photoWallCompareSemantics": "पहले और बाद में। तुलना करने के लिए ऊपर या नीचे स्वाइप करें।",
-  "@photoWallCompareSemantics": {
-    "description": "Screen reader label of the compare slider."
-  },
-  "photoWallSet": "वॉलपेपर के रूप में सेट करें",
-  "@photoWallSet": {
-    "description": "Result button that sets the wallpaper."
-  },
-  "photoWallDownload": "डाउनलोड करें",
-  "@photoWallDownload": {
-    "description": "Result button that saves the wallpaper to the device."
-  },
-  "photoWallSaved": "आपके डिवाइस में सहेजा गया",
-  "@photoWallSaved": {
-    "description": "Toast after Download."
-  },
-  "photoWallStartOver": "कोई और फ़ोटो इस्तेमाल करें",
-  "@photoWallStartOver": {
-    "description": "Result button that returns to the picker."
-  },
-  "photoWallErrorUnsafeInput": "यह फ़ोटो इस्तेमाल नहीं की जा सकती। कोई और फ़ोटो चुनें।",
-  "@photoWallErrorUnsafeInput": {
-    "description": "Error when the content filter blocks the input photo."
-  },
-  "photoWallErrorUnsafeOutput": "नतीजे को रोक दिया गया। फिर से कोशिश करें या कोई और फ़ोटो चुनें।",
-  "@photoWallErrorUnsafeOutput": {
-    "description": "Error when the content filter blocks the result."
-  },
-  "photoWallErrorLimit": "आज की {count} फ़ोटो वॉलपेपर की सीमा पूरी हो गई है।",
-  "@photoWallErrorLimit": {
-    "description": "Error when the daily cap is reached.",
+  "foldersSectionDeleteMessage": "{count, plural, =0{सेक्शन खाली है।} =1{इसका वॉलपेपर “बिना सेक्शन” में चला जाएगा।} other{इसके {count} वॉलपेपर “बिना सेक्शन” में चले जाएँगे।}}",
+  "@foldersSectionDeleteMessage": {
+    "description": "Body of the confirm before deleting a folder section. count is the number of wallpapers in it. Unsorted is the group of wallpapers with no section.",
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
   },
-  "photoWallErrorBusy": "फ़ोटो वॉलपेपर इस समय बहुत व्यस्त हैं। बाद में फिर कोशिश करें।",
-  "@photoWallErrorBusy": {
-    "description": "Error when the global daily cap is reached."
+  "foldersSectionUnsorted": "बिना सेक्शन",
+  "@foldersSectionUnsorted": {
+    "description": "Name of the group at the top of a folder that holds the wallpapers that are in no section."
   },
-  "photoWallErrorUnreadable": "यह फ़ोटो नहीं खुल सकती। कोई और फ़ोटो चुनें।",
-  "@photoWallErrorUnreadable": {
-    "description": "Error when the photo does not decode."
+  "foldersSectionReorder": "सेक्शन का क्रम बदलें",
+  "@foldersSectionReorder": {
+    "description": "Folder page menu item and sheet title for changing the order of the sections."
   },
-  "photoWallErrorInProgress": "आपकी पिछली फ़ोटो पर अभी भी काम चल रहा है।",
-  "@photoWallErrorInProgress": {
-    "description": "Error when the same job is still running."
-  },
-  "photoWallErrorGeneric": "वॉलपेपर नहीं बनाया जा सका। फिर से कोशिश करें।",
-  "@photoWallErrorGeneric": {
-    "description": "Error for any other failure."
-  },
-  "photoWallRefunded": "{coins, plural, =1{आपका 1 कॉइन लौटा दिया गया है।} other{आपके {coins} कॉइन लौटा दिए गए हैं।}}",
-  "@photoWallRefunded": {
-    "description": "Added after an error when the server refunded the coins.",
+  "foldersSectionDragHandle": "{name} को ले जाने के लिए खींचें",
+  "@foldersSectionDragHandle": {
+    "description": "Tooltip of the drag handle on a section in the Reorder sections sheet. name is the section name.",
     "placeholders": {
-      "coins": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionWallCount": "{count, plural, =0{कोई वॉलपेपर नहीं} =1{1 वॉलपेपर} other{{count} वॉलपेपर}}",
+  "@foldersSectionWallCount": {
+    "description": "Count under a section name.",
+    "placeholders": {
+      "count": {
         "type": "int"
       }
     }
   },
-  "photoWallRefundPending": "आपके कॉइन लौटा दिए जाएँगे।",
-  "@photoWallRefundPending": {
-    "description": "Added after an error when the refund is not confirmed yet."
+  "foldersSectionHeaderLabel": "{name}, {count, plural, =0{कोई वॉलपेपर नहीं} =1{1 वॉलपेपर} other{{count} वॉलपेपर}}",
+  "@foldersSectionHeaderLabel": {
+    "description": "Screen reader label of a section header. Double tap collapses or expands it. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
   },
+  "foldersSectionJumpTo": "{name} पर जाएँ, {count, plural, =0{कोई वॉलपेपर नहीं} =1{1 वॉलपेपर} other{{count} वॉलपेपर}}",
+  "@foldersSectionJumpTo": {
+    "description": "Screen reader label of a chip in the section strip at the top of a folder. Tapping it scrolls to the section.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionOptions": "{name} के लिए और विकल्प",
+  "@foldersSectionOptions": {
+    "description": "Tooltip of the menu button on a section header. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionSaveAll": "सेक्शन सहेजें",
+  "@foldersSectionSaveAll": {
+    "description": "Section menu item that saves all wallpapers of one section to the device, like Save all for the whole folder."
+  },
+  "foldersSectionMoveTo": "सेक्शन में ले जाएँ",
+  "@foldersSectionMoveTo": {
+    "description": "Button in the wallpaper menu and the selection bar. It opens a list of the sections."
+  },
+  "foldersSectionMoveTitle": "इसमें ले जाएँ",
+  "@foldersSectionMoveTitle": {
+    "description": "Title of the sheet that lists Unsorted and the sections of a folder."
+  },
+  "foldersSectionMoved": "{count, plural, =1{1 वॉलपेपर {name} में ले जाया गया।} other{{count} वॉलपेपर {name} में ले जाए गए।}}",
+  "@foldersSectionMoved": {
+    "description": "Toast after wallpapers move to a section. name is the section name, or Unsorted.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionSelect": "वॉलपेपर चुनें",
+  "@foldersSectionSelect": {
+    "description": "Folder page menu item that starts selecting wallpapers to move them."
+  },
+  "foldersSectionSelected": "{count, plural, =0{वॉलपेपर चुनने के लिए उन पर टैप करें} =1{1 चुना गया} other{{count} चुने गए}}",
+  "@foldersSectionSelected": {
+    "description": "Text in the selection bar at the bottom of a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionsFull": "एक फ़ोल्डर में अधिकतम {max} सेक्शन हो सकते हैं।",
+  "@foldersSectionsFull": {
+    "description": "Error toast when the user tries to add a section to a folder that has the most sections.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionEmpty": "अभी कोई वॉलपेपर नहीं है।",
+  "@foldersSectionEmpty": {
+    "description": "Text under an empty section for a reader who cannot organize the folder."
+  },
+  "foldersSectionEmptyHint": "वॉलपेपर सेक्शन के नाम पर खींचें, या “सेक्शन में ले जाएँ” इस्तेमाल करें।",
+  "@foldersSectionEmptyHint": {
+    "description": "Text under an empty section for the owner and editors. Only the section name (the header) and its chip in the strip accept a drop, not this text. Move to section is the name of a button."
+  },
+  "foldersSectionSuggest": "सेक्शन सुझाएँ",
+  "@foldersSectionSuggest": {
+    "description": "Folder page menu item. Prism groups the Unsorted wallpapers by mood, category or colour on the device."
+  },
+  "foldersSuggestTitle": "सुझाए गए सेक्शन",
+  "@foldersSuggestTitle": {
+    "description": "Title of the sheet with the suggested sections."
+  },
+  "foldersSuggestBody": "आपके बिना सेक्शन वाले वॉलपेपर के समूह। जो रखना हो, रखें।",
+  "@foldersSuggestBody": {
+    "description": "Message under the title of the suggested sections sheet."
+  },
+  "foldersSuggestByMood": "मूड",
+  "@foldersSuggestByMood": {
+    "description": "Segment in the suggested sections sheet: group by mood."
+  },
+  "foldersSuggestByCategory": "श्रेणी",
+  "@foldersSuggestByCategory": {
+    "description": "Segment in the suggested sections sheet: group by category."
+  },
+  "foldersSuggestByColour": "रंग",
+  "@foldersSuggestByColour": {
+    "description": "Segment in the suggested sections sheet: group by main colour."
+  },
+  "foldersSuggestJoins": "{count}. इस नाम वाले आपके सेक्शन में जाएगा।",
+  "@foldersSuggestJoins": {
+    "description": "Line under a suggested group whose name matches a section that exists. count is a wallpaper count, for example \"3 wallpapers\".",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSuggestAdd": "{count, plural, =0{सेक्शन जोड़ें} =1{1 सेक्शन जोड़ें} other{{count} सेक्शन जोड़ें}}",
+  "@foldersSuggestAdd": {
+    "description": "Main button of the suggested sections sheet. count is the number of new sections it makes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestSort": "{count, plural, =1{1 वॉलपेपर सॉर्ट करें} other{{count} वॉलपेपर सॉर्ट करें}}",
+  "@foldersSuggestSort": {
+    "description": "Main button of the suggested sections sheet when every kept group goes into a section that exists.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestSorted": "{count, plural, =1{1 वॉलपेपर सॉर्ट हो गया।} other{{count} वॉलपेपर सॉर्ट हो गए।}}",
+  "@foldersSuggestSorted": {
+    "description": "Toast after the user keeps suggested sections.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestEmptyTitle": "सुझाने के लिए कोई समूह नहीं",
+  "@foldersSuggestEmptyTitle": {
+    "description": "Empty state in the suggested sections sheet."
+  },
+  "foldersSuggestEmptyBody": "समूह बनने के लिए, बिना सेक्शन वाले एक ही मूड, श्रेणी या रंग के कम से कम 2 Prism वॉलपेपर चाहिए।",
+  "@foldersSuggestEmptyBody": {
+    "description": "Body of the empty state in the suggested sections sheet."
+  },
+  "foldersSuggestError": "सुझाव लोड नहीं हो सके",
+  "@foldersSuggestError": {
+    "description": "Error state in the suggested sections sheet."
+  },
+  "photoWallEntryTitle": "आपकी फ़ोटो से",
+  "@photoWallEntryTitle": {"description": "Entry card on the AI tab that opens photo to wallpaper."},
+  "photoWallEntrySubtitle": "कोई भी फ़ोटो अपनी स्क्रीन के हिसाब से सेट करें",
+  "@photoWallEntrySubtitle": {"description": "Subtitle of the From your photo entry card."},
+  "photoWallPickPhoto": "कोई फ़ोटो चुनें",
+  "@photoWallPickPhoto": {"description": "Button that opens the photo gallery."},
+  "photoWallPickAnother": "कोई और फ़ोटो चुनें",
+  "@photoWallPickAnother": {"description": "Button that replaces the picked photo."},
+  "photoWallPrivacyNote": "आपकी फ़ोटो इस काम के लिए ही हमारे AI प्रदाता fal.ai और Google Cloud Vision को भेजी जाती है। Prism उसे नहीं रखता और काम के बाद fal.ai से उसे हटाने को कहता है।",
+  "@photoWallPrivacyNote": {"description": "Privacy note under the photo picker."},
+  "photoWallTargetLabel": "इसके लिए बनाएँ",
+  "@photoWallTargetLabel": {"description": "Label of the phone or desktop choice."},
+  "photoWallTargetPhone": "फ़ोन",
+  "@photoWallTargetPhone": {"description": "Choice: make a phone wallpaper."},
+  "photoWallTargetDesktop": "डेस्कटॉप वर्शन",
+  "@photoWallTargetDesktop": {"description": "Choice: make a 16:10 desktop wallpaper."},
+  "photoWallPlanExtend": "आपकी स्क्रीन के हिसाब से बढ़ाएँ",
+  "@photoWallPlanExtend": {"description": "Plan shown when the photo has the wrong shape for a phone."},
+  "photoWallPlanExtendDesktop": "डेस्कटॉप स्क्रीन के हिसाब से बढ़ाएँ",
+  "@photoWallPlanExtendDesktop": {"description": "Plan shown when the photo has the wrong shape for a desktop."},
+  "photoWallPlanExtendDetail": "AI आपकी फ़ोटो के आसपास के खाली किनारे भर देता है।",
+  "@photoWallPlanExtendDetail": {"description": "Detail under the Extend plan."},
+  "photoWallPlanUpscale": "अपस्केल",
+  "@photoWallPlanUpscale": {"description": "Plan shown when the photo is too small."},
+  "photoWallPlanUpscaleDetail": "AI विवरण जोड़ता है, ताकि आपकी स्क्रीन पर फ़ोटो साफ़ दिखे।",
+  "@photoWallPlanUpscaleDetail": {"description": "Detail under the Upscale plan."},
+  "photoWallPlanFits": "यह फ़ोटो आपकी स्क्रीन में पहले से फ़िट है",
+  "@photoWallPlanFits": {"description": "Shown when no AI job is needed for a phone."},
+  "photoWallPlanFitsDesktop": "यह फ़ोटो डेस्कटॉप स्क्रीन में पहले से फ़िट है",
+  "@photoWallPlanFitsDesktop": {"description": "Shown when no AI job is needed for a desktop."},
+  "photoWallPlanFitsDetail": "इसका आकार और साइज़ सही है। कोई और फ़ोटो चुनें या लक्ष्य बदलें।",
+  "@photoWallPlanFitsDetail": {"description": "Detail when no AI job is needed."},
+  "photoWallRunExtend": "{coins, plural, =1{बढ़ाएँ · 1 कॉइन} other{बढ़ाएँ · {coins} कॉइन}}",
+  "@photoWallRunExtend": {"description": "Main button. Starts an Extend job and shows its coin cost.", "placeholders": {"coins": {"type": "int"}}},
+  "photoWallRunUpscale": "{coins, plural, =1{अपस्केल · 1 कॉइन} other{अपस्केल · {coins} कॉइन}}",
+  "@photoWallRunUpscale": {"description": "Main button. Starts an Upscale job and shows its coin cost.", "placeholders": {"coins": {"type": "int"}}},
+  "photoWallGetCoins": "कॉइन पाएँ · {coins} चाहिए",
+  "@photoWallGetCoins": {"description": "Main button when the balance is too low. Opens Rewards.", "placeholders": {"coins": {"type": "int"}}},
+  "photoWallPlaceTitle": "अपनी फ़ोटो सेट करें",
+  "@photoWallPlaceTitle": {"description": "Header over the placement frame."},
+  "photoWallPlaceHint": "हिलाने के लिए खींचें। छोटा करने के लिए पिंच करें।",
+  "@photoWallPlaceHint": {"description": "Hint under the placement frame."},
+  "photoWallPlaceReset": "स्थिति रीसेट करें",
+  "@photoWallPlaceReset": {"description": "Button that puts the photo back in the centre at full size."},
+  "photoWallPlaceSemantics": "फ़्रेम में फ़ोटो की स्थिति",
+  "@photoWallPlaceSemantics": {"description": "Screen reader label of the placement frame."},
+  "photoWallPlaceMoveStart": "शुरुआत तक ले जाएँ",
+  "@photoWallPlaceMoveStart": {"description": "Screen reader action: move the photo to the top or left edge."},
+  "photoWallPlaceMoveCentre": "बीच में ले जाएँ",
+  "@photoWallPlaceMoveCentre": {"description": "Screen reader action: move the photo to the centre."},
+  "photoWallPlaceMoveEnd": "आखिर तक ले जाएँ",
+  "@photoWallPlaceMoveEnd": {"description": "Screen reader action: move the photo to the bottom or right edge."},
+  "photoWallWorkingExtend": "आपकी फ़ोटो बढ़ाई जा रही है",
+  "@photoWallWorkingExtend": {"description": "Progress title during an Extend job."},
+  "photoWallWorkingUpscale": "आपकी फ़ोटो की क्वालिटी बढ़ाई जा रही है",
+  "@photoWallWorkingUpscale": {"description": "Progress title during an Upscale job."},
+  "photoWallWorkingDetail": "इसमें एक मिनट तक लग सकता है।",
+  "@photoWallWorkingDetail": {"description": "Progress detail."},
+  "photoWallBefore": "पहले",
+  "@photoWallBefore": {"description": "Label on the original side of the compare slider."},
+  "photoWallAfter": "बाद में",
+  "@photoWallAfter": {"description": "Label on the result side of the compare slider."},
+  "photoWallCompareSemantics": "पहले और बाद में। तुलना करने के लिए ऊपर या नीचे स्वाइप करें।",
+  "@photoWallCompareSemantics": {"description": "Screen reader label of the compare slider."},
+  "photoWallSet": "वॉलपेपर के रूप में सेट करें",
+  "@photoWallSet": {"description": "Result button that sets the wallpaper."},
+  "photoWallDownload": "डाउनलोड करें",
+  "@photoWallDownload": {"description": "Result button that saves the wallpaper to the device."},
+  "photoWallSaved": "आपके डिवाइस में सहेजा गया",
+  "@photoWallSaved": {"description": "Toast after Download."},
+  "photoWallStartOver": "कोई और फ़ोटो इस्तेमाल करें",
+  "@photoWallStartOver": {"description": "Result button that returns to the picker."},
+  "photoWallErrorUnsafeInput": "यह फ़ोटो इस्तेमाल नहीं की जा सकती। कोई और फ़ोटो चुनें।",
+  "@photoWallErrorUnsafeInput": {"description": "Error when the content filter blocks the input photo."},
+  "photoWallErrorUnsafeOutput": "नतीजे को रोक दिया गया। फिर से कोशिश करें या कोई और फ़ोटो चुनें।",
+  "@photoWallErrorUnsafeOutput": {"description": "Error when the content filter blocks the result."},
+  "photoWallErrorLimit": "आज की {count} फ़ोटो वॉलपेपर की सीमा पूरी हो गई है।",
+  "@photoWallErrorLimit": {"description": "Error when the daily cap is reached.", "placeholders": {"count": {"type": "int"}}},
+  "photoWallErrorBusy": "फ़ोटो वॉलपेपर इस समय बहुत व्यस्त हैं। बाद में फिर कोशिश करें।",
+  "@photoWallErrorBusy": {"description": "Error when the global daily cap is reached."},
+  "photoWallErrorUnreadable": "यह फ़ोटो नहीं खुल सकती। कोई और फ़ोटो चुनें।",
+  "@photoWallErrorUnreadable": {"description": "Error when the photo does not decode."},
+  "photoWallErrorInProgress": "आपकी पिछली फ़ोटो पर अभी भी काम चल रहा है।",
+  "@photoWallErrorInProgress": {"description": "Error when the same job is still running."},
+  "photoWallErrorGeneric": "वॉलपेपर नहीं बनाया जा सका। फिर से कोशिश करें।",
+  "@photoWallErrorGeneric": {"description": "Error for any other failure."},
+  "photoWallRefunded": "{coins, plural, =1{आपका 1 कॉइन लौटा दिया गया है।} other{आपके {coins} कॉइन लौटा दिए गए हैं।}}",
+  "@photoWallRefunded": {"description": "Added after an error when the server refunded the coins.", "placeholders": {"coins": {"type": "int"}}},
+  "photoWallRefundPending": "आपके कॉइन लौटा दिए जाएँगे।",
+  "@photoWallRefundPending": {"description": "Added after an error when the refund is not confirmed yet."},
   "photoWallTryAgain": "फिर से कोशिश करें",
   "@photoWallTryAgain": {
     "description": "Button on the error card that runs the same job again."

@@ -3,6 +3,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
@@ -28,6 +29,7 @@ import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -200,6 +202,24 @@ void main() {
   List<LibraryTabViewedEvent> tabEvents() => analytics.events.whereType<LibraryTabViewedEvent>().toList();
 
   List<String> tabNames() => tabEvents().map((event) => event.tab).toList();
+
+  testWidgets('tapping a tab plays one selection haptic and the first build plays none', (tester) async {
+    const MethodChannel channel = MethodChannel('prism/haptics');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final List<Object?> played = <Object?>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      played.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    PrismHaptics.enabled = true;
+
+    await pumpLibrary(tester);
+    expect(played, isEmpty);
+
+    await tapTab(tester, 'Folders');
+    expect(played, <Object?>['selection']);
+  });
 
   testWidgets('Android shows Favourites, Folders, Downloads and History tabs in that order', (tester) async {
     await pumpLibrary(tester);

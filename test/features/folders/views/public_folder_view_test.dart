@@ -16,6 +16,7 @@ import 'package:Prism/features/favourite_walls/domain/repositories/favourite_cou
 import 'package:Prism/features/folders/biz/folder_save/folder_save_bloc.j.dart';
 import 'package:Prism/features/folders/biz/public_folder_cubit.dart';
 import 'package:Prism/features/folders/domain/entities/folder_save_plan.dart';
+import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folder_save_gateway.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
@@ -64,7 +65,8 @@ class _FakePublicFoldersRepository implements PublicFoldersRepository {
   }
 
   @override
-  Future<Result<List<String>>> fetchWallIds(String folderId) async => Result.success(wallIds);
+  Future<Result<List<PublicFolderWall>>> fetchWallIds(String folderId) async =>
+      Result.success(wallIds.map<PublicFolderWall>((id) => (id: id, sectionId: null)).toList());
 
   @override
   Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) async =>
@@ -428,6 +430,27 @@ void main() {
     await _settle(tester);
 
     expect(find.text('No wallpapers here yet'), findsOneWidget);
+  });
+
+  testWidgets('a public folder with empty sections keeps their headers visible and read-only', (tester) async {
+    final repo = _FakePublicFoldersRepository()
+      ..folder = const PublicFolderEntity(
+        id: 'f1',
+        ownerId: 'owner',
+        name: 'Night Owl',
+        itemCount: 0,
+        covers: <String>[],
+        followerCount: 1,
+        sections: <FolderSection>[FolderSection(id: 'dark', name: 'Dark')],
+      );
+    final PublicFolderCubit cubit = PublicFolderCubit(repo, _FakeMoodRepository());
+    addTearDown(cubit.close);
+    await tester.pumpWidget(_host(PublicFolderView(folderId: 'f1', cubit: cubit)));
+    await _settle(tester);
+
+    expect(find.text('Dark'), findsNWidgets(2));
+    expect(find.byTooltip('More options for Dark'), findsNothing);
+    expect(find.text('Follow'), findsOneWidget);
   });
 
   testWidgets('resuming the app reloads the open public folder', (tester) async {

@@ -145,7 +145,9 @@ void main() {
     Future<CustomerInfo> Function()? getCustomerInfo,
     String Function()? apiKey,
     Future<void> Function({String? keepUserId})? resetTrialState,
+    Future<void> Function()? syncPurchases,
   }) => PurchasesService.forTesting(
+    syncPurchases: syncPurchases,
     addCustomerInfoListener: listeners.add,
     syncSubscription: () async {
       syncCalls += 1;
@@ -361,8 +363,28 @@ void main() {
       expect(app_state.prismUser.premium, isFalse);
       expect(syncCalls, 0);
       app_state.prismUser = profileUser(id: '', loggedIn: false);
-      expect(await service.restore(), PurchaseEntitlementStatus.none);
+      await expectLater(service.restore(), throwsA(isA<PlatformException>()));
       expect(app_state.prismUser.premium, isFalse);
+    });
+
+    test('a logout failure mentioning anonymous does not permit restore on the old account', () async {
+      int restoreCalls = 0;
+      logout = () async =>
+          throw PlatformException(code: '10', message: 'Network error while creating an anonymous user');
+      restore = () async {
+        restoreCalls++;
+        return _proCustomerJson;
+      };
+      final service = buildService();
+      await service.ensureConfigured('u1');
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
+
+      await expectLater(service.logOut(), throwsA(isA<PlatformException>()));
+      await expectLater(service.restore(), throwsA(isA<PlatformException>()));
+
+      expect(restoreCalls, 0);
+      expect(app_state.prismUser.premium, isFalse);
+      expect(syncCalls, 0);
     });
 
     test('a guest restore after logout cannot grant the account that signs in during restore', () async {
@@ -432,7 +454,370 @@ void main() {
     expect(resetTrialStateCalls, 1);
   });
 
+  group('a cold start with a saved account (#526)', () {
+    test('configures RevenueCat as the account, never as an anonymous ID that can take its subscription', () async {
+      final List<String?> configuredUserIds = <String?>[];
+      final PurchasesService service = buildService(
+        configurePurchases: (PurchasesConfiguration configuration) async =>
+            configuredUserIds.add(configuration.appUserID),
+        apiKey: () => 'test-key',
+      );
+
+      await service.configureEarly();
+      await service.ensureConfigured('u1');
+
+      expect(configuredUserIds, <String?>['u1']);
+      expect(loginCalls, isEmpty);
+    });
+
+    test('logs RevenueCat out when the saved account turns out to be signed out', () async {
+      final List<String> nativeCalls = <String>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('purchases_flutter'),
+        (call) async {
+          if (call.method == 'setLogLevel') return null;
+          nativeCalls.add(call.method);
+          if (call.method == 'logOut') return _freeCustomerJson;
+          throw StateError('Unexpected RevenueCat call: ${call.method}');
+        },
+      );
+      final PurchasesService service = buildService(apiKey: () => 'test-key');
+      await service.configureEarly();
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
+
+      await service.ensureConfigured('');
+
+      expect(nativeCalls, <String>['logOut']);
+    });
+  });
+
+  group('a paid account that RevenueCat shows as free (#526)', () {
+    late int storeSyncs;
+
+    setUp(() {
+      storeSyncs = 0;
+      app_state.prismUser = profileUser(premium: true)..subscriptionTier = 'pro';
+    });
+
+    test('syncs the store purchases once and keeps Pro the sync brings back', () async {
+      final PurchasesService service = buildService(
+        getCustomerInfo: () async => storeSyncs == 0 ? _freeCustomer : _proCustomer,
+        syncPurchases: () async => storeSyncs++,
+      );
+
+      expect(await service.checkAndPersistPremium(), isTrue);
+
+      expect(storeSyncs, 1);
+      expect(app_state.prismUser.premium, isTrue);
+      expect(app_state.prismUser.subscriptionTier, 'pro');
+    });
+
+    test('removes Pro when the store has no purchase either, and syncs only once', () async {
+      final PurchasesService service = buildService(
+        getCustomerInfo: () async => _freeCustomer,
+        syncPurchases: () async => storeSyncs++,
+      );
+
+      expect(await service.checkAndPersistPremium(), isFalse);
+      app_state.prismUser
+        ..premium = true
+        ..subscriptionTier = 'pro';
+      expect(await service.checkAndPersistPremium(), isFalse);
+
+      expect(storeSyncs, 1);
+      expect(app_state.prismUser.premium, isFalse);
+    });
+
+    test('a failed store sync still applies the RevenueCat answer', () async {
+      final PurchasesService service = buildService(
+        getCustomerInfo: () async => _freeCustomer,
+        syncPurchases: () async => throw PlatformException(code: 'offline'),
+      );
+
+      expect(await service.checkAndPersistPremium(), isFalse);
+      expect(app_state.prismUser.premium, isFalse);
+    });
+
+    for (final bool failSync in <bool>[false, true]) {
+      test('an account switch during recovery cannot revoke the new account (failure: $failSync)', () async {
+        final gate = Completer<void>();
+        final service = buildService(getCustomerInfo: () async => _freeCustomer, syncPurchases: () => gate.future);
+        final pending = service.checkAndPersistPremium();
+        await pumpEventQueue();
+        app_state.prismUser = profileUser(id: 'other-user', premium: true)..subscriptionTier = 'pro';
+        await service.ensureConfigured('other-user');
+        if (failSync) {
+          gate.completeError(PlatformException(code: 'offline'));
+        } else {
+          gate.complete();
+        }
+        await pending;
+        expect(app_state.prismUser.premium, isTrue);
+        expect(app_state.prismUser.subscriptionTier, 'pro');
+        expect(syncCalls, 0);
+      });
+    }
+
+    test('a failed recovery cannot overwrite a newer purchase check', () async {
+      final gate = Completer<void>();
+      bool paid = false;
+      final service = buildService(
+        getCustomerInfo: () async => paid ? _proCustomer : _freeCustomer,
+        syncPurchases: () => gate.future,
+      );
+      final pending = service.checkAndPersistPremium();
+      await pumpEventQueue();
+      paid = true;
+      expect(await service.checkPurchaseEntitlement(), PurchaseEntitlementStatus.serverConfirmed);
+      gate.completeError(PlatformException(code: 'offline'));
+      await pending;
+      expect(app_state.prismUser.premium, isTrue);
+      expect(app_state.prismUser.subscriptionTier, 'pro');
+    });
+
+    test('a free listener waits for recovery before local or server revocation', () async {
+      final gate = Completer<void>();
+      bool recovered = false;
+      final service = buildService(
+        getCustomerInfo: () async => recovered ? _proCustomer : _freeCustomer,
+        syncPurchases: () async {
+          storeSyncs++;
+          await gate.future;
+          recovered = true;
+        },
+      );
+      final pending = service.checkAndPersistPremium();
+      await pumpEventQueue();
+      listeners.single(_freeCustomer);
+      await pumpEventQueue();
+      expect(app_state.prismUser.premium, isTrue);
+      expect(syncCalls, 0);
+      gate.complete();
+      expect(await pending, isTrue);
+      await pumpEventQueue();
+      expect(app_state.prismUser.subscriptionTier, 'pro');
+      expect(storeSyncs, 1);
+    });
+
+    test('a recovery read cannot overwrite a newer paid listener', () async {
+      final gate = Completer<CustomerInfo>();
+      int reads = 0;
+      final service = buildService(
+        getCustomerInfo: () async => ++reads == 1 ? _freeCustomer : gate.future,
+        syncPurchases: () async => storeSyncs++,
+      );
+      final pending = service.checkAndPersistPremium();
+      await pumpEventQueue();
+      listeners.single(_proCustomer);
+      await pumpEventQueue();
+      expect(app_state.prismUser.premium, isTrue);
+      gate.complete(_freeCustomer);
+      await pending;
+      expect(app_state.prismUser.premium, isTrue);
+      expect(app_state.prismUser.subscriptionTier, 'pro');
+    });
+
+    testWidgets('store recovery and its reread share one ten-second deadline', (tester) async {
+      final gate = Completer<void>();
+      final reread = Completer<CustomerInfo>();
+      int reads = 0;
+      bool finished = false;
+      final service = buildService(
+        getCustomerInfo: () async => ++reads == 1 ? _freeCustomer : reread.future,
+        syncPurchases: () => gate.future,
+      );
+      final pending = service.checkAndPersistPremium().then((value) => finished = true);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 9));
+      gate.complete();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(finished, isTrue);
+      expect(app_state.prismUser.premium, isFalse);
+      reread.complete(_proCustomer);
+      await tester.pump();
+      await pending;
+      expect(app_state.prismUser.premium, isFalse);
+    });
+
+    test('logout during recovery cannot overwrite guest access', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('purchases_flutter'),
+        (call) async => call.method == 'logOut' ? _freeCustomerJson : null,
+      );
+      final gate = Completer<void>();
+      final service = buildService(getCustomerInfo: () async => _freeCustomer, syncPurchases: () => gate.future);
+      final pending = service.checkAndPersistPremium();
+      await pumpEventQueue();
+      app_state.prismUser = profileUser(id: '', loggedIn: false, premium: true)..subscriptionTier = 'pro';
+      await service.logOut();
+      gate.complete();
+      await pending;
+      expect(app_state.prismUser.premium, isTrue);
+      expect(app_state.prismUser.subscriptionTier, 'pro');
+      expect(syncCalls, 0);
+    });
+
+    for (final bool restoring in <bool>[false, true]) {
+      test('a successful recovery cannot overwrite a newer forced result (restore: $restoring)', () async {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+          const MethodChannel('purchases_flutter'),
+          (call) async => call.method == 'restorePurchases' ? _proCustomerJson : null,
+        );
+        final gate = Completer<void>();
+        bool paid = false;
+        final service = buildService(
+          getCustomerInfo: () async => paid ? _proCustomer : _freeCustomer,
+          syncPurchases: () => gate.future,
+        );
+        final pending = service.checkAndPersistPremium();
+        await pumpEventQueue();
+        paid = true;
+        expect(
+          await (restoring ? service.restore() : service.checkPurchaseEntitlement()),
+          PurchaseEntitlementStatus.serverConfirmed,
+        );
+        paid = false;
+        gate.complete();
+        await pending;
+        expect(app_state.prismUser.premium, isTrue);
+        expect(app_state.prismUser.subscriptionTier, 'pro');
+      });
+    }
+
+    test('a paid guest never syncs the store before removing access', () async {
+      await getIt.reset();
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      getIt.registerSingleton<SettingsLocalDataSource>(settings);
+      addTearDown(getIt.reset);
+      await settings.set('lastSyncedSubscription.', 'pro|${DateTime.now().millisecondsSinceEpoch}');
+      app_state.prismUser = profileUser(id: '', loggedIn: false, premium: true)..subscriptionTier = 'pro';
+      final service = buildService(getCustomerInfo: () async => _freeCustomer, syncPurchases: () async => storeSyncs++);
+      expect(await service.checkAndPersistPremium(), isFalse);
+      expect(app_state.prismUser.premium, isFalse);
+      expect(storeSyncs, 0);
+    });
+
+    test('a forced check does not perform automatic store recovery', () async {
+      final service = buildService(getCustomerInfo: () async => _freeCustomer, syncPurchases: () async => storeSyncs++);
+      expect(await service.checkPurchaseEntitlement(), PurchaseEntitlementStatus.none);
+      expect(app_state.prismUser.premium, isFalse);
+      expect(storeSyncs, 0);
+    });
+
+    test('an account the server already marked free still recovers when this phone last confirmed Pro', () async {
+      await getIt.reset();
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      getIt.registerSingleton<SettingsLocalDataSource>(settings);
+      addTearDown(getIt.reset);
+      await settings.set('lastSyncedSubscription.u1', 'pro|${DateTime.now().millisecondsSinceEpoch}');
+      app_state.prismUser = profileUser();
+      final PurchasesService service = buildService(
+        getCustomerInfo: () async => storeSyncs == 0 ? _freeCustomer : _proCustomer,
+        syncPurchases: () async => storeSyncs++,
+      );
+
+      expect(await service.checkAndPersistPremium(), isTrue);
+
+      expect(storeSyncs, 1);
+      expect(app_state.prismUser.premium, isTrue);
+    });
+
+    test('a valid stale paid confirmation triggers recovery after a cold launch', () async {
+      await getIt.reset();
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      getIt.registerSingleton<SettingsLocalDataSource>(settings);
+      addTearDown(getIt.reset);
+      final int old = DateTime.now().subtract(const Duration(days: 30)).millisecondsSinceEpoch;
+      await settings.set('lastSyncedSubscription.u1', 'pro|$old');
+      app_state.prismUser = profileUser();
+      final PurchasesService service = buildService(
+        getCustomerInfo: () async => storeSyncs == 0 ? _freeCustomer : _proCustomer,
+        syncPurchases: () async => storeSyncs++,
+      );
+
+      expect(await service.checkAndPersistPremium(), isTrue);
+      expect(storeSyncs, 1);
+      expect(app_state.prismUser.premium, isTrue);
+    });
+
+    test('saved paid confirmation for another uid does not trigger recovery', () async {
+      await getIt.reset();
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      getIt.registerSingleton<SettingsLocalDataSource>(settings);
+      addTearDown(getIt.reset);
+      await settings.set('lastSyncedSubscription.u2', 'pro|${DateTime.now().millisecondsSinceEpoch}');
+      app_state.prismUser = profileUser();
+      final PurchasesService service = buildService(
+        getCustomerInfo: () async => _freeCustomer,
+        syncPurchases: () async => storeSyncs++,
+      );
+
+      expect(await service.checkAndPersistPremium(), isFalse);
+      expect(storeSyncs, 0);
+    });
+
+    test('a free server confirmation prevents recovery on the next cold launch', () async {
+      await getIt.reset();
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      getIt.registerSingleton<SettingsLocalDataSource>(settings);
+      addTearDown(getIt.reset);
+      await settings.set('lastSyncedSubscription.u1', 'pro|${DateTime.now().millisecondsSinceEpoch}');
+      app_state.prismUser = profileUser();
+      PurchasesService service = buildService(
+        getCustomerInfo: () async => _freeCustomer,
+        syncPurchases: () async => storeSyncs++,
+      );
+
+      expect(await service.checkAndPersistPremium(), isFalse);
+      expect(storeSyncs, 1);
+
+      service = buildService(getCustomerInfo: () async => _freeCustomer, syncPurchases: () async => storeSyncs++);
+      expect(await service.checkAndPersistPremium(), isFalse);
+      expect(storeSyncs, 1);
+    });
+
+    for (final Object? malformed in <Object?>[
+      'pro',
+      'pro|not-a-timestamp',
+      'pro|-1',
+      'pro|9223372036854775807',
+      'pro|1|extra',
+      1,
+    ]) {
+      test('malformed saved subscription state $malformed does not trigger recovery', () async {
+        await getIt.reset();
+        final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+        getIt.registerSingleton<SettingsLocalDataSource>(settings);
+        addTearDown(getIt.reset);
+        await settings.set('lastSyncedSubscription.u1', malformed);
+        app_state.prismUser = profileUser();
+        final PurchasesService service = buildService(
+          getCustomerInfo: () async => _freeCustomer,
+          syncPurchases: () async => storeSyncs++,
+        );
+
+        expect(await service.checkAndPersistPremium(), isFalse);
+        expect(storeSyncs, 0);
+        expect(app_state.prismUser.premium, isFalse);
+      });
+    }
+
+    test('a free account never syncs the store', () async {
+      app_state.prismUser = profileUser();
+      final PurchasesService service = buildService(
+        getCustomerInfo: () async => _freeCustomer,
+        syncPurchases: () async => storeSyncs++,
+      );
+
+      await service.checkAndPersistPremium();
+
+      expect(storeSyncs, 0);
+    });
+  });
+
   test('anonymous RevenueCat configuration preserves the reminder until the account is known', () async {
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
     ActiveTrial? trialAtConfigure;
     late PurchasesService service;
     service = PurchasesService.forTesting(
@@ -467,8 +852,10 @@ void main() {
   });
 
   test('a cold-start login clears another user reminder but preserves the target user reminder', () async {
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
     final PurchasesService service = buildService(apiKey: () => 'test-key');
     await service.configureEarly();
+    app_state.prismUser = profileUser(id: 'u2');
 
     await service.ensureConfigured('u2');
 
@@ -494,8 +881,9 @@ void main() {
       apiKey: () => 'test-key',
     );
 
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
     await service.configureEarly();
-    app_state.prismUser.subscriptionTier = 'pro';
+    app_state.prismUser = profileUser(premium: true)..subscriptionTier = 'pro';
     final Future<void> login = service.ensureConfigured('u1');
     await Future<void>.delayed(Duration.zero);
 
@@ -1235,12 +1623,13 @@ void main() {
     });
 
     test('a restore that cannot sign in to RevenueCat throws and keeps the stored tier', () async {
-      app_state.prismUser = profileUser(premium: true)..subscriptionTier = 'pro';
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
       final service = buildService(
         apiKey: () => 'test-key',
         logIn: (_) async => throw PlatformException(code: 'login_failed'),
       );
       await service.configureEarly();
+      app_state.prismUser = profileUser(premium: true)..subscriptionTier = 'pro';
 
       await expectLater(service.restore(), throwsA(isA<PlatformException>()));
       expect(restoreCalls, 0);
@@ -1363,7 +1752,7 @@ void main() {
         expect(await service.checkAndPersistPremium(), active);
         expect(app_state.prismUser.premium, active);
         expect(app_state.prismUser.subscriptionTier, active ? 'pro' : 'free');
-        expect(loginCalls, <String>['u1']);
+        expect(loginCalls, isEmpty);
         expect(syncCalls, 1);
       });
     }

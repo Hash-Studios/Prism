@@ -1,3 +1,8 @@
+import 'package:Prism/features/folders/domain/entities/folder_section.dart';
+
+/// One wall of a public folder: its wall id and the section it is in, if any.
+typedef PublicFolderWall = ({String id, String? sectionId});
+
 /// A folder its owner made public, `publicFolders/{id}`. The server writes it from the private folder.
 class PublicFolderEntity {
   const PublicFolderEntity({
@@ -8,6 +13,7 @@ class PublicFolderEntity {
     required this.covers,
     required this.followerCount,
     this.shareImage = '',
+    this.sections = const <FolderSection>[],
   });
 
   final String id;
@@ -22,6 +28,9 @@ class PublicFolderEntity {
   /// The 4-wall image for link previews. Empty until the server has made it.
   final String shareImage;
 
+  /// The owner's sections, in order.
+  final List<FolderSection> sections;
+
   PublicFolderEntity copyWith({int? followerCount}) => PublicFolderEntity(
     id: id,
     ownerId: ownerId,
@@ -30,6 +39,7 @@ class PublicFolderEntity {
     covers: covers,
     followerCount: followerCount ?? this.followerCount,
     shareImage: shareImage,
+    sections: sections,
   );
 }
 

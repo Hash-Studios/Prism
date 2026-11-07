@@ -309,10 +309,17 @@ void main() {
         routerConfig: router.config(),
         builder: (context, child) => favouriteTestBuilder(
           context,
-          Column(
-            children: <Widget>[
-              const CreatorProgressCard(),
-              Expanded(child: child!),
+          // The card sits above the router's Navigator, so its tooltips need their own Overlay.
+          Overlay(
+            initialEntries: <OverlayEntry>[
+              OverlayEntry(
+                builder: (_) => Column(
+                  children: <Widget>[
+                    const CreatorProgressCard(),
+                    Expanded(child: child!),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -562,10 +569,10 @@ void main() {
       await _pump(tester, theme, const RankProgressCard());
       expect(find.text('Silver'), findsOneWidget);
       expect(
-        find.text(AppLocalizationsEn().economyLifetimeXp(formatLocalizedNumber(1240, AppLocalizationsEn()))),
+        find.textContaining(AppLocalizationsEn().economyLifetimeXp(formatLocalizedNumber(1240, AppLocalizationsEn()))),
         findsOneWidget,
       );
-      expect(find.text('760 XP to Gold'), findsOneWidget);
+      expect(find.textContaining('760 XP to Gold'), findsOneWidget);
       final LinearProgressIndicator bar = tester.widget(find.byType(LinearProgressIndicator));
       expect(bar.value, closeTo((1240 - 500) / (2000 - 500), 0.001));
       expect(find.bySemanticsLabel('Silver rank progress'), findsOneWidget);
@@ -575,7 +582,7 @@ void main() {
       svc.xpNotifier.value = XpStatus(xp: 9000, weekXp: 0, rank: EconomyConfig.current.rankFor(9000));
       await _pump(tester, theme, const RankProgressCard());
       expect(find.text('Prism'), findsOneWidget);
-      expect(find.text('Highest rank reached'), findsOneWidget);
+      expect(find.textContaining('Highest rank reached'), findsOneWidget);
       final LinearProgressIndicator bar = tester.widget(find.byType(LinearProgressIndicator));
       expect(bar.value, 1);
     });

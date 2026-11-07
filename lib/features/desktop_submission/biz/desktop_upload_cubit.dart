@@ -31,6 +31,9 @@ class DesktopUploadCubit extends Cubit<DesktopUploadState> {
     } on DesktopSubmitException catch (error) {
       if (isClosed) return;
       emit(state.copyWith(sending: false, failure: error.failure));
+    } on Object {
+      if (isClosed) return;
+      emit(state.copyWith(sending: false, failure: DesktopSubmitFailure.failed));
     }
   }
 

@@ -5,10 +5,17 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('stored theme ids stay unchanged', () {
-    expect(prismLightThemes.map((o) => o.id), <String>['kLFrost White', 'kLCoffee', 'kLRose', 'kLCotton Blue']);
+    expect(prismLightThemes.map((o) => o.id), <String>[
+      'kLFrost White',
+      'kLWinter',
+      'kLCoffee',
+      'kLRose',
+      'kLCotton Blue',
+    ]);
     expect(prismDarkThemes.map((o) => o.id), <String>[
       'kDMaterial Dark',
       'kDAMOLED',
+      'kDWinter',
       'kDDiwali',
       'kDSpooky',
       'kDOlive',
@@ -29,11 +36,13 @@ void main() {
       ],
       <String>[
         'Frost White',
+        'Winter',
         'Coffee',
         'Rose',
         'Cotton Blue',
         'Material Dark',
         'AMOLED',
+        'Winter',
         'Diwali',
         'Spooky',
         'Olive',

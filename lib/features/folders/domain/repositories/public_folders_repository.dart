@@ -13,8 +13,8 @@ abstract class PublicFoldersRepository {
   /// The folder, or null when it is private, gone, or hidden from this viewer by a block.
   Future<Result<PublicFolderEntity?>> fetchFolder(String folderId);
 
-  /// The wall ids in the folder, newest first.
-  Future<Result<List<String>>> fetchWallIds(String folderId);
+  /// The walls in the folder and their sections, newest first.
+  Future<Result<List<PublicFolderWall>>> fetchWallIds(String folderId);
 
   /// The public folders of [ownerId], most recently updated first.
   Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId);

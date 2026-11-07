@@ -38,4 +38,11 @@ abstract class FoldersEvent with _$FoldersEvent {
     required FavouriteWallEntity wall,
     @Default(0) int operationId,
   }) = _ItemRemoved;
+
+  /// Adds, renames, deletes or reorders sections, or moves walls between them.
+  const factory FoldersEvent.organizeRequested({
+    required String folderId,
+    required FolderEdit edit,
+    @Default(0) int operationId,
+  }) = _OrganizeRequested;
 }

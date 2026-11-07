@@ -65,7 +65,7 @@ class _PrismSearchFieldState extends State<PrismSearchField> {
       child: Row(
         children: <Widget>[
           const SizedBox(width: PrismSpace.md),
-          Icon(Icons.search_rounded, size: 22, color: cs.onSurface.withValues(alpha: 0.6)),
+          Icon(Icons.search_rounded, size: 22, color: cs.onSurfaceVariant),
           const SizedBox(width: PrismSpace.xs),
           Expanded(
             child: TextField(
@@ -88,7 +88,7 @@ class _PrismSearchFieldState extends State<PrismSearchField> {
                 focusedBorder: InputBorder.none,
                 disabledBorder: InputBorder.none,
                 hintText: widget.hint,
-                hintStyle: text.copyWith(color: cs.onSurface.withValues(alpha: 0.45)),
+                hintStyle: text.copyWith(color: cs.onSurfaceVariant),
               ),
             ),
           ),

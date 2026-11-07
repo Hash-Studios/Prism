@@ -614,6 +614,8 @@ void main() {
     testWidgets('screenshot preview opens in a labeled, back-dismissible Prism sheet', (tester) async {
       await openSheet(tester, service(), screenshot: Uint8List.fromList(_png));
 
+      await tester.ensureVisible(find.byKey(const Key('report_problem_screenshot')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('report_problem_screenshot')));
       await tester.pumpAndSettle();
       expect(find.text('View screenshot'), findsOneWidget);

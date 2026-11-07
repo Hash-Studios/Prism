@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/desktop_submission/biz/desktop_upload_cubit.dart';
 import 'package:Prism/features/desktop_submission/data/desktop_submission_repository.dart';
@@ -149,7 +150,11 @@ class _DesktopUploadScreenState extends State<DesktopUploadScreen> {
     final DesktopImageOk? ok = _ok;
     if (_upload.state.sending || bytes == null || ok == null) return;
     await _upload.submit(wallDocId: widget.wallDocId, bytes: bytes);
-    if (!mounted || !_upload.state.sent) return;
+    if (!mounted) return;
+    if (!_upload.state.sent) {
+      if (_upload.state.failure != null) PrismHaptics.error();
+      return;
+    }
     unawaited(
       analytics.track(
         DesktopUploadSubmittedEvent(wallId: widget.wallId, aspect: ok.aspect.label, replace: widget.replace),
@@ -224,6 +229,7 @@ class _DesktopUploadScreenState extends State<DesktopUploadScreen> {
                 PrismButton(
                   maxLines: 2,
                   label: l10n.desktopUploadSubmit,
+                  haptic: false,
                   expand: true,
                   loading: upload.sending,
                   onPressed: _ok == null || upload.sending ? null : _submit,

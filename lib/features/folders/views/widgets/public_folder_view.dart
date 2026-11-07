@@ -7,15 +7,22 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/folders/biz/public_folder_cubit.dart';
+import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_save_run.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/folder_share.dart';
 import 'package:Prism/features/folders/views/widgets/folder_save_views.dart';
+import 'package:Prism/features/folders/views/widgets/folder_sections_view.dart';
 import 'package:Prism/features/moods/views/widgets/wall_ids_grid.dart';
+import 'package:Prism/features/personalized_feed/views/widgets/feed_wall_tile.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
@@ -186,7 +193,7 @@ class _PublicFolderViewState extends State<PublicFolderView> with WidgetsBinding
       onFollow: app_state.prismUser.id == folder.ownerId ? null : () => unawaited(_toggleFollow()),
       source: 'folder_page',
     );
-    if (state.walls.isEmpty) {
+    if (state.walls.isEmpty && folder.sections.isEmpty) {
       return ListView(
         children: <Widget>[
           header,
@@ -198,7 +205,8 @@ class _PublicFolderViewState extends State<PublicFolderView> with WidgetsBinding
         ],
       );
     }
-    return WallIdsGrid(walls: state.walls, top: header);
+    if (folder.sections.isEmpty) return WallIdsGrid(walls: state.walls, top: header);
+    return _SectionedWalls(folder: folder, state: state, header: header);
   }
 }
 
@@ -326,6 +334,62 @@ class PublicFolderHeader extends StatelessWidget {
                 ],
               ),
             ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// The walls of a public folder in its sections, read-only. The tiles are the feed tiles, so a tap opens the detail
+/// page and swipes through the walls in the order they show.
+class _SectionedWalls extends StatelessWidget {
+  const _SectionedWalls({required this.folder, required this.state, required this.header});
+
+  final PublicFolderEntity folder;
+  final PublicFolderState state;
+  final Widget header;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<PrismFavouriteWall> walls = <PrismFavouriteWall>[
+      for (final PrismWallpaper wall in state.walls) PrismFavouriteWall(id: wall.id, wallpaper: wall),
+    ];
+    final Map<String, String> sectionOf = <String, String>{
+      for (final PrismFavouriteWall wall in walls)
+        if (state.sectionOf[wall.id] case final String sectionId) folderItemKey(wall): sectionId,
+    };
+    final int columns = PrismWallGrid.columns(context);
+    final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns);
+    List<FavouriteWallEntity>? feedOrder;
+    List<FeedItemEntity> feed = const <FeedItemEntity>[];
+    return FolderSectionsView(
+      sections: folder.sections,
+      walls: walls,
+      sectionOf: sectionOf,
+      top: header,
+      gridDelegate: (context) => PrismWallGrid.delegate(
+        context,
+        footerHeight: favouriteFooterHeight,
+        columns: columns,
+        spacing: PrismFeedLayout.gridSpacing,
+      ),
+      tileBuilder: (grid, order, index) {
+        if (!identical(order, feedOrder)) {
+          feedOrder = order;
+          feed = <FeedItemEntity>[
+            for (final FavouriteWallEntity wall in order)
+              if (wall case PrismFavouriteWall(:final wallpaper)) PrismFeedItem(id: wallpaper.id, wallpaper: wallpaper),
+          ];
+        }
+        return KeyedSubtree(
+          key: ValueKey<String>(feed[index].id),
+          child: FeedWallTile(
+            item: feed[index],
+            index: index,
+            crossAxisCount: columns,
+            memCacheHeight: decodeHeight,
+            feed: feed,
           ),
         );
       },

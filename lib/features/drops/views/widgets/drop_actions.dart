@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:Prism/core/coins/coins_service.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -22,7 +21,6 @@ Future<bool> Function(BuildContext context) dropSignIn = (context) => googleSign
 /// bloc. A guest signs in first, then gets the sheet unless the account already owns what they asked for.
 void askToUnlock(BuildContext context, DropsState state, DropWall? wall) {
   if (state.drop == null) return;
-  PrismHaptics.tap();
   if (app_state.prismUser.loggedIn) {
     _showUnlockSheet(context, state, wall);
     return;

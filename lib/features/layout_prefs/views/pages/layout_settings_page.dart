@@ -45,7 +45,6 @@ class LayoutSettingsPage extends StatelessWidget {
                 selected: prefs.density,
                 onChanged: (density) {
                   if (density == prefs.density) return;
-                  PrismHaptics.selection();
                   layout.update(prefs.copyWith(density: density));
                   analytics.track(
                     LayoutDensityChangedEvent(density: density, source: LayoutChangeSourceValue.settings),
@@ -90,7 +89,6 @@ class LayoutSettingsPage extends StatelessWidget {
                 onPressed: prefs.isDefaultLayout
                     ? null
                     : () {
-                        PrismHaptics.selection();
                         layout.update(prefs.resetLayout());
                         analytics.track(const LayoutResetEvent());
                       },
@@ -147,7 +145,11 @@ class _DensityPicker extends StatelessWidget {
             child: PrismRow(
               icon: density.icon,
               title: density.label(context),
-              onTap: () => onChanged(density),
+              onTap: () {
+                // PrismSegmented plays its own haptic. A row does not.
+                if (density != selected) PrismHaptics.selection();
+                onChanged(density);
+              },
               trailing: density == selected ? Icon(Icons.check_rounded, color: cs.primary) : const SizedBox.shrink(),
             ),
           ),
@@ -238,7 +240,7 @@ class _Section extends StatelessWidget {
       ),
       child,
       Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.xs, PrismSpace.xs, PrismSpace.xs, 0),
+        padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.xs, 6, PrismSpace.xs, 0),
         child: Text(footnote, style: PrismTextStyles.caption(context)),
       ),
     ],
@@ -353,10 +355,22 @@ class _TabRow extends StatelessWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Semantics(
-                label: context.l10n.layoutShowTab(label),
-                child: Switch(value: visible, onChanged: canToggle ? toggle : null),
-              ),
+              if (tab == NavTab.home)
+                // Home never hides. A lock says so, where a dead switch only looks broken.
+                SizedBox(
+                  width: 52,
+                  child: ExcludeSemantics(
+                    child: Icon(Icons.lock_rounded, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
+                )
+              else
+                Semantics(
+                  label: context.l10n.layoutShowTab(label),
+                  child: Opacity(
+                    opacity: canToggle ? 1 : 0.5,
+                    child: Switch(value: visible, onChanged: canToggle ? toggle : null),
+                  ),
+                ),
               ReorderableDragStartListener(
                 index: index,
                 child: Tooltip(

@@ -1,6 +1,11 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
@@ -71,18 +76,24 @@ class WallpaperRecommendations extends StatelessWidget {
                 child: PrismWallTile(
                   url: item.thumbnailUrl,
                   fallbackUrl: item.source == WallpaperSource.prism ? null : item.fullUrl,
+                  cachedFullUrl: WallpaperDisplaySource.of(item).full,
                   heroTag: hero,
+                  placeholderColor: placeholderColorOf(item, Theme.of(context).scaffoldBackgroundColor),
                   semanticLabel: item.semanticLabel(context.l10n),
-                  onTap: () => onOpen(
-                    item,
-                    hero,
-                    WallpaperFeed(
-                      grid: context,
-                      tiles: [
-                        for (final (i, wall) in state.items.indexed) (item: wall, index: i, heroTag: _heroTag(i, wall)),
-                      ],
-                    ),
-                  ),
+                  onTap: () {
+                    PrismHaptics.tap();
+                    onOpen(
+                      item,
+                      hero,
+                      WallpaperFeed(
+                        grid: context,
+                        tiles: [
+                          for (final (i, wall) in state.items.indexed)
+                            (item: wall, index: i, heroTag: _heroTag(i, wall)),
+                        ],
+                      ),
+                    );
+                  },
                   memCacheHeight: gridTileDecodeHeight(context, crossAxisCount: PrismWallGrid.columns(context)),
                 ),
               );
@@ -91,21 +102,29 @@ class WallpaperRecommendations extends StatelessWidget {
         ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(PrismSpace.xl),
             child: Center(
               child: state.items.isEmpty && (state.loading || !state.started)
                   ? const SizedBox.shrink()
                   : state.loading || !state.started
-                  ? const SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const PrismLoader()
                   : state.failed
-                  ? TextButton.icon(
+                  ? PrismButton(
+                      label: context.l10n.wallpaperFeedLoadMoreError,
+                      icon: Icons.refresh_rounded,
+                      variant: PrismButtonVariant.ghost,
+                      size: PrismButtonSize.compact,
+                      maxLines: 2,
                       onPressed: onLoadMore,
-                      icon: const Icon(Icons.refresh_rounded),
-                      label: Text(context.l10n.wallpaperFeedLoadMoreError),
                     )
                   : state.hasMore
-                  ? TextButton(onPressed: onLoadMore, child: Text(context.l10n.economyShowMore))
-                  : Text(context.l10n.wallpaperFeedCaughtUpTitle, style: Theme.of(context).textTheme.bodySmall),
+                  ? PrismButton(
+                      label: context.l10n.economyShowMore,
+                      variant: PrismButtonVariant.ghost,
+                      size: PrismButtonSize.compact,
+                      onPressed: onLoadMore,
+                    )
+                  : Text(context.l10n.wallpaperFeedCaughtUpTitle, style: PrismTextStyles.caption(context)),
             ),
           ),
         ),

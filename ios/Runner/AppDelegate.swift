@@ -56,6 +56,13 @@ import WidgetKit
       binaryMessenger: messenger,
       api: PrismLivePhotoHostApiImpl(flutterApi: PrismLivePhotoFlutterApi(binaryMessenger: messenger))
     )
+    FlutterMethodChannel(name: "prism/power", binaryMessenger: messenger).setMethodCallHandler { call, result in
+      if call.method == "lowPowerMode" {
+        result(ProcessInfo.processInfo.isLowPowerModeEnabled)
+      } else {
+        result(FlutterError(code: "UNKNOWN_METHOD", message: call.method, details: nil))
+      }
+    }
     NotificationCenter.default.addObserver(
       forName: UIApplication.didBecomeActiveNotification,
       object: nil,

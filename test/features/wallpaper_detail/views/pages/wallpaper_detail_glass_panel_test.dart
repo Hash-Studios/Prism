@@ -120,7 +120,8 @@ void main() {
     final before = tester.getRect(find.byTooltip('Back'));
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -1600));
     await tester.pumpAndSettle();
-    expect(tester.getRect(find.byTooltip('Back')), before);
+    // Back glides 8 points up and in from the card corner into the solid header, now with a 48 point target.
+    expect(tester.getRect(find.byTooltip('Back')).center, before.center - const Offset(8, 8));
     expect(before.top, greaterThanOrEqualTo(47));
     expect(before.bottom, lessThan(47 + kMinInteractiveDimension + 24));
     final scroll = tester.widget<CustomScrollView>(find.byType(CustomScrollView)).controller!;
@@ -139,14 +140,93 @@ void main() {
     expect(clip.borderRadius, const BorderRadius.all(Radius.circular(20)));
     final back = tester.getRect(find.byTooltip('Back'));
     final clock = tester.getRect(find.byTooltip('Preview on your screen'));
-    expect(back, Rect.fromLTWH(card.left + 4, card.top + 4, 44, 44));
-    expect(clock, Rect.fromLTWH(card.right - 4 - 44, card.top + 4, 44, 44));
+    expect(back, Rect.fromLTWH(card.left + 12, card.top + 12, 44, 44));
+    // The clock is a labelled Preview pill: as tall as Back, its end on the same inset.
+    expect(clock.right, card.right - 12);
+    expect(clock.top, card.top + 12);
+    expect(clock.height, 44);
+    expect(clock.width, greaterThan(44));
+    expect(
+      find.descendant(of: find.byTooltip('Preview on your screen'), matching: find.text('Preview')),
+      findsOneWidget,
+    );
 
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -1200));
     await tester.pumpAndSettle();
-    expect(tester.getRect(find.byTooltip('Back')), back);
-    expect(tester.getRect(find.byTooltip('Preview on your screen')), clock);
+    expect(tester.getRect(find.byTooltip('Back')).center, back.center - const Offset(8, 8));
+    expect(find.byTooltip('Back').hitTestable(), findsOneWidget);
   });
+
+  testWidgets('once the card scrolls away, a solid header holds Back and the clock hides off the actions', (
+    tester,
+  ) async {
+    await pump(tester);
+    final scroll = tester.widget<CustomScrollView>(find.byType(CustomScrollView)).controller!;
+    final cardHeight = tester.getRect(find.byType(ShakeOnce)).height;
+    double header() => tester.widget<AnimatedOpacity>(find.byKey(const ValueKey<String>('detail-header'))).opacity;
+    double clock() => tester.widget<AnimatedOpacity>(find.byKey(const ValueKey<String>('detail-clock'))).opacity;
+    final Finder clockButton = find.byTooltip('Preview on your screen');
+    expect(header(), 0);
+    expect(clock(), 1);
+
+    // The card's bottom edge is still below back and the clock (12 + 44 under the card top).
+    scroll.jumpTo(cardHeight - 56 - 1);
+    await tester.pumpAndSettle();
+    expect(header(), 0);
+    expect(clockButton.hitTestable(), findsOneWidget);
+
+    // One point further, the clock would start to cover the actions.
+    scroll.jumpTo(cardHeight - 56 + 1);
+    await tester.pumpAndSettle();
+    expect(header(), 1);
+    expect(clock(), 0);
+    expect(clockButton.hitTestable(), findsNothing);
+    final Rect headerRect = tester.getRect(find.byKey(const ValueKey<String>('detail-header')));
+    expect(headerRect.top, 0);
+    // The header covers the old chrome area, so nothing on it overlaps the actions scrolled beneath.
+    expect(headerRect.bottom, greaterThanOrEqualTo(tester.getRect(find.byTooltip('Back')).bottom));
+    final Rect actions = tester.getRect(find.byType(WallpaperActionBar));
+    expect(clockButton.hitTestable().evaluate(), isEmpty, reason: 'clock must not sit on $actions');
+
+    scroll.jumpTo(0);
+    await tester.pumpAndSettle();
+    expect(header(), 0);
+    expect(clockButton.hitTestable(), findsOneWidget);
+  });
+
+  for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS]) {
+    testWidgets('$platform: under the header the action bar fades and the primary action moves into the header', (
+      tester,
+    ) async {
+      await pump(tester);
+      final scroll = tester.widget<CustomScrollView>(find.byType(CustomScrollView)).controller!;
+      final cardHeight = tester.getRect(find.byType(ShakeOnce)).height;
+      final Finder bar = find.byKey(const ValueKey<String>('detail-action-bar'));
+      final Finder headerAction = find.byKey(const ValueKey<String>('detail-header-action'));
+      final String label = platform == TargetPlatform.iOS ? 'Save' : 'Set';
+      double barOpacity() => tester.widget<AnimatedOpacity>(bar).opacity;
+      expect(barOpacity(), 1);
+      expect(headerAction, findsNothing);
+
+      scroll.jumpTo(cardHeight - 56 + 1);
+      await tester.pumpAndSettle();
+      expect(barOpacity(), 0);
+      // The faded bar stays in the tree, so the header's Set can reach its button, but it takes no taps.
+      expect(find.byType(WallpaperActionBar), findsOneWidget);
+      expect(find.descendant(of: bar, matching: find.byType(WallpaperActionBar)).hitTestable(), findsNothing);
+      expect(find.descendant(of: headerAction, matching: find.textContaining(label)).hitTestable(), findsOneWidget);
+      final Rect action = tester.getRect(headerAction);
+      final Rect back = tester.getRect(find.byTooltip('Back'));
+      expect(action.center.dy, closeTo(back.center.dy, 0.5));
+      // The header action ends on the page margin, like Save in the bar.
+      expect(action.right, tester.getSize(find.byType(WallpaperDetailScreen)).width - 16);
+
+      scroll.jumpTo(0);
+      await tester.pumpAndSettle();
+      expect(barOpacity(), 1);
+      expect(headerAction, findsNothing);
+    }, variant: TargetPlatformVariant.only(platform));
+  }
 
   testWidgets('Back and the clock sit on the theme scrim with the light on-scrim ink', (tester) async {
     const Color scrim = Color(0xFF102030);
@@ -154,13 +234,21 @@ void main() {
       tester,
       theme: ThemeData(colorScheme: const ColorScheme.light(scrim: scrim)),
     );
-    for (final String tooltip in <String>['Back', 'Preview on your screen']) {
-      final IconButton button = tester.widget<IconButton>(
-        find.ancestor(of: find.byTooltip(tooltip), matching: find.byType(IconButton)),
-      );
-      expect(button.style!.backgroundColor!.resolve(<WidgetState>{}), scrim.withValues(alpha: 0.55), reason: tooltip);
-      expect(button.color, PrismColors.onPrimary, reason: tooltip);
-    }
+    final IconButton back = tester.widget<IconButton>(
+      find.ancestor(of: find.byTooltip('Back'), matching: find.byType(IconButton)),
+    );
+    expect(back.style!.backgroundColor!.resolve(<WidgetState>{}), scrim.withValues(alpha: 0.55));
+    expect(back.color, PrismColors.onPrimary);
+    final ButtonStyle preview = tester
+        .widget<ButtonStyleButton>(
+          find.descendant(
+            of: find.byTooltip('Preview on your screen'),
+            matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
+          ),
+        )
+        .style!;
+    expect(preview.backgroundColor!.resolve(<WidgetState>{}), scrim.withValues(alpha: 0.55));
+    expect(preview.foregroundColor!.resolve(<WidgetState>{}), PrismColors.onPrimary);
   });
 
   for (final brightness in Brightness.values) {
@@ -180,8 +268,8 @@ void main() {
       AnnotatedRegion<SystemUiOverlayStyle> overlay() => tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(region);
       final scroll = tester.widget<CustomScrollView>(find.byType(CustomScrollView)).controller!;
       // At rest the card starts under the status bar, so the icons sit on the page.
-      // The rows and the feed pass under the icons on a fade of the page colour; the card and the page do not.
-      double fade() => tester.widget<AnimatedOpacity>(find.byKey(const ValueKey<String>('detail-status-fade'))).opacity;
+      // Once the card scrolls past back, the icons sit on the solid header in the page colour.
+      double fade() => tester.widget<AnimatedOpacity>(find.byKey(const ValueKey<String>('detail-header'))).opacity;
       final pageStyle = overlay();
       expect(pageStyle.value.statusBarIconBrightness, lightFeed ? Brightness.dark : Brightness.light);
       expect(fade(), 0);
@@ -196,9 +284,14 @@ void main() {
       final imageStyle = overlay();
       expect(imageStyle.value.statusBarIconBrightness, lightFeed ? Brightness.light : Brightness.dark);
       expect(fade(), 0);
-      scroll.jumpTo(cardHeight + iconLine - 1);
+      scroll.jumpTo(cardHeight - 56 - 1);
       await tester.pump();
       expect(overlay(), same(imageStyle), reason: 'scrolling within the card must not rebuild the detail shell');
+      scroll.jumpTo(cardHeight - 56 + 1);
+      await tester.pump();
+      // The rest of the card is under the solid header now, so the icons follow the page.
+      expect(overlay().value.statusBarIconBrightness, pageStyle.value.statusBarIconBrightness);
+      expect(fade(), 1);
       scroll.jumpTo(cardHeight + iconLine + 1);
       await tester.pump();
       final feedStyle = overlay();

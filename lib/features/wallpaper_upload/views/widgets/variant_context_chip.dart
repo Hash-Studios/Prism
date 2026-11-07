@@ -1,4 +1,6 @@
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/features/wallpaper_upload/biz/variant_seed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -44,19 +46,22 @@ class VariantContextChip extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurface)),
+                Text(label, style: PrismTextStyles.body(context).copyWith(color: cs.onSurface)),
                 const SizedBox(height: PrismSpace.xxs),
                 Text(
                   context.l10n.wallVariantUploadHint,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                  style: PrismTextStyles.caption(context).copyWith(color: cs.onSurfaceVariant),
                 ),
               ],
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.close_rounded),
+          PrismIconButton(
+            icon: Icons.close_rounded,
             tooltip: context.l10n.wallVariantUnlinkTooltip,
-            onPressed: onRemove,
+            onPressed: () {
+              PrismHaptics.selection();
+              onRemove();
+            },
           ),
         ],
       ),

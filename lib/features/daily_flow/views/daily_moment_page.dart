@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/daily_chest/views/widgets/chest_odds_sheet.dart';
 import 'package:Prism/features/daily_flow/biz/daily_moment_cubit.dart';
@@ -29,17 +30,12 @@ Future<void> showDailyMoment(
   if (_showing || _activeContent) return;
   _showing = true;
   try {
-    await showModalBottomSheet<void>(
-      context: context,
+    await showPrismSheet<void>(
+      context,
       useRootNavigator: true,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      sheetAnimationStyle: context.reduceMotion ? AnimationStyle.noAnimation : null,
-      builder: (_) => FractionallySizedBox(
-        heightFactor: .82,
-        child: DailyMomentContent(requestedStep: requestedStep, receipt: receipt, deepLink: deepLink),
-      ),
+      detents: const <PrismSheetDetent>[PrismSheetDetent.fit],
+      builder: (_) =>
+          DailyMomentContent(requestedStep: requestedStep, receipt: receipt, deepLink: deepLink, sheet: true),
     );
   } finally {
     _showing = false;
@@ -52,19 +48,32 @@ class DailyMomentPage extends StatelessWidget {
   final DailyMomentStep? requestedStep;
   final bool deepLink;
   @override
-  Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(
-      child: DailyMomentContent(requestedStep: requestedStep, deepLink: deepLink),
-    ),
+  Widget build(BuildContext context) => PrismPage(
+    title: context.l10n.dailyMomentTitle,
+    body: DailyMomentContent(requestedStep: requestedStep, deepLink: deepLink, showHeader: false),
   );
 }
 
 class DailyMomentContent extends StatefulWidget {
-  const DailyMomentContent({super.key, this.requestedStep, this.receipt, this.deepLink = false, this.repository});
+  const DailyMomentContent({
+    super.key,
+    this.requestedStep,
+    this.receipt,
+    this.deepLink = false,
+    this.repository,
+    this.sheet = false,
+    this.showHeader = true,
+  });
   final DailyMomentStep? requestedStep;
   final StreakClaimResult? receipt;
   final bool deepLink;
   final DailyMomentRepository? repository;
+
+  /// Draws [PrismSheetBody] chrome. Only valid inside a [showPrismSheet] builder.
+  final bool sheet;
+
+  /// Plain layout only: the caption row with a close button.
+  final bool showHeader;
   @override
   State<DailyMomentContent> createState() => _DailyMomentContentState();
 }
@@ -127,7 +136,6 @@ class _DailyMomentContentState extends State<DailyMomentContent> {
           bloc: _cubit,
           builder: (context, state) {
             final l10n = context.l10n;
-            final theme = Theme.of(context);
             final String title = state.done
                 ? l10n.dailyMomentTitle
                 : switch (state.step) {
@@ -167,72 +175,145 @@ class _DailyMomentContentState extends State<DailyMomentContent> {
                     DailyMomentStep.spin => l10n.dailyMomentSpinAction,
                     _ => l10n.dailyMomentContinue,
                   };
+            final GlintMood mood = state.unavailable || state.done
+                ? GlintMood.sleepy
+                : state.error
+                ? GlintMood.sad
+                : (state.hasReceipt || state.coins != null || state.itemId != null)
+                ? GlintMood.celebrate
+                : switch (state.step) {
+                    DailyMomentStep.chest => GlintMood.surprised,
+                    DailyMomentStep.spin => GlintMood.curious,
+                    _ => GlintMood.happy,
+                  };
+            final Widget button = PrismButton(
+              label: primary,
+              maxLines: null,
+              expand: true,
+              loading: state.busy,
+              onPressed: state.busy
+                  ? null
+                  : finish
+                  ? () => Navigator.of(context).pop()
+                  : _cubit.primary,
+            );
+            final Widget details = Column(
+              children: <Widget>[
+                Semantics(
+                  liveRegion: true,
+                  child: Text(body, textAlign: TextAlign.center, style: PrismTextStyles.body(context)),
+                ),
+                if (!state.done &&
+                    !state.unavailable &&
+                    (state.step == DailyMomentStep.chest || state.step == DailyMomentStep.spin)) ...<Widget>[
+                  const SizedBox(height: PrismSpace.xs),
+                  PrismButton(
+                    label: l10n.economyOddsTitle,
+                    icon: Icons.info_outline_rounded,
+                    variant: PrismButtonVariant.ghost,
+                    size: PrismButtonSize.compact,
+                    onPressed: () => state.step == DailyMomentStep.chest
+                        ? showChestOdds(context, CoinPolicy.dailyChest)
+                        : showWheelOdds(context, CoinPolicy.spinWheel),
+                  ),
+                ],
+                const SizedBox(height: PrismSpace.md),
+                PrismTag(label: l10n.dailyMomentBalance(state.balance), icon: Icons.toll_rounded),
+              ],
+            );
+            final Widget headline = Semantics(
+              header: true,
+              child: Text(title, textAlign: TextAlign.center, style: PrismTextStyles.sheetHeadline(context)),
+            );
+            if (widget.sheet) {
+              // No sheet mood: the mosaic carries Glint, so the hero, headline and details read as one group.
+              return PrismSheetBody(
+                actions: <Widget>[button],
+                child: Column(
+                  children: <Widget>[
+                    _MomentHero(mood: mood, seed: title, height: 188),
+                    const SizedBox(height: PrismSpace.md),
+                    headline,
+                    const SizedBox(height: PrismSpace.xs),
+                    details,
+                  ],
+                ),
+              );
+            }
             return Column(
               children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(PrismSpace.xl, PrismSpace.xs, PrismSpace.xs, 0),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(child: Text(l10n.dailyMomentTitle, style: PrismTextStyles.caption(context))),
-                      IconButton(
-                        tooltip: l10n.dailyMomentClose,
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(PrismSpace.xl, PrismSpace.lg, PrismSpace.xl, PrismSpace.xl),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                if (widget.showHeader)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(PrismSpace.xl, PrismSpace.xs, PrismSpace.xs, 0),
+                    child: Row(
                       children: <Widget>[
-                        const Center(child: Glint(size: 112)),
-                        const SizedBox(height: PrismSpace.xxl),
-                        Text(title, style: PrismTextStyles.display(context)),
-                        const SizedBox(height: PrismSpace.md),
-                        Semantics(liveRegion: true, child: Text(body, style: PrismTextStyles.body(context))),
-                        if (!state.done &&
-                            !state.unavailable &&
-                            (state.step == DailyMomentStep.chest || state.step == DailyMomentStep.spin))
-                          TextButton(
-                            onPressed: () => state.step == DailyMomentStep.chest
-                                ? showChestOdds(context, CoinPolicy.dailyChest)
-                                : showWheelOdds(context, CoinPolicy.spinWheel),
-                            child: Text(l10n.economyOddsTitle),
-                          ),
-                        const SizedBox(height: PrismSpace.xl),
-                        Text(
-                          l10n.dailyMomentBalance(state.balance),
-                          style: PrismTextStyles.caption(context).copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        Expanded(child: Text(l10n.dailyMomentTitle, style: PrismTextStyles.caption(context))),
+                        PrismIconButton(
+                          tooltip: l10n.dailyMomentClose,
+                          icon: Icons.close_rounded,
+                          onPressed: () => Navigator.of(context).pop(),
                         ),
                       ],
                     ),
                   ),
-                ),
-                SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.all(PrismSpace.xl),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: PrismButton(
-                        label: primary,
-                        maxLines: null,
-                        expand: true,
-                        loading: state.busy,
-                        onPressed: state.busy
-                            ? null
-                            : finish
-                            ? () => Navigator.of(context).pop()
-                            : _cubit.primary,
-                      ),
-                    ),
+                Expanded(
+                  // The button sits in the content, right under it; the group rides above the centre and scrolls
+                  // when it is taller than the screen.
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final EdgeInsets padding = EdgeInsets.fromLTRB(
+                        PrismSpace.xl,
+                        PrismSpace.lg,
+                        PrismSpace.xl,
+                        PrismSpace.xl + MediaQuery.paddingOf(context).bottom,
+                      );
+                      return SingleChildScrollView(
+                        padding: padding,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: (constraints.maxHeight - padding.vertical).clamp(0, double.infinity),
+                          ),
+                          child: Align(
+                            alignment: const Alignment(0, -0.5),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                _MomentHero(mood: mood, seed: title, height: 220),
+                                const SizedBox(height: PrismSpace.xl),
+                                headline,
+                                const SizedBox(height: PrismSpace.xs),
+                                details,
+                                const SizedBox(height: PrismSpace.xl),
+                                button,
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
             );
           },
         );
+}
+
+/// Wallpaper covers with Glint on the corner, in the step's mood. Seeded by the title so each step has its own art.
+class _MomentHero extends StatelessWidget {
+  const _MomentHero({required this.mood, required this.seed, required this.height});
+
+  final GlintMood mood;
+  final String seed;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 240,
+    height: height,
+    child: CoverMosaic(
+      seed: seed,
+      badge: Glint(mood: mood, size: 56),
+    ),
+  );
 }

@@ -7,7 +7,7 @@ import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/widgets/glint/glint.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/creator_stats/biz/bloc/creator_stats_bloc.j.dart';
 import 'package:Prism/features/creator_stats/data/creator_stats_repository_impl.dart';
 import 'package:Prism/features/creator_stats/domain/creator_stats.dart';
@@ -273,7 +273,7 @@ void main() {
     first.complete(parseCreatorStats(fixture()));
     await tester.pump();
     expect(find.text('Blue sky'), findsNothing);
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(PrismSkeleton), findsOneWidget);
     second.complete(parseCreatorStats(fixture(empty: true)));
     await tester.pump();
     await tester.pump();
@@ -327,7 +327,7 @@ void main() {
   }
   testWidgets('loading and error offer clear states and retry', (tester) async {
     await pump(tester, const CreatorStatsState(loading: true));
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(PrismSkeleton), findsOneWidget);
     final bloc = await pump(tester, const CreatorStatsState(failed: true));
     await tester.tap(find.text('Try again'));
     verify(() => bloc.add(const CreatorStatsEvent.load())).called(1);
@@ -347,12 +347,13 @@ void main() {
       final upload = find.text('Upload a wallpaper');
       expect(Theme.of(tester.element(title)).brightness, brightness);
       final glint = tester.getRect(find.byType(Glint));
-      expect(glint.size, const Size.square(96), reason: 'Glint stretched to the list width paints over the copy');
-      expect(glint.center.dx, 160);
+      // On the empty state Glint is a small badge on the cover mosaic; it must never stretch to the list width.
+      expect(glint.width, lessThanOrEqualTo(120), reason: 'Glint stretched to the list width paints over the copy');
+      expect(glint.width, glint.height);
       expect(glint.bottom, lessThan(tester.getRect(title).top));
       expect(title.hitTestable(), findsOneWidget);
-      await tester.scrollUntilVisible(upload, 150);
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.scrollUntilVisible(upload, 150, scrollable: find.byType(Scrollable).first);
       expect(upload.hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
@@ -376,8 +377,10 @@ void main() {
   });
   testWidgets('metric switch dispatches and tracks typed event', (tester) async {
     final bloc = await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())));
-    await tester.scrollUntilVisible(find.widgetWithText(ChoiceChip, 'Saves'), 300);
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Saves'));
+    await tester.scrollUntilVisible(find.widgetWithText(PrismChip, 'Saves'), 300);
+    await tester.ensureVisible(find.widgetWithText(PrismChip, 'Saves'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(PrismChip, 'Saves'));
     verify(() => bloc.add(const CreatorStatsEvent.select(StatsMetric.saves))).called(1);
     expect(analytics.events.single.eventName, 'creator_stats_metric_switched');
   });

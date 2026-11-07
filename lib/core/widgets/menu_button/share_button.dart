@@ -33,7 +33,7 @@ class ShareButton extends StatefulWidget {
   /// Stored wall colours for the palette dots, most dominant first.
   final List<Color> palette;
   final Future<String?> Function(String id, WallpaperSource source, String? url, String thumbUrl)? createLink;
-  final ShareSheetOpen openSheet;
+  final PendingShareSheetOpen openSheet;
 
   /// Tells whether the public web catalogue shows the wall. Tests replace it.
   final Future<bool> Function(String id) webCatalogueCheck;
@@ -50,7 +50,7 @@ class ShareButton extends StatefulWidget {
     this.creator,
     this.palette = const <Color>[],
     this.createLink,
-    this.openSheet = showShareSheet,
+    this.openSheet = showPendingShareSheet,
     this.webCatalogueCheck = isOnWebCatalogue,
     this.labelled = false,
     this.duoReveal = false,
@@ -72,12 +72,8 @@ Future<bool> _isOnWebCatalogue(Future<bool> Function(String id) check, String id
 }
 
 class _ShareButtonState extends State<ShareButton> {
-  late bool isLoading;
-  @override
-  void initState() {
-    isLoading = false;
-    super.initState();
-  }
+  // True from the tap until the sheet is closed and its content has settled, so a second tap starts nothing.
+  bool _sharing = false;
 
   @override
   Widget build(BuildContext context) {
@@ -89,14 +85,16 @@ class _ShareButtonState extends State<ShareButton> {
         logger.d('Share');
         onShare();
       },
-      isLoading: isLoading,
+      isLoading: false,
       child: const Icon(JamIcons.share_alt),
     );
   }
 
+  /// Opens the sheet on the first frame. The short link, the web catalogue check and a bundled wall's file load
+  /// inside the open sheet, so the tap never waits on the network.
   Future<void> onShare() async {
-    if (isLoading) return;
-    if (!await requireSignedInAction(context) || !mounted) return;
+    if (_sharing) return;
+    if (!await requireSignedInAction(context) || !mounted || _sharing) return;
 
     final String? id = widget.id;
     final WallpaperSource source = widget.source;
@@ -130,18 +128,39 @@ class _ShareButtonState extends State<ShareButton> {
     final List<Color> palette = widget.palette;
     final bool duoReveal = widget.duoReveal;
     final createLink = widget.createLink;
-    final ShareSheetOpen openSheet = widget.openSheet;
+    final PendingShareSheetOpen openSheet = widget.openSheet;
+    final AppLocalizations l10n = context.l10n;
+    final String canonicalLink = isBundledStarter
+        ? l10n.coreShareWallpaperGeneric
+        : canonicalWallpaperLink(id: itemId, source: source, url: url, thumbUrl: thumbUrl);
 
-    analytics.track(const InviteShareTappedEvent(sourceContext: 'wallpaper_screen'));
-    setState(() {
-      isLoading = true;
-    });
+    ShareCardContent content({required String link, required String imageUrl, Uri? computerLink}) => ShareCardContent(
+      imageUrl: imageUrl,
+      link: link,
+      brandName: l10n.appTitle,
+      contextLine: contextLine,
+      creator: creator,
+      creatorLine: creator == null ? null : l10n.coreShareCardBy(creator),
+      palette: palette,
+      duoReveal: duoReveal,
+      contentId: itemId,
+      foldedLabel: l10n.duoFolded,
+      unfoldedLabel: l10n.duoUnfolded,
+      cta: l10n.duoGetOnPrism,
+      computerLink: computerLink,
+    );
 
-    try {
-      final AppLocalizations l10n = context.l10n;
-      final String canonicalLink = isBundledStarter
-          ? l10n.coreShareWallpaperGeneric
-          : canonicalWallpaperLink(id: itemId, source: source, url: url, thumbUrl: thumbUrl);
+    void trackFailure() => analytics.track(
+      const InviteShareResultEvent(
+        channel: ShareChannelValue.shareSheet,
+        result: EventResultValue.failure,
+        reason: AnalyticsReasonValue.error,
+        sourceContext: 'wallpaper_screen',
+      ),
+    );
+
+    /// The final content, or null (with a toast) when the wall cannot be shared. Never throws.
+    Future<ShareCardContent?> resolve() async {
       String link = canonicalLink;
       if (!isBundledStarter) {
         try {
@@ -157,7 +176,6 @@ class _ShareButtonState extends State<ShareButton> {
           logger.w('Short link unavailable; sharing canonical wallpaper URL.', error: error, stackTrace: stackTrace);
         }
       }
-      if (!mounted) return;
       String shareImageUrl = imageUrl;
       if (isBundledStarter) {
         try {
@@ -166,60 +184,27 @@ class _ShareButtonState extends State<ShareButton> {
           shareImageUrl = file.path;
         } catch (error, stackTrace) {
           logger.w('Bundled wallpaper is unavailable for sharing.', error: error, stackTrace: stackTrace);
-          if (mounted) {
-            analytics.track(
-              const InviteShareResultEvent(
-                channel: ShareChannelValue.shareSheet,
-                result: EventResultValue.failure,
-                reason: AnalyticsReasonValue.error,
-                sourceContext: 'wallpaper_screen',
-              ),
-            );
-            toasts.error(l10n.coreWallpaperShareFailed);
-          }
-          return;
+          trackFailure();
+          toasts.error(l10n.coreWallpaperShareFailed);
+          return null;
         }
       }
-      if (!mounted) return;
       final Uri? computerLink = await onWebCatalogue ? openOnComputerLink(wallId: itemId, shareLink: link) : null;
-      if (!mounted) return;
-      setState(() => isLoading = false);
-      await openSheet(
-        context,
-        ShareCardContent(
-          imageUrl: shareImageUrl,
-          link: link,
-          brandName: l10n.appTitle,
-          contextLine: contextLine,
-          creator: creator,
-          creatorLine: creator == null ? null : l10n.coreShareCardBy(creator),
-          palette: palette,
-          duoReveal: duoReveal,
-          contentId: itemId,
-          foldedLabel: l10n.duoFolded,
-          unfoldedLabel: l10n.duoUnfolded,
-          cta: l10n.duoGetOnPrism,
-          computerLink: computerLink,
-        ),
-        'wallpaper_screen',
-      );
+      return content(link: link, imageUrl: shareImageUrl, computerLink: computerLink);
+    }
+
+    analytics.track(const InviteShareTappedEvent(sourceContext: 'wallpaper_screen'));
+    _sharing = true;
+    final Future<ShareCardContent?> ready = resolve();
+    try {
+      await openSheet(context, content(link: canonicalLink, imageUrl: imageUrl), ready, 'wallpaper_screen');
+      await ready;
     } catch (error, stackTrace) {
       logger.e('Failed to share wallpaper link', error: error, stackTrace: stackTrace);
-      analytics.track(
-        const InviteShareResultEvent(
-          channel: ShareChannelValue.shareSheet,
-          result: EventResultValue.failure,
-          reason: AnalyticsReasonValue.error,
-          sourceContext: 'wallpaper_screen',
-        ),
-      );
-      if (mounted) toasts.error(context.l10n.coreWallpaperShareRetryFailed);
+      trackFailure();
+      if (mounted) toasts.error(l10n.coreWallpaperShareRetryFailed);
     } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
+      _sharing = false;
     }
   }
 }

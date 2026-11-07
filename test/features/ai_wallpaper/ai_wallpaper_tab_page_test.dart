@@ -8,6 +8,7 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -29,6 +30,7 @@ import 'package:Prism/features/weekly_challenges/biz/challenge_admission_tracker
 import 'package:Prism/features/weekly_challenges/biz/confirm_challenge_submission.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -300,8 +302,19 @@ void main() {
       );
       await tester.pumpAndSettle();
       await _openRecent(tester);
+      final haptics = <Object?>[];
+      final previousHaptics = PrismHaptics.enabled;
+      addTearDown(() => PrismHaptics.enabled = previousHaptics);
+      PrismHaptics.enabled = true;
+      const hapticChannel = MethodChannel('prism/haptics');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(hapticChannel, (call) async {
+        haptics.add(call.arguments);
+        return null;
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(hapticChannel, null));
       await tester.tap(find.byTooltip('Save'));
       await tester.pumpAndSettle();
+      expect(haptics, <Object?>[success ? 'success' : 'error']);
       expect(requests, hasLength(1));
       expect(requests.single.link, file.path);
       expect(requests.single.isLocalFile, isTrue);
@@ -460,7 +473,7 @@ void main() {
     expect(sharedImageUrl, 'https://cdn/watermarked.png');
     expect(sharedSourceContext, 'ai_wallpaper');
     expect(find.byTooltip('Share'), findsOneWidget);
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(PrismLoader), findsOneWidget);
     expect(analytics.events.whereType<InviteShareTappedEvent>(), hasLength(1));
     expect(analytics.events.whereType<InviteShareResultEvent>(), isEmpty);
 
@@ -600,10 +613,21 @@ void main() {
     );
     await tester.pumpAndSettle();
     await _openRecent(tester);
+    final haptics = <Object?>[];
+    final previousHaptics = PrismHaptics.enabled;
+    addTearDown(() => PrismHaptics.enabled = previousHaptics);
+    PrismHaptics.enabled = true;
+    const hapticChannel = MethodChannel('prism/haptics');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(hapticChannel, (call) async {
+      haptics.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(hapticChannel, null));
     final Finder shareButton = find.byTooltip('Share');
     await tester.ensureVisible(shareButton);
     await tester.tap(shareButton);
     await tester.pumpAndSettle();
+    expect(haptics, <Object?>['tap']);
 
     final InviteShareResultEvent result = analytics.events.whereType<InviteShareResultEvent>().single;
     expect(result.result, EventResultValue.failure);

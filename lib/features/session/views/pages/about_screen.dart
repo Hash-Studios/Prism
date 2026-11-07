@@ -9,9 +9,11 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/install_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/url_launcher_compat.dart';
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/core/widgets/popup/changelog_pop_up.dart';
 import 'package:Prism/core/widgets/popup/contri_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism/prism_toast.dart';
 import 'package:Prism/features/public_profile/views/widgets/prism_list.dart';
 import 'package:Prism/features/session/data/report_problem_service.dart' show ReportTrigger, supportEmail;
 import 'package:Prism/features/session/views/widgets/report_problem_sheet.dart';
@@ -78,17 +80,15 @@ Future<bool> _openOrExplain(BuildContext context, String target, {required Strin
     logger.w('Opening $target failed.', error: error, stackTrace: stackTrace);
   }
   if (!launched && context.mounted) {
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(context.l10n.accountCouldNotOpenAddress(address)),
-        action: SnackBarAction(
-          label: context.l10n.accountCopy,
-          onPressed: () => Clipboard.setData(ClipboardData(text: address)),
-        ),
-      ),
-    );
+    final OverlayState? overlay = Overlay.maybeOf(context);
+    if (overlay != null) {
+      showPrismToast(
+        overlay,
+        context.l10n.accountCouldNotOpenAddress(address),
+        kind: PrismToastKind.error,
+        action: (label: context.l10n.accountCopy, onPressed: () => Clipboard.setData(ClipboardData(text: address))),
+      );
+    }
   }
   return launched;
 }
@@ -189,8 +189,14 @@ class _AboutScreenState extends State<AboutScreen> {
   Widget _header(BuildContext context) {
     return Column(
       children: <Widget>[
-        Image.asset('assets/images/prism.webp', height: 70),
-        const SizedBox(height: PrismSpace.sm),
+        SizedBox(
+          height: 220,
+          child: CoverMosaic(
+            seed: context.l10n.accountAppName,
+            badge: Image.asset('assets/images/prism.webp', width: 56, height: 56),
+          ),
+        ),
+        const SizedBox(height: PrismSpace.md),
         Text(context.l10n.accountAppName, textAlign: TextAlign.center, style: PrismTextStyles.rowTitle(context)),
         Semantics(
           button: true,
@@ -216,28 +222,17 @@ class _AboutScreenState extends State<AboutScreen> {
           textAlign: TextAlign.center,
           style: PrismTextStyles.body(context),
         ),
-        const SizedBox(height: PrismSpace.md),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: PrismSpace.xs,
-          runSpacing: PrismSpace.xs,
+      ],
+    );
+  }
+
+  Widget _links(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        PrismGroup(
           children: <Widget>[
-            ActionButton(
-              icon: JamIcons.github,
-              text: context.l10n.accountSocialGithub,
-              link: 'https://www.github.com/Hash-Studios/Prism',
-            ),
             ActionButton(icon: Icons.star_rounded, text: context.l10n.accountRateApp, link: _storeLink),
-            if (_showsApkLink)
-              ActionButton(
-                icon: Icons.download_rounded,
-                text: context.l10n.accountDownloadApk,
-                link: apkDownloadUrl,
-                onTap: (BuildContext context) {
-                  unawaited(analytics.track(const ApkLinkTappedEvent(source: ApkLinkSourceValue.about)));
-                  unawaited(_openOrExplain(context, apkDownloadUrl, address: apkDownloadUrl));
-                },
-              ),
             ActionButton(
               icon: Icons.mail_outline_rounded,
               text: context.l10n.accountFeedback,
@@ -254,8 +249,24 @@ class _AboutScreenState extends State<AboutScreen> {
               icon: Icons.refresh_rounded,
               text: context.l10n.accountWhatsNewAction,
               link: '',
+              leavesApp: false,
               onTap: (BuildContext context) => showChangelog(context),
             ),
+            if (_showsApkLink)
+              ActionButton(
+                icon: Icons.download_rounded,
+                text: context.l10n.accountDownloadApk,
+                link: apkDownloadUrl,
+                onTap: (BuildContext context) {
+                  unawaited(analytics.track(const ApkLinkTappedEvent(source: ApkLinkSourceValue.about)));
+                  unawaited(_openOrExplain(context, apkDownloadUrl, address: apkDownloadUrl));
+                },
+              ),
+          ],
+        ),
+        const SizedBox(height: PrismSpace.xl),
+        PrismGroup(
+          children: <Widget>[
             ActionButton(
               icon: Icons.privacy_tip_rounded,
               text: context.l10n.accountPrivacyAction,
@@ -265,6 +276,11 @@ class _AboutScreenState extends State<AboutScreen> {
               icon: Icons.description_rounded,
               text: context.l10n.accountTermsAction,
               link: 'https://prismwalls.com/terms',
+            ),
+            ActionButton(
+              icon: JamIcons.github,
+              text: context.l10n.accountSocialGithub,
+              link: 'https://www.github.com/Hash-Studios/Prism',
             ),
             ActionButton(
               icon: JamIcons.twitter,
@@ -277,7 +293,7 @@ class _AboutScreenState extends State<AboutScreen> {
               link: 'https://www.instagram.com/prismwallpapers',
             ),
             ActionButton(
-              icon: JamIcons.paper_plane,
+              icon: Icons.send_rounded,
               text: context.l10n.accountSocialTelegram,
               link: 'http://t.me/PrismWallpapers',
             ),
@@ -301,7 +317,7 @@ class _AboutScreenState extends State<AboutScreen> {
         else
           Row(
             children: <Widget>[
-              for (final (int rank, double size) in const <(int, double)>[(1, 70), (0, 90), (2, 70)])
+              for (final (int rank, double size) in const <(int, double)>[(1, 72), (0, 72), (2, 72)])
                 if (rank < contributors.length)
                   Expanded(
                     child: _TeamMember(contributor: contributors[rank], size: size),
@@ -368,6 +384,8 @@ class _AboutScreenState extends State<AboutScreen> {
         children: <Widget>[
           _header(context),
           const SizedBox(height: PrismSpace.md),
+          _links(context),
+          const SizedBox(height: PrismSpace.xl),
           _hairline(context),
           PrismSectionHeader(title: context.l10n.accountTheTeam),
           FutureBuilder<List<Contributor>>(
@@ -396,7 +414,10 @@ class _AboutScreenState extends State<AboutScreen> {
                   ),
                 );
               }
-              return _team(context, snapshot.data ?? const <Contributor>[]);
+              final List<Contributor> people = (snapshot.data ?? const <Contributor>[])
+                  .where((Contributor c) => !(c.login ?? '').endsWith('[bot]'))
+                  .toList(growable: false);
+              return _team(context, people);
             },
           ),
           const SizedBox(height: PrismSpace.md),
@@ -447,7 +468,7 @@ class _TeamMember extends StatelessWidget {
               const SizedBox(height: PrismSpace.xs),
               Text(
                 login,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: PrismTextStyles.rowTitle(context),
@@ -465,7 +486,7 @@ class _TeamMember extends StatelessWidget {
   }
 }
 
-/// A link chip: an icon and a label that opens [link] and tracks the result.
+/// A link row: an icon and a label that opens [link] and tracks the result.
 class ActionButton extends StatelessWidget {
   const ActionButton({
     super.key,
@@ -474,11 +495,15 @@ class ActionButton extends StatelessWidget {
     required this.text,
     this.onTap,
     this.onLaunchFailed,
+    this.leavesApp = true,
   });
 
   final IconData icon;
   final String text;
   final String link;
+
+  /// Shows the open-in-new icon: the row leaves the app.
+  final bool leavesApp;
 
   /// Runs instead of opening [link].
   final void Function(BuildContext context)? onTap;
@@ -512,10 +537,18 @@ class ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String sourceContext = 'about_screen_action_chip_${text.toLowerCase()}';
-    return PrismChip(
-      label: text,
+    return PrismRow(
+      title: text,
       icon: icon,
+      trailing: leavesApp
+          ? Icon(
+              Icons.open_in_new_rounded,
+              size: 20,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: PrismInk.iconAlpha),
+            )
+          : null,
       onTap: () async {
+        PrismHaptics.tap();
         unawaited(
           analytics.track(
             SurfaceActionTappedEvent(

@@ -1,4 +1,5 @@
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/localized_relative_time.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view.dart';
@@ -98,7 +99,10 @@ class _DesktopSubmissionCardState extends State<DesktopSubmissionCard> {
     final DesktopSubmission submission = widget.submission;
     final VoidCallback? openFull = submission.thumbUrl.isEmpty
         ? null
-        : () => FullScreenImageView.show(context, submission.thumbUrl);
+        : () {
+            PrismHaptics.tap();
+            FullScreenImageView.show(context, submission.thumbUrl);
+          };
     final Widget phone = AspectRatio(
       aspectRatio: 9 / 19.5,
       child: Semantics(

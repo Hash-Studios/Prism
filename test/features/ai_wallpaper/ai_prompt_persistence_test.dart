@@ -143,13 +143,13 @@ void main() {
   testWidgets('successive style choices replace the generated prompt and save the latest', (tester) async {
     final _PromptRepository repository = _PromptRepository();
     await pumpPage(tester, repository);
-    final Finder anime = find.text('Anime');
+    final Finder anime = find.text('Nature');
     await tester.ensureVisible(anime);
     await tester.tap(anime);
     await tester.pump();
     final String firstStylePrompt = tester.widget<TextField>(find.byType(TextField).first).controller!.text;
 
-    final Finder watercolor = find.text('Watercolor');
+    final Finder watercolor = find.text('Space');
     await tester.ensureVisible(watercolor);
     await tester.tap(watercolor);
     await tester.pump();

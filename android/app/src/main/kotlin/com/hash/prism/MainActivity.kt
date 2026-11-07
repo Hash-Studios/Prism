@@ -1,9 +1,12 @@
 package com.hash.prism
 
+import android.app.UiModeManager
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import androidx.activity.enableEdgeToEdge
 import androidx.core.content.FileProvider
 import com.hash.prism.pigeon.PrismAppIconHostApi
@@ -27,10 +30,31 @@ internal fun copyWallpaperCropFile(source: File, folder: File): File {
     }
 }
 
+internal fun launchNightMode(themeMode: Any?): Int? = when (themeMode) {
+    "light" -> UiModeManager.MODE_NIGHT_NO
+    "dark" -> UiModeManager.MODE_NIGHT_YES
+    "system" -> UiModeManager.MODE_NIGHT_AUTO
+    else -> null
+}
+
+internal fun updateLaunchNightMode(mode: Int, cache: File, legacyMode: Int?, applyMode: (Int) -> Unit) {
+    val cachedMode = runCatching { cache.readText().toIntOrNull() }.getOrNull()
+    if (cachedMode == mode) return
+    val previousMode = cachedMode ?: legacyMode
+    if (mode != UiModeManager.MODE_NIGHT_AUTO ||
+        previousMode == UiModeManager.MODE_NIGHT_NO || previousMode == UiModeManager.MODE_NIGHT_YES
+    ) {
+        applyMode(mode)
+    }
+    runCatching { cache.writeText(mode.toString()) }
+}
+
 class MainActivity : FlutterFragmentActivity() {
     private var hapticsChannel: MethodChannel? = null
     private var quickSettingsChannel: MethodChannel? = null
     private var systemColorsChannel: MethodChannel? = null
+    private var powerChannel: MethodChannel? = null
+    private var launchThemeChannel: MethodChannel? = null
     private var wallpaperCropChannel: MethodChannel? = null
     private var sharedInboxChannel: MethodChannel? = null
     private var tiltChannel: EventChannel? = null
@@ -98,6 +122,41 @@ class MainActivity : FlutterFragmentActivity() {
         systemColorsChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/system_colors").apply {
             setMethodCallHandler(systemColors::handle)
         }
+        powerChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/power").apply {
+            setMethodCallHandler { call, result ->
+                if (call.method == "lowPowerMode") {
+                    result.success(getSystemService(PowerManager::class.java)?.isPowerSaveMode ?: false)
+                } else {
+                    result.notImplemented()
+                }
+            }
+        }
+        launchThemeChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/launch_theme").apply {
+            setMethodCallHandler { call, result ->
+                if (call.method != "setNightMode") {
+                    result.notImplemented()
+                    return@setMethodCallHandler
+                }
+                val mode = launchNightMode(call.arguments)
+                if (mode == null) {
+                    result.error("INVALID_THEME_MODE", "Expected system, light, or dark", null)
+                    return@setMethodCallHandler
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val uiModeManager = getSystemService(UiModeManager::class.java)
+                    if (uiModeManager == null) {
+                        result.error("UNAVAILABLE", "UiModeManager is unavailable", null)
+                        return@setMethodCallHandler
+                    }
+                    val legacyMode = getSharedPreferences("prism_launch_theme", MODE_PRIVATE).getInt("night_mode", -1)
+                    updateLaunchNightMode(mode, File(noBackupFilesDir, "launch_night_mode"), legacyMode) {
+                        uiModeManager.setApplicationNightMode(it)
+                    }
+                }
+                result.success(null)
+            }
+            invokeMethod("ready", null)
+        }
         tiltStream = PrismTiltStream(applicationContext).also { stream ->
             tiltChannel = EventChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/tilt").apply { setStreamHandler(stream) }
         }
@@ -141,6 +200,10 @@ class MainActivity : FlutterFragmentActivity() {
         quickSettingsChannel = null
         systemColorsChannel?.setMethodCallHandler(null)
         systemColorsChannel = null
+        powerChannel?.setMethodCallHandler(null)
+        powerChannel = null
+        launchThemeChannel?.setMethodCallHandler(null)
+        launchThemeChannel = null
         tiltStream?.onCancel(null)
         tiltStream = null
         tiltChannel?.setStreamHandler(null)

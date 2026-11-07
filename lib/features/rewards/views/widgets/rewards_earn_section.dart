@@ -9,6 +9,7 @@ import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism/prism_row.dart';
 import 'package:Prism/core/widgets/prism/prism_section.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
@@ -91,7 +92,7 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
         ),
       if (isPro && !DailyMomentConfig.enabled)
         _EarnRow(
-          icon: Icons.workspace_premium_outlined,
+          icon: Icons.workspace_premium_rounded,
           title: context.l10n.economyFreeDailySpin,
           subtitle: context.l10n.economyOnceADay,
           reward: context.l10n.economyUpToCoins(maxWheelCoins(CoinPolicy.spinWheel)),
@@ -104,22 +105,25 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
             : CoinsService.instance.adsRemainingToday == 0
             ? context.l10n.economyAdDailyLimit
             : context.l10n.economyWatchAdForCoins(CoinsService.instance.adsRewardNow),
-        reward: context.l10n.economyCoinsEarned(CoinsService.instance.adsRewardNow),
+        reward: context.l10n.economyCoinReward(CoinsService.instance.adsRewardNow),
+        rewardLabel: context.l10n.economyCoinsEarned(CoinsService.instance.adsRewardNow),
         loading: _loadingReward,
         onTap: CoinsService.instance.adsRemainingToday == 0 ? null : _onWatchAdTapped,
       ),
       _EarnRow(
-        icon: Icons.group_add_outlined,
+        icon: Icons.group_add_rounded,
         title: context.l10n.economyInviteFriend,
         subtitle: context.l10n.economyReferralBothGet(CoinPolicy.referral),
-        reward: context.l10n.economyCoinsEarned(CoinPolicy.referral),
+        reward: context.l10n.economyCoinReward(CoinPolicy.referral),
+        rewardLabel: context.l10n.economyCoinsEarned(CoinPolicy.referral),
         onTap: () => context.router.root.push(const SharePrismRoute()),
       ),
       _EarnRow(
         icon: Icons.upload_rounded,
         title: context.l10n.economyFirstUpload,
         subtitle: flags.firstUploadRewarded ? context.l10n.actionDone : context.l10n.economyShareWallpaper,
-        reward: context.l10n.economyCoinsEarned(CoinPolicy.firstWallpaperUpload),
+        reward: context.l10n.economyCoinReward(CoinPolicy.firstWallpaperUpload),
+        rewardLabel: context.l10n.economyCoinsEarned(CoinPolicy.firstWallpaperUpload),
         done: flags.firstUploadRewarded,
         onTap: _openUploadSheet,
       ),
@@ -127,7 +131,8 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
         icon: Icons.person_outline_rounded,
         title: context.l10n.economyCompleteProfile,
         subtitle: flags.profileCompletionRewarded ? context.l10n.actionDone : context.l10n.economyAddPhotoBio,
-        reward: context.l10n.economyCoinsEarned(CoinPolicy.profileCompletion),
+        reward: context.l10n.economyCoinReward(CoinPolicy.profileCompletion),
+        rewardLabel: context.l10n.economyCoinsEarned(CoinPolicy.profileCompletion),
         done: flags.profileCompletionRewarded,
         onTap: () => context.router.root.push(const EditProfilePanelRoute()),
       ),
@@ -157,6 +162,7 @@ class _EarnRow extends StatelessWidget {
     required this.title,
     required this.subtitle,
     this.reward,
+    this.rewardLabel,
     this.onTap,
     this.loading = false,
     this.done = false,
@@ -168,27 +174,25 @@ class _EarnRow extends StatelessWidget {
 
   /// Null for a row with no fixed coin reward, so no reward pill shows.
   final String? reward;
+
+  /// What a screen reader says for [reward], which shows as a bare "+20" next to the coin icon.
+  final String? rewardLabel;
   final VoidCallback? onTap;
   final bool loading;
   final bool done;
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
     final bool tappable = onTap != null && !done && !loading;
     final Widget trailing;
     if (done) {
       trailing = const Icon(Icons.check_rounded, key: ValueKey<String>('done'), size: 22, color: PrismColors.success);
     } else if (loading) {
-      trailing = SizedBox.square(
-        key: const ValueKey<String>('loading'),
-        dimension: 20,
-        child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary),
-      );
+      trailing = const PrismLoader(key: ValueKey<String>('loading'), size: 20);
     } else if (reward == null) {
       trailing = const SizedBox.shrink(key: ValueKey<String>('no-reward'));
     } else {
-      trailing = _RewardPill(key: const ValueKey<String>('reward'), reward: reward!);
+      trailing = _RewardPill(key: const ValueKey<String>('reward'), reward: reward!, label: rewardLabel);
     }
     return LayoutBuilder(
       builder: (context, constraints) => PrismRow(
@@ -210,28 +214,28 @@ class _EarnRow extends StatelessWidget {
 }
 
 class _RewardPill extends StatelessWidget {
-  const _RewardPill({super.key, required this.reward});
+  const _RewardPill({super.key, required this.reward, this.label});
 
   final String reward;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm - 2, vertical: PrismSpace.xxs),
-      decoration: BoxDecoration(
-        color: cs.onSurface.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(PrismRadius.pill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          const PrismCoinIcon(size: 14),
-          const SizedBox(width: 5),
-          Flexible(
-            child: Text(reward, style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w700)),
-          ),
-        ],
+    return Semantics(
+      label: label ?? reward,
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: PrismSpace.xxs),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Flexible(
+              child: Text(reward, style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w700)),
+            ),
+            const SizedBox(width: PrismSpace.xxs),
+            const PrismCoinIcon(size: 14),
+          ],
+        ),
       ),
     );
   }

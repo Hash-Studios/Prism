@@ -165,6 +165,45 @@ void main() {
       expect(find.descendant(of: tile, matching: find.text('Owned')), findsOneWidget);
     });
 
+    testWidgets('unlocking a wall puts its heart on the tile and keeps the grid spacing', (tester) async {
+      tester.view.physicalSize = const Size(393, 852);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final unlocked = ValueNotifier<Map<String, DropUnlock>>({});
+      addTearDown(unlocked.dispose);
+      final drop = dropWithin(const Duration(days: 3));
+      await pump(
+        tester,
+        at(drop),
+        Scaffold(
+          body: ValueListenableBuilder<Map<String, DropUnlock>>(
+            valueListenable: unlocked,
+            builder: (context, owned, _) => CustomScrollView(
+              slivers: [DropWallGrid(drop: drop, unlocked: owned, canBuy: true, onLockedTap: (_) {})],
+            ),
+          ),
+        ),
+      );
+      double rowGap() =>
+          tester.getTopLeft(find.byType(PrismWallTile).at(2)).dy -
+          tester.getBottomLeft(find.byType(PrismWallTile).at(0)).dy;
+      final double bare = rowGap();
+
+      unlocked.value = {'A': ownedA};
+      await tester.pump();
+
+      expect(rowGap(), moreOrLessEquals(bare, epsilon: 0.01));
+      final Finder heart = find.byIcon(Icons.favorite_border_rounded);
+      expect(find.descendant(of: find.byKey(const ValueKey<String>('A')), matching: heart), findsOneWidget);
+      expect(heart, findsOneWidget);
+      // The heart sits on the image's bottom-start corner.
+      final Rect tile = tester.getRect(find.byType(PrismWallTile).at(0));
+      final Offset glyph = tester.getCenter(heart);
+      expect(tile.contains(glyph), isTrue);
+      expect(glyph.dx, lessThan(tile.center.dx));
+      expect(glyph.dy, greaterThan(tile.center.dy));
+    });
+
     testWidgets('starts the bloc and shows a skeleton while loading', (tester) async {
       await pump(tester, DropsState.initial(), const DropsPage());
 

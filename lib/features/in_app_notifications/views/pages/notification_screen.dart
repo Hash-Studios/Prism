@@ -6,6 +6,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/prism/prism_toast.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
@@ -48,6 +49,8 @@ String? _compactLineForGroupedChild(
       return null;
   }
 }
+
+enum _InboxAction { markAllRead, clear }
 
 @RoutePage()
 class NotificationScreen extends StatelessWidget {
@@ -112,22 +115,19 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
     PrismHaptics.tap();
     analytics.track(NotificationClearAllConfirmedEvent(count: removed.length));
     bloc.add(const InAppNotificationsEvent.clearRequested());
-    _showUndoSnackBar(context, l10n.notifInboxCleared, removed);
+    _showUndoToast(context, l10n.notifInboxCleared, removed);
   }
 
-  void _showUndoSnackBar(BuildContext context, String message, List<InAppNotificationEntity> removed) {
+  void _showUndoToast(BuildContext context, String message, List<InAppNotificationEntity> removed) {
     final InAppNotificationsBloc bloc = context.read<InAppNotificationsBloc>();
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          action: SnackBarAction(
-            label: context.l10n.notifUndo,
-            onPressed: () => bloc.add(InAppNotificationsEvent.restoreRequested(items: removed)),
-          ),
-        ),
-      );
+    showPrismToast(
+      Overlay.of(context),
+      message,
+      action: (
+        label: context.l10n.notifUndo,
+        onPressed: () => bloc.add(InAppNotificationsEvent.restoreRequested(items: removed)),
+      ),
+    );
   }
 
   @override
@@ -141,21 +141,25 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
         return PrismPage(
           title: l10n.notifTitle,
           actions: <Widget>[
-            if (state.unreadCount > 0)
-              PrismIconButton(
-                icon: Icons.done_all_rounded,
-                tooltip: l10n.notifMarkAllRead,
-                onPressed: () {
-                  PrismHaptics.tap();
-                  context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.markAllReadRequested());
-                },
-              ),
             PrismIconButton(icon: Icons.tune_rounded, tooltip: l10n.notifPreferences, onPressed: _openPreferences),
             if (!initialLoading && notifications.isNotEmpty)
-              PrismIconButton(
-                icon: Icons.delete_sweep_rounded,
-                tooltip: l10n.notifClearInboxAction,
-                onPressed: () => unawaited(_clearInbox(notifications.length)),
+              PopupMenuButton<_InboxAction>(
+                tooltip: l10n.accountMoreOptions,
+                icon: const Icon(Icons.more_vert_rounded),
+                onSelected: (_InboxAction action) {
+                  switch (action) {
+                    case _InboxAction.markAllRead:
+                      PrismHaptics.tap();
+                      context.read<InAppNotificationsBloc>().add(const InAppNotificationsEvent.markAllReadRequested());
+                    case _InboxAction.clear:
+                      unawaited(_clearInbox(notifications.length));
+                  }
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<_InboxAction>>[
+                  if (state.unreadCount > 0)
+                    PopupMenuItem<_InboxAction>(value: _InboxAction.markAllRead, child: Text(l10n.notifMarkAllRead)),
+                  PopupMenuItem<_InboxAction>(value: _InboxAction.clear, child: Text(l10n.notifClearInboxAction)),
+                ],
               ),
           ],
           body: Stack(
@@ -274,7 +278,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
           NotificationItemDismissedEvent(type: notificationTypeFor(notification), dismissMode: DismissModeValue.swipe),
         );
         context.read<InAppNotificationsBloc>().add(InAppNotificationsEvent.deleteRequested(id: notification.id));
-        _showUndoSnackBar(context, context.l10n.notifRemoved, <InAppNotificationEntity>[notification]);
+        _showUndoToast(context, context.l10n.notifRemoved, <InAppNotificationEntity>[notification]);
       },
       dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
       secondaryBackground: _dismissBackground(cs, Alignment.centerRight),
@@ -298,6 +302,12 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
     final String groupTitle = group.displayTitle(l10n);
     final String title = cleanNotificationTitle(groupTitle);
     final InAppNotificationEntity first = group.items.first;
+    final List<String> groupThumbs = group.items
+        .map((InAppNotificationEntity e) => e.imageUrl)
+        .where((String u) => u.isNotEmpty)
+        .toSet()
+        .take(3)
+        .toList(growable: false);
     return Dismissible(
       key: ValueKey<String>('grp:${group.items.map((InAppNotificationEntity e) => e.id).join('|')}'),
       onDismissed: (_) {
@@ -307,7 +317,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
             ids: group.items.map((InAppNotificationEntity e) => e.id).toList(),
           ),
         );
-        _showUndoSnackBar(context, l10n.notifGroupNotificationsRemoved(group.items.length), group.items);
+        _showUndoToast(context, l10n.notifGroupNotificationsRemoved(group.items.length), group.items);
       },
       dismissThresholds: const {DismissDirection.startToEnd: 0.5, DismissDirection.endToStart: 0.5},
       secondaryBackground: _dismissBackground(cs, Alignment.centerRight),
@@ -345,7 +355,7 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        NotificationIconTile(title: groupTitle, body: first.body),
+                        NotificationIconTile(title: groupTitle, body: first.body, unread: group.unreadCount > 0),
                         const SizedBox(width: PrismSpace.sm),
                         Expanded(
                           child: Column(
@@ -355,18 +365,11 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                                 title: title,
                                 time: notificationTimeLabel(first.createdAt, l10n: l10n, locale: locale),
                                 unread: group.unreadCount > 0,
-                                trailing: Padding(
-                                  padding: const EdgeInsets.only(left: PrismSpace.xxs),
-                                  child: AnimatedRotation(
-                                    turns: expanded ? 0.5 : 0,
-                                    duration: context.motion(PrismDurations.fast),
-                                    curve: PrismCurves.move,
-                                    child: Icon(
-                                      Icons.expand_more_rounded,
-                                      size: 20,
-                                      color: cs.onSurface.withValues(alpha: 0.6),
-                                    ),
-                                  ),
+                                trailing: AnimatedRotation(
+                                  turns: expanded ? 0.5 : 0,
+                                  duration: context.motion(PrismDurations.fast),
+                                  curve: PrismCurves.move,
+                                  child: Icon(Icons.expand_more_rounded, size: 20, color: cs.onSurfaceVariant),
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -377,8 +380,8 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                               if (!expanded) ...<Widget>[
                                 const SizedBox(height: PrismSpace.xxs),
                                 Text(
-                                  collapsedGroupSummaryLine(group, l10n),
-                                  maxLines: 3,
+                                  glueTrailingEmoji(collapsedGroupSummaryLine(group, l10n)),
+                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: PrismTextStyles.body(context),
                                 ),
@@ -386,6 +389,10 @@ class _NotificationScreenBodyState extends State<_NotificationScreenBody> {
                             ],
                           ),
                         ),
+                        if (!expanded && groupThumbs.isNotEmpty) ...<Widget>[
+                          const SizedBox(width: PrismSpace.sm),
+                          NotificationThumbs(urls: groupThumbs),
+                        ],
                       ],
                     ),
                   ),

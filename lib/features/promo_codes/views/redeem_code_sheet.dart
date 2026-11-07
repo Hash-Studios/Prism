@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/promo_codes/data/promo_code_repository.dart';
@@ -133,6 +134,7 @@ class _RedeemCodeBodyState extends State<RedeemCodeBody> {
     final ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
     final String pasted = _clean(data?.text ?? '');
     if (!mounted || pasted.isEmpty) return;
+    PrismHaptics.selection();
     _code.value = TextEditingValue(
       text: pasted,
       selection: TextSelection.collapsed(offset: pasted.length),
@@ -168,7 +170,7 @@ class _RedeemCodeBodyState extends State<RedeemCodeBody> {
         }
         unawaited(analytics.track(RedeemSucceededEvent(type: reward.type)));
         widget.onRedeemed(outcome);
-        unawaited(HapticFeedback.mediumImpact());
+        PrismHaptics.success();
         setState(() => _phase = _Redeemed(reward));
       case RedeemFailed(:final reason):
         if (!_retryable.contains(reason)) _lastAttempt = null;
@@ -177,6 +179,7 @@ class _RedeemCodeBodyState extends State<RedeemCodeBody> {
   }
 
   void _fail(RedeemFailureReason reason) {
+    PrismHaptics.error();
     unawaited(analytics.track(RedeemFailedEvent(reason: reason)));
     setState(() => _phase = _Editing(reason));
     SemanticsService.sendAnnouncement(View.of(context), _redeemError(context.l10n, reason), Directionality.of(context));
@@ -193,12 +196,16 @@ class _RedeemCodeBodyState extends State<RedeemCodeBody> {
       actions: <Widget>[
         Semantics(
           label: busy ? l10n.promoRedeeming : null,
-          child: PrismButton(
-            label: l10n.promoRedeemAction,
-            loading: busy,
-            expand: true,
-            maxLines: 2,
-            onPressed: _redeem,
+          child: ListenableBuilder(
+            listenable: _code,
+            builder: (context, _) => PrismButton(
+              label: l10n.promoRedeemAction,
+              haptic: false,
+              loading: busy,
+              expand: true,
+              maxLines: 2,
+              onPressed: _code.text.trim().isEmpty ? null : _redeem,
+            ),
           ),
         ),
       ],

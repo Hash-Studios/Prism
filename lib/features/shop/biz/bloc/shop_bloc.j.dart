@@ -54,7 +54,12 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
     final ShopItem? item = shopItem(event.itemId);
     if (item == null || state.loadingItemId != null) return;
     emit(state.copyWith(loadingItemId: item.id));
-    final ShopPurchaseResult result = await _coins.purchaseShopItem(item.id);
+    ShopPurchaseResult result;
+    try {
+      result = await _coins.purchaseShopItem(item.id);
+    } catch (_) {
+      result = const ShopPurchaseResult(ShopPurchaseOutcome.failed);
+    }
     if (result.outcome == ShopPurchaseOutcome.purchased && item.rankReward == null) {
       analytics.track(ShopItemPurchasedEvent(itemId: item.id, price: shopPriceFor(item)));
     }
@@ -86,7 +91,12 @@ class ShopBloc extends Bloc<ShopEvent, ShopState> {
     final CosmeticSlot? slot = item?.slot;
     if (item == null || slot == null || state.loadingItemId != null) return;
     emit(state.copyWith(loadingItemId: item.id));
-    final bool done = await _coins.equipCosmetic(slot, event.equip ? item.id : null);
+    bool done;
+    try {
+      done = await _coins.equipCosmetic(slot, event.equip ? item.id : null);
+    } catch (_) {
+      done = false;
+    }
     if (done) {
       analytics.track(CosmeticEquippedEvent(slot: slot.name, itemId: event.equip ? item.id : null));
     }

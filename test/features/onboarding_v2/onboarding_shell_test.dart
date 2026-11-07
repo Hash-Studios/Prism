@@ -106,7 +106,7 @@ void main() {
     expect(find.byType(F1InterestsPage), findsOneWidget);
     expect(progressStep(tester), 1);
     expect(find.byType(OnboardingPrimaryButton), findsOneWidget);
-    expect(find.text('continue'), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
 
     await goTo(tester, onStep(OnboardingV2Step.starterPack));
     expect(find.text('Find your people'), findsOneWidget);
@@ -117,13 +117,13 @@ void main() {
     expect(find.text('Create your\nfirst wallpaper'), findsOneWidget);
     expect(find.byType(F3AiGeneratePage), findsOneWidget);
     expect(progressStep(tester), 3);
-    expect(find.text('generate my wallpaper'), findsOneWidget);
+    expect(find.text('Generate my wallpaper'), findsOneWidget);
 
     await goTo(tester, onStep(OnboardingV2Step.firstWallpaper));
     expect(find.text('Make it yours'), findsOneWidget);
     expect(find.byType(F4FirstWallpaperPage), findsOneWidget);
     expect(progressStep(tester), 4);
-    expect(find.text('set as wallpaper'), findsOneWidget);
+    expect(find.text('Set as wallpaper'), findsOneWidget);
   });
 
   testWidgets('going back to the welcome step brings the redesign page back', (tester) async {
@@ -145,7 +145,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text("Couldn't save your picks. Try again."), findsOneWidget);
-    expect(find.text('try again'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
     await tester.pump(const Duration(seconds: 8));
   });
 
@@ -377,7 +377,7 @@ void main() {
                 categoryImages: <String, String>{},
               ),
             ),
-            'continue',
+            'Continue',
           ),
           (
             OnboardingV2Step.starterPack,
@@ -400,7 +400,7 @@ void main() {
                 selectedEmails: <String>{'u0', 'u1', 'u2'},
               ),
             ),
-            'continue',
+            'Continue',
           ),
           (
             OnboardingV2Step.aiGenerate,
@@ -412,12 +412,12 @@ void main() {
                 status: AiGenerateStatus.idle,
               ),
             ),
-            'generate my wallpaper',
+            'Generate my wallpaper',
           ),
           (
             OnboardingV2Step.firstWallpaper,
             OnboardingV2State.initial().copyWith(step: OnboardingV2Step.firstWallpaper),
-            'set as wallpaper',
+            'Set as wallpaper',
           ),
         ];
 

@@ -17,6 +17,7 @@ import 'package:Prism/core/platform/wallpaper_set_feedback.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/features/ads/ads.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/crop_spec.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart';
@@ -85,6 +86,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   bool _effectsAvailable = false;
   bool _comparing = false;
   bool _busy = false;
+  bool _phoneSetInProgress = false;
+
+  /// A Set with phone tap that came while the failed set was still being refunded. It runs when that action ends.
+  VoidCallback? _pendingPhoneSet;
   bool _premiumFilterUnlockedForSession = false;
   double? _previewPixelsPerSourcePixel;
   Future<Uint8List>? _pendingRender;
@@ -92,8 +97,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   @override
   void dispose() {
     _tabs.dispose();
-    for (final File file in _sharedFiles) {
-      unawaited(_deleteEditedFile(file));
+    if (!_phoneSetInProgress) {
+      for (final File file in _sharedFiles) {
+        unawaited(_deleteEditedFile(file));
+      }
     }
     super.dispose();
   }
@@ -173,9 +180,6 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   bool get _isCropped => !(_crop?.isIdentity ?? true);
 
   bool get _isEdited => _isFiltered || _isCropped;
-
-  /// Filters and adjustments cost coins. A crop alone does not: the source already took the same grant as Download.
-  bool get _selectedFilterNeedsPremiumSpend => _isFiltered;
 
   bool get _editorReady =>
       !_loadFailed && _previewLoaded && _previewPixelsPerSourcePixel != null && _pendingRender == null;
@@ -318,7 +322,14 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
     } catch (_) {}
   }
 
-  Future<WallpaperSetResult> _setWallpaper(String path, SetWallpaperChoice choice) async {
+  Future<WallpaperSetResult> _setWallpaper(
+    String path,
+    SetWallpaperChoice choice, {
+    bool offerPhoneScreen = true,
+  }) async {
+    final String filterLabel = _editLabel;
+    final String owner = app_state.prismUser.id;
+    final int sourceGeneration = _sourceLoadGeneration;
     final AppLocalizations l10n = context.l10n;
     final PlacedWallpaper? placed = choice.placed;
     final WallpaperSetResult result = await WallpaperService.setWallpaper(
@@ -339,6 +350,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
             entryPoint: 'wallpaper_filter',
             targetChanged: choice.targetChanged,
           ),
+          onSystemSet: offerPhoneScreen
+              ? (_) => unawaited(_setWithPhone(path, filterLabel, owner: owner, sourceGeneration: sourceGeneration))
+              : null,
         );
       } catch (error) {
         logger.w('Wallpaper set outcome follow-up failed', error: error);
@@ -348,18 +362,22 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   }
 
   /// [action] is the export. It runs inside the coin gate and returns false when it failed, so the gate attempts a refund.
-  Future<void> _runWithPremiumFilterGate(Future<bool> Function() action, {required String sourceTag}) async {
+  Future<void> _runWithPremiumFilterGate(
+    Future<bool> Function() action, {
+    required String sourceTag,
+    String? filterLabel,
+  }) async {
     final int sourceGeneration = _sourceLoadGeneration;
     bool sourceIsCurrent() => mounted && sourceGeneration == _sourceLoadGeneration;
     if (!await requireSignedInAction(context) || !mounted) return;
     if (!sourceIsCurrent()) return;
     final String owner = app_state.prismUser.id;
-    if (!_selectedFilterNeedsPremiumSpend || app_state.prismUser.premium || _premiumFilterUnlockedForSession) {
+    final String filter = filterLabel ?? _editLabel;
+    if (filter.isEmpty || app_state.prismUser.premium || _premiumFilterUnlockedForSession) {
       await action();
       return;
     }
 
-    final String filter = _editLabel;
     // Spend tags end in `.spend`. The filter events log the tag without it.
     String eventTag(String spendTag) => spendTag.substring(0, spendTag.length - '.spend'.length);
     CoinGateSpec spec(String attemptSourceTag) {
@@ -414,6 +432,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
       if (mounted) {
         setState(() => _busy = false);
       }
+      final VoidCallback? pendingPhoneSet = _pendingPhoneSet;
+      _pendingPhoneSet = null;
+      if (mounted) pendingPhoneSet?.call();
     }
   }
 
@@ -527,6 +548,12 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
       }
       if (choice == null) return true;
       final WallpaperSetResult result = await _setWallpaper(path, choice);
+      // The phone's own wallpaper screen needs the edit after this returns, so it stays until the editor closes.
+      if (mounted &&
+          offersPhoneWallpaperScreen(result, choice.target) &&
+          _ownedExportDirectories.contains(imageFile.parent.path)) {
+        _sharedFiles.add(imageFile);
+      }
       if (!result.isFailure) _trackCropApplied();
       if (result.isSuccess || result.isInfo) {
         if (mounted) Navigator.of(context).pop();
@@ -534,7 +561,57 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
       return !result.isFailure;
     } finally {
       await choice?.placed?.discard();
-      await _deleteEditedFile(imageFile);
+      if (!_sharedFiles.contains(imageFile)) await _deleteEditedFile(imageFile);
+    }
+  }
+
+  Future<void> _setWithPhone(
+    String path,
+    String filterLabel, {
+    required String owner,
+    required int sourceGeneration,
+  }) async {
+    bool isCurrent() =>
+        mounted &&
+        app_state.prismUser.loggedIn &&
+        owner == app_state.prismUser.id &&
+        sourceGeneration == _sourceLoadGeneration;
+    if (!isCurrent() || _phoneSetInProgress) return;
+    if (_busy) {
+      _pendingPhoneSet = () =>
+          unawaited(_setWithPhone(path, filterLabel, owner: owner, sourceGeneration: sourceGeneration));
+      return;
+    }
+    _phoneSetInProgress = true;
+    _busy = true;
+    try {
+      if (mounted) setState(() {});
+      // The failed set refunded a premium filter, so this set pays for it again like any other set.
+      await _runWithPremiumFilterGate(
+        () async {
+          if (!isCurrent()) return false;
+          final WallpaperSetResult result = await _setWallpaper(
+            path,
+            const SetWallpaperChoice(WallpaperTarget.lock, useSystemCropper: true),
+            offerPhoneScreen: false,
+          );
+          if ((result.isSuccess || result.isInfo) && mounted) Navigator.of(context).pop();
+          return !result.isFailure;
+        },
+        sourceTag: 'coins.filter.set',
+        filterLabel: filterLabel,
+      );
+    } finally {
+      _phoneSetInProgress = false;
+      _busy = false;
+      if (!mounted) {
+        for (final File file in _sharedFiles.toList()) {
+          _sharedFiles.remove(file);
+          await _deleteEditedFile(file);
+        }
+      } else {
+        setState(() {});
+      }
     }
   }
 
@@ -590,7 +667,12 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
           PrismIconButton(
             icon: Icons.refresh_rounded,
             tooltip: context.l10n.wallpaperReset,
-            onPressed: _isEdited && !_busy ? _reset : null,
+            onPressed: _isEdited && !_busy
+                ? () {
+                    PrismHaptics.tap();
+                    _reset();
+                  }
+                : null,
           ),
           AnimatedSwitcher(
             duration: context.motion(PrismDurations.fast),
@@ -598,12 +680,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
                 ? SizedBox.square(
                     key: const ValueKey('busy'),
                     dimension: 44,
-                    child: Center(
-                      child: SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary),
-                      ),
-                    ),
+                    child: const Center(child: PrismLoader(size: 20)),
                   )
                 : PrismIconButton(
                     key: const ValueKey('download'),
@@ -671,7 +748,10 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
                       crop: _crop,
                       onCropPreset: _pickCropPreset,
                       onRotate: _rotateCrop,
-                      onCropReset: _resetCrop,
+                      onCropReset: () {
+                        PrismHaptics.tap();
+                        _resetCrop();
+                      },
                     ),
                   ),
                 ],

@@ -4,11 +4,15 @@ import 'dart:io' as io;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/gesture_hint.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -28,6 +32,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/favourite_test_scope.dart';
+import '../../support/in_memory_local_store.dart';
 
 class _MockCacheManager extends Mock implements BaseCacheManager {}
 
@@ -91,6 +96,33 @@ void main() {
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
     }
     expect(target, findsWidgets, reason: 'The image did not reach its expected decoded/error state within 5 seconds.');
+  }
+
+  PrismFeedItem wallItem({String thumbnailUrl = thumbnail, String fullUrl = full, List<String>? colors}) =>
+      PrismFeedItem(
+        id: 'wall',
+        wallpaper: PrismWallpaper(
+          core: WallpaperCore(id: 'wall', source: WallpaperSource.prism, thumbnailUrl: thumbnailUrl, fullUrl: fullUrl),
+          colors: colors,
+        ),
+      );
+
+  void respondNever(String url) {
+    final StreamController<FileResponse> pending = StreamController<FileResponse>();
+    addTearDown(pending.close);
+    when(() => cache.getFileStream(url, withProgress: true)).thenAnswer((_) => pending.stream);
+  }
+
+  Future<void> pumpLoadingTile(WidgetTester tester, Widget tile) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: favouriteTestBuilder,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: ListView(children: <Widget>[SizedBox(width: 120, height: 240, child: tile)]),
+      ),
+    );
+    await tester.pump();
   }
 
   Future<void> pumpTile(
@@ -311,6 +343,45 @@ void main() {
 
     expect(find.byTooltip('Retry image'), findsNothing);
     expect(find.byType(PulseFill), findsOneWidget);
+  });
+
+  testWidgets('a wall with a known colour loads as a still block of its muted colour, not the grey pulse', (
+    tester,
+  ) async {
+    respondNever(thumbnail);
+    final PrismFeedItem item = wallItem(colors: const <String>['red']);
+    await pumpLoadingTile(tester, WallpaperTile(index: 0, item: item));
+
+    final Color surface = Theme.of(tester.element(find.byType(WallpaperTile))).colorScheme.surface;
+    final Color expected = placeholderColorOf(item, surface)!;
+    expect(find.byType(PulseFill), findsNothing);
+    expect(find.byWidgetPredicate((widget) => widget is ColoredBox && widget.color == expected), findsOneWidget);
+    final CachedNetworkImage image = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
+    expect(image.fadeInDuration, const Duration(milliseconds: 200));
+  });
+
+  testWidgets('a wall without a colour keeps the grey pulse while it loads', (tester) async {
+    respondNever(thumbnail);
+    await pumpLoadingTile(tester, WallpaperTile(index: 0, item: wallItem()));
+
+    expect(find.byType(PulseFill), findsOneWidget);
+  });
+
+  testWidgets('the hold hint never shows on a tile outside the Home grid', (tester) async {
+    respondNever(thumbnail);
+    GestureHints.resetForTest();
+    getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
+    addTearDown(() async {
+      GestureHints.resetForTest();
+      await getIt.unregister<SettingsLocalDataSource>();
+    });
+    expect(GestureHints.seen(GestureHint.holdToSave).value, isFalse);
+
+    await pumpLoadingTile(tester, WallpaperTile(index: 0, item: wallItem()));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.byType(GestureHintOverlay), findsNothing);
+    expect(find.text('Hold to save'), findsNothing);
   });
 
   testWidgets('the decode sizes reach the image widget', (tester) async {

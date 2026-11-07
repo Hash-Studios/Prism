@@ -45,6 +45,7 @@ import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cloud_functions/cloud_functions.dart' show FirebaseFunctionsException;
+import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -405,14 +406,18 @@ void main() {
     testWidgets('a signed-in user sees the coin price', (tester) async {
       await pump(tester);
 
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
+      expect(find.bySemanticsLabel('Save. Costs ${CoinPolicy.wallpaperDownload} coins'), findsOneWidget);
       expect(semanticsLabel(tester), 'Save. Costs ${CoinPolicy.wallpaperDownload} coins');
+      // The price is a coin and a number after the label, not a "Save · 10" string.
+      expect(find.text('Save'), findsOneWidget);
+      expect(find.byType(PrismCoinIcon), findsOneWidget);
+      expect(find.text('${CoinPolicy.wallpaperDownload}'), findsOneWidget);
     });
 
     testWidgets('a Pro wallpaper shows its higher price', (tester) async {
       await pump(tester, premiumContent: true);
 
-      expect(find.text('Save · ${CoinPolicy.premiumWallpaperDownload}'), findsOneWidget);
+      expect(find.bySemanticsLabel('Save. Costs ${CoinPolicy.premiumWallpaperDownload} coins'), findsOneWidget);
       expect(semanticsLabel(tester), 'Save. Costs ${CoinPolicy.premiumWallpaperDownload} coins');
     });
 
@@ -428,7 +433,7 @@ void main() {
       await tester.runAsync(() => useGraceDownloads(2));
       await pump(tester, premiumContent: true);
 
-      expect(find.text('Save · ${CoinPolicy.premiumWallpaperDownload}'), findsOneWidget);
+      expect(find.bySemanticsLabel('Save. Costs ${CoinPolicy.premiumWallpaperDownload} coins'), findsOneWidget);
     });
 
     testWidgets('an active premium pass makes a Pro wallpaper free', (tester) async {
@@ -547,13 +552,13 @@ void main() {
     testWidgets('another url for the same wall id keeps the normal price', (tester) async {
       await pump(tester, source: WallpaperSource.prism, link: 'https://example.com/walls/other.jpg');
 
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
+      expect(find.bySemanticsLabel('Save. Costs ${CoinPolicy.wallpaperDownload} coins'), findsOneWidget);
     });
 
     testWidgets('a wallpaper from another source keeps its normal price', (tester) async {
       await pump(tester);
 
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
+      expect(find.bySemanticsLabel('Save. Costs ${CoinPolicy.wallpaperDownload} coins'), findsOneWidget);
     });
   });
 
@@ -774,7 +779,7 @@ void main() {
       expect(result.result, 'failed');
       expect(result.reason, 'enqueue_failed');
       expect(result.stage, 'download');
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
+      expect(find.bySemanticsLabel('Save. Costs ${CoinPolicy.wallpaperDownload} coins'), findsOneWidget);
       expect(ledger(), isEmpty);
     });
   });
@@ -1294,7 +1299,7 @@ void main() {
       CoinsService.instance.isLinkDownloaded = (identity) => identity == _link;
       await pump(tester, variant: variant());
 
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
+      expect(find.bySemanticsLabel('Save. Costs ${CoinPolicy.wallpaperDownload} coins'), findsOneWidget);
       await tester.runAsync(() async {});
       await tapSave(tester);
 
@@ -1404,7 +1409,7 @@ void main() {
 
       await pump(tester, variant: variant(key: 'tint-00ff00'));
 
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
+      expect(find.bySemanticsLabel('Save. Costs ${CoinPolicy.wallpaperDownload} coins'), findsOneWidget);
     });
 
     testWidgets('a colour picked while the first one renders changes neither what is saved nor what is remembered', (
@@ -1430,7 +1435,7 @@ void main() {
 
       expect((enqueued.single! as DownloadRequest).filenameWithoutExtension, 'sunset_tint-ff8800');
       expect(remembered, <String>['a']);
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
+      expect(find.bySemanticsLabel('Save. Costs ${CoinPolicy.wallpaperDownload} coins'), findsOneWidget);
     });
 
     testWidgets('a variant save counts the download for the wallpaper, not for the variation link', (tester) async {
@@ -2461,7 +2466,7 @@ void main() {
         source: WallpaperSource.prism,
         set: watchSet(desktop: desktop),
       );
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload * 2}'), findsOneWidget);
+      expect(find.bySemanticsLabel('Save. Costs ${CoinPolicy.wallpaperDownload * 2} coins'), findsOneWidget);
       await tapSave(tester);
       expect(find.text('Download · 40'), findsOneWidget);
       await tester.tap(find.text('Download').last);
@@ -2507,7 +2512,7 @@ void main() {
 
     testWidgets('a set without a desktop version spends one download', (tester) async {
       await pump(tester, set: watchSet());
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
+      expect(find.bySemanticsLabel('Save. Costs ${CoinPolicy.wallpaperDownload} coins'), findsOneWidget);
       await tapSave(tester);
 
       expect(spendCalls, hasLength(1));

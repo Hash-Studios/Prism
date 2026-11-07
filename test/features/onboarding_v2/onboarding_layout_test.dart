@@ -154,7 +154,7 @@ void main() {
       await pumpPage(tester, const F1InterestsPage(), stateWith(categories: <String>['Nature', 'Anime', 'Minimal']));
 
       expect(tester.takeException(), isNull);
-      await tester.tap(find.text('skip'));
+      await tester.tap(find.text('Skip'));
       verify(() => bloc.add(const OnboardingV2Event.interestsSkipped())).called(1);
     });
 
@@ -164,7 +164,7 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
       await tester.tap(find.text('Try again'));
       verify(() => bloc.add(const OnboardingV2Event.loadRetried())).called(1);
-      expect(find.text('skip'), findsOneWidget);
+      expect(find.text('Skip'), findsOneWidget);
     });
 
     testWidgets('a list that is still loading shows the spinner', (tester) async {
@@ -180,7 +180,7 @@ void main() {
       expect(tester.takeException(), isNull);
       await tester.tap(find.text('Try again'));
       verify(() => bloc.add(const OnboardingV2Event.loadRetried())).called(1);
-      await tester.tap(find.text('skip'));
+      await tester.tap(find.text('Skip'));
       verify(() => bloc.add(const OnboardingV2Event.starterPackSkipped())).called(1);
     });
   });

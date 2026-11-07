@@ -1,6 +1,7 @@
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/folders/data/repositories/public_folders_repository_impl.dart';
+import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:cloud_functions/cloud_functions.dart' show FirebaseFunctionsException;
@@ -98,11 +99,54 @@ void main() {
         FakeFirestoreClient()..queryError = FirestoreError(code: 'permission-denied', message: 'blocked'),
       );
 
-      final Result<List<String>> result = await repository.fetchWallIds('f1');
+      final Result<List<PublicFolderWall>> result = await repository.fetchWallIds('f1');
 
       expect(result.isFailure, isTrue);
       expect(result.failure, isA<PublicFolderFailure>());
       expect((result.failure! as PublicFolderFailure).refusal, PublicFolderRefusal.unavailable);
+    });
+
+    test('fetchWallIds keeps a valid section id and drops an invalid one', () async {
+      final PublicFoldersRepositoryImpl repository = PublicFoldersRepositoryImpl(
+        FakeFirestoreClient(
+          onQuery: (spec) => <FakeDocRow>[
+            (id: 'W1', data: <String, dynamic>{'id': 'W1', 'sectionId': 'lock'}),
+            (id: 'W2', data: <String, dynamic>{'id': 'W2', 'sectionId': 'bad id'}),
+          ],
+        ),
+      );
+
+      final Result<List<PublicFolderWall>> result = await repository.fetchWallIds('f1');
+
+      expect(result.isSuccess, isTrue);
+      expect(result.data!.map((w) => w.id).toList(), <String>['W1', 'W2']);
+      expect(result.data![0].sectionId, 'lock');
+      expect(result.data![1].sectionId, isNull);
+    });
+
+    test('fetchFolder parses the header sections', () async {
+      final PublicFoldersRepositoryImpl repository = PublicFoldersRepositoryImpl(
+        FakeFirestoreClient(
+          docs: <String, Map<String, Map<String, dynamic>>>{
+            'publicFolders': <String, Map<String, dynamic>>{
+              'f1': <String, dynamic>{
+                'ownerId': 'o1',
+                'name': 'Name',
+                'itemCount': 1,
+                'covers': <String>[],
+                'followerCount': 0,
+                'sections': <Map<String, String>>[
+                  <String, String>{'id': 'lock', 'name': 'Lock screens'},
+                ],
+              },
+            },
+          },
+        ),
+      );
+
+      final Result<PublicFolderEntity?> result = await repository.fetchFolder('f1');
+
+      expect(result.data!.sections, <FolderSection>[const FolderSection(id: 'lock', name: 'Lock screens')]);
     });
   });
 }

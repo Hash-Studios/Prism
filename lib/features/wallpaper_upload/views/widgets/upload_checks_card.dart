@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/prism/prism_card.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -45,10 +46,7 @@ class _CheckRow extends StatelessWidget {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final Widget icon = switch (check.state) {
       UploadCheckState.done => const Icon(Icons.check_circle_rounded, size: 22, color: PrismColors.success),
-      UploadCheckState.active => SizedBox.square(
-        dimension: 18,
-        child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary),
-      ),
+      UploadCheckState.active => const PrismLoader(size: 18),
       UploadCheckState.pending => Icon(
         Icons.radio_button_unchecked_rounded,
         size: 22,

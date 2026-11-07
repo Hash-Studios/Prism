@@ -5,6 +5,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -16,9 +17,18 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../support/coins_test_backend.dart';
 import '../../../support/fake_app_analytics.dart';
+import '../../../support/in_memory_local_store.dart';
 import '../drop_fixtures.dart';
 
 class _MockRepository extends Mock implements DropsRepository {}
+
+class _FailingUnlockStore extends InMemoryLocalStore {
+  @override
+  Future<void> set(String key, Object? value) async {
+    if (key.contains('pendingEconomyRequest.unlockDrop.')) throw StateError('disk full');
+    await super.set(key, value);
+  }
+}
 
 Map<String, Object?> _reply({
   required bool success,
@@ -264,6 +274,46 @@ void main() {
       expect(completed.lastResult!.outcome, DropUnlockOutcome.unlocked);
       expect(completed.busyKey, isNull);
       expect(calls, hasLength(1));
+    });
+
+    test('a callable that throws ends as a failed result and clears busy', () async {
+      stubLoad(live: dropEntity());
+      await loaded();
+      backend.onCall = (name, params) async => throw StateError('boom');
+
+      bloc.add(const DropsEvent.unlockRequested(wallId: 'A'));
+      final state = await bloc.stream.firstWhere((s) => s.lastResult != null);
+
+      expect(state.lastResult!.outcome, DropUnlockOutcome.failed);
+      expect(state.busyKey, isNull);
+    });
+
+    test('each storage-failed retry publishes a new failure notice for the page listener', () async {
+      stubLoad(live: dropEntity());
+      await loaded();
+      await getIt.unregister<SettingsLocalDataSource>();
+      getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(_FailingUnlockStore()));
+      final List<DropUnlockResult> notices = <DropUnlockResult>[];
+      DropUnlockResult? previous;
+      final subscription = bloc.stream.listen((state) {
+        final result = state.lastResult;
+        if (result != null && result != previous) notices.add(result);
+        previous = result;
+      });
+      addTearDown(subscription.cancel);
+
+      for (int attempt = 0; attempt < 2; attempt++) {
+        bloc.add(const DropsEvent.unlockRequested(wallId: 'A'));
+        await bloc.stream.firstWhere((state) => state.busyKey == null && state.lastResult != null);
+      }
+
+      expect(notices.map((result) => result.outcome), <DropUnlockOutcome>[
+        DropUnlockOutcome.failed,
+        DropUnlockOutcome.failed,
+      ]);
+      expect(bloc.state.busyKey, isNull);
+      expect(bloc.state.unlocked, isEmpty);
+      expect(analytics.events.where((event) => event.eventName == 'drop_unlocked'), isEmpty);
     });
 
     test('is ignored with no Drop loaded', () async {

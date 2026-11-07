@@ -46,3 +46,22 @@ sealed class FeedItemEntity with _$FeedItemEntity {
     l10n,
   );
 }
+
+/// [items] in order, with repeats dropped and the first copy kept. A repeat has the same source and id as a wall kept
+/// before it or listed in [exclude]. Identity uses source and ID; similar image metadata is not proof that two uploads
+/// are the same picture.
+List<FeedItemEntity> distinctWalls(Iterable<FeedItemEntity> items, {Iterable<FeedItemEntity> exclude = const []}) {
+  final Set<(WallpaperSource, String)> ids = <(WallpaperSource, String)>{};
+  bool isNew(FeedItemEntity item) {
+    if (!ids.add((item.source, item.id.trim()))) return false;
+    return true;
+  }
+
+  for (final FeedItemEntity item in exclude) {
+    isNew(item);
+  }
+  return <FeedItemEntity>[
+    for (final FeedItemEntity item in items)
+      if (isNew(item)) item,
+  ];
+}

@@ -456,7 +456,40 @@ service cloud.firestore {
         return validFolderName(data.name)
             && data.itemCount is int && data.itemCount >= 0
             && data.covers is list && data.covers.size() <= 4
-            && data.createdAt is timestamp && data.updatedAt is timestamp;
+            && data.createdAt is timestamp && data.updatedAt is timestamp
+            && validSections(data);
+      }
+
+      function validSectionId(id) {
+        return id is string && id.matches('^[A-Za-z0-9_-]{1,32}$');
+      }
+
+      // Keep validation within the 1000-expression budget for 20 sections. The app also caps names at 40 graphemes
+      // and trims them on read. Inline the id check to avoid another function call for every section.
+      function validSection(section) {
+        // Reading both required fields plus size == 2 excludes extra keys without building a key list.
+        return section.size() == 2 && section.name is string && section.name.size() > 0
+            && section.name.size() <= 160 && section.id.matches('^[A-Za-z0-9_-]{1,32}$');
+      }
+
+      function validSections(data) {
+        return !('sections' in data) || validSectionList(data.sections);
+      }
+
+      // Rules have no loops, so each index is checked.
+      function validSectionList(sections) {
+        let count = sections.size();
+        return sections is list && count <= 20
+            && (count < 1 || validSection(sections[0])) && (count < 2 || validSection(sections[1]))
+            && (count < 3 || validSection(sections[2])) && (count < 4 || validSection(sections[3]))
+            && (count < 5 || validSection(sections[4])) && (count < 6 || validSection(sections[5]))
+            && (count < 7 || validSection(sections[6])) && (count < 8 || validSection(sections[7]))
+            && (count < 9 || validSection(sections[8])) && (count < 10 || validSection(sections[9]))
+            && (count < 11 || validSection(sections[10])) && (count < 12 || validSection(sections[11]))
+            && (count < 13 || validSection(sections[12])) && (count < 14 || validSection(sections[13]))
+            && (count < 15 || validSection(sections[14])) && (count < 16 || validSection(sections[15]))
+            && (count < 17 || validSection(sections[16])) && (count < 18 || validSection(sections[17]))
+            && (count < 19 || validSection(sections[18])) && (count < 20 || validSection(sections[19]));
       }
 
       // A folder item is a favourite doc plus ownerId and addedAt. Its id is "<provider lowercased>_<wall id>".
@@ -466,7 +499,7 @@ service cloud.firestore {
         return data.keys().hasOnly([
               'id', 'url', 'thumb', 'provider', 'category', 'views', 'resolution', 'fav', 'size',
               'photographer', 'collections', 'depth', 'spatial', 'createdAt', 'favouritedAt', 'ownerId', 'addedAt',
-              'wallpaperDocumentId', 'addedBy'
+              'wallpaperDocumentId', 'addedBy', 'sectionId'
             ])
             && data.id is string && data.id.size() > 0
             && data.provider is string
@@ -476,6 +509,7 @@ service cloud.firestore {
                 || (data.wallpaperDocumentId is string && data.wallpaperDocumentId.size() > 0))
             // The favourite mapper copies a Spatial Scene wall's {tier, map}.
             && (!('spatial' in data) || data.spatial is map)
+            && (!('sectionId' in data) || validSectionId(data.sectionId))
             && data.ownerId == folderOwner
             && (('addedBy' in data && data.addedBy == request.auth.uid)
                 || (!('addedBy' in data) && request.auth.uid == folderOwner))
@@ -489,12 +523,18 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(['ownerId', 'name', 'createdAt', 'updatedAt', 'itemCount', 'covers'])
           && request.resource.data.ownerId == request.auth.uid
           && validFolderFields(request.resource.data);
+      // The owner and the editors write sections. The role comes from the stored folder, never from the request.
       allow update: if isSignedIn()
           && folderWritesOpen(request.auth.uid)
-          && resource.data.ownerId == request.auth.uid
           && request.resource.data.ownerId == resource.data.ownerId
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'updatedAt', 'itemCount', 'covers'])
-          && validFolderFields(request.resource.data);
+          && ((resource.data.ownerId == request.auth.uid
+                  && request.resource.data.diff(resource.data).affectedKeys()
+                      .hasOnly(['name', 'updatedAt', 'itemCount', 'covers', 'sections'])
+                  && validFolderFields(request.resource.data))
+              || (request.auth.uid in resource.data.get('memberIds', [])
+                  && folderWritesOpen(resource.data.ownerId)
+                  && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sections'])
+                  && validSections(request.resource.data)));
 
       // getAfter lets one batch create a folder with its first item.
       match /items/{itemKey} {
@@ -527,12 +567,16 @@ service cloud.firestore {
             && folderWritesOpen(folderAfter().ownerId)
             && canEdit(folderAfter())
             && validFolderItem(itemKey, folderAfter().ownerId);
+        // A move changes only sectionId, so a member can move a wall someone else added.
         allow update: if isSignedIn()
             && folderWritesOpen(request.auth.uid)
             && folderWritesOpen(folderAfter().ownerId)
             && canEdit(folderAfter())
             && resource.data.ownerId == folderAfter().ownerId
-            && validFolderItem(itemKey, folderAfter().ownerId);
+            && (validFolderItem(itemKey, folderAfter().ownerId)
+                || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sectionId'])
+                    && (!('sectionId' in request.resource.data)
+                        || validSectionId(request.resource.data.sectionId))));
       }
     }
 

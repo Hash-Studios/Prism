@@ -2,6 +2,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/app_icon_channel.dart';
 import 'package:Prism/core/platform/pigeon/prism_app_icon_api.g.dart';
@@ -94,6 +95,43 @@ void main() {
         ),
       );
     }
+
+    testWidgets('a tap opens the item with one tap haptic', (tester) async {
+      final List<String> haptics = <String>[];
+      PrismHaptics.enabled = true;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), (
+        call,
+      ) async {
+        haptics.add(call.arguments as String);
+        return null;
+      });
+      addTearDown(
+        () =>
+            tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), null),
+      );
+      int taps = 0;
+      await tester.pumpWidget(
+        host(
+          SizedBox(
+            width: 180,
+            height: 210,
+            child: ShopItemTile(
+              item: shopItem('theme_rose')!,
+              owned: false,
+              equipped: false,
+              availability: ShopAvailability.available,
+              onTap: () => taps++,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Rose'));
+      await tester.pump();
+
+      expect(taps, 1);
+      expect(haptics, <String>['tap']);
+    });
 
     testWidgets('an unowned item shows its price and no tag', (tester) async {
       await pumpTile(tester, 'theme_rose');

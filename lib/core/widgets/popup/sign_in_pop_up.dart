@@ -134,7 +134,7 @@ class _AppleButton extends StatelessWidget {
     return PressScale(
       child: FilledButton.icon(
         onPressed: () {
-          PrismHaptics.selection();
+          PrismHaptics.tap();
           onPressed();
         },
         icon: const Icon(Icons.apple, size: 22),

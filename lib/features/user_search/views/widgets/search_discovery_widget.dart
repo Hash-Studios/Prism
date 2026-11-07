@@ -8,7 +8,8 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
-/// What the search tab shows before a search: tags, creators, trending walls, categories and colours.
+/// What the search tab shows before a search. Imagery leads: one chip row of recent searches and tags, trending walls,
+/// categories, colours and creators. The text rows (creators, requests, depth, spatial) close the page as one group.
 class SearchDiscoveryWidget extends StatelessWidget {
   const SearchDiscoveryWidget({
     super.key,
@@ -16,6 +17,7 @@ class SearchDiscoveryWidget extends StatelessWidget {
     required this.selectedTag,
     required this.onTagPressed,
     this.header,
+    this.dimmed = false,
     this.recentSearches = const <String>[],
     this.onRecentPressed,
     this.onClearRecents,
@@ -34,6 +36,9 @@ class SearchDiscoveryWidget extends StatelessWidget {
   /// Scrolls with the content, above the tags. The search tab puts its title and field here.
   final Widget? header;
 
+  /// Dims everything below [header] a little, while the search field has focus.
+  final bool dimmed;
+
   /// Called with the swatch the user taps in "Browse by colour". Without it the section is hidden.
   final void Function(PrismPaletteColor color)? onColorPressed;
 
@@ -50,75 +55,65 @@ class SearchDiscoveryWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           ?header,
-          if (recentSearches.isNotEmpty)
-            _RecentSearches(searches: recentSearches, onPressed: onRecentPressed, onClear: onClearRecents),
-          _TagsRow(tags: tags, selectedTag: selectedTag, onTagPressed: onTagPressed),
-          const SizedBox(height: PrismSpace.md),
-          Padding(
-            padding: PrismSpace.pageInsets,
-            child: PrismGroup(
+          AnimatedOpacity(
+            opacity: dimmed ? 0.55 : 1,
+            duration: context.motion(PrismDurations.fast),
+            curve: PrismCurves.enter,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const _FindCreatorsRow(),
-                const _WallRequestsRow(),
-                if (onDepthPressed != null) _DepthEffectRow(onPressed: onDepthPressed!),
-                if (onSpatialPressed != null) _SpatialSceneRow(onPressed: onSpatialPressed!),
+                _QueryChips(
+                  recents: recentSearches,
+                  onRecentPressed: onRecentPressed,
+                  onClearRecents: onClearRecents,
+                  tags: tags,
+                  selectedTag: selectedTag,
+                  onTagPressed: onTagPressed,
+                ),
+                const TrendingSection(),
+                const CategorySection(),
+                if (onColorPressed != null) ColourSection(onPressed: onColorPressed!),
+                const CreatorsSection(source: 'search'),
+                const SizedBox(height: PrismSpace.xl),
+                Padding(
+                  padding: PrismSpace.pageInsets,
+                  child: PrismGroup(
+                    children: <Widget>[
+                      const _FindCreatorsRow(),
+                      const _WallRequestsRow(),
+                      if (onDepthPressed != null) _DepthEffectRow(onPressed: onDepthPressed!),
+                      if (onSpatialPressed != null) _SpatialSceneRow(onPressed: onSpatialPressed!),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: PrismSpace.bottomBarClearance),
               ],
             ),
           ),
-          if (onColorPressed != null) ColourSection(onPressed: onColorPressed!),
-          const TrendingSection(),
-          const CategorySection(),
-          const CreatorsSection(source: 'search'),
-          const SizedBox(height: PrismSpace.bottomBarClearance),
         ],
       ),
     );
   }
 }
 
-/// The last few searches, newest first, with a Clear action.
-class _RecentSearches extends StatelessWidget {
-  const _RecentSearches({required this.searches, required this.onPressed, required this.onClear});
+/// Padding for the closing text rows: tighter than a settings list, so the group stays compact.
+const EdgeInsets _compactRowPadding = EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: PrismSpace.xs);
 
-  final List<String> searches;
-  final void Function(String query)? onPressed;
-  final VoidCallback? onClear;
+/// One horizontal chip row: the last few searches (newest first, with a history icon), then the curated tags.
+/// A small "Recent searches" header with a Clear action sits above it while there are recents.
+class _QueryChips extends StatelessWidget {
+  const _QueryChips({
+    required this.recents,
+    required this.onRecentPressed,
+    required this.onClearRecents,
+    required this.tags,
+    required this.selectedTag,
+    required this.onTagPressed,
+  });
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        PrismSectionHeader(
-          title: context.l10n.accountRecentSearches,
-          actionLabel: context.l10n.accountClear,
-          onAction: onClear,
-          padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xxs),
-          small: true,
-        ),
-        Padding(
-          padding: PrismSpace.pageInsets,
-          child: Wrap(
-            spacing: PrismSpace.xs,
-            children: <Widget>[
-              for (final String query in searches)
-                PrismChip(
-                  label: query,
-                  icon: Icons.history_rounded,
-                  onTap: onPressed == null ? null : () => onPressed!(query),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: PrismSpace.xs),
-      ],
-    );
-  }
-}
-
-class _TagsRow extends StatelessWidget {
-  const _TagsRow({required this.tags, required this.selectedTag, required this.onTagPressed});
-
+  final List<String> recents;
+  final void Function(String query)? onRecentPressed;
+  final VoidCallback? onClearRecents;
   final List<String> tags;
   final String selectedTag;
   final void Function(String tag) onTagPressed;
@@ -126,20 +121,39 @@ class _TagsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String selected = selectedTag.trim().toLowerCase();
-    return SizedBox(
-      height: 44,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: PrismSpace.pageInsets,
-        itemCount: tags.length,
-        separatorBuilder: (_, _) => const SizedBox(width: PrismSpace.xs),
-        itemBuilder: (context, index) {
-          final String tag = tags[index];
-          return Center(
-            child: PrismChip(label: tag, selected: selected == tag.toLowerCase(), onTap: () => onTagPressed(tag)),
-          );
-        },
-      ),
+    final List<Widget> chips = <Widget>[
+      for (final String query in recents)
+        PrismChip(
+          label: query,
+          icon: Icons.history_rounded,
+          onTap: onRecentPressed == null ? null : () => onRecentPressed!(query),
+        ),
+      for (final String tag in tags)
+        PrismChip(label: tag, selected: selected == tag.toLowerCase(), onTap: () => onTagPressed(tag)),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        if (recents.isNotEmpty)
+          PrismSectionHeader(
+            title: context.l10n.accountRecentSearches,
+            actionLabel: context.l10n.accountClear,
+            onAction: onClearRecents,
+            padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xxs),
+            small: true,
+          ),
+        if (chips.isNotEmpty)
+          SizedBox(
+            height: 44,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: PrismSpace.pageInsets,
+              itemCount: chips.length,
+              separatorBuilder: (_, _) => const SizedBox(width: PrismSpace.xs),
+              itemBuilder: (_, index) => Center(child: chips[index]),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -153,6 +167,7 @@ class _FindCreatorsRow extends StatelessWidget {
       icon: Icons.person_search_rounded,
       title: context.l10n.accountFindCreators,
       subtitle: context.l10n.accountSearchPrismUsersByName,
+      padding: _compactRowPadding,
       onTap: () {
         PrismHaptics.tap();
         context.router.push(const UserSearchRoute());
@@ -170,6 +185,7 @@ class _WallRequestsRow extends StatelessWidget {
       icon: Icons.lightbulb_outline_rounded,
       title: context.l10n.discoverRequestsTitle,
       subtitle: context.l10n.discoverRequestsSubtitle,
+      padding: _compactRowPadding,
       onTap: () {
         PrismHaptics.tap();
         context.router.push(WallRequestsRoute());
@@ -199,6 +215,7 @@ class _DepthEffectRow extends StatelessWidget {
         icon: Icons.layers_rounded,
         title: context.l10n.accountDepthEffect,
         subtitle: context.l10n.accountSubjectInFrontOfClock,
+        padding: _compactRowPadding,
         onTap: open,
       ),
     );
@@ -226,6 +243,7 @@ class _SpatialSceneRow extends StatelessWidget {
         icon: Icons.view_in_ar_rounded,
         title: context.l10n.accountSpatialScene,
         subtitle: context.l10n.accountSpatialSceneSubtitle,
+        padding: _compactRowPadding,
         onTap: open,
       ),
     );

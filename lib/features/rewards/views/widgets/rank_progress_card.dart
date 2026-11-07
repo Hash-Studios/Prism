@@ -48,27 +48,32 @@ class XpProgressCard extends StatelessWidget {
         .where((RankRewardProgress reward) => reward.owned)
         .lastOrNull;
     return PrismCard(
+      padding: const EdgeInsets.all(PrismSpace.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+          // The rank title leads the card; the help button sits on its row instead of under an extra eyebrow.
           Row(
             children: <Widget>[
-              Expanded(child: Text(context.l10n.economyYourXp, style: PrismTextStyles.eyebrow(context))),
-              IconButton(
+              Expanded(
+                child: Text(rankTitle(progress.rank.id, context.l10n), style: PrismTextStyles.cardTitle(context)),
+              ),
+              PrismIconButton(
+                icon: Icons.info_outline_rounded,
                 tooltip: context.l10n.economyRankRewardsHelp,
-                style: IconButton.styleFrom(minimumSize: const Size.square(48), visualDensity: VisualDensity.standard),
+                size: 48,
+                iconSize: 20,
                 onPressed: () => showXpExplanation(context, progress: progress, onOpenShop: onOpenShop),
-                icon: const Icon(Icons.info_outline_rounded, size: 20),
               ),
             ],
           ),
-          Text(rankTitle(progress.rank.id, context.l10n), style: PrismTextStyles.cardTitle(context)),
-          const SizedBox(height: PrismSpace.xxs),
+          // One line: lifetime XP and the XP left to the next rank.
           Text(
-            context.l10n.economyLifetimeXp(groupedXp(progress.xp, context.l10n)),
-            style: PrismTextStyles.body(context),
+            '${context.l10n.economyLifetimeXp(groupedXp(progress.xp, context.l10n))} · '
+            '${next == null ? context.l10n.economyHighestRankReachedShort : context.l10n.economyXpToRank(groupedXp(progress.remainingXp, context.l10n), rankTitle(next.id, context.l10n))}',
+            style: PrismTextStyles.caption(context),
           ),
-          const SizedBox(height: PrismSpace.md),
+          const SizedBox(height: PrismSpace.xs),
           Semantics(
             label: context.l10n.economyRankProgressSemantics(rankTitle(progress.rank.id, context.l10n)),
             value: next == null
@@ -88,19 +93,9 @@ class XpProgressCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: PrismSpace.xs),
-          Text(
-            next == null
-                ? context.l10n.economyHighestRankReachedShort
-                : context.l10n.economyXpToRank(
-                    groupedXp(progress.remainingXp, context.l10n),
-                    rankTitle(next.id, context.l10n),
-                  ),
-            style: PrismTextStyles.caption(context),
-          ),
-          const SizedBox(height: PrismSpace.md),
+          const SizedBox(height: PrismSpace.sm),
           Divider(height: 1, color: cs.onSurface.withValues(alpha: 0.08)),
-          const SizedBox(height: PrismSpace.md),
+          const SizedBox(height: PrismSpace.sm),
           if (reward != null)
             _RewardSummary(reward: reward)
           else ...<Widget>[
@@ -114,10 +109,13 @@ class XpProgressCard extends StatelessWidget {
             Text(context.l10n.economyLifetimeXpNeverResets, style: PrismTextStyles.caption(context)),
           ],
           if (onUseReward != null && ownedReward != null) ...<Widget>[
-            const SizedBox(height: PrismSpace.xs),
-            TextButton(
+            const SizedBox(height: PrismSpace.sm),
+            PrismButton(
+              label: context.l10n.economyUseReward(ownedReward.name(context.l10n)),
+              variant: PrismButtonVariant.tonal,
+              size: PrismButtonSize.compact,
+              maxLines: 2,
               onPressed: () => onUseReward!(ownedReward.item),
-              child: Text(context.l10n.economyUseReward(ownedReward.name(context.l10n))),
             ),
           ],
         ],

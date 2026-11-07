@@ -1212,7 +1212,7 @@ abstract class AppLocalizations {
   /// About page action that opens the APK download page. Shown only on installs that did not come from Google Play.
   ///
   /// In en, this message translates to:
-  /// **'DOWNLOAD APK'**
+  /// **'Download APK'**
   String get accountDownloadApk;
 
   /// Subtitle describing downloaded files and retained offline copies.
@@ -1266,7 +1266,7 @@ abstract class AppLocalizations {
   /// About page action to send feedback.
   ///
   /// In en, this message translates to:
-  /// **'FEEDBACK'**
+  /// **'Feedback'**
   String get accountFeedback;
 
   /// Email subject for feedback sent from the About page.
@@ -1968,7 +1968,7 @@ abstract class AppLocalizations {
   /// About page action to view the privacy policy.
   ///
   /// In en, this message translates to:
-  /// **'PRIVACY'**
+  /// **'Privacy policy'**
   String get accountPrivacyAction;
 
   /// Settings group heading for privacy and data controls.
@@ -2076,7 +2076,7 @@ abstract class AppLocalizations {
   /// About page action to rate Prism.
   ///
   /// In en, this message translates to:
-  /// **'RATE'**
+  /// **'Rate'**
   String get accountRateApp;
 
   /// Search history section heading.
@@ -2204,12 +2204,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Restoring purchases…'**
   String get accountRestoringPurchases;
-
-  /// Label above wallpaper search results.
-  ///
-  /// In en, this message translates to:
-  /// **'Results for {query}'**
-  String accountResultsForQuery(String query);
 
   /// Retry action label.
   ///
@@ -2436,25 +2430,25 @@ abstract class AppLocalizations {
   /// About page social link label for GitHub.
   ///
   /// In en, this message translates to:
-  /// **'GITHUB'**
+  /// **'GitHub'**
   String get accountSocialGithub;
 
   /// About page social link label for Instagram.
   ///
   /// In en, this message translates to:
-  /// **'INSTAGRAM'**
+  /// **'Instagram'**
   String get accountSocialInstagram;
 
   /// About page social link label for Telegram.
   ///
   /// In en, this message translates to:
-  /// **'TELEGRAM'**
+  /// **'Telegram'**
   String get accountSocialTelegram;
 
   /// About page social link label for Twitter.
   ///
   /// In en, this message translates to:
-  /// **'TWITTER'**
+  /// **'Twitter'**
   String get accountSocialTwitter;
 
   /// Generic error shown when account deletion fails.
@@ -2520,7 +2514,7 @@ abstract class AppLocalizations {
   /// About page action to view the terms of use.
   ///
   /// In en, this message translates to:
-  /// **'TERMS'**
+  /// **'Terms of use'**
   String get accountTermsAction;
 
   /// Accessible onboarding legal agreement label.
@@ -2724,7 +2718,7 @@ abstract class AppLocalizations {
   /// About page action to view changes.
   ///
   /// In en, this message translates to:
-  /// **'WHAT\'S NEW'**
+  /// **'What\'s new'**
   String get accountWhatsNewAction;
 
   /// Profile completeness step for writing a bio.
@@ -5589,6 +5583,42 @@ abstract class AppLocalizations {
   /// **'Diyas, fireworks and gold. It is free. Tap to try it.'**
   String get diwaliAnnouncementBody;
 
+  /// No description provided for @coreThemeWinter.
+  ///
+  /// In en, this message translates to:
+  /// **'Winter'**
+  String get coreThemeWinter;
+
+  /// No description provided for @winterBannerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The Winter theme is here'**
+  String get winterBannerTitle;
+
+  /// No description provided for @winterBannerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cool blues and soft snow, in light and dark. Free. Tap to try it.'**
+  String get winterBannerSubtitle;
+
+  /// No description provided for @winterAnnouncementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New: the Winter theme ❄️'**
+  String get winterAnnouncementTitle;
+
+  /// No description provided for @winterAnnouncementBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Cool blues and soft snow for the holidays. It is free. Tap to try it.'**
+  String get winterAnnouncementBody;
+
+  /// No description provided for @winterNewYearGreeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Happy New Year'**
+  String get winterNewYearGreeting;
+
   /// No description provided for @coreThisPageDoesNotExist.
   ///
   /// In en, this message translates to:
@@ -5780,6 +5810,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'That image is too large for a live wallpaper.'**
   String get coreWallpaperErrorTextureDimensions;
+
+  /// Shown when the phone has not finished setting the wallpaper after 30 seconds. The set can still finish, so this is not an error.
+  ///
+  /// In en, this message translates to:
+  /// **'Still setting your wallpaper. This can take a moment on some phones.'**
+  String get coreWallpaperStillSetting;
+
+  /// Snackbar when the lock screen set failed. Its action opens the phone's own wallpaper screen, which some phones (Xiaomi, MIUI) require for the lock screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t set the lock screen. Your phone\'s own wallpaper screen can set it.'**
+  String get coreWallpaperLockFailedUsePhone;
+
+  /// Snackbar when a Both set changed only the home screen. Its action opens the phone's own wallpaper screen for the lock screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Home screen set. Couldn\'t set the lock screen. Your phone\'s own wallpaper screen can set it.'**
+  String get coreWallpaperHomeSetLockFailedUsePhone;
+
+  /// Snackbar action. Opens the phone's own wallpaper screen with this wallpaper. Keep it short.
+  ///
+  /// In en, this message translates to:
+  /// **'Set with phone'**
+  String get coreWallpaperSetWithPhone;
 
   /// No description provided for @coreWallpaperErrorTimeout.
   ///
@@ -7052,6 +7106,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Live wallpaper'**
   String get deepLinkInputLiveTitle;
+
+  /// Instructions on the image chooser page when the user makes a live wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a photo from your gallery to make it a live wallpaper.'**
+  String get deepLinkInputLiveDescription;
 
   /// Page title while choosing an image for photo preview.
   ///
@@ -8369,6 +8429,12 @@ abstract class AppLocalizations {
   /// **'+{count, plural, one{1 coin} other{{count} coins}}'**
   String economyCoinsEarned(int count);
 
+  /// No description provided for @economyCoinReward.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count}'**
+  String economyCoinReward(int count);
+
   /// No description provided for @economyCoinsRange.
   ///
   /// In en, this message translates to:
@@ -9596,7 +9662,7 @@ abstract class AppLocalizations {
   /// No description provided for @economyLeaderboardReset.
   ///
   /// In en, this message translates to:
-  /// **'Resets Monday 00:00 UTC · {days, plural, one{1d} other{{days}d}} {hours, plural, one{1h} other{{hours}h}} left'**
+  /// **'Resets in {days, plural, one{1d} other{{days}d}} {hours, plural, one{1h} other{{hours}h}}'**
   String economyLeaderboardReset(int days, int hours);
 
   /// No description provided for @economyLeaderboardScoringIntro.
@@ -10784,7 +10850,7 @@ abstract class AppLocalizations {
   /// No description provided for @economyWeekly.
   ///
   /// In en, this message translates to:
-  /// **'WEEKLY'**
+  /// **'Weekly'**
   String get economyWeekly;
 
   /// No description provided for @economyWeeklyDraw.
@@ -10802,7 +10868,7 @@ abstract class AppLocalizations {
   /// No description provided for @economyWeeklyEndsIn.
   ///
   /// In en, this message translates to:
-  /// **'WEEKLY · {time}'**
+  /// **'Weekly · {time}'**
   String economyWeeklyEndsIn(String time);
 
   /// No description provided for @economyWeeklyXpFriendsEveryone.
@@ -10890,12 +10956,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You have {count} coins'**
   String economyYouHaveCoins(int count);
-
-  /// No description provided for @economyYourXp.
-  ///
-  /// In en, this message translates to:
-  /// **'YOUR XP'**
-  String get economyYourXp;
 
   /// No description provided for @errorGeneric.
   ///
@@ -11142,12 +11202,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Notification'**
   String get notifGenericTitle;
-
-  /// No description provided for @notifGroupAndMore.
-  ///
-  /// In en, this message translates to:
-  /// **'{message} and {otherCount, plural, one{1 more.} other{{otherCount} more.}}'**
-  String notifGroupAndMore(String message, int otherCount);
 
   /// No description provided for @notifGroupApprovals.
   ///
@@ -11770,7 +11824,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingContinue.
   ///
   /// In en, this message translates to:
-  /// **'continue'**
+  /// **'Continue'**
   String get onboardingContinue;
 
   /// No description provided for @onboardingContinueApple.
@@ -11788,7 +11842,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingContinueSelected.
   ///
   /// In en, this message translates to:
-  /// **'continue ({count} selected)'**
+  /// **'Continue ({count} selected)'**
   String onboardingContinueSelected(int count);
 
   /// No description provided for @onboardingCouldNotLogOut.
@@ -11890,7 +11944,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingGenerateWallpaper.
   ///
   /// In en, this message translates to:
-  /// **'generate my wallpaper'**
+  /// **'Generate my wallpaper'**
   String get onboardingGenerateWallpaper;
 
   /// No description provided for @onboardingHeadlineCreators.
@@ -12016,31 +12070,31 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingReloadLower.
   ///
   /// In en, this message translates to:
-  /// **'reload'**
+  /// **'Reload'**
   String get onboardingReloadLower;
 
   /// No description provided for @onboardingSavePhotos.
   ///
   /// In en, this message translates to:
-  /// **'save to photos'**
+  /// **'Save to photos'**
   String get onboardingSavePhotos;
 
   /// No description provided for @onboardingSelectInterestMinimum.
   ///
   /// In en, this message translates to:
-  /// **'select at least {count} categories to personalize your feed'**
+  /// **'Select at least {count} categories to personalize your feed'**
   String onboardingSelectInterestMinimum(int count);
 
   /// No description provided for @onboardingSetWallpaper.
   ///
   /// In en, this message translates to:
-  /// **'set as wallpaper'**
+  /// **'Set as wallpaper'**
   String get onboardingSetWallpaper;
 
   /// No description provided for @onboardingSignInAgainLower.
   ///
   /// In en, this message translates to:
-  /// **'sign in again'**
+  /// **'Sign in again'**
   String get onboardingSignInAgainLower;
 
   /// No description provided for @onboardingSkip.
@@ -12052,7 +12106,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingSkipLower.
   ///
   /// In en, this message translates to:
-  /// **'skip'**
+  /// **'Skip'**
   String get onboardingSkipLower;
 
   /// No description provided for @onboardingTermsRequired.
@@ -12064,7 +12118,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingTryAgainLower.
   ///
   /// In en, this message translates to:
-  /// **'try again'**
+  /// **'Try again'**
   String get onboardingTryAgainLower;
 
   /// No description provided for @onboardingWallpaperForInterest.
@@ -12121,6 +12175,48 @@ abstract class AppLocalizations {
   /// **'View plans'**
   String get premiumPageViewPlans;
 
+  /// Large headline at the top of the Prism Premium page.
+  ///
+  /// In en, this message translates to:
+  /// **'The whole gallery, unlocked'**
+  String get premiumPageHeadline;
+
+  /// Premium benefit row: premium collections and walls open without coins or a pass.
+  ///
+  /// In en, this message translates to:
+  /// **'Every premium collection and wallpaper'**
+  String get premiumBenefitWalls;
+
+  /// Premium benefit row: downloads cost no coins and inline and full-screen ads are off.
+  ///
+  /// In en, this message translates to:
+  /// **'Free downloads and no ads'**
+  String get premiumBenefitFree;
+
+  /// Premium benefit row: one free spin of the coin wheel each day.
+  ///
+  /// In en, this message translates to:
+  /// **'A free spin every day'**
+  String get premiumBenefitSpin;
+
+  /// Premium benefit row: auto-rotate and day and night wallpaper switching.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-rotate and day and night mode'**
+  String get premiumBenefitAutomation;
+
+  /// Premium benefit row: every live wallpaper style without coins.
+  ///
+  /// In en, this message translates to:
+  /// **'Every live wallpaper style'**
+  String get premiumBenefitLiveStyles;
+
+  /// Premium benefit row: AI wallpapers without the watermark, at a lower coin price.
+  ///
+  /// In en, this message translates to:
+  /// **'AI wallpapers with no watermark, for fewer coins'**
+  String get premiumBenefitAiClean;
+
   /// A guest purchase or restore has active store entitlement locally, but account-based features require sign-in and server confirmation.
   ///
   /// In en, this message translates to:
@@ -12132,6 +12228,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your purchase is saved. Pro can take a minute to unlock.'**
   String get premiumPurchasePending;
+
+  /// Toast when the store holds a purchase as pending (for example a slow UPI or card payment). Pro unlocks later.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payment is pending. Pro unlocks when the payment goes through.'**
+  String get premiumPaymentPending;
 
   /// Toast after a purchase that neither the store nor the server could confirm.
   ///
@@ -15124,13 +15226,13 @@ abstract class AppLocalizations {
   /// Section title for choosing the dark theme accent colour.
   ///
   /// In en, this message translates to:
-  /// **'Dark Accent Color'**
+  /// **'Dark accent colour'**
   String get wallpaperThemeDarkAccent;
 
   /// Section title for dark theme choices.
   ///
   /// In en, this message translates to:
-  /// **'Dark Themes'**
+  /// **'Dark themes'**
   String get wallpaperThemeDarkThemes;
 
   /// Button label that sets a wallpaper color as the app accent.
@@ -15148,13 +15250,13 @@ abstract class AppLocalizations {
   /// Section title for choosing the light theme accent colour.
   ///
   /// In en, this message translates to:
-  /// **'Light Accent Color'**
+  /// **'Light accent colour'**
   String get wallpaperThemeLightAccent;
 
   /// Section title for light theme choices.
   ///
   /// In en, this message translates to:
-  /// **'Light Themes'**
+  /// **'Light themes'**
   String get wallpaperThemeLightThemes;
 
   /// Dark app theme mode option.
@@ -15172,7 +15274,7 @@ abstract class AppLocalizations {
   /// App theme mode option that follows the system light or dark appearance.
   ///
   /// In en, this message translates to:
-  /// **'System (Light/Dark)'**
+  /// **'System'**
   String get wallpaperThemeModeSystem;
 
   /// Setting that selects the app theme mode.
@@ -19306,7 +19408,7 @@ abstract class AppLocalizations {
   /// No description provided for @challengeVotingRules.
   ///
   /// In en, this message translates to:
-  /// **'Vote for other creators until {date} UTC.'**
+  /// **'Vote for other creators until {date}.'**
   String challengeVotingRules(String date);
 
   /// No description provided for @challengeUpload.
@@ -20508,6 +20610,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Creators to follow'**
   String get creatorsToFollow;
+
+  /// Action on the empty creator search, opens the creator directory.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse creators'**
+  String get accountBrowseCreators;
 
   /// Opens the full list of creators.
   ///
@@ -22843,6 +22951,36 @@ abstract class AppLocalizations {
   /// **'Couldn\'t open that photo. Try another one.'**
   String get searchPhotoCouldNotOpen;
 
+  /// Section header for extra wallpaper results in search.
+  ///
+  /// In en, this message translates to:
+  /// **'More wallpapers'**
+  String get searchMoreWallpapers;
+
+  /// Calendar widget text in the wallpaper phone preview when there are no events.
+  ///
+  /// In en, this message translates to:
+  /// **'No events today'**
+  String get wallpaperPreviewNoEvents;
+
+  /// Label under a profile's follower count. The number is shown separately.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Follower} other{Followers}}'**
+  String accountFollowersLabel(int count);
+
+  /// Chip on a profile that opens the list of earned badges.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 badge} other{{count} badges}}'**
+  String profileBadgeCount(int count);
+
+  /// Section heading above the global top 5 on the Following leaderboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Top this week'**
+  String get economyLeaderboardTopThisWeek;
+
   /// Button label that starts saving all wallpapers in a folder.
   ///
   /// In en, this message translates to:
@@ -23340,6 +23478,234 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Only you and the people you invited will see it. Its link stops working and its followers lose it.'**
   String get foldersMakePrivateMessageShared;
+
+  /// One-time hint over a wallpaper tile: long-press it for quick actions such as save.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to save'**
+  String get gestureHintHoldToSave;
+
+  /// One-time hint over the wallpaper detail image: swipe up to see similar wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe up for similar walls'**
+  String get gestureHintSwipeForSimilar;
+
+  /// Folder page menu item and name sheet button that add a named section to a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Add section'**
+  String get foldersSectionAdd;
+
+  /// Title of the sheet where the user types a name for a new folder section. Also a row in the Move to sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'New section'**
+  String get foldersSectionNewTitle;
+
+  /// Hint in the section name field.
+  ///
+  /// In en, this message translates to:
+  /// **'For example, Lock screens'**
+  String get foldersSectionNameHint;
+
+  /// Title of the sheet that renames a folder section.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename section'**
+  String get foldersSectionRenameTitle;
+
+  /// Section menu item and confirm button that delete a folder section. Its wallpapers stay in the folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete section'**
+  String get foldersSectionDelete;
+
+  /// Title of the confirm before deleting a folder section. name is the section name.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String foldersSectionDeleteTitle(String name);
+
+  /// Body of the confirm before deleting a folder section. count is the number of wallpapers in it. Unsorted is the group of wallpapers with no section.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{The section is empty.} =1{Its wallpaper moves to Unsorted.} other{Its {count} wallpapers move to Unsorted.}}'**
+  String foldersSectionDeleteMessage(int count);
+
+  /// Name of the group at the top of a folder that holds the wallpapers that are in no section.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsorted'**
+  String get foldersSectionUnsorted;
+
+  /// Folder page menu item and sheet title for changing the order of the sections.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder sections'**
+  String get foldersSectionReorder;
+
+  /// Tooltip of the drag handle on a section in the Reorder sections sheet. name is the section name.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to move {name}'**
+  String foldersSectionDragHandle(String name);
+
+  /// Count under a section name.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No wallpapers} =1{1 wallpaper} other{{count} wallpapers}}'**
+  String foldersSectionWallCount(int count);
+
+  /// Screen reader label of a section header. Double tap collapses or expands it. name is the section name.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, {count, plural, =0{no wallpapers} =1{1 wallpaper} other{{count} wallpapers}}'**
+  String foldersSectionHeaderLabel(String name, int count);
+
+  /// Screen reader label of a chip in the section strip at the top of a folder. Tapping it scrolls to the section.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to {name}, {count, plural, =0{no wallpapers} =1{1 wallpaper} other{{count} wallpapers}}'**
+  String foldersSectionJumpTo(String name, int count);
+
+  /// Tooltip of the menu button on a section header. name is the section name.
+  ///
+  /// In en, this message translates to:
+  /// **'More options for {name}'**
+  String foldersSectionOptions(String name);
+
+  /// Section menu item that saves all wallpapers of one section to the device, like Save all for the whole folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Save section'**
+  String get foldersSectionSaveAll;
+
+  /// Button in the wallpaper menu and the selection bar. It opens a list of the sections.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to section'**
+  String get foldersSectionMoveTo;
+
+  /// Title of the sheet that lists Unsorted and the sections of a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to'**
+  String get foldersSectionMoveTitle;
+
+  /// Toast after wallpapers move to a section. name is the section name, or Unsorted.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Moved 1 wallpaper to {name}.} other{Moved {count} wallpapers to {name}.}}'**
+  String foldersSectionMoved(int count, String name);
+
+  /// Folder page menu item that starts selecting wallpapers to move them.
+  ///
+  /// In en, this message translates to:
+  /// **'Select wallpapers'**
+  String get foldersSectionSelect;
+
+  /// Text in the selection bar at the bottom of a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Tap wallpapers to select them} =1{1 selected} other{{count} selected}}'**
+  String foldersSectionSelected(int count);
+
+  /// Error toast when the user tries to add a section to a folder that has the most sections.
+  ///
+  /// In en, this message translates to:
+  /// **'A folder can have up to {max} sections.'**
+  String foldersSectionsFull(int max);
+
+  /// Text under an empty section for a reader who cannot organize the folder.
+  ///
+  /// In en, this message translates to:
+  /// **'No wallpapers yet.'**
+  String get foldersSectionEmpty;
+
+  /// Text under an empty section for the owner and editors. Only the section name (the header) and its chip in the strip accept a drop, not this text. Move to section is the name of a button.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag wallpapers onto the section name, or use Move to section.'**
+  String get foldersSectionEmptyHint;
+
+  /// Folder page menu item. Prism groups the Unsorted wallpapers by mood, category or colour on the device.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest sections'**
+  String get foldersSectionSuggest;
+
+  /// Title of the sheet with the suggested sections.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested sections'**
+  String get foldersSuggestTitle;
+
+  /// Message under the title of the suggested sections sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups of your Unsorted wallpapers. Keep the ones you want.'**
+  String get foldersSuggestBody;
+
+  /// Segment in the suggested sections sheet: group by mood.
+  ///
+  /// In en, this message translates to:
+  /// **'Mood'**
+  String get foldersSuggestByMood;
+
+  /// Segment in the suggested sections sheet: group by category.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get foldersSuggestByCategory;
+
+  /// Segment in the suggested sections sheet: group by main colour.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour'**
+  String get foldersSuggestByColour;
+
+  /// Line under a suggested group whose name matches a section that exists. count is a wallpaper count, for example "3 wallpapers".
+  ///
+  /// In en, this message translates to:
+  /// **'{count}. Goes into your section with this name.'**
+  String foldersSuggestJoins(String count);
+
+  /// Main button of the suggested sections sheet. count is the number of new sections it makes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Add sections} =1{Add 1 section} other{Add {count} sections}}'**
+  String foldersSuggestAdd(int count);
+
+  /// Main button of the suggested sections sheet when every kept group goes into a section that exists.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Sort 1 wallpaper} other{Sort {count} wallpapers}}'**
+  String foldersSuggestSort(int count);
+
+  /// Toast after the user keeps suggested sections.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Sorted 1 wallpaper.} other{Sorted {count} wallpapers.}}'**
+  String foldersSuggestSorted(int count);
+
+  /// Empty state in the suggested sections sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'No groups to suggest'**
+  String get foldersSuggestEmptyTitle;
+
+  /// Body of the empty state in the suggested sections sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'A group needs 2 or more Prism wallpapers in Unsorted with the same mood, category or colour.'**
+  String get foldersSuggestEmptyBody;
+
+  /// Error state in the suggested sections sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load suggestions'**
+  String get foldersSuggestError;
 
   /// Entry card on the AI tab that opens photo to wallpaper.
   ///

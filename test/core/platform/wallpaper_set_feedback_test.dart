@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
@@ -31,6 +32,7 @@ class _Client implements WallpaperClient {
   _Client({this.status = aw.WallpaperOperationStatus.applied});
 
   aw.WallpaperOperationStatus status;
+  Completer<void>? hold;
   final List<aw.StaticWallpaperRequest> requests = <aw.StaticWallpaperRequest>[];
 
   @override
@@ -39,6 +41,7 @@ class _Client implements WallpaperClient {
   @override
   Future<aw.WallpaperOperationResult> applyWallpaper(aw.StaticWallpaperRequest request) async {
     requests.add(request);
+    await hold?.future;
     return aw.WallpaperOperationResult(status: status, requestedTarget: request.target);
   }
 
@@ -75,6 +78,7 @@ void main() {
   late WallpaperHistoryStore store;
   late OfflineAssetFixture assets;
   late List<MethodCall> toasts;
+  late List<Object?> haptics;
   late String previousFilePath;
   late String newFilePath;
 
@@ -104,6 +108,11 @@ void main() {
       toasts.add(call);
       return true;
     });
+    haptics = <Object?>[];
+    messenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), (call) async {
+      haptics.add(call.arguments);
+      return null;
+    });
     messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
   });
 
@@ -111,6 +120,7 @@ void main() {
     app_state.prismUser = createGuestPrismUser();
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), null);
+    messenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), null);
     messenger.setMockMethodCallHandler(SystemChannels.platform, null);
     messenger.setMockMethodCallHandler(const MethodChannel('plugins.flutter.io/path_provider'), null);
     await getIt.reset();
@@ -128,6 +138,7 @@ void main() {
     WallpaperTarget target = WallpaperTarget.home,
     WallpaperSetContext setContext = const WallpaperSetContext(),
     ValueChanged<WallpaperTarget>? onRetry,
+    ValueChanged<WallpaperTarget>? onSystemSet,
     VoidCallback? onMatchAccent,
   }) async {
     addTearDown(() async {
@@ -149,6 +160,7 @@ void main() {
                 target: target,
                 setContext: setContext,
                 onRetry: onRetry,
+                onSystemSet: onSystemSet,
                 onMatchAccent: onMatchAccent,
               ),
               child: const Text('go'),
@@ -173,6 +185,7 @@ void main() {
     expect(find.text('Wallpaper set'), findsOneWidget);
     expect(find.text('Undo'), findsOneWidget);
     expect(tester.widget<SnackBar>(find.byType(SnackBar)).duration, const Duration(seconds: 8));
+    expect(haptics, <Object?>['success'], reason: 'the Undo snackbar plays the success haptic once');
     await tester.pump(const Duration(seconds: 2));
   });
 
@@ -223,6 +236,36 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
   });
 
+  testWidgets('an Undo that is still setting keeps the history row and says it is still setting', (tester) async {
+    final _Client client = _Client()..hold = Completer<void>();
+    aw.AsyncWallpaper.debugSetClient(client);
+    WallpaperService.applyTimeout = const Duration(milliseconds: 10);
+    addTearDown(() => WallpaperService.applyTimeout = const Duration(seconds: 30));
+    await store.record(_row('2', '/new.png', 'home'));
+    await report(
+      tester,
+      _success(
+        restore: <WallpaperRestore>[WallpaperRestore(WallpaperTarget.home, _row('1', previousFilePath, 'home'))],
+        ids: <String>['2'],
+      ),
+    );
+
+    await tester.tap(find.text('Undo'));
+    for (int i = 0; i < 5; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    client.hold!.complete();
+
+    expect(client.requests, hasLength(1));
+    expect(store.items().map((item) => item.id), ['2']);
+    expect(analytics.events.whereType<SetWallUndoneEvent>(), isEmpty);
+    expect(toastSaid('Previous wallpaper restored'), isFalse);
+    expect(toastSaid(_l10n.coreRestorePreviousWallpaperFailed), isFalse);
+    expect(toastSaid(_l10n.coreWallpaperStillSetting), isTrue);
+    await tester.pump(const Duration(seconds: 2));
+  });
+
   testWidgets('Undo rejects a legacy Prism original without canonical identity', (tester) async {
     final client = _Client();
     aw.AsyncWallpaper.debugSetClient(client);
@@ -254,6 +297,7 @@ void main() {
 
     expect(find.byType(SnackBar), findsNothing);
     expect(toastSaid('Wallpaper set successfully!'), isTrue);
+    expect(haptics, <Object?>['success'], reason: 'the toast plays the success haptic once');
     await tester.pump(const Duration(seconds: 2));
   });
 
@@ -288,6 +332,7 @@ void main() {
       target: WallpaperTarget.lock,
       onRetry: retried.add,
     );
+    expect(haptics, <Object?>['error'], reason: 'the retry snackbar plays the error haptic once');
 
     await tester.tap(find.text('Try again'));
     await tester.pump();
@@ -317,6 +362,110 @@ void main() {
 
     expect(retried, [WallpaperTarget.lock]);
     await tester.pump(const Duration(seconds: 5));
+  });
+
+  group('a lock screen the phone does not set (#545)', () {
+    testWidgets('offers the phone own wallpaper screen for the lock screen', (tester) async {
+      final List<WallpaperTarget> systemSet = <WallpaperTarget>[];
+      await report(
+        tester,
+        const WallpaperSetResult(
+          WallpaperSetStatus.failed,
+          'wallpaper-apply-failed',
+          errorCode: 'wallpaper-apply-failed',
+        ),
+        target: WallpaperTarget.lock,
+        onRetry: (_) {},
+        onSystemSet: systemSet.add,
+      );
+
+      expect(find.text(_l10n.coreWallpaperLockFailedUsePhone), findsOneWidget);
+      await tester.tap(find.text(_l10n.coreWallpaperSetWithPhone));
+      await tester.pump();
+
+      expect(systemSet, [WallpaperTarget.lock]);
+      await tester.pump(const Duration(seconds: 10));
+    });
+
+    testWidgets('after a Both set that changed only home, it names home and offers the lock screen', (tester) async {
+      final List<WallpaperTarget> systemSet = <WallpaperTarget>[];
+      await report(
+        tester,
+        const WallpaperSetResult(
+          WallpaperSetStatus.failed,
+          'partial-apply',
+          errorCode: 'partial-apply',
+          appliedTarget: WallpaperTarget.home,
+          failedTarget: WallpaperTarget.lock,
+        ),
+        target: WallpaperTarget.both,
+        onRetry: (_) {},
+        onSystemSet: systemSet.add,
+      );
+
+      expect(find.text(_l10n.coreWallpaperHomeSetLockFailedUsePhone), findsOneWidget);
+      await tester.tap(find.text(_l10n.coreWallpaperSetWithPhone));
+      await tester.pump();
+
+      expect(systemSet, [WallpaperTarget.lock]);
+      await tester.pump(const Duration(seconds: 10));
+    });
+
+    testWidgets('a work profile that forbids wallpapers gets no phone screen action', (tester) async {
+      await report(
+        tester,
+        const WallpaperSetResult(
+          WallpaperSetStatus.unsupported,
+          'wallpaper-not-allowed',
+          errorCode: 'wallpaper-not-allowed',
+        ),
+        target: WallpaperTarget.lock,
+        onRetry: (_) {},
+        onSystemSet: (_) {},
+      );
+
+      expect(find.text(_l10n.coreWallpaperSetWithPhone), findsNothing);
+      await tester.pump(const Duration(seconds: 10));
+    });
+
+    for (final String code in <String>['timeout', 'offline_unavailable', 'load_failed']) {
+      testWidgets('a lock screen image that failed to load ($code) keeps its message and Try again', (tester) async {
+        final WallpaperSetResult result = WallpaperSetResult(WallpaperSetStatus.failed, code, errorCode: code);
+        await report(tester, result, target: WallpaperTarget.lock, onRetry: (_) {}, onSystemSet: (_) {});
+
+        expect(find.text(result.localizedMessage(_l10n)), findsOneWidget);
+        expect(find.text('Try again'), findsOneWidget);
+        expect(find.text(_l10n.coreWallpaperSetWithPhone), findsNothing);
+        await tester.pump(const Duration(seconds: 10));
+      });
+    }
+
+    testWidgets('a lock screen that needs Prism in front keeps its message and Try again', (tester) async {
+      const WallpaperSetResult result = WallpaperSetResult(
+        WallpaperSetStatus.foregroundRequired,
+        'foreground_required',
+        errorCode: 'foreground-required',
+      );
+      await report(tester, result, target: WallpaperTarget.lock, onRetry: (_) {}, onSystemSet: (_) {});
+
+      expect(find.text(_l10n.coreKeepPrismOpen), findsOneWidget);
+      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text(_l10n.coreWallpaperSetWithPhone), findsNothing);
+      await tester.pump(const Duration(seconds: 10));
+    });
+
+    testWidgets('a home screen failure keeps Try again', (tester) async {
+      await report(
+        tester,
+        const WallpaperSetResult(WallpaperSetStatus.failed, 'boom', errorCode: 'boom'),
+        onRetry: (_) {},
+        onSystemSet: (_) {},
+      );
+
+      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text(_l10n.coreWallpaperSetWithPhone), findsNothing);
+      await tester.pump(const Duration(seconds: 10));
+    });
   });
 
   testWidgets('a permanent failure shows its message without a retry action', (tester) async {

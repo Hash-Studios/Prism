@@ -118,7 +118,13 @@ class _StreakDetailsState extends State<StreakDetails> {
               const SizedBox(height: PrismSpace.md),
               Semantics(liveRegion: true, child: Text(context.l10n.economyStreakRestoredCount(_restoredCount!))),
             ],
-            if (_loadFailed) TextButton(onPressed: _load, child: Text(context.l10n.dailyMomentRetry)),
+            if (_loadFailed)
+              PrismButton(
+                label: context.l10n.dailyMomentRetry,
+                variant: PrismButtonVariant.ghost,
+                size: PrismButtonSize.compact,
+                onPressed: _load,
+              ),
             if (_offer case final offer?) ...<Widget>[
               const SizedBox(height: PrismSpace.lg),
               Text(context.l10n.economyRestoreStreak(offer.count, kStreakRescueCost)),

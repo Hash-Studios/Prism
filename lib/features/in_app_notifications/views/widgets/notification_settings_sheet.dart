@@ -141,21 +141,29 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
   Widget _permissionBanner() {
     final ColorScheme cs = Theme.of(context).colorScheme;
     return DecoratedBox(
-      decoration: BoxDecoration(
-        color: cs.error.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(PrismRadius.md),
-      ),
+      decoration: BoxDecoration(color: cs.errorContainer, borderRadius: BorderRadius.circular(PrismRadius.md)),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(PrismSpace.sm, PrismSpace.xs, PrismSpace.xs, PrismSpace.xs),
-        child: Row(
+        padding: const EdgeInsets.all(PrismSpace.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Icon(Icons.notifications_off_outlined, color: cs.onSurface),
-            const SizedBox(width: PrismSpace.sm),
-            Expanded(child: Text(context.l10n.notifPermissionOffForApp, style: PrismTextStyles.body(context))),
+            Row(
+              children: <Widget>[
+                Icon(Icons.notifications_off_rounded, color: cs.onErrorContainer),
+                const SizedBox(width: PrismSpace.sm),
+                Expanded(
+                  child: Text(
+                    context.l10n.notifPermissionOffForApp,
+                    style: PrismTextStyles.rowTitle(context).copyWith(color: cs.onErrorContainer),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: PrismSpace.sm),
             PrismButton(
               label: context.l10n.notifOpenSettings,
-              variant: PrismButtonVariant.ghost,
               size: PrismButtonSize.compact,
+              expand: true,
               onPressed: () => widget.permissions.openSystemSettings(),
             ),
           ],
@@ -190,6 +198,8 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           if (_permissionGranted == false) ...<Widget>[_permissionBanner(), const SizedBox(height: PrismSpace.sm)],
+          // The switches stay at full contrast: the banner above says notifications are off, and turning a switch on
+          // asks the system for permission. Dimmed rows read as disabled and fail contrast.
           PrismGroup(
             children: <Widget>[
               _toggle(
@@ -264,7 +274,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
 
   Future<void> _setFollowers(bool value) async {
     await _settingsLocal.set(NotificationPrefKeys.followers, value);
-    setState(() => _followers = value);
+    if (mounted) setState(() => _followers = value);
     unawaited(FcmTokenService.instance.saveFollowerAlerts(userId: app_state.prismUser.id, enabled: value));
     analytics.track(
       NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.followers, value: value),
@@ -287,7 +297,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
       );
     } else {
       await _settingsLocal.set(NotificationPrefKeys.posts, false);
-      setState(() => _posts = false);
+      if (mounted) setState(() => _posts = false);
       analytics.track(
         const NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.posts, value: false),
       );
@@ -297,28 +307,28 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
 
   Future<void> _setPosts(bool value) async {
     await _settingsLocal.set(NotificationPrefKeys.posts, value);
-    setState(() => _posts = value);
+    if (mounted) setState(() => _posts = value);
     analytics.track(NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.posts, value: value));
     unawaited(FcmTokenService.instance.savePostAlerts(userId: app_state.prismUser.id, enabled: value));
   }
 
   Future<void> _setFolders(bool value) async {
     await _settingsLocal.set(NotificationPrefKeys.folders, value);
-    setState(() => _folders = value);
+    if (mounted) setState(() => _folders = value);
     analytics.track(NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.folders, value: value));
     unawaited(FcmTokenService.instance.saveFolderAlerts(userId: app_state.prismUser.id, enabled: value));
   }
 
   Future<void> _setTopics(bool value) async {
     await _settingsLocal.set(NotificationPrefKeys.topics, value);
-    setState(() => _topics = value);
+    if (mounted) setState(() => _topics = value);
     analytics.track(NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.topics, value: value));
     unawaited(FcmTokenService.instance.saveTopicAlerts(userId: app_state.prismUser.id, enabled: value));
   }
 
   Future<void> _setWotd(bool value) async {
     await _settingsLocal.set(PersistenceKeys.notifWotd, value);
-    setState(() => _wotd = value);
+    if (mounted) setState(() => _wotd = value);
     await setWotdTopics(
       widget.permissions.messaging,
       _settingsLocal,
@@ -331,7 +341,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
 
   Future<void> _setDrops(bool value) async {
     await _settingsLocal.set(NotificationPrefKeys.drops, value);
-    setState(() => _drops = value);
+    if (mounted) setState(() => _drops = value);
     if (value) {
       await subscribeToTopicSafely(
         widget.permissions.messaging,
@@ -349,7 +359,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
 
   Future<void> _setRecommendations(bool value) async {
     await _settingsLocal.set(NotificationPrefKeys.recommendations, value);
-    setState(() => _recommendations = value);
+    if (mounted) setState(() => _recommendations = value);
     analytics.track(
       NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.recommendations, value: value),
     );
@@ -371,7 +381,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> w
 
   Future<void> _setStreakReminders(bool value) async {
     await _settingsLocal.set(NotificationPrefKeys.streakReminders, value);
-    setState(() => _streakReminders = value);
+    if (mounted) setState(() => _streakReminders = value);
     analytics.track(
       NotificationPreferenceChangedEvent(preference: NotificationPreferenceValue.streakReminders, value: value),
     );

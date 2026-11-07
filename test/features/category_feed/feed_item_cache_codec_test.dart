@@ -185,9 +185,9 @@ void main() {
     expect(decoded.wallpaper.core.source, WallpaperSource.wallhaven);
   });
 
-  test('cached Wallhaven small URLs resolve to lg and are rewritten on save', () {
+  test('cached Wallhaven small URLs resolve to orig and are rewritten on save', () {
     const oldCropUrl = 'https://th.wallhaven.cc/small/21/21276x.jpg';
-    const originalUrl = 'https://th.wallhaven.cc/lg/21/21276x.jpg';
+    const originalUrl = 'https://th.wallhaven.cc/orig/21/21276x.jpg';
     final cached =
         decodeFeedItem(<String, dynamic>{
               'type': 'wallhaven',

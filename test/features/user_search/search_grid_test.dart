@@ -115,6 +115,30 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('keeps pagination available when identity dedupe shortens the first page', (tester) async {
+    tester.view.physicalSize = const Size(400, 2800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final List<FeedItemEntity> page = List<FeedItemEntity>.generate(24, _wallpaper);
+    page[23] = _wallpaper(0);
+
+    await tester.pumpWidget(
+      _compactGrid(
+        MaterialApp(
+          builder: favouriteTestBuilder,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: SearchGrid(query: 'landscape', provider: SearchProviderValue.pexels, initialResults: page),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(SeeMoreButton), findsOneWidget);
+    expect(find.bySemanticsLabel('Wallpaper by Author 0'), findsOneWidget);
+  });
+
   testWidgets('prefetches the thumbnails below the first screen, up to 24', (tester) async {
     tester.view.physicalSize = const Size(400, 800);
     tester.view.devicePixelRatio = 1;

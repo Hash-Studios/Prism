@@ -1,5 +1,7 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
@@ -39,6 +41,10 @@ class AiResultActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context);
+    VoidCallback tap(VoidCallback action) => () {
+      PrismHaptics.tap();
+      action();
+    };
     final List<Widget> secondary = <Widget>[
       if (showSave) ...<Widget>[
         PrismIconButton(icon: Icons.download_rounded, tooltip: l10n.economyAiSave, onPressed: onSave, filled: true),
@@ -53,16 +59,10 @@ class AiResultActions extends StatelessWidget {
             PrismIconButton(
               icon: Icons.ios_share_rounded,
               tooltip: l10n.economyAiShare,
-              onPressed: sharing ? null : onShare,
+              onPressed: sharing ? null : tap(onShare),
               filled: true,
             ),
-            if (sharing)
-              IgnorePointer(
-                child: SizedBox.square(
-                  dimension: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onSurface),
-                ),
-              ),
+            if (sharing) IgnorePointer(child: const Center(child: PrismLoader(size: 22))),
           ],
         ),
       ),
@@ -72,11 +72,11 @@ class AiResultActions extends StatelessWidget {
           button: true,
           label: l10n.economyAiSubmitForReview,
           excludeSemantics: true,
-          onTap: onSubmit,
+          onTap: tap(onSubmit),
           child: PrismIconButton(
             icon: Icons.upload_rounded,
             tooltip: l10n.economyAiSubmitForReview,
-            onPressed: onSubmit,
+            onPressed: tap(onSubmit),
             filled: true,
           ),
         ),
@@ -86,7 +86,7 @@ class AiResultActions extends StatelessWidget {
         PrismIconButton(
           icon: Icons.auto_fix_high_rounded,
           tooltip: l10n.economyAiTryAnother,
-          onPressed: onRefine,
+          onPressed: tap(onRefine),
           filled: true,
         ),
       ],

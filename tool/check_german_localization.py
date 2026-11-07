@@ -10,6 +10,7 @@ from pathlib import Path
 # Exact English/German matches that are valid as written. Keep entries keyed by
 # message ID: a general same-English exception would hide untranslated copy.
 UNCHANGED_ENGLISH_ALLOWLIST = {
+    'economyCoinReward': '+{count}',
     'wallpaperCropPresetPortrait': '9:16',
     'wallpaperCropPresetSquare': '1:1',
     'wallpaperCropSize': '{width} × {height} px',
@@ -44,10 +45,11 @@ UNCHANGED_ENGLISH_ALLOWLIST = {
     'accountLinkTypeTwitter': 'Twitter',
     'accountLinkTypeUnsplash': 'Unsplash',
     'accountLinkTypeYoutube': 'YouTube',
-    'accountSocialGithub': 'GITHUB',
-    'accountSocialInstagram': 'INSTAGRAM',
-    'accountSocialTelegram': 'TELEGRAM',
-    'accountSocialTwitter': 'TWITTER',
+    'accountSocialGithub': 'GitHub',
+    'accountSocialInstagram': 'Instagram',
+    'accountSocialTelegram': 'Telegram',
+    'accountSocialTwitter': 'Twitter',
+    'wallpaperThemeModeSystem': 'System',
     'coreContributorGithub': 'GitHub',
     'coreContributorTwitter': 'Twitter',
     'coreContributorWebsite': 'Website',
@@ -55,7 +57,7 @@ UNCHANGED_ENGLISH_ALLOWLIST = {
 
     # Standard German loanwords, labels, and technical terms.
     'accountAdmin': 'Admin',
-    'accountFeedback': 'FEEDBACK',
+    'accountFeedback': 'Feedback',
     'accountLink': 'Link',
     'accountShop': 'Shop',
     'accountTop': 'Top',

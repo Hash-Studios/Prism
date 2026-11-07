@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math' show max, min;
+import 'dart:math' show max, min, sqrt;
 import 'dart:ui' show lerpDouble;
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -43,6 +43,7 @@ import 'package:Prism/core/widgets/animated/shake_once.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
+import 'package:Prism/core/widgets/gesture_hint.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
 import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
@@ -71,7 +72,6 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_pin_toggle.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
-import 'package:Prism/features/favourite_walls/views/widgets/wallpaper_stats_row.dart';
 import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
 import 'package:Prism/features/live_photo/views/open_live_photo.dart';
 import 'package:Prism/features/public_profile/domain/creator_label.dart';
@@ -90,6 +90,7 @@ import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
+import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/variant_group.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/wall_credit.dart';
 import 'package:Prism/features/wallpaper_detail/domain/usecases/wallpaper_stats_usecases.dart';
@@ -116,12 +117,12 @@ import 'package:Prism/features/wallpaper_upload/views/pages/wall_metadata_editor
 import 'package:Prism/features/watch_set/views/watch_set_row.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
+import 'package:flutter/rendering.dart' show RenderSliver;
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -711,10 +712,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   /// iOS only: builds Save to Photos for the phone preview.
   Widget Function(String label)? _saveAction;
-  static const double _sheetHPad = PrismSpace.md;
 
-  /// Text and icons in the panel that sit one step below the title.
-  static const double _secondaryAlpha = 0.85;
+  /// iOS only: builds the compact Save for the solid header.
+  Widget Function()? _headerSave;
+  static const double _sheetHPad = PrismSpace.md;
 
   /// The wallpaper is a card just under the status bar: a small side gap and large corners.
   static const double _cardInset = PrismSpace.xxs;
@@ -727,9 +728,18 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   /// narrows and centres instead of cropping a tall wallpaper to a strip.
   static const double _widestCardAspect = 0.85;
 
-  /// Back and the clock sit this far inside the top corners of the card.
+  /// Back sits this far inside the solid header, centred in it.
   static const double _chromePad = PrismSpace.xxs;
+
+  /// Back, the Preview pill and the chips on the card sit this far inside its corners.
+  static const double _chromeInset = PrismSpace.sm;
   static const double _chromeSize = 44;
+
+  /// The details disclosure button. Its tap target pads it to [kMinInteractiveDimension].
+  static const double _toggleSize = 34;
+
+  /// The solid bar under the status bar once the card scrolls away. Back stays where it was, centred in the bar.
+  static const double _headerHeight = _chromeSize + 2 * _chromePad;
 
   /// A colour variation swatch, and the 44 point target around it that holds its selection ring.
   static const double _swatchSize = 36;
@@ -762,12 +772,43 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Animation<double>? _routeAnimation;
   final Object _recommendationHeroScope = Object();
 
-  /// Scroll offsets between which the card is under the status bar icons. Past the end the rows and the feed are under
-  /// them, on a fade of the page colour so the icons stay readable.
+  /// Scroll offsets between which the card is under the status bar icons. Past the end the solid header is under
+  /// them.
   double _imageStatusStart = double.infinity;
   double _imageStatusEnd = double.infinity;
   bool _imageBehindStatusBar = false;
-  bool _feedBehindStatusBar = false;
+
+  /// Set once the card scrolls up past back and the clock, which would otherwise sit on the actions. The solid
+  /// header takes over and the clock hides. See [_headerOver].
+  bool _headerShown = false;
+
+  /// Set when the viewer opens the details, so the page scrolls to them once they build.
+  bool _revealDetails = false;
+  final GlobalKey _summaryKey = GlobalKey();
+
+  /// Back, Preview and the action bar land after the card: they fade in over this once the opening settles.
+  static const Duration _chromeFade = Duration(milliseconds: 120);
+  bool _chromeLanded = false;
+
+  /// An upward release past this share of the screen, or faster than [_similarFling], from a drag that started at the
+  /// top of the page snaps to "More like this".
+  static const double _similarDrag = 0.18;
+  static const double _similarFling = 500;
+  static const double _thumbSize = 28;
+
+  /// Marks where "More like this" starts in the scroll.
+  final GlobalKey _similarKey = GlobalKey();
+
+  /// Set by a drag that started at the top of the page, until its release.
+  bool _swipeFromTop = false;
+
+  /// Where the snap to "More like this" is going, from the release until the scroll stops.
+  double? _snapTarget;
+
+  /// Set while the similar walls fill the screen. "^" then shows to go back up to the wall.
+  /// A notifier, so only "^" rebuilds as it shows and hides.
+  final ValueNotifier<bool> _similarFocus = ValueNotifier<bool>(false);
+  late final ScrollPhysics _similarPhysics = _SimilarSnapPhysics(onRelease: _onRelease);
 
   void _onRouteAnimationStatus(AnimationStatus status) {
     if (status != AnimationStatus.completed) {
@@ -775,6 +816,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       return;
     }
     if (!mounted) return;
+    if (!_chromeLanded) setState(() => _chromeLanded = true);
     final Size? deferredTarget = _deferredCardTarget;
     if (deferredTarget != null) {
       _deferredCardTarget = null;
@@ -794,18 +836,101 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   bool _imageUnderStatusBar(double offset) => offset > _imageStatusStart && offset < _imageStatusEnd;
 
+  /// Whether the card's bottom edge has passed the bottom of back and the clock. Follows the card through its morph.
+  bool _headerOver() => _scroll.hasClients && _scroll.offset > _headerOffset;
+
+  /// The scroll offset past which the solid header takes over.
+  double get _headerOffset => _cardShown.height - _chromeSize - _chromeInset;
+
+  /// The swatches fade out as the card scrolls up and are gone when the solid header takes over, so the header's
+  /// thumbnail never arrives over them, however fast the page moves. Follows the scroll, so it needs no reduce motion
+  /// case.
+  Widget _fadeBeforeHeader(Widget child) => AnimatedBuilder(
+    animation: Listenable.merge(<Listenable>[_scroll, _shapeMorph]),
+    child: child,
+    builder: (context, child) {
+      final double opacity = _scroll.hasClients
+          ? ((_headerOffset - _scroll.offset) / _swatchTarget).clamp(0.0, 1.0)
+          : 1;
+      return IgnorePointer(
+        ignoring: opacity == 0,
+        child: Opacity(key: const ValueKey<String>('detail-swatches'), opacity: opacity, child: child),
+      );
+    },
+  );
+
+  /// Crossfades a row from what showed while Prism confirmed the wall to the real row. Both have the same height, so
+  /// nothing under them moves.
+  Widget _settle(bool pending, Widget child) => AnimatedSwitcher(
+    duration: context.motion(PrismDurations.fast),
+    switchInCurve: PrismCurves.enter,
+    switchOutCurve: PrismCurves.exitReverse,
+    layoutBuilder: (current, previous) => Stack(children: [...previous, if (current != null) current]),
+    child: KeyedSubtree(key: ValueKey<bool>(pending), child: child),
+  );
+
   void _loadMoreRecommendations() {
     context.read<WallpaperDetailBloc>().add(const LoadRecommendations());
+  }
+
+  /// The scroll offset that puts "More like this" just under the solid header, or null before it lays out.
+  double? _similarOffset() {
+    final RenderObject? marker = _similarKey.currentContext?.findRenderObject();
+    if (marker is! RenderSliver || !_scroll.hasClients || !_scroll.position.hasContentDimensions) return null;
+    final double top = marker.constraints.precedingScrollExtent - _statusInset(context) - _headerHeight;
+    return top.clamp(0.0, _scroll.position.maxScrollExtent);
+  }
+
+  static bool _hasSimilar(RecommendationState similar) =>
+      similar.status != RecommendationStatus.exhausted || similar.items.isNotEmpty;
+
+  bool _similarInFocus() {
+    final double? target = _similarOffset();
+    return target != null && target > 0 && _scroll.offset >= target - 1;
+  }
+
+  /// Called with the release velocity of every fling or settle. A drag up from the top of the page that went far or
+  /// fast enough snaps to the similar walls instead of coasting: this returns the offset to snap to, or null to coast.
+  double? _onRelease(ScrollMetrics position, double velocity) {
+    // A snap that is under way keeps its target when the scroll's dimensions change and the physics are asked again.
+    // That can happen during layout, so this path has no side effects.
+    if (_snapTarget != null) return _snapTarget;
+    if (!_swipeFromTop) return null;
+    _swipeFromTop = false;
+    final WallpaperDetailState state = context.read<WallpaperDetailBloc>().state;
+    if (state is! WallpaperDetailLoaded || !_hasSimilar(state.recommendations)) return null;
+    final double? target = _similarOffset();
+    final bool far = position.pixels > position.viewportDimension * _similarDrag;
+    if (target == null || target <= position.pixels || velocity < 0 || !(far || velocity > _similarFling)) {
+      return null;
+    }
+    PrismHaptics.selection();
+    GestureHints.markSeen(GestureHint.swipeForSimilar);
+    if (context.reduceMotion) {
+      // After the release is handled, so the jump ends the fling it starts.
+      scheduleMicrotask(() {
+        if (mounted && _scroll.hasClients) _scroll.jumpTo(target);
+      });
+      return null;
+    }
+    return _snapTarget = target;
+  }
+
+  /// "^": the reverse of the snap, back up to the wall.
+  void _backToWall() {
+    if (!_scroll.hasClients) return;
+    unawaited(_scroll.animateOrJump(0, duration: context.motion(PrismDurations.slow), curve: PrismCurves.move));
   }
 
   void _onDiscoveryScroll() {
     if (_scroll.hasClients) {
       final imageBehindStatusBar = _imageUnderStatusBar(_scroll.offset);
-      final feedBehindStatusBar = _scroll.offset >= _imageStatusEnd;
-      if (imageBehindStatusBar != _imageBehindStatusBar || feedBehindStatusBar != _feedBehindStatusBar) {
+      final headerShown = _headerOver();
+      _similarFocus.value = _similarInFocus();
+      if (imageBehindStatusBar != _imageBehindStatusBar || headerShown != _headerShown) {
         setState(() {
           _imageBehindStatusBar = imageBehindStatusBar;
-          _feedBehindStatusBar = feedBehindStatusBar;
+          _headerShown = headerShown;
         });
       }
     }
@@ -908,8 +1033,26 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   void _handlePanelOpened(BuildContext context, WallpaperDetailLoaded state) {
+    _revealDetails = true;
     context.read<WallpaperDetailBloc>().add(const OnPanelOpened());
     _trackAction(state, AnalyticsActionValue.panelOpened);
+  }
+
+  /// Scrolls the opened details up so the summary sits just under the solid header and the details fill the screen.
+  void _scrollToDetails() {
+    final BuildContext? summary = _summaryKey.currentContext;
+    if (!mounted || summary == null) return;
+    final double viewport = MediaQuery.sizeOf(context).height;
+    if (viewport <= 0) return;
+    unawaited(
+      Scrollable.ensureVisible(
+        summary,
+        // About 0.1 of the screen: just under the solid header, not behind it.
+        alignment: ((_statusInset(context) + _headerHeight) / viewport).clamp(0.0, 1.0),
+        duration: context.motion(PrismDurations.base),
+        curve: PrismCurves.move,
+      ),
+    );
   }
 
   void _handlePanelClosed(BuildContext context, WallpaperDetailLoaded state) {
@@ -934,7 +1077,6 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       toasts.error(context.l10n.coreCustomAccentLowContrast);
       return;
     }
-    PrismHaptics.selection();
     await getIt<SettingsLocalDataSource>().set(SystemAccentChannel.settingsKey, false);
     if (!context.mounted) return;
     if (dark) {
@@ -1005,6 +1147,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       _routeAnimation = animation;
       _routeAnimation?.addStatusListener(_onRouteAnimationStatus);
     }
+    // A pushed route first builds offstage, where its animation reads as complete. The chrome waits for the real one.
+    if (animation == null || (animation.isCompleted && !(ModalRoute.of(context)?.offstage ?? false))) {
+      _chromeLanded = true;
+    }
     final bool immersive = _Immersion.maybeOf(context)?.on ?? false;
     if (immersive && !_immersive) {
       _hideHint();
@@ -1042,6 +1188,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     unawaited(_blockedCreatorSubscription?.cancel());
     _shake.dispose();
     _scroll.dispose();
+    _similarFocus.dispose();
     _views.dispose();
     super.dispose();
   }
@@ -1248,6 +1395,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           });
         }
         if (state is WallpaperDetailLoaded && state.variants != null) _warmVariants(state.variants!);
+        if (state is WallpaperDetailLoaded && !state.panelCollapsed && _revealDetails) {
+          _revealDetails = false;
+          WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToDetails());
+        }
       },
       child: BlocBuilder<WallpaperDetailBloc, WallpaperDetailState>(
         builder: (context, state) {
@@ -1317,56 +1468,240 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   }
 
   /// Back and, once the wallpaper is ready, the clock. Both stay in the top corners of the card while the page
-  /// scrolls under them, on a dark scrim that reads over any wallpaper.
-  List<Widget> _pinnedChrome(WallpaperDetailState state, Size card, {VoidCallback? onClock}) {
+  /// scrolls under them, on a dark scrim that reads over any wallpaper. Once the card scrolls away ([header]), back
+  /// becomes a plain button in the solid header and the clock hides, so neither sits on the actions. [headerAction]
+  /// takes the clock's corner in the header.
+  List<Widget> _pinnedChrome(
+    WallpaperDetailState state,
+    Size card, {
+    VoidCallback? onClock,
+    Widget? headerAction,
+    Widget? headerThumb,
+    bool header = false,
+  }) {
     final EdgeInsets padding = MediaQuery.paddingOf(context);
     final double top = _statusInset(context) + _chromePad;
     // A narrowed card is centred, so its corners sit in from the side insets.
     final double centring = max(0.0, (_availableCardWidth(context) - card.width) / 2);
+    final String backTooltip = MaterialLocalizations.of(context).backButtonTooltip;
+    void back() {
+      _trackAction(state, AnalyticsActionValue.backTapped);
+      Navigator.pop(context);
+    }
+
     return [
       PositionedDirectional(
         start: padding.left + _cardInset + centring + _chromePad,
         top: top,
         child: _hiddenWhenImmersive(
-          _chromeButton(
-            icon: JamIcons.chevron_left,
-            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-            onPressed: () {
-              _trackAction(state, AnalyticsActionValue.backTapped);
-              Navigator.pop(context);
-            },
+          // On the card Back sits deeper in the corner. It glides into the header as the header takes over.
+          AnimatedPadding(
+            padding: header
+                ? EdgeInsets.zero
+                : const EdgeInsetsDirectional.only(start: _chromeInset - _chromePad, top: _chromeInset - _chromePad),
+            duration: context.motion(PrismDurations.fast),
+            curve: PrismCurves.move,
+            // The thumbnail rides in Back's row, a fixed gap after it, so the two never overlap while Back glides.
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedSwitcher(
+                  duration: context.motion(PrismDurations.fast),
+                  switchInCurve: PrismCurves.enter,
+                  switchOutCurve: PrismCurves.exitReverse,
+                  child: header
+                      ? SizedBox.square(
+                          key: const ValueKey<String>('detail-header-back'),
+                          dimension: _chromeSize,
+                          child: OverflowBox(
+                            maxWidth: kMinInteractiveDimension,
+                            maxHeight: kMinInteractiveDimension,
+                            child: PrismIconButton(
+                              icon: Icons.chevron_left_rounded,
+                              iconSize: 28,
+                              tooltip: backTooltip,
+                              onPressed: back,
+                            ),
+                          ),
+                        )
+                      : KeyedSubtree(
+                          key: const ValueKey<String>('detail-card-back'),
+                          child: _chromeButton(
+                            icon: Icons.chevron_left_rounded,
+                            iconSize: 28,
+                            tooltip: backTooltip,
+                            onPressed: back,
+                          ),
+                        ),
+                ),
+                // The wall, small, next to back once the card has scrolled away, so the similar walls keep their
+                // source in view.
+                if (headerThumb != null) ...[
+                  const SizedBox(width: PrismSpace.xxs),
+                  IgnorePointer(
+                    ignoring: !header,
+                    child: AnimatedScale(
+                      scale: header ? 1 : 0.6,
+                      duration: context.motion(PrismDurations.fast),
+                      curve: PrismCurves.enter,
+                      child: AnimatedOpacity(
+                        key: const ValueKey<String>('detail-header-thumb'),
+                        opacity: header ? 1 : 0,
+                        duration: context.motion(PrismDurations.fast),
+                        curve: PrismCurves.enter,
+                        // "^" carries this action for a screen reader.
+                        child: ExcludeSemantics(
+                          child: GestureDetector(onTap: _backToWall, child: headerThumb),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),
       if (onClock != null)
         PositionedDirectional(
-          end: padding.right + _cardInset + centring + _chromePad,
-          top: top,
+          end: padding.right + _cardInset + centring + _chromeInset,
+          top: _statusInset(context) + _chromeInset,
           child: _hiddenWhenImmersive(
-            _chromeButton(
-              icon: Icons.smartphone_rounded,
-              tooltip: context.l10n.wallpaperPreviewOnScreen,
-              onPressed: onClock,
+            IgnorePointer(
+              ignoring: header,
+              child: ExcludeSemantics(
+                excluding: header,
+                child: AnimatedOpacity(
+                  key: const ValueKey<String>('detail-clock'),
+                  opacity: header ? 0 : 1,
+                  duration: context.motion(PrismDurations.fast),
+                  curve: PrismCurves.enter,
+                  child: _chromeButton(
+                    icon: Icons.smartphone_rounded,
+                    iconSize: 18,
+                    label: context.l10n.accountPreview,
+                    tooltip: context.l10n.wallpaperPreviewOnScreen,
+                    onPressed: onClock,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      if (headerAction != null)
+        PositionedDirectional(
+          // Ends on the page margin, like Save in the action bar.
+          end: padding.right + centring + _sheetHPad,
+          top: top,
+          height: _chromeSize,
+          // Built only under the header, so the page never holds two primary actions.
+          child: _hiddenWhenImmersive(
+            IgnorePointer(
+              ignoring: !header,
+              child: ExcludeSemantics(
+                excluding: !header,
+                child: AnimatedSwitcher(
+                  duration: context.motion(PrismDurations.fast),
+                  switchInCurve: PrismCurves.enter,
+                  switchOutCurve: PrismCurves.exitReverse,
+                  child: header
+                      ? Center(key: const ValueKey<String>('detail-header-action'), child: headerAction)
+                      : const SizedBox.shrink(),
+                ),
+              ),
             ),
           ),
         ),
     ];
   }
 
-  Widget _chromeButton({required IconData icon, required String tooltip, required VoidCallback onPressed}) {
+  /// [child] once the opening has landed: it fades in over [_chromeFade] after the card settles.
+  Widget _landed(Widget child) => IgnorePointer(
+    ignoring: !_chromeLanded,
+    child: ExcludeSemantics(
+      excluding: !_chromeLanded,
+      child: AnimatedOpacity(
+        opacity: _chromeLanded ? 1 : 0,
+        duration: context.motion(_chromeFade),
+        curve: PrismCurves.enter,
+        child: child,
+      ),
+    ),
+  );
+
+  /// The wall as a small rounded square for the solid header, or null with no picture to show.
+  Widget? _headerThumb(WallpaperDetailState state) {
+    final FeedItemEntity? entity = state is WallpaperDetailLoaded ? state.entity : widget.entity;
+    final String thumbnail = entity == null ? '' : WallpaperDisplaySource.of(entity).thumbnail;
+    final File? file = state is WallpaperDetailLoaded ? _localFileFor(state) : widget.localFile;
+    final ImageProvider? picture = thumbnail.isNotEmpty
+        ? CachedNetworkImageProvider(thumbnail, cacheManager: PrismImageCache.instance)
+        : file != null
+        ? FileImage(file)
+        : null;
+    if (picture == null) return null;
+    final int decode = (_thumbSize * MediaQuery.devicePixelRatioOf(context)).round();
+    return ClipRRect(
+      borderRadius: const BorderRadius.all(Radius.circular(PrismRadius.sm)),
+      child: Image(
+        image: ResizeImage(picture, width: decode, policy: ResizeImagePolicy.fit),
+        width: _thumbSize,
+        height: _thumbSize,
+        fit: BoxFit.cover,
+        excludeFromSemantics: true,
+        errorBuilder: (_, _, _) => const SizedBox.square(dimension: _thumbSize),
+      ),
+    );
+  }
+
+  Widget _chromeButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+    double iconSize = 22,
+    String? label,
+  }) {
+    final Color scrim = Theme.of(context).colorScheme.scrim.withValues(alpha: 0.55);
+    if (label != null) {
+      // A labelled pill says what it does. The tooltip keeps the longer name for a long press; a screen reader hears
+      // it once, as the label.
+      return PressScale(
+        child: Tooltip(
+          message: tooltip,
+          excludeFromSemantics: true,
+          child: MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.5,
+            child: TextButton.icon(
+              onPressed: onPressed,
+              icon: Icon(icon, size: iconSize),
+              label: Text(label, semanticsLabel: tooltip, maxLines: 1),
+              style: TextButton.styleFrom(
+                backgroundColor: scrim,
+                foregroundColor: PrismColors.onPrimary,
+                textStyle: PrismTextStyles.rowTitle(context),
+                minimumSize: const Size.square(_chromeSize),
+                padding: const EdgeInsetsDirectional.only(start: PrismSpace.sm, end: PrismSpace.md),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                shape: const StadiumBorder(),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return PressScale(
       child: IconButton(
         tooltip: tooltip,
         onPressed: onPressed,
-        icon: Icon(icon, size: 22),
+        icon: Icon(icon, size: iconSize),
         color: PrismColors.onPrimary,
         style: IconButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.55),
+          backgroundColor: scrim,
           minimumSize: const Size.square(_chromeSize),
           fixedSize: const Size.square(_chromeSize),
           padding: EdgeInsets.zero,
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
+          shape: const CircleBorder(),
         ),
       ),
     );
@@ -1428,8 +1763,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                     onAction: () => _loadWallpaper(context),
                   ),
                 ),
-                TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.wallpaperGoBack)),
-                const SizedBox(height: 16),
+                PrismButton(
+                  label: context.l10n.wallpaperGoBack,
+                  variant: PrismButtonVariant.ghost,
+                  onPressed: () => Navigator.pop(context),
+                ),
+                const SizedBox(height: PrismSpace.md),
               ],
             ),
           ),
@@ -1452,6 +1791,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     final Size card = _cardSize(context, state.entity.wallpaperCore);
     _setCardTarget(card);
     final double statusInset = _statusInset(context);
+    // The page takes a little of the wall's colour once the palette arrives.
+    final Color? accent = state.paletteLoading ? null : state.accent;
+    final Color page = accent == null
+        ? theme.scaffoldBackgroundColor
+        : Color.alphaBlend(
+            accent.withValues(alpha: theme.brightness == Brightness.dark ? 0.10 : 0.06),
+            theme.scaffoldBackgroundColor,
+          );
     return AnimatedBuilder(
       animation: _shapeMorph,
       builder: (context, child) {
@@ -1461,8 +1808,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         _imageStatusStart = statusInset / 2;
         _imageStatusEnd = shownCard.height + statusInset / 2;
         _imageBehindStatusBar = _scroll.hasClients && _imageUnderStatusBar(_scroll.offset);
-        _feedBehindStatusBar = _scroll.hasClients && _scroll.offset >= _imageStatusEnd;
-        final chromeBackground = _imageBehindStatusBar
+        _headerShown = _headerOver();
+        final chromeBackground = _imageBehindStatusBar && !_headerShown
             ? (state.paletteLoading ? theme.primaryColor : state.accent ?? theme.scaffoldBackgroundColor)
             : theme.scaffoldBackgroundColor;
         return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -1477,11 +1824,21 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         body: Stack(
           children: [
             Positioned.fill(
+              child: _PageTint(key: const ValueKey<String>('detail-page-tint'), color: page),
+            ),
+            Positioned.fill(
               child: AbsorbPointer(
                 absorbing: canonicalLoading,
                 child: NotificationListener<ScrollNotification>(
                   onNotification: (notification) {
                     if (canonicalLoading) return false;
+                    if (notification is ScrollStartNotification && notification.depth == 0) {
+                      _swipeFromTop = notification.dragDetails != null && notification.metrics.pixels <= 1;
+                    }
+                    if ((notification is ScrollStartNotification || notification is ScrollEndNotification) &&
+                        notification.depth == 0) {
+                      _snapTarget = null;
+                    }
                     if (notification is ScrollStartNotification) {
                       context.read<WallpaperDetailBloc>().add(const OnPanelScrollStart());
                     } else if (notification is ScrollEndNotification) {
@@ -1493,7 +1850,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                     key: PageStorageKey<Object>(_recommendationHeroScope),
                     controller: _scroll,
                     // Immersive, the wall is the whole page.
-                    physics: immersive ? const NeverScrollableScrollPhysics() : null,
+                    physics: immersive ? const NeverScrollableScrollPhysics() : _similarPhysics,
                     slivers: [
                       // Immersive, the card grows to the whole screen.
                       AnimatedBuilder(
@@ -1534,15 +1891,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                           opacity: immersion?.controls ?? kAlwaysCompleteAnimation,
                           sliver: SliverMainAxisGroup(
                             slivers: [
-                              if (canonicalLoading)
-                                SliverToBoxAdapter(
-                                  child: SafeArea(
-                                    top: false,
-                                    bottom: false,
-                                    child: _panelColumn(_buildPendingDetails()),
-                                  ),
-                                )
-                              else ...[
+                              if (!canonicalLoading)
                                 if (state.variants case final VariantGroup group)
                                   SliverToBoxAdapter(
                                     child: SafeArea(
@@ -1565,27 +1914,64 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                                       ),
                                     ),
                                   ),
-                                SliverToBoxAdapter(
-                                  child: SafeArea(
-                                    top: false,
-                                    bottom: false,
-                                    child: _panelColumn(_buildActionBar(context, state)),
+                              // Under the solid header its primary action moves up there, so the bar fades. It stays
+                              // in the tree: the header's Set opens the Set screen through this bar's button.
+                              SliverToBoxAdapter(
+                                key: const ValueKey<String>('detail-actions-row'),
+                                child: SafeArea(
+                                  top: false,
+                                  bottom: false,
+                                  child: AnimatedBuilder(
+                                    animation: _shapeMorph,
+                                    // While Prism confirms the wall, its known favourite count shows among bones.
+                                    child: _panelColumn(
+                                      _settle(
+                                        canonicalLoading,
+                                        canonicalLoading
+                                            ? _buildPendingActionBar(context, state.entity)
+                                            : _landed(_buildActionBar(context, state)),
+                                      ),
+                                    ),
+                                    builder: (context, bar) => IgnorePointer(
+                                      ignoring: _headerOver(),
+                                      child: AnimatedOpacity(
+                                        key: const ValueKey<String>('detail-action-bar'),
+                                        opacity: _headerOver() ? 0 : 1,
+                                        duration: context.motion(PrismDurations.fast),
+                                        curve: PrismCurves.enter,
+                                        child: bar,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                SliverToBoxAdapter(
-                                  child: SafeArea(
-                                    top: false,
-                                    bottom: false,
-                                    child: _panelColumn(_buildColorBar(context, state)),
+                              ),
+                              SliverToBoxAdapter(
+                                key: const ValueKey<String>('detail-swatches-row'),
+                                child: SafeArea(
+                                  top: false,
+                                  bottom: false,
+                                  child: _fadeBeforeHeader(
+                                    _panelColumn(
+                                      _settle(
+                                        canonicalLoading,
+                                        canonicalLoading
+                                            ? _buildPendingColorBar(context, state.entity)
+                                            : _buildColorBar(context, state),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                SliverToBoxAdapter(
-                                  child: SafeArea(
-                                    top: false,
-                                    bottom: false,
-                                    child: _panelColumn(_buildSummary(context, state)),
-                                  ),
+                              ),
+                              // Creator, source and title are known from the tile, so they show from the first frame.
+                              SliverToBoxAdapter(
+                                key: const ValueKey<String>('detail-summary-row'),
+                                child: SafeArea(
+                                  top: false,
+                                  bottom: false,
+                                  child: _panelColumn(_buildSummary(context, state)),
                                 ),
+                              ),
+                              if (!canonicalLoading) ...[
                                 if (!state.panelCollapsed)
                                   SliverToBoxAdapter(
                                     child: SafeArea(
@@ -1602,6 +1988,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                                       ),
                                     ),
                                   ),
+                                SliverToBoxAdapter(key: _similarKey, child: const SizedBox.shrink()),
                                 WallpaperRecommendations(
                                   state: state.recommendations,
                                   heroScope: _recommendationHeroScope,
@@ -1631,73 +2018,120 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                 animation: _shapeMorph,
                 builder: (context, _) => _feedSwipeOverlay(feed, _cardShown, statusInset),
               ),
+            // A solid bar under the status bar once the card has scrolled away, so nothing draws over the actions.
             AnimatedBuilder(
               animation: _shapeMorph,
-              builder: (context, _) {
-                final bool feedBehind = _scroll.hasClients && _scroll.offset >= _cardShown.height + statusInset / 2;
-                return Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: statusInset + PrismSpace.sm,
-                  child: IgnorePointer(
-                    child: AnimatedOpacity(
-                      key: const ValueKey<String>('detail-status-fade'),
-                      opacity: feedBehind ? 1 : 0,
-                      duration: context.motion(PrismDurations.fast),
+              builder: (context, _) => Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: statusInset + _headerHeight,
+                child: IgnorePointer(
+                  child: AnimatedOpacity(
+                    key: const ValueKey<String>('detail-header'),
+                    opacity: _headerOver() ? 1 : 0,
+                    duration: context.motion(PrismDurations.fast),
+                    curve: PrismCurves.enter,
+                    child: _PageTint(
+                      color: page,
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            stops: const [0.6, 1],
-                            colors: [theme.scaffoldBackgroundColor, theme.scaffoldBackgroundColor.withValues(alpha: 0)],
+                          border: Border(
+                            bottom: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: 0.08), width: 0.5),
                           ),
                         ),
                       ),
                     ),
                   ),
-                );
-              },
+                ),
+              ),
             ),
             AnimatedBuilder(
               animation: _shapeMorph,
-              builder: (context, _) => Stack(
-                children: _pinnedChrome(
-                  state,
-                  _cardShown,
-                  onClock: canonicalLoading
-                      ? null
-                      : () async {
-                          // iOS opens a passive preview; its Save button has its own sign-in guard.
-                          if (!hideSetWallpaperUi && (!await requireSignedInAction(context) || !context.mounted)) {
-                            return;
-                          }
-                          final entity = state.entity;
-                          _actedOn(entity);
-                          _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
-                          if (!hideSetWallpaperUi) {
-                            unawaited(_setButtonKey.currentState?.openSetScreen(entryPoint: 'wallpaper_preview'));
-                            return;
-                          }
-                          final display = WallpaperDisplaySource.of(entity);
-                          pushClockPreview(
-                            context,
-                            link: _localFileFor(state)?.path ?? display.bestLink,
-                            file: _localFileFor(state) != null,
-                            wallpaperId: entity.id,
-                            wallpaperSource: entity.source,
-                            thumbnailUrl: display.thumbnail,
-                            tint: state.tint,
-                            saveAction: _saveAction,
-                            spatialMapUrl: spatialOf(entity)?.mapUrl,
-                            livePhotoAction: isDuoWallpaper(entity)
-                                ? null
-                                : (previewContext, preview) => _openLivePhoto(previewContext, state, preview),
-                            duoReveal: isDuoWallpaper(entity),
-                            allowDuo: isLandscapeWallpaper(entity.wallpaperCore),
-                          );
-                        },
+              builder: (context, _) => _landed(
+                Stack(
+                  children: _pinnedChrome(
+                    state,
+                    _cardShown,
+                    header: _headerOver(),
+                    headerThumb: _headerThumb(state),
+                    headerAction: canonicalLoading
+                        ? null
+                        : _headerSave?.call() ??
+                              PrismButton(
+                                label: context.l10n.wallpaperSet,
+                                size: PrismButtonSize.compact,
+                                onPressed: () =>
+                                    unawaited(_setButtonKey.currentState?.openSetScreen(entryPoint: 'detail_header')),
+                              ),
+                    onClock: canonicalLoading
+                        ? null
+                        : () async {
+                            PrismHaptics.tap();
+                            // iOS opens a passive preview; its Save button has its own sign-in guard.
+                            if (!hideSetWallpaperUi && (!await requireSignedInAction(context) || !context.mounted)) {
+                              return;
+                            }
+                            final entity = state.entity;
+                            _actedOn(entity);
+                            _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
+                            if (!hideSetWallpaperUi) {
+                              unawaited(_setButtonKey.currentState?.openSetScreen(entryPoint: 'wallpaper_preview'));
+                              return;
+                            }
+                            final display = WallpaperDisplaySource.of(entity);
+                            pushClockPreview(
+                              context,
+                              link: _localFileFor(state)?.path ?? display.bestLink,
+                              file: _localFileFor(state) != null,
+                              wallpaperId: entity.id,
+                              wallpaperSource: entity.source,
+                              thumbnailUrl: display.thumbnail,
+                              tint: state.tint,
+                              saveAction: _saveAction,
+                              spatialMapUrl: spatialOf(entity)?.mapUrl,
+                              livePhotoAction: isDuoWallpaper(entity)
+                                  ? null
+                                  : (previewContext, preview) => _openLivePhoto(previewContext, state, preview),
+                              duoReveal: isDuoWallpaper(entity),
+                              allowDuo: isLandscapeWallpaper(entity.wallpaperCore),
+                            );
+                          },
+                  ),
+                ),
+              ),
+            ),
+            // "^": while the similar walls fill the screen, one glass button goes back up to the wall.
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md,
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _similarFocus,
+                builder: (context, focus, _) => Center(
+                  child: IgnorePointer(
+                    ignoring: !focus,
+                    child: ExcludeSemantics(
+                      excluding: !focus,
+                      child: AnimatedScale(
+                        scale: focus ? 1 : 0.8,
+                        duration: context.motion(PrismDurations.fast),
+                        curve: PrismCurves.enter,
+                        child: AnimatedOpacity(
+                          key: const ValueKey<String>('detail-back-to-wall'),
+                          opacity: focus ? 1 : 0,
+                          duration: context.motion(PrismDurations.fast),
+                          curve: PrismCurves.enter,
+                          child: PrismIconButton(
+                            icon: Icons.keyboard_arrow_up_rounded,
+                            tooltip: context.l10n.navigationScrollToTop,
+                            glass: true,
+                            onPressed: _backToWall,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -1876,7 +2310,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       child: ExcludeSemantics(
         child: PrismSkeleton(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(_sheetHPad, PrismSpace.sm, PrismSpace.xs + _cardInset, 0),
+            padding: const EdgeInsets.fromLTRB(_sheetHPad, PrismSpace.sm, _sheetHPad, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1912,8 +2346,87 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     );
   }
 
+  /// The action bar while Prism confirms the wall: the heart and its known count, and bones for the actions that wait
+  /// on the wall's access. As tall as [WallpaperActionBar], so the rows under it stay put when it crossfades.
+  Widget _buildPendingActionBar(BuildContext context, FeedItemEntity entity) {
+    final Color muted = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38);
+    return SizedBox(
+      key: const ValueKey<String>('detail-pending-actions'),
+      height: WallpaperActionBar.height,
+      child: Padding(
+        padding: const EdgeInsetsDirectional.only(start: 4, top: 6, end: _sheetHPad),
+        child: PrismSkeleton(
+          child: Row(
+            children: [
+              SizedBox.square(dimension: 53, child: Icon(Icons.favorite_border_rounded, size: 28, color: muted)),
+              ..._favouriteCount(context, entity),
+              for (int i = 0; i < 2; i++)
+                const SizedBox.square(dimension: 50, child: Center(child: PrismBone.circle(size: 24))),
+              const Spacer(),
+              const PrismBone(width: 88, height: 40, radius: PrismRadius.md),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The swatches while Prism confirms the wall: the untouched wall is known, its palette is not yet.
+  Widget _buildPendingColorBar(BuildContext context, FeedItemEntity entity) => Padding(
+    padding: const EdgeInsetsDirectional.only(start: _sheetHPad - (_swatchTarget - _swatchSize) / 2),
+    child: Row(
+      children: [
+        _buildColorSwatch(
+          context: context,
+          thumbnailUrl: WallpaperDisplaySource.of(entity).thumbnail,
+          localFile: widget.localFile,
+          color: null,
+          isSelected: true,
+          onTap: null,
+          onLongPress: null,
+        ),
+        PrismSkeleton(
+          child: Row(
+            children: [
+              for (int i = 0; i < 3; i++)
+                const SizedBox.square(
+                  dimension: _swatchTarget,
+                  child: Center(child: PrismBone.circle(size: _swatchSize)),
+                ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  /// The published favourite total beside the heart, shown compact like the stats rows ("12.3K") and read as
+  /// "12,345 favourites". An invalid or unknown total stays hidden.
+  List<Widget> _favouriteCount(BuildContext context, FeedItemEntity entity) {
+    final TextStyle countStyle = PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500);
+    final NumberFormat compactCount = NumberFormat.compact(locale: context.l10n.localeName)..maximumFractionDigits = 1;
+    Widget count(int count) => count < 0
+        ? const SizedBox.shrink()
+        : Semantics(
+            container: true,
+            label: context.l10n.wallpaperFavouriteCount(count),
+            child: ExcludeSemantics(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(end: PrismSpace.xxs),
+                child: Text(compactCount.format(count), style: countStyle),
+              ),
+            ),
+          );
+    return entity.when(
+      prism: (_, wall) => [PrismFavouriteCount(id: wall.id, builder: (_, total) => count(total))],
+      wallhaven: (_, wall) => [if (wall.favorites ?? wall.core.favourites case final int total) count(total)],
+      pexels: (_, _) => const <Widget>[],
+    );
+  }
+
   void _toggleDetails(BuildContext context, WallpaperDetailLoaded state) {
     if (state.panelScrollInProgress) return;
+    PrismHaptics.selection();
     _trackAction(state, AnalyticsActionValue.panelCollapseTapped);
     state.panelCollapsed ? _handlePanelOpened(context, state) : _handlePanelClosed(context, state);
   }
@@ -1931,10 +2444,20 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         ? context.l10n.wallpaperProviderWallhaven
         : entity.source.legacyProviderString;
     final String photo = entity.maybeWhen(prism: (_, wall) => wall.core.authorPhoto?.trim(), orElse: () => null) ?? '';
+    final String title = entity.maybeWhen(prism: (_, wall) => wall.title?.trim(), orElse: () => null) ?? '';
+    // "Wallpaper by Ana" only repeats the creator line above it, so the fallback title shows only without a creator.
+    final bool showTitle = title.isNotEmpty || creator == null;
     return InkWell(
+      key: _summaryKey,
       onTap: () => _toggleDetails(context, state),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(_sheetHPad, PrismSpace.xs, PrismSpace.xxs + _cardInset, PrismSpace.xs),
+        // The toggle's visible box ends on the page margin. Its tap target reaches past it.
+        padding: const EdgeInsets.fromLTRB(
+          _sheetHPad,
+          PrismSpace.xs,
+          _sheetHPad - (kMinInteractiveDimension - _toggleSize) / 2,
+          PrismSpace.xs,
+        ),
         child: Row(
           children: [
             Expanded(
@@ -1960,13 +2483,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                       Text(provider, maxLines: 1, style: PrismTextStyles.body(context)),
                     ],
                   ),
-                  const SizedBox(height: PrismSpace.xxs + 2),
-                  Text(
-                    wallpaperPreviewTitle(context.l10n, entity),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
+                  if (showTitle) ...[
+                    const SizedBox(height: PrismSpace.xxs + 2),
+                    Text(
+                      wallpaperPreviewTitle(context.l10n, entity),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: PrismTextStyles.rowTitle(context).copyWith(fontSize: 16, fontWeight: FontWeight.w500),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1984,8 +2509,8 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
               color: cs.onSurface,
               style: IconButton.styleFrom(
                 backgroundColor: cs.onSurface.withValues(alpha: 0.08),
-                fixedSize: const Size.square(34),
-                minimumSize: const Size.square(34),
+                fixedSize: const Size.square(_toggleSize),
+                minimumSize: const Size.square(_toggleSize),
                 padding: EdgeInsets.zero,
                 tapTargetSize: MaterialTapTargetSize.padded,
                 shape: const RoundedRectangleBorder(
@@ -2164,93 +2689,97 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     );
   }
 
-  Widget _metadataShell({required List<Widget> left, required List<Widget> right}) {
+  /// The details: who made the wall and where it is from, then its facts in a two-column grid on the page margin.
+  Widget _metadataShell({
+    List<Widget> header = const <Widget>[],
+    required WallCredit credit,
+    required List<_Fact> facts,
+  }) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(_sheetHPad, 4, _sheetHPad, 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      padding: const EdgeInsets.fromLTRB(_sheetHPad, PrismSpace.xxs, _sheetHPad, PrismSpace.sm),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Flexible(
-            flex: 5,
-            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: left),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            flex: 4,
-            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: right),
-          ),
+          ...header,
+          WallCreditRow(credit: credit),
+          if (facts.isNotEmpty) ...[
+            const SizedBox(height: PrismSpace.sm),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final double cell = (constraints.maxWidth - PrismSpace.md) / 2;
+                return Wrap(
+                  spacing: PrismSpace.md,
+                  runSpacing: PrismSpace.sm,
+                  children: [for (final _Fact fact in facts) SizedBox(width: cell, child: _buildFact(context, fact))],
+                );
+              },
+            ),
+          ],
         ],
       ),
     );
   }
 
+  /// A caption label over its value.
+  Widget _buildFact(BuildContext context, _Fact fact) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(fact.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: PrismTextStyles.caption(context)),
+        const SizedBox(height: 2),
+        Text(
+          fact.value,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: PrismTextStyles.rowTitle(context).copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// "general" as "General". Categories are stored lower case.
+  static String _sentenceCase(String text) => '${text[0].toUpperCase()}${text.substring(1)}';
+
+  /// Views as "1.2K". Unknown or zero views stay hidden.
+  _Fact? _viewsFact(BuildContext context, int? views) {
+    if (views == null || views <= 0) return null;
+    final NumberFormat compact = NumberFormat.compact(locale: context.l10n.localeName)..maximumFractionDigits = 1;
+    return (label: context.l10n.statsViews, value: compact.format(views));
+  }
+
   Widget _buildPrismMetadata(BuildContext context, PrismWallpaper wallpaper, WallpaperDetailLoaded state) {
-    final secondary = Theme.of(context).colorScheme.secondary;
-    final TextStyle dimmedHeadline = Theme.of(
-      context,
-    ).textTheme.headlineSmall!.copyWith(color: secondary.withValues(alpha: _secondaryAlpha));
+    final AppLocalizations l10n = context.l10n;
     final collections = wallpaper.collections;
     final category = wallpaper.core.category;
     final resolution = wallpaper.core.resolution;
     final sizeBytes = wallpaper.core.sizeBytes;
     final createdAt = wallpaper.core.createdAt;
     final String? reportDocId = BundledWallpapers.isStarter(state.entity) ? null : wallpaper.firestoreDocumentId;
+    final int? sets = state.setCount;
+    final bool showSets = sets != null && sets >= _minSetCountShown;
+    final bool showTippers = state.tipperCount >= _minTippersShown;
     return _metadataShell(
-      left: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: LayoutBuilder(
-            builder: (context, constraints) => Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              runSpacing: 4,
+      header: [
+        if (showSets || showTippers)
+          Padding(
+            padding: const EdgeInsets.only(bottom: PrismSpace.xs),
+            child: Wrap(
+              spacing: PrismSpace.sm,
+              runSpacing: PrismSpace.xxs,
               children: [
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-                  child: Text(
-                    wallpaperTitle(context.l10n, state.entity),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineSmall!.copyWith(color: secondary),
-                  ),
-                ),
-                if (state.setCount case final int sets when sets >= _minSetCountShown) ...[
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SizedBox(width: 6),
-                      Flexible(child: Text(context.l10n.wallpaperSetCount(sets), style: dimmedHeadline)),
-                    ],
-                  ),
-                ],
-                if (state.tipperCount >= _minTippersShown)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(start: 6),
-                    child: Text(
-                      context.l10n.wallTippedBy(state.tipperCount),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: secondary.withValues(alpha: _secondaryAlpha)),
-                    ),
-                  ),
+                if (showSets) Text(l10n.wallpaperSetCount(sets), style: PrismTextStyles.body(context)),
+                if (showTippers) Text(l10n.wallTippedBy(state.tipperCount), style: PrismTextStyles.body(context)),
               ],
             ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 4),
-          child: PrismFavouriteCount(
-            id: wallpaper.id,
-            showFavourites: false,
-            views: switch (int.tryParse(state.views ?? '')) {
-              final int count when count >= 0 => count,
-              _ => null,
-            },
-          ),
-        ),
         if (AiContentFilter.isAi(wallpaper))
           Align(
-            alignment: Alignment.centerLeft,
+            alignment: AlignmentDirectional.centerStart,
             child: AiGeneratedTag(wallpaper: wallpaper, reportDocId: reportDocId, reportSubtitle: state.entity.id),
           ),
         if (_isPick(wallpaper))
@@ -2258,107 +2787,52 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             padding: EdgeInsets.only(bottom: 6),
             child: Align(alignment: AlignmentDirectional.centerStart, child: EditorsChoiceLabel()),
           ),
-        if (collections != null && collections.isNotEmpty) ...[
-          _buildInfoRow(context, JamIcons.folder, collections.take(2).join(', ')),
-          const SizedBox(height: 4),
-        ],
-        if (category != null) ...[_buildInfoRow(context, JamIcons.unordered_list, category), const SizedBox(height: 4)],
-        if (resolution != null) ...[_buildInfoRow(context, JamIcons.set_square, resolution), const SizedBox(height: 4)],
-        if (sizeBytes != null) _buildInfoRow(context, JamIcons.save, formatMegabytes(sizeBytes, context.l10n)),
       ],
-      right: [
-        WallCreditRow(credit: WallCredit.of(state.entity)),
-        if (createdAt != null) ...[
-          const SizedBox(height: 4),
-          _buildInfoRow(
-            context,
-            JamIcons.calendar,
-            _formatDate(createdAt, context.l10n, Localizations.localeOf(context)),
-            reversed: true,
+      credit: WallCredit.of(state.entity),
+      facts: [
+        ?_viewsFact(context, int.tryParse(state.views ?? '')),
+        if (resolution != null) (label: l10n.wallpaperUploadResolution, value: resolution),
+        if (sizeBytes != null) (label: l10n.wallpaperUploadFileSize, value: formatMegabytes(sizeBytes, l10n)),
+        if (category != null && category.isNotEmpty) (label: l10n.wallpaperCategory, value: _sentenceCase(category)),
+        if (collections != null && collections.isNotEmpty)
+          (
+            label: collections.length > 1 ? l10n.wallpaperLibraryCollections : l10n.wallpaperCollection,
+            value: collections.take(2).join(', '),
           ),
-        ],
+        if (createdAt != null)
+          (label: l10n.adminUploaded, value: _formatDate(createdAt, l10n, Localizations.localeOf(context))),
       ],
     );
   }
 
   Widget _buildWallhavenMetadata(BuildContext context, WallhavenWallpaper wallpaper) {
-    final views = wallpaper.views;
+    final AppLocalizations l10n = context.l10n;
     final sizeBytes = wallpaper.sizeBytes ?? wallpaper.core.sizeBytes;
     final category = wallpaper.core.category;
     final resolution = wallpaper.core.resolution;
     return _metadataShell(
-      left: [
-        _buildInfoTitle(context, wallpaper.id.toUpperCase()),
-        WallpaperStatsRow(views: views),
-        if (sizeBytes != null) ...[
-          const SizedBox(height: 4),
-          _buildInfoRow(context, JamIcons.save, formatMegabytes(sizeBytes, context.l10n)),
-        ],
-      ],
-      right: [
-        WallCreditRow(
-          credit: WallCredit.of(FeedItemEntity.wallhaven(id: wallpaper.id, wallpaper: wallpaper)),
-        ),
-        const SizedBox(height: 4),
-        if (category != null) ...[
-          _buildInfoRow(context, JamIcons.unordered_list, category, reversed: true),
-          const SizedBox(height: 4),
-        ],
-        if (resolution != null) ...[
-          _buildInfoRow(context, JamIcons.set_square, resolution, reversed: true),
-          const SizedBox(height: 4),
-        ],
+      credit: WallCredit.of(FeedItemEntity.wallhaven(id: wallpaper.id, wallpaper: wallpaper)),
+      facts: [
+        (label: l10n.adminWallId, value: wallpaper.id.toUpperCase()),
+        ?_viewsFact(context, wallpaper.views),
+        if (resolution != null) (label: l10n.wallpaperUploadResolution, value: resolution),
+        if (sizeBytes != null) (label: l10n.wallpaperUploadFileSize, value: formatMegabytes(sizeBytes, l10n)),
+        if (category != null && category.isNotEmpty) (label: l10n.wallpaperCategory, value: _sentenceCase(category)),
       ],
     );
   }
 
   Widget _buildPexelsMetadata(BuildContext context, PexelsWallpaper wallpaper) {
+    final AppLocalizations l10n = context.l10n;
     final width = wallpaper.core.width;
     final height = wallpaper.core.height;
     return _metadataShell(
-      left: [
-        _buildInfoTitle(context, wallpaper.id),
-        if (width != null && height != null) ...[
-          const SizedBox(height: 4),
-          _buildInfoRow(context, JamIcons.set_square, "${width}x$height"),
-        ],
-      ],
-      right: [
-        WallCreditRow(
-          credit: WallCredit.of(FeedItemEntity.pexels(id: wallpaper.id, wallpaper: wallpaper)),
-        ),
+      credit: WallCredit.of(FeedItemEntity.pexels(id: wallpaper.id, wallpaper: wallpaper)),
+      facts: [
+        (label: l10n.adminWallId, value: wallpaper.id),
+        if (width != null && height != null) (label: l10n.wallpaperUploadResolution, value: '${width}x$height'),
       ],
     );
-  }
-
-  Widget _buildInfoTitle(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.bodyLarge!.copyWith(color: Theme.of(context).colorScheme.secondary),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(BuildContext context, IconData icon, String text, {bool reversed = false}) {
-    final iconWidget = Icon(
-      icon,
-      size: 20,
-      color: Theme.of(context).colorScheme.secondary.withValues(alpha: _secondaryAlpha),
-    );
-    final textWidget = Flexible(
-      child: Text(
-        text,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Theme.of(context).colorScheme.secondary),
-      ),
-    );
-    const spacer = SizedBox(width: 10);
-    if (reversed) {
-      return Row(mainAxisSize: MainAxisSize.min, children: [textWidget, spacer, iconWidget]);
-    }
-    return Row(mainAxisSize: MainAxisSize.min, children: [iconWidget, spacer, textWidget]);
   }
 
   /// Stored wall colours: Prism palette ids or Wallhaven hex values such as "#663399".
@@ -2427,10 +2901,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       final String? savedKey = _savedTintKeyOf(localFile.path);
       if (savedKey != null) variant = DownloadVariant(key: savedKey, prepare: () async => localFile.path);
     }
-    // The round icon buttons press-scale themselves. Only the labelled pill needs the wrapper.
-    Widget downloadButton({String? label}) {
+    // The round icon buttons and the compact button press-scale themselves. Only the labelled pill needs the wrapper.
+    Widget downloadButton({String? label, bool compact = false, bool expand = false}) {
       final Widget button = DownloadButton(
         label: label,
+        primary: compact || expand,
+        expand: expand,
         link: source,
         variant: variant,
         desktop: desktop,
@@ -2462,7 +2938,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           unawaited(_recordDownload(entity));
         },
       );
-      return label == null ? button : PressScale(child: button);
+      return label == null || compact || expand ? button : PressScale(child: button);
     }
 
     Widget setButton({required String label}) => Column(
@@ -2495,11 +2971,12 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             _setAwardCoins > 0)
           Text(
             context.l10n.economyCoinsEarned(_setAwardCoins),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.primary),
+            style: PrismTextStyles.caption(context).copyWith(color: Theme.of(context).colorScheme.primary),
           ),
       ],
     );
-    _saveAction = hideSetWallpaperUi ? (label) => downloadButton(label: label) : null;
+    _saveAction = hideSetWallpaperUi ? (label) => downloadButton(label: label, expand: true) : null;
+    _headerSave = hideSetWallpaperUi ? () => downloadButton(label: context.l10n.wallpaperSave, compact: true) : null;
     final primary = hideSetWallpaperUi
         ? WallpaperBarAction(
             label: context.l10n.wallpaperSaveToPhotos,
@@ -2509,95 +2986,78 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             label: context.l10n.wallpaperSetAsWallpaper,
             child: setButton(label: context.l10n.wallpaperSet),
           );
-    final TextStyle countStyle = PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w500);
-    final NumberFormat compactCount = NumberFormat.compact(locale: context.l10n.localeName)..maximumFractionDigits = 1;
-    // Shown compact like the stats rows ("12.3K") and read as "12,345 favourites". An invalid total stays hidden.
-    Widget favouriteCount(int count) => count < 0
-        ? const SizedBox.shrink()
-        : Semantics(
-            container: true,
-            label: context.l10n.wallpaperFavouriteCount(count),
-            child: ExcludeSemantics(
-              child: Padding(
-                padding: const EdgeInsetsDirectional.only(end: PrismSpace.xxs),
-                child: Text(compactCount.format(count), style: countStyle),
-              ),
-            ),
-          );
-    return WallpaperActionBar(
-      primary: primary,
-      secondary: [
-        if (!hideSetWallpaperUi) WallpaperBarAction(label: context.l10n.wallpaperDownload, child: downloadButton()),
-      ],
-      actions: [
-        WallpaperBarAction(
-          label: context.l10n.wallpaperFavourite,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              PressScale(
-                child: FavouriteWallpaperButton(
-                  wall: FavouriteWallEntity.fromFeedItem(entity),
-                  trash: false,
-                  onFavourited: () {
-                    _recordTaste(TasteAction.favourite, entity);
-                    _actedOn(entity);
-                  },
+    // The bar keeps 8 at its end. This brings Save in to the page margin, in line with the rows under it.
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: _sheetHPad - 8),
+      child: WallpaperActionBar(
+        primary: primary,
+        secondary: [
+          if (!hideSetWallpaperUi) WallpaperBarAction(label: context.l10n.wallpaperDownload, child: downloadButton()),
+        ],
+        actions: [
+          WallpaperBarAction(
+            label: context.l10n.wallpaperFavourite,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                PressScale(
+                  child: FavouriteWallpaperButton(
+                    wall: FavouriteWallEntity.fromFeedItem(entity),
+                    trash: false,
+                    onFavourited: () {
+                      _recordTaste(TasteAction.favourite, entity);
+                      _actedOn(entity);
+                    },
+                  ),
                 ),
-              ),
-              // The published total sits beside the heart.
-              ...entity.when(
-                prism: (_, wall) => [PrismFavouriteCount(id: wall.id, builder: (_, count) => favouriteCount(count))],
-                wallhaven: (_, wall) => [
-                  if (wall.favorites ?? wall.core.favourites case final int count) favouriteCount(count),
-                ],
-                pexels: (_, _) => const <Widget>[],
-              ),
-            ],
-          ),
-        ),
-        if (_commentsWall(entity) case final CommentsWall wall)
-          WallpaperBarAction(
-            label: context.l10n.commentsAction,
-            child: CommentsButton(wall: wall),
-          ),
-        WallpaperBarAction(
-          label: context.l10n.wallpaperShare,
-          child: ShareButton(
-            id: entity.id,
-            source: entity.source,
-            url: entity.fullUrl,
-            thumbUrl: entity.thumbnailUrl,
-            creator: entity.wallpaperCore.authorName,
-            palette: _sharePalette(entity),
-            duoReveal: isDuoWallpaper(entity),
-            createLink: (id, source, url, thumbUrl) => createDynamicLink(
-              id,
-              source,
-              url,
-              thumbUrl,
-              l10n: context.l10n,
-              title: previewTitle,
-              core: entity.wallpaperCore,
+                // The published total sits beside the heart.
+                ..._favouriteCount(context, entity),
+              ],
             ),
           ),
-        ),
-        if (_remixSeedOf(state) case final AiRemixSeed seed)
+          if (_commentsWall(entity) case final CommentsWall wall)
+            WallpaperBarAction(
+              label: context.l10n.commentsAction,
+              child: CommentsButton(wall: wall),
+            ),
           WallpaperBarAction(
-            label: context.l10n.wallRemixActionTooltip,
-            child: RemixActionButton(seed: seed),
+            label: context.l10n.wallpaperShare,
+            child: ShareButton(
+              id: entity.id,
+              source: entity.source,
+              url: entity.fullUrl,
+              thumbUrl: entity.thumbnailUrl,
+              creator: entity.wallpaperCore.authorName,
+              palette: _sharePalette(entity),
+              duoReveal: isDuoWallpaper(entity),
+              createLink: (id, source, url, thumbUrl) => createDynamicLink(
+                id,
+                source,
+                url,
+                thumbUrl,
+                l10n: context.l10n,
+                title: previewTitle,
+                core: entity.wallpaperCore,
+              ),
+            ),
           ),
-        WallpaperBarAction(
-          label: context.l10n.wallpaperEdit,
-          child: EditButton(
-            url: source,
-            wallpaperId: entity.id,
-            wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
-            prepareSource: prepareSource ?? localSource,
-            prepareAuthorized: prepareAuthorized,
+          if (_remixSeedOf(state) case final AiRemixSeed seed)
+            WallpaperBarAction(
+              label: context.l10n.wallRemixActionTooltip,
+              child: RemixActionButton(seed: seed),
+            ),
+          WallpaperBarAction(
+            label: context.l10n.wallpaperEdit,
+            child: EditButton(
+              url: source,
+              wallpaperId: entity.id,
+              wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
+              prepareSource: prepareSource ?? localSource,
+              prepareAuthorized: prepareAuthorized,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -2882,15 +3342,22 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         padded(
           Row(
             children: [
-              Icon(JamIcons.alert, size: 18, color: theme.colorScheme.error),
+              Icon(Icons.error_outline_rounded, size: 18, color: theme.colorScheme.error),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(note, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.secondary)),
+                child: Text(note, style: PrismTextStyles.body(context).copyWith(color: theme.colorScheme.secondary)),
               ),
             ],
           ),
         ),
-      if (tags.isNotEmpty) padded(WallpaperTagChips(tags: tags, onTagTap: (tag) => openTagSearch(context, tag))),
+      if (tags.isNotEmpty)
+        padded(
+          WallpaperTagChips(
+            key: ValueKey<String>('tags-${entity.id}'),
+            tags: tags,
+            onTagTap: (tag) => openTagSearch(context, tag),
+          ),
+        ),
       // The remix rows size themselves: they take no padding when they show nothing.
       if (entity case PrismFeedItem(:final wallpaper)
           when remixViewer != null &&
@@ -2939,35 +3406,44 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
               children: [
                 if (tipWall != null)
                   TextButton.icon(
-                    onPressed: () => showTipSheet(
-                      context,
-                      creatorUid: tipWall.core.authorUid!.trim(),
-                      creatorName: creatorLabel(
-                        name: tipWall.core.authorName ?? '',
-                        username: '',
-                        fallback: context.l10n.accountCreatorFallback,
-                      ),
-                      source: 'wall',
-                      wallId: reportWallDocId,
-                    ),
+                    onPressed: () {
+                      PrismHaptics.tap();
+                      showTipSheet(
+                        context,
+                        creatorUid: tipWall.core.authorUid!.trim(),
+                        creatorName: creatorLabel(
+                          name: tipWall.core.authorName ?? '',
+                          username: '',
+                          fallback: context.l10n.accountCreatorFallback,
+                        ),
+                        source: 'wall',
+                        wallId: reportWallDocId,
+                      );
+                    },
                     icon: const PrismCoinIcon(),
                     label: Text(context.l10n.tipAction, style: TextStyle(color: theme.colorScheme.secondary)),
                   ),
                 TextButton.icon(
-                  onPressed: () => showContentReportSheet(
-                    context,
-                    contentType: 'wall',
-                    targetFirestoreDocId: reportWallDocId,
-                    subtitle: entity.id,
-                    onBlockCreator: canBlock ? () => unawaited(blockWallCreator(context, entity)) : null,
-                  ),
-                  icon: Icon(JamIcons.flag, size: 20, color: theme.colorScheme.secondary),
+                  // showContentReportSheet plays the tap haptic.
+                  onPressed: () {
+                    showContentReportSheet(
+                      context,
+                      contentType: 'wall',
+                      targetFirestoreDocId: reportWallDocId,
+                      subtitle: entity.id,
+                      onBlockCreator: canBlock ? () => unawaited(blockWallCreator(context, entity)) : null,
+                    );
+                  },
+                  icon: Icon(Icons.outlined_flag_rounded, size: 20, color: theme.colorScheme.secondary),
                   label: Text(context.l10n.wallpaperReport, style: TextStyle(color: theme.colorScheme.secondary)),
                 ),
                 if (canBlock)
                   TextButton.icon(
-                    onPressed: () => unawaited(blockWallCreator(context, entity)),
-                    icon: Icon(JamIcons.user_remove, size: 20, color: theme.colorScheme.secondary),
+                    onPressed: () {
+                      PrismHaptics.tap();
+                      unawaited(blockWallCreator(context, entity));
+                    },
+                    icon: Icon(Icons.person_remove_rounded, size: 20, color: theme.colorScheme.secondary),
                     label: Text(
                       context.l10n.wallpaperBlockCreator,
                       style: TextStyle(color: theme.colorScheme.secondary),
@@ -3026,14 +3502,31 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             !hideSetWallpaperUi &&
             (entity.fullUrl.trim().isNotEmpty || entity.source == WallpaperSource.prism))
           PositionedDirectional(
-            start: _chromePad,
-            bottom: _chromePad,
-            child: _hiddenWhenImmersive(MakeItLiveChip(onPressed: () => _openMakeItLive(context, state))),
+            start: _chromeInset,
+            bottom: _chromeInset,
+            child: _hiddenWhenImmersive(_landed(MakeItLiveChip(onPressed: () => _openMakeItLive(context, state)))),
+          ),
+        // Taught once, on the first wall with similar walls under it. It gives way to the immersive hint.
+        if (!canonicalLoading && state.recommendations.items.isNotEmpty)
+          Positioned.fill(
+            child: _hiddenWhenImmersive(
+              AnimatedOpacity(
+                opacity: _hintVisible ? 0 : 1,
+                duration: context.motion(PrismDurations.fast),
+                curve: PrismCurves.enter,
+                child: GestureHintOverlay(
+                  hint: GestureHint.swipeForSimilar,
+                  label: context.l10n.gestureHintSwipeForSimilar,
+                  icon: Icons.swipe_up_rounded,
+                  scrim: false,
+                ),
+              ),
+            ),
           ),
         PositionedDirectional(
-          start: _chromePad,
-          end: _chromePad,
-          bottom: _chromePad + _chromeSize + PrismSpace.xs,
+          start: _chromeInset,
+          end: _chromeInset,
+          bottom: _chromeInset + _chromeSize + PrismSpace.xs,
           child: IgnorePointer(
             child: Center(
               child: AnimatedOpacity(
@@ -3097,7 +3590,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             display: WallpaperDisplaySource.of(entity),
             onPictureSize: _onPictureSize,
             errorBuilder: (_, _) =>
-                Center(child: Icon(JamIcons.close_circle_f, color: _chromeColor(context, paletteLoading, state))),
+                Center(child: Icon(Icons.cancel_rounded, color: _chromeColor(context, paletteLoading, state))),
           );
     // A colour variant cross-fades in over the one on screen, which stays opaque under it, so the card never dims.
     final Key shown = ValueKey<String>('${entity.source.name}:${entity.id}');
@@ -3224,3 +3717,58 @@ class _HueTintState extends State<_HueTint> with SingleTickerProviderStateMixin 
     );
   }
 }
+
+/// Platform scroll physics that first offer each release to [onRelease]. When it returns an offset, the page springs
+/// there from the release velocity, so the drag and the snap are one motion.
+class _SimilarSnapPhysics extends ScrollPhysics {
+  const _SimilarSnapPhysics({required this.onRelease, super.parent});
+
+  final double? Function(ScrollMetrics position, double velocity) onRelease;
+
+  /// Critically damped: about 330 ms to settle within 2%, near [PrismDurations.slow].
+  static final SpringDescription _spring = SpringDescription.withDampingRatio(mass: 1, stiffness: 300);
+
+  @override
+  _SimilarSnapPhysics applyTo(ScrollPhysics? ancestor) =>
+      _SimilarSnapPhysics(onRelease: onRelease, parent: buildParent(ancestor));
+
+  @override
+  Simulation? createBallisticSimulation(ScrollMetrics position, double velocity) {
+    final double? target = position.outOfRange ? null : onRelease(position, velocity);
+    final Tolerance tolerance = toleranceFor(position);
+    if (target == null || (target - position.pixels).abs() <= tolerance.distance) {
+      return super.createBallisticSimulation(position, velocity);
+    }
+    // A critically damped spring overshoots when it starts faster than this toward its target. Past it, "More like
+    // this" would slide under the header and come back.
+    final double distance = target - position.pixels;
+    final double limit = sqrt(_spring.stiffness / _spring.mass) * distance.abs();
+    return ScrollSpringSimulation(
+      _spring,
+      position.pixels,
+      target,
+      velocity.clamp(-limit, limit),
+      tolerance: tolerance,
+    );
+  }
+}
+
+/// Paints [color], and eases to a new one over [PrismDurations.base].
+class _PageTint extends StatelessWidget {
+  const _PageTint({super.key, required this.color, this.child});
+
+  final Color color;
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<Color?>(
+    tween: ColorTween(end: color),
+    duration: context.motion(PrismDurations.base),
+    curve: PrismCurves.enter,
+    child: child,
+    builder: (context, shown, child) => ColoredBox(color: shown ?? color, child: child),
+  );
+}
+
+/// One fact in the details grid.
+typedef _Fact = ({String label, String value});

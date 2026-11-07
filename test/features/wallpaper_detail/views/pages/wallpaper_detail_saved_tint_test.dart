@@ -407,7 +407,7 @@ void main() {
 
       expect(tester.widget<DownloadButton>(find.byType(DownloadButton)).variant!.key, 'tint-00ff00');
       expect(find.text('Saved'), findsNothing);
-      expect(find.text('Save · ${CoinPolicy.wallpaperDownload}'), findsOneWidget);
+      expect(find.bySemanticsLabel('Save. Costs ${CoinPolicy.wallpaperDownload} coins'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
 

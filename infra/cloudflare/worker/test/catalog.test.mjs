@@ -373,6 +373,62 @@ test('a folder owner marked without a creator page is not linked', async (t) => 
   assert.equal(h.state.reads.length - readsBefore, 1, 'a folder page reads only its own document');
 });
 
+test('folder page groups its walls under headings, with Unsorted first and no heading', async (t) => {
+  const h = setup(t);
+  h.state.docs['webPages/folder~F1'].groups = [{ name: '', count: 1 }, { name: 'Dark', count: 1 }];
+
+  const body = await (await h.get('/folder/F1')).text();
+
+  assert.equal(body.split('<section class="folder-section">').length - 1, 2);
+  assert.match(body, /<section class="folder-section"><ul class="grid">/);
+  assert.match(body, /<section class="folder-section"><h2>Dark <span class="section-count">1<\/span><\/h2>/);
+  const [unsorted, dark] = body.split('<section class="folder-section">').slice(1);
+  assert.ok(unsorted.includes('href="/wallpaper/W1"') && !unsorted.includes('href="/wallpaper/N2"'));
+  assert.ok(dark.includes('href="/wallpaper/N2"') && !dark.includes('href="/wallpaper/W1"'));
+});
+
+test('folder page groups that do not add up to the item count render as one plain grid', async (t) => {
+  const h = setup(t);
+  h.state.docs['webPages/folder~F1'].groups = [{ name: 'Dark', count: 1 }];
+
+  const body = await (await h.get('/folder/F1')).text();
+
+  assert.equal(body.includes('class="folder-section"'), false);
+  assert.equal(body.split('<ul class="grid">').length - 1, 1);
+  assert.ok(body.includes('href="/wallpaper/W1"') && body.includes('href="/wallpaper/N2"'));
+});
+
+test('folder page escapes a section name', async (t) => {
+  const h = setup(t);
+  h.state.docs['webPages/folder~F1'].groups = [{ name: '<b>x</b>', count: 1 }, { name: '', count: 1 }];
+
+  const body = await (await h.get('/folder/F1')).text();
+
+  assert.ok(body.includes('<h2>&lt;b&gt;x&lt;/b&gt; <span class="section-count">1</span></h2>'));
+  assert.equal(body.includes('<b>x</b>'), false);
+});
+
+test('folder page with malformed group entries still renders every wall in one grid', async (t) => {
+  const h = setup(t);
+  h.state.docs['webPages/folder~F1'].groups = [null, { name: 'Dark', count: 2 }];
+  const response = await h.get('/folder/F1');
+  assert.equal(response.status, 200);
+  const body = await response.text();
+  assert.equal(body.includes('class="folder-section"'), false);
+  assert.ok(body.includes('/wallpaper/W1'));
+  assert.ok(body.includes('/wallpaper/N2'));
+});
+
+test('folder page with groups still reads only its own document', async (t) => {
+  const h = setup(t);
+  h.state.docs['webPages/folder~F1'].groups = [{ name: '', count: 1 }, { name: 'Dark', count: 1 }];
+  const readsBefore = h.state.reads.length;
+
+  await (await h.get('/folder/F1')).text();
+
+  assert.equal(h.state.reads.length - readsBefore, 1, 'a folder page reads only its own document');
+});
+
 test('a creator photo outside the profile photo hosts is dropped and the page still renders', async (t) => {
   const h = setup(t);
   h.state.docs['webPages/creator~sam~1'].creator.photo = 'https://tracker.example/pixel.gif';

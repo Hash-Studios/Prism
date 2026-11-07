@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -10,6 +11,7 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/shared_folders_repository.dart';
+import 'package:Prism/features/folders/views/folder_sections.dart';
 import 'package:Prism/features/folders/views/widgets/folder_members_sheet.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -17,17 +19,46 @@ import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Opens the actions for one wallpaper in a shared folder: who added it, and removing it.
-Future<void> showFolderItemSheet(BuildContext context, FolderEntity folder, FavouriteWallEntity wall) async {
+/// Opens the actions for one wallpaper: who added it in a shared folder, "Move to section" when the folder has
+/// sections, and removing it. [sectionId] is the wall's current section.
+Future<void> showFolderItemSheet(
+  BuildContext context,
+  FolderEntity folder,
+  FavouriteWallEntity wall, {
+  String? sectionId,
+}) async {
   PrismHaptics.tap();
   final FoldersBloc bloc = context.read<FoldersBloc>();
   final String userId = bloc.state.userId;
-  final Future<Result<String?>> addedBy = getIt<SharedFoldersRepository>().addedBy(folder.id, folderItemKey(wall));
+  final bool shared = folder.editors.isNotEmpty;
+  final Future<Result<String?>>? addedBy = shared
+      ? getIt<SharedFoldersRepository>().addedBy(folder.id, folderItemKey(wall))
+      : null;
+  final String? current = folder.sections.any((section) => section.id == sectionId) ? sectionId : null;
   await showPrismSheet<void>(
     context,
     detents: const <PrismSheetDetent>[PrismSheetDetent.fit],
     builder: (sheetContext) => PrismSheetBody(
       actions: <Widget>[
+        if (folder.sections.isNotEmpty) ...<Widget>[
+          PrismButton(
+            maxLines: null,
+            label: sheetContext.l10n.foldersSectionMoveTo,
+            variant: PrismButtonVariant.tonal,
+            expand: true,
+            onPressed: () {
+              Navigator.of(sheetContext).pop();
+              unawaited(
+                showMoveToSectionSheet(
+                  context,
+                  folder: folder,
+                  itemKeys: <String>[folderItemKey(wall)],
+                  current: current,
+                ),
+              );
+            },
+          ),
+        ],
         PrismButton(
           maxLines: null,
           label: sheetContext.l10n.foldersRemoveFromFolder,
@@ -42,14 +73,16 @@ Future<void> showFolderItemSheet(BuildContext context, FolderEntity folder, Favo
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          _addedByLine(addedBy, userId),
-          const SizedBox(height: PrismSpace.md),
+          if (addedBy != null) ...<Widget>[_addedByLine(addedBy, userId), const SizedBox(height: PrismSpace.md)],
           SizedBox(
             width: 120,
             height: 160,
             child: PrismWallTile(
               url: wall.thumbnailUrl,
               fallbackUrl: wall.source == WallpaperSource.prism ? null : wall.fullUrl,
+              placeholderColor: wall is LegacyFavouriteWall
+                  ? null
+                  : placeholderColorOf(wall.toFeedItem(), Theme.of(sheetContext).colorScheme.surface),
               semanticLabel: wallpaperSemanticLabel(wall.authorName, sheetContext.l10n),
             ),
           ),
@@ -88,7 +121,6 @@ Future<void> _removeFromFolder(
   FolderEntity folder,
   FavouriteWallEntity wall,
 ) async {
-  PrismHaptics.impact();
   final AppLocalizations l10n = context.l10n;
   final bool confirmed = await showPrismConfirm(
     context,

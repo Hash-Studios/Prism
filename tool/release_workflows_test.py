@@ -41,8 +41,9 @@ RELEASE_JOBS = (('testflight.yml', 'build-and-upload'), ('sentry_release_android
 
 def scheduled(job, outputs):
     """Evaluate this job's simple changes-output condition without eval."""
-    return any(all(outputs[match[0]] == match[1]
-                   for match in re.findall(r"needs\.changes\.outputs\.(\w+) == '(true|false)'", term))
+    return any(all((outputs[key] == value) == (operator == '==')
+                   for key, operator, value in re.findall(
+                       r"needs\.changes\.outputs\.(\w+) (==|!=) '(true|false)'", term))
                for term in job['if'].split(' || '))
 
 
@@ -603,9 +604,9 @@ sys.exit(23)
             'functions/src/__tests__/other.test.ts': False,
             'functions/package.json': False,
             'web/app/page.tsx': False,
-            'lib/core/startup/notification_channels.dart': True,
-            'test/core/startup/notification_channels_test.dart': True,
-            '.github/workflows/ci.yml': True,
+            'lib/core/startup/notification_channels.dart': False,
+            'test/core/startup/notification_channels_test.dart': False,
+            '.github/workflows/ci.yml': False,
         }
         for changed, expected in scenarios.items():
             # These two filters contain positive single-segment globs only.
@@ -613,6 +614,7 @@ sys.exit(23)
                                     and fnmatch.fnmatchcase(changed, pattern)
                                     for pattern in filters[key])).lower()
                        for key in ('notification_contract', 'workflow')}
+            outputs['flutter'] = str(changed.startswith(('lib/', 'test/'))).lower()
             self.assertEqual(scheduled(job, outputs), expected, changed)
         command = next(step['run'] for step in job['steps'] if step.get('name') == 'Check notification-channel contract')
         self.assertEqual(command.split(), ['flutter', 'test', 'test/core/startup/notification_channels_test.dart'])

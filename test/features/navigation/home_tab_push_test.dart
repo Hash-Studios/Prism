@@ -448,7 +448,10 @@ void main() {
     expect(items.single.createdAt, DateTime(2026, 10, 25, 12).toUtc());
     final MethodCall show = notificationCalls.singleWhere((call) => call.method == 'show');
     final Map<Object?, Object?> arguments = show.arguments as Map<Object?, Object?>;
-    expect(jsonDecode(arguments['payload']! as String), <String, String>{'route': '/theme'});
+    expect(jsonDecode(arguments['payload']! as String), <String, String>{
+      'route': '/theme',
+      'seasonal_announcement': 'diwali',
+    });
     final Map<Object?, Object?> platformSpecifics = arguments['platformSpecifics']! as Map<Object?, Object?>;
     expect(platformSpecifics['channelId'], 'recommendations');
 

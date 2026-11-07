@@ -68,7 +68,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Stats'));
+      await tester.tap(find.byTooltip('Stats'));
       await tester.pumpAndSettle();
       expect(router.current.name, CreatorStatsRoute.name);
       expect(find.text('CreatorStatsRoute:profile'), findsOneWidget);

@@ -5,7 +5,8 @@ import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// The text tabs of the home feed, in the style of X: `For you`, `Following`, `Trending`, `Latest` and `Popular`.
-/// An accent underline marks the chosen tab, and a hairline runs under the row.
+/// The chosen tab is bold in full ink over a 2 px ink line, and the others are medium weight at 60% ink, so the row
+/// stays quiet. A hairline runs under the row. The weight and ink move with the controller (160 ms in the feed).
 ///
 /// [selected] is the tab the feed shows, and [controller] only draws the underline. A tap on the chosen `For you` tab
 /// opens the feed settings through [onTuneTap]. On a screen too narrow for all tabs, the row scrolls and fades out at
@@ -81,7 +82,6 @@ class _HomeFeedTabBarState extends State<HomeFeedTabBar> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    final TextStyle labelStyle = PrismTextStyles.button.copyWith(fontWeight: FontWeight.w700);
     return SizedBox(
       height: HomeFeedTabBar.height,
       child: Stack(
@@ -103,11 +103,13 @@ class _HomeFeedTabBarState extends State<HomeFeedTabBar> {
                 tabAlignment: TabAlignment.start,
                 padding: const EdgeInsetsDirectional.only(start: HomeFeedTabBar._startInset),
                 labelPadding: const EdgeInsets.symmetric(horizontal: HomeFeedTabBar._labelPadding),
-                labelStyle: labelStyle,
-                unselectedLabelStyle: labelStyle,
+                labelStyle: PrismTextStyles.button.copyWith(fontWeight: FontWeight.w700),
+                unselectedLabelStyle: PrismTextStyles.button.copyWith(fontWeight: FontWeight.w500),
+                labelColor: cs.onSurface,
+                unselectedLabelColor: cs.onSurface.withValues(alpha: 0.6),
                 indicator: UnderlineTabIndicator(
-                  borderSide: BorderSide(width: 4, color: cs.primary),
-                  borderRadius: BorderRadius.circular(2),
+                  borderSide: BorderSide(width: 2, color: cs.onSurface),
+                  borderRadius: BorderRadius.circular(1),
                 ),
                 indicatorSize: TabBarIndicatorSize.label,
                 dividerColor: Colors.transparent,
@@ -170,7 +172,7 @@ class _HomeFeedTabBarState extends State<HomeFeedTabBar> {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Text(label, softWrap: false),
-          Icon(PrismIcons.dropdownCaret, size: 18, color: cs.onSurface.withValues(alpha: 0.6)),
+          Icon(PrismIcons.dropdownCaret, size: 18, color: cs.onSurfaceVariant),
         ],
       ),
     );

@@ -7,6 +7,7 @@ import 'package:Prism/core/cache/prism_full_image_cache.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
@@ -1682,6 +1683,37 @@ void main() {
       await _expectFileExists(tester, placed, true);
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
+    testWidgets('a failed Adjust launch keeps only the opening tap and allows retry', (tester) async {
+      final haptics = <Object?>[];
+      final previousHaptics = PrismHaptics.enabled;
+      addTearDown(() => PrismHaptics.enabled = previousHaptics);
+      PrismHaptics.enabled = true;
+      const channel = MethodChannel('prism/haptics');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+        haptics.add(call.arguments);
+        return null;
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null));
+      var calls = 0;
+      await _openSetScreen(
+        tester,
+        _request(
+          onAdjust: (_) async {
+            calls++;
+            throw StateError('editor unavailable');
+          },
+        ),
+        <SetWallpaperChoice?>[],
+      );
+      haptics.clear();
+      await tester.tap(find.byKey(_adjustKey));
+      await tester.pumpAndSettle();
+      expect(haptics, <Object?>['tap']);
+      await tester.tap(find.byKey(_adjustKey));
+      await tester.pumpAndSettle();
+      expect(calls, 2);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
     testWidgets('two Adjust taps while the studio is opening call it once', (tester) async {
       final Completer<StudioResult?> adjusted = Completer<StudioResult?>();
       int calls = 0;
@@ -2095,6 +2127,72 @@ void main() {
       expect(find.text('Clear'), findsOneWidget);
       expect(find.text('Tinted'), findsOneWidget);
       expect(find.text('Themed'), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('iOS icon styles are compact chips above Lock and Home, which never move', (tester) async {
+      await _pumpPreview(tester);
+      await tester.pumpAndSettle();
+      final Finder modes = find.byType(PrismSegmented<ClockPreviewMode>);
+      final Rect lockModes = tester.getRect(modes);
+      final Rect lockClose = tester.getRect(find.byTooltip('Close preview'));
+      await tester.tap(find.text(_homeSegment()));
+      await tester.pump();
+      // The chips fade in. Lock, Home and Close stay where they were, from the first frame on.
+      expect(tester.getRect(modes), lockModes);
+      expect(tester.getRect(find.byTooltip('Close preview')), lockClose);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PrismSegmented<PreviewIconStyle>), findsNothing);
+      expect(tester.getRect(modes), lockModes);
+      expect(tester.getRect(find.byTooltip('Close preview')), lockClose);
+      for (final String style in <String>['Default', 'Dark', 'Clear', 'Tinted']) {
+        expect(tester.getBottomLeft(find.widgetWithText(PrismChip, style)).dy, lessThan(lockModes.top), reason: style);
+      }
+
+      await tester.tap(find.text(_lockSegment()));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(PrismChip, 'Default'), findsNothing);
+      expect(tester.getRect(modes), lockModes);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('Lock mode shades the top 40% for the clock; Home mode drops the shade', (tester) async {
+      await _pumpPreview(tester);
+      await tester.pumpAndSettle();
+      final Finder shade = find.byKey(const ValueKey<String>('lock-shade'));
+      expect(tester.widget<AnimatedOpacity>(shade).opacity, 1);
+      final Finder fill = find.descendant(of: shade, matching: find.byType(DecoratedBox));
+      final Size screen = tester.getSize(find.byType(ClockOverlay));
+      expect(tester.getRect(fill), Rect.fromLTWH(0, 0, screen.width, screen.height * 0.4));
+      final LinearGradient gradient =
+          (tester.widget<DecoratedBox>(fill).decoration as BoxDecoration).gradient! as LinearGradient;
+      // Black at 0.25 (0x40), clear by 40% down.
+      expect(gradient.colors, const <Color>[Color(0x40000000), Color(0x00000000)]);
+
+      await tester.tap(find.text(_homeSegment()));
+      await tester.pumpAndSettle();
+      expect(tester.widget<AnimatedOpacity>(shade).opacity, 0);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('Save to Photos fills the row 12 points after Close at the large size', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: ClockOverlay(
+            link: _previewPath,
+            file: true,
+            saveAction: (label) => PrismButton(label: label, expand: true, onPressed: () {}),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final Rect close = tester.getRect(find.byTooltip('Close preview'));
+      final Rect save = tester.getRect(find.widgetWithText(PrismButton, 'Save to Photos'));
+      final Rect modes = tester.getRect(find.byType(PrismSegmented<ClockPreviewMode>));
+      expect(save.left, close.right + 12);
+      expect(save.right, modes.right);
+      expect(save.height, 52);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('the compact icon style keeps a 44 point tappable control', (tester) async {

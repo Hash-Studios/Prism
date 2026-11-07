@@ -55,6 +55,7 @@ class _Fake {
   bool shareFails = false;
   bool textShareFails = false;
   bool copyFails = false;
+  ImageProvider? thumbnail;
 
   ShareSheetServices get services => ShareSheetServices(
     render: (ShareCardFormat format, ShareCardContent content) {
@@ -99,6 +100,7 @@ class _Fake {
       if (copyFails) throw PlatformException(code: 'clipboard_failed');
       copied.add(text);
     },
+    thumbnail: (String imageUrl) => thumbnail,
   );
 }
 
@@ -136,6 +138,7 @@ Future<void> _openSheet(
   WidgetTester tester,
   ShareSheetServices services, {
   ShareCardContent content = _content,
+  Future<ShareCardContent?>? ready,
   VoidCallback? onShared,
   bool disableAnimations = false,
   Locale locale = const Locale('en'),
@@ -179,7 +182,8 @@ Future<void> _openSheet(
         builder: (BuildContext context) => Scaffold(
           body: Center(
             child: TextButton(
-              onPressed: () => showShareSheet(context, content, 'wall_detail', services: services, onShared: onShared),
+              onPressed: () =>
+                  showShareSheet(context, content, 'wall_detail', ready: ready, services: services, onShared: onShared),
               child: const Text('open'),
             ),
           ),
@@ -236,6 +240,89 @@ void main() {
   tearDown(() {
     AnalyticsRuntime.reset();
     app_state.prismUser = app_constants.createGuestPrismUser();
+  });
+
+  testWidgets('a pending share opens on the wall colour, renders once ready, and a target waits for it', (
+    tester,
+  ) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(400, 900);
+    addTearDown(tester.view.reset);
+    _mockChannels(tester);
+    const Color wall = Color(0xFF0066CC);
+    const String shortLink = 'https://prismwalls.com/l/short123';
+    final Completer<ShareCardContent?> ready = Completer<ShareCardContent?>();
+    final _Fake fake = _Fake(await _writeCards(tester));
+    await _openSheet(
+      tester,
+      fake.services,
+      content: const ShareCardContent(
+        imageUrl: 'https://img.test/full.jpg',
+        link: _link,
+        brandName: 'Prism',
+        palette: <Color>[wall],
+      ),
+      ready: ready.future,
+    );
+
+    expect(find.text('Story'), findsOneWidget);
+    expect(fake.renders, isEmpty);
+    expect(
+      tester.widget<ColoredBox>(find.byKey(const ValueKey<String>('share-preview-placeholder-story'))).color,
+      wall,
+    );
+
+    await tester.tap(_target(ShareTargetValue.copyLink));
+    await tester.pump();
+    expect(fake.copied, isEmpty);
+
+    ready.complete(
+      const ShareCardContent(
+        imageUrl: 'https://img.test/full.jpg',
+        link: shortLink,
+        brandName: 'Prism',
+        palette: <Color>[wall],
+      ),
+    );
+    await _settle(tester);
+
+    expect(fake.copied, <String>[shortLink]);
+    expect(fake.renders, contains(ShareCardFormat.story));
+  });
+
+  testWidgets('the card frame shows the wall image while the card renders, then the card fades in over it', (
+    tester,
+  ) async {
+    _mockChannels(tester);
+    final Completer<File> render = Completer<File>();
+    final _Fake fake = _Fake(await _writeCards(tester))
+      ..pendingRender = render.future
+      ..thumbnail = MemoryImage(base64Decode(_pngBase64));
+    await _openSheet(tester, fake.services);
+
+    const ValueKey<String> thumb = ValueKey<String>('share-preview-thumb-story');
+    expect(find.byKey(thumb), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('share-preview-story')), findsNothing);
+
+    render.complete(fake.cards[ShareCardFormat.story]!);
+    await _settle(tester);
+    expect(find.byKey(const ValueKey<String>('share-preview-story')), findsOneWidget);
+    expect(find.byKey(thumb), findsOneWidget);
+  });
+
+  testWidgets('a pending share that cannot load closes the sheet', (tester) async {
+    _mockChannels(tester);
+    final Completer<ShareCardContent?> ready = Completer<ShareCardContent?>();
+    final _Fake fake = _Fake(await _writeCards(tester));
+    await _openSheet(tester, fake.services, ready: ready.future);
+    expect(find.text('Story'), findsOneWidget);
+
+    ready.complete(null);
+    await _settle(tester);
+
+    expect(find.text('Story'), findsNothing);
+    expect(fake.renders, isEmpty);
   });
 
   testWidgets('cancelling sign-in does not copy or save a share card', (tester) async {
@@ -297,16 +384,18 @@ void main() {
         cta: 'Get it on Prism',
       ),
     );
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.duoReveal]);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.duoReveal, ShareCardFormat.story]);
     expect(analytics.events.whereType<DuoShareCardMadeEvent>(), hasLength(1));
     await tester.tap(_target(ShareTargetValue.saveImage));
     await _settle(tester);
     expect(fake.saved.single.path, fake.cards[ShareCardFormat.duoReveal]!.path);
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.duoReveal]);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.duoReveal, ShareCardFormat.story]);
     expect(analytics.events.whereType<DuoShareCardMadeEvent>(), hasLength(1));
   });
 
-  testWidgets('opening the sheet shows the three formats, the three targets, and renders Story once', (tester) async {
+  testWidgets('opening the sheet shows the three formats, the three targets, and renders Story and the peeking Post', (
+    tester,
+  ) async {
     tester.view
       ..devicePixelRatio = 1
       ..physicalSize = const Size(400, 900);
@@ -322,11 +411,11 @@ void main() {
     expect(_target(ShareTargetValue.saveImage), findsOneWidget);
     expect(_target(ShareTargetValue.more), findsOneWidget);
     expect(_target(ShareTargetValue.instagramStories), findsNothing);
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story]);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post]);
     expect(find.byKey(const ValueKey<String>('share-preview-story')), findsOneWidget);
   });
 
-  testWidgets('swiping renders each format once, and only after it is reached', (tester) async {
+  testWidgets('swiping renders each format once, once it or its neighbour is reached', (tester) async {
     tester.view
       ..devicePixelRatio = 1
       ..physicalSize = const Size(400, 900);
@@ -337,19 +426,19 @@ void main() {
 
     await tester.drag(_pages(), const Offset(-300, 0));
     await _settle(tester);
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post]);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post, ShareCardFormat.clean]);
 
     await tester.drag(_pages(), const Offset(300, 0));
     await _settle(tester);
-    expect(fake.renders, hasLength(2));
+    expect(fake.renders, hasLength(3));
 
     await tester.drag(_pages(), const Offset(-300, 0));
     await _settle(tester);
-    expect(fake.renders, hasLength(2));
+    expect(fake.renders, hasLength(3));
 
     await tester.drag(_pages(), const Offset(-300, 0));
     await _settle(tester);
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post, ShareCardFormat.clean]);
+    expect(fake.renders, hasLength(3));
     expect(find.byKey(const ValueKey<String>('share-preview-clean')), findsOneWidget);
   });
 
@@ -567,7 +656,7 @@ void main() {
 
     await tester.drag(_pages(), const Offset(-300, 0));
     await _settle(tester);
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post]);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post, ShareCardFormat.clean]);
 
     await tester.tap(_target(ShareTargetValue.copyLink));
     await _settle(tester);
@@ -729,7 +818,7 @@ void main() {
     expect(fake.sharedTexts, hasLength(1));
     expect(fake.sharedTexts.single, contains(_link));
     expect(_target(ShareTargetValue.more), findsNothing);
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post]);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post, ShareCardFormat.clean]);
   });
 
   testWidgets('Save image retries a failed preview render after the image becomes available', (tester) async {
@@ -776,7 +865,7 @@ void main() {
     await tester.tap(_target(ShareTargetValue.more));
     await _settle(tester);
     expect(analytics.events.whereType<InviteShareResultEvent>().last.result, EventResultValue.success);
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story]);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post]);
   });
 
   testWidgets('a busy save blocks double taps and other targets and retains its original format', (tester) async {
@@ -897,7 +986,7 @@ void main() {
 
     expect(tester.widget<Semantics>(_formatSemantics('Post')).properties.selected, isTrue);
     expect(find.byKey(const ValueKey<String>('share-preview-post')), findsNothing);
-    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post]);
+    expect(fake.renders, <ShareCardFormat>[ShareCardFormat.story, ShareCardFormat.post, ShareCardFormat.clean]);
   });
   testWidgets('Open on computer target shows with a computer link and opens the link sheet', (tester) async {
     tester.view

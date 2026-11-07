@@ -1,9 +1,11 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/views/mood_copy.dart';
 import 'package:Prism/features/wall_requests/domain/entities/wall_request.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 /// The copy for a failed request action. The page toast and the sheet both use it.
 String wallRequestErrorText(BuildContext context, WallRequestError error) {
@@ -66,7 +68,7 @@ class WallRequestRow extends StatelessWidget {
     final AppLocalizations l10n = context.l10n;
     final ColorScheme cs = Theme.of(context).colorScheme;
     final WallRequest r = request;
-    final Color soft = cs.onSurface.withValues(alpha: 0.6);
+    final Color soft = cs.onSurfaceVariant;
     final List<String> meta = <String>[
       l10n.wallRequestVotes(r.voteCount),
       wallRequestAge(context, r.createdAt),
@@ -81,9 +83,10 @@ class WallRequestRow extends StatelessWidget {
           child: Text(r.hidden ? l10n.wallRequestUnhide : l10n.wallRequestHide),
         ),
     ];
-    return PrismCard(
-      padding: const EdgeInsets.all(PrismSpace.md),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: PrismSpace.sm),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           if (r.isFilled) ...<Widget>[
             _Thumb(url: r.filledWallThumb, onTap: onOpenWall),
@@ -94,7 +97,12 @@ class WallRequestRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                Text(r.text, maxLines: 3, overflow: TextOverflow.ellipsis, style: PrismTextStyles.rowTitle(context)),
+                Text(
+                  toBeginningOfSentenceCase(r.text),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: PrismTextStyles.rowTitle(context),
+                ),
                 if (r.tags.isNotEmpty || r.hidden) ...<Widget>[
                   const SizedBox(height: PrismSpace.xs),
                   Wrap(
@@ -107,7 +115,12 @@ class WallRequestRow extends StatelessWidget {
                   ),
                 ],
                 const SizedBox(height: PrismSpace.xxs),
-                Text(meta.join(' · '), style: PrismTextStyles.caption(context).copyWith(fontSize: 13, color: soft)),
+                Text(
+                  meta.join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: PrismTextStyles.caption(context).copyWith(fontSize: 13, color: soft),
+                ),
                 if (r.filledBy == WallRequestFiller.studio) ...<Widget>[
                   const SizedBox(height: PrismSpace.xxs),
                   Text(l10n.wallRequestFilledByStudio, style: PrismTextStyles.caption(context).copyWith(color: soft)),
@@ -115,9 +128,10 @@ class WallRequestRow extends StatelessWidget {
               ],
             ),
           ),
-          if (r.canVote && !r.isFilled)
-            _VoteButton(voted: r.voted, count: r.voteCount, onPressed: onVote)
-          else if (r.mine)
+          if (r.canVote && !r.isFilled) ...<Widget>[
+            const SizedBox(width: PrismSpace.xs),
+            _VoteButton(voted: r.voted, count: r.voteCount, onPressed: onVote),
+          ] else if (r.mine)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
               child: Text(l10n.wallRequestMine, style: PrismTextStyles.caption(context).copyWith(color: soft)),
@@ -126,7 +140,7 @@ class WallRequestRow extends StatelessWidget {
             PopupMenuButton<VoidCallback>(
               tooltip: l10n.wallRequestMoreActions,
               icon: Icon(Icons.more_vert_rounded, color: soft),
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(PrismSpace.sm),
               onSelected: (VoidCallback action) => action(),
               itemBuilder: (_) => menu,
             ),
@@ -161,11 +175,16 @@ class _VoteButton extends StatelessWidget {
           type: MaterialType.transparency,
           child: InkWell(
             borderRadius: BorderRadius.circular(PrismRadius.pill),
-            onTap: onPressed,
+            onTap: onPressed == null
+                ? null
+                : () {
+                    PrismHaptics.impact();
+                    onPressed!();
+                  },
             child: AnimatedContainer(
               duration: context.motion(PrismDurations.fast),
               curve: PrismCurves.enter,
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
               padding: const EdgeInsets.symmetric(horizontal: PrismSpace.sm),
               decoration: BoxDecoration(
                 color: voted ? cs.primary : cs.onSurface.withValues(alpha: 0.06),
@@ -213,7 +232,12 @@ class _Thumb extends StatelessWidget {
         type: MaterialType.transparency,
         child: InkWell(
           borderRadius: BorderRadius.circular(PrismRadius.sm),
-          onTap: onTap,
+          onTap: onTap == null
+              ? null
+              : () {
+                  PrismHaptics.tap();
+                  onTap!();
+                },
           child: ClipRRect(
             borderRadius: BorderRadius.circular(PrismRadius.sm),
             child: SizedBox.square(dimension: 56, child: image),

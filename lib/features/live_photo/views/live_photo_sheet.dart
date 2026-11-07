@@ -225,7 +225,6 @@ class LivePhotoSheet extends StatelessWidget {
       bloc.add(LivePhotoEvent.accessChanged(isPro: app_state.prismUser.premium, unlockedStyles: liveStyleUnlocks()));
       return;
     }
-    PrismHaptics.tap();
     final MediaQueryData media = MediaQuery.of(context);
     final Size points = media.size;
     final Size pixels = Size(points.shortestSide * media.devicePixelRatio, points.longestSide * media.devicePixelRatio);
@@ -258,10 +257,7 @@ class _StylePicker extends StatelessWidget {
                 label: liveMotionStyleLabel(l10n, style),
                 icon: state.isLocked(style) ? Icons.lock_rounded : null,
                 selected: style == state.style,
-                onTap: () {
-                  PrismHaptics.selection();
-                  context.read<LivePhotoBloc>().add(LivePhotoEvent.styleSelected(style));
-                },
+                onTap: () => context.read<LivePhotoBloc>().add(LivePhotoEvent.styleSelected(style)),
               ),
             ),
         ],
@@ -412,10 +408,7 @@ class LivePhotoGuideSheet extends StatelessWidget {
           label: l10n.coreOpenPhotos,
           icon: Icons.photo_library_rounded,
           expand: true,
-          onPressed: () {
-            PrismHaptics.tap();
-            _launch('photos-redirect://');
-          },
+          onPressed: () => _launch('photos-redirect://'),
         ),
         PrismButton(
           label: l10n.coreDone,

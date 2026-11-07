@@ -1,6 +1,5 @@
 import 'dart:ui' as ui;
 
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/crop_spec.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/crop_frame_view.dart';
@@ -44,12 +43,7 @@ class _WatchCropPageState extends State<WatchCropPage> {
           label: l10n.watchCropReset,
           variant: PrismButtonVariant.ghost,
           size: PrismButtonSize.compact,
-          onPressed: _crop == widget.smart
-              ? null
-              : () {
-                  PrismHaptics.selection();
-                  setState(() => _crop = widget.smart);
-                },
+          onPressed: _crop == widget.smart ? null : () => setState(() => _crop = widget.smart),
         ),
       ],
       bottomBar: Padding(

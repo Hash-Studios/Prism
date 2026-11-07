@@ -81,9 +81,14 @@ class CollectionCard extends StatelessWidget {
                 DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      begin: const Alignment(0, 0.1),
+                      begin: const Alignment(0, -0.2),
                       end: Alignment.bottomCenter,
-                      colors: <Color>[Colors.transparent, Colors.black.withValues(alpha: 0.72)],
+                      stops: const <double>[0, 0.55, 1],
+                      colors: <Color>[
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.3),
+                        Colors.black.withValues(alpha: 0.82),
+                      ],
                     ),
                   ),
                 ),

@@ -817,7 +817,7 @@
   "@accountSpatialSceneSemanticLabel": {
     "description": "Spatial Scene text: accountSpatialSceneSemanticLabel."
   },
-  "accountDownloadApk": "DOWNLOAD APK",
+  "accountDownloadApk": "Download APK",
   "@accountDownloadApk": {
     "description": "About page action that opens the APK download page. Shown only on installs that did not come from Google Play."
   },
@@ -865,7 +865,7 @@
   "@accountFavouritesCleared": {
     "description": "Success message after clearing favourite wallpapers."
   },
-  "accountFeedback": "FEEDBACK",
+  "accountFeedback": "Feedback",
   "@accountFeedback": {
     "description": "About page action to send feedback."
   },
@@ -1420,7 +1420,7 @@
   "@accountPrismPro": {
     "description": "Prism Pro drawer heading."
   },
-  "accountPrivacyAction": "PRIVACY",
+  "accountPrivacyAction": "Privacy policy",
   "@accountPrivacyAction": {
     "description": "About page action to view the privacy policy."
   },
@@ -1516,7 +1516,7 @@
   "@accountQuickTiles": {
     "description": "Settings item for Quick Settings tiles."
   },
-  "accountRateApp": "RATE",
+  "accountRateApp": "Rate",
   "@accountRateApp": {
     "description": "About page action to rate Prism."
   },
@@ -1608,15 +1608,6 @@
   "accountRestoringPurchases": "Restoring purchases…",
   "@accountRestoringPurchases": {
     "description": "Progress toast while restoring purchases."
-  },
-  "accountResultsForQuery": "Results for {query}",
-  "@accountResultsForQuery": {
-    "description": "Label above wallpaper search results.",
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
   },
   "accountRetry": "Retry",
   "@accountRetry": {
@@ -1781,19 +1772,19 @@
   "@accountSignInToPrism": {
     "description": "Heading for the signed-out settings account card."
   },
-  "accountSocialGithub": "GITHUB",
+  "accountSocialGithub": "GitHub",
   "@accountSocialGithub": {
     "description": "About page social link label for GitHub."
   },
-  "accountSocialInstagram": "INSTAGRAM",
+  "accountSocialInstagram": "Instagram",
   "@accountSocialInstagram": {
     "description": "About page social link label for Instagram."
   },
-  "accountSocialTelegram": "TELEGRAM",
+  "accountSocialTelegram": "Telegram",
   "@accountSocialTelegram": {
     "description": "About page social link label for Telegram."
   },
-  "accountSocialTwitter": "TWITTER",
+  "accountSocialTwitter": "Twitter",
   "@accountSocialTwitter": {
     "description": "About page social link label for Twitter."
   },
@@ -1857,7 +1848,7 @@
   "@accountTerms": {
     "description": "Terms of use link label."
   },
-  "accountTermsAction": "TERMS",
+  "accountTermsAction": "Terms of use",
   "@accountTermsAction": {
     "description": "About page action to view the terms of use."
   },
@@ -2026,7 +2017,7 @@
   "@accountWhatsNew": {
     "description": "Menu item for the release changelog."
   },
-  "accountWhatsNewAction": "WHAT'S NEW",
+  "accountWhatsNewAction": "What's new",
   "@accountWhatsNewAction": {
     "description": "About page action to view changes."
   },
@@ -3088,6 +3079,12 @@
   "diwaliBannerSubtitle": "Diyas, fireworks and gold. Free. Tap to try it.",
   "diwaliAnnouncementTitle": "New: the Diwali theme 🪔",
   "diwaliAnnouncementBody": "Diyas, fireworks and gold. It is free. Tap to try it.",
+  "coreThemeWinter": "Winter",
+  "winterBannerTitle": "The Winter theme is here",
+  "winterBannerSubtitle": "Cool blues and soft snow, in light and dark. Free. Tap to try it.",
+  "winterAnnouncementTitle": "New: the Winter theme ❄️",
+  "winterAnnouncementBody": "Cool blues and soft snow for the holidays. It is free. Tap to try it.",
+  "winterNewYearGreeting": "Happy New Year",
   "coreThisPageDoesNotExist": "This page does not exist",
   "coreTryAgain": "Try again",
   "coreUndo": "Undo",
@@ -3137,6 +3134,22 @@
   "coreWallpaperErrorStyle": "This device could not start that style. Try another one.",
   "coreWallpaperErrorSystemPreview": "Couldn't open the system preview.",
   "coreWallpaperErrorTextureDimensions": "That image is too large for a live wallpaper.",
+  "coreWallpaperStillSetting": "Still setting your wallpaper. This can take a moment on some phones.",
+  "@coreWallpaperStillSetting": {
+    "description": "Shown when the phone has not finished setting the wallpaper after 30 seconds. The set can still finish, so this is not an error."
+  },
+  "coreWallpaperLockFailedUsePhone": "Couldn't set the lock screen. Your phone's own wallpaper screen can set it.",
+  "@coreWallpaperLockFailedUsePhone": {
+    "description": "Snackbar when the lock screen set failed. Its action opens the phone's own wallpaper screen, which some phones (Xiaomi, MIUI) require for the lock screen."
+  },
+  "coreWallpaperHomeSetLockFailedUsePhone": "Home screen set. Couldn't set the lock screen. Your phone's own wallpaper screen can set it.",
+  "@coreWallpaperHomeSetLockFailedUsePhone": {
+    "description": "Snackbar when a Both set changed only the home screen. Its action opens the phone's own wallpaper screen for the lock screen."
+  },
+  "coreWallpaperSetWithPhone": "Set with phone",
+  "@coreWallpaperSetWithPhone": {
+    "description": "Snackbar action. Opens the phone's own wallpaper screen with this wallpaper. Keep it short."
+  },
   "coreWallpaperErrorTimeout": "Timed out. Check your connection and try again.",
   "coreWallpaperHomeScreen": "Home screen",
   "coreWallpaperHomeSetLockFailed": "Home screen set. Lock screen failed.",
@@ -3461,6 +3474,10 @@
   "deepLinkInputLiveTitle": "Live wallpaper",
   "@deepLinkInputLiveTitle": {
     "description": "Page title while choosing an image for a live wallpaper."
+  },
+  "deepLinkInputLiveDescription": "Choose a photo from your gallery to make it a live wallpaper.",
+  "@deepLinkInputLiveDescription": {
+    "description": "Instructions on the image chooser page when the user makes a live wallpaper."
   },
   "deepLinkInputPhotoPreviewTitle": "Photo preview",
   "@deepLinkInputPhotoPreviewTitle": {
@@ -4173,6 +4190,15 @@
   "economyCoinsAreYoursToSpend": "Coins are yours to spend",
   "economyCoinsEarned": "+{count, plural, one{1 coin} other{{count} coins}}",
   "@economyCoinsEarned": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "economyCoinReward": "+{count}",
+  "@economyCoinReward": {
     "placeholders": {
       "count": {
         "type": "int",
@@ -5219,7 +5245,7 @@
   "economyLeaderboardNoRankings": "No rankings yet",
   "economyLeaderboardOffline": "If you are offline, saved scores may be shown.",
   "economyLeaderboardRankedByXp": "Ranked by XP earned this week",
-  "economyLeaderboardReset": "Resets Monday 00:00 UTC · {days, plural, one{1d} other{{days}d}} {hours, plural, one{1h} other{{hours}h}} left",
+  "economyLeaderboardReset": "Resets in {days, plural, one{1d} other{{days}d}} {hours, plural, one{1h} other{{hours}h}}",
   "@economyLeaderboardReset": {
     "placeholders": {
       "days": {
@@ -5994,10 +6020,10 @@
     }
   },
   "economyWeekComplete": "Week complete!",
-  "economyWeekly": "WEEKLY",
+  "economyWeekly": "Weekly",
   "economyWeeklyDraw": "Weekly draw",
   "economyWeeklyDrop": "Weekly Drop",
-  "economyWeeklyEndsIn": "WEEKLY · {time}",
+  "economyWeeklyEndsIn": "Weekly · {time}",
   "@economyWeeklyEndsIn": {
     "placeholders": {
       "time": {
@@ -6110,7 +6136,6 @@
       }
     }
   },
-  "economyYourXp": "YOUR XP",
   "errorGeneric": "Something went wrong. Please try again.",
   "errorNetwork": "Check your connection and try again.",
   "navigationBackOnline": "Back online",
@@ -6177,18 +6202,6 @@
   "notifEmptyTitle": "No notifications",
   "notifExpanded": "Expanded",
   "notifGenericTitle": "Notification",
-  "notifGroupAndMore": "{message} and {otherCount, plural, one{1 more.} other{{otherCount} more.}}",
-  "@notifGroupAndMore": {
-    "placeholders": {
-      "message": {
-        "type": "String"
-      },
-      "otherCount": {
-        "type": "int",
-        "format": "decimalPattern"
-      }
-    }
-  },
   "notifGroupApprovals": "{count, plural, one{approval} other{approvals}}",
   "@notifGroupApprovals": {
     "placeholders": {
@@ -6598,10 +6611,10 @@
   "onboardingAiGenerating": "crafting your wallpaper…",
   "onboardingBrowseGuest": "Browse without an account",
   "onboardingCategoriesUnavailable": "we could not load categories, you can skip this step",
-  "onboardingContinue": "continue",
+  "onboardingContinue": "Continue",
   "onboardingContinueApple": "Continue with Apple",
   "onboardingContinueGoogle": "Continue with Google",
-  "onboardingContinueSelected": "continue ({count} selected)",
+  "onboardingContinueSelected": "Continue ({count} selected)",
   "@onboardingContinueSelected": {
     "placeholders": {
       "count": {
@@ -6642,7 +6655,7 @@
   "onboardingFollowing": "following",
   "onboardingGenerateFailure": "something went wrong — tap generate to try again",
   "onboardingGenerateSuccess": "looking good! opening your wallpaper",
-  "onboardingGenerateWallpaper": "generate my wallpaper",
+  "onboardingGenerateWallpaper": "Generate my wallpaper",
   "onboardingHeadlineCreators": "Find your people",
   "onboardingHeadlineCustomize": "Make it yours",
   "onboardingHeadlineGenerate": "Create your\nfirst wallpaper",
@@ -6663,9 +6676,9 @@
   "onboardingRecoverySetupFailed": "Couldn't finish setup. Try again.",
   "onboardingRecoverySetupFailedHelper": "couldn't finish setup. check your connection and try again",
   "onboardingRecoverySignIn": "Sign in again",
-  "onboardingReloadLower": "reload",
-  "onboardingSavePhotos": "save to photos",
-  "onboardingSelectInterestMinimum": "select at least {count} categories to personalize your feed",
+  "onboardingReloadLower": "Reload",
+  "onboardingSavePhotos": "Save to photos",
+  "onboardingSelectInterestMinimum": "Select at least {count} categories to personalize your feed",
   "@onboardingSelectInterestMinimum": {
     "placeholders": {
       "count": {
@@ -6674,12 +6687,12 @@
       }
     }
   },
-  "onboardingSetWallpaper": "set as wallpaper",
-  "onboardingSignInAgainLower": "sign in again",
+  "onboardingSetWallpaper": "Set as wallpaper",
+  "onboardingSignInAgainLower": "Sign in again",
   "onboardingSkip": "Skip",
-  "onboardingSkipLower": "skip",
+  "onboardingSkipLower": "Skip",
   "onboardingTermsRequired": "Please agree to the Terms and Privacy policy first.",
-  "onboardingTryAgainLower": "try again",
+  "onboardingTryAgainLower": "Try again",
   "onboardingWallpaperForInterest": "we picked this wallpaper based on your interest in {category}",
   "@onboardingWallpaperForInterest": {
     "placeholders": {
@@ -6711,6 +6724,34 @@
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
   },
+  "premiumPageHeadline": "The whole gallery, unlocked",
+  "@premiumPageHeadline": {
+    "description": "Large headline at the top of the Prism Premium page."
+  },
+  "premiumBenefitWalls": "Every premium collection and wallpaper",
+  "@premiumBenefitWalls": {
+    "description": "Premium benefit row: premium collections and walls open without coins or a pass."
+  },
+  "premiumBenefitFree": "Free downloads and no ads",
+  "@premiumBenefitFree": {
+    "description": "Premium benefit row: downloads cost no coins and inline and full-screen ads are off."
+  },
+  "premiumBenefitSpin": "A free spin every day",
+  "@premiumBenefitSpin": {
+    "description": "Premium benefit row: one free spin of the coin wheel each day."
+  },
+  "premiumBenefitAutomation": "Auto-rotate and day and night mode",
+  "@premiumBenefitAutomation": {
+    "description": "Premium benefit row: auto-rotate and day and night wallpaper switching."
+  },
+  "premiumBenefitLiveStyles": "Every live wallpaper style",
+  "@premiumBenefitLiveStyles": {
+    "description": "Premium benefit row: every live wallpaper style without coins."
+  },
+  "premiumBenefitAiClean": "AI wallpapers with no watermark, for fewer coins",
+  "@premiumBenefitAiClean": {
+    "description": "Premium benefit row: AI wallpapers without the watermark, at a lower coin price."
+  },
   "premiumGuestStorePurchaseActive": "Your store purchase is active on this device. Sign in to use account-based Pro features.",
   "@premiumGuestStorePurchaseActive": {
     "description": "A guest purchase or restore has active store entitlement locally, but account-based features require sign-in and server confirmation."
@@ -6718,6 +6759,10 @@
   "premiumPurchasePending": "Your purchase is saved. Pro can take a minute to unlock.",
   "@premiumPurchasePending": {
     "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
+  },
+  "premiumPaymentPending": "Your payment is pending. Pro unlocks when the payment goes through.",
+  "@premiumPaymentPending": {
+    "description": "Toast when the store holds a purchase as pending (for example a slow UPI or card payment). Pro unlocks later."
   },
   "premiumPurchaseUnconfirmed": "Could not confirm your purchase. Try Restore purchases in Settings.",
   "@premiumPurchaseUnconfirmed": {
@@ -9036,11 +9081,11 @@
   "@wallpaperStartupFailed": {
     "description": "Title shown when app startup fails."
   },
-  "wallpaperThemeDarkAccent": "Dark Accent Color",
+  "wallpaperThemeDarkAccent": "Dark accent colour",
   "@wallpaperThemeDarkAccent": {
     "description": "Section title for choosing the dark theme accent colour."
   },
-  "wallpaperThemeDarkThemes": "Dark Themes",
+  "wallpaperThemeDarkThemes": "Dark themes",
   "@wallpaperThemeDarkThemes": {
     "description": "Section title for dark theme choices."
   },
@@ -9052,11 +9097,11 @@
   "@wallpaperAppAccentUpdated": {
     "description": "Snackbar message shown after the app accent changes from a wallpaper."
   },
-  "wallpaperThemeLightAccent": "Light Accent Color",
+  "wallpaperThemeLightAccent": "Light accent colour",
   "@wallpaperThemeLightAccent": {
     "description": "Section title for choosing the light theme accent colour."
   },
-  "wallpaperThemeLightThemes": "Light Themes",
+  "wallpaperThemeLightThemes": "Light themes",
   "@wallpaperThemeLightThemes": {
     "description": "Section title for light theme choices."
   },
@@ -9068,7 +9113,7 @@
   "@wallpaperThemeModeLight": {
     "description": "Light app theme mode option."
   },
-  "wallpaperThemeModeSystem": "System (Light/Dark)",
+  "wallpaperThemeModeSystem": "System",
   "@wallpaperThemeModeSystem": {
     "description": "App theme mode option that follows the system light or dark appearance."
   },
@@ -11607,7 +11652,7 @@
   },
   "challengeTitle": "Weekly challenge",
   "challengeRules": "Up to 3 entries, each reviewed before appearing.",
-  "challengeVotingRules": "Vote for other creators until {date} UTC.",
+  "challengeVotingRules": "Vote for other creators until {date}.",
   "@challengeVotingRules": {
     "placeholders": {
       "date": {
@@ -12583,6 +12628,10 @@
   "creatorsToFollow": "Creators to follow",
   "@creatorsToFollow": {
     "description": "Title of the row of suggested creators on Home and Search."
+  },
+  "accountBrowseCreators": "Browse creators",
+  "@accountBrowseCreators": {
+    "description": "Action on the empty creator search, opens the creator directory."
   },
   "creatorsSeeAll": "See all",
   "@creatorsSeeAll": {
@@ -14429,6 +14478,16 @@
   "@searchPhotoCouldNotOpen": {
     "description": "Toast when the picked photo cannot be decoded."
   },
+  "searchMoreWallpapers": "More wallpapers",
+  "@searchMoreWallpapers": {"description": "Section header for extra wallpaper results in search."},
+  "wallpaperPreviewNoEvents": "No events today",
+  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."},
+  "accountFollowersLabel": "{count, plural, one{Follower} other{Followers}}",
+  "@accountFollowersLabel": {"description": "Label under a profile's follower count. The number is shown separately.", "placeholders": {"count": {"type": "int"}}},
+  "profileBadgeCount": "{count, plural, one{1 badge} other{{count} badges}}",
+  "@profileBadgeCount": {"description": "Chip on a profile that opens the list of earned badges.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyLeaderboardTopThisWeek": "Top this week",
+  "@economyLeaderboardTopThisWeek": {"description": "Section heading above the global top 5 on the Following leaderboard."},
   "foldersSaveAll": "Save all",
   "@foldersSaveAll": {
     "description": "Button label that starts saving all wallpapers in a folder."
@@ -14972,211 +15031,323 @@
   "@foldersMakePrivateMessageShared": {
     "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
   },
-  "photoWallEntryTitle": "From your photo",
-  "@photoWallEntryTitle": {
-    "description": "Entry card on the AI tab that opens photo to wallpaper."
+  "gestureHintHoldToSave": "Hold to save",
+  "@gestureHintHoldToSave": {"description": "One-time hint over a wallpaper tile: long-press it for quick actions such as save."},
+  "gestureHintSwipeForSimilar": "Swipe up for similar walls",
+  "@gestureHintSwipeForSimilar": {"description": "One-time hint over the wallpaper detail image: swipe up to see similar wallpapers."},
+  "foldersSectionAdd": "Add section",
+  "@foldersSectionAdd": {
+    "description": "Folder page menu item and name sheet button that add a named section to a folder."
   },
-  "photoWallEntrySubtitle": "Fit any photo to your screen",
-  "@photoWallEntrySubtitle": {
-    "description": "Subtitle of the From your photo entry card."
+  "foldersSectionNewTitle": "New section",
+  "@foldersSectionNewTitle": {
+    "description": "Title of the sheet where the user types a name for a new folder section. Also a row in the Move to sheet."
   },
-  "photoWallPickPhoto": "Choose a photo",
-  "@photoWallPickPhoto": {
-    "description": "Button that opens the photo gallery."
+  "foldersSectionNameHint": "For example, Lock screens",
+  "@foldersSectionNameHint": {
+    "description": "Hint in the section name field."
   },
-  "photoWallPickAnother": "Choose another photo",
-  "@photoWallPickAnother": {
-    "description": "Button that replaces the picked photo."
+  "foldersSectionRenameTitle": "Rename section",
+  "@foldersSectionRenameTitle": {
+    "description": "Title of the sheet that renames a folder section."
   },
-  "photoWallPrivacyNote": "Your photo goes to our AI provider, fal.ai, and to Google Cloud Vision for this job only. Prism does not keep it and asks fal.ai to delete it after the job.",
-  "@photoWallPrivacyNote": {
-    "description": "Privacy note under the photo picker."
+  "foldersSectionDelete": "Delete section",
+  "@foldersSectionDelete": {
+    "description": "Section menu item and confirm button that delete a folder section. Its wallpapers stay in the folder."
   },
-  "photoWallTargetLabel": "Make it for",
-  "@photoWallTargetLabel": {
-    "description": "Label of the phone or desktop choice."
-  },
-  "photoWallTargetPhone": "Phone",
-  "@photoWallTargetPhone": {
-    "description": "Choice: make a phone wallpaper."
-  },
-  "photoWallTargetDesktop": "Desktop version",
-  "@photoWallTargetDesktop": {
-    "description": "Choice: make a 16:10 desktop wallpaper."
-  },
-  "photoWallPlanExtend": "Extend to fit your screen",
-  "@photoWallPlanExtend": {
-    "description": "Plan shown when the photo has the wrong shape for a phone."
-  },
-  "photoWallPlanExtendDesktop": "Extend to fit a desktop screen",
-  "@photoWallPlanExtendDesktop": {
-    "description": "Plan shown when the photo has the wrong shape for a desktop."
-  },
-  "photoWallPlanExtendDetail": "AI fills in the missing edges around your photo.",
-  "@photoWallPlanExtendDetail": {
-    "description": "Detail under the Extend plan."
-  },
-  "photoWallPlanUpscale": "Upscale",
-  "@photoWallPlanUpscale": {
-    "description": "Plan shown when the photo is too small."
-  },
-  "photoWallPlanUpscaleDetail": "AI adds detail so the photo stays sharp on your screen.",
-  "@photoWallPlanUpscaleDetail": {
-    "description": "Detail under the Upscale plan."
-  },
-  "photoWallPlanFits": "This photo already fits your screen",
-  "@photoWallPlanFits": {
-    "description": "Shown when no AI job is needed for a phone."
-  },
-  "photoWallPlanFitsDesktop": "This photo already fits a desktop screen",
-  "@photoWallPlanFitsDesktop": {
-    "description": "Shown when no AI job is needed for a desktop."
-  },
-  "photoWallPlanFitsDetail": "It has the right shape and size. Choose another photo or switch the target.",
-  "@photoWallPlanFitsDetail": {
-    "description": "Detail when no AI job is needed."
-  },
-  "photoWallRunExtend": "{coins, plural, =1{Extend · 1 coin} other{Extend · {coins} coins}}",
-  "@photoWallRunExtend": {
-    "description": "Main button. Starts an Extend job and shows its coin cost.",
+  "foldersSectionDeleteTitle": "Delete {name}?",
+  "@foldersSectionDeleteTitle": {
+    "description": "Title of the confirm before deleting a folder section. name is the section name.",
     "placeholders": {
-      "coins": {
-        "type": "int"
+      "name": {
+        "type": "String"
       }
     }
   },
-  "photoWallRunUpscale": "{coins, plural, =1{Upscale · 1 coin} other{Upscale · {coins} coins}}",
-  "@photoWallRunUpscale": {
-    "description": "Main button. Starts an Upscale job and shows its coin cost.",
-    "placeholders": {
-      "coins": {
-        "type": "int"
-      }
-    }
-  },
-  "photoWallGetCoins": "Get coins · need {coins}",
-  "@photoWallGetCoins": {
-    "description": "Main button when the balance is too low. Opens Rewards.",
-    "placeholders": {
-      "coins": {
-        "type": "int"
-      }
-    }
-  },
-  "photoWallPlaceTitle": "Place your photo",
-  "@photoWallPlaceTitle": {
-    "description": "Header over the placement frame."
-  },
-  "photoWallPlaceHint": "Drag to move. Pinch to make it smaller.",
-  "@photoWallPlaceHint": {
-    "description": "Hint under the placement frame."
-  },
-  "photoWallPlaceReset": "Reset position",
-  "@photoWallPlaceReset": {
-    "description": "Button that puts the photo back in the centre at full size."
-  },
-  "photoWallPlaceSemantics": "Photo position in the frame",
-  "@photoWallPlaceSemantics": {
-    "description": "Screen reader label of the placement frame."
-  },
-  "photoWallPlaceMoveStart": "Move to start",
-  "@photoWallPlaceMoveStart": {
-    "description": "Screen reader action: move the photo to the top or left edge."
-  },
-  "photoWallPlaceMoveCentre": "Move to centre",
-  "@photoWallPlaceMoveCentre": {
-    "description": "Screen reader action: move the photo to the centre."
-  },
-  "photoWallPlaceMoveEnd": "Move to end",
-  "@photoWallPlaceMoveEnd": {
-    "description": "Screen reader action: move the photo to the bottom or right edge."
-  },
-  "photoWallWorkingExtend": "Extending your photo",
-  "@photoWallWorkingExtend": {
-    "description": "Progress title during an Extend job."
-  },
-  "photoWallWorkingUpscale": "Upscaling your photo",
-  "@photoWallWorkingUpscale": {
-    "description": "Progress title during an Upscale job."
-  },
-  "photoWallWorkingDetail": "This can take up to a minute.",
-  "@photoWallWorkingDetail": {
-    "description": "Progress detail."
-  },
-  "photoWallBefore": "Before",
-  "@photoWallBefore": {
-    "description": "Label on the original side of the compare slider."
-  },
-  "photoWallAfter": "After",
-  "@photoWallAfter": {
-    "description": "Label on the result side of the compare slider."
-  },
-  "photoWallCompareSemantics": "Before and after. Swipe up or down to compare.",
-  "@photoWallCompareSemantics": {
-    "description": "Screen reader label of the compare slider."
-  },
-  "photoWallSet": "Set as wallpaper",
-  "@photoWallSet": {
-    "description": "Result button that sets the wallpaper."
-  },
-  "photoWallDownload": "Download",
-  "@photoWallDownload": {
-    "description": "Result button that saves the wallpaper to the device."
-  },
-  "photoWallSaved": "Saved to your device",
-  "@photoWallSaved": {
-    "description": "Toast after Download."
-  },
-  "photoWallStartOver": "Use another photo",
-  "@photoWallStartOver": {
-    "description": "Result button that returns to the picker."
-  },
-  "photoWallErrorUnsafeInput": "This photo can't be used. Choose another photo.",
-  "@photoWallErrorUnsafeInput": {
-    "description": "Error when the content filter blocks the input photo."
-  },
-  "photoWallErrorUnsafeOutput": "The result was blocked. Try again or choose another photo.",
-  "@photoWallErrorUnsafeOutput": {
-    "description": "Error when the content filter blocks the result."
-  },
-  "photoWallErrorLimit": "You reached today's limit of {count} photo wallpapers.",
-  "@photoWallErrorLimit": {
-    "description": "Error when the daily cap is reached.",
+  "foldersSectionDeleteMessage": "{count, plural, =0{The section is empty.} =1{Its wallpaper moves to Unsorted.} other{Its {count} wallpapers move to Unsorted.}}",
+  "@foldersSectionDeleteMessage": {
+    "description": "Body of the confirm before deleting a folder section. count is the number of wallpapers in it. Unsorted is the group of wallpapers with no section.",
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
   },
-  "photoWallErrorBusy": "Photo wallpapers are very busy right now. Try again later.",
-  "@photoWallErrorBusy": {
-    "description": "Error when the global daily cap is reached."
+  "foldersSectionUnsorted": "Unsorted",
+  "@foldersSectionUnsorted": {
+    "description": "Name of the group at the top of a folder that holds the wallpapers that are in no section."
   },
-  "photoWallErrorUnreadable": "This photo can't be opened. Choose another photo.",
-  "@photoWallErrorUnreadable": {
-    "description": "Error when the photo does not decode."
+  "foldersSectionReorder": "Reorder sections",
+  "@foldersSectionReorder": {
+    "description": "Folder page menu item and sheet title for changing the order of the sections."
   },
-  "photoWallErrorInProgress": "Still working on your last photo.",
-  "@photoWallErrorInProgress": {
-    "description": "Error when the same job is still running."
-  },
-  "photoWallErrorGeneric": "Couldn't make the wallpaper. Try again.",
-  "@photoWallErrorGeneric": {
-    "description": "Error for any other failure."
-  },
-  "photoWallRefunded": "{coins, plural, =1{Your coin was returned.} other{Your {coins} coins were returned.}}",
-  "@photoWallRefunded": {
-    "description": "Added after an error when the server refunded the coins.",
+  "foldersSectionDragHandle": "Drag to move {name}",
+  "@foldersSectionDragHandle": {
+    "description": "Tooltip of the drag handle on a section in the Reorder sections sheet. name is the section name.",
     "placeholders": {
-      "coins": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionWallCount": "{count, plural, =0{No wallpapers} =1{1 wallpaper} other{{count} wallpapers}}",
+  "@foldersSectionWallCount": {
+    "description": "Count under a section name.",
+    "placeholders": {
+      "count": {
         "type": "int"
       }
     }
   },
-  "photoWallRefundPending": "Your coins will be returned.",
-  "@photoWallRefundPending": {
-    "description": "Added after an error when the refund is not confirmed yet."
+  "foldersSectionHeaderLabel": "{name}, {count, plural, =0{no wallpapers} =1{1 wallpaper} other{{count} wallpapers}}",
+  "@foldersSectionHeaderLabel": {
+    "description": "Screen reader label of a section header. Double tap collapses or expands it. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
   },
+  "foldersSectionJumpTo": "Go to {name}, {count, plural, =0{no wallpapers} =1{1 wallpaper} other{{count} wallpapers}}",
+  "@foldersSectionJumpTo": {
+    "description": "Screen reader label of a chip in the section strip at the top of a folder. Tapping it scrolls to the section.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionOptions": "More options for {name}",
+  "@foldersSectionOptions": {
+    "description": "Tooltip of the menu button on a section header. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionSaveAll": "Save section",
+  "@foldersSectionSaveAll": {
+    "description": "Section menu item that saves all wallpapers of one section to the device, like Save all for the whole folder."
+  },
+  "foldersSectionMoveTo": "Move to section",
+  "@foldersSectionMoveTo": {
+    "description": "Button in the wallpaper menu and the selection bar. It opens a list of the sections."
+  },
+  "foldersSectionMoveTitle": "Move to",
+  "@foldersSectionMoveTitle": {
+    "description": "Title of the sheet that lists Unsorted and the sections of a folder."
+  },
+  "foldersSectionMoved": "{count, plural, =1{Moved 1 wallpaper to {name}.} other{Moved {count} wallpapers to {name}.}}",
+  "@foldersSectionMoved": {
+    "description": "Toast after wallpapers move to a section. name is the section name, or Unsorted.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionSelect": "Select wallpapers",
+  "@foldersSectionSelect": {
+    "description": "Folder page menu item that starts selecting wallpapers to move them."
+  },
+  "foldersSectionSelected": "{count, plural, =0{Tap wallpapers to select them} =1{1 selected} other{{count} selected}}",
+  "@foldersSectionSelected": {
+    "description": "Text in the selection bar at the bottom of a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionsFull": "A folder can have up to {max} sections.",
+  "@foldersSectionsFull": {
+    "description": "Error toast when the user tries to add a section to a folder that has the most sections.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionEmpty": "No wallpapers yet.",
+  "@foldersSectionEmpty": {
+    "description": "Text under an empty section for a reader who cannot organize the folder."
+  },
+  "foldersSectionEmptyHint": "Drag wallpapers onto the section name, or use Move to section.",
+  "@foldersSectionEmptyHint": {
+    "description": "Text under an empty section for the owner and editors. Only the section name (the header) and its chip in the strip accept a drop, not this text. Move to section is the name of a button."
+  },
+  "foldersSectionSuggest": "Suggest sections",
+  "@foldersSectionSuggest": {
+    "description": "Folder page menu item. Prism groups the Unsorted wallpapers by mood, category or colour on the device."
+  },
+  "foldersSuggestTitle": "Suggested sections",
+  "@foldersSuggestTitle": {
+    "description": "Title of the sheet with the suggested sections."
+  },
+  "foldersSuggestBody": "Groups of your Unsorted wallpapers. Keep the ones you want.",
+  "@foldersSuggestBody": {
+    "description": "Message under the title of the suggested sections sheet."
+  },
+  "foldersSuggestByMood": "Mood",
+  "@foldersSuggestByMood": {
+    "description": "Segment in the suggested sections sheet: group by mood."
+  },
+  "foldersSuggestByCategory": "Category",
+  "@foldersSuggestByCategory": {
+    "description": "Segment in the suggested sections sheet: group by category."
+  },
+  "foldersSuggestByColour": "Colour",
+  "@foldersSuggestByColour": {
+    "description": "Segment in the suggested sections sheet: group by main colour."
+  },
+  "foldersSuggestJoins": "{count}. Goes into your section with this name.",
+  "@foldersSuggestJoins": {
+    "description": "Line under a suggested group whose name matches a section that exists. count is a wallpaper count, for example \"3 wallpapers\".",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSuggestAdd": "{count, plural, =0{Add sections} =1{Add 1 section} other{Add {count} sections}}",
+  "@foldersSuggestAdd": {
+    "description": "Main button of the suggested sections sheet. count is the number of new sections it makes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestSort": "{count, plural, =1{Sort 1 wallpaper} other{Sort {count} wallpapers}}",
+  "@foldersSuggestSort": {
+    "description": "Main button of the suggested sections sheet when every kept group goes into a section that exists.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestSorted": "{count, plural, =1{Sorted 1 wallpaper.} other{Sorted {count} wallpapers.}}",
+  "@foldersSuggestSorted": {
+    "description": "Toast after the user keeps suggested sections.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestEmptyTitle": "No groups to suggest",
+  "@foldersSuggestEmptyTitle": {
+    "description": "Empty state in the suggested sections sheet."
+  },
+  "foldersSuggestEmptyBody": "A group needs 2 or more Prism wallpapers in Unsorted with the same mood, category or colour.",
+  "@foldersSuggestEmptyBody": {
+    "description": "Body of the empty state in the suggested sections sheet."
+  },
+  "foldersSuggestError": "Could not load suggestions",
+  "@foldersSuggestError": {
+    "description": "Error state in the suggested sections sheet."
+  },
+  "photoWallEntryTitle": "From your photo",
+  "@photoWallEntryTitle": {"description": "Entry card on the AI tab that opens photo to wallpaper."},
+  "photoWallEntrySubtitle": "Fit any photo to your screen",
+  "@photoWallEntrySubtitle": {"description": "Subtitle of the From your photo entry card."},
+  "photoWallPickPhoto": "Choose a photo",
+  "@photoWallPickPhoto": {"description": "Button that opens the photo gallery."},
+  "photoWallPickAnother": "Choose another photo",
+  "@photoWallPickAnother": {"description": "Button that replaces the picked photo."},
+  "photoWallPrivacyNote": "Your photo goes to our AI provider, fal.ai, and to Google Cloud Vision for this job only. Prism does not keep it and asks fal.ai to delete it after the job.",
+  "@photoWallPrivacyNote": {"description": "Privacy note under the photo picker."},
+  "photoWallTargetLabel": "Make it for",
+  "@photoWallTargetLabel": {"description": "Label of the phone or desktop choice."},
+  "photoWallTargetPhone": "Phone",
+  "@photoWallTargetPhone": {"description": "Choice: make a phone wallpaper."},
+  "photoWallTargetDesktop": "Desktop version",
+  "@photoWallTargetDesktop": {"description": "Choice: make a 16:10 desktop wallpaper."},
+  "photoWallPlanExtend": "Extend to fit your screen",
+  "@photoWallPlanExtend": {"description": "Plan shown when the photo has the wrong shape for a phone."},
+  "photoWallPlanExtendDesktop": "Extend to fit a desktop screen",
+  "@photoWallPlanExtendDesktop": {"description": "Plan shown when the photo has the wrong shape for a desktop."},
+  "photoWallPlanExtendDetail": "AI fills in the missing edges around your photo.",
+  "@photoWallPlanExtendDetail": {"description": "Detail under the Extend plan."},
+  "photoWallPlanUpscale": "Upscale",
+  "@photoWallPlanUpscale": {"description": "Plan shown when the photo is too small."},
+  "photoWallPlanUpscaleDetail": "AI adds detail so the photo stays sharp on your screen.",
+  "@photoWallPlanUpscaleDetail": {"description": "Detail under the Upscale plan."},
+  "photoWallPlanFits": "This photo already fits your screen",
+  "@photoWallPlanFits": {"description": "Shown when no AI job is needed for a phone."},
+  "photoWallPlanFitsDesktop": "This photo already fits a desktop screen",
+  "@photoWallPlanFitsDesktop": {"description": "Shown when no AI job is needed for a desktop."},
+  "photoWallPlanFitsDetail": "It has the right shape and size. Choose another photo or switch the target.",
+  "@photoWallPlanFitsDetail": {"description": "Detail when no AI job is needed."},
+  "photoWallRunExtend": "{coins, plural, =1{Extend · 1 coin} other{Extend · {coins} coins}}",
+  "@photoWallRunExtend": {"description": "Main button. Starts an Extend job and shows its coin cost.", "placeholders": {"coins": {"type": "int"}}},
+  "photoWallRunUpscale": "{coins, plural, =1{Upscale · 1 coin} other{Upscale · {coins} coins}}",
+  "@photoWallRunUpscale": {"description": "Main button. Starts an Upscale job and shows its coin cost.", "placeholders": {"coins": {"type": "int"}}},
+  "photoWallGetCoins": "Get coins · need {coins}",
+  "@photoWallGetCoins": {"description": "Main button when the balance is too low. Opens Rewards.", "placeholders": {"coins": {"type": "int"}}},
+  "photoWallPlaceTitle": "Place your photo",
+  "@photoWallPlaceTitle": {"description": "Header over the placement frame."},
+  "photoWallPlaceHint": "Drag to move. Pinch to make it smaller.",
+  "@photoWallPlaceHint": {"description": "Hint under the placement frame."},
+  "photoWallPlaceReset": "Reset position",
+  "@photoWallPlaceReset": {"description": "Button that puts the photo back in the centre at full size."},
+  "photoWallPlaceSemantics": "Photo position in the frame",
+  "@photoWallPlaceSemantics": {"description": "Screen reader label of the placement frame."},
+  "photoWallPlaceMoveStart": "Move to start",
+  "@photoWallPlaceMoveStart": {"description": "Screen reader action: move the photo to the top or left edge."},
+  "photoWallPlaceMoveCentre": "Move to centre",
+  "@photoWallPlaceMoveCentre": {"description": "Screen reader action: move the photo to the centre."},
+  "photoWallPlaceMoveEnd": "Move to end",
+  "@photoWallPlaceMoveEnd": {"description": "Screen reader action: move the photo to the bottom or right edge."},
+  "photoWallWorkingExtend": "Extending your photo",
+  "@photoWallWorkingExtend": {"description": "Progress title during an Extend job."},
+  "photoWallWorkingUpscale": "Upscaling your photo",
+  "@photoWallWorkingUpscale": {"description": "Progress title during an Upscale job."},
+  "photoWallWorkingDetail": "This can take up to a minute.",
+  "@photoWallWorkingDetail": {"description": "Progress detail."},
+  "photoWallBefore": "Before",
+  "@photoWallBefore": {"description": "Label on the original side of the compare slider."},
+  "photoWallAfter": "After",
+  "@photoWallAfter": {"description": "Label on the result side of the compare slider."},
+  "photoWallCompareSemantics": "Before and after. Swipe up or down to compare.",
+  "@photoWallCompareSemantics": {"description": "Screen reader label of the compare slider."},
+  "photoWallSet": "Set as wallpaper",
+  "@photoWallSet": {"description": "Result button that sets the wallpaper."},
+  "photoWallDownload": "Download",
+  "@photoWallDownload": {"description": "Result button that saves the wallpaper to the device."},
+  "photoWallSaved": "Saved to your device",
+  "@photoWallSaved": {"description": "Toast after Download."},
+  "photoWallStartOver": "Use another photo",
+  "@photoWallStartOver": {"description": "Result button that returns to the picker."},
+  "photoWallErrorUnsafeInput": "This photo can't be used. Choose another photo.",
+  "@photoWallErrorUnsafeInput": {"description": "Error when the content filter blocks the input photo."},
+  "photoWallErrorUnsafeOutput": "The result was blocked. Try again or choose another photo.",
+  "@photoWallErrorUnsafeOutput": {"description": "Error when the content filter blocks the result."},
+  "photoWallErrorLimit": "You reached today's limit of {count} photo wallpapers.",
+  "@photoWallErrorLimit": {"description": "Error when the daily cap is reached.", "placeholders": {"count": {"type": "int"}}},
+  "photoWallErrorBusy": "Photo wallpapers are very busy right now. Try again later.",
+  "@photoWallErrorBusy": {"description": "Error when the global daily cap is reached."},
+  "photoWallErrorUnreadable": "This photo can't be opened. Choose another photo.",
+  "@photoWallErrorUnreadable": {"description": "Error when the photo does not decode."},
+  "photoWallErrorInProgress": "Still working on your last photo.",
+  "@photoWallErrorInProgress": {"description": "Error when the same job is still running."},
+  "photoWallErrorGeneric": "Couldn't make the wallpaper. Try again.",
+  "@photoWallErrorGeneric": {"description": "Error for any other failure."},
+  "photoWallRefunded": "{coins, plural, =1{Your coin was returned.} other{Your {coins} coins were returned.}}",
+  "@photoWallRefunded": {"description": "Added after an error when the server refunded the coins.", "placeholders": {"coins": {"type": "int"}}},
+  "photoWallRefundPending": "Your coins will be returned.",
+  "@photoWallRefundPending": {"description": "Added after an error when the refund is not confirmed yet."},
   "photoWallTryAgain": "Try again",
   "@photoWallTryAgain": {
     "description": "Button on the error card that runs the same job again."

@@ -5,6 +5,7 @@ import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/public_profile/views/widgets/gift_pass_sheet.dart';
@@ -20,8 +21,23 @@ void main() {
   final backend = CoinsTestBackend();
   late FakeAppAnalytics analytics;
   late List<String> messages;
+
+  final List<String> haptics = <String>[];
+  void recordHaptics() {
+    haptics.clear();
+    PrismHaptics.enabled = true;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('prism/haptics'),
+      (call) async {
+        haptics.add(call.arguments as String);
+        return null;
+      },
+    );
+  }
+
   setUp(() async {
     await backend.install();
+    recordHaptics();
     CoinsService.instance.balanceNotifier.value = 100;
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
@@ -131,6 +147,8 @@ void main() {
       containsPair('recipient_uid', 'ana'),
     );
     expect(messages.single, contains('Ana'));
+    // One tap from the button and one success from the toast, never a second success.
+    expect(haptics, <String>['tap', 'success']);
     await tester.pump(const Duration(seconds: 1));
   });
 }

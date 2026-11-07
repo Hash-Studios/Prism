@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
@@ -52,6 +53,8 @@ class WallpaperSetContext {
 /// [context] is null when the screen is gone. Pass the [messenger] taken before the set started. The snackbar then
 /// outlives the screen, and its actions need no live [BuildContext]. [onRetry] gets the screen to try again: only the
 /// failed one after a partial set.
+/// [onSystemSet] opens the phone's own wallpaper screen for a lock screen that failed. Some phones (Xiaomi, MIUI)
+/// let only that screen set the lock screen, so it replaces Try again there (#545).
 /// [onMatchAccent] adds a "Match accent" button to the success snackbar.
 void reportWallpaperSetResult(
   BuildContext? context,
@@ -61,6 +64,7 @@ void reportWallpaperSetResult(
   ScaffoldMessengerState? messenger,
   WallpaperSetContext setContext = const WallpaperSetContext(),
   ValueChanged<WallpaperTarget>? onRetry,
+  ValueChanged<WallpaperTarget>? onSystemSet,
   VoidCallback? onMatchAccent,
   bool track = true,
 }) {
@@ -85,11 +89,30 @@ void reportWallpaperSetResult(
       ..showSnackBar(SnackBar(content: Text(message)));
     return;
   }
+  if (snackHost != null && onSystemSet != null && offersPhoneWallpaperScreen(result, target)) {
+    snackHost
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            result.isPartial ? l10n.coreWallpaperHomeSetLockFailedUsePhone : l10n.coreWallpaperLockFailedUsePhone,
+          ),
+          duration: _successSnackBarDuration,
+          action: SnackBarAction(
+            label: l10n.coreWallpaperSetWithPhone,
+            onPressed: () => onSystemSet(WallpaperTarget.lock),
+          ),
+        ),
+      );
+    return;
+  }
   if (snackHost == null || !result.canRetry || onRetry == null) {
     toasts.error(message);
     return;
   }
   final WallpaperTarget retryTarget = result.failedTarget ?? target;
+  // The snackbar plays no haptic, unlike toasts.error.
+  PrismHaptics.error();
   snackHost
     ..hideCurrentSnackBar()
     ..showSnackBar(
@@ -102,6 +125,19 @@ void reportWallpaperSetResult(
       ),
     );
 }
+
+/// A work profile that forbids wallpapers forbids the phone's screen too. The rest failed while loading the image,
+/// before any apply, so the phone's screen has nothing better to work with and Try again fits.
+const Set<String> _notAppliedCodes = <String>{'wallpaper-not-allowed', 'timeout', 'offline_unavailable', 'load_failed'};
+
+/// True when a lock screen set failed in a way the phone's own wallpaper screen can still do (#545). A work profile
+/// that forbids wallpapers forbids that screen too.
+bool offersPhoneWallpaperScreen(WallpaperSetResult result, WallpaperTarget target) =>
+    // A set that needs Prism in front keeps Keep Prism open and Try again: the phone's screen needs it in front too.
+    result.isFailure &&
+    result.status != WallpaperSetStatus.foregroundRequired &&
+    !_notAppliedCodes.contains(result.errorCode) &&
+    (result.failedTarget == WallpaperTarget.lock || (!result.isPartial && target == WallpaperTarget.lock));
 
 void _trackSetResult(WallpaperSetResult result, WallpaperTarget target, WallpaperSetContext setContext) {
   try {
@@ -139,6 +175,8 @@ void _showSuccess(
     toasts.success(result.localizedMessage(l10n));
     return;
   }
+  // The snackbar plays no haptic, unlike toasts.success.
+  PrismHaptics.success();
   messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(
@@ -201,6 +239,8 @@ Future<bool> undoWallpaperSet(
   required AppLocalizations l10n,
 }) async {
   bool restored = result.restore.isNotEmpty;
+  bool failed = false;
+  bool stillSetting = false;
   for (final WallpaperRestore entry in result.restore) {
     String source;
     try {
@@ -222,6 +262,7 @@ Future<bool> undoWallpaperSet(
     } catch (error) {
       logger.w('Wallpaper undo: original access unavailable', error: error);
       restored = false;
+      failed = true;
       continue;
     }
     final WallpaperSetResult back = await WallpaperService.setWallpaper(
@@ -230,7 +271,14 @@ Future<bool> undoWallpaperSet(
       thumbnailUrl: entry.previous.thumbnailUrl,
       recordHistory: false,
     );
-    if (!back.isSuccess && !back.isInfo) restored = false;
+    // A set that is still running can still fail, so it does not count as restored, nor as failed.
+    if (back.errorCode == WallpaperService.stillSettingMessage) {
+      restored = false;
+      stillSetting = true;
+    } else if (!back.isSuccess && !back.isInfo) {
+      restored = false;
+      failed = true;
+    }
   }
   if (restored) {
     try {
@@ -240,6 +288,10 @@ Future<bool> undoWallpaperSet(
     } catch (error, stackTrace) {
       logger.w('Wallpaper undo: could not update history', error: error, stackTrace: stackTrace);
     }
+  }
+  if (stillSetting && !failed) {
+    toasts.info(l10n.coreWallpaperStillSetting);
+    return false;
   }
   try {
     unawaited(

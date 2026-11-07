@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/analytics_correlation.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/events/generated/analytics_events.g.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -10,6 +11,11 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/creator_directory/biz/creator_directory_cubit.dart';
+import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
+import 'package:Prism/features/creator_directory/views/widgets/creator_directory_card.dart';
+import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
 import 'package:Prism/features/user_search/domain/entities/user_search_user.dart';
 import 'package:Prism/features/user_search/user_search.dart';
 import 'package:Prism/features/user_search/views/widgets/prism_search_field.dart';
@@ -105,7 +111,7 @@ class _UserSearchLoader extends StatelessWidget {
     return BlocBuilder<UserSearchBloc, UserSearchState>(
       builder: (context, state) {
         if (state.status == LoadStatus.initial) {
-          return const _SearchHint();
+          return const _SuggestedCreators();
         }
         if (state.status == LoadStatus.loading) {
           return PrismSkeleton.rows();
@@ -124,10 +130,72 @@ class _UserSearchLoader extends StatelessWidget {
             kind: GlintStateKind.empty,
             title: context.l10n.accountNoCreatorsFound,
             body: context.l10n.accountCreatorSearchEmptyBody,
+            actionLabel: context.l10n.accountBrowseCreators,
+            onAction: () => _openCreators(context),
           );
         }
         return _CreatorList(users: state.users, queryLength: state.query.trim().length, searchId: searchId);
       },
+    );
+  }
+}
+
+/// Opens the creator directory, so an empty search still leads somewhere.
+void _openCreators(BuildContext context) {
+  context.router.push(CreatorsRoute(source: 'user_search'));
+}
+
+/// Creators to follow, shown while the query is empty. Falls back to the Glint hint when there are none.
+class _SuggestedCreators extends StatelessWidget {
+  const _SuggestedCreators();
+
+  static const int _maxCards = 6;
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: <BlocProvider<dynamic>>[
+        BlocProvider<CreatorDirectoryCubit>(create: (_) => getIt<CreatorDirectoryCubit>()..loadRow()),
+        BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
+      ],
+      child: BlocListener<PublicProfileBloc, PublicProfileState>(
+        listenWhen: (prev, curr) => curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
+        listener: (context, state) => showFollowOutcomeToast(context, state.followOutcome!),
+        child: BlocBuilder<CreatorDirectoryCubit, CreatorDirectoryState>(
+          builder: (context, state) {
+            if (state.status == CreatorDirectoryStatus.loading) return PrismSkeleton.rows();
+            if (state.status == CreatorDirectoryStatus.failed || state.creators.isEmpty) return const _SearchHint();
+            final List<DirectoryCreator> creators = state.creators.take(_maxCards).toList(growable: false);
+            return ListView(
+              padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md),
+              children: <Widget>[
+                // Past 1.6x the title breaks inside "Creators" next to See all.
+                MediaQuery.withClampedTextScaling(
+                  maxScaleFactor: 1.6,
+                  child: PrismSectionHeader(
+                    title: context.l10n.creatorsToFollow,
+                    actionLabel: context.l10n.creatorsSeeAll,
+                    onAction: () {
+                      analytics.track(const CreatorsSeeAllOpenedEvent(source: 'search'));
+                      _openCreators(context);
+                    },
+                    padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.sm),
+                  ),
+                ),
+                for (final DirectoryCreator creator in creators)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.sm),
+                    child: CreatorDirectoryCard(
+                      creator: creator,
+                      followed: state.followed.contains(creator.uid),
+                      source: 'search',
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }
@@ -137,14 +205,28 @@ class _SearchHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    // Above the centre, where the eye lands first, and clear of the keyboard.
+    return Align(
+      alignment: const Alignment(0, -0.35),
       child: SingleChildScrollView(
+        padding: const EdgeInsets.all(PrismSpace.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             const Glint(mood: GlintMood.curious),
             const SizedBox(height: PrismSpace.md),
-            Text(context.l10n.accountSearchCreatorsByName, style: PrismTextStyles.body(context)),
+            Text(
+              context.l10n.accountSearchCreatorsByName,
+              textAlign: TextAlign.center,
+              style: PrismTextStyles.body(context),
+            ),
+            const SizedBox(height: PrismSpace.lg),
+            PrismButton(
+              label: context.l10n.creatorsToFollow,
+              variant: PrismButtonVariant.tonal,
+              size: PrismButtonSize.compact,
+              onPressed: () => _openCreators(context),
+            ),
           ],
         ),
       ),

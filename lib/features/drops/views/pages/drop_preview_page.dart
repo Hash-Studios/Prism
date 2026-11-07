@@ -2,9 +2,11 @@ import 'dart:math' as math;
 
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/features/drops/biz/bloc/drops_bloc.j.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/preview/phone_screen_overlay.dart';
@@ -22,6 +24,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 Future<void> openDropPreview(BuildContext context, {required DropWall wall}) async {
   final DropsBloc bloc = context.read<DropsBloc>();
   if (bloc.state.drop == null) return;
+  PrismHaptics.tap();
   await Navigator.of(context, rootNavigator: true).push<void>(
     PageRouteBuilder<void>(
       fullscreenDialog: true,
@@ -83,7 +86,7 @@ class _ResolvedDropPreview extends StatelessWidget {
         if (state.status == LoadStatus.initial || state.status == LoadStatus.loading) {
           return PrismPage(
             title: context.l10n.economyDropPreviewTitle,
-            body: Center(child: CircularProgressIndicator()),
+            body: const Center(child: PrismLoader()),
           );
         }
         if (state.status == LoadStatus.failure) {
@@ -152,7 +155,7 @@ class _DropPreviewPageState extends State<DropPreviewPage> {
           return SafeArea(
             child: Column(
               children: <Widget>[
-                const SizedBox(height: 8),
+                const SizedBox(height: PrismSpace.xs),
                 ValueListenableBuilder<int>(
                   valueListenable: _index,
                   builder: (context, i, _) {
@@ -165,9 +168,9 @@ class _DropPreviewPageState extends State<DropPreviewPage> {
                     );
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: PrismSpace.sm),
                 PreviewModeToggle(mode: _mode, onChanged: (mode) => setState(() => _mode = mode)),
-                const SizedBox(height: 12),
+                const SizedBox(height: PrismSpace.sm),
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, box) {
@@ -208,7 +211,7 @@ class _DropPreviewPageState extends State<DropPreviewPage> {
                       onUnlock: () => askToUnlock(context, state, wall),
                       onOpen: () {
                         if (unlock != null) {
-                          openDropWall(context, wall, unlock, heroTag: _heroTag(drop, i, wall));
+                          openDropWall(context, wall, unlock, heroTag: _heroTag(drop, i, wall), haptic: false);
                         }
                       },
                     );

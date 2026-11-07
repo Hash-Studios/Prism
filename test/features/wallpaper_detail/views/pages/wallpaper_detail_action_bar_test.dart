@@ -26,6 +26,7 @@ import 'package:Prism/core/widgets/menu_button/edit_button.dart';
 import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/share_button.dart';
+import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
@@ -164,24 +165,30 @@ Future<Finder> _waitForThumbnailFallback(WidgetTester tester) async {
   return thumbnail;
 }
 
-FeedItemEntity _prism({List<String> collections = const <String>[], int? width, int? height, List<String>? colors}) =>
-    FeedItemEntity.prism(
+FeedItemEntity _prism({
+  List<String> collections = const <String>[],
+  int? width,
+  int? height,
+  List<String>? colors,
+  String? category,
+}) => FeedItemEntity.prism(
+  id: 'prism-1',
+  wallpaper: PrismWallpaper(
+    core: WallpaperCore(
       id: 'prism-1',
-      wallpaper: PrismWallpaper(
-        core: WallpaperCore(
-          id: 'prism-1',
-          source: WallpaperSource.prism,
-          fullUrl: 'https://img.test/full.jpg',
-          thumbnailUrl: 'https://img.test/thumb.jpg',
-          authorName: 'Akshay',
-          width: width,
-          height: height,
-        ),
-        collections: collections,
-        tags: const <String>['space', 'stars'],
-        colors: colors,
-      ),
-    );
+      source: WallpaperSource.prism,
+      fullUrl: 'https://img.test/full.jpg',
+      thumbnailUrl: 'https://img.test/thumb.jpg',
+      authorName: 'Akshay',
+      width: width,
+      height: height,
+      category: category,
+    ),
+    collections: collections,
+    tags: const <String>['space', 'stars'],
+    colors: colors,
+  ),
+);
 
 Future<List<double>> _hues(Uint8List png) async {
   final ui.Codec codec = await ui.instantiateImageCodec(png);
@@ -532,7 +539,7 @@ void main() {
     );
     expect(
       tester.getRect(find.byType(WallpaperActionBar)).bottom,
-      lessThan(tester.getRect(find.widgetWithText(ActionChip, 'space')).top),
+      lessThan(tester.getRect(find.widgetWithText(PrismChip, 'space')).top),
     );
     final swatch = find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label == 'Accent color');
     await tester.ensureVisible(swatch);
@@ -1252,8 +1259,43 @@ void main() {
       ),
     );
 
-    expect(find.widgetWithText(ActionChip, 'space'), findsOneWidget);
-    expect(find.widgetWithText(ActionChip, 'stars'), findsOneWidget);
+    expect(find.widgetWithText(PrismChip, 'space'), findsOneWidget);
+    expect(find.widgetWithText(PrismChip, 'stars'), findsOneWidget);
+  });
+
+  testWidgets('the category reads with a capital first letter', (tester) async {
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(category: 'general'),
+        paletteLoading: false,
+      ),
+    );
+
+    expect(find.text('General'), findsOneWidget);
+    expect(find.text('general'), findsNothing);
+  });
+
+  testWidgets('Set and the details toggle end on the 16 point page margin', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
+    );
+    final double width = tester.getSize(find.byType(WallpaperDetailScreen)).width;
+
+    expect(tester.getRect(find.byType(SetWallpaperButton)).right, width - 16);
+    final Finder toggle = find
+        .descendant(of: find.widgetWithIcon(IconButton, Icons.expand_more_rounded), matching: find.byType(Material))
+        .first;
+    expect(tester.getRect(toggle).right, width - 16);
   });
 
   testWidgets('an exhausted discovery feed does not invent similar results', (tester) async {

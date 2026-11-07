@@ -4,6 +4,7 @@ import 'dart:ffi';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -61,6 +62,59 @@ class PerformanceProbe {
     } catch (_) {
       return null;
     }
+  }
+
+  static String _phase = 'startup';
+  static const int _maxFrameSamples = 3600;
+  static final List<FrameTiming> _frames = <FrameTiming>[];
+  static int _droppedFrames = 0;
+
+  /// Retains the latest 3600 received frame samples. [phase] reports retained-sample statistics and dropped count.
+  static void startFrameStats() {
+    if (kReleaseMode) return;
+    SchedulerBinding.instance.addTimingsCallback((List<FrameTiming> timings) {
+      _frames.addAll(timings);
+      final int overflow = _frames.length - _maxFrameSamples;
+      if (overflow > 0) {
+        _frames.removeRange(0, overflow);
+        _droppedFrames += overflow;
+      }
+    });
+  }
+
+  /// Starts a named window for received samples. Delayed engine batches can cross phase boundaries.
+  static void phase(String name) {
+    if (kReleaseMode) return;
+    if (_frames.isNotEmpty) {
+      List<int> sorted(Duration Function(FrameTiming) of) =>
+          _frames.map((FrameTiming t) => of(t).inMicroseconds).toList()..sort();
+      int pct(List<int> v, double q) => v[((v.length - 1) * q).round()];
+      final List<int> build = sorted((FrameTiming t) => t.buildDuration);
+      final List<int> raster = sorted((FrameTiming t) => t.rasterDuration);
+      final List<int> total = sorted((FrameTiming t) => t.totalSpan);
+      emit(
+        kind: 'frames',
+        name: _phase,
+        durationMs: total.last ~/ 1000,
+        extra: <String, Object?>{
+          'count': total.length,
+          'dropped_frames': _droppedFrames,
+          'build_p50_us': pct(build, 0.5),
+          'build_p90_us': pct(build, 0.9),
+          'build_p99_us': pct(build, 0.99),
+          'build_max_us': build.last,
+          'raster_max_us': raster.last,
+          'raster_p90_us': pct(raster, 0.9),
+          'raster_p99_us': pct(raster, 0.99),
+          'total_p90_us': pct(total, 0.9),
+          'over_16ms': total.where((int v) => v > 16667).length,
+          'over_33ms': total.where((int v) => v > 33333).length,
+        },
+      );
+      _frames.clear();
+      _droppedFrames = 0;
+    }
+    _phase = name;
   }
 
   /// Marks [name] once per process, after the frame that is being built paints.

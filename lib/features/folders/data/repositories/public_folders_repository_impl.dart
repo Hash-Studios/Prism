@@ -8,6 +8,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/logger/logger.dart';
@@ -27,6 +28,7 @@ PublicFolderEntity publicFolderFromDoc(Map<String, dynamic> data, String id) {
     covers: covers is List ? covers.whereType<String>().take(folderMaxCovers).toList() : const <String>[],
     followerCount: count(data['followerCount']),
     shareImage: parseString(data['shareImage']),
+    sections: folderSectionsFromDoc(data['sections']),
   );
 }
 
@@ -83,16 +85,19 @@ class PublicFoldersRepositoryImpl implements PublicFoldersRepository {
   }
 
   @override
-  Future<Result<List<String>>> fetchWallIds(String folderId) async {
+  Future<Result<List<PublicFolderWall>>> fetchWallIds(String folderId) async {
     try {
       return Result.success(
-        await _firestoreClient.query<String>(
+        await _firestoreClient.query<PublicFolderWall>(
           FirestoreQuerySpec(
             collection: FirebaseCollections.publicFolderItems(folderId),
             sourceTag: 'public_folders.fetch_items',
             orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'addedAt', descending: true)],
           ),
-          (data, docId) => parseString(data['id']),
+          (data, docId) => (
+            id: parseString(data['id']),
+            sectionId: isFolderSectionId(data['sectionId']) ? data['sectionId'] as String : null,
+          ),
         ),
       );
     } catch (error) {

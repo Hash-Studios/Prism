@@ -20,7 +20,7 @@ class RewardsLinksSection extends StatelessWidget {
         child: PrismGroup(
           children: <Widget>[
             PrismRow(
-              icon: Icons.leaderboard_outlined,
+              icon: Icons.leaderboard_rounded,
               title: context.l10n.economyLeaderboardTitle,
               subtitle: context.l10n.economyWeeklyXpFriendsEveryone,
               onTap: () {
@@ -30,7 +30,7 @@ class RewardsLinksSection extends StatelessWidget {
             ),
             if (config.flags.drawEnabled)
               PrismRow(
-                icon: Icons.confirmation_number_outlined,
+                icon: Icons.confirmation_number_rounded,
                 title: context.l10n.economyWeeklyDraw,
                 subtitle: context.l10n.economyDrawTicketCost(CoinPolicy.drawTicket),
                 onTap: () {

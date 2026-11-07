@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
@@ -172,13 +173,13 @@ class _PairGrid extends StatelessWidget {
     return FutureBuilder<List<PairCandidate>>(
       future: load(),
       builder: (context, snapshot) {
-        final List<PairCandidate>? items = snapshot.data;
+        final List<PairCandidate>? items = snapshot.data ?? (snapshot.hasError ? const <PairCandidate>[] : null);
         if (items == null) {
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+          return const Center(child: PrismLoader());
         }
         if (items.isEmpty) {
           return Center(
-            child: Text(emptyText, style: TextStyle(color: scheme.secondary)),
+            child: Text(emptyText, style: PrismTextStyles.body(context).copyWith(color: scheme.secondary)),
           );
         }
         return GridView.builder(
