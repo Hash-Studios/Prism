@@ -30,6 +30,8 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'ai_style_pick_source': AiStylePickSource.values.map((value) => value.wireValue).toList(),
   'photo_job_mode': PhotoJobModeValue.values.map((value) => value.wireValue).toList(),
   'photo_job_target': PhotoJobTargetValue.values.map((value) => value.wireValue).toList(),
+  'shared_item_kind': SharedItemKindValue.values.map((value) => value.wireValue).toList(),
+  'share_action': ShareActionValue.values.map((value) => value.wireValue).toList(),
   'rc_or_fallback': RcOrFallbackValue.values.map((value) => value.wireValue).toList(),
   'live_wallpaper_style': LiveWallpaperStyleValue.values.map((value) => value.wireValue).toList(),
   'paywall_result': PaywallResultValue.values.map((value) => value.wireValue).toList(),
@@ -1052,6 +1054,36 @@ class PhotoJobStartedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'mode': mode.wireValue, 'target': target.wireValue, 'cost': cost};
+  }
+}
+
+class ShareReceivedEvent extends AnalyticsEvent {
+  const ShareReceivedEvent({required this.kind, this.sourceApp});
+
+  final SharedItemKindValue kind;
+  final String? sourceApp;
+
+  @override
+  String get eventName => 'share_received';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'kind': kind.wireValue, if (sourceApp != null) 'source_app': sourceApp!};
+  }
+}
+
+class ShareActionEvent extends AnalyticsEvent {
+  const ShareActionEvent({required this.action, required this.kind});
+
+  final ShareActionValue action;
+  final SharedItemKindValue kind;
+
+  @override
+  String get eventName => 'share_action';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'action': action.wireValue, 'kind': kind.wireValue};
   }
 }
 
