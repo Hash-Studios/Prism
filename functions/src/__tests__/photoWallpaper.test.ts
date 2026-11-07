@@ -1213,7 +1213,7 @@ const lookup = (data: Record<string, unknown>, auth: unknown = USER) =>
 test("lookup after an app restart returns a finished job, and never charges", async (t) => {
   const store = installFakeDb(t, {"usersv2/u1": {coins: 125}, [`${PHOTO_JOB_CLOSURES}/u1`]: {day: today(), count: 20},
     [JOB]: {...runningJob(admin.firestore.Timestamp.now()),
-    state: "succeeded", imageUrl: OUT_URL, watermarked: true}});
+      state: "succeeded", imageUrl: OUT_URL, watermarked: true}});
   const result = await lookup({requestId: "req-00000001"}) as Succeeded;
   assert.equal(result.state, "succeeded");
   assert.equal(result.imageUrl, OUT_URL);
