@@ -13,6 +13,7 @@ import 'package:Prism/features/ai_wallpaper/views/pages/photo_wallpaper_page.dar
 import 'package:Prism/features/ai_wallpaper/views/widgets/photo_wallpaper_widgets.dart';
 import 'package:Prism/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -83,6 +84,7 @@ Future<void> _pumpPage(
   Size size = const Size(1080, 2340),
   double devicePixelRatio = 3,
   double textScale = 1,
+  Brightness brightness = Brightness.light,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = devicePixelRatio;
@@ -101,6 +103,7 @@ Future<void> _pumpPage(
 
   await tester.pumpWidget(
     MaterialApp(
+      theme: ThemeData(brightness: brightness),
       locale: const Locale('en'),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
@@ -361,17 +364,44 @@ void main() {
     expect(placed.toJson(), harness.payloads.single['placement']);
   });
 
-  testWidgets('the Before side is opaque, so the result never shows through its empty canvas', (tester) async {
-    await _pumpPage(tester, _Harness());
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets('the Before side keeps its theme canvas shade and is opaque in $brightness mode', (tester) async {
+      await _pumpPage(tester, _Harness(), brightness: brightness);
+      await _pickPhoto(tester);
+      await tester.tap(find.byKey(_runKey));
+      await _settle(tester);
+
+      final Finder canvas = find.descendant(
+        of: find.descendant(of: find.byKey(_compareKey), matching: find.byType(PhotoInCanvas)),
+        matching: find.byType(ColoredBox),
+      );
+      final ColorScheme cs = Theme.of(tester.element(find.byKey(_compareKey))).colorScheme;
+      final Color oldDraftCanvas = Color.alphaBlend(cs.onSurface.withValues(alpha: 0.06), cs.surface);
+      final Color actual = tester.widget<ColoredBox>(canvas.first).color;
+      expect(actual.a, 1.0);
+      expect(actual, oldDraftCanvas);
+    });
+  }
+
+  testWidgets('result actions wrap their labels on a narrow screen with large text', (tester) async {
+    await _pumpPage(
+      tester,
+      _Harness(),
+      size: const Size(640, 1334),
+      devicePixelRatio: 2,
+      textScale: 2,
+    );
     await _pickPhoto(tester);
     await tester.tap(find.byKey(_runKey));
     await _settle(tester);
 
-    final Finder canvas = find.descendant(
-      of: find.descendant(of: find.byKey(_compareKey), matching: find.byType(PhotoInCanvas)),
-      matching: find.byType(ColoredBox),
-    );
-    expect(tester.widget<ColoredBox>(canvas.first).color.a, 1.0);
+    expect(find.text('Download'), findsOneWidget);
+    expect(find.text('Save to folder'), findsOneWidget);
+    for (final String label in <String>['Download', 'Save to folder']) {
+      final Finder text = find.text(label);
+      expect(tester.renderObject<RenderParagraph>(text).didExceedMaxLines, isFalse, reason: label);
+    }
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('a blocked output shows the refund line and Try again', (tester) async {

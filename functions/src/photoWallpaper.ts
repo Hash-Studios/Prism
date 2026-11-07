@@ -587,10 +587,20 @@ export async function sweepStalePhotoJobsOnce(nowMs = Date.now()): Promise<numbe
   for (const field of ["cleanupPending", "falCleanupPending"] as const) {
     await sweepCleanupQueue(field, nowMs);
   }
-  const orphans = await db.collection(PHOTO_FAL_CLEANUP).limit(CLEANUP_BATCH_SIZE).get();
+  const orphanProgress = db.collection(PHOTO_JOB_BUDGET).doc("cleanup");
+  const orphanQuery = db.collection(PHOTO_FAL_CLEANUP).orderBy(admin.firestore.FieldPath.documentId());
+  const orphanCursor = (await orphanProgress.get()).data()?.falOrphans;
+  const orphans = await (typeof orphanCursor === "string" ? orphanQuery.startAfter(db.collection(PHOTO_FAL_CLEANUP).doc(orphanCursor)) : orphanQuery)
+    .limit(CLEANUP_BATCH_SIZE).get();
+  const orphanSweepStarted = Date.now();
   for (const doc of orphans.docs) {
+    if (Date.now() - orphanSweepStarted >= CLEANUP_QUEUE_BUDGET_MS) break;
     const requestId = doc.data().falRequestId;
     if (typeof requestId === "string" && await deleteFalPayload(requestId, photoDeps)) await doc.ref.delete();
+    await orphanProgress.set({falOrphans: doc.id}, {merge: true});
+  }
+  if (orphans.size < CLEANUP_BATCH_SIZE && Date.now() - orphanSweepStarted < CLEANUP_QUEUE_BUDGET_MS) {
+    await orphanProgress.set({falOrphans: null}, {merge: true});
   }
   return refunded;
 }
@@ -609,6 +619,7 @@ export const sweepStalePhotoJobs = onSchedule({
  */
 export async function removePhotoJobsForAccount(uid: string, deps: PhotoDeps = photoDeps): Promise<void> {
   const jobs = await db.collection(PHOTO_JOBS).where("userId", "==", uid).get();
+  const falCleanupStarted = Date.now();
   for (const doc of jobs.docs) {
     let job = doc.data() as PhotoJob;
     if (job.state === "running") {
@@ -620,11 +631,14 @@ export async function removePhotoJobsForAccount(uid: string, deps: PhotoDeps = p
     }
     const key = job.resultKey;
     if (key) await deps.remove(key);
-    // Account deletion never waits on fal: a payload fal has not confirmed deleted moves to an anonymous retry record.
-    if (job.falCleanupPending && job.falRequestId && !(await deleteFalPayload(job.falRequestId, deps))) {
-      await db.collection(PHOTO_FAL_CLEANUP).doc(job.falRequestId).set({
-        falRequestId: job.falRequestId, at: admin.firestore.Timestamp.now(),
-      });
+    if (job.falCleanupPending && job.falRequestId) {
+      const falDeleted = Date.now() - falCleanupStarted < CLEANUP_QUEUE_BUDGET_MS &&
+        await deleteFalPayload(job.falRequestId, deps);
+      if (!falDeleted) {
+        await db.collection(PHOTO_FAL_CLEANUP).doc(job.falRequestId).set({
+          falRequestId: job.falRequestId, at: admin.firestore.Timestamp.now(),
+        });
+      }
     }
     await doc.ref.delete();
   }

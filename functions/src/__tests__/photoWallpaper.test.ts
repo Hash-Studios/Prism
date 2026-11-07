@@ -18,6 +18,7 @@ import {
   planPhotoJob,
   sweepStalePhotoJobsOnce,
   PHOTO_FAL_CLEANUP,
+  PHOTO_JOB_BUDGET,
   removePhotoJobsForAccount,
 } from "../photoWallpaper";
 import {installFakeDb} from "./fakeDb";
@@ -63,7 +64,7 @@ const upscaleData = async (patch: Record<string, unknown> = {}) => ({
 
 /** Mocks every outside dependency. The fal output is a 1080x2340 JPEG unless `falStatus` makes fal fail. */
 function mockDeps(t: TestContext, opts: {falStatus?: number; deleteStatus?: number; deleteException?: string;
-  safe?: (call: number) => Record<string, unknown>} = {}) {
+  deleteTimeout?: () => void; safe?: (call: number) => Record<string, unknown>} = {}) {
   const calls: Call[] = [];
   const stored: Buffer[] = [];
   const counts = {safe: 0};
@@ -86,7 +87,11 @@ function mockDeps(t: TestContext, opts: {falStatus?: number; deleteStatus?: numb
       return new Response(JSON.stringify({image: {url: `data:image/jpeg;base64,${image}`}}),
         {status: 200, headers: meta});
     }
-    if (url === FAL_DELETE && method === "DELETE") {
+    if (url.startsWith("https://api.fal.ai/v1/models/requests/") && method === "DELETE") {
+      if (opts.deleteTimeout) {
+        opts.deleteTimeout();
+        throw new DOMException("request timed out", "TimeoutError");
+      }
       return Response.json({cdn_delete_results: opts.deleteException ?
         [{link: "https://private-provider-link.test", exception: opts.deleteException}] : []},
       {status: opts.deleteStatus ?? 200});
@@ -151,6 +156,7 @@ test("extend returns the 1080x2340 result, charges 75 and stores a succeeded job
   assert.equal(store.get(CHARGE)?.delta, -75);
   assert.equal(store.get(CHARGE)?.action, "photoWallpaper");
   assert.equal(store.get(JOB)?.state, "succeeded");
+  assert.equal(store.get(JOB)?.falCleanupPending, false);
   assert.deepEqual(await sizeOf(deps.stored[0]), {width: 1080, height: 2340});
   assert.equal((await sharp(deps.stored[0]).metadata()).exif, undefined);
   assert.equal(deps.stored[0].includes("private-provider-metadata"), false);
@@ -770,22 +776,121 @@ test("account deletion never waits on fal: a failed payload delete moves to an a
   assert.equal(retry?.falRequestId, "req-abcdef12");
 });
 
+test("account deletion queues more than 30 fal cleanups without waiting on provider timeouts", async (t) => {
+  const seed = Object.fromEntries(Array.from({length: 40}, (_, i) => {
+    const requestId = `req-${String(i).padStart(8, "0")}`;
+    return [`photoJobs/job-${String(i).padStart(2, "0")}`, {
+      ...runningJob(admin.firestore.Timestamp.fromMillis(Date.now() - 11 * MINUTE)),
+      state: "failed", falRequestId: requestId, falCleanupPending: true,
+    }];
+  }));
+  const store = installFakeDb(t, seed);
+  let clock = Date.now();
+  const started = clock;
+  t.mock.method(Date, "now", () => clock);
+  const deps = mockDeps(t, {deleteTimeout: () => {
+    clock += 10_000;
+  }});
+  await removePhotoJobsForAccount("u1");
+  assert.equal(deps.calls.filter((call) => call.method === "DELETE").length, 2);
+  assert.equal(clock - started, 20_000);
+  assert.equal(Array.from(store.entries()).filter(([path]) => path.startsWith(`${PHOTO_FAL_CLEANUP}/`)).length, 40);
+  for (const [path, retry] of store) {
+    if (path.startsWith(`${PHOTO_FAL_CLEANUP}/`)) {
+      assert.deepEqual(Object.keys(retry).sort(), ["at", "falRequestId"]);
+      assert.equal(retry.falRequestId, path.split("/")[1]);
+    }
+  }
+  assert.equal(Array.from(store.entries()).filter(([path]) => path.startsWith("photoJobs/")).length, 0);
+});
+
+test("account deletion stops on an R2 failure before enqueueing fal cleanup", async (t) => {
+  const store = installFakeDb(t, {
+    [JOB]: {...runningJob(admin.firestore.Timestamp.now()), state: "succeeded", resultKey: "photo-walls/result.jpg",
+      falRequestId: "req-abcdef12", falCleanupPending: true},
+  });
+  const deps = mockDeps(t);
+  await assert.rejects(() => removePhotoJobsForAccount("u1", {...photoDeps, remove: async () => {
+    throw new Error("storage unavailable");
+  }}));
+  assert.equal(store.get(JOB)?.falCleanupPending, true);
+  assert.equal(store.get(`${PHOTO_FAL_CLEANUP}/req-abcdef12`), undefined);
+  assert.equal(deps.calls.filter((call) => call.method === "DELETE").length, 0);
+});
+
 test("the sweeper retries anonymous fal cleanup records and removes them once fal confirms", async (t) => {
   const store = installFakeDb(t, {[`${PHOTO_FAL_CLEANUP}/req-abcdef12`]: {falRequestId: "req-abcdef12",
     at: admin.firestore.Timestamp.now()}});
-  let status = 403;
+  const options = {deleteStatus: 403};
+  const deps = mockDeps(t, options);
+  await sweepStalePhotoJobsOnce();
+  assert.ok(store.get(`${PHOTO_FAL_CLEANUP}/req-abcdef12`));
+  options.deleteStatus = 200;
+  await sweepStalePhotoJobsOnce();
+  assert.equal(store.get(`${PHOTO_FAL_CLEANUP}/req-abcdef12`), undefined);
+  assert.deepEqual(deps.calls.filter((call) => call.method === "DELETE").map((call) => call.url), [FAL_DELETE, FAL_DELETE]);
+});
+
+test("the orphan fal cleanup sweeper advances past a permanently failing first page", async (t) => {
+  const seed = Object.fromEntries(Array.from({length: 11}, (_, i) => {
+    const requestId = `req-${String(i).padStart(8, "0")}`;
+    return [`${PHOTO_FAL_CLEANUP}/${requestId}`, {falRequestId: requestId}];
+  }));
+  const store = installFakeDb(t, seed);
   const calls: string[] = [];
   t.mock.method(photoDeps, "falKey", () => "test-key");
   t.mock.method(photoDeps, "fetch", async (url: string) => {
     calls.push(url);
-    return Response.json({cdn_delete_results: []}, {status});
+    return Response.json({}, {status: 403});
   });
   await sweepStalePhotoJobsOnce();
-  assert.ok(store.get(`${PHOTO_FAL_CLEANUP}/req-abcdef12`));
-  status = 200;
   await sweepStalePhotoJobsOnce();
-  assert.equal(store.get(`${PHOTO_FAL_CLEANUP}/req-abcdef12`), undefined);
-  assert.deepEqual(calls, [FAL_DELETE, FAL_DELETE]);
+  assert.equal(calls.length, 11);
+  assert.equal(calls[10], "https://api.fal.ai/v1/models/requests/req-00000010/payloads");
+  assert.equal(Array.from(store.entries()).filter(([path]) => path.startsWith(`${PHOTO_FAL_CLEANUP}/`)).length, 11);
+});
+
+test("orphan cleanup timeouts rotate and wrap without blocking the other cleanup queues", async (t) => {
+  const requestIds = Array.from({length: 5}, (_, i) => `req-${String(i).padStart(8, "0")}`);
+  const startedAt = admin.firestore.Timestamp.now();
+  const store = installFakeDb(t, {
+    ...Object.fromEntries(requestIds.map((falRequestId) => [`${PHOTO_FAL_CLEANUP}/${falRequestId}`, {falRequestId}])),
+    [`${PHOTO_JOBS}/storage`]: {...runningJob(startedAt), state: "failed", cleanupPending: true,
+      resultKey: "photo-walls/cleanup.jpg"},
+    [`${PHOTO_JOBS}/fal`]: {...runningJob(startedAt), state: "succeeded", falCleanupPending: true,
+      falRequestId: "req-jobcleanup"},
+  });
+  let clock = startedAt.toMillis();
+  t.mock.method(Date, "now", () => clock);
+  mockDeps(t);
+  const removed: string[] = [];
+  const attempted: string[] = [];
+  t.mock.method(photoDeps, "remove", async (key: string) => removed.push(key));
+  t.mock.method(photoDeps, "fetch", async (url: string) => {
+    if (url.includes("req-jobcleanup")) return Response.json({cdn_delete_results: []});
+    attempted.push(url.split("/").at(-2) as string);
+    clock += 10_000;
+    throw new DOMException("request timed out", "TimeoutError");
+  });
+  const progress = `${PHOTO_JOB_BUDGET}/cleanup`;
+  await sweepStalePhotoJobsOnce();
+  assert.equal(clock - startedAt.toMillis(), 20_000);
+  assert.deepEqual(attempted, requestIds.slice(0, 2));
+  assert.equal(store.get(progress)?.falOrphans, requestIds[1]);
+  assert.deepEqual(removed, ["photo-walls/cleanup.jpg"]);
+  assert.equal(store.get(`${PHOTO_JOBS}/storage`)?.cleanupPending, false);
+  assert.equal(store.get(`${PHOTO_JOBS}/fal`)?.falCleanupPending, false);
+  await sweepStalePhotoJobsOnce();
+  assert.equal(clock - startedAt.toMillis(), 40_000);
+  assert.deepEqual(attempted, requestIds.slice(0, 4));
+  assert.equal(store.get(progress)?.falOrphans, requestIds[3]);
+  await sweepStalePhotoJobsOnce();
+  assert.deepEqual(attempted, requestIds);
+  assert.equal(store.get(progress)?.falOrphans, null);
+  await sweepStalePhotoJobsOnce();
+  assert.deepEqual(attempted, [...requestIds, ...requestIds.slice(0, 2)]);
+  assert.equal(store.get(progress)?.falOrphans, requestIds[1]);
+  assert.ok(requestIds.every((id) => store.has(`${PHOTO_FAL_CLEANUP}/${id}`)));
 });
 
 test("account deletion tolerates a concurrent deletion during successful fal cleanup", async (t) => {
@@ -801,6 +906,89 @@ test("account deletion tolerates a concurrent deletion during successful fal cle
   });
   await assert.doesNotReject(() => removePhotoJobsForAccount("u1"));
   assert.equal(store.get(JOB), undefined);
+});
+
+test("overlapping account deletion and sweeping preserve a failed fal cleanup for retry", async (t) => {
+  const store = installFakeDb(t, {
+    [JOB]: {...runningJob(admin.firestore.Timestamp.now()), state: "failed",
+      falRequestId: "req-abcdef12", falCleanupPending: true},
+  });
+  mockDeps(t);
+  let release!: () => void;
+  let entered!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const paused = new Promise<void>((resolve) => {
+    entered = resolve;
+  });
+  let calls = 0;
+  t.mock.method(photoDeps, "fetch", async (url: string) => {
+    assert.equal(url, FAL_DELETE);
+    if (++calls === 1) {
+      entered();
+      await gate;
+    }
+    return Response.json({cdn_delete_results: []}, {status: calls < 3 ? 403 : 200});
+  });
+  const deletion = removePhotoJobsForAccount("u1");
+  await paused;
+  try {
+    await sweepStalePhotoJobsOnce();
+    assert.equal(calls, 2);
+    assert.equal(store.get(JOB)?.falCleanupPending, true);
+  } finally {
+    release();
+    await deletion;
+  }
+  assert.equal(store.get(JOB), undefined);
+  assert.deepEqual(Object.keys(store.get(`${PHOTO_FAL_CLEANUP}/req-abcdef12`) ?? {}).sort(), ["at", "falRequestId"]);
+  await sweepStalePhotoJobsOnce();
+  assert.equal(calls, 3);
+  assert.equal(store.get(`${PHOTO_FAL_CLEANUP}/req-abcdef12`), undefined);
+});
+
+test("concurrent sweeps tolerate deleting the same anonymous fal record", async (t) => {
+  const path = `${PHOTO_FAL_CLEANUP}/req-abcdef12`;
+  const store = installFakeDb(t, {[path]: {falRequestId: "req-abcdef12"}});
+  mockDeps(t);
+  let release!: () => void;
+  let bothEntered!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const paused = new Promise<void>((resolve) => {
+    bothEntered = resolve;
+  });
+  let calls = 0;
+  t.mock.method(photoDeps, "fetch", async (url: string) => {
+    assert.equal(url, FAL_DELETE);
+    if (++calls === 2) bothEntered();
+    await gate;
+    return Response.json({cdn_delete_results: []});
+  });
+  const sweeps = Promise.all([sweepStalePhotoJobsOnce(), sweepStalePhotoJobsOnce()]);
+  await paused;
+  release();
+  await sweeps;
+  assert.equal(calls, 2);
+  assert.equal(store.get(path), undefined);
+});
+
+test("account deletion handoff stays anonymous while the sweeper removes it", async (t) => {
+  const store = installFakeDb(t, {
+    [JOB]: {...runningJob(admin.firestore.Timestamp.fromMillis(Date.now() - 11 * MINUTE)), state: "failed",
+      falRequestId: "req-abcdef12", falCleanupPending: true},
+  });
+  const options = {deleteStatus: 403};
+  mockDeps(t, options);
+  await removePhotoJobsForAccount("u1");
+  assert.equal(store.get(JOB), undefined);
+  assert.deepEqual(Object.keys(store.get(`${PHOTO_FAL_CLEANUP}/req-abcdef12`) ?? {}).sort(), ["at", "falRequestId"]);
+  options.deleteStatus = 200;
+  await sweepStalePhotoJobsOnce();
+  assert.equal(store.get(JOB), undefined);
+  assert.equal(store.get(`${PHOTO_FAL_CLEANUP}/req-abcdef12`), undefined);
 });
 
 test("account deletion retains a result record after storage removal fails, then retries it", async (t) => {
