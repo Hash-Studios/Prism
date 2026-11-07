@@ -88,9 +88,7 @@ void reportWallpaperSetResult(
       ..showSnackBar(SnackBar(content: Text(message)));
     return;
   }
-  final bool lockFailed =
-      result.failedTarget == WallpaperTarget.lock || (!result.isPartial && target == WallpaperTarget.lock);
-  if (snackHost != null && onSystemSet != null && lockFailed && result.errorCode != 'wallpaper-not-allowed') {
+  if (snackHost != null && onSystemSet != null && offersPhoneWallpaperScreen(result, target)) {
     snackHost
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -124,6 +122,13 @@ void reportWallpaperSetResult(
       ),
     );
 }
+
+/// True when a lock screen set failed in a way the phone's own wallpaper screen can still do (#545). A work profile
+/// that forbids wallpapers forbids that screen too.
+bool offersPhoneWallpaperScreen(WallpaperSetResult result, WallpaperTarget target) =>
+    result.isFailure &&
+    result.errorCode != 'wallpaper-not-allowed' &&
+    (result.failedTarget == WallpaperTarget.lock || (!result.isPartial && target == WallpaperTarget.lock));
 
 void _trackSetResult(WallpaperSetResult result, WallpaperTarget target, WallpaperSetContext setContext) {
   try {

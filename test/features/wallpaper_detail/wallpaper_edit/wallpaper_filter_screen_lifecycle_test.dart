@@ -468,6 +468,7 @@ void main() {
     final String exportPath = client.requests.first.source.filePath!;
     expect(File(exportPath).existsSync(), isTrue);
 
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(find.text('Set with phone'));
     await waitForRealIo(
       tester,
