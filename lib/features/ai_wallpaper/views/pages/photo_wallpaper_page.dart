@@ -5,6 +5,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/analytics_correlation.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/platform/ios_wallpaper_guide.dart';
@@ -28,6 +29,7 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_decoded_image.dart'
 import 'package:Prism/features/ai_wallpaper/views/widgets/photo_wallpaper_widgets.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -62,54 +64,133 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
   String? _pendingRequestId;
   bool _picking = false;
   bool _acting = false;
+  bool _checkingPending = true;
+  bool _pendingStorageReady = false;
+  int _sessionRevision = 0;
+  int? _activeRecoveryRevision;
+  late String _owner;
+  StreamSubscription<Object?>? _session;
 
   /// The mode of a job recovered after a restart. The photo itself is not kept, so [_mode] cannot plan it.
   PhotoJobMode? _recoveredMode;
 
   bool get _isPro => widget.isPro ?? app_state.prismUser.premium;
 
-  String get _userId => app_state.prismUser.id;
+  String get _userId => app_state.prismUser.loggedIn ? app_state.prismUser.id : '';
 
-  PhotoJobMode? get _jobMode => _mode ?? _recoveredMode;
+  bool _isCurrent(int revision) => mounted && revision == _sessionRevision && _owner == _userId;
+
+  bool _canUse(PhotoJobSucceeded done) => _owner == _userId && identical(_state, done);
+
+  PhotoJobMode? get _jobMode => _recoveredMode ?? _mode;
 
   @override
   void initState() {
     super.initState();
+    _owner = _userId;
+    if (getIt.isRegistered<SessionRepository>()) {
+      _session = getIt<SessionRepository>().watchCurrentUser().listen((user) {
+        final String owner = user.loggedIn ? user.id : '';
+        if (owner == _owner) return;
+        _sessionRevision++;
+        setState(() {
+          _owner = owner;
+          _source = null;
+          _placement = null;
+          _recoveredMode = null;
+          _pendingRequestId = null;
+          _state = const PhotoJobDraft();
+          _picking = false;
+          _acting = false;
+          _checkingPending = true;
+          _pendingStorageReady = false;
+        });
+        unawaited(_recoverPending());
+      });
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) => _recoverPending());
+  }
+
+  @override
+  void dispose() {
+    unawaited(_session?.cancel());
+    super.dispose();
   }
 
   /// True when the server outcome is final, so the saved request id can go.
   static bool _isFinal(PhotoJobState result) =>
       result is PhotoJobSucceeded ||
       (result is PhotoJobFailed &&
-          result.reason != PhotoJobFailure.network &&
-          result.reason != PhotoJobFailure.inProgress &&
-          !(result.charged && !result.refunded));
+          (result.charged
+              ? result.refunded
+              : result.reason != PhotoJobFailure.network && result.reason != PhotoJobFailure.inProgress));
+
+  Future<bool> _clearPending(String userId, String requestId) async {
+    try {
+      await widget.repository.clearPending(userId: userId, requestId: requestId);
+      return true;
+    } catch (error) {
+      logger.w('[PhotoWallpaper] pending job clear failed (${error.runtimeType})');
+      return false;
+    }
+  }
 
   /// Shows the result of a job that was running when the app closed, or its refund.
   Future<void> _recoverPending() async {
-    final PendingPhotoJob? pending = await widget.repository.readPending();
-    if (!mounted || pending == null || pending.userId != _userId || _source != null || _running) return;
-    setState(() {
-      _target = pending.target;
-      _recoveredMode = pending.mode;
-      _pendingRequestId = pending.requestId;
-      _state = PhotoJobRunning(pending.requestId);
-    });
-    final PhotoJobState? result = await widget.repository.recover(pending.requestId);
-    if (!mounted) return;
-    final PhotoJobState shown = switch (result) {
-      null => const PhotoJobDraft(),
-      PhotoJobRunning() => const PhotoJobFailed(reason: PhotoJobFailure.inProgress, charged: false, refunded: false),
-      _ => result,
-    };
-    if (result == null || _isFinal(shown)) unawaited(widget.repository.savePending(null));
-    unawaited(CoinsService.instance.refreshBalance().then<void>((_) {}, onError: (Object _) {}));
-    setState(() {
-      _state = shown;
-      if (result == null) _recoveredMode = null;
-      if (result == null || _isFinal(shown)) _pendingRequestId = null;
-    });
+    final int revision = _sessionRevision;
+    final String userId = _owner;
+    if (!mounted || _activeRecoveryRevision == revision) return;
+    _activeRecoveryRevision = revision;
+    setState(() => _checkingPending = true);
+    try {
+      if (userId.isEmpty) return;
+      final PendingPhotoJob? pending = await widget.repository.readPending(userId: userId);
+      if (!_isCurrent(revision)) return;
+      _pendingStorageReady = true;
+      if (pending == null) {
+        setState(() {
+          _pendingRequestId = null;
+          _recoveredMode = null;
+          _state = const PhotoJobDraft();
+        });
+        return;
+      }
+      setState(() {
+        if (_pendingRequestId != pending.requestId) {
+          _source = null;
+          _placement = null;
+        }
+        _target = pending.target;
+        _recoveredMode = pending.mode;
+        _pendingRequestId = pending.requestId;
+        _state = PhotoJobRunning(pending.requestId);
+      });
+      final PhotoJobState? result = await widget.repository.recover(pending.requestId);
+      if (!_isCurrent(revision)) return;
+      final PhotoJobState shown = switch (result) {
+        null => const PhotoJobDraft(),
+        PhotoJobRunning() => const PhotoJobFailed(reason: PhotoJobFailure.inProgress, charged: false, refunded: false),
+        _ => result,
+      };
+      final bool cleared = (result == null || _isFinal(shown)) && await _clearPending(userId, pending.requestId);
+      if (!_isCurrent(revision)) return;
+      unawaited(CoinsService.instance.refreshBalance().then<void>((_) {}, onError: (Object _) {}));
+      setState(() {
+        _state = shown;
+        if (result == null) _recoveredMode = null;
+        if (cleared) _pendingRequestId = null;
+      });
+    } catch (error) {
+      logger.w('[PhotoWallpaper] pending job read failed (${error.runtimeType})');
+      if (_isCurrent(revision)) {
+        setState(() => _state = const PhotoJobFailed(reason: PhotoJobFailure.network, charged: false, refunded: false));
+      }
+    } finally {
+      if (_isCurrent(revision)) {
+        setState(() => _checkingPending = false);
+        _activeRecoveryRevision = null;
+      }
+    }
   }
 
   PhotoSize get _phone {
@@ -135,29 +216,36 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
   }
 
   Future<void> _pick() async {
-    if (_picking || _running) return;
+    if (_picking || _running || _checkingPending || _owner.isEmpty) return;
+    if (!_pendingStorageReady || _pendingRequestId != null) {
+      await _recoverPending();
+      return;
+    }
+    final int revision = _sessionRevision;
     setState(() => _picking = true);
     try {
       final PhotoSource? source = await widget.repository.pick();
-      if (!mounted || source == null) return;
+      if (!_isCurrent(revision) || source == null) return;
       setState(() {
         _source = source;
+        _recoveredMode = null;
         _state = const PhotoJobDraft();
         _pendingRequestId = null;
         _replan();
       });
     } catch (error) {
       logger.w('[PhotoWallpaper] pick failed (${error.runtimeType})');
-      if (mounted) toasts.error(context.l10n.photoWallErrorUnreadable);
+      if (mounted && _isCurrent(revision)) toasts.error(context.l10n.photoWallErrorUnreadable);
     } finally {
-      if (mounted) setState(() => _picking = false);
+      if (_isCurrent(revision)) setState(() => _picking = false);
     }
   }
 
   void _setTarget(PhotoJobTarget target) {
-    if (_running || target == _target) return;
+    if (_running || _checkingPending || _pendingRequestId != null || target == _target) return;
     setState(() {
       _target = target;
+      _recoveredMode = null;
       _state = const PhotoJobDraft();
       _pendingRequestId = null;
       _replan();
@@ -165,9 +253,14 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
   }
 
   Future<void> _run() async {
+    if (_running || _checkingPending || _picking) return;
+    if (!_pendingStorageReady || _pendingRequestId != null) {
+      await _recoverPending();
+      return;
+    }
     final PhotoSource? source = _source;
     final PhotoJobMode? mode = _mode;
-    if (source == null || mode == null || _running) return;
+    if (source == null || mode == null || _owner.isEmpty) return;
     if (mode == PhotoJobMode.extend && !(_placement?.validForServer ?? false)) {
       setState(() {
         _state = const PhotoJobFailed(reason: PhotoJobFailure.unreadable, charged: false, refunded: false);
@@ -176,18 +269,34 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       return;
     }
     final PhotoJob job = PhotoJob(source: source, mode: mode, target: _target, cost: _cost);
-    final String requestId = _pendingRequestId ?? AnalyticsCorrelation.newId();
+    final String requestId = AnalyticsCorrelation.newId();
+    final String userId = _userId;
+    final int revision = _sessionRevision;
     final AppLocalizations l10n = context.l10n;
     final PhotoSize canvas = _canvas;
+    final PhotoPlacement? placement = _placement;
     setState(() {
       _pendingRequestId = requestId;
-      _recoveredMode = null;
+      _recoveredMode = mode;
       _state = PhotoJobRunning(requestId);
     });
-    await widget.repository.savePending(
-      PendingPhotoJob(userId: _userId, requestId: requestId, mode: mode, target: _target),
-    );
-    analytics.track(PhotoJobStartedEvent(mode: mode.analytics, target: _target.analytics, cost: job.cost));
+    try {
+      await widget.repository.savePending(
+        PendingPhotoJob(userId: userId, requestId: requestId, mode: mode, target: job.target),
+      );
+    } catch (error) {
+      logger.w('[PhotoWallpaper] pending job save failed (${error.runtimeType})');
+      if (_isCurrent(revision)) {
+        setState(() {
+          _pendingRequestId = null;
+          _pendingStorageReady = false;
+          _state = const PhotoJobFailed(reason: PhotoJobFailure.network, charged: false, refunded: false);
+        });
+      }
+      return;
+    }
+    if (!_isCurrent(revision)) return;
+    analytics.track(PhotoJobStartedEvent(mode: mode.analytics, target: job.target.analytics, cost: job.cost));
     final AiGenerationActivity? activity = await LiveActivityChannel.startAiGeneration(
       AiActivityRequest(
         prompt: mode == PhotoJobMode.extend ? l10n.photoWallWorkingExtend : l10n.photoWallWorkingUpscale,
@@ -201,31 +310,47 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
         openLabel: l10n.aiLiveActivityOpen,
       ),
     );
+    if (!_isCurrent(revision)) {
+      await activity?.cancel();
+      return;
+    }
     final PhotoJobState result = await widget.repository.run(
       job,
       requestId: requestId,
       targetSize: canvas,
-      placement: _placement,
+      placement: placement,
     );
+    if (!_isCurrent(revision)) {
+      await activity?.cancel();
+      return;
+    }
     unawaited(CoinsService.instance.refreshBalance().then<void>((_) {}, onError: (Object _) {}));
     switch (result) {
       case PhotoJobSucceeded(:final String imageUrl):
         PrismHaptics.success();
         await activity?.finish(imageUrl);
-        analytics.track(PhotoJobDoneEvent(mode: mode.analytics, target: _target.analytics, cost: job.cost));
+        if (!_isCurrent(revision)) return;
+        analytics.track(PhotoJobDoneEvent(mode: mode.analytics, target: job.target.analytics, cost: job.cost));
       case PhotoJobFailed(:final PhotoJobFailure reason, :final bool refunded):
         await activity?.fail(_errorText(l10n, result));
+        if (!_isCurrent(revision)) return;
         analytics.track(
-          PhotoJobFailedEvent(mode: mode.analytics, target: _target.analytics, reason: reason.wire, refunded: refunded),
+          PhotoJobFailedEvent(
+            mode: mode.analytics,
+            target: job.target.analytics,
+            reason: reason.wire,
+            refunded: refunded,
+          ),
         );
       case PhotoJobDraft() || PhotoJobRunning():
         await activity?.cancel();
     }
-    if (_isFinal(result)) unawaited(widget.repository.savePending(null));
-    if (!mounted) return;
+    if (!_isCurrent(revision)) return;
+    final bool cleared = _isFinal(result) && await _clearPending(userId, requestId);
+    if (!_isCurrent(revision)) return;
     setState(() {
       _state = result;
-      if (_isFinal(result)) _pendingRequestId = null;
+      if (cleared) _pendingRequestId = null;
     });
   }
 
@@ -245,17 +370,19 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
   }
 
   Future<File?> _resultFile(PhotoJobSucceeded done) async {
+    final int revision = _sessionRevision;
     try {
       return await aiDownloadToTempFile(done.imageUrl);
     } catch (error) {
       logger.w('[PhotoWallpaper] result download failed (${error.runtimeType})');
-      if (mounted) toasts.error(aiDownloadFailureMessage(context.l10n, error));
+      if (_isCurrent(revision)) toasts.error(aiDownloadFailureMessage(context.l10n, error));
       return null;
     }
   }
 
   Future<void> _set(PhotoJobSucceeded done, PhotoJobMode mode) async {
-    if (_acting) return;
+    if (_acting || !_canUse(done)) return;
+    final int revision = _sessionRevision;
     setState(() => _acting = true);
     try {
       analytics.track(
@@ -270,7 +397,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
         return;
       }
       final File? file = await _resultFile(done);
-      if (file == null || !mounted) return;
+      if (file == null || !mounted || !_isCurrent(revision) || !_canUse(done)) return;
       await SetWallpaperFlow.run(
         context,
         url: file.path,
@@ -279,18 +406,21 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
         entryPoint: 'photo_wallpaper',
       );
     } finally {
-      if (mounted) setState(() => _acting = false);
+      if (_isCurrent(revision)) setState(() => _acting = false);
     }
   }
 
   Future<void> _download(PhotoJobSucceeded done, {bool guide = false}) async {
+    if (!_canUse(done)) return;
+    final int revision = _sessionRevision;
     final AppLocalizations l10n = context.l10n;
     try {
       final File local = await OfflineAssetStore.instance.resolve(done.imageUrl).timeout(aiAssetTransferTimeout);
+      if (!_isCurrent(revision) || !_canUse(done)) return;
       final OperationResult result = await PrismMediaHostApi().enqueueDownload(
         DownloadRequest(link: local.path, filenameWithoutExtension: downloadBaseName(done.imageUrl), isLocalFile: true),
       );
-      if (!mounted) return;
+      if (!mounted || !_isCurrent(revision) || !_canUse(done)) return;
       if (result.success) {
         toasts.success(l10n.photoWallSaved);
         if (guide) await showIosSetWallpaperGuide(context);
@@ -301,11 +431,12 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       }
     } catch (error) {
       logger.w('[PhotoWallpaper] save failed (${error.runtimeType})');
-      if (mounted) toasts.error(aiDownloadFailureMessage(l10n, error));
+      if (_isCurrent(revision)) toasts.error(aiDownloadFailureMessage(l10n, error));
     }
   }
 
   Future<void> _saveToFolder(PhotoJobSucceeded done, PhotoJobMode mode) {
+    if (!_canUse(done)) return Future<void>.value();
     final String id = done.jobId;
     final WallpaperCore core = WallpaperCore(
       id: id,
@@ -329,6 +460,10 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
   }
 
   void _startOver() {
+    if (_pendingRequestId != null) {
+      unawaited(_recoverPending());
+      return;
+    }
     setState(() {
       _source = null;
       _state = const PhotoJobDraft();
@@ -348,6 +483,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
         actions: const <Widget>[CoinBalanceChip(sourceTag: 'photo_wallpaper_page', showStreak: false)],
         bottomBar: _bottomBar(l10n),
         body: AnimatedSwitcher(
+          key: ValueKey<int>(_sessionRevision),
           duration: context.motion(PrismDurations.base),
           reverseDuration: context.motion(PrismDurations.fast),
           switchInCurve: PrismCurves.enter,
@@ -390,7 +526,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
         title: l10n.photoWallEntrySubtitle,
         body: l10n.photoWallPrivacyNote,
         actionLabel: l10n.photoWallPickPhoto,
-        onAction: _picking ? null : _pick,
+        onAction: _picking || _checkingPending || _owner.isEmpty ? null : _pick,
       ),
     ],
   );
@@ -403,6 +539,8 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
 
   List<Widget> _draft(AppLocalizations l10n, PhotoSource source) {
     final PhotoPlacement? placement = _placement;
+    final int revision = _sessionRevision;
+    bool canEdit() => _isCurrent(revision) && _state is PhotoJobDraft && identical(_source, source);
     return <Widget>[
       Text(l10n.photoWallTargetLabel, style: PrismTextStyles.rowTitle(context)),
       const SizedBox(height: PrismSpace.xs),
@@ -413,7 +551,9 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
             t == PhotoJobTarget.phone ? l10n.photoWallTargetPhone : l10n.photoWallTargetDesktop,
         iconOf: (PhotoJobTarget t) =>
             t == PhotoJobTarget.phone ? Icons.smartphone_rounded : Icons.desktop_windows_rounded,
-        onChanged: _setTarget,
+        onChanged: (PhotoJobTarget target) {
+          if (canEdit()) _setTarget(target);
+        },
       ),
       const SizedBox(height: PrismSpace.md),
       PhotoPlanCard(mode: _mode, target: _target),
@@ -427,7 +567,9 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
                 label: l10n.photoWallPlaceReset,
                 variant: PrismButtonVariant.ghost,
                 size: PrismButtonSize.compact,
-                onPressed: () => setState(() => _placement = PhotoPlacement.fit(canvas: _canvas, photo: source.size)),
+                onPressed: () {
+                  if (canEdit()) setState(() => _placement = PhotoPlacement.fit(canvas: _canvas, photo: source.size));
+                },
               ),
           ],
         ),
@@ -435,7 +577,9 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
         PhotoPlacementFrame(
           source: source,
           placement: placement,
-          onChanged: (PhotoPlacement next) => setState(() => _placement = next),
+          onChanged: (PhotoPlacement next) {
+            if (canEdit()) setState(() => _placement = next);
+          },
         ),
         const SizedBox(height: PrismSpace.xs),
         Text(l10n.photoWallPlaceHint, style: PrismTextStyles.caption(context), textAlign: TextAlign.center),
@@ -485,12 +629,15 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       kind: GlintStateKind.error,
       title: _errorText(l10n, failed),
       actionLabel: switch (failed.reason) {
+        _ when _pendingRequestId != null && !_isFinal(failed) => l10n.photoWallTryAgain,
         PhotoJobFailure.unsafeInput || PhotoJobFailure.unreadable => l10n.photoWallPickAnother,
         PhotoJobFailure.dailyLimit || PhotoJobFailure.busy => null,
         _ when _source == null && _isFinal(failed) => l10n.photoWallPickPhoto,
         _ => l10n.photoWallTryAgain,
       },
       onAction: switch (failed.reason) {
+        _ when _checkingPending => null,
+        _ when _pendingRequestId != null && !_isFinal(failed) => _source == null ? _recoverPending : _run,
         PhotoJobFailure.unsafeInput || PhotoJobFailure.unreadable => _pick,
         PhotoJobFailure.dailyLimit || PhotoJobFailure.busy => null,
         _ when _source == null => _isFinal(failed) ? _pick : _recoverPending,
@@ -568,14 +715,18 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
                 icon: short ? Icons.toll_rounded : Icons.auto_awesome_rounded,
                 expand: true,
                 maxLines: 2,
-                onPressed: short ? () => context.router.push(RewardsRoute(scrollToEarn: true)) : _run,
+                onPressed: _picking || _checkingPending
+                    ? null
+                    : short
+                    ? () => context.router.push(RewardsRoute(scrollToEarn: true))
+                    : _run,
               ),
             PrismButton(
               label: l10n.photoWallPickAnother,
               variant: mode == null ? PrismButtonVariant.primary : PrismButtonVariant.ghost,
               expand: true,
               loading: _picking,
-              onPressed: _pick,
+              onPressed: _pendingRequestId != null || _checkingPending ? null : _pick,
             ),
           ],
         );

@@ -54,24 +54,62 @@ class PhotoWallpaperRepository {
   final Future<String?> Function() _readPending;
   final Future<void> Function(String? json) _writePending;
 
-  /// The job that was running when the app last ran, or null.
-  Future<PendingPhotoJob?> readPending() async {
-    try {
-      final String? raw = await _readPending();
-      return raw == null ? null : PendingPhotoJob.fromJson(jsonDecode(raw));
-    } catch (error) {
-      logger.w('[PhotoWallpaper] pending job read failed (${error.runtimeType})');
-      return null;
-    }
+  // Pages share one setting, so their read-modify-write operations must not replace one another.
+  static Future<void>? _pendingOperation;
+
+  static Future<T> _serializePending<T>(Future<T> Function() operation) {
+    final Future<void>? previous = _pendingOperation;
+    final Future<T> result = previous == null ? Future<T>.sync(operation) : previous.then((_) => operation());
+    late final Future<void> tail;
+    tail = result.then<void>((_) {}, onError: (Object error, StackTrace stack) {}).whenComplete(() {
+      if (identical(_pendingOperation, tail)) _pendingOperation = null;
+    });
+    _pendingOperation = tail;
+    return result;
   }
 
-  /// Saves [job] as the running job, or clears it when null.
-  Future<void> savePending(PendingPhotoJob? job) async {
-    try {
-      await _writePending(job == null ? null : jsonEncode(job.toJson()));
-    } catch (error) {
-      logger.w('[PhotoWallpaper] pending job write failed (${error.runtimeType})');
+  /// The owner's job from the previous app run, or null. Storage errors are not an empty slot.
+  Future<PendingPhotoJob?> readPending({required String userId}) =>
+      _serializePending(() async => (await _readPendingJobs())[userId]);
+
+  /// Saves [job] before it can charge coins. An unresolved request cannot be replaced by another one.
+  Future<void> savePending(PendingPhotoJob job) => _serializePending(() async {
+    final Map<String, PendingPhotoJob> jobs = await _readPendingJobs();
+    final PendingPhotoJob? previous = jobs[job.userId];
+    if (previous != null && previous.requestId != job.requestId) {
+      throw StateError('A photo job is still pending for this account.');
     }
+    jobs[job.userId] = job;
+    await _writePending(jsonEncode(jobs.values.map((PendingPhotoJob pending) => pending.toJson()).toList()));
+  });
+
+  /// Removes only the completed request, leaving other accounts and newer requests untouched.
+  Future<void> clearPending({required String userId, required String requestId}) => _serializePending(() async {
+    final Map<String, PendingPhotoJob> jobs = await _readPendingJobs();
+    if (jobs[userId]?.requestId != requestId) return;
+    jobs.remove(userId);
+    await _writePending(
+      jobs.isEmpty ? null : jsonEncode(jobs.values.map((PendingPhotoJob pending) => pending.toJson()).toList()),
+    );
+  });
+
+  Future<Map<String, PendingPhotoJob>> _readPendingJobs() async {
+    final String? raw = await _readPending();
+    if (raw == null) return <String, PendingPhotoJob>{};
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } on FormatException {
+      return <String, PendingPhotoJob>{};
+    }
+    // Read the original single-job format as well as the account-isolated list.
+    final Iterable<Object?> records = decoded is List ? decoded : <Object?>[decoded];
+    final Map<String, PendingPhotoJob> jobs = <String, PendingPhotoJob>{};
+    for (final Object? record in records) {
+      final PendingPhotoJob? job = PendingPhotoJob.fromJson(record);
+      if (job != null) jobs[job.userId] = job;
+    }
+    return jobs;
   }
 
   /// The server state of a job started before the app restarted. Null when the server has no such job.

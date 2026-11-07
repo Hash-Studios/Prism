@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -552,6 +553,183 @@ void main() {
   });
 
   group('pending job after a restart', () {
+    const PendingPhotoJob first = PendingPhotoJob(
+      userId: 'u1',
+      requestId: 'req-00000042',
+      mode: PhotoJobMode.extend,
+      target: PhotoJobTarget.phone,
+    );
+    const PendingPhotoJob otherOwner = PendingPhotoJob(
+      userId: 'u2',
+      requestId: 'req-00000043',
+      mode: PhotoJobMode.upscale,
+      target: PhotoJobTarget.desktop,
+    );
+
+    test('a storage read error is not treated as an empty pending slot', () async {
+      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+        null,
+        null,
+        null,
+        null,
+        null,
+        () async => throw StateError('disk unavailable'),
+      );
+      await expectLater(repo.readPending(userId: first.userId), throwsStateError);
+    });
+
+    test('a storage write error prevents the caller from starting a paid job', () async {
+      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+        null,
+        null,
+        null,
+        null,
+        null,
+        () async => null,
+        (String? value) async => throw StateError('disk unavailable'),
+      );
+      await expectLater(repo.savePending(first), throwsStateError);
+    });
+
+    test('saving another account preserves the legacy pending job', () async {
+      String? stored = jsonEncode(first.toJson());
+      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+        null,
+        null,
+        null,
+        null,
+        null,
+        () async => stored,
+        (String? value) async => stored = value,
+      );
+      expect((await repo.readPending(userId: first.userId))?.toJson(), first.toJson());
+      expect(await repo.readPending(userId: otherOwner.userId), isNull);
+      await repo.savePending(otherOwner);
+      expect(stored, contains(first.requestId));
+      expect(stored, contains(otherOwner.requestId));
+      expect((await repo.readPending(userId: first.userId))?.toJson(), first.toJson());
+      expect((await repo.readPending(userId: otherOwner.userId))?.toJson(), otherOwner.toJson());
+    });
+
+    test('overlapping saves from separate pages preserve both accounts', () async {
+      String? stored;
+      PhotoWallpaperRepository repository() => PhotoWallpaperRepository(
+        null,
+        null,
+        null,
+        null,
+        null,
+        () async => stored,
+        (String? value) async => stored = value,
+      );
+      await Future.wait(<Future<void>>[repository().savePending(first), repository().savePending(otherOwner)]);
+      expect(stored, contains(first.requestId));
+      expect(stored, contains(otherOwner.requestId));
+    });
+
+    test('a different request cannot overwrite the same account pending job', () async {
+      String? stored = jsonEncode(first.toJson());
+      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+        null,
+        null,
+        null,
+        null,
+        null,
+        () async => stored,
+        (String? value) async => stored = value,
+      );
+      await expectLater(
+        repo.savePending(
+          PendingPhotoJob(userId: first.userId, requestId: 'req-00000044', mode: first.mode, target: first.target),
+        ),
+        throwsStateError,
+      );
+      expect(stored, contains(first.requestId));
+    });
+
+    test('a failed read prevents overwriting an unreadable pending slot', () async {
+      bool wrote = false;
+      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+        null,
+        null,
+        null,
+        null,
+        null,
+        () async => throw StateError('disk unavailable'),
+        (String? value) async => wrote = true,
+      );
+      await expectLater(repo.savePending(first), throwsStateError);
+      expect(wrote, isFalse);
+    });
+
+    test('repeated saves of the same request keep it recoverable', () async {
+      String? stored;
+      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+        null,
+        null,
+        null,
+        null,
+        null,
+        () async => stored,
+        (String? value) async => stored = value,
+      );
+      await repo.savePending(first);
+      await repo.savePending(first);
+      expect((await repo.readPending(userId: first.userId))?.toJson(), first.toJson());
+    });
+
+    test('a stale completion cannot clear another account or a newer request', () async {
+      String? stored = jsonEncode(first.toJson());
+      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+        null,
+        null,
+        null,
+        null,
+        null,
+        () async => stored,
+        (String? value) async => stored = value,
+      );
+      await repo.clearPending(userId: otherOwner.userId, requestId: first.requestId);
+      await repo.clearPending(userId: first.userId, requestId: 'req-older-request');
+      expect((await repo.readPending(userId: first.userId))?.toJson(), first.toJson());
+    });
+
+    test('clearing one account keeps the other account recoverable', () async {
+      String? stored;
+      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+        null,
+        null,
+        null,
+        null,
+        null,
+        () async => stored,
+        (String? value) async => stored = value,
+      );
+      await repo.savePending(first);
+      await repo.savePending(otherOwner);
+      await repo.clearPending(userId: first.userId, requestId: first.requestId);
+      expect(await repo.readPending(userId: first.userId), isNull);
+      expect((await repo.readPending(userId: otherOwner.userId))?.toJson(), otherOwner.toJson());
+      await repo.clearPending(userId: otherOwner.userId, requestId: otherOwner.requestId);
+      expect(stored, isNull);
+    });
+
+    test('a failed clear retains the job and does not block a later retry', () async {
+      String? stored = jsonEncode(first.toJson());
+      bool failWrite = true;
+      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(null, null, null, null, null, () async => stored, (
+        String? value,
+      ) async {
+        if (failWrite) throw StateError('disk unavailable');
+        stored = value;
+      });
+      await expectLater(repo.clearPending(userId: first.userId, requestId: first.requestId), throwsStateError);
+      expect((await repo.readPending(userId: first.userId))?.toJson(), first.toJson());
+      failWrite = false;
+      await repo.clearPending(userId: first.userId, requestId: first.requestId);
+      expect(stored, isNull);
+    });
+
     test('round-trips through JSON and refuses anything else', () {
       const PendingPhotoJob job = PendingPhotoJob(
         userId: 'u1',
@@ -569,6 +747,22 @@ void main() {
       expect(PendingPhotoJob.fromJson(null), isNull);
       expect(PendingPhotoJob.fromJson(<String, Object?>{...job.toJson(), 'mode': 'paint'}), isNull);
       expect(PendingPhotoJob.fromJson(<String, Object?>{...job.toJson(), 'userId': ''}), isNull);
+    });
+
+    test('a malformed saved request ID cannot trap recovery in permanent network failure', () {
+      for (final String requestId in <String>['bad', '../request', 'x' * 65]) {
+        expect(
+          PendingPhotoJob.fromJson(<String, Object?>{...first.toJson(), 'requestId': requestId}),
+          isNull,
+          reason: requestId,
+        );
+      }
+      for (final String requestId in <String>['a_b-cD09', 'x' * 64]) {
+        expect(
+          PendingPhotoJob.fromJson(<String, Object?>{...first.toJson(), 'requestId': requestId})?.requestId,
+          requestId,
+        );
+      }
     });
 
     test('recover maps unknown to null, running to running, and a result to its state', () async {
@@ -591,7 +785,7 @@ void main() {
 
     test('a broken saved value reads as no pending job', () async {
       final PhotoWallpaperRepository repo = PhotoWallpaperRepository(null, null, null, null, null, () async => '{bad');
-      expect(await repo.readPending(), isNull);
+      expect(await repo.readPending(userId: 'u1'), isNull);
     });
   });
 }

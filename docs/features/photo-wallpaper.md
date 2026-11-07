@@ -99,13 +99,19 @@ Refunds run before cleanup. Each cleanup queue processes at most 10 records per 
 
 ### After an app restart
 
-The app saves the running job on the device (`ai.photoWallPendingJob`: user id, request id, mode, target) before it calls the server, and clears it when the outcome is final. When the page opens and finds a saved job of the signed-in user, it calls `getPhotoWallpaper(requestId)`. That callable never charges or runs anything:
+The app saves pending jobs on the device (`ai.photoWallPendingJob`: user id, request id, mode, target), with one slot for each account. A failed save stops the job before the paid callable. Picking a photo waits for the account's saved-job lookup.
+
+An uncertain job keeps its request id and cannot be replaced by a different photo or target. Retry looks up that request without uploading the photo again. Clears match both the account and request id, so an old completion cannot remove another job. Storage failures keep recovery available.
+
+When the page opens and finds a saved job of the signed-in user, it calls `getPhotoWallpaper(requestId)`. That callable never charges or runs anything. Signing out or switching accounts clears the page's photo and result actions. A late response from an earlier session cannot restore them, even after switching back to that account.
 
 - A finished job returns its result. The page shows the wallpaper alone (the photo is not kept, so there is no before and after) with Set, Download and Save to folder.
 - A failed job returns its refund state. The page shows the error and "Choose a photo".
 - A running job returns `running`. The page says "Still working on your last photo." and Try again asks again.
 - A job that stopped while it ran (older than 10 minutes) is ended and refunded, the same as a replay.
 - An unknown id, or another user's id, returns `unknown`, and the page clears the saved job.
+
+Known limitation: `unknown` means the server has no job record at lookup time. It does not prove an earlier create request cannot still claim and charge later. Clearing that slot can therefore lose recovery of a delayed create request. Closing this race needs an explicit product decision about retaining unknown requests or changing the server's lookup/cancellation contract.
 
 ### Content filter
 
@@ -119,7 +125,7 @@ SafeSearch blocks an image when `adult` or `violence` is LIKELY or more, or `rac
 
 The upload copy is decoded to raw pixels on the phone and then written as a JPEG (the same method as Search by photo). It has no metadata. Extend normally limits the long side to 2560 px, but raises this limit, up to 4096 px, when needed to preserve the server's 256 px minimum short side. Upscale sends the photo at full size, because it is smaller than the screen.
 
-The app reads exact source dimensions from decoder metadata; its smaller preview determines orientation only. While the page remains open, it retains the same request ID for charged jobs whose refund is not confirmed and allows their replay even when the remaining balance is below the price. Refund copy uses the authoritative cost returned by the server.
+The app reads exact source dimensions from decoder metadata; its smaller preview determines orientation only. While the page remains open, it retains the request ID for uncertain jobs and jobs whose refund is not confirmed. Retry uses the read-only lookup even when the remaining balance is below the price. Refund copy uses the authoritative cost returned by the server.
 
 ### Analytics
 
