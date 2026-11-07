@@ -67,8 +67,8 @@ One table of plugin error codes feeds both the static and the live paths: `lib/c
 | `load_failed`, other codes | "Couldn't set the wallpaper." | Yes |
 | unsupported, no code | "This device can't set that screen." | No |
 | foregroundRequired | "Keep Prism open and try again." | Yes |
-| `partial-apply` | "Home screen set. Lock screen failed." (or the other way round) | **Retry home screen** sets only the screen that failed. |
-| Lock screen failed (any code except `wallpaper-not-allowed`), on its own or after a partial Both | "Couldn't set the lock screen. Your phone's own wallpaper screen can set it." (with "Home screen set." first after a partial Both) | **Set with phone** opens the phone's own wallpaper screen with the original image (system cropper). Some phones (Xiaomi, MIUI) let only that screen set the lock screen (#545). The pair flow keeps **Retry lock screen**. |
+| `partial-apply` with the home screen failed | "Lock screen set. Home screen failed." | **Retry home screen** from the Set button sets only the screen that failed. The editor shows the message with no action. |
+| Lock screen failed during the apply (any code except `wallpaper-not-allowed`, `timeout`, `offline_unavailable` and `load_failed`), on its own or after a partial Both | "Couldn't set the lock screen. Your phone's own wallpaper screen can set it." (with "Home screen set." first after a partial Both) | **Set with phone** opens the phone's own wallpaper screen with the original image (system cropper). Some phones (Xiaomi, MIUI) let only that screen set the lock screen (#545). In the editor it sets the edited export, or the source when nothing was edited, and a premium filter is charged again. A failure while loading the image keeps its own message and **Try again**. The pair flow keeps **Retry lock screen**. |
 
 - On a failed direct apply, the service tries once more with `WallpaperApplyStrategy.automatic`. It skips that second try for permanent codes.
 - A fetch that takes more than 30 s returns the timeout message. An apply that takes more than 30 s says "Still setting your wallpaper" with no **Try again**, because the phone keeps setting it (#555).

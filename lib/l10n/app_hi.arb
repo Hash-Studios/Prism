@@ -6729,7 +6729,7 @@
   "@premiumPurchasePending": {
     "description": "Toast after a purchase when the store has it but the server has not confirmed Pro yet."
   },
-  "premiumPaymentPending": "आपका भुगतान अभी बाकी है। भुगतान पूरा होते ही Pro अनलॉक हो जाएगा।",
+  "premiumPaymentPending": "आपके भुगतान की प्रक्रिया अभी पूरी नहीं हुई है। भुगतान पूरा होते ही Pro अनलॉक हो जाएगा।",
   "@premiumPaymentPending": {
     "description": "Toast when the store holds a purchase as pending (for example a slow UPI or card payment). Pro unlocks later."
   },

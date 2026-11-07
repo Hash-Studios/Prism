@@ -82,6 +82,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   bool _comparing = false;
   bool _busy = false;
   bool _phoneSetInProgress = false;
+
+  /// A Set with phone tap that came while the failed set was still being refunded. It runs when that action ends.
+  VoidCallback? _pendingPhoneSet;
   bool _premiumFilterUnlockedForSession = false;
   double? _previewPixelsPerSourcePixel;
   Future<Uint8List>? _pendingRender;
@@ -420,6 +423,9 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
       if (mounted) {
         setState(() => _busy = false);
       }
+      final VoidCallback? pendingPhoneSet = _pendingPhoneSet;
+      _pendingPhoneSet = null;
+      if (mounted) pendingPhoneSet?.call();
     }
   }
 
@@ -551,7 +557,11 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
   }
 
   Future<void> _setWithPhone(String path, String filterLabel) async {
-    if (!mounted || !app_state.prismUser.loggedIn || _phoneSetInProgress || _busy) return;
+    if (!mounted || !app_state.prismUser.loggedIn || _phoneSetInProgress) return;
+    if (_busy) {
+      _pendingPhoneSet = () => unawaited(_setWithPhone(path, filterLabel));
+      return;
+    }
     _phoneSetInProgress = true;
     _busy = true;
     try {

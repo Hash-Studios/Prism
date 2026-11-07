@@ -123,11 +123,15 @@ void reportWallpaperSetResult(
     );
 }
 
+/// A work profile that forbids wallpapers forbids the phone's screen too. The rest failed while loading the image,
+/// before any apply, so the phone's screen has nothing better to work with and Try again fits.
+const Set<String> _notAppliedCodes = <String>{'wallpaper-not-allowed', 'timeout', 'offline_unavailable', 'load_failed'};
+
 /// True when a lock screen set failed in a way the phone's own wallpaper screen can still do (#545). A work profile
 /// that forbids wallpapers forbids that screen too.
 bool offersPhoneWallpaperScreen(WallpaperSetResult result, WallpaperTarget target) =>
     result.isFailure &&
-    result.errorCode != 'wallpaper-not-allowed' &&
+    !_notAppliedCodes.contains(result.errorCode) &&
     (result.failedTarget == WallpaperTarget.lock || (!result.isPartial && target == WallpaperTarget.lock));
 
 void _trackSetResult(WallpaperSetResult result, WallpaperTarget target, WallpaperSetContext setContext) {
@@ -257,7 +261,9 @@ Future<bool> undoWallpaperSet(
       thumbnailUrl: entry.previous.thumbnailUrl,
       recordHistory: false,
     );
-    if (!back.isSuccess && !back.isInfo) restored = false;
+    // A set that is still running can still fail, so it does not count as restored.
+    final bool stillSetting = back.errorCode == WallpaperService.stillSettingMessage;
+    if (!back.isSuccess && (!back.isInfo || stillSetting)) restored = false;
   }
   if (restored) {
     try {
