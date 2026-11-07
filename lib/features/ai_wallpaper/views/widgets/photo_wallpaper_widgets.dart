@@ -49,8 +49,9 @@ class PhotoInCanvas extends StatelessWidget {
       builder: (BuildContext context, BoxConstraints box) {
         final double k = box.maxWidth / placement.canvas.width;
         final int cacheWidth = (placement.width * k * MediaQuery.devicePixelRatioOf(context)).ceil().clamp(1, 4096);
+        // Opaque: in the compare view this sits on top of the result, which must not show through the empty canvas.
         return ColoredBox(
-          color: cs.onSurface.withValues(alpha: 0.06),
+          color: Color.alphaBlend(cs.onSurface.withValues(alpha: 0.06), cs.surface),
           child: Stack(
             children: <Widget>[
               Positioned(

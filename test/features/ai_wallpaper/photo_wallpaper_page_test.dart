@@ -10,9 +10,10 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/photo_wallpaper_repository.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/photo_job.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/photo_wallpaper_page.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/photo_wallpaper_widgets.dart';
 import 'package:Prism/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
@@ -46,6 +47,13 @@ class _Harness {
   /// Replaces the default success reply for the next job when set.
   Future<Object?> Function(Map<String, Object?> payload)? onCall;
 
+  /// The job lookup after a restart. Unknown by default.
+  Future<Object?> Function(Map<String, Object?> payload)? onLookup;
+  int lookups = 0;
+
+  /// The pending job saved on the device, as the repository writes it.
+  String? pendingJson;
+
   late final PhotoWallpaperRepository repository = PhotoWallpaperRepository(
     () async {
       picks++;
@@ -58,6 +66,12 @@ class _Harness {
       final Future<Object?> Function(Map<String, Object?> payload)? handler = onCall;
       return handler == null ? Future<Object?>.value(_successMap) : handler(payload);
     },
+    (Map<String, Object?> payload) {
+      lookups++;
+      return onLookup?.call(payload) ?? Future<Object?>.value(<String, Object?>{'state': 'unknown'});
+    },
+    () async => pendingJson,
+    (String? json) async => pendingJson = json,
   );
 }
 
@@ -82,6 +96,7 @@ Future<void> _pumpPage(
   Size size = const Size(1080, 2340),
   double devicePixelRatio = 3,
   double textScale = 1,
+  Brightness brightness = Brightness.light,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = devicePixelRatio;
@@ -100,6 +115,7 @@ Future<void> _pumpPage(
 
   await tester.pumpWidget(
     MaterialApp(
+      theme: ThemeData(brightness: brightness),
       locale: const Locale('en'),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
@@ -317,7 +333,7 @@ void main() {
     await _settle(tester);
 
     expect(find.text('Extending your photo'), findsOneWidget);
-    expect(find.text('This can take up to a minute.'), findsOneWidget);
+    expect(find.text('This usually takes under a minute.'), findsOneWidget);
     expect(find.byKey(_runKey), findsNothing);
 
     pending.complete(_successMap);
@@ -340,6 +356,58 @@ void main() {
     expect(find.text('Set as wallpaper'), findsOneWidget);
     expect(find.text('Save to folder'), findsOneWidget);
     expect(find.text('Use another photo'), findsOneWidget);
+  });
+
+  testWidgets('the Before side shows the photo where the user placed it, with the empty canvas around it', (
+    tester,
+  ) async {
+    final _Harness harness = _Harness();
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+    await _dragFrameUp(tester);
+
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+
+    final Finder before = find.descendant(of: find.byKey(_compareKey), matching: find.byType(PhotoInCanvas));
+    expect(before, findsOneWidget);
+    final PhotoPlacement placed = tester.widget<PhotoInCanvas>(before).placement;
+    expect(placed.top, 0);
+    expect(placed.toJson(), harness.payloads.single['placement']);
+  });
+
+  for (final Brightness brightness in Brightness.values) {
+    testWidgets('the Before side keeps its theme canvas shade and is opaque in $brightness mode', (tester) async {
+      await _pumpPage(tester, _Harness(), brightness: brightness);
+      await _pickPhoto(tester);
+      await tester.tap(find.byKey(_runKey));
+      await _settle(tester);
+
+      final Finder canvas = find.descendant(
+        of: find.descendant(of: find.byKey(_compareKey), matching: find.byType(PhotoInCanvas)),
+        matching: find.byType(ColoredBox),
+      );
+      final ColorScheme cs = Theme.of(tester.element(find.byKey(_compareKey))).colorScheme;
+      final Color oldDraftCanvas = Color.alphaBlend(cs.onSurface.withValues(alpha: 0.06), cs.surface);
+      final Color actual = tester.widget<ColoredBox>(canvas.first).color;
+      expect(actual.a, 1.0);
+      expect(actual, oldDraftCanvas);
+    });
+  }
+
+  testWidgets('result actions wrap their labels on a narrow screen with large text', (tester) async {
+    await _pumpPage(tester, _Harness(), size: const Size(640, 1334), devicePixelRatio: 2, textScale: 2);
+    await _pickPhoto(tester);
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+
+    expect(find.text('Download'), findsOneWidget);
+    expect(find.text('Save to folder'), findsOneWidget);
+    for (final String label in <String>['Download', 'Save to folder']) {
+      final Finder text = find.text(label);
+      expect(tester.renderObject<RenderParagraph>(text).didExceedMaxLines, isFalse, reason: label);
+    }
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('a blocked output shows the refund line and Try again', (tester) async {
@@ -431,5 +499,89 @@ void main() {
     expect(compare.hasAction(SemanticsAction.increase), isTrue);
     expect(compare.hasAction(SemanticsAction.decrease), isTrue);
     handle.dispose();
+  });
+
+  group('recovery after the app closed during a job', () {
+    String pending(String userId) => jsonEncode(
+      const PendingPhotoJob(
+        userId: 'user-1',
+        requestId: 'req-00000042',
+        mode: PhotoJobMode.extend,
+        target: PhotoJobTarget.phone,
+      ).toJson()..['userId'] = userId,
+    );
+
+    testWidgets('running a job saves it on the device first and clears it when the job ends', (tester) async {
+      final _Harness harness = _Harness();
+      String? savedDuringCall;
+      harness.onCall = (Map<String, Object?> payload) async {
+        savedDuringCall = harness.pendingJson;
+        return _successMap;
+      };
+      await _pumpPage(tester, harness);
+      await _pickPhoto(tester);
+      await tester.tap(find.byKey(_runKey));
+      await _settle(tester);
+
+      final PendingPhotoJob? saved = PendingPhotoJob.fromJson(jsonDecode(savedDuringCall!));
+      expect(saved?.requestId, harness.payloads.single['requestId']);
+      expect(saved?.mode, PhotoJobMode.extend);
+      expect(harness.pendingJson, isNull);
+    });
+
+    testWidgets('a job that finished while the app was closed shows its result, with no new charge', (tester) async {
+      final _Harness harness = _Harness()..pendingJson = pending('user-1');
+      harness.onLookup = (Map<String, Object?> payload) async {
+        expect(payload['requestId'], 'req-00000042');
+        return _successMap;
+      };
+      await _pumpPage(tester, harness);
+      await _settle(tester);
+
+      expect(harness.lookups, 1);
+      expect(harness.payloads, isEmpty);
+      expect(find.byKey(_compareKey), findsNothing);
+      expect(find.text('Set as wallpaper'), findsOneWidget);
+      expect(find.text('Use another photo'), findsOneWidget);
+      expect(harness.pendingJson, isNull);
+    });
+
+    testWidgets('a job that failed while the app was closed shows the refund and offers a new photo', (tester) async {
+      final _Harness harness = _Harness()..pendingJson = pending('user-1');
+      harness.onLookup = (Map<String, Object?> payload) async => <String, Object?>{
+        'state': 'failed',
+        'reason': 'timeout',
+        'refunded': true,
+        'cost': 75,
+      };
+      await _pumpPage(tester, harness);
+      await _settle(tester);
+
+      expect(find.textContaining('Your 75 coins were returned.'), findsOneWidget);
+      expect(find.text('Choose a photo'), findsOneWidget);
+      expect(harness.pendingJson, isNull);
+    });
+
+    testWidgets('a job still running keeps its saved id, so Try again asks the server again', (tester) async {
+      final _Harness harness = _Harness()..pendingJson = pending('user-1');
+      harness.onLookup = (Map<String, Object?> payload) async => <String, Object?>{'jobId': 'x', 'state': 'running'};
+      await _pumpPage(tester, harness);
+      await _settle(tester);
+
+      expect(find.text('Still working on your last photo.'), findsOneWidget);
+      expect(harness.pendingJson, isNotNull);
+      await tester.tap(find.text('Try again'));
+      await _settle(tester);
+      expect(harness.lookups, 2);
+    });
+
+    testWidgets("another account's saved job is ignored", (tester) async {
+      final _Harness harness = _Harness()..pendingJson = pending('someone-else');
+      await _pumpPage(tester, harness);
+      await _settle(tester);
+
+      expect(harness.lookups, 0);
+      expect(find.text('Choose a photo'), findsOneWidget);
+    });
   });
 }

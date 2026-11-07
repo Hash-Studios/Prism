@@ -67,7 +67,8 @@ PhotoSize phoneTargetSize({required double width, required double height}) {
   final double long = math.max(width, height);
   final double ratio = short > 0 ? (long / short).clamp(1.6, 2.4) : 2.0;
   final int w = short.round().clamp(720, 1600);
-  return PhotoSize(w, (w * ratio).floor());
+  // Rounding down could fall under the server's 1.6 minimum when w * 1.6 is not a whole number.
+  return PhotoSize(w, math.max((w * ratio).floor(), (w * 1.6).ceil()));
 }
 
 PhotoSize targetSizeFor(PhotoJobTarget target, PhotoSize phone) =>
@@ -262,4 +263,36 @@ class PhotoJob {
 
   PhotoJob withState(PhotoJobState next) =>
       PhotoJob(source: source, mode: mode, target: target, cost: cost, state: next);
+}
+
+/// The job that was running when the app last ran. Kept on the device, so a result the user paid for is not lost when
+/// the app closes during the job.
+class PendingPhotoJob {
+  const PendingPhotoJob({required this.userId, required this.requestId, required this.mode, required this.target});
+
+  final String userId;
+  final String requestId;
+  final PhotoJobMode mode;
+  final PhotoJobTarget target;
+
+  Map<String, String> toJson() => <String, String>{
+    'userId': userId,
+    'requestId': requestId,
+    'mode': mode.name,
+    'target': target.name,
+  };
+
+  /// Null when [json] is not a pending job this app version wrote.
+  static PendingPhotoJob? fromJson(Object? json) {
+    if (json is! Map) return null;
+    final Object? userId = json['userId'];
+    final Object? requestId = json['requestId'];
+    final PhotoJobMode? mode = PhotoJobMode.values.where((PhotoJobMode m) => m.name == json['mode']).firstOrNull;
+    final PhotoJobTarget? target = PhotoJobTarget.values
+        .where((PhotoJobTarget t) => t.name == json['target'])
+        .firstOrNull;
+    if (userId is! String || userId.isEmpty || requestId is! String || requestId.isEmpty) return null;
+    if (mode == null || target == null) return null;
+    return PendingPhotoJob(userId: userId, requestId: requestId, mode: mode, target: target);
+  }
 }

@@ -16,6 +16,7 @@ import {COMMENT_RATE, removeCommentsForAccount} from "./comments";
 import {removeDesktopSubmissionsForAccount} from "./desktopSubmissions";
 import {PHOTO_JOB_DAILY, removePhotoJobsForAccount} from "./photoWallpaper";
 import {r2Secrets} from "./r2Storage";
+import {falKey} from "./wallDepth";
 
 const USERS = "usersv2";
 const COIN_TRANSACTIONS = "coinTransactions";
@@ -101,7 +102,7 @@ async function releaseUsernames(uid: string): Promise<void> {
  * draft setups is read before the profile is anonymized, and any failed delete throws before the profile is
  * anonymized or the auth user is removed. A retry therefore finishes what an earlier call left.
  */
-export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeoutSeconds: 300, secrets: r2Secrets}, async (request: CallableRequest<unknown>) => {
+export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeoutSeconds: 300, secrets: [falKey, ...r2Secrets]}, async (request: CallableRequest<unknown>) => {
   const callerUid = request.auth?.uid;
   if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to delete your account.");
 

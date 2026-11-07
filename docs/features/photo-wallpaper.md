@@ -65,7 +65,7 @@ A refused job (bad input, cap reached, not enough coins) does not count. A job t
 8. The result page shows before and after with a slider. The actions are "Set as wallpaper", "Download" (Android only, because on iOS Set saves to Photos), "Save to folder" and "Use another photo".
 9. When the job fails, the page tells the user why and if the coins came back.
 
-The privacy note under the picker says: "Your photo goes to our AI provider, fal.ai, and to Google Cloud Vision for this job only. Prism does not keep it and asks fal.ai to delete it after the job."
+The privacy note under the picker says: "Your photo goes to our AI provider, fal.ai, and to Google Cloud Vision for this job only. Prism keeps the finished wallpaper, not your photo, and asks fal.ai to delete the photo after the job."
 
 ## How it works
 
@@ -78,6 +78,7 @@ The callable runs the full job. The app does not spend coins or ask for a refund
 3. It decodes the photo with `sharp`, turns it upright, and writes a new JPEG. The new JPEG has no EXIF, GPS or other metadata. The photo must be 256 to 4096 px on each side and at most 6 MB.
 4. It makes the plan again from the photo size. When the plan is not the requested mode, it refuses the job (`plan_mismatch`).
 5. In one transaction it:
+   - Refuses new or replayed claims after the account-deletion barrier closes.
    - Replays the job when `photoJobs/pj_{uid}_{requestId}` exists. A finished job returns its stored result. A running job returns `aborted`. A running job older than 10 minutes is ended as `timeout` and refunded.
    - Checks the caps (10 for each user each day, 400 for all users each day).
    - Checks the balance.
@@ -88,11 +89,23 @@ The callable runs the full job. The app does not spend coins or ask for a refund
 9. It checks the result with SafeSearch.
 10. It stores the result in the public R2 bucket at the random key recorded before the provider call (`photo-walls/{32 hex}.jpg`), the same way AI results are stored: a link that is hard to guess, shown only to its owner. The job gets state `succeeded` and the link, and its cleanup marker is cleared.
 
-Every failure after step 5 calls `failPhotoJob`. It marks the job `failed` and returns the coins in the same transaction, with the credit `coinTransactions/ctx_photoWallpaperRefund_{uid}_{requestId}`. Only the claim that started the job can end it, so a refund happens one time only.
+Every failure after step 5 calls `failPhotoJob`. It marks the job `failed` and returns the coins in the same transaction, with the credit `coinTransactions/ctx_photoWallpaperRefund_{uid}_{requestId}`. Only the claim that started the job can end it, so a refund happens one time only. Once the account-deletion barrier closes, failure handling does not write refunds or change the account's coins.
 
-The scheduled function `sweepStalePhotoJobs` runs every 15 minutes. It pages through all running jobs and refunds jobs older than 10 minutes, for example when the instance stopped. It also deletes failed jobs' recorded result keys and retries pending fal payload deletions after jobs end. Failed deletions stay pending for later sweeps. The callable has a 180-second hard timeout, below the 10-minute stale cutoff. A late worker that loses to the sweeper removes its own result too. An ambiguous success commit is read back before deciding to delete, so the successful image is kept.
+The scheduled function `sweepStalePhotoJobs` runs every 15 minutes. It pages through all running jobs and refunds jobs older than 10 minutes, for example when the instance stopped. It also deletes failed jobs' recorded result keys and retries pending fal payload deletions after jobs end. Failed deletions stay pending for later sweeps.
+
+The callable has a 180-second request timeout; this does not prove its handler stopped. Before calling fal and before storage, the worker checks its live claim and the deletion barrier, then refuses to start either operation after its 180-second deadline. R2 writes have a 15-second timeout. Account deletion refuses to finish while a job is running and not yet stale; the caller retries after completion or the 10-minute stale cutoff. A late worker that loses to the sweeper removes its own result too. An ambiguous success commit is read back before deciding to delete, so the successful image is kept.
 
 Refunds run before cleanup. Each cleanup queue processes at most 10 records per sweep and stops starting new attempts after its own 20-second budget. The document-ID cursor is saved after every attempt in `photoJobBudget/cleanup`, even when deletion fails, and resets at the queue's end. Slow failures at the front therefore cannot starve later records or the other queue. The scheduled function has a 180-second timeout to allow active attempts to finish.
+
+### After an app restart
+
+The app saves the running job on the device (`ai.photoWallPendingJob`: user id, request id, mode, target) before it calls the server, and clears it when the outcome is final. When the page opens and finds a saved job of the signed-in user, it calls `getPhotoWallpaper(requestId)`. That callable never charges or runs anything:
+
+- A finished job returns its result. The page shows the wallpaper alone (the photo is not kept, so there is no before and after) with Set, Download and Save to folder.
+- A failed job returns its refund state. The page shows the error and "Choose a photo".
+- A running job returns `running`. The page says "Still working on your last photo." and Try again asks again.
+- A job that stopped while it ran (older than 10 minutes) is ended and refunded, the same as a replay.
+- An unknown id, or another user's id, returns `unknown`, and the page clears the saved job.
 
 ### Content filter
 
@@ -121,7 +134,7 @@ The app reads exact source dimensions from decoder metadata; its smaller preview
 
 - The photo goes to fal.ai for the job and to Google Cloud Vision for the check. The server keeps the input photo only in memory. The app reads the gallery picker's temporary copy, then deletes that copy; it does not delete the user's original gallery photo.
 - Prism asks fal.ai not to store the request (`X-Fal-Store-IO: 0`), requests the result inline (`sync_mode`), and attempts to delete the request data at fal.ai after the job. A provider outage or missing key permissions can prevent deletion.
-- Account deletion (`deleteAccount`) deletes the stored results, the job records and the daily count.
+- Account deletion (`deleteAccount`) closes the claim barrier and refuses to finish while a job is running and not stale. The caller retries after completion or the 10-minute stale cutoff. It deletes the stored results, the job records and the daily count before anonymizing the profile and deleting Auth. A failed R2 delete keeps the job record and stops account deletion for a retry. Account deletion stops starting fal payload deletes after 20 seconds; failures and unattempted request ids move to `photoFalCleanup/{requestId}` (no user id). The sweeper reads ordered pages of 10, stops starting deletes after 20 seconds, and advances its cursor so a failed first page cannot starve later records.
 - Prism keeps the result, the job record (mode, target, model, cost, state, result key, provider request ID and cleanup markers) and the daily count. Both result transfer paths reject images larger than 30 MB.
 - The privacy policy (`web/app/privacy/page.tsx`) lists fal.ai and this use.
 
@@ -130,13 +143,12 @@ The app reads exact source dimensions from decoder metadata; its smaller preview
 - The results do not show in the "Recent" strip of the AI tab. The result shows on the page after the job. "Save to folder" keeps it.
 - A desktop version is one fixed size, 2560 x 1600.
 - The models and prices are from the fal model pages. They were not checked against the Prism fal account before the change.
-- The app keeps its pending request ID only on the page. After an app restart it cannot recover a completed photo job. Durable result recovery needs a product decision.
 
 ## Deploy order
 
 Do not deploy without the owner.
 
-1. Deploy functions: `createPhotoWallpaper` and `sweepStalePhotoJobs`. Both need the secrets `FAL_API_KEY`, `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`, and the R2 environment values that `r2Storage.ts` reads.
+1. Deploy functions: `createPhotoWallpaper`, `getPhotoWallpaper` and `sweepStalePhotoJobs`. `createPhotoWallpaper` and `sweepStalePhotoJobs` need the secrets `FAL_API_KEY`, `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`, and the R2 environment values that `r2Storage.ts` reads.
 2. Optional: set `spend.photoExtend`, `spend.photoUpscale` and `proDiscountActions` in `economyConfig/current`. Without them, the defaults apply.
 3. Release the app.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 // Photo to wallpaper local QA on top of the weekly challenge QA runtime. Commands: prepare, emulators, serve, seed,
-// photos, build-apk, build-ios, fail-on, fail-off, ledger.
+// photos, build-apk, build-ios, run-ios, fail-on, fail-off, ledger.
 //
 // The real createPhotoWallpaper callable runs in the Functions emulator. Its network is loopback only, so its fal calls
 // go to a relay in `serve` (https://localhost:19375/fal/...). The relay sends the first REAL_FAL_LIMIT jobs to fal.ai
@@ -25,6 +25,104 @@ const FAL_PRICES = {'fal-ai/bria/expand': () => 0.04, 'fal-ai/seedvr/upscale/ima
 const file = (name) => path.join(runtime, name);
 const readJson = (name, fallback) => (fs.existsSync(file(name)) ? JSON.parse(fs.readFileSync(file(name))) : fallback);
 const writeJson = (name, value) => fs.writeFileSync(file(name), JSON.stringify(value, null, 2) + '\n');
+
+function guardDemoAdmin(admin, project) {
+  for (const app of admin.apps) {
+    if (app.options.projectId !== project) throw Error('Refusing a pre-existing non-demo Firebase Admin app');
+  }
+}
+
+function validateCommandArgs(command, args) {
+  if (!Object.hasOwn(commands, command)) throw Error(`Commands: ${Object.keys(commands).join(', ')}`);
+  const takesOne = command === 'photos' || command === 'run-ios';
+  if (takesOne ? args.length !== 1 || args[0].startsWith('--') : args.length !== 0) {
+    throw Error(takesOne ? `Use ${command} <${command === 'photos' ? 'path.jpg' : 'simulator udid'}>` :
+      `${command} does not accept arguments`);
+  }
+}
+
+function loadDemoRuntime(root = runtime) {
+  const admin = require(path.join(root, 'functions/node_modules/firebase-admin'));
+  guardDemoAdmin(admin, PROJECT);
+  return load(root);
+}
+
+function validateIosBuildInputs(root = runtime) {
+  const read = (name) => fs.readFileSync(path.join(root, name));
+  const readJsonFile = (name) => JSON.parse(read(name));
+  const manifest = readJsonFile('manifest.json');
+  assert.equal(manifest.project, PROJECT);
+  assert.equal(manifest.runtime, fs.realpathSync(root));
+  const defines = readJsonFile('dart-defines.json');
+  assert.equal(defines.PRISM_LOCAL_QA, 'true');
+  assert.ok(Object.keys(defines).every((key) =>
+    ['PRISM_LOCAL_QA', 'PRISM_LOCAL_QA_USER', 'PRISM_LOCAL_QA_CERTIFICATE'].includes(key)), 'Unexpected QA build define');
+  assert.ok(['viewer', 'creator', 'admin', 'guest'].includes(defines.PRISM_LOCAL_QA_USER), 'Unknown QA identity');
+  const certificate = read('cert.der');
+  assert.ok(certificate.length, 'Missing QA certificate');
+  assert.equal(defines.PRISM_LOCAL_QA_CERTIFICATE, certificate.toString('base64'), 'QA certificate mismatch');
+  const plist = cp.spawnSync('python3', ['-c',
+    `import json, plistlib, sys, xml.etree.ElementTree as ET
+def read(path):
+    with open(path, "rb") as source:
+        raw = source.read()
+    for dictionary in ET.fromstring(raw).iter("dict"):
+        keys = [item.text for item in dictionary if item.tag == "key"]
+        if len(keys) != len(set(keys)):
+            raise ValueError("Duplicate plist key")
+    return plistlib.loads(raw)
+print(json.dumps([read(path) for path in sys.argv[1:]]))`,
+    path.join(root, 'native/GoogleService-Info.plist'), path.join(root, 'native/Info-LocalQA.plist')], {encoding: 'utf8'});
+  assert.equal(plist.status, 0, 'Unable to parse synthetic iOS plists');
+  const [firebase, info] = JSON.parse(plist.stdout);
+  assert.deepEqual(firebase, {
+    API_KEY: 'AIzaSy000000000000000000000000000000000',
+    GCM_SENDER_ID: '1234567890',
+    GOOGLE_APP_ID: '1:1234567890:ios:0123456789abcdef',
+    PROJECT_ID: PROJECT,
+    BUNDLE_ID: 'com.hash.prism',
+    IS_ANALYTICS_ENABLED: false,
+    IS_GCM_ENABLED: false,
+    PLIST_VERSION: '1',
+  }, 'Unexpected synthetic Firebase plist');
+  for (const [key, value] of Object.entries({FirebaseAnalyticsCollectionEnabled: false,
+    FIREBASE_ANALYTICS_COLLECTION_DEACTIVATED: true, FirebaseMessagingAutoInitEnabled: false,
+    FirebaseAppDelegateProxyEnabled: false})) {
+    assert.equal(info[key], value, `Unsafe QA Info.plist setting: ${key}`);
+  }
+  assert.deepEqual(info.NSAppTransportSecurity, {NSAllowsLocalNetworking: true}, 'Unsafe QA network settings');
+}
+
+async function swapBuildFiles(swaps, build) {
+  const installed = [];
+  const errors = [];
+  try {
+    for (const swap of swaps) {
+      swap.original = fs.existsSync(swap.target) ? fs.readFileSync(swap.target) : null;
+      fs.writeFileSync(swap.target, swap.replacement);
+      installed.push(swap);
+    }
+    await build();
+  } catch (error) {
+    errors.push(error);
+  }
+  const buildFailed = errors.length > 0;
+  for (const {target, original, replacement} of installed.reverse()) {
+    try {
+      if (!fs.existsSync(target) || !fs.readFileSync(target).equals(replacement)) {
+        throw Error(`Build input changed concurrently; refusing overwrite: ${target}`);
+      }
+      if (original) fs.writeFileSync(target, original);
+      else fs.rmSync(target, {force: true});
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+  if (errors.length > (buildFailed ? 1 : 0)) {
+    throw new AggregateError(errors, 'QA build or input restoration failed: ' + errors.map((error) => error.message).join('; '));
+  }
+  if (buildFailed) throw errors[0];
+}
 
 function weekly(command) {
   const result = cp.spawnSync('node', [path.join(__dirname, 'weekly_challenge_qa.cjs'), command, '--root', runtime],
@@ -59,13 +157,17 @@ function installPhotoSeams(photo, root) {
   };
   photo.photoDeps.falKey = () => 'relay';
   photo.photoDeps.safeSearch = async () => ({adult: 'VERY_UNLIKELY', violence: 'VERY_UNLIKELY', racy: 'VERY_UNLIKELY'});
-  photo.photoDeps.store = async (jpeg) => {
-    const name = `${require('node:crypto').randomBytes(16).toString('hex')}.jpg`;
-    fsm.mkdirSync(p.join(root, 'photo-walls'), {recursive: true});
-    fsm.writeFileSync(p.join(root, 'photo-walls', name), jpeg);
-    return {url: `https://localhost:19375/photo-walls/${name}`, key: `photo-walls/${name}`};
+  const resultPath = (key) => {
+    if (!/^photo-walls\/[a-f0-9]{32}\.jpg$/.test(key)) throw Error('Unexpected local photo result key');
+    return p.join(root, key);
   };
-  photo.photoDeps.remove = async (key) => fsm.rmSync(p.join(root, key), {force: true});
+  photo.photoDeps.store = async (jpeg, key) => {
+    const target = resultPath(key);
+    fsm.mkdirSync(p.dirname(target), {recursive: true});
+    fsm.writeFileSync(target, jpeg);
+    return {url: `https://localhost:19375/${key}`, key};
+  };
+  photo.photoDeps.remove = async (key) => fsm.rmSync(resultPath(key), {force: true});
 }
 
 /** Runs inside the Functions emulator. Sends only shareLinkImage's DNS lookup and pinned GET to the `serve` relay. */
@@ -105,6 +207,7 @@ async function prepare() {
   // Functions emulator, and this flow needs none of them. backend.cjs still installs the loopback port guard.
   fs.writeFileSync(file('functions/index.cjs'), `'use strict';
 if (process.env.FUNCTIONS_EMULATOR !== 'true') throw Error('Emulator only');
+(${guardDemoAdmin.toString()})(require('firebase-admin'), 'demo-prism');
 require('../backend.cjs').load(require('node:path').resolve(__dirname, '..'));
 const photo = require('./lib/photoWallpaper.js');
 (${installPhotoSeams.toString()})(photo, require('node:path').resolve(__dirname, '..'));
@@ -147,6 +250,11 @@ async function stubResult(model, body) {
 }
 
 async function relayFal(model, raw, res) {
+  if (!Object.hasOwn(FAL_PRICES, model)) {
+    res.writeHead(404, {'content-type': 'application/json'});
+    res.end('{"detail":"unknown model"}');
+    return;
+  }
   const ledger = readJson('ledger.json', []);
   const body = JSON.parse(raw);
   if (fs.existsSync(file('force-fail'))) {
@@ -158,9 +266,28 @@ async function relayFal(model, raw, res) {
   }
   const real = ledger.filter((entry) => entry.kind === 'real').length;
   if (real < REAL_FAL_LIMIT && process.env.FAL_API_KEY) {
-    const response = await fetch(`https://fal.run/${model}`, {method: 'POST', body: raw, signal: AbortSignal.timeout(160000),
-      headers: {'Authorization': `Key ${process.env.FAL_API_KEY}`, 'content-type': 'application/json', 'X-Fal-Store-IO': '0'}});
-    const text = await response.text();
+    // Reserve the slot before the first await, so two jobs at once cannot both pass the cap.
+    const slot = {at: new Date().toISOString(), model, kind: 'real', status: 'pending'};
+    ledger.push(slot);
+    writeJson('ledger.json', ledger);
+    const settleSlot = (fields) => {
+      const fresh = readJson('ledger.json', []);
+      const entry = fresh.find((e) => e.kind === 'real' && e.at === slot.at && e.model === model && e.status === 'pending');
+      if (entry) Object.assign(entry, fields);
+      else fresh.push({...slot, ...fields});
+      writeJson('ledger.json', fresh);
+    };
+    let response;
+    let text;
+    try {
+      response = await fetch(`https://fal.run/${model}`, {method: 'POST', body: raw, signal: AbortSignal.timeout(160000),
+        headers: {'Authorization': `Key ${process.env.FAL_API_KEY}`, 'content-type': 'application/json', 'X-Fal-Store-IO': '0'}});
+      text = await response.text();
+    } catch (error) {
+      // fal may have billed the job before the abort, so the slot stays counted, with an unknown cost.
+      settleSlot({status: 'error', error: String(error?.name ?? 'Error'), costUsd: null});
+      throw error;
+    }
     const requestId = response.headers.get('x-fal-request-id') || '';
     let size = null;
     try {
@@ -170,15 +297,15 @@ async function relayFal(model, raw, res) {
       size = null;
     }
     const costUsd = size ? Math.round(FAL_PRICES[model](size.width, size.height) * 10000) / 10000 : null;
-    ledger.push({at: new Date().toISOString(), model, kind: 'real', status: response.status, requestId, size, costUsd});
-    writeJson('ledger.json', ledger);
+    settleSlot({status: response.status, requestId, size, costUsd});
     res.writeHead(response.status, {'content-type': 'application/json', 'x-fal-request-id': requestId});
     res.end(text);
     return;
   }
   const result = await stubResult(model, body);
-  ledger.push({at: new Date().toISOString(), model, kind: 'stub', costUsd: 0});
-  writeJson('ledger.json', ledger);
+  const fresh = readJson('ledger.json', []);
+  fresh.push({at: new Date().toISOString(), model, kind: 'stub', costUsd: 0});
+  writeJson('ledger.json', fresh);
   res.writeHead(200, {'content-type': 'application/json', 'x-fal-request-id': `stub-${Date.now().toString(16)}`});
   res.end(JSON.stringify(result));
 }
@@ -187,14 +314,31 @@ async function relayDelete(route, res) {
   const requestId = route.split('/').filter(Boolean).at(-2);
   const ledger = readJson('ledger.json', []);
   const entry = ledger.find((e) => e.requestId === requestId);
-  if (entry && process.env.FAL_API_KEY) {
+  if (entry?.kind === 'real') {
+    if (!process.env.FAL_API_KEY) {
+      res.writeHead(503, {'content-type': 'application/json'});
+      res.end('{"error":"Provider cleanup key unavailable"}');
+      return;
+    }
     const response = await fetch(`https://api.fal.ai/v1/models/requests/${requestId}/payloads`,
       {method: 'DELETE', headers: {'Authorization': `Key ${process.env.FAL_API_KEY}`}, signal: AbortSignal.timeout(10000)});
-    entry.payloadDelete = response.status;
-    writeJson('ledger.json', ledger);
+    const body = await response.text();
+    // Re-read: a job can reserve a real-call slot while this delete waits on fal.
+    const fresh = readJson('ledger.json', []);
+    const current = fresh.find((e) => e.requestId === requestId);
+    if (current) current.payloadDelete = response.status;
+    writeJson('ledger.json', fresh);
+    res.writeHead(response.status, {'content-type': 'application/json'});
+    res.end(body);
+    return;
+  }
+  if (!/^stub-[a-f0-9]+$/.test(requestId)) {
+    res.writeHead(503, {'content-type': 'application/json'});
+    res.end('{"error":"Provider cleanup request unavailable"}');
+    return;
   }
   res.writeHead(200, {'content-type': 'application/json'});
-  res.end('{}');
+  res.end('{"cdn_delete_results":[]}');
 }
 
 /** The real DNS lookup and pinned GET of shareLinkImage, for the emulator, which has loopback network only. */
@@ -266,7 +410,7 @@ async function serve() {
 
 /** The viewer with 500 coins, so every job can be paid for. */
 async function seed() {
-  const {admin, db} = load(runtime);
+  const {admin, db} = loadDemoRuntime();
   try {
     await admin.auth().createUser({uid: VIEWER, email: `${VIEWER}@example.test`, password: 'local-demo-only-password',
       displayName: VIEWER, emailVerified: true});
@@ -302,38 +446,51 @@ async function ledger() {
   const entries = readJson('ledger.json', []);
   const real = entries.filter((e) => e.kind === 'real');
   console.log(JSON.stringify(entries, null, 2));
-  console.log(`Real fal jobs: ${real.length}. Cost: $${real.reduce((sum, e) => sum + (e.costUsd ?? 0), 0).toFixed(4)}.`);
+  const unknown = real.filter((e) => e.costUsd == null).length;
+  console.log(`Real fal jobs: ${real.length}. Cost: $${real.reduce((sum, e) => sum + (e.costUsd ?? 0), 0).toFixed(4)}` +
+    `${unknown ? `, plus ${unknown} with an unknown cost (errored or no size)` : ''}.`);
 }
 
-/** Swaps in the synthetic iOS config only for the build, then restores the real files. */
-async function buildIos() {
-  const defines = readJson('dart-defines.json');
-  assert.equal(defines.PRISM_LOCAL_QA, 'true');
+/** Runs [flutterArgs] with the synthetic iOS config swapped in, then restores the real files, also on Ctrl-C. */
+async function withIosQaConfig(flutterArgs) {
+  validateIosBuildInputs();
   const repo = path.resolve(__dirname, '..');
   const swaps = [['native/GoogleService-Info.plist', 'ios/Runner/GoogleService-Info.plist'],
     ['native/Info-LocalQA.plist', 'ios/Runner/Info.plist']].map(([from, to]) => {
     const target = path.join(repo, to);
-    return {target, original: fs.existsSync(target) ? fs.readFileSync(target) : null, replacement: fs.readFileSync(file(from))};
+    return {target, replacement: fs.readFileSync(file(from))};
   });
+  // Ctrl-C goes to flutter, which exits; swapBuildFiles then restores the real files.
+  const ignore = () => {};
+  process.on?.('SIGINT', ignore);
   try {
-    for (const swap of swaps) fs.writeFileSync(swap.target, swap.replacement);
-    const result = cp.spawnSync('fvm', ['flutter', 'build', 'ios', '--debug', '--simulator', '--no-pub',
-      `--dart-define-from-file=${file('dart-defines.json')}`], {cwd: repo, stdio: 'inherit'});
-    if (result.status !== 0) throw Error(`flutter build ios exited ${result.status}`);
+    await swapBuildFiles(swaps, async () => {
+      const result = cp.spawnSync('fvm', ['flutter', ...flutterArgs, '--no-pub',
+        `--dart-define-from-file=${file('dart-defines.json')}`], {cwd: repo, stdio: 'inherit'});
+      if (result.status !== 0 && result.signal !== 'SIGINT') throw Error(`flutter ${flutterArgs[0]} exited ${result.status}`);
+    });
   } finally {
-    for (const swap of swaps) {
-      if (swap.original) fs.writeFileSync(swap.target, swap.original);
-      else fs.rmSync(swap.target, {force: true});
-    }
+    process.off?.('SIGINT', ignore);
   }
 }
 
+const buildIos = async () => withIosQaConfig(['build', 'ios', '--debug', '--simulator']);
+
+/** `flutter run` on one simulator, so Dart startup errors print in this terminal. */
+async function runIos() {
+  const udid = process.argv[3];
+  assert.ok(udid && /^[0-9A-F-]{36}$/i.test(udid), 'Pass the simulator UDID: run-ios <udid>');
+  await withIosQaConfig(['run', '-d', udid, '--debug']);
+}
+
 const commands = {
-  prepare, serve, seed, photos, ledger, 'build-ios': buildIos,
+  prepare, serve, seed, photos, ledger, 'build-ios': buildIos, 'run-ios': runIos,
   emulators: () => weekly('emulators'), 'build-apk': () => weekly('build-apk'),
   'fail-on': async () => { fs.writeFileSync(file('force-fail'), ''); console.log('The next fal call fails.'); },
   'fail-off': async () => { fs.rmSync(file('force-fail'), {force: true}); console.log('fal calls run again.'); },
 };
 const command = process.argv[2];
-if (!commands[command]) throw Error(`Commands: ${Object.keys(commands).join(', ')}`);
-Promise.resolve(commands[command]()).catch((error) => { console.error(error.stack); process.exitCode = 1; });
+if (require.main === module) {
+  validateCommandArgs(command, process.argv.slice(3));
+  Promise.resolve(commands[command]()).catch((error) => { console.error(error.stack); process.exitCode = 1; });
+}

@@ -67,7 +67,54 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
   bool _acting = false;
   bool _initialApplied = false;
 
+  /// The mode of a job recovered after a restart. The photo itself is not kept, so [_mode] cannot plan it.
+  PhotoJobMode? _recoveredMode;
+
   bool get _isPro => widget.isPro ?? app_state.prismUser.premium;
+
+  String get _userId => app_state.prismUser.id;
+
+  PhotoJobMode? get _jobMode => _mode ?? _recoveredMode;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _recoverPending());
+  }
+
+  /// True when the server outcome is final, so the saved request id can go.
+  static bool _isFinal(PhotoJobState result) =>
+      result is PhotoJobSucceeded ||
+      (result is PhotoJobFailed &&
+          result.reason != PhotoJobFailure.network &&
+          result.reason != PhotoJobFailure.inProgress &&
+          !(result.charged && !result.refunded));
+
+  /// Shows the result of a job that was running when the app closed, or its refund.
+  Future<void> _recoverPending() async {
+    final PendingPhotoJob? pending = await widget.repository.readPending();
+    if (!mounted || pending == null || pending.userId != _userId || _source != null || _running) return;
+    setState(() {
+      _target = pending.target;
+      _recoveredMode = pending.mode;
+      _pendingRequestId = pending.requestId;
+      _state = PhotoJobRunning(pending.requestId);
+    });
+    final PhotoJobState? result = await widget.repository.recover(pending.requestId);
+    if (!mounted) return;
+    final PhotoJobState shown = switch (result) {
+      null => const PhotoJobDraft(),
+      PhotoJobRunning() => const PhotoJobFailed(reason: PhotoJobFailure.inProgress, charged: false, refunded: false),
+      _ => result,
+    };
+    if (result == null || _isFinal(shown)) unawaited(widget.repository.savePending(null));
+    unawaited(CoinsService.instance.refreshBalance().then<void>((_) {}, onError: (Object _) {}));
+    setState(() {
+      _state = shown;
+      if (result == null) _recoveredMode = null;
+      if (result == null || _isFinal(shown)) _pendingRequestId = null;
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -162,8 +209,12 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
     final PhotoSize canvas = _canvas;
     setState(() {
       _pendingRequestId = requestId;
+      _recoveredMode = null;
       _state = PhotoJobRunning(requestId);
     });
+    await widget.repository.savePending(
+      PendingPhotoJob(userId: _userId, requestId: requestId, mode: mode, target: _target),
+    );
     analytics.track(PhotoJobStartedEvent(mode: mode.analytics, target: _target.analytics, cost: job.cost));
     final AiGenerationActivity? activity = await LiveActivityChannel.startAiGeneration(
       AiActivityRequest(
@@ -209,15 +260,11 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       case PhotoJobDraft() || PhotoJobRunning():
         await activity?.cancel();
     }
+    if (_isFinal(result)) unawaited(widget.repository.savePending(null));
     if (!mounted) return;
     setState(() {
       _state = result;
-      final bool replayable =
-          result is PhotoJobFailed &&
-          (result.reason == PhotoJobFailure.network ||
-              result.reason == PhotoJobFailure.inProgress ||
-              (result.charged && !result.refunded));
-      if (!replayable) _pendingRequestId = null;
+      if (_isFinal(result)) _pendingRequestId = null;
     });
   }
 
@@ -326,6 +373,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       _state = const PhotoJobDraft();
       _pendingRequestId = null;
       _placement = null;
+      _recoveredMode = null;
     });
   }
 
@@ -358,7 +406,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
 
   Widget _body(AppLocalizations l10n) {
     final PhotoSource? source = _source;
-    if (source == null) return _empty(l10n);
+    if (source == null && _state is PhotoJobDraft) return _empty(l10n);
     return SingleChildScrollView(
       padding: PrismSpace.pageInsets.copyWith(top: PrismSpace.xs, bottom: PrismSpace.xxl),
       child: Column(
@@ -367,7 +415,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
           PhotoJobSucceeded() && final PhotoJobSucceeded done => _done(l10n, source, done),
           PhotoJobFailed() && final PhotoJobFailed failed => _failed(l10n, failed),
           PhotoJobRunning() => _working(l10n, source),
-          PhotoJobDraft() => _draft(l10n, source),
+          PhotoJobDraft() => _draft(l10n, source!),
         },
       ),
     );
@@ -437,16 +485,20 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
     ];
   }
 
-  List<Widget> _working(AppLocalizations l10n, PhotoSource source) => <Widget>[
+  List<Widget> _working(AppLocalizations l10n, PhotoSource? source) => <Widget>[
     PhotoFrame(
       canvas: _canvas,
-      child: _Breathing(child: _preview(source)),
+      child: _Breathing(
+        child: source == null
+            ? ColoredBox(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06))
+            : _preview(source),
+      ),
     ),
     const SizedBox(height: PrismSpace.lg),
     Semantics(
       liveRegion: true,
       child: Text(
-        _mode == PhotoJobMode.upscale ? l10n.photoWallWorkingUpscale : l10n.photoWallWorkingExtend,
+        _jobMode == PhotoJobMode.upscale ? l10n.photoWallWorkingUpscale : l10n.photoWallWorkingExtend,
         style: PrismTextStyles.sectionTitle(context),
         textAlign: TextAlign.center,
       ),
@@ -457,16 +509,15 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
     const LinearProgressIndicator(),
   ];
 
-  List<Widget> _done(AppLocalizations l10n, PhotoSource source, PhotoJobSucceeded done) => <Widget>[
-    PhotoCompareView(
-      canvas: done.size,
-      before: _preview(source),
-      after: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints box) =>
-            AiDecodedImage(url: done.imageUrl, logicalWidth: box.maxWidth, logicalHeight: box.maxHeight),
-      ),
-    ),
-  ];
+  List<Widget> _done(AppLocalizations l10n, PhotoSource? source, PhotoJobSucceeded done) {
+    final Widget after = LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints box) =>
+          AiDecodedImage(url: done.imageUrl, logicalWidth: box.maxWidth, logicalHeight: box.maxHeight),
+    );
+    // A job recovered after a restart has no photo to compare with, so it shows the result alone.
+    if (source == null) return <Widget>[PhotoFrame(canvas: done.size, child: after)];
+    return <Widget>[PhotoCompareView(canvas: done.size, before: _preview(source), after: after)];
+  }
 
   List<Widget> _failed(AppLocalizations l10n, PhotoJobFailed failed) => <Widget>[
     GlintState(
@@ -475,11 +526,13 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       actionLabel: switch (failed.reason) {
         PhotoJobFailure.unsafeInput || PhotoJobFailure.unreadable => l10n.photoWallPickAnother,
         PhotoJobFailure.dailyLimit || PhotoJobFailure.busy => null,
+        _ when _source == null && _isFinal(failed) => l10n.photoWallPickPhoto,
         _ => l10n.photoWallTryAgain,
       },
       onAction: switch (failed.reason) {
         PhotoJobFailure.unsafeInput || PhotoJobFailure.unreadable => _pick,
         PhotoJobFailure.dailyLimit || PhotoJobFailure.busy => null,
+        _ when _source == null => _isFinal(failed) ? _pick : _recoverPending,
         _ => _run,
       },
     ),
@@ -488,9 +541,9 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
   Widget? _bottomBar(AppLocalizations l10n) {
     final PhotoJobState state = _state;
     final PhotoSource? source = _source;
-    if (source == null || state is PhotoJobRunning) return null;
+    if (state is PhotoJobRunning) return null;
     if (state case final PhotoJobSucceeded done) {
-      final PhotoJobMode mode = _mode ?? PhotoJobMode.extend;
+      final PhotoJobMode mode = _jobMode ?? PhotoJobMode.extend;
       return _BarColumn(
         children: <Widget>[
           PrismButton(
@@ -506,9 +559,9 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
                 Expanded(
                   child: PrismButton(
                     label: l10n.photoWallDownload,
-                    icon: Icons.download_rounded,
                     variant: PrismButtonVariant.tonal,
                     expand: true,
+                    maxLines: null,
                     onPressed: () => _download(done),
                   ),
                 ),
@@ -517,9 +570,9 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
               Expanded(
                 child: PrismButton(
                   label: l10n.foldersSaveToFolder,
-                  icon: Icons.create_new_folder_rounded,
                   variant: PrismButtonVariant.tonal,
                   expand: true,
+                  maxLines: null,
                   onPressed: () => _saveToFolder(done, mode),
                 ),
               ),
@@ -534,6 +587,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
         ],
       );
     }
+    if (source == null) return null;
     final PhotoJobMode? mode = _mode;
     return ValueListenableBuilder<int>(
       valueListenable: CoinsService.instance.balanceNotifier,

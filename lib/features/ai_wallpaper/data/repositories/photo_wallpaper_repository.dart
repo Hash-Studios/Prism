@@ -5,6 +5,9 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:Prism/core/constants/app_functions.dart';
+import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/photo_job.dart';
 import 'package:Prism/features/user_search/data/photo_search_service.dart';
 import 'package:Prism/logger/logger.dart';
@@ -32,15 +35,60 @@ class PhotoWallpaperRepository {
     Future<PhotoSize> Function(Uint8List bytes)? measure,
     Future<Uint8List> Function(Uint8List bytes, int longSide)? toUploadJpeg,
     PhotoJobCall? call,
+    PhotoJobCall? lookup,
+    Future<String?> Function()? readPending,
+    Future<void> Function(String? json)? writePending,
   ]) : _pick = pick ?? _pickFromGallery,
        _measure = measure ?? _uprightSize,
        _toUploadJpeg = toUploadJpeg ?? _uploadJpegOf,
-       _call = call ?? _callCallable;
+       _call = call ?? _callCallable,
+       _lookup = lookup ?? _lookupCallable,
+       _readPending = readPending ?? _readPendingSetting,
+       _writePending = writePending ?? _writePendingSetting;
 
   final Future<Uint8List?> Function() _pick;
   final Future<PhotoSize> Function(Uint8List bytes) _measure;
   final Future<Uint8List> Function(Uint8List bytes, int longSide) _toUploadJpeg;
   final PhotoJobCall _call;
+  final PhotoJobCall _lookup;
+  final Future<String?> Function() _readPending;
+  final Future<void> Function(String? json) _writePending;
+
+  /// The job that was running when the app last ran, or null.
+  Future<PendingPhotoJob?> readPending() async {
+    try {
+      final String? raw = await _readPending();
+      return raw == null ? null : PendingPhotoJob.fromJson(jsonDecode(raw));
+    } catch (error) {
+      logger.w('[PhotoWallpaper] pending job read failed (${error.runtimeType})');
+      return null;
+    }
+  }
+
+  /// Saves [job] as the running job, or clears it when null.
+  Future<void> savePending(PendingPhotoJob? job) async {
+    try {
+      await _writePending(job == null ? null : jsonEncode(job.toJson()));
+    } catch (error) {
+      logger.w('[PhotoWallpaper] pending job write failed (${error.runtimeType})');
+    }
+  }
+
+  /// The server state of a job started before the app restarted. Null when the server has no such job.
+  Future<PhotoJobState?> recover(String requestId) async {
+    try {
+      final Object? data = await _lookup(<String, Object?>{'requestId': requestId});
+      if (data is Map && data['state'] == 'unknown') return null;
+      if (data is Map && data['state'] == 'running') return PhotoJobRunning(requestId);
+      return parsePhotoJobResult(data);
+    } on FirebaseFunctionsException catch (error) {
+      logger.w('[PhotoWallpaper] job lookup failed: ${error.code}');
+      return const PhotoJobFailed(reason: PhotoJobFailure.network, charged: false, refunded: false);
+    } catch (error) {
+      logger.w('[PhotoWallpaper] job lookup failed (${error.runtimeType})');
+      return const PhotoJobFailed(reason: PhotoJobFailure.network, charged: false, refunded: false);
+    }
+  }
 
   /// The picked photo with its upright size, or null when the user picks none. Throws when it cannot be decoded.
   Future<PhotoSource?> pick() async {
@@ -105,6 +153,16 @@ class PhotoWallpaperRepository {
     }
   }
 
+  static Future<Object?> _lookupCallable(Map<String, Object?> payload) async =>
+      (await appFunctions.httpsCallable('getPhotoWallpaper').call<Object?>(payload)).data;
+
+  static Future<String?> _readPendingSetting() async =>
+      getIt<SettingsLocalDataSource>().get<String?>(PersistenceKeys.photoWallPendingJob);
+
+  static Future<void> _writePendingSetting(String? json) => json == null
+      ? getIt<SettingsLocalDataSource>().delete(PersistenceKeys.photoWallPendingJob)
+      : getIt<SettingsLocalDataSource>().set(PersistenceKeys.photoWallPendingJob, json);
+
   static Future<Object?> _callCallable(Map<String, Object?> payload) async =>
       (await appFunctions
               .httpsCallable('createPhotoWallpaper', options: HttpsCallableOptions(timeout: photoJobTimeout))
@@ -167,13 +225,18 @@ Future<Uint8List> readAndCleanupPickedPhoto(XFile file, {required Directory temp
   try {
     return await file.readAsBytes();
   } finally {
-    final String tempPath = p.normalize(p.absolute(temporaryDirectory.path));
-    final String pickedPath = p.normalize(p.absolute(file.path));
-    final FileSystemEntityType type = await FileSystemEntity.type(pickedPath, followLinks: false);
-    if (type == FileSystemEntityType.file) {
-      final String realTempPath = await Directory(tempPath).resolveSymbolicLinks();
-      final String realPickedPath = await File(pickedPath).resolveSymbolicLinks();
-      if (p.isWithin(realTempPath, realPickedPath)) await File(pickedPath).delete();
+    // Best effort: a cleanup error must not replace the photo that was read.
+    try {
+      final String tempPath = p.normalize(p.absolute(temporaryDirectory.path));
+      final String pickedPath = p.normalize(p.absolute(file.path));
+      final FileSystemEntityType type = await FileSystemEntity.type(pickedPath, followLinks: false);
+      if (type == FileSystemEntityType.file) {
+        final String realTempPath = await Directory(tempPath).resolveSymbolicLinks();
+        final String realPickedPath = await File(pickedPath).resolveSymbolicLinks();
+        if (p.isWithin(realTempPath, realPickedPath)) await File(pickedPath).delete();
+      }
+    } catch (error) {
+      logger.w('[PhotoWallpaper] picker copy cleanup failed (${error.runtimeType})');
     }
   }
 }
