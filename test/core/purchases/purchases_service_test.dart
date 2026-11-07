@@ -432,7 +432,45 @@ void main() {
     expect(resetTrialStateCalls, 1);
   });
 
+  group('a cold start with a saved account (#526)', () {
+    test('configures RevenueCat as the account, never as an anonymous ID that can take its subscription', () async {
+      final List<String?> configuredUserIds = <String?>[];
+      final PurchasesService service = buildService(
+        configurePurchases: (PurchasesConfiguration configuration) async =>
+            configuredUserIds.add(configuration.appUserID),
+        apiKey: () => 'test-key',
+      );
+
+      await service.configureEarly();
+      await service.ensureConfigured('u1');
+
+      expect(configuredUserIds, <String?>['u1']);
+      expect(loginCalls, isEmpty);
+    });
+
+    test('logs RevenueCat out when the saved account turns out to be signed out', () async {
+      final List<String> nativeCalls = <String>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('purchases_flutter'),
+        (call) async {
+          if (call.method == 'setLogLevel') return null;
+          nativeCalls.add(call.method);
+          if (call.method == 'logOut') return _freeCustomerJson;
+          throw StateError('Unexpected RevenueCat call: ${call.method}');
+        },
+      );
+      final PurchasesService service = buildService(apiKey: () => 'test-key');
+      await service.configureEarly();
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
+
+      await service.ensureConfigured('');
+
+      expect(nativeCalls, <String>['logOut']);
+    });
+  });
+
   test('anonymous RevenueCat configuration preserves the reminder until the account is known', () async {
+    app_state.prismUser = profileUser(id: '', loggedIn: false);
     ActiveTrial? trialAtConfigure;
     late PurchasesService service;
     service = PurchasesService.forTesting(
