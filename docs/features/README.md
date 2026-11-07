@@ -7,6 +7,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [live-wallpapers.md](live-wallpapers.md) | Make it live, Living gradients, Video to wallpaper (Android) |
 | [live-photo.md](live-photo.md) | Live Photo walls (iOS): render a live style, save as a Live Photo, Lock Screen guide |
 | [set-wallpaper.md](set-wallpaper.md) | Set sheet, Fit and Fill, Undo, lock and home pair, Match accent, default target, errors, iOS save guide |
+| [share-to-prism.md](share-to-prism.md) | Share one image or link from another app to Prism: set, make it fit, upload, Save to Folder, Android and iOS handoff |
 | [position-studio.md](position-studio.md) | Adjust position and preview: pan, zoom, fit modes, dim |
 | [wallpaper-editor.md](wallpaper-editor.md) | Edit screen: filters, adjust, crop presets and frame, rotate, export size, Share, crop vs placement |
 | [depth-effect.md](depth-effect.md) | iOS Lock Screen Depth Effect: detector, `walls.depth` tiers, Depth tag, backfill |
