@@ -11,7 +11,7 @@ import {CALLABLE_REGIONS, db} from "./common";
 
 /**
  * Finds the og:image of a page that a user shared to Prism. The server reads only the page HTML, never the image,
- * and stores nothing. The app downloads the image itself.
+ * and stores only quota counters. The app downloads the image itself.
  */
 
 export const LINK_TIMEOUT_MS = 5000;
@@ -256,18 +256,24 @@ export const linkDeps: LinkDeps = {
 };
 
 /**
- * The address that called. Google's front end appends the address it saw to X-Forwarded-For, so only the last entry is
- * trusted; earlier entries come from the client.
+ * The last forwarded hop for direct gen2 callable ingress. Earlier entries can come from the client. Do not skip an
+ * invalid final hop or fall back to Express ip, whose value depends on trust-proxy configuration.
  */
-export function callerAddress(raw: {headers?: IncomingHttpHeaders; ip?: string} | undefined): string {
+export function callerAddress(raw: {headers?: IncomingHttpHeaders; ip?: string} | undefined): string | null {
   const header = raw?.headers?.["x-forwarded-for"];
-  const forwarded = (Array.isArray(header) ? header.join(",") : header ?? "").split(",").map((it) => it.trim());
-  return forwarded.filter(Boolean).at(-1) ?? raw?.ip ?? "unknown";
+  const address = (Array.isArray(header) ? header.join(",") : header ?? "").split(",").at(-1)?.trim() ?? "";
+  if (isIPv4(address)) return address;
+  if (!isIPv6(address) || address.includes("%")) return null;
+  const words = ipv6Words(address);
+  if (words && words.slice(0, 5).every((word) => word === 0) && words[5] === 0xffff) {
+    return [words[6] >> 8, words[6] & 255, words[7] >> 8, words[7] & 255].join(".");
+  }
+  return new URL(`https://[${address}]/`).hostname.slice(1, -1);
 }
 
 /**
  * Counts one lookup for [address] in the current 10-minute window, and returns false once the window has
- * [LINK_QUOTA_PER_WINDOW]. The counter key is a hash, so no address is stored, and TTL deletes it on `expireAt`.
+ * [LINK_QUOTA_PER_WINDOW]. The unsalted hash is pseudonymous, not anonymous. TTL eventually deletes expired counters.
  */
 export async function takeLinkQuota(address: string, now = Date.now()): Promise<boolean> {
   const window = Math.floor(now / LINK_QUOTA_WINDOW_MS);
@@ -293,7 +299,16 @@ export const shareLinkImage = onCall(
     if (typeof url !== "string" || url.length === 0 || url.length > MAX_URL_LENGTH) {
       throw new HttpsError("invalid-argument", "url must be an https link");
     }
-    if (!(await takeLinkQuota(callerAddress(request.rawRequest)))) return {imageUrl: null, reason: "rate_limited"};
+    if (!parseHttpsUrl(url)) return {imageUrl: null, reason: "invalid_url"};
+    const address = callerAddress(request.rawRequest);
+    if (!address) return {imageUrl: null, reason: "error"};
+    try {
+      if (!(await takeLinkQuota(address))) return {imageUrl: null, reason: "rate_limited"};
+    } catch {
+      // No unmetered lookups when Firestore is down or transaction retries are exhausted. Log no caller data.
+      logger.warn("shareLinkImage: quota unavailable");
+      return {imageUrl: null, reason: "error"};
+    }
     const result = await findLinkImage(url);
     return result.status === "found" ? {imageUrl: result.imageUrl} : {imageUrl: null, reason: result.reason};
   },

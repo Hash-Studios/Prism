@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/photo_wallpaper_repository.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/photo_wallpaper_page.dart';
@@ -108,20 +109,29 @@ class _ShareInPageState extends State<ShareInPage> {
 
   Future<void> _open(ShareInChoice choice) async {
     final StackRouter router = context.router;
+    final String owner = app_state.prismUser.id;
+    bool sameAccount() => app_state.prismUser.loggedIn && app_state.prismUser.id == owner;
+    void requireSameAccount() {
+      if (!sameAccount()) throw StateError('The share account signed out or changed.');
+    }
+
+    requireSameAccount();
     switch (choice.action) {
       case ShareInAction.set:
         final File file = await _handOff(choice.path);
         try {
+          requireSameAccount();
           await router.replace(WallpaperFilterRoute(filePath: file.path, sharedImage: true));
         } finally {
           await _inbox.discard(file.path);
         }
       case ShareInAction.upload:
         final File file = await _handOff(choice.path);
-        // Edit replaces itself with Upload, so the replace future never completes. Wait for the stack instead.
-        final Future<void> released = _untilReleased(router, file.path);
-        unawaited(router.replace(EditWallRoute(image: file)));
         try {
+          requireSameAccount();
+          // Edit replaces itself with Upload, so the replace future never completes. Wait for the stack instead.
+          final Future<void> released = _untilReleased(router, file.path);
+          unawaited(router.replace(EditWallRoute(image: file)));
           await released;
         } finally {
           await _inbox.discard(file.path);
@@ -131,6 +141,7 @@ class _ShareInPageState extends State<ShareInPage> {
         _discardAll();
         final NavigatorState navigator = Navigator.of(context);
         await router.maybePop();
+        if (!navigator.mounted || !sameAccount()) return;
         unawaited(
           navigator.push<void>(
             MaterialPageRoute<void>(

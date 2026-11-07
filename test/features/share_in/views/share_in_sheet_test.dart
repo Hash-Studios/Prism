@@ -227,6 +227,21 @@ void main() {
       expect(probe.choice?.action, ShareInAction.set);
     });
 
+    for (final bool signedIn in <bool>[false, true]) {
+      testWidgets('guest Fit requires successful sign-in, signedIn=$signedIn', (tester) async {
+        _phoneView(tester);
+        final _Probe probe = _Probe()..signInResult = signedIn;
+        await _pump(tester, item: _image, probe: probe, isGuest: true);
+        final int cost = photoJobCost(PhotoJobMode.extend, isPro: false);
+
+        await _tap(tester, 'Make it fit · $cost ${cost == 1 ? 'coin' : 'coins'}');
+
+        expect(probe.signInCalls, 1);
+        expect(probe.done, signedIn);
+        expect(probe.choice?.action, signedIn ? ShareInAction.fit : null);
+      });
+    }
+
     testWidgets('guest Upload that is not signed in keeps the sheet open and pops nothing', (tester) async {
       _phoneView(tester);
       final _Probe probe = _Probe()..signInResult = false;

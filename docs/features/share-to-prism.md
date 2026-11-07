@@ -60,9 +60,13 @@ Input: `{url}`. Output: `{imageUrl}` or `{imageUrl: null, reason}`.
 - Malformed meta tags are scanned without repeated regex backtracking.
 - The og:image URL must also be https and public.
 - Guests may call it, because a guest sees the sheet before sign-in.
-- Each caller address gets 30 lookups in a 10-minute window. Then the callable returns `{imageUrl: null, reason: "rate_limited"}`, and the app shows "Prism cannot use this link."
-- The address is the last `X-Forwarded-For` entry. Google's front end adds that entry, so a client cannot fake it.
-- The counter is in `shareLinkQuota/<hash>_<window>`. The key is a SHA-256 hash, so Prism stores no address. A Firestore TTL policy on `expireAt` deletes each counter about 20 minutes after its window starts.
+- Each caller address gets 30 lookups in a fixed 10-minute window, aligned to Unix time. Then the callable returns `{imageUrl: null, reason: "rate_limited"}`, and the app shows "Prism cannot use this link." A caller can make 30 lookups just before a boundary and 30 just after it. This is not a rolling-window limit.
+- The address is the last `X-Forwarded-For` entry for direct gen2 callable ingress. Earlier entries can be client-supplied. This follows Google's [one-hop Cloud Run rate-limit example](https://github.com/GoogleCloudPlatform/nodejs-docs-samples/pull/3586), not an assumption that the first entry is trusted. The [Functions header reference](https://cloud.google.com/functions/docs/reference/headers#x-forwarded-for) describes a proxy chain, not a client identity guarantee for every ingress setup.
+- Missing or malformed final entries fail closed with `{imageUrl: null, reason: "error"}`. The callable never falls back to an earlier entry, Express `ip`, or an "unknown" shared bucket. Equivalent IPv6 and IPv4-mapped spellings use one canonical address.
+- Users behind the same NAT share a quota. Extra proxies, Hosting rewrites or load balancers can make the last entry a proxy address instead of the end user's address. Verify the header behavior on the actual gen2 endpoint before release and after any ingress change. Do not switch to the first entry to work around this.
+- The counter is in `shareLinkQuota/<hash>_<window>`. The key uses a truncated SHA-256 hash. It is pseudonymous, not anonymous: an unsalted IPv4 hash can be recovered by enumeration, and the stable hash links windows. The document stores only `count` and `expireAt`, not a raw address, URL, image or account ID.
+- `expireAt` is 20 minutes after the window starts. Firestore TTL deletion is asynchronous, [typically within 24 hours after expiry](https://firebase.google.com/docs/firestore/ttl). It is not a 20-minute deletion guarantee. The window in the document ID resets the quota without waiting for deletion.
+- The Firestore transaction serializes increments for one address and retries conflicts. An outage or exhausted retries returns `{imageUrl: null, reason: "error"}` without DNS or HTTP work. Invalid URLs do not consume quota. Failure is closed, not an unmetered fallback.
 - `maxInstances` is 10.
 
 ### Native handoff
@@ -124,7 +128,7 @@ The text is at most 2048 characters.
 ## Privacy
 
 - Prism never sends a shared image anywhere unless the user picks Make it fit or Upload to Prism.
-- For a web link, the server reads only the page HTML. It does not read the image. It stores nothing.
+- For a web link, the server reads only the page HTML. It does not read or store the image or store the URL. It stores pseudonymous quota counters, with the retention and hash limitations above.
 - The app downloads the image itself. Each redirect must remain https on port 443 without credentials. The download is at most 25 MB, with one 20 s deadline across redirects, headers, and body.
 - Make it fit sends the photo to fal.ai and Google Cloud Vision. See [photo-wallpaper.md](photo-wallpaper.md).
 - Make it fit checks the account again before preparing the upload, after preparation, and before a retry. Signing out or changing accounts prevents another send.
@@ -135,6 +139,7 @@ The text is at most 2048 characters.
 - When the user picks Set or Upload, the file moves to the hand-off folder `<temp>/share_in`. That flow owns the file.
 - Set deletes its source when the editor closes. Upload keeps it through Edit and Upload, then deletes it when that flow closes.
 - When the user closes the sheet, Prism deletes the file.
+- If the account signs out or changes during the Set or Upload file hand-off, Prism cancels the action and deletes the moved file. It does not leave an auth-deferred route holding a deleted source. Fit also checks the account after closing the share page.
 - Make it fit reads the file into memory and deletes it.
 - At app start and at each share, `SharedInbox.sweep` deletes files older than 24 hours. It checks the inbox and the hand-off folder.
 - Native sweeps also remove abandoned partial copies. If the OS stops the app and extension, cleanup runs on their next activation. Deletion at exactly 24 hours while both processes are stopped is not guaranteed.
@@ -183,4 +188,4 @@ No Worker change and no rules change are needed.
 1. `fvm flutter test test/features/share_in/ test/core/router/deep_link_share_in_test.dart`
 2. `cd functions && npm run build && node --test 'lib/__tests__/shareLinkImage*.test.js'`
 3. Android: `android/app/src/test/kotlin/com/hash/prism/SharedInboxLinksTest.kt`, and `verifySharedIntent` in `PrismNativeInstrumentation.kt`.
-4. iOS: `ios/RunnerTests/ShareInboxTests.swift`.
+4. On macOS with Swift 6.2 or later: `swift test --package-path ios`. The `PrismShareInbox` target builds `ios/ShareInboxShared/ShareInbox.swift`, and the test target imports it to run `ios/RunnerTests/ShareInboxTests.swift`. This is native package proof, not an iOS app or extension build.

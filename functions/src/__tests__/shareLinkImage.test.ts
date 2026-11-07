@@ -5,6 +5,7 @@ import {createServer, getDefaultAutoSelectFamily, isIPv6, setDefaultAutoSelectFa
 import type {TestContext} from "node:test";
 import test from "node:test";
 import {HttpsError} from "firebase-functions/v2/https";
+import {db} from "../common";
 import {
   callerAddress,
   findLinkImage,
@@ -416,8 +417,114 @@ test("the quota stores a hash with a TTL, never the address", async (t: TestCont
 test("callerAddress trusts only the last X-Forwarded-For entry", () => {
   assert.equal(callerAddress({headers: {"x-forwarded-for": "10.0.0.1, 203.0.113.9"}, ip: "10.9.9.9"}), "203.0.113.9");
   assert.equal(callerAddress({headers: {"x-forwarded-for": ["1.1.1.1", "203.0.113.9 "]}}), "203.0.113.9");
-  assert.equal(callerAddress({headers: {}, ip: "198.51.100.4"}), "198.51.100.4");
-  assert.equal(callerAddress(undefined), "unknown");
+  assert.equal(callerAddress({headers: {}, ip: "198.51.100.4"}), null);
+  assert.equal(callerAddress(undefined), null);
+});
+
+test("callerAddress rejects an unusable final hop instead of trusting an earlier entry or Express ip", () => {
+  for (const header of ["", "203.0.113.9,", "203.0.113.9, garbage", "203.0.113.9:443", "fe80::1%eth0"]) {
+    assert.equal(callerAddress({headers: {"x-forwarded-for": header}, ip: "203.0.113.9"}), null, header);
+  }
+});
+
+test("callerAddress canonicalizes equivalent IPv6 addresses", () => {
+  const address = (header: string) => callerAddress({headers: {"x-forwarded-for": header}});
+  assert.equal(address("2001:0DB8:0000:0000:0000:0000:0000:0001"), "2001:db8::1");
+  assert.equal(address("::ffff:203.0.113.9"), "203.0.113.9");
+  assert.equal(address("::ffff:cb00:7109"), "203.0.113.9");
+});
+
+test("callable refuses missing or malformed caller addresses without Firestore or network work", async (t) => {
+  installFakeDb(t);
+  const transaction = t.mock.method(db, "runTransaction");
+  const resolve = t.mock.method(linkDeps, "resolve", async () => []);
+  const get = t.mock.method(linkDeps, "get", async () => {
+    throw new Error("unexpected fetch");
+  });
+  for (const header of [undefined, "", "203.0.113.9, garbage", "203.0.113.9,"]) {
+    const request = {
+      data: {url: PAGE}, rawRequest: {headers: {"x-forwarded-for": header}, ip: "203.0.113.9"},
+    } as unknown as Parameters<typeof shareLinkImage.run>[0];
+    assert.deepEqual(await shareLinkImage.run(request), {imageUrl: null, reason: "error"});
+  }
+  assert.equal(transaction.mock.callCount(), 0);
+  assert.equal(resolve.mock.callCount(), 0);
+  assert.equal(get.mock.callCount(), 0);
+});
+
+test("invalid URLs do not consume quota or need Firestore", async (t) => {
+  installFakeDb(t);
+  const transaction = t.mock.method(db, "runTransaction");
+  const request = {data: {url: "http://example.com/"}} as Parameters<typeof shareLinkImage.run>[0];
+  assert.deepEqual(await shareLinkImage.run(request), {imageUrl: null, reason: "invalid_url"});
+  assert.equal(transaction.mock.callCount(), 0);
+});
+
+test("a Firestore outage or exhausted transaction retries fail closed without a lookup", async (t) => {
+  installFakeDb(t);
+  const resolve = t.mock.method(linkDeps, "resolve", async () => []);
+  const get = t.mock.method(linkDeps, "get", async () => {
+    throw new Error("unexpected fetch");
+  });
+  for (const code of [14, 10]) { // UNAVAILABLE, ABORTED after the SDK's retries.
+    t.mock.method(db, "runTransaction", async () => {
+      throw Object.assign(new Error("quota unavailable"), {code});
+    });
+    const request = {
+      data: {url: PAGE}, rawRequest: {headers: {"x-forwarded-for": "203.0.113.9"}},
+    } as unknown as Parameters<typeof shareLinkImage.run>[0];
+    assert.deepEqual(await shareLinkImage.run(request), {imageUrl: null, reason: "error"});
+  }
+  assert.equal(resolve.mock.callCount(), 0);
+  assert.equal(get.mock.callCount(), 0);
+});
+
+test("a guest with a valid forwarded address can look up an image without authentication", async (t) => {
+  installFakeDb(t);
+  t.mock.method(linkDeps, "resolve", async () => [{address: "93.184.216.34", family: 4}]);
+  const get = t.mock.method(linkDeps, "get", async () => probed(200, {"content-type": "text/html"}, [
+    Buffer.from(og("https://cdn.example.com/image.png")),
+  ]));
+  const request = {
+    data: {url: PAGE}, rawRequest: {headers: {"x-forwarded-for": "203.0.113.9"}},
+  } as unknown as Parameters<typeof shareLinkImage.run>[0];
+  assert.deepEqual(await shareLinkImage.run(request), {imageUrl: "https://cdn.example.com/image.png"});
+  assert.equal(get.mock.callCount(), 1, "only the HTML, never the image");
+});
+
+test("concurrent requests cannot spend more than the window quota", async (t) => {
+  const store = installFakeDb(t);
+  const now = 1_700_000_000_000;
+  const results = await Promise.all(Array.from({length: 80}, () => takeLinkQuota("203.0.113.9", now)));
+  assert.equal(results.filter(Boolean).length, LINK_QUOTA_PER_WINDOW);
+  assert.equal(store.get(quotaDoc("203.0.113.9", now))?.count, LINK_QUOTA_PER_WINDOW);
+});
+
+test("retrying an aborted transaction callback counts a lookup only once", async (t) => {
+  const observed = {reads: 0, writes: 0};
+  const store = installFakeDb(t, {}, observed, {failCommits: 1});
+  const attempt = db.runTransaction.bind(db);
+  // Re-run the callback as the SDK does after a conflict. The aborted write must not consume quota.
+  t.mock.method(db, "runTransaction", async (callback: Parameters<typeof db.runTransaction>[0]) => {
+    try {
+      return await attempt(callback);
+    } catch {
+      return attempt(callback);
+    }
+  });
+  const now = 1_700_000_000_000;
+  assert.equal(await takeLinkQuota("203.0.113.9", now), true);
+  assert.equal(observed.reads, 2);
+  assert.equal(observed.writes, 2);
+  assert.equal(store.get(quotaDoc("203.0.113.9", now))?.count, 1);
+});
+
+test("the fixed window resets exactly at the boundary, not when TTL eventually deletes a document", async (t) => {
+  installFakeDb(t);
+  const boundary = 100 * LINK_QUOTA_WINDOW_MS;
+  for (let i = 0; i < LINK_QUOTA_PER_WINDOW; i++) assert.equal(await takeLinkQuota("203.0.113.9", boundary - 1), true);
+  assert.equal(await takeLinkQuota("203.0.113.9", boundary - 1), false);
+  assert.equal(await takeLinkQuota("203.0.113.9", boundary), true);
 });
 
 test("callable answers rate_limited without a lookup once the quota is used", async (t: TestContext) => {

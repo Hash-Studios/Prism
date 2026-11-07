@@ -8,7 +8,9 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/ai_wallpaper/views/pages/photo_wallpaper_page.dart';
 import 'package:Prism/features/share_in/biz/share_in_resolver.dart';
+import 'package:Prism/features/share_in/domain/shared_item.dart';
 import 'package:Prism/features/share_in/views/widgets/share_in_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -176,6 +178,84 @@ void main() {
     await _settleSheet(tester);
     await waitForRealIo(tester, () => !File(path).existsSync(), reason: 'completed hand-off cleanup');
   });
+
+  for (final String action in <String>['Set as wallpaper', 'Upload to Prism']) {
+    for (final bool signOut in <bool>[true, false]) {
+      testWidgets('$action cancels and cleans up if the account ${signOut ? 'signs out' : 'changes'} during hand-off', (
+        tester,
+      ) async {
+        file.writeAsBytesSync(
+          base64Decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+          ),
+        );
+        app_state.prismUser.id = 'sharing-owner';
+        await mount(tester);
+        unawaited(router.push(ShareInRoute(kind: SharedItemKind.image, item: SharedImage(file.path))));
+        await _settleSheet(tester);
+        await waitForRealIo(tester, () => find.text(action).evaluate().isNotEmpty, reason: 'shared image decode');
+        await _settleSheet(tester);
+        bool changed = false;
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(paths, (_) async {
+          changed = true;
+          if (signOut) {
+            app_state.prismUser.loggedIn = false;
+          } else {
+            app_state.prismUser.id = 'different-owner';
+          }
+          return directory.path;
+        });
+
+        await tester.tap(find.text(action));
+        await _settleSheet(tester);
+        await waitForRealIo(tester, () => changed, reason: 'account change during hand-off');
+        await waitForRealIo(tester, () => router.topRoute.name == 'Host', reason: 'cancelled hand-off');
+        await waitForRealIo(tester, () => !file.existsSync(), reason: 'cancelled source cleanup');
+        final Directory handOff = Directory('${directory.path}/share_in');
+        await waitForRealIo(
+          tester,
+          () => handOff.existsSync() && handOff.listSync().isEmpty,
+          reason: 'hand-off cleanup',
+        );
+        expect(find.text('Editor'), findsNothing);
+        expect(find.text('Edit upload'), findsNothing);
+      });
+    }
+  }
+
+  testWidgets('Fit does not open the photo flow if the account signs out while the share page closes', (tester) async {
+    file.writeAsBytesSync(
+      base64Decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='),
+    );
+    await mount(tester);
+    unawaited(router.push(ShareInRoute(kind: SharedItemKind.image, item: SharedImage(file.path))));
+    await _settleSheet(tester);
+    final Finder fit = find.textContaining('Make it fit');
+    await waitForRealIo(tester, () => fit.evaluate().isNotEmpty, reason: 'shared image decode');
+    await _settleSheet(tester);
+    bool signedOut = false;
+    void signOutOnPop() {
+      if (router.topRoute.name == 'Host') {
+        signedOut = true;
+        app_state.prismUser.loggedIn = false;
+      }
+    }
+
+    router.addListener(signOutOnPop);
+    router.navigationHistory.addListener(signOutOnPop);
+    addTearDown(() {
+      router.removeListener(signOutOnPop);
+      router.navigationHistory.removeListener(signOutOnPop);
+    });
+
+    await tester.tap(fit);
+    await _settleSheet(tester);
+    await waitForRealIo(tester, () => signedOut, reason: 'sign-out during share pop');
+    await tester.pump();
+    expect(find.byType(PhotoWallpaperPage), findsNothing);
+    await waitForRealIo(tester, () => !file.existsSync(), reason: 'Fit source cleanup');
+  });
+
   for (final bool proceedToUpload in <bool>[false, true]) {
     testWidgets('Upload cleans its source after ${proceedToUpload ? 'Upload' : 'Edit'} closes', (tester) async {
       file.writeAsBytesSync(
