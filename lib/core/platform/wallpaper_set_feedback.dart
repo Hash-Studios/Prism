@@ -234,6 +234,8 @@ Future<bool> undoWallpaperSet(
   required AppLocalizations l10n,
 }) async {
   bool restored = result.restore.isNotEmpty;
+  bool failed = false;
+  bool stillSetting = false;
   for (final WallpaperRestore entry in result.restore) {
     String source;
     try {
@@ -255,6 +257,7 @@ Future<bool> undoWallpaperSet(
     } catch (error) {
       logger.w('Wallpaper undo: original access unavailable', error: error);
       restored = false;
+      failed = true;
       continue;
     }
     final WallpaperSetResult back = await WallpaperService.setWallpaper(
@@ -263,9 +266,14 @@ Future<bool> undoWallpaperSet(
       thumbnailUrl: entry.previous.thumbnailUrl,
       recordHistory: false,
     );
-    // A set that is still running can still fail, so it does not count as restored.
-    final bool stillSetting = back.errorCode == WallpaperService.stillSettingMessage;
-    if (!back.isSuccess && (!back.isInfo || stillSetting)) restored = false;
+    // A set that is still running can still fail, so it does not count as restored, nor as failed.
+    if (back.errorCode == WallpaperService.stillSettingMessage) {
+      restored = false;
+      stillSetting = true;
+    } else if (!back.isSuccess && !back.isInfo) {
+      restored = false;
+      failed = true;
+    }
   }
   if (restored) {
     try {
@@ -275,6 +283,10 @@ Future<bool> undoWallpaperSet(
     } catch (error, stackTrace) {
       logger.w('Wallpaper undo: could not update history', error: error, stackTrace: stackTrace);
     }
+  }
+  if (stillSetting && !failed) {
+    toasts.info(l10n.coreWallpaperStillSetting);
+    return false;
   }
   try {
     unawaited(
