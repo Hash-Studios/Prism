@@ -700,6 +700,24 @@ void main() {
       expect(storeSyncs, 0);
     });
 
+    test('an account the server already marked free still recovers when this phone last confirmed Pro', () async {
+      await getIt.reset();
+      final SettingsLocalDataSource settings = SettingsLocalDataSource(InMemoryLocalStore());
+      getIt.registerSingleton<SettingsLocalDataSource>(settings);
+      addTearDown(getIt.reset);
+      await settings.set('lastSyncedSubscription.u1', 'pro|${DateTime.now().millisecondsSinceEpoch}');
+      app_state.prismUser = profileUser();
+      final PurchasesService service = buildService(
+        getCustomerInfo: () async => storeSyncs == 0 ? _freeCustomer : _proCustomer,
+        syncPurchases: () async => storeSyncs++,
+      );
+
+      expect(await service.checkAndPersistPremium(), isTrue);
+
+      expect(storeSyncs, 1);
+      expect(app_state.prismUser.premium, isTrue);
+    });
+
     test('a free account never syncs the store', () async {
       app_state.prismUser = profileUser();
       final PurchasesService service = buildService(
