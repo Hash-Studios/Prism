@@ -128,7 +128,7 @@ void main() {
     final target = targetRect();
     expect(target.width, closeTo(392, 0.01));
     expect(target.width / target.height, closeTo(1.5, 0.001));
-    expect(route.transitionDuration, const Duration(milliseconds: 160));
+    expect(route.transitionDuration, wallpaperDetailZoomDuration);
     final flying = find.byElementPredicate(
       (element) =>
           element.widget is ProgressiveWallpaperImage &&
@@ -174,7 +174,8 @@ void main() {
     expectFlight();
     await tester.pump(const Duration(milliseconds: 40));
     expectFlight();
-    await tester.pump(const Duration(milliseconds: 100));
+    // Past the rest of the 260 ms flight.
+    await tester.pump(const Duration(milliseconds: 220));
     expect(flying, findsNothing);
     expect(tester.getRect(destination), target);
     expect(tester.takeException(), isNull);

@@ -8,6 +8,7 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_filter_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/crop_frame_view.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -99,7 +100,7 @@ Widget _screenHost(String sourcePath) => MaterialApp(
 Future<void> _waitForIdle(WidgetTester tester) async {
   await waitForRealIo(tester, () {
     final Finder download = _downloadButton();
-    return find.byType(CircularProgressIndicator).evaluate().isEmpty &&
+    return find.byType(PrismLoader).evaluate().isEmpty &&
         download.evaluate().isNotEmpty &&
         tester.widget<IconButton>(download).onPressed != null;
   }, reason: 'export finished and editor idle');

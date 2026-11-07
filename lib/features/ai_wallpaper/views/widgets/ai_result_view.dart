@@ -1,8 +1,10 @@
 import 'dart:io';
 
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_follow_up.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record.dart';
 import 'package:Prism/features/ai_wallpaper/views/ai_wallpaper_helpers.dart';
@@ -111,10 +113,7 @@ class AiResultView extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          SizedBox.square(
-                            dimension: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: cs.onSurface),
-                          ),
+                          const PrismLoader(size: 16),
                           const SizedBox(width: PrismSpace.sm),
                           const Flexible(child: AiGeneratingStatusLine()),
                         ],
@@ -398,7 +397,10 @@ class _ImagePill extends StatelessWidget {
         button: true,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: onTap,
+          onTap: () {
+            PrismHaptics.tap();
+            onTap();
+          },
           child: Container(
             constraints: const BoxConstraints(minHeight: 44),
             padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),

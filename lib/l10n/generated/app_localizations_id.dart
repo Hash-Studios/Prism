@@ -681,7 +681,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountSpatialSceneSemanticLabel => 'Spasial, wallpaper dengan kedalaman 3D yang jelas';
 
   @override
-  String get accountDownloadApk => 'UNDUH APK';
+  String get accountDownloadApk => 'Unduh APK';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -725,7 +725,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountFavouritesCleared => 'Semua wallpaper favorit dihapus.';
 
   @override
-  String get accountFeedback => 'MASUKAN';
+  String get accountFeedback => 'Masukan';
 
   @override
   String get accountFeedbackSubject => 'Masukan Prism';
@@ -1129,7 +1129,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountPrismPro => 'Prism Pro';
 
   @override
-  String get accountPrivacyAction => 'PRIVASI';
+  String get accountPrivacyAction => 'Kebijakan privasi';
 
   @override
   String get accountPrivacyAndData => 'Privasi dan data';
@@ -1198,7 +1198,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountQuickTiles => 'Tile Cepat';
 
   @override
-  String get accountRateApp => 'NILAI';
+  String get accountRateApp => 'Nilai';
 
   @override
   String get accountRecentSearches => 'Pencarian terbaru';
@@ -1265,11 +1265,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get accountRestoringPurchases => 'Memulihkan pembelian…';
-
-  @override
-  String accountResultsForQuery(String query) {
-    return 'Hasil untuk $query';
-  }
 
   @override
   String get accountRetry => 'Coba lagi';
@@ -1393,16 +1388,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountSignInToPrism => 'Masuk ke Prism';
 
   @override
-  String get accountSocialGithub => 'GITHUB';
+  String get accountSocialGithub => 'GitHub';
 
   @override
-  String get accountSocialInstagram => 'INSTAGRAM';
+  String get accountSocialInstagram => 'Instagram';
 
   @override
-  String get accountSocialTelegram => 'TELEGRAM';
+  String get accountSocialTelegram => 'Telegram';
 
   @override
-  String get accountSocialTwitter => 'TWITTER';
+  String get accountSocialTwitter => 'Twitter';
 
   @override
   String get accountSomethingWentWrongTryAgain => 'Terjadi kesalahan. Coba lagi.';
@@ -1443,7 +1438,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountTerms => 'Ketentuan';
 
   @override
-  String get accountTermsAction => 'KETENTUAN';
+  String get accountTermsAction => 'Ketentuan penggunaan';
 
   @override
   String accountTermsAgreementSemanticLabel(String terms, String privacy) {
@@ -1557,7 +1552,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountWhatsNew => 'Yang baru';
 
   @override
-  String get accountWhatsNewAction => 'YANG BARU';
+  String get accountWhatsNewAction => 'Yang baru';
 
   @override
   String get accountWriteBio => 'Tulis bio';
@@ -4031,6 +4026,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get deepLinkInputLiveTitle => 'Wallpaper bergerak';
 
   @override
+  String get deepLinkInputLiveDescription => 'Pilih foto dari galeri untuk dijadikan wallpaper bergerak.';
+
+  @override
   String get deepLinkInputPhotoPreviewTitle => 'Pratinjau foto';
 
   @override
@@ -4937,6 +4935,14 @@ class AppLocalizationsId extends AppLocalizations {
 
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString koin', one: '1 koin');
     return '+$_temp0';
+  }
+
+  @override
+  String economyCoinReward(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '+$countString';
   }
 
   @override
@@ -6046,7 +6052,7 @@ class AppLocalizationsId extends AppLocalizations {
 
     String _temp0 = intl.Intl.pluralLogic(days, locale: localeName, other: '${daysString}h', one: '1h');
     String _temp1 = intl.Intl.pluralLogic(hours, locale: localeName, other: '${hoursString}j', one: '1j');
-    return 'Direset Senin pukul 00.00 UTC · tersisa $_temp0 $_temp1';
+    return 'Direset dalam $_temp0 $_temp1';
   }
 
   @override
@@ -6936,7 +6942,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get economyWeekComplete => 'Minggu selesai!';
 
   @override
-  String get economyWeekly => 'MINGGUAN';
+  String get economyWeekly => 'Mingguan';
 
   @override
   String get economyWeeklyDraw => 'Draw mingguan';
@@ -6946,7 +6952,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String economyWeeklyEndsIn(String time) {
-    return 'MINGGUAN · $time';
+    return 'Mingguan · $time';
   }
 
   @override
@@ -7042,9 +7048,6 @@ class AppLocalizationsId extends AppLocalizations {
 
     return 'Anda memiliki $countString koin';
   }
-
-  @override
-  String get economyYourXp => 'XP ANDA';
 
   @override
   String get errorGeneric => 'Terjadi kesalahan. Coba lagi.';
@@ -7184,20 +7187,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get notifGenericTitle => 'Notifikasi';
-
-  @override
-  String notifGroupAndMore(String message, int otherCount) {
-    final intl.NumberFormat otherCountNumberFormat = intl.NumberFormat.decimalPattern(localeName);
-    final String otherCountString = otherCountNumberFormat.format(otherCount);
-
-    String _temp0 = intl.Intl.pluralLogic(
-      otherCount,
-      locale: localeName,
-      other: '$otherCountString lainnya.',
-      one: '1 lainnya.',
-    );
-    return '$message dan $_temp0';
-  }
 
   @override
   String notifGroupApprovals(int count) {
@@ -7784,10 +7773,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get onboardingRecoverySignIn => 'Masuk lagi';
 
   @override
-  String get onboardingReloadLower => 'muat ulang';
+  String get onboardingReloadLower => 'Muat ulang';
 
   @override
-  String get onboardingSavePhotos => 'simpan ke Foto';
+  String get onboardingSavePhotos => 'Simpan ke Foto';
 
   @override
   String onboardingSelectInterestMinimum(int count) {
@@ -7798,22 +7787,22 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get onboardingSetWallpaper => 'pasang sebagai wallpaper';
+  String get onboardingSetWallpaper => 'Pasang sebagai wallpaper';
 
   @override
-  String get onboardingSignInAgainLower => 'masuk lagi';
+  String get onboardingSignInAgainLower => 'Masuk lagi';
 
   @override
   String get onboardingSkip => 'Lewati';
 
   @override
-  String get onboardingSkipLower => 'lewati';
+  String get onboardingSkipLower => 'Lewati';
 
   @override
   String get onboardingTermsRequired => 'Setujui Ketentuan dan Kebijakan Privasi terlebih dahulu.';
 
   @override
-  String get onboardingTryAgainLower => 'coba lagi';
+  String get onboardingTryAgainLower => 'Coba lagi';
 
   @override
   String onboardingWallpaperForInterest(String category) {
@@ -7843,6 +7832,27 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get premiumPageViewPlans => 'Lihat paket';
+
+  @override
+  String get premiumPageHeadline => 'Seluruh galeri, terbuka';
+
+  @override
+  String get premiumBenefitWalls => 'Semua koleksi dan wallpaper premium';
+
+  @override
+  String get premiumBenefitFree => 'Unduhan gratis tanpa iklan';
+
+  @override
+  String get premiumBenefitSpin => 'Satu putaran gratis setiap hari';
+
+  @override
+  String get premiumBenefitAutomation => 'Putar otomatis dan mode siang-malam';
+
+  @override
+  String get premiumBenefitLiveStyles => 'Semua gaya wallpaper bergerak';
+
+  @override
+  String get premiumBenefitAiClean => 'Wallpaper AI tanpa tanda air, dengan koin lebih sedikit';
 
   @override
   String get premiumGuestStorePurchaseActive =>
@@ -9629,10 +9639,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperStartupFailed => 'Prism tidak dapat dimulai';
 
   @override
-  String get wallpaperThemeDarkAccent => 'Warna Aksen Gelap';
+  String get wallpaperThemeDarkAccent => 'Warna aksen gelap';
 
   @override
-  String get wallpaperThemeDarkThemes => 'Tema Gelap';
+  String get wallpaperThemeDarkThemes => 'Tema gelap';
 
   @override
   String get wallpaperUseAsAppAccent => 'Gunakan sebagai aksen aplikasi';
@@ -9641,10 +9651,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperAppAccentUpdated => 'Aksen aplikasi diperbarui';
 
   @override
-  String get wallpaperThemeLightAccent => 'Warna Aksen Terang';
+  String get wallpaperThemeLightAccent => 'Warna aksen terang';
 
   @override
-  String get wallpaperThemeLightThemes => 'Tema Terang';
+  String get wallpaperThemeLightThemes => 'Tema terang';
 
   @override
   String get wallpaperThemeModeDark => 'Gelap';
@@ -9653,7 +9663,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get wallpaperThemeModeLight => 'Terang';
 
   @override
-  String get wallpaperThemeModeSystem => 'Sistem (terang/gelap)';
+  String get wallpaperThemeModeSystem => 'Sistem';
 
   @override
   String get wallpaperThemePreference => 'Preferensi tema';
@@ -12068,7 +12078,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String challengeVotingRules(String date) {
-    return 'Pilih karya kreator lain hingga $date UTC.';
+    return 'Pilih karya kreator lain hingga $date.';
   }
 
   @override
@@ -12782,6 +12792,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get creatorsToFollow => 'Kreator untuk diikuti';
+
+  @override
+  String get accountBrowseCreators => 'Jelajahi kreator';
 
   @override
   String get creatorsSeeAll => 'Lihat semua';
@@ -14205,6 +14218,30 @@ class AppLocalizationsId extends AppLocalizations {
   String get searchPhotoCouldNotOpen => 'Foto itu tidak bisa dibuka. Coba foto lain.';
 
   @override
+  String get searchMoreWallpapers => 'Wallpaper lainnya';
+
+  @override
+  String get wallpaperPreviewNoEvents => 'Tidak ada acara hari ini';
+
+  @override
+  String accountFollowersLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Pengikut', one: 'Pengikut');
+    return '$_temp0';
+  }
+
+  @override
+  String profileBadgeCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString lencana', one: '1 lencana');
+    return '$_temp0';
+  }
+
+  @override
+  String get economyLeaderboardTopThisWeek => 'Teratas minggu ini';
+
+  @override
   String get foldersSaveAll => 'Simpan semua';
 
   @override
@@ -14705,6 +14742,12 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get foldersMakePrivateMessageShared =>
       'Hanya Anda dan orang yang Anda undang yang bisa melihatnya. Tautannya berhenti berfungsi dan pengikutnya kehilangan folder ini.';
+
+  @override
+  String get gestureHintHoldToSave => 'Tahan untuk menyimpan';
+
+  @override
+  String get gestureHintSwipeForSimilar => 'Geser ke atas untuk wallpaper serupa';
 
   @override
   String get foldersSectionAdd => 'Tambah bagian';

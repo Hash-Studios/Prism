@@ -293,7 +293,8 @@ void main() {
   testWidgets('closing the sheet without accepting never calls organize', (tester) async {
     final result = await _pumpHost(tester, loadTraits: _traitsOf(_moodTraits()));
 
-    await tester.tapAt(const Offset(10, 10));
+    // Tap the dim outside the sheet: sheets float 8 pt in from the screen edge.
+    await tester.tapAt(const Offset(2, 2));
     await _settle(tester);
 
     expect(find.text('Suggested sections'), findsNothing);

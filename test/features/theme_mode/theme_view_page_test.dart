@@ -2,6 +2,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/system_accent_channel.dart';
 import 'package:Prism/core/platform/system_color_schemes.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/theme_mode/domain/entities/theme_preferences.dart';
 import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -55,55 +56,61 @@ void main() {
   testWidgets('system mode shows the light and the dark pickers', (tester) async {
     await pumpPage(tester, ThemeMode.system);
 
-    expect(find.text('Light Themes'), findsOneWidget);
-    expect(find.text('Dark Themes'), findsOneWidget);
-    expect(find.text('Light Accent Color'), findsOneWidget);
-    expect(find.text('Dark Accent Color'), findsOneWidget);
-    expect(find.text('System (Light/Dark)'), findsOneWidget);
+    expect(find.text('Light themes'), findsOneWidget);
+    expect(find.text('Dark themes'), findsOneWidget);
+    expect(find.text('Light accent colour'), findsOneWidget);
+    expect(find.text('Dark accent colour'), findsOneWidget);
+    expect(find.text('System'), findsOneWidget);
   });
 
   testWidgets('light mode hides the dark pickers', (tester) async {
     await pumpPage(tester, ThemeMode.light);
 
-    expect(find.text('Light Themes'), findsOneWidget);
-    expect(find.text('Dark Themes'), findsNothing);
-    expect(find.text('Dark Accent Color'), findsNothing);
+    expect(find.text('Light themes'), findsOneWidget);
+    expect(find.text('Dark themes'), findsNothing);
+    expect(find.text('Dark accent colour'), findsNothing);
   });
 
-  testWidgets('all light and dark theme chips use their scheme surface and readable text roles', (tester) async {
+  testWidgets('every light and dark theme shows as a preview in its own colours', (tester) async {
     await pumpPage(tester, ThemeMode.system);
 
-    final List<List<PrismThemeOption>> themeGroups = <List<PrismThemeOption>>[prismLightThemes, prismDarkThemes];
-    for (int rowIndex = 0; rowIndex < themeGroups.length; rowIndex++) {
-      final Finder row = find.byType(ListView).at(rowIndex);
-      final Finder scrollable = find.descendant(of: row, matching: find.byType(Scrollable));
-      for (final PrismThemeOption option in themeGroups[rowIndex]) {
-        final Finder labelFinder = find.descendant(
-          of: row,
+    final Map<String, List<PrismThemeOption>> grids = <String, List<PrismThemeOption>>{
+      'theme-grid-light': prismLightThemes,
+      'theme-grid-dark': prismDarkThemes,
+    };
+    for (final MapEntry<String, List<PrismThemeOption>> grid in grids.entries) {
+      await tester.scrollUntilVisible(
+        find.byKey(ValueKey<String>(grid.key)),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      final Finder gridFinder = find.byKey(ValueKey<String>(grid.key));
+      // The row scrolls sideways and builds only the cards near the screen, so check each theme as it comes into view.
+      for (final PrismThemeOption option in grid.value) {
+        final Finder name = find.descendant(
+          of: gridFinder,
           matching: find.text(prismThemeDisplayName(option, AppLocalizationsEn())),
         );
-        await tester.scrollUntilVisible(labelFinder, 200, scrollable: scrollable);
-
-        final Text label = tester.widget<Text>(labelFinder);
-        expect(label.style!.color, option.theme.colorScheme.onSurface);
-        expect(
-          contrastRatio(option.theme.colorScheme.onSurface, option.theme.colorScheme.surfaceContainerHigh),
-          greaterThanOrEqualTo(4.5),
-          reason: '${prismThemeDisplayName(option, AppLocalizationsEn())} label must be readable against its chip fill',
+        await tester.scrollUntilVisible(
+          name,
+          200,
+          scrollable: find.descendant(of: gridFinder, matching: find.byType(Scrollable)),
         );
-        expect(
-          tester.takeException(),
-          isNull,
-          reason: '${prismThemeDisplayName(option, AppLocalizationsEn())} chip must fit its row',
+        expect(name, findsOneWidget);
+        final Finder card = find.ancestor(of: name, matching: find.byType(SizedBox)).first;
+        final PrismThemePreview preview = tester.widget<PrismThemePreview>(
+          find.descendant(of: card, matching: find.byType(PrismThemePreview)),
         );
+        expect(preview.theme.colorScheme.surface, option.theme.colorScheme.surface);
       }
     }
+    expect(tester.takeException(), isNull);
   });
 
-  testWidgets('theme manager chip borders and preview shadows follow the active scheme', (tester) async {
-    const Color shadow = Color(0xff123456);
+  testWidgets('the selected theme has an accent ring and a check badge', (tester) async {
+    const Color accent = Color(0xff123456);
     final ThemeData light = ThemeData.light();
-    final ThemeData hostTheme = light.copyWith(colorScheme: light.colorScheme.copyWith(shadow: shadow));
+    final ThemeData hostTheme = light.copyWith(colorScheme: light.colorScheme.copyWith(primary: accent));
     await tester.pumpWidget(
       BlocProvider<ThemeBloc>.value(
         value: themeBloc,
@@ -116,19 +123,14 @@ void main() {
       ),
     );
 
-    final Finder preview = find.byWidgetPredicate(
+    final Finder selected = find.byWidgetPredicate(
       (widget) =>
-          widget is Container &&
+          widget is AnimatedContainer &&
           widget.decoration is BoxDecoration &&
-          ((widget.decoration! as BoxDecoration).boxShadow?.isNotEmpty ?? false),
+          (widget.decoration! as BoxDecoration).border!.top.color == accent,
     );
-    final BoxDecoration previewDecoration = tester.widget<Container>(preview.first).decoration! as BoxDecoration;
-    expect(previewDecoration.boxShadow!.first.color, shadow.withValues(alpha: 0.15));
-
-    final Finder label = find.text(prismThemeDisplayName(prismLightThemes.first, AppLocalizationsEn()));
-    final Finder chip = find.ancestor(of: label, matching: find.byType(Container)).first;
-    final BoxDecoration chipDecoration = tester.widget<Container>(chip).decoration! as BoxDecoration;
-    expect(chipDecoration.border!.top.color, prismLightThemes.first.theme.colorScheme.scrim.withValues(alpha: 0.12));
+    expect(selected, findsNWidgets(2), reason: 'system mode shows two grids, each with one selected theme');
+    expect(find.byIcon(Icons.check_rounded), findsWidgets);
   });
 
   testWidgets('tapping a light theme chip dispatches themeChanged', (tester) async {
@@ -139,119 +141,55 @@ void main() {
     verify(() => themeBloc.add(const ThemeEvent.lightThemeChanged(themeId: 'kLCoffee'))).called(1);
   });
 
-  testWidgets('the preference sheet changes the theme mode', (tester) async {
+  testWidgets('the mode control changes the theme mode', (tester) async {
     await pumpPage(tester, ThemeMode.dark);
 
-    await tester.tap(find.text('Theme Preference'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Light').last);
-    await tester.pumpAndSettle();
+    await tester.tap(find.text('Light'));
+    await tester.pump();
 
     verify(() => themeBloc.add(const ThemeEvent.modeChanged(mode: ThemeMode.light))).called(1);
-    expect(find.text('Theme Preference'), findsOneWidget);
   });
 
-  testWidgets('the preference sheet marks the selected mode with the accent, not the error red', (tester) async {
-    await pumpPage(tester, ThemeMode.dark);
-
-    await tester.tap(find.text('Theme Preference'));
-    await tester.pumpAndSettle();
-
-    final ColorScheme scheme = Theme.of(tester.element(find.text('Dark').last)).colorScheme;
-    final Finder option = find.ancestor(of: find.text('Dark').last, matching: find.byType(Container)).first;
-    final BoxDecoration selected = tester.widget<Container>(option).decoration! as BoxDecoration;
-    expect(selected.border!.top.color, scheme.primary);
-    expect(selected.border!.top.color, isNot(scheme.error));
-  });
-
-  testWidgets('the preference sheet exposes each mode and its selection to accessibility', (tester) async {
+  testWidgets('the mode control exposes each mode and its selection to accessibility', (tester) async {
     final SemanticsHandle handle = tester.ensureSemantics();
     await pumpPage(tester, ThemeMode.dark);
 
-    await tester.tap(find.text('Theme Preference'));
-    await tester.pumpAndSettle();
-
+    expect(tester.getSemantics(find.text('Dark')), isSemantics(label: 'Dark', isButton: true, isSelected: true));
     expect(
-      tester.getSemantics(find.text('Dark').last),
-      isSemantics(label: 'Dark', isButton: true, isSelected: true, hasTapAction: true),
-    );
-    expect(
-      tester.getSemantics(find.text('Light').last),
+      tester.getSemantics(find.text('Light')),
       isSemantics(label: 'Light', isButton: true, isSelected: false, hasTapAction: true),
     );
-    final SemanticsNode light = tester.getSemantics(find.text('Light').last);
-    tester.binding.performSemanticsAction(
-      SemanticsActionEvent(type: SemanticsAction.tap, viewId: tester.view.viewId, nodeId: light.id),
-    );
-    await tester.pumpAndSettle();
-    verify(() => themeBloc.add(const ThemeEvent.modeChanged(mode: ThemeMode.light))).called(1);
-    expect(find.text('Theme Preference'), findsOneWidget);
     handle.dispose();
   });
 
-  testWidgets('the preference sheet remains usable with large text on a short screen', (tester) async {
-    tester.view.physicalSize = const Size(320, 568);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(
-      BlocProvider<ThemeBloc>.value(
-        value: themeBloc,
-        child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-
-          theme: ThemeData.light(),
-          builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
-            child: child!,
+  for (final Size size in const <Size>[Size(320, 568), Size(568, 320)]) {
+    testWidgets('the mode control remains usable with large text at $size', (tester) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        BlocProvider<ThemeBloc>.value(
+          value: themeBloc,
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            theme: ThemeData.light(),
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+              child: child!,
+            ),
+            home: const ThemeView(),
           ),
-          home: const ThemeView(),
         ),
-      ),
-    );
+      );
 
-    await tester.tap(find.text('Theme Preference'));
-    await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('Dark'));
+      await tester.pump();
 
-    expect(tester.takeException(), isNull);
-    await tester.ensureVisible(find.text('Dark').last);
-    await tester.tap(find.text('Dark').last);
-    await tester.pumpAndSettle();
-
-    verify(() => themeBloc.add(const ThemeEvent.modeChanged(mode: ThemeMode.dark))).called(1);
-  });
-
-  testWidgets('the preference sheet remains usable with large text in landscape', (tester) async {
-    tester.view.physicalSize = const Size(568, 320);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await tester.pumpWidget(
-      BlocProvider<ThemeBloc>.value(
-        value: themeBloc,
-        child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-
-          theme: ThemeData.light(),
-          builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
-            child: child!,
-          ),
-          home: const ThemeView(),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Theme Preference'));
-    await tester.pumpAndSettle();
-
-    expect(tester.takeException(), isNull);
-    await tester.ensureVisible(find.text('Dark').last);
-    await tester.tap(find.text('Dark').last);
-    await tester.pumpAndSettle();
-
-    verify(() => themeBloc.add(const ThemeEvent.modeChanged(mode: ThemeMode.dark))).called(1);
-  });
+      verify(() => themeBloc.add(const ThemeEvent.modeChanged(mode: ThemeMode.dark))).called(1);
+    });
+  }
 
   testWidgets('the selected accent is derived from the bloc state', (tester) async {
     when(() => themeBloc.state).thenReturn(
@@ -301,32 +239,14 @@ void main() {
       (widget) => widget is Semantics && (widget.properties.label?.startsWith('Accent colour ') ?? false),
     );
     final Set<Color> picks = <Color>{};
-    final Finder picker = find.ancestor(of: choices.first, matching: find.byType(ListView));
-    final ScrollableState scrollable = tester.state<ScrollableState>(
-      find.descendant(of: picker, matching: find.byType(Scrollable)),
-    );
-
-    while (true) {
-      for (final Element choice in choices.evaluate()) {
-        final Finder swatch = find.descendant(
-          of: find.byWidget(choice.widget),
-          matching: find.byWidgetPredicate(
-            (widget) =>
-                widget is Container &&
-                widget.decoration is BoxDecoration &&
-                (widget.decoration! as BoxDecoration).border != null,
-          ),
-        );
-        final BoxDecoration decoration = tester.widget<Container>(swatch).decoration! as BoxDecoration;
-        picks.add(decoration.color!);
-      }
-      if (scrollable.position.pixels >= scrollable.position.maxScrollExtent) break;
-      final double previousOffset = scrollable.position.pixels;
-      scrollable.position.jumpTo(
-        (previousOffset + scrollable.position.viewportDimension).clamp(0, scrollable.position.maxScrollExtent),
+    for (final Element choice in choices.evaluate()) {
+      final Finder dot = find.descendant(
+        of: find.byWidget(choice.widget),
+        matching: find.byWidgetPredicate(
+          (widget) => widget is Container && widget.key is ValueKey<String> && widget.decoration is BoxDecoration,
+        ),
       );
-      await tester.pump();
-      expect(scrollable.position.pixels, greaterThan(previousOffset), reason: 'the picker must advance to its end');
+      picks.add((tester.widget<Container>(dot).decoration! as BoxDecoration).color!);
     }
     expect(picks, isNotEmpty);
 
@@ -353,11 +273,11 @@ void main() {
     }
   });
 
-  testWidgets('the title reads Themes and the Done button is available', (tester) async {
+  testWidgets('the title reads Themes and changes apply live without a Done button', (tester) async {
     await pumpPage(tester, ThemeMode.light);
 
     expect(find.text('Themes'), findsOneWidget);
-    expect(find.byTooltip('Done'), findsOneWidget);
+    expect(find.byTooltip('Done'), findsNothing);
   });
 
   testWidgets('the system colour switch is hidden when the phone has no system accent', (tester) async {
@@ -417,12 +337,12 @@ void main() {
       await pumpPage(tester, ThemeMode.system, state: ThemeState.initial().copyWith(system: schemes));
 
       expect(find.text('Material You'), findsNWidgets(2));
-      final Finder lightRow = find.byType(ListView).at(0);
+      final Finder lightRow = find.byKey(const ValueKey<String>('theme-grid-light'));
       final Finder lightMaterialYou = find.descendant(of: lightRow, matching: find.text('Material You'));
       final Finder lightFrost = find.descendant(of: lightRow, matching: find.text('Frost White'));
       expect(tester.getTopLeft(lightMaterialYou).dx, lessThan(tester.getTopLeft(lightFrost).dx));
 
-      final Finder darkRow = find.byType(ListView).at(1);
+      final Finder darkRow = find.byKey(const ValueKey<String>('theme-grid-dark'));
       expect(find.descendant(of: darkRow, matching: find.text('Material You')), findsOneWidget);
     });
 
@@ -442,9 +362,9 @@ void main() {
         ),
       );
 
-      expect(find.text('Light Accent Color'), findsNothing);
+      expect(find.text('Light accent colour'), findsNothing);
       expect(find.text('Material You takes its colours from your wallpaper.'), findsOneWidget);
-      expect(find.byType(SwitchListTile), findsNothing);
+      expect(find.byType(PrismSwitchRow), findsNothing);
     });
 
     testWidgets('an unusable Material You id shows the default theme and its accent controls', (tester) async {
@@ -456,7 +376,7 @@ void main() {
         ),
       );
 
-      expect(find.text('Light Accent Color'), findsOneWidget);
+      expect(find.text('Light accent colour'), findsOneWidget);
       expect(find.text('Material You takes its colours from your wallpaper.'), findsNothing);
     });
 
@@ -471,8 +391,8 @@ void main() {
         ),
       );
 
-      expect(find.text('Light Accent Color'), findsNothing);
-      expect(find.text('Dark Accent Color'), findsOneWidget);
+      expect(find.text('Light accent colour'), findsNothing);
+      expect(find.text('Dark accent colour'), findsOneWidget);
       expect(find.text('Material You takes its colours from your wallpaper.'), findsOneWidget);
     });
 
@@ -508,7 +428,7 @@ void main() {
       await pumpPage(tester, ThemeMode.system);
       await tester.pumpAndSettle();
 
-      expect(find.text('Match system colour'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('Match system colour'), 300, scrollable: find.byType(Scrollable).first);
       await tester.tap(find.text('Match system colour'));
       await tester.pumpAndSettle();
 
@@ -529,6 +449,7 @@ void main() {
       await tester.pumpAndSettle();
       clearInteractions(themeBloc);
 
+      await tester.scrollUntilVisible(find.text('Match system colour'), 300, scrollable: find.byType(Scrollable).first);
       await tester.tap(find.text('Match system colour'));
       await tester.pumpAndSettle();
 
@@ -541,6 +462,7 @@ void main() {
       await pumpPage(tester, ThemeMode.light);
       await tester.pumpAndSettle();
 
+      await tester.ensureVisible(find.bySemanticsLabel('Accent colour 2 of 22'));
       await tester.tap(find.bySemanticsLabel('Accent colour 2 of 22'));
       await tester.pumpAndSettle();
 

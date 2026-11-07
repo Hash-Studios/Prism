@@ -202,19 +202,16 @@ Future<void> _flight(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 40));
 }
 
-void _expectLocked(
-  WidgetTester tester, {
-  required String below,
-  required String above,
-  required Rect tile,
-  required Rect marker,
-}) {
-  final art = tester.getRect(find.byKey(_art(above)));
+/// The page behind, mid-flight, stepped back around the centre of the measured [tile]: the marker on it shrinks toward
+/// that centre. A wrong source measurement moves the centre.
+void _expectSteppedBack(WidgetTester tester, {required String below, required Rect tile, required Rect marker}) {
   final actual = tester.getRect(find.byKey(_marker(below)));
-  final scale = art.width / tile.width;
-  expect(actual.left, closeTo(art.left + (marker.left - tile.left) * scale, 0.1));
-  expect(actual.top, closeTo(art.top + (marker.top - tile.top) * scale, 0.1));
-  expect(actual.width, closeTo(marker.width * scale, 0.1));
+  final scale = actual.width / marker.width;
+  expect(scale, lessThan(1));
+  expect(scale, greaterThanOrEqualTo(0.94 - 1e-9));
+  final Offset c = tile.center;
+  expect(actual.left, closeTo(c.dx + (marker.left - c.dx) * scale, 0.1));
+  expect(actual.top, closeTo(c.dy + (marker.top - c.dy) * scale, 0.1));
 }
 
 void main() {
@@ -233,11 +230,11 @@ void main() {
       final marker = tester.getRect(find.byKey(_marker('First')));
       unawaited(router.push<void>(const PageRouteInfo<void>('Second')));
       await _flight(tester);
-      _expectLocked(tester, below: 'First', above: 'Second', tile: tile, marker: marker);
+      _expectSteppedBack(tester, below: 'First', tile: tile, marker: marker);
       await tester.pumpAndSettle();
       unawaited(router.maybePop<void>());
       await _flight(tester);
-      _expectLocked(tester, below: 'First', above: 'Second', tile: tile, marker: marker);
+      _expectSteppedBack(tester, below: 'First', tile: tile, marker: marker);
       await tester.pumpAndSettle();
       expect(router.pages['First'], same(state));
       expect(state.scroll.offset, 30);
@@ -253,11 +250,11 @@ void main() {
       expect(tile.topLeft, const Offset(72, 168));
       unawaited(router.push<void>(const PageRouteInfo<void>('First')));
       await _flight(tester);
-      _expectLocked(tester, below: 'Grid', above: 'First', tile: tile, marker: marker);
+      _expectSteppedBack(tester, below: 'Grid', tile: tile, marker: marker);
       await tester.pumpAndSettle();
       unawaited(router.maybePop<void>());
       await _flight(tester);
-      _expectLocked(tester, below: 'Grid', above: 'First', tile: tile, marker: marker);
+      _expectSteppedBack(tester, below: 'Grid', tile: tile, marker: marker);
       await tester.pumpAndSettle();
       expect(router.pages['Grid'], same(state));
       expect(tester.getRect(find.byKey(_tile('Grid'))), tile);
@@ -275,11 +272,11 @@ void main() {
       final marker = tester.getRect(find.byKey(_marker('Fullscreen')));
       unawaited(router.push<void>(const PageRouteInfo<void>('First')));
       await _flight(tester);
-      _expectLocked(tester, below: 'Fullscreen', above: 'First', tile: tile, marker: marker);
+      _expectSteppedBack(tester, below: 'Fullscreen', tile: tile, marker: marker);
       await tester.pumpAndSettle();
       unawaited(router.maybePop<void>());
       await _flight(tester);
-      _expectLocked(tester, below: 'Fullscreen', above: 'First', tile: tile, marker: marker);
+      _expectSteppedBack(tester, below: 'Fullscreen', tile: tile, marker: marker);
       await tester.pumpAndSettle();
       expect(router.current.name, 'Fullscreen');
       expect(tester.getRect(find.byKey(_tile('Fullscreen'))), tile);
@@ -296,10 +293,9 @@ void main() {
     await tester.pumpAndSettle();
     unawaited(router.maybePop<void>());
     await _flight(tester);
-    _expectLocked(
+    _expectSteppedBack(
       tester,
       below: 'Replacement',
-      above: 'First',
       tile: const Rect.fromLTWH(180, 240, 80, 110),
       marker: const Rect.fromLTWH(200, 320, 100, 48),
     );

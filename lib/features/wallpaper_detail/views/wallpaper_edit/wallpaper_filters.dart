@@ -4,7 +4,11 @@ import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/color_matri
 sealed class WallpaperFilter {
   const WallpaperFilter(this.name);
 
+  /// The stable id. It goes into analytics and coin receipts, so it never changes.
   final String name;
+
+  /// The name shown to people: "AddictiveBlue" reads as "Addictive Blue".
+  String get label => name.replaceAllMapped(RegExp('([a-z])([A-Z])'), (m) => '${m[1]} ${m[2]}');
 }
 
 /// A per-pixel colour change. Stacks by matrix product, so any number of them costs one GPU pass.

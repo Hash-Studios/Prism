@@ -3,9 +3,10 @@ import 'dart:async';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/moods/biz/gallery_walls_cubit.dart';
 import 'package:Prism/features/moods/views/pages/gallery_screen.dart';
 import 'package:Prism/features/wall_requests/biz/wall_requests_cubit.dart';
@@ -15,6 +16,7 @@ import 'package:Prism/features/wall_requests/views/widgets/wall_request_row.dart
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -32,6 +34,7 @@ WallRequest _request({
   String text = 'dark minimal mountains',
   WallRequestStatus status = WallRequestStatus.open,
   String filledWallId = '',
+  String filledWallThumb = '',
   WallRequestFiller? filledBy,
 }) => WallRequest(
   id: id,
@@ -46,6 +49,7 @@ WallRequest _request({
   voted: false,
   hidden: false,
   filledWallId: filledWallId,
+  filledWallThumb: filledWallThumb,
   filledBy: filledBy,
 );
 
@@ -119,8 +123,81 @@ void main() {
 
     verify(() => cubit.load(WallRequestTab.top)).called(1);
     expect(find.byType(WallRequestRow), findsNWidgets(2));
-    expect(find.text('dark minimal mountains'), findsOneWidget);
-    expect(find.text('neon city rain'), findsOneWidget);
+    expect(find.text('Dark minimal mountains'), findsOneWidget);
+    expect(find.text('Neon city rain'), findsOneWidget);
+  });
+
+  testWidgets('a short list has its Request button in the list and no pinned bar, a long list pins it', (tester) async {
+    Future<void> pumpTop(int rows) async {
+      await tester.pumpWidget(const SizedBox());
+      stub(
+        _state(
+          tabs: <WallRequestTab, WallRequestsTabState>{
+            WallRequestTab.top: WallRequestsTabLoaded(<WallRequest>[
+              for (int i = 0; i < rows; i++) _request(id: 'r$i', text: 'wall $i'),
+            ]),
+          },
+        ),
+      );
+      await pumpPage(tester);
+    }
+
+    Widget? pinnedBar() => tester
+        .widget<Scaffold>(find.descendant(of: find.byType(PrismPage), matching: find.byType(Scaffold)))
+        .bottomNavigationBar;
+
+    await pumpTop(2);
+    expect(pinnedBar(), isNull);
+    expect(find.text('Request a wall'), findsOneWidget);
+    expect(find.text("Ask for the wall you can't find. Others can upvote it."), findsOneWidget);
+
+    await pumpTop(4);
+    expect(pinnedBar(), isNotNull);
+    expect(find.text('Request a wall'), findsOneWidget);
+    expect(find.text("Ask for the wall you can't find. Others can upvote it."), findsNothing);
+  });
+
+  testWidgets('a short list shows filled walls under it and See all opens the Filled tab', (tester) async {
+    stub(
+      _state(
+        tabs: <WallRequestTab, WallRequestsTabState>{
+          WallRequestTab.top: WallRequestsTabLoaded(<WallRequest>[_request()]),
+          WallRequestTab.filled: WallRequestsTabLoaded(<WallRequest>[
+            for (int i = 0; i < 8; i++)
+              _request(
+                id: 'f$i',
+                status: WallRequestStatus.filled,
+                filledWallId: 'w$i',
+                filledWallThumb: 'https://example.com/$i.jpg',
+              ),
+          ]),
+        },
+      ),
+    );
+    await pumpPage(tester);
+    await tester.scrollUntilVisible(find.text('See all'), 200, scrollable: find.byType(Scrollable).last);
+
+    expect(find.text('Filled'), findsNWidgets(2));
+    expect(find.byType(CachedNetworkImage, skipOffstage: false), findsNWidgets(6));
+    await tester.tap(find.text('See all'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(WallRequestRow), findsAtLeastNWidgets(4));
+  });
+
+  testWidgets('a short list with no filled walls shows no extra section', (tester) async {
+    stub(
+      _state(
+        tabs: <WallRequestTab, WallRequestsTabState>{
+          WallRequestTab.top: WallRequestsTabLoaded(<WallRequest>[_request()]),
+          WallRequestTab.filled: const WallRequestsTabLoaded(<WallRequest>[]),
+        },
+      ),
+    );
+    await pumpPage(tester);
+
+    expect(find.text('See all'), findsNothing);
+    expect(find.byType(CachedNetworkImage), findsNothing);
   });
 
   testWidgets('switching to Filled loads it and shows the filled wall thumbnail', (tester) async {
@@ -147,9 +224,30 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     verify(() => cubit.load(WallRequestTab.filled)).called(1);
-    expect(find.text('forest cabin'), findsOneWidget);
+    expect(find.text('Forest cabin'), findsOneWidget);
     expect(find.bySemanticsLabel('Open the wall'), findsOneWidget);
     semantics.dispose();
+  });
+
+  testWidgets('changing tab plays one selection haptic, tapping the same tab plays none', (tester) async {
+    const MethodChannel channel = MethodChannel('prism/haptics');
+    final List<String> played = <String>[];
+    PrismHaptics.enabled = true;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (MethodCall call) async {
+      played.add(call.arguments as String);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null));
+    stub(_state());
+    await pumpPage(tester);
+
+    await tester.tap(find.text('Top'));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(played, isEmpty);
+
+    await tester.tap(find.text('New'));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(played, <String>['selection']);
   });
 
   testWidgets('a failed tab shows a retry that loads it again', (tester) async {

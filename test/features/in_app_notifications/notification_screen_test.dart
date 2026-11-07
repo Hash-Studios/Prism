@@ -93,11 +93,15 @@ void main() {
     ).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[unread.copyWith(read: true), read]));
     await pumpScreen(tester);
 
-    await tester.tap(find.byTooltip('Mark all as read'));
+    await tester.tap(find.byTooltip('More options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mark all as read'));
     await tester.pumpAndSettle();
 
     verify(() => markAll(const NoParams())).called(1);
-    expect(find.byTooltip('Mark all as read'), findsNothing);
+    await tester.tap(find.byTooltip('More options'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mark all as read'), findsNothing);
   });
 
   testWidgets('swiping deletes without a dialog and Undo restores the notification', (tester) async {
@@ -125,7 +129,9 @@ void main() {
   testWidgets('Clear inbox asks first, and Cancel keeps every notification', (tester) async {
     await pumpScreen(tester);
 
-    await tester.tap(find.byTooltip('Clear inbox'));
+    await tester.tap(find.byTooltip('More options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear inbox'));
     await tester.pumpAndSettle();
 
     expect(find.text('Clear 2 notifications?'), findsOneWidget);
@@ -142,7 +148,9 @@ void main() {
     when(() => restore(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[unread, read]));
     await pumpScreen(tester);
 
-    await tester.tap(find.byTooltip('Clear inbox'));
+    await tester.tap(find.byTooltip('More options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear inbox'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(PrismButton, 'Clear inbox'));
     // The empty state animates for ever, so pumpAndSettle would not finish.
@@ -173,7 +181,9 @@ void main() {
     when(() => restore(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[late, unread, read]));
     await pumpScreen(tester);
 
-    await tester.tap(find.byTooltip('Clear inbox'));
+    await tester.tap(find.byTooltip('More options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear inbox'));
     await tester.pumpAndSettle();
     when(() => fetch(any())).thenAnswer((_) async => Result.success(<InAppNotificationEntity>[late, unread, read]));
     getIt<InAppNotificationsBloc>().add(const InAppNotificationsEvent.localReloadRequested());

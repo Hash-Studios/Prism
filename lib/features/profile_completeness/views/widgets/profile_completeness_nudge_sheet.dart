@@ -54,7 +54,7 @@ class _ProfileCompletenessNudgeSheet extends StatelessWidget {
         children: <Widget>[
           for (final ProfileCompletenessStep step in status.missingSteps)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(vertical: PrismSpace.xxs),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -189,6 +190,7 @@ class DayNightScreen extends StatelessWidget {
   }
 
   Future<void> _pickStart(BuildContext context, DayNightBloc bloc, DayNightTimes times, DayNightSlot slot) async {
+    PrismHaptics.tap();
     final DayTime current = times.startOf(slot);
     final TimeOfDay? picked = await showTimePicker(
       context: context,

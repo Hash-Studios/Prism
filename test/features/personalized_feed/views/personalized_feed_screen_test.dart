@@ -68,8 +68,10 @@ import 'package:Prism/features/wallpaper_history/views/widgets/pick_up_row.dart'
 import 'package:Prism/features/weekly_challenges/biz/weekly_challenges_cubit.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -279,6 +281,7 @@ void main() {
   Future<void> pumpScreen(
     WidgetTester tester, {
     bool disableAnimations = false,
+    ValueListenable<bool>? reduceMotionSignal,
     bool tickersEnabled = true,
     WallOfTheDayEntity? wotdEntity,
     VoidCallback? onTuneTap,
@@ -311,10 +314,16 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
 
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(size: mediaSize, disableAnimations: disableAnimations),
-          child: favouriteTestBuilder(context, child),
-        ),
+        builder: (context, child) {
+          Widget withMotion(bool reduceMotion) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(size: mediaSize, disableAnimations: reduceMotion),
+            child: favouriteTestBuilder(context, child),
+          );
+          final ValueListenable<bool>? signal = reduceMotionSignal;
+          return signal == null
+              ? withMotion(disableAnimations)
+              : ValueListenableBuilder<bool>(valueListenable: signal, builder: (_, value, _) => withMotion(value));
+        },
         home: Scaffold(
           body: TickerMode(
             enabled: tickersEnabled,
@@ -781,6 +790,145 @@ void main() {
     expect(find.byType(FeedCarousel), findsNothing);
   });
 
+  testWidgets('a tab change slides the old content out and the new content in at the same time', (tester) async {
+    await pumpScreen(tester);
+    final Finder outgoing = find.byKey(const ValueKey<String>('home-tab-outgoing'));
+    double incomingOpacity() => tester.widget<SliverFadeTransition>(find.byType(SliverFadeTransition)).opacity.value;
+    double outgoingOpacity() =>
+        tester.widget<Opacity>(find.descendant(of: outgoing, matching: find.byType(Opacity))).opacity;
+    double outgoingDx() => tester.widget<Transform>(outgoing).transform.getTranslation().x;
+    Finder latestTile() => find.descendant(of: find.byType(PagedChipSliver), matching: find.byType(FeedWallTile)).first;
+    expect(outgoing, findsNothing);
+
+    await tapTab(tester, 'Latest');
+    await tester.pump();
+    expect(find.byType(FeedCarousel), findsNothing, reason: 'the new content shows from the first frame');
+    expect(outgoing, findsOneWidget, reason: 'a picture of the old content stays over it');
+
+    final List<double> lastDx = <double>[];
+    for (int frame = 0; frame < 5; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(incomingOpacity(), inExclusiveRange(0, 1));
+      expect(outgoingOpacity(), inExclusiveRange(0, 1));
+      expect(incomingOpacity() + outgoingOpacity(), closeTo(1, 0.001), reason: 'no near-blank frame');
+      expect(outgoingDx(), inInclusiveRange(-48, 0), reason: 'Latest is to the right, so the old content goes left');
+      lastDx.add(outgoingDx());
+    }
+    expect(lastDx.last, lessThan(lastDx.first));
+    await tester.pump();
+    final double movingX = tester.getTopLeft(latestTile()).dx;
+
+    await _settle(tester);
+    expect(outgoing, findsNothing);
+    expect(incomingOpacity(), 1);
+    final double restX = tester.getTopLeft(latestTile()).dx;
+    expect(movingX - restX, inExclusiveRange(0, 48), reason: 'the new content came in from the right');
+
+    await tapTab(tester, 'Following');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 40));
+    expect(outgoingDx(), greaterThan(0), reason: 'Following is to the left, so the old content goes right');
+    await _settle(tester);
+  });
+
+  testWidgets('a tab change takes about 320 ms and is still visibly moving halfway through', (tester) async {
+    await pumpScreen(tester);
+    await tapTab(tester, 'Latest');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 160));
+    final Finder outgoing = find.byKey(const ValueKey<String>('home-tab-outgoing'));
+    expect(outgoing, findsOneWidget);
+    // Halfway, the slide must still be under way: a curve that front-loads nearly all of it reads as a cut on a
+    // 60 Hz screen.
+    expect(tester.widget<Transform>(outgoing).transform.getTranslation().x.abs(), lessThan(46));
+    await tester.pump(const Duration(milliseconds: 140));
+    expect(outgoing, findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 30));
+    await tester.pump();
+    expect(find.byKey(const ValueKey<String>('home-tab-outgoing')), findsNothing);
+    expect(tester.widget<SliverFadeTransition>(find.byType(SliverFadeTransition)).opacity.value, 1);
+  });
+
+  testWidgets('with reduce motion on, a tab change swaps the content at once', (tester) async {
+    await pumpScreen(tester, disableAnimations: true);
+
+    await tapTab(tester, 'Latest');
+    await tester.pump();
+
+    expect(find.byType(FeedCarousel), findsNothing);
+    expect(tester.widget<SliverFadeTransition>(find.byType(SliverFadeTransition)).opacity.value, 1);
+    expect(find.byKey(const ValueKey<String>('home-tab-outgoing')), findsNothing, reason: 'no slide, no picture');
+  });
+
+  testWidgets('the carousel does not turn for 5 s after a touch', (tester) async {
+    await pumpScreen(tester);
+    int page() => tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current;
+    Future<void> wait(Duration total) async {
+      for (Duration d = Duration.zero; d < total; d += const Duration(milliseconds: 100)) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
+    // Count from the last rebuild of the carousel: it settles 1 s, then the next turn is due in 5 s.
+    await wait(const Duration(milliseconds: 5800));
+    final int start = page();
+    await wait(const Duration(milliseconds: 3500));
+    expect(page(), start);
+
+    // Below the carousel: a touch on the carousel already pauses it by itself.
+    final TestGesture touch = await tester.startGesture(
+      Offset(4, tester.getRect(find.byType(FeedCarousel)).bottom + 200),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    await touch.up();
+    await wait(const Duration(milliseconds: 4500));
+    expect(page(), start, reason: 'the touch restarted the countdown');
+
+    // 1 s of settle after the lift, then the 5 s interval.
+    await wait(const Duration(seconds: 2));
+    expect(page(), isNot(start));
+  });
+
+  testWidgets('a touch released between frames still pauses the carousel', (tester) async {
+    await pumpScreen(tester);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+    bool autoPlay() => tester.widget<CarouselSlider>(find.byType(CarouselSlider)).options.autoPlay;
+    expect(autoPlay(), isTrue);
+
+    final TestGesture touch = await tester.startGesture(
+      Offset(4, tester.getRect(find.byType(FeedCarousel)).bottom + 200),
+    );
+    await touch.up();
+    await tester.pump();
+    await tester.pump();
+    expect(autoPlay(), isFalse);
+    await tester.pump(const Duration(milliseconds: 900));
+    expect(autoPlay(), isFalse);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump();
+    expect(autoPlay(), isTrue);
+  });
+
+  testWidgets('a swipe on the carousel still turns its page while the touch holds the auto-advance', (tester) async {
+    await pumpScreen(tester);
+    int page() => tester.widget<FeedCarouselDots>(find.byType(FeedCarouselDots)).current;
+    final int start = page();
+
+    await tester.fling(find.byType(FeedCarousel), const Offset(-300, 0), 1000);
+    for (int i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(page(), isNot(start));
+    expect(
+      tester
+          .widget<TickerMode>(find.ancestor(of: find.byType(FeedCarousel), matching: find.byType(TickerMode)).first)
+          .enabled,
+      isTrue,
+    );
+  });
+
   testWidgets('the home loads the trending week list once at start, and has no Trending strip', (tester) async {
     await pumpScreen(tester);
 
@@ -811,8 +959,8 @@ void main() {
     expect(find.byType(FeedCarousel), findsNothing);
     final Rect first = tester.getRect(find.byType(WallpaperTile).first);
     final Rect second = tester.getRect(find.byType(WallpaperTile).at(1));
-    expect(first.left, 4, reason: 'a 4 px side margin');
-    expect(second.left - first.right, 4, reason: 'a 4 px gap');
+    expect(first.left, 16, reason: 'a 16 px side margin');
+    expect(second.left - first.right, 8, reason: 'an 8 px gap');
   });
 
   testWidgets('an empty Trending tab says nothing is trending', (tester) async {
@@ -1069,6 +1217,20 @@ void main() {
     verify(() => feedRepository.fetchPopular()).called(3);
   });
 
+  testWidgets('turning on reduce motion ends an in-progress tab transition', (tester) async {
+    final ValueNotifier<bool> reduceMotion = ValueNotifier<bool>(false);
+    addTearDown(reduceMotion.dispose);
+    await pumpScreen(tester, reduceMotionSignal: reduceMotion);
+
+    await tapTab(tester, 'Latest');
+    await tester.pump(const Duration(milliseconds: 40));
+    expect(find.byKey(const ValueKey<String>('home-tab-outgoing')), findsOneWidget);
+
+    reduceMotion.value = true;
+    await tester.pump();
+    expect(find.byKey(const ValueKey<String>('home-tab-outgoing')), findsNothing);
+  });
+
   testWidgets('a tab is loaded once, however often the user comes back to it', (tester) async {
     await pumpScreen(tester);
 
@@ -1199,6 +1361,9 @@ void main() {
 
   testWidgets('Show less like this gives an Undo that brings the wallpaper back', (tester) async {
     await pumpScreen(tester);
+    // The Undo lives on the in-app toast, which needs the app's overlay.
+    toasts.overlayResolver = () => tester.state<OverlayState>(find.byType(Overlay).first);
+    addTearDown(() => toasts.overlayResolver = null);
     final int before = find.byType(WallpaperTile).evaluate().length;
     final gesture = await tester.startGesture(tester.getCenter(find.byType(WallpaperTile).first));
     await tester.pump(const Duration(milliseconds: 600));
@@ -1366,7 +1531,7 @@ void main() {
     verify(() => paged.add(const PagedFeedEvent.fetchMoreRequested())).called(1);
   });
 
-  testWidgets('the carousel shows Wall of the Day first, inset by 4 px, with the dots inside the image', (
+  testWidgets('the carousel shows Wall of the Day first, inset by 16 px, with the dots inside the image', (
     tester,
   ) async {
     await pumpScreen(
@@ -1378,32 +1543,32 @@ void main() {
     expect(find.text('by Ana'), findsOneWidget);
     final Rect card = tester.getRect(find.byType(FeedHeroCard).first);
     final Rect dots = tester.getRect(find.byType(FeedCarouselDots));
-    expect(card.left, 4);
-    expect(card.width, 592);
-    expect(card.height, closeTo(355.2, 0.01));
+    expect(card.left, 16);
+    expect(card.width, 568);
+    expect(card.height, closeTo(340.8, 0.01));
     expect(dots.top, greaterThanOrEqualTo(card.top));
     expect(dots.bottom, lessThanOrEqualTo(card.bottom));
   });
 
-  testWidgets('the For you grid has a 4 px side margin, 4 px gaps and rounded tiles', (tester) async {
+  testWidgets('the For you grid has a 16 px side margin, 8 px gaps and rounded tiles', (tester) async {
     await pumpScreen(tester);
 
     final List<Rect> tiles = [for (int i = 0; i < 4; i++) tester.getRect(find.byType(FeedWallTile).at(i))];
-    expect(tiles[0].left, 4);
-    expect(tiles[2].right, closeTo(596, 0.01));
-    expect(tiles[1].left - tiles[0].right, closeTo(4, 0.01));
-    expect(tiles[3].top - tiles[0].bottom, closeTo(4, 0.01));
+    expect(tiles[0].left, 16);
+    expect(tiles[2].right, closeTo(584, 0.01));
+    expect(tiles[1].left - tiles[0].right, closeTo(8, 0.01));
+    expect(tiles[3].top - tiles[0].bottom, closeTo(8, 0.01));
     expect(tester.widget<PrismWallTile>(find.byType(PrismWallTile).first).borderRadius, BorderRadius.circular(12));
   });
 
-  testWidgets('the carousel and the first grid row are 4 px apart', (tester) async {
+  testWidgets('the carousel and the first grid row are 8 px apart', (tester) async {
     await pumpScreen(tester);
 
     final double carouselBottom = tester.getRect(find.byType(CarouselSlider)).bottom;
-    expect(tester.getRect(find.byType(FeedWallTile).first).top - carouselBottom, closeTo(4, 0.01));
+    expect(tester.getRect(find.byType(FeedWallTile).first).top - carouselBottom, closeTo(8, 0.01));
   });
 
-  testWidgets('the Latest grid has a 4 px side margin, 4 px gaps and rounded tiles', (tester) async {
+  testWidgets('the Latest grid has a 16 px side margin, 8 px gaps and rounded tiles', (tester) async {
     when(
       () => prismRepository.fetchFeed(refresh: any(named: 'refresh')),
     ).thenAnswer((_) async => Result.success(<PrismWallpaper>[_wall('l1'), _wall('l2'), _wall('l3'), _wall('l4')]));
@@ -1413,9 +1578,9 @@ void main() {
     await _settle(tester);
 
     final List<Rect> tiles = [for (int i = 0; i < 4; i++) tester.getRect(find.byType(FeedWallTile).at(i))];
-    expect(tiles[0].left, 4);
-    expect(tiles[1].left - tiles[0].right, closeTo(4, 0.01));
-    expect(tiles[3].top - tiles[0].bottom, closeTo(4, 0.01));
+    expect(tiles[0].left, 16);
+    expect(tiles[1].left - tiles[0].right, closeTo(8, 0.01));
+    expect(tiles[3].top - tiles[0].bottom, closeTo(8, 0.01));
     expect(tester.widget<PrismWallTile>(find.byType(PrismWallTile).first).borderRadius, BorderRadius.circular(12));
   });
 
@@ -1571,6 +1736,9 @@ void main() {
 
     testWidgets('turns pages by itself while the feed is on screen', (tester) async {
       await pumpScreen(tester);
+      // A carousel that just showed settles for 1 s first.
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
 
       expect(autoPlay(tester), isTrue);
     });
@@ -1605,16 +1773,16 @@ void main() {
       expect(autoPlay(tester), isTrue);
     });
 
-    testWidgets('decodes its wallpaper tiles at the carousel height', (tester) async {
+    testWidgets('decodes its banner tile at the carousel height', (tester) async {
       await pumpScreen(tester);
 
       final Iterable<PrismImageTile> tiles = tester.widgetList<PrismImageTile>(
         find.descendant(of: find.byType(CarouselSlider), matching: find.byType(PrismImageTile)),
       );
 
-      // 600 px wide at a pixel ratio of 1, so the page is 592 px wide and 0.6 as tall: 355.2 px.
+      // 600 px wide at a pixel ratio of 1, so the page is 568 px wide and 0.6 as tall: 340.8 px.
       expect(tiles, isNotEmpty);
-      expect(tiles.map((tile) => tile.memCacheHeight), everyElement(355));
+      expect(tiles.map((tile) => tile.memCacheHeight), everyElement(341));
     });
   });
 
@@ -1636,18 +1804,18 @@ void main() {
     expect(tester.widget<LoadingCards>(find.byType(LoadingCards)).useFeedLayout, isTrue);
     expect(tab('Latest'), findsOneWidget, reason: 'the tabs are usable while it loads');
     final Finder bone = find.descendant(of: find.byType(PrismSkeleton), matching: find.byType(PrismBone));
-    expect(tester.getRect(bone).left, 4);
-    expect(tester.getSize(bone).width, 592);
-    expect(tester.getSize(bone).height, closeTo(355.2, 0.01));
+    expect(tester.getRect(bone).left, 16);
+    expect(tester.getSize(bone).width, 568);
+    expect(tester.getSize(bone).height, closeTo(340.8, 0.01));
   });
 
   for (final viewport in <({String name, Size size, double cardWidth, double cardHeight})>[
-    (name: 'narrow phone', size: const Size(320, 480), cardWidth: 312, cardHeight: 187.2),
+    (name: 'narrow phone', size: const Size(320, 480), cardWidth: 288, cardHeight: 172.8),
     (
       name: 'Android emulator',
       size: const Size(1080 / 2.625, 2400 / 2.625),
-      cardWidth: 403.428571,
-      cardHeight: 242.057143,
+      cardWidth: 379.428571,
+      cardHeight: 227.657143,
     ),
   ]) {
     for (final bool emptyMedia in <bool>[true, false]) {
@@ -1662,7 +1830,7 @@ void main() {
         expect(tester.takeException(), isNull);
         final Finder bone = find.descendant(of: find.byType(PrismSkeleton), matching: find.byType(PrismBone));
         final Rect placeholder = tester.getRect(bone);
-        expect(placeholder.left, 4);
+        expect(placeholder.left, 16);
         expect(placeholder.width, closeTo(viewport.cardWidth, 0.01));
         expect(placeholder.height, closeTo(viewport.cardHeight, 0.01));
         expect(placeholder.top, greaterThanOrEqualTo(0));

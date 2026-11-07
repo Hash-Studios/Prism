@@ -159,6 +159,7 @@ ThemeData _theme({
 }) {
   return _baseTheme(brightness, background).withPrismScheme(
     prismColorScheme(brightness: brightness, background: background, foreground: foreground, accent: accent),
+    sheetOnSurface: brightness == Brightness.light,
   );
 }
 
@@ -267,7 +268,11 @@ ThemeData kDarkTheme11 = _darkTheme(
 /// Applies a Prism [ColorScheme] and the component defaults that follow from it. The accent picker calls this again
 /// with the user's accent, so every component default tracks the accent too.
 extension PrismThemeData on ThemeData {
-  ThemeData withPrismScheme(ColorScheme cs) {
+  /// [sheetOnSurface] fills bottom sheets with `surface` instead of `surfaceContainerLow`, so cards inside a sheet
+  /// read as grouped lists. The light Prism themes pass true. Left null, a re-apply keeps the choice of this theme.
+  ThemeData withPrismScheme(ColorScheme cs, {bool? sheetOnSurface}) {
+    final bool onSurface = sheetOnSurface ?? bottomSheetTheme.modalBackgroundColor == colorScheme.surface;
+    final Color sheetFill = onSurface ? cs.surface : cs.surfaceContainerLow;
     final Color hairline = cs.onSurface.withValues(alpha: 0.08);
     final TextStyle body = TextStyle(
       fontFamily: PrismFonts.proximaNova,
@@ -321,7 +326,7 @@ extension PrismThemeData on ThemeData {
             backgroundColor: cs.primary,
             foregroundColor: cs.onPrimary,
             disabledBackgroundColor: cs.onSurface.withValues(alpha: 0.08),
-            disabledForegroundColor: cs.onSurface.withValues(alpha: 0.38),
+            disabledForegroundColor: cs.onSurface.withValues(alpha: 0.5),
             minimumSize: buttonSize,
             padding: buttonPadding,
             shape: pill,
@@ -362,10 +367,10 @@ extension PrismThemeData on ThemeData {
           filled: true,
           fillColor: cs.surfaceContainerHigh,
           contentPadding: const EdgeInsets.symmetric(horizontal: PrismSpace.md, vertical: 15),
-          hintStyle: body.copyWith(fontSize: 15, color: cs.onSurface.withValues(alpha: 0.45)),
+          hintStyle: body.copyWith(fontSize: 15, color: cs.onSurfaceVariant),
           labelStyle: body.copyWith(fontSize: 15),
-          helperStyle: body.copyWith(fontSize: 12),
-          errorStyle: body.copyWith(fontSize: 12, color: cs.error),
+          helperStyle: body.copyWith(fontSize: 13),
+          errorStyle: body.copyWith(fontSize: 13, color: cs.error),
           prefixIconColor: cs.onSurfaceVariant,
           suffixIconColor: cs.onSurfaceVariant,
           border: fieldBorder(Colors.transparent),
@@ -381,8 +386,8 @@ extension PrismThemeData on ThemeData {
           selectionHandleColor: cs.primary,
         ),
         bottomSheetTheme: BottomSheetThemeData(
-          backgroundColor: cs.surfaceContainerLow,
-          modalBackgroundColor: cs.surfaceContainerLow,
+          backgroundColor: sheetFill,
+          modalBackgroundColor: sheetFill,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           modalElevation: 0,
@@ -432,7 +437,7 @@ extension PrismThemeData on ThemeData {
             (states) => states.contains(WidgetState.selected) ? cs.onPrimary : cs.onSurface.withValues(alpha: 0.7),
           ),
           trackColor: WidgetStateProperty.resolveWith(
-            (states) => states.contains(WidgetState.selected) ? cs.primary : cs.onSurface.withValues(alpha: 0.12),
+            (states) => states.contains(WidgetState.selected) ? cs.primary : cs.onSurface.withValues(alpha: 0.18),
           ),
           trackOutlineColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
         ),
@@ -445,7 +450,7 @@ extension PrismThemeData on ThemeData {
         ),
         tabBarTheme: TabBarThemeData(
           labelColor: cs.onSurface,
-          unselectedLabelColor: cs.onSurface.withValues(alpha: 0.55),
+          unselectedLabelColor: cs.onSurface.withValues(alpha: 0.62),
           indicatorColor: cs.primary,
           dividerColor: Colors.transparent,
           labelStyle: PrismTextStyles.button,
@@ -453,7 +458,7 @@ extension PrismThemeData on ThemeData {
         ),
         tooltipTheme: TooltipThemeData(
           decoration: BoxDecoration(color: cs.inverseSurface, borderRadius: BorderRadius.circular(PrismRadius.xs)),
-          textStyle: body.copyWith(fontSize: 12, color: cs.onInverseSurface),
+          textStyle: body.copyWith(fontSize: 13, color: cs.onInverseSurface),
           waitDuration: const Duration(milliseconds: 400),
           exitDuration: PrismDurations.press,
         ),

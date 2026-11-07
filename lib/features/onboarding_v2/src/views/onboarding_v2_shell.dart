@@ -20,6 +20,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/ai_target_size.dart';
 import 'package:Prism/core/utils/edge_to_edge_overlay_style.dart';
+import 'package:Prism/core/widgets/prism/prism_toast.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/ai_wallpaper/views/ai_wallpaper_helpers.dart';
 import 'package:Prism/features/onboarding_v2/src/biz/onboarding_v2_bloc.j.dart';
@@ -195,24 +196,20 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
       showPhotosPermissionDenied(context);
       return;
     }
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    if (messenger == null) return;
+    final OverlayState? overlay = Overlay.maybeOf(context);
+    if (overlay == null) return;
     PrismHaptics.error();
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            defaultTargetPlatform == TargetPlatform.android
-                ? context.l10n.onboardingFirstWallpaperSetFailed
-                : context.l10n.onboardingFirstWallpaperSaveFailed,
-          ),
-          action: SnackBarAction(
-            label: context.l10n.onboardingRecoveryRetry,
-            onPressed: () => _bloc.add(const OnboardingV2Event.firstWallpaperActionRequested()),
-          ),
-        ),
-      );
+    showPrismToast(
+      overlay,
+      defaultTargetPlatform == TargetPlatform.android
+          ? context.l10n.onboardingFirstWallpaperSetFailed
+          : context.l10n.onboardingFirstWallpaperSaveFailed,
+      kind: PrismToastKind.error,
+      action: (
+        label: context.l10n.onboardingRecoveryRetry,
+        onPressed: () => _bloc.add(const OnboardingV2Event.firstWallpaperActionRequested()),
+      ),
+    );
   }
 
   Future<void> _continueAfterFirstWallpaper(BuildContext context) async {
@@ -247,7 +244,8 @@ class _OnboardingV2ShellState extends State<OnboardingV2Shell> {
         _bloc.add(const OnboardingV2Event.authCompleted());
       }
     } catch (error) {
-      if (mounted) toasts.error(errorMessage(error));
+      if (!mounted) return;
+      toasts.error(errorMessage(error));
       _bloc.add(const OnboardingV2Event.authLoadingChanged(isLoading: false));
     }
   }

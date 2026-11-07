@@ -4,12 +4,14 @@ import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/coins/economy_state.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/features/draw/biz/bloc/draw_bloc.j.dart';
 import 'package:Prism/features/draw/domain/entities/draw_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -58,7 +60,7 @@ class DrawPage extends StatelessWidget implements AutoRouteWrapper {
                 }
                 return PrismSkeleton.rows(rows: 4, avatar: false);
               }
-              return RefreshIndicator(
+              return PrismRefresh(
                 onRefresh: () => _refresh(context),
                 child: _DrawBody(state: state, draw: draw),
               );
@@ -192,7 +194,10 @@ class _DrawBody extends StatelessWidget {
             PrismRow(
               icon: Icons.gavel_rounded,
               title: context.l10n.economyDrawOfficialRules,
-              onTap: () => unawaited(openPrismLink(context, drawRulesUrl)),
+              onTap: () {
+                PrismHaptics.tap();
+                unawaited(openPrismLink(context, drawRulesUrl));
+              },
             ),
           ],
         ),

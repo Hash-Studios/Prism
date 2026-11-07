@@ -241,11 +241,14 @@ class _FoldersGridState extends State<FoldersGrid> {
         }
         return _grid(
           context,
-          itemCount: owned.length,
+          itemCount: owned.length + 1,
           shared: shared,
           followed: followed,
           card: (index, width) {
-            final FolderEntity folder = owned[index];
+            if (index == 0) {
+              return _NewFolderTile(size: width, onTap: () => unawaited(createFolderFromLibrary(context)));
+            }
+            final FolderEntity folder = owned[index - 1];
             return FolderCard(
               key: ValueKey<String>(folder.id),
               name: folder.name,
@@ -259,6 +262,50 @@ class _FoldersGridState extends State<FoldersGrid> {
           },
         );
       },
+    );
+  }
+}
+
+/// The first tile of the owner's folders: a dashed-look square that starts a new folder.
+class _NewFolderTile extends StatelessWidget {
+  const _NewFolderTile({required this.size, required this.onTap});
+
+  final double size;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final String label = context.l10n.foldersNewFolder;
+    return PressScale(
+      child: Semantics(
+        button: true,
+        label: label,
+        excludeSemantics: true,
+        onTap: onTap,
+        child: GestureDetector(
+          key: const ValueKey<String>('folders-new-folder-tile'),
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  color: cs.onSurface.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(PrismRadius.sm),
+                  border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
+                ),
+                child: Icon(Icons.add_rounded, size: 32, color: cs.onSurface),
+              ),
+              const SizedBox(height: PrismSpace.xs),
+              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: PrismTextStyles.rowTitle(context)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

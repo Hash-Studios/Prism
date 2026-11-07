@@ -492,10 +492,11 @@ void main() {
         paletteLoading: false,
       ),
     );
-    // The rows under the card keep the 560 point panel width, centred in the safe area.
+    // The rows under the card keep the 560 point panel width, centred in the safe area. The bar ends 8 points in, so
+    // Save ends on the page margin.
     final actions = tester.getRect(find.byType(WallpaperActionBar));
-    expect(actions.width, 560);
-    expect(actions.center.dx, 844 / 2);
+    expect(actions.left, (844 - 560) / 2);
+    expect(actions.width, 560 - 8);
     final card = tester.getRect(
       find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label == 'Wallpaper'),
     );
@@ -503,8 +504,8 @@ void main() {
     expect(card.height, closeTo(390 * 0.66, 0.01));
     expect(card.width, closeTo(card.height * 0.85, 0.01));
     expect(card.center.dx, closeTo(844 / 2, 0.01));
-    expect(tester.getRect(find.byTooltip('Back')).topLeft, card.topLeft + const Offset(4, 4));
-    expect(tester.getRect(find.byTooltip('Preview on your screen')).topRight, card.topRight + const Offset(-4, 4));
+    expect(tester.getRect(find.byTooltip('Back')).topLeft, card.topLeft + const Offset(12, 12));
+    expect(tester.getRect(find.byTooltip('Preview on your screen')).topRight, card.topRight + const Offset(-12, 12));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('no Live chip on iOS, where nothing can be set from the app', (tester) async {
@@ -587,6 +588,35 @@ void main() {
       expect(events.single.entryPoint, 'wallpaper_preview');
       expect(events.single.wallpaperTarget, WallpaperTarget.home);
       expect(client.requests, hasLength(1));
+      await tester.pump(const Duration(seconds: 10));
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+    testWidgets('Set in the solid header opens the Set screen as detail_header', (tester) async {
+      final List<SetScreenRequest> opened = <SetScreenRequest>[];
+      stubSetScreen(opened, choice: const SetWallpaperChoice(WallpaperTarget.home));
+      await pump(
+        tester,
+        WallpaperDetailLoaded(
+          recommendations: const RecommendationState.exhausted(),
+          entity: _prism(),
+          paletteLoading: false,
+        ),
+        // A short window, so the details scroll the card under the header.
+        surfaceSize: const Size(360, 300),
+      );
+      final ScrollController scroll = tester.widget<CustomScrollView>(find.byType(CustomScrollView)).controller!;
+      scroll.jumpTo(scroll.position.maxScrollExtent);
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.descendant(of: find.byKey(const ValueKey<String>('detail-header-action')), matching: find.text('Set')),
+      );
+      await tester.pump();
+      await waitUntil(tester, () => analytics.events.whereType<SetWallEvent>().isNotEmpty);
+
+      expect(opened, hasLength(1));
+      expect(opened.single.url, _prism().fullUrl);
+      expect(analytics.events.whereType<SetWallEvent>().single.entryPoint, 'detail_header');
       await tester.pump(const Duration(seconds: 10));
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 

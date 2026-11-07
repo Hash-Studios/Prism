@@ -96,11 +96,11 @@ void main() {
     expect(find.text("Editors' Choice"), findsNothing);
   });
 
-  testWidgets('a Studio wall names Hash Studios in the summary and the credit', (tester) async {
+  testWidgets('a Studio wall names Hash Studios in the summary, and the credit says Prism exclusive', (tester) async {
     await pumpScreen(tester, _wall(byStudio: true));
 
     expect(find.text('Hash Studios'), findsOneWidget);
-    expect(find.text('By Hash Studios', skipOffstage: false), findsOneWidget);
+    expect(find.text('Prism exclusive', skipOffstage: false), findsOneWidget);
     expect(find.text('Akshay'), findsNothing);
   });
 }

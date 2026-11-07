@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
@@ -7,6 +8,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/weekly_challenges/biz/weekly_challenges_cubit.dart';
 import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
 import 'package:Prism/features/weekly_challenges/views/pages/weekly_challenge_page.dart';
@@ -14,6 +16,7 @@ import 'package:Prism/features/weekly_challenges/views/widgets/weekly_challenge_
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -97,9 +100,9 @@ void main() {
         );
         when(() => cubit.load(any(), sort: any(named: 'sort'))).thenAnswer((_) async {});
         await tester.pumpWidget(app(WeeklyChallengePage(challengeId: '2026-10-26', cubit: cubit)));
-        final button = find.widgetWithText(FilledButton, 'Upload an entry');
+        final button = find.widgetWithText(PrismButton, 'Upload an entry');
         if (count == 3) {
-          expect(tester.widget<FilledButton>(button).onPressed, isNull);
+          expect(tester.widget<PrismButton>(button).onPressed, isNull);
         } else {
           await tester.tap(button);
           await tester.pump();
@@ -195,6 +198,67 @@ void main() {
       ], expected[locale.toString()]);
     }
   });
+  testWidgets('an empty week shows last week top entries above the empty message', (tester) async {
+    final cubit = MockChallengeCubit();
+    final past = WeeklyChallenge(
+      id: '2026-10-19',
+      theme: 'Morning light',
+      state: ChallengeState.archived,
+      opensAt: DateTime.utc(2026, 10, 19),
+      closesAt: DateTime.utc(2026, 10, 26),
+    );
+    when(() => cubit.state).thenReturn(
+      WeeklyChallengesState(
+        loading: false,
+        detail: ChallengeDetail(challenge: challenge(), entries: [], myEntryCount: 0),
+        past: [past],
+      ),
+    );
+    when(() => cubit.load(any(), sort: any(named: 'sort'))).thenAnswer((_) async {});
+    when(() => cubit.topEntries('2026-10-19')).thenAnswer((_) async => [entry(), entry()]);
+    await tester.pumpWidget(app(WeeklyChallengePage(challengeId: '2026-10-26', cubit: cubit)));
+    await tester.pump();
+    expect(find.text('Morning light'), findsWidgets);
+    expect(find.byType(GridView), findsOneWidget);
+    expect(find.text('Approved entries will appear here.', skipOffstage: false), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('last-week thumbnail failures show a themed fallback without an image error', (tester) async {
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+    final cubit = MockChallengeCubit();
+    final past = WeeklyChallenge(
+      id: '2026-10-19',
+      theme: 'Morning light',
+      state: ChallengeState.archived,
+      opensAt: DateTime.utc(2026, 10, 19),
+      closesAt: DateTime.utc(2026, 10, 26),
+    );
+    when(() => cubit.state).thenReturn(
+      WeeklyChallengesState(
+        loading: false,
+        detail: ChallengeDetail(challenge: challenge(), entries: [], myEntryCount: 0),
+        past: [past],
+      ),
+    );
+    when(() => cubit.load(any(), sort: any(named: 'sort'))).thenAnswer((_) async {});
+    when(() => cubit.topEntries(past.id)).thenAnswer((_) async => [entry()]);
+    final imageLoad = Completer<ImageInfo>();
+    final imageKey = await const CachedNetworkImageProvider('').obtainKey(ImageConfiguration.empty);
+    PaintingBinding.instance.imageCache.putIfAbsent(imageKey, () => OneFrameImageStreamCompleter(imageLoad.future));
+    await tester.pumpWidget(app(WeeklyChallengePage(challengeId: '2026-10-26', cubit: cubit)));
+    await tester.pump();
+    imageLoad.completeError(const SocketException('offline'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.takeException(), isNull);
+    expect(find.descendant(of: find.byType(CachedNetworkImage), matching: find.byType(ColoredBox)), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+  });
+
   for (final state in [ChallengeState.open, ChallengeState.votingClosed, ChallengeState.archived]) {
     testWidgets('page renders $state with empty entries and past winners', (tester) async {
       final cubit = MockChallengeCubit();
@@ -219,6 +283,7 @@ void main() {
         ),
       );
       when(() => cubit.load(any(), sort: any(named: 'sort'))).thenAnswer((_) async {});
+      when(() => cubit.topEntries(any())).thenAnswer((_) async => const []);
       await tester.pumpWidget(app(WeeklyChallengePage(challengeId: '2026-10-26', cubit: cubit)));
       expect(find.text('Quiet oceans'), findsOneWidget);
       expect(find.text('Upload an entry'), state == ChallengeState.open ? findsOneWidget : findsNothing);
@@ -281,6 +346,22 @@ void main() {
     );
     expect(find.text('You have entered 3 wallpapers in this challenge.'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('the two entry buttons share the row width', (tester) async {
+    final cubit = MockChallengeCubit();
+    when(() => cubit.state).thenReturn(
+      WeeklyChallengesState(
+        loading: false,
+        detail: ChallengeDetail(challenge: challenge(), entries: [], myEntryCount: 0),
+      ),
+    );
+    when(() => cubit.load(any(), sort: any(named: 'sort'))).thenAnswer((_) async {});
+    await tester.pumpWidget(app(WeeklyChallengePage(challengeId: '2026-10-26', cubit: cubit)));
+    final Finder buttons = find.byType(PrismButton);
+    expect(buttons, findsNWidgets(2));
+    expect(tester.getSize(buttons.at(0)).width, tester.getSize(buttons.at(1)).width);
     await tester.pumpWidget(const SizedBox());
   });
 }

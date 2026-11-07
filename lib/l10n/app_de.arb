@@ -707,7 +707,7 @@
   "@accountSpatialSceneSemanticLabel": {
     "description": "Spatial Scene text: accountSpatialSceneSemanticLabel."
   },
-  "accountDownloadApk": "APK HERUNTERLADEN",
+  "accountDownloadApk": "APK herunterladen",
   "@accountDownloadApk": {
     "description": "About page action that opens the APK download page. Shown only on installs that did not come from Google Play."
   },
@@ -755,7 +755,7 @@
   "@accountFavouritesCleared": {
     "description": "Success message after clearing favourite wallpapers."
   },
-  "accountFeedback": "FEEDBACK",
+  "accountFeedback": "Feedback",
   "@accountFeedback": {
     "description": "About page action to send feedback."
   },
@@ -1310,7 +1310,7 @@
   "@accountPrismPro": {
     "description": "Prism Pro drawer heading."
   },
-  "accountPrivacyAction": "DATENSCHUTZ",
+  "accountPrivacyAction": "Datenschutzerklärung",
   "@accountPrivacyAction": {
     "description": "About page action to view the privacy policy."
   },
@@ -1406,7 +1406,7 @@
   "@accountQuickTiles": {
     "description": "Settings item for Quick Settings tiles."
   },
-  "accountRateApp": "BEWERTEN",
+  "accountRateApp": "Bewerten",
   "@accountRateApp": {
     "description": "About page action to rate Prism."
   },
@@ -1498,15 +1498,6 @@
   "accountRestoringPurchases": "Käufe werden wiederhergestellt…",
   "@accountRestoringPurchases": {
     "description": "Progress toast while restoring purchases."
-  },
-  "accountResultsForQuery": "Ergebnisse für {query}",
-  "@accountResultsForQuery": {
-    "description": "Label above wallpaper search results.",
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
   },
   "accountRetry": "Erneut versuchen",
   "@accountRetry": {
@@ -1671,19 +1662,19 @@
   "@accountSignInToPrism": {
     "description": "Heading for the signed-out settings account card."
   },
-  "accountSocialGithub": "GITHUB",
+  "accountSocialGithub": "GitHub",
   "@accountSocialGithub": {
     "description": "About page social link label for GitHub."
   },
-  "accountSocialInstagram": "INSTAGRAM",
+  "accountSocialInstagram": "Instagram",
   "@accountSocialInstagram": {
     "description": "About page social link label for Instagram."
   },
-  "accountSocialTelegram": "TELEGRAM",
+  "accountSocialTelegram": "Telegram",
   "@accountSocialTelegram": {
     "description": "About page social link label for Telegram."
   },
-  "accountSocialTwitter": "TWITTER",
+  "accountSocialTwitter": "Twitter",
   "@accountSocialTwitter": {
     "description": "About page social link label for Twitter."
   },
@@ -1747,7 +1738,7 @@
   "@accountTerms": {
     "description": "Terms of use link label."
   },
-  "accountTermsAction": "BEDINGUNGEN",
+  "accountTermsAction": "Nutzungsbedingungen",
   "@accountTermsAction": {
     "description": "About page action to view the terms of use."
   },
@@ -1916,7 +1907,7 @@
   "@accountWhatsNew": {
     "description": "Menu item for the release changelog."
   },
-  "accountWhatsNewAction": "NEUIGKEITEN",
+  "accountWhatsNewAction": "Neuigkeiten",
   "@accountWhatsNewAction": {
     "description": "About page action to view changes."
   },
@@ -3368,6 +3359,10 @@
   "@deepLinkInputLiveTitle": {
     "description": "Page title while choosing an image for a live wallpaper."
   },
+  "deepLinkInputLiveDescription": "Wähle ein Foto aus deiner Galerie, um daraus ein Live-Hintergrundbild zu machen.",
+  "@deepLinkInputLiveDescription": {
+    "description": "Instructions on the image chooser page when the user makes a live wallpaper."
+  },
   "deepLinkInputPhotoPreviewTitle": "Fotovorschau",
   "@deepLinkInputPhotoPreviewTitle": {
     "description": "Page title while choosing an image for photo preview."
@@ -4073,6 +4068,15 @@
   "economyCoinsAreYoursToSpend": "Du kannst deine Coins ausgeben",
   "economyCoinsEarned": "+{count, plural, one{1 Coin} other{{count} Coins}}",
   "@economyCoinsEarned": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "economyCoinReward": "+{count}",
+  "@economyCoinReward": {
     "placeholders": {
       "count": {
         "type": "int",
@@ -5119,7 +5123,7 @@
   "economyLeaderboardNoRankings": "Noch keine Rangliste",
   "economyLeaderboardOffline": "Wenn du offline bist, werden möglicherweise gespeicherte Ergebnisse angezeigt.",
   "economyLeaderboardRankedByXp": "Sortiert nach den diese Woche verdienten XP",
-  "economyLeaderboardReset": "Wird Montag um 00:00 UTC zurückgesetzt · noch {days, plural, one{1 T.} other{{days} T.}} {hours, plural, one{1 Std.} other{{hours} Std.}}",
+  "economyLeaderboardReset": "Wird in {days, plural, one{1 T.} other{{days} T.}} {hours, plural, one{1 Std.} other{{hours} Std.}} zurückgesetzt",
   "@economyLeaderboardReset": {
     "placeholders": {
       "days": {
@@ -5894,10 +5898,10 @@
     }
   },
   "economyWeekComplete": "Woche abgeschlossen!",
-  "economyWeekly": "WÖCHENTLICH",
+  "economyWeekly": "Wöchentlich",
   "economyWeeklyDraw": "Wöchentliche Verlosung",
   "economyWeeklyDrop": "Wöchentlicher Drop",
-  "economyWeeklyEndsIn": "WÖCHENTLICH · {time}",
+  "economyWeeklyEndsIn": "Wöchentlich · {time}",
   "@economyWeeklyEndsIn": {
     "placeholders": {
       "time": {
@@ -6010,7 +6014,6 @@
       }
     }
   },
-  "economyYourXp": "DEINE XP",
   "errorGeneric": "Etwas ist schiefgelaufen. Bitte versuch es erneut.",
   "errorNetwork": "Prüfe deine Verbindung und versuch es erneut.",
   "navigationBackOnline": "Wieder online",
@@ -6077,18 +6080,6 @@
   "notifEmptyTitle": "Keine Benachrichtigungen",
   "notifExpanded": "Ausgeklappt",
   "notifGenericTitle": "Benachrichtigung",
-  "notifGroupAndMore": "{message} und {otherCount, plural, one{1 weitere.} other{{otherCount} weitere.}}",
-  "@notifGroupAndMore": {
-    "placeholders": {
-      "message": {
-        "type": "String"
-      },
-      "otherCount": {
-        "type": "int",
-        "format": "decimalPattern"
-      }
-    }
-  },
   "notifGroupApprovals": "{count, plural, one{Freigabe} other{Freigaben}}",
   "@notifGroupApprovals": {
     "placeholders": {
@@ -6563,7 +6554,7 @@
   "onboardingRecoverySetupFailed": "Einrichtung nicht abgeschlossen. Versuche es erneut.",
   "onboardingRecoverySetupFailedHelper": "Einrichtung nicht abgeschlossen. Prüfe deine Verbindung und versuche es erneut.",
   "onboardingRecoverySignIn": "Erneut anmelden",
-  "onboardingReloadLower": "neu laden",
+  "onboardingReloadLower": "Neu laden",
   "onboardingSavePhotos": "In Fotos speichern",
   "onboardingSelectInterestMinimum": "Wähle mindestens {count} Kategorien aus, damit wir deinen Feed personalisieren können",
   "@onboardingSelectInterestMinimum": {
@@ -6575,11 +6566,11 @@
     }
   },
   "onboardingSetWallpaper": "Als Hintergrundbild festlegen",
-  "onboardingSignInAgainLower": "erneut anmelden",
+  "onboardingSignInAgainLower": "Erneut anmelden",
   "onboardingSkip": "Überspringen",
-  "onboardingSkipLower": "überspringen",
+  "onboardingSkipLower": "Überspringen",
   "onboardingTermsRequired": "Bitte stimme zuerst den Nutzungsbedingungen und der Datenschutzerklärung zu.",
-  "onboardingTryAgainLower": "erneut versuchen",
+  "onboardingTryAgainLower": "Erneut versuchen",
   "onboardingWallpaperForInterest": "Wir haben dieses Hintergrundbild passend zu deinem Interesse an {category} ausgewählt.",
   "@onboardingWallpaperForInterest": {
     "placeholders": {
@@ -6610,6 +6601,34 @@
   "premiumPageViewPlans": "Abos ansehen",
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
+  },
+  "premiumPageHeadline": "Die ganze Galerie, freigeschaltet",
+  "@premiumPageHeadline": {
+    "description": "Large headline at the top of the Prism Premium page."
+  },
+  "premiumBenefitWalls": "Alle Premium-Sammlungen und -Hintergrundbilder",
+  "@premiumBenefitWalls": {
+    "description": "Premium benefit row: premium collections and walls open without coins or a pass."
+  },
+  "premiumBenefitFree": "Kostenlose Downloads und keine Werbung",
+  "@premiumBenefitFree": {
+    "description": "Premium benefit row: downloads cost no coins and inline and full-screen ads are off."
+  },
+  "premiumBenefitSpin": "Jeden Tag ein Gratisdreh",
+  "@premiumBenefitSpin": {
+    "description": "Premium benefit row: one free spin of the coin wheel each day."
+  },
+  "premiumBenefitAutomation": "Automatischer Wechsel und Tag-und-Nacht-Modus",
+  "@premiumBenefitAutomation": {
+    "description": "Premium benefit row: auto-rotate and day and night wallpaper switching."
+  },
+  "premiumBenefitLiveStyles": "Alle Stile für Live-Hintergrundbilder",
+  "@premiumBenefitLiveStyles": {
+    "description": "Premium benefit row: every live wallpaper style without coins."
+  },
+  "premiumBenefitAiClean": "KI-Hintergrundbilder ohne Wasserzeichen, für weniger Coins",
+  "@premiumBenefitAiClean": {
+    "description": "Premium benefit row: AI wallpapers without the watermark, at a lower coin price."
   },
   "premiumGuestStorePurchaseActive": "Dein Store-Kauf ist auf diesem Gerät aktiv. Melde dich an, um kontobasierte Pro-Funktionen zu nutzen.",
   "@premiumGuestStorePurchaseActive": {
@@ -8966,7 +8985,7 @@
   "@wallpaperThemeModeLight": {
     "description": "Light app theme mode option."
   },
-  "wallpaperThemeModeSystem": "System (hell/dunkel)",
+  "wallpaperThemeModeSystem": "System",
   "@wallpaperThemeModeSystem": {
     "description": "App theme mode option that follows the system light or dark appearance."
   },
@@ -11332,7 +11351,7 @@
   "dailyMomentStreakLeft": "Tägliche Serie verfügbar",
   "challengeTitle": "Wochen-Challenge",
   "challengeRules": "Bis zu 3 Beiträge, die vor der Anzeige geprüft werden.",
-  "challengeVotingRules": "Stimme bis {date} UTC für andere ab.",
+  "challengeVotingRules": "Stimme bis {date} für andere ab.",
   "@challengeVotingRules": {
     "placeholders": {
       "date": {
@@ -12067,6 +12086,10 @@
   "creatorsToFollow": "Kreative zum Folgen",
   "@creatorsToFollow": {
     "description": "Title of the row of suggested creators on Home and Search."
+  },
+  "accountBrowseCreators": "Kreative entdecken",
+  "@accountBrowseCreators": {
+    "description": "Action on the empty creator search, opens the creator directory."
   },
   "creatorsSeeAll": "Alle ansehen",
   "@creatorsSeeAll": {
@@ -13523,6 +13546,16 @@
   "@searchPhotoCouldNotOpen": {
     "description": "Toast when the picked photo cannot be decoded."
   },
+  "searchMoreWallpapers": "Weitere Hintergrundbilder",
+  "@searchMoreWallpapers": {"description": "Section header for extra wallpaper results in search."},
+  "wallpaperPreviewNoEvents": "Heute keine Termine",
+  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."},
+  "accountFollowersLabel": "{count, plural, one{Follower} other{Follower}}",
+  "@accountFollowersLabel": {"description": "Label under a profile's follower count. The number is shown separately.", "placeholders": {"count": {"type": "int"}}},
+  "profileBadgeCount": "{count, plural, one{1 Abzeichen} other{{count} Abzeichen}}",
+  "@profileBadgeCount": {"description": "Chip on a profile that opens the list of earned badges.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyLeaderboardTopThisWeek": "Top dieser Woche",
+  "@economyLeaderboardTopThisWeek": {"description": "Section heading above the global top 5 on the Following leaderboard."},
   "foldersSaveAll": "Alle speichern",
   "@foldersSaveAll": {
     "description": "Button label that starts saving all wallpapers in a folder."
@@ -14066,6 +14099,8 @@
   "@foldersMakePrivateMessageShared": {
     "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
   },
+  "gestureHintHoldToSave": "Gedrückt halten zum Speichern",
+  "gestureHintSwipeForSimilar": "Nach oben wischen für ähnliche Wallpaper",
   "foldersSectionAdd": "Abschnitt hinzufügen",
   "@foldersSectionAdd": {
     "description": "Folder page menu item and name sheet button that add a named section to a folder."

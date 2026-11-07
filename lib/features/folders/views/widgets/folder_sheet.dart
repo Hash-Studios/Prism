@@ -191,6 +191,7 @@ class _FolderSheetState extends State<FolderSheet> {
         kind: GlintStateKind.error,
         title: l10n.foldersSaveFailed,
         actionLabel: l10n.wallpaperTryAgain,
+        actionVariant: PrismButtonVariant.tonal,
         onAction: () => unawaited(_load()),
       );
     }

@@ -9,11 +9,14 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
+import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
@@ -82,7 +85,8 @@ class _SearchGridState extends State<SearchGrid> {
 
   bool get _showAi =>
       !getIt.isRegistered<SettingsLocalDataSource>() || AiContentFilter.showsAi(getIt<SettingsLocalDataSource>());
-  List<FeedItemEntity> get _visibleResults => AiContentFilter.filterFeedItems(_results, showAi: _showAi);
+  // Drop repeated source/ID pairs, matching Home and More like this.
+  List<FeedItemEntity> get _visibleResults => distinctWalls(AiContentFilter.filterFeedItems(_results, showAi: _showAi));
   List<FeedItemEntity> get _visiblePrismResults =>
       AiContentFilter.filterFeedItems(widget.prismResults, showAi: _showAi);
 
@@ -286,17 +290,13 @@ class _SearchGridState extends State<SearchGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
     final List<FeedItemEntity> results = _visibleResults;
     final List<FeedItemEntity> prismResults = _visiblePrismResults;
-    final bool showFooter = _hasMore && results.length >= 24;
+    final bool showFooter = _hasMore && _results.length >= 24;
     final int columns = PrismWallGrid.columns(context);
     final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns);
-    return RefreshIndicator(
-      color: cs.primary,
-      backgroundColor: cs.surfaceContainerHigh,
+    return PrismRefresh(
       onRefresh: () {
-        PrismHaptics.impact();
         return refreshList();
       },
       child: NotificationListener<ScrollNotification>(
@@ -316,7 +316,7 @@ class _SearchGridState extends State<SearchGrid> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(PrismSpace.md, PrismSpace.sm, PrismSpace.md, PrismSpace.xs),
-                  child: Text(context.l10n.accountSavedOnThisDevice, style: Theme.of(context).textTheme.labelMedium),
+                  child: Text(context.l10n.accountSavedOnThisDevice, style: PrismTextStyles.caption(context)),
                 ),
               ),
             if (prismResults.isNotEmpty)
@@ -325,6 +325,19 @@ class _SearchGridState extends State<SearchGrid> {
                   results: prismResults,
                   onOpen: (grid, wallpaper, index) => _openPrismWallpaper(grid, wallpaper, index, prismResults),
                   session: _impressions,
+                ),
+              ),
+            if (prismResults.isNotEmpty && results.isNotEmpty)
+              SliverToBoxAdapter(
+                child: PrismSectionHeader(
+                  title: context.l10n.searchMoreWallpapers,
+                  small: true,
+                  padding: const EdgeInsets.fromLTRB(
+                    PrismWallGrid.margin,
+                    PrismSpace.md,
+                    PrismWallGrid.margin,
+                    PrismSpace.xs,
+                  ),
                 ),
               ),
             SliverPadding(
@@ -352,6 +365,8 @@ class _SearchGridState extends State<SearchGrid> {
                         key: ValueKey<String>(wallpaper.id),
                         url: wallpaper.thumbnailUrl,
                         fallbackUrl: wallpaper.fullUrl,
+                        cachedFullUrl: WallpaperDisplaySource.of(wallpaper).full,
+                        placeholderColor: placeholderColorOf(wallpaper, Theme.of(context).colorScheme.surface),
                         memCacheHeight: decodeHeight,
                         heroTag: prismHeroTag(this, index, wallpaper.id),
                         semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),
@@ -397,7 +412,7 @@ class _FromPrismRow extends StatelessWidget {
         PrismSectionHeader(
           title: context.l10n.accountFromPrism,
           small: true,
-          padding: EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xs),
+          padding: EdgeInsets.fromLTRB(PrismWallGrid.margin, PrismSpace.xs, PrismWallGrid.margin, PrismSpace.xs),
         ),
         SizedBox(
           height: 176 + favouriteFooterHeight,
@@ -425,6 +440,8 @@ class _FromPrismRow extends StatelessWidget {
                     key: ValueKey<String>('prism-${wallpaper.id}'),
                     url: wallpaper.thumbnailUrl,
                     fallbackUrl: wallpaper.fullUrl,
+                    cachedFullUrl: WallpaperDisplaySource.of(wallpaper).full,
+                    placeholderColor: placeholderColorOf(wallpaper, Theme.of(context).colorScheme.surface),
                     memCacheHeight: 400,
                     heroTag: prismHeroTag(results, index, wallpaper.id),
                     semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),

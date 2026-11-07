@@ -15,6 +15,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/pair_picker_sheet.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
@@ -1514,13 +1515,13 @@ void main() {
       await tester.tap(find.byKey(const ValueKey<String>('set-screen-adjust')));
       await tester.pump();
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(PrismLoader), findsOneWidget);
       expect(opened, <String>['/tmp/wall.png']);
       studio.complete(null);
       await tester.pumpAndSettle();
 
       expect(opened, <String>['/tmp/wall.png']);
-      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(PrismLoader), findsNothing);
     });
 
     testWidgets('Adjust opens the studio with the wall and its entry point', (tester) async {

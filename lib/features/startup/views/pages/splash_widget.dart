@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:Prism/core/auth/guest_browsing_policy.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -212,10 +211,7 @@ class _StartupFailure extends StatelessWidget {
           title: context.l10n.wallpaperStartupFailed,
           body: context.l10n.wallpaperCheckConnection,
           actionLabel: context.l10n.wallpaperTryAgain,
-          onAction: () {
-            PrismHaptics.tap();
-            onRetry();
-          },
+          onAction: onRetry,
           padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xxl, vertical: PrismSpace.xl),
         ),
       ),

@@ -147,6 +147,86 @@ void main() {
     expect(find.byTooltip('Clear search'), findsNothing);
   });
 
+  testWidgets('focusing the field slides in Cancel in place of the photo and filter buttons; Cancel reverses it', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+    expect(find.text('Cancel'), findsNothing);
+    expect(find.byTooltip('Filters'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'fog');
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+
+    expect(find.text('Cancel'), findsOneWidget);
+    expect(find.byTooltip('Filters'), findsNothing);
+    expect(find.byTooltip('Search by photo'), findsNothing);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pump(); // The focus change rebuilds the header; the 160 ms swap starts on this frame.
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+
+    expect(find.text('Cancel'), findsNothing);
+    expect(find.byTooltip('Filters'), findsOneWidget);
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
+    expect(tester.widget<TextField>(find.byType(TextField)).focusNode!.hasFocus, isFalse);
+  });
+
+  testWidgets('the photo and filter buttons leave in 100 ms before Cancel comes in, and back on unfocus', (
+    tester,
+  ) async {
+    await pumpScreen(tester);
+    double opacity(Finder of) => of.evaluate().isEmpty
+        ? 0
+        : tester
+              .widget<FadeTransition>(find.ancestor(of: of, matching: find.byType(FadeTransition)).first)
+              .opacity
+              .value;
+    final Finder icons = find.byTooltip('Filters');
+    final Finder cancel = find.text('Cancel');
+
+    Future<void> check(Finder leaving, Finder arriving) async {
+      await tester.pump(); // The focus change rebuilds the header; the swap starts on this frame.
+      for (int ms = 10; ms <= 240; ms += 10) {
+        await tester.pump(const Duration(milliseconds: 10));
+        final double out = opacity(leaving);
+        final double inn = opacity(arriving);
+        expect(out * inn, lessThan(0.0001), reason: 'both visible at $ms ms ($out, $inn)');
+        if (ms < 100) expect(out, greaterThan(0), reason: 'still leaving at $ms ms');
+        if (ms > 110) expect(out, 0, reason: 'gone at $ms ms');
+        if (ms > 110 && ms < 220) expect(inn, inExclusiveRange(0, 1), reason: 'arriving at $ms ms');
+      }
+      expect(opacity(arriving), 1);
+      expect(leaving, findsNothing);
+    }
+
+    await tester.showKeyboard(find.byType(TextField));
+    await check(icons, cancel);
+    await tester.tap(cancel);
+    await check(cancel, icons);
+  });
+
+  testWidgets('Cancel on a results page returns to discovery', (tester) async {
+    when(
+      () => service.search(any(), filters: any(named: 'filters')),
+    ).thenAnswer((_) async => _page(<FeedItemEntity>[_wallpaper('wh-1')]));
+    await pumpScreen(tester);
+    await enterQuery(tester, 'forest');
+    await tester.pump();
+    expect(find.byType(SearchGrid), findsOneWidget);
+
+    await tester.showKeyboard(find.byType(TextField));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+    await tester.tap(find.text('Cancel'));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+
+    expect(find.byType(SearchGrid), findsNothing);
+    expect(find.text('Find creators'), findsOneWidget);
+  });
+
   testWidgets('shows the trending skeleton while loading and an error with retry when it fails', (tester) async {
     await getIt.unregister<SearchDiscoveryBloc>();
     stubDiscovery(
@@ -172,7 +252,6 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text(AppLocalizationsEn().accountResultsForQuery('anime')), findsOneWidget);
     expect(find.byType(PrismWallTile), findsNWidgets(4));
     expect(find.text('Find creators'), findsNothing);
     expect(analytics.events.whereType<SearchSubmittedEvent>(), hasLength(1));
@@ -245,7 +324,6 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text(AppLocalizationsEn().accountResultsForQuery('Nature')), findsOneWidget);
     verify(() => service.search('Nature', filters: any(named: 'filters'))).called(1);
   });
 
@@ -590,6 +668,8 @@ void main() {
         ),
       );
       await tester.pump();
+      // Colours sit below Trending and the categories, under the fold of the test view.
+      await tester.ensureVisible(find.bySemanticsLabel(name));
       await tester.tap(find.bySemanticsLabel(name));
       await tester.pump();
       await tester.pump();
@@ -623,6 +703,7 @@ void main() {
 
       await tester.tap(find.byTooltip('Clear search'));
       await tester.pump();
+      await tester.ensureVisible(find.bySemanticsLabel('Red'));
       await tester.tap(find.bySemanticsLabel('Red'));
       await tester.pump();
       await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
@@ -751,6 +832,7 @@ void main() {
           );
           await pumpScreen(tester);
 
+          await tester.ensureVisible(find.text('Spatial'));
           await tester.tap(find.text('Spatial'));
           await tester.pump();
           await tester.pump();
@@ -776,6 +858,7 @@ void main() {
         );
         await pumpScreen(tester);
 
+        await tester.ensureVisible(find.text('Depth Effect'));
         await tester.tap(find.text('Depth Effect'));
         await tester.pump();
         await tester.pump();

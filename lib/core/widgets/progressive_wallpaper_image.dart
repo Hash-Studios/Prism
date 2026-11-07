@@ -21,7 +21,8 @@ const Duration _fullFade = PrismDurations.base;
 /// over it and, once shown, stays. A copy on the device wins over the network. The full picture gets one retry, then
 /// the thumbnail stays.
 ///
-/// Nothing is painted until a picture decodes, so whatever is under this (a grid tile's Hero) shows through.
+/// Without [placeholderColor], nothing is painted until a picture decodes, so whatever is under this (a grid tile's
+/// Hero) shows through.
 class ProgressiveWallpaperImage extends StatefulWidget {
   const ProgressiveWallpaperImage({
     super.key,
@@ -29,6 +30,7 @@ class ProgressiveWallpaperImage extends StatefulWidget {
     this.decodeBox,
     this.errorBuilder,
     this.onPictureSize,
+    this.placeholderColor,
   });
 
   final WallpaperDisplaySource display;
@@ -43,6 +45,11 @@ class ProgressiveWallpaperImage extends StatefulWidget {
   /// Called after a frame with the pixel size of the full picture when it first paints. Its shape is the wallpaper's.
   /// The thumbnail is never reported: some sources crop it.
   final ValueChanged<Size>? onPictureSize;
+
+  /// The wall's own colour (see `placeholderColorOf`), painted under the pictures so the card is never blank or a
+  /// foreign colour before the first frame. It covers anything under this widget, so leave it null where a decoded
+  /// picture already sits underneath (a Hero flight from a grid tile).
+  final Color? placeholderColor;
 
   /// Replaces the on-device lookup in tests.
   @visibleForTesting
@@ -298,6 +305,7 @@ class _ProgressiveWallpaperImageState extends State<ProgressiveWallpaperImage> {
     return Stack(
       fit: StackFit.expand,
       children: <Widget>[
+        if (widget.placeholderColor case final Color colour) ColoredBox(color: colour),
         if (fullFallback != null)
           RawImage(key: const ValueKey<String>('last-full'), image: fullFallback, fit: BoxFit.cover),
         if (thumbnail != null)

@@ -1,5 +1,7 @@
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
@@ -50,6 +52,136 @@ void main() {
     expect(calls, 1);
   });
 
+  testWidgets('the action is primary by default and tonal on request', (tester) async {
+    await tester.pumpWidget(
+      host(GlintState(kind: GlintStateKind.empty, title: 'T', actionLabel: 'Go', onAction: () {})),
+    );
+    expect(tester.widget<PrismButton>(find.byType(PrismButton)).variant, PrismButtonVariant.primary);
+
+    await tester.pumpWidget(
+      host(
+        GlintState(
+          kind: GlintStateKind.empty,
+          title: 'T',
+          actionLabel: 'Go',
+          onAction: () {},
+          actionVariant: PrismButtonVariant.tonal,
+        ),
+      ),
+    );
+    expect(tester.widget<PrismButton>(find.byType(PrismButton)).variant, PrismButtonVariant.tonal);
+  });
+
+  testWidgets('sits above the centre on a tall area and in the centre on a short one', (tester) async {
+    await tester.pumpWidget(
+      host(
+        const GlintState(kind: GlintStateKind.empty, title: 'T'),
+        size: const Size(360, 600),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    final Rect tall = tester.getRect(find.byType(GlintState));
+    final double tallMiddle =
+        (tester.getTopLeft(find.byType(CoverMosaic)).dy + tester.getBottomLeft(find.text('T')).dy) / 2;
+    expect(tallMiddle, lessThan(tall.center.dy - 60), reason: 'biased towards the top');
+
+    await tester.pumpWidget(
+      host(
+        const GlintState(kind: GlintStateKind.empty, title: 'T'),
+        size: const Size(360, 400),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    final Rect short = tester.getRect(find.byType(GlintState));
+    final double shortMiddle = (tester.getTopLeft(find.byType(Glint)).dy + tester.getBottomLeft(find.text('T')).dy) / 2;
+    expect(shortMiddle, closeTo(short.center.dy, 1));
+  });
+
+  testWidgets('a tall area gets the halo, a section title and a large wide action; a short one stays compact', (
+    tester,
+  ) async {
+    Future<void> pumpAt(Size size, {double? glintSize}) async {
+      await tester.pumpWidget(
+        host(
+          GlintState(
+            kind: GlintStateKind.empty,
+            title: 'T',
+            body: 'B',
+            actionLabel: 'Go',
+            onAction: () {},
+            glintSize: glintSize,
+            covers: false,
+          ),
+          size: size,
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+
+    await pumpAt(const Size(390, 700));
+    expect(find.byType(GlintHalo), findsOneWidget);
+    expect(tester.getSize(find.byType(GlintHalo)), const Size.square(176));
+    expect(tester.widget<Glint>(find.byType(Glint)).size, 120);
+    expect(tester.widget<Text>(find.text('T')).style!.fontSize, 20);
+    expect(tester.widget<PrismButton>(find.byType(PrismButton)).size, PrismButtonSize.large);
+    expect(tester.getSize(find.byType(FilledButton)).width, greaterThanOrEqualTo(220));
+    expect(tester.getTopLeft(find.text('T')).dy - tester.getBottomLeft(find.byType(GlintHalo)).dy, 24);
+    expect(tester.getTopLeft(find.byType(FilledButton)).dy - tester.getBottomLeft(find.text('B')).dy, 24);
+
+    await pumpAt(const Size(390, 400));
+    expect(find.byType(GlintHalo), findsNothing);
+    expect(tester.widget<Glint>(find.byType(Glint)).size, 96);
+    expect(tester.widget<PrismButton>(find.byType(PrismButton)).size, PrismButtonSize.compact);
+
+    await pumpAt(const Size(390, 700), glintSize: 64);
+    expect(tester.widget<Glint>(find.byType(Glint)).size, 64);
+    expect(tester.getSize(find.byType(GlintHalo)), const Size.square(120));
+  });
+
+  testWidgets('a tall bounded area shows the cover mosaic with a small Glint on its corner', (tester) async {
+    await tester.pumpWidget(
+      host(
+        GlintState(kind: GlintStateKind.empty, title: 'T', body: 'B', actionLabel: 'Go', onAction: () {}),
+        size: const Size(390, 700),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(CoverMosaic), findsOneWidget);
+    expect(find.byType(GlintHalo), findsNothing);
+    expect(tester.widget<CoverMosaic>(find.byType(CoverMosaic)).seed, 'T');
+    expect(tester.widget<Glint>(find.byType(Glint)).size, 56);
+    final Rect mosaic = tester.getRect(find.byType(CoverMosaic));
+    final Rect glint = tester.getRect(find.byType(Glint));
+    expect(mosaic.contains(glint.center), isTrue, reason: 'Glint sits on the mosaic');
+    expect(glint.center.dx, greaterThan(mosaic.center.dx), reason: 'on the bottom-end corner');
+    expect(glint.center.dy, greaterThan(mosaic.center.dy));
+    expect(tester.getTopLeft(find.text('T')).dy - mosaic.bottom, 24);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('an unbounded height or covers: false keeps Glint on the halo', (tester) async {
+    await tester.pumpWidget(
+      host(
+        const SingleChildScrollView(
+          child: GlintState(kind: GlintStateKind.nothingNew, title: 'T', glintSize: 64),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(CoverMosaic), findsNothing);
+    expect(tester.widget<Glint>(find.byType(Glint)).size, 64);
+
+    await tester.pumpWidget(
+      host(
+        const GlintState(kind: GlintStateKind.empty, title: 'T', covers: false),
+        size: const Size(390, 700),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(CoverMosaic), findsNothing);
+    expect(find.byType(GlintHalo), findsOneWidget);
+  });
+
   testWidgets('does not overflow at 320x200', (tester) async {
     await tester.pumpWidget(
       host(
@@ -65,6 +197,31 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 300));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('at 2x text a state taller than its area scrolls instead of overflowing', (tester) async {
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+        child: host(
+          GlintState(
+            kind: GlintStateKind.error,
+            title: 'Could not load your folders',
+            body: 'Check your connection and try again. Your folders are safe and will come back.',
+            actionLabel: 'Try again',
+            onAction: () {},
+          ),
+          size: const Size(320, 300),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.takeException(), isNull);
+    expect(find.byType(FittedBox), findsNothing, reason: 'not tight, so no scale-down');
+    final ScrollableState scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+    expect(scrollable.position.maxScrollExtent, greaterThan(0));
+    await tester.scrollUntilVisible(find.text('Try again'), 50, scrollable: find.byType(Scrollable));
+    expect(find.text('Try again').hitTestable(), findsOneWidget);
   });
 
   testWidgets('title and body remain visible in light and dark themes', (tester) async {

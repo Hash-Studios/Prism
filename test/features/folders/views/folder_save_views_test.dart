@@ -252,11 +252,19 @@ void main() {
 
   testWidgets('tapping the paid button closes the sheet and starts a run of the free and coin walls', (tester) async {
     await freeAndCoinsScenario(tester);
+    final List<Object?> haptics = <Object?>[];
+    const MethodChannel hapticsChannel = MethodChannel('prism/haptics');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(hapticsChannel, (MethodCall call) async {
+      haptics.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(hapticsChannel, null));
 
     final Future<FolderSaveState> finished = bloc.stream.firstWhere((state) => state is FolderSaveFinished);
     await tester.tap(find.byKey(const ValueKey<String>('folder-save-paid')));
     await settle(tester);
 
+    expect(haptics.where((h) => h == 'tap' || h == 'impact'), <Object?>['tap'], reason: 'one press, one haptic');
     expect(find.byType(FolderSavePlanSheet), findsNothing);
     expect(bloc.state, anyOf(isA<FolderSaveRunning>(), isA<FolderSaveFinished>()));
     expect(_runOf(bloc.state)?.queue, hasLength(4));

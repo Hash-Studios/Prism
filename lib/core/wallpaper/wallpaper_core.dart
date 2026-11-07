@@ -64,7 +64,8 @@ String normalizeWallpaperThumbnailUrl(String thumbnailUrl) {
   if (uri.host == 'th.wallhaven.cc') {
     final String path = uri.path;
     if (!_wallhavenCropPath.hasMatch(path)) return thumbnailUrl;
-    return uri.replace(path: path.replaceFirst(_wallhavenCropPath, '/lg/')).toString();
+    // lg and small are 432x243 and 300x200 landscape crops. orig is about 212x300 at the wall's own aspect.
+    return uri.replace(path: path.replaceFirst(_wallhavenCropPath, '/orig/')).toString();
   }
 
   if (uri.host == 'images.pexels.com') {
@@ -105,7 +106,7 @@ class WallpaperCore {
   final String fullUrl;
   final String _thumbnailUrl;
 
-  /// Wallhaven lg/small and Pexels tiny variants crop the original aspect ratio.
+  /// Wallhaven lg/small and Pexels tiny variants crop the original aspect ratio, so this maps them to uncropped ones.
   String get thumbnailUrl => normalizeWallpaperThumbnailUrl(_thumbnailUrl);
 
   final String? resolution;

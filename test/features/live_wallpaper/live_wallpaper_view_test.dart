@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -19,6 +20,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -233,6 +235,59 @@ void main() {
     expect(find.text("Couldn't set the live wallpaper. Try again."), findsOneWidget);
   });
 
+  group('haptics', () {
+    List<String> record(WidgetTester tester) {
+      const MethodChannel channel = MethodChannel('prism/haptics');
+      PrismHaptics.enabled = true;
+      final List<String> events = <String>[];
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+        if (call.method == 'play') events.add(call.arguments! as String);
+        return null;
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null));
+      return events;
+    }
+
+    testWidgets('a mode chip plays one selection, and Set plays one tap, then the outcome', (tester) async {
+      final List<String> haptics = record(tester);
+      await pump(tester);
+      await tester.tap(find.text('Video'));
+      await tester.pump();
+      await tester.tap(find.text('Gradients'));
+      await tester.pump();
+      expect(haptics, <String>['selection', 'selection']);
+      haptics.clear();
+      await tester.tap(find.text('Set live wallpaper'));
+      await tester.pump();
+      await tester.pump();
+      expect(haptics, <String>['tap']);
+    });
+
+    testWidgets('a failed apply keeps only the button tap', (tester) async {
+      repository.outcome = const LiveApplyOutcome.failed(LiveApplyFailure.setFailed);
+      final List<String> haptics = record(tester);
+      await pump(tester);
+      await tester.tap(find.text('Set live wallpaper'));
+      await tester.pump();
+      await tester.pump();
+      expect(haptics, <String>['tap']);
+    });
+
+    testWidgets('a rejected video keeps only the Choose button tap', (tester) async {
+      repository.videoProblem = LiveApplyFailure.videoTooLarge;
+      final List<String> haptics = record(tester);
+      await pump(tester, pickVideo: () async => '/tmp/big.mp4');
+      await tester.tap(find.text('Video'));
+      await tester.pump();
+      haptics.clear();
+      await tester.tap(find.text('Choose a video'));
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('That video is larger than 256 MB. Pick a shorter clip.'), findsOneWidget);
+      expect(haptics, <String>['tap']);
+    });
+  });
+
   testWidgets('a repeated failure shows its message again after the first one is dismissed', (tester) async {
     repository.outcome = const LiveApplyOutcome.failed(LiveApplyFailure.setFailed);
     await pump(tester);
@@ -241,7 +296,8 @@ void main() {
     await tester.pump();
     expect(find.text("Couldn't set the live wallpaper. Try again."), findsOneWidget);
 
-    ScaffoldMessenger.of(tester.element(find.byType(LiveWallpaperView))).hideCurrentSnackBar();
+    // The toast dismisses itself.
+    await tester.pump(const Duration(seconds: 5));
     await tester.pump(const Duration(seconds: 1));
     expect(find.text("Couldn't set the live wallpaper. Try again."), findsNothing);
 
@@ -255,7 +311,7 @@ void main() {
     await pump(tester, pickVideo: () async => '/tmp/loop.mp4');
     await tester.tap(find.text('Video'));
     await tester.pump();
-    FilledButton button() => tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Set live wallpaper'));
+    PrismButton button() => tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Set live wallpaper'));
     expect(button().onPressed, isNull);
 
     await tester.tap(find.text('Choose a video'));
@@ -264,7 +320,7 @@ void main() {
     expect(find.text('loop.mp4'), findsOneWidget);
     expect(button().onPressed, isNotNull);
 
-    await tester.tap(find.widgetWithText(FilledButton, 'Set live wallpaper'));
+    await tester.tap(find.widgetWithText(PrismButton, 'Set live wallpaper'));
     await tester.pump();
     await tester.pump();
     expect(repository.videoApplies, <String>['/tmp/loop.mp4']);
@@ -279,7 +335,7 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.text('That video is larger than 256 MB. Pick a shorter clip.'), findsOneWidget);
-    expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Set live wallpaper')).onPressed, isNull);
+    expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Set live wallpaper')).onPressed, isNull);
   });
   group('gradient colours', () {
     const Color seed = Color(0xFF2E9E6B);
@@ -373,8 +429,8 @@ void main() {
       expect(find.text('Lock screen'), findsNothing);
       expect(find.text('Both'), findsNothing);
 
-      expect(find.byType(FilledButton), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Set live wallpaper'), findsOneWidget);
+      expect(find.byType(PrismButton), findsOneWidget);
+      expect(find.widgetWithText(PrismButton, 'Set live wallpaper'), findsOneWidget);
       expect(find.text('Android opens a preview. Tap Set wallpaper there.'), findsOneWidget);
       expect(find.text('Gradients'), findsOneWidget);
       expect(find.text('Video'), findsOneWidget);
@@ -548,10 +604,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
 
       expect(
-        find.descendant(
-          of: find.byType(SnackBar),
-          matching: find.text('Confirm in the system preview. This phone shows the same live wall on both screens.'),
-        ),
+        find.text('Confirm in the system preview. This phone shows the same live wall on both screens.'),
         findsOneWidget,
       );
     });
@@ -566,7 +619,7 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 500));
 
-      expect(find.widgetWithText(SnackBar, 'Confirm in the system preview.'), findsOneWidget);
+      expect(find.text('Confirm in the system preview.'), findsOneWidget);
       expect(find.text('In the preview, tap Set wallpaper, then Home screen.'), findsNothing);
     });
 
@@ -610,13 +663,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      expect(
-        find.descendant(
-          of: find.byType(SnackBar),
-          matching: find.text('In the preview, tap Set wallpaper, then Lock screen.'),
-        ),
-        findsOneWidget,
-      );
+      expect(find.text('In the preview, tap Set wallpaper, then Lock screen.'), findsOneWidget);
     });
 
     testWidgets('resume reads the screens', (tester) async {
@@ -650,7 +697,7 @@ void main() {
     testWidgets('access rules unchanged: a locked style still asks to unlock, with the choice shown', (tester) async {
       await _pumpScreen(tester, state: _readyState(gradientStyle: GradientStyle.starfield));
 
-      expect(find.widgetWithText(FilledButton, 'Unlock · 20 coins'), findsOneWidget);
+      expect(find.widgetWithText(PrismButton, 'Unlock · 20 coins'), findsOneWidget);
       expect(find.text('Set live wallpaper'), findsNothing);
       expect(find.byType(PrismSegmented<WallpaperTarget>), findsOneWidget);
       expect(find.text('Home screen'), findsOneWidget);

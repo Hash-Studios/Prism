@@ -86,7 +86,7 @@ void main() {
   }
 
   bool saveEnabled(WidgetTester tester) =>
-      tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Save changes')).onPressed != null;
+      tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Save')).onPressed != null;
 
   testWidgets('shows the current profile in fields, with Save disabled until something changes', (tester) async {
     await pumpPanel(tester);
@@ -101,6 +101,11 @@ void main() {
     expect(find.text('Edit cover'), findsOneWidget);
     expect(find.byTooltip('Remove cover photo'), findsNothing);
     expect(saveEnabled(tester), isFalse);
+    // Save is the header's trailing action, on the title row, not a bar under the form.
+    expect(
+      tester.getCenter(find.widgetWithText(FilledButton, 'Save')).dy,
+      closeTo(tester.getCenter(find.text('Edit profile')).dy, 2),
+    );
   });
 
   testWidgets('change cover photo has a hit target of at least 44 pixels', (tester) async {
@@ -211,7 +216,7 @@ void main() {
       expect(find.text('That username is taken.'), findsNothing);
       expect(saveEnabled(tester), isTrue);
 
-      await tester.tap(find.text('Save changes'));
+      await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 2));
       expect(firestore.writes, isEmpty, reason: 'Canonical usernames are written only by the server.');
@@ -227,7 +232,7 @@ void main() {
       await tester.enterText(usernameField(), 'racing_name');
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump();
-      await tester.tap(find.text('Save changes'));
+      await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
       expect(app_state.prismUser.username, 'creator_01');
       expect(firestore.writes, isEmpty);
@@ -243,7 +248,7 @@ void main() {
       await tester.enterText(usernameField(), 'claimed_name');
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump();
-      await tester.tap(find.text('Save changes'));
+      await tester.tap(find.text('Save'));
       await tester.pump();
       final previousUser = app_state.prismUser;
       app_state.prismUser = profileUser(id: 'other', username: 'other_name');
@@ -264,7 +269,7 @@ void main() {
       await tester.enterText(find.widgetWithText(TextField, 'Me Myself'), 'Changed Name');
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump();
-      await tester.tap(find.text('Save changes'));
+      await tester.tap(find.text('Save'));
       await tester.pump();
       expect(session.started.isCompleted, isTrue);
       session.currentUser = profileUser(id: 'other', username: 'other_name');
@@ -336,7 +341,7 @@ void main() {
     await tester.pump();
     expect(saveEnabled(tester), isTrue);
 
-    await tester.tap(find.text('Save changes'));
+    await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     await tester.pump(const Duration(seconds: 2));
 
@@ -365,7 +370,7 @@ void main() {
 
         expect(find.text('Enter a valid Buy Me a Coffee link.'), findsNothing);
         expect(saveEnabled(tester), isTrue);
-        await tester.tap(find.text('Save changes'));
+        await tester.tap(find.text('Save'));
         await tester.pumpAndSettle();
         await tester.pump(const Duration(seconds: 2));
         expect((firestore.writes.single.data!['links'] as Map)['buymeacoffee'], 'https://$host/prism');
@@ -404,7 +409,7 @@ void main() {
 
       expect(find.text('Enter a valid link.'), findsNothing);
       expect(saveEnabled(tester), isTrue);
-      await tester.tap(find.text('Save changes'));
+      await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 2));
       expect((firestore.writes.single.data!['links'] as Map)['custom link'], 'https://example.com/me');

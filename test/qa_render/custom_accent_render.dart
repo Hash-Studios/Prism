@@ -44,6 +44,8 @@ void main() {
       await shot.pump(BlocProvider<ThemeBloc>.value(value: bloc, child: const ThemeView()));
       await shot.save('theme_page_$name');
       if (name != 'custom') return;
+      await shot.tester.ensureVisible(find.bySemanticsLabel('Custom color').first);
+      await shot.settle();
       await shot.tester.tap(find.bySemanticsLabel('Custom color').first);
       await shot.settle();
       await shot.save('custom_accent_sheet');

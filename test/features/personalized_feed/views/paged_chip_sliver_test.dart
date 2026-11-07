@@ -103,7 +103,7 @@ void main() {
     );
   }
 
-  testWidgets('the grid has a 4 px side margin, 4 px gaps both ways and rounded tiles', (tester) async {
+  testWidgets('the grid has a 16 px side margin, 8 px gaps both ways and rounded tiles', (tester) async {
     await pumpSliver(
       tester,
       PagedFeedState.initial().copyWith(
@@ -115,11 +115,11 @@ void main() {
     );
 
     final List<Rect> tiles = [for (int i = 0; i < 6; i++) tester.getRect(find.byType(FeedWallTile).at(i))];
-    expect(tiles[0].left, 4);
-    expect(tiles[2].right, closeTo(596, 0.01));
-    expect(tiles[1].left - tiles[0].right, closeTo(4, 0.01));
-    expect(tiles[2].left - tiles[1].right, closeTo(4, 0.01));
-    expect(tiles[3].top - tiles[0].bottom, closeTo(4, 0.01));
+    expect(tiles[0].left, 16);
+    expect(tiles[2].right, closeTo(584, 0.01));
+    expect(tiles[1].left - tiles[0].right, closeTo(8, 0.01));
+    expect(tiles[2].left - tiles[1].right, closeTo(8, 0.01));
+    expect(tiles[3].top - tiles[0].bottom, closeTo(8, 0.01));
     for (final Element tile in find.byType(PrismWallTile).evaluate()) {
       expect((tile.widget as PrismWallTile).borderRadius, BorderRadius.circular(12));
     }
@@ -129,7 +129,7 @@ void main() {
     await pumpSliver(tester, PagedFeedState.initial().copyWith(status: LoadStatus.loading));
 
     expect(tester.widget<LoadingCards>(find.byType(LoadingCards)).useFeedLayout, isTrue);
-    expect(tester.getTopLeft(find.byType(PulseFill).first).dx, 4);
+    expect(tester.getTopLeft(find.byType(PulseFill).first).dx, 16);
   });
 
   testWidgets('an all-AI page with AI hidden offers Show AI walls, which turns the setting on', (tester) async {

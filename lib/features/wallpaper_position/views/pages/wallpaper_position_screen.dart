@@ -2,6 +2,7 @@ import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_position/biz/bloc/wallpaper_position_bloc.j.dart';
 import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
 import 'package:Prism/features/wallpaper_position/domain/repositories/wallpaper_position_repository.dart';
@@ -85,10 +86,10 @@ class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
         final WallpaperPositionBloc bloc = context.read<WallpaperPositionBloc>();
         final PlacementSource? source = state.source;
         return Scaffold(
-          backgroundColor: theme.primaryColor,
+          backgroundColor: theme.colorScheme.surface,
           appBar: AppBar(
-            backgroundColor: theme.primaryColor,
-            title: Text(context.l10n.setScreenAdjust, style: theme.textTheme.displaySmall),
+            backgroundColor: theme.colorScheme.surface,
+            title: Text(context.l10n.setScreenAdjust, style: PrismTextStyles.screenTitle(context)),
           ),
           body: switch (state.status) {
             WallpaperPositionStatus.loading => GlintState(
@@ -116,7 +117,7 @@ class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xl, vertical: PrismSpace.xs),
                     child: Center(
                       child: AspectRatio(
                         aspectRatio: screen.width / screen.height,
@@ -133,7 +134,7 @@ class _WallpaperPositionViewState extends State<_WallpaperPositionView> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: PrismSpace.xs),
                   child: Text(context.l10n.wallpaperPositionApproximate, style: PrismTextStyles.caption(context)),
                 ),
                 PlacementPanel(
@@ -175,21 +176,13 @@ class _PreviewModeToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: SegmentedButton<PlacementPreviewMode>(
-        showSelectedIcon: false,
-        segments: <ButtonSegment<PlacementPreviewMode>>[
-          ButtonSegment<PlacementPreviewMode>(
-            value: PlacementPreviewMode.lock,
-            label: Text(context.l10n.wallpaperPreviewLock),
-          ),
-          ButtonSegment<PlacementPreviewMode>(
-            value: PlacementPreviewMode.home,
-            label: Text(context.l10n.wallpaperPreviewHome),
-          ),
-        ],
-        selected: <PlacementPreviewMode>{mode},
-        onSelectionChanged: (selection) => onChanged(selection.single),
+      padding: const EdgeInsets.fromLTRB(PrismSpace.xl, PrismSpace.xs, PrismSpace.xl, 0),
+      child: PrismSegmented<PlacementPreviewMode>(
+        values: PlacementPreviewMode.values,
+        selected: mode,
+        labelOf: (value) =>
+            value == PlacementPreviewMode.lock ? context.l10n.wallpaperPreviewLock : context.l10n.wallpaperPreviewHome,
+        onChanged: onChanged,
       ),
     );
   }

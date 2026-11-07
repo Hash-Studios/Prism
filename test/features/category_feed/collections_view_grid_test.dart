@@ -13,6 +13,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/collections_view_grid.dart';
@@ -137,7 +138,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
     await tester.pump();
-    final int loadingIndicators = find.byType(CircularProgressIndicator).evaluate().length;
+    final int loadingIndicators = find.byType(PrismLoader).evaluate().length;
     final int prematureRetries = find.text('Try again').evaluate().length;
     firestore.releaseNextPage.complete();
     await tester.pump(const Duration(milliseconds: 50));
@@ -147,7 +148,7 @@ void main() {
     expect(prematureRetries, 0);
     expect(find.text("Couldn't load wallpapers"), findsOneWidget);
     expect(find.text('Try again'), findsOneWidget);
-    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.byType(PrismLoader), findsNothing);
     expect(find.text('No human-made walls here yet'), findsNothing);
   });
 
@@ -194,7 +195,7 @@ void main() {
 
     expect(firestore.nextPageCalls, 6);
     expect(find.text('No human-made walls here yet'), findsOneWidget);
-    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.byType(PrismLoader), findsNothing);
   });
 
   testWidgets('See more pages past AI-only pages until a human wall arrives', (tester) async {
@@ -531,7 +532,7 @@ void main() {
   });
 
   for (final thumbnail in <String, String>{
-    'https://th.wallhaven.cc/small/21/collection.jpg': 'https://th.wallhaven.cc/lg/21/collection.jpg',
+    'https://th.wallhaven.cc/small/21/collection.jpg': 'https://th.wallhaven.cc/orig/21/collection.jpg',
     'https://images.pexels.com/photos/1/tiny.jpg?fit=crop&w=200&h=280':
         'https://images.pexels.com/photos/1/tiny.jpg?fit=max&w=200&h=280',
   }.entries) {

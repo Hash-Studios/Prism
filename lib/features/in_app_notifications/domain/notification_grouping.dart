@@ -99,15 +99,17 @@ String wallOfTheDayRowDayLabel(
   };
 }
 
-/// Time stamp on a notification row: `3:05 PM`, `Yesterday, 3:05 PM`, `Mar 4` or `Mar 4, 2024`.
+/// Group children can span days even when their group sits under a single day header.
 String notificationTimeLabel(
   DateTime createdAt, {
   required AppLocalizations l10n,
   required Locale locale,
   DateTime? now,
+  bool includeDate = false,
 }) {
   final DateTime local = createdAt.toLocal();
   final String time = DateFormat.jm(locale.toString()).format(local);
+  if (!includeDate) return time;
   return switch (_relativeDay(local, (now ?? DateTime.now()).toLocal())) {
     _RelativeDay.today => time,
     _RelativeDay.yesterday => l10n.notifYesterdayAt(time),
@@ -177,14 +179,7 @@ String collapsedGroupSummaryLine(InAppNotificationTitleGroup group, AppLocalizat
   if (firstBody.isEmpty) {
     return l10n.notifGroupSummaryCount(n);
   }
-  if (notificationGroupHasUniformBody(group)) {
-    return l10n.notifGroupSameMessage(n);
-  }
-  final String short = firstBody.length > 52 ? '${firstBody.substring(0, 49)}…' : firstBody;
-  if (n == 2) {
-    return l10n.notifGroupAndMore(short, n - 1);
-  }
-  return l10n.notifGroupAndMore(short, n - 1);
+  return firstBody;
 }
 
 /// Expects [sortedNewestFirst] (e.g. from repository). Returns groups sorted by

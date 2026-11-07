@@ -13,9 +13,7 @@ import 'package:Prism/features/in_app_notifications/domain/notification_grouping
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_visuals.dart';
 import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 /// Left inset of the text column: page margin, icon tile and gap. Grouped children line up with it.
@@ -106,7 +104,12 @@ class NotificationRow extends StatelessWidget {
     final AppLocalizations l10n = context.l10n;
     final Locale locale = Localizations.localeOf(context);
     final localized = localizedNotificationCopy(notification, l10n);
-    final String timeStr = notificationTimeLabel(notification.createdAt, l10n: l10n, locale: locale);
+    final String timeStr = notificationTimeLabel(
+      notification.createdAt,
+      l10n: l10n,
+      locale: locale,
+      includeDate: compactInGroup,
+    );
     final String title = cleanNotificationTitle(localized.title);
     final String body = localized.body;
     final String semanticLine = compactInGroup ? (body.trim().isNotEmpty ? body.trim() : title) : '$title. $body';
@@ -137,14 +140,16 @@ class NotificationRow extends StatelessWidget {
         children: <Widget>[
           Expanded(
             child: Text(
-              displayBody,
+              glueTrailingEmoji(displayBody),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: PrismTextStyles.body(context),
             ),
           ),
           const SizedBox(width: PrismSpace.sm),
-          Text(timeStr, style: PrismTextStyles.caption(context)),
+          Flexible(
+            child: Text(timeStr, textAlign: TextAlign.end, style: PrismTextStyles.caption(context)),
+          ),
           if (!notification.read) ...<Widget>[
             const SizedBox(width: PrismSpace.xs),
             const Padding(padding: EdgeInsets.only(top: 5), child: UnreadDot()),
@@ -155,10 +160,7 @@ class NotificationRow extends StatelessWidget {
   }
 
   Widget _full(BuildContext context, String timeStr, String title) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
     final bool showImage = _hasValidImageUrl(notification.imageUrl);
-    final double width = MediaQuery.sizeOf(context).width;
-    final int memCacheWidth = (width * MediaQuery.devicePixelRatioOf(context)).round().clamp(1, 4096);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page, vertical: PrismSpace.xs),
       child: Row(
@@ -167,6 +169,7 @@ class NotificationRow extends StatelessWidget {
           NotificationIconTile(
             title: localizedNotificationCopy(notification, context.l10n).title,
             body: localizedNotificationCopy(notification, context.l10n).body,
+            unread: !notification.read,
           ),
           const SizedBox(width: PrismSpace.sm),
           Expanded(
@@ -177,42 +180,26 @@ class NotificationRow extends StatelessWidget {
                 if (localizedNotificationCopy(notification, context.l10n).body.trim().isNotEmpty) ...<Widget>[
                   const SizedBox(height: 2),
                   Text(
-                    localizedNotificationCopy(notification, context.l10n).body,
-                    maxLines: 3,
+                    glueTrailingEmoji(localizedNotificationCopy(notification, context.l10n).body),
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: PrismTextStyles.body(context),
-                  ),
-                ],
-                if (showImage) ...<Widget>[
-                  const SizedBox(height: PrismSpace.sm),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(PrismRadius.md),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: ((width - notificationTextInset - PrismSpace.page) * 9 / 16).clamp(0, 180),
-                      child: CachedNetworkImage(
-                        imageUrl: notification.imageUrl,
-                        fit: BoxFit.cover,
-                        memCacheWidth: memCacheWidth,
-                        placeholder: (_, _) => ColoredBox(color: cs.surfaceContainerHigh),
-                        errorWidget: (_, _, _) => ColoredBox(
-                          color: cs.surfaceContainerHigh,
-                          child: Center(child: Icon(JamIcons.picture, color: cs.onSurfaceVariant, size: 24)),
-                        ),
-                      ),
-                    ),
                   ),
                 ],
               ],
             ),
           ),
+          if (showImage) ...<Widget>[
+            const SizedBox(width: PrismSpace.sm),
+            NotificationThumbs(urls: <String>[notification.imageUrl]),
+          ],
         ],
       ),
     );
   }
 }
 
-/// The title of a notification with its time, and an unread dot, on one line.
+/// The title of a notification with its time, and a reserved end slot, on one line.
 class NotificationTitleLine extends StatelessWidget {
   const NotificationTitleLine({
     super.key,
@@ -231,28 +218,40 @@ class NotificationTitleLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Expanded(
-          child: Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: unread ? FontWeight.w700 : FontWeight.w500),
-          ),
-        ),
-        const SizedBox(width: PrismSpace.xs),
-        Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Text(time, style: PrismTextStyles.caption(context)),
-        ),
-        if (unread) ...<Widget>[
-          const SizedBox(width: PrismSpace.xs),
-          const Padding(padding: EdgeInsets.only(top: 7), child: UnreadDot()),
-        ],
-        ?trailing,
-      ],
+    final Widget heading = Text(
+      title,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: unread ? FontWeight.w700 : FontWeight.w500),
+    );
+    final Widget timestamp = Text(time, style: PrismTextStyles.caption(context));
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < MediaQuery.textScalerOf(context).scale(220)) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              heading,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Expanded(child: timestamp),
+                  if (trailing != null) SizedBox(width: 24, child: trailing),
+                ],
+              ),
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(child: heading),
+            const SizedBox(width: PrismSpace.xs),
+            Padding(padding: const EdgeInsets.only(top: 2), child: timestamp),
+            SizedBox(width: 24, child: trailing),
+          ],
+        );
+      },
     );
   }
 }

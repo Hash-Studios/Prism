@@ -35,9 +35,18 @@ class CreatorProgressView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          const StatsEntryButton(source: 'rewards'),
-          Text(context.l10n.economyCreatorMilestones, style: PrismTextStyles.eyebrow(context)),
-          const SizedBox(height: PrismSpace.sm),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Semantics(
+                  header: true,
+                  child: Text(context.l10n.economyCreatorMilestones, style: PrismTextStyles.cardTitle(context)),
+                ),
+              ),
+              const StatsEntryButton(source: 'rewards'),
+            ],
+          ),
+          const SizedBox(height: PrismSpace.xxs),
           if (state.status == CreatorProgressStatus.loading)
             Text(context.l10n.economyCreatorRefreshing, style: PrismTextStyles.caption(context)),
           if (state.status == CreatorProgressStatus.cached)
@@ -69,6 +78,8 @@ class CreatorProgressView extends StatelessWidget {
           Material(
             type: MaterialType.transparency,
             child: ExpansionTile(
+              shape: const Border(),
+              collapsedShape: const Border(),
               tilePadding: EdgeInsets.zero,
               childrenPadding: const EdgeInsets.only(bottom: PrismSpace.xs),
               title: Text(context.l10n.economyCreatorWhatCounts, style: PrismTextStyles.rowTitle(context)),
@@ -95,10 +106,16 @@ class CreatorProgressView extends StatelessWidget {
               ],
             ),
           ),
-          if (onRefresh != null)
-            TextButton(
-              onPressed: state.status == CreatorProgressStatus.loading ? null : onRefresh,
-              child: Text(context.l10n.economyCreatorRefresh),
+          if (onRefresh != null && (state.status == CreatorProgressStatus.cached || stale))
+            // Shifted by the ghost button's own padding so the label lines up with the text above.
+            Transform.translate(
+              offset: Offset(Directionality.of(context) == TextDirection.rtl ? PrismSpace.md : -PrismSpace.md, 0),
+              child: PrismButton(
+                label: context.l10n.economyCreatorRefresh,
+                variant: PrismButtonVariant.ghost,
+                size: PrismButtonSize.compact,
+                onPressed: onRefresh,
+              ),
             ),
         ],
       ),

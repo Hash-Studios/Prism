@@ -2,12 +2,16 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/purchases/annual_trial.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/premium/views/pages/premium_page.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -48,7 +52,34 @@ void main() {
     await getIt.reset();
   });
 
+  // A phone screen: the actions follow the benefits, below the default 800x600 test view's fold. The test font is
+  // wider than the app's, so the benefit rows wrap more; the extra 120 points keep the cover banner's page on screen.
+  void phone(WidgetTester tester) {
+    tester.view.physicalSize = const Size(393, 972);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+  }
+
+  testWidgets('a wallpaper cover banner leads the page and View plans stays above the fold', (tester) async {
+    phone(tester);
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: PremiumPage(),
+      ),
+    );
+    await tester.pump();
+    expect(tester.widget<CoverMosaic>(find.byType(CoverMosaic)).seed, AppLocalizationsEn().premiumPageTitle);
+    expect(
+      tester.getBottomLeft(find.byType(CoverMosaic)).dy,
+      lessThan(tester.getTopLeft(find.text(AppLocalizationsEn().premiumPageHeadline)).dy),
+    );
+    expect(find.text(AppLocalizationsEn().premiumPageViewPlans).hitTestable(), findsOneWidget);
+  });
+
   testWidgets('opening Premium waits for the user to view plans', (tester) async {
+    phone(tester);
     await tester.pumpWidget(
       const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -60,10 +91,77 @@ void main() {
 
     expect(find.text(AppLocalizationsEn().premiumPageTitle), findsOneWidget);
     expect(find.text(AppLocalizationsEn().premiumPageViewPlans), findsOneWidget);
+    // On a short page the action follows the benefits in the content, not in a pinned bottom bar.
+    expect(
+      tester.getTopLeft(find.text(AppLocalizationsEn().premiumPageViewPlans)).dy - PrismSpace.xl,
+      greaterThan(tester.getBottomLeft(find.text(AppLocalizationsEn().premiumBenefitAiClean)).dy),
+    );
+    expect(tester.widget<Scaffold>(find.byType(Scaffold)).bottomNavigationBar, isNull);
     expect(analytics.events.whereType<PaywallImpressionEvent>(), isEmpty);
   });
 
+  testWidgets('Restore is silent while sign-in is pending or cancelled', (tester) async {
+    phone(tester);
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final originalSignIn = signedInActionSignIn;
+    final pending = Completer<bool>();
+    signedInActionSignIn = (_) => pending.future;
+    addTearDown(() => signedInActionSignIn = originalSignIn);
+    final List<String> played = <String>[];
+    const channel = MethodChannel('prism/haptics');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      played.add(call.arguments as String);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    final previousHaptics = PrismHaptics.enabled;
+    addTearDown(() => PrismHaptics.enabled = previousHaptics);
+    PrismHaptics.enabled = true;
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: PremiumPage(),
+      ),
+    );
+
+    await tester.tap(find.text(AppLocalizationsEn().accountRestorePurchases));
+    await tester.pump();
+    expect(played, isEmpty);
+    pending.complete(false);
+    await tester.pumpAndSettle();
+    expect(played, isEmpty);
+  });
+
+  testWidgets('Premium lists what Pro unlocks and offers to restore purchases', (tester) async {
+    phone(tester);
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: PremiumPage(),
+      ),
+    );
+    await tester.pump();
+
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(find.text(l10n.premiumPageHeadline), findsOneWidget);
+    for (final String benefit in <String>[
+      l10n.premiumBenefitWalls,
+      l10n.premiumBenefitFree,
+      l10n.premiumBenefitSpin,
+      l10n.premiumBenefitAutomation,
+      l10n.premiumBenefitLiveStyles,
+      l10n.premiumBenefitAiClean,
+    ]) {
+      expect(find.text(benefit), findsOneWidget);
+    }
+    expect(find.text(l10n.accountRestorePurchases), findsOneWidget);
+  });
+
   testWidgets('unavailable native plans leave a persistent retry action', (tester) async {
+    phone(tester);
     await tester.pumpWidget(
       const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -82,6 +180,7 @@ void main() {
   });
 
   testWidgets('a RevenueCat call that never settles stops loading and offers a retry', (tester) async {
+    phone(tester);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
       purchasesChannel,
       (_) => Completer<Object?>().future,
@@ -144,6 +243,7 @@ void main() {
   });
 
   testWidgets('a trial that starts while the page is open replaces View plans', (tester) async {
+    phone(tester);
     await tester.pumpWidget(
       const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,

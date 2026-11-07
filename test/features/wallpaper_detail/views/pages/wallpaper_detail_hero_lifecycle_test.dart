@@ -12,7 +12,6 @@ import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
-import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
 import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
@@ -126,7 +125,7 @@ class _HeroRouter extends RootStackRouter {
 void main() {
   setUpFavouriteCounts();
 
-  testWidgets('canonical Prism loading preserves the destination Hero throughout its real 160ms flight', (
+  testWidgets('canonical Prism loading preserves the destination Hero throughout its real 260 ms flight', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(400, 800);
@@ -180,7 +179,7 @@ void main() {
       matching: find.byType(Hero, skipOffstage: false),
     );
     final heroState = tester.state(destination);
-    expect(ModalRoute.of(tester.element(destination))!.transitionDuration, const Duration(milliseconds: 160));
+    expect(ModalRoute.of(tester.element(destination))!.transitionDuration, wallpaperDetailZoomDuration);
     await tester.pump();
     expect(bloc.state, isA<WallpaperDetailLoading>());
     expect(tester.state(destination), same(heroState));
@@ -230,9 +229,7 @@ void main() {
     expect(beforeRadius, inExclusiveRange(12, 20));
     // The whole page grows with the flight while Prism confirms the wallpaper. It follows the picture's left edge,
     // top edge and width, so the placeholders start where the page's card slot ends, never below the picture.
-    final pendingBefore = tester.getRect(
-      find.descendant(of: find.byType(WallpaperDetailScreen), matching: find.byType(PrismSkeleton)),
-    );
+    final pendingBefore = tester.getRect(find.byKey(const ValueKey<String>('detail-pending-actions')));
     expect(pendingBefore.top, closeTo(before.top + before.width * 528 / 392, 0.5));
     expect(pendingBefore.top, lessThanOrEqualTo(before.bottom + 0.5));
     expect(pendingBefore.width, closeTo(400 * before.width / 392, 0.5));

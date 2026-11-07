@@ -10,43 +10,18 @@ class NotFoundPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: PrismSpace.pageInsets,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 320),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  const Glint(mood: GlintMood.surprised, size: 120),
-                  const SizedBox(height: PrismSpace.lg),
-                  Text(
-                    context.l10n.coreThisPageDoesNotExist,
-                    textAlign: TextAlign.center,
-                    style: PrismTextStyles.sectionTitle(context),
-                  ),
-                  const SizedBox(height: PrismSpace.xs),
-                  Text(
-                    context.l10n.coreInvalidLinkBody,
-                    textAlign: TextAlign.center,
-                    style: PrismTextStyles.body(context),
-                  ),
-                  const SizedBox(height: PrismSpace.xl),
-                  PrismButton(
-                    label: context.l10n.coreGoHome,
-                    variant: PrismButtonVariant.tonal,
-                    onPressed: () {
-                      context.router.replaceAll(<PageRouteInfo>[const DashboardRoute()]);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+    return PrismPage(
+      title: context.l10n.coreThisPageDoesNotExist,
+      titleWidget: const SizedBox.shrink(),
+      body: GlintState(
+        kind: GlintStateKind.empty,
+        glintSize: 120,
+        title: context.l10n.coreThisPageDoesNotExist,
+        body: context.l10n.coreInvalidLinkBody,
+        actionLabel: context.l10n.coreGoHome,
+        onAction: () {
+          context.router.replaceAll(<PageRouteInfo>[const DashboardRoute()]);
+        },
       ),
     );
   }

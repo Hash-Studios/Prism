@@ -120,8 +120,8 @@ class FolderSavePlanSheet extends StatelessWidget {
     final int free = plan.count(FolderSaveKind.free);
     final int coins = plan.count(FolderSaveKind.coins);
     final int affordable = plan.affordable.length;
+    // Each caller is a PrismButton, which plays the tap haptic.
     void start(FolderSaveChoice choice) {
-      PrismHaptics.impact();
       context.read<FolderSaveBloc>().add(FolderSaveEvent.started(choice: choice, announce: folderSaveAnnouncer(l10n)));
       Navigator.of(context).pop();
     }

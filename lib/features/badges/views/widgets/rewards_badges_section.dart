@@ -1,4 +1,5 @@
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/features/badges/biz/bloc/badges_bloc.dart';
 import 'package:Prism/features/badges/domain/badge_catalog.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -27,9 +28,15 @@ class _BadgesBody extends StatelessWidget {
     return BlocBuilder<BadgesBloc, BadgesState>(
       builder: (context, state) {
         final Set<String> earned = state.earnedIds.toSet();
-        final int count = badgeCatalog.where((BadgeInfo b) => earned.contains(b.id)).length;
+        final List<BadgeInfo> earnedBadges = badgeCatalog.where((BadgeInfo b) => earned.contains(b.id)).toList();
+        final int count = earnedBadges.length;
+        // Earned first, each half in catalog order.
+        final List<BadgeInfo> badges = <BadgeInfo>[
+          ...earnedBadges,
+          ...badgeCatalog.where((BadgeInfo b) => !earned.contains(b.id)),
+        ];
         return Padding(
-          padding: const EdgeInsets.only(top: 32),
+          padding: const EdgeInsets.only(top: PrismSpace.xxl),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -37,26 +44,23 @@ class _BadgesBody extends StatelessWidget {
                 header: true,
                 child: Text(context.l10n.economyBadges, style: PrismTextStyles.sectionTitle(context)),
               ),
-              const SizedBox(height: 4),
-              Text(
-                context.l10n.economyBadgeEarnedCount(count, badgeCatalog.length),
-                style: PrismTextStyles.caption(context),
-              ),
-              const SizedBox(height: 12),
-              for (int i = 0; i < badgeCatalog.length; i += 2) ...<Widget>[
-                if (i > 0) const SizedBox(height: 12),
+              const SizedBox(height: PrismSpace.xxs),
+              Text(context.l10n.economyBadgeEarnedCount(count, badges.length), style: PrismTextStyles.caption(context)),
+              const SizedBox(height: PrismSpace.sm),
+              for (int i = 0; i < badges.length; i += 2) ...<Widget>[
+                if (i > 0) const SizedBox(height: PrismSpace.sm),
                 // Both tiles in a row take the taller one's height.
                 IntrinsicHeight(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       Expanded(
-                        child: _BadgeTile(info: badgeCatalog[i], earned: earned.contains(badgeCatalog[i].id)),
+                        child: _BadgeTile(info: badges[i], earned: earned.contains(badges[i].id)),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: PrismSpace.sm),
                       Expanded(
-                        child: i + 1 < badgeCatalog.length
-                            ? _BadgeTile(info: badgeCatalog[i + 1], earned: earned.contains(badgeCatalog[i + 1].id))
+                        child: i + 1 < badges.length
+                            ? _BadgeTile(info: badges[i + 1], earned: earned.contains(badges[i + 1].id))
                             : const SizedBox.shrink(),
                       ),
                     ],
@@ -88,39 +92,97 @@ class _BadgeTile extends StatelessWidget {
       ),
       excludeSemantics: true,
       child: Container(
-        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: cs.onSurface.withValues(alpha: 0.1)),
+          borderRadius: BorderRadius.circular(PrismRadius.md),
+          border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
         ),
+        clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: earned ? cs.primary : cs.onSurface.withValues(alpha: 0.08),
-              ),
-              child: Icon(
-                earned ? info.icon : Icons.lock_outline_rounded,
-                size: 22,
-                color: earned ? cs.onPrimary : cs.onSurface.withValues(alpha: 0.4),
+            // Bundled wallpaper art. Earned: full colour. Locked: grey and dim, plus the lock, so colour is not the
+            // only cue.
+            SizedBox(
+              height: 72,
+              child: Stack(
+                fit: StackFit.expand,
+                children: <Widget>[
+                  ColorFiltered(
+                    colorFilter: earned ? _identity : _grey,
+                    child: Image.asset(
+                      kCoverMosaicAssets[_coverIndex(info.id)],
+                      fit: BoxFit.cover,
+                      excludeFromSemantics: true,
+                      errorBuilder: (_, _, _) => ColoredBox(color: cs.surfaceContainerHighest),
+                    ),
+                  ),
+                  if (!earned) ColoredBox(color: Colors.black.withValues(alpha: 0.5)),
+                  PositionedDirectional(
+                    start: 12,
+                    bottom: 8,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: <Widget>[
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: earned ? 0.92 : 0.7),
+                          ),
+                          child: Icon(info.icon, size: 20, color: earned ? Colors.black87 : Colors.black45),
+                        ),
+                        if (!earned)
+                          PositionedDirectional(
+                            end: -4,
+                            bottom: -4,
+                            child: Container(
+                              width: 18,
+                              height: 18,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: cs.surfaceContainerHighest,
+                                border: Border.all(color: cs.surface, width: 1.5),
+                              ),
+                              child: Icon(Icons.lock_rounded, size: 11, color: cs.onSurfaceVariant),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              info.name(context.l10n),
-              style: PrismTextStyles.rowTitle(
-                context,
-              ).copyWith(color: earned ? null : cs.onSurface.withValues(alpha: 0.55)),
+            Padding(
+              padding: const EdgeInsets.all(PrismSpace.sm),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    info.name(context.l10n),
+                    style: PrismTextStyles.rowTitle(context).copyWith(color: earned ? null : cs.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(info.description(context.l10n), style: PrismTextStyles.caption(context)),
+                ],
+              ),
             ),
-            const SizedBox(height: 2),
-            Text(info.description(context.l10n), style: PrismTextStyles.caption(context)),
           ],
         ),
       ),
     );
   }
 }
+
+int _coverIndex(String id) {
+  final int i = badgeCatalog.indexWhere((BadgeInfo b) => b.id == id);
+  return (i < 0 ? 0 : i) % kCoverMosaicAssets.length;
+}
+
+const ColorFilter _identity = ColorFilter.mode(Colors.transparent, BlendMode.dst);
+const ColorFilter _grey = ColorFilter.matrix(<double>[
+  0.2126, 0.7152, 0.0722, 0, 0, //
+  0.2126, 0.7152, 0.0722, 0, 0,
+  0.2126, 0.7152, 0.0722, 0, 0,
+  0, 0, 0, 1, 0,
+]);

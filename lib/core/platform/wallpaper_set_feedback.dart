@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
@@ -110,6 +111,8 @@ void reportWallpaperSetResult(
     return;
   }
   final WallpaperTarget retryTarget = result.failedTarget ?? target;
+  // The snackbar plays no haptic, unlike toasts.error.
+  PrismHaptics.error();
   snackHost
     ..hideCurrentSnackBar()
     ..showSnackBar(
@@ -172,6 +175,8 @@ void _showSuccess(
     toasts.success(result.localizedMessage(l10n));
     return;
   }
+  // The snackbar plays no haptic, unlike toasts.success.
+  PrismHaptics.success();
   messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(

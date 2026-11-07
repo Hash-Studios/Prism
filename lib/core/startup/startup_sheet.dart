@@ -1,3 +1,4 @@
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
@@ -34,11 +35,22 @@ Future<bool> showStartupChoiceSheet(
         Row(
           children: <Widget>[
             Expanded(
-              child: TextButton(onPressed: () => Navigator.of(sheetContext).pop(false), child: Text(dismissLabel)),
+              child: PrismButton(
+                label: dismissLabel,
+                variant: PrismButtonVariant.ghost,
+                maxLines: 2,
+                expand: true,
+                onPressed: () => Navigator.of(sheetContext).pop(false),
+              ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: PrismSpace.sm),
             Expanded(
-              child: FilledButton(onPressed: () => Navigator.of(sheetContext).pop(true), child: Text(confirmLabel)),
+              child: PrismButton(
+                label: confirmLabel,
+                maxLines: 2,
+                expand: true,
+                onPressed: () => Navigator.of(sheetContext).pop(true),
+              ),
             ),
           ],
         ),

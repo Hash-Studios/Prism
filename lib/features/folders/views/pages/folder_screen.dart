@@ -543,7 +543,7 @@ class _FolderScreenState extends State<FolderScreen> {
                       value: _FolderMenuAction.delete,
                       child: Text(
                         context.l10n.foldersDelete,
-                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                        style: PrismTextStyles.body(context).copyWith(color: Theme.of(context).colorScheme.error),
                       ),
                     ),
                 ],

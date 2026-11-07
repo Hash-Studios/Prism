@@ -8,8 +8,8 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
-import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_chrome.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
@@ -18,8 +18,8 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
 /// Opens an unlocked wall in the wallpaper detail page. The full url comes from the unlock, not from the Drop doc.
-void openDropWall(BuildContext context, DropWall wall, DropUnlock unlock, {String? heroTag}) {
-  PrismHaptics.tap();
+void openDropWall(BuildContext context, DropWall wall, DropUnlock unlock, {String? heroTag, bool haptic = true}) {
+  if (haptic) PrismHaptics.tap();
   final entity = dropWallFeedItem(wall, unlock);
   unawaited(context.router.push(WallpaperDetailRoute(entity: entity, heroTag: heroTag)));
 }
@@ -68,17 +68,13 @@ class DropWallGrid extends StatelessWidget {
     return SliverPadding(
       padding: PrismWallGrid.padding,
       sliver: SliverGrid.builder(
-        gridDelegate: PrismWallGrid.delegate(
-          context,
-          columns: largeTileGridColumns(MediaQuery.sizeOf(context).width),
-          footerHeight: favouriteFooterHeight,
-        ),
+        gridDelegate: PrismWallGrid.delegate(context, columns: largeTileGridColumns(MediaQuery.sizeOf(context).width)),
         itemCount: drop.walls.length,
         itemBuilder: (context, index) {
           final DropWall wall = drop.walls[index];
           final DropUnlock? unlock = unlocked[wall.id];
           final String heroTag = prismHeroTag(context, index, 'drop-grid-${drop.weekKey}-${wall.id}');
-          final tile = DropWallTile(
+          return DropWallTile(
             key: ValueKey<String>(wall.id),
             wall: wall,
             position: context.l10n.economyDropPosition(index + 1, drop.walls.length),
@@ -93,16 +89,6 @@ class DropWallGrid extends StatelessWidget {
                 : canBuy
                 ? () => onLockedTap(wall)
                 : null,
-          );
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: tile),
-              if (unlock != null)
-                FavouriteWallpaperFooter(item: dropWallFeedItem(wall, unlock))
-              else
-                const SizedBox(height: favouriteFooterHeight),
-            ],
           );
         },
       ),
@@ -133,6 +119,8 @@ class DropWallTile extends StatelessWidget {
   final bool missed;
   final bool busy;
   final VoidCallback? onTap;
+
+  /// Set on an unlocked wall: the tile gets the hold menu and the favourite heart.
   final FeedItemEntity? quickActionItem;
   final String? heroTag;
 
@@ -174,22 +162,19 @@ class DropWallTile extends StatelessWidget {
             ),
           ),
           if (busy)
-            const Center(
+            Center(
               child: DecoratedBox(
-                decoration: BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                child: Padding(
-                  padding: EdgeInsets.all(PrismSpace.sm),
-                  child: SizedBox.square(
-                    dimension: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.92),
+                  shape: BoxShape.circle,
                 ),
+                child: const Padding(padding: EdgeInsets.all(PrismSpace.sm), child: PrismLoader(size: 24)),
               ),
             ),
         ],
       ),
     );
     final FeedItemEntity? item = quickActionItem;
-    return item == null ? tile : WallpaperQuickActionRegion(item: item, child: tile);
+    return item == null ? tile : FavouriteWallpaperCard(item: item, child: tile);
   }
 }

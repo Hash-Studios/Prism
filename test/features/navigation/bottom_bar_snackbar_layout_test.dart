@@ -14,7 +14,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _FakeTabsRouter extends ChangeNotifier implements TabsRouter {
   @override
-  int get activeIndex => 0;
+  int get activeIndex => _activeIndex;
+
+  int _activeIndex = 0;
+
+  @override
+  void setActiveIndex(int index, {bool notify = true}) {
+    _activeIndex = index;
+    if (notify) notifyListeners();
+  }
 
   @override
   StackRouter? stackRouterOfIndex(int index) => null;
@@ -67,6 +75,7 @@ void main() {
       tabContext = context;
       return Scaffold(
         body: ListView.builder(
+          key: ValueKey(tabs.activeIndex),
           controller: scrollController,
           itemCount: 100,
           itemBuilder: (_, index) => SizedBox(height: 80, child: Text('row $index')),
@@ -159,14 +168,58 @@ void main() {
     });
   }
 
-  testWidgets('keyboard feedback clears the lifted pill instead of applying its inset twice', (tester) async {
+  testWidgets('the keyboard covers the pill instead of lifting it, and feedback sits on the keyboard', (tester) async {
     await pumpBar(tester, keyboard: 300);
     await showMessage(tester);
 
     final Rect pill = tester.getRect(find.byType(PrismBottomNav));
-    expect(pill.bottom, closeTo(844 - 300 - 10, 0.01));
-    expect(cardRect(tester).bottom, closeTo(pill.top - 8, 0.01));
+    expect(pill.bottom, closeTo(844 - 10, 0.01), reason: 'the pill does not ride up with the keyboard');
+    expect(pill.top, greaterThan(844 - 300), reason: 'the keyboard covers all of it');
+    expect(cardRect(tester).bottom, closeTo(844 - 300 - 10, 0.01));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the keyboard fades the pill and the create button out and they stop taking taps', (tester) async {
+    await pumpBar(tester);
+    expect(find.byType(PrismBottomNav).hitTestable(), findsOneWidget);
+
+    await pumpBar(tester, keyboard: 300);
+    expect(find.byType(PrismBottomNav).hitTestable(), findsNothing);
+    expect(find.byType(PrismFab).hitTestable(), findsNothing);
+    final AnimatedOpacity fade = tester.widget<AnimatedOpacity>(
+      find.ancestor(of: find.byType(PrismBottomNav), matching: find.byType(AnimatedOpacity)).first,
+    );
+    expect(fade.opacity, 0);
+  });
+
+  testWidgets('a short, light fade to the page colour sits under the row and lets taps through', (tester) async {
+    await pumpBar(tester);
+    final Finder fade = find.byWidgetPredicate(
+      (widget) =>
+          widget is DecoratedBox &&
+          widget.decoration is BoxDecoration &&
+          (widget.decoration as BoxDecoration).gradient is LinearGradient,
+    );
+    expect(fade, findsOneWidget);
+    expect(tester.getSize(fade).height, 34 + 64);
+    final List<Color> colors = ((tester.widget<DecoratedBox>(fade).decoration as BoxDecoration).gradient!).colors;
+    expect(colors.last, kDarkTheme.colorScheme.surface.withValues(alpha: 0.6));
+    expect(find.ancestor(of: fade, matching: find.byType(IgnorePointer)), findsWidgets);
+  });
+
+  testWidgets('the pill and the create button are glass that share one backdrop read', (tester) async {
+    await pumpBar(tester);
+    final List<RenderBackdropFilter> glass = tester
+        .renderObjectList<RenderBackdropFilter>(
+          find.descendant(
+            of: find.byWidgetPredicate((widget) => widget is PrismBottomNav || widget is PrismFab),
+            matching: find.byType(BackdropFilter),
+          ),
+        )
+        .toList();
+    expect(glass, hasLength(2));
+    expect(glass.first.backdropKey, isNotNull);
+    expect(glass.last.backdropKey, same(glass.first.backdropKey));
   });
 
   testWidgets('a hidden pill leaves feedback above the scroll-to-top action', (tester) async {
@@ -177,15 +230,38 @@ void main() {
     await tester.drag(find.byType(ListView), const Offset(0, -600));
     await tester.pumpAndSettle();
     final Finder scrollToTop = find.bySemanticsLabel('Scroll to top');
+    expect(scrollToTop, findsNothing, reason: 'less than two screens down');
+    await tester.drag(find.byType(ListView), const Offset(0, -1400));
+    await tester.pumpAndSettle();
     expect(scrollToTop, findsOneWidget);
     await showMessage(tester);
 
     expect(cardRect(tester).bottom, lessThan(tester.getRect(scrollToTop).top));
     expect(scrollToTop.hitTestable(), findsOneWidget);
+    expect(tester.getSize(scrollToTop).width, greaterThanOrEqualTo(44));
     expect(controller.offset, greaterThan(0));
     await tester.tap(scrollToTop);
     await tester.pumpAndSettle();
     expect(controller.offset, 0);
+    expect(tester.takeException(), isNull);
+    semantics.dispose();
+  });
+
+  testWidgets('a programmatic tab switch clears the previous tab scroll-to-top action', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final deepController = ScrollController();
+    final shallowController = ScrollController();
+    addTearDown(deepController.dispose);
+    addTearDown(shallowController.dispose);
+    await pumpBar(tester, scrollController: deepController);
+    await tester.drag(find.byType(ListView), const Offset(0, -2200));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Scroll to top'), findsOneWidget);
+
+    tabs.setActiveIndex(1);
+    await pumpBar(tester, scrollController: shallowController);
+    expect(shallowController.offset, 0);
+    expect(find.bySemanticsLabel('Scroll to top'), findsNothing);
     expect(tester.takeException(), isNull);
     semantics.dispose();
   });

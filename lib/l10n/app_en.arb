@@ -817,7 +817,7 @@
   "@accountSpatialSceneSemanticLabel": {
     "description": "Spatial Scene text: accountSpatialSceneSemanticLabel."
   },
-  "accountDownloadApk": "DOWNLOAD APK",
+  "accountDownloadApk": "Download APK",
   "@accountDownloadApk": {
     "description": "About page action that opens the APK download page. Shown only on installs that did not come from Google Play."
   },
@@ -865,7 +865,7 @@
   "@accountFavouritesCleared": {
     "description": "Success message after clearing favourite wallpapers."
   },
-  "accountFeedback": "FEEDBACK",
+  "accountFeedback": "Feedback",
   "@accountFeedback": {
     "description": "About page action to send feedback."
   },
@@ -1420,7 +1420,7 @@
   "@accountPrismPro": {
     "description": "Prism Pro drawer heading."
   },
-  "accountPrivacyAction": "PRIVACY",
+  "accountPrivacyAction": "Privacy policy",
   "@accountPrivacyAction": {
     "description": "About page action to view the privacy policy."
   },
@@ -1516,7 +1516,7 @@
   "@accountQuickTiles": {
     "description": "Settings item for Quick Settings tiles."
   },
-  "accountRateApp": "RATE",
+  "accountRateApp": "Rate",
   "@accountRateApp": {
     "description": "About page action to rate Prism."
   },
@@ -1608,15 +1608,6 @@
   "accountRestoringPurchases": "Restoring purchases…",
   "@accountRestoringPurchases": {
     "description": "Progress toast while restoring purchases."
-  },
-  "accountResultsForQuery": "Results for {query}",
-  "@accountResultsForQuery": {
-    "description": "Label above wallpaper search results.",
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
   },
   "accountRetry": "Retry",
   "@accountRetry": {
@@ -1781,19 +1772,19 @@
   "@accountSignInToPrism": {
     "description": "Heading for the signed-out settings account card."
   },
-  "accountSocialGithub": "GITHUB",
+  "accountSocialGithub": "GitHub",
   "@accountSocialGithub": {
     "description": "About page social link label for GitHub."
   },
-  "accountSocialInstagram": "INSTAGRAM",
+  "accountSocialInstagram": "Instagram",
   "@accountSocialInstagram": {
     "description": "About page social link label for Instagram."
   },
-  "accountSocialTelegram": "TELEGRAM",
+  "accountSocialTelegram": "Telegram",
   "@accountSocialTelegram": {
     "description": "About page social link label for Telegram."
   },
-  "accountSocialTwitter": "TWITTER",
+  "accountSocialTwitter": "Twitter",
   "@accountSocialTwitter": {
     "description": "About page social link label for Twitter."
   },
@@ -1857,7 +1848,7 @@
   "@accountTerms": {
     "description": "Terms of use link label."
   },
-  "accountTermsAction": "TERMS",
+  "accountTermsAction": "Terms of use",
   "@accountTermsAction": {
     "description": "About page action to view the terms of use."
   },
@@ -2026,7 +2017,7 @@
   "@accountWhatsNew": {
     "description": "Menu item for the release changelog."
   },
-  "accountWhatsNewAction": "WHAT'S NEW",
+  "accountWhatsNewAction": "What's new",
   "@accountWhatsNewAction": {
     "description": "About page action to view changes."
   },
@@ -3484,6 +3475,10 @@
   "@deepLinkInputLiveTitle": {
     "description": "Page title while choosing an image for a live wallpaper."
   },
+  "deepLinkInputLiveDescription": "Choose a photo from your gallery to make it a live wallpaper.",
+  "@deepLinkInputLiveDescription": {
+    "description": "Instructions on the image chooser page when the user makes a live wallpaper."
+  },
   "deepLinkInputPhotoPreviewTitle": "Photo preview",
   "@deepLinkInputPhotoPreviewTitle": {
     "description": "Page title while choosing an image for photo preview."
@@ -4195,6 +4190,15 @@
   "economyCoinsAreYoursToSpend": "Coins are yours to spend",
   "economyCoinsEarned": "+{count, plural, one{1 coin} other{{count} coins}}",
   "@economyCoinsEarned": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "economyCoinReward": "+{count}",
+  "@economyCoinReward": {
     "placeholders": {
       "count": {
         "type": "int",
@@ -5241,7 +5245,7 @@
   "economyLeaderboardNoRankings": "No rankings yet",
   "economyLeaderboardOffline": "If you are offline, saved scores may be shown.",
   "economyLeaderboardRankedByXp": "Ranked by XP earned this week",
-  "economyLeaderboardReset": "Resets Monday 00:00 UTC · {days, plural, one{1d} other{{days}d}} {hours, plural, one{1h} other{{hours}h}} left",
+  "economyLeaderboardReset": "Resets in {days, plural, one{1d} other{{days}d}} {hours, plural, one{1h} other{{hours}h}}",
   "@economyLeaderboardReset": {
     "placeholders": {
       "days": {
@@ -6016,10 +6020,10 @@
     }
   },
   "economyWeekComplete": "Week complete!",
-  "economyWeekly": "WEEKLY",
+  "economyWeekly": "Weekly",
   "economyWeeklyDraw": "Weekly draw",
   "economyWeeklyDrop": "Weekly Drop",
-  "economyWeeklyEndsIn": "WEEKLY · {time}",
+  "economyWeeklyEndsIn": "Weekly · {time}",
   "@economyWeeklyEndsIn": {
     "placeholders": {
       "time": {
@@ -6132,7 +6136,6 @@
       }
     }
   },
-  "economyYourXp": "YOUR XP",
   "errorGeneric": "Something went wrong. Please try again.",
   "errorNetwork": "Check your connection and try again.",
   "navigationBackOnline": "Back online",
@@ -6199,18 +6202,6 @@
   "notifEmptyTitle": "No notifications",
   "notifExpanded": "Expanded",
   "notifGenericTitle": "Notification",
-  "notifGroupAndMore": "{message} and {otherCount, plural, one{1 more.} other{{otherCount} more.}}",
-  "@notifGroupAndMore": {
-    "placeholders": {
-      "message": {
-        "type": "String"
-      },
-      "otherCount": {
-        "type": "int",
-        "format": "decimalPattern"
-      }
-    }
-  },
   "notifGroupApprovals": "{count, plural, one{approval} other{approvals}}",
   "@notifGroupApprovals": {
     "placeholders": {
@@ -6620,10 +6611,10 @@
   "onboardingAiGenerating": "crafting your wallpaper…",
   "onboardingBrowseGuest": "Browse without an account",
   "onboardingCategoriesUnavailable": "we could not load categories, you can skip this step",
-  "onboardingContinue": "continue",
+  "onboardingContinue": "Continue",
   "onboardingContinueApple": "Continue with Apple",
   "onboardingContinueGoogle": "Continue with Google",
-  "onboardingContinueSelected": "continue ({count} selected)",
+  "onboardingContinueSelected": "Continue ({count} selected)",
   "@onboardingContinueSelected": {
     "placeholders": {
       "count": {
@@ -6664,7 +6655,7 @@
   "onboardingFollowing": "following",
   "onboardingGenerateFailure": "something went wrong — tap generate to try again",
   "onboardingGenerateSuccess": "looking good! opening your wallpaper",
-  "onboardingGenerateWallpaper": "generate my wallpaper",
+  "onboardingGenerateWallpaper": "Generate my wallpaper",
   "onboardingHeadlineCreators": "Find your people",
   "onboardingHeadlineCustomize": "Make it yours",
   "onboardingHeadlineGenerate": "Create your\nfirst wallpaper",
@@ -6685,9 +6676,9 @@
   "onboardingRecoverySetupFailed": "Couldn't finish setup. Try again.",
   "onboardingRecoverySetupFailedHelper": "couldn't finish setup. check your connection and try again",
   "onboardingRecoverySignIn": "Sign in again",
-  "onboardingReloadLower": "reload",
-  "onboardingSavePhotos": "save to photos",
-  "onboardingSelectInterestMinimum": "select at least {count} categories to personalize your feed",
+  "onboardingReloadLower": "Reload",
+  "onboardingSavePhotos": "Save to photos",
+  "onboardingSelectInterestMinimum": "Select at least {count} categories to personalize your feed",
   "@onboardingSelectInterestMinimum": {
     "placeholders": {
       "count": {
@@ -6696,12 +6687,12 @@
       }
     }
   },
-  "onboardingSetWallpaper": "set as wallpaper",
-  "onboardingSignInAgainLower": "sign in again",
+  "onboardingSetWallpaper": "Set as wallpaper",
+  "onboardingSignInAgainLower": "Sign in again",
   "onboardingSkip": "Skip",
-  "onboardingSkipLower": "skip",
+  "onboardingSkipLower": "Skip",
   "onboardingTermsRequired": "Please agree to the Terms and Privacy policy first.",
-  "onboardingTryAgainLower": "try again",
+  "onboardingTryAgainLower": "Try again",
   "onboardingWallpaperForInterest": "we picked this wallpaper based on your interest in {category}",
   "@onboardingWallpaperForInterest": {
     "placeholders": {
@@ -6732,6 +6723,34 @@
   "premiumPageViewPlans": "View plans",
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
+  },
+  "premiumPageHeadline": "The whole gallery, unlocked",
+  "@premiumPageHeadline": {
+    "description": "Large headline at the top of the Prism Premium page."
+  },
+  "premiumBenefitWalls": "Every premium collection and wallpaper",
+  "@premiumBenefitWalls": {
+    "description": "Premium benefit row: premium collections and walls open without coins or a pass."
+  },
+  "premiumBenefitFree": "Free downloads and no ads",
+  "@premiumBenefitFree": {
+    "description": "Premium benefit row: downloads cost no coins and inline and full-screen ads are off."
+  },
+  "premiumBenefitSpin": "A free spin every day",
+  "@premiumBenefitSpin": {
+    "description": "Premium benefit row: one free spin of the coin wheel each day."
+  },
+  "premiumBenefitAutomation": "Auto-rotate and day and night mode",
+  "@premiumBenefitAutomation": {
+    "description": "Premium benefit row: auto-rotate and day and night wallpaper switching."
+  },
+  "premiumBenefitLiveStyles": "Every live wallpaper style",
+  "@premiumBenefitLiveStyles": {
+    "description": "Premium benefit row: every live wallpaper style without coins."
+  },
+  "premiumBenefitAiClean": "AI wallpapers with no watermark, for fewer coins",
+  "@premiumBenefitAiClean": {
+    "description": "Premium benefit row: AI wallpapers without the watermark, at a lower coin price."
   },
   "premiumGuestStorePurchaseActive": "Your store purchase is active on this device. Sign in to use account-based Pro features.",
   "@premiumGuestStorePurchaseActive": {
@@ -9062,11 +9081,11 @@
   "@wallpaperStartupFailed": {
     "description": "Title shown when app startup fails."
   },
-  "wallpaperThemeDarkAccent": "Dark Accent Color",
+  "wallpaperThemeDarkAccent": "Dark accent colour",
   "@wallpaperThemeDarkAccent": {
     "description": "Section title for choosing the dark theme accent colour."
   },
-  "wallpaperThemeDarkThemes": "Dark Themes",
+  "wallpaperThemeDarkThemes": "Dark themes",
   "@wallpaperThemeDarkThemes": {
     "description": "Section title for dark theme choices."
   },
@@ -9078,11 +9097,11 @@
   "@wallpaperAppAccentUpdated": {
     "description": "Snackbar message shown after the app accent changes from a wallpaper."
   },
-  "wallpaperThemeLightAccent": "Light Accent Color",
+  "wallpaperThemeLightAccent": "Light accent colour",
   "@wallpaperThemeLightAccent": {
     "description": "Section title for choosing the light theme accent colour."
   },
-  "wallpaperThemeLightThemes": "Light Themes",
+  "wallpaperThemeLightThemes": "Light themes",
   "@wallpaperThemeLightThemes": {
     "description": "Section title for light theme choices."
   },
@@ -9094,7 +9113,7 @@
   "@wallpaperThemeModeLight": {
     "description": "Light app theme mode option."
   },
-  "wallpaperThemeModeSystem": "System (Light/Dark)",
+  "wallpaperThemeModeSystem": "System",
   "@wallpaperThemeModeSystem": {
     "description": "App theme mode option that follows the system light or dark appearance."
   },
@@ -11633,7 +11652,7 @@
   },
   "challengeTitle": "Weekly challenge",
   "challengeRules": "Up to 3 entries, each reviewed before appearing.",
-  "challengeVotingRules": "Vote for other creators until {date} UTC.",
+  "challengeVotingRules": "Vote for other creators until {date}.",
   "@challengeVotingRules": {
     "placeholders": {
       "date": {
@@ -12609,6 +12628,10 @@
   "creatorsToFollow": "Creators to follow",
   "@creatorsToFollow": {
     "description": "Title of the row of suggested creators on Home and Search."
+  },
+  "accountBrowseCreators": "Browse creators",
+  "@accountBrowseCreators": {
+    "description": "Action on the empty creator search, opens the creator directory."
   },
   "creatorsSeeAll": "See all",
   "@creatorsSeeAll": {
@@ -14455,6 +14478,16 @@
   "@searchPhotoCouldNotOpen": {
     "description": "Toast when the picked photo cannot be decoded."
   },
+  "searchMoreWallpapers": "More wallpapers",
+  "@searchMoreWallpapers": {"description": "Section header for extra wallpaper results in search."},
+  "wallpaperPreviewNoEvents": "No events today",
+  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."},
+  "accountFollowersLabel": "{count, plural, one{Follower} other{Followers}}",
+  "@accountFollowersLabel": {"description": "Label under a profile's follower count. The number is shown separately.", "placeholders": {"count": {"type": "int"}}},
+  "profileBadgeCount": "{count, plural, one{1 badge} other{{count} badges}}",
+  "@profileBadgeCount": {"description": "Chip on a profile that opens the list of earned badges.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyLeaderboardTopThisWeek": "Top this week",
+  "@economyLeaderboardTopThisWeek": {"description": "Section heading above the global top 5 on the Following leaderboard."},
   "foldersSaveAll": "Save all",
   "@foldersSaveAll": {
     "description": "Button label that starts saving all wallpapers in a folder."
@@ -14998,6 +15031,10 @@
   "@foldersMakePrivateMessageShared": {
     "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
   },
+  "gestureHintHoldToSave": "Hold to save",
+  "@gestureHintHoldToSave": {"description": "One-time hint over a wallpaper tile: long-press it for quick actions such as save."},
+  "gestureHintSwipeForSimilar": "Swipe up for similar walls",
+  "@gestureHintSwipeForSimilar": {"description": "One-time hint over the wallpaper detail image: swipe up to see similar wallpapers."},
   "foldersSectionAdd": "Add section",
   "@foldersSectionAdd": {
     "description": "Folder page menu item and name sheet button that add a named section to a folder."

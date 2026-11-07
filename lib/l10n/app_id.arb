@@ -933,7 +933,7 @@
   "@accountSpatialSceneSemanticLabel": {
     "description": "Spatial Scene text: accountSpatialSceneSemanticLabel."
   },
-  "accountDownloadApk": "UNDUH APK",
+  "accountDownloadApk": "Unduh APK",
   "@accountDownloadApk": {
     "description": "About page action that opens the APK download page. Shown only on installs that did not come from Google Play."
   },
@@ -981,7 +981,7 @@
   "@accountFavouritesCleared": {
     "description": "Success message after clearing favourite wallpapers."
   },
-  "accountFeedback": "MASUKAN",
+  "accountFeedback": "Masukan",
   "@accountFeedback": {
     "description": "About page action to send feedback."
   },
@@ -1536,7 +1536,7 @@
   "@accountPrismPro": {
     "description": "Prism Pro drawer heading."
   },
-  "accountPrivacyAction": "PRIVASI",
+  "accountPrivacyAction": "Kebijakan privasi",
   "@accountPrivacyAction": {
     "description": "About page action to view the privacy policy."
   },
@@ -1632,7 +1632,7 @@
   "@accountQuickTiles": {
     "description": "Settings item for Quick Settings tiles."
   },
-  "accountRateApp": "NILAI",
+  "accountRateApp": "Nilai",
   "@accountRateApp": {
     "description": "About page action to rate Prism."
   },
@@ -1724,15 +1724,6 @@
   "accountRestoringPurchases": "Memulihkan pembelian…",
   "@accountRestoringPurchases": {
     "description": "Progress toast while restoring purchases."
-  },
-  "accountResultsForQuery": "Hasil untuk {query}",
-  "@accountResultsForQuery": {
-    "description": "Label above wallpaper search results.",
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
   },
   "accountRetry": "Coba lagi",
   "@accountRetry": {
@@ -1897,19 +1888,19 @@
   "@accountSignInToPrism": {
     "description": "Heading for the signed-out settings account card."
   },
-  "accountSocialGithub": "GITHUB",
+  "accountSocialGithub": "GitHub",
   "@accountSocialGithub": {
     "description": "About page social link label for GitHub."
   },
-  "accountSocialInstagram": "INSTAGRAM",
+  "accountSocialInstagram": "Instagram",
   "@accountSocialInstagram": {
     "description": "About page social link label for Instagram."
   },
-  "accountSocialTelegram": "TELEGRAM",
+  "accountSocialTelegram": "Telegram",
   "@accountSocialTelegram": {
     "description": "About page social link label for Telegram."
   },
-  "accountSocialTwitter": "TWITTER",
+  "accountSocialTwitter": "Twitter",
   "@accountSocialTwitter": {
     "description": "About page social link label for Twitter."
   },
@@ -1973,7 +1964,7 @@
   "@accountTerms": {
     "description": "Terms of use link label."
   },
-  "accountTermsAction": "KETENTUAN",
+  "accountTermsAction": "Ketentuan penggunaan",
   "@accountTermsAction": {
     "description": "About page action to view the terms of use."
   },
@@ -2142,7 +2133,7 @@
   "@accountWhatsNew": {
     "description": "Menu item for the release changelog."
   },
-  "accountWhatsNewAction": "YANG BARU",
+  "accountWhatsNewAction": "Yang baru",
   "@accountWhatsNewAction": {
     "description": "About page action to view changes."
   },
@@ -3594,6 +3585,10 @@
   "@deepLinkInputLiveTitle": {
     "description": "Page title while choosing an image for a live wallpaper."
   },
+  "deepLinkInputLiveDescription": "Pilih foto dari galeri untuk dijadikan wallpaper bergerak.",
+  "@deepLinkInputLiveDescription": {
+    "description": "Instructions on the image chooser page when the user makes a live wallpaper."
+  },
   "deepLinkInputPhotoPreviewTitle": "Pratinjau foto",
   "@deepLinkInputPhotoPreviewTitle": {
     "description": "Page title while choosing an image for photo preview."
@@ -4299,6 +4294,15 @@
   "economyCoinsAreYoursToSpend": "Koin dapat Anda gunakan",
   "economyCoinsEarned": "+{count, plural, one{1 koin} other{{count} koin}}",
   "@economyCoinsEarned": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "economyCoinReward": "+{count}",
+  "@economyCoinReward": {
     "placeholders": {
       "count": {
         "type": "int",
@@ -5345,7 +5349,7 @@
   "economyLeaderboardNoRankings": "Belum ada peringkat",
   "economyLeaderboardOffline": "Jika Anda offline, skor tersimpan mungkin ditampilkan.",
   "economyLeaderboardRankedByXp": "Diurutkan berdasarkan XP yang diperoleh minggu ini",
-  "economyLeaderboardReset": "Direset Senin pukul 00.00 UTC · tersisa {days, plural, one{1h} other{{days}h}} {hours, plural, one{1j} other{{hours}j}}",
+  "economyLeaderboardReset": "Direset dalam {days, plural, one{1h} other{{days}h}} {hours, plural, one{1j} other{{hours}j}}",
   "@economyLeaderboardReset": {
     "placeholders": {
       "days": {
@@ -6120,10 +6124,10 @@
     }
   },
   "economyWeekComplete": "Minggu selesai!",
-  "economyWeekly": "MINGGUAN",
+  "economyWeekly": "Mingguan",
   "economyWeeklyDraw": "Draw mingguan",
   "economyWeeklyDrop": "Drop mingguan",
-  "economyWeeklyEndsIn": "MINGGUAN · {time}",
+  "economyWeeklyEndsIn": "Mingguan · {time}",
   "@economyWeeklyEndsIn": {
     "placeholders": {
       "time": {
@@ -6236,7 +6240,6 @@
       }
     }
   },
-  "economyYourXp": "XP ANDA",
   "errorGeneric": "Terjadi kesalahan. Coba lagi.",
   "errorNetwork": "Periksa koneksi Anda, lalu coba lagi.",
   "navigationBackOnline": "Kembali online",
@@ -6303,18 +6306,6 @@
   "notifEmptyTitle": "Tidak ada notifikasi",
   "notifExpanded": "Diperluas",
   "notifGenericTitle": "Notifikasi",
-  "notifGroupAndMore": "{message} dan {otherCount, plural, one{1 lainnya.} other{{otherCount} lainnya.}}",
-  "@notifGroupAndMore": {
-    "placeholders": {
-      "message": {
-        "type": "String"
-      },
-      "otherCount": {
-        "type": "int",
-        "format": "decimalPattern"
-      }
-    }
-  },
   "notifGroupApprovals": "{count, plural, one{persetujuan} other{persetujuan}}",
   "@notifGroupApprovals": {
     "placeholders": {
@@ -6789,8 +6780,8 @@
   "onboardingRecoverySetupFailed": "Penyiapan tidak selesai. Coba lagi.",
   "onboardingRecoverySetupFailedHelper": "Penyiapan tidak selesai. Periksa koneksi, lalu coba lagi.",
   "onboardingRecoverySignIn": "Masuk lagi",
-  "onboardingReloadLower": "muat ulang",
-  "onboardingSavePhotos": "simpan ke Foto",
+  "onboardingReloadLower": "Muat ulang",
+  "onboardingSavePhotos": "Simpan ke Foto",
   "onboardingSelectInterestMinimum": "Pilih setidaknya {count} kategori agar beranda Anda sesuai minat.",
   "@onboardingSelectInterestMinimum": {
     "placeholders": {
@@ -6800,12 +6791,12 @@
       }
     }
   },
-  "onboardingSetWallpaper": "pasang sebagai wallpaper",
-  "onboardingSignInAgainLower": "masuk lagi",
+  "onboardingSetWallpaper": "Pasang sebagai wallpaper",
+  "onboardingSignInAgainLower": "Masuk lagi",
   "onboardingSkip": "Lewati",
-  "onboardingSkipLower": "lewati",
+  "onboardingSkipLower": "Lewati",
   "onboardingTermsRequired": "Setujui Ketentuan dan Kebijakan Privasi terlebih dahulu.",
-  "onboardingTryAgainLower": "coba lagi",
+  "onboardingTryAgainLower": "Coba lagi",
   "onboardingWallpaperForInterest": "Wallpaper ini dipilih berdasarkan minat Anda pada {category}",
   "@onboardingWallpaperForInterest": {
     "placeholders": {
@@ -6836,6 +6827,34 @@
   "premiumPageViewPlans": "Lihat paket",
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
+  },
+  "premiumPageHeadline": "Seluruh galeri, terbuka",
+  "@premiumPageHeadline": {
+    "description": "Large headline at the top of the Prism Premium page."
+  },
+  "premiumBenefitWalls": "Semua koleksi dan wallpaper premium",
+  "@premiumBenefitWalls": {
+    "description": "Premium benefit row: premium collections and walls open without coins or a pass."
+  },
+  "premiumBenefitFree": "Unduhan gratis tanpa iklan",
+  "@premiumBenefitFree": {
+    "description": "Premium benefit row: downloads cost no coins and inline and full-screen ads are off."
+  },
+  "premiumBenefitSpin": "Satu putaran gratis setiap hari",
+  "@premiumBenefitSpin": {
+    "description": "Premium benefit row: one free spin of the coin wheel each day."
+  },
+  "premiumBenefitAutomation": "Putar otomatis dan mode siang-malam",
+  "@premiumBenefitAutomation": {
+    "description": "Premium benefit row: auto-rotate and day and night wallpaper switching."
+  },
+  "premiumBenefitLiveStyles": "Semua gaya wallpaper bergerak",
+  "@premiumBenefitLiveStyles": {
+    "description": "Premium benefit row: every live wallpaper style without coins."
+  },
+  "premiumBenefitAiClean": "Wallpaper AI tanpa tanda air, dengan koin lebih sedikit",
+  "@premiumBenefitAiClean": {
+    "description": "Premium benefit row: AI wallpapers without the watermark, at a lower coin price."
   },
   "premiumGuestStorePurchaseActive": "Pembelian toko Anda aktif di perangkat ini. Masuk untuk menggunakan fitur Pro berbasis akun.",
   "premiumPurchasePending": "Pembelian Anda tersimpan. Pro mungkin perlu waktu satu menit untuk aktif.",
@@ -9157,11 +9176,11 @@
   "@wallpaperStartupFailed": {
     "description": "Title shown when app startup fails."
   },
-  "wallpaperThemeDarkAccent": "Warna Aksen Gelap",
+  "wallpaperThemeDarkAccent": "Warna aksen gelap",
   "@wallpaperThemeDarkAccent": {
     "description": "Section title for choosing the dark theme accent colour."
   },
-  "wallpaperThemeDarkThemes": "Tema Gelap",
+  "wallpaperThemeDarkThemes": "Tema gelap",
   "@wallpaperThemeDarkThemes": {
     "description": "Section title for dark theme choices."
   },
@@ -9173,11 +9192,11 @@
   "@wallpaperAppAccentUpdated": {
     "description": "Snackbar message shown after the app accent changes from a wallpaper."
   },
-  "wallpaperThemeLightAccent": "Warna Aksen Terang",
+  "wallpaperThemeLightAccent": "Warna aksen terang",
   "@wallpaperThemeLightAccent": {
     "description": "Section title for choosing the light theme accent colour."
   },
-  "wallpaperThemeLightThemes": "Tema Terang",
+  "wallpaperThemeLightThemes": "Tema terang",
   "@wallpaperThemeLightThemes": {
     "description": "Section title for light theme choices."
   },
@@ -9189,7 +9208,7 @@
   "@wallpaperThemeModeLight": {
     "description": "Light app theme mode option."
   },
-  "wallpaperThemeModeSystem": "Sistem (terang/gelap)",
+  "wallpaperThemeModeSystem": "Sistem",
   "@wallpaperThemeModeSystem": {
     "description": "App theme mode option that follows the system light or dark appearance."
   },
@@ -11319,7 +11338,7 @@
   },
   "challengeTitle": "Tantangan mingguan",
   "challengeRules": "Maksimal 3 karya, ditinjau sebelum ditampilkan.",
-  "challengeVotingRules": "Pilih karya kreator lain hingga {date} UTC.",
+  "challengeVotingRules": "Pilih karya kreator lain hingga {date}.",
   "@challengeVotingRules": {
     "placeholders": {
       "date": {
@@ -12099,6 +12118,10 @@
   "creatorsToFollow": "Kreator untuk diikuti",
   "@creatorsToFollow": {
     "description": "Title of the row of suggested creators on Home and Search."
+  },
+  "accountBrowseCreators": "Jelajahi kreator",
+  "@accountBrowseCreators": {
+    "description": "Action on the empty creator search, opens the creator directory."
   },
   "creatorsSeeAll": "Lihat semua",
   "@creatorsSeeAll": {
@@ -13651,6 +13674,16 @@
   "@searchPhotoCouldNotOpen": {
     "description": "Toast when the picked photo cannot be decoded."
   },
+  "searchMoreWallpapers": "Wallpaper lainnya",
+  "@searchMoreWallpapers": {"description": "Section header for extra wallpaper results in search."},
+  "wallpaperPreviewNoEvents": "Tidak ada acara hari ini",
+  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."},
+  "accountFollowersLabel": "{count, plural, one{Pengikut} other{Pengikut}}",
+  "@accountFollowersLabel": {"description": "Label under a profile's follower count. The number is shown separately.", "placeholders": {"count": {"type": "int"}}},
+  "profileBadgeCount": "{count, plural, one{1 lencana} other{{count} lencana}}",
+  "@profileBadgeCount": {"description": "Chip on a profile that opens the list of earned badges.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyLeaderboardTopThisWeek": "Teratas minggu ini",
+  "@economyLeaderboardTopThisWeek": {"description": "Section heading above the global top 5 on the Following leaderboard."},
   "foldersSaveAll": "Simpan semua",
   "@foldersSaveAll": {
     "description": "Button label that starts saving all wallpapers in a folder."
@@ -14194,6 +14227,8 @@
   "@foldersMakePrivateMessageShared": {
     "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
   },
+  "gestureHintHoldToSave": "Tahan untuk menyimpan",
+  "gestureHintSwipeForSimilar": "Geser ke atas untuk wallpaper serupa",
   "foldersSectionAdd": "Tambah bagian",
   "@foldersSectionAdd": {
     "description": "Folder page menu item and name sheet button that add a named section to a folder."

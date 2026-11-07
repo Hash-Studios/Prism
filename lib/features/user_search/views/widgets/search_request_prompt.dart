@@ -19,10 +19,12 @@ class SearchRequestPrompt extends StatelessWidget {
       child: Row(
         children: <Widget>[
           Expanded(child: Text(context.l10n.searchRequestPrompt, style: PrismTextStyles.caption(context))),
-          TextButton(
+          PrismButton(
+            label: context.l10n.searchRequestAction,
+            variant: PrismButtonVariant.ghost,
+            size: PrismButtonSize.compact,
             onPressed: () =>
                 unawaited(showWallRequestSheet(context, source: WallRequestSourceValue.search, initialText: query)),
-            child: Text(context.l10n.searchRequestAction),
           ),
         ],
       ),

@@ -141,7 +141,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
   Widget build(BuildContext context) {
     final bool isPremium = app_state.prismUser.premium;
     final TextStyle caption = PrismTextStyles.caption(context);
-    final Color chevron = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35);
+    final Color chevron = Theme.of(context).colorScheme.onSurface.withValues(alpha: PrismInk.iconAlpha);
 
     final Widget content = PrismSheetBody(
       title: context.l10n.wallpaperUploadCreateTitle,
@@ -188,7 +188,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
                 UploadQuota.remainingFreeUploadsThisWeek(),
                 UploadQuota.freeUploadsPerWeek,
               ),
-              style: caption,
+              style: PrismTextStyles.body(context).copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: PrismSpace.xxs),
           ],

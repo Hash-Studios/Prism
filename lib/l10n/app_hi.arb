@@ -1434,7 +1434,7 @@
   "@accountPrismPro": {
     "description": "Prism Pro drawer heading."
   },
-  "accountPrivacyAction": "गोपनीयता",
+  "accountPrivacyAction": "गोपनीयता नीति",
   "@accountPrivacyAction": {
     "description": "About page action to view the privacy policy."
   },
@@ -1623,15 +1623,6 @@
   "@accountRestoringPurchases": {
     "description": "Progress toast while restoring purchases."
   },
-  "accountResultsForQuery": "{query} के नतीजे",
-  "@accountResultsForQuery": {
-    "description": "Label above wallpaper search results.",
-    "placeholders": {
-      "query": {
-        "type": "String"
-      }
-    }
-  },
   "accountRetry": "फिर कोशिश करें",
   "@accountRetry": {
     "description": "Retry action label."
@@ -1795,19 +1786,19 @@
   "@accountSignInToPrism": {
     "description": "Heading for the signed-out settings account card."
   },
-  "accountSocialGithub": "GITHUB",
+  "accountSocialGithub": "GitHub",
   "@accountSocialGithub": {
     "description": "About page social link label for GitHub."
   },
-  "accountSocialInstagram": "INSTAGRAM",
+  "accountSocialInstagram": "Instagram",
   "@accountSocialInstagram": {
     "description": "About page social link label for Instagram."
   },
-  "accountSocialTelegram": "TELEGRAM",
+  "accountSocialTelegram": "Telegram",
   "@accountSocialTelegram": {
     "description": "About page social link label for Telegram."
   },
-  "accountSocialTwitter": "TWITTER",
+  "accountSocialTwitter": "Twitter",
   "@accountSocialTwitter": {
     "description": "About page social link label for Twitter."
   },
@@ -1871,7 +1862,7 @@
   "@accountTerms": {
     "description": "Terms of use link label."
   },
-  "accountTermsAction": "शर्तें",
+  "accountTermsAction": "उपयोग की शर्तें",
   "@accountTermsAction": {
     "description": "About page action to view the terms of use."
   },
@@ -3498,6 +3489,10 @@
   "@deepLinkInputLiveTitle": {
     "description": "Page title while choosing an image for a live wallpaper."
   },
+  "deepLinkInputLiveDescription": "लाइव वॉलपेपर बनाने के लिए अपनी गैलरी से एक तस्वीर चुनें।",
+  "@deepLinkInputLiveDescription": {
+    "description": "Instructions on the image chooser page when the user makes a live wallpaper."
+  },
   "deepLinkInputPhotoPreviewTitle": "तस्वीर का प्रीव्यू",
   "@deepLinkInputPhotoPreviewTitle": {
     "description": "Page title while choosing an image for photo preview."
@@ -4183,6 +4178,15 @@
   "economyCoinsAreYoursToSpend": "कॉइन खर्च करने के लिए आपके हैं",
   "economyCoinsEarned": "+{count, plural, one{{count} कॉइन} other{{count} कॉइन}}",
   "@economyCoinsEarned": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "economyCoinReward": "+{count}",
+  "@economyCoinReward": {
     "placeholders": {
       "count": {
         "type": "int",
@@ -5229,7 +5233,7 @@
   "economyLeaderboardNoRankings": "अभी कोई रैंकिंग नहीं",
   "economyLeaderboardOffline": "ऑफ़लाइन होने पर सेव किए गए स्कोर दिख सकते हैं।",
   "economyLeaderboardRankedByXp": "इस हफ़्ते कमाए गए XP के आधार पर रैंकिंग",
-  "economyLeaderboardReset": "सोमवार 00:00 UTC पर रीसेट · {days, plural, one{{days} दिन} other{{days} दिन}} {hours, plural, one{{hours} घंटा} other{{hours} घंटे}} बाकी",
+  "economyLeaderboardReset": "{days, plural, one{{days} दिन} other{{days} दिन}} {hours, plural, one{{hours} घंटा} other{{hours} घंटे}} में रीसेट",
   "@economyLeaderboardReset": {
     "placeholders": {
       "days": {
@@ -6120,7 +6124,6 @@
       }
     }
   },
-  "economyYourXp": "आपके XP",
   "errorGeneric": "कुछ गड़बड़ हुई। कृपया फिर कोशिश करें।",
   "errorNetwork": "अपना कनेक्शन जाँचें और फिर कोशिश करें।",
   "navigationBackOnline": "फिर से ऑनलाइन",
@@ -6187,18 +6190,6 @@
   "notifEmptyTitle": "कोई सूचना नहीं",
   "notifExpanded": "खोला गया",
   "notifGenericTitle": "सूचना",
-  "notifGroupAndMore": "{message} और {otherCount, plural, one{{otherCount} और।} other{{otherCount} और।}}",
-  "@notifGroupAndMore": {
-    "placeholders": {
-      "message": {
-        "type": "String"
-      },
-      "otherCount": {
-        "type": "int",
-        "format": "decimalPattern"
-      }
-    }
-  },
   "notifGroupApprovals": "{count, plural, one{मंज़ूरी} other{मंज़ूरियाँ}}",
   "@notifGroupApprovals": {
     "placeholders": {
@@ -6720,6 +6711,34 @@
   "premiumPageViewPlans": "प्लान देखें",
   "@premiumPageViewPlans": {
     "description": "Action to open the Prism Premium purchase plans."
+  },
+  "premiumPageHeadline": "पूरी गैलरी, अनलॉक",
+  "@premiumPageHeadline": {
+    "description": "Large headline at the top of the Prism Premium page."
+  },
+  "premiumBenefitWalls": "सभी प्रीमियम कलेक्शन और वॉलपेपर",
+  "@premiumBenefitWalls": {
+    "description": "Premium benefit row: premium collections and walls open without coins or a pass."
+  },
+  "premiumBenefitFree": "मुफ़्त डाउनलोड और कोई विज्ञापन नहीं",
+  "@premiumBenefitFree": {
+    "description": "Premium benefit row: downloads cost no coins and inline and full-screen ads are off."
+  },
+  "premiumBenefitSpin": "हर दिन एक मुफ़्त स्पिन",
+  "@premiumBenefitSpin": {
+    "description": "Premium benefit row: one free spin of the coin wheel each day."
+  },
+  "premiumBenefitAutomation": "ऑटो-रोटेशन और दिन-रात मोड",
+  "@premiumBenefitAutomation": {
+    "description": "Premium benefit row: auto-rotate and day and night wallpaper switching."
+  },
+  "premiumBenefitLiveStyles": "लाइव वॉलपेपर की सभी स्टाइल",
+  "@premiumBenefitLiveStyles": {
+    "description": "Premium benefit row: every live wallpaper style without coins."
+  },
+  "premiumBenefitAiClean": "बिना वॉटरमार्क वाले AI वॉलपेपर, कम कॉइन्स में",
+  "@premiumBenefitAiClean": {
+    "description": "Premium benefit row: AI wallpapers without the watermark, at a lower coin price."
   },
   "premiumGuestStorePurchaseActive": "स्टोर से की गई आपकी खरीद इस डिवाइस पर सक्रिय है। खाते से जुड़ी Pro सुविधाओं का उपयोग करने के लिए साइन इन करें।",
   "@premiumGuestStorePurchaseActive": {
@@ -9082,7 +9101,7 @@
   "@wallpaperThemeModeLight": {
     "description": "Light app theme mode option."
   },
-  "wallpaperThemeModeSystem": "सिस्टम (हल्का/गहरा)",
+  "wallpaperThemeModeSystem": "सिस्टम",
   "@wallpaperThemeModeSystem": {
     "description": "App theme mode option that follows the system light or dark appearance."
   },
@@ -11633,7 +11652,7 @@
   },
   "challengeTitle": "साप्ताहिक चुनौती",
   "challengeRules": "अधिकतम 3 प्रविष्टियाँ, दिखाने से पहले समीक्षा होगी।",
-  "challengeVotingRules": "अन्य रचनाकारों के लिए {date} UTC तक वोट दें।",
+  "challengeVotingRules": "अन्य रचनाकारों के लिए {date} तक वोट दें।",
   "@challengeVotingRules": {
     "placeholders": {
       "date": {
@@ -12609,6 +12628,10 @@
   "creatorsToFollow": "फ़ॉलो करने लायक क्रिएटर",
   "@creatorsToFollow": {
     "description": "Title of the row of suggested creators on Home and Search."
+  },
+  "accountBrowseCreators": "क्रिएटर देखें",
+  "@accountBrowseCreators": {
+    "description": "Action on the empty creator search, opens the creator directory."
   },
   "creatorsSeeAll": "सभी देखें",
   "@creatorsSeeAll": {
@@ -14272,6 +14295,16 @@
   "@searchPhotoCouldNotOpen": {
     "description": "Toast when the picked photo cannot be decoded."
   },
+  "searchMoreWallpapers": "और वॉलपेपर",
+  "@searchMoreWallpapers": {"description": "Section header for extra wallpaper results in search."},
+  "wallpaperPreviewNoEvents": "आज कोई इवेंट नहीं",
+  "@wallpaperPreviewNoEvents": {"description": "Calendar widget text in the wallpaper phone preview when there are no events."},
+  "accountFollowersLabel": "{count, plural, one{फ़ॉलोअर} other{फ़ॉलोअर्स}}",
+  "@accountFollowersLabel": {"description": "Label under a profile's follower count. The number is shown separately.", "placeholders": {"count": {"type": "int"}}},
+  "profileBadgeCount": "{count, plural, one{1 बैज} other{{count} बैज}}",
+  "@profileBadgeCount": {"description": "Chip on a profile that opens the list of earned badges.", "placeholders": {"count": {"type": "int", "format": "decimalPattern"}}},
+  "economyLeaderboardTopThisWeek": "इस हफ़्ते के टॉप",
+  "@economyLeaderboardTopThisWeek": {"description": "Section heading above the global top 5 on the Following leaderboard."},
   "foldersSaveAll": "सभी सहेजें",
   "@foldersSaveAll": {
     "description": "Button label that starts saving all wallpapers in a folder."
@@ -14815,6 +14848,10 @@
   "@foldersMakePrivateMessageShared": {
     "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
   },
+  "gestureHintHoldToSave": "सेव करने के लिए दबाकर रखें",
+  "@gestureHintHoldToSave": {"description": "One-time hint over a wallpaper tile: long-press it for quick actions such as save."},
+  "gestureHintSwipeForSimilar": "मिलते-जुलते वॉलपेपर के लिए ऊपर स्वाइप करें",
+  "@gestureHintSwipeForSimilar": {"description": "One-time hint over the wallpaper detail image: swipe up to see similar wallpapers."},
   "foldersSectionAdd": "सेक्शन जोड़ें",
   "@foldersSectionAdd": {
     "description": "Folder page menu item and name sheet button that add a named section to a folder."

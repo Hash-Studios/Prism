@@ -139,14 +139,14 @@ void main() {
   testWidgets('changing style keeps the remix prompt', (tester) async {
     await _pump(tester, _seed());
     final Finder natureStyle = find.byWidgetPredicate(
-      (Widget widget) => widget is Semantics && (widget.properties.label ?? '').contains('Minimal'),
+      (Widget widget) => widget is Semantics && (widget.properties.label ?? '').contains('Nature'),
     );
     await tester.ensureVisible(natureStyle);
     await tester.tap(natureStyle);
     await tester.pumpAndSettle();
 
     expect(_promptText(tester), 'neon koi pond at dusk');
-    expect(_selectedStyleTile('Minimal'), findsOneWidget);
+    expect(_selectedStyleTile('Nature'), findsOneWidget);
   });
 
   testWidgets('switching to another signed-in account drops the remix link and its prompt', (tester) async {

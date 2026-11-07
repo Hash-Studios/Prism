@@ -71,6 +71,13 @@ void main() {
     expect(find.text('Next reward: Gold frame'), findsOneWidget);
   });
 
+  testWidgets('the rank title leads the card with the help button on its row', (tester) async {
+    await pump(tester);
+    expect(find.text('YOUR XP'), findsNothing);
+    final Finder title = find.text('Silver');
+    expect(tester.getCenter(find.byTooltip('How XP and rank rewards work')).dy, closeTo(tester.getCenter(title).dy, 1));
+  });
+
   testWidgets('explanation opens from accessible info button and explains XP versus coins', (tester) async {
     await pump(tester);
     final Size infoTarget = tester.getSize(find.byTooltip('How XP and rank rewards work'));
@@ -140,7 +147,7 @@ void main() {
     );
     await pump(tester, xp: 300, config: config);
     expect(find.text(AppLocalizationsEn().economyRankUnknown), findsOneWidget);
-    expect(find.text('Highest rank reached'), findsOneWidget);
+    expect(find.textContaining('Highest rank reached'), findsOneWidget);
     expect(find.textContaining('Prism'), findsNothing);
     expect(tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator)).value, 1);
   });
@@ -165,7 +172,7 @@ void main() {
     );
     await tester.pump();
     expect(
-      find.text(
+      find.textContaining(
         AppLocalizationsEn().economyXpToRank(
           formatLocalizedNumber(30, AppLocalizationsEn()),
           AppLocalizationsEn().economyRankUnknown,
@@ -178,7 +185,7 @@ void main() {
     CoinsService.instance.xpNotifier.value = XpStatus.fromUserData(<String, dynamic>{'xp': 800});
     await tester.pump();
     expect(find.text('Silver'), findsOneWidget);
-    expect(find.text('Highest rank reached'), findsOneWidget);
+    expect(find.textContaining('Highest rank reached'), findsOneWidget);
   });
 
   for (final ThemeData theme in <ThemeData>[kLightTheme, kDarkTheme]) {

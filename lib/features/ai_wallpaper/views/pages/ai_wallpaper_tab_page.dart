@@ -30,6 +30,7 @@ import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wallstore;
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
@@ -1090,7 +1091,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           sourceContext: 'ai_wallpaper',
         ),
       );
-      if (mounted) toasts.error(context.l10n.economyAiShareFailed);
+      if (mounted) toasts.error(context.l10n.economyAiShareFailed, haptic: false);
     } finally {
       if (mounted) setState(() => _sharing = false);
     }
@@ -1325,9 +1326,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   Widget _composeBody() {
     final bool busy = _loadingGeneration;
     const EdgeInsets page = PrismSpace.pageInsets;
-    return RefreshIndicator(
+    return PrismRefresh(
       onRefresh: () {
-        PrismHaptics.impact();
         return _loadHistory(userInitiated: true);
       },
       child: SingleChildScrollView(
@@ -1354,12 +1354,6 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                     AiRemixChip(seed: _remixLink!, onDrop: busy ? null : _dropRemixLink),
                     const SizedBox(height: PrismSpace.sm),
                   ],
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(context.l10n.duoAiFormatLabel, style: PrismTextStyles.rowTitle(context)),
-                    value: _duoReveal,
-                    onChanged: busy ? null : (value) => setState(() => _duoReveal = value),
-                  ),
                   if (_duoReveal)
                     AiDuoFields(folded: _foldedController, revealed: _revealedController, enabled: !busy)
                   else
@@ -1371,6 +1365,12 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                       onShuffle: _shufflePrompt,
                       onSceneIdea: _useSceneIdea,
                     ),
+                  PrismSwitchRow(
+                    padding: const EdgeInsets.only(top: PrismSpace.xs),
+                    title: context.l10n.duoAiFormatLabel,
+                    value: _duoReveal,
+                    onChanged: busy ? null : (value) => setState(() => _duoReveal = value),
+                  ),
                 ],
               ),
             ),
@@ -1453,9 +1453,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                     liveRegion: true,
                     child: Text(
                       context.l10n.economyCoinsEarned(_uploadAwards[hero.id]!),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.primary),
+                      style: PrismTextStyles.body(context).copyWith(color: Theme.of(context).colorScheme.primary),
                     ),
                   ),
                 if (hasUnconfirmedSubmission) AiUnconfirmedNotice(onCheck: () => context.router.push(ReviewRoute())),

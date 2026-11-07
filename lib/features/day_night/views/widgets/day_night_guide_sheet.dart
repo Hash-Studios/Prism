@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
@@ -33,7 +32,6 @@ class _DayNightGuideSheet extends StatelessWidget {
   final bool legacyAutomation;
 
   Future<void> _openShortcuts(BuildContext context) async {
-    PrismHaptics.selection();
     final String message = context.l10n.wallpaperShortcutsOpenError;
     bool opened = false;
     try {

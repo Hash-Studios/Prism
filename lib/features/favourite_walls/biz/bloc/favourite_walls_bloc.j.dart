@@ -95,9 +95,11 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   }
 
   Future<void> _onStarted(_Started event, Emitter<FavouriteWallsState> emit) async {
-    if (state.userId != event.userId) _accountGeneration++;
+    final bool accountChanged = state.userId != event.userId;
+    if (accountChanged) _accountGeneration++;
     emit(
       state.copyWith(
+        items: accountChanged ? const <FavouriteWallEntity>[] : state.items,
         status: LoadStatus.loading,
         actionStatus: ActionStatus.inProgress,
         userId: event.userId,
@@ -125,7 +127,9 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   }
 
   Future<void> _fetch(Emitter<FavouriteWallsState> emit, [int? operationId]) async {
+    final int accountGeneration = _accountGeneration;
     final result = await _fetchFavouriteWallsUseCase(FetchFavouriteWallsParams(userId: state.userId));
+    if (accountGeneration != _accountGeneration) return;
 
     result.fold(
       onSuccess: (items) => emit(

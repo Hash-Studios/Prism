@@ -2,12 +2,18 @@ import 'dart:math' as math;
 
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/widgets/gesture_hint.dart';
+import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 enum WallpaperQuickAction { favourite, share, showLess, resetOriginal, saveToFolder, pin, dayNight }
 
 enum _HoldPhase { idle, entering, open, exiting }
+
+/// How long a finger rests on a tile before the menu opens. Shorter than [kLongPressTimeout] so the menu feels quick;
+/// a scroll still wins once the finger moves past [kTouchSlop], and a tap still wins on a lift before this.
+const Duration _holdTimeout = Duration(milliseconds: 300);
 
 /// Owns the hold without navigation so the source recognizer keeps its pointer.
 class WallpaperHoldRegion extends StatefulWidget {
@@ -28,6 +34,7 @@ class WallpaperHoldRegion extends StatefulWidget {
     this.unpinLabel,
     this.readIsPinned,
     this.dayNightLabel,
+    this.tone,
   });
 
   final Object identity;
@@ -50,11 +57,19 @@ class WallpaperHoldRegion extends StatefulWidget {
   /// Null hides Day and night: on Android, and on iOS before 16.
   final String? dayNightLabel;
 
+  /// The wall's main colour. A dark one gets a white press ring. Null uses the theme's ink over a light wash.
+  final Color? tone;
+
   @override
   State<WallpaperHoldRegion> createState() => _WallpaperHoldRegionState();
 }
 
-class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsBindingObserver {
+class _WallpaperHoldRegionState extends State<WallpaperHoldRegion>
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+  /// Fills over [_holdTimeout] from touch-down, so the hold shows progress and the menu opens as it closes.
+  late final AnimationController _ring = AnimationController(vsync: this, duration: _holdTimeout);
+  Offset _touch = Offset.zero;
+  Offset? _ringDown;
   OverlayEntry? _entry;
   LocalHistoryEntry? _history;
   WallpaperQuickAction? _hovered;
@@ -67,6 +82,10 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
   FlutterView? _view;
   (Size, double, EdgeInsets, EdgeInsets)? _viewGeometry;
   Map<WallpaperQuickAction, Offset> _centres = const <WallpaperQuickAction, Offset>{};
+  Offset _anchor = Offset.zero;
+
+  /// The menu's progress when the close began, so the fold toward the finger starts from where the buttons are.
+  double? _exitFrom;
   int _actionDispatchGeneration = 0;
 
   @override
@@ -124,15 +143,28 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
     WidgetsBinding.instance.removeObserver(this);
     _scrollPosition?.removeListener(_closeForScroll);
     _close(rebuild: false, animate: false);
+    _ring.dispose();
     super.dispose();
   }
 
   void _routePointer(PointerEvent event) {
     if (event is PointerDownEvent && _pointer != null && event.pointer != _pointer) _close(animate: false);
-    if (event is PointerCancelEvent && event.pointer == _pointer) _close(animate: false);
+    // The system took the touch: settle like a lift, without an action.
+    if (event is PointerCancelEvent && event.pointer == _pointer) _close();
   }
 
-  void _closeForScroll() => _close(animate: false);
+  void _closeForScroll() {
+    _releaseRing();
+    _close(animate: false);
+  }
+
+  /// A lift, a drag or a scroll before the timeout: the ring unwinds and fades.
+  void _releaseRing() {
+    _ringDown = null;
+    if (_ring.value > 0 || _ring.isAnimating) {
+      _ring.animateBack(0, duration: const Duration(milliseconds: 120), curve: Curves.easeOut);
+    }
+  }
 
   void _close({WallpaperQuickAction? action, bool rebuild = true, bool animate = true}) {
     if (!animate) _actionDispatchGeneration++;
@@ -151,7 +183,8 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
     final LocalHistoryEntry? history = _history;
     _history = null;
     history?.remove();
-    _hovered = null;
+    // An animated close keeps the chosen action lit while it fades; an instant one clears it now.
+    if (!animate || _reduceMotion) _hovered = null;
     _pointer = null;
     if (rebuild && mounted) setState(() {});
     if (action != null && mounted) {
@@ -176,13 +209,14 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
     if (entry == null) return;
     _entry = null;
     _phase = _HoldPhase.idle;
+    _hovered = null;
     entry.remove();
     entry.dispose();
     if (rebuild && mounted) setState(() {});
   }
 
   void _move(Offset position) {
-    if (_entry == null) return;
+    if (_entry == null || _phase == _HoldPhase.exiting) return;
     final WallpaperQuickAction? hovered = _centres.entries
         .where((entry) => (entry.value - position).distance <= 24)
         .firstOrNull
@@ -196,10 +230,13 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
   void _open(Offset position) {
     if (_entry != null || _phase != _HoldPhase.idle) return;
     _reduceMotion = MediaQuery.disableAnimationsOf(context) || MediaQuery.accessibleNavigationOf(context);
+    _ringDown = null;
+    _ring.value = 0;
     _saved = widget.readIsFavourite?.call() ?? false;
     _pinned = widget.pinLabel == null ? null : widget.readIsPinned?.call();
     final OverlayState overlay = Overlay.of(context, rootOverlay: true);
     PrismHaptics.impact();
+    GestureHints.markSeen(GestureHint.holdToSave);
     final RenderBox overlayBox = overlay.context.findRenderObject()! as RenderBox;
     final RenderBox box = context.findRenderObject()! as RenderBox;
     final Offset origin = overlayBox.globalToLocal(box.localToGlobal(Offset.zero));
@@ -237,6 +274,8 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
       Offset(-direction * 64, -vertical * 16),
       Offset(0, -vertical * 64),
     ];
+    _anchor = anchor;
+    _exitFrom = null;
     _centres = <WallpaperQuickAction, Offset>{for (int i = 0; i < actions.length; i++) actions[i]: anchor + offsets[i]};
     // Bound every frame of the tilt and scale, not just the unpainted layout rect.
     double paintedExtent(double side, double other) {
@@ -285,16 +324,27 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
   };
 
   Widget _buildOverlay(Rect lifted, Rect safe, List<WallpaperQuickAction> actions) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme cs = theme.colorScheme;
     final bool reduceMotion = _reduceMotion;
-    final TextStyle? labelStyle = Theme.of(context).textTheme.titleMedium?.copyWith(color: cs.onSurface);
+    // Light themes wash the rest of the screen toward the page, so the lifted wall reads as the one thing left. Dark
+    // themes keep a dark scrim: a light wash there would glare.
+    final bool wash = theme.brightness == Brightness.light;
+    final TextStyle? labelStyle = theme.textTheme.titleLarge?.copyWith(
+      color: cs.onSurface,
+      fontWeight: FontWeight.w700,
+    );
     final TextPainter labelPainter = TextPainter(
       text: TextSpan(text: _hovered == null ? '' : _label(_hovered!), style: labelStyle),
       textDirection: Directionality.of(context),
       textScaler: MediaQuery.textScalerOf(context),
     )..layout(maxWidth: safe.width - 32);
-    final double labelHeight = labelPainter.height + 16;
+    final double labelHeight = labelPainter.height + 20;
     labelPainter.dispose();
+    // The label sits above the ring, where the finger does not cover it. Below only when the top has no room.
+    final double ringTop = _centres.values.map((p) => p.dy).reduce(math.min) - 24;
+    final double ringBottom = _centres.values.map((p) => p.dy).reduce(math.max) + 24;
+    final double labelTop = ringTop - 12 - labelHeight >= safe.top ? ringTop - 12 - labelHeight : ringBottom + 12;
     return TickerMode(
       enabled: true,
       child: _HoldMotion(
@@ -305,6 +355,13 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
         },
         onDismissed: _finishClose,
         builder: (progress) {
+          // 0 until the close starts, then 1 when it ends. Only the close moves the buttons, so a finger that aims at
+          // a button while the menu opens finds it where it lands.
+          double fold = 0;
+          if (_phase == _HoldPhase.exiting) {
+            final double from = _exitFrom ??= progress;
+            fold = progress >= from ? 0 : 1 - progress / from;
+          }
           return IgnorePointer(
             ignoring: _phase == _HoldPhase.exiting,
             child: BlockSemantics(
@@ -317,7 +374,9 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
                         onTap: _close,
                         child: ColoredBox(
                           key: const ValueKey<String>('wallpaper-hold-scrim'),
-                          color: cs.scrim.withValues(alpha: 0.72 * progress),
+                          color: wash
+                              ? cs.surface.withValues(alpha: 0.82 * progress)
+                              : cs.scrim.withValues(alpha: 0.72 * progress),
                         ),
                       ),
                     ),
@@ -331,7 +390,20 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
                               angle: reduceMotion ? 0 : -0.025 * progress,
                               child: Transform.scale(
                                 scale: reduceMotion ? 1 : 1 + 0.025 * progress,
-                                child: widget.preview,
+                                child: DecoratedBox(
+                                  key: const ValueKey<String>('wallpaper-hold-lift-shadow'),
+                                  decoration: BoxDecoration(
+                                    borderRadius: PrismWallGrid.tileRadius,
+                                    boxShadow: <BoxShadow>[
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.18 * progress),
+                                        offset: const Offset(0, 12),
+                                        blurRadius: 28,
+                                      ),
+                                    ],
+                                  ),
+                                  child: widget.preview,
+                                ),
                               ),
                             ),
                           ),
@@ -342,26 +414,27 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
                       Positioned(
                         left: _centres[action]!.dx - 24,
                         top: _centres[action]!.dy - 24,
-                        child: _buildAction(action, actions.indexOf(action), reduceMotion, progress, cs),
+                        child: _buildAction(action, actions.indexOf(action), reduceMotion, progress, fold, cs),
                       ),
                     if (_hovered case final WallpaperQuickAction action)
                       Positioned(
                         left: safe.left,
                         width: safe.width,
-                        top: (_centres.values.map((p) => p.dy).reduce(math.max) + 44).clamp(
-                          safe.top,
-                          math.max(safe.top, safe.bottom - labelHeight),
-                        ),
+                        top: labelTop.clamp(safe.top, math.max(safe.top, safe.bottom - labelHeight)),
                         child: IgnorePointer(
                           child: Center(
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: cs.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                child: Text(_label(action), textAlign: TextAlign.center, style: labelStyle),
+                            child: Opacity(
+                              opacity: progress,
+                              child: DecoratedBox(
+                                key: const ValueKey<String>('wallpaper-hold-label'),
+                                decoration: BoxDecoration(
+                                  color: cs.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                  child: Text(_label(action), textAlign: TextAlign.center, style: labelStyle),
+                                ),
                               ),
                             ),
                           ),
@@ -377,45 +450,69 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
     );
   }
 
-  Widget _buildAction(WallpaperQuickAction action, int index, bool reduceMotion, double progress, ColorScheme cs) {
+  Widget _buildAction(
+    WallpaperQuickAction action,
+    int index,
+    bool reduceMotion,
+    double progress,
+    double fold,
+    ColorScheme cs,
+  ) {
     final double staggered = reduceMotion
         ? 1
         : PrismCurves.enter.transform(((progress - index * 0.08) / (1 - index * 0.08)).clamp(0, 1));
     return Opacity(
       opacity: staggered,
       alwaysIncludeSemantics: true,
-      child: Transform.scale(
-        scale: 0.84 + 0.16 * staggered,
-        child: Semantics(
-          button: true,
-          label: _label(action),
-          selected: action == _hovered,
-          child: SizedBox.square(
-            dimension: 48,
-            child: ClipOval(
-              child: Material(
-                color: action == _hovered ? cs.primary : cs.surfaceContainerHighest,
-                shape: const CircleBorder(),
-                elevation: 4,
-                animationDuration: const Duration(milliseconds: 100),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: () => _close(action: action),
-                  child: Icon(switch (action) {
-                    WallpaperQuickAction.favourite => _saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                    WallpaperQuickAction.share => Icons.ios_share_rounded,
-                    WallpaperQuickAction.showLess => Icons.visibility_off_outlined,
-                    WallpaperQuickAction.resetOriginal => Icons.restart_alt_rounded,
-                    WallpaperQuickAction.saveToFolder => Icons.create_new_folder_rounded,
-                    WallpaperQuickAction.pin => _pinned == true ? Icons.push_pin_rounded : Icons.push_pin_outlined,
-                    WallpaperQuickAction.dayNight => Icons.contrast_rounded,
-                  }, color: action == _hovered ? cs.onPrimary : cs.onSurface),
+      child: Transform.translate(
+        // Back toward the finger as the menu closes.
+        offset: (_anchor - _centres[action]!) * (0.5 * fold),
+        child: Transform.scale(
+          scale: 0.84 + 0.16 * staggered - 0.24 * fold,
+          child: Semantics(
+            button: true,
+            label: _label(action),
+            selected: action == _hovered,
+            child: SizedBox.square(
+              dimension: 48,
+              child: ClipOval(
+                child: Material(
+                  color: action == _hovered ? cs.primary : cs.surfaceContainerHighest,
+                  shape: const CircleBorder(),
+                  elevation: 4,
+                  animationDuration: const Duration(milliseconds: 100),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () => _close(action: action),
+                    child: Icon(switch (action) {
+                      WallpaperQuickAction.favourite => _saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                      WallpaperQuickAction.share => Icons.ios_share_rounded,
+                      WallpaperQuickAction.showLess => Icons.visibility_off_outlined,
+                      WallpaperQuickAction.resetOriginal => Icons.restart_alt_rounded,
+                      WallpaperQuickAction.saveToFolder => Icons.create_new_folder_rounded,
+                      WallpaperQuickAction.pin => _pinned == true ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+                      WallpaperQuickAction.dayNight => Icons.contrast_rounded,
+                    }, color: action == _hovered ? cs.onPrimary : cs.onSurface),
+                  ),
                 ),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  _HoldRingPainter _buildRingPainter(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final Color? tone = widget.tone;
+    final bool onDark = tone != null && ThemeData.estimateBrightnessForColor(tone) == Brightness.dark;
+    return _HoldRingPainter(
+      progress: _ring,
+      centre: _touch,
+      ink: onDark ? Colors.white : cs.onSurface,
+      wash: onDark ? Colors.white.withValues(alpha: 0.24) : cs.surface.withValues(alpha: 0.6),
+      grow: !context.reduceMotion,
     );
   }
 
@@ -428,6 +525,12 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
         _close(animate: false);
       }
     },
+    // A tap or a scroll that wins the arena never calls onLongPressCancel, so the ring watches the pointer itself.
+    onPointerMove: (event) {
+      if (_ringDown != null && (event.position - _ringDown!).distance > kTouchSlop) _releaseRing();
+    },
+    onPointerUp: (_) => _releaseRing(),
+    onPointerCancel: (_) => _releaseRing(),
     child: Semantics(
       container: true,
       onLongPress: () {
@@ -435,25 +538,86 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion> with WidgetsB
         final RenderBox box = context.findRenderObject()! as RenderBox;
         _open(box.localToGlobal(box.size.center(Offset.zero)));
       },
-      child: GestureDetector(
+      child: RawGestureDetector(
         excludeFromSemantics: true,
         behavior: HitTestBehavior.opaque,
-        onLongPressStart: (details) => _open(details.globalPosition),
-        onLongPressMoveUpdate: (details) {
-          final RenderBox overlayBox = Overlay.of(context, rootOverlay: true).context.findRenderObject()! as RenderBox;
-          _move(overlayBox.globalToLocal(details.globalPosition));
+        gestures: <Type, GestureRecognizerFactory>{
+          LongPressGestureRecognizer: GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+            () => LongPressGestureRecognizer(duration: _holdTimeout, debugOwner: this),
+            (recognizer) => recognizer
+              ..onLongPressDown = (details) {
+                if (_entry != null) return;
+                _ringDown = details.globalPosition;
+                setState(() => _touch = details.localPosition);
+                _ring.forward(from: 0);
+              }
+              ..onLongPressStart = ((details) => _open(details.globalPosition))
+              ..onLongPressMoveUpdate = (details) {
+                final RenderBox overlayBox =
+                    Overlay.of(context, rootOverlay: true).context.findRenderObject()! as RenderBox;
+                _move(overlayBox.globalToLocal(details.globalPosition));
+              }
+              ..onLongPressEnd = (details) {
+                if (_entry == null) return;
+                final RenderBox overlayBox =
+                    Overlay.of(context, rootOverlay: true).context.findRenderObject()! as RenderBox;
+                _move(overlayBox.globalToLocal(details.globalPosition));
+                _close(action: _hovered);
+              }
+              // Before the menu opens there is nothing to close. After, only a cancelled pointer gets here.
+              ..onLongPressCancel = _close,
+          ),
         },
-        onLongPressEnd: (details) {
-          if (_entry == null) return;
-          final RenderBox overlayBox = Overlay.of(context, rootOverlay: true).context.findRenderObject()! as RenderBox;
-          _move(overlayBox.globalToLocal(details.globalPosition));
-          _close(action: _hovered);
-        },
-        onLongPressCancel: () => _close(animate: false),
-        child: Opacity(opacity: _entry == null ? 1 : 0, child: widget.child),
+        child: CustomPaint(
+          key: const ValueKey<String>('wallpaper-hold-ring'),
+          foregroundPainter: _buildRingPainter(context),
+          child: Opacity(opacity: _entry == null ? 1 : 0, child: widget.child),
+        ),
       ),
     ),
   );
+}
+
+/// A light disc under the finger with a 2 pt ring that sweeps once over [_holdTimeout].
+class _HoldRingPainter extends CustomPainter {
+  _HoldRingPainter({
+    required this.progress,
+    required this.centre,
+    required this.ink,
+    required this.wash,
+    required this.grow,
+  }) : super(repaint: progress);
+
+  final Animation<double> progress;
+  final Offset centre;
+  final Color ink;
+  final Color wash;
+  final bool grow;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double t = progress.value;
+    if (t <= 0) return;
+    // Fades in over the first 60 ms, so a quick tap or a scroll start barely shows it.
+    final double alpha = (t / 0.2).clamp(0.0, 1.0);
+    final double radius = grow ? 16 + 8 * PrismCurves.enter.transform(t) : 24;
+    canvas.drawCircle(centre, radius, Paint()..color = wash.withValues(alpha: wash.a * alpha));
+    canvas.drawArc(
+      Rect.fromCircle(center: centre, radius: radius),
+      -math.pi / 2,
+      2 * math.pi * t,
+      false,
+      Paint()
+        ..color = ink.withValues(alpha: ink.a * alpha)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_HoldRingPainter old) =>
+      old.centre != centre || old.ink != ink || old.wash != wash || old.grow != grow || old.progress != progress;
 }
 
 class _HoldMotion extends StatefulWidget {
@@ -495,7 +659,9 @@ class _HoldMotionState extends State<_HoldMotion> with SingleTickerProviderState
   void didUpdateWidget(_HoldMotion oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!oldWidget.exiting && widget.exiting && !widget.reduceMotion) {
-      _controller.animateBack(0, duration: PrismDurations.fast * _controller.value, curve: PrismCurves.exit);
+      // A gentle ease-out in time. PrismCurves.exit here drops most of the opacity in the first 40 ms, which reads
+      // as a snap.
+      _controller.animateBack(0, duration: PrismDurations.fast * _controller.value, curve: Curves.easeOut);
     }
   }
 

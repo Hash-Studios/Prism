@@ -278,6 +278,7 @@ void main() {
       expect(find.text('Not enough coins'), findsOneWidget);
       expect(find.textContaining('The chest costs 8 coins. You have 4. Watch a video to earn more.'), findsOneWidget);
       expect(maxCosts, isEmpty);
+      expect(haptics, <String>['tap'], reason: 'Get coins taps once, like Open');
       await tester.tap(find.text('Not now'));
       await pumpFor(tester, const Duration(milliseconds: 500));
       expect(find.text('Not enough coins'), findsNothing);
@@ -720,6 +721,7 @@ void main() {
 
       expect(phase(tester), ChestPhase.ready);
       expect(find.text('Get coins'), findsOneWidget);
+      expect(haptics, <String>['tap']);
       expect(find.text('340'), findsOneWidget);
     });
 

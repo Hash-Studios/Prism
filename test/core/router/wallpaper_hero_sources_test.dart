@@ -57,16 +57,19 @@ Future<void> _expectMarkerFollowsHero(WidgetTester tester, Rect tileRect, Rect m
     await tester.pump();
   }
   expect(find.byKey(_flyingPictureKey), findsOneWidget);
+  // The page behind steps back around the tile's centre while the card flies, never below 0.94.
+  final Offset c = tileRect.center;
   for (var frame = 0; frame < 5; frame++) {
-    final Rect flight = tester.getRect(find.byKey(_flyingPictureKey));
-    final double scale = flight.width / tileRect.width;
+    final Rect marker = tester.getRect(find.byKey(_backgroundMarkerKey));
+    final double scale = marker.width / markerRect.width;
+    expect(scale, inInclusiveRange(0.94 - 1e-6, 1));
     final Rect expected = Rect.fromLTWH(
-      flight.left + (markerRect.left - tileRect.left) * scale,
-      flight.top + (markerRect.top - tileRect.top) * scale,
+      c.dx + (markerRect.left - c.dx) * scale,
+      c.dy + (markerRect.top - c.dy) * scale,
       markerRect.width * scale,
       markerRect.height * scale,
     );
-    expect(tester.getRect(find.byKey(_backgroundMarkerKey)), rectMoreOrLessEquals(expected, epsilon: 0.5));
+    expect(marker, rectMoreOrLessEquals(expected, epsilon: 0.5));
     await tester.pump(const Duration(milliseconds: 20));
   }
 }

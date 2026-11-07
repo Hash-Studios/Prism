@@ -1,4 +1,5 @@
 import 'package:Prism/core/widgets/glint/glint_state.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:flutter/material.dart';
 
 /// A [GlintState] inside an always-scrollable list, so pull-to-refresh still works on an empty or failed feed.
@@ -22,7 +23,7 @@ class RefreshableGlintState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
+    return PrismRefresh(
       onRefresh: onRefresh,
       child: LayoutBuilder(
         builder: (context, constraints) => ListView(

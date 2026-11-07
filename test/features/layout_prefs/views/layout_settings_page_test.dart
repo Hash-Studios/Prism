@@ -119,9 +119,13 @@ void main() {
     expect(centerOf('Home'), lessThan(centerOf('Search')));
     expect(centerOf('Search'), lessThan(centerOf('Rewards')));
 
-    expect(find.descendant(of: find.byType(ReorderableListView), matching: find.byType(Switch)), findsNWidgets(4));
+    expect(find.descendant(of: find.byType(ReorderableListView), matching: find.byType(Switch)), findsNWidgets(3));
     expect(find.text('Always in the bar'), findsOneWidget);
-    expect(tester.widget<Switch>(_switchFor('Home')).onChanged, isNull);
+    // Home has a lock, not a dead switch.
+    expect(
+      find.descendant(of: find.byType(ReorderableListView), matching: find.byIcon(Icons.lock_rounded)),
+      findsOneWidget,
+    );
     expect(tester.widget<Switch>(_switchFor('Search')).onChanged, isNotNull);
   });
 

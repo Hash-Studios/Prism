@@ -1,6 +1,7 @@
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
@@ -188,5 +189,34 @@ void main() {
     for (final String line in shortcutsAutomationSteps(l10n)) {
       expect(find.text(line), findsOneWidget);
     }
+  });
+
+  testWidgets('the automation note is a full-width card with an info icon, outside the step indent', (tester) async {
+    await _pump(tester, folders: _foldersState());
+    final AppLocalizations l10n = _l10n(tester);
+
+    final Finder icon = find.byIcon(Icons.info_outline_rounded);
+    expect(icon, findsOneWidget);
+    final Finder card = find.ancestor(of: icon, matching: find.byType(PrismCard));
+    final double stepTitleLeft = tester.getTopLeft(find.text(l10n.shortcutsStepAutomationTitle)).dx;
+    expect(tester.getTopLeft(card).dx, lessThan(stepTitleLeft));
+    final Finder rotationCard = find.byType(PrismCard).first;
+    expect(tester.getTopLeft(card).dx, tester.getTopLeft(rotationCard).dx);
+    expect(tester.getSize(card).width, tester.getSize(rotationCard).width);
+  });
+
+  testWidgets('a 9:19.5 phone frame shows a bundled cover above the steps', (tester) async {
+    await _pump(tester, folders: _foldersState());
+
+    final Finder cover = find.byWidgetPredicate(
+      (Widget w) => w is Image && w.image is AssetImage && (w.image as AssetImage).assetName.contains('covers/'),
+    );
+    expect(cover, findsOneWidget);
+    final Size frame = tester.getSize(find.byType(AspectRatio).first);
+    expect(frame.width / frame.height, closeTo(9 / 19.5, 0.01));
+    expect(
+      tester.getTopLeft(cover).dy,
+      lessThan(tester.getTopLeft(find.text(_l10n(tester).shortcutsGuideHeadline)).dy),
+    );
   });
 }

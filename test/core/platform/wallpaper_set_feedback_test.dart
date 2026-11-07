@@ -78,6 +78,7 @@ void main() {
   late WallpaperHistoryStore store;
   late OfflineAssetFixture assets;
   late List<MethodCall> toasts;
+  late List<Object?> haptics;
   late String previousFilePath;
   late String newFilePath;
 
@@ -107,6 +108,11 @@ void main() {
       toasts.add(call);
       return true;
     });
+    haptics = <Object?>[];
+    messenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), (call) async {
+      haptics.add(call.arguments);
+      return null;
+    });
     messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
   });
 
@@ -114,6 +120,7 @@ void main() {
     app_state.prismUser = createGuestPrismUser();
     final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(const MethodChannel('PonnamKarthik/fluttertoast'), null);
+    messenger.setMockMethodCallHandler(const MethodChannel('prism/haptics'), null);
     messenger.setMockMethodCallHandler(SystemChannels.platform, null);
     messenger.setMockMethodCallHandler(const MethodChannel('plugins.flutter.io/path_provider'), null);
     await getIt.reset();
@@ -178,6 +185,7 @@ void main() {
     expect(find.text('Wallpaper set'), findsOneWidget);
     expect(find.text('Undo'), findsOneWidget);
     expect(tester.widget<SnackBar>(find.byType(SnackBar)).duration, const Duration(seconds: 8));
+    expect(haptics, <Object?>['success'], reason: 'the Undo snackbar plays the success haptic once');
     await tester.pump(const Duration(seconds: 2));
   });
 
@@ -289,6 +297,7 @@ void main() {
 
     expect(find.byType(SnackBar), findsNothing);
     expect(toastSaid('Wallpaper set successfully!'), isTrue);
+    expect(haptics, <Object?>['success'], reason: 'the toast plays the success haptic once');
     await tester.pump(const Duration(seconds: 2));
   });
 
@@ -323,6 +332,7 @@ void main() {
       target: WallpaperTarget.lock,
       onRetry: retried.add,
     );
+    expect(haptics, <Object?>['error'], reason: 'the retry snackbar plays the error haptic once');
 
     await tester.tap(find.text('Try again'));
     await tester.pump();

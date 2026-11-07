@@ -13,11 +13,14 @@ Route<T> wallpaperDetailRouteBuilder<T>(BuildContext context, Widget child, Auto
       page: page,
       child: child,
       isIOS: defaultTargetPlatform == TargetPlatform.iOS,
-      duration: context.motion(PrismDurations.fast),
+      duration: context.motion(wallpaperDetailZoomDuration),
     );
 
-/// The card Hero flies, and the page grows, on this curve. Sharing it keeps the page under the picture. Over 160 ms
-/// it follows frames measured from the Pinterest closeup: about 10% of the way at 17 ms, 55% at 50 ms, 95% at 100 ms.
+/// How long the card takes to grow out of its tile, and to shrink back. Long enough to read the growth.
+const Duration wallpaperDetailZoomDuration = Duration(milliseconds: 260);
+
+/// The card Hero flies, and the page grows, on this curve. Sharing it keeps the page under the picture. It is the
+/// Pinterest closeup's shape (fast start, long settle), stretched over [wallpaperDetailZoomDuration].
 const Curve _zoomCurve = Cubic(0.45, 0.3, 0.1, 1);
 
 /// Going back, the card Hero flies home on the flipped curve, so the page shrinks with the same timing it grew with.
@@ -25,6 +28,9 @@ const Curve _zoomOutCurve = FlippedCurve(_zoomCurve);
 
 /// How dark the page behind gets while the detail grows over it.
 const double _zoomDim = 0.3;
+
+/// How small the page behind gets, around the tile, while the detail grows over it.
+const double _zoomBack = 0.94;
 
 /// A straight path for every wallpaper Hero. A tile's Hero sets the path of the flight home, and the page shrinks
 /// along a straight line, so a tile that kept the app's arc would leave the picture off the page.
@@ -149,8 +155,10 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
   @override
   bool get opaque => _page.opaque;
 
+  /// Only an opaque, ordinary page slides the detail away. Sheets are non-opaque page routes and dialogs cover it.
   @override
-  bool canTransitionTo(TransitionRoute<dynamic> nextRoute) => nextRoute is PageRoute && !nextRoute.fullscreenDialog;
+  bool canTransitionTo(TransitionRoute<dynamic> nextRoute) =>
+      nextRoute is PageRoute && nextRoute.opaque && !nextRoute.fullscreenDialog;
 
   /// Whether the opening finished. A back before that reverses the fade instead of sliding.
   bool _hasEntered = false;
@@ -213,8 +221,9 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
   @override
   DelegatedTransitionBuilder? get delegatedTransition => _zoomBehind;
 
-  /// Zooms the page behind with the card, as the Pinterest feed does: the page scales and moves so its tile stays
-  /// under the card, toward the screen on the way in and back to its place on the way out.
+  /// Steps the page behind back around its tile while the card grows out of it, so the tile visibly leaves its
+  /// neighbours. They shrink to [_zoomBack] over the page colour and dim under the scrim, then come back as the card
+  /// shrinks home.
   Widget _zoomBehind(
     BuildContext context,
     Animation<double> animation,
@@ -225,9 +234,8 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
     final _Zoom? zoom = _zoomFor(context);
     Matrix4 transform = Matrix4.identity();
     if (zoom != null) {
-      final Rect card = Rect.lerp(zoom.source, zoom.target, _curve.transform(secondaryAnimation.value))!;
-      final double scale = card.width / zoom.source.width;
-      final Offset shift = card.topLeft - zoom.source.topLeft * scale;
+      final double scale = lerpDouble(1, _zoomBack, _curve.transform(secondaryAnimation.value))!;
+      final Offset shift = zoom.source.center * (1 - scale);
       transform = Matrix4.translationValues(shift.dx, shift.dy, 0)..scaleByDouble(scale, scale, 1, 1);
     }
 
@@ -246,7 +254,12 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
         child: content,
       );
     }
-    return Transform(transform: transform, child: content);
+    // The page shrinks off the screen edges. Paint the page colour there, so the edges never show the black root.
+    // Transparent without a zoom, and always present, so the page behind is never re-parented.
+    return ColoredBox(
+      color: zoom == null ? Colors.transparent : Theme.of(context).scaffoldBackgroundColor,
+      child: Transform(transform: transform, child: content),
+    );
   }
 
   @override

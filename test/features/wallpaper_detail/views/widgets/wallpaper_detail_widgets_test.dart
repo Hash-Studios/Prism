@@ -3,8 +3,11 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/primary_action_pill.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
+import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/pulse_placeholder.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -18,6 +21,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/contrast.dart';
 import 'package:Prism/theme/prism_theme_options.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../support/favourite_test_scope.dart';
@@ -29,13 +33,7 @@ Widget _host(Widget child) => MaterialApp(
   home: Scaffold(body: child),
 );
 
-typedef _TagScene = ({String theme, String over, Color backdrop});
-
-const List<_TagScene> _tagScenes = <_TagScene>[
-  (theme: 'Frost White', over: 'a faint tint', backdrop: Color(0x33FFFFFF)),
-  (theme: 'Cotton Blue', over: 'a dark wallpaper', backdrop: Color(0xFF101010)),
-  (theme: 'Cotton Blue', over: 'a white wallpaper', backdrop: Color(0xFFFFFFFF)),
-];
+const List<String> _tagThemes = <String>['Frost White', 'Cotton Blue', 'AMOLED'];
 
 void main() {
   setUpFavouriteCounts();
@@ -230,18 +228,18 @@ void main() {
     testWidgets('successful exhausted empty results leave no orphan heading or footer', (tester) async {
       await pumpRecommendations(tester, const RecommendationState.exhausted());
       expect(find.byType(Text), findsNothing);
-      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(PrismLoader), findsNothing);
     });
 
     testWidgets('initial loading shows tile placeholders and failed empty results can retry', (tester) async {
       await pumpRecommendations(tester, const RecommendationState.initial());
       expect(find.byType(PulseFill), findsWidgets);
-      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(PrismLoader), findsNothing);
       var retries = 0;
       await pumpRecommendations(tester, const RecommendationState.initial().failure(), onLoadMore: () => retries++);
       expect(find.byType(PulseFill), findsNothing);
-      expect(find.byType(CircularProgressIndicator), findsNothing);
-      await tester.tap(find.byType(TextButton));
+      expect(find.byType(PrismLoader), findsNothing);
+      await tester.tap(find.byType(PrismButton));
       expect(retries, 1);
     });
 
@@ -263,13 +261,15 @@ void main() {
       await pumpRecommendations(tester, RecommendationState(items: [item], status: RecommendationStatus.exhausted));
       expect(find.byType(FavouriteWallpaperCard), findsOneWidget);
       expect(find.byType(FavouriteWallpaperFooter), findsOneWidget);
-      expect(find.text('24'), findsOneWidget);
-      expect(find.text('1.2K'), findsOneWidget);
-      expect(find.bySemanticsLabel(AppLocalizationsEn().wallpaperViewCount(1234)), findsOneWidget);
+      // Tiles show the heart only. Counts live on the detail screen.
+      expect(find.text('24'), findsNothing);
+      expect(find.text('1.2K'), findsNothing);
+      expect(find.bySemanticsLabel(AppLocalizationsEn().wallpaperViewCount(1234)), findsNothing);
       final image = tester.getRect(find.byType(PrismWallTile));
-      final footer = tester.getRect(find.byType(FavouriteWallpaperFooter));
-      expect(footer.top, image.bottom);
-      expect(footer.height, favouriteFooterHeight);
+      final heart = tester.getRect(find.byType(FavouriteWallpaperFooter));
+      // The heart sits on the image at its bottom-start corner.
+      expect(heart.bottomLeft, image.bottomLeft);
+      expect(heart.size, const Size.square(44));
       expect(image.width / image.height, closeTo(0.5, 0.001));
       semantics.dispose();
     });
@@ -293,9 +293,31 @@ void main() {
         onLoadMore: () => retries++,
       );
       expect(tester.widget<PrismWallTile>(find.byType(PrismWallTile)).fallbackUrl, isNull);
-      await tester.tap(find.byType(TextButton));
+      await tester.tap(find.byType(PrismButton));
       expect(retries, 1);
       expect(find.byKey(ValueKey((WallpaperSource.prism, 'protected'))), findsOneWidget);
+    });
+
+    testWidgets('opening a recommended wall plays one tap haptic, like every other grid', (tester) async {
+      final List<Object?> haptics = <Object?>[];
+      const MethodChannel hapticsChannel = MethodChannel('prism/haptics');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(hapticsChannel, (MethodCall call) async {
+        haptics.add(call.arguments);
+        return null;
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(hapticsChannel, null));
+      const item = PrismFeedItem(
+        id: 'open-me',
+        wallpaper: PrismWallpaper(
+          core: WallpaperCore(id: 'open-me', source: WallpaperSource.prism, thumbnailUrl: '', fullUrl: ''),
+        ),
+      );
+      await pumpRecommendations(
+        tester,
+        RecommendationState(items: const [item], status: RecommendationStatus.exhausted),
+      );
+      await tester.tap(find.byType(PrismWallTile));
+      expect(haptics, <Object?>['tap']);
     });
   });
 
@@ -312,60 +334,64 @@ void main() {
     testWidgets('renders nothing without tags', (tester) async {
       await tester.pumpWidget(_host(WallpaperTagChips(tags: const <String>[], onTagTap: (_) {})));
 
-      expect(find.byType(ActionChip), findsNothing);
+      expect(find.byType(PrismChip), findsNothing);
     });
 
-    for (final _TagScene scene in _tagScenes) {
-      testWidgets('${scene.theme} tags are 36 px solid pills with 500 weight labels over ${scene.over}', (
-        tester,
-      ) async {
+    testWidgets('shows eight tags, then a "+N" chip that shows the rest', (tester) async {
+      final List<String> tags = <String>[for (int i = 1; i <= 10; i++) 'tag$i'];
+      await tester.pumpWidget(_host(WallpaperTagChips(tags: tags, onTagTap: (_) {})));
+
+      expect(find.byType(PrismChip), findsNWidgets(9));
+      expect(find.text('tag8'), findsOneWidget);
+      expect(find.text('tag9'), findsNothing);
+      expect(find.byTooltip('See more'), findsOneWidget);
+
+      await tester.tap(find.text('+2'));
+      await tester.pump();
+      expect(find.text('+2'), findsNothing);
+      expect(find.byType(PrismChip), findsNWidgets(10));
+      expect(find.text('tag10'), findsOneWidget);
+    });
+
+    testWidgets('eight tags or fewer show no "+N" chip', (tester) async {
+      final List<String> tags = <String>[for (int i = 1; i <= 8; i++) 'tag$i'];
+      await tester.pumpWidget(_host(WallpaperTagChips(tags: tags, onTagTap: (_) {})));
+
+      expect(find.byType(PrismChip), findsNWidgets(8));
+      expect(find.textContaining('+'), findsNothing);
+    });
+
+    for (final String themeName in _tagThemes) {
+      testWidgets('$themeName tags are compact readable pills with a 44 point target on the page', (tester) async {
         final PrismThemeOption option = <PrismThemeOption>[
           ...prismLightThemes,
           ...prismDarkThemes,
-        ].firstWhere((PrismThemeOption o) => prismThemeDisplayName(o, AppLocalizationsEn()) == scene.theme);
+        ].firstWhere((PrismThemeOption o) => prismThemeDisplayName(o, AppLocalizationsEn()) == themeName);
         final ThemeData theme = withPrismAccent(option.theme, option.defaultAccentValue);
         await tester.pumpWidget(
           MaterialApp(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-
             theme: theme,
             home: Scaffold(
-              body: ColoredBox(
-                color: scene.backdrop,
-                child: WallpaperTagChips(tags: const <String>['space', 'stars'], onTagTap: (_) {}),
-              ),
+              body: WallpaperTagChips(tags: const <String>['space', 'stars'], onTagTap: (_) {}),
             ),
           ),
         );
 
         for (final String tag in <String>['space', 'stars']) {
-          final Finder chip = find.widgetWithText(ActionChip, tag);
-          final ShapeDecoration decoration =
-              tester.widget<Ink>(find.descendant(of: chip, matching: find.byType(Ink))).decoration! as ShapeDecoration;
-          final TextStyle label = tester
+          final Finder chip = find.widgetWithText(PrismChip, tag);
+          final Finder pill = find.descendant(of: chip, matching: find.byType(AnimatedContainer));
+          final BoxDecoration decoration = tester.widget<AnimatedContainer>(pill).decoration! as BoxDecoration;
+          final Color fill = Color.alphaBlend(decoration.color!, theme.scaffoldBackgroundColor);
+          final Color label = tester
               .widget<RichText>(find.descendant(of: chip, matching: find.byType(RichText)))
               .text
-              .style!;
-          expect(decoration.shape, isA<StadiumBorder>(), reason: tag);
-          expect(decoration.color!.a, 1, reason: tag);
-          expect(
-            decoration.color,
-            Color.alphaBlend(
-              ChipTheme.of(tester.element(chip)).backgroundColor!,
-              theme.colorScheme.surfaceContainerLow,
-            ),
-            reason: tag,
-          );
-          expect(label.fontWeight, FontWeight.w500, reason: tag);
-          expect(label.fontSize, 14, reason: tag);
-          expect(contrastRatio(label.color!, decoration.color!), greaterThanOrEqualTo(4.5), reason: tag);
-          expect(
-            tester.getSize(find.descendant(of: chip, matching: find.byType(Ink))).height,
-            36,
-            reason: tag,
-          );
-          expect(tester.getSize(chip).height, 48, reason: tag);
+              .style!
+              .color!;
+          expect(contrastRatio(label, fill), greaterThanOrEqualTo(4.5), reason: tag);
+          expect(tester.getSize(pill).height, 34, reason: tag);
+          expect(tester.getSize(chip).height, greaterThanOrEqualTo(44), reason: tag);
         }
       });
     }

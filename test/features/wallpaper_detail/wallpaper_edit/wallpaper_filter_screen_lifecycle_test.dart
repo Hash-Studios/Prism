@@ -154,10 +154,11 @@ Future<File> _startLockFailure(WidgetTester tester, _LockRefusingClient client) 
   });
   await tester.pumpWidget(_screenHost(source.path));
   await _waitForReady(tester);
-  await tester.tap(find.text('AddictiveBlue'));
+  await tester.tap(find.text('Addictive Blue'));
   await tester.pump();
   await tester.tap(find.byTooltip('Set as wallpaper'));
   await waitForRealIo(tester, () => client.requests.isNotEmpty, reason: 'initial native lock screen request');
+  expect(client.requests.first.source.filePath, isNot(source.path), reason: 'the selected filter must be exported');
   return File(client.requests.first.source.filePath!);
 }
 
@@ -180,7 +181,7 @@ void main() {
     await tester.tap(find.text('Try again'));
     await _waitForReady(tester);
     expect(find.text("Couldn't open this wallpaper"), findsNothing);
-    await tester.tap(find.text('AddictiveBlue'));
+    await tester.tap(find.text('Addictive Blue'));
     await tester.pump();
     final preview = find.descendant(of: find.byType(AspectRatio).first, matching: find.byType(Image)).first;
     final gesture = await tester.startGesture(tester.getCenter(preview));
@@ -446,7 +447,7 @@ void main() {
 
     await tester.pumpWidget(_screenHost(source.path));
     await _waitForReady(tester);
-    await tester.tap(find.text('AddictiveBlue'));
+    await tester.tap(find.text('Addictive Blue'));
     await tester.pump();
     await tester.tap(find.byTooltip('Set as wallpaper'));
     await waitForRealIo(
@@ -504,7 +505,7 @@ void main() {
 
     await tester.pumpWidget(_screenHost(source.path));
     await _waitForReady(tester);
-    await tester.tap(find.text('AddictiveBlue'));
+    await tester.tap(find.text('Addictive Blue'));
     await tester.pump();
     await tester.tap(find.byTooltip('Set as wallpaper'));
     await waitForRealIo(
@@ -516,6 +517,7 @@ void main() {
       reason: 'lock screen fallback snackbar',
     );
     final String exportPath = client.requests.first.source.filePath!;
+    expect(exportPath, isNot(source.path), reason: 'the phone fallback must receive the filtered export');
     expect(File(exportPath).existsSync(), isTrue);
 
     await tester.pump(const Duration(milliseconds: 500));

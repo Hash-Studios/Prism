@@ -111,7 +111,7 @@ void main() {
         ),
       );
 
-      final SemanticsNode preset = tester.getSemantics(find.bySemanticsLabel('AddictiveBlue'));
+      final SemanticsNode preset = tester.getSemantics(find.bySemanticsLabel('Addictive Blue'));
       expect(preset.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
       tester.binding.performSemanticsAction(
         SemanticsActionEvent(type: SemanticsAction.tap, viewId: tester.view.viewId, nodeId: preset.id),

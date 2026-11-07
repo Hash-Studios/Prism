@@ -3,13 +3,14 @@
 import 'dart:async';
 
 import 'package:Prism/core/constants/app_constants.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
 import 'package:Prism/features/deep_link_input/views/pages/deep_link_input_page.dart';
-import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -66,6 +67,13 @@ class _InputRouter extends AppRouter {
   ];
 }
 
+/// Glint animates forever, so `pumpAndSettle` never returns while the chooser is on screen.
+Future<void> settle(WidgetTester tester) async {
+  for (var i = 0; i < 10; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+}
+
 void main() {
   late ImagePickerPlatform previousPicker;
   late _Picker picker;
@@ -96,7 +104,7 @@ void main() {
         routerConfig: router.config(),
       ),
     );
-    await tester.pumpAndSettle();
+    await settle(tester);
   }
 
   for (final DeepLinkInputWorkflow workflow in DeepLinkInputWorkflow.values) {
@@ -108,7 +116,7 @@ void main() {
       expect(opened, isEmpty);
 
       await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       expect(picker.calls, 1);
       expect(opened, hasLength(1));
@@ -152,11 +160,36 @@ void main() {
     });
   }
 
+  testWidgets('the title shows once, in the header, and the live preview has an on-image pill', (tester) async {
+    await showChooser(tester, DeepLinkInputWorkflow.liveWallpaper);
+
+    expect(find.text(AppLocalizationsEn().deepLinkInputLiveTitle), findsOneWidget);
+    final Finder pill = find.ancestor(
+      of: find.text(AppLocalizationsEn().wallpaperLive),
+      matching: find.byType(DecoratedBox),
+    );
+    final DecoratedBox box = tester.widget<DecoratedBox>(pill.first);
+    expect((box.decoration as BoxDecoration).color, Colors.black.withValues(alpha: 0.55));
+  });
+
+  testWidgets('pending chooser shows progress until selection is cancelled', (tester) async {
+    final pending = Completer<XFile?>();
+    picker.choose = () => pending.future;
+    await showChooser(tester, DeepLinkInputWorkflow.liveWallpaper);
+    await tester.tap(find.text('Choose image'));
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    pending.complete(null);
+    await settle(tester);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('Choose image'), findsOneWidget);
+  });
+
   testWidgets('cancel stays on the chooser and allows another selection', (tester) async {
     picker.choose = () async => null;
     await showChooser(tester, DeepLinkInputWorkflow.wallpaperFilter);
     await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
-    await tester.pumpAndSettle();
+    await settle(tester);
 
     expect(opened, isEmpty);
     expect(find.text(AppLocalizationsEn().deepLinkInputChooseImage), findsOneWidget);
@@ -164,7 +197,7 @@ void main() {
 
     picker.choose = () async => XFile('/picked/second.png');
     await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
-    await tester.pumpAndSettle();
+    await settle(tester);
     expect(opened.single.argsAs<WallpaperFilterRouteArgs>().filePath, '/picked/second.png');
   });
 
@@ -172,14 +205,14 @@ void main() {
     picker.choose = () async => throw PlatformException(code: 'photo_access_denied');
     await showChooser(tester, DeepLinkInputWorkflow.editWall);
     await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
-    await tester.pumpAndSettle();
+    await settle(tester);
 
     expect(opened, isEmpty);
     expect(find.text(AppLocalizationsEn().deepLinkInputGalleryError), findsOneWidget);
 
     picker.choose = () async => XFile('/picked/retry.png');
     await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
-    await tester.pumpAndSettle();
+    await settle(tester);
     expect(opened.single.argsAs<EditWallRouteArgs>().image.path, '/picked/retry.png');
     expect(tester.takeException(), isNull);
   });
@@ -189,7 +222,7 @@ void main() {
       picker.choose = () async => XFile(path);
       await showChooser(tester, DeepLinkInputWorkflow.uploadWall);
       await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
-      await tester.pumpAndSettle();
+      await settle(tester);
 
       expect(opened, isEmpty);
       expect(find.text(AppLocalizationsEn().deepLinkInputGalleryError), findsOneWidget);
@@ -203,14 +236,39 @@ void main() {
     await tester.tap(find.text('Choose image'));
     await tester.pump();
     expect(picker.calls, 1);
-    await tester.tap(find.byType(FilledButton));
+    await tester.tap(find.byType(CircularProgressIndicator));
     await tester.pump();
     expect(picker.calls, 1);
 
     await tester.pumpWidget(const MaterialApp(home: SizedBox()));
     pending.complete(XFile('/picked/late.png'));
-    await tester.pumpAndSettle();
+    await settle(tester);
     expect(opened, isEmpty);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a failed gallery open plays one error haptic and a cancel plays none', (tester) async {
+    const channel = MethodChannel('prism/haptics');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final played = <Object?>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      played.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    PrismHaptics.enabled = true;
+
+    picker.choose = () async => null;
+    await showChooser(tester, DeepLinkInputWorkflow.wallpaperFilter);
+    await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
+    await settle(tester);
+    // PrismButton plays its own tap, and a cancel adds nothing on top.
+    expect(played, <Object?>['tap']);
+
+    played.clear();
+    picker.choose = () async => throw PlatformException(code: 'photo_access_denied');
+    await tester.tap(find.text(AppLocalizationsEn().deepLinkInputChooseImage));
+    await settle(tester);
+    expect(played, <Object?>['tap', 'error']);
   });
 }

@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_decoded_image.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
@@ -49,11 +50,16 @@ class AiRemixChip extends StatelessWidget {
                   style: PrismTextStyles.rowTitle(context),
                 ),
               ),
-              IconButton(
-                onPressed: onDrop,
+              PrismIconButton(
+                icon: Icons.close_rounded,
                 tooltip: l10n.wallRemixDropLinkTooltip,
-                icon: const Icon(Icons.close_rounded, size: 18),
-                visualDensity: VisualDensity.compact,
+                iconSize: 18,
+                onPressed: onDrop == null
+                    ? null
+                    : () {
+                        PrismHaptics.selection();
+                        onDrop!();
+                      },
               ),
             ],
           ),

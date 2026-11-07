@@ -194,9 +194,15 @@ class _PrismPageState extends State<PrismPage> {
           ? null
           : Padding(
               padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-              child: SafeArea(
-                minimum: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.md),
-                child: PrismMaxWidth(maxWidth: widget.maxContentWidth, child: widget.bottomBar!),
+              // A hairline on top separates the pinned action from the content that scrolls under it.
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: cs.onSurface.withValues(alpha: 0.08))),
+                ),
+                child: SafeArea(
+                  minimum: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.md),
+                  child: PrismMaxWidth(maxWidth: widget.maxContentWidth, child: widget.bottomBar!),
+                ),
               ),
             ),
       body: SafeArea(

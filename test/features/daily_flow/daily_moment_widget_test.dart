@@ -49,6 +49,9 @@ void main() {
   }
 
   Future<void> tap(WidgetTester tester, String text) async {
+    // The content scrolls in the short test sheet, so bring the button into view first.
+    await tester.ensureVisible(find.text(text));
+    await tester.pump();
     await tester.tap(find.text(text));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
@@ -122,42 +125,42 @@ void main() {
     );
     await tester.pumpWidget(host());
     await tester.pump();
-    expect(find.byTooltip('Close daily moment'), findsNothing);
+    expect(find.byType(DailyMomentContent), findsNothing);
     gate.bootstrapReady = true;
     await tester.pump();
     await tester.pump();
-    expect(find.byTooltip('Close daily moment'), findsNothing);
+    expect(find.byType(DailyMomentContent), findsNothing);
     gate.purchaseActive = false;
     await tester.pump();
     await tester.pump();
-    expect(find.byTooltip('Close daily moment'), findsNothing);
+    expect(find.byType(DailyMomentContent), findsNothing);
     gate.deepLinkActive = false;
     await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-    expect(find.byTooltip('Close daily moment'), findsNothing);
+    expect(find.byType(DailyMomentContent), findsNothing);
     expect(store.get('dailyMoment.shown.${backend.userId}'), isNull);
     gate.launchIntentsReady = true;
     await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-    expect(find.byTooltip('Close daily moment'), findsOneWidget);
+    expect(find.byType(DailyMomentContent), findsOneWidget);
     expect(store.get('dailyMoment.shown.${backend.userId}'), isNotNull);
-    await tester.tap(find.byTooltip('Close daily moment'));
+    await tester.tap(find.byTooltip('Close'));
     await tester.pump(const Duration(seconds: 1));
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpWidget(host());
     await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-    expect(find.byTooltip('Close daily moment'), findsNothing);
+    expect(find.byType(DailyMomentContent), findsNothing);
     app_state.prismUser.id = '${backend.userId}-other';
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpWidget(host());
     await tester.pump();
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-    expect(find.byTooltip('Close daily moment'), findsOneWidget);
+    expect(find.byType(DailyMomentContent), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

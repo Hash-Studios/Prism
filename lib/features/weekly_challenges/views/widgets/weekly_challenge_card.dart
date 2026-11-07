@@ -8,6 +8,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+/// The weekly challenge as a chip. It leads the mood row on Home. Nothing when no challenge is open.
 class WeeklyChallengeCard extends StatefulWidget {
   const WeeklyChallengeCard({super.key, this.cubit, this.now});
   final WeeklyChallengesCubit? cubit;
@@ -46,14 +47,12 @@ class _WeeklyChallengeCardState extends State<WeeklyChallengeCard> with WidgetsB
       final challenge = state.current;
       if (challenge == null) return const SizedBox.shrink();
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Card(
-          child: ListTile(
-            title: Text(context.l10n.challengeTitle, style: PrismTextStyles.rowTitle(context)),
-            subtitle: Text(challenge.theme),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.router.push(WeeklyChallengeRoute(challengeId: challenge.id)),
-          ),
+        padding: const EdgeInsetsDirectional.only(end: 6),
+        child: PrismChip(
+          compact: true,
+          icon: Icons.emoji_events_rounded,
+          label: context.l10n.challengeTitle,
+          onTap: () => context.router.push(WeeklyChallengeRoute(challengeId: challenge.id)),
         ),
       );
     },

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_row.dart';
+import 'package:Prism/features/in_app_notifications/views/widgets/notification_visuals.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -39,7 +40,7 @@ void main() {
       final imageLoad = Completer<ImageInfo>();
       final imageKey = await ResizeImage(
         CachedNetworkImageProvider(item.imageUrl),
-        width: tester.view.physicalSize.width.round().clamp(1, 4096),
+        width: (44 * tester.view.devicePixelRatio).round(),
       ).obtainKey(ImageConfiguration.empty);
       PaintingBinding.instance.imageCache.putIfAbsent(imageKey, () => OneFrameImageStreamCompleter(imageLoad.future));
 
@@ -50,12 +51,52 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       final Finder image = find.byType(CachedNetworkImage);
-      expect(tester.getSize(image).height, 180);
+      expect(tester.getSize(image), const Size(44, 78));
       expect(find.descendant(of: image, matching: find.byIcon(JamIcons.picture)), findsOneWidget);
       expect(find.descendant(of: image, matching: find.byType(ColoredBox)), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('image notifications fit a small screen with large text', (tester) async {
+    tester.view.physicalSize = const Size(320, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      host(
+        MediaQuery(
+          data: const MediaQueryData(size: Size(320, 900), textScaler: TextScaler.linear(3)),
+          child: NotificationRow(
+            notification: notification(
+              'large',
+            ).copyWith(imageUrl: 'https://example.test/wall.jpg', createdAt: DateTime.utc(2023)),
+          ),
+        ),
+      ),
+    );
+    expect(find.byType(NotificationThumbs), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a gallery strip shows at most three phone-ratio thumbnails', (tester) async {
+    await tester.pumpWidget(
+      host(
+        const Center(
+          child: NotificationThumbs(
+            urls: <String>[
+              'https://e.test/1.jpg',
+              'https://e.test/2.jpg',
+              'https://e.test/3.jpg',
+              'https://e.test/4.jpg',
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(CachedNetworkImage), findsNWidgets(3));
+    expect(tester.getSize(find.byType(CachedNetworkImage).first), const Size(30, 54));
+  });
 
   testWidgets('a notification without an image has no media slot', (tester) async {
     await tester.pumpWidget(host(NotificationRow(notification: notification('no-image').copyWith(imageUrl: ''))));

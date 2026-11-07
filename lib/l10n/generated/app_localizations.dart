@@ -1212,7 +1212,7 @@ abstract class AppLocalizations {
   /// About page action that opens the APK download page. Shown only on installs that did not come from Google Play.
   ///
   /// In en, this message translates to:
-  /// **'DOWNLOAD APK'**
+  /// **'Download APK'**
   String get accountDownloadApk;
 
   /// Subtitle describing downloaded files and retained offline copies.
@@ -1266,7 +1266,7 @@ abstract class AppLocalizations {
   /// About page action to send feedback.
   ///
   /// In en, this message translates to:
-  /// **'FEEDBACK'**
+  /// **'Feedback'**
   String get accountFeedback;
 
   /// Email subject for feedback sent from the About page.
@@ -1968,7 +1968,7 @@ abstract class AppLocalizations {
   /// About page action to view the privacy policy.
   ///
   /// In en, this message translates to:
-  /// **'PRIVACY'**
+  /// **'Privacy policy'**
   String get accountPrivacyAction;
 
   /// Settings group heading for privacy and data controls.
@@ -2076,7 +2076,7 @@ abstract class AppLocalizations {
   /// About page action to rate Prism.
   ///
   /// In en, this message translates to:
-  /// **'RATE'**
+  /// **'Rate'**
   String get accountRateApp;
 
   /// Search history section heading.
@@ -2204,12 +2204,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Restoring purchases…'**
   String get accountRestoringPurchases;
-
-  /// Label above wallpaper search results.
-  ///
-  /// In en, this message translates to:
-  /// **'Results for {query}'**
-  String accountResultsForQuery(String query);
 
   /// Retry action label.
   ///
@@ -2436,25 +2430,25 @@ abstract class AppLocalizations {
   /// About page social link label for GitHub.
   ///
   /// In en, this message translates to:
-  /// **'GITHUB'**
+  /// **'GitHub'**
   String get accountSocialGithub;
 
   /// About page social link label for Instagram.
   ///
   /// In en, this message translates to:
-  /// **'INSTAGRAM'**
+  /// **'Instagram'**
   String get accountSocialInstagram;
 
   /// About page social link label for Telegram.
   ///
   /// In en, this message translates to:
-  /// **'TELEGRAM'**
+  /// **'Telegram'**
   String get accountSocialTelegram;
 
   /// About page social link label for Twitter.
   ///
   /// In en, this message translates to:
-  /// **'TWITTER'**
+  /// **'Twitter'**
   String get accountSocialTwitter;
 
   /// Generic error shown when account deletion fails.
@@ -2520,7 +2514,7 @@ abstract class AppLocalizations {
   /// About page action to view the terms of use.
   ///
   /// In en, this message translates to:
-  /// **'TERMS'**
+  /// **'Terms of use'**
   String get accountTermsAction;
 
   /// Accessible onboarding legal agreement label.
@@ -2724,7 +2718,7 @@ abstract class AppLocalizations {
   /// About page action to view changes.
   ///
   /// In en, this message translates to:
-  /// **'WHAT\'S NEW'**
+  /// **'What\'s new'**
   String get accountWhatsNewAction;
 
   /// Profile completeness step for writing a bio.
@@ -7113,6 +7107,12 @@ abstract class AppLocalizations {
   /// **'Live wallpaper'**
   String get deepLinkInputLiveTitle;
 
+  /// Instructions on the image chooser page when the user makes a live wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a photo from your gallery to make it a live wallpaper.'**
+  String get deepLinkInputLiveDescription;
+
   /// Page title while choosing an image for photo preview.
   ///
   /// In en, this message translates to:
@@ -8429,6 +8429,12 @@ abstract class AppLocalizations {
   /// **'+{count, plural, one{1 coin} other{{count} coins}}'**
   String economyCoinsEarned(int count);
 
+  /// No description provided for @economyCoinReward.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count}'**
+  String economyCoinReward(int count);
+
   /// No description provided for @economyCoinsRange.
   ///
   /// In en, this message translates to:
@@ -9656,7 +9662,7 @@ abstract class AppLocalizations {
   /// No description provided for @economyLeaderboardReset.
   ///
   /// In en, this message translates to:
-  /// **'Resets Monday 00:00 UTC · {days, plural, one{1d} other{{days}d}} {hours, plural, one{1h} other{{hours}h}} left'**
+  /// **'Resets in {days, plural, one{1d} other{{days}d}} {hours, plural, one{1h} other{{hours}h}}'**
   String economyLeaderboardReset(int days, int hours);
 
   /// No description provided for @economyLeaderboardScoringIntro.
@@ -10844,7 +10850,7 @@ abstract class AppLocalizations {
   /// No description provided for @economyWeekly.
   ///
   /// In en, this message translates to:
-  /// **'WEEKLY'**
+  /// **'Weekly'**
   String get economyWeekly;
 
   /// No description provided for @economyWeeklyDraw.
@@ -10862,7 +10868,7 @@ abstract class AppLocalizations {
   /// No description provided for @economyWeeklyEndsIn.
   ///
   /// In en, this message translates to:
-  /// **'WEEKLY · {time}'**
+  /// **'Weekly · {time}'**
   String economyWeeklyEndsIn(String time);
 
   /// No description provided for @economyWeeklyXpFriendsEveryone.
@@ -10950,12 +10956,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You have {count} coins'**
   String economyYouHaveCoins(int count);
-
-  /// No description provided for @economyYourXp.
-  ///
-  /// In en, this message translates to:
-  /// **'YOUR XP'**
-  String get economyYourXp;
 
   /// No description provided for @errorGeneric.
   ///
@@ -11202,12 +11202,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Notification'**
   String get notifGenericTitle;
-
-  /// No description provided for @notifGroupAndMore.
-  ///
-  /// In en, this message translates to:
-  /// **'{message} and {otherCount, plural, one{1 more.} other{{otherCount} more.}}'**
-  String notifGroupAndMore(String message, int otherCount);
 
   /// No description provided for @notifGroupApprovals.
   ///
@@ -11830,7 +11824,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingContinue.
   ///
   /// In en, this message translates to:
-  /// **'continue'**
+  /// **'Continue'**
   String get onboardingContinue;
 
   /// No description provided for @onboardingContinueApple.
@@ -11848,7 +11842,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingContinueSelected.
   ///
   /// In en, this message translates to:
-  /// **'continue ({count} selected)'**
+  /// **'Continue ({count} selected)'**
   String onboardingContinueSelected(int count);
 
   /// No description provided for @onboardingCouldNotLogOut.
@@ -11950,7 +11944,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingGenerateWallpaper.
   ///
   /// In en, this message translates to:
-  /// **'generate my wallpaper'**
+  /// **'Generate my wallpaper'**
   String get onboardingGenerateWallpaper;
 
   /// No description provided for @onboardingHeadlineCreators.
@@ -12076,31 +12070,31 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingReloadLower.
   ///
   /// In en, this message translates to:
-  /// **'reload'**
+  /// **'Reload'**
   String get onboardingReloadLower;
 
   /// No description provided for @onboardingSavePhotos.
   ///
   /// In en, this message translates to:
-  /// **'save to photos'**
+  /// **'Save to photos'**
   String get onboardingSavePhotos;
 
   /// No description provided for @onboardingSelectInterestMinimum.
   ///
   /// In en, this message translates to:
-  /// **'select at least {count} categories to personalize your feed'**
+  /// **'Select at least {count} categories to personalize your feed'**
   String onboardingSelectInterestMinimum(int count);
 
   /// No description provided for @onboardingSetWallpaper.
   ///
   /// In en, this message translates to:
-  /// **'set as wallpaper'**
+  /// **'Set as wallpaper'**
   String get onboardingSetWallpaper;
 
   /// No description provided for @onboardingSignInAgainLower.
   ///
   /// In en, this message translates to:
-  /// **'sign in again'**
+  /// **'Sign in again'**
   String get onboardingSignInAgainLower;
 
   /// No description provided for @onboardingSkip.
@@ -12112,7 +12106,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingSkipLower.
   ///
   /// In en, this message translates to:
-  /// **'skip'**
+  /// **'Skip'**
   String get onboardingSkipLower;
 
   /// No description provided for @onboardingTermsRequired.
@@ -12124,7 +12118,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingTryAgainLower.
   ///
   /// In en, this message translates to:
-  /// **'try again'**
+  /// **'Try again'**
   String get onboardingTryAgainLower;
 
   /// No description provided for @onboardingWallpaperForInterest.
@@ -12180,6 +12174,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View plans'**
   String get premiumPageViewPlans;
+
+  /// Large headline at the top of the Prism Premium page.
+  ///
+  /// In en, this message translates to:
+  /// **'The whole gallery, unlocked'**
+  String get premiumPageHeadline;
+
+  /// Premium benefit row: premium collections and walls open without coins or a pass.
+  ///
+  /// In en, this message translates to:
+  /// **'Every premium collection and wallpaper'**
+  String get premiumBenefitWalls;
+
+  /// Premium benefit row: downloads cost no coins and inline and full-screen ads are off.
+  ///
+  /// In en, this message translates to:
+  /// **'Free downloads and no ads'**
+  String get premiumBenefitFree;
+
+  /// Premium benefit row: one free spin of the coin wheel each day.
+  ///
+  /// In en, this message translates to:
+  /// **'A free spin every day'**
+  String get premiumBenefitSpin;
+
+  /// Premium benefit row: auto-rotate and day and night wallpaper switching.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-rotate and day and night mode'**
+  String get premiumBenefitAutomation;
+
+  /// Premium benefit row: every live wallpaper style without coins.
+  ///
+  /// In en, this message translates to:
+  /// **'Every live wallpaper style'**
+  String get premiumBenefitLiveStyles;
+
+  /// Premium benefit row: AI wallpapers without the watermark, at a lower coin price.
+  ///
+  /// In en, this message translates to:
+  /// **'AI wallpapers with no watermark, for fewer coins'**
+  String get premiumBenefitAiClean;
 
   /// A guest purchase or restore has active store entitlement locally, but account-based features require sign-in and server confirmation.
   ///
@@ -15190,13 +15226,13 @@ abstract class AppLocalizations {
   /// Section title for choosing the dark theme accent colour.
   ///
   /// In en, this message translates to:
-  /// **'Dark Accent Color'**
+  /// **'Dark accent colour'**
   String get wallpaperThemeDarkAccent;
 
   /// Section title for dark theme choices.
   ///
   /// In en, this message translates to:
-  /// **'Dark Themes'**
+  /// **'Dark themes'**
   String get wallpaperThemeDarkThemes;
 
   /// Button label that sets a wallpaper color as the app accent.
@@ -15214,13 +15250,13 @@ abstract class AppLocalizations {
   /// Section title for choosing the light theme accent colour.
   ///
   /// In en, this message translates to:
-  /// **'Light Accent Color'**
+  /// **'Light accent colour'**
   String get wallpaperThemeLightAccent;
 
   /// Section title for light theme choices.
   ///
   /// In en, this message translates to:
-  /// **'Light Themes'**
+  /// **'Light themes'**
   String get wallpaperThemeLightThemes;
 
   /// Dark app theme mode option.
@@ -15238,7 +15274,7 @@ abstract class AppLocalizations {
   /// App theme mode option that follows the system light or dark appearance.
   ///
   /// In en, this message translates to:
-  /// **'System (Light/Dark)'**
+  /// **'System'**
   String get wallpaperThemeModeSystem;
 
   /// Setting that selects the app theme mode.
@@ -19372,7 +19408,7 @@ abstract class AppLocalizations {
   /// No description provided for @challengeVotingRules.
   ///
   /// In en, this message translates to:
-  /// **'Vote for other creators until {date} UTC.'**
+  /// **'Vote for other creators until {date}.'**
   String challengeVotingRules(String date);
 
   /// No description provided for @challengeUpload.
@@ -20574,6 +20610,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Creators to follow'**
   String get creatorsToFollow;
+
+  /// Action on the empty creator search, opens the creator directory.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse creators'**
+  String get accountBrowseCreators;
 
   /// Opens the full list of creators.
   ///
@@ -22909,6 +22951,36 @@ abstract class AppLocalizations {
   /// **'Couldn\'t open that photo. Try another one.'**
   String get searchPhotoCouldNotOpen;
 
+  /// Section header for extra wallpaper results in search.
+  ///
+  /// In en, this message translates to:
+  /// **'More wallpapers'**
+  String get searchMoreWallpapers;
+
+  /// Calendar widget text in the wallpaper phone preview when there are no events.
+  ///
+  /// In en, this message translates to:
+  /// **'No events today'**
+  String get wallpaperPreviewNoEvents;
+
+  /// Label under a profile's follower count. The number is shown separately.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{Follower} other{Followers}}'**
+  String accountFollowersLabel(int count);
+
+  /// Chip on a profile that opens the list of earned badges.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 badge} other{{count} badges}}'**
+  String profileBadgeCount(int count);
+
+  /// Section heading above the global top 5 on the Following leaderboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Top this week'**
+  String get economyLeaderboardTopThisWeek;
+
   /// Button label that starts saving all wallpapers in a folder.
   ///
   /// In en, this message translates to:
@@ -23406,6 +23478,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Only you and the people you invited will see it. Its link stops working and its followers lose it.'**
   String get foldersMakePrivateMessageShared;
+
+  /// One-time hint over a wallpaper tile: long-press it for quick actions such as save.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold to save'**
+  String get gestureHintHoldToSave;
+
+  /// One-time hint over the wallpaper detail image: swipe up to see similar wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe up for similar walls'**
+  String get gestureHintSwipeForSimilar;
 
   /// Folder page menu item and name sheet button that add a named section to a folder.
   ///

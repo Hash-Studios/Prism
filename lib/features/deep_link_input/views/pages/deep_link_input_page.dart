@@ -1,3 +1,4 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/deep_link_input/biz/deep_link_input_service.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
@@ -31,7 +32,10 @@ class _DeepLinkInputPageState extends State<DeepLinkInputPage> {
       if (!mounted) return;
       if (destination != null) await context.router.replace<void>(destination);
     } catch (_) {
-      if (mounted) setState(() => _error = context.l10n.deepLinkInputGalleryError);
+      if (mounted) {
+        PrismHaptics.error();
+        setState(() => _error = context.l10n.deepLinkInputGalleryError);
+      }
     } finally {
       if (mounted) setState(() => _choosing = false);
     }
@@ -52,35 +56,71 @@ class _DeepLinkInputPageState extends State<DeepLinkInputPage> {
     };
     return PrismPage(
       title: title,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: PrismSpace.pageInsets,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Icon(Icons.photo_library_outlined, size: 64, color: Theme.of(context).colorScheme.primary),
-              const SizedBox(height: PrismSpace.lg),
-              Text(
-                l10n.deepLinkInputChooseImageDescription,
-                textAlign: TextAlign.center,
-                style: PrismTextStyles.body(context),
-              ),
-              if (_error != null) ...<Widget>[
-                const SizedBox(height: PrismSpace.md),
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    _error!,
-                    textAlign: TextAlign.center,
-                    style: PrismTextStyles.body(context).copyWith(color: Theme.of(context).colorScheme.error),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.md, PrismSpace.page, PrismSpace.xl),
+        children: <Widget>[
+          Center(
+            child: ExcludeSemantics(
+              child: SizedBox(
+                height: (MediaQuery.sizeOf(context).height * 0.45).clamp(260.0, 400.0),
+                child: AspectRatio(
+                  aspectRatio: 9 / 16,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(PrismRadius.md),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: <Widget>[
+                        Image.asset('assets/images/wallpaper.jpg', fit: BoxFit.cover, cacheHeight: 780),
+                        if (widget.workflow == DeepLinkInputWorkflow.liveWallpaper)
+                          PositionedDirectional(
+                            top: PrismSpace.xs,
+                            start: PrismSpace.xs,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.55),
+                                borderRadius: BorderRadius.circular(PrismRadius.pill),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs, vertical: 3),
+                                child: Text(
+                                  l10n.wallpaperLive,
+                                  style: PrismTextStyles.caption(
+                                    context,
+                                  ).copyWith(fontWeight: FontWeight.w700, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ],
-              const SizedBox(height: PrismSpace.xl),
-              PrismButton(label: l10n.deepLinkInputChooseImage, onPressed: _chooseImage, loading: _choosing),
-            ],
+              ),
+            ),
           ),
-        ),
+          const SizedBox(height: PrismSpace.lg),
+          Text(
+            widget.workflow == DeepLinkInputWorkflow.liveWallpaper
+                ? l10n.deepLinkInputLiveDescription
+                : l10n.deepLinkInputChooseImageDescription,
+            textAlign: TextAlign.center,
+            style: PrismTextStyles.body(context),
+          ),
+          const SizedBox(height: PrismSpace.xl),
+          PrismButton(label: l10n.deepLinkInputChooseImage, expand: true, loading: _choosing, onPressed: _chooseImage),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: PrismSpace.md),
+              child: Semantics(
+                liveRegion: true,
+                child: Text(
+                  _error!,
+                  textAlign: TextAlign.center,
+                  style: PrismTextStyles.body(context).copyWith(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

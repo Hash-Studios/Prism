@@ -12,11 +12,13 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_row.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_activity_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_collection_section.dart';
+import 'package:Prism/features/rewards/views/widgets/rewards_cover_art.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_earn_section.dart';
 import 'package:Prism/features/rewards/views/widgets/rewards_spend_section.dart';
 import 'package:Prism/features/streak/bloc/streak_shop_bloc.dart';
@@ -196,7 +198,14 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(_host(const RewardsEarnSection(), Brightness.light));
     expect(find.text(AppLocalizationsEn().economyWatchAdForCoins(CoinsService.instance.adsRewardNow)), findsOneWidget);
-    expect(find.text(AppLocalizationsEn().economyCoinsEarned(CoinsService.instance.adsRewardNow)), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyCoinReward(CoinsService.instance.adsRewardNow)), findsOneWidget);
+    // The coin follows the amount, as in "+20 (coin)".
+    final Finder amount = find.text(AppLocalizationsEn().economyCoinReward(CoinsService.instance.adsRewardNow));
+    final Finder coin = find.descendant(
+      of: find.ancestor(of: amount, matching: find.byType(Row)).first,
+      matching: find.byType(PrismCoinIcon),
+    );
+    expect(tester.getTopLeft(coin).dx, greaterThan(tester.getTopRight(amount).dx));
   });
 
   testWidgets('earn ad row refreshes after background settlement and disables at the daily limit', (tester) async {
@@ -428,6 +437,10 @@ void main() {
         await tester.pumpWidget(_host(RewardsSpendSection(onStreakFreeze: () => freezeTaps++), brightness));
 
         expect(find.text('Use your coins'), findsOneWidget);
+        // Every tile has wallpaper art behind its text.
+        expect(find.byType(RewardsCoverArt), findsNWidgets(8));
+        expect(find.descendant(of: find.byType(RewardsCoverArt).first, matching: find.byType(Image)), findsOneWidget);
+        expect(find.text('Streak freeze'), findsOneWidget);
         expect(find.text('from ${CoinPolicy.aiGenerationFast}'), findsOneWidget);
         expect(find.text('${CoinPolicy.dropWall} a wall'), findsOneWidget);
         expect(find.text('from 100'), findsOneWidget);
@@ -519,6 +532,14 @@ void main() {
         expect(find.text('Streak collection'), findsOneWidget);
         expect(find.text(AppLocalizationsEn().economyCollectionUnlockedAtDays(7)), findsOneWidget);
         expect(find.text(AppLocalizationsEn().economyCollectionUnlocksAtDays(30)), findsOneWidget);
+        final heart = find.ancestor(of: find.byIcon(Icons.favorite_border_rounded), matching: find.byType(InkWell));
+        expect(find.bySemanticsLabel('Favourite'), findsOneWidget);
+        final image = find.byType(PrismWallTile).first;
+        expect(tester.getBottomLeft(heart), tester.getBottomLeft(image));
+        expect(
+          tester.getBottomLeft(heart).dy,
+          lessThan(tester.getTopLeft(find.text(AppLocalizationsEn().economyCollectionUnlockedAtDays(7))).dy),
+        );
 
         await tester.tap(find.text(AppLocalizationsEn().economyCollectionUnlocksAtDays(30)));
         await tester.pump();

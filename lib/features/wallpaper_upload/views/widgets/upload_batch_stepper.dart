@@ -1,5 +1,6 @@
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// "Wallpaper 2 of 3" with one mark per image: sent, not sent, current or waiting.
@@ -18,7 +19,7 @@ class UploadBatchStepper extends StatelessWidget {
       excludeSemantics: true,
       child: Row(
         children: <Widget>[
-          Text(label, style: theme.textTheme.labelLarge?.copyWith(color: colors.onSurface)),
+          Text(label, style: PrismTextStyles.rowTitle(context).copyWith(color: colors.onSurface)),
           const SizedBox(width: 12),
           for (int i = 0; i < batch.total; i++) ...<Widget>[_mark(colors, i), const SizedBox(width: 6)],
         ],

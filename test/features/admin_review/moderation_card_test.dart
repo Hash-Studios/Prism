@@ -5,6 +5,7 @@ import 'package:Prism/features/admin_review/views/widgets/moderation_bits.dart';
 import 'package:Prism/features/admin_review/views/widgets/moderation_card.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _app(Widget home, {TextScaler textScaler = TextScaler.noScaling}) => MaterialApp(
@@ -86,6 +87,12 @@ void main() {
   });
 
   testWidgets('Retry runs the failed action again through the same guard', (WidgetTester tester) async {
+    final List<Object?> haptics = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'HapticFeedback.vibrate') haptics.add(call.arguments);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
     int calls = 0;
     await tester.pumpWidget(
       _app(
@@ -102,6 +109,7 @@ void main() {
     await tester.tap(find.widgetWithText(PrismButton, 'Approve'));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(PrismButton, 'Retry'), findsOneWidget);
+    expect(haptics, <String>['HapticFeedbackType.lightImpact']);
 
     await tester.tap(find.widgetWithText(PrismButton, 'Retry'));
     await tester.tap(find.widgetWithText(PrismButton, 'Retry'), warnIfMissed: false);
@@ -109,5 +117,5 @@ void main() {
 
     expect(calls, 2);
     expect(find.widgetWithText(PrismButton, 'Retry'), findsNothing);
-  });
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 }

@@ -6,11 +6,13 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/animated/press_scale.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/features/navigation/views/widgets/nav_glass.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 
-/// The round create button: four layered rainbow rings. The middle and top rings turn once over five seconds.
+/// The round create button: a glass disc like the tab pill, with a plus inside the rainbow brand ring. The ring turns
+/// once over five seconds.
 class PrismFab extends StatefulWidget {
   const PrismFab({super.key});
 
@@ -81,20 +83,27 @@ class _PrismFabState extends State<PrismFab> with SingleTickerProviderStateMixin
           child: SizedBox(
             width: 56,
             height: 56,
-            child: RepaintBoundary(
+            child: NavGlass(
+              circle: true,
               child: Stack(
                 fit: StackFit.expand,
                 children: <Widget>[
-                  Image.asset('assets/images/button_bottom_layer.webp'),
-                  RotationTransition(
-                    turns: _rotationController,
-                    child: Image.asset('assets/images/button_middle_layer.webp'),
+                  ClipPath(
+                    clipper: const _RingClipper(),
+                    child: RepaintBoundary(
+                      child: RotationTransition(
+                        turns: _rotationController,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: <Widget>[
+                            Image.asset('assets/images/button_middle_layer.webp'),
+                            Image.asset('assets/images/button_topmost_layer.webp'),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  Image.asset('assets/images/button_top_layer.webp'),
-                  RotationTransition(
-                    turns: _rotationController,
-                    child: Image.asset('assets/images/button_topmost_layer.webp'),
-                  ),
+                  Icon(Icons.add_rounded, size: 26, color: Theme.of(context).colorScheme.secondary),
                 ],
               ),
             ),
@@ -103,4 +112,24 @@ class _PrismFabState extends State<PrismFab> with SingleTickerProviderStateMixin
       ),
     );
   }
+}
+
+/// Keeps the outer band of the rainbow art, so the brand ring frames a glass centre. The art's disc ends 24.5 pt from
+/// the centre of the 56 pt button.
+class _RingClipper extends CustomClipper<Path> {
+  const _RingClipper();
+
+  static const double innerRadius = 21;
+
+  @override
+  Path getClip(Size size) {
+    final Offset center = size.center(Offset.zero);
+    return Path()
+      ..fillType = PathFillType.evenOdd
+      ..addOval(Rect.fromCircle(center: center, radius: size.shortestSide / 2))
+      ..addOval(Rect.fromCircle(center: center, radius: innerRadius));
+  }
+
+  @override
+  bool shouldReclip(_RingClipper oldClipper) => false;
 }

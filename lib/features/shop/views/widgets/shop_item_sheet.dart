@@ -47,11 +47,15 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
     setState(() => _watching = true);
     final ShopBloc bloc = context.read<ShopBloc>();
     final String owner = app_state.prismUser.id;
-    final bool credited = await CoinGate.forContext(
-      context,
-    ).watchAdForCoins(sourceTag: 'shop.item_sheet.ad', upsellSource: 'shop_item_sheet', isMounted: () => mounted);
+    bool credited = false;
+    try {
+      credited = await CoinGate.forContext(
+        context,
+      ).watchAdForCoins(sourceTag: 'shop.item_sheet.ad', upsellSource: 'shop_item_sheet', isMounted: () => mounted);
+    } finally {
+      if (mounted) setState(() => _watching = false);
+    }
     if (!mounted) return;
-    setState(() => _watching = false);
     if (credited && owner == app_state.prismUser.id && buyAfter && bloc.state.balance >= shopPriceFor(item)) {
       bloc.add(ShopEvent.purchaseRequested(item.id));
     }

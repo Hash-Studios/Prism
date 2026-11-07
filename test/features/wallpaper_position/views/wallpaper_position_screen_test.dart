@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
 import 'package:Prism/features/wallpaper_position/biz/bloc/wallpaper_position_bloc.j.dart';
 import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
@@ -227,7 +228,7 @@ void main() {
     await tester.tap(find.text('Fit with blur'));
     await tester.pump();
     expect(bloc.state.placement.fit, PlacementFit.fitBlur);
-    expect(tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Fit with blur')).selected, isTrue);
+    expect(tester.widget<PrismChip>(find.widgetWithText(PrismChip, 'Fit with blur')).selected, isTrue);
 
     await tester.tap(find.text('Reset'));
     await tester.pump();

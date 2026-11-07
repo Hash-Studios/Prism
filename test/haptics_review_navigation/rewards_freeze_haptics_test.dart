@@ -43,7 +43,9 @@ void main() {
 
         home: Builder(
           builder: (BuildContext context) => Scaffold(
-            body: RewardsSpendSection(onStreakFreeze: () => buyStreakFreezeFlow(context, onEarnCoins: () {})),
+            body: SingleChildScrollView(
+              child: RewardsSpendSection(onStreakFreeze: () => buyStreakFreezeFlow(context, onEarnCoins: () {})),
+            ),
           ),
         ),
       ),
@@ -57,6 +59,9 @@ void main() {
     CoinsService.instance.streakNotifier.value = StreakStatus.empty.copyWith(freezes: CoinPolicy.maxStreakFreezes);
     await pumpSpendSection(tester);
 
+    // The spend tiles carry wallpaper art now and are taller, so the freeze tile can start below the fold.
+    await tester.ensureVisible(find.bySemanticsLabel(freezeLabel));
+    await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel(freezeLabel));
     await tester.pump();
 

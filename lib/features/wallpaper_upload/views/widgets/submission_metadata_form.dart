@@ -1,5 +1,8 @@
+import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -97,11 +100,14 @@ class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
         if (_invalid)
           Semantics(
             liveRegion: true,
-            child: Text(context.l10n.wallMetadataInvalid, style: TextStyle(color: colors.error)),
+            child: Text(
+              context.l10n.wallMetadataInvalid,
+              style: PrismTextStyles.body(context).copyWith(color: colors.error),
+            ),
           ),
         Text(
           context.l10n.wallpaperUploadDetailsOptional,
-          style: theme.textTheme.titleSmall?.copyWith(color: colors.onSurface),
+          style: PrismTextStyles.rowTitle(context).copyWith(color: colors.onSurface),
         ),
         const SizedBox(height: 12),
         TextField(
@@ -132,7 +138,7 @@ class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
         if (widget.showCategory) ...<Widget>[
           Text(
             context.l10n.wallpaperCategory,
-            style: theme.textTheme.labelLarge?.copyWith(color: colors.onSurfaceVariant),
+            style: PrismTextStyles.rowTitle(context).copyWith(color: colors.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -163,10 +169,15 @@ class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
                 ? context.l10n.wallpaperUploadMaxTagsReached(maxSubmissionTags)
                 : context.l10n.wallpaperUploadAddTagHint,
             helperText: context.l10n.wallpaperUploadTagsHelp(maxSubmissionTags),
-            suffixIcon: IconButton(
+            suffixIcon: PrismIconButton(
+              icon: Icons.add,
               tooltip: context.l10n.wallpaperUploadAddTag,
-              icon: const Icon(Icons.add),
-              onPressed: tagsFull || !widget.enabled ? null : () => _addTags(_tagInput.text),
+              onPressed: tagsFull || !widget.enabled
+                  ? null
+                  : () {
+                      PrismHaptics.selection();
+                      _addTags(_tagInput.text);
+                    },
             ),
           ),
           onChanged: (String value) {

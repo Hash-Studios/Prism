@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/spin_wheel.dart';
+import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/features/spin_wheel/domain/bulb_pattern.dart';
@@ -39,7 +40,10 @@ class SpinWheelCard extends StatelessWidget {
             ? context.l10n.economyFreeSpinReady(status.paidSpinsLeft)
             : context.l10n.economySpinCardCaption(status.price, maxWheelCoins(wheel));
         return PrismCard(
-          onTap: open,
+          onTap: () {
+            PrismHaptics.tap();
+            open();
+          },
           semanticLabel: context.l10n.economySpinWheelCardSemantics(caption),
           child: Row(
             children: <Widget>[

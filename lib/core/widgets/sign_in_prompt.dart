@@ -1,4 +1,3 @@
-import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/glint/glint_state.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -22,10 +21,8 @@ class SignInPrompt extends StatelessWidget {
       title: context.l10n.coreSignInFeatureTitle(feature),
       body: context.l10n.coreSignInFeatureBody,
       actionLabel: context.l10n.coreSignInPromptAction,
-      onAction: () {
-        PrismHaptics.tap();
-        googleSignInPopUp(context, () => main.RestartWidget.restartApp(context));
-      },
+      // GlintState's PrismButton plays the tap haptic.
+      onAction: () => googleSignInPopUp(context, () => main.RestartWidget.restartApp(context)),
     );
   }
 }

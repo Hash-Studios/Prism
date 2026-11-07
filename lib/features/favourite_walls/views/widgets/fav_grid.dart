@@ -18,6 +18,7 @@ import 'package:Prism/core/widgets/menu_button/circular_menu_button.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/core/widgets/selection_action_bar.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
@@ -174,15 +175,16 @@ class _FavouriteGridState extends State<FavouriteGrid> {
   }
 
   void _showUndo(ScaffoldMessengerState messenger, String message, Future<bool> Function() undo) {
+    final AppLocalizations l10n = context.l10n;
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           content: Text(message),
           action: SnackBarAction(
-            label: context.l10n.notifUndo,
+            label: l10n.notifUndo,
             onPressed: () async {
-              if (!await undo()) toasts.error(context.l10n.wallpaperFavouriteRestoreError);
+              if (!await undo()) toasts.error(l10n.wallpaperFavouriteRestoreError);
             },
           ),
         ),
@@ -193,18 +195,18 @@ class _FavouriteGridState extends State<FavouriteGrid> {
     if (!await requireSignedInAction(context) || !mounted) return;
     final FavouriteWallsAdapter adapter = context.favouriteWallsAdapter(listen: false);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    final AppLocalizations l10n = context.l10n;
     if (playTapHaptic) PrismHaptics.tap();
     final bool removed = await adapter.removeWalls(walls.map((wall) => wall.id).toList(growable: false));
     if (!removed) {
-      toasts.error(context.l10n.wallpaperFavouriteRemoveError);
+      toasts.error(l10n.wallpaperFavouriteRemoveError);
       return;
     }
     _exitSelection();
+    if (!mounted) return;
     _showUndo(
       messenger,
-      walls.length == 1
-          ? context.l10n.wallpaperFavouriteRemovedOne
-          : context.l10n.wallpaperFavouriteRemovedMany(walls.length),
+      walls.length == 1 ? l10n.wallpaperFavouriteRemovedOne : l10n.wallpaperFavouriteRemovedMany(walls.length),
       () => adapter.restoreWalls(walls),
     );
   }
@@ -229,17 +231,17 @@ class _FavouriteGridState extends State<FavouriteGrid> {
     final FavouriteWallsAdapter adapter = context.favouriteWallsAdapter(listen: false);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final List<FavouriteWallEntity> before = List<FavouriteWallEntity>.of(all);
+    final AppLocalizations l10n = context.l10n;
     PrismHaptics.tap();
     _exitSelection();
     if (!await adapter.deleteData()) {
-      toasts.error(context.l10n.wallpaperFavouriteClearError);
+      toasts.error(l10n.wallpaperFavouriteClearError);
       return;
     }
+    if (!mounted) return;
     _showUndo(
       messenger,
-      before.length == 1
-          ? context.l10n.wallpaperFavouriteClearedOne
-          : context.l10n.wallpaperFavouriteClearedMany(before.length),
+      before.length == 1 ? l10n.wallpaperFavouriteClearedOne : l10n.wallpaperFavouriteClearedMany(before.length),
       () => adapter.restoreWalls(before),
     );
   }
@@ -452,7 +454,10 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                       },
                     ),
             )
-          : Text(l10n.wallpaperFavouriteCount(state.items.length), style: PrismTextStyles.caption(context)),
+          : Padding(
+              padding: const EdgeInsetsDirectional.only(start: PrismSpace.page - PrismWallGrid.margin),
+              child: Text(l10n.wallpaperFavouriteCount(state.items.length), style: PrismTextStyles.caption(context)),
+            ),
       actions: <Widget>[
         Badge(
           isLabelVisible: viewChanged,
@@ -761,7 +766,6 @@ class _FavouriteGridState extends State<FavouriteGrid> {
             },
           );
         }
-        final ColorScheme cs = Theme.of(context).colorScheme;
         final List<FavouriteWallEntity> selectedWalls = _selectedWalls(state.items);
         final bool selecting = _selecting;
         return PopScope(
@@ -785,11 +789,8 @@ class _FavouriteGridState extends State<FavouriteGrid> {
                 if (state.items.isNotEmpty) _toolbar(context, state),
               ],
               Expanded(
-                child: RefreshIndicator(
-                  color: cs.primary,
-                  backgroundColor: cs.surfaceContainerHigh,
+                child: PrismRefresh(
                   onRefresh: () {
-                    PrismHaptics.impact();
                     return refreshList();
                   },
                   child: _content(context, state, loaded),

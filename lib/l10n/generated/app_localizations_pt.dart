@@ -700,7 +700,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountSpatialSceneSemanticLabel => 'Espacial, walls com profundidade 3D nítida';
 
   @override
-  String get accountDownloadApk => 'BAIXAR APK';
+  String get accountDownloadApk => 'Baixar APK';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -744,7 +744,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountFavouritesCleared => 'Todos os papéis de parede favoritos foram excluídos.';
 
   @override
-  String get accountFeedback => 'OPINIÃO';
+  String get accountFeedback => 'Opinião';
 
   @override
   String get accountFeedbackSubject => 'Opinião sobre o Prism';
@@ -1148,7 +1148,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountPrismPro => 'Prism Pro';
 
   @override
-  String get accountPrivacyAction => 'PRIVACIDADE';
+  String get accountPrivacyAction => 'Política de privacidade';
 
   @override
   String get accountPrivacyAndData => 'Privacidade e dados';
@@ -1217,7 +1217,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountQuickTiles => 'Blocos rápidos';
 
   @override
-  String get accountRateApp => 'AVALIAR';
+  String get accountRateApp => 'Avaliar';
 
   @override
   String get accountRecentSearches => 'Buscas recentes';
@@ -1285,11 +1285,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get accountRestoringPurchases => 'Restaurando compras…';
-
-  @override
-  String accountResultsForQuery(String query) {
-    return 'Resultados para $query';
-  }
 
   @override
   String get accountRetry => 'Tentar novamente';
@@ -1413,16 +1408,16 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountSignInToPrism => 'Entrar no Prism';
 
   @override
-  String get accountSocialGithub => 'GITHUB';
+  String get accountSocialGithub => 'GitHub';
 
   @override
-  String get accountSocialInstagram => 'INSTAGRAM';
+  String get accountSocialInstagram => 'Instagram';
 
   @override
-  String get accountSocialTelegram => 'TELEGRAM';
+  String get accountSocialTelegram => 'Telegram';
 
   @override
-  String get accountSocialTwitter => 'TWITTER';
+  String get accountSocialTwitter => 'Twitter';
 
   @override
   String get accountSomethingWentWrongTryAgain => 'Algo deu errado. Tente novamente.';
@@ -1463,7 +1458,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountTerms => 'Termos';
 
   @override
-  String get accountTermsAction => 'TERMOS';
+  String get accountTermsAction => 'Termos de uso';
 
   @override
   String accountTermsAgreementSemanticLabel(String terms, String privacy) {
@@ -1577,7 +1572,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountWhatsNew => 'Novidades';
 
   @override
-  String get accountWhatsNewAction => 'NOVIDADES';
+  String get accountWhatsNewAction => 'Novidades';
 
   @override
   String get accountWriteBio => 'Escrever biografia';
@@ -4088,6 +4083,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get deepLinkInputLiveTitle => 'Papel de parede animado';
 
   @override
+  String get deepLinkInputLiveDescription =>
+      'Escolha uma foto da sua galeria para transformá-la em papel de parede animado.';
+
+  @override
   String get deepLinkInputPhotoPreviewTitle => 'Prévia da foto';
 
   @override
@@ -5025,6 +5024,14 @@ class AppLocalizationsPt extends AppLocalizations {
       zero: '$countString moedas',
     );
     return '+$_temp0';
+  }
+
+  @override
+  String economyCoinReward(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '+$countString';
   }
 
   @override
@@ -6197,7 +6204,7 @@ class AppLocalizationsPt extends AppLocalizations {
       one: '1h',
       zero: '${hoursString}h',
     );
-    return 'Reinicia segunda-feira às 00:00 UTC · $_temp0 $_temp1 restantes';
+    return 'Reinicia em $_temp0 $_temp1';
   }
 
   @override
@@ -7118,7 +7125,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get economyWeekComplete => 'Semana completa!';
 
   @override
-  String get economyWeekly => 'SEMANAL';
+  String get economyWeekly => 'Semanal';
 
   @override
   String get economyWeeklyDraw => 'Sorteio semanal';
@@ -7128,7 +7135,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String economyWeeklyEndsIn(String time) {
-    return 'SEMANAL · $time';
+    return 'Semanal · $time';
   }
 
   @override
@@ -7230,9 +7237,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
     return 'Você tem $countString moedas';
   }
-
-  @override
-  String get economyYourXp => 'SEU XP';
 
   @override
   String get errorGeneric => 'Algo deu errado. Por favor, tente novamente.';
@@ -7374,21 +7378,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get notifGenericTitle => 'Notificação';
-
-  @override
-  String notifGroupAndMore(String message, int otherCount) {
-    final intl.NumberFormat otherCountNumberFormat = intl.NumberFormat.decimalPattern(localeName);
-    final String otherCountString = otherCountNumberFormat.format(otherCount);
-
-    String _temp0 = intl.Intl.pluralLogic(
-      otherCount,
-      locale: localeName,
-      other: '$otherCountString itens.',
-      one: '1 item.',
-      zero: '$otherCountString itens.',
-    );
-    return '$message e mais $_temp0';
-  }
 
   @override
   String notifGroupApprovals(int count) {
@@ -7954,7 +7943,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get onboardingGenerateSuccess => 'ficou ótimo! abrindo seu papel de parede';
 
   @override
-  String get onboardingGenerateWallpaper => 'gerar meu papel de parede';
+  String get onboardingGenerateWallpaper => 'Gerar meu papel de parede';
 
   @override
   String get onboardingHeadlineCreators => 'Encontre seu pessoal';
@@ -8021,36 +8010,36 @@ class AppLocalizationsPt extends AppLocalizations {
   String get onboardingRecoverySignIn => 'Faça login novamente';
 
   @override
-  String get onboardingReloadLower => 'recarregar';
+  String get onboardingReloadLower => 'Recarregar';
 
   @override
-  String get onboardingSavePhotos => 'salvar em fotos';
+  String get onboardingSavePhotos => 'Salvar em fotos';
 
   @override
   String onboardingSelectInterestMinimum(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
-    return 'selecione pelo menos $countString categorias para personalizar seu feed';
+    return 'Selecione pelo menos $countString categorias para personalizar seu feed';
   }
 
   @override
-  String get onboardingSetWallpaper => 'definir como papel de parede';
+  String get onboardingSetWallpaper => 'Definir como papel de parede';
 
   @override
-  String get onboardingSignInAgainLower => 'faça login novamente';
+  String get onboardingSignInAgainLower => 'Faça login novamente';
 
   @override
   String get onboardingSkip => 'Pular';
 
   @override
-  String get onboardingSkipLower => 'pular';
+  String get onboardingSkipLower => 'Pular';
 
   @override
   String get onboardingTermsRequired => 'Concorde primeiro com os Termos e a Política de Privacidade.';
 
   @override
-  String get onboardingTryAgainLower => 'tente novamente';
+  String get onboardingTryAgainLower => 'Tente novamente';
 
   @override
   String onboardingWallpaperForInterest(String category) {
@@ -8081,6 +8070,27 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get premiumPageViewPlans => 'Ver planos';
+
+  @override
+  String get premiumPageHeadline => 'A galeria inteira, liberada';
+
+  @override
+  String get premiumBenefitWalls => 'Todas as coleções e papéis de parede premium';
+
+  @override
+  String get premiumBenefitFree => 'Downloads grátis e sem anúncios';
+
+  @override
+  String get premiumBenefitSpin => 'Um giro grátis por dia';
+
+  @override
+  String get premiumBenefitAutomation => 'Rotação automática e modo dia e noite';
+
+  @override
+  String get premiumBenefitLiveStyles => 'Todos os estilos de papel de parede animado';
+
+  @override
+  String get premiumBenefitAiClean => 'Papéis de parede com IA sem marca-d\'água, por menos moedas';
 
   @override
   String get premiumGuestStorePurchaseActive =>
@@ -9928,7 +9938,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallpaperThemeModeLight => 'Claro';
 
   @override
-  String get wallpaperThemeModeSystem => 'Sistema (claro/escuro)';
+  String get wallpaperThemeModeSystem => 'Sistema';
 
   @override
   String get wallpaperThemePreference => 'Preferência de tema';
@@ -12363,7 +12373,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String challengeVotingRules(String date) {
-    return 'Vote em outros criadores até $date UTC.';
+    return 'Vote em outros criadores até $date.';
   }
 
   @override
@@ -13088,6 +13098,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get creatorsToFollow => 'Criadores para seguir';
+
+  @override
+  String get accountBrowseCreators => 'Explorar criadores';
 
   @override
   String get creatorsSeeAll => 'Ver tudo';
@@ -14521,6 +14534,30 @@ class AppLocalizationsPt extends AppLocalizations {
   String get searchPhotoCouldNotOpen => 'Não foi possível abrir essa foto. Tente outra.';
 
   @override
+  String get searchMoreWallpapers => 'Mais papéis de parede';
+
+  @override
+  String get wallpaperPreviewNoEvents => 'Nenhum evento hoje';
+
+  @override
+  String accountFollowersLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Seguidores', one: 'Seguidor');
+    return '$_temp0';
+  }
+
+  @override
+  String profileBadgeCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString selos', one: '1 selo');
+    return '$_temp0';
+  }
+
+  @override
+  String get economyLeaderboardTopThisWeek => 'Top desta semana';
+
+  @override
   String get foldersSaveAll => 'Salvar tudo';
 
   @override
@@ -15021,6 +15058,12 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get foldersMakePrivateMessageShared =>
       'Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso.';
+
+  @override
+  String get gestureHintHoldToSave => 'Toque e segure para salvar';
+
+  @override
+  String get gestureHintSwipeForSimilar => 'Deslize para cima para ver papéis de parede parecidos';
 
   @override
   String get foldersSectionAdd => 'Adicionar seção';
@@ -15914,7 +15957,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get accountSpatialSceneSemanticLabel => 'Espacial, walls com profundidade 3D nítida';
 
   @override
-  String get accountDownloadApk => 'BAIXAR APK';
+  String get accountDownloadApk => 'Baixar APK';
 
   @override
   String accountDownloadedWallpaperCount(int count) {
@@ -15958,7 +16001,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get accountFavouritesCleared => 'Todos os papéis de parede favoritos foram excluídos.';
 
   @override
-  String get accountFeedback => 'OPINIÃO';
+  String get accountFeedback => 'Opinião';
 
   @override
   String get accountFeedbackSubject => 'Opinião sobre o Prism';
@@ -16362,7 +16405,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get accountPrismPro => 'Prism Pro';
 
   @override
-  String get accountPrivacyAction => 'PRIVACIDADE';
+  String get accountPrivacyAction => 'Política de privacidade';
 
   @override
   String get accountPrivacyAndData => 'Privacidade e dados';
@@ -16431,7 +16474,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get accountQuickTiles => 'Blocos rápidos';
 
   @override
-  String get accountRateApp => 'AVALIAR';
+  String get accountRateApp => 'Avaliar';
 
   @override
   String get accountRecentSearches => 'Buscas recentes';
@@ -16499,11 +16542,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get accountRestoringPurchases => 'Restaurando compras…';
-
-  @override
-  String accountResultsForQuery(String query) {
-    return 'Resultados para $query';
-  }
 
   @override
   String get accountRetry => 'Tentar novamente';
@@ -16627,16 +16665,16 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get accountSignInToPrism => 'Entrar no Prism';
 
   @override
-  String get accountSocialGithub => 'GITHUB';
+  String get accountSocialGithub => 'GitHub';
 
   @override
-  String get accountSocialInstagram => 'INSTAGRAM';
+  String get accountSocialInstagram => 'Instagram';
 
   @override
-  String get accountSocialTelegram => 'TELEGRAM';
+  String get accountSocialTelegram => 'Telegram';
 
   @override
-  String get accountSocialTwitter => 'TWITTER';
+  String get accountSocialTwitter => 'Twitter';
 
   @override
   String get accountSomethingWentWrongTryAgain => 'Algo deu errado. Tente novamente.';
@@ -16677,7 +16715,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get accountTerms => 'Termos';
 
   @override
-  String get accountTermsAction => 'TERMOS';
+  String get accountTermsAction => 'Termos de uso';
 
   @override
   String accountTermsAgreementSemanticLabel(String terms, String privacy) {
@@ -16791,7 +16829,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get accountWhatsNew => 'Novidades';
 
   @override
-  String get accountWhatsNewAction => 'NOVIDADES';
+  String get accountWhatsNewAction => 'Novidades';
 
   @override
   String get accountWriteBio => 'Escrever biografia';
@@ -19302,6 +19340,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get deepLinkInputLiveTitle => 'Papel de parede animado';
 
   @override
+  String get deepLinkInputLiveDescription =>
+      'Escolha uma foto da sua galeria para transformá-la em papel de parede animado.';
+
+  @override
   String get deepLinkInputPhotoPreviewTitle => 'Prévia da foto';
 
   @override
@@ -20239,6 +20281,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       zero: '$countString moedas',
     );
     return '+$_temp0';
+  }
+
+  @override
+  String economyCoinReward(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    return '+$countString';
   }
 
   @override
@@ -21411,7 +21461,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       one: '1h',
       zero: '${hoursString}h',
     );
-    return 'Reinicia segunda-feira às 00:00 UTC · $_temp0 $_temp1 restantes';
+    return 'Reinicia em $_temp0 $_temp1';
   }
 
   @override
@@ -22332,7 +22382,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get economyWeekComplete => 'Semana completa!';
 
   @override
-  String get economyWeekly => 'SEMANAL';
+  String get economyWeekly => 'Semanal';
 
   @override
   String get economyWeeklyDraw => 'Sorteio semanal';
@@ -22342,7 +22392,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String economyWeeklyEndsIn(String time) {
-    return 'SEMANAL · $time';
+    return 'Semanal · $time';
   }
 
   @override
@@ -22444,9 +22494,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
     return 'Você tem $countString moedas';
   }
-
-  @override
-  String get economyYourXp => 'SEU XP';
 
   @override
   String get errorGeneric => 'Algo deu errado. Por favor, tente novamente.';
@@ -22588,21 +22635,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get notifGenericTitle => 'Notificação';
-
-  @override
-  String notifGroupAndMore(String message, int otherCount) {
-    final intl.NumberFormat otherCountNumberFormat = intl.NumberFormat.decimalPattern(localeName);
-    final String otherCountString = otherCountNumberFormat.format(otherCount);
-
-    String _temp0 = intl.Intl.pluralLogic(
-      otherCount,
-      locale: localeName,
-      other: '$otherCountString itens.',
-      one: '1 item.',
-      zero: '$otherCountString itens.',
-    );
-    return '$message e mais $_temp0';
-  }
 
   @override
   String notifGroupApprovals(int count) {
@@ -23168,7 +23200,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get onboardingGenerateSuccess => 'ficou ótimo! abrindo seu papel de parede';
 
   @override
-  String get onboardingGenerateWallpaper => 'gerar meu papel de parede';
+  String get onboardingGenerateWallpaper => 'Gerar meu papel de parede';
 
   @override
   String get onboardingHeadlineCreators => 'Encontre seu pessoal';
@@ -23235,36 +23267,36 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get onboardingRecoverySignIn => 'Faça login novamente';
 
   @override
-  String get onboardingReloadLower => 'recarregar';
+  String get onboardingReloadLower => 'Recarregar';
 
   @override
-  String get onboardingSavePhotos => 'salvar em fotos';
+  String get onboardingSavePhotos => 'Salvar em fotos';
 
   @override
   String onboardingSelectInterestMinimum(int count) {
     final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String countString = countNumberFormat.format(count);
 
-    return 'selecione pelo menos $countString categorias para personalizar seu feed';
+    return 'Selecione pelo menos $countString categorias para personalizar seu feed';
   }
 
   @override
-  String get onboardingSetWallpaper => 'definir como papel de parede';
+  String get onboardingSetWallpaper => 'Definir como papel de parede';
 
   @override
-  String get onboardingSignInAgainLower => 'faça login novamente';
+  String get onboardingSignInAgainLower => 'Faça login novamente';
 
   @override
   String get onboardingSkip => 'Pular';
 
   @override
-  String get onboardingSkipLower => 'pular';
+  String get onboardingSkipLower => 'Pular';
 
   @override
   String get onboardingTermsRequired => 'Concorde primeiro com os Termos e a Política de Privacidade.';
 
   @override
-  String get onboardingTryAgainLower => 'tente novamente';
+  String get onboardingTryAgainLower => 'Tente novamente';
 
   @override
   String onboardingWallpaperForInterest(String category) {
@@ -23295,6 +23327,27 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get premiumPageViewPlans => 'Ver planos';
+
+  @override
+  String get premiumPageHeadline => 'A galeria inteira, liberada';
+
+  @override
+  String get premiumBenefitWalls => 'Todas as coleções e papéis de parede premium';
+
+  @override
+  String get premiumBenefitFree => 'Downloads grátis e sem anúncios';
+
+  @override
+  String get premiumBenefitSpin => 'Um giro grátis por dia';
+
+  @override
+  String get premiumBenefitAutomation => 'Rotação automática e modo dia e noite';
+
+  @override
+  String get premiumBenefitLiveStyles => 'Todos os estilos de papel de parede animado';
+
+  @override
+  String get premiumBenefitAiClean => 'Papéis de parede com IA sem marca-d\'água, por menos moedas';
 
   @override
   String get premiumGuestStorePurchaseActive =>
@@ -25142,7 +25195,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get wallpaperThemeModeLight => 'Claro';
 
   @override
-  String get wallpaperThemeModeSystem => 'Sistema (claro/escuro)';
+  String get wallpaperThemeModeSystem => 'Sistema';
 
   @override
   String get wallpaperThemePreference => 'Preferência de tema';
@@ -27577,7 +27630,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String challengeVotingRules(String date) {
-    return 'Vote em outros criadores até $date UTC.';
+    return 'Vote em outros criadores até $date.';
   }
 
   @override
@@ -28302,6 +28355,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get creatorsToFollow => 'Criadores para seguir';
+
+  @override
+  String get accountBrowseCreators => 'Explorar criadores';
 
   @override
   String get creatorsSeeAll => 'Ver tudo';
@@ -29735,6 +29791,30 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get searchPhotoCouldNotOpen => 'Não foi possível abrir essa foto. Tente outra.';
 
   @override
+  String get searchMoreWallpapers => 'Mais papéis de parede';
+
+  @override
+  String get wallpaperPreviewNoEvents => 'Nenhum evento hoje';
+
+  @override
+  String accountFollowersLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Seguidores', one: 'Seguidor');
+    return '$_temp0';
+  }
+
+  @override
+  String profileBadgeCount(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString selos', one: '1 selo');
+    return '$_temp0';
+  }
+
+  @override
+  String get economyLeaderboardTopThisWeek => 'Top desta semana';
+
+  @override
   String get foldersSaveAll => 'Salvar tudo';
 
   @override
@@ -30235,6 +30315,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get foldersMakePrivateMessageShared =>
       'Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso.';
+
+  @override
+  String get gestureHintHoldToSave => 'Toque e segure para salvar';
+
+  @override
+  String get gestureHintSwipeForSimilar => 'Deslize para cima para ver papéis de parede parecidos';
 
   @override
   String get foldersSectionAdd => 'Adicionar seção';

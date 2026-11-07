@@ -7,6 +7,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/drops/drops.dart';
 import 'package:Prism/features/drops/views/pages/drop_preview_page.dart';
@@ -180,7 +181,7 @@ void main() {
     testWidgets('waits for the week before constructing the preview pager', (tester) async {
       await pumpRoute(tester, DropsState.initial());
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(PrismLoader), findsOneWidget);
       expect(find.byType(DropPreviewPage), findsNothing);
     });
 
