@@ -305,6 +305,13 @@ class PurchasesService {
     return !age.isNegative && age < _subscriptionResyncAfter;
   }
 
+  /// The daily server check can mark an account free before the app runs. The tier the server last confirmed on this
+  /// phone still shows the account had Pro.
+  bool _lastConfirmedPaid(String userId) {
+    final String saved = _settings?.get<String>('$_lastSyncedKeyPrefix$userId', defaultValue: '') ?? '';
+    return SubscriptionTier.fromValue(saved.split('|').first).isPaid;
+  }
+
   bool _matchesSubscriptionRequest(String userId, int identityRevision, bool loggedIn, SubscriptionTier tier) =>
       _matchesSubscriptionIdentity(userId, identityRevision, loggedIn) &&
       app_state.prismUser.subscriptionTier == tier.name;
@@ -476,7 +483,11 @@ class PurchasesService {
     } else if (forcedAppliesAtRead != _forcedApplies) {
       return _cachedEntitlementStatus(forceSync);
     }
-    if (!isPremium && !forceSync && app_state.prismUser.premium && loggedIn && userId.isNotEmpty) {
+    if (!isPremium &&
+        !forceSync &&
+        (app_state.prismUser.premium || _lastConfirmedPaid(userId)) &&
+        loggedIn &&
+        userId.isNotEmpty) {
       final int appliesBeforeSync = _customerInfoApplies;
       final CustomerInfo? synced = await _syncStoreBeforeRemovingPro(userId, identityRevision, loggedIn);
       if (!_matchesSubscriptionIdentity(userId, identityRevision, loggedIn) ||
