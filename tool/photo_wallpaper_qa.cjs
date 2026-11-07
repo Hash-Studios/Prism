@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 // Photo to wallpaper local QA on top of the weekly challenge QA runtime. Commands: prepare, emulators, serve, seed,
-// photos, build-apk, build-ios, fail-on, fail-off, ledger.
+// photos, build-apk, build-ios, run-ios, fail-on, fail-off, ledger.
 //
 // The real createPhotoWallpaper callable runs in the Functions emulator. Its network is loopback only, so its fal calls
 // go to a relay in `serve` (https://localhost:19375/fal/...). The relay sends the first REAL_FAL_LIMIT jobs to fal.ai
@@ -232,8 +232,8 @@ async function ledger() {
   console.log(`Real fal jobs: ${real.length}. Cost: $${real.reduce((sum, e) => sum + (e.costUsd ?? 0), 0).toFixed(4)}.`);
 }
 
-/** Swaps in the synthetic iOS config only for the build, then restores the real files. */
-async function buildIos() {
+/** Runs [flutterArgs] with the synthetic iOS config swapped in, then restores the real files, also on Ctrl-C. */
+function withIosQaConfig(flutterArgs) {
   const defines = readJson('dart-defines.json');
   assert.equal(defines.PRISM_LOCAL_QA, 'true');
   const repo = path.resolve(__dirname, '..');
@@ -242,21 +242,34 @@ async function buildIos() {
     const target = path.join(repo, to);
     return {target, original: fs.existsSync(target) ? fs.readFileSync(target) : null, replacement: fs.readFileSync(file(from))};
   });
+  // Ctrl-C goes to flutter, which exits; the restore below then runs.
+  const ignore = () => {};
+  process.on('SIGINT', ignore);
   try {
     for (const swap of swaps) fs.writeFileSync(swap.target, swap.replacement);
-    const result = cp.spawnSync('fvm', ['flutter', 'build', 'ios', '--debug', '--simulator', '--no-pub',
-      `--dart-define-from-file=${file('dart-defines.json')}`], {cwd: repo, stdio: 'inherit'});
-    if (result.status !== 0) throw Error(`flutter build ios exited ${result.status}`);
+    const result = cp.spawnSync('fvm', ['flutter', ...flutterArgs, '--no-pub', `--dart-define-from-file=${file('dart-defines.json')}`],
+      {cwd: repo, stdio: 'inherit'});
+    if (result.status !== 0 && result.signal !== 'SIGINT') throw Error(`flutter ${flutterArgs[0]} exited ${result.status}`);
   } finally {
     for (const swap of swaps) {
       if (swap.original) fs.writeFileSync(swap.target, swap.original);
       else fs.rmSync(swap.target, {force: true});
     }
+    process.off('SIGINT', ignore);
   }
 }
 
+const buildIos = async () => withIosQaConfig(['build', 'ios', '--debug', '--simulator']);
+
+/** `flutter run` on one simulator, so Dart startup errors print in this terminal. */
+async function runIos() {
+  const udid = process.argv[3];
+  assert.ok(udid && /^[0-9A-F-]{36}$/i.test(udid), 'Pass the simulator UDID: run-ios <udid>');
+  withIosQaConfig(['run', '-d', udid, '--debug']);
+}
+
 const commands = {
-  prepare, serve, seed, photos, ledger, 'build-ios': buildIos,
+  prepare, serve, seed, photos, ledger, 'build-ios': buildIos, 'run-ios': runIos,
   emulators: () => weekly('emulators'), 'build-apk': () => weekly('build-apk'),
   'fail-on': async () => { fs.writeFileSync(file('force-fail'), ''); console.log('The next fal call fails.'); },
   'fail-off': async () => { fs.rmSync(file('force-fail'), {force: true}); console.log('fal calls run again.'); },
