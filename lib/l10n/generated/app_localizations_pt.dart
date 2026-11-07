@@ -15140,7 +15140,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get foldersSuggestTitle => 'Seções sugeridas';
 
   @override
-  String get foldersSuggestBody => 'Grupos dos seus papéis de parede não organizados. Mantenha os que quiser.';
+  String get foldersSuggestBody => 'Grupos dos seus papéis de parede não organizados. Mantenha os que você quiser.';
 
   @override
   String get foldersSuggestByMood => 'Humor';
