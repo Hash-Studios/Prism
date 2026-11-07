@@ -20,6 +20,12 @@ int _int(Object? raw, int fallback, {int min = 0, int max = _maxPrice}) {
   return value < min || value > max ? fallback : value;
 }
 
+int _photoPrice(Object? raw, int fallback) {
+  if (raw is! num || !raw.isFinite || raw != raw.truncateToDouble()) return fallback;
+  final int value = raw.toInt();
+  return value >= 0 && value <= _maxPrice ? value : fallback;
+}
+
 double _double(Object? raw, double fallback) => raw is num && raw.isFinite && raw >= 0 ? raw.toDouble() : fallback;
 
 bool _bool(Object? raw, bool fallback) => raw is bool ? raw : fallback;
@@ -64,6 +70,8 @@ class EconomySpend {
     this.drawTicket = 20,
     this.spinWheel = 10,
     this.dailyChest = 8,
+    this.photoExtend = 75,
+    this.photoUpscale = 10,
   });
 
   factory EconomySpend.fromMap(Map<String, dynamic> m) {
@@ -87,6 +95,8 @@ class EconomySpend {
       drawTicket: _int(m['drawTicket'], d.drawTicket),
       spinWheel: _int(m['spinWheel'], d.spinWheel),
       dailyChest: _int(m['dailyChest'], d.dailyChest),
+      photoExtend: _photoPrice(m['photoExtend'], d.photoExtend),
+      photoUpscale: _photoPrice(m['photoUpscale'], d.photoUpscale),
     );
   }
 
@@ -112,6 +122,10 @@ class EconomySpend {
 
   /// What the daily chest costs before today's quests are done.
   final int dailyChest;
+
+  /// What a photo wallpaper job costs: Extend to the screen shape, or Upscale.
+  final int photoExtend;
+  final int photoUpscale;
 }
 
 class SpinSegment {
@@ -355,7 +369,7 @@ class EconomyConfig {
   const EconomyConfig({
     this.version = 2,
     this.spend = const EconomySpend(),
-    this.proDiscountActions = const <String>['aiGeneration', 'dropWall', 'dropPack'],
+    this.proDiscountActions = const <String>['aiGeneration', 'dropWall', 'dropPack', 'photoWallpaper'],
     this.proBypassActions = const <String>[
       'wallpaperDownload',
       'premiumWallpaperDownload',
@@ -377,7 +391,9 @@ class EconomyConfig {
     return EconomyConfig(
       version: _int(raw['version'], defaults.version),
       spend: raw['spend'] is Map ? EconomySpend.fromMap(toJsonMap(raw['spend'])) : defaults.spend,
-      proDiscountActions: _strings(raw['proDiscountActions'], defaults.proDiscountActions),
+      proDiscountActions: raw['proDiscountActions'] is List
+          ? List<String>.unmodifiable((raw['proDiscountActions'] as List).whereType<String>())
+          : defaults.proDiscountActions,
       proBypassActions: List<String>.unmodifiable(
         _strings(raw['proBypassActions'], defaults.proBypassActions).where((String a) => !_neverBypassed.contains(a)),
       ),

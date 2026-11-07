@@ -6,6 +6,7 @@ import {deleteAccount} from "../deleteAccount";
 import {claimUsername} from "../claimUsername";
 import * as publicFolders from "../publicFolders";
 import * as desktopSubmissions from "../desktopSubmissions";
+import * as photoWallpaper from "../photoWallpaper";
 import {installFakeDb} from "./fakeDb";
 
 type Options = {
@@ -165,7 +166,7 @@ test("deleting an account removes every per-user doc, anonymizes, then deletes t
     "recursive:usersv2/u1/blockedUsers", "recursive:usersv2/u1/private", "recursive:usersv2/u1/history", "recursive:wrapped/u1",
     "delete:referralStats/u1", "delete:subscriptionSync/u1", "delete:githubUploadStats/u1",
     "delete:badgeCheckRate/u1", "delete:coinAdRateDaily/d1", "delete:coinTransactions/d1",
-    "delete:aiGenerations/d1", "delete:draftSetups/d1",
+    "delete:aiGenerations/d1", "delete:draftSetups/d1", "delete:photoJobDaily/u1", "delete:photoJobClosures/u1", "query:photoJobs.userId==u1",
   ]) {
     assert.ok(log.includes(path), path);
   }
@@ -257,6 +258,24 @@ test("desktop cleanup failure keeps account state available for retry after the 
   assert.deepEqual(await call(), {ok: true});
   assert.ok(log.includes("delete:desktopSubmissions/d1"));
   assert.equal(log.at(-1), "auth");
+});
+
+test("photo cleanup failure stops account deletion before profile anonymization", async (t) => {
+  const log = fake(t);
+  t.mock.method(photoWallpaper, "removePhotoJobsForAccount", async () => {
+    log.push("photoCleanup");
+    throw new Error("photo job is still running");
+  });
+  await assert.rejects(() => call(), /photo job is still running/);
+  assert.ok(log.indexOf("barrier:creatorDeletionState/u1") < log.indexOf("photoCleanup"));
+  assert.ok(log.includes("photoCleanup"));
+  assert.equal(log.includes("recursive:usersv2/u1/private"), false);
+  assert.equal(log.includes("anonymize"), false);
+  assert.equal(log.includes("auth"), false);
+});
+
+test("account deletion binds fal payload cleanup credentials", () => {
+  assert.ok(deleteAccount.__endpoint.secretEnvironmentVariables?.some(({key}) => key === "FAL_API_KEY"));
 });
 
 test("a failed delete throws before the profile is anonymized or the auth user removed", async (t) => {

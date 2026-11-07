@@ -34,6 +34,8 @@ export interface EconomyConfig {
     drawTicket: number;
     spinWheel: number;
     dailyChest: number;
+    photoExtend: number;
+    photoUpscale: number;
   };
   proDiscountActions: string[];
   proBypassActions: string[];
@@ -108,8 +110,10 @@ export const DEFAULT_ECONOMY: EconomyConfig = {
     drawTicket: 20,
     spinWheel: 10,
     dailyChest: 8,
+    photoExtend: 75,
+    photoUpscale: 10,
   },
-  proDiscountActions: ["aiGeneration", "dropWall", "dropPack"],
+  proDiscountActions: ["aiGeneration", "dropWall", "dropPack", "photoWallpaper"],
   proBypassActions: [
     "wallpaperDownload", "premiumWallpaperDownload", "liveWallpaperStyle", "premiumFilter", "premiumPreview24h",
     "autoRotatePass7d",

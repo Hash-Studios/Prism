@@ -43,6 +43,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/ai_prompt_pools.dart';
 import 'package:Prism/features/ai_wallpaper/views/ai_wallpaper_helpers.dart';
+import 'package:Prism/features/ai_wallpaper/views/pages/photo_wallpaper_page.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_duo_fields.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_error_copy.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_generate_bar.dart';
@@ -55,6 +56,7 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_actions.dart
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheets.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_style_sheet.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/photo_wallpaper_widgets.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
@@ -1373,6 +1375,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
                   ),
                 ],
               ),
+            ),
+            Padding(
+              padding: page.copyWith(top: PrismSpace.md),
+              child: AiFromPhotoCard(enabled: !busy, onTap: () => openPhotoWallpaperPage(context)),
             ),
             PrismSectionHeader(
               title: AppLocalizations.of(context).economyAiStyle,

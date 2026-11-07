@@ -23706,6 +23706,282 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load suggestions'**
   String get foldersSuggestError;
+
+  /// Entry card on the AI tab that opens photo to wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'From your photo'**
+  String get photoWallEntryTitle;
+
+  /// Subtitle of the From your photo entry card.
+  ///
+  /// In en, this message translates to:
+  /// **'Fit any photo to your screen'**
+  String get photoWallEntrySubtitle;
+
+  /// Button that opens the photo gallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a photo'**
+  String get photoWallPickPhoto;
+
+  /// Button that replaces the picked photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another photo'**
+  String get photoWallPickAnother;
+
+  /// Privacy note under the photo picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Your photo goes to our AI provider, fal.ai, and to Google Cloud Vision for this job only. Prism keeps the finished wallpaper, not your photo, and asks fal.ai to delete the photo after the job.'**
+  String get photoWallPrivacyNote;
+
+  /// Label of the phone or desktop choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Make it for'**
+  String get photoWallTargetLabel;
+
+  /// Choice: make a phone wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get photoWallTargetPhone;
+
+  /// Choice: make a 16:10 desktop wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version'**
+  String get photoWallTargetDesktop;
+
+  /// Plan shown when the photo has the wrong shape for a phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Extend to fit your screen'**
+  String get photoWallPlanExtend;
+
+  /// Plan shown when the photo has the wrong shape for a desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'Extend to fit a desktop screen'**
+  String get photoWallPlanExtendDesktop;
+
+  /// Detail under the Extend plan.
+  ///
+  /// In en, this message translates to:
+  /// **'AI fills in the missing edges around your photo.'**
+  String get photoWallPlanExtendDetail;
+
+  /// Plan shown when the photo is too small.
+  ///
+  /// In en, this message translates to:
+  /// **'Upscale'**
+  String get photoWallPlanUpscale;
+
+  /// Detail under the Upscale plan.
+  ///
+  /// In en, this message translates to:
+  /// **'AI adds detail so the photo stays sharp on your screen.'**
+  String get photoWallPlanUpscaleDetail;
+
+  /// Shown when no AI job is needed for a phone.
+  ///
+  /// In en, this message translates to:
+  /// **'This photo already fits your screen'**
+  String get photoWallPlanFits;
+
+  /// Shown when no AI job is needed for a desktop.
+  ///
+  /// In en, this message translates to:
+  /// **'This photo already fits a desktop screen'**
+  String get photoWallPlanFitsDesktop;
+
+  /// Detail when no AI job is needed.
+  ///
+  /// In en, this message translates to:
+  /// **'It has the right shape and size. Choose another photo or switch the target.'**
+  String get photoWallPlanFitsDetail;
+
+  /// Main button. Starts an Extend job and shows its coin cost.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins, plural, =1{Extend · 1 coin} other{Extend · {coins} coins}}'**
+  String photoWallRunExtend(int coins);
+
+  /// Main button. Starts an Upscale job and shows its coin cost.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins, plural, =1{Upscale · 1 coin} other{Upscale · {coins} coins}}'**
+  String photoWallRunUpscale(int coins);
+
+  /// Main button when the balance is too low. Opens Rewards.
+  ///
+  /// In en, this message translates to:
+  /// **'Get coins · need {coins}'**
+  String photoWallGetCoins(int coins);
+
+  /// Header over the placement frame.
+  ///
+  /// In en, this message translates to:
+  /// **'Place your photo'**
+  String get photoWallPlaceTitle;
+
+  /// Hint under the placement frame.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to move. Pinch to make it smaller.'**
+  String get photoWallPlaceHint;
+
+  /// Button that puts the photo back in the centre at full size.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset position'**
+  String get photoWallPlaceReset;
+
+  /// Screen reader label of the placement frame.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo position in the frame'**
+  String get photoWallPlaceSemantics;
+
+  /// Screen reader action: move the photo to the top or left edge.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to start'**
+  String get photoWallPlaceMoveStart;
+
+  /// Screen reader action: move the photo to the centre.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to centre'**
+  String get photoWallPlaceMoveCentre;
+
+  /// Screen reader action: move the photo to the bottom or right edge.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to end'**
+  String get photoWallPlaceMoveEnd;
+
+  /// Progress title during an Extend job.
+  ///
+  /// In en, this message translates to:
+  /// **'Extending your photo'**
+  String get photoWallWorkingExtend;
+
+  /// Progress title during an Upscale job.
+  ///
+  /// In en, this message translates to:
+  /// **'Upscaling your photo'**
+  String get photoWallWorkingUpscale;
+
+  /// Progress detail.
+  ///
+  /// In en, this message translates to:
+  /// **'This usually takes under a minute.'**
+  String get photoWallWorkingDetail;
+
+  /// Label on the original side of the compare slider.
+  ///
+  /// In en, this message translates to:
+  /// **'Before'**
+  String get photoWallBefore;
+
+  /// Label on the result side of the compare slider.
+  ///
+  /// In en, this message translates to:
+  /// **'After'**
+  String get photoWallAfter;
+
+  /// Screen reader label of the compare slider.
+  ///
+  /// In en, this message translates to:
+  /// **'Before and after. Swipe up or down to compare.'**
+  String get photoWallCompareSemantics;
+
+  /// Result button that sets the wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as wallpaper'**
+  String get photoWallSet;
+
+  /// Result button that saves the wallpaper to the device.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get photoWallDownload;
+
+  /// Toast after Download.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your device'**
+  String get photoWallSaved;
+
+  /// Result button that returns to the picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Use another photo'**
+  String get photoWallStartOver;
+
+  /// Error when the content filter blocks the input photo.
+  ///
+  /// In en, this message translates to:
+  /// **'This photo can\'t be used. Choose another photo.'**
+  String get photoWallErrorUnsafeInput;
+
+  /// Error when the content filter blocks the result.
+  ///
+  /// In en, this message translates to:
+  /// **'The result was blocked. Try again or choose another photo.'**
+  String get photoWallErrorUnsafeOutput;
+
+  /// Error when the daily cap is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'You reached today\'s limit of {count} photo wallpapers.'**
+  String photoWallErrorLimit(int count);
+
+  /// Error when the global daily cap is reached.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo wallpapers are very busy right now. Try again later.'**
+  String get photoWallErrorBusy;
+
+  /// Error when the photo does not decode.
+  ///
+  /// In en, this message translates to:
+  /// **'This photo can\'t be opened. Choose another photo.'**
+  String get photoWallErrorUnreadable;
+
+  /// Error when the same job is still running.
+  ///
+  /// In en, this message translates to:
+  /// **'Still working on your last photo.'**
+  String get photoWallErrorInProgress;
+
+  /// Error for any other failure.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t make the wallpaper. Try again.'**
+  String get photoWallErrorGeneric;
+
+  /// Added after an error when the server refunded the coins.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins, plural, =1{Your coin was returned.} other{Your {coins} coins were returned.}}'**
+  String photoWallRefunded(int coins);
+
+  /// Added after an error when the refund is not confirmed yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Your coins will be returned.'**
+  String get photoWallRefundPending;
+
+  /// Button on the error card that runs the same job again.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get photoWallTryAgain;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

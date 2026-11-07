@@ -28,6 +28,8 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'binary_result': BinaryResultValue.values.map((value) => value.wireValue).toList(),
   'ai_apply_from': AiApplyFromValue.values.map((value) => value.wireValue).toList(),
   'ai_style_pick_source': AiStylePickSource.values.map((value) => value.wireValue).toList(),
+  'photo_job_mode': PhotoJobModeValue.values.map((value) => value.wireValue).toList(),
+  'photo_job_target': PhotoJobTargetValue.values.map((value) => value.wireValue).toList(),
   'rc_or_fallback': RcOrFallbackValue.values.map((value) => value.wireValue).toList(),
   'live_wallpaper_style': LiveWallpaperStyleValue.values.map((value) => value.wireValue).toList(),
   'paywall_result': PaywallResultValue.values.map((value) => value.wireValue).toList(),
@@ -1037,6 +1039,76 @@ class AiStripSwappedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'position': position, 'count': count};
+  }
+}
+
+class PhotoJobStartedEvent extends AnalyticsEvent {
+  const PhotoJobStartedEvent({required this.mode, required this.target, required this.cost});
+
+  final PhotoJobModeValue mode;
+  final PhotoJobTargetValue target;
+  final int cost;
+
+  @override
+  String get eventName => 'photo_job_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'mode': mode.wireValue, 'target': target.wireValue, 'cost': cost};
+  }
+}
+
+class PhotoJobDoneEvent extends AnalyticsEvent {
+  const PhotoJobDoneEvent({required this.mode, required this.target, required this.cost});
+
+  final PhotoJobModeValue mode;
+  final PhotoJobTargetValue target;
+  final int cost;
+
+  @override
+  String get eventName => 'photo_job_done';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'mode': mode.wireValue, 'target': target.wireValue, 'cost': cost};
+  }
+}
+
+class PhotoJobFailedEvent extends AnalyticsEvent {
+  const PhotoJobFailedEvent({required this.mode, required this.target, required this.reason, required this.refunded});
+
+  final PhotoJobModeValue mode;
+  final PhotoJobTargetValue target;
+  final String reason;
+  final bool refunded;
+
+  @override
+  String get eventName => 'photo_job_failed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'mode': mode.wireValue,
+      'target': target.wireValue,
+      'reason': reason,
+      'refunded': refunded ? 1 : 0,
+    };
+  }
+}
+
+class PhotoJobResultSetEvent extends AnalyticsEvent {
+  const PhotoJobResultSetEvent({required this.mode, required this.target, required this.platform});
+
+  final PhotoJobModeValue mode;
+  final PhotoJobTargetValue target;
+  final String platform;
+
+  @override
+  String get eventName => 'photo_job_result_set';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'mode': mode.wireValue, 'target': target.wireValue, 'platform': platform};
   }
 }
 

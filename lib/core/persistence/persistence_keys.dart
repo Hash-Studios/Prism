@@ -54,6 +54,7 @@ class PersistenceKeys {
 
   // The highest follow-up chip price the user confirmed.
   static const String aiFollowUpConfirmedCost = 'ai.followUpConfirmedCost';
+  static const String photoWallPendingJob = 'ai.photoWallPendingJob';
 
   // Recently viewed walls on this device, newest first, and the Save viewing history setting.
   static const String viewedHistoryItems = 'history.viewed.items';

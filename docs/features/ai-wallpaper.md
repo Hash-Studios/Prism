@@ -12,6 +12,10 @@ The AI tab makes a wallpaper from a text description. Each image costs coins. Th
 
 The AI tab. Code: `lib/features/ai_wallpaper/`. The worker side is in `docs/features/ai-charge.md`.
 
+## From your photo
+
+The AI tab has a "From your photo" card. It opens Photo to wallpaper: AI extends a photo to the screen shape or upscales a small photo, for a phone or a desktop. It runs on Cloud Functions, not on the worker. The callable takes the coins and returns them when the job fails. See [photo-wallpaper.md](photo-wallpaper.md).
+
 ## Platforms and plans
 
 | Platform | Free | Pro |

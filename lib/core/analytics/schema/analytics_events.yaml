@@ -85,6 +85,16 @@ enums:
       - row
       - sheet
       - onboarding
+  - name: photo_job_mode
+    dart_type: PhotoJobModeValue
+    values:
+      - extend
+      - upscale
+  - name: photo_job_target
+    dart_type: PhotoJobTargetValue
+    values:
+      - phone
+      - desktop
   - name: rc_or_fallback
     dart_type: RcOrFallbackValue
     values:
@@ -1218,6 +1228,61 @@ events:
       - name: count
         key: count
         type: int
+  - id: photo_job_started
+    fields:
+      - name: mode
+        key: mode
+        type: enum
+        enum: PhotoJobModeValue
+      - name: target
+        key: target
+        type: enum
+        enum: PhotoJobTargetValue
+      - name: cost
+        key: cost
+        type: int
+  - id: photo_job_done
+    fields:
+      - name: mode
+        key: mode
+        type: enum
+        enum: PhotoJobModeValue
+      - name: target
+        key: target
+        type: enum
+        enum: PhotoJobTargetValue
+      - name: cost
+        key: cost
+        type: int
+  - id: photo_job_failed
+    fields:
+      - name: mode
+        key: mode
+        type: enum
+        enum: PhotoJobModeValue
+      - name: target
+        key: target
+        type: enum
+        enum: PhotoJobTargetValue
+      - name: reason
+        key: reason
+        type: string
+      - name: refunded
+        key: refunded
+        type: bool
+  - id: photo_job_result_set
+    fields:
+      - name: mode
+        key: mode
+        type: enum
+        enum: PhotoJobModeValue
+      - name: target
+        key: target
+        type: enum
+        enum: PhotoJobTargetValue
+      - name: platform
+        key: platform
+        type: string
   - id: coin_preview_unlock_attempt
     fields:
       - name: collection
