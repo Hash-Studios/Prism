@@ -46,8 +46,11 @@ class PhotoWallpaperRepository {
   Future<PhotoSource?> pick() async {
     final Uint8List? bytes = await _pick();
     if (bytes == null) return null;
-    return PhotoSource(bytes: bytes, size: await _measure(bytes));
+    return source(bytes);
   }
+
+  /// [bytes] with its upright size. Throws when they cannot be decoded.
+  Future<PhotoSource> source(Uint8List bytes) async => PhotoSource(bytes: bytes, size: await _measure(bytes));
 
   /// Runs [job] once, and once more with the same [requestId] when the connection drops. The server replays a
   /// finished job for the same requestId, so the retry never charges twice.
@@ -56,7 +59,10 @@ class PhotoWallpaperRepository {
     required String requestId,
     required PhotoSize targetSize,
     PhotoPlacement? placement,
+    bool Function()? mayUpload,
   }) async {
+    const PhotoJobFailed signedOut = PhotoJobFailed(reason: PhotoJobFailure.signIn, charged: false, refunded: false);
+    if (mayUpload?.call() == false) return signedOut;
     final Uint8List jpeg;
     try {
       final PhotoSize size = job.source.size;
@@ -83,6 +89,7 @@ class PhotoWallpaperRepository {
       'image': base64Encode(jpeg),
     };
     for (int attempt = 0; ; attempt++) {
+      if (mayUpload?.call() == false) return signedOut;
       try {
         return parsePhotoJobResult(await _call(payload));
       } on FirebaseFunctionsException catch (error) {

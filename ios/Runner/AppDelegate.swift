@@ -50,6 +50,7 @@ import WidgetKit
       api: PrismLiveActivityHostApiImpl(flutterApi: PrismLiveActivityFlutterApi(binaryMessenger: messenger))
     )
     FlutterEventChannel(name: "prism/tilt", binaryMessenger: messenger).setStreamHandler(PrismTiltStream())
+    PrismSharedInboxChannel.register(with: messenger)
     PrismWidgetHostApiSetup.setUp(binaryMessenger: messenger, api: PrismWidgetHostApiImpl())
     PrismLivePhotoHostApiSetup.setUp(
       binaryMessenger: messenger,

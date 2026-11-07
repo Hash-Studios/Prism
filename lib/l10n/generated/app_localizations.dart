@@ -23616,6 +23616,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try again'**
   String get photoWallTryAgain;
+
+  /// Title of the sheet shown after the user shares an image to Prism.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this image'**
+  String get shareInImageTitle;
+
+  /// Action on the share sheet: crop the shared image and set it.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as wallpaper'**
+  String get shareInSet;
+
+  /// Detail under the Set as wallpaper action.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop it, then set it on your screen.'**
+  String get shareInSetDetail;
+
+  /// Action on the share sheet: AI extends or upscales the image. Shows the coin cost.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins, plural, =1{Make it fit · 1 coin} other{Make it fit · {coins} coins}}'**
+  String shareInFit(int coins);
+
+  /// Action on the share sheet when the image needs no change, so there is no cost.
+  ///
+  /// In en, this message translates to:
+  /// **'Make it fit'**
+  String get shareInFitTitle;
+
+  /// Detail under Make it fit.
+  ///
+  /// In en, this message translates to:
+  /// **'AI extends or sharpens it to fit your screen.'**
+  String get shareInFitDetail;
+
+  /// Detail under Make it fit when the image needs no change.
+  ///
+  /// In en, this message translates to:
+  /// **'Already fits your screen'**
+  String get shareInFitNotNeeded;
+
+  /// Action on the share sheet: start the normal upload with review.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload to Prism'**
+  String get shareInUpload;
+
+  /// Detail under Upload to Prism.
+  ///
+  /// In en, this message translates to:
+  /// **'Others can see it after a review.'**
+  String get shareInUploadDetail;
+
+  /// Detail under an action that needs an account, shown to guests.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to use this.'**
+  String get shareInSignInDetail;
+
+  /// Shown while Prism looks for an image on a shared web page.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding the image in this link'**
+  String get shareInLooking;
+
+  /// Title when a shared link has no image Prism can use.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism cannot use this link.'**
+  String get shareInLinkUnusable;
+
+  /// Detail under shareInLinkUnusable.
+  ///
+  /// In en, this message translates to:
+  /// **'Share an image, or a link to a page with an image.'**
+  String get shareInLinkUnusableDetail;
+
+  /// Title when the shared image cannot be read.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism cannot open this image.'**
+  String get shareInImageUnreadable;
+
+  /// Detail under shareInImageUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Share it again, or share a different image.'**
+  String get shareInImageUnreadableDetail;
+
+  /// Screen reader label for the preview of the shared image.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared image'**
+  String get shareInPreviewSemantics;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -82,6 +82,10 @@ Analytics record receipt, resolution, and the navigation result separately throu
 
 A network failure during short-code resolution can defer the request until connectivity returns or the app resumes online. The scheduler retries each queued code once. A retry keeps the original entry source and does not record another receipt. Deferred attempts do not record a final navigation result until retry or cancellation. Cancellation discards queued requests and prevents late lookups from navigating.
 
+## Shares from other apps
+
+Native code turns a share into a `prism://share-in` link. Android uses `ShareTargetActivity`. iOS uses the Share Extension. The dispatcher handles this link like any other link. It waits for startup, then records `deep_link_received` with `target_type` `shared_item`. For the share flow, see [share-to-prism.md](share-to-prism.md).
+
 ## Preserved aliases
 
 | Alias | Destination or behavior |
@@ -94,6 +98,7 @@ A network failure during short-code resolution can defer the request until conne
 | `/setup`, `/share-setup` | Reports that home screen setups are unavailable and opens Home. |
 | `/refer/INVITER_ID`, `/referral/INVITER_ID` | Saves the referral and opens Rewards. A signed-out user can sign in later to claim an eligible reward. |
 | `/l/SHORT_CODE`, `/l?code=SHORT_CODE` | Resolves the short code, then validates its canonical URL through the same parser. |
+| `prism://share-in?id=ID`, `prism://share-in?text=TEXT` | A share from another app. Only the `prism:` scheme. See [share-to-prism.md](share-to-prism.md). |
 
 Short links with `type: "page"` accept only catalogued app paths and preserve validated query parameters. Canonical paths with invalid queries cannot fall through to permissive legacy aliases.
 

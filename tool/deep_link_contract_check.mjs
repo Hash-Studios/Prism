@@ -54,7 +54,10 @@ for (const path of examplePaths) {
 const routerPaths = [...router.matchAll(/\b(?:AutoRoute|RedirectRoute|CustomRoute)\s*\([\s\S]*?\bpath:\s*'([^']+)'/g)]
   .map((match) => match[1])
   .filter((path) => path.startsWith('/') && path !== '/' && path !== '/*');
+// DeepLinkParser reads prism://share-in itself. No web link opens it, so it has no catalog example.
+const parserOnlyPaths = new Set(['/share-in']);
 for (const routePath of routerPaths) {
+  if (parserOnlyPaths.has(routePath)) continue;
   const routeParts = routePath.split('/').filter(Boolean);
   const hasExample = examplePaths.some((example) => {
     const parts = example.split('/').filter(Boolean);

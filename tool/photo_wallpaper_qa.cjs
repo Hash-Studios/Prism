@@ -8,6 +8,9 @@
 // with FAL_API_KEY from its own environment, then answers with a local stub that it labels in ledger.json. Results
 // are written to the runtime and served by `serve`. Cloud Vision cannot be reached, so SafeSearch is a stub that
 // passes every image.
+//
+// The shareLinkImage callable also runs there for Share to Prism. Its address checks run in the emulator; only its DNS
+// lookup and pinned HTTPS GET go through `serve` (/link/resolve, /link/get), which runs the production linkDeps.
 const fs = require('node:fs');
 const path = require('node:path');
 const https = require('node:https');
@@ -65,8 +68,38 @@ function installPhotoSeams(photo, root) {
   photo.photoDeps.remove = async (key) => fsm.rmSync(p.join(root, key), {force: true});
 }
 
+/** Runs inside the Functions emulator. Sends only shareLinkImage's DNS lookup and pinned GET to the `serve` relay. */
+function installLinkSeams(share, root) {
+  const fsm = require('node:fs');
+  const p = require('node:path');
+  const httpsm = require('node:https');
+  const ca = fsm.readFileSync(p.join(root, 'cert.pem'));
+  const relay = (route, payload) => new Promise((resolve, reject) => {
+    const req = httpsm.request({host: 'localhost', port: 19375, path: route, method: 'POST', ca,
+      headers: {'content-type': 'application/json'}}, (res) => {
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => {
+        const body = JSON.parse(Buffer.concat(chunks).toString() || '{}');
+        if (res.statusCode === 200) resolve(body);
+        else reject(Error(body.error || `relay ${res.statusCode}`));
+      });
+    });
+    req.on('error', reject);
+    req.end(JSON.stringify(payload));
+  });
+  share.linkDeps.resolve = (host) => relay('/link/resolve', {host});
+  share.linkDeps.get = async (url, address) => {
+    const response = await relay('/link/get', {url: url.toString(), address});
+    const body = Buffer.from(response.body, 'base64');
+    return {status: response.status, headers: response.headers, body: (async function* () { yield body; })(), close() {}};
+  };
+}
+
 async function prepare() {
-  assert.ok(fs.existsSync(path.join(__dirname, '../functions/lib/photoWallpaper.js')), 'Run npm run build in functions first');
+  for (const name of ['photoWallpaper.js', 'shareLinkImage.js']) {
+    assert.ok(fs.existsSync(path.join(__dirname, '../functions/lib', name)), 'Run npm run build in functions first');
+  }
   weekly('prepare');
   // Only the photo callable. The weekly wrapper's Firestore triggers fire on the seed writes and can stop the
   // Functions emulator, and this flow needs none of them. backend.cjs still installs the loopback port guard.
@@ -76,6 +109,9 @@ require('../backend.cjs').load(require('node:path').resolve(__dirname, '..'));
 const photo = require('./lib/photoWallpaper.js');
 (${installPhotoSeams.toString()})(photo, require('node:path').resolve(__dirname, '..'));
 exports.createPhotoWallpaper = photo.createPhotoWallpaper;
+const share = require('./lib/shareLinkImage.js');
+(${installLinkSeams.toString()})(share, require('node:path').resolve(__dirname, '..'));
+exports.shareLinkImage = share.shareLinkImage;
 `);
   // The callable declares secrets. Without local values the emulator asks Secret Manager, which this runtime blocks.
   // The seams above replace every use of them, so these placeholders never leave the emulator.
@@ -157,6 +193,32 @@ async function relayDelete(route, res) {
   res.end('{}');
 }
 
+/** The real DNS lookup and pinned GET of shareLinkImage, for the emulator, which has loopback network only. */
+async function relayLink(route, raw, res) {
+  const {linkDeps, MAX_HTML_BYTES} = require(path.join(__dirname, '../functions/lib/shareLinkImage.js'));
+  const body = JSON.parse(raw);
+  if (route === '/link/resolve') {
+    res.writeHead(200, {'content-type': 'application/json'});
+    res.end(JSON.stringify(await linkDeps.resolve(String(body.host))));
+    return;
+  }
+  const response = await linkDeps.get(new URL(body.url), body.address, AbortSignal.timeout(5000));
+  const chunks = [];
+  let total = 0;
+  try {
+    for await (const chunk of response.body) {
+      chunks.push(chunk);
+      total += chunk.length;
+      if (total > MAX_HTML_BYTES) break;
+    }
+  } finally {
+    response.close();
+  }
+  res.writeHead(200, {'content-type': 'application/json'});
+  res.end(JSON.stringify({status: response.status, headers: response.headers,
+    body: Buffer.concat(chunks).subarray(0, MAX_HTML_BYTES + 1).toString('base64')}));
+}
+
 async function serve() {
   const manifest = readJson('manifest.json');
   assert.equal(manifest.project, PROJECT);
@@ -183,6 +245,13 @@ async function serve() {
         return;
       }
       if (req.method === 'DELETE' && route.startsWith('/fal-payloads/')) { relayDelete(route, res).catch(done); return; }
+      if (req.method === 'POST' && (route === '/link/resolve' || route === '/link/get')) {
+        relayLink(route, Buffer.concat(chunks).toString(), res).catch((error) => {
+          res.writeHead(502, {'content-type': 'application/json'});
+          res.end(JSON.stringify({error: error.message}));
+        });
+        return;
+      }
       res.writeHead(404);
       res.end();
     });

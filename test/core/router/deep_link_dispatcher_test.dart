@@ -9,6 +9,7 @@ import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/deep_link_startup_gate.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
+import 'package:Prism/features/share_in/domain/shared_item.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -51,6 +52,7 @@ class _LinkTestRouter extends RootStackRouter {
     AutoRoute(path: '/about', page: _page(AboutRoute.name)),
     AutoRoute(path: '/rewards', page: _page(RewardsRoute.name)),
     AutoRoute(path: '/wallpaper-detail', page: _page(WallpaperDetailRoute.name)),
+    AutoRoute(path: '/share-in', page: _page(ShareInRoute.name)),
     AutoRoute(path: '/notifications', page: _page(NotificationRoute.name)),
     AutoRoute(path: '/shop', page: _page(ShopRoute.name), guards: <AutoRouteGuard>[_DenyGuard()]),
     AutoRoute(path: '/not-found', page: _page(NotFoundRoute.name)),
@@ -122,6 +124,57 @@ void main() {
     await tester.pumpAndSettle();
     expect(await opened, DeepLinkDispatchResult.blocked);
     expect(DailyMomentPresentationGate.instance.deepLinkActive, isFalse);
+  });
+
+  testWidgets('duplicate image delivery resolves only once, including after its sheet closes', (tester) async {
+    await mount(tester);
+    dispatcher.dispose();
+    int resolutions = 0;
+    final Completer<bool> ready = Completer<bool>();
+    dispatcher = create(
+      whenReady: () => ready.future,
+      navigation: _ResolvingNavigation((_) async {
+        resolutions++;
+        return DeepLinkRouteResolution.route(ShareInRoute(kind: SharedItemKind.image));
+      }),
+    );
+    const ShareInIntent image = ShareInIntent(inboxId: 'one-image', rawUri: 'prism://share-in?id=one-image');
+
+    final first = dispatcher.openAction(image, source: DeepLinkSourceValue.appLinks);
+    final duplicate = dispatcher.openAction(image, source: DeepLinkSourceValue.appLinks);
+    await tester.pump();
+    expect(resolutions, 0, reason: 'the shared image waits for onboarding or sign-in');
+    ready.complete(true);
+    await tester.pumpAndSettle();
+    expect(await first, DeepLinkDispatchResult.navigated);
+    expect(await duplicate, DeepLinkDispatchResult.navigated);
+    expect(resolutions, 1);
+
+    await router.maybePop();
+    await tester.pumpAndSettle();
+    expect(await dispatcher.openAction(image, source: DeepLinkSourceValue.appLinks), DeepLinkDispatchResult.navigated);
+    expect(resolutions, 1);
+    expect(router.topRoute.name, HomeTabRoute.name);
+  });
+
+  testWidgets('a text shared again after a different image resolves again', (tester) async {
+    await mount(tester);
+    dispatcher.dispose();
+    int resolutions = 0;
+    dispatcher = create(
+      navigation: _ResolvingNavigation((_) async {
+        resolutions++;
+        return DeepLinkRouteResolution.route(ShareInRoute(key: UniqueKey(), kind: SharedItemKind.url));
+      }),
+    );
+    const ShareInIntent text = ShareInIntent(text: 'https://example.com/a', rawUri: 'prism://share-in?text=a');
+    const ShareInIntent image = ShareInIntent(inboxId: 'image-b', rawUri: 'prism://share-in?id=image-b');
+    for (final ShareInIntent action in <ShareInIntent>[text, image, text]) {
+      final result = dispatcher.openAction(action, source: DeepLinkSourceValue.appLinks);
+      await tester.pumpAndSettle();
+      expect(await result, DeepLinkDispatchResult.navigated);
+    }
+    expect(resolutions, 3);
   });
 
   setUp(() {

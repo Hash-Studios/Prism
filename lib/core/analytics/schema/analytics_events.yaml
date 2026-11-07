@@ -95,6 +95,20 @@ enums:
     values:
       - phone
       - desktop
+  - name: shared_item_kind
+    dart_type: SharedItemKindValue
+    values:
+      - prism_link
+      - image
+      - url
+  - name: share_action
+    dart_type: ShareActionValue
+    values:
+      - set
+      - fit
+      - upload
+      - save
+      - failed
   - name: rc_or_fallback
     dart_type: RcOrFallbackValue
     values:
@@ -278,6 +292,7 @@ enums:
       - refer
       - screen
       - short_code
+      - shared_item
       - unknown
   - name: entrypoint
     dart_type: EntryPointValue
@@ -1225,6 +1240,26 @@ events:
       - name: cost
         key: cost
         type: int
+  - id: share_received
+    fields:
+      - name: kind
+        key: kind
+        type: enum
+        enum: SharedItemKindValue
+      - name: source_app
+        key: source_app
+        type: string
+        required: false
+  - id: share_action
+    fields:
+      - name: action
+        key: action
+        type: enum
+        enum: ShareActionValue
+      - name: kind
+        key: kind
+        type: enum
+        enum: SharedItemKindValue
   - id: photo_job_done
     fields:
       - name: mode
