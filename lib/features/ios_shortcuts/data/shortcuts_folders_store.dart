@@ -179,7 +179,13 @@ class ShortcutsFoldersStore {
   }) => sync(
     ownerId: ownerId,
     folders: folders,
-    fetchItems: (folderId) => repository.fetchItems(folderId, userId: ownerId, limit: maxItems),
+    fetchItems: (folderId) async {
+      final result = await repository.fetchItems(folderId, userId: ownerId, limit: maxItems);
+      return result.fold(
+        onSuccess: (items) => Result.success(items?.map((item) => item.wall).toList()),
+        onFailure: Result.error,
+      );
+    },
   );
 
   static Future<String?> rotationFolderId() async {

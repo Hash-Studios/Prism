@@ -14870,4 +14870,201 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get gestureHintSwipeForSimilar => 'Desliza hacia arriba para ver fondos similares';
+
+  @override
+  String get foldersSectionAdd => 'Añadir sección';
+
+  @override
+  String get foldersSectionNewTitle => 'Nueva sección';
+
+  @override
+  String get foldersSectionNameHint => 'Por ejemplo, Pantallas de bloqueo';
+
+  @override
+  String get foldersSectionRenameTitle => 'Cambiar nombre de la sección';
+
+  @override
+  String get foldersSectionDelete => 'Eliminar sección';
+
+  @override
+  String foldersSectionDeleteTitle(String name) {
+    return '¿Eliminar $name?';
+  }
+
+  @override
+  String foldersSectionDeleteMessage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Sus $count fondos de pantalla pasan a Sin ordenar.',
+      one: 'Su fondo de pantalla pasa a Sin ordenar.',
+      zero: 'La sección está vacía.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionUnsorted => 'Sin ordenar';
+
+  @override
+  String get foldersSectionReorder => 'Reordenar secciones';
+
+  @override
+  String foldersSectionDragHandle(String name) {
+    return 'Arrastra para mover $name';
+  }
+
+  @override
+  String foldersSectionWallCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count fondos de pantalla',
+      one: '1 fondo de pantalla',
+      zero: 'Sin fondos de pantalla',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionHeaderLabel(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count fondos de pantalla',
+      one: '1 fondo de pantalla',
+      zero: 'sin fondos de pantalla',
+    );
+    return '$name, $_temp0';
+  }
+
+  @override
+  String foldersSectionJumpTo(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count fondos de pantalla',
+      one: '1 fondo de pantalla',
+      zero: 'sin fondos de pantalla',
+    );
+    return 'Ir a $name, $_temp0';
+  }
+
+  @override
+  String foldersSectionOptions(String name) {
+    return 'Más opciones para $name';
+  }
+
+  @override
+  String get foldersSectionSaveAll => 'Guardar sección';
+
+  @override
+  String get foldersSectionMoveTo => 'Mover a sección';
+
+  @override
+  String get foldersSectionMoveTitle => 'Mover a';
+
+  @override
+  String foldersSectionMoved(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Se movieron $count fondos de pantalla a $name.',
+      one: 'Se movió 1 fondo de pantalla a $name.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionSelect => 'Seleccionar fondos de pantalla';
+
+  @override
+  String foldersSectionSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count seleccionados',
+      one: '1 seleccionado',
+      zero: 'Toca los fondos de pantalla para seleccionarlos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionsFull(int max) {
+    return 'Una carpeta puede tener hasta $max secciones.';
+  }
+
+  @override
+  String get foldersSectionEmpty => 'Aún no hay fondos de pantalla.';
+
+  @override
+  String get foldersSectionEmptyHint => 'Arrastra fondos de pantalla al nombre de la sección o usa Mover a sección.';
+
+  @override
+  String get foldersSectionSuggest => 'Sugerir secciones';
+
+  @override
+  String get foldersSuggestTitle => 'Secciones sugeridas';
+
+  @override
+  String get foldersSuggestBody => 'Grupos de tus fondos de pantalla sin ordenar. Conserva los que quieras.';
+
+  @override
+  String get foldersSuggestByMood => 'Estado de ánimo';
+
+  @override
+  String get foldersSuggestByCategory => 'Categoría';
+
+  @override
+  String get foldersSuggestByColour => 'Color';
+
+  @override
+  String foldersSuggestJoins(String count) {
+    return '$count. Irá a tu sección con este nombre.';
+  }
+
+  @override
+  String foldersSuggestAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Añadir $count secciones',
+      one: 'Añadir 1 sección',
+      zero: 'Añadir secciones',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSort(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ordenar $count fondos de pantalla',
+      one: 'Ordenar 1 fondo de pantalla',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSorted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Se ordenaron $count fondos de pantalla.',
+      one: 'Se ordenó 1 fondo de pantalla.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSuggestEmptyTitle => 'No hay grupos para sugerir';
+
+  @override
+  String get foldersSuggestEmptyBody =>
+      'Un grupo necesita 2 o más fondos de pantalla de Prism en Sin ordenar con el mismo estado de ánimo, categoría o color.';
+
+  @override
+  String get foldersSuggestError => 'No se pudieron cargar las sugerencias';
 }

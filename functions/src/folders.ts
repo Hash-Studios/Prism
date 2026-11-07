@@ -56,7 +56,8 @@ export const onFolderItemWritten = onDocumentWritten(
 export function changesPublicFolder(before: admin.firestore.DocumentData | undefined,
   after: admin.firestore.DocumentData | undefined): boolean {
   if (before?.public !== true && after?.public !== true) return false;
-  return !before || !after || ["public", "name", "ownerId", "moderationHidden"].some((key) => before[key] !== after[key]);
+  return !before || !after || ["public", "name", "ownerId", "moderationHidden"].some((key) => before[key] !== after[key]) ||
+    JSON.stringify(before.sections ?? []) !== JSON.stringify(after.sections ?? []);
 }
 
 export const onFolderWritten = onDocumentWritten(

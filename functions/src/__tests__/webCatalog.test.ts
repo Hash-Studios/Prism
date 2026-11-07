@@ -13,6 +13,7 @@ import {
   isCatalogChange,
   PAGE_SIZE,
   rebuildWebCatalog,
+  sectionGroups,
   syncWebWall,
   webCatalogDeps,
   type WebCard,
@@ -521,6 +522,67 @@ test("buildPages folder page lists live walls only and counts every saved wall",
   assert.equal(folder.total, 3);
 });
 
+function folderCard(id: string): WebCard {
+  return {id, title: id, thumb: `https://img.prismwalls.com/previews/${id}.img`, width: 1080, height: 2340};
+}
+
+test("sectionGroups leaves items in order and returns no groups when the folder has no sections", () => {
+  const shown = [{card: folderCard("W1"), sectionId: "dark"}, {card: folderCard("W2")}];
+  const result = sectionGroups(shown, []);
+  assert.deepEqual(result.items.map((card) => card.id), ["W1", "W2"]);
+  assert.deepEqual(result.groups, []);
+});
+
+test("sectionGroups returns no groups when no shown wall is in a section", () => {
+  const shown = [{card: folderCard("W1")}, {card: folderCard("W2"), sectionId: "gone"}];
+  const result = sectionGroups(shown, [{id: "dark", name: "Dark"}]);
+  assert.deepEqual(result.items.map((card) => card.id), ["W1", "W2"]);
+  assert.deepEqual(result.groups, []);
+});
+
+test("sectionGroups puts Unsorted first, then each section in order", () => {
+  const shown = [
+    {card: folderCard("W1"), sectionId: "dark"},
+    {card: folderCard("W2")},
+    {card: folderCard("W3"), sectionId: "lock"},
+    {card: folderCard("W4"), sectionId: "dark"},
+    {card: folderCard("W5"), sectionId: "gone"},
+  ];
+  const result = sectionGroups(shown, [{id: "lock", name: "Lock screens"}, {id: "dark", name: "Dark"}]);
+  assert.deepEqual(result.items.map((card) => card.id), ["W2", "W5", "W3", "W1", "W4"]);
+  assert.deepEqual(result.groups, [
+    {name: "", count: 2},
+    {name: "Lock screens", count: 1},
+    {name: "Dark", count: 2},
+  ]);
+});
+
+test("sectionGroups leaves out an empty section and an Unsorted group when every wall is sorted", () => {
+  const shown = [{card: folderCard("W1"), sectionId: "dark"}];
+  const result = sectionGroups(shown, [{id: "lock", name: "Lock"}, {id: "dark", name: "Dark"}]);
+  assert.deepEqual(result.items.map((card) => card.id), ["W1"]);
+  assert.deepEqual(result.groups, [{name: "Dark", count: 1}]);
+});
+
+test("buildPages orders a sectioned folder page by group with Unsorted first", () => {
+  const folders = [{
+    id: "F1", name: "Faves", owner: null, wallIds: ["W01", "W02", "W03"], updatedAt: NOW,
+    sections: [{id: "dark", name: "Dark"}], sectionOf: {W02: "dark"},
+  }];
+  const folder = buildPages(thirtyWalls(), [], folders, new Map()).get("folder~F1") as unknown as {
+    items: WebCard[]; groups?: Array<{name: string; count: number}>;
+  };
+  assert.deepEqual(folder.items.map((item) => item.id), ["W01", "W03", "W02"]);
+  assert.deepEqual(folder.groups, [{name: "", count: 2}, {name: "Dark", count: 1}]);
+});
+
+test("buildPages gives a folder page without sections no groups key", () => {
+  const folders = [{id: "F1", name: "Faves", owner: null, wallIds: ["W01", "W02"], updatedAt: NOW}];
+  const folder = buildPages(thirtyWalls(), [], folders, new Map()).get("folder~F1");
+  assert.ok(folder);
+  assert.equal("groups" in folder, false);
+});
+
 test("buildPages uses the folder's full header count rather than its sampled wall items", () => {
   const folders = [{
     id: "F1", name: "Faves", owner: null, wallIds: ["W01", "W02"], total: 100, updatedAt: NOW,
@@ -538,6 +600,23 @@ test("buildPages keeps maximum-length wall URLs under Firestore's document size 
       assert.ok(Buffer.byteLength(JSON.stringify(page)) < 1_048_576, `${key} exceeds Firestore's 1 MiB document limit`);
     }
   }
+});
+
+test("a 60-wall folder with 20 maximum-length sections stays within one document", (t) => {
+  const sections = Array.from({length: 20}, (_, i) => ({id: String(i).padStart(32, "s"), name: "\u754c".repeat(160)}));
+  const walls = new Map(Array.from({length: 60}, (_, i): [string, WebWall] => {
+    const id = String(i).padStart(200, "W");
+    return [id, liveCard(i, {title: "\u754c".repeat(90), thumb: `https://img.prismwalls.com/previews/${id}.img`})];
+  }));
+  const wallIds = [...walls.keys()];
+  const folders = [{id: "F1", name: "Faves", owner: null, wallIds, updatedAt: NOW, sections,
+    sectionOf: Object.fromEntries(wallIds.map((id, i) => [id, sections[i % 20].id]))}];
+  const folder = buildPages(walls, [], folders, new Map()).get("folder~F1");
+  assert.ok(folder);
+  assert.equal((folder.items as WebCard[]).length, 60);
+  assert.equal((folder.groups as unknown[]).length, 20);
+  assert.ok(Buffer.byteLength(JSON.stringify(folder)) < 64_000);
+  t.diagnostic(`20-section, 60-wall page JSON bytes: ${Buffer.byteLength(JSON.stringify(folder))}`);
 });
 
 test("rebuildWebCatalog writes the catalogue once, then writes nothing on a second run", async (t) => {

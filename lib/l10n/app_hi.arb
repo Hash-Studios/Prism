@@ -14831,5 +14831,228 @@
   "gestureHintHoldToSave": "सेव करने के लिए दबाकर रखें",
   "@gestureHintHoldToSave": {"description": "One-time hint over a wallpaper tile: long-press it for quick actions such as save."},
   "gestureHintSwipeForSimilar": "मिलते-जुलते वॉलपेपर के लिए ऊपर स्वाइप करें",
-  "@gestureHintSwipeForSimilar": {"description": "One-time hint over the wallpaper detail image: swipe up to see similar wallpapers."}
+  "@gestureHintSwipeForSimilar": {"description": "One-time hint over the wallpaper detail image: swipe up to see similar wallpapers."},
+  "foldersSectionAdd": "सेक्शन जोड़ें",
+  "@foldersSectionAdd": {
+    "description": "Folder page menu item and name sheet button that add a named section to a folder."
+  },
+  "foldersSectionNewTitle": "नया सेक्शन",
+  "@foldersSectionNewTitle": {
+    "description": "Title of the sheet where the user types a name for a new folder section. Also a row in the Move to sheet."
+  },
+  "foldersSectionNameHint": "उदाहरण के लिए, लॉक स्क्रीन",
+  "@foldersSectionNameHint": {
+    "description": "Hint in the section name field."
+  },
+  "foldersSectionRenameTitle": "सेक्शन का नाम बदलें",
+  "@foldersSectionRenameTitle": {
+    "description": "Title of the sheet that renames a folder section."
+  },
+  "foldersSectionDelete": "सेक्शन हटाएँ",
+  "@foldersSectionDelete": {
+    "description": "Section menu item and confirm button that delete a folder section. Its wallpapers stay in the folder."
+  },
+  "foldersSectionDeleteTitle": "{name} हटाएँ?",
+  "@foldersSectionDeleteTitle": {
+    "description": "Title of the confirm before deleting a folder section. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionDeleteMessage": "{count, plural, =0{सेक्शन खाली है।} =1{इसका वॉलपेपर “बिना सेक्शन” में चला जाएगा।} other{इसके {count} वॉलपेपर “बिना सेक्शन” में चले जाएँगे।}}",
+  "@foldersSectionDeleteMessage": {
+    "description": "Body of the confirm before deleting a folder section. count is the number of wallpapers in it. Unsorted is the group of wallpapers with no section.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionUnsorted": "बिना सेक्शन",
+  "@foldersSectionUnsorted": {
+    "description": "Name of the group at the top of a folder that holds the wallpapers that are in no section."
+  },
+  "foldersSectionReorder": "सेक्शन का क्रम बदलें",
+  "@foldersSectionReorder": {
+    "description": "Folder page menu item and sheet title for changing the order of the sections."
+  },
+  "foldersSectionDragHandle": "{name} को ले जाने के लिए खींचें",
+  "@foldersSectionDragHandle": {
+    "description": "Tooltip of the drag handle on a section in the Reorder sections sheet. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionWallCount": "{count, plural, =0{कोई वॉलपेपर नहीं} =1{1 वॉलपेपर} other{{count} वॉलपेपर}}",
+  "@foldersSectionWallCount": {
+    "description": "Count under a section name.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionHeaderLabel": "{name}, {count, plural, =0{कोई वॉलपेपर नहीं} =1{1 वॉलपेपर} other{{count} वॉलपेपर}}",
+  "@foldersSectionHeaderLabel": {
+    "description": "Screen reader label of a section header. Double tap collapses or expands it. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionJumpTo": "{name} पर जाएँ, {count, plural, =0{कोई वॉलपेपर नहीं} =1{1 वॉलपेपर} other{{count} वॉलपेपर}}",
+  "@foldersSectionJumpTo": {
+    "description": "Screen reader label of a chip in the section strip at the top of a folder. Tapping it scrolls to the section.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionOptions": "{name} के लिए और विकल्प",
+  "@foldersSectionOptions": {
+    "description": "Tooltip of the menu button on a section header. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionSaveAll": "सेक्शन सहेजें",
+  "@foldersSectionSaveAll": {
+    "description": "Section menu item that saves all wallpapers of one section to the device, like Save all for the whole folder."
+  },
+  "foldersSectionMoveTo": "सेक्शन में ले जाएँ",
+  "@foldersSectionMoveTo": {
+    "description": "Button in the wallpaper menu and the selection bar. It opens a list of the sections."
+  },
+  "foldersSectionMoveTitle": "इसमें ले जाएँ",
+  "@foldersSectionMoveTitle": {
+    "description": "Title of the sheet that lists Unsorted and the sections of a folder."
+  },
+  "foldersSectionMoved": "{count, plural, =1{1 वॉलपेपर {name} में ले जाया गया।} other{{count} वॉलपेपर {name} में ले जाए गए।}}",
+  "@foldersSectionMoved": {
+    "description": "Toast after wallpapers move to a section. name is the section name, or Unsorted.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionSelect": "वॉलपेपर चुनें",
+  "@foldersSectionSelect": {
+    "description": "Folder page menu item that starts selecting wallpapers to move them."
+  },
+  "foldersSectionSelected": "{count, plural, =0{वॉलपेपर चुनने के लिए उन पर टैप करें} =1{1 चुना गया} other{{count} चुने गए}}",
+  "@foldersSectionSelected": {
+    "description": "Text in the selection bar at the bottom of a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionsFull": "एक फ़ोल्डर में अधिकतम {max} सेक्शन हो सकते हैं।",
+  "@foldersSectionsFull": {
+    "description": "Error toast when the user tries to add a section to a folder that has the most sections.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionEmpty": "अभी कोई वॉलपेपर नहीं है।",
+  "@foldersSectionEmpty": {
+    "description": "Text under an empty section for a reader who cannot organize the folder."
+  },
+  "foldersSectionEmptyHint": "वॉलपेपर सेक्शन के नाम पर खींचें, या “सेक्शन में ले जाएँ” इस्तेमाल करें।",
+  "@foldersSectionEmptyHint": {
+    "description": "Text under an empty section for the owner and editors. Only the section name (the header) and its chip in the strip accept a drop, not this text. Move to section is the name of a button."
+  },
+  "foldersSectionSuggest": "सेक्शन सुझाएँ",
+  "@foldersSectionSuggest": {
+    "description": "Folder page menu item. Prism groups the Unsorted wallpapers by mood, category or colour on the device."
+  },
+  "foldersSuggestTitle": "सुझाए गए सेक्शन",
+  "@foldersSuggestTitle": {
+    "description": "Title of the sheet with the suggested sections."
+  },
+  "foldersSuggestBody": "आपके बिना सेक्शन वाले वॉलपेपर के समूह। जो रखना हो, रखें।",
+  "@foldersSuggestBody": {
+    "description": "Message under the title of the suggested sections sheet."
+  },
+  "foldersSuggestByMood": "मूड",
+  "@foldersSuggestByMood": {
+    "description": "Segment in the suggested sections sheet: group by mood."
+  },
+  "foldersSuggestByCategory": "श्रेणी",
+  "@foldersSuggestByCategory": {
+    "description": "Segment in the suggested sections sheet: group by category."
+  },
+  "foldersSuggestByColour": "रंग",
+  "@foldersSuggestByColour": {
+    "description": "Segment in the suggested sections sheet: group by main colour."
+  },
+  "foldersSuggestJoins": "{count}. इस नाम वाले आपके सेक्शन में जाएगा।",
+  "@foldersSuggestJoins": {
+    "description": "Line under a suggested group whose name matches a section that exists. count is a wallpaper count, for example \"3 wallpapers\".",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSuggestAdd": "{count, plural, =0{सेक्शन जोड़ें} =1{1 सेक्शन जोड़ें} other{{count} सेक्शन जोड़ें}}",
+  "@foldersSuggestAdd": {
+    "description": "Main button of the suggested sections sheet. count is the number of new sections it makes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestSort": "{count, plural, =1{1 वॉलपेपर सॉर्ट करें} other{{count} वॉलपेपर सॉर्ट करें}}",
+  "@foldersSuggestSort": {
+    "description": "Main button of the suggested sections sheet when every kept group goes into a section that exists.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestSorted": "{count, plural, =1{1 वॉलपेपर सॉर्ट हो गया।} other{{count} वॉलपेपर सॉर्ट हो गए।}}",
+  "@foldersSuggestSorted": {
+    "description": "Toast after the user keeps suggested sections.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestEmptyTitle": "सुझाने के लिए कोई समूह नहीं",
+  "@foldersSuggestEmptyTitle": {
+    "description": "Empty state in the suggested sections sheet."
+  },
+  "foldersSuggestEmptyBody": "समूह बनने के लिए, बिना सेक्शन वाले एक ही मूड, श्रेणी या रंग के कम से कम 2 Prism वॉलपेपर चाहिए।",
+  "@foldersSuggestEmptyBody": {
+    "description": "Body of the empty state in the suggested sections sheet."
+  },
+  "foldersSuggestError": "सुझाव लोड नहीं हो सके",
+  "@foldersSuggestError": {
+    "description": "Error state in the suggested sections sheet."
+  }
 }

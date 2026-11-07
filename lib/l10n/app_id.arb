@@ -14208,5 +14208,228 @@
     "description": "Confirm message when the owner makes a folder with editors private. The editors keep access."
   },
   "gestureHintHoldToSave": "Tahan untuk menyimpan",
-  "gestureHintSwipeForSimilar": "Geser ke atas untuk wallpaper serupa"
+  "gestureHintSwipeForSimilar": "Geser ke atas untuk wallpaper serupa",
+  "foldersSectionAdd": "Tambah bagian",
+  "@foldersSectionAdd": {
+    "description": "Folder page menu item and name sheet button that add a named section to a folder."
+  },
+  "foldersSectionNewTitle": "Bagian baru",
+  "@foldersSectionNewTitle": {
+    "description": "Title of the sheet where the user types a name for a new folder section. Also a row in the Move to sheet."
+  },
+  "foldersSectionNameHint": "Misalnya, Layar kunci",
+  "@foldersSectionNameHint": {
+    "description": "Hint in the section name field."
+  },
+  "foldersSectionRenameTitle": "Ganti nama bagian",
+  "@foldersSectionRenameTitle": {
+    "description": "Title of the sheet that renames a folder section."
+  },
+  "foldersSectionDelete": "Hapus bagian",
+  "@foldersSectionDelete": {
+    "description": "Section menu item and confirm button that delete a folder section. Its wallpapers stay in the folder."
+  },
+  "foldersSectionDeleteTitle": "Hapus {name}?",
+  "@foldersSectionDeleteTitle": {
+    "description": "Title of the confirm before deleting a folder section. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionDeleteMessage": "{count, plural, =0{Bagian ini kosong.} =1{Wallpaper-nya pindah ke Belum disortir.} other{{count} wallpaper-nya pindah ke Belum disortir.}}",
+  "@foldersSectionDeleteMessage": {
+    "description": "Body of the confirm before deleting a folder section. count is the number of wallpapers in it. Unsorted is the group of wallpapers with no section.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionUnsorted": "Belum disortir",
+  "@foldersSectionUnsorted": {
+    "description": "Name of the group at the top of a folder that holds the wallpapers that are in no section."
+  },
+  "foldersSectionReorder": "Atur ulang bagian",
+  "@foldersSectionReorder": {
+    "description": "Folder page menu item and sheet title for changing the order of the sections."
+  },
+  "foldersSectionDragHandle": "Seret untuk memindahkan {name}",
+  "@foldersSectionDragHandle": {
+    "description": "Tooltip of the drag handle on a section in the Reorder sections sheet. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionWallCount": "{count, plural, =0{Tidak ada wallpaper} =1{1 wallpaper} other{{count} wallpaper}}",
+  "@foldersSectionWallCount": {
+    "description": "Count under a section name.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionHeaderLabel": "{name}, {count, plural, =0{tidak ada wallpaper} =1{1 wallpaper} other{{count} wallpaper}}",
+  "@foldersSectionHeaderLabel": {
+    "description": "Screen reader label of a section header. Double tap collapses or expands it. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionJumpTo": "Buka {name}, {count, plural, =0{tidak ada wallpaper} =1{1 wallpaper} other{{count} wallpaper}}",
+  "@foldersSectionJumpTo": {
+    "description": "Screen reader label of a chip in the section strip at the top of a folder. Tapping it scrolls to the section.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionOptions": "Opsi lain untuk {name}",
+  "@foldersSectionOptions": {
+    "description": "Tooltip of the menu button on a section header. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionSaveAll": "Simpan bagian",
+  "@foldersSectionSaveAll": {
+    "description": "Section menu item that saves all wallpapers of one section to the device, like Save all for the whole folder."
+  },
+  "foldersSectionMoveTo": "Pindahkan ke bagian",
+  "@foldersSectionMoveTo": {
+    "description": "Button in the wallpaper menu and the selection bar. It opens a list of the sections."
+  },
+  "foldersSectionMoveTitle": "Pindahkan ke",
+  "@foldersSectionMoveTitle": {
+    "description": "Title of the sheet that lists Unsorted and the sections of a folder."
+  },
+  "foldersSectionMoved": "{count, plural, =1{1 wallpaper dipindahkan ke {name}.} other{{count} wallpaper dipindahkan ke {name}.}}",
+  "@foldersSectionMoved": {
+    "description": "Toast after wallpapers move to a section. name is the section name, or Unsorted.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionSelect": "Pilih wallpaper",
+  "@foldersSectionSelect": {
+    "description": "Folder page menu item that starts selecting wallpapers to move them."
+  },
+  "foldersSectionSelected": "{count, plural, =0{Ketuk wallpaper untuk memilihnya} =1{1 dipilih} other{{count} dipilih}}",
+  "@foldersSectionSelected": {
+    "description": "Text in the selection bar at the bottom of a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionsFull": "Folder dapat memiliki hingga {max} bagian.",
+  "@foldersSectionsFull": {
+    "description": "Error toast when the user tries to add a section to a folder that has the most sections.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionEmpty": "Belum ada wallpaper.",
+  "@foldersSectionEmpty": {
+    "description": "Text under an empty section for a reader who cannot organize the folder."
+  },
+  "foldersSectionEmptyHint": "Seret wallpaper ke nama bagian, atau gunakan Pindahkan ke bagian.",
+  "@foldersSectionEmptyHint": {
+    "description": "Text under an empty section for the owner and editors. Only the section name (the header) and its chip in the strip accept a drop, not this text. Move to section is the name of a button."
+  },
+  "foldersSectionSuggest": "Sarankan bagian",
+  "@foldersSectionSuggest": {
+    "description": "Folder page menu item. Prism groups the Unsorted wallpapers by mood, category or colour on the device."
+  },
+  "foldersSuggestTitle": "Bagian yang disarankan",
+  "@foldersSuggestTitle": {
+    "description": "Title of the sheet with the suggested sections."
+  },
+  "foldersSuggestBody": "Kelompok wallpaper Belum disortir Anda. Simpan yang Anda mau.",
+  "@foldersSuggestBody": {
+    "description": "Message under the title of the suggested sections sheet."
+  },
+  "foldersSuggestByMood": "Suasana",
+  "@foldersSuggestByMood": {
+    "description": "Segment in the suggested sections sheet: group by mood."
+  },
+  "foldersSuggestByCategory": "Kategori",
+  "@foldersSuggestByCategory": {
+    "description": "Segment in the suggested sections sheet: group by category."
+  },
+  "foldersSuggestByColour": "Warna",
+  "@foldersSuggestByColour": {
+    "description": "Segment in the suggested sections sheet: group by main colour."
+  },
+  "foldersSuggestJoins": "{count}. Masuk ke bagian Anda dengan nama ini.",
+  "@foldersSuggestJoins": {
+    "description": "Line under a suggested group whose name matches a section that exists. count is a wallpaper count, for example \"3 wallpapers\".",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSuggestAdd": "{count, plural, =0{Tambah bagian} =1{Tambah 1 bagian} other{Tambah {count} bagian}}",
+  "@foldersSuggestAdd": {
+    "description": "Main button of the suggested sections sheet. count is the number of new sections it makes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestSort": "{count, plural, =1{Sortir 1 wallpaper} other{Sortir {count} wallpaper}}",
+  "@foldersSuggestSort": {
+    "description": "Main button of the suggested sections sheet when every kept group goes into a section that exists.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestSorted": "{count, plural, =1{1 wallpaper sudah disortir.} other{{count} wallpaper sudah disortir.}}",
+  "@foldersSuggestSorted": {
+    "description": "Toast after the user keeps suggested sections.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestEmptyTitle": "Tidak ada kelompok untuk disarankan",
+  "@foldersSuggestEmptyTitle": {
+    "description": "Empty state in the suggested sections sheet."
+  },
+  "foldersSuggestEmptyBody": "Kelompok perlu 2 wallpaper Prism atau lebih di Belum disortir dengan suasana, kategori, atau warna yang sama.",
+  "@foldersSuggestEmptyBody": {
+    "description": "Body of the empty state in the suggested sections sheet."
+  },
+  "foldersSuggestError": "Saran tidak dapat dimuat",
+  "@foldersSuggestError": {
+    "description": "Error state in the suggested sections sheet."
+  }
 }

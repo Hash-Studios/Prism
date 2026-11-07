@@ -15014,5 +15014,228 @@
   "gestureHintHoldToSave": "Hold to save",
   "@gestureHintHoldToSave": {"description": "One-time hint over a wallpaper tile: long-press it for quick actions such as save."},
   "gestureHintSwipeForSimilar": "Swipe up for similar walls",
-  "@gestureHintSwipeForSimilar": {"description": "One-time hint over the wallpaper detail image: swipe up to see similar wallpapers."}
+  "@gestureHintSwipeForSimilar": {"description": "One-time hint over the wallpaper detail image: swipe up to see similar wallpapers."},
+  "foldersSectionAdd": "Add section",
+  "@foldersSectionAdd": {
+    "description": "Folder page menu item and name sheet button that add a named section to a folder."
+  },
+  "foldersSectionNewTitle": "New section",
+  "@foldersSectionNewTitle": {
+    "description": "Title of the sheet where the user types a name for a new folder section. Also a row in the Move to sheet."
+  },
+  "foldersSectionNameHint": "For example, Lock screens",
+  "@foldersSectionNameHint": {
+    "description": "Hint in the section name field."
+  },
+  "foldersSectionRenameTitle": "Rename section",
+  "@foldersSectionRenameTitle": {
+    "description": "Title of the sheet that renames a folder section."
+  },
+  "foldersSectionDelete": "Delete section",
+  "@foldersSectionDelete": {
+    "description": "Section menu item and confirm button that delete a folder section. Its wallpapers stay in the folder."
+  },
+  "foldersSectionDeleteTitle": "Delete {name}?",
+  "@foldersSectionDeleteTitle": {
+    "description": "Title of the confirm before deleting a folder section. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionDeleteMessage": "{count, plural, =0{The section is empty.} =1{Its wallpaper moves to Unsorted.} other{Its {count} wallpapers move to Unsorted.}}",
+  "@foldersSectionDeleteMessage": {
+    "description": "Body of the confirm before deleting a folder section. count is the number of wallpapers in it. Unsorted is the group of wallpapers with no section.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionUnsorted": "Unsorted",
+  "@foldersSectionUnsorted": {
+    "description": "Name of the group at the top of a folder that holds the wallpapers that are in no section."
+  },
+  "foldersSectionReorder": "Reorder sections",
+  "@foldersSectionReorder": {
+    "description": "Folder page menu item and sheet title for changing the order of the sections."
+  },
+  "foldersSectionDragHandle": "Drag to move {name}",
+  "@foldersSectionDragHandle": {
+    "description": "Tooltip of the drag handle on a section in the Reorder sections sheet. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionWallCount": "{count, plural, =0{No wallpapers} =1{1 wallpaper} other{{count} wallpapers}}",
+  "@foldersSectionWallCount": {
+    "description": "Count under a section name.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionHeaderLabel": "{name}, {count, plural, =0{no wallpapers} =1{1 wallpaper} other{{count} wallpapers}}",
+  "@foldersSectionHeaderLabel": {
+    "description": "Screen reader label of a section header. Double tap collapses or expands it. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionJumpTo": "Go to {name}, {count, plural, =0{no wallpapers} =1{1 wallpaper} other{{count} wallpapers}}",
+  "@foldersSectionJumpTo": {
+    "description": "Screen reader label of a chip in the section strip at the top of a folder. Tapping it scrolls to the section.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionOptions": "More options for {name}",
+  "@foldersSectionOptions": {
+    "description": "Tooltip of the menu button on a section header. name is the section name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionSaveAll": "Save section",
+  "@foldersSectionSaveAll": {
+    "description": "Section menu item that saves all wallpapers of one section to the device, like Save all for the whole folder."
+  },
+  "foldersSectionMoveTo": "Move to section",
+  "@foldersSectionMoveTo": {
+    "description": "Button in the wallpaper menu and the selection bar. It opens a list of the sections."
+  },
+  "foldersSectionMoveTitle": "Move to",
+  "@foldersSectionMoveTitle": {
+    "description": "Title of the sheet that lists Unsorted and the sections of a folder."
+  },
+  "foldersSectionMoved": "{count, plural, =1{Moved 1 wallpaper to {name}.} other{Moved {count} wallpapers to {name}.}}",
+  "@foldersSectionMoved": {
+    "description": "Toast after wallpapers move to a section. name is the section name, or Unsorted.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSectionSelect": "Select wallpapers",
+  "@foldersSectionSelect": {
+    "description": "Folder page menu item that starts selecting wallpapers to move them."
+  },
+  "foldersSectionSelected": "{count, plural, =0{Tap wallpapers to select them} =1{1 selected} other{{count} selected}}",
+  "@foldersSectionSelected": {
+    "description": "Text in the selection bar at the bottom of a folder.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionsFull": "A folder can have up to {max} sections.",
+  "@foldersSectionsFull": {
+    "description": "Error toast when the user tries to add a section to a folder that has the most sections.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSectionEmpty": "No wallpapers yet.",
+  "@foldersSectionEmpty": {
+    "description": "Text under an empty section for a reader who cannot organize the folder."
+  },
+  "foldersSectionEmptyHint": "Drag wallpapers onto the section name, or use Move to section.",
+  "@foldersSectionEmptyHint": {
+    "description": "Text under an empty section for the owner and editors. Only the section name (the header) and its chip in the strip accept a drop, not this text. Move to section is the name of a button."
+  },
+  "foldersSectionSuggest": "Suggest sections",
+  "@foldersSectionSuggest": {
+    "description": "Folder page menu item. Prism groups the Unsorted wallpapers by mood, category or colour on the device."
+  },
+  "foldersSuggestTitle": "Suggested sections",
+  "@foldersSuggestTitle": {
+    "description": "Title of the sheet with the suggested sections."
+  },
+  "foldersSuggestBody": "Groups of your Unsorted wallpapers. Keep the ones you want.",
+  "@foldersSuggestBody": {
+    "description": "Message under the title of the suggested sections sheet."
+  },
+  "foldersSuggestByMood": "Mood",
+  "@foldersSuggestByMood": {
+    "description": "Segment in the suggested sections sheet: group by mood."
+  },
+  "foldersSuggestByCategory": "Category",
+  "@foldersSuggestByCategory": {
+    "description": "Segment in the suggested sections sheet: group by category."
+  },
+  "foldersSuggestByColour": "Colour",
+  "@foldersSuggestByColour": {
+    "description": "Segment in the suggested sections sheet: group by main colour."
+  },
+  "foldersSuggestJoins": "{count}. Goes into your section with this name.",
+  "@foldersSuggestJoins": {
+    "description": "Line under a suggested group whose name matches a section that exists. count is a wallpaper count, for example \"3 wallpapers\".",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSuggestAdd": "{count, plural, =0{Add sections} =1{Add 1 section} other{Add {count} sections}}",
+  "@foldersSuggestAdd": {
+    "description": "Main button of the suggested sections sheet. count is the number of new sections it makes.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestSort": "{count, plural, =1{Sort 1 wallpaper} other{Sort {count} wallpapers}}",
+  "@foldersSuggestSort": {
+    "description": "Main button of the suggested sections sheet when every kept group goes into a section that exists.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestSorted": "{count, plural, =1{Sorted 1 wallpaper.} other{Sorted {count} wallpapers.}}",
+  "@foldersSuggestSorted": {
+    "description": "Toast after the user keeps suggested sections.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "foldersSuggestEmptyTitle": "No groups to suggest",
+  "@foldersSuggestEmptyTitle": {
+    "description": "Empty state in the suggested sections sheet."
+  },
+  "foldersSuggestEmptyBody": "A group needs 2 or more Prism wallpapers in Unsorted with the same mood, category or colour.",
+  "@foldersSuggestEmptyBody": {
+    "description": "Body of the empty state in the suggested sections sheet."
+  },
+  "foldersSuggestError": "Could not load suggestions",
+  "@foldersSuggestError": {
+    "description": "Error state in the suggested sections sheet."
+  }
 }

@@ -88,11 +88,16 @@ const historyFields = (id = 'abc', provider = 'wallhaven', extra = {}) => ({ id:
 const ownerFilter = (uid) => ({ fieldFilter: { field: { fieldPath: 'ownerId' }, op: 'EQUAL', value: { stringValue: uid } } });
 const arrayContainsFilter = (field, value) => ({ fieldFilter: { field: { fieldPath: field }, op: 'ARRAY_CONTAINS', value: { stringValue: value } } });
 const sharedMembers = { mapValue: { fields: { e: { mapValue: { fields: { addedBy: { stringValue: 'a' } } } } } } };
+const sec = (id, name, extra = {}) => ({ mapValue: { fields: { id: str(id), name: str(name), ...extra } } });
+const secs = (...values) => ({ arrayValue: { values } });
 const newestFirst = (field, limit) => ({ orderBy: [{ field: { fieldPath: field }, direction: 'DESCENDING' }], ...(limit ? { limit } : {}) });
 const commitDocs = async (auth, docs) => {
   const r = await fetch(`${B}:commit`, {
     method: 'POST', headers: { Authorization: `Bearer ${auth}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ writes: docs.map(([path, fields]) => ({ update: { name: `projects/${P}/databases/(default)/documents/${path}`, fields } })) }),
+    body: JSON.stringify({ writes: docs.map(([path, fields, mask]) => ({
+      update: { name: `projects/${P}/databases/(default)/documents/${path}`, fields },
+      ...(mask ? { updateMask: { fieldPaths: mask } } : {}),
+    })) }),
   });
   return r.status;
 };
@@ -203,6 +208,13 @@ const seed = () => Promise.all([
   req('PATCH', 'folders/shared-closing', folderFields('closing-owner', 'Closing', { memberIds: arr(['e']), members: sharedMembers }), 'owner'),
   req('PATCH', 'folders/shared-closing/items/wallhaven_existing', { ...itemFields('closing-owner', 'existing'), addedBy: str('e') }, 'owner'),
   req('PATCH', 'folderInvites/code1', { folderId: str('shared1'), createdBy: str('a') }, 'owner'),
+  req('PATCH', 'folders/sections1', folderFields('a', 'Sections', { memberIds: arr(['e']), members: sharedMembers, public: { booleanValue: true } }), 'owner'),
+  req('PATCH', 'folders/sections1/items/wallhaven_s1', itemFields('a', 's1'), 'owner'),
+  req('PATCH', 'folders/sections1/items/wallhaven_s2', { ...itemFields('a', 's2'), addedBy: str('e') }, 'owner'),
+  commitDocs('owner', [
+    ['folders/sections-batch', folderFields('a', 'Batch', { memberIds: arr(['e']), members: sharedMembers })],
+    ...Array.from({ length: 399 }, (_, i) => [`folders/sections-batch/items/wallhaven_b${i}`, itemFields('a', `b${i}`)]),
+  ]),
 ]);
 const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), HistoryOwner = tok('history-owner', 'history-owner@x.com'), ADM = tok('adm', 'admin@x.com');
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
@@ -1160,6 +1172,55 @@ const cases = [
   ['u1 writes topicNews', () => req('PATCH', 'topicNews/current', { latest: { mapValue: { fields: {} } } }, U1), 403],
   ['owner writes layoutPrefs with followingRow false', () => req('PATCH', 'usersv2/u1', layoutMap({ ...layoutFields, followingRow: { booleanValue: false } }), U1, ['layoutPrefs']), 200],
   ['owner writes layoutPrefs with followingRow as a string', () => req('PATCH', 'usersv2/u1', layoutMap({ ...layoutFields, followingRow: str('no') }), U1, ['layoutPrefs']), 403],
+  ['owner writes sections [lock]', () => req('PATCH', 'folders/sections1', { sections: secs(sec('lock', 'Lock screens')) }, A, ['sections']), 200],
+  ['editor writes sections with two entries', () => req('PATCH', 'folders/sections1', { sections: secs(sec('lock', 'Lock screens'), sec('dark', 'Dark')) }, Ed, ['sections']), 200],
+  ['editor cannot write sections and name together', () => req('PATCH', 'folders/sections1', { sections: secs(sec('lock', 'Lock screens')), name: str('Mine') }, Ed, ['sections', 'name']), 403],
+  ['editor cannot write sections and updatedAt together', () => req('PATCH', 'folders/sections1', { sections: secs(sec('lock', 'Lock screens')), updatedAt: ts() }, Ed, ['sections', 'updatedAt']), 403],
+  ['editor cannot write sections and itemCount together', () => req('PATCH', 'folders/sections1', { sections: secs(sec('lock', 'Lock screens')), itemCount: { integerValue: '1' } }, Ed, ['sections', 'itemCount']), 403],
+  ['public viewer cannot write sections', () => req('PATCH', 'folders/sections1', { sections: secs(sec('lock', 'Lock screens')) }, C, ['sections']), 403],
+  ['owner cannot write a section with empty name', () => req('PATCH', 'folders/sections1', { sections: secs(sec('n1', '')) }, A, ['sections']), 403],
+  ['rules accept a section name with a leading space; the app trims it on read', () => req('PATCH', 'folders/sections1', { sections: secs(sec('n1', ' Dark')) }, A, ['sections']), 200],
+  ['owner cannot write a section name of 161 characters', () => req('PATCH', 'folders/sections1', { sections: secs(sec('n1', 'a'.repeat(161))) }, A, ['sections']), 403],
+  ['owner writes a section name of 160 characters', () => req('PATCH', 'folders/sections1', { sections: secs(sec('n1', 'a'.repeat(160))) }, A, ['sections']), 200],
+  ['server may include the owner in memberIds', () => req('PATCH', 'folders/sections1', { memberIds: arr(['a', 'e']) }, 'owner', ['memberIds']), 200],
+  ['owner writes 20 sections', () => req('PATCH', 'folders/sections1', { sections: secs(...Array.from({ length: 20 }, (_, i) => sec(`s${i}`, `Section ${i}`))) }, A, ['sections']), 200],
+  ['editor writes 20 sections within the expression budget', () => req('PATCH', 'folders/sections1', { sections: secs(...Array.from({ length: 20 }, (_, i) => sec(`s${i}`, `Editor section ${i}`))) }, Ed, ['sections']), 200],
+  ...[[A, 'owner'], [Ed, 'editor']].map(([auth, role]) => [
+    `${role} atomically writes 20 sections and moves 399 owner items`,
+    () => commitDocs(auth, [
+      ['folders/sections-batch', { sections: secs(...Array.from({ length: 20 }, (_, i) => sec(`s${i}`, `${role} ${i}`))) }, ['sections']],
+      ...Array.from({ length: 399 }, (_, i) => [`folders/sections-batch/items/wallhaven_b${i}`, { sectionId: str(role === 'owner' ? 's0' : 's1') }, ['sectionId']]),
+    ]),
+    200,
+  ]),
+  ['stranger cannot forge membership while writing sections', () => req('PATCH', 'folders/sections1', { memberIds: arr(['c']), sections: secs(sec('lock', 'Lock')) }, C, ['memberIds', 'sections']), 403],
+  ['editor cannot forge ownership while writing sections', () => req('PATCH', 'folders/sections1', { ownerId: str('e'), sections: secs(sec('lock', 'Lock')) }, Ed, ['ownerId', 'sections']), 403],
+  ['owner cannot write 21 sections', () => req('PATCH', 'folders/sections1', { sections: secs(...Array.from({ length: 21 }, (_, i) => sec(`s${i}`, `Section ${i}`))) }, A, ['sections']), 403],
+  ['owner cannot write a section with an extra key', () => req('PATCH', 'folders/sections1', { sections: secs(sec('o1', 'Order', { order: { integerValue: '1' } })) }, A, ['sections']), 403],
+  ['owner cannot write an unbounded section id', () => req('PATCH', 'folders/sections1', { sections: secs(sec('x'.repeat(10000), 'Name')) }, A, ['sections']), 403],
+  ['owner cannot write a section with a map id', () => req('PATCH', 'folders/sections1', { sections: secs(sec('id', 'Name', { id: { mapValue: { fields: { payload: str('large') } } } })) }, A, ['sections']), 403],
+  ['owner cannot write a section without an id', () => req('PATCH', 'folders/sections1', { sections: secs({ mapValue: { fields: { name: str('Name') } } }) }, A, ['sections']), 403],
+  ['owner cannot write a section id with a space', () => req('PATCH', 'folders/sections1', { sections: secs(sec('bad id', 'Name')) }, A, ['sections']), 403],
+  ['owner cannot write a section name that is not a string', () => req('PATCH', 'folders/sections1', { sections: secs({ mapValue: { fields: { id: str('n1'), name: arr(['a']) } } }) }, A, ['sections']), 403],
+  ['editor sets sectionId on an owner item', () => req('PATCH', 'folders/sections1/items/wallhaven_s1', { sectionId: str('lock') }, Ed, ['sectionId']), 200],
+  ['owner sets sectionId on an editor item', () => req('PATCH', 'folders/sections1/items/wallhaven_s2', { sectionId: str('dark') }, A, ['sectionId']), 200],
+  ['editor clears sectionId on an owner item', () => req('PATCH', 'folders/sections1/items/wallhaven_s1', {}, Ed, ['sectionId']), 200],
+  ['stranger cannot set sectionId', () => req('PATCH', 'folders/sections1/items/wallhaven_s1', { sectionId: str('lock') }, C, ['sectionId']), 403],
+  ['editor cannot set sectionId with a space', () => req('PATCH', 'folders/sections1/items/wallhaven_s1', { sectionId: str('bad id') }, Ed, ['sectionId']), 403],
+  ['editor cannot change sectionId and thumb together', () => req('PATCH', 'folders/sections1/items/wallhaven_s1', { sectionId: str('lock'), thumb: str('https://example.com/changed.jpg') }, Ed, ['sectionId', 'thumb']), 403],
+  ['editor cannot remove thumb together with sectionId on an owner item', () => req('PATCH', 'folders/sections1/items/wallhaven_s1', {}, Ed, ['sectionId', 'thumb']), 403],
+  ['owner old client writes a full item without sectionId', () => req('PATCH', 'folders/sections1/items/wallhaven_old1', itemFields('a', 'old1'), A), 200],
+  ['editor old client writes a full item without sectionId', () => req('PATCH', 'folders/sections1/items/wallhaven_old2', { ...itemFields('a', 'old2'), addedBy: str('e') }, Ed), 200],
+  ['owner creates a full item with sectionId', () => req('PATCH', 'folders/sections1/items/wallhaven_s3', { ...itemFields('a', 's3'), sectionId: str('lock') }, A), 200],
+  ['owner old client fully replaces an existing sectioned item without sectionId', () => req('PATCH', 'folders/sections1/items/wallhaven_s3', itemFields('a', 's3'), A), 200],
+  ['editor old client fully replaces their existing sectioned item without sectionId', () => req('PATCH', 'folders/sections1/items/wallhaven_s2', { ...itemFields('a', 's2'), addedBy: str('e') }, Ed), 200],
+  ['editor old client can save an already existing owner item through the legacy full-write path', () => req('PATCH', 'folders/sections1/items/wallhaven_s3', { ...itemFields('a', 's3'), addedBy: str('e') }, Ed), 200],
+  ['owner old client updates count and covers while 20 sections exist', () => req('PATCH', 'folders/sections1', { itemCount: { integerValue: '4' }, covers: arr(['https://example.com/t.jpg']), updatedAt: ts() }, A, ['itemCount', 'covers', 'updatedAt']), 200],
+  ['editor cannot change addedAt together with sectionId on an owner item', () => req('PATCH', 'folders/sections1/items/wallhaven_s1', { sectionId: str('lock'), addedAt: ts() }, Ed, ['sectionId', 'addedAt']), 403],
+  ['owner old client renames sections1', () => req('PATCH', 'folders/sections1', { name: str('Sections renamed'), updatedAt: ts() }, A, ['name', 'updatedAt']), 200],
+  ['owner old client deletes an existing sectioned item', () => req('DELETE', 'folders/sections1/items/wallhaven_s1', null, A), 200],
+  ['editor old client deletes their existing item', () => req('DELETE', 'folders/sections1/items/wallhaven_s2', null, Ed), 200],
+  ['owner name of 100 emoji (U+1F600, 2 UTF-16 units each)', () => req('PATCH', 'folders/sections1', { sections: secs(sec('emo', '\u{1F600}'.repeat(100))) }, A, ['sections']), 403],
 ];
 await seed();
 let bad = 0;

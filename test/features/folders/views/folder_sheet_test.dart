@@ -17,6 +17,7 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/favourite_walls/domain/usecases/favourite_walls_usecases.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
@@ -77,9 +78,20 @@ class _FakeFoldersRepository implements FoldersRepository {
   }
 
   @override
-  Future<Result<List<FavouriteWallEntity>?>> fetchItems(String folderId, {required String userId, int? limit}) async {
+  Future<Result<List<FolderItem>?>> fetchItems(String folderId, {required String userId, int? limit}) async {
     calls.add('fetchItems:$folderId');
-    return Result.success(const <FavouriteWallEntity>[]);
+    return Result.success(const <FolderItem>[]);
+  }
+
+  @override
+  Future<Result<void>> organize(
+    FolderEntity folder, {
+    required String userId,
+    List<FolderSection>? sections,
+    Map<String, String?> moves = const <String, String?>{},
+  }) async {
+    calls.add('organize:${folder.id}');
+    return Result.success<void>(null);
   }
 
   @override
@@ -158,7 +170,7 @@ class _NoPublicFolders implements PublicFoldersRepository {
   Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success<PublicFolderEntity?>(null);
 
   @override
-  Future<Result<List<String>>> fetchWallIds(String folderId) async => Result.success(<String>[]);
+  Future<Result<List<PublicFolderWall>>> fetchWallIds(String folderId) async => Result.success(<PublicFolderWall>[]);
 
   @override
   Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) async =>

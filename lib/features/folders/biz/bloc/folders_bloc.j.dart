@@ -6,7 +6,9 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_edit.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:bloc/bloc.dart';
@@ -109,6 +111,8 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
           await _onSaveRequested(event, emit, session);
         case _ItemRemoved():
           await _onItemRemoved(event, emit, session);
+        case _OrganizeRequested():
+          await _onOrganizeRequested(event, emit, session);
       }
     } on _FolderSessionCancelled {
       // A request already sent to Firestore may finish, but cannot update another session or start more writes.
@@ -147,6 +151,7 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
   FoldersState _forgetFolder(String id) => state.copyWith(
     folders: state.folders.where((folder) => folder.id != id).toList(),
     items: <String, List<FavouriteWallEntity>>{...state.items}..remove(id),
+    itemSections: <String, Map<String, String>>{...state.itemSections}..remove(id),
     itemsStatus: <String, LoadStatus>{...state.itemsStatus, id: LoadStatus.success},
     membership: state.membership.map((key, ids) => MapEntry(key, ids.toSet()..remove(id))),
   );
@@ -176,6 +181,7 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
           status: LoadStatus.success,
           folders: _sorted(folders),
           items: const {},
+          itemSections: const {},
           itemsStatus: const {},
           membership: const {},
           membershipStatus: const {},
@@ -209,21 +215,35 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
         return;
       }
     }
-    final Result<List<FavouriteWallEntity>?> result = await session.wait(
-      _repository.fetchItems(id, userId: state.userId),
-    );
+    final Result<List<FolderItem>?> result = await session.wait(_repository.fetchItems(id, userId: state.userId));
     if (result.failure case final Failure failure) {
       emit(state.copyWith(itemsStatus: <String, LoadStatus>{...state.itemsStatus, id: LoadStatus.failure}));
       _finish(emit, event.operationId, failure: failure);
       return;
     }
-    final List<FavouriteWallEntity>? items = result.data;
+    final List<FolderItem>? items = result.data;
+    final Set<String> present = <String>{
+      for (final FolderItem item in items ?? const <FolderItem>[]) folderItemKey(item.wall),
+    };
     emit(
       items == null
           ? _forgetFolder(id)
           : state.copyWith(
-              items: <String, List<FavouriteWallEntity>>{...state.items, id: items},
+              items: <String, List<FavouriteWallEntity>>{
+                ...state.items,
+                id: <FavouriteWallEntity>[for (final i in items) i.wall],
+              },
+              itemSections: <String, Map<String, String>>{
+                ...state.itemSections,
+                id: <String, String>{
+                  for (final FolderItem item in items)
+                    if (item.sectionId case final String sectionId) folderItemKey(item.wall): sectionId,
+                },
+              },
               itemsStatus: <String, LoadStatus>{...state.itemsStatus, id: LoadStatus.success},
+              membership: state.membership.map(
+                (key, ids) => MapEntry(key, present.contains(key) ? <String>{...ids, id} : (ids.toSet()..remove(id))),
+              ),
             ),
     );
     _finish(emit, event.operationId);
@@ -352,6 +372,7 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
         state.copyWith(
           folders: state.folders.where((folder) => folder.id != id).toList(),
           items: <String, List<FavouriteWallEntity>>{...state.items}..remove(id),
+          itemSections: <String, Map<String, String>>{...state.itemSections}..remove(id),
           itemsStatus: <String, LoadStatus>{...state.itemsStatus}..remove(id),
           membership: state.membership.map((key, ids) => MapEntry(key, ids.toSet()..remove(id))),
         ),
@@ -383,6 +404,12 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
                 ...state.items,
                 folderId: <FavouriteWallEntity>[wall, ...loaded.where((item) => folderItemKey(item) != key)],
               },
+        itemSections: state.itemSections[folderId]?.containsKey(key) ?? false
+            ? <String, Map<String, String>>{
+                ...state.itemSections,
+                folderId: <String, String>{...state.itemSections[folderId]!}..remove(key),
+              }
+            : state.itemSections,
         membership: _withMembership(key, folderId, member: true),
       ),
     );
@@ -415,7 +442,7 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
         _repository.fetchItems(folderId, userId: state.userId, limit: folderMaxCovers + 1),
       );
       if (result.failure case final failure?) return failure;
-      newest = result.data;
+      newest = result.data?.map((item) => item.wall).toList();
       if (newest == null) {
         emit(_forgetFolder(folderId));
         return const ValidationFailure('This folder is gone.');
@@ -437,6 +464,12 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
                 ...state.items,
                 folderId: loaded.where((item) => folderItemKey(item) != key).toList(),
               },
+        itemSections: state.itemSections[folderId]?.containsKey(key) ?? false
+            ? <String, Map<String, String>>{
+                ...state.itemSections,
+                folderId: <String, String>{...state.itemSections[folderId]!}..remove(key),
+              }
+            : state.itemSections,
         membership: _withMembership(key, folderId, member: false),
       ),
     );
@@ -486,6 +519,61 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
 
   Future<void> _onItemRemoved(_ItemRemoved event, Emitter<FoldersState> emit, _FolderSession session) async {
     _finish(emit, event.operationId, failure: await session.wait(_remove(event.folderId, event.wall, emit, session)));
+  }
+
+  /// The owner and the editors organize. The edit is applied to the newest state, so two quick edits never undo
+  /// each other.
+  Future<void> _onOrganizeRequested(
+    _OrganizeRequested event,
+    Emitter<FoldersState> emit,
+    _FolderSession session,
+  ) async {
+    final FolderEntity? folder = state.folder(event.folderId);
+    final List<FavouriteWallEntity>? walls = state.items[event.folderId];
+    final Map<String, String> known = state.itemSections[event.folderId] ?? const <String, String>{};
+    final FolderEditResult? change =
+        folder == null ||
+            walls == null ||
+            state.itemsStatus[event.folderId] != LoadStatus.success ||
+            folder.roleOf(state.userId) == null
+        ? null
+        : applyFolderEdit(folder.sections, <String, String?>{
+            for (final FavouriteWallEntity wall in walls) folderItemKey(wall): known[folderItemKey(wall)],
+          }, event.edit);
+    if (folder == null || change == null) {
+      _finish(emit, event.operationId, failure: const ValidationFailure('Cannot organize this folder.'));
+      return;
+    }
+    if (change.sections == null && change.moves.isEmpty) {
+      _finish(emit, event.operationId);
+      return;
+    }
+    final List<MapEntry<String, String?>> entries = change.moves.entries.toList();
+    int start = 0;
+    do {
+      session.ensureActive();
+      final List<FolderSection>? sections = start == 0 ? change.sections : null;
+      final int end = (start + folderOrganizeMaxWrites - (sections == null ? 0 : 1)).clamp(0, entries.length);
+      final Map<String, String?> moves = Map<String, String?>.fromEntries(entries.sublist(start, end));
+      final Result<void> result = await session.wait(
+        _repository.organize(folder, userId: state.userId, sections: sections, moves: moves),
+      );
+      if (result.isFailure) {
+        _finish(emit, event.operationId, failure: result.failure);
+        return;
+      }
+      final FolderEntity? current = state.folder(folder.id);
+      final Map<String, String> next = <String, String>{...?state.itemSections[folder.id]};
+      moves.forEach((key, sectionId) => sectionId == null ? next.remove(key) : next[key] = sectionId);
+      emit(
+        state.copyWith(
+          folders: sections == null || current == null ? state.folders : _replace(current.copyWith(sections: sections)),
+          itemSections: <String, Map<String, String>>{...state.itemSections, folder.id: next},
+        ),
+      );
+      start = end;
+    } while (start < entries.length);
+    _finish(emit, event.operationId);
   }
 }
 

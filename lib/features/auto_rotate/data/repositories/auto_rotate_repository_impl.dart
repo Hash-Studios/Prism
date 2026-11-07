@@ -301,9 +301,12 @@ class AutoRotateRepositoryImpl implements AutoRotateRepository {
     if (folderId.trim().isEmpty || userId.trim().isEmpty) return null;
     final result = await _folders.fetchItems(folderId, userId: userId, limit: _folderLimit);
     if (result.isFailure) return null;
-    final walls = result.data;
-    if (walls == null) return (found: false, urls: const <String>[]);
-    return (found: true, urls: await _safeWallSources(walls.map((wall) => (wall.id, wall.source, wall.fullUrl))));
+    final items = result.data;
+    if (items == null) return (found: false, urls: const <String>[]);
+    return (
+      found: true,
+      urls: await _safeWallSources(items.map((item) => (item.wall.id, item.wall.source, item.wall.fullUrl))),
+    );
   }
 
   @override

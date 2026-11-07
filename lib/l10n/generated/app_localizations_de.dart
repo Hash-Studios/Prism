@@ -14911,4 +14911,202 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get gestureHintSwipeForSimilar => 'Nach oben wischen für ähnliche Wallpaper';
+
+  @override
+  String get foldersSectionAdd => 'Abschnitt hinzufügen';
+
+  @override
+  String get foldersSectionNewTitle => 'Neuer Abschnitt';
+
+  @override
+  String get foldersSectionNameHint => 'Zum Beispiel Sperrbildschirm';
+
+  @override
+  String get foldersSectionRenameTitle => 'Abschnitt umbenennen';
+
+  @override
+  String get foldersSectionDelete => 'Abschnitt löschen';
+
+  @override
+  String foldersSectionDeleteTitle(String name) {
+    return '$name löschen?';
+  }
+
+  @override
+  String foldersSectionDeleteMessage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Seine $count Hintergrundbilder werden nach „Nicht sortiert“ verschoben.',
+      one: 'Sein Hintergrundbild wird nach „Nicht sortiert“ verschoben.',
+      zero: 'Der Abschnitt ist leer.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionUnsorted => 'Nicht sortiert';
+
+  @override
+  String get foldersSectionReorder => 'Abschnitte neu anordnen';
+
+  @override
+  String foldersSectionDragHandle(String name) {
+    return 'Ziehen, um $name zu verschieben';
+  }
+
+  @override
+  String foldersSectionWallCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Hintergrundbilder',
+      one: '1 Hintergrundbild',
+      zero: 'Keine Hintergrundbilder',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionHeaderLabel(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Hintergrundbilder',
+      one: '1 Hintergrundbild',
+      zero: 'keine Hintergrundbilder',
+    );
+    return '$name, $_temp0';
+  }
+
+  @override
+  String foldersSectionJumpTo(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Hintergrundbilder',
+      one: '1 Hintergrundbild',
+      zero: 'keine Hintergrundbilder',
+    );
+    return 'Zu $name gehen, $_temp0';
+  }
+
+  @override
+  String foldersSectionOptions(String name) {
+    return 'Weitere Optionen für $name';
+  }
+
+  @override
+  String get foldersSectionSaveAll => 'Abschnitt speichern';
+
+  @override
+  String get foldersSectionMoveTo => 'In Abschnitt verschieben';
+
+  @override
+  String get foldersSectionMoveTitle => 'Verschieben nach';
+
+  @override
+  String foldersSectionMoved(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Hintergrundbilder nach $name verschoben.',
+      one: '1 Hintergrundbild nach $name verschoben.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionSelect => 'Hintergrundbilder auswählen';
+
+  @override
+  String foldersSectionSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ausgewählt',
+      one: '1 ausgewählt',
+      zero: 'Tippe auf Hintergrundbilder, um sie auszuwählen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionsFull(int max) {
+    return 'Ein Ordner kann bis zu $max Abschnitte haben.';
+  }
+
+  @override
+  String get foldersSectionEmpty => 'Noch keine Hintergrundbilder.';
+
+  @override
+  String get foldersSectionEmptyHint =>
+      'Ziehe Hintergrundbilder auf den Namen des Abschnitts oder nutze „In Abschnitt verschieben“.';
+
+  @override
+  String get foldersSectionSuggest => 'Abschnitte vorschlagen';
+
+  @override
+  String get foldersSuggestTitle => 'Vorgeschlagene Abschnitte';
+
+  @override
+  String get foldersSuggestBody => 'Gruppen deiner nicht sortierten Hintergrundbilder. Behalte die, die du willst.';
+
+  @override
+  String get foldersSuggestByMood => 'Stimmung';
+
+  @override
+  String get foldersSuggestByCategory => 'Kategorie';
+
+  @override
+  String get foldersSuggestByColour => 'Farbe';
+
+  @override
+  String foldersSuggestJoins(String count) {
+    return '$count. Kommt in deinen Abschnitt mit diesem Namen.';
+  }
+
+  @override
+  String foldersSuggestAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Abschnitte hinzufügen',
+      one: '1 Abschnitt hinzufügen',
+      zero: 'Abschnitte hinzufügen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSort(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Hintergrundbilder sortieren',
+      one: '1 Hintergrundbild sortieren',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSorted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Hintergrundbilder sortiert.',
+      one: '1 Hintergrundbild sortiert.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSuggestEmptyTitle => 'Keine Gruppen zum Vorschlagen';
+
+  @override
+  String get foldersSuggestEmptyBody =>
+      'Eine Gruppe braucht 2 oder mehr Prism-Hintergrundbilder in „Nicht sortiert“ mit derselben Stimmung, Kategorie oder Farbe.';
+
+  @override
+  String get foldersSuggestError => 'Vorschläge konnten nicht geladen werden';
 }

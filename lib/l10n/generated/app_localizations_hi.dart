@@ -14822,4 +14822,201 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get gestureHintSwipeForSimilar => 'मिलते-जुलते वॉलपेपर के लिए ऊपर स्वाइप करें';
+
+  @override
+  String get foldersSectionAdd => 'सेक्शन जोड़ें';
+
+  @override
+  String get foldersSectionNewTitle => 'नया सेक्शन';
+
+  @override
+  String get foldersSectionNameHint => 'उदाहरण के लिए, लॉक स्क्रीन';
+
+  @override
+  String get foldersSectionRenameTitle => 'सेक्शन का नाम बदलें';
+
+  @override
+  String get foldersSectionDelete => 'सेक्शन हटाएँ';
+
+  @override
+  String foldersSectionDeleteTitle(String name) {
+    return '$name हटाएँ?';
+  }
+
+  @override
+  String foldersSectionDeleteMessage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'इसके $count वॉलपेपर “बिना सेक्शन” में चले जाएँगे।',
+      one: 'इसका वॉलपेपर “बिना सेक्शन” में चला जाएगा।',
+      zero: 'सेक्शन खाली है।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionUnsorted => 'बिना सेक्शन';
+
+  @override
+  String get foldersSectionReorder => 'सेक्शन का क्रम बदलें';
+
+  @override
+  String foldersSectionDragHandle(String name) {
+    return '$name को ले जाने के लिए खींचें';
+  }
+
+  @override
+  String foldersSectionWallCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count वॉलपेपर',
+      one: '1 वॉलपेपर',
+      zero: 'कोई वॉलपेपर नहीं',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionHeaderLabel(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count वॉलपेपर',
+      one: '1 वॉलपेपर',
+      zero: 'कोई वॉलपेपर नहीं',
+    );
+    return '$name, $_temp0';
+  }
+
+  @override
+  String foldersSectionJumpTo(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count वॉलपेपर',
+      one: '1 वॉलपेपर',
+      zero: 'कोई वॉलपेपर नहीं',
+    );
+    return '$name पर जाएँ, $_temp0';
+  }
+
+  @override
+  String foldersSectionOptions(String name) {
+    return '$name के लिए और विकल्प';
+  }
+
+  @override
+  String get foldersSectionSaveAll => 'सेक्शन सहेजें';
+
+  @override
+  String get foldersSectionMoveTo => 'सेक्शन में ले जाएँ';
+
+  @override
+  String get foldersSectionMoveTitle => 'इसमें ले जाएँ';
+
+  @override
+  String foldersSectionMoved(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count वॉलपेपर $name में ले जाए गए।',
+      one: '1 वॉलपेपर $name में ले जाया गया।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionSelect => 'वॉलपेपर चुनें';
+
+  @override
+  String foldersSectionSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count चुने गए',
+      one: '1 चुना गया',
+      zero: 'वॉलपेपर चुनने के लिए उन पर टैप करें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionsFull(int max) {
+    return 'एक फ़ोल्डर में अधिकतम $max सेक्शन हो सकते हैं।';
+  }
+
+  @override
+  String get foldersSectionEmpty => 'अभी कोई वॉलपेपर नहीं है।';
+
+  @override
+  String get foldersSectionEmptyHint => 'वॉलपेपर सेक्शन के नाम पर खींचें, या “सेक्शन में ले जाएँ” इस्तेमाल करें।';
+
+  @override
+  String get foldersSectionSuggest => 'सेक्शन सुझाएँ';
+
+  @override
+  String get foldersSuggestTitle => 'सुझाए गए सेक्शन';
+
+  @override
+  String get foldersSuggestBody => 'आपके बिना सेक्शन वाले वॉलपेपर के समूह। जो रखना हो, रखें।';
+
+  @override
+  String get foldersSuggestByMood => 'मूड';
+
+  @override
+  String get foldersSuggestByCategory => 'श्रेणी';
+
+  @override
+  String get foldersSuggestByColour => 'रंग';
+
+  @override
+  String foldersSuggestJoins(String count) {
+    return '$count. इस नाम वाले आपके सेक्शन में जाएगा।';
+  }
+
+  @override
+  String foldersSuggestAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count सेक्शन जोड़ें',
+      one: '1 सेक्शन जोड़ें',
+      zero: 'सेक्शन जोड़ें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSort(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count वॉलपेपर सॉर्ट करें',
+      one: '1 वॉलपेपर सॉर्ट करें',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSorted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count वॉलपेपर सॉर्ट हो गए।',
+      one: '1 वॉलपेपर सॉर्ट हो गया।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSuggestEmptyTitle => 'सुझाने के लिए कोई समूह नहीं';
+
+  @override
+  String get foldersSuggestEmptyBody =>
+      'समूह बनने के लिए, बिना सेक्शन वाले एक ही मूड, श्रेणी या रंग के कम से कम 2 Prism वॉलपेपर चाहिए।';
+
+  @override
+  String get foldersSuggestError => 'सुझाव लोड नहीं हो सके';
 }

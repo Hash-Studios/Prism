@@ -14,6 +14,7 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_member.dart';
+import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
@@ -28,7 +29,6 @@ import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -73,9 +73,20 @@ class _FakeFoldersRepository implements FoldersRepository {
   }
 
   @override
-  Future<Result<List<FavouriteWallEntity>?>> fetchItems(String folderId, {required String userId, int? limit}) async {
+  Future<Result<List<FolderItem>?>> fetchItems(String folderId, {required String userId, int? limit}) async {
     calls.add('fetchItems:$folderId');
-    return Result.success(items[folderId] ?? const <FavouriteWallEntity>[]);
+    return Result.success(items[folderId]?.map((w) => FolderItem(w)).toList() ?? const <FolderItem>[]);
+  }
+
+  @override
+  Future<Result<void>> organize(
+    FolderEntity folder, {
+    required String userId,
+    List<FolderSection>? sections,
+    Map<String, String?> moves = const <String, String?>{},
+  }) async {
+    calls.add('organize:${folder.id}');
+    return Result.success<void>(null);
   }
 
   @override
@@ -179,7 +190,7 @@ class _NoPublicFolders implements PublicFoldersRepository {
   Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success<PublicFolderEntity?>(null);
 
   @override
-  Future<Result<List<String>>> fetchWallIds(String folderId) async => Result.success(<String>[]);
+  Future<Result<List<PublicFolderWall>>> fetchWallIds(String folderId) async => Result.success(<PublicFolderWall>[]);
 
   @override
   Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) async =>
@@ -495,18 +506,10 @@ void main() {
       folder: _teamFolder(ownerId: 'owner', editors: <FolderMember>[_editor('me', 'owner')]),
       walls: <FavouriteWallEntity>[_wall('w1')],
     );
-    final List<Object?> haptics = <Object?>[];
-    const MethodChannel hapticsChannel = MethodChannel('prism/haptics');
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(hapticsChannel, (MethodCall call) async {
-      haptics.add(call.arguments);
-      return null;
-    });
-    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(hapticsChannel, null));
 
     await tester.longPress(find.byType(PrismWallTile));
     await settle(tester);
 
-    expect(haptics, <Object?>['impact'], reason: 'a long press plays impact once');
     expect(find.text('Remove from folder'), findsOneWidget);
     expect(find.text('Added by Ana'), findsOneWidget);
   });

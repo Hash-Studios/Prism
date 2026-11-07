@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_member.dart';
+import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 
 const int folderNameMaxLength = 50;
 const int folderMaxCovers = 4;
@@ -19,6 +20,7 @@ class FolderEntity {
     required this.covers,
     this.isPublic = false,
     this.editors = const <FolderMember>[],
+    this.sections = const <FolderSection>[],
   });
 
   final String id;
@@ -37,6 +39,9 @@ class FolderEntity {
   /// The people the owner invited, oldest first. Only the server sets them.
   final List<FolderMember> editors;
 
+  /// The named parts of the folder, in order. The owner and the editors write them.
+  final List<FolderSection> sections;
+
   bool isOwnedBy(String uid) => uid.isNotEmpty && uid == ownerId;
 
   /// Owner or editor. Null for anyone else.
@@ -52,18 +57,25 @@ class FolderEntity {
     ...editors,
   ];
 
-  FolderEntity copyWith({String? name, DateTime? updatedAt, int? itemCount, List<String>? covers, bool? isPublic}) =>
-      FolderEntity(
-        id: id,
-        ownerId: ownerId,
-        name: name ?? this.name,
-        createdAt: createdAt,
-        updatedAt: updatedAt ?? this.updatedAt,
-        itemCount: itemCount ?? this.itemCount,
-        covers: covers ?? this.covers,
-        isPublic: isPublic ?? this.isPublic,
-        editors: editors,
-      );
+  FolderEntity copyWith({
+    String? name,
+    DateTime? updatedAt,
+    int? itemCount,
+    List<String>? covers,
+    bool? isPublic,
+    List<FolderSection>? sections,
+  }) => FolderEntity(
+    id: id,
+    ownerId: ownerId,
+    name: name ?? this.name,
+    createdAt: createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    itemCount: itemCount ?? this.itemCount,
+    covers: covers ?? this.covers,
+    isPublic: isPublic ?? this.isPublic,
+    editors: editors,
+    sections: sections ?? this.sections,
+  );
 
   FolderEntity withItemAdded(String thumbnailUrl, DateTime at) => copyWith(
     updatedAt: at,

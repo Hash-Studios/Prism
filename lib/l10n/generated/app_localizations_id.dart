@@ -14730,4 +14730,201 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get gestureHintSwipeForSimilar => 'Geser ke atas untuk wallpaper serupa';
+
+  @override
+  String get foldersSectionAdd => 'Tambah bagian';
+
+  @override
+  String get foldersSectionNewTitle => 'Bagian baru';
+
+  @override
+  String get foldersSectionNameHint => 'Misalnya, Layar kunci';
+
+  @override
+  String get foldersSectionRenameTitle => 'Ganti nama bagian';
+
+  @override
+  String get foldersSectionDelete => 'Hapus bagian';
+
+  @override
+  String foldersSectionDeleteTitle(String name) {
+    return 'Hapus $name?';
+  }
+
+  @override
+  String foldersSectionDeleteMessage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count wallpaper-nya pindah ke Belum disortir.',
+      one: 'Wallpaper-nya pindah ke Belum disortir.',
+      zero: 'Bagian ini kosong.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionUnsorted => 'Belum disortir';
+
+  @override
+  String get foldersSectionReorder => 'Atur ulang bagian';
+
+  @override
+  String foldersSectionDragHandle(String name) {
+    return 'Seret untuk memindahkan $name';
+  }
+
+  @override
+  String foldersSectionWallCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count wallpaper',
+      one: '1 wallpaper',
+      zero: 'Tidak ada wallpaper',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionHeaderLabel(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count wallpaper',
+      one: '1 wallpaper',
+      zero: 'tidak ada wallpaper',
+    );
+    return '$name, $_temp0';
+  }
+
+  @override
+  String foldersSectionJumpTo(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count wallpaper',
+      one: '1 wallpaper',
+      zero: 'tidak ada wallpaper',
+    );
+    return 'Buka $name, $_temp0';
+  }
+
+  @override
+  String foldersSectionOptions(String name) {
+    return 'Opsi lain untuk $name';
+  }
+
+  @override
+  String get foldersSectionSaveAll => 'Simpan bagian';
+
+  @override
+  String get foldersSectionMoveTo => 'Pindahkan ke bagian';
+
+  @override
+  String get foldersSectionMoveTitle => 'Pindahkan ke';
+
+  @override
+  String foldersSectionMoved(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count wallpaper dipindahkan ke $name.',
+      one: '1 wallpaper dipindahkan ke $name.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionSelect => 'Pilih wallpaper';
+
+  @override
+  String foldersSectionSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count dipilih',
+      one: '1 dipilih',
+      zero: 'Ketuk wallpaper untuk memilihnya',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionsFull(int max) {
+    return 'Folder dapat memiliki hingga $max bagian.';
+  }
+
+  @override
+  String get foldersSectionEmpty => 'Belum ada wallpaper.';
+
+  @override
+  String get foldersSectionEmptyHint => 'Seret wallpaper ke nama bagian, atau gunakan Pindahkan ke bagian.';
+
+  @override
+  String get foldersSectionSuggest => 'Sarankan bagian';
+
+  @override
+  String get foldersSuggestTitle => 'Bagian yang disarankan';
+
+  @override
+  String get foldersSuggestBody => 'Kelompok wallpaper Belum disortir Anda. Simpan yang Anda mau.';
+
+  @override
+  String get foldersSuggestByMood => 'Suasana';
+
+  @override
+  String get foldersSuggestByCategory => 'Kategori';
+
+  @override
+  String get foldersSuggestByColour => 'Warna';
+
+  @override
+  String foldersSuggestJoins(String count) {
+    return '$count. Masuk ke bagian Anda dengan nama ini.';
+  }
+
+  @override
+  String foldersSuggestAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Tambah $count bagian',
+      one: 'Tambah 1 bagian',
+      zero: 'Tambah bagian',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSort(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Sortir $count wallpaper',
+      one: 'Sortir 1 wallpaper',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSorted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count wallpaper sudah disortir.',
+      one: '1 wallpaper sudah disortir.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSuggestEmptyTitle => 'Tidak ada kelompok untuk disarankan';
+
+  @override
+  String get foldersSuggestEmptyBody =>
+      'Kelompok perlu 2 wallpaper Prism atau lebih di Belum disortir dengan suasana, kategori, atau warna yang sama.';
+
+  @override
+  String get foldersSuggestError => 'Saran tidak dapat dimuat';
 }
