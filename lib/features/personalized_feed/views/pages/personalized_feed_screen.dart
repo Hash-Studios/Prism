@@ -62,11 +62,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// twelfth.
 const List<int> _moodRowGridRows = <int>[4, 12];
 
-/// How long a tab change takes. The old content leaves and the new content arrives at the same time.
-const Duration _tabSwitchDuration = Duration(milliseconds: 220);
+/// How long a tab change takes. The old content leaves and the new content arrives at the same time. Long enough that
+/// the direction reads: a strong ease-out over a shorter span finishes in a frame or two.
+const Duration _tabSwitchDuration = Duration(milliseconds: 320);
 
 /// How far the old and the new tab's content move sideways during a tab change.
-const double _tabShift = 24;
+const double _tabShift = 48;
 
 /// Grid rows before the "Pick up where you left off" row.
 const int _pickUpGridRows = 2;
@@ -144,7 +145,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   /// picture of the old content slides away from it and fades out on top.
   late final AnimationController _tabSwitch = AnimationController(vsync: this, duration: _tabSwitchDuration, value: 1)
     ..addStatusListener(_onTabSwitchStatus);
-  late final CurvedAnimation _tabSwitchCurve = CurvedAnimation(parent: _tabSwitch, curve: PrismCurves.enter);
+  late final CurvedAnimation _tabSwitchCurve = CurvedAnimation(parent: _tabSwitch, curve: Curves.easeOutCubic);
 
   /// +1 when the new tab is to the right of the old one, -1 when it is to the left.
   double _tabDirection = 1;

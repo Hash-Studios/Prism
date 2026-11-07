@@ -810,7 +810,7 @@ void main() {
       expect(incomingOpacity(), inExclusiveRange(0, 1));
       expect(outgoingOpacity(), inExclusiveRange(0, 1));
       expect(incomingOpacity() + outgoingOpacity(), closeTo(1, 0.001), reason: 'no near-blank frame');
-      expect(outgoingDx(), inInclusiveRange(-24, 0), reason: 'Latest is to the right, so the old content goes left');
+      expect(outgoingDx(), inInclusiveRange(-48, 0), reason: 'Latest is to the right, so the old content goes left');
       lastDx.add(outgoingDx());
     }
     expect(lastDx.last, lessThan(lastDx.first));
@@ -821,7 +821,7 @@ void main() {
     expect(outgoing, findsNothing);
     expect(incomingOpacity(), 1);
     final double restX = tester.getTopLeft(latestTile()).dx;
-    expect(movingX - restX, inExclusiveRange(0, 24), reason: 'the new content came in from the right');
+    expect(movingX - restX, inExclusiveRange(0, 48), reason: 'the new content came in from the right');
 
     await tapTab(tester, 'Following');
     await tester.pump();
@@ -830,12 +830,18 @@ void main() {
     await _settle(tester);
   });
 
-  testWidgets('a tab change takes about 220 ms', (tester) async {
+  testWidgets('a tab change takes about 320 ms and is still visibly moving halfway through', (tester) async {
     await pumpScreen(tester);
     await tapTab(tester, 'Latest');
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
-    expect(find.byKey(const ValueKey<String>('home-tab-outgoing')), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 160));
+    final Finder outgoing = find.byKey(const ValueKey<String>('home-tab-outgoing'));
+    expect(outgoing, findsOneWidget);
+    // Halfway, the slide must still be under way: a curve that front-loads nearly all of it reads as a cut on a
+    // 60 Hz screen.
+    expect(tester.widget<Transform>(outgoing).transform.getTranslation().x.abs(), lessThan(46));
+    await tester.pump(const Duration(milliseconds: 140));
+    expect(outgoing, findsOneWidget);
     await tester.pump(const Duration(milliseconds: 30));
     await tester.pump();
     expect(find.byKey(const ValueKey<String>('home-tab-outgoing')), findsNothing);
