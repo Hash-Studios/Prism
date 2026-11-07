@@ -5,6 +5,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.HttpURLConnection
+import java.net.MalformedURLException
 import java.net.URL
 
 /** A transfer failure that a second request cannot fix. */
@@ -31,6 +32,7 @@ internal object PrismImageTransfer {
         var url = URL(link)
         var requestHeaders = headers
         repeat(MAX_REDIRECTS + 1) { redirects ->
+            if (Thread.currentThread().isInterrupted) throw PermanentTransferException("Transfer cancelled")
             require(url.protocol == "http" || url.protocol == HTTPS) { "Unsupported URL protocol" }
             require(url.host.isNotBlank() && url.userInfo == null) { "Invalid download URL" }
             val connection = url.openConnection() as HttpURLConnection
@@ -49,7 +51,12 @@ internal object PrismImageTransfer {
                     return connection
                 }
                 if (redirects == MAX_REDIRECTS) throw PermanentTransferException("Too many download redirects")
-                val next = URL(url, connection.getHeaderField("Location") ?: throw PermanentTransferException("Missing redirect location"))
+                val location = connection.getHeaderField("Location") ?: throw PermanentTransferException("Missing redirect location")
+                val next = try {
+                    URL(url, location)
+                } catch (_: MalformedURLException) {
+                    throw PermanentTransferException("Invalid redirect location")
+                }
                 if (url.protocol == HTTPS && next.protocol != HTTPS) throw PermanentTransferException("Insecure download redirect")
                 if (url.host != next.host || url.port != next.port || url.protocol != next.protocol) requestHeaders = emptyMap()
                 url = next

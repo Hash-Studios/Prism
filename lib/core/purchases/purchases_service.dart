@@ -618,11 +618,7 @@ class PurchasesService {
       try {
         await Purchases.logOut();
       } on PlatformException catch (e) {
-        final String details = e.details?.toString().toLowerCase() ?? '';
-        final String message = e.message?.toLowerCase() ?? '';
-        if (e.code != '22' &&
-            !details.contains('logout_called_with_anonymous_user') &&
-            !message.contains('anonymous')) {
+        if (e.code != PurchasesErrorCode.logOutWithAnonymousUserError.index.toString()) {
           rethrow;
         }
         logger.w('Skipping RevenueCat logout for anonymous user.');

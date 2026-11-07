@@ -351,6 +351,7 @@ class PaywallOrchestrator {
       offering: offering,
       onPurchaseStarted: (package) => selectedPackage = package,
       onPurchaseError: (PurchasesError error) => lastPurchaseError = error.code,
+      onRestoreError: (_) => lastPurchaseError = null,
       onPurchaseCompleted: (customerInfo, transaction) =>
           _recordVerifiedPurchase(transaction, selectedPackage, customerInfo, source: source, placement: placement),
       onRestoreCompleted: (customerInfo) {

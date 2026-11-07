@@ -365,6 +365,26 @@ void main() {
       expect(app_state.prismUser.premium, isFalse);
     });
 
+    test('a logout failure mentioning anonymous does not permit restore on the old account', () async {
+      int restoreCalls = 0;
+      logout = () async =>
+          throw PlatformException(code: '10', message: 'Network error while creating an anonymous user');
+      restore = () async {
+        restoreCalls++;
+        return _proCustomerJson;
+      };
+      final service = buildService();
+      await service.ensureConfigured('u1');
+      app_state.prismUser = profileUser(id: '', loggedIn: false);
+
+      await expectLater(service.logOut(), throwsA(isA<PlatformException>()));
+      await expectLater(service.restore(), throwsA(isA<PlatformException>()));
+
+      expect(restoreCalls, 0);
+      expect(app_state.prismUser.premium, isFalse);
+      expect(syncCalls, 0);
+    });
+
     test('a guest restore after logout cannot grant the account that signs in during restore', () async {
       final restoreReply = Completer<Object?>();
       restore = () => restoreReply.future;

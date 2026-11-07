@@ -89,6 +89,45 @@ internal class PrismImageTransferTest {
     }
 
     @Test
+    fun `a malformed redirect is not requested again`() {
+        val link = serve { _, output ->
+            output.write("HTTP/1.1 302 Found\r\nLocation: http://[invalid\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".toByteArray())
+        }
+
+        assertThrows(PermanentTransferException::class.java) { PrismImageTransfer.download(link, file) }
+        assertEquals(1, requests.get())
+    }
+
+    @Test
+    fun `a cancelled transfer does not open a connection`() {
+        val link = serve { _, output ->
+            output.head("200 OK", body.size)
+            output.write(body)
+        }
+        Thread.currentThread().interrupt()
+        try {
+            assertThrows(PermanentTransferException::class.java) { PrismImageTransfer.download(link, file) }
+            assertEquals(0, requests.get())
+        } finally {
+            Thread.interrupted()
+        }
+    }
+
+    @Test
+    fun `a retry truncates a longer partial response`() {
+        val replacement = body.copyOf(50)
+        val link = serve { attempt, output ->
+            output.head("200 OK", if (attempt == 1) body.size else replacement.size)
+            output.write(if (attempt == 1) body.copyOf(100) else replacement)
+        }
+
+        PrismImageTransfer.download(link, file)
+
+        assertEquals(2, requests.get())
+        assertArrayEquals(replacement, file.readBytes())
+    }
+
+    @Test
     fun `two dropped responses fail after one retry`() {
         val link = serve { _, output ->
             output.head("200 OK", body.size)

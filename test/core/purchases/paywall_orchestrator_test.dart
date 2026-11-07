@@ -85,6 +85,7 @@ void main() {
       bool purchaseThrows = false,
       PlatformException? purchaseException,
       int? paywallPurchaseErrorCode,
+      List<MethodCall> laterPaywallEvents = const <MethodCall>[],
       String legacyOffering = 'v3_default',
       Map<String, Object?>? annualProduct,
     }) async {
@@ -231,6 +232,9 @@ void main() {
               },
             });
           }
+        }
+        for (final event in laterPaywallEvents) {
+          await emit(event.method, event.arguments);
         }
         return present();
       });
@@ -684,11 +688,34 @@ void main() {
         expect(result, PaywallResultValue.paymentPending);
         expect(toasts, <String>['Your payment is pending. Pro unlocks when the payment goes through.']);
         expect(syncCalls, 0);
-        expect(
-          fakeAnalytics.events.whereType<PaywallResultEvent>().map((e) => e.result),
-          <PaywallResultValue>[PaywallResultValue.paymentPending],
-        );
+        expect(fakeAnalytics.events.whereType<PaywallResultEvent>().map((e) => e.result), <PaywallResultValue>[
+          PaywallResultValue.paymentPending,
+        ]);
       });
+
+      for (final method in <String>['onPurchaseError', 'onRestoreError']) {
+        test('a later $method replaces a pending error in the same paywall', () async {
+          await installPaywall(
+            present: () async => 'ERROR',
+            paywallPurchaseErrorCode: PurchasesErrorCode.paymentPendingError.index,
+            laterPaywallEvents: <MethodCall>[
+              MethodCall(method, <String, Object?>{
+                'code': PurchasesErrorCode.storeProblemError.index,
+                'message': 'The store is unavailable.',
+                'underlyingErrorMessage': '',
+                'readableErrorCode': 'STORE_PROBLEM_ERROR',
+              }),
+            ],
+          );
+
+          final result = await orchestrator.present(placement: PaywallPlacement.mainUpsell, source: 'test');
+          await AnalyticsRuntime.instance.flush();
+
+          expect(result, PaywallResultValue.error);
+          expect(toasts, isEmpty);
+          expect(fakeAnalytics.events.whereType<PaywallResultEvent>().single.result, PaywallResultValue.error);
+        });
+      }
 
       test('another purchase error stays an error with no pending message', () async {
         await installPaywall(
