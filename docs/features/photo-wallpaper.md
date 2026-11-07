@@ -103,7 +103,7 @@ The app saves pending jobs on the device (`ai.photoWallPendingJob`: user id, req
 
 An uncertain job keeps its request id and cannot be replaced by a different photo or target. Retry looks up that request without uploading the photo again. Clears match both the account and request id, so an old completion cannot remove another job. Storage failures keep recovery available.
 
-When the page opens and finds a saved job of the signed-in user, it calls `getPhotoWallpaper(requestId)`. That callable never charges or runs anything. Signing out or switching accounts clears the page's photo and result actions. A late response from an earlier session cannot restore them, even after switching back to that account.
+When the page opens and finds a saved job of the signed-in user, it calls `getPhotoWallpaper(requestId)`. That callable never charges or runs a job. Signing out or switching accounts clears the page's photo and result actions. A late response from an earlier session cannot restore them, even after switching back to that account.
 
 - A finished job returns its result. The page shows the wallpaper alone (the photo is not kept, so there is no before and after) with Set, Download and Save to folder.
 - A failed job returns its refund state. The page shows the error and "Choose a photo".
@@ -111,7 +111,7 @@ When the page opens and finds a saved job of the signed-in user, it calls `getPh
 - A job that stopped while it ran (older than 10 minutes) is ended and refunded, the same as a replay.
 - An unknown id, or another user's id, returns `unknown`, and the page clears the saved job.
 
-Known limitation: `unknown` means the server has no job record at lookup time. It does not prove an earlier create request cannot still claim and charge later. Clearing that slot can therefore lose recovery of a delayed create request. Closing this race needs an explicit product decision about retaining unknown requests or changing the server's lookup/cancellation contract.
+`unknown` is final. When the lookup finds no job, it writes a closed record for that request id (user id and request id only) in a transaction. A create for the same request id that reaches its claim later refuses with `request_closed` and charges nothing, so the app can safely clear the saved job.
 
 ### Content filter
 

@@ -26,7 +26,8 @@ export interface PhotoJob {
   model: string;
   cost: number;
   chargeTxId: string;
-  state: "running" | "succeeded" | "failed";
+  /** "closed": a lookup found no job, so a create that arrives later must not charge. */
+  state: "running" | "succeeded" | "failed" | "closed";
   startedAt: admin.firestore.Timestamp;
   width: number;
   height: number;
@@ -381,6 +382,7 @@ async function claimJob(uid: string, requestId: string, mode: PhotoJobMode, targ
     if (jobSnap.exists) {
       const job = jobSnap.data() as PhotoJob;
       if (job.userId !== uid) throw new HttpsError("permission-denied", "This job belongs to another account.");
+      if (job.state === "closed") throw new HttpsError("failed-precondition", "request_closed");
       if (job.state === "running" && Date.now() - job.startedAt.toMillis() < STALE_RUNNING_MS) {
         throw new HttpsError("aborted", "in_progress");
       }
@@ -582,8 +584,16 @@ export const getPhotoWallpaper = onCall({region: CALLABLE_REGIONS, timeoutSecond
     const requestId = (request.data as Record<string, unknown> | undefined)?.requestId;
     if (!isValidRequestId(requestId)) throw bad("requestId is invalid.");
     const jobId = `pj_${uid}_${requestId}`;
-    const job = (await db.collection(PHOTO_JOBS).doc(jobId).get()).data() as PhotoJob | undefined;
-    if (!job || job.userId !== uid) return {state: "unknown"};
+    const jobRef = db.collection(PHOTO_JOBS).doc(jobId);
+    // No job yet: close the request id in a transaction, so "unknown" is final. A create still on its way then finds
+    // the closed record at its claim and charges nothing.
+    const job = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(jobRef);
+      if (snap.exists) return snap.data() as PhotoJob;
+      tx.set(jobRef, {userId: uid, requestId, state: "closed", closedAt: admin.firestore.Timestamp.now()});
+      return null;
+    });
+    if (!job || job.userId !== uid || job.state === "closed") return {state: "unknown"};
     if (job.state !== "running") return jobResult(jobId, job);
     if (Date.now() - job.startedAt.toMillis() < STALE_RUNNING_MS) return {jobId, state: "running"};
     return jobResult(jobId, (await failPhotoJob(jobId, job.startedAt.toMillis(), "timeout")) ?? job);

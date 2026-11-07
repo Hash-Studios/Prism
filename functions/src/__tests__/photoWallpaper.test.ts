@@ -1219,7 +1219,7 @@ test("lookup after an app restart returns a finished job, and never charges", as
   assert.equal(coinTxCount(store), 0);
 });
 
-test("an unknown lookup does not prevent an already admitted create from charging later", async (t) => {
+test("an unknown lookup closes the request, so a create that arrives later charges nothing", async (t) => {
   const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
   const deps = mockDeps(t);
   const transaction = db.runTransaction.bind(db);
@@ -1244,15 +1244,16 @@ test("an unknown lookup does not prevent an already admitted create from chargin
   await entered;
   try {
     assert.deepEqual(await lookup({requestId: "req-00000001"}), {state: "unknown"});
-    assert.equal(store.has(JOB), false);
+    assert.equal(store.get(JOB)?.state, "closed");
     assert.equal(coinTxCount(store), 0);
   } finally {
     release();
   }
-  assert.equal((await creating).state, "succeeded");
-  assert.equal(store.get("usersv2/u1")?.coins, 125);
-  assert.equal(store.get(CHARGE)?.delta, -75);
-  assert.equal(deps.fal().length, 1);
+  await assert.rejects(creating, {code: "failed-precondition", message: "request_closed"});
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(coinTxCount(store), 0);
+  assert.equal(deps.fal().length, 0);
+  assert.deepEqual(await lookup({requestId: "req-00000001"}), {state: "unknown"});
 });
 
 test("lookup reports a running job as running, and ends a stale one with a refund", async (t) => {
