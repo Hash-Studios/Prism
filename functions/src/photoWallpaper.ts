@@ -569,6 +569,26 @@ async function sweepCleanupQueue(field: "cleanupPending" | "falCleanupPending", 
   if (processed === page.size && page.size < CLEANUP_BATCH_SIZE) await progress.set({[field]: null}, {merge: true});
 }
 
+/**
+ * The state of one of the caller's jobs, for an app that restarted while it ran. Never charges or runs anything. A job
+ * that stopped while it ran is ended and refunded, the same as a replay of its requestId.
+ */
+export const getPhotoWallpaper = onCall({region: CALLABLE_REGIONS, timeoutSeconds: 30},
+  async (request): Promise<PhotoJobResult | {jobId: string; state: "running"} | {state: "unknown"}> => {
+    const uid = request.auth?.uid;
+    if (!uid || request.auth?.token.firebase?.sign_in_provider === "anonymous") {
+      throw new HttpsError("unauthenticated", "Sign in to see your photo wallpaper.");
+    }
+    const requestId = (request.data as Record<string, unknown> | undefined)?.requestId;
+    if (!isValidRequestId(requestId)) throw bad("requestId is invalid.");
+    const jobId = `pj_${uid}_${requestId}`;
+    const job = (await db.collection(PHOTO_JOBS).doc(jobId).get()).data() as PhotoJob | undefined;
+    if (!job || job.userId !== uid) return {state: "unknown"};
+    if (job.state !== "running") return jobResult(jobId, job);
+    if (Date.now() - job.startedAt.toMillis() < STALE_RUNNING_MS) return {jobId, state: "running"};
+    return jobResult(jobId, (await failPhotoJob(jobId, job.startedAt.toMillis(), "timeout")) ?? job);
+  });
+
 /** Refunds jobs that stopped while they ran, for example when the instance died. */
 export async function sweepStalePhotoJobsOnce(nowMs = Date.now()): Promise<number> {
   let refunded = 0;

@@ -97,6 +97,16 @@ The callable has a 180-second request timeout; this does not prove its handler s
 
 Refunds run before cleanup. Each cleanup queue processes at most 10 records per sweep and stops starting new attempts after its own 20-second budget. The document-ID cursor is saved after every attempt in `photoJobBudget/cleanup`, even when deletion fails, and resets at the queue's end. Slow failures at the front therefore cannot starve later records or the other queue. The scheduled function has a 180-second timeout to allow active attempts to finish.
 
+### After an app restart
+
+The app saves the running job on the device (`ai.photoWallPendingJob`: user id, request id, mode, target) before it calls the server, and clears it when the outcome is final. When the page opens and finds a saved job of the signed-in user, it calls `getPhotoWallpaper(requestId)`. That callable never charges or runs anything:
+
+- A finished job returns its result. The page shows the wallpaper alone (the photo is not kept, so there is no before and after) with Set, Download and Save to folder.
+- A failed job returns its refund state. The page shows the error and "Choose a photo".
+- A running job returns `running`. The page says "Still working on your last photo." and Try again asks again.
+- A job that stopped while it ran (older than 10 minutes) is ended and refunded, the same as a replay.
+- An unknown id, or another user's id, returns `unknown`, and the page clears the saved job.
+
 ### Content filter
 
 SafeSearch blocks an image when `adult` or `violence` is LIKELY or more, or `racy` is VERY_LIKELY. A missing or unknown result also blocks it. A blocked input gives `unsafe_input`. A blocked result gives `unsafe_output`. Both refund the coins. The two Vision checks are required regardless of any model-side filtering.
@@ -133,13 +143,12 @@ The app reads exact source dimensions from decoder metadata; its smaller preview
 - The results do not show in the "Recent" strip of the AI tab. The result shows on the page after the job. "Save to folder" keeps it.
 - A desktop version is one fixed size, 2560 x 1600.
 - The models and prices are from the fal model pages. They were not checked against the Prism fal account before the change.
-- The app keeps its pending request ID only on the page. After an app restart it cannot recover a completed photo job. Durable result recovery needs a product decision.
 
 ## Deploy order
 
 Do not deploy without the owner.
 
-1. Deploy functions: `createPhotoWallpaper` and `sweepStalePhotoJobs`. Both need the secrets `FAL_API_KEY`, `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`, and the R2 environment values that `r2Storage.ts` reads.
+1. Deploy functions: `createPhotoWallpaper`, `getPhotoWallpaper` and `sweepStalePhotoJobs`. `createPhotoWallpaper` and `sweepStalePhotoJobs` need the secrets `FAL_API_KEY`, `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`, and the R2 environment values that `r2Storage.ts` reads.
 2. Optional: set `spend.photoExtend`, `spend.photoUpscale` and `proDiscountActions` in `economyConfig/current`. Without them, the defaults apply.
 3. Release the app.
 

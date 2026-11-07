@@ -14,7 +14,6 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/photo_wallpaper_widget
 import 'package:Prism/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
@@ -48,6 +47,13 @@ class _Harness {
   /// Replaces the default success reply for the next job when set.
   Future<Object?> Function(Map<String, Object?> payload)? onCall;
 
+  /// The job lookup after a restart. Unknown by default.
+  Future<Object?> Function(Map<String, Object?> payload)? onLookup;
+  int lookups = 0;
+
+  /// The pending job saved on the device, as the repository writes it.
+  String? pendingJson;
+
   late final PhotoWallpaperRepository repository = PhotoWallpaperRepository(
     () async {
       picks++;
@@ -60,6 +66,12 @@ class _Harness {
       final Future<Object?> Function(Map<String, Object?> payload)? handler = onCall;
       return handler == null ? Future<Object?>.value(_successMap) : handler(payload);
     },
+    (Map<String, Object?> payload) {
+      lookups++;
+      return onLookup?.call(payload) ?? Future<Object?>.value(<String, Object?>{'state': 'unknown'});
+    },
+    () async => pendingJson,
+    (String? json) async => pendingJson = json,
   );
 }
 
@@ -487,5 +499,89 @@ void main() {
     expect(compare.hasAction(SemanticsAction.increase), isTrue);
     expect(compare.hasAction(SemanticsAction.decrease), isTrue);
     handle.dispose();
+  });
+
+  group('recovery after the app closed during a job', () {
+    String pending(String userId) => jsonEncode(
+      const PendingPhotoJob(
+        userId: 'user-1',
+        requestId: 'req-00000042',
+        mode: PhotoJobMode.extend,
+        target: PhotoJobTarget.phone,
+      ).toJson()..['userId'] = userId,
+    );
+
+    testWidgets('running a job saves it on the device first and clears it when the job ends', (tester) async {
+      final _Harness harness = _Harness();
+      String? savedDuringCall;
+      harness.onCall = (Map<String, Object?> payload) async {
+        savedDuringCall = harness.pendingJson;
+        return _successMap;
+      };
+      await _pumpPage(tester, harness);
+      await _pickPhoto(tester);
+      await tester.tap(find.byKey(_runKey));
+      await _settle(tester);
+
+      final PendingPhotoJob? saved = PendingPhotoJob.fromJson(jsonDecode(savedDuringCall!));
+      expect(saved?.requestId, harness.payloads.single['requestId']);
+      expect(saved?.mode, PhotoJobMode.extend);
+      expect(harness.pendingJson, isNull);
+    });
+
+    testWidgets('a job that finished while the app was closed shows its result, with no new charge', (tester) async {
+      final _Harness harness = _Harness()..pendingJson = pending('user-1');
+      harness.onLookup = (Map<String, Object?> payload) async {
+        expect(payload['requestId'], 'req-00000042');
+        return _successMap;
+      };
+      await _pumpPage(tester, harness);
+      await _settle(tester);
+
+      expect(harness.lookups, 1);
+      expect(harness.payloads, isEmpty);
+      expect(find.byKey(_compareKey), findsNothing);
+      expect(find.text('Set as wallpaper'), findsOneWidget);
+      expect(find.text('Use another photo'), findsOneWidget);
+      expect(harness.pendingJson, isNull);
+    });
+
+    testWidgets('a job that failed while the app was closed shows the refund and offers a new photo', (tester) async {
+      final _Harness harness = _Harness()..pendingJson = pending('user-1');
+      harness.onLookup = (Map<String, Object?> payload) async => <String, Object?>{
+        'state': 'failed',
+        'reason': 'timeout',
+        'refunded': true,
+        'cost': 75,
+      };
+      await _pumpPage(tester, harness);
+      await _settle(tester);
+
+      expect(find.textContaining('Your 75 coins were returned.'), findsOneWidget);
+      expect(find.text('Choose a photo'), findsOneWidget);
+      expect(harness.pendingJson, isNull);
+    });
+
+    testWidgets('a job still running keeps its saved id, so Try again asks the server again', (tester) async {
+      final _Harness harness = _Harness()..pendingJson = pending('user-1');
+      harness.onLookup = (Map<String, Object?> payload) async => <String, Object?>{'jobId': 'x', 'state': 'running'};
+      await _pumpPage(tester, harness);
+      await _settle(tester);
+
+      expect(find.text('Still working on your last photo.'), findsOneWidget);
+      expect(harness.pendingJson, isNotNull);
+      await tester.tap(find.text('Try again'));
+      await _settle(tester);
+      expect(harness.lookups, 2);
+    });
+
+    testWidgets("another account's saved job is ignored", (tester) async {
+      final _Harness harness = _Harness()..pendingJson = pending('someone-else');
+      await _pumpPage(tester, harness);
+      await _settle(tester);
+
+      expect(harness.lookups, 0);
+      expect(find.text('Choose a photo'), findsOneWidget);
+    });
   });
 }

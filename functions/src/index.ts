@@ -19,7 +19,7 @@ export {onWallModerate} from "./wallModeration";
 export {refreshCollections} from "./wallCollections";
 export {categorizeWallpaper} from "./categorizeWallpaper";
 export {photoSearchLabels} from "./photoSearchLabels";
-export {createPhotoWallpaper, sweepStalePhotoJobs} from "./photoWallpaper";
+export {createPhotoWallpaper, getPhotoWallpaper, sweepStalePhotoJobs} from "./photoWallpaper";
 export {onCampaignNotificationRequested} from "./onCampaignNotificationRequested";
 export {onNotificationCreated} from "./onNotificationCreated";
 export {recordWallpaperView, recordSetupView} from "./viewStats";

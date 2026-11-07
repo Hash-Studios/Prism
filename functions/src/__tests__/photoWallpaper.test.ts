@@ -18,6 +18,7 @@ import {
   planPhotoJob,
   sweepStalePhotoJobsOnce,
   PHOTO_FAL_CLEANUP,
+  getPhotoWallpaper,
   PHOTO_JOB_BUDGET,
   removePhotoJobsForAccount,
 } from "../photoWallpaper";
@@ -1203,4 +1204,42 @@ test("deletion during an admitted storage write waits for the worker and can ret
   await removePhotoJobsForAccount("u1");
   assert.equal(store.get(JOB), undefined);
   assert.ok(key.startsWith("photo-walls/"));
+});
+
+const lookup = (data: Record<string, unknown>, auth: unknown = USER) =>
+  getPhotoWallpaper.run({auth, data} as unknown as Parameters<typeof getPhotoWallpaper.run>[0]);
+
+test("lookup after an app restart returns a finished job, and never charges", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 125}, [JOB]: {...runningJob(admin.firestore.Timestamp.now()),
+    state: "succeeded", imageUrl: OUT_URL, watermarked: true}});
+  const result = await lookup({requestId: "req-00000001"}) as Succeeded;
+  assert.equal(result.state, "succeeded");
+  assert.equal(result.imageUrl, OUT_URL);
+  assert.equal(store.get("usersv2/u1")?.coins, 125);
+  assert.equal(coinTxCount(store), 0);
+});
+
+test("lookup reports a running job as running, and ends a stale one with a refund", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 125}, [JOB]: runningJob(admin.firestore.Timestamp.now())});
+  assert.deepEqual(await lookup({requestId: "req-00000001"}), {jobId: JOB_ID, state: "running"});
+  store.set(JOB, runningJob(admin.firestore.Timestamp.fromMillis(Date.now() - 11 * MINUTE)));
+  const failed = await lookup({requestId: "req-00000001"}) as Failed;
+  assert.equal(failed.state, "failed");
+  assert.equal(failed.refunded, true);
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+});
+
+test("lookup of an unknown job, or another user's job id, returns unknown", async (t) => {
+  installFakeDb(t, {[JOB]: {...runningJob(admin.firestore.Timestamp.now()), state: "succeeded", imageUrl: OUT_URL}});
+  assert.deepEqual(await lookup({requestId: "req-99999999"}), {state: "unknown"});
+  const other = {uid: "u2", token: {firebase: {sign_in_provider: "google.com"}}};
+  assert.deepEqual(await lookup({requestId: "req-00000001"}, other), {state: "unknown"});
+});
+
+test("lookup needs a signed-in, non-anonymous user and a valid requestId", async (t) => {
+  installFakeDb(t);
+  await assert.rejects(() => lookup({requestId: "req-00000001"}, null), {code: "unauthenticated"});
+  await assert.rejects(() => lookup({requestId: "req-00000001"},
+    {uid: "a", token: {firebase: {sign_in_provider: "anonymous"}}}), {code: "unauthenticated"});
+  await assert.rejects(() => lookup({requestId: "x"}), {code: "invalid-argument"});
 });
