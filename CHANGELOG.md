@@ -1,5 +1,14 @@
 ## Changelog
 
+### v3.24.0
+- A calmer, more polished Prism: clearer type, steadier spacing and smoother motion on every screen
+- Walls load in their own colours first, then fade in
+- Swipe up on a wallpaper for More like this
+- Hold a wallpaper to open quick actions
+- Split a folder into named sections
+- Setting a wallpaper, downloads and restoring Pro recover better when something goes wrong
+- Security and stability fixes
+
 ### v3.23.0
 - Search by photo: find walls that match a photo's colours and subject
 - Share a folder: invite up to 10 people to add walls with you
