@@ -115,10 +115,7 @@ class _FolderSectionsViewState extends State<FolderSectionsView> {
         _scroll.position.minScrollExtent,
         _scroll.position.maxScrollExtent,
       );
-      final Duration duration = context.motion(PrismDurations.slow);
-      duration == Duration.zero
-          ? _scroll.jumpTo(target)
-          : unawaited(_scroll.animateTo(target, duration: duration, curve: PrismCurves.move));
+      unawaited(_scroll.animateOrJump(target, duration: context.motion(PrismDurations.slow), curve: PrismCurves.move));
     });
   }
 
