@@ -85,7 +85,7 @@ final class ShareViewController: UIViewController {
       if let container = ShareInbox.containerURL() { ShareInbox.storePendingLink(url, container: container) }
       // Completing the request before the open finishes keeps Prism in the background.
       self.open(url)
-      DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in self?.complete() }
+      DispatchQueue.main.asyncAfter(deadline: .now() + 3) { self.complete() }
     }
   }
 
