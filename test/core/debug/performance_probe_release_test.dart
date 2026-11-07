@@ -17,6 +17,13 @@ import '../../support/fake_app_analytics.dart';
 
 class _Binding extends AutomatedTestWidgetsFlutterBinding {
   int postFrameCallbacks = 0;
+  int timingCallbacks = 0;
+
+  @override
+  void addTimingsCallback(TimingsCallback callback) {
+    timingCallbacks++;
+    super.addTimingsCallback(callback);
+  }
 
   @override
   void addPostFrameCallback(FrameCallback callback, {String debugLabel = 'callback'}) {
@@ -68,6 +75,9 @@ void main() {
       debugPrint = previousPrint;
     });
     final int callbacks = binding.postFrameCallbacks;
+    final int timings = binding.timingCallbacks;
+    PerformanceProbe.startFrameStats();
+    PerformanceProbe.phase('release');
     PerformanceProbe.mark('startup.binding_ready');
     PerformanceProbe.markOnce('home.grid_first_paint');
     PerformanceProbe.emit(kind: 'test', name: 'test', durationMs: 2);
@@ -81,6 +91,7 @@ void main() {
     expect(paths.calls, 0);
     expect(messages, isEmpty);
     expect(binding.postFrameCallbacks, callbacks);
+    expect(binding.timingCallbacks, timings);
   }, skip: !kReleaseMode);
 
   test('release analytics forwards events without probe serialization or frame callbacks', () async {
