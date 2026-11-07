@@ -49,6 +49,9 @@ export type PhotoJobResult =
 
 export const PHOTO_JOBS = "photoJobs";
 export const PHOTO_JOB_DAILY = "photoJobDaily";
+/** Per-account daily count of request ids a lookup closed. Bounds the closed records one account can create. */
+export const PHOTO_JOB_CLOSURES = "photoJobClosures";
+export const MAX_PHOTO_JOB_CLOSURES_PER_DAY = 20;
 export const PHOTO_JOB_BUDGET = "photoJobBudget";
 /** fal payload deletes left over after account deletion. Holds only the fal request id, never the user. */
 export const PHOTO_FAL_CLEANUP = "photoFalCleanup";
@@ -599,11 +602,17 @@ export const getPhotoWallpaper = onCall({region: CALLABLE_REGIONS, timeoutSecond
     const deletionRef = db.collection("creatorDeletionState").doc(uid);
     // No job yet: close the request id in a transaction, so "unknown" is final. A create still on its way then finds
     // the closed record at its claim and charges nothing.
+    const closuresRef = db.collection(PHOTO_JOB_CLOSURES).doc(uid);
     const job = await db.runTransaction(async (tx) => {
-      const [snap, deletion] = await tx.getAll(jobRef, deletionRef);
+      const [snap, deletion, closures] = await tx.getAll(jobRef, deletionRef, closuresRef);
       if (snap.exists) return snap.data() as PhotoJob;
       if (deletion.data()?.closed === true) return null;
+      const day = utcDateString();
+      const closedToday = readDailyCount(closures, day);
+      if (closedToday >= MAX_PHOTO_JOB_CLOSURES_PER_DAY) return null;
       tx.set(jobRef, {userId: uid, requestId, state: "closed", closedAt: admin.firestore.Timestamp.now()});
+      tx.set(closuresRef, {day, count: closedToday + 1,
+        expireAt: admin.firestore.Timestamp.fromMillis(Date.now() + 2 * DAY_MS)});
       return null;
     });
     if (!job || job.userId !== uid || job.state === "closed") return {state: "unknown"};

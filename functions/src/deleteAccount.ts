@@ -14,7 +14,7 @@ import {WRAPPED_COLLECTION} from "./wrapped";
 import {FOLLOWED_FOLDERS, removeAllFolderFollows, removeOwnerPublicFolders} from "./publicFolders";
 import {COMMENT_RATE, removeCommentsForAccount} from "./comments";
 import {removeDesktopSubmissionsForAccount} from "./desktopSubmissions";
-import {PHOTO_JOB_DAILY, removePhotoJobsForAccount} from "./photoWallpaper";
+import {PHOTO_JOB_CLOSURES, PHOTO_JOB_DAILY, removePhotoJobsForAccount} from "./photoWallpaper";
 import {r2Secrets} from "./r2Storage";
 import {falKey} from "./wallDepth";
 
@@ -29,7 +29,7 @@ const BOOSTS = "boosts";
 const DELETED_NAME = "Deleted Account";
 /** Docs keyed by the bare uid. The last two are legacy collections. */
 const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens", "rewardedAdUsers", "creatorTips", COMMENT_RATE,
-  PHOTO_JOB_DAILY];
+  PHOTO_JOB_DAILY, PHOTO_JOB_CLOSURES];
 /** Docs keyed `<uid>_<day>`. */
 const UID_PREFIX_KEYED = [
   "coinAdRateDaily", "coinRefundDaily", "contentReportRateDaily", "userBlockRateDaily", REQUEST_RATE_DAILY, VOTE_RATE_DAILY,

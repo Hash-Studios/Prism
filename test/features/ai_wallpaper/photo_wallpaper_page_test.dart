@@ -140,6 +140,9 @@ class _Session implements SessionRepository {
   PrismUsersV2 user = app_state.prismUser;
   final StreamController<PrismUsersV2> changes = StreamController<PrismUsersV2>.broadcast(sync: true);
 
+  /// Like the real repository when persisting fails: the user changes, but no change event is sent.
+  bool failPersist = false;
+
   void switchTo(String? uid) {
     user = app_constants.createGuestPrismUser()
       ..id = uid ?? ''
@@ -153,7 +156,7 @@ class _Session implements SessionRepository {
   @override
   Future<Result<SessionEntity>> replaceCurrentUser(PrismUsersV2 value) async {
     user = value;
-    changes.add(user);
+    if (!failPersist) changes.add(user);
     return Result.success(
       SessionEntity(userId: user.id, loggedIn: user.loggedIn, premium: user.premium, subscriptionTier: 'free'),
     );
@@ -743,6 +746,25 @@ void main() {
       await tester.tap(find.text('Try again'));
       await _settle(tester);
       expect(harness.lookups, 2);
+    });
+
+    testWidgets('a silent account change during recovery resets the page for the new account', (tester) async {
+      final _Harness harness = _Harness()..pendingJson = pending('user-1');
+      final Completer<Object?> lookup = Completer<Object?>();
+      harness.onLookup = (Map<String, Object?> payload) => lookup.future;
+      await _pumpPage(tester, harness);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(harness.lookups, 1);
+
+      harness.session.failPersist = true;
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'user-2'
+        ..loggedIn = true;
+      lookup.complete(_successMap);
+      await _settle(tester);
+
+      expect(find.text('Set as wallpaper'), findsNothing);
+      expect(tester.widget<GlintState>(find.byType(GlintState)).onAction, isNotNull);
     });
 
     testWidgets("another account's saved job is ignored", (tester) async {

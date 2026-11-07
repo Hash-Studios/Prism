@@ -18,6 +18,7 @@ import {
   planPhotoJob,
   sweepStalePhotoJobsOnce,
   PHOTO_FAL_CLEANUP,
+  PHOTO_JOB_CLOSURES,
   getPhotoWallpaper,
   PHOTO_JOB_BUDGET,
   removePhotoJobsForAccount,
@@ -1466,4 +1467,14 @@ test("balance lookup is optional when the user record is missing or unreadable",
   assert.equal(unreadable.state, "succeeded");
   assert.equal(unreadable.balance, undefined);
   assert.equal(store.get(JOB)?.state, "succeeded");
+});
+
+test("an account can close at most 20 unknown request ids a day, so lookups cannot pile up records", async (t) => {
+  const store = installFakeDb(t, {[`${PHOTO_JOB_CLOSURES}/u1`]: {day: today(), count: 19}});
+  assert.deepEqual(await lookup({requestId: "req-00000101"}), {state: "unknown"});
+  assert.equal(store.get(`${PHOTO_JOBS}/pj_u1_req-00000101`)?.state, "closed");
+  assert.equal(store.get(`${PHOTO_JOB_CLOSURES}/u1`)?.count, 20);
+  assert.deepEqual(await lookup({requestId: "req-00000102"}), {state: "unknown"});
+  assert.equal(store.has(`${PHOTO_JOBS}/pj_u1_req-00000102`), false);
+  assert.equal(store.get(`${PHOTO_JOB_CLOSURES}/u1`)?.count, 20);
 });

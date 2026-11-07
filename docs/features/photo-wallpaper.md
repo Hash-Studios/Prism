@@ -105,7 +105,7 @@ The app saves pending jobs on the device (`ai.photoWallPendingJob`: user id, req
 
 An uncertain job keeps its request id and cannot be replaced by a different photo or target. Retry looks up that request without uploading the photo again. Clears match both the account and request id, so an old completion cannot remove another job. Storage failures keep recovery available.
 
-When the page opens and finds a saved job of the signed-in user, it calls `getPhotoWallpaper(requestId)`. That callable never charges or runs a job. Signing out or switching accounts clears the page's photo and result actions. A late response from an earlier session cannot restore them, even after switching back to that account.
+When the page opens and finds a saved job of the signed-in user, it calls `getPhotoWallpaper(requestId)`. This is a status lookup, not a pure read. It never charges or runs a job, but it has two side effects: it ends and refunds a job that stopped while it ran, and it closes an unknown request id so that a create still on its way cannot charge later (at most 20 closures for each account each day). Signing out or switching accounts clears the page's photo and result actions. A late response from an earlier session cannot restore them, even after switching back to that account.
 
 - A finished job returns its result. The page shows the wallpaper alone (the photo is not kept, so there is no before and after) with Set, Download and Save to folder.
 - A failed job returns its refund state. The page shows the error and "Choose a photo".
@@ -127,7 +127,7 @@ SafeSearch blocks an image when `adult` or `violence` is LIKELY or more, or `rac
 
 The upload copy is decoded to raw pixels on the phone and then written as a JPEG (the same method as Search by photo). It has no metadata. Extend normally limits the long side to 2560 px, but raises this limit, up to 4096 px, when needed to preserve the server's 256 px minimum short side. Upscale sends the photo at full size, because it is smaller than the screen.
 
-The app reads exact source dimensions from decoder metadata; its smaller preview determines orientation only. While the page remains open, it retains the request ID for uncertain jobs and jobs whose refund is not confirmed. Retry uses the read-only lookup even when the remaining balance is below the price. Refund copy uses the authoritative cost returned by the server.
+The app reads exact source dimensions from decoder metadata; its smaller preview determines orientation only. While the page remains open, it retains the request ID for uncertain jobs and jobs whose refund is not confirmed. Retry uses the status lookup, not a second create, even when the remaining balance is below the price. Refund copy uses the authoritative cost returned by the server.
 
 ### Analytics
 
