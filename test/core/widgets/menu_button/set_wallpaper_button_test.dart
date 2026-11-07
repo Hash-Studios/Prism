@@ -391,10 +391,10 @@ void main() {
 
     testWidgets('a fixed target prepares the consented original and retries on that target', (tester) async {
       await asGuest(tester, signsIn: true);
-      await settings.set(PersistenceKeys.defaultApplyTarget, 'home');
+      await settings.set(PersistenceKeys.defaultApplyTarget, 'lock');
       assets.mapSource('https://signed.test/protected-wall', File(wallFilePath));
       final String preparedPath = assets.createImageSync('tinted-protected-wall.png').path;
-      final client = _Client()..statusFor[aw.WallpaperTarget.lock] = aw.WallpaperOperationStatus.failed;
+      final client = _Client()..statusFor[aw.WallpaperTarget.home] = aw.WallpaperOperationStatus.failed;
       aw.AsyncWallpaper.debugSetClient(client);
       final List<String> preparedSources = <String>[];
       await pumpButton(
@@ -402,33 +402,33 @@ void main() {
         source: WallpaperSource.prism,
         wallpaperId: 'protected-wall',
         url: '',
-        target: WallpaperTarget.lock,
+        target: WallpaperTarget.home,
         prepareAuthorized: (source) async {
           preparedSources.add(source);
           return preparedPath;
         },
       );
 
-      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreLockScreen)));
+      await tester.tap(find.bySemanticsLabel(l10n.coreSetWallpaperOn(l10n.coreHomeScreen)));
       await tester.pumpAndSettle();
 
       expect(preparedSources, <String>['https://signed.test/protected-wall']);
       final int initialRequestCount = client.requests.length;
       expect(initialRequestCount, greaterThanOrEqualTo(2));
       expect(client.requests, everyElement(isA<aw.StaticWallpaperRequest>()));
-      expect(client.requests.map((request) => request.target), everyElement(aw.WallpaperTarget.lock));
+      expect(client.requests.map((request) => request.target), everyElement(aw.WallpaperTarget.home));
       expect(client.requests.map((request) => request.source.filePath), everyElement(preparedPath));
       expect(find.text(l10n.coreTryAgain), findsOneWidget);
 
-      client.statusFor[aw.WallpaperTarget.lock] = aw.WallpaperOperationStatus.applied;
+      client.statusFor[aw.WallpaperTarget.home] = aw.WallpaperOperationStatus.applied;
       await tester.tap(find.text(l10n.coreTryAgain));
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
       expect(client.requests, hasLength(initialRequestCount + 1));
-      expect(client.requests.last.target, aw.WallpaperTarget.lock);
+      expect(client.requests.last.target, aw.WallpaperTarget.home);
       expect(client.requests.last.source.filePath, preparedPath);
       expect(preparedSources, hasLength(1));
-      expect(settings.get<String>(PersistenceKeys.defaultApplyTarget), 'home');
+      expect(settings.get<String>(PersistenceKeys.defaultApplyTarget), 'lock');
       expect(calls.map((call) => (call['assetId'], call['action'], call['mode'])), [
         ('protected-wall', 'set', 'quote'),
         ('protected-wall', 'set', null),
@@ -1753,78 +1753,87 @@ void main() {
   });
 
   for (final bool placed in <bool>[false, true]) {
-    testWidgets('retrying a partial Both set keeps both restore entries for Undo (placed: $placed)', (tester) async {
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('plugins.flutter.io/path_provider'),
-        (_) async => '${assets.directory.path}/scratch',
-      );
-      addTearDown(
-        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+    testWidgets(
+      'setting the lock screen with the phone after a partial Both set keeps both restore entries for Undo (placed: $placed)',
+      (tester) async {
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
           const MethodChannel('plugins.flutter.io/path_provider'),
-          null,
-        ),
-      );
-      final store = WallpaperHistoryStore(settings);
-      getIt.registerSingleton<WallpaperHistoryStore>(store);
-      await store.record(
-        AppliedWallpaper(
-          id: 'previous-home',
-          source: 'local',
-          thumbnailUrl: wallFilePath,
-          fullUrl: wallFilePath,
-          target: WallpaperTarget.home.name,
-          appliedAt: DateTime(2025),
-        ),
-      );
-      await store.record(
-        AppliedWallpaper(
-          id: 'previous-lock',
-          source: 'local',
-          thumbnailUrl: lockFilePath,
-          fullUrl: lockFilePath,
-          target: WallpaperTarget.lock.name,
-          appliedAt: DateTime(2025, 1, 2),
-        ),
-      );
-      final String sourcePath = assets.createImageSync('partial-both-source-$placed.png').path;
-      final String? placedPath = placed ? placedWallFile() : null;
-      final client = _Client()
-        ..scriptedResults.addAll(<aw.WallpaperOperationResult>[
-          const aw.WallpaperOperationResult(
-            status: aw.WallpaperOperationStatus.failed,
-            requestedTarget: aw.WallpaperTarget.both,
-            errorCode: 'partial-apply',
-            home: aw.WallpaperTargetResult(status: aw.WallpaperTargetStatus.applied),
-            lock: aw.WallpaperTargetResult(status: aw.WallpaperTargetStatus.failed),
-          ),
-        ]);
-      aw.AsyncWallpaper.debugSetClient(client);
-      if (placedPath != null) {
-        SetWallpaperFlow.screenOpener = (_, _) async => SetWallpaperChoice(
-          WallpaperTarget.both,
-          placed: PlacedWallpaper(path: placedPath, placement: const WallpaperPlacement()),
+          (_) async => '${assets.directory.path}/scratch',
         );
-      }
-      await pumpButton(tester, target: placed ? null : WallpaperTarget.both, url: sourcePath);
+        addTearDown(
+          () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            const MethodChannel('plugins.flutter.io/path_provider'),
+            null,
+          ),
+        );
+        final store = WallpaperHistoryStore(settings);
+        getIt.registerSingleton<WallpaperHistoryStore>(store);
+        await store.record(
+          AppliedWallpaper(
+            id: 'previous-home',
+            source: 'local',
+            thumbnailUrl: wallFilePath,
+            fullUrl: wallFilePath,
+            target: WallpaperTarget.home.name,
+            appliedAt: DateTime(2025),
+          ),
+        );
+        await store.record(
+          AppliedWallpaper(
+            id: 'previous-lock',
+            source: 'local',
+            thumbnailUrl: lockFilePath,
+            fullUrl: lockFilePath,
+            target: WallpaperTarget.lock.name,
+            appliedAt: DateTime(2025, 1, 2),
+          ),
+        );
+        final String sourcePath = assets.createImageSync('partial-both-source-$placed.png').path;
+        final String? placedPath = placed ? placedWallFile() : null;
+        final client = _Client()
+          ..scriptedResults.addAll(<aw.WallpaperOperationResult>[
+            const aw.WallpaperOperationResult(
+              status: aw.WallpaperOperationStatus.failed,
+              requestedTarget: aw.WallpaperTarget.both,
+              errorCode: 'partial-apply',
+              home: aw.WallpaperTargetResult(status: aw.WallpaperTargetStatus.applied),
+              lock: aw.WallpaperTargetResult(status: aw.WallpaperTargetStatus.failed),
+            ),
+          ]);
+        aw.AsyncWallpaper.debugSetClient(client);
+        const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          cropChannel,
+          (MethodCall call) async => 'content://com.hash.prism.wallpaper_crop/wallpaper_crop/wallpaper.jpg',
+        );
+        addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(cropChannel, null));
+        if (placedPath != null) {
+          SetWallpaperFlow.screenOpener = (_, _) async => SetWallpaperChoice(
+            WallpaperTarget.both,
+            placed: PlacedWallpaper(path: placedPath, placement: const WallpaperPlacement()),
+          );
+        }
+        await pumpButton(tester, target: placed ? null : WallpaperTarget.both, url: sourcePath);
 
-      await tester.tap(
-        find.bySemanticsLabel(placed ? l10n.coreSetWallpaper : l10n.coreSetWallpaperOn(l10n.coreBothScreens)),
-      );
-      await tester.pumpAndSettle(const Duration(seconds: 2));
-      await tester.tap(find.text(l10n.coreRetryOnScreen(l10n.coreLockScreen)));
-      await tester.pumpAndSettle(const Duration(seconds: 2));
-      expect(find.text(l10n.coreUndo), findsOneWidget);
-      await tester.tap(find.text(l10n.coreUndo));
-      await settleUndoIo(tester);
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+        await tester.tap(
+          find.bySemanticsLabel(placed ? l10n.coreSetWallpaper : l10n.coreSetWallpaperOn(l10n.coreBothScreens)),
+        );
+        await tester.pumpAndSettle(const Duration(seconds: 2));
+        await tester.tap(find.text(l10n.coreWallpaperSetWithPhone));
+        await tester.pumpAndSettle(const Duration(seconds: 2));
+        expect(find.text(l10n.coreUndo), findsOneWidget);
+        await tester.tap(find.text(l10n.coreUndo));
+        await settleUndoIo(tester);
+        await tester.pumpAndSettle(const Duration(seconds: 2));
 
-      expect(client.requests.skip(2).map((request) => request.target), <aw.WallpaperTarget>[
-        aw.WallpaperTarget.home,
-        aw.WallpaperTarget.lock,
-      ]);
-      expect(client.requests.skip(2).map((request) => request.source.filePath), <String>[wallFilePath, lockFilePath]);
-      expect(store.items().map((item) => item.id).toSet(), <String>{'previous-home', 'previous-lock'});
-    });
+        expect(client.requests.skip(2).map((request) => request.target), <aw.WallpaperTarget>[
+          aw.WallpaperTarget.home,
+          aw.WallpaperTarget.lock,
+        ]);
+        expect(client.requests.skip(2).map((request) => request.source.filePath), <String>[wallFilePath, lockFilePath]);
+        expect(store.items().map((item) => item.id).toSet(), <String>{'previous-home', 'previous-lock'});
+      },
+    );
   }
 
   testWidgets('Match accent shows on the success snackbar when the screen offers it', (tester) async {

@@ -52,6 +52,8 @@ class WallpaperSetContext {
 /// [context] is null when the screen is gone. Pass the [messenger] taken before the set started. The snackbar then
 /// outlives the screen, and its actions need no live [BuildContext]. [onRetry] gets the screen to try again: only the
 /// failed one after a partial set.
+/// [onSystemSet] opens the phone's own wallpaper screen for a lock screen that failed. Some phones (Xiaomi, MIUI)
+/// let only that screen set the lock screen, so it replaces Try again there (#545).
 /// [onMatchAccent] adds a "Match accent" button to the success snackbar.
 void reportWallpaperSetResult(
   BuildContext? context,
@@ -61,6 +63,7 @@ void reportWallpaperSetResult(
   ScaffoldMessengerState? messenger,
   WallpaperSetContext setContext = const WallpaperSetContext(),
   ValueChanged<WallpaperTarget>? onRetry,
+  ValueChanged<WallpaperTarget>? onSystemSet,
   VoidCallback? onMatchAccent,
   bool track = true,
 }) {
@@ -83,6 +86,25 @@ void reportWallpaperSetResult(
     snackHost
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+    return;
+  }
+  final bool lockFailed =
+      result.failedTarget == WallpaperTarget.lock || (!result.isPartial && target == WallpaperTarget.lock);
+  if (snackHost != null && onSystemSet != null && lockFailed && result.errorCode != 'wallpaper-not-allowed') {
+    snackHost
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            result.isPartial ? l10n.coreWallpaperHomeSetLockFailedUsePhone : l10n.coreWallpaperLockFailedUsePhone,
+          ),
+          duration: _successSnackBarDuration,
+          action: SnackBarAction(
+            label: l10n.coreWallpaperSetWithPhone,
+            onPressed: () => onSystemSet(WallpaperTarget.lock),
+          ),
+        ),
+      );
     return;
   }
   if (snackHost == null || !result.canRetry || onRetry == null) {
