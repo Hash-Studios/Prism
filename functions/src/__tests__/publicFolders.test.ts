@@ -5,9 +5,11 @@ import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import * as pushGallery from "../pushGallery";
 import {db} from "../common";
+import {changesPublicFolder} from "../folders";
 import {
   publicFolderDeps,
   publicFolderName,
+  publicFolderSections,
   removeFolderFollowsBetween,
   removeOwnerPublicFolders,
   refreshWallInPublicFolders,
@@ -418,6 +420,24 @@ test("projection keeps only the allowlisted item fields and the server thumb", a
   assert.deepEqual(header?.covers, [THUMB]);
 });
 
+test("a sync writes the sanitized sections to the header and an item follows its private sectionId", async (t) => {
+  const store = setup(t);
+  store.set("folders/f1", {ownerId: "a", name: "Night", public: true, itemCount: 1, covers: [],
+    sections: [{id: "lock", name: "Lock screens"}]});
+  const item = {ownerId: "a", id: "w1", provider: "Prism", wallpaperDocumentId: "W1", addedAt: at(Date.now() - 60_000)};
+  store.set("folders/f1/items/prism_w1", {...item, sectionId: "lock"});
+
+  await syncPublicFolder("f1");
+
+  assert.deepEqual(store.get("publicFolders/f1")?.sections, [{id: "lock", name: "Lock screens"}]);
+  assert.equal(store.get("publicFolders/f1/items/prism_w1")?.sectionId, "lock");
+
+  store.set("folders/f1/items/prism_w1", {...item, sectionId: "dark"});
+  await syncPublicFolderItem("f1", "prism_w1");
+
+  assert.equal(store.get("publicFolders/f1/items/prism_w1")?.sectionId, "dark");
+});
+
 test("gated items are left out of the projection", async (t) => {
   const store = setup(t);
   store.delete("folders/f1/items/prism_w1");
@@ -527,6 +547,49 @@ test("publicFolderName trims and collapses spaces and rejects hidden or long nam
   assert.equal(publicFolderName(""), null);
   assert.equal(publicFolderName("a".repeat(51)), null);
   assert.equal(publicFolderName("a​b"), null);
+});
+
+test("publicFolderSections keeps valid sections in order and drops the bad ones", () => {
+  assert.deepEqual(publicFolderSections([
+    {id: "lock", name: "Lock screens"},
+    {id: "bad id", name: "Spaces in id"},
+    {id: "a".repeat(33), name: "Id too long"},
+    {id: "lock", name: "Repeated id"},
+    {id: "dark", name: 7},
+    {id: "empty", name: "   "},
+    null,
+    {id: "bidi", name: "Evil‮name"},
+    {id: "ctrl", name: "Bad\u0007name"},
+    {id: "long", name: "x".repeat(161)},
+    {id: "night", name: "  Night   sky\t\tblue "},
+  ]), [{id: "lock", name: "Lock screens"}, {id: "night", name: "Night sky blue"}]);
+});
+
+test("publicFolderSections keeps a 160-character name and caps the list at 20 sections", () => {
+  const long = publicFolderSections([{id: "long", name: "y".repeat(160)}]);
+  assert.equal(long[0]?.name.length, 160);
+
+  const many = publicFolderSections(Array.from({length: 25}, (_, i) => ({id: `s${i}`, name: `Name ${i}`})));
+  assert.equal(many.length, 20);
+  assert.deepEqual(many.at(-1), {id: "s19", name: "Name 19"});
+});
+
+test("publicFolderSections returns nothing for a value that is not an array", () => {
+  assert.deepEqual(publicFolderSections({id: "lock", name: "Lock screens"}), []);
+  assert.deepEqual(publicFolderSections(undefined), []);
+});
+
+test("changesPublicFolder reacts to a sections-only change of a public folder", () => {
+  const before = {public: true, name: "Night", ownerId: "a", sections: [{id: "lock", name: "Lock screens"}]};
+  assert.equal(changesPublicFolder(before, {...before, sections: [{id: "lock", name: "Lock"}]}), true);
+});
+
+test("changesPublicFolder ignores equal sections and folders that are not public", () => {
+  const before = {public: true, name: "Night", ownerId: "a", sections: [{id: "lock", name: "Lock screens"}]};
+  assert.equal(changesPublicFolder(before, {...before, sections: [{id: "lock", name: "Lock screens"}]}), false);
+
+  const privateBefore = {public: false, name: "Night", ownerId: "a", sections: [{id: "lock", name: "Lock screens"}]};
+  assert.equal(changesPublicFolder(privateBefore, {...privateBefore, sections: []}), false);
 });
 
 test("syncPublicFolderItem adds and removes one projected item", async (t) => {

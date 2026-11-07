@@ -64,7 +64,8 @@ class _FakePublicFoldersRepository implements PublicFoldersRepository {
   }
 
   @override
-  Future<Result<List<String>>> fetchWallIds(String folderId) async => Result.success(wallIds);
+  Future<Result<List<PublicFolderWall>>> fetchWallIds(String folderId) async =>
+      Result.success(wallIds.map<PublicFolderWall>((id) => (id: id, sectionId: null)).toList());
 
   @override
   Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) async =>

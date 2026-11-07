@@ -29,7 +29,8 @@ class _FakePublicFoldersRepository implements PublicFoldersRepository {
   Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success(null);
 
   @override
-  Future<Result<List<String>>> fetchWallIds(String folderId) async => Result.success(const <String>[]);
+  Future<Result<List<PublicFolderWall>>> fetchWallIds(String folderId) async =>
+      Result.success(const <PublicFolderWall>[]);
 
   @override
   Future<Result<List<PublicFolderEntity>>> fetchFollowedFolders(String userId) async =>

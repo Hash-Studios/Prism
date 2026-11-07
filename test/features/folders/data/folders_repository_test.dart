@@ -9,6 +9,7 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/data/repositories/folders_repository_impl.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
@@ -152,7 +153,7 @@ class _NoPublicFolders implements PublicFoldersRepository {
   Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success<PublicFolderEntity?>(null);
 
   @override
-  Future<Result<List<String>>> fetchWallIds(String folderId) async => Result.success(<String>[]);
+  Future<Result<List<PublicFolderWall>>> fetchWallIds(String folderId) async => Result.success(<PublicFolderWall>[]);
 
   @override
   Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) async =>
@@ -211,15 +212,15 @@ void main() {
       ];
     final repository = FoldersRepositoryImpl(client);
     final result = await repository.fetchItems('a', userId: 'u1');
-    expect((result.data!.single as PrismFavouriteWall).wallpaper.firestoreDocumentId, 'source-document');
-    await repository.createFolder(_folder(), firstWall: result.data!.single);
+    expect((result.data!.single.wall as PrismFavouriteWall).wallpaper.firestoreDocumentId, 'source-document');
+    await repository.createFolder(_folder(), firstWall: result.data!.single.wall);
     final item = client.batches.single.batch.writes.last;
     expect(item.id, 'prism_wall');
     expect(item.data?['wallpaperDocumentId'], 'source-document');
     expect(item.data?['ownerId'], 'u1');
     expect(item.data?['addedAt'], FieldValue.serverTimestamp());
 
-    await repository.addItem(_folder(), result.data!.single, userId: _folder().ownerId);
+    await repository.addItem(_folder(), result.data!.single.wall, userId: _folder().ownerId);
     final addedItem = client.batches.last.batch.writes.first;
     expect(addedItem.collection, FirebaseCollections.folderItems('a'));
     expect(addedItem.data?['ownerId'], 'u1');
@@ -233,7 +234,7 @@ void main() {
       ];
     final repository = FoldersRepositoryImpl(client);
     final fetched = await repository.fetchItems('a', userId: 'u1');
-    final wall = fetched.data!.single.withPinnedAt(DateTime.utc(2026));
+    final wall = fetched.data!.single.wall.withPinnedAt(DateTime.utc(2026));
 
     await repository.createFolder(_folder(), firstWall: wall);
     final createItem = client.batches.single.batch.writes.last;
@@ -255,19 +256,19 @@ void main() {
     expect(spec.orderBy.single.field, 'addedAt');
     expect(spec.orderBy.single.descending, isTrue);
     expect(spec.limit, 1);
-    expect(result.data?.map((wall) => wall.id), <String>['new']);
+    expect(result.data?.map((item) => item.wall.id), <String>['new']);
   });
 
   test('unlimited and under-limit reads return all owned items newest first', () async {
     final client = _Client()..onQuery = (spec) => _queryItems(spec, _itemRows());
     final repository = FoldersRepositoryImpl(client);
 
-    expect((await repository.fetchItems('a', userId: 'u1')).data?.map((wall) => wall.id), <String>[
+    expect((await repository.fetchItems('a', userId: 'u1')).data?.map((item) => item.wall.id), <String>[
       'new',
       'middle',
       'old',
     ]);
-    expect((await repository.fetchItems('a', userId: 'u1', limit: 5)).data?.map((wall) => wall.id), <String>[
+    expect((await repository.fetchItems('a', userId: 'u1', limit: 5)).data?.map((item) => item.wall.id), <String>[
       'new',
       'middle',
       'old',
@@ -279,14 +280,14 @@ void main() {
     final client = _Client()..onQuery = (spec) => _queryItems(spec, _itemRows());
     final result = await FoldersRepositoryImpl(client).fetchItems('a', userId: 'u1', limit: 2);
 
-    expect(result.data?.map((wall) => wall.id), <String>['new', 'middle']);
+    expect(result.data?.map((item) => item.wall.id), <String>['new', 'middle']);
   });
 
   test("an editor reads the owner's items, newest first", () async {
     final client = _Client()..onQuery = (spec) => _queryItems(spec, _itemRows());
     final result = await FoldersRepositoryImpl(client).fetchItems('a', userId: 'u3');
 
-    expect(result.data?.map((wall) => wall.id), <String>['new', 'middle', 'old']);
+    expect(result.data?.map((item) => item.wall.id), <String>['new', 'middle', 'old']);
   });
 
   test('an item read of a folder that is gone returns null without a query', () async {
@@ -303,7 +304,7 @@ void main() {
         (id: 'prism_wall', data: {'id': 'wall', 'provider': 'Prism'}),
       ];
     final repository = FoldersRepositoryImpl(client);
-    final wall = (await repository.fetchItems('a', userId: 'u1')).data!.single;
+    final wall = (await repository.fetchItems('a', userId: 'u1')).data!.single.wall;
 
     await repository.addItem(_folder(), wall, userId: 'editor');
     expect(client.batches.last.batch.writes.map((write) => (write.op, write.collection, write.id)), [
@@ -324,7 +325,7 @@ void main() {
         (id: 'prism_wall', data: {'id': 'wall', 'provider': 'Prism'}),
       ];
     final repository = FoldersRepositoryImpl(client);
-    final wall = (await repository.fetchItems('a', userId: 'u1')).data!.single;
+    final wall = (await repository.fetchItems('a', userId: 'u1')).data!.single.wall;
 
     await repository.addItem(_folder(), wall, userId: 'u1');
     expect(client.batches.last.batch.writes.map((write) => (write.op, write.collection, write.id)), [
@@ -343,7 +344,7 @@ void main() {
       ];
     final result = await FoldersRepositoryImpl(client).fetchItems('a', userId: 'u1');
 
-    expect(result.data?.map((wall) => wall.id), <String>['pending', 'new', 'old']);
+    expect(result.data?.map((item) => item.wall.id), <String>['pending', 'new', 'old']);
   });
 
   test('a denied item read means the folder is gone while other read failures still fail', () async {
@@ -403,6 +404,82 @@ void main() {
 
     client.membershipError = FirebaseException(plugin: 'cloud_firestore', code: 'unavailable');
     expect((await repository.foldersContaining(<String>['a'], 'prism_old')).isFailure, isTrue);
+  });
+
+  test('organize with sections only writes one batch holding one folder update', () async {
+    final client = _Client();
+    final result = await FoldersRepositoryImpl(client).organize(
+      _folder(),
+      userId: 'u1',
+      sections: const <FolderSection>[
+        FolderSection(id: 's1', name: 'Dark'),
+        FolderSection(id: 's2', name: 'Light'),
+      ],
+    );
+
+    expect(result.isSuccess, isTrue);
+    expect(client.batches, hasLength(1));
+    final writes = client.batches.single.batch.writes;
+    expect(writes, hasLength(1));
+    expect(writes.single.op, 'update');
+    expect(writes.single.collection, FirebaseCollections.folders);
+    expect(writes.single.id, 'a');
+    expect(writes.single.data, <String, dynamic>{
+      'sections': <Map<String, String>>[
+        <String, String>{'id': 's1', 'name': 'Dark'},
+        <String, String>{'id': 's2', 'name': 'Light'},
+      ],
+    });
+  });
+
+  test('organize moves write sectionId on each item and a null move deletes it', () async {
+    final client = _Client();
+    final result = await FoldersRepositoryImpl(
+      client,
+    ).organize(_folder(), userId: 'u1', moves: <String, String?>{'prism_a': 's1', 'prism_b': null});
+
+    expect(result.isSuccess, isTrue);
+    expect(client.batches, hasLength(1));
+    final writes = client.batches.single.batch.writes;
+    expect(writes, hasLength(2));
+    expect(writes[0].op, 'update');
+    expect(writes[0].collection, FirebaseCollections.folderItems('a'));
+    expect(writes[0].id, 'prism_a');
+    expect(writes[0].data, <String, dynamic>{'sectionId': 's1'});
+    expect(writes[1].id, 'prism_b');
+    expect(writes[1].data!['sectionId'], isA<FieldValue>());
+    expect(writes[1].data!['sectionId'], isNot(isA<String>()));
+  });
+
+  test('organize with sections and 401 moves splits into batches of 400 then 2', () async {
+    final client = _Client();
+    final moves = <String, String?>{for (var i = 0; i < 401; i++) 'prism_$i': 's1'};
+    final result = await FoldersRepositoryImpl(client).organize(
+      _folder(),
+      userId: 'u1',
+      sections: const <FolderSection>[FolderSection(id: 's1', name: 'Dark')],
+      moves: moves,
+    );
+
+    expect(result.isSuccess, isTrue);
+    expect(client.batches, hasLength(2));
+    final first = client.batches.first.batch.writes;
+    expect(first, hasLength(400));
+    expect(first.first.collection, FirebaseCollections.folders);
+    expect(first.first.id, 'a');
+    expect(first.where((w) => w.collection == FirebaseCollections.folderItems('a')), hasLength(399));
+    expect(client.batches.last.batch.writes, hasLength(2));
+  });
+
+  test('fetchItems returns the item sectionId, and null for an invalid one', () async {
+    final client = _Client()
+      ..onQuery = (_) => <FakeDocRow>[
+        (id: 'prism_lock', data: {'id': 'lock_wall', 'provider': 'Prism', 'sectionId': 'lock'}),
+        (id: 'prism_bad', data: {'id': 'bad_wall', 'provider': 'Prism', 'sectionId': 'bad id'}),
+      ];
+    final result = await FoldersRepositoryImpl(client).fetchItems('a', userId: 'u1');
+
+    expect(result.data!.map((item) => item.sectionId).toList(), <String?>['lock', null]);
   });
 
   testWidgets('a write is queued only after eight seconds and a late rejection is handled', (tester) async {

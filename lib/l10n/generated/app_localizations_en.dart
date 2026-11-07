@@ -14625,4 +14625,201 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get foldersMakePrivateMessageShared =>
       'Only you and the people you invited will see it. Its link stops working and its followers lose it.';
+
+  @override
+  String get foldersSectionAdd => 'Add section';
+
+  @override
+  String get foldersSectionNewTitle => 'New section';
+
+  @override
+  String get foldersSectionNameHint => 'For example, Lock screens';
+
+  @override
+  String get foldersSectionRenameTitle => 'Rename section';
+
+  @override
+  String get foldersSectionDelete => 'Delete section';
+
+  @override
+  String foldersSectionDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String foldersSectionDeleteMessage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Its $count wallpapers move to Unsorted.',
+      one: 'Its wallpaper moves to Unsorted.',
+      zero: 'The section is empty.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionUnsorted => 'Unsorted';
+
+  @override
+  String get foldersSectionReorder => 'Reorder sections';
+
+  @override
+  String foldersSectionDragHandle(String name) {
+    return 'Drag to move $name';
+  }
+
+  @override
+  String foldersSectionWallCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count wallpapers',
+      one: '1 wallpaper',
+      zero: 'No wallpapers',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionHeaderLabel(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count wallpapers',
+      one: '1 wallpaper',
+      zero: 'no wallpapers',
+    );
+    return '$name, $_temp0';
+  }
+
+  @override
+  String foldersSectionJumpTo(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count wallpapers',
+      one: '1 wallpaper',
+      zero: 'no wallpapers',
+    );
+    return 'Go to $name, $_temp0';
+  }
+
+  @override
+  String foldersSectionOptions(String name) {
+    return 'More options for $name';
+  }
+
+  @override
+  String get foldersSectionSaveAll => 'Save section';
+
+  @override
+  String get foldersSectionMoveTo => 'Move to section';
+
+  @override
+  String get foldersSectionMoveTitle => 'Move to';
+
+  @override
+  String foldersSectionMoved(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Moved $count wallpapers to $name.',
+      one: 'Moved 1 wallpaper to $name.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionSelect => 'Select wallpapers';
+
+  @override
+  String foldersSectionSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count selected',
+      one: '1 selected',
+      zero: 'Tap wallpapers to select them',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionsFull(int max) {
+    return 'A folder can have up to $max sections.';
+  }
+
+  @override
+  String get foldersSectionEmpty => 'No wallpapers yet.';
+
+  @override
+  String get foldersSectionEmptyHint => 'Drag wallpapers here, or use Move to section.';
+
+  @override
+  String get foldersSectionSuggest => 'Suggest sections';
+
+  @override
+  String get foldersSuggestTitle => 'Suggested sections';
+
+  @override
+  String get foldersSuggestBody => 'Groups of your Unsorted wallpapers. Keep the ones you want.';
+
+  @override
+  String get foldersSuggestByMood => 'Mood';
+
+  @override
+  String get foldersSuggestByCategory => 'Category';
+
+  @override
+  String get foldersSuggestByColour => 'Colour';
+
+  @override
+  String foldersSuggestJoins(String count) {
+    return '$count. Goes into your section with this name.';
+  }
+
+  @override
+  String foldersSuggestAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Add $count sections',
+      one: 'Add 1 section',
+      zero: 'Add sections',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSort(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Sort $count wallpapers',
+      one: 'Sort 1 wallpaper',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSorted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Sorted $count wallpapers.',
+      one: 'Sorted 1 wallpaper.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSuggestEmptyTitle => 'No groups to suggest';
+
+  @override
+  String get foldersSuggestEmptyBody =>
+      'A group needs 2 or more Prism wallpapers in Unsorted with the same mood, category or colour.';
+
+  @override
+  String get foldersSuggestError => 'Could not load suggestions';
 }

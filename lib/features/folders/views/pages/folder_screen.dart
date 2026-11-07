@@ -8,8 +8,6 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
-import 'package:Prism/core/wallpaper/wallpaper_core.dart';
-import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
 import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
@@ -18,16 +16,20 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_save_run.dart';
+import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/folder_invite.dart';
+import 'package:Prism/features/folders/views/folder_sections.dart';
 import 'package:Prism/features/folders/views/folders_access.dart';
 import 'package:Prism/features/folders/views/widgets/folder_item_sheet.dart';
 import 'package:Prism/features/folders/views/widgets/folder_members_row.dart';
 import 'package:Prism/features/folders/views/widgets/folder_members_sheet.dart';
 import 'package:Prism/features/folders/views/widgets/folder_save_views.dart';
+import 'package:Prism/features/folders/views/widgets/folder_sections_view.dart';
 import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
 import 'package:Prism/features/folders/views/widgets/public_folder_view.dart';
+import 'package:Prism/features/folders/views/widgets/section_suggestions_sheet.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_folders_store.dart';
 import 'package:Prism/features/library/views/widgets/offline_chip.dart';
@@ -39,7 +41,19 @@ import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatf
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-enum _FolderMenuAction { rotate, rotateDaily, invite, people, visibility, rename, delete }
+enum _FolderMenuAction {
+  addSection,
+  suggestSections,
+  select,
+  reorderSections,
+  rotate,
+  rotateDaily,
+  invite,
+  people,
+  visibility,
+  rename,
+  delete,
+}
 
 /// One folder. The owner sees and edits their folder. Anyone else sees its public projection, read-only, or a calm
 /// "private or no longer exists" state.
@@ -57,6 +71,7 @@ class _FolderScreenState extends State<FolderScreen> {
   bool _tracked = false;
   String? _loadingKey;
   bool _iosShortcuts = false;
+  bool _selecting = false;
 
   @override
   void initState() {
@@ -111,6 +126,7 @@ class _FolderScreenState extends State<FolderScreen> {
   void _openWall(BuildContext grid, List<FavouriteWallEntity> walls, int index) {
     PrismHaptics.tap();
     final FavouriteWallEntity wall = walls[index];
+    final List<FavouriteWallEntity> order = walls;
     unawaited(
       context.router.push(
         WallpaperDetailRoute(
@@ -119,11 +135,8 @@ class _FolderScreenState extends State<FolderScreen> {
           heroTag: _heroTag(wall),
           feed: WallpaperFeed(
             grid: grid,
-            indexInGrid: (item) {
-              final List<FavouriteWallEntity> current =
-                  context.read<FoldersBloc>().state.items[widget.folderId] ?? const <FavouriteWallEntity>[];
-              return current.indexWhere((candidate) => candidate.id == item.id && candidate.source == item.source);
-            },
+            indexInGrid: (item) =>
+                order.indexWhere((candidate) => candidate.id == item.id && candidate.source == item.source),
             tiles: <WallpaperFeedTile>[
               for (final (int i, FavouriteWallEntity w) in walls.indexed)
                 if (w is! LegacyFavouriteWall) (item: w.toFeedItem(), index: i, heroTag: _heroTag(w)),
@@ -203,6 +216,20 @@ class _FolderScreenState extends State<FolderScreen> {
     final FoldersBloc bloc = context.read<FoldersBloc>();
     final AppLocalizations l10n = context.l10n;
     switch (action) {
+      case _FolderMenuAction.addSection:
+        await addFolderSection(context, folder, source: 'folder_menu');
+      case _FolderMenuAction.suggestSections:
+        final FoldersState state = bloc.state;
+        await showSectionSuggestionsSheet(
+          context,
+          folder: folder,
+          walls: state.items[folder.id] ?? const <FavouriteWallEntity>[],
+          sectionOf: state.itemSections[folder.id] ?? const <String, String>{},
+        );
+      case _FolderMenuAction.select:
+        setState(() => _selecting = true);
+      case _FolderMenuAction.reorderSections:
+        await showReorderSectionsSheet(context, folder);
       case _FolderMenuAction.rotate:
         unawaited(analytics.track(AutoRotateFolderTappedEvent(itemCountBucket: folderCountBucket(folder.itemCount))));
         unawaited(context.router.push(AutoRotateRoute(folderId: folder.id, folderName: folder.name)));
@@ -261,6 +288,16 @@ class _FolderScreenState extends State<FolderScreen> {
         toasts.success(l10n.foldersDeleted);
         await router.maybePop();
     }
+  }
+
+  void _onWallMenu(FolderEntity? folder, FoldersState state, FavouriteWallEntity wall) {
+    if (folder == null || (folder.editors.isEmpty && folder.sections.isEmpty && folder.isOwnedBy(state.userId))) {
+      unawaited(_remove(wall));
+      return;
+    }
+    unawaited(
+      showFolderItemSheet(context, folder, wall, sectionId: state.itemSections[folder.id]?[folderItemKey(wall)]),
+    );
   }
 
   Future<void> _saveAll(FolderEntity folder, List<FavouriteWallEntity> walls) => openFolderSave(
@@ -338,24 +375,20 @@ class _FolderScreenState extends State<FolderScreen> {
         ),
       );
     }
-    return GridView.builder(
-      padding: PrismWallGrid.padding.copyWith(bottom: MediaQuery.paddingOf(context).bottom + PrismSpace.md),
-      gridDelegate: PrismWallGrid.delegate(context),
-      itemCount: walls.length,
-      itemBuilder: (grid, index) {
-        final FavouriteWallEntity wall = walls[index];
-        return PrismWallTile(
-          key: ValueKey<String>(folderItemKey(wall)),
-          url: wall.thumbnailUrl,
-          fallbackUrl: wall.source == WallpaperSource.prism ? null : wall.fullUrl,
-          heroTag: _heroTag(wall),
-          semanticLabel: wallpaperSemanticLabel(wall.authorName, l10n),
-          onTap: wall is LegacyFavouriteWall ? null : () => _openWall(grid, walls, index),
-          onLongPress: () => folder == null || (folder.editors.isEmpty && folder.isOwnedBy(state.userId))
-              ? unawaited(_remove(wall))
-              : unawaited(showFolderItemSheet(context, folder, wall)),
-        );
-      },
+    if (folder == null) return const LoadingCards();
+    return FolderSectionsView(
+      sections: folder.sections,
+      folder: folder,
+      walls: walls,
+      sectionOf: state.itemSections[folder.id] ?? const <String, String>{},
+      canOrganize: folder.roleOf(state.userId) != null,
+      heroTag: _heroTag,
+      onOpen: _openWall,
+      onMenu: (wall) => _onWallMenu(folder, state, wall),
+      onSaveSection: (FolderSection section, List<FavouriteWallEntity> sectionWalls) =>
+          unawaited(_saveAll(folder, sectionWalls)),
+      selecting: _selecting,
+      onSelectingDone: () => setState(() => _selecting = false),
     );
   }
 
@@ -396,6 +429,7 @@ class _FolderScreenState extends State<FolderScreen> {
         final String userId = state.userId;
         final bool owner = folder?.isOwnedBy(userId) ?? false;
         final bool showMembers = folder != null && (owner || folder.editors.isNotEmpty);
+        final bool hasWalls = state.items[widget.folderId]?.isNotEmpty ?? false;
         return PrismPage(
           title: folder?.name ?? context.l10n.foldersTitle,
           maxContentWidth: double.infinity,
@@ -449,6 +483,29 @@ class _FolderScreenState extends State<FolderScreen> {
                 icon: const Icon(Icons.more_vert_rounded),
                 onSelected: (action) => unawaited(_onMenu(action, folder)),
                 itemBuilder: (context) => <PopupMenuEntry<_FolderMenuAction>>[
+                  if (folder.roleOf(userId) != null) ...<PopupMenuEntry<_FolderMenuAction>>[
+                    if (folder.sections.length < folderMaxSections)
+                      PopupMenuItem<_FolderMenuAction>(
+                        value: _FolderMenuAction.addSection,
+                        child: Text(context.l10n.foldersSectionAdd),
+                      ),
+                    if (hasWalls)
+                      PopupMenuItem<_FolderMenuAction>(
+                        value: _FolderMenuAction.suggestSections,
+                        child: Text(context.l10n.foldersSectionSuggest),
+                      ),
+                    if (hasWalls && folder.sections.isNotEmpty)
+                      PopupMenuItem<_FolderMenuAction>(
+                        value: _FolderMenuAction.select,
+                        child: Text(context.l10n.foldersSectionSelect),
+                      ),
+                    if (folder.sections.length > 1)
+                      PopupMenuItem<_FolderMenuAction>(
+                        value: _FolderMenuAction.reorderSections,
+                        child: Text(context.l10n.foldersSectionReorder),
+                      ),
+                    const PopupMenuDivider(),
+                  ],
                   if (android && owner)
                     PopupMenuItem<_FolderMenuAction>(
                       value: _FolderMenuAction.rotate,

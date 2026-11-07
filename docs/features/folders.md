@@ -2,7 +2,7 @@
 
 A **folder** is a named group of saved wallpapers. Each folder is private when the user makes it. The owner can make a folder **public**. Other signed-in users can then see the folder, follow it, and share its link. Followers get one "New in <folder>" push a day when the owner adds wallpapers. The user can save all the wallpapers of a folder at once with **Save all**.
 
-The owner can invite up to 10 people to add and remove wallpapers in a folder. These people are editors. See Shared folders.
+The owner can invite up to 10 people to add and remove wallpapers in a folder. These people are editors. See Shared folders. The owner and the editors can split a folder into named sections. See Sections.
 
 The Library page ([library.md](library.md)) covers the Folders tab, the folder grid and the Save to folder sheet. This page covers public and shared folders.
 
@@ -267,6 +267,7 @@ An owner can invite editors. An editor adds and removes wallpapers in the folder
 | Invite people | Yes | No |
 | Remove people | Yes | No |
 | Delete the folder | Yes | No |
+| Add, rename, delete and reorder sections, and move wallpapers | Yes | Yes |
 | Auto-rotate and iOS Shortcuts rotation | Yes | No |
 | Leave the folder | No | Yes |
 
@@ -358,6 +359,131 @@ The app reads the folder again each time a member opens it, so a join, a leave o
 | `folder_member_removed` | `member_count` |
 | `folder_member_left` | `member_count` |
 
+## Sections
+
+A folder can have up to 20 sections. Sections split the wallpapers of a folder into named groups. A section is not a folder. It has no privacy of its own.
+
+Each section has an id, a name and an order. The name has 1 to 40 graphemes. A grapheme is one character as the user sees it.
+
+Each wallpaper is in one section, or in **Unsorted**. **Unsorted** is the group at the top. It holds the wallpapers that have no section. It also holds the wallpapers whose section was deleted. It shows only when it has wallpapers, or while the user drags a wallpaper.
+
+The owner and the editors can add, rename, delete and reorder sections, and move wallpapers. Viewers of a public folder see the sections, but they cannot change them.
+
+### Where to find it
+
+| Surface | What the user sees |
+|---|---|
+| Folder page, overflow menu | **Add section**, **Suggest sections**, **Select wallpapers** (when the folder has sections) and **Reorder sections** (when it has 2 or more). |
+| Section header | The cover (the first wallpaper), the name and the count. Tap the header to collapse or expand the section. A menu has **Rename**, **Save section** and **Delete section**. |
+| Section strip | A row of chips at the top of the page. It stays in view as the user scrolls. One chip for each group, with the cover, the name and the count. A tap scrolls to that section. |
+| Wallpaper, long press | A menu with **Move to section** and **Remove from folder**. |
+| Wallpaper, long press and move | The user drags the wallpaper. |
+| Selection bar | "2 selected" and **Move to section**. |
+| Public folder page | The same headers and strip. Read only. |
+| Web catalogue page | Unsorted first, with no heading. Then each section, with a heading and the count. |
+
+### Move a wallpaper
+
+Use one of these ways to move a wallpaper:
+
+- Drag the wallpaper onto a section header or a chip in the section strip.
+- Long press the wallpaper. Tap **Move to section**.
+- Tap **Select wallpapers** in the overflow menu. Select the wallpapers. Tap **Move to section** in the selection bar.
+
+The sheet lists **Unsorted**, each section and **New section**.
+
+**Move to section** is the path for screen readers, such as VoiceOver and TalkBack.
+
+### Suggest sections
+
+**Suggest sections** finds groups in the wallpapers of **Unsorted**. The app makes the groups on the device. It makes no AI call.
+
+The app reads the `walls` documents of the Prism wallpapers in **Unsorted**. Each query uses 30 ids and `review == true`.
+
+The app groups the wallpapers by mood, by category, or by main color. The main color is the first entry of `colors`.
+
+The mood rules are a copy of `functions/src/wallMoods.ts`. The copy is in `lib/features/moods/domain/wall_mood_rules_data.dart`. The test `functions/src/__tests__/wallMoodRulesParity.test.ts` fails when the two differ. To write the copy again, set `UPDATE_MOOD_RULES=1`.
+
+- A group needs 2 or more wallpapers.
+- The category "General" is not a group.
+- Wallhaven and Pexels wallpapers have no mood, category or color data. They stay in **Unsorted**.
+- Larger groups come first.
+- New sections stop at 20.
+- A group whose name is the same as an existing section (case does not matter) goes into that section.
+
+The sheet opens on the kind that sorts the most wallpapers. Ties go to mood, then category, then color.
+
+The sheet shows each group with 4 covers. The user keeps all, some or none of the groups. One write adds the sections and moves the wallpapers.
+
+### Save section
+
+**Save section** runs **Save all** on the wallpapers of one section. The album still has the folder name.
+
+**Save all** for the whole folder works as before.
+
+Auto-rotate (Android), the iOS Shortcuts folder source, the "New in" push and the shared folder push work as before. They ignore sections.
+
+### Delete a section
+
+Deleting a section removes it. Its wallpapers go to **Unsorted**.
+
+The app writes only the folder doc. The items keep their old `sectionId`. The app reads an unknown `sectionId` as **Unsorted**.
+
+### Reorder sections
+
+Open **Reorder sections** from the overflow menu. Drag the handle of a section to its new place. Screen readers get move up and move down actions.
+
+### Data
+
+The `sections` field is in the folder doc, not in a subcollection. At most 20 sections take about 7 KB (20 × (32-character id + 160 UTF-16 units)). Every reader of the folder already reads that doc.
+
+| Path | Writer | Contents |
+|---|---|---|
+| `folders/{id}` field `sections` | Owner and editors | A list of `{id, name}` in display order. The list position is the order, so two sections can never share an order. |
+| `folders/{id}/items/{key}` field `sectionId` (optional) | Owner and editors | The id of the section. A wallpaper with no `sectionId` is in Unsorted. New wallpapers go to Unsorted. |
+| `publicFolders/{id}` field `sections` | Server only | The copy of `sections` in the projection. |
+| `publicFolders/{id}/items/{key}` field `sectionId` | Server only | The copy of `sectionId` in the projection. |
+| `webPages/folder~{id}` field `groups` | `buildWebCatalog` | `[{name, count}]`, one entry for each run of `items`. The empty name `""` is Unsorted. |
+
+### Rules
+
+- The role comes from the stored folder (`ownerId` and `memberIds`), never from the request.
+- The owner can update `sections`, with the other owner fields.
+- An editor can update only `sections` in the folder doc.
+- A member can update an item when only `sectionId` changes. This includes an item that another member added.
+- A stranger and a public viewer can write neither.
+- `sections` has at most 20 entries. Each entry has only `id` and `name`. The name is a string of 1 to 160 UTF-16 units.
+- The rules cannot count graphemes. The app caps names at 40 graphemes.
+- Rules allow 1000 expressions for each request, so each entry gets only these checks. The app trims names and drops entries with a bad id when it reads them.
+- `sectionId` matches `^[A-Za-z0-9_-]{1,32}$`.
+
+### Server and web catalogue
+
+- `onFolderWritten` syncs the public projection when `sections` changes on a public folder.
+- `publicFolderSections` keeps entries with a good id and a name that passes the public name check. It keeps at most 20.
+- A move of a wallpaper fires `onFolderItemWritten`. It repairs the counts and projects the item again. A move is not a new wallpaper, so it sends no shared folder push.
+- `buildWebCatalog` reads the header `sections` and the item `sectionId` from the docs it already reads. The Worker still reads 1 doc for each folder page. The read budget does not change.
+- Sections show only for the 60 newest wallpapers on the page.
+
+### Analytics
+
+| Event | Fields |
+|---|---|
+| `folder_section_created` | `source` (`folder_menu` or `move_sheet`), `section_count` |
+| `folder_section_renamed` | `section_count` |
+| `folder_section_deleted` | `wall_count` |
+| `folder_wall_moved` | `method` (`drag` or `menu`), `wall_count` |
+| `folder_section_suggestions_shown` | `kind`, `group_count` |
+| `folder_section_suggestions_accepted` | `count`, `offered`, `kind` |
+
+### Limits
+
+- When two members change sections at the same time, the last write of the list wins.
+- Offline, a section change waits in the queue, as other folder writes do.
+- Section names are not translated.
+- A wallpaper is in one section only.
+- Auto-rotate from one section is not in this change. It needs a new source in the auto-rotate settings, the picker and the Android worker.
+
 ## Deploy order
 
 Do these steps in this order. No backfill is necessary, because every folder starts private.
@@ -368,6 +494,15 @@ Do these steps in this order. No backfill is necessary, because every folder sta
 4. The app release.
 
 The new rules accept every write that shipped clients make. So the rules can go live before the functions.
+
+### Folder sections
+
+1. Firestore rules: `firebase deploy --only firestore:rules --project prism-wallpapers`. No new index.
+2. Cloud Functions: changed `onFolderWritten`, `onFolderItemWritten` (projection), `buildWebCatalog`.
+3. Cloudflare Worker: `infra/cloudflare/worker`, for the folder page groups. This change does not deploy it.
+4. The app release.
+
+The rules accept every write that shipped clients make, so the rules can go first.
 
 ## Limits
 
@@ -422,6 +557,17 @@ Shared folders:
 6. As A, open **People**. Tap **Remove** on B.
 7. As user C, open the same link. Make sure the page shows "This invite was already used".
 
+Sections:
+
+1. As the owner, open a folder that has Prism wallpapers in Unsorted.
+2. Tap **Add section**. Name the section **Lock screens**. Tap **Add section** again. Name the section **Dark**.
+3. Tap **Suggest sections**. Keep some of the groups. Make sure that the kept groups are sections.
+4. Drag a wallpaper onto the **Dark** header.
+5. Tap the **Lock screens** header. Make sure that the section collapses.
+6. Sign in as an editor on a second device. Open the folder. Long press a wallpaper. Tap **Move to section**. Choose a section.
+7. As the owner, open the folder again. Make sure that the move shows.
+8. Tap **Make public**. Wait for the catalogue build. Open `https://prismwalls.com/folder/<id>`. Make sure that the sections show with their headings.
+
 Tests:
 
 | Area | Files |
@@ -437,3 +583,7 @@ Tests:
 | Shared folders, server | `functions/src/__tests__/sharedFolders.test.ts` |
 | Shared folders, rules | `tool/firestore_rules_smoke.mjs` (shared folder cases) |
 | Shared folders, app | `test/features/folders/` (shared folder widgets) |
+| Sections, rules | `tool/firestore_rules_smoke.mjs` (folder sections cases) |
+| Sections, server | `functions/src/__tests__/publicFolders.test.ts`, `functions/src/__tests__/webCatalog.test.ts`, `functions/src/__tests__/wallMoodRulesParity.test.ts` |
+| Sections, worker | `infra/cloudflare/worker/test/catalog.test.mjs` |
+| Sections, app | `test/features/folders/domain/folder_section_test.dart`, `test/features/folders/domain/folder_edit_test.dart`, `test/features/folders/domain/section_suggester_test.dart`, `test/features/moods/domain/wall_mood_rules_test.dart`, `test/features/folders/biz/folders_organize_test.dart`, `test/features/folders/views/folder_sections_view_test.dart`, `test/features/folders/views/section_suggestions_sheet_test.dart` |

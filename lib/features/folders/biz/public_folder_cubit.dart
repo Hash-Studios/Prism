@@ -25,6 +25,7 @@ class PublicFolderState {
     this.walls = const <PrismWallpaper>[],
     this.following = false,
     this.followBusy = false,
+    this.sectionOf = const <String, String>{},
   });
 
   final PublicFolderStatus status;
@@ -33,18 +34,23 @@ class PublicFolderState {
   final bool following;
   final bool followBusy;
 
+  /// Wall id to section id, for the walls in a section.
+  final Map<String, String> sectionOf;
+
   PublicFolderState copyWith({
     PublicFolderStatus? status,
     PublicFolderEntity? folder,
     List<PrismWallpaper>? walls,
     bool? following,
     bool? followBusy,
+    Map<String, String>? sectionOf,
   }) => PublicFolderState(
     status: status ?? this.status,
     folder: folder ?? this.folder,
     walls: walls ?? this.walls,
     following: following ?? this.following,
     followBusy: followBusy ?? this.followBusy,
+    sectionOf: sectionOf ?? this.sectionOf,
   );
 }
 
@@ -91,7 +97,7 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
     if (folder.isFailure) return emit(const PublicFolderState(status: PublicFolderStatus.failure));
     final PublicFolderEntity? found = folder.data;
     if (found == null) return emit(const PublicFolderState(status: PublicFolderStatus.unavailable));
-    final (Result<List<String>> ids, Result<bool> following) = await (
+    final (Result<List<PublicFolderWall>> ids, Result<bool> following) = await (
       _repository.fetchWallIds(folderId),
       viewerId.isEmpty
           ? Future<Result<bool>>.value(Result.success(false))
@@ -105,7 +111,9 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
       return emit(PublicFolderState(status: unavailable ? PublicFolderStatus.unavailable : PublicFolderStatus.failure));
     }
     try {
-      final List<PrismWallpaper> walls = await _walls.fetchMoodWalls(ids.data!, keepOrder: true);
+      final List<PrismWallpaper> walls = await _walls.fetchMoodWalls(<String>[
+        for (final PublicFolderWall wall in ids.data!) wall.id,
+      ], keepOrder: true);
       if (!current()) return;
       emit(
         PublicFolderState(
@@ -113,6 +121,10 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
           folder: found,
           walls: walls,
           following: following.data ?? false,
+          sectionOf: <String, String>{
+            for (final PublicFolderWall wall in ids.data!)
+              if (wall.sectionId case final String sectionId) wall.id: sectionId,
+          },
         ),
       );
     } catch (error, stackTrace) {

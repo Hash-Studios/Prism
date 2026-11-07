@@ -11,6 +11,9 @@ abstract class FoldersState with _$FoldersState {
     @Default(<String, List<FavouriteWallEntity>>{}) Map<String, List<FavouriteWallEntity>> items,
     @Default(<String, LoadStatus>{}) Map<String, LoadStatus> itemsStatus,
 
+    /// The section id of each sorted wall per folder id, keyed by [folderItemKey]. A wall not here is in Unsorted.
+    @Default(<String, Map<String, String>>{}) Map<String, Map<String, String>> itemSections,
+
     /// Folder ids that hold each wall, keyed by [folderItemKey].
     @Default(<String, Set<String>>{}) Map<String, Set<String>> membership,
     @Default(<String, LoadStatus>{}) Map<String, LoadStatus> membershipStatus,

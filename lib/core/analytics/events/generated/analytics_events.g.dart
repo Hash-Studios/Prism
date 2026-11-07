@@ -3075,6 +3075,95 @@ class FolderOpenedEvent extends AnalyticsEvent {
   }
 }
 
+class FolderSectionCreatedEvent extends AnalyticsEvent {
+  const FolderSectionCreatedEvent({required this.source, required this.sectionCount});
+
+  final String source;
+  final int sectionCount;
+
+  @override
+  String get eventName => 'folder_section_created';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'section_count': sectionCount};
+  }
+}
+
+class FolderSectionRenamedEvent extends AnalyticsEvent {
+  const FolderSectionRenamedEvent({required this.sectionCount});
+
+  final int sectionCount;
+
+  @override
+  String get eventName => 'folder_section_renamed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'section_count': sectionCount};
+  }
+}
+
+class FolderSectionDeletedEvent extends AnalyticsEvent {
+  const FolderSectionDeletedEvent({required this.wallCount});
+
+  final int wallCount;
+
+  @override
+  String get eventName => 'folder_section_deleted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_count': wallCount};
+  }
+}
+
+class FolderWallMovedEvent extends AnalyticsEvent {
+  const FolderWallMovedEvent({required this.method, required this.wallCount});
+
+  final String method;
+  final int wallCount;
+
+  @override
+  String get eventName => 'folder_wall_moved';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'method': method, 'wall_count': wallCount};
+  }
+}
+
+class FolderSectionSuggestionsShownEvent extends AnalyticsEvent {
+  const FolderSectionSuggestionsShownEvent({required this.kind, required this.groupCount});
+
+  final String kind;
+  final int groupCount;
+
+  @override
+  String get eventName => 'folder_section_suggestions_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'kind': kind, 'group_count': groupCount};
+  }
+}
+
+class FolderSectionSuggestionsAcceptedEvent extends AnalyticsEvent {
+  const FolderSectionSuggestionsAcceptedEvent({required this.count, required this.offered, required this.kind});
+
+  final int count;
+  final int offered;
+  final String kind;
+
+  @override
+  String get eventName => 'folder_section_suggestions_accepted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'count': count, 'offered': offered, 'kind': kind};
+  }
+}
+
 class FolderVisibilityChangedEvent extends AnalyticsEvent {
   const FolderVisibilityChangedEvent({required this.isPublic, required this.source});
 
