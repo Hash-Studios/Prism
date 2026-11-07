@@ -1,6 +1,9 @@
 import Foundation
 import Testing
 
+#if canImport(PrismShareInbox)
+@testable import PrismShareInbox
+#endif
 #if canImport(Runner)
 @testable import Runner
 #endif

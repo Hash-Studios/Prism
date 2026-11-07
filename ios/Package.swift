@@ -7,6 +7,7 @@ let package = Package(
   targets: [
     .target(name: "PrismMediaStorage", path: "Runner/Media"),
     .target(name: "PrismShortcutsCore", path: "Runner/Shortcuts/Core"),
+    .target(name: "PrismShareInbox", path: "ShareInboxShared"),
     .target(
       name: "PrismNotificationCore",
       path: "PrismNotificationService",
@@ -15,7 +16,7 @@ let package = Package(
     ),
     .testTarget(
       name: "PrismMediaStorageTests",
-      dependencies: ["PrismMediaStorage", "PrismShortcutsCore", "PrismNotificationCore"],
+      dependencies: ["PrismMediaStorage", "PrismShortcutsCore", "PrismNotificationCore", "PrismShareInbox"],
       path: "RunnerTests",
       exclude: ["RunnerTests.swift"]
     )
