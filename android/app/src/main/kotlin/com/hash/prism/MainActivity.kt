@@ -1,6 +1,8 @@
 package com.hash.prism
 
+import android.app.UiModeManager
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -28,11 +30,18 @@ internal fun copyWallpaperCropFile(source: File, folder: File): File {
     }
 }
 
+internal fun launchNightMode(themeMode: String?): Int = when (themeMode) {
+    "light" -> UiModeManager.MODE_NIGHT_NO
+    "dark" -> UiModeManager.MODE_NIGHT_YES
+    else -> UiModeManager.MODE_NIGHT_AUTO
+}
+
 class MainActivity : FlutterFragmentActivity() {
     private var hapticsChannel: MethodChannel? = null
     private var quickSettingsChannel: MethodChannel? = null
     private var systemColorsChannel: MethodChannel? = null
     private var powerChannel: MethodChannel? = null
+    private var launchThemeChannel: MethodChannel? = null
     private var wallpaperCropChannel: MethodChannel? = null
     private var tiltChannel: EventChannel? = null
     private var tiltStream: PrismTiltStream? = null
@@ -108,6 +117,24 @@ class MainActivity : FlutterFragmentActivity() {
                 }
             }
         }
+        launchThemeChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/launch_theme").apply {
+            setMethodCallHandler { call, result ->
+                if (call.method != "setNightMode") {
+                    result.notImplemented()
+                    return@setMethodCallHandler
+                }
+                // The system splash reads the app night mode (Android 12+). Older versions use values-night only.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val mode = launchNightMode(call.arguments as? String)
+                    val prefs = getSharedPreferences("prism_launch_theme", MODE_PRIVATE)
+                    if (prefs.getInt("night_mode", -1) != mode) {
+                        getSystemService(UiModeManager::class.java)?.setApplicationNightMode(mode)
+                        prefs.edit().putInt("night_mode", mode).apply()
+                    }
+                }
+                result.success(null)
+            }
+        }
         tiltStream = PrismTiltStream(applicationContext).also { stream ->
             tiltChannel = EventChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/tilt").apply { setStreamHandler(stream) }
         }
@@ -150,6 +177,8 @@ class MainActivity : FlutterFragmentActivity() {
         systemColorsChannel = null
         powerChannel?.setMethodCallHandler(null)
         powerChannel = null
+        launchThemeChannel?.setMethodCallHandler(null)
+        launchThemeChannel = null
         tiltStream?.onCancel(null)
         tiltStream = null
         tiltChannel?.setStreamHandler(null)

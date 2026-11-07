@@ -33,6 +33,7 @@ import 'package:Prism/core/persistence/bootstrap/persistence_bootstrap.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
+import 'package:Prism/core/platform/launch_night_mode.dart';
 import 'package:Prism/core/platform/review_live_activity_sync.dart';
 import 'package:Prism/core/platform/streak_widget_sync.dart';
 import 'package:Prism/core/platform/system_color_schemes.dart';
@@ -851,6 +852,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     );
     unawaited(_watchSession());
     unawaited(NotificationSignals.instance.onResumed());
+    unawaited(syncLaunchNightMode(context.read<ThemeBloc>().state.mode));
   }
 
   Future<void> _refreshWotdTopics() async {
@@ -949,6 +951,10 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
               getIt<InAppNotificationsBloc>().add(const InAppNotificationsEvent.localReloadRequested());
             }
           },
+        ),
+        BlocListener<ThemeBloc, ThemeState>(
+          listenWhen: (previous, current) => previous.mode != current.mode,
+          listener: (context, state) => unawaited(syncLaunchNightMode(state.mode)),
         ),
         BlocListener<StartupBloc, StartupState>(
           listenWhen: (previous, current) =>
