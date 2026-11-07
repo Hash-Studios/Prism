@@ -65,6 +65,8 @@ interface FolderPage {
   owner: { username: string; name: string; hasPage: boolean } | null;
   total: number;
   items: Card[];
+  /** Runs of `items`, in order. "" is Unsorted, shown first with no heading. Empty when the folder has no sections. */
+  groups: Array<{ name: string; count: number }>;
   updatedAt: string;
 }
 
@@ -544,8 +546,32 @@ function parseFolderPage(value: unknown, env: CatalogEnv): FolderPage {
   return {
     kind: 'folder', id: requiredString(item, 'id'), name: requiredString(item, 'name'), owner,
     total: requiredNumber(item, 'total'), items: item.items.map((value) => parseCard(value, env)),
-    updatedAt: requiredString(item, 'updatedAt'),
+    groups: parseFolderGroups(item.groups, item.items.length), updatedAt: requiredString(item, 'updatedAt'),
   };
+}
+
+/** Groups that do not add up to the item count are dropped, so a bad page still shows every wall in one grid. */
+function parseFolderGroups(value: unknown, itemCount: number): FolderPage['groups'] {
+  if (!Array.isArray(value) || value.some((raw) => raw == null || typeof raw !== 'object' || Array.isArray(raw))) return [];
+  const groups = value.map((raw) => {
+    const group = record(raw);
+    return { name: typeof group.name === 'string' ? group.name : '', count: Number(group.count) };
+  });
+  const valid = groups.every((group) => Number.isSafeInteger(group.count) && group.count > 0)
+    && groups.reduce((sum, group) => sum + group.count, 0) === itemCount;
+  return valid ? groups : [];
+}
+
+function folderGridHtml(folder: FolderPage, eager: number): string {
+  if (!folder.groups.length) return gridHtml(folder.items, eager);
+  let start = 0;
+  return folder.groups.map((group) => {
+    const cards = folder.items.slice(start, start + group.count);
+    const html = `<section class="folder-section">${group.name ? `<h2>${escapeHtml(group.name)} <span class="section-count">${
+      formatCount(group.count)}</span></h2>` : ''}${gridHtml(cards, Math.max(0, eager - start))}</section>`;
+    start += group.count;
+    return html;
+  }).join('');
 }
 
 async function renderWall(id: string, desktopView: boolean, env: CatalogEnv): Promise<Response> {
@@ -747,7 +773,7 @@ async function renderFolder(id: string, env: CatalogEnv): Promise<Response> {
       ${actionsHtml(canonical, 'Open in Prism', env)}
     </div>
   </header>
-  ${folder.items.length ? gridHtml(folder.items, covers.length) : '<p class="empty">This folder has no public wallpapers yet.</p>'}
+  ${folder.items.length ? folderGridHtml(folder, covers.length) : '<p class="empty">This folder has no public wallpapers yet.</p>'}
   ${folder.total > folder.items.length ? `<p class="more">Open Prism to see all ${escapeHtml(count)}.</p>` : ''}
 </main>`;
   return page({
@@ -1440,6 +1466,9 @@ h2{font-size:1.25rem;font-weight:700}
 .folder-row img{width:100%;height:auto;aspect-ratio:3/4;object-fit:cover;border-radius:var(--radius)}
 .folder-name{display:block;font-weight:700;margin-top:8px}
 .folder-count{display:block;color:var(--muted);font-size:.85rem}
+.folder-section+.folder-section{margin-top:32px}
+.folder-section h2{margin:0 0 12px}
+.section-count{color:var(--muted);font-weight:400}
 .missing{padding-top:48px;max-width:640px}
 .missing .btn{margin-top:24px}
 .site-foot{max-width:1200px;margin:0 auto;padding:32px var(--gutter) max(32px,env(safe-area-inset-bottom));border-top:1px solid var(--line);color:var(--muted);font-size:.9rem;display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between}

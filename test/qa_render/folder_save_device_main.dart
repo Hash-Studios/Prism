@@ -23,6 +23,7 @@ import 'package:Prism/features/folders/data/folder_save_gateway_impl.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_save_plan.dart';
 import 'package:Prism/features/folders/domain/entities/folder_save_run.dart';
+import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folder_save_gateway.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
@@ -105,8 +106,18 @@ class _QaFolders implements FoldersRepository {
   ]);
 
   @override
-  Future<Result<List<FavouriteWallEntity>?>> fetchItems(String folderId, {required String userId, int? limit}) async =>
-      Result.success<List<FavouriteWallEntity>?>(limit == null ? _walls : _walls.take(limit).toList());
+  Future<Result<List<FolderItem>?>> fetchItems(String folderId, {required String userId, int? limit}) async {
+    final List<FavouriteWallEntity> walls = limit == null ? _walls : _walls.take(limit).toList();
+    return Result.success<List<FolderItem>?>(walls.map((w) => FolderItem(w)).toList());
+  }
+
+  @override
+  Future<Result<void>> organize(
+    FolderEntity folder, {
+    required String userId,
+    List<FolderSection>? sections,
+    Map<String, String?> moves = const <String, String?>{},
+  }) async => Result.success<void>(null);
 
   @override
   Future<Result<Set<String>>> foldersContaining(List<String> folderIds, String itemKey) async =>
@@ -137,7 +148,7 @@ class _QaPublicFolders implements PublicFoldersRepository {
   Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success<PublicFolderEntity?>(null);
 
   @override
-  Future<Result<List<String>>> fetchWallIds(String folderId) async => Result.success(<String>[]);
+  Future<Result<List<PublicFolderWall>>> fetchWallIds(String folderId) async => Result.success(<PublicFolderWall>[]);
 
   @override
   Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) async =>

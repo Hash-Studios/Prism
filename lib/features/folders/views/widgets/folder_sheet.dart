@@ -44,12 +44,22 @@ Future<String?> showFolderNameSheet(
   required String title,
   required String actionLabel,
   String initialName = '',
+  String? hint,
+  int maxLength = folderNameMaxLength,
+  String? Function(String raw) normalize = normalizeFolderName,
 }) {
   return showPrismSheet<String>(
     context,
     detents: const <PrismSheetDetent>[PrismSheetDetent.fit],
     dismissKeyboardOnDrag: true,
-    builder: (_) => _FolderNameSheet(title: title, actionLabel: actionLabel, initialName: initialName),
+    builder: (_) => _FolderNameSheet(
+      title: title,
+      actionLabel: actionLabel,
+      initialName: initialName,
+      hint: hint,
+      maxLength: maxLength,
+      normalize: normalize,
+    ),
   );
 }
 
@@ -323,11 +333,21 @@ class FolderCheckRow extends StatelessWidget {
 }
 
 class _FolderNameSheet extends StatefulWidget {
-  const _FolderNameSheet({required this.title, required this.actionLabel, required this.initialName});
+  const _FolderNameSheet({
+    required this.title,
+    required this.actionLabel,
+    required this.initialName,
+    required this.hint,
+    required this.maxLength,
+    required this.normalize,
+  });
 
   final String title;
   final String actionLabel;
   final String initialName;
+  final String? hint;
+  final int maxLength;
+  final String? Function(String raw) normalize;
 
   @override
   State<_FolderNameSheet> createState() => _FolderNameSheetState();
@@ -344,7 +364,7 @@ class _FolderNameSheetState extends State<_FolderNameSheet> {
   }
 
   void _submit() {
-    final String? name = normalizeFolderName(_controller.text);
+    final String? name = widget.normalize(_controller.text);
     if (name != null) Navigator.of(context).pop(name);
   }
 
@@ -356,16 +376,16 @@ class _FolderNameSheetState extends State<_FolderNameSheet> {
         PrismButton(
           label: widget.actionLabel,
           expand: true,
-          onPressed: normalizeFolderName(_controller.text) == null ? null : _submit,
+          onPressed: widget.normalize(_controller.text) == null ? null : _submit,
         ),
       ],
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
         child: PrismTextField(
           controller: _controller,
-          hint: context.l10n.foldersNameHint,
+          hint: widget.hint ?? context.l10n.foldersNameHint,
           autofocus: true,
-          maxLength: folderNameMaxLength,
+          maxLength: widget.maxLength,
           textCapitalization: TextCapitalization.sentences,
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => _submit(),

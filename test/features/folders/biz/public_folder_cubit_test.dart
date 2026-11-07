@@ -14,6 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 class _FakePublicFolders extends Fake implements PublicFoldersRepository {
   Result<PublicFolderEntity?> folder = Result.success(_folder(0));
   Result<List<String>> wallIds = Result.success(<String>[]);
+  List<PublicFolderWall>? wallRecords;
   Result<bool> following = Result.success(false);
   Future<Result<PublicFolderEntity?>>? nextFolderRead;
   Future<Result<void>> Function()? onSetFollowing;
@@ -27,7 +28,13 @@ class _FakePublicFolders extends Fake implements PublicFoldersRepository {
   }
 
   @override
-  Future<Result<List<String>>> fetchWallIds(String folderId) async => wallIds;
+  Future<Result<List<PublicFolderWall>>> fetchWallIds(String folderId) async {
+    final List<PublicFolderWall>? records = wallRecords;
+    if (records != null) return Result.success(records);
+    final Result<List<String>> ids = wallIds;
+    if (ids.isFailure) return Result.error(ids.failure!);
+    return Result.success(ids.data!.map<PublicFolderWall>((id) => (id: id, sectionId: null)).toList());
+  }
 
   @override
   Future<Result<bool>> isFollowing(String folderId, String userId) async => following;
@@ -108,6 +115,16 @@ void main() {
     expect(cubit.state.following, isTrue);
     expect(walls.requestedIds, <String>['w2', 'w1']);
     expect(walls.requestedKeepOrder, isTrue);
+  });
+
+  test('load maps the wall sections into sectionOf', () async {
+    final PublicFolderCubit cubit = cubitFor();
+    addTearDown(cubit.close);
+    repo.wallRecords = <PublicFolderWall>[(id: 'W1', sectionId: 'lock'), (id: 'W2', sectionId: null)];
+
+    await cubit.load('f1', viewerId: 'u1');
+
+    expect(cubit.state.sectionOf, <String, String>{'W1': 'lock'});
   });
 
   test('load is unavailable when the folder read returns null', () async {

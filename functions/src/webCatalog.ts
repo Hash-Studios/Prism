@@ -6,6 +6,7 @@ import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {db, REGION, str} from "./common";
 import {isPreviewUrl} from "./pushGallery";
+import {isSectionId, publicFolderSections, type PublicSection} from "./publicFolders";
 import {r2Secrets} from "./r2Storage";
 import {parseDesktopVariant, readyDesktopCompanion} from "./studio/desktop";
 import {PALETTE} from "./wallColors";
@@ -331,7 +332,8 @@ function sitemap(name: string, entries: Array<[string, string]>): Array<[string,
  */
 export function buildPages(
   walls: Map<string, WebWall>, popularIds: string[], folders: Array<{id: string; name: string; owner: PublicProfile | null;
-    wallIds: string[]; updatedAt: string; total?: number}>, creators: Map<string, PublicProfile>,
+    wallIds: string[]; updatedAt: string; total?: number; sections?: PublicSection[];
+    sectionOf?: Record<string, string>}>, creators: Map<string, PublicProfile>,
 ): Map<string, PageDoc> {
   const live = [...walls].filter(([, wall]) => wall.state === "live").sort(newest);
   // Popular ids and folder items carry the share id in upper case, the way wallpaper_stats keys it.
@@ -371,11 +373,12 @@ export function buildPages(
     ({...cardOf(id, wall), desktop: wall.desktop?.thumb ?? ""}))));
 
   const publicFolders = folders.map((folder) => {
-    const items = folder.wallIds.flatMap((id) => {
+    const shown = folder.wallIds.flatMap((id) => {
       const entry = liveById.get(id.toUpperCase());
-      return entry ? [cardOf(...entry)] : [];
+      return entry ? [{card: cardOf(...entry), sectionId: folder.sectionOf?.[id]}] : [];
     }).slice(0, FOLDER_WALLS);
-    return {...folder, items};
+    const {items, groups} = sectionGroups(shown, folder.sections ?? []);
+    return {...folder, items, groups};
   });
   for (const folder of publicFolders) {
     pages.set(`folder~${folder.id}`, {
@@ -384,6 +387,7 @@ export function buildPages(
         username: folder.owner.username, name: folder.owner.name, hasPage: hasCreatorPage(folder.owner.username),
       } : null,
       total: folder.total ?? folder.wallIds.length, items: folder.items,
+      ...(folder.groups.length ? {groups: folder.groups} : {}),
     });
   }
 
@@ -424,6 +428,26 @@ const hashOf = (doc: PageDoc) => createHash("sha256").update(stableJson(doc)).di
 
 async function inChunks<T>(values: T[], run: (value: T) => Promise<unknown>, size = WRITE_CHUNK): Promise<void> {
   for (let i = 0; i < values.length; i += size) await Promise.all(values.slice(i, i + size).map(run));
+}
+
+/**
+ * Orders a folder page's walls as the app shows them: Unsorted first, then each section in order, each newest first.
+ * `groups` names each run of `items`; "" is Unsorted. It is empty when no shown wall is in a section, so a folder
+ * without sections keeps its old page.
+ */
+export function sectionGroups(shown: Array<{card: WebCard; sectionId?: string}>, sections: PublicSection[]):
+  {items: WebCard[]; groups: Array<{name: string; count: number}>} {
+  const known = new Set(sections.map((section) => section.id));
+  const unsorted = shown.filter((wall) => !wall.sectionId || !known.has(wall.sectionId)).map((wall) => wall.card);
+  const named = sections.map((section) => ({
+    name: section.name, cards: shown.filter((wall) => wall.sectionId === section.id).map((wall) => wall.card),
+  })).filter((group) => group.cards.length > 0);
+  if (named.length === 0) return {items: shown.map((wall) => wall.card), groups: []};
+  return {
+    items: [...unsorted, ...named.flatMap((group) => group.cards)],
+    groups: [...(unsorted.length ? [{name: "", count: unsorted.length}] : []),
+      ...named.map((group) => ({name: group.name, count: group.cards.length}))],
+  };
 }
 
 /**
@@ -496,6 +520,9 @@ export async function rebuildWebCatalog(): Promise<{walls: number; pages: number
       name: cleanText(data.name, 50),
       owner: profiles.get(str(data.ownerId)) ?? null,
       wallIds: items.docs.map((item) => str(item.data().id)).filter((id) => SHARE_ID.test(id)),
+      sections: publicFolderSections(data.sections),
+      sectionOf: Object.fromEntries(items.docs.filter((item) => isSectionId(item.data().sectionId))
+        .map((item) => [str(item.data().id), str(item.data().sectionId)])),
       total: typeof data.itemCount === "number" && Number.isFinite(data.itemCount) ? data.itemCount : items.size,
       updatedAt: isoOf(data.updatedAt) || isoOf(doc.createTime) || now.toISOString(),
     };

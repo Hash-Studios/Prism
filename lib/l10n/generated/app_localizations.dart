@@ -23376,6 +23376,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Only you and the people you invited will see it. Its link stops working and its followers lose it.'**
   String get foldersMakePrivateMessageShared;
+
+  /// Folder page menu item and name sheet button that add a named section to a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Add section'**
+  String get foldersSectionAdd;
+
+  /// Title of the sheet where the user types a name for a new folder section. Also a row in the Move to sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'New section'**
+  String get foldersSectionNewTitle;
+
+  /// Hint in the section name field.
+  ///
+  /// In en, this message translates to:
+  /// **'For example, Lock screens'**
+  String get foldersSectionNameHint;
+
+  /// Title of the sheet that renames a folder section.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename section'**
+  String get foldersSectionRenameTitle;
+
+  /// Section menu item and confirm button that delete a folder section. Its wallpapers stay in the folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete section'**
+  String get foldersSectionDelete;
+
+  /// Title of the confirm before deleting a folder section. name is the section name.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String foldersSectionDeleteTitle(String name);
+
+  /// Body of the confirm before deleting a folder section. count is the number of wallpapers in it. Unsorted is the group of wallpapers with no section.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{The section is empty.} =1{Its wallpaper moves to Unsorted.} other{Its {count} wallpapers move to Unsorted.}}'**
+  String foldersSectionDeleteMessage(int count);
+
+  /// Name of the group at the top of a folder that holds the wallpapers that are in no section.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsorted'**
+  String get foldersSectionUnsorted;
+
+  /// Folder page menu item and sheet title for changing the order of the sections.
+  ///
+  /// In en, this message translates to:
+  /// **'Reorder sections'**
+  String get foldersSectionReorder;
+
+  /// Tooltip of the drag handle on a section in the Reorder sections sheet. name is the section name.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to move {name}'**
+  String foldersSectionDragHandle(String name);
+
+  /// Count under a section name.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No wallpapers} =1{1 wallpaper} other{{count} wallpapers}}'**
+  String foldersSectionWallCount(int count);
+
+  /// Screen reader label of a section header. Double tap collapses or expands it. name is the section name.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, {count, plural, =0{no wallpapers} =1{1 wallpaper} other{{count} wallpapers}}'**
+  String foldersSectionHeaderLabel(String name, int count);
+
+  /// Screen reader label of a chip in the section strip at the top of a folder. Tapping it scrolls to the section.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to {name}, {count, plural, =0{no wallpapers} =1{1 wallpaper} other{{count} wallpapers}}'**
+  String foldersSectionJumpTo(String name, int count);
+
+  /// Tooltip of the menu button on a section header. name is the section name.
+  ///
+  /// In en, this message translates to:
+  /// **'More options for {name}'**
+  String foldersSectionOptions(String name);
+
+  /// Section menu item that saves all wallpapers of one section to the device, like Save all for the whole folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Save section'**
+  String get foldersSectionSaveAll;
+
+  /// Button in the wallpaper menu and the selection bar. It opens a list of the sections.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to section'**
+  String get foldersSectionMoveTo;
+
+  /// Title of the sheet that lists Unsorted and the sections of a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to'**
+  String get foldersSectionMoveTitle;
+
+  /// Toast after wallpapers move to a section. name is the section name, or Unsorted.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Moved 1 wallpaper to {name}.} other{Moved {count} wallpapers to {name}.}}'**
+  String foldersSectionMoved(int count, String name);
+
+  /// Folder page menu item that starts selecting wallpapers to move them.
+  ///
+  /// In en, this message translates to:
+  /// **'Select wallpapers'**
+  String get foldersSectionSelect;
+
+  /// Text in the selection bar at the bottom of a folder.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Tap wallpapers to select them} =1{1 selected} other{{count} selected}}'**
+  String foldersSectionSelected(int count);
+
+  /// Error toast when the user tries to add a section to a folder that has the most sections.
+  ///
+  /// In en, this message translates to:
+  /// **'A folder can have up to {max} sections.'**
+  String foldersSectionsFull(int max);
+
+  /// Text under an empty section for a reader who cannot organize the folder.
+  ///
+  /// In en, this message translates to:
+  /// **'No wallpapers yet.'**
+  String get foldersSectionEmpty;
+
+  /// Text under an empty section for the owner and editors. Only the section name (the header) and its chip in the strip accept a drop, not this text. Move to section is the name of a button.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag wallpapers onto the section name, or use Move to section.'**
+  String get foldersSectionEmptyHint;
+
+  /// Folder page menu item. Prism groups the Unsorted wallpapers by mood, category or colour on the device.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggest sections'**
+  String get foldersSectionSuggest;
+
+  /// Title of the sheet with the suggested sections.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested sections'**
+  String get foldersSuggestTitle;
+
+  /// Message under the title of the suggested sections sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups of your Unsorted wallpapers. Keep the ones you want.'**
+  String get foldersSuggestBody;
+
+  /// Segment in the suggested sections sheet: group by mood.
+  ///
+  /// In en, this message translates to:
+  /// **'Mood'**
+  String get foldersSuggestByMood;
+
+  /// Segment in the suggested sections sheet: group by category.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get foldersSuggestByCategory;
+
+  /// Segment in the suggested sections sheet: group by main colour.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour'**
+  String get foldersSuggestByColour;
+
+  /// Line under a suggested group whose name matches a section that exists. count is a wallpaper count, for example "3 wallpapers".
+  ///
+  /// In en, this message translates to:
+  /// **'{count}. Goes into your section with this name.'**
+  String foldersSuggestJoins(String count);
+
+  /// Main button of the suggested sections sheet. count is the number of new sections it makes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Add sections} =1{Add 1 section} other{Add {count} sections}}'**
+  String foldersSuggestAdd(int count);
+
+  /// Main button of the suggested sections sheet when every kept group goes into a section that exists.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Sort 1 wallpaper} other{Sort {count} wallpapers}}'**
+  String foldersSuggestSort(int count);
+
+  /// Toast after the user keeps suggested sections.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Sorted 1 wallpaper.} other{Sorted {count} wallpapers.}}'**
+  String foldersSuggestSorted(int count);
+
+  /// Empty state in the suggested sections sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'No groups to suggest'**
+  String get foldersSuggestEmptyTitle;
+
+  /// Body of the empty state in the suggested sections sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'A group needs 2 or more Prism wallpapers in Unsorted with the same mood, category or colour.'**
+  String get foldersSuggestEmptyBody;
+
+  /// Error state in the suggested sections sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load suggestions'**
+  String get foldersSuggestError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -14,6 +14,7 @@ import 'package:Prism/features/favourite_walls/data/favourite_wall_doc_mapper.da
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_member.dart';
+import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:injectable/injectable.dart';
@@ -38,6 +39,7 @@ FolderEntity folderFromDoc(Map<String, dynamic> data, String id) {
     covers: covers is List ? covers.whereType<String>().take(folderMaxCovers).toList() : const <String>[],
     isPublic: data['public'] == true,
     editors: folderEditorsFromDoc(data['members']),
+    sections: folderSectionsFromDoc(data['sections']),
   );
 }
 
@@ -136,7 +138,7 @@ class FoldersRepositoryImpl implements FoldersRepository {
   });
 
   @override
-  Future<Result<List<FavouriteWallEntity>?>> fetchItems(String folderId, {required String userId, int? limit}) =>
+  Future<Result<List<FolderItem>?>> fetchItems(String folderId, {required String userId, int? limit}) =>
       _guard('load folder items', () async {
         if (userId.isEmpty) return null;
         try {
@@ -148,7 +150,7 @@ class FoldersRepositoryImpl implements FoldersRepository {
             sourceTag: 'folders.fetch_items.owner',
           );
           if (ownerId == null || ownerId.isEmpty) return null;
-          return await _firestoreClient.query<FavouriteWallEntity>(
+          return await _firestoreClient.query<FolderItem>(
             FirestoreQuerySpec(
               collection: FirebaseCollections.folderItems(folderId),
               sourceTag: 'folders.fetch_items',
@@ -158,9 +160,12 @@ class FoldersRepositoryImpl implements FoldersRepository {
               orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'addedAt', descending: true)],
               limit: limit,
             ),
-            (data, docId) => mapFavouriteWallDoc(
-              FavouriteWallDocDto.fromJson(data),
-              parseString(data['wallpaperDocumentId'], fallback: parseString(data['id'], fallback: docId)),
+            (data, docId) => FolderItem(
+              mapFavouriteWallDoc(
+                FavouriteWallDocDto.fromJson(data),
+                parseString(data['wallpaperDocumentId'], fallback: parseString(data['id'], fallback: docId)),
+              ),
+              sectionId: isFolderSectionId(data['sectionId']) ? data['sectionId'] as String : null,
             ),
           );
         } catch (error) {
@@ -327,4 +332,39 @@ class FoldersRepositoryImpl implements FoldersRepository {
           ownerId: userId,
         );
       });
+
+  @override
+  Future<Result<void>> organize(
+    FolderEntity folder, {
+    required String userId,
+    List<FolderSection>? sections,
+    Map<String, String?> moves = const <String, String?>{},
+  }) => _guard('organize folder', () async {
+    final List<MapEntry<String, String?>> entries = moves.entries.toList();
+    // The batch that writes the sections carries the first moves, so a new section and its walls land together.
+    final int firstChunk = sections == null ? folderOrganizeMaxWrites : folderOrganizeMaxWrites - 1;
+    int start = 0;
+    do {
+      final int end = math.min(start + (start == 0 ? firstChunk : folderOrganizeMaxWrites), entries.length);
+      final List<MapEntry<String, String?>> chunk = entries.sublist(start, end);
+      final bool withSections = start == 0 && sections != null;
+      await _write(
+        (batch) async {
+          if (withSections) {
+            batch.updateDoc(FirebaseCollections.folders, folder.id, <String, dynamic>{
+              'sections': <Map<String, String>>[for (final FolderSection section in sections) section.toDoc()],
+            });
+          }
+          for (final MapEntry<String, String?> move in chunk) {
+            batch.updateDoc(FirebaseCollections.folderItems(folder.id), move.key, <String, dynamic>{
+              'sectionId': move.value ?? FirestoreSentinels.delete(),
+            });
+          }
+        },
+        'folders.organize',
+        ownerId: userId,
+      );
+      start = end;
+    } while (start < entries.length);
+  });
 }

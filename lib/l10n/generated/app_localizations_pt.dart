@@ -15002,6 +15002,203 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get foldersMakePrivateMessageShared =>
       'Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso.';
+
+  @override
+  String get foldersSectionAdd => 'Adicionar seção';
+
+  @override
+  String get foldersSectionNewTitle => 'Nova seção';
+
+  @override
+  String get foldersSectionNameHint => 'Por exemplo, Telas de bloqueio';
+
+  @override
+  String get foldersSectionRenameTitle => 'Renomear seção';
+
+  @override
+  String get foldersSectionDelete => 'Excluir seção';
+
+  @override
+  String foldersSectionDeleteTitle(String name) {
+    return 'Excluir $name?';
+  }
+
+  @override
+  String foldersSectionDeleteMessage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Os $count papéis de parede dela vão para Não organizados.',
+      one: 'O papel de parede dela vai para Não organizados.',
+      zero: 'A seção está vazia.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionUnsorted => 'Não organizados';
+
+  @override
+  String get foldersSectionReorder => 'Reordenar seções';
+
+  @override
+  String foldersSectionDragHandle(String name) {
+    return 'Arraste para mover $name';
+  }
+
+  @override
+  String foldersSectionWallCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count papéis de parede',
+      one: '1 papel de parede',
+      zero: 'Nenhum papel de parede',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionHeaderLabel(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count papéis de parede',
+      one: '1 papel de parede',
+      zero: 'nenhum papel de parede',
+    );
+    return '$name, $_temp0';
+  }
+
+  @override
+  String foldersSectionJumpTo(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count papéis de parede',
+      one: '1 papel de parede',
+      zero: 'nenhum papel de parede',
+    );
+    return 'Ir para $name, $_temp0';
+  }
+
+  @override
+  String foldersSectionOptions(String name) {
+    return 'Mais opções para $name';
+  }
+
+  @override
+  String get foldersSectionSaveAll => 'Salvar seção';
+
+  @override
+  String get foldersSectionMoveTo => 'Mover para seção';
+
+  @override
+  String get foldersSectionMoveTitle => 'Mover para';
+
+  @override
+  String foldersSectionMoved(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count papéis de parede movidos para $name.',
+      one: '1 papel de parede movido para $name.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionSelect => 'Selecionar papéis de parede';
+
+  @override
+  String foldersSectionSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count selecionados',
+      one: '1 selecionado',
+      zero: 'Toque nos papéis de parede para selecioná-los',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionsFull(int max) {
+    return 'Uma pasta pode ter até $max seções.';
+  }
+
+  @override
+  String get foldersSectionEmpty => 'Ainda não há papéis de parede.';
+
+  @override
+  String get foldersSectionEmptyHint => 'Arraste papéis de parede para o nome da seção ou use Mover para seção.';
+
+  @override
+  String get foldersSectionSuggest => 'Sugerir seções';
+
+  @override
+  String get foldersSuggestTitle => 'Seções sugeridas';
+
+  @override
+  String get foldersSuggestBody => 'Grupos dos seus papéis de parede não organizados. Mantenha os que você quiser.';
+
+  @override
+  String get foldersSuggestByMood => 'Humor';
+
+  @override
+  String get foldersSuggestByCategory => 'Categoria';
+
+  @override
+  String get foldersSuggestByColour => 'Cor';
+
+  @override
+  String foldersSuggestJoins(String count) {
+    return '$count. Vai para a sua seção com este nome.';
+  }
+
+  @override
+  String foldersSuggestAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Adicionar $count seções',
+      one: 'Adicionar 1 seção',
+      zero: 'Adicionar seções',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSort(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Organizar $count papéis de parede',
+      one: 'Organizar 1 papel de parede',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSorted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count papéis de parede organizados.',
+      one: '1 papel de parede organizado.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSuggestEmptyTitle => 'Nenhum grupo para sugerir';
+
+  @override
+  String get foldersSuggestEmptyBody =>
+      'Um grupo precisa de 2 ou mais papéis de parede do Prism em Não organizados com o mesmo humor, categoria ou cor.';
+
+  @override
+  String get foldersSuggestError => 'Não foi possível carregar as sugestões';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -30000,4 +30197,201 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get foldersMakePrivateMessageShared =>
       'Só você e as pessoas que você convidou vão vê-la. O link deixa de funcionar e os seguidores perdem o acesso.';
+
+  @override
+  String get foldersSectionAdd => 'Adicionar seção';
+
+  @override
+  String get foldersSectionNewTitle => 'Nova seção';
+
+  @override
+  String get foldersSectionNameHint => 'Por exemplo, Telas de bloqueio';
+
+  @override
+  String get foldersSectionRenameTitle => 'Renomear seção';
+
+  @override
+  String get foldersSectionDelete => 'Excluir seção';
+
+  @override
+  String foldersSectionDeleteTitle(String name) {
+    return 'Excluir $name?';
+  }
+
+  @override
+  String foldersSectionDeleteMessage(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Os $count papéis de parede dela vão para Não organizados.',
+      one: 'O papel de parede dela vai para Não organizados.',
+      zero: 'A seção está vazia.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionUnsorted => 'Não organizados';
+
+  @override
+  String get foldersSectionReorder => 'Reordenar seções';
+
+  @override
+  String foldersSectionDragHandle(String name) {
+    return 'Arraste para mover $name';
+  }
+
+  @override
+  String foldersSectionWallCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count papéis de parede',
+      one: '1 papel de parede',
+      zero: 'Nenhum papel de parede',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionHeaderLabel(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count papéis de parede',
+      one: '1 papel de parede',
+      zero: 'nenhum papel de parede',
+    );
+    return '$name, $_temp0';
+  }
+
+  @override
+  String foldersSectionJumpTo(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count papéis de parede',
+      one: '1 papel de parede',
+      zero: 'nenhum papel de parede',
+    );
+    return 'Ir para $name, $_temp0';
+  }
+
+  @override
+  String foldersSectionOptions(String name) {
+    return 'Mais opções para $name';
+  }
+
+  @override
+  String get foldersSectionSaveAll => 'Salvar seção';
+
+  @override
+  String get foldersSectionMoveTo => 'Mover para seção';
+
+  @override
+  String get foldersSectionMoveTitle => 'Mover para';
+
+  @override
+  String foldersSectionMoved(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count papéis de parede movidos para $name.',
+      one: '1 papel de parede movido para $name.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSectionSelect => 'Selecionar papéis de parede';
+
+  @override
+  String foldersSectionSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count selecionados',
+      one: '1 selecionado',
+      zero: 'Toque nos papéis de parede para selecioná-los',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSectionsFull(int max) {
+    return 'Uma pasta pode ter até $max seções.';
+  }
+
+  @override
+  String get foldersSectionEmpty => 'Ainda não há papéis de parede.';
+
+  @override
+  String get foldersSectionEmptyHint => 'Arraste papéis de parede para o nome da seção ou use Mover para seção.';
+
+  @override
+  String get foldersSectionSuggest => 'Sugerir seções';
+
+  @override
+  String get foldersSuggestTitle => 'Seções sugeridas';
+
+  @override
+  String get foldersSuggestBody => 'Grupos dos seus papéis de parede não organizados. Mantenha os que você quiser.';
+
+  @override
+  String get foldersSuggestByMood => 'Humor';
+
+  @override
+  String get foldersSuggestByCategory => 'Categoria';
+
+  @override
+  String get foldersSuggestByColour => 'Cor';
+
+  @override
+  String foldersSuggestJoins(String count) {
+    return '$count. Vai para a sua seção com este nome.';
+  }
+
+  @override
+  String foldersSuggestAdd(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Adicionar $count seções',
+      one: 'Adicionar 1 seção',
+      zero: 'Adicionar seções',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSort(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Organizar $count papéis de parede',
+      one: 'Organizar 1 papel de parede',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSuggestSorted(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count papéis de parede organizados.',
+      one: '1 papel de parede organizado.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSuggestEmptyTitle => 'Nenhum grupo para sugerir';
+
+  @override
+  String get foldersSuggestEmptyBody =>
+      'Um grupo precisa de 2 ou mais papéis de parede do Prism em Não organizados com o mesmo humor, categoria ou cor.';
+
+  @override
+  String get foldersSuggestError => 'Não foi possível carregar as sugestões';
 }
