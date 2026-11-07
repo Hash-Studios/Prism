@@ -5583,6 +5583,42 @@ abstract class AppLocalizations {
   /// **'Diyas, fireworks and gold. It is free. Tap to try it.'**
   String get diwaliAnnouncementBody;
 
+  /// No description provided for @coreThemeWinter.
+  ///
+  /// In en, this message translates to:
+  /// **'Winter'**
+  String get coreThemeWinter;
+
+  /// No description provided for @winterBannerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The Winter theme is here'**
+  String get winterBannerTitle;
+
+  /// No description provided for @winterBannerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cool blues and soft snow, in light and dark. Free. Tap to try it.'**
+  String get winterBannerSubtitle;
+
+  /// No description provided for @winterAnnouncementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New: the Winter theme ❄️'**
+  String get winterAnnouncementTitle;
+
+  /// No description provided for @winterAnnouncementBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Cool blues and soft snow for the holidays. It is free. Tap to try it.'**
+  String get winterAnnouncementBody;
+
+  /// No description provided for @winterNewYearGreeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Happy New Year'**
+  String get winterNewYearGreeting;
+
   /// No description provided for @coreThisPageDoesNotExist.
   ///
   /// In en, this message translates to:

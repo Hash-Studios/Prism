@@ -3261,6 +3261,24 @@ class AppLocalizationsPt extends AppLocalizations {
   String get diwaliAnnouncementBody => 'Diyas, fogos de artifício e ouro. É grátis. Toque para experimentar.';
 
   @override
+  String get coreThemeWinter => 'Inverno';
+
+  @override
+  String get winterBannerTitle => 'O tema Inverno chegou';
+
+  @override
+  String get winterBannerSubtitle => 'Azuis frios e neve suave, no claro e no escuro. Grátis. Toque para experimentar.';
+
+  @override
+  String get winterAnnouncementTitle => 'Novo: o tema Inverno ❄️';
+
+  @override
+  String get winterAnnouncementBody => 'Azuis frios e neve suave para as festas. É grátis. Toque para experimentar.';
+
+  @override
+  String get winterNewYearGreeting => 'Feliz Ano Novo';
+
+  @override
   String get coreThisPageDoesNotExist => 'Esta página não existe';
 
   @override
@@ -18282,6 +18300,24 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get diwaliAnnouncementBody => 'Diyas, fogos de artifício e ouro. É grátis. Toque para experimentar.';
+
+  @override
+  String get coreThemeWinter => 'Inverno';
+
+  @override
+  String get winterBannerTitle => 'O tema Inverno chegou';
+
+  @override
+  String get winterBannerSubtitle => 'Azuis frios e neve suave, no claro e no escuro. Grátis. Toque para experimentar.';
+
+  @override
+  String get winterAnnouncementTitle => 'Novo: o tema Inverno ❄️';
+
+  @override
+  String get winterAnnouncementBody => 'Azuis frios e neve suave para as festas. É grátis. Toque para experimentar.';
+
+  @override
+  String get winterNewYearGreeting => 'Feliz Ano Novo';
 
   @override
   String get coreThisPageDoesNotExist => 'Esta página não existe';

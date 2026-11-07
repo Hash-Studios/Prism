@@ -60,6 +60,22 @@ int _carouselColumns(BuildContext context) {
 double feedCarouselCardHeight(BuildContext context) =>
     math.max(0, (_carouselWidth(context) / _carouselColumns(context) - PrismFeedLayout.gridPadding.horizontal) * 0.6);
 
+/// True when [seasonCards] placed after [otherPages] stay more than [columns] pages from the Wrapped card at
+/// [wrappedIndex] in both directions of the loop. A swipe can show partial cards at both viewport edges.
+@visibleForTesting
+bool seasonCardsClearOfWrapped({
+  required int otherPages,
+  required int seasonCards,
+  required int wrappedIndex,
+  required int columns,
+}) {
+  final int total = otherPages + seasonCards;
+  for (int at = otherPages; at < total; at++) {
+    if (math.min(at - wrappedIndex, total - at + wrappedIndex) <= columns) return false;
+  }
+  return true;
+}
+
 /// The home carousel: Wall of the Day, the user's Wrapped (in its window), the live Drop, boosted walls, a card for each seasonal theme (in its season,
 /// while the theme is off), the promo banner and the first wallpapers as rounded pages, with page dots over the bottom right of the
 /// image.
@@ -180,7 +196,10 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _refreshWrapped();
+    if (state == AppLifecycleState.resumed) {
+      _scheduleSeasonEnd();
+      _refreshWrapped();
+    }
   }
 
   @override
@@ -214,12 +233,13 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
     });
   }
 
-  /// Rebuilds when the next season ends, so its card goes away.
+  /// Rebuilds when the next season card starts or ends.
   void _scheduleSeasonEnd() {
     _seasonEndTimer?.cancel();
     final DateTime now = seasonNow();
     final Duration? left = seasonalThemes
-        .map((season) => season.seasonEnd.difference(now))
+        .expand((season) => <DateTime>[season.promo.start, season.promo.end])
+        .map((boundary) => boundary.difference(now))
         .where((left) => left > Duration.zero)
         .fold<Duration?>(null, (soonest, left) => soonest == null || left < soonest ? left : soonest);
     if (left == null) return;
@@ -260,10 +280,21 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
         ),
       ),
     );
-    context.setPrismDarkTheme(
-      season.themeId,
-      mode: Theme.of(context).brightness == Brightness.light ? ThemeMode.dark : null,
+    unawaited(
+      analytics.track(
+        SeasonalAnnouncementOpenedEvent(season: season.name, surface: SeasonalAnnouncementSurfaceValue.homeCard),
+      ),
     );
+    unawaited(
+      analytics.track(SeasonalThemeAppliedEvent(season: season.name, source: SeasonalThemeSourceValue.homeCard)),
+    );
+    final bool light = Theme.of(context).brightness == Brightness.light;
+    final String? lightThemeId = season.lightThemeId;
+    if (light && lightThemeId != null) {
+      context.setPrismLightTheme(lightThemeId);
+    } else {
+      context.setPrismDarkTheme(season.themeId, mode: light ? ThemeMode.dark : null);
+    }
     unawaited(context.router.push(const ThemeViewRoute()));
   }
 
@@ -308,17 +339,37 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
     final WrappedYear? wrapped = wrappedBloc == null
         ? null
         : wrappedForHome(wrappedBloc.state, _currentWrappedUid, DateTime.now());
-    final List<SeasonalTheme> seasons = seasonalThemes
+    List<SeasonalTheme> seasons = seasonalThemes
         .where((season) => season.inSeason() && !season.isActive(context))
         .toList();
+    final bool showsDrop = _showsDrop(widget.liveDrop);
+    // Place seasons last on multi-column layouts, and omit them if the loop still brings them alongside Wrapped.
+    final bool seasonsLast = wrapped != null && columns > 1;
+    if (seasonsLast &&
+        !seasonCardsClearOfWrapped(
+          otherPages:
+              (hasWotd ? 2 : 1) +
+              (showsDrop ? 1 : 0) +
+              widget.boostedWalls.length +
+              (bannerImage.trim().isNotEmpty ? 1 : 0) +
+              widget.previewWalls.length,
+          seasonCards: seasons.length,
+          wrappedIndex: hasWotd ? 1 : 0,
+          columns: columns,
+        )) {
+      seasons = const <SeasonalTheme>[];
+    }
     final List<String> pageIds = <String>[
       if (hasWotd) 'wotd',
       if (wrapped != null) 'wrapped',
-      if (_showsDrop(widget.liveDrop)) 'drop',
+      if (showsDrop) 'drop',
       for (final PrismWallpaper wall in widget.boostedWalls) 'boosted:${wall.core.id}',
-      for (final SeasonalTheme season in seasons) season.name,
+      if (!seasonsLast)
+        for (final SeasonalTheme season in seasons) season.name,
       if (bannerImage.trim().isNotEmpty) 'banner',
       for (final PrismFeedItem wall in widget.previewWalls) 'preview:${wall.id}',
+      if (seasonsLast)
+        for (final SeasonalTheme season in seasons) season.name,
     ];
     if (_pageIds.isNotEmpty && _current < _pageIds.length) {
       final int preservedPage = pageIds.indexOf(_pageIds[_current]);
@@ -332,7 +383,7 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
     final List<Widget Function(int realIndex)> pages = <Widget Function(int)>[
       if (hasWotd) (_) => const WallOfTheDayCard(),
       if (wrapped != null) (_) => WrappedHomeCard(year: wrapped, memCacheHeight: memCacheHeight),
-      if (_showsDrop(widget.liveDrop))
+      if (showsDrop)
         (_) => DropCarouselSlide(
           drop: widget.liveDrop!,
           now: DateTime.now(),
@@ -341,14 +392,8 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
         ),
       for (int i = 0; i < widget.boostedWalls.length; i++)
         (int realIndex) => _boostedCard(widget.boostedWalls[i], i, realIndex),
-      for (final SeasonalTheme season in seasons)
-        (_) => FeedHeroCard(
-          image: season.bannerArt,
-          semanticLabel: season.bannerTitle(context.l10n),
-          title: season.bannerTitle(context.l10n),
-          subtitle: season.bannerSubtitle(context.l10n),
-          onTap: () => _trySeasonalTheme(season),
-        ),
+      if (!seasonsLast)
+        for (final SeasonalTheme season in seasons) (_) => _seasonCard(season),
       if (bannerImage.trim().isNotEmpty)
         (_) => FeedHeroCard(
           image: PrismImageTile(url: bannerImage, memCacheHeight: memCacheHeight),
@@ -358,6 +403,8 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
         ),
       for (int i = 0; i < widget.previewWalls.length; i++)
         (int realIndex) => _previewCard(widget.previewWalls[i], i, realIndex),
+      if (seasonsLast)
+        for (final SeasonalTheme season in seasons) (_) => _seasonCard(season),
     ];
     if (pages.isEmpty) {
       _current = 0;
@@ -397,6 +444,14 @@ class _FeedCarouselState extends State<FeedCarousel> with WidgetsBindingObserver
       ],
     );
   }
+
+  Widget _seasonCard(SeasonalTheme season) => FeedHeroCard(
+    image: season.bannerArt,
+    semanticLabel: season.bannerTitle(context.l10n),
+    title: season.bannerTitle(context.l10n),
+    subtitle: season.bannerSubtitle(context.l10n),
+    onTap: () => _trySeasonalTheme(season),
+  );
 
   Widget _boostedCard(PrismWallpaper wall, int index, int realIndex) => _wallCard(
     PrismFeedItem(id: wall.id, wallpaper: wall),

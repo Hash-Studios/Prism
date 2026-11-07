@@ -3211,6 +3211,25 @@ class AppLocalizationsId extends AppLocalizations {
   String get diwaliAnnouncementBody => 'Diya, kembang api, dan emas. Gratis. Ketuk untuk mencoba.';
 
   @override
+  String get coreThemeWinter => 'Musim Dingin';
+
+  @override
+  String get winterBannerTitle => 'Tema Musim Dingin sudah hadir';
+
+  @override
+  String get winterBannerSubtitle =>
+      'Biru sejuk dan salju lembut, dalam mode terang dan gelap. Gratis. Ketuk untuk mencoba.';
+
+  @override
+  String get winterAnnouncementTitle => 'Baru: tema Musim Dingin ❄️';
+
+  @override
+  String get winterAnnouncementBody => 'Biru sejuk dan salju lembut untuk liburan. Gratis. Ketuk untuk mencoba.';
+
+  @override
+  String get winterNewYearGreeting => 'Selamat Tahun Baru';
+
+  @override
   String get coreThisPageDoesNotExist => 'Halaman ini tidak ada';
 
   @override

@@ -10,8 +10,9 @@ import 'package:Prism/notifications/notification_pref_keys.dart';
 
 final Map<String, Future<bool>> _announcementsInFlight = <String, Future<bool>>{};
 
-/// Records an app update and retries a pending announcement until its inbox write succeeds. An update makes only the
-/// first season in [seasons] that is in season and not yet announced pending, so one update sends at most one push.
+/// Records an app update and retries a pending announcement until its inbox write succeeds. An update makes pending the
+/// first season in [seasons] that is in season and not yet announced, so one update sends at most one push now. It also
+/// makes pending each season that has not started yet, which announces on the first launch in its season.
 /// Returns true when this launch detected an app update.
 Future<bool> checkSeasonalAnnouncementOnAppUpdate({
   required String currentVersion,
@@ -28,11 +29,11 @@ Future<bool> checkSeasonalAnnouncementOnAppUpdate({
       lastSeenVersion != null &&
       (lastSeenVersion != currentVersion || lastSeenBuild == null || lastSeenBuild != currentBuild);
   if (updated) {
-    final SeasonalTheme? next = all
-        .where((season) => season.inSeason(now) && !settings.get<bool>(season.announcedKey, defaultValue: false))
-        .firstOrNull;
+    final DateTime at = now ?? seasonNow();
+    bool unannounced(SeasonalTheme season) => !settings.get<bool>(season.announcedKey, defaultValue: false);
+    final SeasonalTheme? next = all.where((season) => season.inSeason(at) && unannounced(season)).firstOrNull;
     for (final SeasonalTheme season in all) {
-      if (season == next) {
+      if (season == next || (season.promo.isUpcoming(at) && unannounced(season))) {
         await settings.set(season.pendingKey, true);
       } else {
         await settings.delete(season.pendingKey);
@@ -44,6 +45,7 @@ Future<bool> checkSeasonalAnnouncementOnAppUpdate({
 
   for (final SeasonalTheme season in all) {
     if (!settings.get<bool>(season.pendingKey, defaultValue: false)) continue;
+    if (season.promo.isUpcoming(now ?? seasonNow())) continue;
     if (!season.inSeason(now)) {
       await settings.delete(season.pendingKey);
       continue;

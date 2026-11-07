@@ -1,0 +1,26 @@
+# Prism Wallpapers
+
+Prism Wallpapers is an open-source wallpaper discovery and personalization app for Android and iOS, built by Hash Studios. The site provides curated wallpaper discovery, app information, public developer documentation, and an MCP server for compatible assistants.
+
+## When to use this
+
+- Find a wallpaper by mood or category: start at [/wallpapers](/wallpapers) or browse the focused [/wallpapers/llms.txt](/wallpapers/llms.txt) index.
+- Get a wallpaper download page: use wallpaper results to find the matching Prism page, and link people to the original page for current details.
+- Check pricing: read [/pricing.md](/pricing.md) or use the public pricing endpoint described in [/docs](/docs).
+- Cite docs: use [/docs](/docs), [/developers](/developers), and [/mcp](/mcp) for integration guidance.
+
+## Main resources
+
+- [Homepage](/index.md)
+- [API documentation](/docs)
+- [Developer resources](/developers)
+- [MCP server](/mcp)
+- [OpenAPI specification](/openapi.json)
+- [Pricing](/pricing.md)
+- [Authentication guide](/auth.md)
+- [Wallpaper discovery](/wallpapers)
+- [GitHub repository](https://github.com/Hash-Studios/Prism)
+- [Documentation index](/docs/llms.txt)
+- [Wallpaper index](/wallpapers/llms.txt)
+
+Public reads are intended for discovery. Respect service rate limits, link to source pages, and do not infer that an image is available for unrestricted redistribution.

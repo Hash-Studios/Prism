@@ -11,6 +11,7 @@ import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_sheet.dart';
 import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/theme_mode/data/legacy_themes.dart';
+import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/features/theme_mode/views/pages/theme_view_widgets.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
 import 'package:Prism/features/theme_mode/views/widgets/custom_accent_sheet.dart';
@@ -87,6 +88,12 @@ class _ThemeViewState extends State<ThemeView> {
       context.setPrismDarkTheme(option.id);
     }
     analytics.track(ThemeChangedEvent(themeId: option.id));
+    final SeasonalTheme? season = seasonalThemes
+        .where((season) => season.themeId == option.id || season.lightThemeId == option.id)
+        .firstOrNull;
+    if (season != null) {
+      analytics.track(SeasonalThemeAppliedEvent(season: season.name, source: SeasonalThemeSourceValue.themesPage));
+    }
   }
 
   String _modeLabel(ThemeMode mode) => switch (mode) {

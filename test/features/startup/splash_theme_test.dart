@@ -21,11 +21,13 @@ class _MockStartupBloc extends MockBloc<StartupEvent, StartupState> implements S
 
 const Map<String, Color> _themeBackgrounds = <String, Color>{
   'kLFrost White': Color(0xFFFFFFFF),
+  'kLWinter': Color(0xFFE8F0F7),
   'kLCoffee': Color(0xFFF7F1E3),
   'kLRose': Color(0xFFC5A79F),
   'kLCotton Blue': Color(0xFF8399BE),
   'kDMaterial Dark': Color(0xFF000000),
   'kDAMOLED': Color(0xFF000000),
+  'kDWinter': Color(0xFF0A1521),
   'kDDiwali': Color(0xFF0D0718),
   'kDSpooky': Color(0xFF0B0806),
   'kDOlive': Color(0xFF202113),
@@ -93,7 +95,7 @@ void main() {
   testWidgets('system mode updates the splash when system brightness changes', (tester) async {
     tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
     addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
-    final light = prismLightThemes[1].theme;
+    final light = prismThemeById(prismLightThemes, 'kLCoffee')!.theme;
     final dark = prismThemeById(prismDarkThemes, 'kDOlive')!.theme;
     await pumpSplash(tester, ThemeMode.system, light, dark);
     expect(splashColor(tester), const Color(0xFFF7F1E3));

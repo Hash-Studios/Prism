@@ -1,0 +1,13 @@
+{
+  "$schema": "https://agent-plugins.org/schema/plugin.json",
+  "name": "prism-wallpapers",
+  "version": "1.0.0",
+  "description": "Discover Prism Wallpapers content and developer resources.",
+  "skills": ["skills/prism-wallpapers"],
+  "mcpServers": [
+    {
+      "name": "prism-wallpapers",
+      "url": "https://prismwalls.com/mcp"
+    }
+  ]
+}
