@@ -130,6 +130,9 @@ class PaywallOrchestrator {
     if (_unavailableResults.contains(result)) {
       final AppLocalizations localized = messages ?? await loadDeviceAppLocalizations();
       toasts.error(localized.premiumPagePlansUnavailable);
+    } else if (result == PaywallResultValue.paymentPending) {
+      final AppLocalizations localized = messages ?? await loadDeviceAppLocalizations();
+      toasts.info(localized.premiumPaymentPending);
     }
     return result;
   }
@@ -272,7 +275,9 @@ class PaywallOrchestrator {
       if (!isCurrentAccount()) return PaywallResultValue.error;
       final PaywallResultValue resultValue =
           timelineResult ?? await _presentRevenueCatSheet(offering, placement: placement, source: source);
-      if (resultValue == PaywallResultValue.notPresented || resultValue == PaywallResultValue.error) {
+      if (resultValue == PaywallResultValue.notPresented ||
+          resultValue == PaywallResultValue.error ||
+          resultValue == PaywallResultValue.paymentPending) {
         analytics.track(
           PaywallResultEvent(
             source: source,
@@ -341,9 +346,11 @@ class PaywallOrchestrator {
     required String source,
   }) async {
     Package? selectedPackage;
+    PurchasesErrorCode? lastPurchaseError;
     final PaywallResult paywallResult = await RevenueCatUI.presentPaywall(
       offering: offering,
       onPurchaseStarted: (package) => selectedPackage = package,
+      onPurchaseError: (PurchasesError error) => lastPurchaseError = error.code,
       onPurchaseCompleted: (customerInfo, transaction) =>
           _recordVerifiedPurchase(transaction, selectedPackage, customerInfo, source: source, placement: placement),
       onRestoreCompleted: (customerInfo) {
@@ -358,7 +365,11 @@ class PaywallOrchestrator {
         'source': CustomVariableValue.string(source),
       },
     );
-    return paywallResultValueFromSdkName(paywallResult.name);
+    final PaywallResultValue result = paywallResultValueFromSdkName(paywallResult.name);
+    // The SDK has no pending result. A pending store payment arrives as an error, and Pro unlocks when it clears.
+    return result == PaywallResultValue.error && lastPurchaseError == PurchasesErrorCode.paymentPendingError
+        ? PaywallResultValue.paymentPending
+        : result;
   }
 
   void _recordVerifiedPurchase(
@@ -401,7 +412,7 @@ class PaywallOrchestrator {
     );
     await TrialReminder.instance.setOptIn(true);
     if (!context.mounted || !isCurrentAccount()) return null;
-    Future<bool>? purchaseInFlight;
+    Future<PaywallResultValue>? purchaseInFlight;
     final TrialTimelineChoice? choice = await Navigator.of(context, rootNavigator: true).push<TrialTimelineChoice>(
       MaterialPageRoute<TrialTimelineChoice>(
         fullscreenDialog: true,
@@ -411,24 +422,27 @@ class PaywallOrchestrator {
             analytics.track(TrialReminderToggledEvent(enabled: enabled));
             unawaited(TrialReminder.instance.setOptIn(enabled));
           },
-          onStartTrial: ({required bool remind}) => purchaseInFlight = _purchaseTrial(
-            offer,
-            remind: remind,
-            placement: placement,
-            source: source,
-            isCurrentAccount: isCurrentAccount,
-            isTimelineCurrent: () => pageContext.mounted && ModalRoute.of(pageContext)?.isCurrent == true,
-            dismissTimeline: (TrialTimelineChoice choice) {
-              if (pageContext.mounted && ModalRoute.of(pageContext)?.isCurrent == true) {
-                Navigator.of(pageContext, rootNavigator: true).pop(choice);
-              }
-            },
-          ),
+          onStartTrial: ({required bool remind}) async {
+            final Future<PaywallResultValue> purchase = purchaseInFlight = _purchaseTrial(
+              offer,
+              remind: remind,
+              placement: placement,
+              source: source,
+              isCurrentAccount: isCurrentAccount,
+              isTimelineCurrent: () => pageContext.mounted && ModalRoute.of(pageContext)?.isCurrent == true,
+              dismissTimeline: (TrialTimelineChoice choice) {
+                if (pageContext.mounted && ModalRoute.of(pageContext)?.isCurrent == true) {
+                  Navigator.of(pageContext, rootNavigator: true).pop(choice);
+                }
+              },
+            );
+            return await purchase == PaywallResultValue.purchased;
+          },
         ),
       ),
     );
     if (choice == TrialTimelineChoice.closed || choice == null) {
-      return await purchaseInFlight == true ? PaywallResultValue.purchased : PaywallResultValue.cancelled;
+      return await purchaseInFlight ?? PaywallResultValue.cancelled;
     }
     return switch (choice) {
       TrialTimelineChoice.started => PaywallResultValue.purchased,
@@ -437,7 +451,7 @@ class PaywallOrchestrator {
     };
   }
 
-  Future<bool> _purchaseTrial(
+  Future<PaywallResultValue> _purchaseTrial(
     TrialOffer offer, {
     required bool remind,
     required String placement,
@@ -448,13 +462,13 @@ class PaywallOrchestrator {
   }) async {
     if (!isCurrentAccount()) {
       dismissTimeline(TrialTimelineChoice.closed);
-      return false;
+      return PaywallResultValue.cancelled;
     }
     try {
       await TrialReminder.instance.setOptIn(remind);
       if (!isCurrentAccount()) {
         dismissTimeline(TrialTimelineChoice.closed);
-        return false;
+        return PaywallResultValue.cancelled;
       }
       final Offerings? latestOfferings = await PurchasesService.instance.getOfferings().timeout(
         _loadTimeout,
@@ -462,9 +476,9 @@ class PaywallOrchestrator {
       );
       if (!isCurrentAccount()) {
         dismissTimeline(TrialTimelineChoice.closed);
-        return false;
+        return PaywallResultValue.cancelled;
       }
-      if (!isTimelineCurrent()) return false;
+      if (!isTimelineCurrent()) return PaywallResultValue.cancelled;
       final Offering? latestOffering = latestOfferings?.all[PurchaseConstants.offeringV3Default];
       final TrialOfferLookup? latestLookup = latestOffering == null
           ? null
@@ -476,9 +490,9 @@ class PaywallOrchestrator {
                 );
       if (!isCurrentAccount()) {
         dismissTimeline(TrialTimelineChoice.closed);
-        return false;
+        return PaywallResultValue.cancelled;
       }
-      if (!isTimelineCurrent()) return false;
+      if (!isTimelineCurrent()) return PaywallResultValue.cancelled;
       final TrialOffer? latestOffer = latestLookup?.offer;
       if (latestOffer == null) {
         analytics.track(
@@ -489,15 +503,15 @@ class PaywallOrchestrator {
           ),
         );
         dismissTimeline(TrialTimelineChoice.seeAllPlans);
-        return false;
+        return PaywallResultValue.cancelled;
       }
       if (latestOffer.productId != offer.productId ||
           latestOffer.days != offer.days ||
           latestOffer.priceString != offer.priceString) {
         dismissTimeline(TrialTimelineChoice.seeAllPlans);
-        return false;
+        return PaywallResultValue.cancelled;
       }
-      if (!isTimelineCurrent()) return false;
+      if (!isTimelineCurrent()) return PaywallResultValue.cancelled;
 
       final PurchaseResult result = await Purchases.purchase(PurchaseParams.package(latestOffer.package));
       final bool currentAccount = isCurrentAccount();
@@ -520,22 +534,27 @@ class PaywallOrchestrator {
           logger.w('Notification permission request failed.', error: error);
         }
       }
-      return true;
+      return PaywallResultValue.purchased;
     } on PlatformException catch (error) {
       if (!isCurrentAccount()) {
         dismissTimeline(TrialTimelineChoice.closed);
-        return false;
+        return PaywallResultValue.cancelled;
       }
-      if (int.tryParse(error.code) == PurchasesErrorCode.purchaseCancelledError.index) return false;
+      final int? code = int.tryParse(error.code);
+      if (code == PurchasesErrorCode.purchaseCancelledError.index) return PaywallResultValue.cancelled;
+      if (code == PurchasesErrorCode.paymentPendingError.index) {
+        dismissTimeline(TrialTimelineChoice.closed);
+        return PaywallResultValue.paymentPending;
+      }
       await _showTrialPurchaseFailure(error, StackTrace.current, isCurrentAccount: isCurrentAccount);
-      return false;
+      return PaywallResultValue.cancelled;
     } catch (error, stackTrace) {
       if (!isCurrentAccount()) {
         dismissTimeline(TrialTimelineChoice.closed);
-        return false;
+        return PaywallResultValue.cancelled;
       }
       await _showTrialPurchaseFailure(error, stackTrace, isCurrentAccount: isCurrentAccount);
-      return false;
+      return PaywallResultValue.cancelled;
     }
   }
 
