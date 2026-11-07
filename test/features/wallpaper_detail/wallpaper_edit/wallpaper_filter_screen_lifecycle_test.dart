@@ -104,6 +104,20 @@ class _PreviewWallpaperClient implements WallpaperClient {
       throw UnimplementedError();
 }
 
+/// Refuses the lock screen as some phones (Xiaomi, MIUI) do, and opens the phone's own screen for the system cropper.
+class _LockRefusingClient extends _PreviewWallpaperClient {
+  @override
+  Future<aw.WallpaperOperationResult> applyWallpaper(aw.StaticWallpaperRequest request) async {
+    requests.add(request);
+    final bool systemScreen = request.strategy == aw.WallpaperApplyStrategy.systemCropper;
+    return aw.WallpaperOperationResult(
+      status: systemScreen ? aw.WallpaperOperationStatus.awaitingUserConfirmation : aw.WallpaperOperationStatus.failed,
+      requestedTarget: request.target,
+      errorCode: systemScreen ? null : 'wallpaper-apply-failed',
+    );
+  }
+}
+
 void main() {
   testWidgets('retry recovers a moved image and holding the preview compares the original', (tester) async {
     final directory = Directory.systemTemp.createTempSync('wallpaper_filter_retry_');
@@ -397,6 +411,73 @@ void main() {
     expect(opened.single.url, client.requests.single.source.filePath);
     expect(client.requests.single.source.filePath, isNotNull);
     expect(File(client.requests.single.source.filePath!).existsSync(), isFalse);
+    await tester.pump(const Duration(seconds: 1));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('a refused lock screen keeps the edit for the phone own wallpaper screen (#545)', (tester) async {
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final Directory directory = Directory.systemTemp.createTempSync('wallpaper_filter_lock_');
+    final File source = File('${directory.path}/source.png');
+    source.writeAsBytesSync((await tester.runAsync(_smallPng))!);
+    addTearDown(() => directory.deleteSync(recursive: true));
+
+    app_state.prismUser = profileUser(premium: true);
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+
+    final _LockRefusingClient client = _LockRefusingClient();
+    aw.AsyncWallpaper.debugSetClient(client);
+    addTearDown(aw.AsyncWallpaper.debugResetClient);
+
+    final originalOpener = SetWallpaperFlow.screenOpener;
+    SetWallpaperFlow.screenOpener = (context, request) async => const SetWallpaperChoice(WallpaperTarget.lock);
+    addTearDown(() => SetWallpaperFlow.screenOpener = originalOpener);
+
+    final List<bool> exportExistedAtCrop = <bool>[];
+    const MethodChannel pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
+    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    const MethodChannel cropChannel = MethodChannel('prism/wallpaper_crop');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(pathProviderChannel, (_) async => directory.path);
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (_) async => true);
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(cropChannel, (MethodCall call) async {
+      exportExistedAtCrop.add(File(call.arguments as String).existsSync());
+      return 'content://com.hash.prism.wallpaper_crop/wallpaper_crop/edit.png';
+    });
+    addTearDown(() {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(pathProviderChannel, null);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null);
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(cropChannel, null);
+    });
+
+    await tester.pumpWidget(_screenHost(source.path));
+    await _waitForReady(tester);
+    await tester.tap(find.text('AddictiveBlue'));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Set as wallpaper'));
+    await waitForRealIo(
+      tester,
+      () => find
+          .text("Couldn't set the lock screen. Your phone's own wallpaper screen can set it.")
+          .evaluate()
+          .isNotEmpty,
+      reason: 'lock screen fallback snackbar',
+    );
+    final String exportPath = client.requests.first.source.filePath!;
+    expect(File(exportPath).existsSync(), isTrue);
+
+    await tester.tap(find.text('Set with phone'));
+    await waitForRealIo(
+      tester,
+      () => client.requests.any((request) => request.strategy == aw.WallpaperApplyStrategy.systemCropper),
+      reason: 'system cropper request',
+    );
+
+    expect(exportExistedAtCrop, <bool>[true]);
+    expect(client.requests.last.target, aw.WallpaperTarget.lock);
+    expect(client.requests.last.source.contentUri, startsWith('content://'));
     await tester.pump(const Duration(seconds: 1));
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }
