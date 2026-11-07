@@ -179,4 +179,43 @@ void main() {
     expect(first.path.endsWith('.png'), isTrue);
     expect(second.path, isNot(first.path));
   });
+
+  group('takePendingLink', () {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    const MethodChannel channel = MethodChannel('test/pending_link');
+    String? stored;
+
+    setUp(() {
+      stored = 'prism://share-in?text=https%3A%2F%2Fexample.com%2F';
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+        final String? link = stored;
+        stored = null;
+        return call.method == 'takePendingLink' ? link : null;
+      });
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
+    });
+
+    test('returns the pending share once', () async {
+      final SharedInbox pending = SharedInbox(channel: channel);
+      expect((await pending.takePendingLink()).toString(), 'prism://share-in?text=https%3A%2F%2Fexample.com%2F');
+      expect(await pending.takePendingLink(), isNull);
+    });
+
+    test('drops the pending share when it is the share that just arrived', () async {
+      final SharedInbox pending = SharedInbox(channel: channel);
+      expect(await pending.takePendingLink(arriving: Uri.parse('prism://share-in?text=https://example.com/')), isNull);
+      expect(stored, isNull, reason: 'the pending share is consumed either way');
+    });
+
+    test('returns a different pending share even when another share arrives', () async {
+      final SharedInbox pending = SharedInbox(channel: channel);
+      final Uri? link = await pending.takePendingLink(
+        arriving: Uri.parse('prism://share-in?text=https://other.example/'),
+      );
+      expect(link?.queryParameters['text'], 'https://example.com/');
+    });
+  });
 }

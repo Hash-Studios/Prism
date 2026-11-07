@@ -217,4 +217,75 @@ void main() {
     expect(await repository.imageFor(_page), isNull);
     expect(handOffFiles(), isEmpty);
   });
+
+  test('isPublicAddress accepts public addresses and refuses private, reserved and embedded private ones', () {
+    for (final String ip in <String>['8.8.8.8', '151.101.1.1', '2606:4700::1111', '::ffff:8.8.8.8']) {
+      expect(isPublicAddress(InternetAddress(ip)), isTrue, reason: ip);
+    }
+    for (final String ip in <String>[
+      '127.0.0.1',
+      '10.1.2.3',
+      '172.16.0.1',
+      '192.168.1.1',
+      '169.254.169.254',
+      '100.64.0.1',
+      '0.0.0.0',
+      '224.0.0.1',
+      '255.255.255.255',
+      '198.18.0.1',
+      '192.0.2.1',
+      '203.0.113.5',
+      '::1',
+      '::',
+      'fc00::1',
+      'fe80::1',
+      'ff02::1',
+      '2001:db8::1',
+      '2002:c0a8:101::1',
+      '::ffff:127.0.0.1',
+      '64:ff9b::a00:1',
+    ]) {
+      expect(isPublicAddress(InternetAddress(ip)), isFalse, reason: ip);
+    }
+  });
+
+  group('publicOnlyHttpClient', () {
+    Future<Object?> connectError(HttpClient client, String url) async {
+      try {
+        await client.getUrl(Uri.parse(url));
+        return null;
+      } on SocketException catch (error) {
+        return error;
+      } finally {
+        client.close(force: true);
+      }
+    }
+
+    test('refuses a host that resolves to a private address', () async {
+      final HttpClient client = publicOnlyHttpClient((_) async => <InternetAddress>[InternetAddress('10.0.0.1')]);
+      expect(await connectError(client, 'https://cdn.example.com/a.png'), isA<SocketException>());
+    });
+
+    test('refuses a host with one private address among public ones', () async {
+      final HttpClient client = publicOnlyHttpClient(
+        (_) async => <InternetAddress>[InternetAddress('8.8.8.8'), InternetAddress('192.168.0.2')],
+      );
+      expect(await connectError(client, 'https://cdn.example.com/a.png'), isA<SocketException>());
+    });
+
+    test('refuses a host that does not resolve', () async {
+      final HttpClient client = publicOnlyHttpClient((_) async => <InternetAddress>[]);
+      expect(await connectError(client, 'https://cdn.example.com/a.png'), isA<SocketException>());
+    });
+
+    test('refuses plain http without resolving it', () async {
+      int lookups = 0;
+      final HttpClient client = publicOnlyHttpClient((_) async {
+        lookups++;
+        return <InternetAddress>[InternetAddress('8.8.8.8')];
+      });
+      expect(await connectError(client, 'http://cdn.example.com/a.png'), isA<SocketException>());
+      expect(lookups, 0);
+    });
+  });
 }

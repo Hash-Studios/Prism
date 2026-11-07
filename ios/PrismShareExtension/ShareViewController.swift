@@ -77,7 +77,10 @@ final class ShareViewController: UIViewController {
     DispatchQueue.main.async {
       guard self.request.finish(discardingIfLate: storedFile) else { return }
       self.loading?.cancel()
-      if let url { self.open(url) }
+      if let url {
+        if let container = ShareInbox.containerURL() { ShareInbox.storePendingLink(url, container: container) }
+        self.open(url)
+      }
       self.extensionContext?.completeRequest(returningItems: nil)
     }
   }

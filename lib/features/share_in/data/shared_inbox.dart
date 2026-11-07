@@ -35,6 +35,18 @@ class SharedInbox {
     return path;
   }
 
+  /// The share link the iOS Share Extension left for the app, once. Null when there is none, or when it is the same
+  /// share as [arriving], which the system already delivered.
+  Future<Uri?> takePendingLink({Uri? arriving}) async {
+    final String? link = await _channel.invokeMethod<String>('takePendingLink');
+    final Uri? uri = link == null ? null : Uri.tryParse(link);
+    if (uri == null || arriving != null && _sameShare(uri, arriving)) return null;
+    return uri;
+  }
+
+  static bool _sameShare(Uri a, Uri b) =>
+      a.queryParameters['id'] == b.queryParameters['id'] && a.queryParameters['text'] == b.queryParameters['text'];
+
   /// A new file in the hand-off folder for an image that Prism downloads itself.
   Future<File> newHandOffFile(String extension) async {
     final Directory folder = await handOffDirectory();

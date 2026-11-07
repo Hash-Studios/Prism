@@ -752,7 +752,25 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       _launchLinkHandled = true;
     }
     unawaited(_deepLinkDispatcher.openUri(platformDeepLink.uri, source: DeepLinkSourceValue.appLinks));
+    if (_isShareIn(platformDeepLink.uri)) unawaited(_openPendingShare(arriving: platformDeepLink.uri));
     return platformDeepLink.initial ? DeepLink.defaultPath : DeepLink.none;
+  }
+
+  static bool _isShareIn(Uri uri) =>
+      uri.scheme == 'prism' && (uri.host == 'share-in' || uri.path == '/share-in' || uri.path == 'share-in');
+
+  /// Opens the share the iOS Share Extension left in the App Group. The system can drop the URL it hands over while
+  /// Prism starts, so Prism also takes the share itself at start, on resume and when a share URL arrives.
+  Future<void> _openPendingShare({Uri? arriving}) async {
+    if (defaultTargetPlatform != TargetPlatform.iOS) return;
+    try {
+      final Uri? link = await SharedInbox().takePendingLink(arriving: arriving);
+      if (link != null && mounted) {
+        unawaited(_deepLinkDispatcher.openUri(link, source: DeepLinkSourceValue.appLinks));
+      }
+    } catch (error) {
+      logger.w('Pending share link unavailable (${error.runtimeType}).');
+    }
   }
 
   Future<void> _handleSessionEnded() async {
@@ -839,6 +857,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
     unawaited(SharedInbox().sweep().catchError((Object _) => 0));
+    unawaited(_openPendingShare());
     unawaited(
       CoinsService.instance.restoreLocalEconomyForCurrentUser().catchError((Object error, StackTrace stackTrace) {
         CoinsService.instance.logCoinError(sourceTag: 'coins.main.local_restore', error: error, stackTrace: stackTrace);
@@ -884,6 +903,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      unawaited(_openPendingShare());
       final now = DateTime.now();
       // The app can stay alive across days, so pick up a new Wall of the Day.
       if (shouldRefreshWotdOnResume(lastRefresh: _lastWotdRefresh, now: now)) {

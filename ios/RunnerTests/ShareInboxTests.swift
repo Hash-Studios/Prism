@@ -239,4 +239,21 @@ struct ShareInboxTests {
     #expect(!request.finish(discardingIfLate: file))
     #expect(!FileManager.default.fileExists(atPath: file.path))
   }
+
+  @Test func pendingLinkIsTakenOnce() throws {
+    let container = makeContainer()
+    defer { try? FileManager.default.removeItem(at: container) }
+    let url = try #require(ShareInbox.openURL(text: "https://example.com/a"))
+    ShareInbox.storePendingLink(url, container: container)
+    #expect(ShareInbox.takePendingLink(container: container) == url.absoluteString)
+    #expect(ShareInbox.takePendingLink(container: container) == nil)
+  }
+
+  @Test func pendingLinkIgnoresAnythingButAShareLink() throws {
+    let container = makeContainer()
+    defer { try? FileManager.default.removeItem(at: container) }
+    ShareInbox.storePendingLink(try #require(URL(string: "prism://settings")), container: container)
+    #expect(ShareInbox.takePendingLink(container: container) == nil)
+    #expect(!FileManager.default.fileExists(atPath: ShareInbox.folder(in: container).appendingPathComponent("pending-link").path))
+  }
 }

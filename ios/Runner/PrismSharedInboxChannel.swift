@@ -11,6 +11,8 @@ enum PrismSharedInboxChannel {
       }
       ShareInbox.sweep(container: container)
       switch call.method {
+      case "takePendingLink":
+        result(ShareInbox.takePendingLink(container: container))
       case "directory":
         result(ShareInbox.folder(in: container).path)
       case "take":
@@ -31,7 +33,7 @@ enum PrismSharedInboxChannel {
           result(FlutterError(code: code, message: "The shared image is not available", details: nil))
         }
       default:
-        // Swift 6 rejects Flutter's FlutterMethodNotImplemented global. Dart only sends the two methods above.
+        // Swift 6 rejects Flutter's FlutterMethodNotImplemented global. Dart only sends the methods above.
         result(FlutterError(code: "unknown-method", message: "Unknown shared inbox method: \(call.method)", details: nil))
       }
     }

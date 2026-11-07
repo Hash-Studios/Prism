@@ -113,6 +113,25 @@ enum ShareInbox {
     }
   }
 
+  private static let pendingLinkName = "pending-link"
+
+  /// Leaves [url] for the app, which takes it when it is ready. The system can drop a URL it hands over while the
+  /// app starts, so the app does not depend on that delivery.
+  static func storePendingLink(_ url: URL, container: URL) {
+    let directory = folder(in: container)
+    try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    try? Data(url.absoluteString.utf8).write(to: directory.appendingPathComponent(pendingLinkName), options: .atomic)
+  }
+
+  /// The share link the extension left, once. Anything that is not a share link is deleted and ignored.
+  static func takePendingLink(container: URL) -> String? {
+    let file = folder(in: container).appendingPathComponent(pendingLinkName)
+    guard let data = try? Data(contentsOf: file) else { return nil }
+    try? FileManager.default.removeItem(at: file)
+    guard let link = String(data: data, encoding: .utf8), link.hasPrefix("prism://share-in?") else { return nil }
+    return link
+  }
+
   static func openURL(id: String) -> URL? {
     guard isValidId(id) else { return nil }
     return URL(string: "prism://share-in?id=\(id)")
