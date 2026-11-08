@@ -9,6 +9,35 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
+/// Longest wait for one FCM call. Without Google Play services, FCM calls on Android never answer.
+const Duration fcmCallTimeout = Duration(seconds: 5);
+
+@visibleForTesting
+bool defaultTopicCallsNeedFcmToken() => Platform.isAndroid;
+
+/// Android topic calls go through only after FCM gives a token. Apple devices wait for the APNS token instead.
+@visibleForTesting
+bool Function() topicCallsNeedFcmToken = defaultTopicCallsNeedFcmToken;
+
+bool _fcmTokenTimedOut = false;
+
+@visibleForTesting
+void resetFcmTokenGuard() => _fcmTokenTimedOut = false;
+
+/// The FCM token, or null when FCM does not answer in [fcmCallTimeout]. That means Google Play services is missing,
+/// so later reads in this run return null at once. Other errors reach the caller.
+Future<String?> readFcmToken(FirebaseMessaging messaging) async {
+  if (_fcmTokenTimedOut) return null;
+  try {
+    return await messaging.getToken().timeout(fcmCallTimeout);
+  } on TimeoutException {
+    _fcmTokenTimedOut = true;
+    logger.w('FCM gave no token in time. Push topics wait until the next launch.', tag: 'Push');
+    return null;
+  }
+}
 
 final RegExp _invalidFcmTopicCharacters = RegExp(r'[^A-Za-z0-9\-_.~%]');
 
@@ -218,7 +247,7 @@ Future<void> syncPushTopics(
 }) async {
   final String? token;
   try {
-    token = await messaging.getToken();
+    token = await readFcmToken(messaging);
   } catch (error, stackTrace) {
     logger.w('Topic sync skipped: no FCM token yet.', tag: 'Push', error: error, stackTrace: stackTrace);
     return;
@@ -332,23 +361,27 @@ Future<bool> _changeTopic(
     final bool canProceed = await _canProceedWithTopicCall(messaging, isCurrent: isCurrent);
     if (!(isCurrent?.call() ?? true)) return false;
     if (!canProceed) {
-      logger.w('Skipping topic $noun until APNS token is available.', tag: 'Push', fields: fields);
+      logger.w('Skipping topic $noun until a push token is available.', tag: 'Push', fields: fields);
       return false;
     }
     if (subscribe) {
-      await messaging.subscribeToTopic(localizationTopic);
+      await messaging.subscribeToTopic(localizationTopic).timeout(fcmCallTimeout);
       if (!(isCurrent?.call() ?? true)) return false;
       if (legacyTopic != localizationTopic) {
-        await messaging.unsubscribeFromTopic(legacyTopic);
+        await messaging.unsubscribeFromTopic(legacyTopic).timeout(fcmCallTimeout);
       }
     } else {
-      await messaging.unsubscribeFromTopic(legacyTopic);
+      await messaging.unsubscribeFromTopic(legacyTopic).timeout(fcmCallTimeout);
       if (!(isCurrent?.call() ?? true)) return false;
       if (legacyTopic != localizationTopic) {
-        await messaging.unsubscribeFromTopic(localizationTopic);
+        await messaging.unsubscribeFromTopic(localizationTopic).timeout(fcmCallTimeout);
       }
     }
     return true;
+  } on TimeoutException {
+    // On Android, FCM keeps a queued topic change and can still finish it later.
+    logger.w('Topic $noun did not answer in time.', tag: 'Push', fields: fields);
+    return false;
   } catch (error, stackTrace) {
     if (_isApnsTokenMissing(error)) {
       logger.w(
@@ -372,12 +405,16 @@ Future<bool> _changeTopic(
 }
 
 Future<bool> _canProceedWithTopicCall(FirebaseMessaging messaging, {bool Function()? isCurrent}) async {
+  if (topicCallsNeedFcmToken()) {
+    final String? token = await readFcmToken(messaging);
+    return token != null && token.trim().isNotEmpty;
+  }
   if (!(Platform.isIOS || Platform.isMacOS)) {
     return true;
   }
   for (int attempt = 0; attempt < 3; attempt++) {
     if (!(isCurrent?.call() ?? true)) return false;
-    final String? token = await messaging.getAPNSToken();
+    final String? token = await messaging.getAPNSToken().timeout(fcmCallTimeout);
     if (!(isCurrent?.call() ?? true)) return false;
     if (token != null && token.trim().isNotEmpty) {
       return true;
