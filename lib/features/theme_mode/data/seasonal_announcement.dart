@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/features/in_app_notifications/domain/entities/in_app_notification_entity.dart';
 import 'package:Prism/features/theme_mode/seasonal_themes.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -100,6 +101,7 @@ Future<bool> _announceSeasonalTheme({
   if (!season.inSeason(now) || settings.get<bool>(season.announcedKey, defaultValue: false)) return false;
   final String ownerId = inbox.ownerId;
   final int ownerGeneration = inbox.ownerGeneration;
+  StartupModalSlot.markPromptShown();
   await inbox.upsertAll(<InAppNotificationEntity>[
     InAppNotificationEntity(
       id: season.announcementId,

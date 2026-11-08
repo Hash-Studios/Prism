@@ -33,6 +33,8 @@ import 'package:Prism/features/folders/views/widgets/public_folder_view.dart';
 import 'package:Prism/features/folders/views/widgets/section_suggestions_sheet.dart';
 import 'package:Prism/features/folders/views/widgets/smart_folder_sheet.dart';
 import 'package:Prism/features/folders/views/widgets/smart_rules_line.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_folders_store.dart';
 import 'package:Prism/features/library/views/widgets/offline_chip.dart';
@@ -516,73 +518,77 @@ class _FolderScreenState extends State<FolderScreen> {
                 onPressed: () => unawaited(_saveAll(folder, state.items[widget.folderId]!)),
               ),
             if (folder != null)
-              PopupMenuButton<_FolderMenuAction>(
-                tooltip: context.l10n.foldersMoreOptions,
-                icon: const Icon(Icons.more_vert_rounded),
-                onSelected: (action) => unawaited(_onMenu(action, folder)),
-                itemBuilder: (context) => <PopupMenuEntry<_FolderMenuAction>>[
-                  if (folder.roleOf(userId) != null && !smart) ...<PopupMenuEntry<_FolderMenuAction>>[
-                    if (folder.sections.length < folderMaxSections)
+              FeatureHint(
+                id: HintId.folderSections,
+                enabled: folder.roleOf(userId) != null && !smart && folder.sections.isEmpty && folder.itemCount >= 12,
+                child: PopupMenuButton<_FolderMenuAction>(
+                  tooltip: context.l10n.foldersMoreOptions,
+                  icon: const Icon(Icons.more_vert_rounded),
+                  onSelected: (action) => unawaited(_onMenu(action, folder)),
+                  itemBuilder: (context) => <PopupMenuEntry<_FolderMenuAction>>[
+                    if (folder.roleOf(userId) != null && !smart) ...<PopupMenuEntry<_FolderMenuAction>>[
+                      if (folder.sections.length < folderMaxSections)
+                        PopupMenuItem<_FolderMenuAction>(
+                          value: _FolderMenuAction.addSection,
+                          child: Text(context.l10n.foldersSectionAdd),
+                        ),
+                      if (hasWalls)
+                        PopupMenuItem<_FolderMenuAction>(
+                          value: _FolderMenuAction.suggestSections,
+                          child: Text(context.l10n.foldersSectionSuggest),
+                        ),
+                      if (hasWalls && folder.sections.isNotEmpty)
+                        PopupMenuItem<_FolderMenuAction>(
+                          value: _FolderMenuAction.select,
+                          child: Text(context.l10n.foldersSectionSelect),
+                        ),
+                      if (folder.sections.length > 1)
+                        PopupMenuItem<_FolderMenuAction>(
+                          value: _FolderMenuAction.reorderSections,
+                          child: Text(context.l10n.foldersSectionReorder),
+                        ),
+                      const PopupMenuDivider(),
+                    ],
+                    if (android && owner)
                       PopupMenuItem<_FolderMenuAction>(
-                        value: _FolderMenuAction.addSection,
-                        child: Text(context.l10n.foldersSectionAdd),
+                        value: _FolderMenuAction.rotate,
+                        child: Text(context.l10n.foldersRotateThisFolder),
                       ),
-                    if (hasWalls)
+                    if (_iosShortcuts && owner)
                       PopupMenuItem<_FolderMenuAction>(
-                        value: _FolderMenuAction.suggestSections,
-                        child: Text(context.l10n.foldersSectionSuggest),
+                        value: _FolderMenuAction.rotateDaily,
+                        child: Text(context.l10n.foldersRotateDaily),
                       ),
-                    if (hasWalls && folder.sections.isNotEmpty)
+                    if (owner && !smart)
                       PopupMenuItem<_FolderMenuAction>(
-                        value: _FolderMenuAction.select,
-                        child: Text(context.l10n.foldersSectionSelect),
+                        value: _FolderMenuAction.invite,
+                        child: Text(context.l10n.foldersInvite),
                       ),
-                    if (folder.sections.length > 1)
+                    if (!smart && (!owner || folder.editors.isNotEmpty))
                       PopupMenuItem<_FolderMenuAction>(
-                        value: _FolderMenuAction.reorderSections,
-                        child: Text(context.l10n.foldersSectionReorder),
+                        value: _FolderMenuAction.people,
+                        child: Text(context.l10n.foldersPeople),
                       ),
-                    const PopupMenuDivider(),
+                    if (owner)
+                      PopupMenuItem<_FolderMenuAction>(
+                        value: _FolderMenuAction.visibility,
+                        child: Text(folder.isPublic ? context.l10n.foldersMakePrivate : context.l10n.foldersMakePublic),
+                      ),
+                    if (owner)
+                      PopupMenuItem<_FolderMenuAction>(
+                        value: _FolderMenuAction.rename,
+                        child: Text(context.l10n.foldersRename),
+                      ),
+                    if (owner)
+                      PopupMenuItem<_FolderMenuAction>(
+                        value: _FolderMenuAction.delete,
+                        child: Text(
+                          context.l10n.foldersDelete,
+                          style: PrismTextStyles.body(context).copyWith(color: Theme.of(context).colorScheme.error),
+                        ),
+                      ),
                   ],
-                  if (android && owner)
-                    PopupMenuItem<_FolderMenuAction>(
-                      value: _FolderMenuAction.rotate,
-                      child: Text(context.l10n.foldersRotateThisFolder),
-                    ),
-                  if (_iosShortcuts && owner)
-                    PopupMenuItem<_FolderMenuAction>(
-                      value: _FolderMenuAction.rotateDaily,
-                      child: Text(context.l10n.foldersRotateDaily),
-                    ),
-                  if (owner && !smart)
-                    PopupMenuItem<_FolderMenuAction>(
-                      value: _FolderMenuAction.invite,
-                      child: Text(context.l10n.foldersInvite),
-                    ),
-                  if (!smart && (!owner || folder.editors.isNotEmpty))
-                    PopupMenuItem<_FolderMenuAction>(
-                      value: _FolderMenuAction.people,
-                      child: Text(context.l10n.foldersPeople),
-                    ),
-                  if (owner)
-                    PopupMenuItem<_FolderMenuAction>(
-                      value: _FolderMenuAction.visibility,
-                      child: Text(folder.isPublic ? context.l10n.foldersMakePrivate : context.l10n.foldersMakePublic),
-                    ),
-                  if (owner)
-                    PopupMenuItem<_FolderMenuAction>(
-                      value: _FolderMenuAction.rename,
-                      child: Text(context.l10n.foldersRename),
-                    ),
-                  if (owner)
-                    PopupMenuItem<_FolderMenuAction>(
-                      value: _FolderMenuAction.delete,
-                      child: Text(
-                        context.l10n.foldersDelete,
-                        style: PrismTextStyles.body(context).copyWith(color: Theme.of(context).colorScheme.error),
-                      ),
-                    ),
-                ],
+                ),
               ),
           ],
           body: _body(context, state, folder),

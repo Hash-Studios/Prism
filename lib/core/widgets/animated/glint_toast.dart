@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:flutter/widgets.dart';
 
@@ -20,6 +21,7 @@ void showGlintToast(
   entry = OverlayEntry(
     builder: (_) => _GlintToast(mood: mood, size: size, duration: duration, onDone: () => entry.remove()),
   );
+  StartupModalSlot.markPromptShown();
   overlay.insert(entry);
 }
 

@@ -17,6 +17,8 @@ import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/widgets/folders_grid.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
@@ -455,6 +457,27 @@ void main() {
       isSemantics(label: 'Trips', value: '7 wallpapers', isButton: true, hasTapAction: true),
     );
     handle.dispose();
+  });
+
+  testWidgets('the New smart folder tile carries the smartFolders feature hint, on with two owned folders only', (
+    tester,
+  ) async {
+    Finder hintOf() => find.ancestor(
+      of: find.text('New smart folder'),
+      matching: find.byWidgetPredicate((Widget w) => w is FeatureHint && w.id == HintId.smartFolders),
+    );
+
+    await pumpGrid(tester, _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work')]));
+    expect(hintOf(), findsOneWidget);
+    expect(tester.widget<FeatureHint>(hintOf()).enabled, isFalse);
+
+    await tester.pumpWidget(const SizedBox());
+    await pumpGrid(
+      tester,
+      _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work'), _folder('trips', 'Trips')]),
+    );
+    expect(hintOf(), findsOneWidget);
+    expect(tester.widget<FeatureHint>(hintOf()).enabled, isTrue);
   });
 
   testWidgets('a 390 px phone shows two folder columns', (tester) async {

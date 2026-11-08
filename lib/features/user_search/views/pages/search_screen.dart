@@ -15,6 +15,8 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
 import 'package:Prism/features/user_search/data/photo_search_service.dart';
 import 'package:Prism/features/user_search/data/recent_searches_store.dart';
@@ -500,10 +502,13 @@ class _SearchScreenState extends State<SearchScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
                             const SizedBox(width: PrismSpace.xxs),
-                            PrismIconButton(
-                              icon: Icons.image_search_rounded,
-                              tooltip: context.l10n.searchByPhoto,
-                              onPressed: () => unawaited(_searchByPhoto()),
+                            FeatureHint(
+                              id: HintId.photoSearch,
+                              child: PrismIconButton(
+                                icon: Icons.image_search_rounded,
+                                tooltip: context.l10n.searchByPhoto,
+                                onPressed: () => unawaited(_searchByPhoto()),
+                              ),
                             ),
                             Badge(
                               isLabelVisible: _filters != const SearchFilters(),

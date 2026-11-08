@@ -4,6 +4,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
@@ -29,6 +30,7 @@ Future<void> showDailyClaimSheet(
   VoidCallback? onEarnCoins,
   StreakRescueService? rescueService,
 }) async {
+  StartupModalSlot.markPromptShown();
   final _ClaimSheetExit? exit = await showPrismSheet<_ClaimSheetExit>(
     context,
     builder: (_) => DailyClaimSheet(result: result, rescueService: rescueService),

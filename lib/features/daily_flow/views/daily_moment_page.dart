@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/widgets/glint/cover_mosaic.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/daily_chest/views/widgets/chest_odds_sheet.dart';
@@ -30,6 +31,7 @@ Future<void> showDailyMoment(
   if (_showing || _activeContent) return;
   _showing = true;
   try {
+    StartupModalSlot.markPromptShown();
     await showPrismSheet<void>(
       context,
       useRootNavigator: true,

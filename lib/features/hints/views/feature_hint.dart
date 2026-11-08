@@ -199,6 +199,7 @@ class _HintCalloutState extends State<_HintCallout> with SingleTickerProviderSta
               ),
             ),
             Semantics(
+              container: true,
               button: true,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,

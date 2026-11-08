@@ -41,6 +41,8 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
@@ -255,6 +257,28 @@ void main() {
     await tester.pump();
     return bloc;
   }
+
+  testWidgets('Favourite button carries the folderHold feature hint, enabled when signed in', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'test-user'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
+    );
+
+    final Finder hint = find.ancestor(
+      of: find.byType(FavouriteWallpaperButton),
+      matching: find.byWidgetPredicate((Widget w) => w is FeatureHint && w.id == HintId.folderHold),
+    );
+    expect(hint, findsOneWidget);
+    expect(tester.widget<FeatureHint>(hint).enabled, isTrue);
+  });
 
   testWidgets('Android shows a labelled Set action and icon actions with tooltips, on the details panel', (
     tester,

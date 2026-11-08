@@ -21,6 +21,8 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/prism_glass.dart';
 import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/wallpaper_detail/biz/top_third_text_color.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_scheme.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/duo_reveal_view.dart';
@@ -903,13 +905,16 @@ class _ClockOverlayState extends State<ClockOverlay> {
                                   if (hideSetWallpaperUi && widget.livePhotoAction != null && !_duo) ...<Widget>[
                                     const SizedBox(height: PrismSpace.xxs),
                                     Center(
-                                      child: Tooltip(
-                                        message: l10n.livePhotoActionTooltip,
-                                        child: _QuietButton(
-                                          key: const ValueKey<String>('set-screen-live-photo'),
-                                          icon: Icons.motion_photos_on_rounded,
-                                          label: l10n.livePhotoAction,
-                                          onPressed: () => widget.livePhotoAction!(context, _provider),
+                                      child: FeatureHint(
+                                        id: HintId.livePhoto,
+                                        child: Tooltip(
+                                          message: l10n.livePhotoActionTooltip,
+                                          child: _QuietButton(
+                                            key: const ValueKey<String>('set-screen-live-photo'),
+                                            icon: Icons.motion_photos_on_rounded,
+                                            label: l10n.livePhotoAction,
+                                            onPressed: () => widget.livePhotoAction!(context, _provider),
+                                          ),
                                         ),
                                       ),
                                     ),

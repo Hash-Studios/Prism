@@ -8,6 +8,8 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/followed_topics/data/followed_topics_store.dart';
 import 'package:Prism/features/followed_topics/domain/entities/followed_topic.dart';
 import 'package:Prism/features/followed_topics/views/topic_copy.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
@@ -86,23 +88,27 @@ class _FollowButtonState extends State<_FollowButton> {
       builder: (context, _) {
         final bool following = _store.isFollowed(widget.topic);
         final String name = widget.topic.title(l10n);
-        return Semantics(
-          container: true,
-          button: true,
-          enabled: !_busy,
-          toggled: following,
-          label: following ? l10n.topicUnfollowHint(name) : l10n.topicFollowHint(name),
-          onTap: _busy ? null : () => unawaited(_toggle()),
-          excludeSemantics: true,
-          child: AnimatedSwitcher(
-            duration: context.motion(PrismDurations.fast),
-            child: PrismButton(
-              key: ValueKey<bool>(following),
-              label: following ? l10n.topicFollowing : l10n.topicFollow,
-              icon: following ? Icons.check_rounded : Icons.add_rounded,
-              variant: following ? PrismButtonVariant.tonal : PrismButtonVariant.primary,
-              size: PrismButtonSize.compact,
-              onPressed: _busy ? null : () => unawaited(_toggle()),
+        return FeatureHint(
+          id: HintId.followCategory,
+          enabled: widget.topic.kind == TopicKind.category && !_store.isFollowed(widget.topic),
+          child: Semantics(
+            container: true,
+            button: true,
+            enabled: !_busy,
+            toggled: following,
+            label: following ? l10n.topicUnfollowHint(name) : l10n.topicFollowHint(name),
+            onTap: _busy ? null : () => unawaited(_toggle()),
+            excludeSemantics: true,
+            child: AnimatedSwitcher(
+              duration: context.motion(PrismDurations.fast),
+              child: PrismButton(
+                key: ValueKey<bool>(following),
+                label: following ? l10n.topicFollowing : l10n.topicFollow,
+                icon: following ? Icons.check_rounded : Icons.add_rounded,
+                variant: following ? PrismButtonVariant.tonal : PrismButtonVariant.primary,
+                size: PrismButtonSize.compact,
+                onPressed: _busy ? null : () => unawaited(_toggle()),
+              ),
             ),
           ),
         );

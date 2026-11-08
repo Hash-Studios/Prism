@@ -19,6 +19,8 @@ import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/data/wallpaper_search_service.dart';
@@ -131,6 +133,17 @@ void main() {
     );
     await enterQuery(tester, query);
   }
+
+  testWidgets('Search by photo button carries the photoSearch feature hint', (tester) async {
+    await pumpScreen(tester);
+
+    final Finder hint = find.ancestor(
+      of: find.byTooltip('Search by photo'),
+      matching: find.byWidgetPredicate((Widget w) => w is FeatureHint && w.id == HintId.photoSearch),
+    );
+    expect(hint, findsOneWidget);
+    expect(tester.widget<FeatureHint>(hint).enabled, isTrue);
+  });
 
   testWidgets('idle: title, pill field, tag chips and the discovery sections', (tester) async {
     await pumpScreen(tester);

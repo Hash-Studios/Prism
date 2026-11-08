@@ -18,6 +18,9 @@ import 'package:Prism/features/category_feed/views/pages/collection_view_screen.
 import 'package:Prism/features/followed_topics/data/followed_topics_store.dart';
 import 'package:Prism/features/followed_topics/domain/entities/followed_topic.dart';
 import 'package:Prism/features/followed_topics/views/widgets/topic_follow_button.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
+import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -114,6 +117,32 @@ void main() {
     AnalyticsRuntime.reset();
     app_state.prismUser = app_constants.createGuestPrismUser();
     await getIt.reset();
+  });
+
+  testWidgets('Follow button carries the followCategory feature hint, on for an unfollowed category only', (
+    tester,
+  ) async {
+    Finder hintOf(Finder control) => find.ancestor(
+      of: control,
+      matching: find.byWidgetPredicate((Widget w) => w is FeatureHint && w.id == HintId.followCategory),
+    );
+
+    await tester.pumpWidget(_app(TopicFollowButton(topic: pastel)));
+    await tester.pumpAndSettle();
+    expect(hintOf(find.text('Follow')), findsOneWidget);
+    expect(tester.widget<FeatureHint>(hintOf(find.text('Follow'))).enabled, isTrue);
+
+    await tester.tap(find.text('Follow'));
+    await tester.pumpAndSettle();
+    expect(hintOf(find.text('Following')), findsOneWidget);
+    expect(tester.widget<FeatureHint>(hintOf(find.text('Following'))).enabled, isFalse);
+    // The success toast leaves a one second timer in fluttertoast. Let it finish.
+    await tester.pump(const Duration(seconds: 1));
+
+    await tester.pumpWidget(_app(TopicFollowButton(topic: FollowedTopic.mood(WallMood.dreamy))));
+    await tester.pumpAndSettle();
+    expect(hintOf(find.text('Follow')), findsOneWidget);
+    expect(tester.widget<FeatureHint>(hintOf(find.text('Follow'))).enabled, isFalse);
   });
 
   testWidgets('a signed-in tap follows the topic and the label changes to Following', (tester) async {

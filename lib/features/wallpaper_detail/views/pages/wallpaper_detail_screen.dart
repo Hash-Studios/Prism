@@ -73,6 +73,8 @@ import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapte
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_pin_toggle.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/live_photo/views/open_live_photo.dart';
 import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
@@ -1904,11 +1906,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                                             end: _sheetHPad,
                                             top: PrismSpace.xs,
                                           ),
-                                          child: VariantDots(
-                                            group: group,
-                                            selected: state.variantIndex,
-                                            onSelect: (index) =>
-                                                _selectVariant(state, index, VariantSwitchSourceValue.dot),
+                                          child: FeatureHint(
+                                            id: HintId.variantDots,
+                                            child: VariantDots(
+                                              group: group,
+                                              selected: state.variantIndex,
+                                              onSelect: (index) =>
+                                                  _selectVariant(state, index, VariantSwitchSourceValue.dot),
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -3000,14 +3005,18 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                PressScale(
-                  child: FavouriteWallpaperButton(
-                    wall: FavouriteWallEntity.fromFeedItem(entity),
-                    trash: false,
-                    onFavourited: () {
-                      _recordTaste(TasteAction.favourite, entity);
-                      _actedOn(entity);
-                    },
+                FeatureHint(
+                  id: HintId.folderHold,
+                  enabled: app_state.prismUser.loggedIn,
+                  child: PressScale(
+                    child: FavouriteWallpaperButton(
+                      wall: FavouriteWallEntity.fromFeedItem(entity),
+                      trash: false,
+                      onFavourited: () {
+                        _recordTaste(TasteAction.favourite, entity);
+                        _actedOn(entity);
+                      },
+                    ),
                   ),
                 ),
                 // The published total sits beside the heart.

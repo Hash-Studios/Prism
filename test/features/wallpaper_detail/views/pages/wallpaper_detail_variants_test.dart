@@ -17,6 +17,8 @@ import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
@@ -26,6 +28,7 @@ import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart'
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/variant_group.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/variant_dots.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -235,6 +238,17 @@ void main() {
       tester.getSemantics(find.bySemanticsLabel('Variant 2 of 3, Red')),
       isSemantics(isButton: true, isSelected: false),
     );
+  });
+
+  testWidgets('the variant dots carry the variantDots feature hint', (tester) async {
+    await pumpDetail(tester, _state(entity: _entity(_v0), variants: _group));
+
+    final Finder hint = find.ancestor(
+      of: find.byType(VariantDots),
+      matching: find.byWidgetPredicate((Widget w) => w is FeatureHint && w.id == HintId.variantDots),
+    );
+    expect(hint, findsOneWidget);
+    expect(tester.widget<FeatureHint>(hint).enabled, isTrue);
   });
 
   testWidgets('each dot has a 44 point target', (tester) async {

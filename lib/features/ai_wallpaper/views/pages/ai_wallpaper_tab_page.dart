@@ -58,6 +58,8 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheets.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_style_sheet.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/photo_wallpaper_widgets.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
@@ -1378,7 +1380,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
             ),
             Padding(
               padding: page.copyWith(top: PrismSpace.md),
-              child: AiFromPhotoCard(enabled: !busy, onTap: () => openPhotoWallpaperPage(context)),
+              child: FeatureHint(
+                id: HintId.photoFit,
+                enabled: !busy,
+                child: AiFromPhotoCard(enabled: !busy, onTap: () => openPhotoWallpaperPage(context)),
+              ),
             ),
             PrismSectionHeader(
               title: AppLocalizations.of(context).economyAiStyle,

@@ -37,6 +37,7 @@ Each page covers one user-facing feature. A page tells you what the feature does
 | [upload.md](upload.md) | Upload metadata, multi-upload, size warnings, rejected wall delete |
 | [wall-requests.md](wall-requests.md) | Ask for a wall, upvote requests, fills by creators and Prism Studio, filled push |
 | [profile.md](profile.md) | Profile links, username rules, share link, block and report |
+| [hints.md](hints.md) | One-time feature hints: the 8 hints, budget, other prompts, Show tips, Remote Config kill switch, analytics |
 | [settings.md](settings.md) | Privacy and data, report a problem, data saver, rate prompt |
 | [coins-and-downloads.md](coins-and-downloads.md) | Price on the pill, already downloaded, ads, pending refunds and rewards |
 | [daily-moment.md](daily-moment.md) | Shared streak, chest, and free Pro spin sheet, reward contracts, old entry points, and release limits |

@@ -62,7 +62,7 @@ class FeatureHints extends ChangeNotifier {
   }) : _read = read ?? _defaultRead,
        _write = write ?? _defaultWrite,
        _clock = clock ?? DateTime.now,
-       _session = session ?? (() => AppSessionTracker.instance.sessionNumber),
+       _session = session ?? (() => _storeReady ? AppSessionTracker.instance.sessionNumber : 0),
        _userId = userId ?? (() => app_state.prismUser.id),
        _remoteConfig = remoteConfig ?? _defaultRemoteConfig,
        _openSheets = openSheets ?? (() => openPrismSheetCount);
@@ -226,11 +226,16 @@ class FeatureHints extends ChangeNotifier {
     super.dispose();
   }
 
+  /// False before DI is set up, and in tests that do not register the settings store. Then no hint shows.
+  static bool get _storeReady => getIt.isRegistered<SettingsLocalDataSource>();
+
   static T _defaultRead<T>(String key, T defaultValue) {
+    if (!_storeReady) return defaultValue;
     return getIt<SettingsLocalDataSource>().get<T>(key, defaultValue: defaultValue);
   }
 
-  static Future<void> _defaultWrite(String key, Object? value) {
+  static Future<void> _defaultWrite(String key, Object? value) async {
+    if (!_storeReady) return;
     final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
     return value == null ? settings.delete(key) : settings.set(key, value);
   }

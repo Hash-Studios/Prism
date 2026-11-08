@@ -21,6 +21,9 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_generation_record
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/photo_wallpaper_widgets.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_prompt_field.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
@@ -214,6 +217,35 @@ Future<void> _openRecent(WidgetTester tester) async {
 void main() {
   setUp(AnalyticsRuntime.reset);
   tearDown(AnalyticsRuntime.reset);
+
+  testWidgets('From your photo card carries the photoFit feature hint', (tester) async {
+    tester.view.physicalSize = const Size(1000, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService(online: false));
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(
+          repository: _FakeAiGenerationRepository(_record(), Completer<AiSubmissionMetadata>(), local: [_record()]),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final Finder hint = find.ancestor(
+      of: find.byType(AiFromPhotoCard),
+      matching: find.byWidgetPredicate((Widget w) => w is FeatureHint && w.id == HintId.photoFit),
+    );
+    expect(hint, findsOneWidget);
+    expect(tester.widget<FeatureHint>(hint).enabled, isTrue);
+  });
 
   testWidgets('offline history uses retained records without fetching remote history', (tester) async {
     tester.view.physicalSize = const Size(1000, 2200);
