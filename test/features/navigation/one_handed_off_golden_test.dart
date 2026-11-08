@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -34,6 +36,9 @@ class _FakeTabsRouter extends ChangeNotifier implements TabsRouter {
 
 /// The goldens were drawn from master before one-handed controls existed. With the option off, the top bar and the
 /// bottom row must still match them pixel for pixel.
+/// The goldens are drawn on Linux, the CI host. Font rendering differs on macOS, so they are skipped there.
+final bool _linuxOnly = !Platform.isLinux;
+
 void main() {
   late PrismUsersV2 previousUser;
 
@@ -82,10 +87,10 @@ void main() {
   testWidgets('off, the top bar matches master', (tester) async {
     await pumpOff(tester, const Align(alignment: Alignment.topCenter, child: PrismTopAppBar()));
     await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/top_bar_one_handed_off.png'));
-  });
+  }, skip: _linuxOnly);
 
   testWidgets('off, the bottom row matches master', (tester) async {
     await pumpOff(tester, const BottomBar(child: SizedBox.expand()));
     await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/bottom_bar_one_handed_off.png'));
-  });
+  }, skip: _linuxOnly);
 }

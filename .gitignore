@@ -83,3 +83,6 @@ web/node_modules/**
 *.apk
 *.aab
 *.ipa
+
+# Golden test failure output
+test/**/failures/

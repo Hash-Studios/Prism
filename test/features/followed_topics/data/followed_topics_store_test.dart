@@ -8,6 +8,7 @@ import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/features/followed_topics/data/followed_topics_store.dart';
 import 'package:Prism/features/followed_topics/domain/entities/followed_topic.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
+import 'package:Prism/notifications/notification_retention.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -121,6 +122,8 @@ class _FailingSeenLocalStore extends InMemoryLocalStore {
 }
 
 void main() {
+  // The store syncs the stored offset to this device, so seeds must match the host zone (CI is UTC, devs are not).
+  final int deviceOffset = roundedTimezoneOffsetMinutes(DateTime.now().timeZoneOffset);
   late InMemoryLocalStore localStore;
   late SettingsLocalDataSource settings;
   late _FailingWritesFirestore firestore;
@@ -232,7 +235,7 @@ void main() {
     firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
       'session': <String, dynamic>{
         'followedTopics': <String>['category:Pastel'],
-        'followedTopicsOffset': 0,
+        'followedTopicsOffset': deviceOffset,
       },
     };
     final FollowedTopicsStore store = newStore();
@@ -244,7 +247,7 @@ void main() {
     expect(saved, isTrue);
     expect(store.topics, isEmpty);
     final Map<String, dynamic> session = firestore.docs['usersv2/u1/private']!['session']!;
-    expect(session['followedTopicsOffset'], 0);
+    expect(session['followedTopicsOffset'], deviceOffset);
     expect(firestore.writes.last.data, isNot(contains('followedTopicsOffset')));
     expect(session['followedTopics'], isA<FieldValue>());
   });
@@ -253,7 +256,7 @@ void main() {
     firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
       'session': <String, dynamic>{
         'followedTopics': <String>['category:Pastel', 'mood:dreamy'],
-        'followedTopicsOffset': 0,
+        'followedTopicsOffset': deviceOffset,
       },
     };
     final FollowedTopicsStore store = newStore();
@@ -270,7 +273,7 @@ void main() {
     firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
       'session': <String, dynamic>{
         'followedTopics': <String>['category:Pastel', 'mood:dreamy'],
-        'followedTopicsOffset': 0,
+        'followedTopicsOffset': deviceOffset,
       },
     };
     final FollowedTopicsStore store = newStore();
@@ -293,7 +296,7 @@ void main() {
 
   test('loading an empty topic list clears a stale digest offset', () async {
     firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
-      'session': <String, dynamic>{'followedTopics': <String>[], 'followedTopicsOffset': 0},
+      'session': <String, dynamic>{'followedTopics': <String>[], 'followedTopicsOffset': deviceOffset},
     };
 
     await newStore().ensureLoaded();
@@ -308,7 +311,7 @@ void main() {
     firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
       'session': <String, dynamic>{
         'followedTopics': <String>[pastel.key],
-        'followedTopicsOffset': 0,
+        'followedTopicsOffset': deviceOffset,
       },
     };
     final FollowedTopicsStore store = newStore();
@@ -336,7 +339,7 @@ void main() {
     firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
       'session': <String, dynamic>{
         'followedTopics': <String>[pastel.key],
-        'followedTopicsOffset': 0,
+        'followedTopicsOffset': deviceOffset,
       },
     };
     final FollowedTopicsStore store = newStore();
@@ -361,7 +364,7 @@ void main() {
     firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
       'session': <String, dynamic>{
         'followedTopics': <String>[pastel.key],
-        'followedTopicsOffset': 0,
+        'followedTopicsOffset': deviceOffset,
       },
     };
     final FollowedTopicsStore store = newStore();
@@ -452,7 +455,7 @@ void main() {
       firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
         'session': <String, dynamic>{
           'followedTopics': <String>[if (!following) pastel.key],
-          if (!following) 'followedTopicsOffset': 0,
+          if (!following) 'followedTopicsOffset': deviceOffset,
         },
       };
       final FollowedTopicsStore store = newStore();
@@ -518,13 +521,13 @@ void main() {
         firestore.docs['usersv2/u1/private'] = <String, Map<String, dynamic>>{
           'session': <String, dynamic>{
             'followedTopics': <String>[pastel.key],
-            'followedTopicsOffset': 0,
+            'followedTopicsOffset': deviceOffset,
           },
         };
         firestore.docs['usersv2/u2/private'] = <String, Map<String, dynamic>>{
           'session': <String, dynamic>{
             'followedTopics': <String>[dreamy.key],
-            'followedTopicsOffset': 0,
+            'followedTopicsOffset': deviceOffset,
           },
         };
         final FollowedTopicsStore store = newStore();
