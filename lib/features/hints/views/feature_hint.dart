@@ -2,13 +2,17 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:Prism/core/motion/prism_motion.dart';
+import 'package:Prism/core/widgets/prism_sheet/prism_sheet_route.dart';
 import 'package:Prism/features/hints/data/feature_hints.dart';
 import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 
 /// Wraps the real control of a feature. Each time the control has been on screen for a moment it counts a view, and
 /// when [FeatureHints] allows it, a small callout with one line and "Got it" points at the control.
@@ -33,6 +37,10 @@ class _FeatureHintState extends State<FeatureHint> {
   final GlobalKey _anchor = GlobalKey();
   OverlayEntry? _entry;
   Timer? _timer;
+  Timer? _visibilityTimer;
+  HintId? _shownId;
+  String? _shownUserId;
+  Rect? _lastAnchorRect;
   bool _viewed = false;
   bool _routeCurrent = true;
 
@@ -47,7 +55,15 @@ class _FeatureHintState extends State<FeatureHint> {
   @override
   void didUpdateWidget(FeatureHint oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!widget.enabled) _close(HintDismissMethod.interrupted);
+    if (oldWidget.id != widget.id) {
+      _close(HintDismissMethod.interrupted);
+      _viewed = false;
+      _timer?.cancel();
+    }
+    if (!widget.enabled) {
+      _timer?.cancel();
+      _close(HintDismissMethod.interrupted);
+    }
     _schedule();
   }
 
@@ -66,7 +82,17 @@ class _FeatureHintState extends State<FeatureHint> {
   void _check() {
     if (!mounted || !widget.enabled) return;
     _viewed = true;
-    if (_hints.view(widget.id, canShow: _routeCurrent && _anchorOnScreen())) _show();
+    if (_hints.view(widget.id, canShow: _canShow())) _show();
+  }
+
+  bool _canShow() {
+    final ModalRoute<dynamic>? route = ModalRoute.of(context);
+    return _routeCurrent &&
+        openPrismSheetCount == 0 &&
+        TickerMode.of(context) &&
+        (route?.animation?.status ?? AnimationStatus.completed) == AnimationStatus.completed &&
+        (route?.secondaryAnimation?.status ?? AnimationStatus.dismissed) == AnimationStatus.dismissed &&
+        _anchorOnScreen();
   }
 
   bool _anchorOnScreen() {
@@ -75,7 +101,19 @@ class _FeatureHintState extends State<FeatureHint> {
     final Rect rect = box.localToGlobal(Offset.zero) & box.size;
     final MediaQueryData media = MediaQuery.of(context);
     final Rect safe = media.padding.deflateRect(Offset.zero & media.size);
-    return safe.contains(rect.topLeft) && safe.contains(rect.bottomRight - const Offset(1, 1));
+    if (!safe.contains(rect.topLeft) || !safe.contains(rect.bottomRight - const Offset(1, 1))) return false;
+    RenderObject child = box;
+    while (child.parent != null) {
+      final RenderObject parent = child.parent!;
+      if (parent is RenderOffstage && parent.offstage) return false;
+      final Rect? clip = parent.describeApproximatePaintClip(child);
+      if (clip != null) {
+        final Rect visible = MatrixUtils.transformRect(parent.getTransformTo(null), clip);
+        if (!visible.contains(rect.topLeft) || !visible.contains(rect.bottomRight - const Offset(1, 1))) return false;
+      }
+      child = parent;
+    }
+    return true;
   }
 
   void _show() {
@@ -85,16 +123,36 @@ class _FeatureHintState extends State<FeatureHint> {
       return;
     }
     final String message = kHints[widget.id]!.copy(context.l10n);
+    final FocusScopeNode focusScope = FocusScope.of(context);
     _entry = OverlayEntry(
-      builder: (_) => _HintCallout(
-        anchor: _anchor,
-        overlay: overlay,
-        message: message,
-        onGotIt: () => _close(HintDismissMethod.gotIt),
-        onTapOutside: () => _close(HintDismissMethod.tapOutside),
+      builder: (_) => Focus(
+        parentNode: focusScope,
+        canRequestFocus: false,
+        skipTraversal: true,
+        child: _HintCallout(
+          anchor: _anchor,
+          overlay: overlay,
+          message: message,
+          onGotIt: () => _close(HintDismissMethod.gotIt),
+          onTapOutside: () => _close(HintDismissMethod.tapOutside),
+        ),
       ),
     );
+    _shownId = widget.id;
+    _shownUserId = _hints.userId;
     overlay.insert(_entry!);
+    _visibilityTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (!mounted || _hints.userId != _shownUserId || _hints.active != _shownId || !_canShow()) {
+        _close(HintDismissMethod.interrupted);
+      } else {
+        final RenderBox box = _anchor.currentContext!.findRenderObject()! as RenderBox;
+        final Rect rect = box.localToGlobal(Offset.zero) & box.size;
+        if (rect != _lastAnchorRect) {
+          _lastAnchorRect = rect;
+          _entry?.markNeedsBuild();
+        }
+      }
+    });
     _hints.addListener(_onHintsChanged);
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       unawaited(SemanticsService.sendAnnouncement(View.of(context), message, Directionality.of(context)));
@@ -102,20 +160,39 @@ class _FeatureHintState extends State<FeatureHint> {
   }
 
   void _onHintsChanged() {
-    if (_hints.active != widget.id) _removeEntry();
+    if (_hints.active != _shownId) _removeEntry();
+  }
+
+  void _afterBuild(VoidCallback action) {
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => action());
+    } else {
+      action();
+    }
   }
 
   void _close(HintDismissMethod method) {
-    if (_entry == null) return;
+    final HintId? id = _shownId;
+    if (id == null) return;
+    final String? userId = _shownUserId;
     _removeEntry();
-    _hints.dismiss(widget.id, method);
+    final FeatureHints hints = _hints;
+    _afterBuild(() => hints.dismiss(id, method, userId: userId));
   }
 
   void _removeEntry() {
     _hints.removeListener(_onHintsChanged);
-    _entry?.remove();
-    _entry?.dispose();
+    _visibilityTimer?.cancel();
+    final OverlayEntry? entry = _entry;
     _entry = null;
+    _shownId = null;
+    _shownUserId = null;
+    if (entry != null) {
+      _afterBuild(() {
+        entry.remove();
+        entry.dispose();
+      });
+    }
   }
 
   @override
@@ -201,18 +278,32 @@ class _HintCalloutState extends State<_HintCallout> with SingleTickerProviderSta
             Semantics(
               container: true,
               button: true,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: widget.onGotIt,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
-                    child: Center(
-                      widthFactor: 1,
-                      child: Text(
-                        context.l10n.hintGotIt,
-                        style: text.copyWith(color: cs.inversePrimary, fontWeight: FontWeight.w700),
+              child: FocusableActionDetector(
+                shortcuts: const <ShortcutActivator, Intent>{
+                  SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
+                  SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
+                },
+                actions: <Type, Action<Intent>>{
+                  ActivateIntent: CallbackAction<ActivateIntent>(
+                    onInvoke: (_) {
+                      widget.onGotIt();
+                      return null;
+                    },
+                  ),
+                },
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: widget.onGotIt,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
+                      child: Center(
+                        widthFactor: 1,
+                        child: Text(
+                          context.l10n.hintGotIt,
+                          style: text.copyWith(color: cs.inversePrimary, fontWeight: FontWeight.w700),
+                        ),
                       ),
                     ),
                   ),

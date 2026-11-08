@@ -520,7 +520,12 @@ class _FolderScreenState extends State<FolderScreen> {
             if (folder != null)
               FeatureHint(
                 id: HintId.folderSections,
-                enabled: folder.roleOf(userId) != null && !smart && folder.sections.isEmpty && folder.itemCount >= 12,
+                enabled:
+                    folder.roleOf(userId) != null &&
+                    !smart &&
+                    hasWalls &&
+                    folder.sections.isEmpty &&
+                    folder.itemCount >= 12,
                 child: PopupMenuButton<_FolderMenuAction>(
                   tooltip: context.l10n.foldersMoreOptions,
                   icon: const Icon(Icons.more_vert_rounded),

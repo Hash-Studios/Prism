@@ -6,6 +6,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -59,13 +60,15 @@ class FeatureHints extends ChangeNotifier {
     String Function()? userId,
     String Function(String key)? remoteConfig,
     int Function()? openSheets,
+    ValueListenable<bool>? paywallPresenting,
   }) : _read = read ?? _defaultRead,
        _write = write ?? _defaultWrite,
        _clock = clock ?? DateTime.now,
        _session = session ?? (() => _storeReady ? AppSessionTracker.instance.sessionNumber : 0),
        _userId = userId ?? (() => app_state.prismUser.id),
        _remoteConfig = remoteConfig ?? _defaultRemoteConfig,
-       _openSheets = openSheets ?? (() => openPrismSheetCount);
+       _openSheets = openSheets ?? (() => openPrismSheetCount),
+       _paywallPresenting = paywallPresenting ?? PaywallOrchestrator.instance.presenting;
 
   /// Tests swap this for a [FeatureHints] built with fakes.
   static FeatureHints instance = FeatureHints();
@@ -83,8 +86,13 @@ class FeatureHints extends ChangeNotifier {
   final String Function() _userId;
   final String Function(String key) _remoteConfig;
   final int Function() _openSheets;
+  final ValueListenable<bool> _paywallPresenting;
 
   HintId? _active;
+  String? _activeUserId;
+  final Map<String, Map<HintId, HintRecord>> _recordCache = <String, Map<HintId, HintRecord>>{};
+  final Map<String, List<DateTime>> _historyCache = <String, List<DateTime>>{};
+  bool _disposed = false;
   bool _attached = false;
 
   /// Starts listening for feature use and for other prompts. Call it once at launch.
@@ -93,10 +101,13 @@ class FeatureHints extends ChangeNotifier {
     _attached = true;
     AnalyticsRuntime.trackListeners.add(_onTracked);
     StartupModalSlot.lastPromptAt.addListener(_onPrompt);
+    _paywallPresenting.addListener(_onPaywallChanged);
   }
 
+  String get userId => _userId();
+
   /// The hint on screen now, if any.
-  HintId? get active => _active;
+  HintId? get active => _activeUserId == _userId() ? _active : null;
 
   /// The Show tips switch in Settings.
   bool get enabled => _read<bool>(enabledKey, true);
@@ -104,14 +115,21 @@ class FeatureHints extends ChangeNotifier {
   Future<void> setEnabled(bool value) async {
     if (!value) _hideActive();
     await _write(enabledKey, value);
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   /// Lets every hint show again for the current user.
   Future<void> reset() async {
     _hideActive();
-    await _write(recordsKey(_userId()), null);
-    notifyListeners();
+    final String uid = _userId();
+    final List<DateTime> history = _history(_records());
+    await _write(
+      '${recordsKey(uid)}.budget',
+      jsonEncode(history.map((DateTime at) => at.millisecondsSinceEpoch).toList()),
+    );
+    _recordCache[uid] = <HintId, HintRecord>{};
+    await _write(recordsKey(uid), null);
+    if (!_disposed) notifyListeners();
   }
 
   HintRecord record(HintId id) => _records()[id] ?? const HintRecord();
@@ -119,7 +137,9 @@ class FeatureHints extends ChangeNotifier {
   /// The surface of [id] was seen. Returns true when its hint should show now. Pass [canShow] false when the control
   /// is off screen or covered: the view still counts.
   bool view(HintId id, {bool canShow = true}) {
+    if (_active != null && active == null) _hideActive();
     final Map<HintId, HintRecord> records = _records();
+    final List<DateTime> history = _history(records);
     final HintRecord current = records[id] ?? const HintRecord();
     if (current.done) return false;
     final HintRecord viewed = current.copyWith(views: current.views + 1);
@@ -130,15 +150,21 @@ class FeatureHints extends ChangeNotifier {
         viewed.views >= kHints[id]!.views &&
         _allowedByConfig(id) &&
         _openSheets() == 0 &&
-        HintBudget.allows(
-          now: _clock(),
-          session: _session(),
-          shownAt: records.values.map((HintRecord r) => r.shownAt).nonNulls,
-          lastPromptAt: _lastPromptAt(),
-        );
+        !_paywallPresenting.value &&
+        HintBudget.allows(now: _clock(), session: _session(), shownAt: history, lastPromptAt: _lastPromptAt());
     if (show) {
-      records[id] = viewed.copyWith(shownAt: _clock());
+      final DateTime shownAt = _clock();
+      records[id] = viewed.copyWith(shownAt: shownAt);
+      history.removeWhere((DateTime at) => shownAt.difference(at) >= HintBudget.week);
+      history.add(shownAt);
+      unawaited(
+        _write(
+          '${recordsKey(_userId())}.budget',
+          jsonEncode(history.map((DateTime at) => at.millisecondsSinceEpoch).toList()),
+        ),
+      );
       _active = id;
+      _activeUserId = _userId();
       unawaited(analytics.track(HintShownEvent(hintId: id)));
     }
     unawaited(_save(records));
@@ -146,9 +172,10 @@ class FeatureHints extends ChangeNotifier {
     return show;
   }
 
-  void dismiss(HintId id, HintDismissMethod method) {
-    if (_active != id) return;
+  void dismiss(HintId id, HintDismissMethod method, {String? userId}) {
+    if (_disposed || _active != id || (userId != null && userId != _activeUserId)) return;
     _active = null;
+    _activeUserId = null;
     unawaited(analytics.track(HintDismissedEvent(hintId: id, method: method)));
     notifyListeners();
   }
@@ -170,6 +197,10 @@ class FeatureHints extends ChangeNotifier {
     return live.isAfter(saved) ? live : saved;
   }
 
+  void _onPaywallChanged() {
+    if (_paywallPresenting.value) _hideActive();
+  }
+
   void _onPrompt() {
     final DateTime? at = StartupModalSlot.lastPromptAt.value;
     if (at == null) return;
@@ -189,16 +220,34 @@ class FeatureHints extends ChangeNotifier {
       final HintRecord current = records[hint.id] ?? const HintRecord();
       if (current.used) continue;
       final DateTime? shownAt = current.shownAt;
-      if (shownAt != null && _clock().difference(shownAt) < HintBudget.day) {
+      final Duration? age = shownAt == null ? null : _clock().difference(shownAt);
+      if (age != null && !age.isNegative && age < HintBudget.day) {
         unawaited(analytics.track(HintFeatureUsedEvent(hintId: hint.id)));
       }
       records[hint.id] = current.copyWith(used: true);
       unawaited(_save(records));
+      if (active == hint.id) _hideActive();
     }
   }
 
+  List<DateTime> _history(Map<HintId, HintRecord> records) {
+    return _historyCache.putIfAbsent(_userId(), () {
+      final Set<int> times = records.values.map((HintRecord r) => r.shownAt?.millisecondsSinceEpoch).nonNulls.toSet();
+      try {
+        final Object? saved = jsonDecode(_read<String>('${recordsKey(_userId())}.budget', '[]'));
+        if (saved is List) times.addAll(saved.whereType<int>());
+      } on FormatException {
+        // Keep the history still available in the hint records.
+      }
+      return times.map(DateTime.fromMillisecondsSinceEpoch).toList();
+    });
+  }
+
   Map<HintId, HintRecord> _records() {
+    final String uid = _userId();
+    if (_recordCache.containsKey(uid)) return _recordCache[uid]!;
     final Map<HintId, HintRecord> records = <HintId, HintRecord>{};
+    _recordCache[uid] = records;
     try {
       final Object? decoded = jsonDecode(_read<String>(recordsKey(_userId()), '{}'));
       if (decoded is Map) {
@@ -221,8 +270,10 @@ class FeatureHints extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     AnalyticsRuntime.trackListeners.remove(_onTracked);
     StartupModalSlot.lastPromptAt.removeListener(_onPrompt);
+    _paywallPresenting.removeListener(_onPaywallChanged);
     super.dispose();
   }
 

@@ -68,4 +68,28 @@ void main() {
       isTrue,
     );
   });
+  test('clock rollback blocks hints until timestamps catch up', () {
+    expect(HintBudget.allows(now: now, session: 3, shownAt: <DateTime>[now.add(const Duration(hours: 1))]), isFalse);
+    expect(
+      HintBudget.allows(
+        now: now,
+        session: 3,
+        shownAt: const <DateTime>[],
+        lastPromptAt: now.add(const Duration(minutes: 1)),
+      ),
+      isFalse,
+    );
+  });
+
+  test('exact daily and prompt cooldown boundaries allow hints', () {
+    expect(
+      HintBudget.allows(
+        now: now,
+        session: 3,
+        shownAt: <DateTime>[now.subtract(const Duration(days: 1))],
+        lastPromptAt: now.subtract(const Duration(minutes: 10)),
+      ),
+      isTrue,
+    );
+  });
 }

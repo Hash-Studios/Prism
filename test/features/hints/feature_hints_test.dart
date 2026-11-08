@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/features/hints/data/feature_hints.dart';
 import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../support/fake_app_analytics.dart';
 
@@ -23,6 +26,7 @@ void main() {
   late int sheets;
   late FakeAppAnalytics analytics;
   late FeatureHints hints;
+  late ValueNotifier<bool> paywall;
 
   FeatureHints makeHints() => FeatureHints(
     read: <T>(String key, T defaultValue) {
@@ -41,6 +45,7 @@ void main() {
     userId: () => uid,
     remoteConfig: (String key) => remote[key] ?? '',
     openSheets: () => sheets,
+    paywallPresenting: paywall,
   );
 
   setUp(() {
@@ -53,11 +58,13 @@ void main() {
     sheets = 0;
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
+    paywall = ValueNotifier<bool>(false);
     hints = makeHints();
   });
 
   tearDown(() {
     hints.dispose();
+    paywall.dispose();
     StartupModalSlot.reset();
     AnalyticsRuntime.reset();
   });
@@ -258,5 +265,125 @@ void main() {
     expect(paramsOf(analytics, 'hint_dismissed'), <Map<String, Object?>>[
       <String, Object?>{'hint_id': 'variant_dots', 'method': 'got_it'},
     ]);
+  });
+  test('reset retains the daily budget after restart', () async {
+    expect(hints.view(HintId.variantDots), isTrue);
+    await hints.reset();
+    hints.dispose();
+    hints = makeHints();
+
+    expect(hints.view(HintId.variantDots), isFalse);
+    clockNow = clockNow.add(const Duration(days: 1));
+    expect(hints.view(HintId.variantDots), isTrue);
+  });
+
+  test('reset retains the weekly budget after restart', () async {
+    expect(hints.view(HintId.variantDots), isTrue);
+    for (int i = 0; i < 2; i++) {
+      clockNow = clockNow.add(const Duration(days: 1));
+      await hints.reset();
+      expect(hints.view(HintId.variantDots), isTrue);
+    }
+    await hints.reset();
+    clockNow = clockNow.add(const Duration(days: 1));
+    hints.dispose();
+    hints = makeHints();
+    expect(hints.view(HintId.variantDots), isFalse);
+  });
+
+  test('pending persistence does not lose views or used records', () async {
+    hints.dispose();
+    final Completer<void> writes = Completer<void>();
+    hints = FeatureHints(
+      read: <T>(String key, T fallback) => store[key] is T ? store[key] as T : fallback,
+      write: (String key, Object? value) async {
+        await writes.future;
+        store[key] = value;
+      },
+      clock: () => clockNow,
+      session: () => 3,
+      userId: () => uid,
+      remoteConfig: (_) => '',
+      openSheets: () => 0,
+    );
+    hints.attach();
+    expect(hints.view(HintId.photoSearch), isFalse);
+    expect(hints.view(HintId.photoSearch), isFalse);
+    expect(hints.view(HintId.photoSearch), isTrue);
+    await AnalyticsRuntime.instance.track(const PhotoSearchStartedEvent(signedIn: true, searchId: 'pending'));
+    expect(hints.record(HintId.photoSearch).views, 3);
+    expect(hints.record(HintId.photoSearch).used, isTrue);
+    expect(hints.record(HintId.photoSearch).shownAt, clockNow);
+    writes.complete();
+    await settle();
+  });
+
+  test('account switch invalidates the active hint without blocking the new user', () {
+    expect(hints.view(HintId.variantDots), isTrue);
+    uid = 'other';
+    expect(hints.active, isNull);
+    expect(hints.view(HintId.variantDots), isTrue);
+    expect(hints.record(HintId.variantDots).views, 1);
+  });
+
+  test('feature use closes its active hint', () async {
+    hints.attach();
+    hints.view(HintId.photoSearch);
+    hints.view(HintId.photoSearch);
+    expect(hints.view(HintId.photoSearch), isTrue);
+    await AnalyticsRuntime.instance.track(const PhotoSearchStartedEvent(signedIn: true, searchId: 'close'));
+    expect(hints.active, isNull);
+  });
+
+  test('clock rollback does not attribute future hint impressions', () async {
+    hints.attach();
+    expect(hints.view(HintId.photoSearch), isFalse);
+    expect(hints.view(HintId.photoSearch), isFalse);
+    expect(hints.view(HintId.photoSearch), isTrue);
+    clockNow = clockNow.subtract(const Duration(minutes: 1));
+    await AnalyticsRuntime.instance.track(const PhotoSearchStartedEvent(signedIn: true, searchId: 'rollback'));
+    await settle();
+    expect(paramsOf(analytics, 'hint_feature_used'), isEmpty);
+  });
+
+  test('settings writes completing after disposal do not notify listeners', () async {
+    hints.dispose();
+    final Completer<void> writes = Completer<void>();
+    hints = FeatureHints(read: <T>(String key, T fallback) => fallback, write: (_, _) => writes.future);
+    final Future<void> update = hints.setEnabled(false);
+    hints.dispose();
+    hints = makeHints();
+    writes.complete();
+    await expectLater(update, completes);
+  });
+
+  test('reset completing after disposal does not notify listeners', () async {
+    hints.dispose();
+    final Completer<void> writes = Completer<void>();
+    hints = FeatureHints(read: <T>(String key, T fallback) => fallback, write: (_, _) => writes.future);
+    final Future<void> reset = hints.reset();
+    hints.dispose();
+    hints = makeHints();
+    writes.complete();
+    await expectLater(reset, completes);
+  });
+
+  test('native paywall interrupts a hint and blocks views beyond the prompt cooldown', () {
+    hints.attach();
+    expect(hints.view(HintId.variantDots), isTrue);
+    paywall.value = true;
+    expect(hints.active, isNull);
+    clockNow = clockNow.add(const Duration(days: 1));
+    expect(hints.view(HintId.folderSections), isFalse);
+    paywall.value = false;
+    expect(hints.view(HintId.folderSections), isTrue);
+  });
+  test('old account dismissal cannot close the new account hint', () {
+    expect(hints.view(HintId.variantDots), isTrue);
+    final String owner = hints.userId;
+    uid = 'other';
+    expect(hints.view(HintId.variantDots), isTrue);
+    hints.dismiss(HintId.variantDots, HintDismissMethod.interrupted, userId: owner);
+    expect(hints.active, HintId.variantDots);
   });
 }

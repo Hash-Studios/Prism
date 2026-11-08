@@ -587,11 +587,13 @@ void main() {
     required String folderId,
     required AutoRotateState rotation,
     List<FolderEntity>? folders,
+    List<FavouriteWallEntity> walls = const <FavouriteWallEntity>[],
   }) async {
     app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     addTearDown(() => getIt.unregister<ConnectivityService>());
     final repo = _FakeFoldersRepository(folders: folders ?? <FolderEntity>[_folder('work', 'Work')]);
+    repo.items[folderId] = walls;
     final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     final _MockStackRouter router = _MockStackRouter();
@@ -630,7 +632,20 @@ void main() {
       covers: const <String>[],
     );
 
-    await pumpFolderPage(tester, folderId: 'work', rotation: AutoRotateState.initial(), folders: <FolderEntity>[large]);
+    await pumpFolderPage(
+      tester,
+      folderId: 'work',
+      rotation: AutoRotateState.initial(),
+      folders: <FolderEntity>[large],
+      walls: const <FavouriteWallEntity>[
+        PrismFavouriteWall(
+          id: 'wall_1',
+          wallpaper: PrismWallpaper(
+            core: WallpaperCore(id: 'wall_1', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+          ),
+        ),
+      ],
+    );
 
     final Finder hint = find.ancestor(
       of: find.byIcon(Icons.more_vert_rounded),
@@ -638,6 +653,20 @@ void main() {
     );
     expect(hint, findsOneWidget);
     expect(tester.widget<FeatureHint>(hint).enabled, isTrue);
+  });
+
+  testWidgets('the sections hint is off when stale metadata has no loaded wallpapers', (tester) async {
+    await pumpFolderPage(
+      tester,
+      folderId: 'work',
+      rotation: AutoRotateState.initial(),
+      folders: <FolderEntity>[_folder('work', 'Work', itemCount: 12)],
+    );
+    final Finder hint = find.byWidgetPredicate((Widget w) => w is FeatureHint && w.id == HintId.folderSections);
+    expect(tester.widget<FeatureHint>(hint).enabled, isFalse);
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await settle(tester);
+    expect(find.text('Suggest sections'), findsNothing);
   });
 
   testWidgets('the more button carries the folderSections feature hint, off once the folder has a section', (

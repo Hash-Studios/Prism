@@ -4,6 +4,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/followed_topics/data/followed_topics_store.dart';
 import 'package:Prism/features/followed_topics/domain/entities/followed_topic.dart';
@@ -39,11 +40,21 @@ class _FollowButton extends StatefulWidget {
 class _FollowButtonState extends State<_FollowButton> {
   final FollowedTopicsStore _store = getIt<FollowedTopicsStore>();
   bool _busy = false;
+  String? _hintUserId;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_store.ensureLoaded().then((_) => _store.markSeen(widget.topic)));
+    unawaited(_loadTopic());
+  }
+
+  Future<void> _loadTopic() async {
+    final String userId = app_state.prismUser.id;
+    await _store.ensureLoaded();
+    if (mounted && app_state.prismUser.id == userId) {
+      setState(() => _hintUserId = userId);
+    }
+    await _store.markSeen(widget.topic);
   }
 
   Future<void> _toggle() async {
@@ -90,7 +101,8 @@ class _FollowButtonState extends State<_FollowButton> {
         final String name = widget.topic.title(l10n);
         return FeatureHint(
           id: HintId.followCategory,
-          enabled: widget.topic.kind == TopicKind.category && !_store.isFollowed(widget.topic),
+          enabled:
+              _hintUserId == app_state.prismUser.id && widget.topic.kind == TopicKind.category && !following && !_busy,
           child: Semantics(
             container: true,
             button: true,

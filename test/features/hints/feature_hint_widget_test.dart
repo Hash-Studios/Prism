@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/widgets/prism_sheet/prism_sheet_route.dart';
 import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/features/hints/data/feature_hints.dart';
 import 'package:Prism/features/hints/domain/feature_hint.dart';
@@ -7,6 +10,8 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
@@ -18,6 +23,7 @@ const String _gotIt = 'Got it';
 late Map<String, Object?> _store;
 late DateTime _now;
 late int _sheets;
+late String _uid;
 late String Function(String key) _remote;
 late FeatureHints _previous;
 late FeatureHints _hints;
@@ -33,7 +39,7 @@ FeatureHints _build() => FeatureHints(
   },
   clock: () => _now,
   session: () => 5,
-  userId: () => 'u1',
+  userId: () => _uid,
   remoteConfig: (String key) => _remote(key),
   openSheets: () => _sheets,
 );
@@ -45,6 +51,7 @@ void main() {
     _store = <String, Object?>{};
     _now = DateTime(2026, 11, 9, 12);
     _sheets = 0;
+    _uid = 'u1';
     _remote = (String key) => '';
     _previous = FeatureHints.instance;
     _hints = _build();
@@ -59,6 +66,187 @@ void main() {
     FeatureHints.instance = _previous;
     StartupModalSlot.reset();
     AnalyticsRuntime.reset();
+  });
+
+  testWidgets('disabling restarts the full dwell interval', (tester) async {
+    await tester.pumpWidget(_app(_host()));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpWidget(_app(_host(enabled: false)));
+    await tester.pumpWidget(_app(_host()));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(_hints.record(HintId.variantDots).views, 0);
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    expect(find.text(_copy), findsOneWidget);
+  });
+
+  testWidgets('reusing the wrapper for another id counts its own view', (tester) async {
+    await tester.pumpWidget(_app(_host(id: HintId.photoSearch)));
+    await _settle(tester);
+    expect(_hints.record(HintId.photoSearch).views, 1);
+    await tester.pumpWidget(_app(_host()));
+    await _settle(tester);
+    expect(find.text(_copy), findsOneWidget);
+  });
+
+  testWidgets('a clipped control counts a view but never shows a hint', (tester) async {
+    await tester.pumpWidget(
+      _app(
+        Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 100,
+              height: 20,
+              child: SingleChildScrollView(
+                child: FeatureHint(id: HintId.variantDots, child: const SizedBox(width: 44, height: 44)),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await _settle(tester);
+    expect(_hints.record(HintId.variantDots).views, 1);
+    expect(find.text(_copy), findsNothing);
+  });
+
+  testWidgets('scrolling the control out of view interrupts its hint', (tester) async {
+    final ScrollController scroll = ScrollController();
+    addTearDown(scroll.dispose);
+    await tester.pumpWidget(
+      _app(
+        Scaffold(
+          body: SingleChildScrollView(
+            controller: scroll,
+            child: const Column(
+              children: <Widget>[
+                SizedBox(height: 100),
+                FeatureHint(
+                  id: HintId.variantDots,
+                  child: SizedBox(key: Key('control'), width: 44, height: 44),
+                ),
+                SizedBox(height: 1500),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await _settle(tester);
+    expect(find.text(_copy), findsOneWidget);
+    scroll.jumpTo(500);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpAndSettle();
+    expect(find.text(_copy), findsNothing);
+    expect(_hints.active, isNull);
+  });
+
+  testWidgets('offstage controls never show hints', (tester) async {
+    await tester.pumpWidget(_app(Offstage(offstage: true, child: _host())));
+    await _settle(tester);
+    expect(_hints.record(HintId.variantDots).views, 1);
+    expect(_hints.active, isNull);
+  });
+
+  testWidgets('a hint cannot appear during a slow route transition', (tester) async {
+    await tester.pumpWidget(_app(const Scaffold(body: Text('Start'))));
+    Navigator.of(tester.element(find.text('Start'))).push(
+      PageRouteBuilder<void>(transitionDuration: const Duration(seconds: 2), pageBuilder: (_, __, ___) => _host()),
+    );
+    await tester.pump();
+    await tester.pump(FeatureHint.settle);
+    expect(_hints.record(HintId.variantDots).views, 1);
+    expect(_hints.active, isNull);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('a sheet in a nested navigator interrupts the outer hint', (tester) async {
+    await tester.pumpWidget(
+      _app(
+        _host(
+          extra: Positioned(
+            top: 0,
+            left: 0,
+            width: 100,
+            height: 100,
+            child: Navigator(onGenerateRoute: (_) => MaterialPageRoute<void>(builder: (_) => const Text('Nested'))),
+          ),
+        ),
+      ),
+    );
+    await _settle(tester);
+    expect(find.text(_copy), findsOneWidget);
+    unawaited(showPrismSheet<void>(tester.element(find.text('Nested')), builder: (_) => const SizedBox(height: 44)));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpAndSettle();
+    expect(find.text(_copy), findsNothing);
+    expect(_hints.active, isNull);
+  });
+
+  testWidgets('switching accounts interrupts the previous account hint', (tester) async {
+    await tester.pumpWidget(_app(_host()));
+    await _settle(tester);
+    expect(find.text(_copy), findsOneWidget);
+    _uid = 'u2';
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pumpAndSettle();
+    expect(find.text(_copy), findsNothing);
+    expect(_hints.record(HintId.variantDots).shownAt, isNull);
+  });
+
+  testWidgets('disabling a visible hint during build does not notify during build', (tester) async {
+    bool enabled = true;
+    late StateSetter rebuild;
+    await tester.pumpWidget(
+      _app(
+        StatefulBuilder(
+          builder: (_, setState) {
+            rebuild = setState;
+            return _host(enabled: enabled);
+          },
+        ),
+      ),
+    );
+    await _settle(tester);
+    _hints.addListener(() => rebuild(() {}));
+    rebuild(() => enabled = false);
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text(_copy), findsNothing);
+  });
+
+  testWidgets('Got it can be reached and activated with a keyboard', (tester) async {
+    await tester.pumpWidget(_app(_host()));
+    await _settle(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(find.text(_copy), findsNothing);
+  });
+
+  testWidgets('iOS sends one announcement without an Android live region', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final List<Object?> messages = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(SystemChannels.accessibility, (
+      message,
+    ) async {
+      messages.add(message);
+      return null;
+    });
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+        SystemChannels.accessibility,
+        null,
+      ),
+    );
+    await tester.pumpWidget(_app(_host()));
+    await _settle(tester);
+    expect(messages.where((m) => m is Map && m['type'] == 'announce'), hasLength(1));
+    expect(find.byWidgetPredicate((w) => w is Semantics && w.properties.liveRegion == true), findsNothing);
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('shows on its trigger after the settle delay, not before', (tester) async {

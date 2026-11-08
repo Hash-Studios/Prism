@@ -114,7 +114,13 @@ class BufferedAppAnalytics implements AppAnalytics {
   @override
   Future<void> track(AnalyticsEvent event) {
     for (final void Function(AnalyticsEvent event) listener in List.of(AnalyticsRuntime.trackListeners)) {
-      listener(event);
+      try {
+        listener(event);
+      } catch (error, stackTrace) {
+        FlutterError.reportError(
+          FlutterErrorDetails(exception: error, stack: stackTrace, library: 'Prism analytics observer'),
+        );
+      }
     }
     if (!kReleaseMode) {
       final Map<String, Object?> params = event.toWireParameters();
