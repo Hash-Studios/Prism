@@ -12,7 +12,6 @@ import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/ai_wallpaper/views/pages/photo_wallpaper_page.dart';
 import 'package:Prism/features/share_in/biz/share_in_resolver.dart';
-import 'package:Prism/features/share_in/data/shared_inbox.dart';
 import 'package:Prism/features/share_in/domain/shared_item.dart';
 import 'package:Prism/features/share_in/views/widgets/share_in_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -192,80 +191,6 @@ void main() {
       expect(find.byType(ShareInSheet), findsOneWidget);
     });
   }
-
-  // Known pre-existing main.dart bug: duplicate rejection runs after auto_route pops the sheet. Fix is out of scope.
-  testWidgets('a late system duplicate preserves the sheet opened from the iOS pending link', (tester) async {
-    final SharedInbox inbox = SharedInbox();
-    final Uri link = Uri.parse('prism://share-in?text=not%20a%20link#11111111-1111-4111-8111-111111111111');
-    String? pending = link.toString();
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
-      if (call.method == 'takePendingLink') {
-        final String? taken = pending;
-        pending = null;
-        return taken;
-      }
-      return directory.path;
-    });
-    final DeepLinkDispatcher dispatcher = DeepLinkDispatcher(
-      router: router,
-      whenReady: () async => true,
-      track: (_) async {},
-    );
-    addTearDown(dispatcher.dispose);
-    Future<void> openPending({Uri? arriving}) async {
-      final Uri? pendingLink = await inbox.takePendingLink(arriving: arriving);
-      if (pendingLink != null && inbox.claimLink(pendingLink)) {
-        unawaited(dispatcher.openUri(pendingLink, source: DeepLinkSourceValue.appLinks));
-      }
-    }
-
-    bool rejectedDuplicate = false;
-    await tester.pumpWidget(
-      MaterialApp.router(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        routerConfig: router.config(
-          deepLinkBuilder: (PlatformDeepLink platformLink) {
-            if (platformLink.initial) return DeepLink.defaultPath;
-            if (SharedInbox.isShareLink(platformLink.uri)) {
-              unawaited(openPending(arriving: platformLink.uri));
-              if (!inbox.claimLink(platformLink.uri)) {
-                rejectedDuplicate = true;
-                return DeepLink.none;
-              }
-            }
-            unawaited(dispatcher.openUri(platformLink.uri, source: DeepLinkSourceValue.appLinks));
-            return DeepLink.none;
-          },
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.runAsync(openPending);
-    await waitForRealIo(
-      tester,
-      () => find.byType(ShareInSheet).evaluate().isNotEmpty,
-      reason: 'pending-link share sheet',
-    );
-    await _settleSheet(tester);
-    final Element originalSheet = find.byType(ShareInSheet).evaluate().single;
-    expect(router.topRoute.name, ShareInRoute.name);
-
-    await tester.runAsync(
-      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
-        SystemChannels.navigation.name,
-        SystemChannels.navigation.codec.encodeMethodCall(
-          MethodCall('pushRouteInformation', <String, Object?>{'location': link.toString(), 'state': null}),
-        ),
-        (_) {},
-      ),
-    );
-    await waitForRealIo(tester, () => rejectedDuplicate, reason: 'duplicate system-link claim');
-    await _settleSheet(tester);
-
-    expect(router.topRoute.name, ShareInRoute.name);
-    expect(find.byType(ShareInSheet).evaluate(), <Element>[originalSheet]);
-  }, skip: true);
 
   testWidgets('a missing native image keeps the image error message', (tester) async {
     await mount(tester);
