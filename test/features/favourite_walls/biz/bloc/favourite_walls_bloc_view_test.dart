@@ -77,19 +77,31 @@ void main() {
   test('removeRequested sends one batched clear for the ids and drops them from the list', () async {
     final bloc = await loaded();
 
-    bloc.add(const FavouriteWallsEvent.removeRequested(wallIds: <String>['a', 'c']));
+    bloc.add(const FavouriteWallsEvent.removeRequested(wallIds: <String>['a', 'wallhaven_c']));
     await bloc.stream.firstWhere((state) => state.actionStatus == ActionStatus.success);
 
     final params = verify(() => clear(captureAny())).captured.single as ClearFavouriteWallsParams;
-    expect(params.wallIds, <String>['a', 'c']);
+    expect(params.wallIds, <String>['a', 'wallhaven_c']);
     expect(bloc.state.items.map((wall) => wall.id), <String>['b']);
     verifyNever(() => toggle(any()));
+  });
+
+  test('a Pexels wall with the id of a Wallhaven favourite is not favourited yet (#524)', () async {
+    when(() => toggle(any())).thenAnswer((_) async => Result.success(true));
+    final bloc = await loaded();
+
+    bloc.add(FavouriteWallsEvent.toggleRequested(wall: pexelsFav('c')));
+    await bloc.stream.firstWhere((state) => state.actionStatus == ActionStatus.success);
+
+    final params = verify(() => toggle(captureAny())).captured.single as ToggleFavouriteWallParams;
+    expect(params.currentlyFavourited, isFalse);
+    expect(bloc.state.items.map((wall) => wall.key), containsAll(<String>['wallhaven_c', 'pexels_c']));
   });
 
   test('restoreRequested puts removed walls back in date order', () async {
     final bloc = await loaded();
     final FavouriteWallEntity removed = bloc.state.items.first;
-    bloc.add(FavouriteWallsEvent.removeRequested(wallIds: <String>[removed.id]));
+    bloc.add(FavouriteWallsEvent.removeRequested(wallIds: <String>[removed.key]));
     await bloc.stream.firstWhere((state) => state.items.length == 2);
 
     bloc.add(FavouriteWallsEvent.restoreRequested(walls: <FavouriteWallEntity>[removed]));

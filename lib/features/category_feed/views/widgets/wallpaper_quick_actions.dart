@@ -63,7 +63,8 @@ class WallpaperQuickActionRegion extends StatelessWidget {
       unpinLabel: context.l10n.favouriteUnpin,
       readIsPinned: readIsPinned,
       dayNightLabel: dayNightSupportedNow ? context.l10n.dayNightTitle : null,
-      readIsFavourite: () => getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, item.id),
+      readIsFavourite: () =>
+          getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, favouriteKey(item.source, item.id)),
       tone: placeholderColorOf(item, Theme.of(context).colorScheme.surface),
       preview:
           preview ??
@@ -100,7 +101,10 @@ Future<void> _dispatch(
   if (!await requireSignedInAction(context) || !context.mounted) return;
   switch (action) {
     case WallpaperQuickAction.favourite:
-      final bool saved = getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, item.id);
+      final bool saved = getIt<FavoritesLocalDataSource>().isWallFavourite(
+        app_state.prismUser.id,
+        favouriteKey(item.source, item.id),
+      );
       await _toggleFavourite(context, item, favourite: !saved);
     case WallpaperQuickAction.share:
       unawaited(

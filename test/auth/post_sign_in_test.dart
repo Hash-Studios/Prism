@@ -173,6 +173,23 @@ class _Messaging extends Fake implements FirebaseMessaging {
   Future<void> deleteToken() async {}
 }
 
+/// FCM without Google Play services: topic calls never answer.
+class _SilentTopicsMessaging extends _Messaging {
+  final Completer<void> topicCallStarted = Completer<void>();
+
+  @override
+  Future<void> subscribeToTopic(String topic) {
+    if (!topicCallStarted.isCompleted) topicCallStarted.complete();
+    return Completer<void>().future;
+  }
+
+  @override
+  Future<void> unsubscribeFromTopic(String topic) {
+    if (!topicCallStarted.isCompleted) topicCallStarted.complete();
+    return Completer<void>().future;
+  }
+}
+
 class _DelayedAnalytics extends FakeAppAnalytics {
   final started = Completer<void>();
   final gate = Completer<void>();
@@ -317,6 +334,18 @@ void main() {
     expect(app_state.prismUser.id, 'u1');
     expect(app_state.prismUser.loggedIn, isFalse);
     expect(firebase.currentUser?.uid, 'u1');
+  });
+
+  test('sign-in completes while FCM topic calls never answer', () async {
+    final _SilentTopicsMessaging messaging = _SilentTopicsMessaging();
+    final GoogleAuth auth = GoogleAuth(auth: _Auth(), googleSignIn: _GoogleSignIn(), messaging: messaging);
+    final Future<Object?> signIn = auth.signInWithGoogle();
+    await firestore.writeStarted.future;
+    firestore.writeGate.complete();
+
+    await signIn.timeout(const Duration(seconds: 2));
+    expect(messaging.topicCallStarted.isCompleted, isTrue);
+    expect(app_state.prismUser.loggedIn, isTrue);
   });
 
   test('sign-in reads the user document once for coins, not twice', () async {

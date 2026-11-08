@@ -7,6 +7,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
+import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/usecases/public_profile_usecases.dart';
 import 'package:Prism/logger/logger.dart';
@@ -154,7 +155,13 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     final UserRelationKind kind = event.kind;
     final RelationList current = state.relation(kind);
     if (current.isFetching) return;
-    if (event.page > 0 && !current.hasMore) return;
+    // A page whose start is inside the ids it carries is fetched even after hasMore went false, because the
+    // caller may have appended ids.
+    if (event.page > 0 &&
+        !current.hasMore &&
+        event.page * PublicProfileRepository.relationPageSize >= event.userIds.length) {
+      return;
+    }
 
     _emitRelation(kind, emit, (list) => list.copyWith(isFetching: true));
 

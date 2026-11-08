@@ -9,6 +9,7 @@ import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:injectable/injectable.dart';
 
 const int _maxBatchWrites = 400;
@@ -41,17 +42,23 @@ class GuestFavouritesMerger {
     final cloudSaved = Map<String, Map<String, Object?>>.from(saved)..removeWhere((id, _) => starterIds.contains(id));
     if (cloudSaved.isEmpty) return 0;
     final String path = 'usersv2/$userId/images';
+    String keyOf(Map<String, Object?> data, String docId) => favouriteKey(
+      WallpaperSourceX.fromWire(data['provider']?.toString() ?? ''),
+      data['id']?.toString().trim().isNotEmpty == true ? data['id'].toString() : docId,
+    );
     final Set<String> existing =
         (await _firestoreClient
                 .query<String>(
                   FirestoreQuerySpec(collection: path, sourceTag: 'favourite_walls.guest_merge.existing'),
-                  (data, docId) => docId,
+                  keyOf,
                 )
                 .timeout(_networkTimeout))
             .toSet();
-    final List<MapEntry<String, Map<String, Object?>>> missing = cloudSaved.entries
-        .where((entry) => !existing.contains(entry.key))
-        .toList(growable: false);
+    // Guest favourites are stored under the raw wall ID; the account doc goes under the favourite key.
+    final List<MapEntry<String, Map<String, Object?>>> missing = <String, Map<String, Object?>>{
+      for (final MapEntry<String, Map<String, Object?>> entry in cloudSaved.entries)
+        keyOf(entry.value, entry.key): entry.value,
+    }.entries.where((entry) => !existing.contains(entry.key)).toList(growable: false);
     for (int start = 0; start < missing.length; start += _maxBatchWrites) {
       final List<MapEntry<String, Map<String, Object?>>> chunk = missing.sublist(
         start,

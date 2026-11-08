@@ -194,6 +194,9 @@ jobs:
           pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
       - run: tool/write_firebase_options_stub.sh
       - name: Run test shard
+        # A half-hour zone, not UTC, so a test that assumes UTC fails here as it does on a developer machine.
+        env:
+          TZ: Asia/Kolkata
         run: make test-shard CI=true TEST_TOTAL_SHARDS=2 TEST_SHARD_INDEX=${{ matrix.shard }}
 
   notification_contract:

@@ -36,16 +36,18 @@ class FavouriteWallsAdapter {
 
   Future<bool> deleteData() => _runAction((int id) => FavouriteWallsEvent.clearRequested(operationId: id));
 
-  Future<bool> removeWalls(List<String> wallIds) =>
-      _runAction((int id) => FavouriteWallsEvent.removeRequested(wallIds: wallIds, operationId: id));
+  /// [keys] are favourite keys (FavouriteWallEntity.key).
+  Future<bool> removeWalls(List<String> keys) =>
+      _runAction((int id) => FavouriteWallsEvent.removeRequested(wallIds: keys, operationId: id));
 
   Future<bool> restoreWalls(List<FavouriteWallEntity> walls) =>
       _runAction((int id) => FavouriteWallsEvent.restoreRequested(walls: walls, operationId: id));
 
-  Future<FavouritePinOutcome> setPinned(String wallId, {required bool pinned}) async {
+  /// [key] is the favourite key (FavouriteWallEntity.key).
+  Future<FavouritePinOutcome> setPinned(String key, {required bool pinned}) async {
     await _ensureLoaded();
     final FavouriteWallsState completed = await _dispatch(
-      (int id) => FavouriteWallsEvent.pinRequested(wallId: wallId, pinned: pinned, operationId: id),
+      (int id) => FavouriteWallsEvent.pinRequested(wallId: key, pinned: pinned, operationId: id),
     );
     if (completed.actionStatus == ActionStatus.success) return FavouritePinOutcome.done;
     return completed.failure is FavouritePinLimitFailure ? FavouritePinOutcome.limit : FavouritePinOutcome.failed;

@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 
 import {DEFAULT_CATEGORY, mapLabelsToCategory} from "../wallCategory";
 
+/** Categories added in #806. A rerun never moves a wall out of them. */
 export const NEW_CATEGORIES: readonly string[] = ["Gaming", "Pastel"];
 
 const BATCH_SIZE = 300;
@@ -11,6 +12,8 @@ export type WallCategoryBackfillCounts = {
   noLabels: number;
   creatorPicked: number;
   changed: number;
+  /** Changes to General walls the classifier never set. --classified-only skips them. */
+  unclassified: number;
   written: number;
   failed: number;
   moves: Record<string, number>;
@@ -19,9 +22,11 @@ export type WallCategoryBackfillCounts = {
 
 export const USAGE = `Usage: node lib/scripts/backfillWallCategories.js [--apply]
 
-Moves approved walls into the new Gaming and Pastel categories when their Vision labels point there.
-A wall keeps its category when a creator picked it. The classifier owns a wall that it categorized or that has General.
+Recategorizes approved walls from their stored Vision labels with the current classifier rules.
+A wall keeps its category when a creator picked it, and a wall in Gaming or Pastel stays there.
+The classifier owns a wall that it categorized or that has General.
 A dry run is the default. It reads approved walls and writes nothing. It calls no paid service.
+--classified-only leaves General walls that the classifier never set (labels saved, category never chosen).
 --apply writes the new category. Get the owner's OK first.
 Credentials come from Application Default Credentials, as in the other backfills.`;
 
@@ -39,7 +44,7 @@ export function planCategoryChange(
     return "creatorPicked";
   }
   const to = mapLabelsToCategory(labels);
-  if (!NEW_CATEGORIES.includes(to) || to === from) {
+  if (to === from || NEW_CATEGORIES.includes(from)) {
     return null;
   }
   return {from, to};
@@ -55,10 +60,10 @@ const bump = (histogram: Record<string, number>, key: string) => {
  */
 export async function backfillWallCategories(
   db: admin.firestore.Firestore,
-  options: {apply: boolean},
+  options: {apply: boolean; classifiedOnly?: boolean},
   log: (line: string) => void = console.log,
 ): Promise<WallCategoryBackfillCounts> {
-  const counts: WallCategoryBackfillCounts = {scanned: 0, noLabels: 0, creatorPicked: 0, changed: 0, written: 0,
+  const counts: WallCategoryBackfillCounts = {scanned: 0, noLabels: 0, creatorPicked: 0, changed: 0, unclassified: 0, written: 0,
     failed: 0, moves: {}, samples: []};
   const writer = options.apply ? db.bulkWriter() : undefined;
   let last: admin.firestore.QueryDocumentSnapshot | undefined;
@@ -79,7 +84,8 @@ export async function backfillWallCategories(
     for (const doc of snapshot.docs) {
       counts.scanned += 1;
       last = doc;
-      const plan = planCategoryChange(doc.data());
+      const data = doc.data();
+      const plan = planCategoryChange(data);
       if (plan === "noLabels") {
         counts.noLabels += 1;
         continue;
@@ -89,6 +95,11 @@ export async function backfillWallCategories(
         continue;
       }
       if (plan === null) {
+        continue;
+      }
+      const unclassified = data.aiCategorized !== true;
+      if (unclassified) counts.unclassified += 1;
+      if (unclassified && options.classifiedOnly) {
         continue;
       }
       counts.changed += 1;
@@ -122,15 +133,15 @@ export async function backfillWallCategories(
   }
   log(`samples: ${counts.samples.join(" ")}`);
   log(`done scanned=${counts.scanned} noLabels=${counts.noLabels} creatorPicked=${counts.creatorPicked} ` +
-    `changed=${counts.changed} written=${counts.written} failed=${counts.failed} applied=${options.apply}`);
+    `changed=${counts.changed} unclassified=${counts.unclassified} written=${counts.written} failed=${counts.failed} applied=${options.apply}`);
   if (options.apply && counts.failed > 0) {
     throw new Error(`${counts.failed} category writes failed`);
   }
   return counts;
 }
 
-export function parseWallCategoryArgs(argv: string[]): {apply: boolean} {
-  return {apply: argv.includes("--apply")};
+export function parseWallCategoryArgs(argv: string[]): {apply: boolean; classifiedOnly: boolean} {
+  return {apply: argv.includes("--apply"), classifiedOnly: argv.includes("--classified-only")};
 }
 
 if (require.main === module) {

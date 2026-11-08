@@ -180,18 +180,21 @@ class FavouritesSyncService {
               <String, String>{entry.key: operationId},
               () async {
                 if (operation['desired'] == true && operation['wall'] != null) {
+                  final FavouriteWallEntity wall = _operationWall(entry.key, operation)!;
                   await _firestoreClient
                       .setDoc(
                         _imagesPath(uid),
-                        entry.key,
+                        wall.key,
                         FavouriteWallDocDto.fromJson(Map<String, dynamic>.from(operation['wall']! as Map)).toJson(),
                         sourceTag: 'favourite_walls.retry.set',
                       )
                       .timeout(const Duration(seconds: 8));
                 } else {
-                  await _firestoreClient
-                      .deleteDoc(_imagesPath(uid), entry.key, sourceTag: 'favourite_walls.retry.delete')
-                      .timeout(const Duration(seconds: 8));
+                  for (final String docId in await _docIdsToDelete(uid, entry.key, operation)) {
+                    await _firestoreClient
+                        .deleteDoc(_imagesPath(uid), docId, sourceTag: 'favourite_walls.retry.delete')
+                        .timeout(const Duration(seconds: 8));
+                  }
                 }
               },
             );
@@ -234,6 +237,19 @@ class FavouritesSyncService {
 
   bool _isBundledStarter(FavouriteWallEntity wall) => BundledWallpapers.isStarterIdentity(wall.id, wall.source);
 
+  /// [opKey] plus every doc that holds the operation's wall: its key doc and an older build's raw-ID doc.
+  Future<Set<String>> _docIdsToDelete(String uid, String opKey, Map<String, Object?> operation) async {
+    if (operation['wall'] == null) return <String>{opKey};
+    final FavouriteWallEntity wall = mapFavouriteWallDoc(
+      FavouriteWallDocDto.fromJson(Map<String, dynamic>.from(operation['wall']! as Map)),
+      opKey,
+    );
+    return <String>{
+      wall.key,
+      ...await existingFavouriteDocIds(_firestoreClient, _imagesPath(uid), wall.source, wall.id),
+    };
+  }
+
   bool _isBundledStarterOperation(String id, Map<String, Object?> operation) {
     final wall = operation['wall'];
     if (wall == null) return false;
@@ -259,7 +275,10 @@ class FavouritesSyncService {
     final items = await _prepareSnapshot(
       uid,
       session,
-      (snapshot) => <FavouriteWallEntity>[...snapshot.where((item) => item.id != wallId), wall.withSyncStatus(status)],
+      (snapshot) => <FavouriteWallEntity>[
+        ...snapshot.where((item) => item.key != wall.key),
+        wall.withSyncStatus(status),
+      ],
     );
     if (items == null || !_canPublish(uid, session, revision)) return;
     final hydrated = await hydratePrismFavourites(items, _prismWallpapers);

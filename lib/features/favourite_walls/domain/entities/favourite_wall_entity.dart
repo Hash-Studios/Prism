@@ -4,6 +4,14 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 
+/// The doc ID of a favourite in `usersv2/{uid}/images`. Wallhaven and Pexels IDs can be equal (both can be all
+/// digits), so their docs carry the source. A Prism ID always has capital letters, and the server counts Prism
+/// favourites by the raw ID, so a Prism doc keeps it. Older builds wrote every source under the raw ID.
+String favouriteKey(WallpaperSource source, String id) => switch (source) {
+  WallpaperSource.wallhaven || WallpaperSource.pexels => '${source.wireValue}_$id',
+  WallpaperSource.prism || WallpaperSource.downloaded || WallpaperSource.unknown => id,
+};
+
 sealed class FavouriteWallEntity {
   const FavouriteWallEntity({
     required this.id,
@@ -21,6 +29,9 @@ sealed class FavouriteWallEntity {
 
   final String id;
   final WallpaperSource source;
+
+  /// Identity of this favourite in local state and its Firestore doc ID. See [favouriteKey].
+  String get key => favouriteKey(source, id);
 
   /// When the user saved the wall. Docs written before this field existed have none.
   final DateTime? favouritedAt;

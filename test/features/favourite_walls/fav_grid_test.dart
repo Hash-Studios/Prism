@@ -371,7 +371,7 @@ void main() {
 
       expect(find.byType(WallpaperStatsRow), findsNothing);
       expect(find.byType(FavouriteWallpaperFooter), findsNothing);
-      for (final String id in <String>['a', 'b']) {
+      for (final String id in <String>['a', 'pexels_b']) {
         final Size tile = tester.getSize(find.byKey(ValueKey<String>(id)));
         expect(tile.height, closeTo(tile.width / PrismFeedLayout.gridTileAspectRatio, 0.5), reason: id);
       }
@@ -425,7 +425,7 @@ void main() {
       await tester.pump();
 
       final params = verify(() => clearUseCase(captureAny())).captured.single as ClearFavouriteWallsParams;
-      expect(params.wallIds, <String>['a', 'b']);
+      expect(params.wallIds, <String>['a', 'pexels_b']);
       expect(bloc.state.items.map((wall) => wall.id), <String>['c']);
       expect(haptics, <String>['tap']);
       await tester.pump(const Duration(milliseconds: 500));
@@ -436,6 +436,24 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(bloc.state.items.map((wall) => wall.id), <String>['a', 'b', 'c']);
+    });
+
+    testWidgets('selection keeps same-ID favourites from different sources distinct', (tester) async {
+      createBlocWith(<FavouriteWallEntity>[wallhavenFav('shared'), pexelsFav('shared', author: 'Pexels')]);
+      await pumpLoaded(tester);
+
+      await selectWithHold(tester, find.byType(FavouriteTileImage).first);
+      await tester.pump();
+      await tester.tap(find.byType(FavouriteTileImage).last);
+      await tester.pump();
+
+      expect(find.text('2 selected'), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel('Remove from favourites'));
+      await tester.pump();
+      await tester.pump();
+
+      final params = verify(() => clearUseCase(captureAny())).captured.single as ClearFavouriteWallsParams;
+      expect(params.wallIds, unorderedEquals(<String>['wallhaven_shared', 'pexels_shared']));
     });
 
     testWidgets('an unavailable favourite Remove emits one tap haptic and removes the wall', (tester) async {
@@ -807,7 +825,7 @@ void main() {
       await tester.tap(find.text('Clear all favourites'));
       await settle(tester);
       final params = verify(() => clearUseCase(captureAny())).captured.single as ClearFavouriteWallsParams;
-      expect(params.wallIds, <String>['a', 'b']);
+      expect(params.wallIds, <String>['a', 'pexels_b']);
       expect(bloc.state.items, isEmpty);
       expect(find.text('Cleared 2 favourites'), findsOneWidget);
 

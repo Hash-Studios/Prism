@@ -166,6 +166,18 @@ class _FakeMessaging extends Fake implements FirebaseMessaging {
   Future<void> deleteToken() async => _log.add('fcm.deleteToken');
 }
 
+/// FCM without Google Play services: no call ever answers.
+class _SilentMessaging extends Fake implements FirebaseMessaging {
+  @override
+  Future<String?> getAPNSToken() => Completer<String?>().future;
+
+  @override
+  Future<void> unsubscribeFromTopic(String topic) => Completer<void>().future;
+
+  @override
+  Future<void> deleteToken() => Completer<void>().future;
+}
+
 class _ThrowingAnalytics extends FakeAppAnalytics {
   _ThrowingAnalytics({this.failure, this.failIdentity = false});
 
@@ -503,6 +515,21 @@ void main() {
     firestore.loggedOutWriteGate = Completer<void>(); // never completed, like an offline write
 
     expect(await auth.signOutGoogle().timeout(const Duration(seconds: 2)), isTrue);
+    expect(_log, contains('auth.signOut'));
+    expect(app_state.prismUser.id, isEmpty);
+  });
+
+  test('FCM calls that never answer do not hang sign-out', () async {
+    GoogleAuth.signOutStepTimeout = const Duration(milliseconds: 50);
+    addTearDown(() => GoogleAuth.signOutStepTimeout = const Duration(seconds: 3));
+    app_state.prismUser = profileUser();
+    final GoogleAuth silent = GoogleAuth(
+      auth: _FakeAuth(),
+      googleSignIn: _FakeGoogleSignIn(),
+      messaging: _SilentMessaging(),
+    );
+
+    expect(await silent.signOutGoogle().timeout(const Duration(seconds: 2)), isTrue);
     expect(_log, contains('auth.signOut'));
     expect(app_state.prismUser.id, isEmpty);
   });

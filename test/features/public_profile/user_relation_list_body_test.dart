@@ -138,4 +138,40 @@ void main() {
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
     await tester.pump(const Duration(seconds: 1));
   });
+
+  testWidgets('at the end of 500 loaded ids, scrolling loads the next id page and asks for its user page', (
+    tester,
+  ) async {
+    final List<String> firstIds = <String>[for (int i = 0; i < 500; i++) 'id-$i'];
+    final List<UserSummaryEntity> users = <UserSummaryEntity>[
+      for (int i = 0; i < 20; i++)
+        UserSummaryEntity(
+          id: 'id-$i',
+          email: 'user$i@example.com',
+          name: 'User $i',
+          username: 'user_$i',
+          profilePhoto: '',
+          isFollowedByCurrentUser: false,
+        ),
+    ];
+    await pumpBody(
+      tester,
+      followers: RelationList(summaries: users),
+      emails: firstIds,
+    );
+    when(
+      () => repo.fetchRelationIds(profileUid: 'profile-uid', kind: UserRelationKind.followers, afterId: 'id-499'),
+    ).thenAnswer((_) async => Result.success<List<String>>(const <String>['id-500']));
+    clearInteractions(bloc);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -5000));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    verify(
+      () => repo.fetchRelationIds(profileUid: 'profile-uid', kind: UserRelationKind.followers, afterId: 'id-499'),
+    ).called(1);
+    final event = verify(() => bloc.add(captureAny())).captured.single as PublicProfileEvent;
+    expect(event.toString(), contains('id-500'));
+    expect(event.toString(), contains('page: 1'));
+  });
 }

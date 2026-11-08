@@ -40,7 +40,7 @@ void main() {
     await saveGuest('already');
     final firestore = MergeFirestore(
       onQuery: (_) => <FakeDocRow>[
-        (id: 'already', data: <String, dynamic>{'id': 'already'}),
+        (id: 'already', data: <String, dynamic>{'id': 'already', 'provider': 'pexels'}),
       ],
     );
 
@@ -49,7 +49,7 @@ void main() {
     expect(merged, 1);
     expect(firestore.batchTags, <String>['favourite_walls.guest_merge']);
     final sets = firestore.batches.single.sets;
-    expect(sets.map((set) => '${set.collection}/${set.id}'), <String>['usersv2/uid/images/new1']);
+    expect(sets.map((set) => '${set.collection}/${set.id}'), <String>['usersv2/uid/images/pexels_new1']);
     expect(sets.single.data['favouritedAt'], DateTime.utc(2026, 2, 3), reason: 'dates go back to DateTime');
     expect(await store.readAll(), isEmpty);
     expect(local.isWallFavourite('', 'new1'), isFalse);

@@ -411,8 +411,8 @@ void main() {
     await waitForUpdateCount(1);
     expect(updates.last.items.map((wall) => wall.id), unorderedEquals(<String>['a', 'b']));
     expect((await local.readWallSnapshot('u')).map((wall) => wall.id), unorderedEquals(<String>['a', 'b']));
-    expect(local.isWallFavourite('u', 'b'), isTrue);
-    expect(local.isWallFavourite('u', 'c'), isFalse);
+    expect(local.isWallFavourite('u', 'pexels_b'), isTrue);
+    expect(local.isWallFavourite('u', 'pexels_c'), isFalse);
     expect(updates.last.items.singleWhere((wall) => wall.id == 'a').syncStatus, FavouriteSyncStatus.rejected);
   });
 
@@ -575,7 +575,7 @@ void main() {
 
     await service.start('u');
 
-    expect(firestore.batches.single.sets.single.id, 'g1');
+    expect(firestore.batches.single.sets.single.id, 'pexels_g1');
     expect(await guests.readAll(), isEmpty);
   });
 
@@ -602,6 +602,40 @@ void main() {
     expect(firestore.writes.single.data!.containsKey('pinnedAt'), isFalse);
     expect((await local.readFavouriteOperation('u', 'replayed'))!['status'], 'synced');
     expect(operation['status'], 'pending');
+  });
+
+  test('an old raw-key queued add writes at the source-qualified key', () async {
+    final wall = wallhavenFav('777');
+    await local.createFavouriteOperation(
+      'u',
+      wall.id,
+      desired: true,
+      wall: Map<String, Object?>.from(favouriteWallToDoc(wall)),
+    );
+
+    await service.start('u');
+    await local.waitForStatus(wall.id, 'synced');
+
+    expect(firestore.writes.single.id, 'wallhaven_777');
+  });
+
+  test('an old raw-key queued delete does not delete a different source with the same id', () async {
+    final wall = wallhavenFav('777');
+    await local.createFavouriteOperation(
+      'u',
+      wall.id,
+      desired: false,
+      wall: Map<String, Object?>.from(favouriteWallToDoc(wall)),
+    );
+    firestore.docs['usersv2/u/images'] = <String, Map<String, dynamic>>{
+      '777': <String, dynamic>{'id': '777', 'provider': 'pexels'},
+    };
+
+    await service.start('u');
+    await local.waitForStatus(wall.id, 'synced');
+
+    expect(firestore.docs['usersv2/u/images']!.containsKey('777'), isTrue);
+    expect(firestore.writes.where((write) => write.op == 'delete').map((write) => write.id), <String>['wallhaven_777']);
   });
 
   for (final DateTime? nextPin in <DateTime?>[DateTime.utc(2026, 5, 6), null]) {

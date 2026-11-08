@@ -9,6 +9,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/features/followed_topics/data/followed_topics_store.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
+import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 /// Stores and keeps the FCM device token up-to-date in the user's Firestore
@@ -70,7 +71,7 @@ class FcmTokenService {
       } else if (invalidation != null && settings?.isOpen == true) {
         await settings!.set(_tokenRotationKey, userId);
       }
-      final String? token = await resolvedMessaging.getToken();
+      final String? token = await readFcmToken(resolvedMessaging);
       if (generation != _generation || token == null || token.trim().isEmpty) return;
       await _trackWrite(() => _persistToken(userId: userId, token: token, client: client));
       if (generation != _generation) return;
@@ -280,7 +281,7 @@ class FcmTokenService {
         if (settings.isOpen) await settings.set(_tokenInvalidationPendingKey, true);
       }
       try {
-        await messaging.deleteToken();
+        await messaging.deleteToken().timeout(fcmCallTimeout);
       } catch (error, stackTrace) {
         if (clearForUser != null && clearForUser.trim().isNotEmpty) {
           await _clearStoredTokenBestEffort(clearForUser, client: client);

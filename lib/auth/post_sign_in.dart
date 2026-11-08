@@ -224,26 +224,27 @@ Future<void> completeSignIn({
   await analytics.setUserProperty(name: AnalyticsUserProperty.isPremium.wireName, value: owner.premium ? '1' : '0');
   operation.requireCurrent();
   final FirebaseMessaging resolvedMessaging = messaging ?? FirebaseMessaging.instance;
-  final String? legacyUserTopic = userTopicFromId(user.uid);
-  if (legacyUserTopic != null) {
-    await unsubscribeFromTopicSafely(
-      resolvedMessaging,
-      legacyUserTopic,
-      sourceTag: '$sourceTagPrefix.user_topic_cleanup',
-      isCurrent: () => operation.isCurrent,
-    );
-    operation.requireCurrent();
-  }
-  final String? followersTopic = followersTopicFromEmail(email);
-  if (followersTopic != null) {
-    await subscribeToTopicSafely(
-      resolvedMessaging,
-      followersTopic,
-      sourceTag: '$sourceTagPrefix.followers_topic',
-      isCurrent: () => operation.isCurrent,
-    );
-    operation.requireCurrent();
-  }
+  // Sign-in does not wait for FCM. Without Google Play services, topic calls only end at their timeout.
+  unawaited(() async {
+    final String? legacyUserTopic = userTopicFromId(user.uid);
+    if (legacyUserTopic != null) {
+      await unsubscribeFromTopicSafely(
+        resolvedMessaging,
+        legacyUserTopic,
+        sourceTag: '$sourceTagPrefix.user_topic_cleanup',
+        isCurrent: () => operation.isCurrent,
+      );
+    }
+    final String? followersTopic = followersTopicFromEmail(email);
+    if (followersTopic != null) {
+      await subscribeToTopicSafely(
+        resolvedMessaging,
+        followersTopic,
+        sourceTag: '$sourceTagPrefix.followers_topic',
+        isCurrent: () => operation.isCurrent,
+      );
+    }
+  }());
   unawaited(FcmTokenService.instance.syncToken(userId: user.uid, messaging: resolvedMessaging));
   FcmTokenService.instance.listenForTokenRefresh(userId: user.uid, messaging: resolvedMessaging);
   unawaited(ReviewLiveActivitySync.start());

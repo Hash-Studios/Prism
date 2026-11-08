@@ -43,7 +43,6 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
   int? _wallSession;
   static const int _profileReadDedupeMs = 30000;
   static const int _searchChunkSize = 30;
-  static const int _summariesPageSize = 20;
   static const int _searchLimit = 5;
 
   @override
@@ -433,7 +432,11 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
   }
 
   @override
-  Future<Result<List<String>>> fetchRelationIds({required String profileUid, required UserRelationKind kind}) async {
+  Future<Result<List<String>>> fetchRelationIds({
+    required String profileUid,
+    required UserRelationKind kind,
+    String? afterId,
+  }) async {
     final String uid = profileUid.trim();
     if (uid.isEmpty) return Result.success(const <String>[]);
     final bool followers = kind == UserRelationKind.followers;
@@ -444,6 +447,7 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
           sourceTag: followers ? 'public_profile.relation_ids.followers' : 'public_profile.relation_ids.following',
           orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
           limit: PublicProfileRepository.relationIdsLimit,
+          startAfterDocId: afterId,
         ),
         (_, docId) => docId,
       );
@@ -561,11 +565,11 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     final String owner = _snapshotOwner;
     final List<String> unique = _uniqueUserIds(userIds);
     try {
-      final start = page * _summariesPageSize;
+      final start = page * PublicProfileRepository.relationPageSize;
       if (start >= unique.length) {
         return Result.success((items: const <UserSummaryEntity>[], hasMore: false));
       }
-      final end = math.min(start + _summariesPageSize, unique.length);
+      final end = math.min(start + PublicProfileRepository.relationPageSize, unique.length);
       final pageUserIds = unique.sublist(start, end);
       final String pageIdentity = sha256.convert(utf8.encode(pageUserIds.join(','))).toString();
       final String cacheKey = 'v3::$owner::summaries:$page:$pageIdentity';
@@ -616,8 +620,8 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     } catch (error) {
       if (_snapshotOwner == owner) {
         try {
-          final start = page * _summariesPageSize;
-          final end = math.min(start + _summariesPageSize, unique.length);
+          final start = page * PublicProfileRepository.relationPageSize;
+          final end = math.min(start + PublicProfileRepository.relationPageSize, unique.length);
           final pageIdentity = sha256.convert(utf8.encode(unique.sublist(start, end).join(','))).toString();
           final cacheKey = 'v3::$owner::summaries:$page:$pageIdentity';
           final cached = await _profileSnapshots.read(cacheKey);

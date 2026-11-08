@@ -3484,7 +3484,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             onTogglePin: () {
               final bool? pinned = _favouritePinState(entity);
               if (pinned == null) return;
-              unawaited(toggleFavouritePin(context, entity.id, pin: !pinned, surface: FavouritePinSurfaceValue.detail));
+              unawaited(
+                toggleFavouritePin(
+                  context,
+                  favouriteKey(entity.source, entity.id),
+                  pin: !pinned,
+                  surface: FavouritePinSurfaceValue.detail,
+                ),
+              );
             },
             child: _cardSemantics(
               feed,
@@ -3557,10 +3564,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   /// Whether the favourite [entity] is pinned, or null when it is not a favourite, so the hold menu shows no Pin.
   bool? _favouritePinState(FeedItemEntity entity) {
-    if (!getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, entity.id)) return null;
+    final String key = favouriteKey(entity.source, entity.id);
+    if (!getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, key)) return null;
     final FavouriteWallsBloc? bloc = context.read<FavouriteWallsBloc?>();
     if (bloc == null) return null;
-    final bool? pinned = currentFavouritePinState(context, entity.id);
+    final bool? pinned = currentFavouritePinState(context, key);
     if (pinned == null &&
         (bloc.state.status == LoadStatus.initial ||
             bloc.state.status == LoadStatus.failure ||

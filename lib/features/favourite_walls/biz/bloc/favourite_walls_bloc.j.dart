@@ -77,21 +77,21 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     }
   }
 
-  bool _containsWall(String wallId) {
-    return state.items.any((item) => item.id == wallId);
+  bool _containsWall(String key) {
+    return state.items.any((item) => item.key == key);
   }
 
   List<FavouriteWallEntity> _upsertWall(FavouriteWallEntity wall) {
     final List<FavouriteWallEntity> next = <FavouriteWallEntity>[
-      ...state.items.where((item) => item.id != wall.id),
+      ...state.items.where((item) => item.key != wall.key),
       wall,
     ];
     next.sort(compareByCreatedAtDesc);
     return next;
   }
 
-  List<FavouriteWallEntity> _removeWall(String wallId) {
-    return state.items.where((item) => item.id != wallId).toList(growable: false);
+  List<FavouriteWallEntity> _removeWall(String key) {
+    return state.items.where((item) => item.key != key).toList(growable: false);
   }
 
   Future<void> _onStarted(_Started event, Emitter<FavouriteWallsState> emit) async {
@@ -154,7 +154,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
 
   Future<void> _onToggleRequested(_ToggleRequested event, Emitter<FavouriteWallsState> emit) async {
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
-    final bool currentlyFavourited = event.desired == null ? _containsWall(event.wall.id) : !event.desired!;
+    final bool currentlyFavourited = event.desired == null ? _containsWall(event.wall.key) : !event.desired!;
     final FavouriteWallEntity wall = currentlyFavourited
         ? event.wall
         : event.wall.withFavouritedAt(DateTime.now().toUtc()).withPinnedAt(null);
@@ -170,7 +170,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
             actionStatus: ActionStatus.success,
             items: isNowFavourite
                 ? _upsertWall(wall.withSyncStatus(FavouriteSyncStatus.pending))
-                : _removeWall(wall.id),
+                : _removeWall(wall.key),
             completedOperationId: event.operationId,
             failure: null,
           ),
@@ -199,7 +199,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
       return;
     }
     await _removeAndRefetchOnFailure(
-      current.map((item) => item.id).toList(growable: false),
+      current.map((item) => item.key).toList(growable: false),
       emit,
       operationId: event.operationId,
     );
@@ -224,7 +224,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
           state.copyWith(
             status: LoadStatus.success,
             actionStatus: ActionStatus.success,
-            items: state.items.where((item) => !removedIds.contains(item.id)).toList(growable: false),
+            items: state.items.where((item) => !removedIds.contains(item.key)).toList(growable: false),
             completedOperationId: operationId,
             failure: null,
           ),
@@ -243,7 +243,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
     emit(state.copyWith(actionStatus: ActionStatus.inProgress, failure: null));
     final List<FavouriteWallEntity> restored = <FavouriteWallEntity>[];
     for (final FavouriteWallEntity original in event.walls) {
-      if (_containsWall(original.id) || restored.any((item) => item.id == original.id)) continue;
+      if (_containsWall(original.key) || restored.any((item) => item.key == original.key)) continue;
       // A removed favourite lost its pin, so the undo brings it back unpinned.
       final FavouriteWallEntity wall = original
           .withFavouritedAt(original.favouritedAt ?? original.createdAt ?? DateTime.now().toUtc())
@@ -269,7 +269,7 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
   Future<void> _onPinRequested(_PinRequested event, Emitter<FavouriteWallsState> emit) async {
     final String userId = state.userId;
     final int accountGeneration = _accountGeneration;
-    final FavouriteWallEntity? wall = state.items.where((item) => item.id == event.wallId).firstOrNull;
+    final FavouriteWallEntity? wall = state.items.where((item) => item.key == event.wallId).firstOrNull;
     if (wall == null) {
       emit(
         state.copyWith(
@@ -312,7 +312,8 @@ class FavouriteWallsBloc extends Bloc<FavouriteWallsEvent, FavouriteWallsState> 
         state.copyWith(
           actionStatus: ActionStatus.success,
           items: <FavouriteWallEntity>[
-            for (final FavouriteWallEntity item in state.items) item.id == wall.id ? item.withPinnedAt(pinnedAt) : item,
+            for (final FavouriteWallEntity item in state.items)
+              item.key == wall.key ? item.withPinnedAt(pinnedAt) : item,
           ],
           completedOperationId: event.operationId,
           failure: null,

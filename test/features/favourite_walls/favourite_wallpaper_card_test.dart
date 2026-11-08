@@ -221,6 +221,16 @@ void main() {
     },
   );
 
+  testWidgets('a favourite from another source does not mark this footer saved', (tester) async {
+    app_state.prismUser.id = 'different-user';
+    await getIt<FavoritesLocalDataSource>().setWallFavourite('different-user', 'shared', true);
+
+    await pump(tester, _item(WallpaperSource.pexels, id: 'shared'));
+
+    expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.favorite_rounded), findsNothing);
+  });
+
   testWidgets('detail view totals override cached totals and render without fetched favourites', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
@@ -341,7 +351,7 @@ void main() {
   });
 
   testWidgets('failed membership load retains a locally saved heart', (tester) async {
-    await getIt<FavoritesLocalDataSource>().setWallFavourite('user', 'wall', true);
+    await getIt<FavoritesLocalDataSource>().setWallFavourite('user', 'pexels_wall', true);
     repository.fetchFails = true;
     bloc.add(const FavouriteWallsEvent.refreshRequested());
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));

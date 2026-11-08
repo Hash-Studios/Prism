@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart' as constants;
@@ -10,6 +12,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
+import 'package:Prism/notifications/topic_subscription.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/test.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -28,6 +31,7 @@ void main() {
   late AuthorizationStatus current;
   late AuthorizationStatus requested;
   late List<MethodCall> calls;
+  bool hangTopics = false;
 
   setUpAll(() async {
     setupFirebaseCoreMocks();
@@ -45,8 +49,10 @@ void main() {
     current = AuthorizationStatus.notDetermined;
     requested = AuthorizationStatus.authorized;
     calls = <MethodCall>[];
+    hangTopics = false;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
       calls.add(call);
+      if (hangTopics && call.method.contains('Topic')) return Completer<Object?>().future;
       if (call.method == 'Messaging#getAPNSToken') {
         return <String, String>{'token': 'test-apns-token'};
       }
@@ -100,6 +106,24 @@ void main() {
   void testOnIOS(String description, WidgetTesterCallback callback) {
     testWidgets(description, callback, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   }
+
+  testOnIOS('the prompt returns at once while FCM topic calls never answer', (tester) async {
+    current = AuthorizationStatus.authorized;
+    hangTopics = true;
+    final context = await host(tester);
+    bool done = false;
+    unawaited(
+      NotificationPermissionPromptService.instance
+          .maybePromptAfterValueAction(context, sourceTag: 'download')
+          .then((_) => done = true),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(done, isTrue);
+    await tester.pump(fcmCallTimeout * 6);
+    expect(event().result, EventResultValue.success);
+  });
 
   testOnIOS('already authorized subscribes opted-in topics and records completion once', (tester) async {
     current = AuthorizationStatus.authorized;
