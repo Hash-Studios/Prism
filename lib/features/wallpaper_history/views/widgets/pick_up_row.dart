@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -39,7 +40,8 @@ List<HistoryWall> pickUpWallsForSession({DateTime? now}) {
     viewedNewestFirst: viewed.items(),
     sessionStart: now ?? DateTime.now(),
     returningSession: AppSessionTracker.instance.sessionNumber > 1,
-    kept: (wall) => used.contains(wall.key) || (favourites?.isWallFavourite(userId, wall.id) ?? false),
+    kept: (wall) =>
+        used.contains(wall.key) || (favourites?.isWallFavourite(userId, favouriteKey(wall.source, wall.id)) ?? false),
   );
 }
 

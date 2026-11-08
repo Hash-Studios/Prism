@@ -174,7 +174,7 @@ class _FolderSheetState extends State<FolderSheet> {
   /// A later folder write failure keeps the favourite.
   Future<bool> _favourite(FavouriteWallsAdapter favourites, FavouriteWallEntity wall) async {
     if (app_state.prismUser.id != _ownerId) return false;
-    if (getIt<FavoritesLocalDataSource>().isWallFavourite(_ownerId, wall.id)) return true;
+    if (getIt<FavoritesLocalDataSource>().isWallFavourite(_ownerId, wall.key)) return true;
     try {
       return await favourites.favCheck(wall, desired: true);
     } catch (error, stackTrace) {

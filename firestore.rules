@@ -41,10 +41,13 @@ service cloud.firestore {
     // pinnedAt is optional; when present it is the time the owner pinned the favourite.
     // favouriteWallToDoc stores string ids for every provider, including Pexels numeric ids.
     // Optional media/metadata fields vary by provider and by shipped client version.
+    // Docs from builds before #524 use the raw wall id. Newer builds key Wallhaven and Pexels walls as
+    // `<provider>_<id>`, because the two can share an id. Prism keeps the raw id, which the server counts.
     function validFavourite(docId) {
       let data = request.resource.data;
-      return data.id is string && data.id == docId
-          && data.provider is string
+      return data.id is string && data.provider is string
+          && (data.id == docId
+              || (data.provider.lower() in ['wallhaven', 'pexels'] && docId == data.provider.lower() + '_' + data.id))
           && data.provider.lower() in ['prism', 'wall_of_the_day', 'walloftheday', 'wallhaven', 'pexels']
           && (!('pinnedAt' in data) || data.pinnedAt is timestamp);
     }

@@ -411,8 +411,8 @@ void main() {
     await waitForUpdateCount(1);
     expect(updates.last.items.map((wall) => wall.id), unorderedEquals(<String>['a', 'b']));
     expect((await local.readWallSnapshot('u')).map((wall) => wall.id), unorderedEquals(<String>['a', 'b']));
-    expect(local.isWallFavourite('u', 'b'), isTrue);
-    expect(local.isWallFavourite('u', 'c'), isFalse);
+    expect(local.isWallFavourite('u', 'pexels_b'), isTrue);
+    expect(local.isWallFavourite('u', 'pexels_c'), isFalse);
     expect(updates.last.items.singleWhere((wall) => wall.id == 'a').syncStatus, FavouriteSyncStatus.rejected);
   });
 
@@ -575,7 +575,7 @@ void main() {
 
     await service.start('u');
 
-    expect(firestore.batches.single.sets.single.id, 'g1');
+    expect(firestore.batches.single.sets.single.id, 'pexels_g1');
     expect(await guests.readAll(), isEmpty);
   });
 

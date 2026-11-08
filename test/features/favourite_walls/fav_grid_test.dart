@@ -371,7 +371,7 @@ void main() {
 
       expect(find.byType(WallpaperStatsRow), findsNothing);
       expect(find.byType(FavouriteWallpaperFooter), findsNothing);
-      for (final String id in <String>['a', 'b']) {
+      for (final String id in <String>['a', 'pexels_b']) {
         final Size tile = tester.getSize(find.byKey(ValueKey<String>(id)));
         expect(tile.height, closeTo(tile.width / PrismFeedLayout.gridTileAspectRatio, 0.5), reason: id);
       }
@@ -425,7 +425,7 @@ void main() {
       await tester.pump();
 
       final params = verify(() => clearUseCase(captureAny())).captured.single as ClearFavouriteWallsParams;
-      expect(params.wallIds, <String>['a', 'b']);
+      expect(params.wallIds, <String>['a', 'pexels_b']);
       expect(bloc.state.items.map((wall) => wall.id), <String>['c']);
       expect(haptics, <String>['tap']);
       await tester.pump(const Duration(milliseconds: 500));
@@ -807,7 +807,7 @@ void main() {
       await tester.tap(find.text('Clear all favourites'));
       await settle(tester);
       final params = verify(() => clearUseCase(captureAny())).captured.single as ClearFavouriteWallsParams;
-      expect(params.wallIds, <String>['a', 'b']);
+      expect(params.wallIds, <String>['a', 'pexels_b']);
       expect(bloc.state.items, isEmpty);
       expect(find.text('Cleared 2 favourites'), findsOneWidget);
 

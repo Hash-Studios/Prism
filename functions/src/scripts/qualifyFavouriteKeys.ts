@@ -1,0 +1,120 @@
+import * as admin from "firebase-admin";
+
+const PAGE_SIZE = 500;
+const QUALIFIED = new Set(["wallhaven", "pexels"]);
+
+export const USAGE = `Usage: node lib/scripts/qualifyFavouriteKeys.js [--apply]
+
+Moves Wallhaven and Pexels favourites in usersv2/{uid}/images from the raw wall id to the key that new builds
+write, <provider>_<id> (#524). The two sources can share an id. Prism favourites keep the raw id.
+A dry run is the default. It reads only and prints counts, collisions and 10 sample ids.
+--apply copies each doc to its new key (unless that key exists) and deletes the raw doc, one transaction per doc,
+so a stopped run can run again. Builds before #524 cannot delete a moved favourite, so run --apply only after most
+users run a build with #524, and only with the owner's OK.
+Credentials come from Application Default Credentials, as in the other backfills.`;
+
+export type FavouriteKeyCounts = {
+  scanned: number;
+  rawKept: number;
+  alreadyQualified: number;
+  toMove: number;
+  collisions: number;
+  odd: number;
+  moved: number;
+  failed: number;
+  bySource: Record<string, number>;
+  samples: string[];
+};
+
+/** The new doc id for a favourite doc, or why it stays. */
+export function planFavouriteKey(docId: string, data: admin.firestore.DocumentData):
+  {target: string} | "keep" | "qualified" | "odd" {
+  const id = typeof data.id === "string" ? data.id : "";
+  const provider = typeof data.provider === "string" ? data.provider.toLowerCase() : "";
+  if (!QUALIFIED.has(provider)) return "keep";
+  if (docId === `${provider}_${id}`) return "qualified";
+  if (!id || docId !== id) return "odd";
+  return {target: `${provider}_${id}`};
+}
+
+const uidPrefix = (uid: string) => `${uid.slice(0, 4)}…`;
+
+/** Walks every favourite doc in path order. Logs counts only, never a whole uid or doc data. */
+export async function qualifyFavouriteKeys(
+  db: admin.firestore.Firestore,
+  options: {apply: boolean},
+  log: (line: string) => void = console.log,
+): Promise<FavouriteKeyCounts> {
+  const counts: FavouriteKeyCounts = {scanned: 0, rawKept: 0, alreadyQualified: 0, toMove: 0, collisions: 0, odd: 0,
+    moved: 0, failed: 0, bySource: {}, samples: []};
+  let last: admin.firestore.QueryDocumentSnapshot | undefined;
+
+  for (;;) {
+    let query = db.collectionGroup("images").orderBy(admin.firestore.FieldPath.documentId()).limit(PAGE_SIZE);
+    if (last) query = query.startAfter(last);
+    const snapshot = await query.get();
+    if (snapshot.empty) break;
+
+    for (const doc of snapshot.docs) {
+      last = doc;
+      const parts = doc.ref.path.split("/");
+      if (parts.length !== 4 || parts[0] !== "usersv2") continue;
+      counts.scanned += 1;
+      const plan = planFavouriteKey(doc.id, doc.data());
+      if (plan === "keep") {
+        counts.rawKept += 1;
+        continue;
+      }
+      if (plan === "qualified") {
+        counts.alreadyQualified += 1;
+        continue;
+      }
+      if (plan === "odd") {
+        counts.odd += 1;
+        continue;
+      }
+      counts.toMove += 1;
+      const source = plan.target.split("_")[0];
+      counts.bySource[source] = (counts.bySource[source] ?? 0) + 1;
+      const targetRef = db.doc(`usersv2/${parts[1]}/images/${plan.target}`);
+      const collides = (await targetRef.get()).exists;
+      if (collides) counts.collisions += 1;
+      if (counts.samples.length < 10) {
+        counts.samples.push(`${uidPrefix(parts[1])}/${doc.id} -> ${plan.target}${collides ? " (key exists)" : ""}`);
+      }
+      if (!options.apply) continue;
+      try {
+        await db.runTransaction(async (tx) => {
+          const [raw, target] = await Promise.all([tx.get(doc.ref), tx.get(targetRef)]);
+          if (!raw.exists) return;
+          if (!target.exists) tx.set(targetRef, raw.data() ?? {});
+          tx.delete(doc.ref);
+        });
+        counts.moved += 1;
+      } catch {
+        counts.failed += 1;
+      }
+    }
+    if (snapshot.size < PAGE_SIZE) break;
+  }
+
+  for (const [source, n] of Object.entries(counts.bySource)) log(`to move ${source}: ${n}`);
+  log(`samples:\n  ${counts.samples.join("\n  ")}`);
+  log(`done scanned=${counts.scanned} rawKept=${counts.rawKept} alreadyQualified=${counts.alreadyQualified} ` +
+    `toMove=${counts.toMove} collisions=${counts.collisions} odd=${counts.odd} moved=${counts.moved} ` +
+    `failed=${counts.failed} applied=${options.apply}`);
+  if (options.apply && counts.failed > 0) throw new Error(`${counts.failed} favourite moves failed`);
+  return counts;
+}
+
+if (require.main === module) {
+  const argv = process.argv.slice(2);
+  console.log(USAGE);
+  if (!argv.includes("--help")) {
+    if (!admin.apps.length) admin.initializeApp();
+    qualifyFavouriteKeys(admin.firestore(), {apply: argv.includes("--apply")}).catch((err) => {
+      console.error(err);
+      process.exitCode = 1;
+    });
+  }
+}

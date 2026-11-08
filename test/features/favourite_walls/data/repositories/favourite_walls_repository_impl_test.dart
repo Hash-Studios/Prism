@@ -12,6 +12,7 @@ import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/favourite_walls/data/favourite_wall_doc_mapper.dart';
 import 'package:Prism/features/favourite_walls/data/repositories/favourite_walls_repository_impl.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_async/fake_async.dart';
@@ -219,7 +220,7 @@ void main() {
     expect(local.isWallFavourite('user_a', 'stale_a'), isTrue);
     expect(local.isWallFavourite('user_b', 'stale_b'), isFalse);
     expect(local.isWallFavourite('user_b', 'wall_b1'), isTrue);
-    expect(local.isWallFavourite('user_b', 'wall_b2'), isTrue);
+    expect(local.isWallFavourite('user_b', 'pexels_wall_b2'), isTrue);
   });
 
   test('failed fetch preserves the account local cache', () async {
@@ -869,6 +870,89 @@ void main() {
     expect((await local.readFavouriteOperation('account', starter.id)), isNull);
     expect(local.isWallFavourite('account', starter.id), isFalse);
     expect(await local.readWallSnapshot('account'), isEmpty);
+  });
+
+  group('favourites from two sources with one id (#524)', () {
+    const String images = 'usersv2/u/images';
+    late _MetadataFirestore firestore;
+    late FavouriteWallsRepositoryImpl repository;
+
+    setUp(() {
+      firestore = _MetadataFirestore();
+      firestore.onQuery = (_) => <FakeDocRow>[
+        for (final MapEntry<String, Map<String, dynamic>> doc in (firestore.docs[images] ?? const {}).entries)
+          (id: doc.key, data: doc.value),
+      ];
+      repository = FavouriteWallsRepositoryImpl(
+        firestore,
+        _local(),
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
+    });
+
+    test('a Wallhaven and a Pexels favourite with the same id are both kept', () async {
+      await repository.toggleFavourite(userId: 'u', wall: wallhavenFav('123456'), currentlyFavourited: false);
+      await repository.toggleFavourite(userId: 'u', wall: pexelsFav('123456'), currentlyFavourited: false);
+
+      expect(firestore.docs[images]!.keys, unorderedEquals(<String>['wallhaven_123456', 'pexels_123456']));
+      final fetched = await repository.fetchFavourites(userId: 'u');
+      expect(
+        fetched.data!.map((wall) => wall.source),
+        unorderedEquals(<WallpaperSource>[WallpaperSource.wallhaven, WallpaperSource.pexels]),
+      );
+
+      await repository.toggleFavourite(userId: 'u', wall: pexelsFav('123456'), currentlyFavourited: true);
+
+      expect(firestore.docs[images]!.keys, <String>['wallhaven_123456']);
+      final after = await repository.fetchFavourites(userId: 'u');
+      expect(after.data!.single.source, WallpaperSource.wallhaven);
+    });
+
+    test('a Prism favourite keeps its raw id, which the server counts', () async {
+      await repository.toggleFavourite(userId: 'u', wall: prismFav('AB1CDEFGHI'), currentlyFavourited: false);
+
+      expect(firestore.docs[images]!.keys, <String>['AB1CDEFGHI']);
+    });
+
+    test('removing a favourite an older build saved under the raw id deletes that doc, not another source', () async {
+      firestore.docs[images] = <String, Map<String, dynamic>>{
+        'abc123': <String, dynamic>{'id': 'abc123', 'provider': 'wallhaven'},
+        '777': <String, dynamic>{'id': '777', 'provider': 'pexels'},
+      };
+
+      await repository.toggleFavourite(userId: 'u', wall: wallhavenFav('abc123'), currentlyFavourited: true);
+      await repository.toggleFavourite(userId: 'u', wall: wallhavenFav('777'), currentlyFavourited: true);
+
+      expect(firestore.docs[images]!.keys, <String>['777']);
+    });
+
+    test('pinning a favourite an older build saved under the raw id pins that doc', () async {
+      firestore.docs[images] = <String, Map<String, dynamic>>{
+        '777': <String, dynamic>{'id': '777', 'provider': 'pexels'},
+      };
+      await repository.fetchFavourites(userId: 'u');
+      final DateTime pinnedAt = DateTime.utc(2026, 11, 8);
+
+      final result = await repository.setPinned(userId: 'u', wall: pexelsFav('777'), pinnedAt: pinnedAt);
+
+      expect(result.isSuccess, isTrue);
+      expect(firestore.docs[images]!['777']!['pinnedAt'], pinnedAt);
+      expect(firestore.docs[images]!.containsKey('pexels_777'), isFalse);
+    });
+
+    test('a raw-id doc and a qualified doc for one wall show once', () async {
+      firestore.docs[images] = <String, Map<String, dynamic>>{
+        'abc123': <String, dynamic>{'id': 'abc123', 'provider': 'wallhaven'},
+        'wallhaven_abc123': <String, dynamic>{'id': 'abc123', 'provider': 'wallhaven'},
+      };
+
+      final fetched = await repository.fetchFavourites(userId: 'u');
+
+      expect(fetched.data, hasLength(1));
+      await repository.toggleFavourite(userId: 'u', wall: wallhavenFav('abc123'), currentlyFavourited: true);
+      expect(firestore.docs[images], isEmpty);
+    });
   });
 
   test('toggleFavourite writes favouritedAt and fetch maps it back', () async {

@@ -43,8 +43,9 @@ class FavoritesLocalDataSource {
     return _store.set(PersistenceKeys.favoritesWallSet(scope), ids.toList(growable: false));
   }
 
-  bool isWallFavourite(String userId, String itemId) {
-    return _wallSet(_scope(userId)).contains(itemId);
+  /// [key] is the favourite key, `favouriteKey(source, id)`. Operations below are keyed the same way.
+  bool isWallFavourite(String userId, String key) {
+    return _wallSet(_scope(userId)).contains(key);
   }
 
   Future<void> setWallFavourite(String userId, String itemId, bool value) {
@@ -92,7 +93,7 @@ class FavoritesLocalDataSource {
     }
     final operations = await readFavouriteOperations(scope);
     final withStatus = walls.map((wall) {
-      final FavouriteSyncStatus status = switch (operations[wall.id]?['status']) {
+      final FavouriteSyncStatus status = switch ((operations[wall.key] ?? operations[wall.id])?['status']) {
         'pending' => FavouriteSyncStatus.pending,
         'rejected' => FavouriteSyncStatus.rejected,
         _ => FavouriteSyncStatus.synced,
@@ -117,30 +118,35 @@ class FavoritesLocalDataSource {
     final String scope = _scope(userId);
     return _serialize(scope, () async {
       final Map<String, FavouriteWallEntity> desired = <String, FavouriteWallEntity>{
-        for (final wall in serverWalls) wall.id: wall,
+        for (final wall in serverWalls) wall.key: wall,
       };
       final operations = await readFavouriteOperations(userId);
       for (final entry in operations.entries) {
         final operation = entry.value;
         final status = operation['status'];
         if (status != 'pending' && status != 'rejected') continue;
+        final Object? payload = operation['wall'];
+        final FavouriteWallEntity? opWall = payload is Map && payload.isNotEmpty
+            ? mapFavouriteWallDoc(FavouriteWallDocDto.fromJson(Map<String, dynamic>.from(payload)), entry.key)
+            : null;
+        // Operations queued by an older build use the raw wall ID; the wall payload gives the key.
+        final String key = opWall?.key ?? entry.key;
         if (operation['desired'] == false) {
           if (status == 'pending') {
-            desired.remove(entry.key);
-          } else if (desired[entry.key] != null) {
-            final wall = desired[entry.key]!;
-            desired[entry.key] = wall.withSyncStatus(FavouriteSyncStatus.rejected);
+            desired.remove(key);
+          } else if (desired[key] != null) {
+            final wall = desired[key]!;
+            desired[key] = wall.withSyncStatus(FavouriteSyncStatus.rejected);
           }
-        } else if (operation['wall'] != null) {
-          final doc = FavouriteWallDocDto.fromJson(Map<String, dynamic>.from(operation['wall']! as Map));
-          final wall = mapFavouriteWallDoc(doc, entry.key);
-          desired[entry.key] = wall.withSyncStatus(
+        } else if (opWall != null) {
+          final wall = opWall;
+          desired[key] = wall.withSyncStatus(
             status == 'pending' ? FavouriteSyncStatus.pending : FavouriteSyncStatus.rejected,
           );
         }
       }
       final List<FavouriteWallEntity> merged = desired.values.toList()..sort(compareByCreatedAtDesc);
-      await _saveWallSet(scope, merged.map((wall) => wall.id).toSet());
+      await _saveWallSet(scope, merged.map((wall) => wall.key).toSet());
       await _writeWallSnapshot(scope, merged);
       return merged;
     });
@@ -150,7 +156,7 @@ class FavoritesLocalDataSource {
     final docs = <Map<String, Object?>>[];
     final Set<String> seen = <String>{};
     for (final wall in walls) {
-      if (wall.id.isEmpty || !seen.add(wall.id)) continue;
+      if (wall.id.isEmpty || !seen.add(wall.key)) continue;
       docs.add(_jsonFavouriteDoc(wall));
     }
     final chunks = await _chunkDocs(docs);

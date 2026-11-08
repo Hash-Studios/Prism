@@ -379,6 +379,18 @@ const cases = [
   ['favourite numeric stored id rejected', () => req('PATCH', 'usersv2/b/images/123', {
     id: { integerValue: '123' }, provider: { stringValue: 'Pexels' },
   }, Bu), 403],
+  ['source-qualified Wallhaven favourite allowed', () => req('PATCH', 'usersv2/b/images/wallhaven_123456', {
+    id: { stringValue: '123456' }, provider: { stringValue: 'WallHaven' },
+  }, Bu), 200],
+  ['source-qualified Pexels favourite allowed', () => req('PATCH', 'usersv2/b/images/pexels_123456', {
+    id: { stringValue: '123456' }, provider: { stringValue: 'Pexels' },
+  }, Bu), 200],
+  ['qualified key with the wrong provider rejected', () => req('PATCH', 'usersv2/b/images/pexels_777', {
+    id: { stringValue: '777' }, provider: { stringValue: 'WallHaven' },
+  }, Bu), 403],
+  ['Prism favourite under a qualified key rejected', () => req('PATCH', 'usersv2/b/images/prism_AB1C', {
+    id: { stringValue: 'AB1C' }, provider: { stringValue: 'Prism' },
+  }, Bu), 403],
   ['owner may delete malformed legacy favourites', () => req('DELETE', 'usersv2/b/images/legacy-alias', null, Bu), 200],
   ...['Prism', 'wall_of_the_day', 'WallOfTheDay', 'WallHaven', 'Pexels'].flatMap((provider) => [
     [`valid ${provider} favourite allowed`, () => req('PATCH', `usersv2/b/images/${provider}`, {

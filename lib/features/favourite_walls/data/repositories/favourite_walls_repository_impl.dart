@@ -9,6 +9,7 @@ import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
 import 'package:Prism/features/favourite_walls/data/favourite_wall_doc_mapper.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
@@ -162,78 +163,81 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
     final bool add = !currentlyFavourited;
     final FavouriteWallEntity savedWall = add ? wall.withPinnedAt(null) : wall;
     try {
+      final String key = wall.key;
       if (_isBundledStarter(wall)) {
-        await _favoritesLocal.setWallFavourite(userId, wall.id, add);
+        await _favoritesLocal.setWallFavourite(userId, key, add);
         await _favoritesLocal.updateWallSnapshot(
           userId,
-          (current) => <FavouriteWallEntity>[...current.where((item) => item.id != wall.id), if (add) savedWall],
+          (current) => <FavouriteWallEntity>[...current.where((item) => item.key != key), if (add) savedWall],
         );
         return Result.success(add);
       }
       final Map<String, Object?> operation = await _favoritesLocal.createFavouriteOperation(
         userId,
-        wall.id,
+        key,
         desired: add,
         wall: Map<String, Object?>.from(favouriteWallToDoc(savedWall)),
       );
       final String operationId = operation['operationId']! as String;
-      await _favoritesLocal.setWallFavourite(userId, wall.id, add);
+      await _favoritesLocal.setWallFavourite(userId, key, add);
       if (add) {
         await _favoritesLocal.updateWallSnapshot(
           userId,
           (current) => <FavouriteWallEntity>[
-            ...current.where((item) => item.id != wall.id),
+            ...current.where((item) => item.key != key),
             savedWall.withSyncStatus(FavouriteSyncStatus.pending),
           ],
         );
       } else {
         await _favoritesLocal.updateWallSnapshot(
           userId,
-          (current) => current.where((item) => item.id != wall.id).toList(growable: false),
+          (current) => current.where((item) => item.key != key).toList(growable: false),
         );
       }
       try {
         final bool sent = await _favoritesLocal.runFavouriteOperationsIfCurrent(
           userId,
-          <String, String>{wall.id: operationId},
+          <String, String>{key: operationId},
           () async {
             if (add) {
               await _firestoreClient
                   .setDoc(
                     _collectionPath(userId),
-                    wall.id,
+                    key,
                     favouriteWallToDoc(savedWall),
                     sourceTag: 'favourite_walls.toggle.set',
                   )
                   .timeout(_writeTimeout);
             } else {
-              await _firestoreClient
-                  .deleteDoc(_collectionPath(userId), wall.id, sourceTag: 'favourite_walls.toggle.delete')
-                  .timeout(_writeTimeout);
+              for (final String docId in await _docIdsToDelete(userId, wall.source, wall.id)) {
+                await _firestoreClient
+                    .deleteDoc(_collectionPath(userId), docId, sourceTag: 'favourite_walls.toggle.delete')
+                    .timeout(_writeTimeout);
+              }
             }
           },
         );
         if (!sent) return Result.error(const ServerFailure('A newer favourite choice replaced this action.'));
-        await _favoritesLocal.updateFavouriteOperationStatus(userId, wall.id, operationId, status: 'synced');
+        await _favoritesLocal.updateFavouriteOperationStatus(userId, key, operationId, status: 'synced');
       } on TimeoutException {
-        logger.w('Favourite write queued offline for ${wall.id}.', tag: 'Favourites');
+        logger.w('Favourite write queued offline for $key.', tag: 'Favourites');
       } catch (error) {
         if (!_isPermanentFavouriteFailure(error)) {
-          logger.w('Favourite write remains pending for retry: ${wall.id}.', tag: 'Favourites', error: error);
+          logger.w('Favourite write remains pending for retry: $key.', tag: 'Favourites', error: error);
           return Result.success(add);
         }
         final rejected = await _favoritesLocal.updateFavouriteOperationStatus(
           userId,
-          wall.id,
+          key,
           operationId,
           status: 'rejected',
         );
         if (rejected) {
-          await _favoritesLocal.setWallFavourite(userId, wall.id, !add);
+          await _favoritesLocal.setWallFavourite(userId, key, !add);
           await _favoritesLocal.updateWallSnapshot(
             userId,
             (current) => <FavouriteWallEntity>[
-              ...current.where((item) => item.id != wall.id),
+              ...current.where((item) => item.key != key),
               if (!add) wall.withSyncStatus(FavouriteSyncStatus.rejected),
             ],
           );
@@ -259,7 +263,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
         await _favoritesLocal.updateWallSnapshot(
           userId,
           (current) => <FavouriteWallEntity>[
-            for (final FavouriteWallEntity item in current) item.id == wall.id ? item.withPinnedAt(pinnedAt) : item,
+            for (final FavouriteWallEntity item in current) item.key == wall.key ? item.withPinnedAt(pinnedAt) : item,
           ],
         );
         return Result.success(null);
@@ -267,12 +271,12 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
 
       await _favoritesLocal.runFavouriteOperationsIfCurrent(userId, const <String, String>{}, () async {
         final List<FavouriteWallEntity> current = await _favoritesLocal.readWallSnapshot(userId);
-        final FavouriteWallEntity? previous = current.where((item) => item.id == wall.id).firstOrNull;
+        final FavouriteWallEntity? previous = current.where((item) => item.key == wall.key).firstOrNull;
         if (previous == null) {
           throw const ServerFailure('Cannot pin a wall that is not a favourite.');
         }
         final FavouriteWallEntity next = previous.withPinnedAt(pinnedAt);
-        final Map<String, Object?>? operation = await _favoritesLocal.readFavouriteOperation(userId, wall.id);
+        final Map<String, Object?>? operation = await _favoritesLocal.readFavouriteOperation(userId, wall.key);
         final bool? desired = switch (operation?['desired']) {
           final bool value => value,
           _ => null,
@@ -288,14 +292,14 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
         if (desired == true && (status == 'pending' || status == 'rejected')) {
           final Map<String, Object?> updatedOperation = await _favoritesLocal.createFavouriteOperation(
             userId,
-            wall.id,
+            wall.key,
             desired: true,
             wall: Map<String, Object?>.from(favouriteWallToDoc(next)),
           );
           if (status == 'rejected') {
             await _favoritesLocal.updateFavouriteOperationStatus(
               userId,
-              wall.id,
+              wall.key,
               updatedOperation['operationId']! as String,
               status: 'rejected',
             );
@@ -304,7 +308,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
             userId,
             (items) => <FavouriteWallEntity>[
               for (final FavouriteWallEntity item in items)
-                if (item.id == wall.id)
+                if (item.key == wall.key)
                   next.withSyncStatus(status == 'rejected' ? FavouriteSyncStatus.rejected : FavouriteSyncStatus.pending)
                 else
                   item,
@@ -317,23 +321,31 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
           userId,
           (items) => <FavouriteWallEntity>[
             for (final FavouriteWallEntity item in items)
-              if (item.id == wall.id) next else item,
+              if (item.key == wall.key) next else item,
           ],
         );
         try {
-          await _firestoreClient
-              .updateDoc(_collectionPath(userId), wall.id, <String, dynamic>{
-                'pinnedAt': pinnedAt ?? FirestoreSentinels.delete(),
-              }, sourceTag: 'favourite_walls.pin')
-              .timeout(_writeTimeout);
+          final List<String> docIds = await existingFavouriteDocIds(
+            _firestoreClient,
+            _collectionPath(userId),
+            wall.source,
+            wall.id,
+          );
+          for (final String docId in docIds.isEmpty ? <String>[wall.key] : docIds) {
+            await _firestoreClient
+                .updateDoc(_collectionPath(userId), docId, <String, dynamic>{
+                  'pinnedAt': pinnedAt ?? FirestoreSentinels.delete(),
+                }, sourceTag: 'favourite_walls.pin')
+                .timeout(_writeTimeout);
+          }
         } on TimeoutException {
-          logger.w('Favourite pin queued offline for ${wall.id}.', tag: 'Favourites');
+          logger.w('Favourite pin queued offline for ${wall.key}.', tag: 'Favourites');
         } catch (error) {
           await _favoritesLocal.updateWallSnapshot(
             userId,
             (items) => <FavouriteWallEntity>[
               for (final FavouriteWallEntity item in items)
-                if (item.id == wall.id) item.withPinnedAt(previous.pinnedAt) else item,
+                if (item.key == wall.key) item.withPinnedAt(previous.pinnedAt) else item,
             ],
           );
           rethrow;
@@ -347,25 +359,33 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
 
   bool _isBundledStarter(FavouriteWallEntity wall) => BundledWallpapers.isStarterIdentity(wall.id, wall.source);
 
+  /// The favourite's key doc, plus the raw-ID doc an older build wrote for the same wall.
+  Future<Set<String>> _docIdsToDelete(String userId, WallpaperSource source, String id) async => <String>{
+    favouriteKey(source, id),
+    ...await existingFavouriteDocIds(_firestoreClient, _collectionPath(userId), source, id),
+  };
+
   @override
   Future<Result<bool>> clearAll({required String userId, required List<String> wallIds}) async {
     if (userId.isEmpty) return Result.error(const ValidationFailure('Sign in to change favourites.'));
     try {
+      // [wallIds] are favourite keys (FavouriteWallEntity.key).
       final List<String> ids = wallIds.map((id) => id.trim()).where((id) => id.isNotEmpty).toSet().toList();
       for (int start = 0; start < ids.length; start += _maxBatchDeletes) {
         final List<String> chunk = ids.sublist(start, math.min(start + _maxBatchDeletes, ids.length));
         final Map<String, String> operationIds = <String, String>{};
+        final Set<String> docIds = <String>{};
         final cachedBefore = await _favoritesLocal.readWallSnapshot(userId);
         final Set<String> bundledStarterIds = cachedBefore
-            .where((wall) => chunk.contains(wall.id) && _isBundledStarter(wall))
-            .map((wall) => wall.id)
+            .where((wall) => chunk.contains(wall.key) && _isBundledStarter(wall))
+            .map((wall) => wall.key)
             .toSet();
         for (final String id in chunk) {
           if (bundledStarterIds.contains(id)) {
             await _favoritesLocal.setWallFavourite(userId, id, false);
             continue;
           }
-          final oldWall = cachedBefore.where((wall) => wall.id == id).firstOrNull;
+          final oldWall = cachedBefore.where((wall) => wall.key == id).firstOrNull;
           final operation = await _favoritesLocal.createFavouriteOperation(
             userId,
             id,
@@ -374,10 +394,11 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
           );
           await _favoritesLocal.setWallFavourite(userId, id, false);
           operationIds[id] = operation['operationId']! as String;
+          docIds.addAll(oldWall == null ? <String>{id} : await _docIdsToDelete(userId, oldWall.source, oldWall.id));
         }
         await _favoritesLocal.updateWallSnapshot(
           userId,
-          (current) => current.where((wall) => !chunk.contains(wall.id)).toList(growable: false),
+          (current) => current.where((wall) => !chunk.contains(wall.key)).toList(growable: false),
         );
         if (operationIds.isEmpty) continue;
         try {
@@ -386,7 +407,7 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
             operationIds,
             () => _firestoreClient
                 .runBatch((batch) async {
-                  for (final String id in operationIds.keys) {
+                  for (final String id in docIds) {
                     batch.deleteDoc(_collectionPath(userId), id);
                   }
                 }, sourceTag: 'favourite_walls.clear_all.delete')
@@ -415,8 +436,8 @@ class FavouriteWallsRepositoryImpl implements FavouriteWallsRepository {
           await _favoritesLocal.updateWallSnapshot(
             userId,
             (current) => <FavouriteWallEntity>[
-              ...current.where((wall) => !chunk.contains(wall.id)),
-              ...cachedBefore.where((wall) => chunk.contains(wall.id)),
+              ...current.where((wall) => !chunk.contains(wall.key)),
+              ...cachedBefore.where((wall) => chunk.contains(wall.key)),
             ],
           );
           rethrow;

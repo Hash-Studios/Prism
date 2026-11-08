@@ -1,10 +1,43 @@
 import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
+import 'package:Prism/logger/logger.dart';
+
+const Duration _docLookupTimeout = Duration(seconds: 3);
+
+/// The docs in [collection] that hold the favourite [id] from [source]: its [favouriteKey] doc and the raw-ID doc an
+/// older build wrote, when each exists. A raw-ID doc of another source is never returned. Reads prefer the cache, so
+/// this works offline for docs the app has seen. Prism favourites keep the raw ID and need no read.
+Future<List<String>> existingFavouriteDocIds(
+  FirestoreClient client,
+  String collection,
+  WallpaperSource source,
+  String id,
+) async {
+  final String key = favouriteKey(source, id);
+  if (key == id) return <String>[id];
+  Future<WallpaperSource?> providerOf(String docId) => client
+      .getById<WallpaperSource>(
+        collection,
+        docId,
+        (data, _) => WallpaperSourceX.fromWire(data['provider']),
+        sourceTag: 'favourite_walls.find_doc',
+        preferCacheFirst: true,
+      )
+      .timeout(_docLookupTimeout);
+  try {
+    final List<WallpaperSource?> found = await Future.wait(<Future<WallpaperSource?>>[providerOf(key), providerOf(id)]);
+    return <String>[if (found[0] != null) key, if (found[1] == source) id];
+  } catch (error, stackTrace) {
+    logger.w('Could not look up the docs of favourite $key.', tag: 'Favourites', error: error, stackTrace: stackTrace);
+    return <String>[key];
+  }
+}
 
 FavouriteWallEntity mapFavouriteWallDoc(FavouriteWallDocDto dto, String docId) {
   final String id = dto.id.isNotEmpty ? dto.id : docId;

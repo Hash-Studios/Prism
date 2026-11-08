@@ -59,9 +59,9 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
     // Rebuild when a save made elsewhere, such as the folder sheet, changes this wall's favourite.
     // Some hosts have no FavouriteWallsBloc; the heart then reads the local store only.
     context.select<FavouriteWallsBloc?, bool>(
-      (bloc) => bloc?.state.items.any((item) => item.id == widget.wall?.id) ?? false,
+      (bloc) => bloc?.state.items.any((item) => item.key == widget.wall?.key) ?? false,
     );
-    final bool isFavorite = _favoritesLocal.isWallFavourite(app_state.prismUser.id, widget.wall?.id ?? '');
+    final bool isFavorite = _favoritesLocal.isWallFavourite(app_state.prismUser.id, widget.wall?.key ?? '');
     // The glass action bar keeps the heart of the current app: the theme ink, 30 points, in a 53 point target.
     final bool flat = FlatMenuButtons.of(context);
     final ColorScheme cs = Theme.of(context).colorScheme;
@@ -125,7 +125,7 @@ class _FavouriteWallpaperButtonState extends State<FavouriteWallpaperButton> {
           FavStatusChangedEvent(wallId: wall.id, provider: wall.source.legacyProviderString, isFavourite: desired),
         ),
       );
-      if (_favoritesLocal.isWallFavourite(app_state.prismUser.id, wall.id)) {
+      if (_favoritesLocal.isWallFavourite(app_state.prismUser.id, wall.key)) {
         _followUp(() => widget.onFavourited?.call());
       }
       if (desired) {

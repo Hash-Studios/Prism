@@ -197,7 +197,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final AppLocalizations l10n = context.l10n;
     if (playTapHaptic) PrismHaptics.tap();
-    final bool removed = await adapter.removeWalls(walls.map((wall) => wall.id).toList(growable: false));
+    final bool removed = await adapter.removeWalls(walls.map((wall) => wall.key).toList(growable: false));
     if (!removed) {
       toasts.error(l10n.wallpaperFavouriteRemoveError);
       return;
@@ -503,17 +503,17 @@ class _FavouriteGridState extends State<FavouriteGrid> {
     final bool isSelected = _selected.contains(wall.id);
     final bool dark = Theme.of(context).brightness == Brightness.dark;
     return KeyedSubtree(
-      key: ValueKey<String>(wall.id),
+      key: ValueKey<String>(wall.key),
       child: wall is LegacyFavouriteWall || _selecting
           ? _tileImage(context, walls, index, wall, cs, isSelected, dark)
           : WallpaperQuickActionRegion(
               item: wall.toFeedItem(),
-              readIsPinned: () => isFavouritePinned(context, wall.id),
+              readIsPinned: () => isFavouritePinned(context, wall.key),
               onTogglePin: () => unawaited(
                 toggleFavouritePin(
                   context,
-                  wall.id,
-                  pin: !isFavouritePinned(context, wall.id),
+                  wall.key,
+                  pin: !isFavouritePinned(context, wall.key),
                   surface: FavouritePinSurfaceValue.library,
                 ),
               ),
