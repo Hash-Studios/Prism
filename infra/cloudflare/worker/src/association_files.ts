@@ -19,7 +19,7 @@ const APP_LINK_PATHS = [
   '/wallpaper-detail', '/wotd-archive', '/download-wallpaper', '/wallpaper-filter', '/choose-wallpaper', '/premium', '/paywall',
   '/edit-profile', '/share-prism',
   '/settings', '/layout', '/blocked-accounts', '/about', '/fav-walls', '/downloads', '/library', '/upload-wall', '/edit-wall',
-  '/review', '/coin-transactions', '/theme', '/notifications', '/collection-view', '/gallery', '/requests', '/creators', '/editors-choice', '/wrapped', '/followers', '/following',
+  '/review', '/coin-transactions', '/theme', '/notifications', '/collection-view', '/gallery', '/requests', '/creators', '/folders', '/editors-choice', '/wrapped', '/followers', '/following',
   '/admin-review', '/admin-review/swipe', '/admin-review/image', '/admin-firestore-telemetry', '/admin-promo-codes', '/debug-panel',
   '/daily-moment', '/daily-chest', '/spin-wheel',
   '/photo-preview', '/clock-preview', '/quick-tile-settings',

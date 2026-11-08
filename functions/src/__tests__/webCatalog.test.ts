@@ -468,6 +468,50 @@ test("buildPages sitemap targets exist in an empty catalogue", () => {
   assert.deepEqual(entries, ["/wallpapers", "/wallpapers/popular"]);
 });
 
+test("buildPages lists trending and new discover folders, skipping hidden and unlisted ones", () => {
+  const sam = {username: "sam", name: "Sam K", bio: "", photo: ""};
+  const folders = [
+    {id: "f1", name: "Calm", owner: sam, wallIds: ["W01", "W02", "W03", "W04", "W05"], total: 5, updatedAt: NOW},
+    {id: "f2", name: "Hidden", owner: null, wallIds: ["W06"], updatedAt: NOW, discoveryHidden: true},
+    {id: "f3", name: "Fresh", owner: null, wallIds: ["W07"], updatedAt: NOW},
+    {id: "f4", name: "Unlisted", owner: null, wallIds: ["W08"], updatedAt: NOW},
+  ];
+  const pages = buildPages(thirtyWalls(), [], folders, new Map(), {trending: ["f1", "f2"], new: ["f3"]});
+
+  const discover = pageOf(pages, "folders") as unknown as {
+    kind: string; trending: Array<{id: string; name: string; total: number; covers: string[]; owner: unknown}>;
+    new: Array<{id: string; name: string; total: number; covers: string[]; owner: unknown}>;
+  };
+  assert.equal(discover.kind, "folders");
+  assert.deepEqual(discover.trending.map((card) => card.id), ["f1"]);
+  assert.deepEqual(discover.new.map((card) => card.id), ["f3"]);
+  assert.deepEqual(discover.trending[0], {
+    id: "f1",
+    name: "Calm",
+    total: 5,
+    covers: [
+      "https://img.prismwalls.com/previews/W01.img",
+      "https://img.prismwalls.com/previews/W02.img",
+      "https://img.prismwalls.com/previews/W03.img",
+      "https://img.prismwalls.com/previews/W04.img",
+    ],
+    owner: {username: "sam", name: "Sam K", hasPage: false},
+  });
+  const entries = pageOf(pages, "sitemap~categories-1").entries.split("\n").map((line) => line.split("\t")[0]);
+  assert.ok(entries.includes("/folders"));
+});
+
+test("buildPages drops the folders page when discover names only a hidden or non-public folder", () => {
+  const folders = [
+    {id: "f2", name: "Hidden", owner: null, wallIds: ["W06"], updatedAt: NOW, discoveryHidden: true},
+  ];
+  const pages = buildPages(thirtyWalls(), [], folders, new Map(), {trending: ["f2"], new: ["f9"]});
+
+  assert.equal(pages.has("folders"), false);
+  const entries = pageOf(pages, "sitemap~categories-1").entries.split("\n").map((line) => line.split("\t")[0]);
+  assert.equal(entries.includes("/folders"), false);
+});
+
 test("rebuildWebCatalog publishes only profile photos from the app's photo hosts", async (t) => {
   stubDeps(t);
   const store = installFakeDb(t, {

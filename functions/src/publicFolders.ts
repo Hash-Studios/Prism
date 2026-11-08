@@ -7,6 +7,7 @@ import {isAdminCaller} from "./adminConfig";
 import {buildPushGallery, isPreviewUrl, type GalleryDeps} from "./pushGallery";
 import {r2Secrets} from "./r2Storage";
 import {isWotdEligible, parseCollectionList} from "./wallEligibility";
+import {countFolderSignal, dropFromDiscovery, MIN_DISCOVER_WALLS} from "./folderSignals";
 
 export const PUBLIC_FOLDERS = "publicFolders";
 export const FOLLOWED_FOLDERS = "followedFolders";
@@ -102,7 +103,11 @@ async function ownerOpen(uid: string): Promise<boolean> {
   return !(await publicFolderDeps.authDisabled(uid));
 }
 
-interface Wanted {ownerId: string; name: string; sections: PublicSection[]; sourceCreatedAt: admin.firestore.Timestamp}
+interface Wanted {
+  ownerId: string; name: string; sections: PublicSection[]; sourceCreatedAt: admin.firestore.Timestamp;
+  /** Server-only discovery fields of the private folder. They outlive a private and public again cycle. */
+  discoveryHidden: boolean; discoveryEligibleAt: admin.firestore.Timestamp | null;
+}
 class OwnerChanged extends Error {}
 
 /** Auth is external; all Firestore lifecycle gates and source data belong to the committing transaction. */
@@ -128,7 +133,10 @@ async function folderTransaction<T>(folderId: string, run: (
         const want = enabled && user?.exists && user.data()?.deleted !== true && barrier?.data()?.closed !== true &&
           folder?.public === true && folder.moderationHidden !== true && name ?
           {ownerId, name, sections: publicFolderSections(folder?.sections),
-            sourceCreatedAt: snapshot.createTime as admin.firestore.Timestamp} : null;
+            sourceCreatedAt: snapshot.createTime as admin.firestore.Timestamp,
+            discoveryHidden: folder?.discoveryHidden === true,
+            discoveryEligibleAt: folder?.discoveryEligibleAt instanceof admin.firestore.Timestamp ?
+              folder.discoveryEligibleAt : null} : null;
         const result = await run(tx, want);
         // This write is based on this transaction's name, never a stale invalid-name snapshot.
         if (folder?.public === true && !name) tx.update(source, {public: false});
@@ -265,6 +273,7 @@ async function finishRemoval(folderId: string, generation: string): Promise<void
     const fence = await tx.get(state);
     if (fence.data()?.generation === generation && fence.data()?.deleting === true) tx.update(state, {deleting: false});
   });
+  await dropFromDiscovery(folderId);
 }
 
 /** Lifecycle callers pass their owner so a delayed old-owner cleanup cannot remove a transferred folder. */
@@ -307,12 +316,21 @@ async function refreshHeader(folderId: string): Promise<void> {
         {key: d.id, id: str(current.id), thumb: str(current.thumb), tags: [] as string[]} : null;
     }));
     const walls = candidates.filter((w): w is NonNullable<typeof w> => w !== null);
+    // The first time a public folder has 8 walls it becomes new in discovery. The time lives on the private folder,
+    // so making the folder private and public again does not make it new again.
+    let eligibleAt = want.discoveryEligibleAt;
+    if (!eligibleAt && count >= MIN_DISCOVER_WALLS) {
+      eligibleAt = admin.firestore.Timestamp.now();
+      tx.update(db.collection(FOLDERS).doc(folderId), {discoveryEligibleAt: eligibleAt});
+    }
     const next: Doc = {
       ownerId: want.ownerId,
       name: want.name,
       sections: want.sections,
       itemCount: count,
       covers: walls.map((w) => w.thumb),
+      discoveryHidden: want.discoveryHidden,
+      ...(eligibleAt ? {discoveryEligibleAt: eligibleAt} : {}),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       ...(lastAddedAt instanceof admin.firestore.Timestamp ? {lastAddedAt} : {}),
     };
@@ -368,7 +386,7 @@ async function ensureHeader(folderId: string): Promise<boolean> {
       if (!head.exists) {
         tx.set(header, {
           generation, ownerId: want.ownerId, sourceCreatedAt: want.sourceCreatedAt, name: want.name,
-          itemCount: 0, covers: [], followerCount: 0,
+          itemCount: 0, covers: [], followerCount: 0, discoveryHidden: want.discoveryHidden,
           createdAt: admin.firestore.FieldValue.serverTimestamp(), updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
       } else if (!head.data()?.generation || !head.data()?.sourceCreatedAt) {
@@ -566,7 +584,7 @@ export const setFolderFollow = onCall(
     if (!precheck) throw new HttpsError("failed-precondition", "This folder is private or no longer exists.");
     if (ownerId === uid) throw new HttpsError("invalid-argument", "You cannot follow your own folder.");
     if (!(await ownerOpen(uid))) throw new HttpsError("failed-precondition", "This account cannot follow folders.");
-    await folderTransaction(folderId, async (tx, want) => {
+    const created = await folderTransaction(folderId, async (tx, want) => {
       const [head, edge, back, followed, mine, theirs, user, barrier, fence] = await Promise.all([
         tx.get(header), tx.get(follower), tx.get(reverse), tx.get(userRef.collection(FOLLOWED_FOLDERS).count()),
         tx.get(userRef.collection("blockedUsers").doc(ownerId)),
@@ -580,7 +598,7 @@ export const setFolderFollow = onCall(
         throw new HttpsError("failed-precondition", "This account cannot follow folders.");
       }
       if (mine.exists || theirs.exists) throw new HttpsError("failed-precondition", "This follow is not allowed.");
-      if (edge.exists && back.exists) return;
+      if (edge.exists && back.exists) return false;
       const count = await countDaily(tx, rateRef, MAX_FOLLOW_ACTIONS_PER_DAY);
       if (!back.exists && followed.data().count >= MAX_FOLLOWED_FOLDERS) {
         throw new HttpsError("resource-exhausted", "You follow the most folders you can.");
@@ -592,7 +610,10 @@ export const setFolderFollow = onCall(
         tx.set(follower, {uid, createdAt});
         tx.update(header, {followerCount: (Number(head.data()?.followerCount) || 0) + 1});
       }
+      return !edge.exists;
     });
+    // The discover ranking counts new follows. A failure here must not fail the follow.
+    if (created) await countFolderSignal(uid, folderId, ownerId, "follow").catch(() => undefined);
     return {following: true};
   },
 );

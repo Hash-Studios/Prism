@@ -5,6 +5,7 @@ import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import * as pushGallery from "../pushGallery";
 import {db} from "../common";
+import {folderSignalDeps} from "../folderSignals";
 import {changesPublicFolder} from "../folders";
 import {
   publicFolderDeps,
@@ -1052,4 +1053,86 @@ test("an item write in a private folder makes no Auth call", async (t) => {
   await syncPublicFolderItem("f1", "prism_w1");
   assert.equal(authCalls, 0);
   assert.equal(store.has("publicFolders/f1"), false);
+});
+
+// Adds gated-free walls W2..W{count} to the folder, on top of the W1 seeded by setup.
+function seedProjectedWalls(store: Map<string, Doc>, count: number) {
+  for (let n = 2; n <= count; n++) {
+    store.set(`walls/W${n}`, {id: `w${n}`, review: true, wallpaper_thumb: `https://img.prismwalls.com/previews/w${n}.img`,
+      collections: ["nature"], originalProtected: true});
+    store.set(`folders/f1/items/prism_w${n}`, {ownerId: "a", id: `w${n}`, provider: "Prism", wallpaperDocumentId: `W${n}`,
+      addedAt: at(Date.now() - 60_000)});
+  }
+}
+
+test("a public folder with 8 projected walls gets discoveryEligibleAt on the folder and its header", async (t) => {
+  const store = setup(t);
+  seedProjectedWalls(store, 7);
+  await syncPublicFolder("f1");
+  assert.equal(store.get("publicFolders/f1")?.itemCount, 7);
+  assert.equal(store.get("folders/f1")?.discoveryEligibleAt, undefined);
+  assert.equal(store.get("publicFolders/f1")?.discoveryEligibleAt, undefined);
+
+  seedProjectedWalls(store, 8);
+  await syncPublicFolder("f1");
+  assert.equal(store.get("publicFolders/f1")?.itemCount, 8);
+  assert.ok(store.get("folders/f1")?.discoveryEligibleAt instanceof admin.firestore.Timestamp);
+  assert.ok(store.get("publicFolders/f1")?.discoveryEligibleAt instanceof admin.firestore.Timestamp);
+});
+
+test("discoveryEligibleAt keeps its first value through a private and public cycle", async (t) => {
+  const store = setup(t);
+  seedProjectedWalls(store, 8);
+  await syncPublicFolder("f1");
+  const first = store.get("folders/f1")?.discoveryEligibleAt as admin.firestore.Timestamp;
+  assert.ok(first);
+
+  store.set("folders/f1", {...store.get("folders/f1"), public: false});
+  await syncPublicFolder("f1");
+  assert.deepEqual(keysUnder(store, "publicFolders/"), []);
+
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  store.set("folders/f1", {...store.get("folders/f1"), public: true});
+  await syncPublicFolder("f1");
+  const header = store.get("publicFolders/f1")?.discoveryEligibleAt as admin.firestore.Timestamp;
+  const source = store.get("folders/f1")?.discoveryEligibleAt as admin.firestore.Timestamp;
+  assert.equal(header.toMillis(), first.toMillis());
+  assert.equal(source.toMillis(), first.toMillis());
+});
+
+test("discoveryHidden from the private folder is copied to the header on each sync", async (t) => {
+  const store = setup(t);
+  await syncPublicFolder("f1");
+  assert.equal(store.get("publicFolders/f1")?.discoveryHidden, false);
+
+  store.set("folders/f1", {...store.get("folders/f1"), discoveryHidden: true});
+  await syncPublicFolder("f1");
+  assert.equal(store.get("publicFolders/f1")?.discoveryHidden, true);
+});
+
+test("removing a projection drops its folder from the discover lists", async (t) => {
+  const store = setup(t);
+  await syncPublicFolder("f1");
+  store.set("folderTrending/current", {trending: [{id: "f1"}, {id: "f2"}], new: [{id: "f1"}]});
+  store.set("webPages/folders", {kind: "folders", trending: [{id: "f1"}, {id: "f2"}], new: [{id: "f1"}]});
+  store.set("folders/f1", {...store.get("folders/f1"), public: false});
+
+  await syncPublicFolder("f1");
+
+  assert.deepEqual(keysUnder(store, "publicFolders/"), []);
+  assert.deepEqual(store.get("folderTrending/current"), {trending: [{id: "f2"}], new: []});
+  assert.deepEqual(store.get("webPages/folders"), {kind: "folders", trending: [{id: "f2"}], new: []});
+});
+
+test("a new follow counts once in the folder's daily stats, and a repeat follow does not", async (t) => {
+  const store = setup(t);
+  t.mock.method(folderSignalDeps, "accountCreatedMs", async () => Date.now() - 30 * 24 * 60 * 60 * 1000);
+  store.set("publicFolders/f1", {ownerId: "a", name: "Night", itemCount: 1, followerCount: 0, covers: []});
+  const daily = `folderStatsDaily/${TODAY.replace(/-/g, "")}_f1`;
+
+  assert.deepEqual(await followCall("b", {folderId: "f1", following: true}), {following: true});
+  assert.equal(store.get(daily)?.follows, 1);
+
+  assert.deepEqual(await followCall("b", {folderId: "f1", following: true}), {following: true});
+  assert.equal(store.get(daily)?.follows, 1);
 });

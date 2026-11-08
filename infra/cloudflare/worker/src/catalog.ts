@@ -58,6 +58,15 @@ interface ListPage {
   creator?: { username: string; name: string; bio: string; photo: string };
   folders?: Array<{ id: string; name: string; total: number; cover: string }>;
 }
+/** One folder on the /folders discover page. The server keeps hidden, private and empty folders out. */
+interface DiscoverCard {
+  id: string;
+  name: string;
+  total: number;
+  covers: string[];
+  owner: { username: string; name: string; hasPage: boolean } | null;
+}
+interface DiscoverPage { trending: DiscoverCard[]; fresh: DiscoverCard[] }
 interface FolderPage {
   kind: 'folder';
   id: string;
@@ -106,6 +115,7 @@ const SITE_HOSTS = [DOMAIN, `www.${DOMAIN}`];
 type Route =
   | { kind: 'wall'; id: string; desktop: boolean }
   | { kind: 'folder'; id: string }
+  | { kind: 'folders' }
   | { kind: 'hub'; list: 'latest' | 'popular' | 'category'; slug: string; page: number }
   | { kind: 'desktop-hub'; list: 'desktop' | 'sets'; page: number }
   | { kind: 'creator'; username: string; page: number }
@@ -124,7 +134,7 @@ const activeRefreshes = new WeakMap<Cache, Map<string, Promise<void>>>();
 
 /**
  * The catalogue's response, or null when the path is not a catalogue page. `landing` is the old generic app landing:
- * wall and folder links still work through it while Firestore is unreachable.
+ * wall and folder links still work through it while Firestore is unreachable, and /folders before the first list.
  */
 export async function handleCatalogRequest(
   request: Request, url: URL, env: CatalogEnv, ctx: ExecutionContext, landing: () => Response,
@@ -149,7 +159,7 @@ export async function handleCatalogRequest(
   } catch (error) {
     if (!(error instanceof FirestoreUnavailable)) throw error;
     console.warn('[catalog] firestore_unavailable', { route: route.kind, error: `${error.message}` });
-    if (route.kind === 'wall' || route.kind === 'folder') return withMethod(request, landing());
+    if (route.kind === 'wall' || route.kind === 'folder' || route.kind === 'folders') return withMethod(request, landing());
     return withMethod(request, unavailable());
   }
 }
@@ -168,6 +178,7 @@ function matchRoute(url: URL): Route | null {
   if (segments[0] === 'folder' && segments.length === 2 && FOLDER_ID.test(segments[1])) {
     return { kind: 'folder', id: segments[1] };
   }
+  if (segments.length === 1 && segments[0] === 'folders') return { kind: 'folders' };
   if (path === '/sitemap.xml') return { kind: 'sitemap-index' };
   const sitemap = /^\/sitemaps\/([a-z]+-\d{1,4})\.xml$/.exec(path);
   if (sitemap) return { kind: 'sitemap', name: sitemap[1] };
@@ -210,6 +221,7 @@ function cacheKeyOf(route: Route): string {
   switch (route.kind) {
     case 'wall': return route.desktop ? `wall/${route.id}/desktop` : `wall/${route.id}`;
     case 'folder': case 'og': case 'preview': return `${route.kind}/${route.id}`;
+    case 'folders': return 'folders';
     case 'desktop-image': return `${route.kind}/${route.id}/${route.version ?? 'unversioned'}`;
     case 'hub': return `hub/${route.list}/${route.slug}/${route.page}`;
     case 'desktop-hub': return `desktop-hub/${route.list}/${route.page}`;
@@ -302,6 +314,7 @@ async function render(route: Route, env: CatalogEnv): Promise<Response> {
   switch (route.kind) {
     case 'wall': return renderWall(route.id, route.desktop, env);
     case 'folder': return renderFolder(route.id, env);
+    case 'folders': return renderFoldersDiscover(env);
     case 'hub': return renderHub(route.list, route.slug, route.page, env);
     case 'desktop-hub': return renderDesktopHub(route.list, route.page, env);
     case 'creator': return renderCreator(route.username, route.page, env);
@@ -550,6 +563,29 @@ function parseFolderPage(value: unknown, env: CatalogEnv): FolderPage {
   };
 }
 
+function parseDiscoverPage(value: unknown, env: CatalogEnv): DiscoverPage {
+  const item = record(value);
+  const list = (raw: unknown): DiscoverCard[] => {
+    if (raw == null) return [];
+    if (!Array.isArray(raw)) throw new FirestoreUnavailable('invalid discover list');
+    return raw.map((entry) => {
+      const card = record(entry);
+      const id = requiredString(card, 'id');
+      if (!FOLDER_ID.test(id)) throw new FirestoreUnavailable('invalid discover folder id');
+      const covers = Array.isArray(card.covers) ? card.covers : [];
+      if (!covers.length || !covers.every((cover) => typeof cover === 'string' && publicThumb(cover, env.R2_PREVIEW_BASE_URL))) {
+        throw new FirestoreUnavailable('invalid discover covers');
+      }
+      const owner = card.owner == null ? null : record(card.owner);
+      return {
+        id, name: requiredString(card, 'name'), total: requiredNumber(card, 'total'), covers: (covers as string[]).slice(0, 4),
+        owner: owner ? { username: requiredString(owner, 'username'), name: requiredString(owner, 'name'), hasPage: owner.hasPage === true } : null,
+      };
+    });
+  };
+  return { trending: list(item.trending), fresh: list(item.new) };
+}
+
 /** Groups that do not add up to the item count are dropped, so a bad page still shows every wall in one grid. */
 function parseFolderGroups(value: unknown, itemCount: number): FolderPage['groups'] {
   if (!Array.isArray(value) || value.some((raw) => raw == null || typeof raw !== 'object' || Array.isArray(raw))) return [];
@@ -781,6 +817,38 @@ async function renderFolder(id: string, env: CatalogEnv): Promise<Response> {
     robots: folder.items.length ? 'index,follow,max-image-preview:large' : 'noindex,follow', appUrl: canonical,
     jsonLd: [collectionLd(folder.name, description, canonical, folder.items),
       breadcrumbLd([['Wallpapers', `${SITE}/wallpapers`], [folder.name, canonical]])],
+  });
+}
+
+function discoverRowHtml(title: string, cards: DiscoverCard[]): string {
+  if (!cards.length) return '';
+  return `<section class="shelf"><h2>${escapeHtml(title)}</h2><ul class="folder-row">${cards.map((card) => `<li><a href="/folder/${escapeAttribute(card.id)}">
+    <img src="${escapeAttribute(card.covers[0])}" width="${THUMB_WIDTH}" height="${THUMB_HEIGHT}" alt="" loading="lazy" decoding="async">
+    <span class="folder-name">${escapeHtml(card.name)}</span><span class="folder-count">${card.owner ? `By ${escapeHtml(card.owner.name)} · ` : ''}${formatCount(card.total)} ${card.total === 1 ? 'wallpaper' : 'wallpapers'}</span></a></li>`).join('')}</ul></section>`;
+}
+
+/** The public folders people follow and save this week, and the new ones. One document read. */
+async function renderFoldersDiscover(env: CatalogEnv): Promise<Response> {
+  const stored = await readDoc<unknown>(env, 'webPages/folders');
+  const data = stored == null ? null : parseDiscoverPage(stored, env);
+  // No list yet: /folders is also an app link, so the app landing serves it.
+  if (data == null || (!data.trending.length && !data.fresh.length)) throw new FirestoreUnavailable('no discover folders');
+  const canonical = `${SITE}/folders`;
+  const title = 'Public wallpaper folders | Prism';
+  const description = 'Folders of wallpapers that people on Prism follow and save this week, and new folders. '
+    + 'Open one in Prism to follow it.';
+  const body = `
+<main>
+  ${breadcrumbHtml([['Wallpapers', `${SITE}/wallpapers`], ['Folders', canonical]])}
+  <h1>Public folders</h1>
+  <p class="lead">Wallpaper folders made by people on Prism.</p>
+  ${discoverRowHtml('Trending this week', data.trending)}
+  ${discoverRowHtml('New this week', data.fresh)}
+</main>`;
+  return page({
+    title, description, canonical, ogImage: data.trending[0]?.covers[0] || data.fresh[0]?.covers[0] || OG_HOME,
+    ogType: 'website', body, robots: 'index,follow,max-image-preview:large', appUrl: canonical,
+    jsonLd: [breadcrumbLd([['Wallpapers', `${SITE}/wallpapers`], ['Folders', canonical]])],
   });
 }
 

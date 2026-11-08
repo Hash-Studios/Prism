@@ -1834,6 +1834,18 @@
       ]
     },
     {
+      "collectionGroup": "folderStatsDaily",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "folderSignalRate",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
       "collectionGroup": "questEventRate",
       "fieldPath": "expireAt",
       "ttl": true,

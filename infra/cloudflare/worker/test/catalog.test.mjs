@@ -839,6 +839,54 @@ test('creator page looks up the lower-case username and renders the profile', as
   assert.equal(missing.status, 404);
 });
 
+test('the /folders discover page lists trending and new folders and escapes their names', async (t) => {
+  const h = setup(t);
+  h.state.docs['webPages/folders'] = {
+    kind: 'folders',
+    trending: [{ id: 'F1', name: 'Calm <b>Bold</b>', total: 3, covers: [THUMB], owner: null }],
+    new: [{ id: 'F2', name: 'Fresh', total: 1, covers: [THUMB], owner: { username: 'sam', name: 'Sam K', hasPage: true } }],
+  };
+
+  const response = await h.get('/folders');
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.ok(body.includes('Trending this week'));
+  assert.ok(body.includes('New this week'));
+  assert.ok(body.includes('Calm &lt;b&gt;Bold&lt;/b&gt;'));
+  assert.equal(body.includes('<b>Bold</b>'), false);
+  assert.ok(body.includes('href="/folder/F1"'));
+  assert.ok(body.includes('href="/folder/F2"'));
+});
+
+test('a discover card with a cover that is not a public preview thumb falls back to the app landing', async (t) => {
+  const h = setup(t);
+  const badCover = 'https://example.com/original.jpg';
+  h.state.docs['webPages/folders'] = {
+    kind: 'folders',
+    trending: [{ id: 'F1', name: 'Calm', total: 3, covers: [badCover], owner: null }],
+    new: [],
+  };
+
+  const response = await h.get('/folders');
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.equal(body.includes('Trending this week'), false);
+  assert.equal(body.includes(badCover), false);
+});
+
+test('a missing webPages/folders doc serves the app landing, not the discover page', async (t) => {
+  const h = setup(t);
+  assert.equal(Object.hasOwn(h.state.docs, 'webPages/folders'), false);
+
+  const response = await h.get('/folders');
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.equal(body.includes('Trending this week'), false);
+});
+
 test('sitemaps list the page sitemap and each wall sitemap with its lastmod', async (t) => {
   const h = setup(t);
 

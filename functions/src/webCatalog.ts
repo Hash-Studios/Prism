@@ -7,6 +7,7 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {db, REGION, str} from "./common";
 import {isPreviewUrl} from "./pushGallery";
 import {isSectionId, publicFolderSections, type PublicSection} from "./publicFolders";
+import {DISCOVER_WEB_PAGE, FOLDER_TRENDING, FOLDER_TRENDING_DOC} from "./folderSignals";
 import {r2Secrets} from "./r2Storage";
 import {parseDesktopVariant, readyDesktopCompanion} from "./studio/desktop";
 import {PALETTE} from "./wallColors";
@@ -333,7 +334,8 @@ function sitemap(name: string, entries: Array<[string, string]>): Array<[string,
 export function buildPages(
   walls: Map<string, WebWall>, popularIds: string[], folders: Array<{id: string; name: string; owner: PublicProfile | null;
     wallIds: string[]; updatedAt: string; total?: number; sections?: PublicSection[];
-    sectionOf?: Record<string, string>}>, creators: Map<string, PublicProfile>,
+    sectionOf?: Record<string, string>; discoveryHidden?: boolean}>, creators: Map<string, PublicProfile>,
+  discover: {trending: string[]; new: string[]} = {trending: [], new: []},
 ): Map<string, PageDoc> {
   const live = [...walls].filter(([, wall]) => wall.state === "live").sort(newest);
   // Popular ids and folder items carry the share id in upper case, the way wallpaper_stats keys it.
@@ -391,6 +393,20 @@ export function buildPages(
     });
   }
 
+  // The /folders page lists the discover folders that are still public, not hidden and have a live wall.
+  const discoverable = new Map(publicFolders.filter((f) => f.discoveryHidden !== true && f.items.length > 0)
+    .map((f) => [f.id, f]));
+  const discoverCards = (ids: string[]) => ids.flatMap((id) => {
+    const folder = discoverable.get(id);
+    return folder ? [{
+      id, name: folder.name, total: folder.total ?? folder.wallIds.length, covers: folder.items.slice(0, 4).map((c) => c.thumb),
+      owner: folder.owner ? {username: folder.owner.username, name: folder.owner.name,
+        hasPage: hasCreatorPage(folder.owner.username)} : null,
+    }] : [];
+  });
+  const discoverPage = {kind: DISCOVER_WEB_PAGE, trending: discoverCards(discover.trending), new: discoverCards(discover.new)};
+  if (discoverPage.trending.length || discoverPage.new.length) pages.set(DISCOVER_WEB_PAGE, discoverPage);
+
   const creatorPages: Array<[string, string]> = [];
   for (const [username, entries] of byCreator) {
     const profile = profileByName.get(username);
@@ -409,6 +425,7 @@ export function buildPages(
       [`/wallpapers/${slug}`, maxDate(entries.map(([, w]) => w.updatedAt))]),
     ...(desktops.length ? ["/desktop-wallpapers", "/matching-sets"].map((path): [string, string] =>
       [path, maxDate(desktops.map(([, w]) => w.updatedAt))]) : []),
+    ...(pages.has(DISCOVER_WEB_PAGE) ? [["/folders", maxDate([...discoverable.values()].map((f) => f.updatedAt))] as [string, string]] : []),
   ];
   const folderEntries = publicFolders.filter((f) => f.items.length > 0)
     .map((f): [string, string] => [`/folder/${f.id}`, f.updatedAt]);
@@ -457,12 +474,13 @@ export function sectionGroups(shown: Array<{card: WebCard; sectionId?: string}>,
 export async function rebuildWebCatalog(): Promise<{walls: number; pages: number; written: number}> {
   const now = webCatalogDeps.now();
   const premium = await webCatalogDeps.premium();
-  const [approved, existing, popularDoc, folderDocs, manifestDoc] = await Promise.all([
+  const [approved, existing, popularDoc, folderDocs, manifestDoc, discoverDoc] = await Promise.all([
     db.collection("walls").get(),
     db.collection(WEB_WALLS).get(),
     db.collection("popular").doc("current").get(),
     db.collection("publicFolders").get(),
     db.collection(STATE).doc("pages").get(),
+    db.collection(FOLDER_TRENDING).doc(FOLDER_TRENDING_DOC).get(),
   ]);
   const previous = new Map(existing.docs.map((doc) => [doc.id, doc.data() as WebWall]));
   const byId = new Map<string, Doc[]>();
@@ -525,10 +543,14 @@ export async function rebuildWebCatalog(): Promise<{walls: number; pages: number
         .map((item) => [str(item.data().id), str(item.data().sectionId)])),
       total: typeof data.itemCount === "number" && Number.isFinite(data.itemCount) ? data.itemCount : items.size,
       updatedAt: isoOf(data.updatedAt) || isoOf(doc.createTime) || now.toISOString(),
+      discoveryHidden: data.discoveryHidden === true,
     };
   }));
   const popularIds = Array.isArray(popularDoc.data()?.wallIds) ? (popularDoc.data()?.wallIds as unknown[]).map(str) : [];
-  const pages = buildPages(walls, popularIds, folders.filter((f) => f.name), profiles);
+  const discoverIds = (list: unknown) => Array.isArray(list) ? list.map((entry) => str(entry?.id)).filter(Boolean) : [];
+  const pages = buildPages(walls, popularIds, folders.filter((f) => f.name), profiles, {
+    trending: discoverIds(discoverDoc.data()?.trending), new: discoverIds(discoverDoc.data()?.new),
+  });
 
   const oldHashes = (manifestDoc.data()?.hashes ?? {}) as Record<string, string>;
   const hashes: Record<string, string> = {};

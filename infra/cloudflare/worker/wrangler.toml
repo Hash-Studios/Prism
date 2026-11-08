@@ -223,6 +223,10 @@ pattern = "prismwalls.com/creators*"
 zone_name = "prismwalls.com"
 
 [[routes]]
+pattern = "prismwalls.com/folders*"
+zone_name = "prismwalls.com"
+
+[[routes]]
 pattern = "prismwalls.com/editors-choice*"
 zone_name = "prismwalls.com"
 
@@ -592,6 +596,10 @@ zone_name = "prismwalls.com"
 
 [[routes]]
 pattern = "www.prismwalls.com/creators*"
+zone_name = "prismwalls.com"
+
+[[routes]]
+pattern = "www.prismwalls.com/folders*"
 zone_name = "prismwalls.com"
 
 [[routes]]
