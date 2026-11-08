@@ -828,3 +828,39 @@ test("account deletion removes authored comments across walls and their rate wit
     assert.equal(store.get("commentRate/u2")?.count, 20);
   }
 });
+
+test("account deletion removes the owner's smart folders and their index docs, not another owner's", async (t) => {
+  fake(t, {email: ""});
+  const store = installFakeDb(t, {
+    "usersv2/u1": {coins: 20},
+    "folders/sf1": {ownerId: "u1", name: "Blue", itemCount: 1, covers: [], smartRules: [{kind: "colour", value: "blue"}]},
+    "folders/sf1/items/prism_w1": {ownerId: "u1", id: "w1", provider: "Prism", wallpaperDocumentId: "W1", smart: true,
+      addedAt: admin.firestore.Timestamp.now()},
+    "smartFolderIndex/sf1": {ownerId: "u1", anchors: ["colour:blue"], anchorKind: "colour",
+      rules: [{kind: "colour", value: "blue"}]},
+    "smartFolderIndex/other": {ownerId: "someoneElse", anchors: ["colour:blue"], anchorKind: "colour"},
+  });
+  t.mock.method(db, "bulkWriter", () => ({
+    set: (ref: admin.firestore.DocumentReference, data: admin.firestore.DocumentData) => ref.set(data),
+    update: (ref: admin.firestore.DocumentReference, data: admin.firestore.UpdateData<admin.firestore.DocumentData>) => ref.update(data),
+    delete: (ref: admin.firestore.DocumentReference) => ref.delete(),
+    close: async () => undefined,
+  }));
+  // The fake batch only logs, so this one deletes the documents it is given, like the real batch commit does.
+  t.mock.method(db, "batch", () => {
+    const writes: Promise<unknown>[] = [];
+    const batch = {
+      delete: (ref: admin.firestore.DocumentReference) => {
+        writes.push(ref.delete());
+        return batch;
+      },
+      commit: async () => Promise.all(writes),
+    };
+    return batch;
+  });
+  await call();
+  assert.equal(store.has("smartFolderIndex/sf1"), false);
+  assert.equal(store.has("folders/sf1"), false);
+  assert.equal(store.has("folders/sf1/items/prism_w1"), false);
+  assert.equal(store.has("smartFolderIndex/other"), true);
+});

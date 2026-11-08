@@ -1675,6 +1675,20 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "smartWallKeys",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "keys",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [

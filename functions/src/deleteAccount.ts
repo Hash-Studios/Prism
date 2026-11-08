@@ -9,6 +9,7 @@ import {verifiedEmailForUid} from "./wallAuthor";
 import {removeUidFollowGraph} from "./profiles";
 import {FOLDERS, FOLDER_ITEMS, isFolderItemPath} from "./folders";
 import {removeAllFolderMemberships} from "./sharedFolders";
+import {removeOwnerSmartFolders} from "./smartFolders";
 import {removeWallRequestsForAccount, REQUEST_RATE_DAILY, VOTE_RATE_DAILY} from "./wallRequests";
 import {WRAPPED_COLLECTION} from "./wrapped";
 import {FOLLOWED_FOLDERS, removeAllFolderFollows, removeOwnerPublicFolders} from "./publicFolders";
@@ -124,6 +125,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   await removeOwnerPublicFolders(callerUid);
   await removeAllFolderFollows(callerUid);
   await removeAllFolderMemberships(callerUid);
+  await removeOwnerSmartFolders(callerUid);
   await removeCommentsForAccount(callerUid);
   await removeDesktopSubmissionsForAccount(callerUid);
   await removePhotoJobsForAccount(callerUid);

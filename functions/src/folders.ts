@@ -4,6 +4,7 @@ import {db, REGION, str} from "./common";
 import {syncPublicFolder, syncPublicFolderItem} from "./publicFolders";
 import {r2Secrets} from "./r2Storage";
 import {cleanupDeletedFolder, forgetFolderActivityItem, recordFolderActivity} from "./sharedFolders";
+import {removeSmartFolder} from "./smartFolders";
 
 export const FOLDERS = "folders";
 export const FOLDER_ITEMS = "items";
@@ -67,6 +68,9 @@ export const onFolderWritten = onDocumentWritten(
     const after = event.data?.after;
     if (changesPublicFolder(before?.data(), after?.data())) await syncPublicFolder(event.params.folderId);
     if (before?.exists && !after?.exists) await cleanupDeletedFolder(event.params.folderId);
+    if (before?.exists && !after?.exists && Array.isArray(before.data()?.smartRules)) {
+      await removeSmartFolder(event.params.folderId);
+    }
     if (!before?.exists || !after?.exists) return;
     const previousCount = before.data()?.itemCount;
     const currentCount = after.data()?.itemCount;

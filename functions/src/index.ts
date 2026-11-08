@@ -50,6 +50,9 @@ export {deleteAccount} from "./deleteAccount";
 export {beginRewardedSession, getRewardedSession, admobRewardedSsv} from "./rewardedAds";
 export {onFolderItemWritten, onFolderWritten} from "./folders";
 export {onWallPublicGateChanged, setFolderFollow, setFolderHidden, setFolderPublic} from "./publicFolders";
+export {
+  createSmartFolder, onSmartFollowWritten, onWallSmartFolders, previewSmartFolder, updateSmartFolderRules,
+} from "./smartFolders";
 export {buildWebCatalog, onWallWebCatalog} from "./webCatalog";
 export {sendFolderDigests} from "./folderDigest";
 export {sendTopicDigests} from "./topicDigest";

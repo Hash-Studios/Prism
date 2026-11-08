@@ -182,6 +182,8 @@ export const createFolderInvite = onCall(
       if (!folder.exists || str(folder.data()?.ownerId) !== uid) {
         throw new HttpsError("permission-denied", "Only the owner can invite people.");
       }
+      // Smart folders fill themselves from rules, so nobody else can edit them.
+      if (Array.isArray(folder.data()?.smartRules)) throw new HttpsError("failed-precondition", "smart");
       if (!(await accountOpen(tx, uid))) throw refuse("account");
       if (editorsOf(folder.data()).length >= MAX_FOLDER_EDITORS) throw refuse("full");
       const today = utcDateString();
