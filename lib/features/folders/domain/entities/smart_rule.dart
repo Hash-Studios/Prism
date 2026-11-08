@@ -31,14 +31,14 @@ enum SmartRuleKind {
 /// The categories the server classifier writes to `walls.category`. Keep in sync with `CATEGORY_NAMES` in
 /// functions/src/wallCategory.ts; `functions/src/__tests__/smartRuleParity.test.ts` fails when they differ.
 const List<String> smartCategoryNames = <String>[
+  'Anime',
+  'Flowers',
   'Nature',
   'Architecture',
   'Cars',
-  'Anime',
   'Gaming',
   'Space',
   'Ocean',
-  'Flowers',
   'Neon',
   'Dark',
   'Abstract',
