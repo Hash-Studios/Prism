@@ -17,14 +17,18 @@ const Duration fcmCallTimeout = Duration(seconds: 5);
 @visibleForTesting
 bool defaultTopicCallsCheckPlayServices() => Platform.isAndroid;
 
-/// Android topic calls first check for Google Play services. Apple devices wait for the APNS token instead.
-@visibleForTesting
-bool Function() topicCallsCheckPlayServices = defaultTopicCallsCheckPlayServices;
-
 Future<bool>? _playServicesMissing;
+bool Function() _topicCallsCheckPlayServices = defaultTopicCallsCheckPlayServices;
 
+/// Android topic calls first check for Google Play services. Apple devices wait for the APNS token instead.
+bool Function() get topicCallsCheckPlayServices => _topicCallsCheckPlayServices;
+
+/// Setting it also forgets the last Play services probe.
 @visibleForTesting
-void resetPlayServicesProbe() => _playServicesMissing = null;
+set topicCallsCheckPlayServices(bool Function() value) {
+  _topicCallsCheckPlayServices = value;
+  _playServicesMissing = null;
+}
 
 /// Whether Google Play services is missing. Without it, an FCM token read fails at once with
 /// MISSING_INSTANCEID_SERVICE and topic calls never answer. That cannot change while the app runs, so a missing

@@ -58,7 +58,6 @@ void main() {
     setUp(() => topicCallsCheckPlayServices = () => true);
     tearDown(() {
       topicCallsCheckPlayServices = defaultTopicCallsCheckPlayServices;
-      resetPlayServicesProbe();
     });
 
     test('topic calls skip FCM at once for the rest of the run', () {
@@ -176,7 +175,7 @@ void main() {
         async.flushMicrotasks();
         expect(messaging.tokenReads, 1);
 
-        resetPlayServicesProbe();
+        topicCallsCheckPlayServices = () => true;
         messaging.getTokenHandler = () => newToken.future;
         subscribeToTopicSafely(messaging, 'new', sourceTag: 'test').then(results.add);
         async.flushMicrotasks();
