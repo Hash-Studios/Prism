@@ -3268,6 +3268,67 @@ class FolderSectionSuggestionsAcceptedEvent extends AnalyticsEvent {
   }
 }
 
+class SmartFolderCreatedEvent extends AnalyticsEvent {
+  const SmartFolderCreatedEvent({required this.ruleKinds, required this.ruleCount, required this.matchCount});
+
+  final List<String> ruleKinds;
+  final int ruleCount;
+  final int matchCount;
+
+  @override
+  String get eventName => 'smart_folder_created';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'rule_kinds': ruleKinds, 'rule_count': ruleCount, 'match_count': matchCount};
+  }
+}
+
+class SmartFolderRulesEditedEvent extends AnalyticsEvent {
+  const SmartFolderRulesEditedEvent({required this.ruleKinds, required this.ruleCount, required this.matchCount});
+
+  final List<String> ruleKinds;
+  final int ruleCount;
+  final int matchCount;
+
+  @override
+  String get eventName => 'smart_folder_rules_edited';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'rule_kinds': ruleKinds, 'rule_count': ruleCount, 'match_count': matchCount};
+  }
+}
+
+class SmartFolderOpenedEvent extends AnalyticsEvent {
+  const SmartFolderOpenedEvent({required this.ruleKinds, required this.itemCount});
+
+  final List<String> ruleKinds;
+  final int itemCount;
+
+  @override
+  String get eventName => 'smart_folder_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'rule_kinds': ruleKinds, 'item_count': itemCount};
+  }
+}
+
+class SmartFolderMadePublicEvent extends AnalyticsEvent {
+  const SmartFolderMadePublicEvent({required this.ruleKinds});
+
+  final List<String> ruleKinds;
+
+  @override
+  String get eventName => 'smart_folder_made_public';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'rule_kinds': ruleKinds};
+  }
+}
+
 class FolderVisibilityChangedEvent extends AnalyticsEvent {
   const FolderVisibilityChangedEvent({required this.isPublic, required this.source});
 

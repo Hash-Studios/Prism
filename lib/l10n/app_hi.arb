@@ -10415,6 +10415,193 @@
   "@foldersMakePrivate": {
     "description": "Folder menu action that hides the folder from others."
   },
+  "foldersSmartNew": "नया स्मार्ट फ़ोल्डर",
+  "@foldersSmartNew": {
+    "description": "Button and sheet title that creates a folder which fills itself from rules."
+  },
+  "foldersSmartTag": "स्मार्ट",
+  "@foldersSmartTag": {
+    "description": "Short label on a folder that fills itself from rules."
+  },
+  "foldersSmartIntro": "नियम एक बार चुनें। मिलते हुए नए वॉलपेपर अपने-आप इसमें आ जाएँगे।",
+  "@foldersSmartIntro": {
+    "description": "One line under the title of the new smart folder sheet."
+  },
+  "foldersSmartRulesTitle": "नियम",
+  "@foldersSmartRulesTitle": {
+    "description": "Heading above the rule chips in the smart folder sheet."
+  },
+  "foldersSmartRulesHint": "वॉलपेपर को आपके चुने हुए हर प्रकार से मेल खाना होगा। एक प्रकार के अंदर कोई भी विकल्प चलेगा।",
+  "@foldersSmartRulesHint": {
+    "description": "Explains that rule kinds join with AND and choices inside a kind join with OR."
+  },
+  "foldersSmartKindMood": "मूड",
+  "@foldersSmartKindMood": {
+    "description": "Rule kind: the mood of a wallpaper, for example Dreamy."
+  },
+  "foldersSmartKindColour": "रंग",
+  "@foldersSmartKindColour": {
+    "description": "Rule kind: a main colour of a wallpaper."
+  },
+  "foldersSmartKindCategory": "श्रेणी",
+  "@foldersSmartKindCategory": {
+    "description": "Rule kind: the category of a wallpaper, for example Nature."
+  },
+  "foldersSmartKindFollowed": "फ़ॉलो किए गए क्रिएटर",
+  "@foldersSmartKindFollowed": {
+    "description": "Rule: only wallpapers from creators the user follows."
+  },
+  "foldersSmartKindCreator": "क्रिएटर",
+  "@foldersSmartKindCreator": {
+    "description": "Rule kind: wallpapers from one chosen creator."
+  },
+  "foldersSmartKindDesktop": "डेस्कटॉप वर्शन है",
+  "@foldersSmartKindDesktop": {
+    "description": "Rule: only wallpapers that also have a desktop version."
+  },
+  "foldersSmartKindOnly": "सिर्फ़",
+  "@foldersSmartKindOnly": {
+    "description": "Heading above the on or off rules: Creators I follow, Has a desktop version, Editors' Choice."
+  },
+  "foldersSmartNoCreators": "यहाँ चुनने के लिए पहले कुछ क्रिएटर फ़ॉलो करें।",
+  "@foldersSmartNoCreators": {
+    "description": "Shown in the Creator row when the user follows nobody."
+  },
+  "foldersSmartKindLimit": "{count, plural, =1{आप 1 प्रकार का नियम इस्तेमाल कर सकते हैं।} other{आप {count} प्रकार तक के नियम इस्तेमाल कर सकते हैं।}}",
+  "@foldersSmartKindLimit": {
+    "description": "Shown when the user tries to add a fourth kind of rule.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartValueLimit": "{count, plural, =1{आप एक प्रकार में 1 विकल्प चुन सकते हैं।} other{आप एक प्रकार में {count} विकल्प तक चुन सकते हैं।}}",
+  "@foldersSmartValueLimit": {
+    "description": "Shown when the user picks too many choices in one rule kind.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartPreviewTitle": "प्रीव्यू",
+  "@foldersSmartPreviewTitle": {
+    "description": "Heading above the grid of wallpapers that match the rules."
+  },
+  "foldersSmartMatches": "{count, plural, =0{0 मिलान} =1{1 मिलान} other{{count} मिलान}}",
+  "@foldersSmartMatches": {
+    "description": "How many wallpapers match the rules now.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartMatchesMore": "{count, plural, other{{count}+ मिलान}}",
+  "@foldersSmartMatchesMore": {
+    "description": "More than this many wallpapers match the rules. The folder keeps the newest ones.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartNoMatchesHint": "अभी कोई भी वॉलपेपर इन सभी नियमों से नहीं मिलता। ज़्यादा देखने के लिए कोई नियम हटाएँ, या फ़ोल्डर सेव करें ताकि नए मिलान आने पर अपने-आप जुड़ जाएँ।",
+  "@foldersSmartNoMatchesHint": {
+    "description": "Shown under 0 matches in the smart folder preview."
+  },
+  "foldersSmartPickRule": "मिलते हुए वॉलपेपर देखने के लिए कोई नियम चुनें।",
+  "@foldersSmartPickRule": {
+    "description": "Shown in the preview before the user picks a rule."
+  },
+  "foldersSmartPreviewError": "प्रीव्यू लोड नहीं हो सका।",
+  "@foldersSmartPreviewError": {
+    "description": "Shown when the preview of matching wallpapers fails to load."
+  },
+  "foldersSmartCreate": "स्मार्ट फ़ोल्डर बनाएँ",
+  "@foldersSmartCreate": {
+    "description": "Button that creates the smart folder."
+  },
+  "foldersSmartSaveRules": "नियम सेव करें",
+  "@foldersSmartSaveRules": {
+    "description": "Button that saves changed rules of a smart folder."
+  },
+  "foldersSmartEditRules": "नियम बदलें",
+  "@foldersSmartEditRules": {
+    "description": "Button under a smart folder title that opens its rules."
+  },
+  "foldersSmartCreated": "{count, plural, =0{स्मार्ट फ़ोल्डर बन गया। नए मिलान आने पर अपने-आप जुड़ जाएँगे।} =1{1 वॉलपेपर के साथ स्मार्ट फ़ोल्डर बन गया।} other{{count} वॉलपेपर के साथ स्मार्ट फ़ोल्डर बन गया।}}",
+  "@foldersSmartCreated": {
+    "description": "Toast after a smart folder is created.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartRulesSaved": "{count, plural, =0{नियम सेव हो गए। अभी कुछ नहीं मिलता।} =1{नियम सेव हो गए। 1 वॉलपेपर मिलता है।} other{नियम सेव हो गए। {count} वॉलपेपर मिलते हैं।}}",
+  "@foldersSmartRulesSaved": {
+    "description": "Toast after the rules of a smart folder are saved.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartLimitRefused": "{count, plural, other{आप अधिकतम {count} स्मार्ट फ़ोल्डर बना सकते हैं। नया बनाने के लिए कोई एक हटाएँ।}}",
+  "@foldersSmartLimitRefused": {
+    "description": "Shown when the user already has the most smart folders allowed.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartTooManyChanges": "आज बहुत सारे बदलाव हो गए। कल फिर कोशिश करें।",
+  "@foldersSmartTooManyChanges": {
+    "description": "Shown when the user changed smart folders too often today."
+  },
+  "foldersSmartSaveFailed": "स्मार्ट फ़ोल्डर सेव नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।",
+  "@foldersSmartSaveFailed": {
+    "description": "Shown when creating a smart folder or saving its rules fails."
+  },
+  "foldersSmartEmptyTitle": "अभी कुछ नहीं मिलता",
+  "@foldersSmartEmptyTitle": {
+    "description": "Title on an empty smart folder."
+  },
+  "foldersSmartEmptyBody": "नियमों से मिलते नए वॉलपेपर अपने-आप इसमें आ जाएँगे।",
+  "@foldersSmartEmptyBody": {
+    "description": "Body on an empty smart folder."
+  },
+  "foldersSmartRuleSummary": "{kind}: {values}",
+  "@foldersSmartRuleSummary": {
+    "description": "One rule kind and its choices under a smart folder title, for example Colour: Blue, Teal.",
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "values": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSmartRulesLabel": "नियम: {rules}",
+  "@foldersSmartRulesLabel": {
+    "description": "Screen reader label for the rules under a smart folder title.",
+    "placeholders": {
+      "rules": {
+        "type": "String"
+      }
+    }
+  },
   "foldersMakePublicTitle": "क्या इस फ़ोल्डर को सार्वजनिक करें?",
   "@foldersMakePublicTitle": {
     "description": "Title of the dialog before a folder becomes public."

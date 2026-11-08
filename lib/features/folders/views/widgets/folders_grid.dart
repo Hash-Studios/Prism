@@ -15,6 +15,7 @@ import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/folders_access.dart';
 import 'package:Prism/features/folders/views/widgets/folder_card.dart';
+import 'package:Prism/features/folders/views/widgets/smart_folder_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -241,14 +242,17 @@ class _FoldersGridState extends State<FoldersGrid> {
         }
         return _grid(
           context,
-          itemCount: owned.length + 1,
+          itemCount: owned.length + 2,
           shared: shared,
           followed: followed,
           card: (index, width) {
             if (index == 0) {
               return _NewFolderTile(size: width, onTap: () => unawaited(createFolderFromLibrary(context)));
             }
-            final FolderEntity folder = owned[index - 1];
+            if (index == 1) {
+              return _NewFolderTile(size: width, smart: true, onTap: () => unawaited(showSmartFolderSheet(context)));
+            }
+            final FolderEntity folder = owned[index - 2];
             return FolderCard(
               key: ValueKey<String>(folder.id),
               name: folder.name,
@@ -257,6 +261,7 @@ class _FoldersGridState extends State<FoldersGrid> {
               coverSize: width,
               markPublic: folder.isPublic,
               markShared: folder.editors.isNotEmpty,
+              markSmart: folder.isSmart,
               onTap: () => unawaited(_open(folder.id)),
             );
           },
@@ -266,17 +271,18 @@ class _FoldersGridState extends State<FoldersGrid> {
   }
 }
 
-/// The first tile of the owner's folders: a dashed-look square that starts a new folder.
+/// The first tiles of the owner's folders: a dashed-look square that starts a new folder or a new smart folder.
 class _NewFolderTile extends StatelessWidget {
-  const _NewFolderTile({required this.size, required this.onTap});
+  const _NewFolderTile({required this.size, required this.onTap, this.smart = false});
 
   final double size;
   final VoidCallback onTap;
+  final bool smart;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
-    final String label = context.l10n.foldersNewFolder;
+    final String label = smart ? context.l10n.foldersSmartNew : context.l10n.foldersNewFolder;
     return PressScale(
       child: Semantics(
         button: true,
@@ -284,7 +290,7 @@ class _NewFolderTile extends StatelessWidget {
         excludeSemantics: true,
         onTap: onTap,
         child: GestureDetector(
-          key: const ValueKey<String>('folders-new-folder-tile'),
+          key: ValueKey<String>(smart ? 'folders-new-smart-folder-tile' : 'folders-new-folder-tile'),
           behavior: HitTestBehavior.opaque,
           onTap: onTap,
           child: Column(
@@ -298,7 +304,7 @@ class _NewFolderTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(PrismRadius.sm),
                   border: Border.all(color: cs.onSurface.withValues(alpha: 0.08)),
                 ),
-                child: Icon(Icons.add_rounded, size: 32, color: cs.onSurface),
+                child: Icon(smart ? Icons.auto_awesome_rounded : Icons.add_rounded, size: 32, color: cs.onSurface),
               ),
               const SizedBox(height: PrismSpace.xs),
               Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: PrismTextStyles.rowTitle(context)),

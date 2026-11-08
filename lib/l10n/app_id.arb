@@ -10238,6 +10238,193 @@
   "@foldersMakePrivate": {
     "description": "Folder menu action that hides the folder from others."
   },
+  "foldersSmartNew": "Folder pintar baru",
+  "@foldersSmartNew": {
+    "description": "Button and sheet title that creates a folder which fills itself from rules."
+  },
+  "foldersSmartTag": "Pintar",
+  "@foldersSmartTag": {
+    "description": "Short label on a folder that fills itself from rules."
+  },
+  "foldersSmartIntro": "Pilih aturan sekali saja. Wallpaper baru yang cocok akan masuk sendiri.",
+  "@foldersSmartIntro": {
+    "description": "One line under the title of the new smart folder sheet."
+  },
+  "foldersSmartRulesTitle": "Aturan",
+  "@foldersSmartRulesTitle": {
+    "description": "Heading above the rule chips in the smart folder sheet."
+  },
+  "foldersSmartRulesHint": "Wallpaper harus cocok dengan setiap jenis yang Anda pilih. Dalam satu jenis, pilihan mana pun berlaku.",
+  "@foldersSmartRulesHint": {
+    "description": "Explains that rule kinds join with AND and choices inside a kind join with OR."
+  },
+  "foldersSmartKindMood": "Suasana",
+  "@foldersSmartKindMood": {
+    "description": "Rule kind: the mood of a wallpaper, for example Dreamy."
+  },
+  "foldersSmartKindColour": "Warna",
+  "@foldersSmartKindColour": {
+    "description": "Rule kind: a main colour of a wallpaper."
+  },
+  "foldersSmartKindCategory": "Kategori",
+  "@foldersSmartKindCategory": {
+    "description": "Rule kind: the category of a wallpaper, for example Nature."
+  },
+  "foldersSmartKindFollowed": "Kreator yang saya ikuti",
+  "@foldersSmartKindFollowed": {
+    "description": "Rule: only wallpapers from creators the user follows."
+  },
+  "foldersSmartKindCreator": "Kreator",
+  "@foldersSmartKindCreator": {
+    "description": "Rule kind: wallpapers from one chosen creator."
+  },
+  "foldersSmartKindDesktop": "Punya versi desktop",
+  "@foldersSmartKindDesktop": {
+    "description": "Rule: only wallpapers that also have a desktop version."
+  },
+  "foldersSmartKindOnly": "Hanya",
+  "@foldersSmartKindOnly": {
+    "description": "Heading above the on or off rules: Creators I follow, Has a desktop version, Editors' Choice."
+  },
+  "foldersSmartNoCreators": "Ikuti kreator untuk memilih satu di sini.",
+  "@foldersSmartNoCreators": {
+    "description": "Shown in the Creator row when the user follows nobody."
+  },
+  "foldersSmartKindLimit": "{count, plural, =1{Anda dapat memakai 1 jenis aturan.} other{Anda dapat memakai hingga {count} jenis aturan.}}",
+  "@foldersSmartKindLimit": {
+    "description": "Shown when the user tries to add a fourth kind of rule.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartValueLimit": "{count, plural, =1{Anda dapat memilih 1 pilihan dalam satu jenis.} other{Anda dapat memilih hingga {count} pilihan dalam satu jenis.}}",
+  "@foldersSmartValueLimit": {
+    "description": "Shown when the user picks too many choices in one rule kind.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartPreviewTitle": "Pratinjau",
+  "@foldersSmartPreviewTitle": {
+    "description": "Heading above the grid of wallpapers that match the rules."
+  },
+  "foldersSmartMatches": "{count, plural, =0{0 kecocokan} =1{1 kecocokan} other{{count} kecocokan}}",
+  "@foldersSmartMatches": {
+    "description": "How many wallpapers match the rules now.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartMatchesMore": "{count, plural, other{{count}+ kecocokan}}",
+  "@foldersSmartMatchesMore": {
+    "description": "More than this many wallpapers match the rules. The folder keeps the newest ones.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartNoMatchesHint": "Belum ada wallpaper yang cocok dengan semua aturan ini. Hapus satu aturan untuk melihat lebih banyak, atau simpan folder dan kecocokan baru akan masuk saat tersedia.",
+  "@foldersSmartNoMatchesHint": {
+    "description": "Shown under 0 matches in the smart folder preview."
+  },
+  "foldersSmartPickRule": "Pilih aturan untuk melihat wallpaper yang cocok.",
+  "@foldersSmartPickRule": {
+    "description": "Shown in the preview before the user picks a rule."
+  },
+  "foldersSmartPreviewError": "Pratinjau tidak dapat dimuat.",
+  "@foldersSmartPreviewError": {
+    "description": "Shown when the preview of matching wallpapers fails to load."
+  },
+  "foldersSmartCreate": "Buat folder pintar",
+  "@foldersSmartCreate": {
+    "description": "Button that creates the smart folder."
+  },
+  "foldersSmartSaveRules": "Simpan aturan",
+  "@foldersSmartSaveRules": {
+    "description": "Button that saves changed rules of a smart folder."
+  },
+  "foldersSmartEditRules": "Edit aturan",
+  "@foldersSmartEditRules": {
+    "description": "Button under a smart folder title that opens its rules."
+  },
+  "foldersSmartCreated": "{count, plural, =0{Folder pintar dibuat. Kecocokan baru akan masuk saat tersedia.} =1{Folder pintar dibuat dengan 1 wallpaper.} other{Folder pintar dibuat dengan {count} wallpaper.}}",
+  "@foldersSmartCreated": {
+    "description": "Toast after a smart folder is created.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartRulesSaved": "{count, plural, =0{Aturan disimpan. Belum ada yang cocok.} =1{Aturan disimpan. 1 wallpaper cocok.} other{Aturan disimpan. {count} wallpaper cocok.}}",
+  "@foldersSmartRulesSaved": {
+    "description": "Toast after the rules of a smart folder are saved.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartLimitRefused": "{count, plural, other{Anda dapat memiliki hingga {count} folder pintar. Hapus satu untuk membuat yang lain.}}",
+  "@foldersSmartLimitRefused": {
+    "description": "Shown when the user already has the most smart folders allowed.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartTooManyChanges": "Terlalu banyak perubahan hari ini. Coba lagi besok.",
+  "@foldersSmartTooManyChanges": {
+    "description": "Shown when the user changed smart folders too often today."
+  },
+  "foldersSmartSaveFailed": "Folder pintar tidak dapat disimpan. Periksa koneksi Anda lalu coba lagi.",
+  "@foldersSmartSaveFailed": {
+    "description": "Shown when creating a smart folder or saving its rules fails."
+  },
+  "foldersSmartEmptyTitle": "Belum ada yang cocok",
+  "@foldersSmartEmptyTitle": {
+    "description": "Title on an empty smart folder."
+  },
+  "foldersSmartEmptyBody": "Wallpaper baru yang cocok dengan aturan akan masuk sendiri.",
+  "@foldersSmartEmptyBody": {
+    "description": "Body on an empty smart folder."
+  },
+  "foldersSmartRuleSummary": "{kind}: {values}",
+  "@foldersSmartRuleSummary": {
+    "description": "One rule kind and its choices under a smart folder title, for example Colour: Blue, Teal.",
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "values": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSmartRulesLabel": "Aturan: {rules}",
+  "@foldersSmartRulesLabel": {
+    "description": "Screen reader label for the rules under a smart folder title.",
+    "placeholders": {
+      "rules": {
+        "type": "String"
+      }
+    }
+  },
   "foldersMakePublicTitle": "Jadikan folder ini publik?",
   "@foldersMakePublicTitle": {
     "description": "Title of the dialog before a folder becomes public."

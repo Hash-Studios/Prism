@@ -18,6 +18,7 @@ import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_save_run.dart';
 import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
+import 'package:Prism/features/folders/domain/entities/smart_rule.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/folder_invite.dart';
 import 'package:Prism/features/folders/views/folder_sections.dart';
@@ -30,6 +31,8 @@ import 'package:Prism/features/folders/views/widgets/folder_sections_view.dart';
 import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
 import 'package:Prism/features/folders/views/widgets/public_folder_view.dart';
 import 'package:Prism/features/folders/views/widgets/section_suggestions_sheet.dart';
+import 'package:Prism/features/folders/views/widgets/smart_folder_sheet.dart';
+import 'package:Prism/features/folders/views/widgets/smart_rules_line.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/ios_shortcuts/data/shortcuts_folders_store.dart';
 import 'package:Prism/features/library/views/widgets/offline_chip.dart';
@@ -117,6 +120,13 @@ class _FolderScreenState extends State<FolderScreen> {
       unawaited(
         analytics.track(FolderOpenedEvent(source: fromLibrary ? 'library' : 'link', itemCount: folder.itemCount)),
       );
+      if (folder.smartRules case final List<SmartRule> rules) {
+        unawaited(
+          analytics.track(
+            SmartFolderOpenedEvent(ruleKinds: smartRuleKindsForAnalytics(rules), itemCount: folder.itemCount),
+          ),
+        );
+      }
     } finally {
       if (_loadingKey == key) _loadingKey = null;
     }
@@ -194,6 +204,11 @@ class _FolderScreenState extends State<FolderScreen> {
     if (!mounted) return;
     if (ok) {
       unawaited(analytics.track(FolderVisibilityChangedEvent(isPublic: isPublic, source: 'folder_menu')));
+      if (isPublic && folder.smartRules != null) {
+        unawaited(
+          analytics.track(SmartFolderMadePublicEvent(ruleKinds: smartRuleKindsForAnalytics(folder.smartRules!))),
+        );
+      }
       toasts.success(isPublic ? l10n.foldersMadePublic : l10n.foldersMadePrivate);
       setState(() => _projection = null);
       return;
@@ -292,6 +307,8 @@ class _FolderScreenState extends State<FolderScreen> {
   }
 
   void _onWallMenu(FolderEntity? folder, FoldersState state, FavouriteWallEntity wall) {
+    // The server owns the walls of a smart folder.
+    if (folder?.isSmart ?? false) return;
     if (folder == null || (folder.editors.isEmpty && folder.sections.isEmpty && folder.isOwnedBy(state.userId))) {
       unawaited(_remove(wall));
       return;
@@ -365,6 +382,19 @@ class _FolderScreenState extends State<FolderScreen> {
       );
     }
     if (walls == null) return const LoadingCards();
+    if (walls.isEmpty && folder != null && folder.isSmart) {
+      return _message(
+        GlintState(
+          kind: GlintStateKind.empty,
+          title: l10n.foldersSmartEmptyTitle,
+          body: l10n.foldersSmartEmptyBody,
+          actionLabel: folder.isOwnedBy(state.userId) ? l10n.foldersSmartEditRules : null,
+          onAction: folder.isOwnedBy(state.userId)
+              ? () => unawaited(showSmartFolderSheet(context, folder: folder))
+              : null,
+        ),
+      );
+    }
     if (walls.isEmpty && (folder?.sections.isEmpty ?? true)) {
       return _message(
         GlintState(
@@ -383,7 +413,7 @@ class _FolderScreenState extends State<FolderScreen> {
       folder: folder,
       walls: walls,
       sectionOf: state.itemSections[folder.id] ?? const <String, String>{},
-      canOrganize: folder.roleOf(state.userId) != null,
+      canOrganize: folder.roleOf(state.userId) != null && !folder.isSmart,
       heroTag: _heroTag,
       onOpen: _openWall,
       onMenu: (wall) => _onWallMenu(folder, state, wall),
@@ -430,7 +460,8 @@ class _FolderScreenState extends State<FolderScreen> {
             );
         final String userId = state.userId;
         final bool owner = folder?.isOwnedBy(userId) ?? false;
-        final bool showMembers = folder != null && (owner || folder.editors.isNotEmpty);
+        final bool smart = folder?.isSmart ?? false;
+        final bool showMembers = folder != null && !smart && (owner || folder.editors.isNotEmpty);
         final bool hasWalls = state.items[widget.folderId]?.isNotEmpty ?? false;
         return PrismPage(
           title: folder?.name ?? context.l10n.foldersTitle,
@@ -459,6 +490,11 @@ class _FolderScreenState extends State<FolderScreen> {
                     ),
                   ),
                 ),
+              if (folder?.smartRules case final List<SmartRule> rules)
+                SmartRulesLine(
+                  rules: rules,
+                  onEdit: owner ? () => unawaited(showSmartFolderSheet(context, folder: folder)) : null,
+                ),
               if (showMembers)
                 Padding(
                   padding: const EdgeInsetsDirectional.fromSTEB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.sm),
@@ -485,7 +521,7 @@ class _FolderScreenState extends State<FolderScreen> {
                 icon: const Icon(Icons.more_vert_rounded),
                 onSelected: (action) => unawaited(_onMenu(action, folder)),
                 itemBuilder: (context) => <PopupMenuEntry<_FolderMenuAction>>[
-                  if (folder.roleOf(userId) != null) ...<PopupMenuEntry<_FolderMenuAction>>[
+                  if (folder.roleOf(userId) != null && !smart) ...<PopupMenuEntry<_FolderMenuAction>>[
                     if (folder.sections.length < folderMaxSections)
                       PopupMenuItem<_FolderMenuAction>(
                         value: _FolderMenuAction.addSection,
@@ -518,12 +554,12 @@ class _FolderScreenState extends State<FolderScreen> {
                       value: _FolderMenuAction.rotateDaily,
                       child: Text(context.l10n.foldersRotateDaily),
                     ),
-                  if (owner)
+                  if (owner && !smart)
                     PopupMenuItem<_FolderMenuAction>(
                       value: _FolderMenuAction.invite,
                       child: Text(context.l10n.foldersInvite),
                     ),
-                  if (!owner || folder.editors.isNotEmpty)
+                  if (!smart && (!owner || folder.editors.isNotEmpty))
                     PopupMenuItem<_FolderMenuAction>(
                       value: _FolderMenuAction.people,
                       child: Text(context.l10n.foldersPeople),

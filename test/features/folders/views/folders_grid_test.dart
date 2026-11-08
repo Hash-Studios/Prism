@@ -473,10 +473,13 @@ void main() {
       ),
     );
 
-    // The New folder tile takes the first slot, so Work shares the first row with it.
+    // The New folder and New smart folder tiles fill the first row, so Work and Trips share the second.
     final double firstRowTop = tester.getTopLeft(find.text('New folder')).dy;
-    expect(tester.getTopLeft(find.text('Work')).dy, firstRowTop);
-    expect(tester.getTopLeft(find.text('Trips')).dy, greaterThan(firstRowTop));
+    expect(tester.getTopLeft(find.text('New smart folder')).dy, firstRowTop);
+    final double secondRowTop = tester.getTopLeft(find.text('Work')).dy;
+    expect(secondRowTop, greaterThan(firstRowTop));
+    expect(tester.getTopLeft(find.text('Trips')).dy, secondRowTop);
+    expect(tester.getTopLeft(find.text('Gym')).dy, greaterThan(secondRowTop));
   });
 
   testWidgets('an 834 px tablet shows four folder columns', (tester) async {
@@ -498,10 +501,10 @@ void main() {
     );
 
     final double firstRowTop = tester.getTopLeft(find.text('New folder')).dy;
-    for (final String name in <String>['Work', 'Trips', 'Gym']) {
+    for (final String name in <String>['New smart folder', 'Work', 'Trips']) {
       expect(tester.getTopLeft(find.text(name)).dy, firstRowTop);
     }
-    expect(tester.getTopLeft(find.text('Music')).dy, greaterThan(firstRowTop));
+    expect(tester.getTopLeft(find.text('Gym')).dy, greaterThan(firstRowTop));
   });
 
   testWidgets('tapping a folder card pushes its folder route', (tester) async {

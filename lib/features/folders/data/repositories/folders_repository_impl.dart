@@ -15,6 +15,7 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_member.dart';
 import 'package:Prism/features/folders/domain/entities/folder_section.dart';
+import 'package:Prism/features/folders/domain/entities/smart_rule.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:injectable/injectable.dart';
@@ -40,6 +41,7 @@ FolderEntity folderFromDoc(Map<String, dynamic> data, String id) {
     isPublic: data['public'] == true,
     editors: folderEditorsFromDoc(data['members']),
     sections: folderSectionsFromDoc(data['sections']),
+    smartRules: smartRulesFromDoc(data['smartRules']),
   );
 }
 
@@ -250,50 +252,62 @@ class FoldersRepositoryImpl implements FoldersRepository {
   });
 
   @override
-  Future<Result<void>> deleteFolder(String folderId, {required String userId, bool Function()? isCancelled}) => _guard(
-    'delete folder',
-    () async {
-      if (userId.isEmpty) throw StateError('Sign in to delete folders.');
-      void ensureActive() {
-        if (isCancelled?.call() ?? false) throw StateError('Folder operation cancelled.');
-      }
+  Future<Result<void>> deleteFolder(String folderId, {required String userId, bool Function()? isCancelled}) =>
+      _guard('delete folder', () async {
+        if (userId.isEmpty) throw StateError('Sign in to delete folders.');
+        void ensureActive() {
+          if (isCancelled?.call() ?? false) throw StateError('Folder operation cancelled.');
+        }
 
-      ensureActive();
-      final List<String> keys = await _firestoreClient.query<String>(
-        FirestoreQuerySpec(
-          collection: FirebaseCollections.folderItems(folderId),
-          sourceTag: 'folders.delete.list',
-          filters: <FirestoreFilter>[FirestoreFilter(field: 'ownerId', op: FirestoreFilterOp.isEqualTo, value: userId)],
-        ),
-        (_, docId) => docId,
-      );
-      ensureActive();
-      for (int start = 0; start < keys.length; start += _maxBatchWrites) {
         ensureActive();
-        final List<String> chunk = keys.sublist(start, math.min(start + _maxBatchWrites, keys.length));
+        // The server owns the items of a smart folder and deletes them with it. The rules refuse a client delete.
+        final bool smart =
+            await _firestoreClient.getById<bool>(
+              FirebaseCollections.folders,
+              folderId,
+              (data, _) => data['smartRules'] is List,
+              sourceTag: 'folders.delete.kind',
+            ) ??
+            false;
+        ensureActive();
+        final List<String> keys = smart
+            ? const <String>[]
+            : await _firestoreClient.query<String>(
+                FirestoreQuerySpec(
+                  collection: FirebaseCollections.folderItems(folderId),
+                  sourceTag: 'folders.delete.list',
+                  filters: <FirestoreFilter>[
+                    FirestoreFilter(field: 'ownerId', op: FirestoreFilterOp.isEqualTo, value: userId),
+                  ],
+                ),
+                (_, docId) => docId,
+              );
+        ensureActive();
+        for (int start = 0; start < keys.length; start += _maxBatchWrites) {
+          ensureActive();
+          final List<String> chunk = keys.sublist(start, math.min(start + _maxBatchWrites, keys.length));
+          await _write(
+            (batch) async {
+              ensureActive();
+              for (final String key in chunk) {
+                batch.deleteDoc(FirebaseCollections.folderItems(folderId), key);
+              }
+            },
+            'folders.delete.items',
+            ownerId: userId,
+          );
+        }
+        // The folder goes last, so a failed run leaves it in place and deleteAccount still finds its items.
+        ensureActive();
         await _write(
           (batch) async {
             ensureActive();
-            for (final String key in chunk) {
-              batch.deleteDoc(FirebaseCollections.folderItems(folderId), key);
-            }
+            batch.deleteDoc(FirebaseCollections.folders, folderId);
           },
-          'folders.delete.items',
+          'folders.delete.folder',
           ownerId: userId,
         );
-      }
-      // The folder goes last, so a failed run leaves it in place and deleteAccount still finds its items.
-      ensureActive();
-      await _write(
-        (batch) async {
-          ensureActive();
-          batch.deleteDoc(FirebaseCollections.folders, folderId);
-        },
-        'folders.delete.folder',
-        ownerId: userId,
-      );
-    },
-  );
+      });
 
   Map<String, dynamic> _folderCounts(FolderEntity folder, int delta) => <String, dynamic>{
     'itemCount': FirestoreSentinels.increment(delta),

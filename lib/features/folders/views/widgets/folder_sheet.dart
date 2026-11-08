@@ -198,7 +198,9 @@ class _FolderSheetState extends State<FolderSheet> {
     // Three 64 px rows: the sheet body scrolls, so the skeleton list needs a bounded height.
     if (membership != LoadStatus.success) return SizedBox(height: 3 * 64, child: PrismSkeleton.rows(rows: 3));
     final Set<String> selected = _current(state);
-    final bool suggest = state.folders.isEmpty;
+    // A smart folder fills itself from rules, so it is never a save target.
+    final List<FolderEntity> targets = state.folders.where((folder) => !folder.isSmart).toList();
+    final bool suggest = targets.isEmpty;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -235,7 +237,7 @@ class _FolderSheetState extends State<FolderSheet> {
               checked: false,
               onTap: () => _addName(name),
             ),
-        for (final FolderEntity folder in state.folders)
+        for (final FolderEntity folder in targets)
           FolderCheckRow(
             key: ValueKey<String>(folder.id),
             title: folder.name,

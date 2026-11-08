@@ -14,6 +14,7 @@ class FolderCard extends StatelessWidget {
     required this.onTap,
     this.markPublic = false,
     this.markShared = false,
+    this.markSmart = false,
   });
 
   final String name;
@@ -28,6 +29,9 @@ class FolderCard extends StatelessWidget {
   /// Shows the owner that others can edit this folder. Shared with the user shows it too.
   final bool markShared;
 
+  /// The folder fills itself from rules.
+  final bool markSmart;
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
@@ -38,7 +42,12 @@ class FolderCard extends StatelessWidget {
       child: Semantics(
         button: true,
         label: name,
-        value: <String>[count, if (markPublic) l10n.foldersPublic, if (markShared) l10n.foldersSharedLabel].join(', '),
+        value: <String>[
+          count,
+          if (markPublic) l10n.foldersPublic,
+          if (markShared) l10n.foldersSharedLabel,
+          if (markSmart) l10n.foldersSmartTag,
+        ].join(', '),
         excludeSemantics: true,
         onTap: onTap,
         child: GestureDetector(
@@ -58,6 +67,10 @@ class FolderCard extends StatelessWidget {
                   ],
                   if (markShared) ...<Widget>[
                     Icon(Icons.group_rounded, size: 14, color: cs.onSurfaceVariant),
+                    const SizedBox(width: PrismSpace.xxs),
+                  ],
+                  if (markSmart) ...<Widget>[
+                    Icon(Icons.auto_awesome_rounded, size: 13, color: cs.onSurfaceVariant),
                     const SizedBox(width: PrismSpace.xxs),
                   ],
                   Flexible(
