@@ -1,5 +1,13 @@
 ## Changelog
 
+### v3.25.0
+- Make a wallpaper from your own photo: extend it to fit your screen, or upscale it
+- Share images and links from other apps straight into Prism
+- Smart folders fill themselves with new walls that match your rules
+- Favourites from Wallhaven and Pexels no longer clash when two walls share an ID
+- Notifications work on phones without Google Play services
+- Security and stability fixes
+
 ### v3.24.0
 - A calmer, more polished Prism: clearer type, steadier spacing and smoother motion on every screen
 - Walls load in their own colours first, then fade in
