@@ -14098,6 +14098,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get coreContentReportComment => 'Kommentar';
 
   @override
+  String get coreContentReportFolder => 'Ordner';
+
+  @override
   String get commentsAction => 'Kommentare';
 
   @override

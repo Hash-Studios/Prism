@@ -3923,6 +3923,7 @@
   },
   "notifPushEditorsChoiceBodyUntitled": "Nuestros editores eligieron tu fondo de pantalla. Todos pueden encontrarlo en Inicio.",
   "coreContentReportComment": "comentario",
+  "coreContentReportFolder": "carpeta",
   "commentsAction": "Comentarios",
   "commentsCountLabel": "{count, plural, =0{Sin comentarios} =1{1 comentario} other{{count} comentarios}}",
   "commentsTitle": "Comentarios",

@@ -203,6 +203,10 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('Ocean Walls'), findsOneWidget);
+    // The menu moves under Follow, so "Following" keeps the whole card width.
+    final Rect follow = tester.getRect(find.text('Follow'));
+    final Rect menu = tester.getRect(find.byIcon(Icons.more_horiz_rounded));
+    expect(menu.top, greaterThan(follow.bottom));
   });
 
   testWidgets('the Follow button has a semantics label with the folder name', (tester) async {

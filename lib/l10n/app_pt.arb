@@ -3779,6 +3779,7 @@
   "notifPushEditorsChoiceBody": "Nossos editores escolheram {wallTitle}. Todos podem encontrá-lo no Início.",
   "notifPushEditorsChoiceBodyUntitled": "Nossos editores escolheram seu papel de parede. Todos podem encontrá-lo no Início.",
   "coreContentReportComment": "comentário",
+  "coreContentReportFolder": "pasta",
   "commentsAction": "Comentários",
   "commentsCountLabel": "{count, plural, =0{Nenhum comentário} =1{1 comentário} other{{count} comentários}}",
   "commentsTitle": "Comentários",

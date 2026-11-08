@@ -13938,6 +13938,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreContentReportComment => 'komentar';
 
   @override
+  String get coreContentReportFolder => 'folder';
+
+  @override
   String get commentsAction => 'Komentar';
 
   @override

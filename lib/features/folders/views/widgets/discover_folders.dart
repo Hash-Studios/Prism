@@ -35,6 +35,14 @@ class DiscoverFolderCard extends StatelessWidget {
     final AppLocalizations l10n = context.l10n;
     final String owner = folder.ownerName.isEmpty ? '' : l10n.foldersByOwner(folder.ownerName);
     final String count = l10n.foldersItemCount(folder.itemCount);
+    final Widget menu = PopupMenuButton<_CardAction>(
+      tooltip: l10n.foldersMoreOptions,
+      icon: const Icon(Icons.more_horiz_rounded),
+      onSelected: (_) => _report(context),
+      itemBuilder: (_) => <PopupMenuEntry<_CardAction>>[
+        PopupMenuItem<_CardAction>(value: _CardAction.report, child: Text(l10n.foldersReport)),
+      ],
+    );
     return SizedBox(
       width: width,
       child: Column(
@@ -76,21 +84,24 @@ class DiscoverFolderCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: PrismSpace.xs),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: _FollowButton(folder: folder, tab: tab),
-              ),
-              PopupMenuButton<_CardAction>(
-                tooltip: l10n.foldersMoreOptions,
-                icon: const Icon(Icons.more_horiz_rounded),
-                onSelected: (_) => _report(context),
-                itemBuilder: (_) => <PopupMenuEntry<_CardAction>>[
-                  PopupMenuItem<_CardAction>(value: _CardAction.report, child: Text(l10n.foldersReport)),
-                ],
-              ),
-            ],
-          ),
+          // At large text sizes "Following" needs the whole width, so the menu moves under the button.
+          if (MediaQuery.textScalerOf(context).scale(1) > 1.4)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                _FollowButton(folder: folder, tab: tab),
+                Align(alignment: AlignmentDirectional.centerEnd, child: menu),
+              ],
+            )
+          else
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: _FollowButton(folder: folder, tab: tab),
+                ),
+                menu,
+              ],
+            ),
         ],
       ),
     );

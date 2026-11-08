@@ -14249,6 +14249,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get coreContentReportComment => 'comentário';
 
   @override
+  String get coreContentReportFolder => 'pasta';
+
+  @override
   String get commentsAction => 'Comentários';
 
   @override
@@ -29978,6 +29981,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get coreContentReportComment => 'comentário';
+
+  @override
+  String get coreContentReportFolder => 'pasta';
 
   @override
   String get commentsAction => 'Comentários';

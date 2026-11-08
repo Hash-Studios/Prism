@@ -14036,6 +14036,9 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreContentReportComment => 'टिप्पणी';
 
   @override
+  String get coreContentReportFolder => 'फ़ोल्डर';
+
+  @override
   String get commentsAction => 'टिप्पणियाँ';
 
   @override

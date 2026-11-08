@@ -13878,6 +13878,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreContentReportComment => 'comment';
 
   @override
+  String get coreContentReportFolder => 'folder';
+
+  @override
   String get commentsAction => 'Comments';
 
   @override

@@ -22345,6 +22345,12 @@ abstract class AppLocalizations {
   /// **'comment'**
   String get coreContentReportComment;
 
+  /// Content type word in the report prompt for a public folder, lower case as in the sentence
+  ///
+  /// In en, this message translates to:
+  /// **'folder'**
+  String get coreContentReportFolder;
+
   /// Wall detail action bar: tooltip of the button that opens the comments sheet
   ///
   /// In en, this message translates to:

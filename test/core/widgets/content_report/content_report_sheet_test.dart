@@ -307,7 +307,7 @@ void main() {
   testWidgets('a folder report uses the singular folder label', (tester) async {
     await pumpBody(tester, contentType: 'folder');
 
-    expect(find.text('Why are you reporting this Folder?'), findsOneWidget);
+    expect(find.text('Why are you reporting this folder?'), findsOneWidget);
   });
 
   testWidgets('an unknown initial reason selects nothing', (tester) async {

@@ -13950,6 +13950,10 @@
   "@coreContentReportComment": {
     "description": "Content type word in the report prompt for a wall comment, lower case as in the sentence"
   },
+  "coreContentReportFolder": "folder",
+  "@coreContentReportFolder": {
+    "description": "Content type word in the report prompt for a public folder, lower case as in the sentence"
+  },
   "commentsAction": "Comments",
   "@commentsAction": {
     "description": "Wall detail action bar: tooltip of the button that opens the comments sheet"
