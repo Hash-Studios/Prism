@@ -42,6 +42,9 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
   // Edge ids, loaded once from the subcollection. Null while loading.
   List<String>? _userIds;
   bool _idsFailed = false;
+  // True when the last id page returned the full limit, so more ids may exist.
+  bool _lastIdPageFull = false;
+  bool _loadingMoreIds = false;
 
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
@@ -66,20 +69,24 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
 
   void _maybeAutoLoadMore(PublicProfileState state) {
     final RelationList list = _list(state);
-    if (_isSearchActive || list.isFetching || !list.hasMore) {
+    if (_isSearchActive || list.isFetching) {
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (!_scrollController.hasClients) return;
       final current = _list(_bloc.state);
-      if (_isSearchActive || current.isFetching || !current.hasMore) {
+      if (_isSearchActive || current.isFetching) {
         return;
       }
       // If the list still cannot scroll, auto-fetch the next page so users are
       // not stuck on a tiny first page when many emails no longer map to docs.
       if (_scrollController.position.maxScrollExtent <= 0) {
-        _bloc.add(_fetchPageEvent(current.page + 1));
+        if (current.hasMore) {
+          _bloc.add(_fetchPageEvent(current.page + 1));
+        } else {
+          unawaited(_loadMoreIds());
+        }
       }
     });
   }
@@ -105,10 +112,36 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
       setState(() => _idsFailed = true);
       return;
     }
-    setState(() => _userIds = ids);
+    setState(() {
+      _userIds = ids;
+      _lastIdPageFull = ids.length == PublicProfileRepository.relationIdsLimit;
+    });
     if (ids.isNotEmpty) {
       _bloc.add(_fetchPageEvent(0));
     }
+  }
+
+  /// Loads the next id page after the last loaded id, then asks for the next user page.
+  /// On failure it does nothing, so a later scroll retries.
+  Future<void> _loadMoreIds() async {
+    final List<String>? loaded = _userIds;
+    if (loaded == null || !_lastIdPageFull || _loadingMoreIds || _isSearchActive) return;
+    _loadingMoreIds = true;
+    final result = await getIt<PublicProfileRepository>().fetchRelationIds(
+      profileUid: widget.profileUid,
+      kind: widget.kind,
+      afterId: loaded.last,
+    );
+    _loadingMoreIds = false;
+    if (!mounted) return;
+    final ids = result.data;
+    if (result.isFailure || ids == null) return;
+    final Set<String> known = loaded.toSet();
+    setState(() {
+      _userIds = <String>[...loaded, ...ids.where((id) => !known.contains(id))];
+      _lastIdPageFull = ids.length == PublicProfileRepository.relationIdsLimit;
+    });
+    _bloc.add(_fetchPageEvent(_list(_bloc.state).page + 1));
   }
 
   @override
@@ -126,7 +159,11 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
     if (_scrollController.offset < threshold) return;
 
     final list = _list(_bloc.state);
-    if (list.isFetching || !list.hasMore || _isSearchActive) return;
+    if (list.isFetching || _isSearchActive) return;
+    if (!list.hasMore) {
+      unawaited(_loadMoreIds());
+      return;
+    }
 
     _bloc.add(_fetchPageEvent(list.page + 1));
   }

@@ -87,8 +87,11 @@ class _FakeRepo implements PublicProfileRepository {
   Stream<PublicProfileEntity?> watchProfile(String identifier) => Stream<PublicProfileEntity?>.value(_ava);
 
   @override
-  Future<Result<List<String>>> fetchRelationIds({required String profileUid, required UserRelationKind kind}) async =>
-      Result.success(<String>[for (final UserSummaryEntity s in _summaries) s.id]);
+  Future<Result<List<String>>> fetchRelationIds({
+    required String profileUid,
+    required UserRelationKind kind,
+    String? afterId,
+  }) async => Result.success(<String>[for (final UserSummaryEntity s in _summaries) s.id]);
 
   @override
   Future<Result<({List<UserSummaryEntity> items, bool hasMore})>> fetchUserSummariesPage({

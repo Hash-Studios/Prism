@@ -229,6 +229,25 @@ void main() {
       expect((spec.orderBy.single.field, spec.orderBy.single.descending), ('createdAt', true));
     });
 
+    test('fetchRelationIds with afterId returns the next page after that id', () async {
+      client.onQuery = (_) => <FakeDocRow>[
+        (id: 'f501', data: <String, dynamic>{}),
+        (id: 'f502', data: <String, dynamic>{}),
+      ];
+      final result = await repo.fetchRelationIds(
+        profileUid: 'UserABC',
+        kind: UserRelationKind.followers,
+        afterId: 'f500',
+      );
+
+      expect(result.data, <String>['f501', 'f502']);
+      final spec = client.querySpecs.single;
+      expect(spec.collection, 'profiles/UserABC/followers');
+      expect(spec.startAfterDocId, 'f500');
+      expect(spec.limit, PublicProfileRepository.relationIdsLimit);
+      expect((spec.orderBy.single.field, spec.orderBy.single.descending), ('createdAt', true));
+    });
+
     test('maps cover, badges, frame, name glow and xp from the profiles document', () async {
       const String uid = 'UserABC';
       client.docs['profiles'] = <String, Map<String, dynamic>>{

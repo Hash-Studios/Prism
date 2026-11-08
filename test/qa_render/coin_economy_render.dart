@@ -118,8 +118,11 @@ class _ProfileRepository implements PublicProfileRepository {
   Stream<PublicProfileEntity?> watchProfile(String identifier) => profiles.stream;
 
   @override
-  Future<Result<List<String>>> fetchRelationIds({required String profileUid, required UserRelationKind kind}) =>
-      throw UnimplementedError();
+  Future<Result<List<String>>> fetchRelationIds({
+    required String profileUid,
+    required UserRelationKind kind,
+    String? afterId,
+  }) => throw UnimplementedError();
 
   @override
   Future<void> clearForUser(String userId) async {}

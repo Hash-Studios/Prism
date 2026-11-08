@@ -8,9 +8,16 @@ abstract class PublicProfileRepository {
   /// Most recent edges loaded for a followers or following list.
   static const int relationIdsLimit = 500;
 
+  /// Users loaded per page of a followers or following list.
+  static const int relationPageSize = 20;
+
   /// Loads up to [relationIdsLimit] ids from `profiles/{uid}/followers` or `/following`, newest first.
-  /// One query, only when a list screen opens.
-  Future<Result<List<String>>> fetchRelationIds({required String profileUid, required UserRelationKind kind});
+  /// When [afterId] is set, loads the page of ids that follows that edge id.
+  Future<Result<List<String>>> fetchRelationIds({
+    required String profileUid,
+    required UserRelationKind kind,
+    String? afterId,
+  });
 
   /// Live profile for a UID or canonical username. Email identifiers fail closed.
   Stream<PublicProfileEntity?> watchProfile(String identifier);

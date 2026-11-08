@@ -442,6 +442,42 @@ void main() {
       verify: (_) => verifyNever(() => summaries(any())),
     );
 
+    test('a page request with appended ids fetches past hasMore false', () async {
+      // Pages slice the carried ids the way the repository does (20 per page).
+      when(() => summaries(any())).thenAnswer((invocation) async {
+        final FetchUserSummariesPageParams params =
+            invocation.positionalArguments.first as FetchUserSummariesPageParams;
+        final int start = params.page * 20;
+        final int end = start + 20 < params.userIds.length ? start + 20 : params.userIds.length;
+        return Result.success<_Summaries>((
+          items: <UserSummaryEntity>[
+            for (final String id in params.userIds.sublist(start, end)) _user('$id@x.com', id: id),
+          ],
+          hasMore: end < params.userIds.length,
+        ));
+      });
+      final bloc = buildBloc();
+      final List<String> firstIds = <String>[for (int i = 0; i < 500; i++) 'id-$i'];
+      for (int page = 0; page < 25; page++) {
+        bloc.add(
+          PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, userIds: firstIds, page: page),
+        );
+        await pumpEventQueue();
+      }
+      expect(bloc.state.followers.hasMore, isFalse);
+      expect(bloc.state.followers.page, 24);
+
+      final List<String> withNext = <String>[...firstIds, 'id-500'];
+      bloc.add(PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, userIds: withNext, page: 25));
+      await pumpEventQueue();
+
+      expect(bloc.state.followers.summaries.last.id, 'id-500');
+      expect(bloc.state.followers.summaries, hasLength(501));
+      expect(bloc.state.followers.page, 25);
+      expect(bloc.state.followers.hasMore, isFalse);
+      await bloc.close();
+    });
+
     test('only the newest search writes its results', () async {
       final first = Completer<Result<List<UserSummaryEntity>>>();
       final second = Completer<Result<List<UserSummaryEntity>>>();
