@@ -101,3 +101,20 @@ test("Pastel does not take Gradient or Minimal walls", () => {
   assert.equal(mapLabelsToCategory(["White", "Pastel"]), "Minimal");
   assert.equal(mapLabelsToCategory(["Simple", "Pastel"]), "Minimal");
 });
+
+// #538 regressions. Labels are the stored Vision labels of real approved walls, in score order.
+test("a label that names anime beats Nature, so an anime wall with a sky stays Anime", () => {
+  assert.equal(mapLabelsToCategory(["Sky", "Cloud", "Anime", "Cartoon"]), "Anime");
+  assert.equal(mapLabelsToCategory(["Manga", "Tree"]), "Anime");
+});
+
+test("a space subject beats a plain illustration label", () => {
+  assert.equal(mapLabelsToCategory(["Astronaut", "Astronomical object", "Outer space", "Illustration", "Animation",
+    "Graphics"]), "Space");
+});
+
+test("flower close-up labels pick Flowers, and a plain flower in a landscape stays Nature", () => {
+  assert.equal(mapLabelsToCategory(["Flower", "Petal", "Garden roses", "Flower bouquet", "Floristry", "Cut flowers"]),
+    "Flowers");
+  assert.equal(mapLabelsToCategory(["Mountain", "Flower", "Grass"]), "Nature");
+});

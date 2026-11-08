@@ -46,6 +46,18 @@ const SEED: Record<string, Doc> = {
   "walls/d": {review: true, category: "Architecture", visionLabels: ["Pastel"]},
 };
 
+test("planCategoryChange moves any classifier-owned wall the current rules place elsewhere", () => {
+  assert.deepEqual(planCategoryChange({aiCategorized: true, category: "Anime",
+    visionLabels: ["Astronaut", "Astronomical object", "Outer space", "Illustration"]}), {from: "Anime", to: "Space"});
+  assert.deepEqual(planCategoryChange({aiCategorized: true, category: "Nature", visionLabels: ["Flower", "Petal"]}),
+    {from: "Nature", to: "Flowers"});
+});
+
+test("planCategoryChange never moves a wall out of Gaming or Pastel", () => {
+  assert.equal(planCategoryChange({aiCategorized: true, category: "Gaming", visionLabels: ["Anime", "PC game"]}), null);
+  assert.equal(planCategoryChange({aiCategorized: true, category: "Pastel", visionLabels: ["Mountain"]}), null);
+});
+
 test("planCategoryChange moves only classifier-owned walls into the new categories", () => {
   assert.deepEqual(planCategoryChange({aiCategorized: true, category: "Anime",
     visionLabels: ["Fictional character", "PC game"]}), {from: "Anime", to: "Gaming"});
@@ -65,7 +77,7 @@ test("the category backfill is a dry run by default and writes nothing", async (
   const logs: string[] = [];
   const counts = await backfillWallCategories(db, parseWallCategoryArgs([]), (line) => logs.push(line));
 
-  assert.deepEqual(counts, {scanned: 4, noLabels: 0, creatorPicked: 1, changed: 2, written: 0, failed: 0,
+  assert.deepEqual(counts, {scanned: 4, noLabels: 0, creatorPicked: 1, changed: 2, unclassified: 1, written: 0, failed: 0,
     moves: {"Anime -> Gaming": 1, "General -> Pastel": 1}, samples: ["a", "b"]});
   assert.equal(writes.length, 0);
   assert.equal(creations.count, 0, "dry run must not create a bulk writer");
@@ -76,7 +88,7 @@ test("the category backfill is a dry run by default and writes nothing", async (
     "move Anime -> Gaming: 1",
     "move General -> Pastel: 1",
     "samples: a b",
-    "done scanned=4 noLabels=0 creatorPicked=1 changed=2 written=0 failed=0 applied=false",
+    "done scanned=4 noLabels=0 creatorPicked=1 changed=2 unclassified=1 written=0 failed=0 applied=false",
   ]);
 });
 
@@ -121,7 +133,7 @@ test("the category backfill rejects after logging failed apply writes", async (t
   await assert.rejects(backfillWallCategories(db, parseWallCategoryArgs(["--apply"]), (line) => logs.push(line)),
     /2 category writes failed/);
   assert.equal(writes.length, 2);
-  assert.ok(logs.includes("done scanned=4 noLabels=0 creatorPicked=1 changed=2 written=0 failed=2 applied=true"));
+  assert.ok(logs.includes("done scanned=4 noLabels=0 creatorPicked=1 changed=2 unclassified=1 written=0 failed=2 applied=true"));
 });
 
 test("the category backfill does not overwrite walls changed since the scan", async (t) => {
@@ -134,6 +146,16 @@ test("the category backfill does not overwrite walls changed since the scan", as
   assert.equal(store.get("walls/b")?.category, "General");
   assert.equal(store.get("walls/a")?.concurrentChange, true);
   assert.equal(store.get("walls/b")?.concurrentChange, true);
+});
+
+test("--classified-only leaves General walls the classifier never set", async (t) => {
+  installFakeDb(t, SEED);
+  const {writes} = installBulkWriter(t);
+  const counts = await backfillWallCategories(db, parseWallCategoryArgs(["--apply", "--classified-only"]), () => undefined);
+
+  assert.equal(counts.changed, 1);
+  assert.equal(counts.unclassified, 1);
+  assert.deepEqual(writes.map((w) => w.ref.id), ["a"]);
 });
 
 test("parseWallCategoryArgs reads --apply", () => {
