@@ -17695,6 +17695,204 @@ abstract class AppLocalizations {
   /// **'Make private'**
   String get foldersMakePrivate;
 
+  /// Button and sheet title that creates a folder which fills itself from rules.
+  ///
+  /// In en, this message translates to:
+  /// **'New smart folder'**
+  String get foldersSmartNew;
+
+  /// Short label on a folder that fills itself from rules.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart'**
+  String get foldersSmartTag;
+
+  /// One line under the title of the new smart folder sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick rules once. New wallpapers that match go in by themselves.'**
+  String get foldersSmartIntro;
+
+  /// Heading above the rule chips in the smart folder sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules'**
+  String get foldersSmartRulesTitle;
+
+  /// Explains that rule kinds join with AND and choices inside a kind join with OR.
+  ///
+  /// In en, this message translates to:
+  /// **'A wallpaper must match each kind you pick. Inside one kind, any choice counts.'**
+  String get foldersSmartRulesHint;
+
+  /// Rule kind: the mood of a wallpaper, for example Dreamy.
+  ///
+  /// In en, this message translates to:
+  /// **'Mood'**
+  String get foldersSmartKindMood;
+
+  /// Rule kind: a main colour of a wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour'**
+  String get foldersSmartKindColour;
+
+  /// Rule kind: the category of a wallpaper, for example Nature.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get foldersSmartKindCategory;
+
+  /// Rule: only wallpapers from creators the user follows.
+  ///
+  /// In en, this message translates to:
+  /// **'Creators I follow'**
+  String get foldersSmartKindFollowed;
+
+  /// Rule kind: wallpapers from one chosen creator.
+  ///
+  /// In en, this message translates to:
+  /// **'Creator'**
+  String get foldersSmartKindCreator;
+
+  /// Rule: only wallpapers that also have a desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version'**
+  String get foldersSmartKindDesktop;
+
+  /// Heading above the on or off rules: Creators I follow, Has a desktop version, Editors' Choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Only'**
+  String get foldersSmartKindOnly;
+
+  /// Shown in the Creator row when the user follows nobody.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow creators to pick one here.'**
+  String get foldersSmartNoCreators;
+
+  /// Shown when the user tries to add a fourth kind of rule.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{You can use 1 kind of rule.} other{You can use up to {count} kinds of rule.}}'**
+  String foldersSmartKindLimit(int count);
+
+  /// Shown when the user picks too many choices in one rule kind.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{You can pick 1 choice in one kind.} other{You can pick up to {count} choices in one kind.}}'**
+  String foldersSmartValueLimit(int count);
+
+  /// Heading above the grid of wallpapers that match the rules.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get foldersSmartPreviewTitle;
+
+  /// How many wallpapers match the rules now.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{0 matches} =1{1 match} other{{count} matches}}'**
+  String foldersSmartMatches(int count);
+
+  /// More than this many wallpapers match the rules. The folder keeps the newest ones.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, other{{count}+ matches}}'**
+  String foldersSmartMatchesMore(int count);
+
+  /// Shown under 0 matches in the smart folder preview.
+  ///
+  /// In en, this message translates to:
+  /// **'No wallpaper matches all these rules yet. Remove a rule to see more, or save the folder and new matches go in when they arrive.'**
+  String get foldersSmartNoMatchesHint;
+
+  /// Shown in the preview before the user picks a rule.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a rule to see the wallpapers that match.'**
+  String get foldersSmartPickRule;
+
+  /// Shown when the preview of matching wallpapers fails to load.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the preview.'**
+  String get foldersSmartPreviewError;
+
+  /// Button that creates the smart folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Create smart folder'**
+  String get foldersSmartCreate;
+
+  /// Button that saves changed rules of a smart folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Save rules'**
+  String get foldersSmartSaveRules;
+
+  /// Button under a smart folder title that opens its rules.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit rules'**
+  String get foldersSmartEditRules;
+
+  /// Toast after a smart folder is created.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Smart folder created. New matches go in when they arrive.} =1{Smart folder created with 1 wallpaper.} other{Smart folder created with {count} wallpapers.}}'**
+  String foldersSmartCreated(int count);
+
+  /// Toast after the rules of a smart folder are saved.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Rules saved. Nothing matches yet.} =1{Rules saved. 1 wallpaper matches.} other{Rules saved. {count} wallpapers match.}}'**
+  String foldersSmartRulesSaved(int count);
+
+  /// Shown when the user already has the most smart folders allowed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, other{You can have up to {count} smart folders. Delete one to make another.}}'**
+  String foldersSmartLimitRefused(int count);
+
+  /// Shown when the user changed smart folders too often today.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many changes today. Try again tomorrow.'**
+  String get foldersSmartTooManyChanges;
+
+  /// Shown when creating a smart folder or saving its rules fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the smart folder. Check your connection and try again.'**
+  String get foldersSmartSaveFailed;
+
+  /// Title on an empty smart folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing matches yet'**
+  String get foldersSmartEmptyTitle;
+
+  /// Body on an empty smart folder.
+  ///
+  /// In en, this message translates to:
+  /// **'New wallpapers that match the rules go in by themselves.'**
+  String get foldersSmartEmptyBody;
+
+  /// One rule kind and its choices under a smart folder title, for example Colour: Blue, Teal.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind}: {values}'**
+  String foldersSmartRuleSummary(String kind, String values);
+
+  /// Screen reader label for the rules under a smart folder title.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules: {rules}'**
+  String foldersSmartRulesLabel(String rules);
+
   /// Title of the dialog before a folder becomes public.
   ///
   /// In en, this message translates to:

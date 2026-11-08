@@ -11058,6 +11058,185 @@ class AppLocalizationsId extends AppLocalizations {
   String get foldersMakePrivate => 'Jadikan privat';
 
   @override
+  String get foldersSmartNew => 'Folder pintar baru';
+
+  @override
+  String get foldersSmartTag => 'Pintar';
+
+  @override
+  String get foldersSmartIntro => 'Pilih aturan sekali saja. Wallpaper baru yang cocok akan masuk sendiri.';
+
+  @override
+  String get foldersSmartRulesTitle => 'Aturan';
+
+  @override
+  String get foldersSmartRulesHint =>
+      'Wallpaper harus cocok dengan setiap jenis yang Anda pilih. Dalam satu jenis, pilihan mana pun berlaku.';
+
+  @override
+  String get foldersSmartKindMood => 'Suasana';
+
+  @override
+  String get foldersSmartKindColour => 'Warna';
+
+  @override
+  String get foldersSmartKindCategory => 'Kategori';
+
+  @override
+  String get foldersSmartKindFollowed => 'Kreator yang saya ikuti';
+
+  @override
+  String get foldersSmartKindCreator => 'Kreator';
+
+  @override
+  String get foldersSmartKindDesktop => 'Punya versi desktop';
+
+  @override
+  String get foldersSmartKindOnly => 'Hanya';
+
+  @override
+  String get foldersSmartNoCreators => 'Ikuti kreator untuk memilih satu di sini.';
+
+  @override
+  String foldersSmartKindLimit(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda dapat memakai hingga $countString jenis aturan.',
+      one: 'Anda dapat memakai 1 jenis aturan.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSmartValueLimit(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda dapat memilih hingga $countString pilihan dalam satu jenis.',
+      one: 'Anda dapat memilih 1 pilihan dalam satu jenis.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSmartPreviewTitle => 'Pratinjau';
+
+  @override
+  String foldersSmartMatches(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString kecocokan',
+      one: '1 kecocokan',
+      zero: '0 kecocokan',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSmartMatchesMore(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString+ kecocokan');
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSmartNoMatchesHint =>
+      'Belum ada wallpaper yang cocok dengan semua aturan ini. Hapus satu aturan untuk melihat lebih banyak, atau simpan folder dan kecocokan baru akan masuk saat tersedia.';
+
+  @override
+  String get foldersSmartPickRule => 'Pilih aturan untuk melihat wallpaper yang cocok.';
+
+  @override
+  String get foldersSmartPreviewError => 'Pratinjau tidak dapat dimuat.';
+
+  @override
+  String get foldersSmartCreate => 'Buat folder pintar';
+
+  @override
+  String get foldersSmartSaveRules => 'Simpan aturan';
+
+  @override
+  String get foldersSmartEditRules => 'Edit aturan';
+
+  @override
+  String foldersSmartCreated(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Folder pintar dibuat dengan $countString wallpaper.',
+      one: 'Folder pintar dibuat dengan 1 wallpaper.',
+      zero: 'Folder pintar dibuat. Kecocokan baru akan masuk saat tersedia.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSmartRulesSaved(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Aturan disimpan. $countString wallpaper cocok.',
+      one: 'Aturan disimpan. 1 wallpaper cocok.',
+      zero: 'Aturan disimpan. Belum ada yang cocok.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSmartLimitRefused(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Anda dapat memiliki hingga $countString folder pintar. Hapus satu untuk membuat yang lain.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSmartTooManyChanges => 'Terlalu banyak perubahan hari ini. Coba lagi besok.';
+
+  @override
+  String get foldersSmartSaveFailed => 'Folder pintar tidak dapat disimpan. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
+  String get foldersSmartEmptyTitle => 'Belum ada yang cocok';
+
+  @override
+  String get foldersSmartEmptyBody => 'Wallpaper baru yang cocok dengan aturan akan masuk sendiri.';
+
+  @override
+  String foldersSmartRuleSummary(String kind, String values) {
+    return '$kind: $values';
+  }
+
+  @override
+  String foldersSmartRulesLabel(String rules) {
+    return 'Aturan: $rules';
+  }
+
+  @override
   String get foldersMakePublicTitle => 'Jadikan folder ini publik?';
 
   @override

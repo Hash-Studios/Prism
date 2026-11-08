@@ -11143,6 +11143,185 @@ class AppLocalizationsHi extends AppLocalizations {
   String get foldersMakePrivate => 'निजी करें';
 
   @override
+  String get foldersSmartNew => 'नया स्मार्ट फ़ोल्डर';
+
+  @override
+  String get foldersSmartTag => 'स्मार्ट';
+
+  @override
+  String get foldersSmartIntro => 'नियम एक बार चुनें। मिलते हुए नए वॉलपेपर अपने-आप इसमें आ जाएँगे।';
+
+  @override
+  String get foldersSmartRulesTitle => 'नियम';
+
+  @override
+  String get foldersSmartRulesHint =>
+      'वॉलपेपर को आपके चुने हुए हर प्रकार से मेल खाना होगा। एक प्रकार के अंदर कोई भी विकल्प चलेगा।';
+
+  @override
+  String get foldersSmartKindMood => 'मूड';
+
+  @override
+  String get foldersSmartKindColour => 'रंग';
+
+  @override
+  String get foldersSmartKindCategory => 'श्रेणी';
+
+  @override
+  String get foldersSmartKindFollowed => 'फ़ॉलो किए गए क्रिएटर';
+
+  @override
+  String get foldersSmartKindCreator => 'क्रिएटर';
+
+  @override
+  String get foldersSmartKindDesktop => 'डेस्कटॉप वर्शन है';
+
+  @override
+  String get foldersSmartKindOnly => 'सिर्फ़';
+
+  @override
+  String get foldersSmartNoCreators => 'यहाँ चुनने के लिए पहले कुछ क्रिएटर फ़ॉलो करें।';
+
+  @override
+  String foldersSmartKindLimit(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आप $countString प्रकार तक के नियम इस्तेमाल कर सकते हैं।',
+      one: 'आप 1 प्रकार का नियम इस्तेमाल कर सकते हैं।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSmartValueLimit(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आप एक प्रकार में $countString विकल्प तक चुन सकते हैं।',
+      one: 'आप एक प्रकार में 1 विकल्प चुन सकते हैं।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSmartPreviewTitle => 'प्रीव्यू';
+
+  @override
+  String foldersSmartMatches(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString मिलान',
+      one: '1 मिलान',
+      zero: '0 मिलान',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSmartMatchesMore(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString+ मिलान');
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSmartNoMatchesHint =>
+      'अभी कोई भी वॉलपेपर इन सभी नियमों से नहीं मिलता। ज़्यादा देखने के लिए कोई नियम हटाएँ, या फ़ोल्डर सेव करें ताकि नए मिलान आने पर अपने-आप जुड़ जाएँ।';
+
+  @override
+  String get foldersSmartPickRule => 'मिलते हुए वॉलपेपर देखने के लिए कोई नियम चुनें।';
+
+  @override
+  String get foldersSmartPreviewError => 'प्रीव्यू लोड नहीं हो सका।';
+
+  @override
+  String get foldersSmartCreate => 'स्मार्ट फ़ोल्डर बनाएँ';
+
+  @override
+  String get foldersSmartSaveRules => 'नियम सेव करें';
+
+  @override
+  String get foldersSmartEditRules => 'नियम बदलें';
+
+  @override
+  String foldersSmartCreated(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString वॉलपेपर के साथ स्मार्ट फ़ोल्डर बन गया।',
+      one: '1 वॉलपेपर के साथ स्मार्ट फ़ोल्डर बन गया।',
+      zero: 'स्मार्ट फ़ोल्डर बन गया। नए मिलान आने पर अपने-आप जुड़ जाएँगे।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSmartRulesSaved(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'नियम सेव हो गए। $countString वॉलपेपर मिलते हैं।',
+      one: 'नियम सेव हो गए। 1 वॉलपेपर मिलता है।',
+      zero: 'नियम सेव हो गए। अभी कुछ नहीं मिलता।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSmartLimitRefused(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आप अधिकतम $countString स्मार्ट फ़ोल्डर बना सकते हैं। नया बनाने के लिए कोई एक हटाएँ।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSmartTooManyChanges => 'आज बहुत सारे बदलाव हो गए। कल फिर कोशिश करें।';
+
+  @override
+  String get foldersSmartSaveFailed => 'स्मार्ट फ़ोल्डर सेव नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String get foldersSmartEmptyTitle => 'अभी कुछ नहीं मिलता';
+
+  @override
+  String get foldersSmartEmptyBody => 'नियमों से मिलते नए वॉलपेपर अपने-आप इसमें आ जाएँगे।';
+
+  @override
+  String foldersSmartRuleSummary(String kind, String values) {
+    return '$kind: $values';
+  }
+
+  @override
+  String foldersSmartRulesLabel(String rules) {
+    return 'नियम: $rules';
+  }
+
+  @override
   String get foldersMakePublicTitle => 'क्या इस फ़ोल्डर को सार्वजनिक करें?';
 
   @override

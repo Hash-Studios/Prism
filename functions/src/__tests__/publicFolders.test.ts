@@ -818,6 +818,53 @@ test("a wall in a premium collection stays out of the projection, like the free 
   assert.equal(store.get("publicFolders/f1")?.itemCount, 0);
 });
 
+test("missing preview configuration preserves the projection until a retry", async (t) => {
+  const store = setup(t);
+  await syncPublicFolder("f1");
+  const before = store.get("publicFolders/f1/items/prism_w1");
+  const base = process.env.R2_PREVIEW_BASE_URL;
+  delete process.env.R2_PREVIEW_BASE_URL;
+  t.after(() => {
+    process.env.R2_PREVIEW_BASE_URL = base;
+  });
+  await assert.rejects(() => syncPublicFolder("f1"), /R2_PREVIEW_BASE_URL/);
+  assert.deepEqual(store.get("publicFolders/f1/items/prism_w1"), before);
+  process.env.R2_PREVIEW_BASE_URL = base;
+  await syncPublicFolder("f1");
+  assert.deepEqual(store.get("publicFolders/f1/items/prism_w1"), before);
+});
+
+test("smart folder projection exposes only public preview fields", async (t) => {
+  const store = setup(t);
+  store.set("folders/f1", {...store.get("folders/f1"), smartRules: [{kind: "colour", value: "blue"}]});
+  store.set("folders/f1/items/prism_w1", {...store.get("folders/f1/items/prism_w1"), smart: true,
+    email: "private@example.com", originalPath: "private/original"});
+  await syncPublicFolder("f1");
+  const projected = store.get("publicFolders/f1/items/prism_w1");
+  assert.deepEqual(Object.keys(projected ?? {}).sort(),
+    ["addedAt", "id", "projectedAt", "provider", "thumb", "wallpaperDocumentId"]);
+  assert.equal(projected?.thumb, THUMB);
+  for (const patch of [
+    {collections: ["abstract"]}, {dropReserved: true}, {dropWeek: "2026-W40"},
+    {is_streak_exclusive: true}, {review: false, heldForReview: true}, {review: false},
+    {wallpaper_thumb: "https://secret/original.jpg"},
+  ]) {
+    const before = store.get("walls/W1");
+    assert.ok(before);
+    const after = {...before, ...patch};
+    store.set("walls/W1", after);
+    await refreshWallInPublicFolders("W1", before, after);
+    assert.equal(store.has("publicFolders/f1/items/prism_w1"), false, JSON.stringify(patch));
+    store.set("walls/W1", before);
+    await syncPublicFolder("f1");
+    assert.equal(store.has("publicFolders/f1/items/prism_w1"), true);
+  }
+  const before = store.get("walls/W1");
+  store.delete("walls/W1");
+  await refreshWallInPublicFolders("W1", before, undefined);
+  assert.equal(store.has("publicFolders/f1/items/prism_w1"), false);
+});
+
 test("a projected wall that is held for review leaves every public folder", async (t) => {
   const store = setup(t);
   await syncPublicFolder("f1");

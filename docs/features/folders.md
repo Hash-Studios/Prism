@@ -1,6 +1,6 @@
 # Folders: private, public and shared
 
-A **folder** is a named group of saved wallpapers. Each folder is private when the user makes it. The owner can make a folder **public**. Other signed-in users can then see the folder, follow it, and share its link. Followers get one "New in <folder>" push a day when the owner adds wallpapers. The user can save all the wallpapers of a folder at once with **Save all**.
+A **folder** is a named group of saved wallpapers. A **smart folder** fills itself from rules. See Smart folders. Each folder is private when the user makes it. The owner can make a folder **public**. Other signed-in users can then see the folder, follow it, and share its link. Followers get one "New in <folder>" push a day when the owner adds wallpapers. The user can save all the wallpapers of a folder at once with **Save all**.
 
 The owner can invite up to 10 people to add and remove wallpapers in a folder. These people are editors. See Shared folders. The owner and the editors can split a folder into named sections. See Sections.
 
@@ -483,6 +483,191 @@ The `sections` field is in the folder doc, not in a subcollection. At most 20 se
 - Section names are not translated.
 - A wallpaper is in one section only.
 - Auto-rotate from one section is not in this change. It needs a new source in the auto-rotate settings, the picker and the Android worker.
+
+## Smart folders
+
+A **smart folder** fills itself from rules. The user sets the rules once. When a new wallpaper is approved and matches the rules, the server adds it to the folder. Examples: "Dark and quiet walls from creators I follow", "Pastel and blue", "Desktop version".
+
+### Rules
+
+A rule has a kind and a value.
+
+| Kind | Wire name | Value | A wall matches when |
+|---|---|---|---|
+| Mood | `mood` | A mood id from `functions/src/wallMoods.ts`, for example `dreamy` | `matchesMood` is true for the wall. |
+| Colour | `colour` | A palette id, for example `blue` | The id is in `walls.colors`. |
+| Category | `category` | A name from `CATEGORY_NAMES`, for example `Pastel` | `walls.category` is the name. |
+| Creators I follow | `followed` | Empty | The folder owner follows `walls.creatorUid` (`profiles/{owner}/following/{creator}` exists). |
+| Creator | `creator` | A creator uid | `walls.creatorUid` is the uid. |
+| Desktop version | `desktop` | Empty | `parseDesktopVariant(walls.desktopVariant)` is not null. |
+| Editors' Choice | `editorsChoice` | Empty | `walls.editorsChoiceAt` is set. |
+
+- A smart folder has 1 to 3 kinds. Different kinds join with AND.
+- One kind can have 1 to 6 values. Values of one kind join with OR.
+- Example: colour `blue`, colour `teal` and category `Pastel` means (blue OR teal) AND Pastel.
+- A smart folder holds only walls that pass the free gallery gate (`isPublicWall`) and have a preview thumbnail. A premium, Drop, streak or held wall never goes into a smart folder, so a public smart folder cannot show one.
+- The server checks every rule set (`parseSmartRules`). It refuses an unknown kind or value, more than 3 kinds and more than 6 values in one kind.
+
+### Where to find it
+
+| Surface | What the user sees |
+|---|---|
+| Library > Folders | A **New smart folder** tile after **New folder**. A sparkle icon on each smart folder card. |
+| New smart folder sheet | The name, the rule chips, and a live preview of the first 12 matches with the count. |
+| Folder page, smart folder | The rules under the title, for example "Colour: Blue, Teal · Creators I follow". The owner sees **Edit rules**. |
+| Empty smart folder | "Nothing matches yet" with **Edit rules**. |
+| Save to folder sheet | Smart folders do not show. Nobody saves a wall into a smart folder by hand. |
+
+### Create and edit
+
+1. The user taps **New smart folder**. The sheet opens.
+2. The user types a name and taps rule chips. The preview loads 400 ms after the last tap. The count shows "37 matches", "100+ matches" or "0 matches".
+3. When nothing matches, the sheet shows: "No wallpaper matches all these rules yet. Remove a rule to see more, or save the folder and new matches go in when they arrive." The user can still create the folder.
+4. A tap on a fourth kind, or a seventh value in one kind, does not add the chip. A note tells the user the limit.
+5. **Create smart folder** calls `createSmartFolder`. The server makes the folder and fills it. The app opens the folder.
+6. **Edit rules** opens the same sheet with the current rules. **Save rules** calls `updateSmartFolderRules`. The server fills the folder again.
+
+The Creator row loads all pages of the returned following list, plus creators already selected in the rules. Selected creators keep a removable chip even when their profile cannot load. The sheet cannot save after the signed-in account changes. A user who follows nobody sees "Follow creators to pick one here."
+
+### Behaviour
+
+| Feature | Smart folder |
+|---|---|
+| Private by default | Yes. |
+| Make public | Yes, with **Make public**, the same as other folders. The projection shows only gated walls. |
+| Share for editing | No. `createFolderInvite` refuses with `failed-precondition` and message `smart`. **Invite** and **People** do not show. |
+| Add, remove or move walls by hand | No. The rules refuse client item writes. The hold menu does not open. |
+| Sections | No. The rules refuse `sections` on a smart folder. The section menu items do not show. |
+| Rename and delete | Yes, the owner. |
+| Save all | Yes. |
+| Auto-rotate (Android) and iOS Shortcuts | Yes. Both read the items. |
+| "New in" push and web catalogue | Yes, when the folder is public. Both read the projection. |
+
+### How it works
+
+`functions/src/smartFolders.ts` owns smart folders.
+
+#### Data
+
+| Path | Writer | Readers | Contents |
+|---|---|---|---|
+| `folders/{id}` field `smartRules` | Server only | Owner | `[{kind, value}]`, sorted. A folder with this field is a smart folder. |
+| `folders/{id}/items/{key}` | Server only, for a smart folder | Owner | The same shape as a Prism favourite item, plus `smart: true`. `ownerId` is the folder owner. The key is `prism_<wall id>`. |
+| `smartFolderIndex/{folderId}` | Server only | Nobody | `ownerId`, `rules`, `anchorKind`, `anchors`, `updatedAt`. The rule index. |
+| `smartWallKeys/{wallDocId}` | Server only | Nobody | `keys`, `wallId`, `thumb`, `createdAt`. The match keys of one gated wall. |
+| `smartFolderPreviewRateDaily`, `smartFolderEditRateDaily` | Server only | Nobody | Daily counts for the rate limits. |
+| `smartFolderOwners/{uid}` | Server only | Nobody | `ownerId`, `updatedAt`. Two creates at the same time both write it, so one retries and the 20-folder limit holds. |
+
+#### Wall keys
+
+`wallSmartKeys` turns a wall into a list of keys: `mood:<id>` for each matching mood, `category:<name>`, `colour:<id>` for each colour, `creator:<uid>`, `desktop` and `editorsChoice`. A wall has at most 23 keys with the current mood and palette sets. A wall that fails the gate has no keys.
+
+`onWallSmartFolders` runs on each wall write. It returns at once, with no reads, when no key field changed (`changesSmartKeys`). Otherwise `syncWallSmartFolders` reads the wall again and:
+
+1. Reads the current wall and writes `smartWallKeys/{wallDocId}` in one transaction, or deletes the keys doc when the wall has no keys.
+2. Finds only smart items of the wall with the `items.wallpaperDocumentId` and `smart == true` collection-group query. It checks each again in a transaction and deletes it when the wall no longer matches. This removes rejected, held, deleted and changed walls.
+3. Finds candidate folders in the rule index with one query: `anchors array-contains-any <wall keys>`.
+4. Adds the wall to each candidate in a transaction that reads the folder rules, the wall and the follow edge at commit time.
+
+Because the trigger reads the current wall and each write is a transaction, a late, repeated or out-of-order event cannot add a wrong wall.
+
+#### Rule index
+
+Each smart folder has one index entry. The entry stores the keys of one rule kind, the anchor. The anchor is the kind that a new wall is least likely to match, in this order: creator, Editors' Choice, creators I follow, desktop, category, colour, mood.
+
+- A wall that matches the folder must have one anchor key. So the index query returns every folder that can match, and only those folders and folders that share the anchor.
+- For "Creators I follow" as the anchor, the anchors are `creator:<uid>` for each followed creator. `onSmartFollowWritten` adds or removes one key when the owner follows or unfollows a creator. The follow trigger reads the live edge, folder and index in one transaction, so an old follow event cannot restore an unfollowed anchor. It also reconciles existing items for every folder with a followed rule, even when another kind is the anchor. Rule edits read the follows and rewrite the folder and index in the same transaction.
+- Firestore allows 30 values in `array-contains-any`. The current maximum of 23 wall keys fits in one query.
+
+#### Cost at 10,000 smart folders
+
+| Step | Reads | Writes |
+|---|---|---|
+| Wall write with no key change (counters) | 0 | 0 |
+| Derived wall keys | 1 current wall | 1 keys set or delete |
+| Index query | 1 per candidate folder (at least 1) | 0 |
+| Smart item check | Matching smart item query + 3 transaction reads per held item, plus a follow edge when needed | 1 delete per removed item |
+| Add to one folder | 4 or 5 (folder, wall, item, count, optional follow edge), plus 2 at the cap | Item + folder serialization write, plus 1 delete when full |
+
+These are the smart-folder operations, not the total downstream trigger bill. Item writes also run count repair, public projection and activity hooks. Public folders can cost more than private folders. Premium collection configuration is cached separately.
+
+At 10,000 smart folders, a wall whose anchors select 200 folders reads those 200 index entries, not all 10,000 folders. Add work scales with those candidates and held smart items. Manual folder saves do not enter the held-item query. Candidate and held-item processing uses batches of 25 concurrent transactions. There is no global candidate cap, since a cap would skip matching folders.
+
+#### Fill
+
+`fillSmartFolder` runs after a create or a rule edit.
+
+1. It queries `smartWallKeys` with `keys array-contains-any <anchor keys>`, newest first, in pages of 200. Index: `smartWallKeys` (`keys` CONTAINS, `createdAt` DESC). It checks the other rules on each result. It stops at 101 matches or after 1,000 docs for each chunk of 30 anchor keys.
+2. It adds up to 100 newest matches found within those scan bounds. Each add rechecks the live wall, rules and follow edge in a transaction. New items use the wall `createdAt` for `addedAt`; existing matching items keep their timestamp. Adds to this one folder run sequentially.
+3. It reconciles existing items against current rules and wall state in transactions, not against an earlier discovery snapshot.
+4. It drops the oldest items until the folder has 500 or fewer.
+
+A "Creators I follow" fill reads at most 10 chunks, which is 300 followed creators. These bounds mean a fill is not guaranteed to find the globally newest 100 matches when there are more followed creators or the scan limit is reached. Approval processing still indexes all followed creators. Preview `more` is true when follow chunks or the scan bound leave results unknown.
+
+`previewSmartFolder` runs the same query and returns the count (at most 100), `more`, and the first 12 walls.
+
+#### Cap
+
+A smart folder keeps at most 500 items, the same limit the app reads (#739). When a new wall would make 501, the add transaction compares the incoming timestamp with the oldest existing `addedAt`. The oldest item drops, including the incoming item when an old fill loses to 500 newer items. The transaction writes the folder as a serialization fence, so concurrent boundary adds retry rather than both admitting a 501st item.
+
+#### Callables
+
+| Callable | Input | Checks |
+|---|---|---|
+| `previewSmartFolder` | `rules` | Signed in. Valid rules. At most 300 previews a day. |
+| `createSmartFolder` | `name`, `rules` | Signed in. Name of 1 to 50 characters after trim. Valid rules. The account is open. At most 20 smart folders (`resource-exhausted`, message `limit`). Returns `folderId` and `count`. |
+| `updateSmartFolderRules` | `folderId`, `rules` | Signed in. Owner only, and the folder must be a smart folder. Valid rules. At most 50 edits a day. Returns `count`. |
+
+Creation rechecks account deletion state and the 20-folder count inside the folder/index transaction. An owner account write serializes concurrent creates.
+
+#### Rules
+
+- A client cannot create a folder with `smartRules` or change `smartRules`. The create and update key lists do not include it.
+- A client cannot create, update or delete an item of a smart folder. The owner can still delete items of a deleted folder.
+- The owner cannot write `sections` on a smart folder.
+- No client reads or writes `smartFolderIndex`, `smartWallKeys` or `smartFolderOwners`.
+
+#### Cleanup
+
+- Folder delete: the app deletes only the folder doc. `onFolderWritten` deletes the index entry and the smart items.
+- `deleteAccount`: removes the user's index entries with `removeOwnerSmartFolders`. The owned folders and their items go with the other owned folders.
+
+### Analytics
+
+| Event | Fields |
+|---|---|
+| `smart_folder_created` | `rule_kinds`, `rule_count`, `match_count` |
+| `smart_folder_rules_edited` | `rule_kinds`, `rule_count`, `match_count` |
+| `smart_folder_opened` | `rule_kinds`, `item_count` |
+| `smart_folder_made_public` | `rule_kinds` |
+
+### Limits
+
+- Only walls approved after the deploy have `smartWallKeys`. Older walls need the backfill (`functions/src/scripts/backfillSmartWallKeys.ts`). Until it runs, a new smart folder finds only new walls.
+- A new follow does not add the creator's older walls. Edit the rules to fill the folder again.
+- A smart folder holds no premium walls, also for a Pro owner.
+- Fill and preview searches are bounded by 300 followed creators and 1,000 scanned walls per anchor chunk; the globally newest 100 matches are not guaranteed beyond those bounds.
+- The public folder page does not show the rules.
+- A blocked creator in a Creator rule still adds walls. Remove the rule to stop it.
+
+### Deploy order
+
+1. Firestore rules and indexes: `firebase deploy --only firestore:rules,firestore:indexes --project prism-wallpapers`. Wait until these indexes are built: `smartWallKeys` (`keys` CONTAINS, `createdAt` DESC) and the `items` collection-group index (`wallpaperDocumentId` ASC, `smart` ASC). The new rules accept every write that shipped clients make.
+2. `make functions-env`, so the new functions get `R2_PREVIEW_BASE_URL`. Without it, the trigger and the fill fail and retry. They do not delete data.
+3. Cloud Functions. New: `previewSmartFolder`, `createSmartFolder`, `updateSmartFolderRules`, `onWallSmartFolders`, `onSmartFollowWritten`. Changed: `onFolderWritten`, `createFolderInvite`, `deleteAccount`.
+4. Backfill, only with the owner's OK. Dry run: `cd functions && npm run build && R2_PREVIEW_BASE_URL=<value> node lib/scripts/backfillSmartWallKeys.js`. Then the same command with `--apply`.
+5. The app release.
+
+### Smart folder tests
+
+| Area | Files |
+|---|---|
+| Matcher, keys, index, fill, trigger, cap, removal | `functions/src/__tests__/smartFolders.test.ts` |
+| Category and kind parity with the app | `functions/src/__tests__/smartRuleParity.test.ts` |
+| Account deletion | `functions/src/__tests__/deleteAccount.test.ts` |
+| Backfill | `functions/src/__tests__/backfillSmartWallKeys.test.ts` |
+| Rules | `tool/firestore_rules_smoke.mjs` (smart folder cases) |
+| App | `test/features/folders/biz/smart_folder_builder_cubit_test.dart`, `test/features/folders/views/smart_folder_sheet_test.dart`, `test/features/folders/views/smart_rules_line_test.dart` |
 
 ## Deploy order
 

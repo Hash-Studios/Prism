@@ -11170,6 +11170,186 @@ class AppLocalizationsDe extends AppLocalizations {
   String get foldersMakePrivate => 'Privat machen';
 
   @override
+  String get foldersSmartNew => 'Neuer Smart-Ordner';
+
+  @override
+  String get foldersSmartTag => 'Smart';
+
+  @override
+  String get foldersSmartIntro => 'Lege Regeln einmal fest. Neue passende Hintergrundbilder kommen von allein hinein.';
+
+  @override
+  String get foldersSmartRulesTitle => 'Regeln';
+
+  @override
+  String get foldersSmartRulesHint =>
+      'Ein Hintergrundbild muss jede gewählte Art erfüllen. Innerhalb einer Art zählt jede Auswahl.';
+
+  @override
+  String get foldersSmartKindMood => 'Stimmung';
+
+  @override
+  String get foldersSmartKindColour => 'Farbe';
+
+  @override
+  String get foldersSmartKindCategory => 'Kategorie';
+
+  @override
+  String get foldersSmartKindFollowed => 'Kreative, denen ich folge';
+
+  @override
+  String get foldersSmartKindCreator => 'Creator';
+
+  @override
+  String get foldersSmartKindDesktop => 'Hat eine Desktop-Version';
+
+  @override
+  String get foldersSmartKindOnly => 'Nur';
+
+  @override
+  String get foldersSmartNoCreators => 'Folge Kreativen, um hier einen auszuwählen.';
+
+  @override
+  String foldersSmartKindLimit(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Du kannst bis zu $countString Regelarten verwenden.',
+      one: 'Du kannst 1 Regelart verwenden.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSmartValueLimit(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Du kannst bis zu $countString Auswahlen in einer Art treffen.',
+      one: 'Du kannst 1 Auswahl in einer Art treffen.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSmartPreviewTitle => 'Vorschau';
+
+  @override
+  String foldersSmartMatches(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString Treffer',
+      one: '1 Treffer',
+      zero: '0 Treffer',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSmartMatchesMore(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString+ Treffer');
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSmartNoMatchesHint =>
+      'Noch kein Hintergrundbild passt zu allen diesen Regeln. Entferne eine Regel, um mehr zu sehen, oder speichere den Ordner. Neue Treffer kommen dann hinzu, sobald sie da sind.';
+
+  @override
+  String get foldersSmartPickRule => 'Wähle eine Regel, um passende Hintergrundbilder zu sehen.';
+
+  @override
+  String get foldersSmartPreviewError => 'Die Vorschau konnte nicht geladen werden.';
+
+  @override
+  String get foldersSmartCreate => 'Smart-Ordner erstellen';
+
+  @override
+  String get foldersSmartSaveRules => 'Regeln speichern';
+
+  @override
+  String get foldersSmartEditRules => 'Regeln bearbeiten';
+
+  @override
+  String foldersSmartCreated(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Smart-Ordner mit $countString Hintergrundbildern erstellt.',
+      one: 'Smart-Ordner mit 1 Hintergrundbild erstellt.',
+      zero: 'Smart-Ordner erstellt. Neue Treffer kommen hinzu, sobald sie da sind.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSmartRulesSaved(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Regeln gespeichert. $countString Hintergrundbilder passen.',
+      one: 'Regeln gespeichert. 1 Hintergrundbild passt.',
+      zero: 'Regeln gespeichert. Noch passt nichts.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSmartLimitRefused(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Du kannst bis zu $countString Smart-Ordner haben. Lösche einen, um einen neuen zu erstellen.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSmartTooManyChanges => 'Heute zu viele Änderungen. Versuche es morgen noch einmal.';
+
+  @override
+  String get foldersSmartSaveFailed =>
+      'Der Smart-Ordner konnte nicht gespeichert werden. Prüfe deine Verbindung und versuche es noch einmal.';
+
+  @override
+  String get foldersSmartEmptyTitle => 'Noch nichts passt';
+
+  @override
+  String get foldersSmartEmptyBody => 'Neue Hintergrundbilder, die zu den Regeln passen, kommen von allein hinein.';
+
+  @override
+  String foldersSmartRuleSummary(String kind, String values) {
+    return '$kind: $values';
+  }
+
+  @override
+  String foldersSmartRulesLabel(String rules) {
+    return 'Regeln: $rules';
+  }
+
+  @override
   String get foldersMakePublicTitle => 'Diesen Ordner öffentlich machen?';
 
   @override

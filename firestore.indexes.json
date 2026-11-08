@@ -1675,6 +1675,34 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "smartWallKeys",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "keys",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "items",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "wallpaperDocumentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "smart",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [

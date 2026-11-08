@@ -2493,6 +2493,41 @@ events:
       - name: kind
         key: kind
         type: string
+  - id: smart_folder_created
+    fields:
+      - name: rule_kinds
+        key: rule_kinds
+        type: string_list
+      - name: rule_count
+        key: rule_count
+        type: int
+      - name: match_count
+        key: match_count
+        type: int
+  - id: smart_folder_rules_edited
+    fields:
+      - name: rule_kinds
+        key: rule_kinds
+        type: string_list
+      - name: rule_count
+        key: rule_count
+        type: int
+      - name: match_count
+        key: match_count
+        type: int
+  - id: smart_folder_opened
+    fields:
+      - name: rule_kinds
+        key: rule_kinds
+        type: string_list
+      - name: item_count
+        key: item_count
+        type: int
+  - id: smart_folder_made_public
+    fields:
+      - name: rule_kinds
+        key: rule_kinds
+        type: string_list
   - id: folder_visibility_changed
     fields:
       - name: is_public

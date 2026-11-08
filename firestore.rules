@@ -533,8 +533,12 @@ service cloud.firestore {
           && ((resource.data.ownerId == request.auth.uid
                   && request.resource.data.diff(resource.data).affectedKeys()
                       .hasOnly(['name', 'updatedAt', 'itemCount', 'covers', 'sections'])
+                  // A smart folder fills itself from rules (functions/src/smartFolders.ts). It has no sections.
+                  && (!('smartRules' in resource.data)
+                      || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['sections']))
                   && validFolderFields(request.resource.data))
               || (request.auth.uid in resource.data.get('memberIds', [])
+                  && !('smartRules' in resource.data)
                   && folderWritesOpen(resource.data.ownerId)
                   && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sections'])
                   && validSections(request.resource.data)));
@@ -553,6 +557,11 @@ service cloud.firestore {
           return exists(/databases/$(database)/documents/folders/$(folderId));
         }
 
+        // Only the server writes the items of a smart folder.
+        function notSmart(data) {
+          return !('smartRules' in data);
+        }
+
         // A deleted folder can leave items behind. Reusing its id must not expose the old owner's items.
         // Missing gets still support the Save sheet's membership check.
         allow get: if isSignedIn() && canEdit(folder())
@@ -562,25 +571,40 @@ service cloud.firestore {
         // The owner can also clear items whose folder is gone.
         allow delete: if isSignedIn() && (
             (resource.data.ownerId == request.auth.uid
-                && (!folderExists() || folder().ownerId == request.auth.uid))
+                && (!folderExists() || (folder().ownerId == request.auth.uid && notSmart(folder()))))
             || (folderExists() && folderWritesOpen(request.auth.uid) && request.auth.uid in folder().get('memberIds', [])
-                && resource.data.ownerId == folder().ownerId));
+                && notSmart(folder()) && resource.data.ownerId == folder().ownerId));
         allow create: if isSignedIn()
             && folderWritesOpen(request.auth.uid)
             && folderWritesOpen(folderAfter().ownerId)
             && canEdit(folderAfter())
+            && notSmart(folderAfter())
             && validFolderItem(itemKey, folderAfter().ownerId);
         // A move changes only sectionId, so a member can move a wall someone else added.
         allow update: if isSignedIn()
             && folderWritesOpen(request.auth.uid)
             && folderWritesOpen(folderAfter().ownerId)
             && canEdit(folderAfter())
+            && notSmart(folderAfter())
             && resource.data.ownerId == folderAfter().ownerId
             && (validFolderItem(itemKey, folderAfter().ownerId)
                 || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sectionId'])
                     && (!('sectionId' in request.resource.data)
                         || validSectionId(request.resource.data.sectionId))));
       }
+    }
+
+    // Smart folders: the rule index and the wall keys (functions/src/smartFolders.ts). Only the Admin SDK uses them.
+    match /smartFolderIndex/{folderId} {
+      allow read, write: if false;
+    }
+
+    match /smartWallKeys/{wallId} {
+      allow read, write: if false;
+    }
+
+    match /smartFolderOwners/{uid} {
+      allow read, write: if false;
     }
 
     // Public folders: the server projection of a folder its owner made public (functions/src/publicFolders.ts).

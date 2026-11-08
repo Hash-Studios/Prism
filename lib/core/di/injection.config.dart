@@ -117,6 +117,8 @@ import '../../features/folders/data/repositories/public_folders_repository_impl.
     as _i994;
 import '../../features/folders/data/repositories/shared_folders_repository_impl.dart'
     as _i347;
+import '../../features/folders/data/repositories/smart_folders_repository_impl.dart'
+    as _i406;
 import '../../features/folders/domain/repositories/folder_save_gateway.dart'
     as _i507;
 import '../../features/folders/domain/repositories/folders_repository.dart'
@@ -125,6 +127,8 @@ import '../../features/folders/domain/repositories/public_folders_repository.dar
     as _i279;
 import '../../features/folders/domain/repositories/shared_folders_repository.dart'
     as _i249;
+import '../../features/folders/domain/repositories/smart_folders_repository.dart'
+    as _i213;
 import '../../features/followed_topics/data/followed_topics_store.dart'
     as _i407;
 import '../../features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart'
@@ -425,6 +429,9 @@ _i174.GetIt initGetIt(
     () => _i387.WallhavenWallpaperRepositoryImpl(
       gh<_i954.FeedCacheLocalDataSource>(),
     ),
+  );
+  gh.lazySingleton<_i213.SmartFoldersRepository>(
+    () => _i406.SmartFoldersRepositoryImpl(),
   );
   gh.lazySingleton<_i474.FetchNotificationsUseCase>(
     () => _i474.FetchNotificationsUseCase(gh<_i366.NotificationsRepository>()),

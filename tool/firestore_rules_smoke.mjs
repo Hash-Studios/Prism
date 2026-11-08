@@ -90,6 +90,7 @@ const arrayContainsFilter = (field, value) => ({ fieldFilter: { field: { fieldPa
 const sharedMembers = { mapValue: { fields: { e: { mapValue: { fields: { addedBy: { stringValue: 'a' } } } } } } };
 const sec = (id, name, extra = {}) => ({ mapValue: { fields: { id: str(id), name: str(name), ...extra } } });
 const secs = (...values) => ({ arrayValue: { values } });
+const smartRules = (...rules) => ({ arrayValue: { values: rules.map(([kind, value]) => ({ mapValue: { fields: { kind: str(kind), value: str(value) } } })) } });
 const newestFirst = (field, limit) => ({ orderBy: [{ field: { fieldPath: field }, direction: 'DESCENDING' }], ...(limit ? { limit } : {}) });
 const commitDocs = async (auth, docs) => {
   const r = await fetch(`${B}:commit`, {
@@ -211,6 +212,14 @@ const seed = () => Promise.all([
   req('PATCH', 'folders/sections1', folderFields('a', 'Sections', { memberIds: arr(['e']), members: sharedMembers, public: { booleanValue: true } }), 'owner'),
   req('PATCH', 'folders/sections1/items/wallhaven_s1', itemFields('a', 's1'), 'owner'),
   req('PATCH', 'folders/sections1/items/wallhaven_s2', { ...itemFields('a', 's2'), addedBy: str('e') }, 'owner'),
+  req('PATCH', 'folders/smart1', folderFields('alice', 'Blue', { smartRules: smartRules(['colour', 'blue']) }), 'owner'),
+  req('PATCH', 'folders/smart-shared', folderFields('a', 'Smart shared', { smartRules: smartRules(['colour', 'blue']), memberIds: arr(['a', 'e']), members: sharedMembers }), 'owner'),
+  req('PATCH', 'folders/smart1/items/prism_w1', { ...itemFields('alice', 'w1', 'Prism'), smart: { booleanValue: true } }, 'owner'),
+  req('PATCH', 'folders/alice-normal', folderFields('alice', 'Plain'), 'owner'),
+  req('PATCH', 'folders/alice-normal/items/prism_w1', itemFields('alice', 'w1', 'Prism'), 'owner'),
+  req('PATCH', 'smartFolderIndex/smart1', { folderId: str('smart1') }, 'owner'),
+  req('PATCH', 'smartWallKeys/W1', { wallId: str('W1') }, 'owner'),
+  req('PATCH', 'smartFolderOwners/alice', { ownerId: str('alice') }, 'owner'),
   commitDocs('owner', [
     ['folders/sections-batch', folderFields('a', 'Batch', { memberIds: arr(['e']), members: sharedMembers })],
     ...Array.from({ length: 399 }, (_, i) => [`folders/sections-batch/items/wallhaven_b${i}`, itemFields('a', `b${i}`)]),
@@ -234,6 +243,7 @@ const layoutFields = {
 };
 const layoutMap = (fields) => ({ layoutPrefs: { mapValue: { fields } } });
 const U2 = tok('u2', 'u2@x.com');
+const ALICE = tok('alice', 'alice@x.com');
 // The 27 keys in validTopicSession (firestore.rules), in the same order.
 const topicKeys = [
   'category:Nature', 'category:Architecture', 'category:Cars', 'category:Anime', 'category:Gaming',
@@ -1233,6 +1243,28 @@ const cases = [
   ['owner old client deletes an existing sectioned item', () => req('DELETE', 'folders/sections1/items/wallhaven_s1', null, A), 200],
   ['editor old client deletes their existing item', () => req('DELETE', 'folders/sections1/items/wallhaven_s2', null, Ed), 200],
   ['owner name of 100 emoji (U+1F600, 2 UTF-16 units each)', () => req('PATCH', 'folders/sections1', { sections: secs(sec('emo', '\u{1F600}'.repeat(100))) }, A, ['sections']), 403],
+  ['alice can create the same item in a normal folder', () => req('PATCH', 'folders/alice-normal/items/prism_w2', itemFields('alice', 'w2', 'Prism'), ALICE), 200],
+  ['alice can move an item in a normal folder', () => req('PATCH', 'folders/alice-normal/items/prism_w1', { sectionId: str('abc') }, ALICE, ['sectionId']), 200],
+  ['alice can write sections on a normal folder', () => req('PATCH', 'folders/alice-normal', { sections: secs(sec('lock', 'Lock screens')) }, ALICE, ['sections']), 200],
+  ['alice can delete an item in a normal folder', () => req('DELETE', 'folders/alice-normal/items/prism_w2', null, ALICE), 200],
+  ['alice cannot create an item in a smart folder', () => req('PATCH', 'folders/smart1/items/prism_w2', itemFields('alice', 'w2', 'Prism'), ALICE), 403],
+  ['alice cannot update an item in a smart folder', () => req('PATCH', 'folders/smart1/items/prism_w1', { sectionId: str('abc') }, ALICE, ['sectionId']), 403],
+  ['alice cannot delete an item in a smart folder', () => req('DELETE', 'folders/smart1/items/prism_w1', null, ALICE), 403],
+  ['alice cannot add smartRules when creating a normal folder', () => req('PATCH', 'folders/smart-forged', folderFields('alice', 'Forged', { smartRules: smartRules(['colour', 'blue']) }), ALICE), 403],
+  ['alice cannot change smartRules on a smart folder', () => req('PATCH', 'folders/smart1', { smartRules: smartRules(['colour', 'red']) }, ALICE, ['smartRules']), 403],
+  ['alice cannot write sections on a smart folder', () => req('PATCH', 'folders/smart1', { sections: secs(sec('lock', 'Lock screens')) }, ALICE, ['sections']), 403],
+  ['editor cannot write sections on a smart folder', () => req('PATCH', 'folders/smart-shared', { sections: secs(sec('lock', 'Lock')) }, Ed, ['sections']), 403],
+  ['owner listed as member cannot write smart sections', () => req('PATCH', 'folders/smart-shared', { sections: secs(sec('lock', 'Lock')) }, A, ['sections']), 403],
+  ['alice can read a smart folder', () => req('GET', 'folders/smart1', null, ALICE), 200],
+  ['alice can list smart folder items', () => runQuery(ALICE, [ownerFilter('alice')], 'items', 'folders/smart1'), 200],
+  ['alice can rename a smart folder', () => req('PATCH', 'folders/smart1', { name: str('Blue renamed'), updatedAt: ts() }, ALICE, ['name', 'updatedAt']), 200],
+  ...[['alice', ALICE], ['bob', Bu]].flatMap(([role, auth]) => ['smartFolderIndex/smart1', 'smartWallKeys/W1', 'smartFolderOwners/alice'].flatMap((path) => [
+    [`${role} cannot read ${path}`, () => req('GET', path, null, auth), 403],
+    [`${role} cannot create ${path}`, () => req('PATCH', path, { folderId: str('x') }, auth), 403],
+    [`${role} cannot update ${path}`, () => req('PATCH', path, { folderId: str('x') }, auth, ['folderId']), 403],
+    [`${role} cannot delete ${path}`, () => req('DELETE', path, null, auth), 403],
+  ])),
+  ['alice can delete a smart folder', () => req('DELETE', 'folders/smart1', null, ALICE), 200],
 ];
 await seed();
 let bad = 0;

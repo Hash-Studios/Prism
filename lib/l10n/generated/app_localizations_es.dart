@@ -11145,6 +11145,187 @@ class AppLocalizationsEs extends AppLocalizations {
   String get foldersMakePrivate => 'Hacer privada';
 
   @override
+  String get foldersSmartNew => 'Nueva carpeta inteligente';
+
+  @override
+  String get foldersSmartTag => 'Inteligente';
+
+  @override
+  String get foldersSmartIntro =>
+      'Elige las reglas una vez. Los fondos de pantalla nuevos que coincidan se añaden solos.';
+
+  @override
+  String get foldersSmartRulesTitle => 'Reglas';
+
+  @override
+  String get foldersSmartRulesHint =>
+      'Un fondo de pantalla debe cumplir cada tipo que elijas. Dentro de un tipo, vale cualquier opción.';
+
+  @override
+  String get foldersSmartKindMood => 'Estado de ánimo';
+
+  @override
+  String get foldersSmartKindColour => 'Color';
+
+  @override
+  String get foldersSmartKindCategory => 'Categoría';
+
+  @override
+  String get foldersSmartKindFollowed => 'Creadores que sigo';
+
+  @override
+  String get foldersSmartKindCreator => 'Creador';
+
+  @override
+  String get foldersSmartKindDesktop => 'Tiene versión de escritorio';
+
+  @override
+  String get foldersSmartKindOnly => 'Solo';
+
+  @override
+  String get foldersSmartNoCreators => 'Sigue a creadores para elegir uno aquí.';
+
+  @override
+  String foldersSmartKindLimit(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Puedes usar hasta $countString tipos de regla.',
+      one: 'Puedes usar 1 tipo de regla.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSmartValueLimit(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Puedes elegir hasta $countString opciones en un tipo.',
+      one: 'Puedes elegir 1 opción en un tipo.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSmartPreviewTitle => 'Vista previa';
+
+  @override
+  String foldersSmartMatches(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$countString coincidencias',
+      one: '1 coincidencia',
+      zero: '0 coincidencias',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSmartMatchesMore(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$countString+ coincidencias');
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSmartNoMatchesHint =>
+      'Ningún fondo de pantalla cumple todas estas reglas todavía. Quita una regla para ver más, o guarda la carpeta y las nuevas coincidencias se añadirán cuando lleguen.';
+
+  @override
+  String get foldersSmartPickRule => 'Elige una regla para ver los fondos de pantalla que coinciden.';
+
+  @override
+  String get foldersSmartPreviewError => 'No se pudo cargar la vista previa.';
+
+  @override
+  String get foldersSmartCreate => 'Crear carpeta inteligente';
+
+  @override
+  String get foldersSmartSaveRules => 'Guardar reglas';
+
+  @override
+  String get foldersSmartEditRules => 'Editar reglas';
+
+  @override
+  String foldersSmartCreated(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Carpeta inteligente creada con $countString fondos de pantalla.',
+      one: 'Carpeta inteligente creada con 1 fondo de pantalla.',
+      zero: 'Carpeta inteligente creada. Las nuevas coincidencias se añadirán cuando lleguen.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSmartRulesSaved(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Reglas guardadas. $countString fondos de pantalla coinciden.',
+      one: 'Reglas guardadas. 1 fondo de pantalla coincide.',
+      zero: 'Reglas guardadas. Todavía no hay coincidencias.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String foldersSmartLimitRefused(int count) {
+    final intl.NumberFormat countNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String countString = countNumberFormat.format(count);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Puedes tener hasta $countString carpetas inteligentes. Elimina una para crear otra.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get foldersSmartTooManyChanges => 'Demasiados cambios hoy. Inténtalo mañana.';
+
+  @override
+  String get foldersSmartSaveFailed =>
+      'No se pudo guardar la carpeta inteligente. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get foldersSmartEmptyTitle => 'Todavía no hay coincidencias';
+
+  @override
+  String get foldersSmartEmptyBody => 'Los fondos de pantalla nuevos que cumplan las reglas se añadirán solos.';
+
+  @override
+  String foldersSmartRuleSummary(String kind, String values) {
+    return '$kind: $values';
+  }
+
+  @override
+  String foldersSmartRulesLabel(String rules) {
+    return 'Reglas: $rules';
+  }
+
+  @override
   String get foldersMakePublicTitle => '¿Hacer pública esta carpeta?';
 
   @override

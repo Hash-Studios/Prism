@@ -4,6 +4,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_member.dart';
 import 'package:Prism/features/folders/domain/entities/folder_section.dart';
+import 'package:Prism/features/folders/domain/entities/smart_rule.dart';
 
 const int folderNameMaxLength = 50;
 const int folderMaxCovers = 4;
@@ -21,6 +22,7 @@ class FolderEntity {
     this.isPublic = false,
     this.editors = const <FolderMember>[],
     this.sections = const <FolderSection>[],
+    this.smartRules,
   });
 
   final String id;
@@ -41,6 +43,11 @@ class FolderEntity {
 
   /// The named parts of the folder, in order. The owner and the editors write them.
   final List<FolderSection> sections;
+
+  /// Set for a smart folder. The server fills it from these rules, so nobody adds, moves or removes its wallpapers.
+  final List<SmartRule>? smartRules;
+
+  bool get isSmart => smartRules != null;
 
   bool isOwnedBy(String uid) => uid.isNotEmpty && uid == ownerId;
 
@@ -64,6 +71,7 @@ class FolderEntity {
     List<String>? covers,
     bool? isPublic,
     List<FolderSection>? sections,
+    List<SmartRule>? smartRules,
   }) => FolderEntity(
     id: id,
     ownerId: ownerId,
@@ -75,6 +83,7 @@ class FolderEntity {
     isPublic: isPublic ?? this.isPublic,
     editors: editors,
     sections: sections ?? this.sections,
+    smartRules: smartRules ?? this.smartRules,
   );
 
   FolderEntity withItemAdded(String thumbnailUrl, DateTime at) => copyWith(

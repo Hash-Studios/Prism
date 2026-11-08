@@ -10241,6 +10241,193 @@
   "@foldersMakePrivate": {
     "description": "Folder menu action that hides the folder from others."
   },
+  "foldersSmartNew": "Neuer Smart-Ordner",
+  "@foldersSmartNew": {
+    "description": "Button and sheet title that creates a folder which fills itself from rules."
+  },
+  "foldersSmartTag": "Smart",
+  "@foldersSmartTag": {
+    "description": "Short label on a folder that fills itself from rules."
+  },
+  "foldersSmartIntro": "Lege Regeln einmal fest. Neue passende Hintergrundbilder kommen von allein hinein.",
+  "@foldersSmartIntro": {
+    "description": "One line under the title of the new smart folder sheet."
+  },
+  "foldersSmartRulesTitle": "Regeln",
+  "@foldersSmartRulesTitle": {
+    "description": "Heading above the rule chips in the smart folder sheet."
+  },
+  "foldersSmartRulesHint": "Ein Hintergrundbild muss jede gewählte Art erfüllen. Innerhalb einer Art zählt jede Auswahl.",
+  "@foldersSmartRulesHint": {
+    "description": "Explains that rule kinds join with AND and choices inside a kind join with OR."
+  },
+  "foldersSmartKindMood": "Stimmung",
+  "@foldersSmartKindMood": {
+    "description": "Rule kind: the mood of a wallpaper, for example Dreamy."
+  },
+  "foldersSmartKindColour": "Farbe",
+  "@foldersSmartKindColour": {
+    "description": "Rule kind: a main colour of a wallpaper."
+  },
+  "foldersSmartKindCategory": "Kategorie",
+  "@foldersSmartKindCategory": {
+    "description": "Rule kind: the category of a wallpaper, for example Nature."
+  },
+  "foldersSmartKindFollowed": "Kreative, denen ich folge",
+  "@foldersSmartKindFollowed": {
+    "description": "Rule: only wallpapers from creators the user follows."
+  },
+  "foldersSmartKindCreator": "Creator",
+  "@foldersSmartKindCreator": {
+    "description": "Rule kind: wallpapers from one chosen creator."
+  },
+  "foldersSmartKindDesktop": "Hat eine Desktop-Version",
+  "@foldersSmartKindDesktop": {
+    "description": "Rule: only wallpapers that also have a desktop version."
+  },
+  "foldersSmartKindOnly": "Nur",
+  "@foldersSmartKindOnly": {
+    "description": "Heading above the on or off rules: Creators I follow, Has a desktop version, Editors' Choice."
+  },
+  "foldersSmartNoCreators": "Folge Kreativen, um hier einen auszuwählen.",
+  "@foldersSmartNoCreators": {
+    "description": "Shown in the Creator row when the user follows nobody."
+  },
+  "foldersSmartKindLimit": "{count, plural, =1{Du kannst 1 Regelart verwenden.} other{Du kannst bis zu {count} Regelarten verwenden.}}",
+  "@foldersSmartKindLimit": {
+    "description": "Shown when the user tries to add a fourth kind of rule.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartValueLimit": "{count, plural, =1{Du kannst 1 Auswahl in einer Art treffen.} other{Du kannst bis zu {count} Auswahlen in einer Art treffen.}}",
+  "@foldersSmartValueLimit": {
+    "description": "Shown when the user picks too many choices in one rule kind.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartPreviewTitle": "Vorschau",
+  "@foldersSmartPreviewTitle": {
+    "description": "Heading above the grid of wallpapers that match the rules."
+  },
+  "foldersSmartMatches": "{count, plural, =0{0 Treffer} =1{1 Treffer} other{{count} Treffer}}",
+  "@foldersSmartMatches": {
+    "description": "How many wallpapers match the rules now.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartMatchesMore": "{count, plural, other{{count}+ Treffer}}",
+  "@foldersSmartMatchesMore": {
+    "description": "More than this many wallpapers match the rules. The folder keeps the newest ones.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartNoMatchesHint": "Noch kein Hintergrundbild passt zu allen diesen Regeln. Entferne eine Regel, um mehr zu sehen, oder speichere den Ordner. Neue Treffer kommen dann hinzu, sobald sie da sind.",
+  "@foldersSmartNoMatchesHint": {
+    "description": "Shown under 0 matches in the smart folder preview."
+  },
+  "foldersSmartPickRule": "Wähle eine Regel, um passende Hintergrundbilder zu sehen.",
+  "@foldersSmartPickRule": {
+    "description": "Shown in the preview before the user picks a rule."
+  },
+  "foldersSmartPreviewError": "Die Vorschau konnte nicht geladen werden.",
+  "@foldersSmartPreviewError": {
+    "description": "Shown when the preview of matching wallpapers fails to load."
+  },
+  "foldersSmartCreate": "Smart-Ordner erstellen",
+  "@foldersSmartCreate": {
+    "description": "Button that creates the smart folder."
+  },
+  "foldersSmartSaveRules": "Regeln speichern",
+  "@foldersSmartSaveRules": {
+    "description": "Button that saves changed rules of a smart folder."
+  },
+  "foldersSmartEditRules": "Regeln bearbeiten",
+  "@foldersSmartEditRules": {
+    "description": "Button under a smart folder title that opens its rules."
+  },
+  "foldersSmartCreated": "{count, plural, =0{Smart-Ordner erstellt. Neue Treffer kommen hinzu, sobald sie da sind.} =1{Smart-Ordner mit 1 Hintergrundbild erstellt.} other{Smart-Ordner mit {count} Hintergrundbildern erstellt.}}",
+  "@foldersSmartCreated": {
+    "description": "Toast after a smart folder is created.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartRulesSaved": "{count, plural, =0{Regeln gespeichert. Noch passt nichts.} =1{Regeln gespeichert. 1 Hintergrundbild passt.} other{Regeln gespeichert. {count} Hintergrundbilder passen.}}",
+  "@foldersSmartRulesSaved": {
+    "description": "Toast after the rules of a smart folder are saved.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartLimitRefused": "{count, plural, other{Du kannst bis zu {count} Smart-Ordner haben. Lösche einen, um einen neuen zu erstellen.}}",
+  "@foldersSmartLimitRefused": {
+    "description": "Shown when the user already has the most smart folders allowed.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "foldersSmartTooManyChanges": "Heute zu viele Änderungen. Versuche es morgen noch einmal.",
+  "@foldersSmartTooManyChanges": {
+    "description": "Shown when the user changed smart folders too often today."
+  },
+  "foldersSmartSaveFailed": "Der Smart-Ordner konnte nicht gespeichert werden. Prüfe deine Verbindung und versuche es noch einmal.",
+  "@foldersSmartSaveFailed": {
+    "description": "Shown when creating a smart folder or saving its rules fails."
+  },
+  "foldersSmartEmptyTitle": "Noch nichts passt",
+  "@foldersSmartEmptyTitle": {
+    "description": "Title on an empty smart folder."
+  },
+  "foldersSmartEmptyBody": "Neue Hintergrundbilder, die zu den Regeln passen, kommen von allein hinein.",
+  "@foldersSmartEmptyBody": {
+    "description": "Body on an empty smart folder."
+  },
+  "foldersSmartRuleSummary": "{kind}: {values}",
+  "@foldersSmartRuleSummary": {
+    "description": "One rule kind and its choices under a smart folder title, for example Colour: Blue, Teal.",
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "values": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersSmartRulesLabel": "Regeln: {rules}",
+  "@foldersSmartRulesLabel": {
+    "description": "Screen reader label for the rules under a smart folder title.",
+    "placeholders": {
+      "rules": {
+        "type": "String"
+      }
+    }
+  },
   "foldersMakePublicTitle": "Diesen Ordner öffentlich machen?",
   "@foldersMakePublicTitle": {
     "description": "Title of the dialog before a folder becomes public."
