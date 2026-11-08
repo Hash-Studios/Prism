@@ -292,7 +292,9 @@ class SmartRuleBuilder extends StatelessWidget {
           title: l10n.foldersSmartKindMood,
           chips: <Widget>[
             for (final WallMood mood in WallMood.values)
-              if (ios || mood.iosMajor == null) chip(SmartRule(SmartRuleKind.mood, mood.id)),
+              // A rule picked on iOS stays removable on Android.
+              if (ios || mood.iosMajor == null || state.rules.contains(SmartRule(SmartRuleKind.mood, mood.id)))
+                chip(SmartRule(SmartRuleKind.mood, mood.id)),
           ],
         ),
         _RuleGroup(

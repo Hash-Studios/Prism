@@ -228,6 +228,20 @@ test("createSmartFolder fills the new folder with the matching walls only and re
     {code: "invalid-argument"}, "an unknown rule kind must be refused");
 });
 
+test("createSmartFolder returns the committed folder when its first fill fails, so a retry makes no duplicate", async (t) => {
+  const store = setup(t, {
+    ...seedWall("W1", gatedWall({id: "w1", colors: ["blue"]})),
+    "usersv2/u1": {email: "u1@x.com"},
+  });
+  t.mock.method(publicFolderDeps, "premium", async () => {
+    throw new Error("transient read failure");
+  });
+  const created = await callCreate("u1", {name: "Blue", rules: [{kind: "colour", value: "blue"}]});
+  assert.equal(created.count, 0, "a failed fill reports no items");
+  assert.equal(store.get(`folders/${created.folderId}`)?.ownerId, "u1", "the committed folder must be returned");
+  assert.equal([...store.keys()].filter((key) => /^folders\/[^/]+$/.test(key)).length, 1, "one folder exists");
+});
+
 test("syncWallSmartFolders adds a new wall only to the folder whose anchor it matches, once", async (t) => {
   const store = setup(t, {
     ...seedWall("W1", gatedWall({id: "w1"}), false),

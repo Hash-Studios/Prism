@@ -164,6 +164,23 @@ void main() {
     expect(repo.creates, 0);
   });
 
+  testWidgets('an iOS-only mood picked on iOS stays as a removable chip on Android', (tester) async {
+    final SmartFolderBuilderCubit cubit = _cubit(
+      _FakeSmartRepo(),
+      initial: const <SmartRule>[SmartRule(SmartRuleKind.mood, 'spatial_ready')],
+    );
+    await _pumpBody(tester, cubit);
+    await _settle(tester);
+
+    final Finder picked = find.byKey(const ValueKey<String>('smart-rule-mood-spatial_ready'));
+    expect(tester.widget<PrismChip>(picked).selected, isTrue);
+    expect(find.byKey(const ValueKey<String>('smart-rule-mood-depth_ready')), findsNothing);
+    await tester.ensureVisible(picked);
+    await tester.tap(picked);
+    await _settle(tester);
+    expect(cubit.state.rules, isEmpty);
+  });
+
   testWidgets('on or off rule chips pass their icon to the chip, so a selected chip tints it', (tester) async {
     final SmartFolderBuilderCubit cubit = _cubit(
       _FakeSmartRepo(),

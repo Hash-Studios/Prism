@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import {logger} from "firebase-functions/v2";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {CALLABLE_REGIONS, db, readDailyCount, REGION, str, utcDateString} from "./common";
@@ -464,7 +465,13 @@ export const createSmartFolder = onCall(OPTIONS, async (request: CallableRequest
     // Concurrent creates both read the count, so they also write one owner doc and the second one retries.
     tx.set(db.collection(SMART_FOLDER_OWNERS).doc(uid), {ownerId: uid, updatedAt: now});
   });
-  return {folderId: ref.id, count: await fillSmartFolder(ref.id)};
+  try {
+    return {folderId: ref.id, count: await fillSmartFolder(ref.id)};
+  } catch (error) {
+    // The folder is committed. Returning it keeps a retry from making a duplicate; Edit rules fills it again.
+    logger.error("createSmartFolder: first fill failed", {folderId: ref.id, error: String(error)});
+    return {folderId: ref.id, count: 0};
+  }
 });
 
 export const updateSmartFolderRules = onCall(OPTIONS, async (request: CallableRequest<{folderId?: unknown; rules?: unknown}>) => {
