@@ -2552,6 +2552,24 @@ events:
       - name: source
         key: source
         type: string
+  - id: folder_discover_opened
+    fields:
+      - name: tab
+        key: tab
+        type: string
+      - name: source
+        key: source
+        type: string
+  - id: folder_discover_followed
+    fields:
+      - name: tab
+        key: tab
+        type: string
+  - id: folder_reported
+    fields:
+      - name: source
+        key: source
+        type: string
   - id: folder_shared
     fields:
       - name: source

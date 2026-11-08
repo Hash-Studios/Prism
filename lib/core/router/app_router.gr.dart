@@ -1398,6 +1398,55 @@ class FolderRouteArgs {
 }
 
 /// generated route for
+/// [FoldersDiscoverPage]
+class FoldersDiscoverRoute extends PageRouteInfo<FoldersDiscoverRouteArgs> {
+  FoldersDiscoverRoute({
+    Key? key,
+    String source = 'search',
+    List<PageRouteInfo>? children,
+  }) : super(
+         FoldersDiscoverRoute.name,
+         args: FoldersDiscoverRouteArgs(key: key, source: source),
+         initialChildren: children,
+       );
+
+  static const String name = 'FoldersDiscoverRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<FoldersDiscoverRouteArgs>(
+        orElse: () => const FoldersDiscoverRouteArgs(),
+      );
+      return FoldersDiscoverPage(key: args.key, source: args.source);
+    },
+  );
+}
+
+class FoldersDiscoverRouteArgs {
+  const FoldersDiscoverRouteArgs({this.key, this.source = 'search'});
+
+  final Key? key;
+
+  final String source;
+
+  @override
+  String toString() {
+    return 'FoldersDiscoverRouteArgs{key: $key, source: $source}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! FoldersDiscoverRouteArgs) return false;
+    return key == other.key && source == other.source;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ source.hashCode;
+}
+
+/// generated route for
 /// [FollowersScreen]
 class FollowersRoute extends PageRouteInfo<FollowersRouteArgs> {
   FollowersRoute({

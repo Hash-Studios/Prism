@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
+import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/folders_repository.dart';
@@ -27,6 +28,15 @@ class _FakeFoldersRepository extends Fake implements FoldersRepository {
 }
 
 class _FakePublicFolders extends Fake implements PublicFoldersRepository {
+  @override
+  Future<Result<Set<String>>> fetchFollowedIds(String userId) async => Result.success(<String>{});
+
+  @override
+  Future<Result<FolderDiscoverLists>> fetchDiscover() async => Result.success(FolderDiscoverLists.empty);
+
+  @override
+  Future<void> recordSignal(String folderId, FolderSignal signal) async {}
+
   final List<({String id, bool isPublic})> setPublicCalls = <({String id, bool isPublic})>[];
   Result<bool> Function(String folderId, bool isPublic)? onSetPublic;
 

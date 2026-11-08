@@ -17983,6 +17983,132 @@ abstract class AppLocalizations {
   /// **'Report folder'**
   String get foldersReport;
 
+  /// Title of the Folders row in Search.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders to follow'**
+  String get foldersDiscoverSectionTitle;
+
+  /// Title of the page that lists public folders to follow.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover folders'**
+  String get foldersDiscoverTitle;
+
+  /// Discover folders tab: folders people follow, save and open most this week.
+  ///
+  /// In en, this message translates to:
+  /// **'Trending'**
+  String get foldersDiscoverTabTrending;
+
+  /// Discover folders tab: folders that became public with enough wallpapers this week.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get foldersDiscoverTabNew;
+
+  /// Discover folders tab: folders with the same moods and categories as the wallpapers the user saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Like your saves'**
+  String get foldersDiscoverTabLikeYourSaves;
+
+  /// Empty state title of the Trending tab.
+  ///
+  /// In en, this message translates to:
+  /// **'No trending folders yet'**
+  String get foldersDiscoverTrendingEmptyTitle;
+
+  /// Empty state body of the Trending tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders that people follow and save this week show here.'**
+  String get foldersDiscoverTrendingEmptyBody;
+
+  /// Empty state title of the New tab.
+  ///
+  /// In en, this message translates to:
+  /// **'No new folders this week'**
+  String get foldersDiscoverNewEmptyTitle;
+
+  /// Empty state body of the New tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Public folders with 8 or more wallpapers show here in their first week.'**
+  String get foldersDiscoverNewEmptyBody;
+
+  /// Empty state title of the Like your saves tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing like your saves yet'**
+  String get foldersDiscoverSavesEmptyTitle;
+
+  /// Empty state body of the Like your saves tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Save wallpapers you like. Folders with the same moods and categories show here.'**
+  String get foldersDiscoverSavesEmptyBody;
+
+  /// Button in an empty discover tab that opens the Trending tab.
+  ///
+  /// In en, this message translates to:
+  /// **'See trending folders'**
+  String get foldersDiscoverSeeTrending;
+
+  /// Error when the discover folders lists do not load.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load folders'**
+  String get foldersDiscoverLoadError;
+
+  /// Error when the Like your saves tab cannot read the user's saved wallpapers.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read your saves'**
+  String get foldersDiscoverSavesError;
+
+  /// Screen reader label of the Follow button on a discover folder card.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow {name}'**
+  String foldersDiscoverFollowNamed(String name);
+
+  /// Screen reader label of the Following button on a discover folder card.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow {name}'**
+  String foldersDiscoverUnfollowNamed(String name);
+
+  /// Tag on an admin review card for a reported public folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder report'**
+  String get adminFolderReport;
+
+  /// Admin action: remove a reported folder from the discover lists. The folder stays public by link.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide from discovery'**
+  String get adminHideFromDiscovery;
+
+  /// Admin action: close a folder report and keep the folder in discovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep folder'**
+  String get adminKeepFolder;
+
+  /// Toast after an admin hides a folder from discovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden from discovery. The folder still opens by link.'**
+  String get adminFolderHiddenFromDiscovery;
+
+  /// Toast after an admin keeps a reported folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder kept'**
+  String get adminFolderKept;
+
   /// Title when a shared folder cannot be shown.
   ///
   /// In en, this message translates to:

@@ -11387,6 +11387,75 @@ class AppLocalizationsEs extends AppLocalizations {
   String get foldersReport => 'Denunciar carpeta';
 
   @override
+  String get foldersDiscoverSectionTitle => 'Carpetas para seguir';
+
+  @override
+  String get foldersDiscoverTitle => 'Descubrir carpetas';
+
+  @override
+  String get foldersDiscoverTabTrending => 'Tendencias';
+
+  @override
+  String get foldersDiscoverTabNew => 'Nuevas';
+
+  @override
+  String get foldersDiscoverTabLikeYourSaves => 'Parecidas a tus guardados';
+
+  @override
+  String get foldersDiscoverTrendingEmptyTitle => 'Aún no hay carpetas en tendencia';
+
+  @override
+  String get foldersDiscoverTrendingEmptyBody => 'Aquí aparecen las carpetas que la gente sigue y guarda esta semana.';
+
+  @override
+  String get foldersDiscoverNewEmptyTitle => 'No hay carpetas nuevas esta semana';
+
+  @override
+  String get foldersDiscoverNewEmptyBody =>
+      'Las carpetas públicas con 8 o más fondos de pantalla aparecen aquí durante su primera semana.';
+
+  @override
+  String get foldersDiscoverSavesEmptyTitle => 'Aún no hay nada parecido a tus guardados';
+
+  @override
+  String get foldersDiscoverSavesEmptyBody =>
+      'Guarda los fondos de pantalla que te gusten. Aquí aparecen las carpetas con los mismos ambientes y categorías.';
+
+  @override
+  String get foldersDiscoverSeeTrending => 'Ver carpetas en tendencia';
+
+  @override
+  String get foldersDiscoverLoadError => 'No se pudieron cargar las carpetas';
+
+  @override
+  String get foldersDiscoverSavesError => 'No se pudieron leer tus guardados';
+
+  @override
+  String foldersDiscoverFollowNamed(String name) {
+    return 'Seguir a $name';
+  }
+
+  @override
+  String foldersDiscoverUnfollowNamed(String name) {
+    return 'Dejar de seguir a $name';
+  }
+
+  @override
+  String get adminFolderReport => 'Denuncia de carpeta';
+
+  @override
+  String get adminHideFromDiscovery => 'Ocultar de descubrir';
+
+  @override
+  String get adminKeepFolder => 'Mantener carpeta';
+
+  @override
+  String get adminFolderHiddenFromDiscovery => 'Oculta de descubrir. La carpeta sigue abriéndose con el enlace.';
+
+  @override
+  String get adminFolderKept => 'Carpeta conservada';
+
+  @override
   String get foldersUnavailableTitle => 'Esta carpeta es privada o ya no existe';
 
   @override

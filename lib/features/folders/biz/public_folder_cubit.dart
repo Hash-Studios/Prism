@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
@@ -78,6 +79,12 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
     return super.close();
   }
 
+  /// The viewer started Save all on this folder. Discovery counts it as a save.
+  void recordSave() {
+    final String? folderId = _request?.folderId;
+    if (folderId != null) unawaited(_repository.recordSignal(folderId, FolderSignal.save));
+  }
+
   /// A [quiet] load keeps the shown folder until the new one arrives and on read errors.
   Future<void> load(String folderId, {required String viewerId, bool quiet = false}) async {
     if (isClosed) return;
@@ -127,6 +134,8 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
           },
         ),
       );
+      // A quiet reload is the same visit, so only the first load counts as an open for discovery.
+      if (!keep) unawaited(_repository.recordSignal(folderId, FolderSignal.open));
     } catch (error, stackTrace) {
       logger.w('[PublicFolderCubit] walls failed', error: error, stackTrace: stackTrace);
       if (keep) return;

@@ -6,12 +6,22 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/folders/biz/public_folder_cubit.dart';
+import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakePublicFolders extends Fake implements PublicFoldersRepository {
+  @override
+  Future<Result<Set<String>>> fetchFollowedIds(String userId) async => Result.success(<String>{});
+
+  @override
+  Future<Result<FolderDiscoverLists>> fetchDiscover() async => Result.success(FolderDiscoverLists.empty);
+
+  @override
+  Future<void> recordSignal(String folderId, FolderSignal signal) async {}
+
   Result<PublicFolderEntity?> folder = Result.success(_folder(0));
   Result<List<String>> wallIds = Result.success(<String>[]);
   List<PublicFolderWall>? wallRecords;

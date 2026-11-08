@@ -33,6 +33,9 @@ class FirebaseCollections {
   /// `publicFolders/{folderId}`, the server projection of a public folder.
   static const String publicFolders = 'publicFolders';
 
+  /// `folderTrending/current`, the daily trending and new public folders.
+  static const String folderTrending = 'folderTrending';
+
   /// `publicFolders/{folderId}/items`, the walls others see.
   static String publicFolderItems(String folderId) => '$publicFolders/$folderId/items';
 

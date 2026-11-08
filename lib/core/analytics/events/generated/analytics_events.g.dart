@@ -3374,6 +3374,49 @@ class FolderFollowChangedEvent extends AnalyticsEvent {
   }
 }
 
+class FolderDiscoverOpenedEvent extends AnalyticsEvent {
+  const FolderDiscoverOpenedEvent({required this.tab, required this.source});
+
+  final String tab;
+  final String source;
+
+  @override
+  String get eventName => 'folder_discover_opened';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'tab': tab, 'source': source};
+  }
+}
+
+class FolderDiscoverFollowedEvent extends AnalyticsEvent {
+  const FolderDiscoverFollowedEvent({required this.tab});
+
+  final String tab;
+
+  @override
+  String get eventName => 'folder_discover_followed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'tab': tab};
+  }
+}
+
+class FolderReportedEvent extends AnalyticsEvent {
+  const FolderReportedEvent({required this.source});
+
+  final String source;
+
+  @override
+  String get eventName => 'folder_reported';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source};
+  }
+}
+
 class FolderSharedEvent extends AnalyticsEvent {
   const FolderSharedEvent({required this.source});
 

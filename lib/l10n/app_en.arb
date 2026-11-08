@@ -10552,6 +10552,100 @@
   "@foldersReport": {
     "description": "Menu action that reports a public folder."
   },
+  "foldersDiscoverSectionTitle": "Folders to follow",
+  "@foldersDiscoverSectionTitle": {
+    "description": "Title of the Folders row in Search."
+  },
+  "foldersDiscoverTitle": "Discover folders",
+  "@foldersDiscoverTitle": {
+    "description": "Title of the page that lists public folders to follow."
+  },
+  "foldersDiscoverTabTrending": "Trending",
+  "@foldersDiscoverTabTrending": {
+    "description": "Discover folders tab: folders people follow, save and open most this week."
+  },
+  "foldersDiscoverTabNew": "New",
+  "@foldersDiscoverTabNew": {
+    "description": "Discover folders tab: folders that became public with enough wallpapers this week."
+  },
+  "foldersDiscoverTabLikeYourSaves": "Like your saves",
+  "@foldersDiscoverTabLikeYourSaves": {
+    "description": "Discover folders tab: folders with the same moods and categories as the wallpapers the user saved."
+  },
+  "foldersDiscoverTrendingEmptyTitle": "No trending folders yet",
+  "@foldersDiscoverTrendingEmptyTitle": {
+    "description": "Empty state title of the Trending tab."
+  },
+  "foldersDiscoverTrendingEmptyBody": "Folders that people follow and save this week show here.",
+  "@foldersDiscoverTrendingEmptyBody": {
+    "description": "Empty state body of the Trending tab."
+  },
+  "foldersDiscoverNewEmptyTitle": "No new folders this week",
+  "@foldersDiscoverNewEmptyTitle": {
+    "description": "Empty state title of the New tab."
+  },
+  "foldersDiscoverNewEmptyBody": "Public folders with 8 or more wallpapers show here in their first week.",
+  "@foldersDiscoverNewEmptyBody": {
+    "description": "Empty state body of the New tab."
+  },
+  "foldersDiscoverSavesEmptyTitle": "Nothing like your saves yet",
+  "@foldersDiscoverSavesEmptyTitle": {
+    "description": "Empty state title of the Like your saves tab."
+  },
+  "foldersDiscoverSavesEmptyBody": "Save wallpapers you like. Folders with the same moods and categories show here.",
+  "@foldersDiscoverSavesEmptyBody": {
+    "description": "Empty state body of the Like your saves tab."
+  },
+  "foldersDiscoverSeeTrending": "See trending folders",
+  "@foldersDiscoverSeeTrending": {
+    "description": "Button in an empty discover tab that opens the Trending tab."
+  },
+  "foldersDiscoverLoadError": "Couldn't load folders",
+  "@foldersDiscoverLoadError": {
+    "description": "Error when the discover folders lists do not load."
+  },
+  "foldersDiscoverSavesError": "Couldn't read your saves",
+  "@foldersDiscoverSavesError": {
+    "description": "Error when the Like your saves tab cannot read the user's saved wallpapers."
+  },
+  "foldersDiscoverFollowNamed": "Follow {name}",
+  "@foldersDiscoverFollowNamed": {
+    "description": "Screen reader label of the Follow button on a discover folder card.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersDiscoverUnfollowNamed": "Unfollow {name}",
+  "@foldersDiscoverUnfollowNamed": {
+    "description": "Screen reader label of the Following button on a discover folder card.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminFolderReport": "Folder report",
+  "@adminFolderReport": {
+    "description": "Tag on an admin review card for a reported public folder."
+  },
+  "adminHideFromDiscovery": "Hide from discovery",
+  "@adminHideFromDiscovery": {
+    "description": "Admin action: remove a reported folder from the discover lists. The folder stays public by link."
+  },
+  "adminKeepFolder": "Keep folder",
+  "@adminKeepFolder": {
+    "description": "Admin action: close a folder report and keep the folder in discovery."
+  },
+  "adminFolderHiddenFromDiscovery": "Hidden from discovery. The folder still opens by link.",
+  "@adminFolderHiddenFromDiscovery": {
+    "description": "Toast after an admin hides a folder from discovery."
+  },
+  "adminFolderKept": "Folder kept",
+  "@adminFolderKept": {
+    "description": "Toast after an admin keeps a reported folder."
+  },
   "foldersUnavailableTitle": "This folder is private or no longer exists",
   "@foldersUnavailableTitle": {
     "description": "Title when a shared folder cannot be shown."

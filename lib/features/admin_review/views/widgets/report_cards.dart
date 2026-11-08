@@ -13,6 +13,9 @@ import 'package:Prism/features/admin_review/biz/admin_review_localization.dart';
 import 'package:Prism/features/admin_review/biz/reject_reasons.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/features/admin_review/views/widgets/moderation_bits.dart';
+import 'package:Prism/features/folders/data/repositories/public_folders_repository_impl.dart';
+import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
+import 'package:Prism/features/folders/views/widgets/folder_cover.dart';
 import 'package:Prism/features/wall_comments/data/wall_comments_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -422,6 +425,141 @@ class _CommentReportCardState extends State<CommentReportCard> {
                 onPressed: () => _resolve(keep: true),
               ),
               ModerationDangerButton(label: l10n.adminRemove, onPressed: _busy ? null : () => _resolve(keep: false)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// An open report on a public folder: the cover, name and owner, the reason, and Keep folder or Hide from discovery.
+/// Hiding takes the folder out of the discover lists. It stays public and opens by link.
+class FolderReportCard extends StatefulWidget {
+  const FolderReportCard({
+    super.key,
+    required this.report,
+    required this.folderId,
+    required this.reason,
+    required this.reporterUid,
+    required this.timeStr,
+    required this.repository,
+  });
+
+  final FirestoreDocument report;
+  final String folderId;
+  final String reason;
+  final String reporterUid;
+  final String timeStr;
+  final AdminModerationRepository repository;
+
+  @override
+  State<FolderReportCard> createState() => _FolderReportCardState();
+}
+
+class _FolderReportCardState extends State<FolderReportCard> {
+  late Future<PublicFolderEntity?> _folder = _load();
+  bool _busy = false;
+
+  Future<PublicFolderEntity?> _load() => firestoreClient.getById<PublicFolderEntity>(
+    FirebaseCollections.publicFolders,
+    widget.folderId,
+    publicFolderFromDoc,
+    sourceTag: 'admin_review.report_folder',
+  );
+
+  @override
+  void didUpdateWidget(FolderReportCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.folderId != widget.folderId) _folder = _load();
+  }
+
+  Future<void> _resolve({required bool hide}) async {
+    if (_busy) return;
+    final AppLocalizations l10n = context.l10n;
+    final FolderReportCard target = widget;
+    setState(() => _busy = true);
+    try {
+      if (hide) await target.repository.setFolderDiscoveryHidden(target.folderId, hidden: true);
+      await target.repository.markContentReportReviewed(
+        target.report.id,
+        resolution: hide ? 'hidden_from_discovery' : 'dismissed',
+      );
+      toasts.success(hide ? l10n.adminFolderHiddenFromDiscovery : l10n.adminFolderKept);
+    } catch (e, st) {
+      logger.e('resolve folder report failed', tag: 'AdminReview', error: e, stackTrace: st);
+      toasts.error(l10n.adminMarkReviewedFailed);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
+    return PrismCard(
+      padding: const EdgeInsets.all(PrismSpace.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Align(
+            alignment: Alignment.centerLeft,
+            child: PrismTag(label: l10n.adminFolderReport, tone: PrismTone.warning),
+          ),
+          const SizedBox(height: PrismSpace.xs),
+          FutureBuilder<PublicFolderEntity?>(
+            future: _folder,
+            builder: (BuildContext context, AsyncSnapshot<PublicFolderEntity?> snap) {
+              if (snap.connectionState != ConnectionState.done) {
+                return const PrismSkeleton(child: PrismBone(height: 72, radius: PrismRadius.sm));
+              }
+              final PublicFolderEntity? folder = snap.data;
+              if (folder == null) return Text(l10n.foldersUnavailableTitle, style: PrismTextStyles.body(context));
+              return Row(
+                children: <Widget>[
+                  FolderCover(covers: folder.covers, size: 72),
+                  const SizedBox(width: PrismSpace.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(folder.name, style: PrismTextStyles.rowTitle(context)),
+                        Text(l10n.foldersItemCount(folder.itemCount), style: PrismTextStyles.caption(context)),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: PrismSpace.xs),
+          Text(
+            widget.reason.isEmpty ? l10n.adminNoReasonGiven : adminReviewReportReasonLabel(widget.reason, l10n),
+            style: PrismTextStyles.cardTitle(context),
+          ),
+          ModerationFact(label: l10n.adminReported, value: widget.timeStr.isEmpty ? l10n.adminUnknown : widget.timeStr),
+          ModerationFact(label: l10n.adminTarget, value: widget.folderId),
+          ModerationFact(
+            label: l10n.adminReporter,
+            value: widget.reporterUid.isEmpty ? l10n.adminUnknown : widget.reporterUid,
+          ),
+          const SizedBox(height: PrismSpace.xs),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: PrismSpace.xs,
+            runSpacing: PrismSpace.xs,
+            children: <Widget>[
+              PrismButton(
+                label: l10n.adminKeepFolder,
+                variant: PrismButtonVariant.tonal,
+                size: PrismButtonSize.compact,
+                loading: _busy,
+                onPressed: () => _resolve(hide: false),
+              ),
+              ModerationDangerButton(
+                label: l10n.adminHideFromDiscovery,
+                onPressed: _busy ? null : () => _resolve(hide: true),
+              ),
             ],
           ),
         ],

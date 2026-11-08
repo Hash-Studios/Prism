@@ -15,6 +15,7 @@ import 'package:Prism/features/favourite_walls/biz/favourite_counts_cubit.dart';
 import 'package:Prism/features/favourite_walls/domain/repositories/favourite_counts_repository.dart';
 import 'package:Prism/features/folders/biz/folder_save/folder_save_bloc.j.dart';
 import 'package:Prism/features/folders/biz/public_folder_cubit.dart';
+import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
 import 'package:Prism/features/folders/domain/entities/folder_save_plan.dart';
 import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
@@ -45,6 +46,15 @@ class _MockFavouriteWallsBloc extends MockBloc<FavouriteWallsEvent, FavouriteWal
     implements FavouriteWallsBloc {}
 
 class _FakePublicFoldersRepository implements PublicFoldersRepository {
+  @override
+  Future<Result<Set<String>>> fetchFollowedIds(String userId) async => Result.success(<String>{});
+
+  @override
+  Future<Result<FolderDiscoverLists>> fetchDiscover() async => Result.success(FolderDiscoverLists.empty);
+
+  @override
+  Future<void> recordSignal(String folderId, FolderSignal signal) async {}
+
   PublicFolderEntity? folder;
   List<String> wallIds = const <String>[];
   bool following = false;

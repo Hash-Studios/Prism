@@ -1,5 +1,6 @@
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 
 /// A refused public folder request. [refusal] is null for network and other errors.
@@ -23,6 +24,15 @@ abstract class PublicFoldersRepository {
   Future<Result<List<PublicFolderEntity>>> fetchFollowedFolders(String userId);
 
   Future<Result<bool>> isFollowing(String folderId, String userId);
+
+  /// The ids of the public folders [userId] follows.
+  Future<Result<Set<String>>> fetchFollowedIds(String userId);
+
+  /// The trending and new public folders the server ranked today.
+  Future<Result<FolderDiscoverLists>> fetchDiscover();
+
+  /// Tells the discover ranking that the user opened or saved a folder. Errors are logged and ignored.
+  Future<void> recordSignal(String folderId, FolderSignal signal);
 
   Future<Result<void>> setFollowing(String folderId, {required bool following});
 

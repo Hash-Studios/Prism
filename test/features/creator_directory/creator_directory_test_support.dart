@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators.dart';
+import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -14,6 +16,10 @@ import 'package:Prism/features/creator_directory/biz/followed_by_cubit.dart';
 import 'package:Prism/features/creator_directory/biz/similar_creators_offer_session.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_repository.dart';
+import 'package:Prism/features/favourite_walls/domain/repositories/favourite_walls_repository.dart';
+import 'package:Prism/features/folders/biz/folder_discover_cubit.dart';
+import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
+import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -90,6 +96,9 @@ class EmptyCreatorBlocks extends Fake implements UserBlockRepository {
 
   @override
   Stream<BlockedCreators> watchBlockedCreators() => const Stream<BlockedCreators>.empty();
+
+  @override
+  Future<BlockedCreators> loadBlockedCreators() async => blockedCreators;
 }
 
 class MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
@@ -201,5 +210,27 @@ void registerCreatorDirectoryFakes({FakeCreatorDirectoryRepository? repository, 
   if (profileBloc && !getIt.isRegistered<PublicProfileBloc>()) {
     final MockPublicProfileBloc bloc = publicProfileBlocWith();
     getIt.registerFactory<PublicProfileBloc>(() => bloc);
+  } // Search also shows the Folders to follow row. It stays empty here.
+  if (!getIt.isRegistered<FolderDiscoverCubit>()) {
+    getIt.registerFactory<FolderDiscoverCubit>(
+      () => FolderDiscoverCubit(
+        _EmptyDiscoverFolders(),
+        _NoFavourites(),
+        getIt.isRegistered<UserBlockRepository>() ? getIt<UserBlockRepository>() : EmptyCreatorBlocks(),
+        _NoFirestore(),
+      ),
+    );
   }
 }
+
+class _EmptyDiscoverFolders extends Fake implements PublicFoldersRepository {
+  @override
+  Future<Result<FolderDiscoverLists>> fetchDiscover() async => Result.success(FolderDiscoverLists.empty);
+
+  @override
+  Future<Result<Set<String>>> fetchFollowedIds(String userId) async => Result.success(<String>{});
+}
+
+class _NoFavourites extends Fake implements FavouriteWallsRepository {}
+
+class _NoFirestore extends Fake implements FirestoreClient {}

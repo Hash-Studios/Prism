@@ -107,6 +107,7 @@ import '../../features/favourite_walls/domain/repositories/favourite_walls_repos
 import '../../features/favourite_walls/domain/usecases/favourite_walls_usecases.dart'
     as _i406;
 import '../../features/folders/biz/bloc/folders_bloc.j.dart' as _i129;
+import '../../features/folders/biz/folder_discover_cubit.dart' as _i275;
 import '../../features/folders/biz/folder_save/folder_save_bloc.j.dart'
     as _i1021;
 import '../../features/folders/biz/public_folder_cubit.dart' as _i651;
@@ -879,6 +880,14 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i446.SearchUsersByUsernameUseCase>(
     () =>
         _i446.SearchUsersByUsernameUseCase(gh<_i817.PublicProfileRepository>()),
+  );
+  gh.factory<_i275.FolderDiscoverCubit>(
+    () => _i275.FolderDiscoverCubit(
+      gh<_i279.PublicFoldersRepository>(),
+      gh<_i643.FavouriteWallsRepository>(),
+      gh<_i112.UserBlockRepository>(),
+      gh<_i349.FirestoreClient>(),
+    ),
   );
   gh.factory<_i583.ThemeBloc>(
     () => _i583.ThemeBloc(
