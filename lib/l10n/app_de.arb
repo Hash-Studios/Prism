@@ -14675,17 +14675,59 @@
     "description": "Screen reader label for the preview of the shared image."
   },
   "hintGotIt": "Verstanden",
+  "@hintGotIt": {
+    "description": "Button that closes a feature hint callout."
+  },
   "hintFolderHold": "Halte das Herz gedrückt, um dieses Hintergrundbild in einem Ordner zu speichern.",
+  "@hintFolderHold": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintVariantDots": "Tippe auf einen Punkt, um dieses Hintergrundbild in einer anderen Farbe zu sehen.",
+  "@hintVariantDots": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintPhotoSearch": "Finde Hintergrundbilder, die zu einem Foto aus deiner Galerie passen.",
+  "@hintPhotoSearch": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintFollowCategory": "Folge dieser Kategorie, um zu sehen, wann sie neue Hintergrundbilder bekommt.",
+  "@hintFollowCategory": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintSmartFolders": "Ein intelligenter Ordner füllt sich selbst mit Hintergrundbildern, die zu deinen Regeln passen.",
+  "@hintSmartFolders": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintFolderSections": "Öffne Weitere Optionen und dann Abschnitte vorschlagen, um diesen Ordner zu sortieren.",
+  "@hintFolderSections": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintPhotoFit": "Mach aus deinem eigenen Foto ein Hintergrundbild, das auf deinen Bildschirm passt.",
+  "@hintPhotoFit": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintLivePhoto": "Speichere dieses Hintergrundbild als Live Photo für einen bewegten Sperrbildschirm.",
+  "@hintLivePhoto": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "settingsShowTipsTitle": "Tipps anzeigen",
+  "@settingsShowTipsTitle": {
+    "description": "Settings switch that turns feature hints on or off."
+  },
   "settingsShowTipsBody": "Kurze Hinweise zu Funktionen, die du noch nicht genutzt hast.",
+  "@settingsShowTipsBody": {
+    "description": "Subtitle of the Show tips switch."
+  },
   "settingsResetTipsTitle": "Tipps zurücksetzen",
+  "@settingsResetTipsTitle": {
+    "description": "Settings row that lets every feature hint show again."
+  },
   "settingsResetTipsBody": "Alle Tipps erneut anzeigen.",
-  "settingsResetTipsDone": "Tipps werden wieder angezeigt."
+  "@settingsResetTipsBody": {
+    "description": "Subtitle of the Reset tips row."
+  },
+  "settingsResetTipsDone": "Tipps werden wieder angezeigt.",
+  "@settingsResetTipsDone": {
+    "description": "Toast after the user resets feature hints."
+  }
 }

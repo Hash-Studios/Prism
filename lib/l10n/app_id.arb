@@ -14803,17 +14803,59 @@
     "description": "Screen reader label for the preview of the shared image."
   },
   "hintGotIt": "Mengerti",
+  "@hintGotIt": {
+    "description": "Button that closes a feature hint callout."
+  },
   "hintFolderHold": "Tahan ikon hati untuk menyimpan wallpaper ini ke folder.",
+  "@hintFolderHold": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintVariantDots": "Ketuk titik untuk melihat wallpaper ini dalam warna lain.",
+  "@hintVariantDots": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintPhotoSearch": "Temukan wallpaper yang cocok dengan foto dari galerimu.",
+  "@hintPhotoSearch": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintFollowCategory": "Ikuti kategori ini untuk tahu saat ada wallpaper baru.",
+  "@hintFollowCategory": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintSmartFolders": "Folder pintar terisi sendiri dengan wallpaper yang cocok dengan aturanmu.",
+  "@hintSmartFolders": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintFolderSections": "Buka Opsi lainnya, lalu Sarankan bagian, untuk merapikan folder ini.",
+  "@hintFolderSections": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintPhotoFit": "Ubah fotomu sendiri menjadi wallpaper yang pas di layarmu.",
+  "@hintPhotoFit": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintLivePhoto": "Simpan wallpaper ini sebagai Live Photo untuk Layar Terkunci yang bergerak.",
+  "@hintLivePhoto": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "settingsShowTipsTitle": "Tampilkan tips",
+  "@settingsShowTipsTitle": {
+    "description": "Settings switch that turns feature hints on or off."
+  },
   "settingsShowTipsBody": "Petunjuk singkat tentang fitur yang belum kamu pakai.",
+  "@settingsShowTipsBody": {
+    "description": "Subtitle of the Show tips switch."
+  },
   "settingsResetTipsTitle": "Atur ulang tips",
+  "@settingsResetTipsTitle": {
+    "description": "Settings row that lets every feature hint show again."
+  },
   "settingsResetTipsBody": "Tampilkan semua tips lagi.",
-  "settingsResetTipsDone": "Tips akan muncul lagi."
+  "@settingsResetTipsBody": {
+    "description": "Subtitle of the Reset tips row."
+  },
+  "settingsResetTipsDone": "Tips akan muncul lagi.",
+  "@settingsResetTipsDone": {
+    "description": "Toast after the user resets feature hints."
+  }
 }

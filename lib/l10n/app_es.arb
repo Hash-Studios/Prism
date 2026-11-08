@@ -4285,17 +4285,59 @@
   "shareInImageUnreadableDetail": "Compártela de nuevo o comparte otra imagen.",
   "shareInPreviewSemantics": "Imagen compartida",
   "hintGotIt": "Entendido",
+  "@hintGotIt": {
+    "description": "Button that closes a feature hint callout."
+  },
   "hintFolderHold": "Mantén pulsado el corazón para guardar este fondo en una carpeta.",
+  "@hintFolderHold": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintVariantDots": "Toca un punto para ver este fondo en otro color.",
+  "@hintVariantDots": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintPhotoSearch": "Encuentra fondos que combinen con una foto de tu galería.",
+  "@hintPhotoSearch": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintFollowCategory": "Sigue esta categoría para saber cuándo tiene fondos nuevos.",
+  "@hintFollowCategory": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintSmartFolders": "Una carpeta inteligente se llena sola con fondos que cumplen tus reglas.",
+  "@hintSmartFolders": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintFolderSections": "Abre Más opciones y luego Sugerir secciones para ordenar esta carpeta.",
+  "@hintFolderSections": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintPhotoFit": "Convierte tu propia foto en un fondo que se ajuste a tu pantalla.",
+  "@hintPhotoFit": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "hintLivePhoto": "Guarda este fondo como Live Photo para una pantalla de bloqueo con movimiento.",
+  "@hintLivePhoto": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
   "settingsShowTipsTitle": "Mostrar consejos",
+  "@settingsShowTipsTitle": {
+    "description": "Settings switch that turns feature hints on or off."
+  },
   "settingsShowTipsBody": "Pistas breves sobre funciones que aún no has usado.",
+  "@settingsShowTipsBody": {
+    "description": "Subtitle of the Show tips switch."
+  },
   "settingsResetTipsTitle": "Restablecer consejos",
+  "@settingsResetTipsTitle": {
+    "description": "Settings row that lets every feature hint show again."
+  },
   "settingsResetTipsBody": "Volver a mostrar todos los consejos.",
-  "settingsResetTipsDone": "Los consejos volverán a aparecer."
+  "@settingsResetTipsBody": {
+    "description": "Subtitle of the Reset tips row."
+  },
+  "settingsResetTipsDone": "Los consejos volverán a aparecer.",
+  "@settingsResetTipsDone": {
+    "description": "Toast after the user resets feature hints."
+  }
 }
