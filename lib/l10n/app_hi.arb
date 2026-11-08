@@ -15424,5 +15424,19 @@
   "shareInPreviewSemantics": "शेयर की गई इमेज",
   "@shareInPreviewSemantics": {
     "description": "Screen reader label for the preview of the shared image."
-  }
+  },
+  "hintGotIt": "समझ गया",
+  "hintFolderHold": "इस वॉलपेपर को फ़ोल्डर में सेव करने के लिए दिल को दबाकर रखें।",
+  "hintVariantDots": "इस वॉलपेपर को दूसरे रंग में देखने के लिए किसी बिंदु पर टैप करें।",
+  "hintPhotoSearch": "अपनी गैलरी की किसी फ़ोटो से मेल खाते वॉलपेपर खोजें।",
+  "hintFollowCategory": "इस कैटेगरी को फ़ॉलो करें ताकि नए वॉलपेपर आने पर आपको पता चले।",
+  "hintSmartFolders": "स्मार्ट फ़ोल्डर आपके नियमों से मेल खाते वॉलपेपर अपने आप जोड़ता है।",
+  "hintFolderSections": "इस फ़ोल्डर को छाँटने के लिए और विकल्प खोलें, फिर सेक्शन सुझाएँ चुनें।",
+  "hintPhotoFit": "अपनी फ़ोटो को ऐसा वॉलपेपर बनाएँ जो आपकी स्क्रीन पर फ़िट हो।",
+  "hintLivePhoto": "चलती लॉक स्क्रीन के लिए इस वॉलपेपर को Live Photo के रूप में सेव करें।",
+  "settingsShowTipsTitle": "टिप्स दिखाएँ",
+  "settingsShowTipsBody": "उन फ़ीचर के छोटे संकेत जिन्हें आपने अभी तक इस्तेमाल नहीं किया।",
+  "settingsResetTipsTitle": "टिप्स रीसेट करें",
+  "settingsResetTipsBody": "सभी टिप्स फिर से दिखाएँ।",
+  "settingsResetTipsDone": "टिप्स फिर से दिखेंगे।"
 }

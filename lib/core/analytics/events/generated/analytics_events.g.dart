@@ -7,6 +7,7 @@ import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
 import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
@@ -16,6 +17,8 @@ import 'package:Prism/features/watch_set/domain/entities/watch_format.dart';
 import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challenge.dart';
 
 Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
+  'hint_id': HintId.values.map((value) => value.wireValue).toList(),
+  'hint_dismiss_method': HintDismissMethod.values.map((value) => value.wireValue).toList(),
   'daily_moment_step': DailyMomentStepValue.values.map((value) => value.wireValue).toList(),
   'challenge_entry_source': ChallengeEntrySource.values.map((value) => value.wireValue).toList(),
   'wallpaper_target': WallpaperTarget.values.map((value) => value.wireValue).toList(),
@@ -5744,5 +5747,48 @@ class WatchCropAdjustedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'watch_type': watchType.wireValue};
+  }
+}
+
+class HintShownEvent extends AnalyticsEvent {
+  const HintShownEvent({required this.hintId});
+
+  final HintId hintId;
+
+  @override
+  String get eventName => 'hint_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'hint_id': hintId.wireValue};
+  }
+}
+
+class HintDismissedEvent extends AnalyticsEvent {
+  const HintDismissedEvent({required this.hintId, required this.method});
+
+  final HintId hintId;
+  final HintDismissMethod method;
+
+  @override
+  String get eventName => 'hint_dismissed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'hint_id': hintId.wireValue, 'method': method.wireValue};
+  }
+}
+
+class HintFeatureUsedEvent extends AnalyticsEvent {
+  const HintFeatureUsedEvent({required this.hintId});
+
+  final HintId hintId;
+
+  @override
+  String get eventName => 'hint_feature_used';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'hint_id': hintId.wireValue};
   }
 }

@@ -14673,5 +14673,19 @@
   "shareInPreviewSemantics": "Geteiltes Bild",
   "@shareInPreviewSemantics": {
     "description": "Screen reader label for the preview of the shared image."
-  }
+  },
+  "hintGotIt": "Verstanden",
+  "hintFolderHold": "Halte das Herz gedrückt, um dieses Hintergrundbild in einem Ordner zu speichern.",
+  "hintVariantDots": "Tippe auf einen Punkt, um dieses Hintergrundbild in einer anderen Farbe zu sehen.",
+  "hintPhotoSearch": "Finde Hintergrundbilder, die zu einem Foto aus deiner Galerie passen.",
+  "hintFollowCategory": "Folge dieser Kategorie, um zu sehen, wann sie neue Hintergrundbilder bekommt.",
+  "hintSmartFolders": "Ein intelligenter Ordner füllt sich selbst mit Hintergrundbildern, die zu deinen Regeln passen.",
+  "hintFolderSections": "Öffne Weitere Optionen und dann Abschnitte vorschlagen, um diesen Ordner zu sortieren.",
+  "hintPhotoFit": "Mach aus deinem eigenen Foto ein Hintergrundbild, das auf deinen Bildschirm passt.",
+  "hintLivePhoto": "Speichere dieses Hintergrundbild als Live Photo für einen bewegten Sperrbildschirm.",
+  "settingsShowTipsTitle": "Tipps anzeigen",
+  "settingsShowTipsBody": "Kurze Hinweise zu Funktionen, die du noch nicht genutzt hast.",
+  "settingsResetTipsTitle": "Tipps zurücksetzen",
+  "settingsResetTipsBody": "Alle Tipps erneut anzeigen.",
+  "settingsResetTipsDone": "Tipps werden wieder angezeigt."
 }

@@ -53,6 +53,7 @@ import 'package:Prism/features/theme_mode/views/widgets/spooky_decor.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
 import 'package:Prism/features/wallpaper_history/data/history_wall_stores.dart';
+import 'package:Prism/features/hints/views/hint_settings_rows.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
@@ -366,6 +367,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         trailing: Switch(value: _haptics, onChanged: _setHaptics),
       ),
     ),
+    const ShowTipsRow(),
+    const ResetTipsRow(),
   ];
 
   void _setHaptics(bool value) {

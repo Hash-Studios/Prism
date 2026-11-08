@@ -1,6 +1,25 @@
 version: 1
 
 enums:
+  - name: hint_id
+    dart_type: HintId
+    import: package:Prism/features/hints/domain/feature_hint.dart
+    values:
+      - folder_hold
+      - variant_dots
+      - photo_search
+      - follow_category
+      - smart_folders
+      - folder_sections
+      - photo_fit
+      - live_photo
+  - name: hint_dismiss_method
+    dart_type: HintDismissMethod
+    import: package:Prism/features/hints/domain/feature_hint.dart
+    values:
+      - got_it
+      - tap_outside
+      - interrupted
   - name: daily_moment_step
     dart_type: DailyMomentStepValue
     values:
@@ -3697,3 +3716,25 @@ events:
         key: watch_type
         type: enum
         enum: WatchFormat
+  - id: hint_shown
+    fields:
+      - name: hint_id
+        key: hint_id
+        type: enum
+        enum: HintId
+  - id: hint_dismissed
+    fields:
+      - name: hint_id
+        key: hint_id
+        type: enum
+        enum: HintId
+      - name: method
+        key: method
+        type: enum
+        enum: HintDismissMethod
+  - id: hint_feature_used
+    fields:
+      - name: hint_id
+        key: hint_id
+        type: enum
+        enum: HintId

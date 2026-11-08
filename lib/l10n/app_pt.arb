@@ -4139,5 +4139,19 @@
   "shareInLinkUnusableDetail": "Compartilhe uma imagem ou um link para uma página com imagem.",
   "shareInImageUnreadable": "O Prism não pode abrir esta imagem.",
   "shareInImageUnreadableDetail": "Compartilhe de novo ou compartilhe outra imagem.",
-  "shareInPreviewSemantics": "Imagem compartilhada"
+  "shareInPreviewSemantics": "Imagem compartilhada",
+  "hintGotIt": "Entendi",
+  "hintFolderHold": "Mantenha o coração premido para guardar este fundo numa pasta.",
+  "hintVariantDots": "Toque num ponto para ver este fundo noutra cor.",
+  "hintPhotoSearch": "Encontre fundos que combinam com uma foto da sua galeria.",
+  "hintFollowCategory": "Siga esta categoria para saber quando tem fundos novos.",
+  "hintSmartFolders": "Uma pasta inteligente enche-se sozinha com fundos que seguem as suas regras.",
+  "hintFolderSections": "Abra Mais opções e depois Sugerir secções para organizar esta pasta.",
+  "hintPhotoFit": "Transforme a sua própria foto num fundo que cabe no seu ecrã.",
+  "hintLivePhoto": "Guarde este fundo como Live Photo para um ecrã bloqueado com movimento.",
+  "settingsShowTipsTitle": "Mostrar dicas",
+  "settingsShowTipsBody": "Dicas curtas sobre funções que ainda não usou.",
+  "settingsResetTipsTitle": "Repor dicas",
+  "settingsResetTipsBody": "Mostrar todas as dicas outra vez.",
+  "settingsResetTipsDone": "As dicas vão aparecer outra vez."
 }

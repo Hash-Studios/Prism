@@ -16,6 +16,9 @@ class AnalyticsRuntime {
 
   static AppAnalytics get instance => _buffer;
 
+  /// Called with every tracked event. Feature hints use it to see when a feature is used.
+  static final List<void Function(AnalyticsEvent event)> trackListeners = <void Function(AnalyticsEvent event)>[];
+
   static set instance(AppAnalytics value) {
     _buffer.attach(value);
     changes.value = value;
@@ -110,6 +113,9 @@ class BufferedAppAnalytics implements AppAnalytics {
 
   @override
   Future<void> track(AnalyticsEvent event) {
+    for (final void Function(AnalyticsEvent event) listener in List.of(AnalyticsRuntime.trackListeners)) {
+      listener(event);
+    }
     if (!kReleaseMode) {
       final Map<String, Object?> params = event.toWireParameters();
       final Object? ms = params['load_time_ms'] ?? params['duration_ms'];

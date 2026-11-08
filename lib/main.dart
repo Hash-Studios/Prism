@@ -94,6 +94,7 @@ import 'package:Prism/features/theme_mode/theme_mode.dart';
 import 'package:Prism/features/wall_of_the_day/biz/bloc/wotd_bloc.j.dart';
 import 'package:Prism/features/wall_of_the_day/views/widgets/wotd_quick_tile_listener.dart';
 import 'package:Prism/firebase_options.dart';
+import 'package:Prism/features/hints/data/feature_hints.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/local_notification.dart';
@@ -522,6 +523,8 @@ Future<void> _configureAnalyticsRuntime({required bool firebaseInitialized}) asy
   }
 
   AnalyticsRuntime.instance = ProviderBackedAppAnalytics(provider: CompositeAnalyticsProvider(providers));
+  // Starts listening for feature use, so a hint retires once its feature is used.
+  FeatureHints.instance.attach();
 }
 
 Future<AnalyticsProvider?> _buildMixpanelProvider({required bool enabled}) async {

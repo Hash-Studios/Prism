@@ -4139,5 +4139,19 @@
   "shareInLinkUnusableDetail": "Compartilhe uma imagem ou um link para uma página com imagem.",
   "shareInImageUnreadable": "O Prism não pode abrir esta imagem.",
   "shareInImageUnreadableDetail": "Compartilhe de novo ou compartilhe outra imagem.",
-  "shareInPreviewSemantics": "Imagem compartilhada"
+  "shareInPreviewSemantics": "Imagem compartilhada",
+  "hintGotIt": "Entendi",
+  "hintFolderHold": "Toque e segure o coração para salvar este papel de parede em uma pasta.",
+  "hintVariantDots": "Toque em um ponto para ver este papel de parede em outra cor.",
+  "hintPhotoSearch": "Encontre papéis de parede que combinam com uma foto da sua galeria.",
+  "hintFollowCategory": "Siga esta categoria para saber quando ela tiver papéis de parede novos.",
+  "hintSmartFolders": "Uma pasta inteligente se enche sozinha com papéis de parede que seguem suas regras.",
+  "hintFolderSections": "Abra Mais opções e depois Sugerir seções para organizar esta pasta.",
+  "hintPhotoFit": "Transforme sua própria foto em um papel de parede que cabe na sua tela.",
+  "hintLivePhoto": "Salve este papel de parede como Live Photo para uma tela bloqueada com movimento.",
+  "settingsShowTipsTitle": "Mostrar dicas",
+  "settingsShowTipsBody": "Dicas curtas sobre recursos que você ainda não usou.",
+  "settingsResetTipsTitle": "Redefinir dicas",
+  "settingsResetTipsBody": "Mostrar todas as dicas de novo.",
+  "settingsResetTipsDone": "As dicas vão aparecer de novo."
 }

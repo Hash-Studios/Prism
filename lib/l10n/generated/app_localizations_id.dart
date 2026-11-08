@@ -15347,4 +15347,46 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get shareInPreviewSemantics => 'Gambar yang dibagikan';
+
+  @override
+  String get hintGotIt => 'Mengerti';
+
+  @override
+  String get hintFolderHold => 'Tahan ikon hati untuk menyimpan wallpaper ini ke folder.';
+
+  @override
+  String get hintVariantDots => 'Ketuk titik untuk melihat wallpaper ini dalam warna lain.';
+
+  @override
+  String get hintPhotoSearch => 'Temukan wallpaper yang cocok dengan foto dari galerimu.';
+
+  @override
+  String get hintFollowCategory => 'Ikuti kategori ini untuk tahu saat ada wallpaper baru.';
+
+  @override
+  String get hintSmartFolders => 'Folder pintar terisi sendiri dengan wallpaper yang cocok dengan aturanmu.';
+
+  @override
+  String get hintFolderSections => 'Buka Opsi lainnya, lalu Sarankan bagian, untuk merapikan folder ini.';
+
+  @override
+  String get hintPhotoFit => 'Ubah fotomu sendiri menjadi wallpaper yang pas di layarmu.';
+
+  @override
+  String get hintLivePhoto => 'Simpan wallpaper ini sebagai Live Photo untuk Layar Terkunci yang bergerak.';
+
+  @override
+  String get settingsShowTipsTitle => 'Tampilkan tips';
+
+  @override
+  String get settingsShowTipsBody => 'Petunjuk singkat tentang fitur yang belum kamu pakai.';
+
+  @override
+  String get settingsResetTipsTitle => 'Atur ulang tips';
+
+  @override
+  String get settingsResetTipsBody => 'Tampilkan semua tips lagi.';
+
+  @override
+  String get settingsResetTipsDone => 'Tips akan muncul lagi.';
 }

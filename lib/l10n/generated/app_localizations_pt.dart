@@ -15666,6 +15666,48 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get shareInPreviewSemantics => 'Imagem compartilhada';
+
+  @override
+  String get hintGotIt => 'Entendi';
+
+  @override
+  String get hintFolderHold => 'Mantenha o coração premido para guardar este fundo numa pasta.';
+
+  @override
+  String get hintVariantDots => 'Toque num ponto para ver este fundo noutra cor.';
+
+  @override
+  String get hintPhotoSearch => 'Encontre fundos que combinam com uma foto da sua galeria.';
+
+  @override
+  String get hintFollowCategory => 'Siga esta categoria para saber quando tem fundos novos.';
+
+  @override
+  String get hintSmartFolders => 'Uma pasta inteligente enche-se sozinha com fundos que seguem as suas regras.';
+
+  @override
+  String get hintFolderSections => 'Abra Mais opções e depois Sugerir secções para organizar esta pasta.';
+
+  @override
+  String get hintPhotoFit => 'Transforme a sua própria foto num fundo que cabe no seu ecrã.';
+
+  @override
+  String get hintLivePhoto => 'Guarde este fundo como Live Photo para um ecrã bloqueado com movimento.';
+
+  @override
+  String get settingsShowTipsTitle => 'Mostrar dicas';
+
+  @override
+  String get settingsShowTipsBody => 'Dicas curtas sobre funções que ainda não usou.';
+
+  @override
+  String get settingsResetTipsTitle => 'Repor dicas';
+
+  @override
+  String get settingsResetTipsBody => 'Mostrar todas as dicas outra vez.';
+
+  @override
+  String get settingsResetTipsDone => 'As dicas vão aparecer outra vez.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -31328,4 +31370,46 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get shareInPreviewSemantics => 'Imagem compartilhada';
+
+  @override
+  String get hintGotIt => 'Entendi';
+
+  @override
+  String get hintFolderHold => 'Toque e segure o coração para salvar este papel de parede em uma pasta.';
+
+  @override
+  String get hintVariantDots => 'Toque em um ponto para ver este papel de parede em outra cor.';
+
+  @override
+  String get hintPhotoSearch => 'Encontre papéis de parede que combinam com uma foto da sua galeria.';
+
+  @override
+  String get hintFollowCategory => 'Siga esta categoria para saber quando ela tiver papéis de parede novos.';
+
+  @override
+  String get hintSmartFolders => 'Uma pasta inteligente se enche sozinha com papéis de parede que seguem suas regras.';
+
+  @override
+  String get hintFolderSections => 'Abra Mais opções e depois Sugerir seções para organizar esta pasta.';
+
+  @override
+  String get hintPhotoFit => 'Transforme sua própria foto em um papel de parede que cabe na sua tela.';
+
+  @override
+  String get hintLivePhoto => 'Salve este papel de parede como Live Photo para uma tela bloqueada com movimento.';
+
+  @override
+  String get settingsShowTipsTitle => 'Mostrar dicas';
+
+  @override
+  String get settingsShowTipsBody => 'Dicas curtas sobre recursos que você ainda não usou.';
+
+  @override
+  String get settingsResetTipsTitle => 'Redefinir dicas';
+
+  @override
+  String get settingsResetTipsBody => 'Mostrar todas as dicas de novo.';
+
+  @override
+  String get settingsResetTipsDone => 'As dicas vão aparecer de novo.';
 }

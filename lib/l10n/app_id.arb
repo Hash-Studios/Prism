@@ -14801,5 +14801,19 @@
   "shareInPreviewSemantics": "Gambar yang dibagikan",
   "@shareInPreviewSemantics": {
     "description": "Screen reader label for the preview of the shared image."
-  }
+  },
+  "hintGotIt": "Mengerti",
+  "hintFolderHold": "Tahan ikon hati untuk menyimpan wallpaper ini ke folder.",
+  "hintVariantDots": "Ketuk titik untuk melihat wallpaper ini dalam warna lain.",
+  "hintPhotoSearch": "Temukan wallpaper yang cocok dengan foto dari galerimu.",
+  "hintFollowCategory": "Ikuti kategori ini untuk tahu saat ada wallpaper baru.",
+  "hintSmartFolders": "Folder pintar terisi sendiri dengan wallpaper yang cocok dengan aturanmu.",
+  "hintFolderSections": "Buka Opsi lainnya, lalu Sarankan bagian, untuk merapikan folder ini.",
+  "hintPhotoFit": "Ubah fotomu sendiri menjadi wallpaper yang pas di layarmu.",
+  "hintLivePhoto": "Simpan wallpaper ini sebagai Live Photo untuk Layar Terkunci yang bergerak.",
+  "settingsShowTipsTitle": "Tampilkan tips",
+  "settingsShowTipsBody": "Petunjuk singkat tentang fitur yang belum kamu pakai.",
+  "settingsResetTipsTitle": "Atur ulang tips",
+  "settingsResetTipsBody": "Tampilkan semua tips lagi.",
+  "settingsResetTipsDone": "Tips akan muncul lagi."
 }
