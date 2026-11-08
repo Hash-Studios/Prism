@@ -25,6 +25,7 @@ class _DelayedMessaging extends Fake implements FirebaseMessaging {
 class _SilentMessaging extends Fake implements FirebaseMessaging {
   int tokenReads = 0;
   int topicCalls = 0;
+  bool completeTopicCalls = false;
   Future<String?> Function()? getTokenHandler;
 
   @override
@@ -39,13 +40,13 @@ class _SilentMessaging extends Fake implements FirebaseMessaging {
   @override
   Future<void> subscribeToTopic(String topic) {
     topicCalls++;
-    return Completer<void>().future;
+    return completeTopicCalls ? Future<void>.value() : Completer<void>().future;
   }
 
   @override
   Future<void> unsubscribeFromTopic(String topic) {
     topicCalls++;
-    return Completer<void>().future;
+    return completeTopicCalls ? Future<void>.value() : Completer<void>().future;
   }
 }
 
@@ -71,6 +72,129 @@ void main() {
         expect(results, <bool>[false, false]);
         expect(messaging.topicCalls, 0);
         expect(messaging.tokenReads, 1);
+        subscribeToTopicSafely(messaging, 'another', sourceTag: 'test');
+        async.flushMicrotasks();
+        expect(messaging.tokenReads, 1);
+        expect(messaging.topicCalls, 0);
+      });
+    });
+
+    test('concurrent first topic calls share one pending Play services probe', () {
+      fakeAsync((FakeAsync async) {
+        final Completer<String?> token = Completer<String?>();
+        final _SilentMessaging messaging = _SilentMessaging()
+          ..completeTopicCalls = true
+          ..getTokenHandler = () => token.future;
+        final List<bool> results = <bool>[];
+        subscribeToTopicSafely(messaging, 'first', sourceTag: 'test').then(results.add);
+        unsubscribeFromTopicSafely(messaging, 'second', sourceTag: 'test').then((_) => results.add(true));
+        async.flushMicrotasks();
+        expect(messaging.tokenReads, 1);
+        expect(messaging.topicCalls, 0);
+
+        token.complete('present-token');
+        async.flushMicrotasks();
+        expect(messaging.tokenReads, 1);
+        expect(messaging.topicCalls, 4);
+        expect(results, <bool>[true, true]);
+      });
+    });
+
+    test('successful and null probe results are retried on later calls', () {
+      fakeAsync((FakeAsync async) {
+        final _SilentMessaging messaging = _SilentMessaging()..completeTopicCalls = true;
+        final List<String?> tokens = <String?>['first-token', null];
+        final List<bool> results = <bool>[];
+        messaging.getTokenHandler = () async => tokens.removeAt(0);
+
+        subscribeToTopicSafely(messaging, 'first', sourceTag: 'test').then(results.add);
+        async.flushMicrotasks();
+        expect(messaging.tokenReads, 1);
+        expect(messaging.topicCalls, 2);
+
+        subscribeToTopicSafely(messaging, 'second', sourceTag: 'test').then(results.add);
+        async.flushMicrotasks();
+        expect(messaging.tokenReads, 2);
+        expect(messaging.topicCalls, 4);
+        expect(results, <bool>[true, true]);
+      });
+    });
+
+    test('a late missing-services error after timeout does not latch failure', () {
+      fakeAsync((FakeAsync async) {
+        final Completer<String?> lateToken = Completer<String?>();
+        final _SilentMessaging messaging = _SilentMessaging()
+          ..completeTopicCalls = true
+          ..getTokenHandler = () => lateToken.future;
+        final List<bool> results = <bool>[];
+        subscribeToTopicSafely(messaging, 'slow', sourceTag: 'test').then(results.add);
+        async.flushMicrotasks();
+        async.elapse(fcmCallTimeout + const Duration(milliseconds: 1));
+        async.flushMicrotasks();
+        expect(messaging.topicCalls, 2);
+
+        lateToken.completeError(Exception(noPlayServices));
+        async.flushMicrotasks();
+        messaging.getTokenHandler = () async => 'recovered-token';
+        subscribeToTopicSafely(messaging, 'recovered', sourceTag: 'test').then(results.add);
+        async.flushMicrotasks();
+        expect(messaging.tokenReads, 2);
+        expect(messaging.topicCalls, 4);
+        expect(results, <bool>[true, true]);
+      });
+    });
+
+    test('ownership loss while the probe is pending prevents topic dispatch', () {
+      fakeAsync((FakeAsync async) {
+        final Completer<String?> token = Completer<String?>();
+        final _SilentMessaging messaging = _SilentMessaging()
+          ..completeTopicCalls = true
+          ..getTokenHandler = () => token.future;
+        bool isCurrent = true;
+        final List<bool> results = <bool>[];
+        subscribeToTopicSafely(messaging, 'owned', sourceTag: 'test', isCurrent: () => isCurrent).then(results.add);
+        async.flushMicrotasks();
+        expect(messaging.tokenReads, 1);
+
+        isCurrent = false;
+        token.complete('present-token');
+        async.flushMicrotasks();
+        expect(results, <bool>[false]);
+        expect(messaging.topicCalls, 0);
+      });
+    });
+
+    test('a stale probe completing after reset cannot replace a newer probe', () {
+      fakeAsync((FakeAsync async) {
+        final Completer<String?> oldToken = Completer<String?>();
+        final Completer<String?> newToken = Completer<String?>();
+        final _SilentMessaging messaging = _SilentMessaging()
+          ..completeTopicCalls = true
+          ..getTokenHandler = () => oldToken.future;
+        final List<bool> results = <bool>[];
+        subscribeToTopicSafely(messaging, 'old', sourceTag: 'test').then(results.add);
+        async.flushMicrotasks();
+        expect(messaging.tokenReads, 1);
+
+        resetPlayServicesProbe();
+        messaging.getTokenHandler = () => newToken.future;
+        subscribeToTopicSafely(messaging, 'new', sourceTag: 'test').then(results.add);
+        async.flushMicrotasks();
+        expect(messaging.tokenReads, 2);
+        expect(messaging.topicCalls, 0);
+
+        oldToken.complete('old-token');
+        async.flushMicrotasks();
+        expect(messaging.topicCalls, 2);
+        subscribeToTopicSafely(messaging, 'after-stale', sourceTag: 'test').then(results.add);
+        async.flushMicrotasks();
+        expect(messaging.tokenReads, 2);
+        expect(messaging.topicCalls, 2);
+
+        newToken.complete('new-token');
+        async.flushMicrotasks();
+        expect(messaging.topicCalls, 6);
+        expect(results, <bool>[true, true, true]);
       });
     });
 

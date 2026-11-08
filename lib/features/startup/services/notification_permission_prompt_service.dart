@@ -68,12 +68,13 @@ class NotificationPermissionPromptService {
     final NotificationSettings current = await messaging.getNotificationSettings();
     if (current.authorizationStatus == AuthorizationStatus.authorized) {
       await _settings.set(_promptedPrefKey, true);
-      final bool subscribedToWotd = await _subscribeAfterPermissionGrant(
-        messaging,
-        sourceTag: '$sourceTag.already_granted',
-      );
-      await analytics.track(
-        TomorrowHookPermissionResultEvent(result: EventResultValue.success, subscribedToWotd: subscribedToWotd),
+      // The caller (onboarding, a download) never waits for FCM; the result event follows the topic calls.
+      unawaited(
+        _subscribeAfterPermissionGrant(messaging, sourceTag: '$sourceTag.already_granted').then(
+          (bool subscribedToWotd) => analytics.track(
+            TomorrowHookPermissionResultEvent(result: EventResultValue.success, subscribedToWotd: subscribedToWotd),
+          ),
+        ),
       );
       unawaited(NotificationSignals.instance.onPermission(true));
       return;
@@ -106,18 +107,23 @@ class NotificationPermissionPromptService {
 
     final AuthorizationStatus status = requested.authorizationStatus;
     final bool granted = status == AuthorizationStatus.authorized || status == AuthorizationStatus.provisional;
-    bool subscribedToWotd = false;
     if (granted) {
-      subscribedToWotd = await _subscribeAfterPermissionGrant(messaging, sourceTag: '$sourceTag.value_action_prompt');
+      unawaited(
+        _subscribeAfterPermissionGrant(messaging, sourceTag: '$sourceTag.value_action_prompt').then(
+          (bool subscribedToWotd) => analytics.track(
+            TomorrowHookPermissionResultEvent(result: EventResultValue.success, subscribedToWotd: subscribedToWotd),
+          ),
+        ),
+      );
+    } else {
+      await analytics.track(
+        TomorrowHookPermissionResultEvent(
+          result: EventResultValue.failure,
+          reason: _reasonFromAuthorizationStatus(status),
+          subscribedToWotd: false,
+        ),
+      );
     }
-
-    await analytics.track(
-      TomorrowHookPermissionResultEvent(
-        result: granted ? EventResultValue.success : EventResultValue.failure,
-        reason: granted ? null : _reasonFromAuthorizationStatus(status),
-        subscribedToWotd: subscribedToWotd,
-      ),
-    );
     unawaited(NotificationSignals.instance.onPermission(granted));
   }
 
