@@ -13248,6 +13248,9 @@
   },
   "coreContentReportComment": "Kommentar",
   "coreContentReportFolder": "Ordner",
+  "@coreContentReportFolder": {
+    "description": "Content type word in the report prompt for a public folder, lower case as in the sentence"
+  },
   "@coreContentReportComment": {
     "description": "Content type word in the report prompt for a wall comment, lower case as in the sentence"
   },
