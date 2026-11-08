@@ -15166,5 +15166,76 @@
   "photoWallRefundPending": "आपके कॉइन लौटा दिए जाएँगे।",
   "@photoWallRefundPending": {"description": "Added after an error when the refund is not confirmed yet."},
   "photoWallTryAgain": "फिर से कोशिश करें",
-  "@photoWallTryAgain": {"description": "Button on the error card that runs the same job again."}
+  "@photoWallTryAgain": {
+    "description": "Button on the error card that runs the same job again."
+  },
+  "shareInImageTitle": "यह इमेज इस्तेमाल करें",
+  "@shareInImageTitle": {
+    "description": "Title of the sheet shown after the user shares an image to Prism."
+  },
+  "shareInSet": "वॉलपेपर के रूप में सेट करें",
+  "@shareInSet": {
+    "description": "Action on the share sheet: crop the shared image and set it."
+  },
+  "shareInSetDetail": "इसे क्रॉप करें, फिर अपनी स्क्रीन पर सेट करें।",
+  "@shareInSetDetail": {
+    "description": "Detail under the Set as wallpaper action."
+  },
+  "shareInFit": "{coins, plural, =1{फ़िट करें · 1 कॉइन} other{फ़िट करें · {coins} कॉइन}}",
+  "@shareInFit": {
+    "description": "Action on the share sheet: AI extends or upscales the image. Shows the coin cost.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "shareInFitTitle": "फ़िट करें",
+  "@shareInFitTitle": {
+    "description": "Action on the share sheet when the image needs no change, so there is no cost."
+  },
+  "shareInFitDetail": "AI इसे बढ़ाता या तेज़ करता है, ताकि यह आपकी स्क्रीन में फ़िट हो।",
+  "@shareInFitDetail": {
+    "description": "Detail under Make it fit."
+  },
+  "shareInFitNotNeeded": "यह पहले से आपकी स्क्रीन में फ़िट है",
+  "@shareInFitNotNeeded": {
+    "description": "Detail under Make it fit when the image needs no change."
+  },
+  "shareInUpload": "Prism पर अपलोड करें",
+  "@shareInUpload": {
+    "description": "Action on the share sheet: start the normal upload with review."
+  },
+  "shareInUploadDetail": "समीक्षा के बाद दूसरे इसे देख सकेंगे।",
+  "@shareInUploadDetail": {
+    "description": "Detail under Upload to Prism."
+  },
+  "shareInSignInDetail": "इसका इस्तेमाल करने के लिए साइन इन करें।",
+  "@shareInSignInDetail": {
+    "description": "Detail under an action that needs an account, shown to guests."
+  },
+  "shareInLooking": "इस लिंक में इमेज खोजी जा रही है",
+  "@shareInLooking": {
+    "description": "Shown while Prism looks for an image on a shared web page."
+  },
+  "shareInLinkUnusable": "Prism इस लिंक का इस्तेमाल नहीं कर सकता।",
+  "@shareInLinkUnusable": {
+    "description": "Title when a shared link has no image Prism can use."
+  },
+  "shareInLinkUnusableDetail": "कोई इमेज शेयर करें, या इमेज वाले पेज का लिंक।",
+  "@shareInLinkUnusableDetail": {
+    "description": "Detail under shareInLinkUnusable."
+  },
+  "shareInImageUnreadable": "Prism यह इमेज नहीं खोल सकता।",
+  "@shareInImageUnreadable": {
+    "description": "Title when the shared image cannot be read."
+  },
+  "shareInImageUnreadableDetail": "इसे फिर से शेयर करें, या कोई दूसरी इमेज शेयर करें।",
+  "@shareInImageUnreadableDetail": {
+    "description": "Detail under shareInImageUnreadable."
+  },
+  "shareInPreviewSemantics": "शेयर की गई इमेज",
+  "@shareInPreviewSemantics": {
+    "description": "Screen reader label for the preview of the shared image."
+  }
 }

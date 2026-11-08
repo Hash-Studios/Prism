@@ -100,6 +100,24 @@ enum PhotoJobModeValue {
   String get wireValue => _snakeCase(name);
 }
 
+enum SharedItemKindValue {
+  prismLink,
+  image,
+  url;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum ShareActionValue {
+  set,
+  fit,
+  upload,
+  save,
+  failed;
+
+  String get wireValue => _snakeCase(name);
+}
+
 enum PhotoJobTargetValue {
   phone,
   desktop;
@@ -275,6 +293,7 @@ enum TargetTypeValue {
   refer,
   screen,
   shortCode,
+  sharedItem,
   unknown;
 
   String get wireValue => _snakeCase(name);

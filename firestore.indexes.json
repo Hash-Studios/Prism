@@ -1691,6 +1691,12 @@
       "indexes": []
     },
     {
+      "collectionGroup": "shareLinkQuota",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
       "collectionGroup": "promoRedeemRate",
       "fieldPath": "expiresAt",
       "ttl": true,

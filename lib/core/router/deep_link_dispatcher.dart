@@ -50,6 +50,9 @@ class DeepLinkDispatcher {
   Future<void> _tail = Future<void>.value();
   int _pendingDispatches = 0;
   PageRouteInfo? _dailyMomentTarget;
+  final Map<String, Future<DeepLinkDispatchResult>> _sharedImages = <String, Future<DeepLinkDispatchResult>>{};
+  final Map<String, Future<DeepLinkDispatchResult>> _pendingSharedTexts = <String, Future<DeepLinkDispatchResult>>{};
+  String? _visibleSharedText;
 
   void _onRouterChanged() => scheduleMicrotask(_updateDailyMomentGate);
 
@@ -82,7 +85,35 @@ class DeepLinkDispatcher {
     DeepLinkActionEntity action, {
     required DeepLinkSourceValue source,
     bool isRetry = false,
-  }) => _enqueue(action, source: source, isRetry: isRetry);
+  }) {
+    if (action is! ShareInIntent) return _enqueue(action, source: source, isRetry: isRetry);
+    final String? id = action.inboxId?.toLowerCase();
+    final String text = action.text ?? '';
+    final Future<DeepLinkDispatchResult>? existing = id != null ? _sharedImages[id] : _pendingSharedTexts[text];
+    if (existing != null) return existing;
+    if (id == null && text == _visibleSharedText && _router.topRoute.name == ShareInRoute.name) {
+      return Future<DeepLinkDispatchResult>.value(DeepLinkDispatchResult.navigated);
+    }
+    final Future<DeepLinkDispatchResult> result = _enqueue(action, source: source, isRetry: isRetry);
+    if (id != null) {
+      _sharedImages[id] = result;
+    } else {
+      _pendingSharedTexts[text] = result;
+    }
+    unawaited(
+      result.then((DeepLinkDispatchResult outcome) {
+        if (id == null && identical(_pendingSharedTexts[text], result)) {
+          _pendingSharedTexts.remove(text);
+        }
+        if (outcome == DeepLinkDispatchResult.navigated) {
+          _visibleSharedText = id == null && _router.topRoute.name == ShareInRoute.name ? text : null;
+        } else if (id != null && identical(_sharedImages[id], result)) {
+          _sharedImages.remove(id);
+        }
+      }),
+    );
+    return result;
+  }
 
   Future<DeepLinkDispatchResult> openActionLoader(
     Future<DeepLinkActionEntity?> Function() loadAction, {
@@ -197,6 +228,8 @@ class DeepLinkDispatcher {
   }
 
   void cancel() {
+    _visibleSharedText = null;
+    _pendingSharedTexts.clear();
     for (final request in _deferred) {
       _record(
         DeepLinkNavigationResultEvent(

@@ -2439,6 +2439,56 @@ class SettingsRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [ShareInPage]
+class ShareInRoute extends PageRouteInfo<ShareInRouteArgs> {
+  ShareInRoute({
+    Key? key,
+    required SharedItemKind kind,
+    SharedItem? item,
+    List<PageRouteInfo>? children,
+  }) : super(
+         ShareInRoute.name,
+         args: ShareInRouteArgs(key: key, kind: kind, item: item),
+         initialChildren: children,
+       );
+
+  static const String name = 'ShareInRoute';
+
+  static PageInfo page = PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<ShareInRouteArgs>();
+      return ShareInPage(key: args.key, kind: args.kind, item: args.item);
+    },
+  );
+}
+
+class ShareInRouteArgs {
+  const ShareInRouteArgs({this.key, required this.kind, this.item});
+
+  final Key? key;
+
+  final SharedItemKind kind;
+
+  final SharedItem? item;
+
+  @override
+  String toString() {
+    return 'ShareInRouteArgs{key: $key, kind: $kind, item: $item}';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! ShareInRouteArgs) return false;
+    return key == other.key && kind == other.kind && item == other.item;
+  }
+
+  @override
+  int get hashCode => key.hashCode ^ kind.hashCode ^ item.hashCode;
+}
+
+/// generated route for
 /// [SharePrismScreen]
 class SharePrismRoute extends PageRouteInfo<void> {
   const SharePrismRoute({List<PageRouteInfo>? children})
@@ -2853,6 +2903,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
     String? requestId,
     WallpaperFeed? feed,
     bool desktopDownload = false,
+    bool openFolderSheet = false,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperDetailRoute.name,
@@ -2869,6 +2920,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
            requestId: requestId,
            feed: feed,
            desktopDownload: desktopDownload,
+           openFolderSheet: openFolderSheet,
          ),
          initialChildren: children,
        );
@@ -2895,6 +2947,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
           requestId: args.requestId,
           feed: args.feed,
           desktopDownload: args.desktopDownload,
+          openFolderSheet: args.openFolderSheet,
         ),
       );
     },
@@ -2915,6 +2968,7 @@ class WallpaperDetailRouteArgs {
     this.requestId,
     this.feed,
     this.desktopDownload = false,
+    this.openFolderSheet = false,
   });
 
   final Key? key;
@@ -2941,9 +2995,11 @@ class WallpaperDetailRouteArgs {
 
   final bool desktopDownload;
 
+  final bool openFolderSheet;
+
   @override
   String toString() {
-    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag, localFile: $localFile, aspectRatio: $aspectRatio, requestId: $requestId, feed: $feed, desktopDownload: $desktopDownload}';
+    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag, localFile: $localFile, aspectRatio: $aspectRatio, requestId: $requestId, feed: $feed, desktopDownload: $desktopDownload, openFolderSheet: $openFolderSheet}';
   }
 
   @override
@@ -2961,7 +3017,8 @@ class WallpaperDetailRouteArgs {
         aspectRatio == other.aspectRatio &&
         requestId == other.requestId &&
         feed == other.feed &&
-        desktopDownload == other.desktopDownload;
+        desktopDownload == other.desktopDownload &&
+        openFolderSheet == other.openFolderSheet;
   }
 
   @override
@@ -2977,7 +3034,8 @@ class WallpaperDetailRouteArgs {
       aspectRatio.hashCode ^
       requestId.hashCode ^
       feed.hashCode ^
-      desktopDownload.hashCode;
+      desktopDownload.hashCode ^
+      openFolderSheet.hashCode;
 }
 
 /// generated route for
@@ -2985,11 +3043,16 @@ class WallpaperDetailRouteArgs {
 class WallpaperFilterRoute extends PageRouteInfo<WallpaperFilterRouteArgs> {
   WallpaperFilterRoute({
     required String filePath,
+    bool sharedImage = false,
     Key? key,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperFilterRoute.name,
-         args: WallpaperFilterRouteArgs(filePath: filePath, key: key),
+         args: WallpaperFilterRouteArgs(
+           filePath: filePath,
+           sharedImage: sharedImage,
+           key: key,
+         ),
          initialChildren: children,
        );
 
@@ -2999,32 +3062,44 @@ class WallpaperFilterRoute extends PageRouteInfo<WallpaperFilterRouteArgs> {
     name,
     builder: (data) {
       final args = data.argsAs<WallpaperFilterRouteArgs>();
-      return WallpaperFilterScreen(filePath: args.filePath, key: args.key);
+      return WallpaperFilterScreen(
+        filePath: args.filePath,
+        sharedImage: args.sharedImage,
+        key: args.key,
+      );
     },
   );
 }
 
 class WallpaperFilterRouteArgs {
-  const WallpaperFilterRouteArgs({required this.filePath, this.key});
+  const WallpaperFilterRouteArgs({
+    required this.filePath,
+    this.sharedImage = false,
+    this.key,
+  });
 
   final String filePath;
+
+  final bool sharedImage;
 
   final Key? key;
 
   @override
   String toString() {
-    return 'WallpaperFilterRouteArgs{filePath: $filePath, key: $key}';
+    return 'WallpaperFilterRouteArgs{filePath: $filePath, sharedImage: $sharedImage, key: $key}';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! WallpaperFilterRouteArgs) return false;
-    return filePath == other.filePath && key == other.key;
+    return filePath == other.filePath &&
+        sharedImage == other.sharedImage &&
+        key == other.key;
   }
 
   @override
-  int get hashCode => filePath.hashCode ^ key.hashCode;
+  int get hashCode => filePath.hashCode ^ sharedImage.hashCode ^ key.hashCode;
 }
 
 /// generated route for

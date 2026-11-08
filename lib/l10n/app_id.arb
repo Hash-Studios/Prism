@@ -14543,5 +14543,76 @@
   "photoWallRefundPending": "Koin kamu akan dikembalikan.",
   "@photoWallRefundPending": {"description": "Added after an error when the refund is not confirmed yet."},
   "photoWallTryAgain": "Coba lagi",
-  "@photoWallTryAgain": {"description": "Button on the error card that runs the same job again."}
+  "@photoWallTryAgain": {
+    "description": "Button on the error card that runs the same job again."
+  },
+  "shareInImageTitle": "Gunakan gambar ini",
+  "@shareInImageTitle": {
+    "description": "Title of the sheet shown after the user shares an image to Prism."
+  },
+  "shareInSet": "Jadikan wallpaper",
+  "@shareInSet": {
+    "description": "Action on the share sheet: crop the shared image and set it."
+  },
+  "shareInSetDetail": "Potong dulu, lalu atur di layarmu.",
+  "@shareInSetDetail": {
+    "description": "Detail under the Set as wallpaper action."
+  },
+  "shareInFit": "{coins, plural, =1{Buat pas · 1 koin} other{Buat pas · {coins} koin}}",
+  "@shareInFit": {
+    "description": "Action on the share sheet: AI extends or upscales the image. Shows the coin cost.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "shareInFitTitle": "Buat pas",
+  "@shareInFitTitle": {
+    "description": "Action on the share sheet when the image needs no change, so there is no cost."
+  },
+  "shareInFitDetail": "AI memperluas atau mempertajamnya agar pas dengan layarmu.",
+  "@shareInFitDetail": {
+    "description": "Detail under Make it fit."
+  },
+  "shareInFitNotNeeded": "Sudah pas dengan layarmu",
+  "@shareInFitNotNeeded": {
+    "description": "Detail under Make it fit when the image needs no change."
+  },
+  "shareInUpload": "Unggah ke Prism",
+  "@shareInUpload": {
+    "description": "Action on the share sheet: start the normal upload with review."
+  },
+  "shareInUploadDetail": "Orang lain bisa melihatnya setelah ditinjau.",
+  "@shareInUploadDetail": {
+    "description": "Detail under Upload to Prism."
+  },
+  "shareInSignInDetail": "Masuk untuk menggunakan ini.",
+  "@shareInSignInDetail": {
+    "description": "Detail under an action that needs an account, shown to guests."
+  },
+  "shareInLooking": "Mencari gambar di tautan ini",
+  "@shareInLooking": {
+    "description": "Shown while Prism looks for an image on a shared web page."
+  },
+  "shareInLinkUnusable": "Prism tidak dapat menggunakan tautan ini.",
+  "@shareInLinkUnusable": {
+    "description": "Title when a shared link has no image Prism can use."
+  },
+  "shareInLinkUnusableDetail": "Bagikan gambar, atau tautan ke halaman yang berisi gambar.",
+  "@shareInLinkUnusableDetail": {
+    "description": "Detail under shareInLinkUnusable."
+  },
+  "shareInImageUnreadable": "Prism tidak dapat membuka gambar ini.",
+  "@shareInImageUnreadable": {
+    "description": "Title when the shared image cannot be read."
+  },
+  "shareInImageUnreadableDetail": "Bagikan lagi, atau bagikan gambar lain.",
+  "@shareInImageUnreadableDetail": {
+    "description": "Detail under shareInImageUnreadable."
+  },
+  "shareInPreviewSemantics": "Gambar yang dibagikan",
+  "@shareInPreviewSemantics": {
+    "description": "Screen reader label for the preview of the shared image."
+  }
 }

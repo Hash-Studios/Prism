@@ -15296,4 +15296,60 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get photoWallTryAgain => 'Erneut versuchen';
+
+  @override
+  String get shareInImageTitle => 'Dieses Bild verwenden';
+
+  @override
+  String get shareInSet => 'Als Hintergrundbild festlegen';
+
+  @override
+  String get shareInSetDetail => 'Zuschneiden und dann auf deinem Bildschirm festlegen.';
+
+  @override
+  String shareInFit(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Passend machen · $coins Coins',
+      one: 'Passend machen · 1 Coin',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shareInFitTitle => 'Passend machen';
+
+  @override
+  String get shareInFitDetail => 'Die KI erweitert oder schärft es, damit es auf deinen Bildschirm passt.';
+
+  @override
+  String get shareInFitNotNeeded => 'Passt bereits auf deinen Bildschirm';
+
+  @override
+  String get shareInUpload => 'In Prism hochladen';
+
+  @override
+  String get shareInUploadDetail => 'Andere sehen es nach einer Prüfung.';
+
+  @override
+  String get shareInSignInDetail => 'Melde dich an, um das zu nutzen.';
+
+  @override
+  String get shareInLooking => 'Bild in diesem Link wird gesucht';
+
+  @override
+  String get shareInLinkUnusable => 'Prism kann diesen Link nicht verwenden.';
+
+  @override
+  String get shareInLinkUnusableDetail => 'Teile ein Bild oder einen Link zu einer Seite mit einem Bild.';
+
+  @override
+  String get shareInImageUnreadable => 'Prism kann dieses Bild nicht öffnen.';
+
+  @override
+  String get shareInImageUnreadableDetail => 'Teile es erneut oder teile ein anderes Bild.';
+
+  @override
+  String get shareInPreviewSemantics => 'Geteiltes Bild';
 }

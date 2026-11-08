@@ -85,6 +85,7 @@ import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/session.dart';
 import 'package:Prism/features/session/views/widgets/shake_to_report_listener.dart';
+import 'package:Prism/features/share_in/data/shared_inbox.dart';
 import 'package:Prism/features/startup/services/resume_refresh_policy.dart';
 import 'package:Prism/features/startup/startup.dart';
 import 'package:Prism/features/theme_mode/data/theme_mode_migration.dart';
@@ -575,6 +576,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   final AnalyticsIdentitySync _analyticsIdentitySync = AnalyticsIdentitySync();
   final DeepLinkParser _deepLinkParser = const DeepLinkParser();
   late final DeepLinkDispatcher _deepLinkDispatcher;
+  final SharedInbox _sharedInbox = SharedInbox();
   late final AuthNavigationContinuation _authContinuation;
   final Map<String, (ShortCodeIntent, DeepLinkSourceValue)> _shortLinkRetries =
       <String, (ShortCodeIntent, DeepLinkSourceValue)>{};
@@ -750,8 +752,30 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
       if (_launchLinkHandled) return DeepLink.defaultPath;
       _launchLinkHandled = true;
     }
+    if (defaultTargetPlatform == TargetPlatform.iOS && _isShareIn(platformDeepLink.uri)) {
+      unawaited(_openPendingShare(arriving: platformDeepLink.uri));
+      if (!_sharedInbox.claimLink(platformDeepLink.uri)) {
+        return platformDeepLink.initial ? DeepLink.defaultPath : DeepLink.none;
+      }
+    }
     unawaited(_deepLinkDispatcher.openUri(platformDeepLink.uri, source: DeepLinkSourceValue.appLinks));
     return platformDeepLink.initial ? DeepLink.defaultPath : DeepLink.none;
+  }
+
+  static bool _isShareIn(Uri uri) => SharedInbox.isShareLink(uri);
+
+  /// Opens the share the iOS Share Extension left in the App Group. The system can drop the URL it hands over while
+  /// Prism starts, so Prism also takes the share itself at start, on resume and when a share URL arrives.
+  Future<void> _openPendingShare({Uri? arriving}) async {
+    if (defaultTargetPlatform != TargetPlatform.iOS) return;
+    try {
+      final Uri? link = await _sharedInbox.takePendingLink(arriving: arriving);
+      if (link != null && mounted && _sharedInbox.claimLink(link)) {
+        unawaited(_deepLinkDispatcher.openUri(link, source: DeepLinkSourceValue.appLinks));
+      }
+    } catch (error) {
+      logger.w('Pending share link unavailable (${error.runtimeType}).');
+    }
   }
 
   Future<void> _handleSessionEnded() async {
@@ -837,6 +861,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     AnalyticsRuntime.changes.addListener(_onAnalyticsRuntimeChanged);
     unawaited(_configureDisplayMode());
     unawaited(_configureLocalNotificationChannels());
+    unawaited(SharedInbox().sweep().catchError((Object _) => 0));
+    unawaited(_openPendingShare());
     unawaited(
       CoinsService.instance.restoreLocalEconomyForCurrentUser().catchError((Object error, StackTrace stackTrace) {
         CoinsService.instance.logCoinError(sourceTag: 'coins.main.local_restore', error: error, stackTrace: stackTrace);
@@ -882,6 +908,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      unawaited(_openPendingShare());
       final now = DateTime.now();
       // The app can stay alive across days, so pick up a new Wall of the Day.
       if (shouldRefreshWotdOnResume(lastRefresh: _lastWotdRefresh, now: now)) {

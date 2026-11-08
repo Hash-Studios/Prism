@@ -18,6 +18,10 @@ class DeepLinkParser {
     'draw': DeepLinkScreen.draw,
   };
   static const Set<String> _shortCodeRoots = <String>{'l'};
+  static const String _shareInRoot = 'share-in';
+  static final RegExp _shareInId = RegExp(r'^[0-9a-f-]{36}$');
+  static final RegExp _shareInSource = RegExp(r'^[A-Za-z0-9._-]{1,128}$');
+  static const int _shareInMaxText = 2048;
 
   Uri transform(Uri uri) {
     try {
@@ -152,12 +156,36 @@ class DeepLinkParser {
       return ShortCodeIntent(code: code, rawUri: uri.toString());
     }
 
+    if (root == _shareInRoot) return _shareIn(uri, segments);
+
     final DeepLinkScreen? screen = _screenRoots[root];
     if (screen != null) {
       return ScreenLinkIntent(screen: screen, rawUri: uri.toString());
     }
 
     return UnknownIntent(rawUri: uri.toString());
+  }
+
+  /// Only the app's own `prism:` scheme carries shares. A web link to /share-in is not a share.
+  DeepLinkActionEntity _shareIn(Uri uri, List<String> segments) {
+    final Map<String, String> query = uri.queryParameters;
+    final String? id = query['id'];
+    final String? text = query['text'];
+    final String? source = query['src'];
+    final bool valid =
+        _isCustomScheme(uri) &&
+        segments.length == 1 &&
+        query.keys.every(const <String>{'id', 'text', 'src'}.contains) &&
+        (id == null) != (text == null) &&
+        (id == null || _shareInId.hasMatch(id)) &&
+        (text == null || (text.trim().isNotEmpty && text.length <= _shareInMaxText));
+    if (!valid) return UnknownIntent(rawUri: uri.toString());
+    return ShareInIntent(
+      inboxId: id,
+      text: text,
+      sourceApp: source != null && _shareInSource.hasMatch(source) ? source : null,
+      rawUri: uri.toString(),
+    );
   }
 
   List<String> _segments(Uri uri) {

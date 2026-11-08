@@ -14415,5 +14415,76 @@
   "photoWallRefundPending": "Deine Coins werden zurückgegeben.",
   "@photoWallRefundPending": {"description": "Added after an error when the refund is not confirmed yet."},
   "photoWallTryAgain": "Erneut versuchen",
-  "@photoWallTryAgain": {"description": "Button on the error card that runs the same job again."}
+  "@photoWallTryAgain": {
+    "description": "Button on the error card that runs the same job again."
+  },
+  "shareInImageTitle": "Dieses Bild verwenden",
+  "@shareInImageTitle": {
+    "description": "Title of the sheet shown after the user shares an image to Prism."
+  },
+  "shareInSet": "Als Hintergrundbild festlegen",
+  "@shareInSet": {
+    "description": "Action on the share sheet: crop the shared image and set it."
+  },
+  "shareInSetDetail": "Zuschneiden und dann auf deinem Bildschirm festlegen.",
+  "@shareInSetDetail": {
+    "description": "Detail under the Set as wallpaper action."
+  },
+  "shareInFit": "{coins, plural, =1{Passend machen · 1 Coin} other{Passend machen · {coins} Coins}}",
+  "@shareInFit": {
+    "description": "Action on the share sheet: AI extends or upscales the image. Shows the coin cost.",
+    "placeholders": {
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "shareInFitTitle": "Passend machen",
+  "@shareInFitTitle": {
+    "description": "Action on the share sheet when the image needs no change, so there is no cost."
+  },
+  "shareInFitDetail": "Die KI erweitert oder schärft es, damit es auf deinen Bildschirm passt.",
+  "@shareInFitDetail": {
+    "description": "Detail under Make it fit."
+  },
+  "shareInFitNotNeeded": "Passt bereits auf deinen Bildschirm",
+  "@shareInFitNotNeeded": {
+    "description": "Detail under Make it fit when the image needs no change."
+  },
+  "shareInUpload": "In Prism hochladen",
+  "@shareInUpload": {
+    "description": "Action on the share sheet: start the normal upload with review."
+  },
+  "shareInUploadDetail": "Andere sehen es nach einer Prüfung.",
+  "@shareInUploadDetail": {
+    "description": "Detail under Upload to Prism."
+  },
+  "shareInSignInDetail": "Melde dich an, um das zu nutzen.",
+  "@shareInSignInDetail": {
+    "description": "Detail under an action that needs an account, shown to guests."
+  },
+  "shareInLooking": "Bild in diesem Link wird gesucht",
+  "@shareInLooking": {
+    "description": "Shown while Prism looks for an image on a shared web page."
+  },
+  "shareInLinkUnusable": "Prism kann diesen Link nicht verwenden.",
+  "@shareInLinkUnusable": {
+    "description": "Title when a shared link has no image Prism can use."
+  },
+  "shareInLinkUnusableDetail": "Teile ein Bild oder einen Link zu einer Seite mit einem Bild.",
+  "@shareInLinkUnusableDetail": {
+    "description": "Detail under shareInLinkUnusable."
+  },
+  "shareInImageUnreadable": "Prism kann dieses Bild nicht öffnen.",
+  "@shareInImageUnreadable": {
+    "description": "Title when the shared image cannot be read."
+  },
+  "shareInImageUnreadableDetail": "Teile es erneut oder teile ein anderes Bild.",
+  "@shareInImageUnreadableDetail": {
+    "description": "Detail under shareInImageUnreadable."
+  },
+  "shareInPreviewSemantics": "Geteiltes Bild",
+  "@shareInPreviewSemantics": {
+    "description": "Screen reader label for the preview of the shared image."
+  }
 }

@@ -15049,4 +15049,60 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get photoWallTryAgain => 'Try again';
+
+  @override
+  String get shareInImageTitle => 'Use this image';
+
+  @override
+  String get shareInSet => 'Set as wallpaper';
+
+  @override
+  String get shareInSetDetail => 'Crop it, then set it on your screen.';
+
+  @override
+  String shareInFit(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Make it fit · $coins coins',
+      one: 'Make it fit · 1 coin',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shareInFitTitle => 'Make it fit';
+
+  @override
+  String get shareInFitDetail => 'AI extends or sharpens it to fit your screen.';
+
+  @override
+  String get shareInFitNotNeeded => 'Already fits your screen';
+
+  @override
+  String get shareInUpload => 'Upload to Prism';
+
+  @override
+  String get shareInUploadDetail => 'Others can see it after a review.';
+
+  @override
+  String get shareInSignInDetail => 'Sign in to use this.';
+
+  @override
+  String get shareInLooking => 'Finding the image in this link';
+
+  @override
+  String get shareInLinkUnusable => 'Prism cannot use this link.';
+
+  @override
+  String get shareInLinkUnusableDetail => 'Share an image, or a link to a page with an image.';
+
+  @override
+  String get shareInImageUnreadable => 'Prism cannot open this image.';
+
+  @override
+  String get shareInImageUnreadableDetail => 'Share it again, or share a different image.';
+
+  @override
+  String get shareInPreviewSemantics => 'Shared image';
 }

@@ -15429,6 +15429,62 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get photoWallTryAgain => 'Tentar novamente';
+
+  @override
+  String get shareInImageTitle => 'Usar esta imagem';
+
+  @override
+  String get shareInSet => 'Definir como papel de parede';
+
+  @override
+  String get shareInSetDetail => 'Recorte e depois defina na sua tela.';
+
+  @override
+  String shareInFit(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Ajustar · $coins moedas',
+      one: 'Ajustar · 1 moeda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shareInFitTitle => 'Ajustar';
+
+  @override
+  String get shareInFitDetail => 'A IA estende ou aprimora a imagem para caber na sua tela.';
+
+  @override
+  String get shareInFitNotNeeded => 'Já cabe na sua tela';
+
+  @override
+  String get shareInUpload => 'Enviar para o Prism';
+
+  @override
+  String get shareInUploadDetail => 'Outras pessoas podem vê-la depois de uma análise.';
+
+  @override
+  String get shareInSignInDetail => 'Entre na sua conta para usar isto.';
+
+  @override
+  String get shareInLooking => 'Procurando a imagem neste link';
+
+  @override
+  String get shareInLinkUnusable => 'O Prism não pode usar este link.';
+
+  @override
+  String get shareInLinkUnusableDetail => 'Compartilhe uma imagem ou um link para uma página com imagem.';
+
+  @override
+  String get shareInImageUnreadable => 'O Prism não pode abrir esta imagem.';
+
+  @override
+  String get shareInImageUnreadableDetail => 'Compartilhe de novo ou compartilhe outra imagem.';
+
+  @override
+  String get shareInPreviewSemantics => 'Imagem compartilhada';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -30854,4 +30910,60 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get photoWallTryAgain => 'Tentar novamente';
+
+  @override
+  String get shareInImageTitle => 'Usar esta imagem';
+
+  @override
+  String get shareInSet => 'Definir como papel de parede';
+
+  @override
+  String get shareInSetDetail => 'Recorte e depois defina na sua tela.';
+
+  @override
+  String shareInFit(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Ajustar · $coins moedas',
+      one: 'Ajustar · 1 moeda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shareInFitTitle => 'Ajustar';
+
+  @override
+  String get shareInFitDetail => 'A IA estende ou aprimora a imagem para caber na sua tela.';
+
+  @override
+  String get shareInFitNotNeeded => 'Já cabe na sua tela';
+
+  @override
+  String get shareInUpload => 'Enviar para o Prism';
+
+  @override
+  String get shareInUploadDetail => 'Outras pessoas podem vê-la depois de uma análise.';
+
+  @override
+  String get shareInSignInDetail => 'Entre na sua conta para usar isto.';
+
+  @override
+  String get shareInLooking => 'Procurando a imagem neste link';
+
+  @override
+  String get shareInLinkUnusable => 'O Prism não pode usar este link.';
+
+  @override
+  String get shareInLinkUnusableDetail => 'Compartilhe uma imagem ou um link para uma página com imagem.';
+
+  @override
+  String get shareInImageUnreadable => 'O Prism não pode abrir esta imagem.';
+
+  @override
+  String get shareInImageUnreadableDetail => 'Compartilhe de novo ou compartilhe outra imagem.';
+
+  @override
+  String get shareInPreviewSemantics => 'Imagem compartilhada';
 }

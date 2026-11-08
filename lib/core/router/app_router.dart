@@ -63,6 +63,8 @@ import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';
 import 'package:Prism/features/session/views/pages/settings_screen.dart';
 import 'package:Prism/features/session/views/pages/share_prism_screen.dart';
+import 'package:Prism/features/share_in/domain/shared_item.dart';
+import 'package:Prism/features/share_in/views/pages/share_in_page.dart';
 import 'package:Prism/features/shop/shop.dart';
 import 'package:Prism/features/spin_wheel/views/pages/spin_wheel_page.dart';
 import 'package:Prism/features/startup/views/pages/splash_widget.dart';
@@ -170,6 +172,14 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/choose-wallpaper', page: DeepLinkInputRoute.page, guards: [_signedInGuard]),
+    CustomRoute(
+      path: '/share-in',
+      page: ShareInRoute.page,
+      opaque: false,
+      duration: Duration.zero,
+      reverseDuration: Duration.zero,
+      transitionsBuilder: TransitionsBuilders.noTransition,
+    ),
     AutoRoute(path: '/premium', page: PremiumRoute.page),
     RedirectRoute(path: '/paywall', redirectTo: '/premium'),
     AutoRoute(

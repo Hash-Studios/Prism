@@ -15204,4 +15204,60 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get photoWallTryAgain => 'फिर से कोशिश करें';
+
+  @override
+  String get shareInImageTitle => 'यह इमेज इस्तेमाल करें';
+
+  @override
+  String get shareInSet => 'वॉलपेपर के रूप में सेट करें';
+
+  @override
+  String get shareInSetDetail => 'इसे क्रॉप करें, फिर अपनी स्क्रीन पर सेट करें।';
+
+  @override
+  String shareInFit(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'फ़िट करें · $coins कॉइन',
+      one: 'फ़िट करें · 1 कॉइन',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shareInFitTitle => 'फ़िट करें';
+
+  @override
+  String get shareInFitDetail => 'AI इसे बढ़ाता या तेज़ करता है, ताकि यह आपकी स्क्रीन में फ़िट हो।';
+
+  @override
+  String get shareInFitNotNeeded => 'यह पहले से आपकी स्क्रीन में फ़िट है';
+
+  @override
+  String get shareInUpload => 'Prism पर अपलोड करें';
+
+  @override
+  String get shareInUploadDetail => 'समीक्षा के बाद दूसरे इसे देख सकेंगे।';
+
+  @override
+  String get shareInSignInDetail => 'इसका इस्तेमाल करने के लिए साइन इन करें।';
+
+  @override
+  String get shareInLooking => 'इस लिंक में इमेज खोजी जा रही है';
+
+  @override
+  String get shareInLinkUnusable => 'Prism इस लिंक का इस्तेमाल नहीं कर सकता।';
+
+  @override
+  String get shareInLinkUnusableDetail => 'कोई इमेज शेयर करें, या इमेज वाले पेज का लिंक।';
+
+  @override
+  String get shareInImageUnreadable => 'Prism यह इमेज नहीं खोल सकता।';
+
+  @override
+  String get shareInImageUnreadableDetail => 'इसे फिर से शेयर करें, या कोई दूसरी इमेज शेयर करें।';
+
+  @override
+  String get shareInPreviewSemantics => 'शेयर की गई इमेज';
 }

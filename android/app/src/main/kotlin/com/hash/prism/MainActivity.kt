@@ -56,6 +56,7 @@ class MainActivity : FlutterFragmentActivity() {
     private var powerChannel: MethodChannel? = null
     private var launchThemeChannel: MethodChannel? = null
     private var wallpaperCropChannel: MethodChannel? = null
+    private var sharedInboxChannel: MethodChannel? = null
     private var tiltChannel: EventChannel? = null
     private var tiltStream: PrismTiltStream? = null
     private var engine: FlutterEngine? = null
@@ -159,6 +160,9 @@ class MainActivity : FlutterFragmentActivity() {
         tiltStream = PrismTiltStream(applicationContext).also { stream ->
             tiltChannel = EventChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/tilt").apply { setStreamHandler(stream) }
         }
+        sharedInboxChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/shared_inbox").also {
+            SharedInbox.register(this, it)
+        }
         wallpaperCropChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "prism/wallpaper_crop").apply {
             setMethodCallHandler { call, result ->
                 val path = call.arguments as? String
@@ -206,6 +210,8 @@ class MainActivity : FlutterFragmentActivity() {
         tiltChannel = null
         wallpaperCropChannel?.setMethodCallHandler(null)
         wallpaperCropChannel = null
+        sharedInboxChannel?.setMethodCallHandler(null)
+        sharedInboxChannel = null
         super.cleanUpFlutterEngine(flutterEngine)
     }
 
