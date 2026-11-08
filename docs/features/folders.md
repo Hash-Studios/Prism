@@ -691,7 +691,7 @@ The daily job lists a public folder only when all of these are true:
 2. The header has 8 or more public walls (`itemCount`).
 3. The name passes `publicFolderName` and `hasBlockedWord` (`functions/src/textSafety.ts`) finds no blocked word.
 4. The owner account is 7 or more days old and the Auth user is not disabled.
-5. The folder has no open report (`contentReports`, `contentType == folder`, `status == open`).
+5. The folder has no open report (`contentReports`, `contentType == folder`, `status == open`). The job checks each candidate with its own query, so unrelated reports cannot push a report past a cap.
 6. A moderator did not hide it from discovery (`discoveryHidden` is not `true`).
 
 The app removes the viewer's own folders and the folders of creators that the viewer blocked. The server lists do not depend on the viewer.
@@ -706,7 +706,7 @@ The app removes the viewer's own folders and the folders of creators that the vi
 - **Owner cap.** One owner has at most 2 folders in each list.
 - **Size.** Each list has at most 30 folders.
 
-Each list entry has `id`, `ownerId`, `ownerName`, `ownerUsername`, `ownerPhoto`, `name`, `itemCount`, `covers`, `followerCount`, `moods` and `categories`. The moods and categories are the 3 most common of the 12 newest public walls. The job writes the doc in a transaction that reads each listed header again. A folder that was hidden or made private while the job ran is not written.
+Each list entry has `id`, `ownerId`, `ownerName`, `ownerUsername`, `ownerPhoto`, `name`, `itemCount`, `covers`, `followerCount`, `moods` and `categories`. The moods and categories are the 3 most common of the 12 newest public walls. The job writes the doc in a transaction that reads each listed header again and applies the eligibility rules again. A folder that was hidden, renamed to a blocked name, made smaller or made private while the job ran is not written.
 
 ### Signals
 
@@ -720,8 +720,8 @@ Each list entry has `id`, `ownerId`, `ownerName`, `ownerUsername`, `ownerPhoto`,
 
 - The owner never counts.
 - One account counts once for each folder and signal in 7 days. The claim is `folderSignalRate/{uid}_{folderId}_{signal}`.
-- An account that is younger than 7 days does not count.
-- A folder that is not public does not count.
+- An account that is younger than 7 days does not count. The age check runs before the claim, so the account counts once it is 7 days old.
+- A folder that is not public does not count. The claim and the count run in one transaction that reads the header again.
 
 A counted signal adds 1 to `folderStatsDaily/{yyyymmdd}_{folderId}`. A TTL policy deletes the stats docs after 14 days and the claims after 7 days.
 
@@ -761,7 +761,7 @@ The app ranks this tab on the device. It uses no new server data and sends nothi
 
 ### Web
 
-`buildWebCatalog` reads `folderTrending/current` (1 read for each build) and the public folder headers that it already reads. It writes `webPages/folders` with the listed folders that are public, not hidden from discovery and have a live wall. The Worker reads 1 doc for each `/folders` page. Before the first list, `/folders` shows the app landing. The page is edge cached like other catalogue pages, so a hide reaches each edge location in about 10 minutes.
+`buildWebCatalog` reads `folderTrending/current` (1 read for each build) and the public folder headers that it already reads. It writes `webPages/folders` with the listed folders that are public, not hidden from discovery, still have 8 walls and a clean name, and have a live wall. The Worker reads 1 doc for each `/folders` page. Before the first list, `/folders` shows the app landing. The page is edge cached like other catalogue pages, so a hide reaches each edge location in about 10 minutes.
 
 ### Cost at 50,000 public folders
 
@@ -772,22 +772,22 @@ The job never reads all folders. These are the most reads for one run.
 | `folderStatsDaily` for 7 days | At most 50,000 (cap, with a warning). With 5,000 active folders on 3 days each: about 15,000. | 0 |
 | Headers of the 300 best scored folders | At most 300 | 0 |
 | New folders query | At most 300 | 0 |
-| Open folder reports | At most 1,000 | 0 |
+| Open report check, 1 query for each candidate | At most 600 | 0 |
 | Owner accounts | 0 (Auth `getUsers`, at most 6 calls of 100) | 0 |
 | Traits: 12 items and 12 walls for each listed folder | At most 1,440 | 0 |
 | Owner profiles | At most 60 | 0 |
 | Final transaction | At most 60 | 1 |
-| **Total** | **At most 53,160. About 18,200 in the example.** | **1** |
+| **Total** | **At most 52,760. About 17,800 in the example.** | **1** |
 
 Other costs:
 
 | Event | Reads | Writes |
 |---|---|---|
-| Open or Save all of a public folder | 2 (header and claim) | 2 when it counts (claim and stats), 0 when it does not |
-| New follow | 1 (claim) | 2 when it counts |
+| Open or Save all of a public folder | 2 (header and claim). 4 when it counts (the transaction reads the claim and the header again) | 2 when it counts (claim and stats), 0 when it does not |
+| New follow | 1 (claim). 3 when it counts | 2 when it counts |
 | Discover page open in the app | 1 (`folderTrending/current`) + the user's followed folders (at least 1) | 0 |
 | "Like your saves" tab | The user's favourites + 1 for each 30 saved walls | 0 |
-| A folder leaves the projection | 2 | 0 to 2 |
+| A folder leaves the projection | 4 (the fence and each list, in 2 transactions) | 0 to 2 |
 | Each `buildWebCatalog` run | 1 | 0 or 1 |
 
 ### App
