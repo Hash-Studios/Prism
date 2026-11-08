@@ -50,6 +50,45 @@ class _SilentMessaging extends Fake implements FirebaseMessaging {
 }
 
 void main() {
+  group('Android without Google Play services (#249, #552)', () {
+    // The error firebase_messaging gave on the API 30 emulator with no Play services, 2026-11-08.
+    const String noPlayServices = '[firebase_messaging/unknown] java.io.IOException: MISSING_INSTANCEID_SERVICE';
+
+    setUp(() => topicCallsCheckPlayServices = () => true);
+    tearDown(() {
+      topicCallsCheckPlayServices = defaultTopicCallsCheckPlayServices;
+      resetPlayServicesProbe();
+    });
+
+    test('topic calls skip FCM at once for the rest of the run', () {
+      fakeAsync((FakeAsync async) {
+        final _SilentMessaging messaging = _SilentMessaging()
+          ..getTokenHandler = () => Future<String?>.error(Exception(noPlayServices));
+        final List<bool> results = <bool>[];
+        subscribeToTopicSafely(messaging, 'drops', sourceTag: 'test').then(results.add);
+        unsubscribeFromTopicSafely(messaging, 'recommendations', sourceTag: 'test').then((_) => results.add(false));
+        async.flushMicrotasks();
+        expect(results, <bool>[false, false]);
+        expect(messaging.topicCalls, 0);
+        expect(messaging.tokenReads, 1);
+      });
+    });
+
+    test('another token failure, as on an offline Play phone, does not stop topic calls', () {
+      fakeAsync((FakeAsync async) {
+        final _SilentMessaging messaging = _SilentMessaging()
+          ..getTokenHandler = () => Future<String?>.error(Exception('SERVICE_NOT_AVAILABLE'));
+        subscribeToTopicSafely(messaging, 'drops', sourceTag: 'test');
+        async.flushMicrotasks();
+        subscribeToTopicSafely(messaging, 'recommendations', sourceTag: 'test');
+        async.flushMicrotasks();
+        expect(messaging.topicCalls, 2);
+        expect(messaging.tokenReads, 2);
+        async.elapse(fcmCallTimeout * 3);
+      });
+    });
+  });
+
   group('FCM that never answers', () {
     test('a subscribe returns false after the timeout', () {
       fakeAsync((FakeAsync async) {

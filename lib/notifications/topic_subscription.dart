@@ -9,9 +9,42 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 /// Longest wait for one FCM call. Without Google Play services, FCM calls on Android never answer.
 const Duration fcmCallTimeout = Duration(seconds: 5);
+
+@visibleForTesting
+bool defaultTopicCallsCheckPlayServices() => Platform.isAndroid;
+
+/// Android topic calls first check for Google Play services. Apple devices wait for the APNS token instead.
+@visibleForTesting
+bool Function() topicCallsCheckPlayServices = defaultTopicCallsCheckPlayServices;
+
+Future<bool>? _playServicesMissing;
+
+@visibleForTesting
+void resetPlayServicesProbe() => _playServicesMissing = null;
+
+/// Whether Google Play services is missing. Without it, an FCM token read fails at once with
+/// MISSING_INSTANCEID_SERVICE and topic calls never answer. That cannot change while the app runs, so a missing
+/// result is kept for the run. Any other result, such as an offline Play phone, probes again on the next call.
+Future<bool> _isPlayServicesMissing(FirebaseMessaging messaging) {
+  final Future<bool> probe = _playServicesMissing ??= () async {
+    try {
+      await messaging.getToken().timeout(fcmCallTimeout);
+      return false;
+    } catch (error) {
+      if (!error.toString().contains('MISSING_INSTANCEID_SERVICE')) return false;
+      logger.w('Google Play services is missing. Push topics are off for this run.', tag: 'Push');
+      return true;
+    }
+  }();
+  probe.then((bool missing) {
+    if (!missing && identical(_playServicesMissing, probe)) _playServicesMissing = null;
+  });
+  return probe;
+}
 
 /// The FCM token, or null when FCM does not answer in [fcmCallTimeout]. A later call can retry.
 Future<String?> readFcmToken(FirebaseMessaging messaging) async {
@@ -345,7 +378,7 @@ Future<bool> _changeTopic(
     final bool canProceed = await _canProceedWithTopicCall(messaging, isCurrent: isCurrent);
     if (!(isCurrent?.call() ?? true)) return false;
     if (!canProceed) {
-      logger.w('Skipping topic $noun until a push token is available.', tag: 'Push', fields: fields);
+      logger.w('Skipping topic $noun: no push token or no Google Play services.', tag: 'Push', fields: fields);
       return false;
     }
     if (subscribe) {
@@ -388,6 +421,7 @@ Future<bool> _changeTopic(
 }
 
 Future<bool> _canProceedWithTopicCall(FirebaseMessaging messaging, {bool Function()? isCurrent}) async {
+  if (topicCallsCheckPlayServices()) return !await _isPlayServicesMissing(messaging);
   if (!(Platform.isIOS || Platform.isMacOS)) {
     return true;
   }
