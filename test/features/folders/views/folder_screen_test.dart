@@ -20,9 +20,9 @@ import 'package:Prism/features/folders/domain/repositories/folders_repository.da
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/domain/repositories/shared_folders_repository.dart';
 import 'package:Prism/features/folders/views/pages/folder_screen.dart';
+import 'package:Prism/features/folders/views/widgets/folder_members_row.dart';
 import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/hints/views/feature_hint.dart';
-import 'package:Prism/features/folders/views/widgets/folder_members_row.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
