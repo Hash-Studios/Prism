@@ -12,6 +12,8 @@ const SEED: Record<string, Doc> = {
   "usersv2/u2/images/wallhaven_x1": {id: "x1", provider: "WallHaven"},
   "usersv2/u2/images/alias": {id: "other", provider: "Pexels"},
   "walls/abc123": {id: "abc123"},
+  "aaa/x/images/early": {id: "early", provider: "Pexels"},
+  "zzz/x/images/late": {id: "late", provider: "Pexels"},
 };
 
 test("planFavouriteKey qualifies only raw Wallhaven and Pexels docs", () => {

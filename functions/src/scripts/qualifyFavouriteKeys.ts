@@ -53,18 +53,23 @@ export async function qualifyFavouriteKeys(
 
   for (;;) {
     // Planning needs only the id and provider; --apply reads the whole doc in its transaction.
-    let query = db.collectionGroup("images").orderBy(admin.firestore.FieldPath.documentId())
-      .select("id", "provider").limit(PAGE_SIZE);
-    if (last) query = query.startAfter(last);
+    // Other collections named images sort before usersv2, so the scan starts at usersv2 and stops after it.
+    const query = db.collectionGroup("images").orderBy(admin.firestore.FieldPath.documentId())
+      .select("id", "provider").limit(PAGE_SIZE).startAfter(last ?? db.doc("usersv2/!/images/!"));
     const snapshot = await query.get();
     if (snapshot.empty) break;
     pages += 1;
 
     const moves: Array<{doc: admin.firestore.QueryDocumentSnapshot; uid: string; target: string}> = [];
+    let pastUsers = false;
     for (const doc of snapshot.docs) {
       last = doc;
       const parts = doc.ref.path.split("/");
-      if (parts.length !== 4 || parts[0] !== "usersv2") continue;
+      if (parts[0] !== "usersv2") {
+        pastUsers = true;
+        break;
+      }
+      if (parts.length !== 4) continue;
       counts.scanned += 1;
       const plan = planFavouriteKey(doc.id, doc.data());
       if (plan === "keep") {
@@ -122,7 +127,7 @@ export async function qualifyFavouriteKeys(
       }
     }
     if (pages % 50 === 0) log(`progress pages=${pages} scanned=${counts.scanned} toMove=${counts.toMove}`);
-    if (snapshot.size < PAGE_SIZE) break;
+    if (pastUsers || snapshot.size < PAGE_SIZE) break;
   }
 
   for (const [source, n] of Object.entries(counts.bySource)) log(`to move ${source}: ${n}`);
