@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 
-const PAGE_SIZE = 500;
+const PAGE_SIZE = 1000;
 const QUALIFIED = new Set(["wallhaven", "pexels"]);
 
 export const USAGE = `Usage: node lib/scripts/qualifyFavouriteKeys.js [--apply]
@@ -49,13 +49,18 @@ export async function qualifyFavouriteKeys(
   const counts: FavouriteKeyCounts = {scanned: 0, rawKept: 0, alreadyQualified: 0, toMove: 0, collisions: 0, odd: 0,
     moved: 0, failed: 0, bySource: {}, samples: []};
   let last: admin.firestore.QueryDocumentSnapshot | undefined;
+  let pages = 0;
 
   for (;;) {
-    let query = db.collectionGroup("images").orderBy(admin.firestore.FieldPath.documentId()).limit(PAGE_SIZE);
+    // Planning needs only the id and provider; --apply reads the whole doc in its transaction.
+    let query = db.collectionGroup("images").orderBy(admin.firestore.FieldPath.documentId())
+      .select("id", "provider").limit(PAGE_SIZE);
     if (last) query = query.startAfter(last);
     const snapshot = await query.get();
     if (snapshot.empty) break;
+    pages += 1;
 
+    const moves: Array<{doc: admin.firestore.QueryDocumentSnapshot; uid: string; target: string}> = [];
     for (const doc of snapshot.docs) {
       last = doc;
       const parts = doc.ref.path.split("/");
@@ -74,14 +79,20 @@ export async function qualifyFavouriteKeys(
         counts.odd += 1;
         continue;
       }
+      moves.push({doc, uid: parts[1], target: plan.target});
+    }
+
+    const targets = await Promise.all(moves.map((move) => db.doc(`usersv2/${move.uid}/images/${move.target}`).get()));
+    for (const [index, {doc, uid, target}] of moves.entries()) {
+      const plan = {target};
       counts.toMove += 1;
-      const source = plan.target.split("_")[0];
+      const source = target.split("_")[0];
       counts.bySource[source] = (counts.bySource[source] ?? 0) + 1;
-      const targetRef = db.doc(`usersv2/${parts[1]}/images/${plan.target}`);
-      const collides = (await targetRef.get()).exists;
+      const targetRef = db.doc(`usersv2/${uid}/images/${target}`);
+      const collides = targets[index].exists;
       if (collides) counts.collisions += 1;
       if (counts.samples.length < 10) {
-        counts.samples.push(`${uidPrefix(parts[1])}/${doc.id} -> ${plan.target}${collides ? " (key exists)" : ""}`);
+        counts.samples.push(`${uidPrefix(uid)}/${doc.id} -> ${target}${collides ? " (key exists)" : ""}`);
       }
       if (!options.apply) continue;
       try {
@@ -110,6 +121,7 @@ export async function qualifyFavouriteKeys(
         counts.failed += 1;
       }
     }
+    if (pages % 50 === 0) log(`progress pages=${pages} scanned=${counts.scanned} toMove=${counts.toMove}`);
     if (snapshot.size < PAGE_SIZE) break;
   }
 
