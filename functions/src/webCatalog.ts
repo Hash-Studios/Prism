@@ -6,8 +6,9 @@ import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {db, REGION, str} from "./common";
 import {isPreviewUrl} from "./pushGallery";
-import {isSectionId, publicFolderSections, type PublicSection} from "./publicFolders";
+import {isSectionId, publicFolderName, publicFolderSections, type PublicSection} from "./publicFolders";
 import {DISCOVER_WEB_PAGE, FOLDER_TRENDING, FOLDER_TRENDING_DOC} from "./folderSignals";
+import {hasBlockedWord} from "./textSafety";
 import {r2Secrets} from "./r2Storage";
 import {parseDesktopVariant, readyDesktopCompanion} from "./studio/desktop";
 import {PALETTE} from "./wallColors";
@@ -334,7 +335,7 @@ function sitemap(name: string, entries: Array<[string, string]>): Array<[string,
 export function buildPages(
   walls: Map<string, WebWall>, popularIds: string[], folders: Array<{id: string; name: string; owner: PublicProfile | null;
     wallIds: string[]; updatedAt: string; total?: number; sections?: PublicSection[];
-    sectionOf?: Record<string, string>; discoveryHidden?: boolean}>, creators: Map<string, PublicProfile>,
+    sectionOf?: Record<string, string>; discoveryHidden?: boolean; discoveryEligible?: boolean}>, creators: Map<string, PublicProfile>,
   discover: {trending: string[]; new: string[]} = {trending: [], new: []},
 ): Map<string, PageDoc> {
   const live = [...walls].filter(([, wall]) => wall.state === "live").sort(newest);
@@ -394,7 +395,8 @@ export function buildPages(
   }
 
   // The /folders page lists the discover folders that are still public, not hidden and have a live wall.
-  const discoverable = new Map(publicFolders.filter((f) => f.discoveryHidden !== true && f.items.length > 0)
+  const discoverable = new Map(publicFolders.filter((f) => f.discoveryHidden !== true && f.discoveryEligible !== false &&
+    f.items.length > 0)
     .map((f) => [f.id, f]));
   const discoverCards = (ids: string[]) => ids.flatMap((id) => {
     const folder = discoverable.get(id);
@@ -544,30 +546,77 @@ export async function rebuildWebCatalog(): Promise<{walls: number; pages: number
       total: typeof data.itemCount === "number" && Number.isFinite(data.itemCount) ? data.itemCount : items.size,
       updatedAt: isoOf(data.updatedAt) || isoOf(doc.createTime) || now.toISOString(),
       discoveryHidden: data.discoveryHidden === true,
+      discoveryEligible: publicFolderName(data.name) !== null && !hasBlockedWord(str(data.name)) &&
+        Number(data.itemCount) >= 8,
     };
   }));
   const popularIds = Array.isArray(popularDoc.data()?.wallIds) ? (popularDoc.data()?.wallIds as unknown[]).map(str) : [];
   const discoverIds = (list: unknown) => Array.isArray(list) ? list.map((entry) => str(entry?.id)).filter(Boolean) : [];
-  const pages = buildPages(walls, popularIds, folders.filter((f) => f.name), profiles, {
+  const discover = {
     trending: discoverIds(discoverDoc.data()?.trending), new: discoverIds(discoverDoc.data()?.new),
-  });
+  };
+  const pages = buildPages(walls, popularIds, folders.filter((f) => f.name), profiles, discover);
+  const discoveryHeaders = new Map(folderDocs.docs.map((doc) => {
+    const data = doc.data();
+    return [doc.id, {generation: data.generation, name: data.name, itemCount: data.itemCount,
+      discoveryHidden: data.discoveryHidden === true}] as const;
+  }));
+  const discoverySnapshotCurrent = async (tx: admin.firestore.Transaction): Promise<boolean> => {
+    const latest = (await tx.get(db.collection(FOLDER_TRENDING).doc(FOLDER_TRENDING_DOC))).data();
+    const latestIds = (list: unknown) => Array.isArray(list) ? list.map((entry) => str(entry?.id)).filter(Boolean) : [];
+    if (stableJson({trending: latestIds(latest?.trending), new: latestIds(latest?.new)}) !== stableJson(discover)) return false;
+    const ids = [...new Set([...discover.trending, ...discover.new])];
+    const headers = await Promise.all(ids.map((id) => tx.get(db.collection("publicFolders").doc(id))));
+    return headers.every((header, index) => {
+      const expected = discoveryHeaders.get(ids[index]);
+      if (!expected) return !header.exists;
+      const data = header.data();
+      return header.exists && data?.generation === expected.generation && data?.name === expected.name &&
+        data?.itemCount === expected.itemCount && (data?.discoveryHidden === true) === expected.discoveryHidden;
+    });
+  };
 
   const oldHashes = (manifestDoc.data()?.hashes ?? {}) as Record<string, string>;
   const hashes: Record<string, string> = {};
   const writes: Array<[string, PageDoc]> = [];
   for (const [key, doc] of pages) {
     hashes[key] = hashOf(doc);
-    if (oldHashes[key] !== hashes[key]) writes.push([key, doc]);
+    // Incremental hide operations patch webPages/folders without touching this manifest. Compare that page
+    // against the desired document on every build so a later unhide can restore identical content.
+    if (oldHashes[key] !== hashes[key] || key === DISCOVER_WEB_PAGE) writes.push([key, doc]);
   }
   await inChunks(writes, async ([key, doc]) => {
     const ref = db.collection(WEB_PAGES).doc(key);
+    if (key === DISCOVER_WEB_PAGE) {
+      await db.runTransaction(async (tx) => {
+        if (!(await discoverySnapshotCurrent(tx))) return;
+        const current = await tx.get(ref);
+        if (current.exists && stableJson({...current.data(), updatedAt: ""}) === stableJson({...doc, updatedAt: ""})) return;
+        tx.set(ref, {...doc, updatedAt: now.toISOString()});
+        written++;
+      });
+      return;
+    }
     const current = (await ref.get()).data();
     if (current && stableJson({...current, updatedAt: ""}) === stableJson({...doc, updatedAt: ""})) return;
     await ref.set({...doc, updatedAt: now.toISOString()});
     written++;
   });
-  await inChunks(Object.keys(oldHashes).filter((key) => !(key in hashes)), async (key) => {
+  // A prior build may have removed this key from the manifest after its deletion guard saw a racing snapshot.
+  // Keep retrying the concrete /folders document until a stable snapshot can safely delete it.
+  await inChunks([...new Set([...Object.keys(oldHashes).filter((key) => !(key in hashes)),
+    ...(!pages.has(DISCOVER_WEB_PAGE) ? [DISCOVER_WEB_PAGE] : [])])], async (key) => {
     const ref = db.collection(WEB_PAGES).doc(key);
+    if (key === DISCOVER_WEB_PAGE) {
+      await db.runTransaction(async (tx) => {
+        if (!(await discoverySnapshotCurrent(tx))) return;
+        const current = await tx.get(ref);
+        if (!current.exists) return;
+        tx.delete(ref);
+        written++;
+      });
+      return;
+    }
     if (!(await ref.get()).exists) return;
     await ref.delete();
     written++;

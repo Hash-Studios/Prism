@@ -269,11 +269,13 @@ async function finishRemoval(folderId: string, generation: string): Promise<void
     const [fence, head] = await Promise.all([tx.get(state), tx.get(header)]);
     if (fence.data()?.generation === generation && fence.data()?.deleting === true && !head.exists) tx.delete(back.ref);
   }));
+  // Keep the deleting fence until both projections are pruned. A new generation cannot publish while the
+  // cleanup is in flight, so this old generation cannot remove a freshly restored discovery entry.
+  await dropFromDiscovery(folderId, generation);
   await db.runTransaction(async (tx) => {
     const fence = await tx.get(state);
     if (fence.data()?.generation === generation && fence.data()?.deleting === true) tx.update(state, {deleting: false});
   });
-  await dropFromDiscovery(folderId);
 }
 
 /** Lifecycle callers pass their owner so a delayed old-owner cleanup cannot remove a transferred folder. */

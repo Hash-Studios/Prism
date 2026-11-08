@@ -81,6 +81,64 @@ test("discoveryRefusal applies each rule and passes a good folder", () => {
   assert.equal(discoveryRefusal(good, ctx([]), "f1"), "owner");
 });
 
+test("rebuild rechecks the current name before publishing a candidate", async (t) => {
+  const store = installFakeDb(t, seedOf(header("f1", "o1"), daily("f1", TODAY, {opens: 9})));
+  t.mock.method(folderDiscoveryDeps, "owners", async () => {
+    // Simulate a rename after candidate selection, while the job is assembling its listing.
+    store.set("publicFolders/f1", {...store.get("publicFolders/f1"), name: "s.e.x wallpapers"});
+    return new Map([["o1", OK_OWNER]]);
+  });
+
+  await rebuildFolderDiscovery(NOW);
+  assert.deepEqual(ids(readListing(store).trending), []);
+});
+
+test("rebuild rechecks current size before publishing a candidate", async (t) => {
+  const store = installFakeDb(t, seedOf(header("f1", "o1"), daily("f1", TODAY, {opens: 9})));
+  t.mock.method(folderDiscoveryDeps, "owners", async () => {
+    store.set("publicFolders/f1", {...store.get("publicFolders/f1"), itemCount: 7});
+    return new Map([["o1", OK_OWNER]]);
+  });
+
+  await rebuildFolderDiscovery(NOW);
+  assert.deepEqual(ids(readListing(store).trending), []);
+});
+
+test("rebuild does not publish a replacement folder generation", async (t) => {
+  const createdAt = ts(NOW - DAY);
+  const store = installFakeDb(t, seedOf(
+    header("f1", "o1", {generation: "old", sourceCreatedAt: createdAt}),
+    daily("f1", TODAY, {opens: 9}),
+  ));
+  t.mock.method(folderDiscoveryDeps, "owners", async () => {
+    store.set("publicFolders/f1", {...store.get("publicFolders/f1"), generation: "new"});
+    return new Map([["o1", OK_OWNER]]);
+  });
+
+  await rebuildFolderDiscovery(NOW);
+  assert.deepEqual(ids(readListing(store).trending), []);
+});
+
+test("an open report for a candidate is found past 1000 unrelated reports", async (t) => {
+  const seed = seedOf(header("target", "o1"), daily("target", TODAY, {opens: 9}));
+  for (let i = 0; i < 1000; i++) {
+    Object.assign(seed, {[`contentReports/unrelated${i.toString().padStart(4, "0")}`]: {
+      contentType: "folder", targetFirestoreDocId: `other${i}`, status: "open",
+    }});
+  }
+  Object.assign(seed, {"contentReports/zTarget": {
+    contentType: "folder", targetFirestoreDocId: "target", status: "open",
+  }});
+  const observed = {reads: 0, writes: 0, outsideReads: 0};
+  const store = installFakeDb(t, seed, observed);
+  stubOwners(t);
+
+  await rebuildFolderDiscovery(NOW);
+
+  assert.deepEqual(ids(readListing(store).trending), []);
+  assert.ok(observed.outsideReads <= 10, `bounded candidate reads expected, got ${observed.outsideReads}`);
+});
+
 test("capPerOwner keeps order and stops at the size limit", () => {
   const items = [{id: "1", ownerId: "x"}, {id: "2", ownerId: "x"}, {id: "3", ownerId: "x"}, {id: "4", ownerId: "y"}];
   assert.deepEqual(ids(capPerOwner(items, 10)), ["1", "2", "4"]);
@@ -163,8 +221,11 @@ test("setDiscoveryHidden removes a folder from every list and rebuild keeps it o
 
 test("countFolderSignal skips own, repeated, and young-account signals, and counts the rest", async (t) => {
   const created = new Map<string, number>([["young", NOW - 2 * DAY]]);
-  t.mock.method(folderSignalDeps, "accountCreatedMs", async (uid: string) => created.get(uid) ?? NOW - 30 * DAY);
-  const store = installFakeDb(t);
+  const store = installFakeDb(t, {"publicFolders/f1": {ownerId: "o1"}});
+  t.mock.method(folderSignalDeps, "accountCreatedMs", async (uid: string) => {
+    if (uid === "racer") store.delete("publicFolders/f1");
+    return created.get(uid) ?? NOW - 30 * DAY;
+  });
 
   assert.equal(await countFolderSignal("o1", "f1", "o1", "open", NOW), false);
   assert.equal(store.has(`folderStatsDaily/${TODAY}_f1`), false);
@@ -180,11 +241,39 @@ test("countFolderSignal skips own, repeated, and young-account signals, and coun
 
   assert.equal(await countFolderSignal("young", "f1", "o1", "open", NOW), false);
   assert.equal(store.get(`folderStatsDaily/${TODAY}_f1`)?.opens, 1);
+  assert.equal(store.has("folderSignalRate/young_f1_open"), false);
+  assert.equal(await countFolderSignal("young", "f1", "o1", "open", NOW + 8 * DAY), true);
+
+  assert.equal(await countFolderSignal("racer", "f1", "o1", "open", NOW), false);
+  assert.equal(store.has("folderSignalRate/racer_f1_open"), false);
+  store.set("publicFolders/f1", {ownerId: "o1"});
 
   assert.equal(await countFolderSignal("u2", "f1", "o1", "follow", NOW), true);
   assert.equal(await countFolderSignal("u3", "f1", "o1", "save", NOW), true);
   assert.equal(store.get(`folderStatsDaily/${TODAY}_f1`)?.follows, 1);
   assert.equal(store.get(`folderStatsDaily/${TODAY}_f1`)?.saves, 1);
+});
+
+test("failed Auth and transaction commits do not spend a signal claim; duplicates skip Auth", async (t) => {
+  const authCalls: string[] = [];
+  t.mock.method(folderSignalDeps, "accountCreatedMs", async (uid: string) => {
+    authCalls.push(uid);
+    if (uid === "auth-fails") throw new Error("Auth unavailable");
+    return NOW - 30 * DAY;
+  });
+  const store = installFakeDb(t, {"publicFolders/f1": {ownerId: "o1"}}, undefined, {failCommits: 1});
+
+  await assert.rejects(countFolderSignal("auth-fails", "f1", "o1", "open", NOW), /Auth unavailable/);
+  assert.equal(store.has("folderSignalRate/auth-fails_f1_open"), false);
+  assert.equal(store.has(`folderStatsDaily/${TODAY}_f1`), false);
+
+  await assert.rejects(countFolderSignal("retry", "f1", "o1", "open", NOW), /injected transaction commit failure/);
+  assert.equal(store.has("folderSignalRate/retry_f1_open"), false);
+  assert.equal(store.has(`folderStatsDaily/${TODAY}_f1`), false);
+  assert.equal(await countFolderSignal("retry", "f1", "o1", "open", NOW), true);
+  assert.equal(await countFolderSignal("retry", "f1", "o1", "open", NOW), false);
+  assert.deepEqual(authCalls, ["auth-fails", "retry", "retry"]);
+  assert.equal(store.get(`folderStatsDaily/${TODAY}_f1`)?.opens, 1);
 });
 
 test("a rebuild reads a bounded number of documents and writes only the list doc", async (t) => {
@@ -218,7 +307,7 @@ test("a rebuild reads a bounded number of documents and writes only the list doc
   const bound =
     40 * days.length + // daily docs
     40 + // header gets for candidates
-    5 + // open folder reports
+    40 + // one open-report lookup per candidate
     20 + // one profile per owner
     DISCOVERY_LIMITS.listSize * (12 + 12) + // 12 items and 12 walls per listed folder
     DISCOVERY_LIMITS.listSize + // transaction header rereads
@@ -226,6 +315,6 @@ test("a rebuild reads a bounded number of documents and writes only the list doc
   assert.ok(observed.reads + observed.outsideReads <= bound,
     `reads ${observed.reads + observed.outsideReads} > bound ${bound}`);
   assert.deepEqual(DISCOVERY_LIMITS, {
-    listSize: 30, dailyDocs: 50000, trendingCandidates: 300, newCandidates: 300, openReports: 1000,
+    listSize: 30, dailyDocs: 50000, trendingCandidates: 300, newCandidates: 300,
   });
 });

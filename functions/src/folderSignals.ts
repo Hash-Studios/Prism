@@ -1,6 +1,5 @@
 import * as admin from "firebase-admin";
 import {db, utcDateString} from "./common";
-import {claimRateDoc} from "./viewStats";
 
 export const FOLDER_STATS_DAILY = "folderStatsDaily";
 export const FOLDER_SIGNAL_RATE = "folderSignalRate";
@@ -45,36 +44,52 @@ export async function countFolderSignal(
 ): Promise<boolean> {
   if (!uid || !ownerId || uid === ownerId) return false;
   const rateRef = db.collection(FOLDER_SIGNAL_RATE).doc(`${uid}_${folderId}_${signal}`);
-  const rateSnap = await rateRef.get();
-  const lastAt = rateSnap.data()?.lastAt;
-  if (lastAt instanceof admin.firestore.Timestamp && nowMs - lastAt.toMillis() < SIGNAL_COOLDOWN_MS) return false;
-  const claimed = await claimRateDoc(rateRef, rateSnap, {
-    lastAt: admin.firestore.Timestamp.fromMillis(nowMs),
-    expireAt: admin.firestore.Timestamp.fromMillis(nowMs + SIGNAL_COOLDOWN_MS),
-  });
-  if (!claimed) return false;
+  const cachedRate = await rateRef.get();
+  const cachedLastAt = cachedRate.data()?.lastAt;
+  if (cachedLastAt instanceof admin.firestore.Timestamp && nowMs - cachedLastAt.toMillis() < SIGNAL_COOLDOWN_MS) {
+    return false;
+  }
+  // Check age before spending the cooldown claim. A young account should be able to count its first action once it
+  // ages past the threshold, and an Auth outage must not consume the claim either. The cheap cooldown read above
+  // avoids an Auth lookup for repeated signals.
   const created = await folderSignalDeps.accountCreatedMs(uid);
   if (created === null || nowMs - created < MIN_ACTOR_AGE_MS) return false;
   const day = utcDateString(new Date(nowMs)).replace(/-/g, "");
-  await db.collection(FOLDER_STATS_DAILY).doc(`${day}_${folderId}`).set({
-    folderId,
-    day,
-    [FOLDER_SIGNAL_FIELD[signal]]: admin.firestore.FieldValue.increment(1),
-    expireAt: admin.firestore.Timestamp.fromMillis(nowMs + DAILY_DOC_TTL_MS),
-  }, {merge: true});
-  return true;
+  const headerRef = db.collection("publicFolders").doc(folderId);
+  const statsRef = db.collection(FOLDER_STATS_DAILY).doc(`${day}_${folderId}`);
+  return db.runTransaction(async (tx) => {
+    const [rate, header] = await Promise.all([tx.get(rateRef), tx.get(headerRef)]);
+    if (!header.exists || header.data()?.ownerId !== ownerId) return false;
+    const lastAt = rate.data()?.lastAt;
+    if (lastAt instanceof admin.firestore.Timestamp && nowMs - lastAt.toMillis() < SIGNAL_COOLDOWN_MS) return false;
+    tx.set(rateRef, {
+      lastAt: admin.firestore.Timestamp.fromMillis(nowMs),
+      expireAt: admin.firestore.Timestamp.fromMillis(nowMs + SIGNAL_COOLDOWN_MS),
+    });
+    tx.set(statsRef, {
+      folderId,
+      day,
+      [FOLDER_SIGNAL_FIELD[signal]]: admin.firestore.FieldValue.increment(1),
+      expireAt: admin.firestore.Timestamp.fromMillis(nowMs + DAILY_DOC_TTL_MS),
+    }, {merge: true});
+    return true;
+  });
 }
 
 /**
  * Removes a folder from the discover lists and the web /folders page at once, without waiting for the next build.
  * Used when a folder leaves the projection or a moderator hides it from discovery. Writes only when it is listed.
  */
-export async function dropFromDiscovery(folderId: string): Promise<void> {
+export async function dropFromDiscovery(folderId: string, expectedGeneration?: string): Promise<void> {
   const refs = [
     db.collection(FOLDER_TRENDING).doc(FOLDER_TRENDING_DOC),
     db.collection("webPages").doc(DISCOVER_WEB_PAGE),
   ];
   await Promise.all(refs.map((ref) => db.runTransaction(async (tx) => {
+    if (expectedGeneration !== undefined) {
+      const fence = await tx.get(db.collection("publicFolderState").doc(folderId));
+      if (fence.data()?.generation !== expectedGeneration || fence.data()?.deleting !== true) return;
+    }
     const data = (await tx.get(ref)).data();
     if (!data) return;
     const update: Record<string, unknown> = {};

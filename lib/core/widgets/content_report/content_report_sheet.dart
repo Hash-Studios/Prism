@@ -115,6 +115,8 @@ String _contentTypeLabel(String contentType, AppLocalizations l10n) {
       return l10n.coreContentReportUser;
     case 'comment':
       return l10n.coreContentReportComment;
+    case 'folder':
+      return l10n.wallpaperAutoRotateSourceFolder;
     default:
       return l10n.coreContentReportWallpaper;
   }

@@ -256,7 +256,12 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
   });
 
-  Future<void> pumpBody(WidgetTester tester, {String? initialReason, String? initialDetails}) async {
+  Future<void> pumpBody(
+    WidgetTester tester, {
+    String contentType = 'wall',
+    String? initialReason,
+    String? initialDetails,
+  }) async {
     tester.view.physicalSize = const Size(800, 1600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -270,7 +275,7 @@ void main() {
               onPressed: () => showPrismSheet<void>(
                 context,
                 builder: (_) => ContentReportSheetBody(
-                  contentType: 'wall',
+                  contentType: contentType,
                   targetFirestoreDocId: 'wall-doc',
                   initialReason: initialReason,
                   initialDetails: initialDetails,
@@ -297,6 +302,12 @@ void main() {
       (type: 'wall', id: 'wall-doc', reason: 'other', details: 'Wrong AI label'),
     ]);
     await tester.pump(const Duration(seconds: 5));
+  });
+
+  testWidgets('a folder report uses the singular folder label', (tester) async {
+    await pumpBody(tester, contentType: 'folder');
+
+    expect(find.text('Why are you reporting this Folder?'), findsOneWidget);
   });
 
   testWidgets('an unknown initial reason selects nothing', (tester) async {

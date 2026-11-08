@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -20,6 +22,7 @@ class _FakePublicFolders extends Fake implements PublicFoldersRepository {
   Result<FolderDiscoverLists> discover = Result.success(FolderDiscoverLists.empty);
   Result<Set<String>> followed = Result.success(<String>{});
   Result<void> followResult = Result.success<void>(null);
+  Future<Result<void>> Function(String folderId, bool following)? followHandler;
   final List<({String id, bool following})> followCalls = <({String id, bool following})>[];
   int discoverCalls = 0;
 
@@ -38,17 +41,24 @@ class _FakePublicFolders extends Fake implements PublicFoldersRepository {
   @override
   Future<Result<void>> setFollowing(String folderId, {required bool following}) async {
     followCalls.add((id: folderId, following: following));
+    if (followHandler case final Future<Result<void>> Function(String, bool) handler) {
+      return handler(folderId, following);
+    }
     return followResult;
   }
 }
 
 class _FakeFavourites extends Fake implements FavouriteWallsRepository {
   Result<List<FavouriteWallEntity>> saves = Result.success(<FavouriteWallEntity>[]);
+  Future<Result<List<FavouriteWallEntity>>> Function(String userId)? fetchHandler;
   int fetchCalls = 0;
 
   @override
   Future<Result<List<FavouriteWallEntity>>> fetchFavourites({required String userId}) async {
     fetchCalls++;
+    if (fetchHandler case final Future<Result<List<FavouriteWallEntity>>> Function(String) handler) {
+      return handler(userId);
+    }
     return saves;
   }
 }
@@ -122,6 +132,20 @@ void main() {
     expect(folders.discoverCalls, 0);
   });
 
+  test('a guest cannot see cached folders after the block stream updates', () async {
+    folders.discover = Result.success(FolderDiscoverLists(trending: <DiscoverFolder>[_folder('t1', owner: 'a')]));
+    final FolderDiscoverCubit cubit = cubitWith();
+    addTearDown(cubit.close);
+
+    await cubit.load();
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await cubit.load();
+    blocks.completeInitial(<String>{});
+    await Future<void>.delayed(Duration.zero);
+
+    expect(cubit.state.lists.isEmpty, isTrue);
+  });
+
   test('a fetchDiscover failure emits failed', () async {
     folders.discover = Result.error(const PublicFolderFailure('x'));
     final FolderDiscoverCubit cubit = cubitWith();
@@ -135,6 +159,7 @@ void main() {
   test('toggleFollow on success adds the id to followed', () async {
     final FolderDiscoverCubit cubit = cubitWith();
     addTearDown(cubit.close);
+    await cubit.load();
 
     final PublicFolderFailure? failure = await cubit.toggleFollow(_folder('t1'));
 
@@ -148,6 +173,7 @@ void main() {
     folders.followResult = Result.error(const PublicFolderFailure('x'));
     final FolderDiscoverCubit cubit = cubitWith();
     addTearDown(cubit.close);
+    await cubit.load();
 
     final PublicFolderFailure? failure = await cubit.toggleFollow(_folder('t1'));
 
@@ -155,6 +181,27 @@ void main() {
     expect(failure!.message, 'x');
     expect(cubit.state.followed, isNot(contains('t1')));
     expect(cubit.state.busy, isNot(contains('t1')));
+  });
+
+  test('a previous viewer follow refusal cannot roll back the new viewer state', () async {
+    final Completer<Result<void>> oldRequest = Completer<Result<void>>();
+    folders.followHandler = (_, _) => oldRequest.future;
+    final FolderDiscoverCubit cubit = cubitWith();
+    addTearDown(cubit.close);
+    await cubit.load();
+    final Future<PublicFolderFailure?> oldFollow = cubit.toggleFollow(_folder('t1'));
+
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'other'
+      ..loggedIn = true;
+    folders.followed = Result.success(<String>{'t1'});
+    folders.followHandler = null;
+    await cubit.load();
+    oldRequest.complete(Result.error(const PublicFolderFailure('old viewer')));
+    await oldFollow;
+
+    expect(cubit.state.followed, contains('t1'));
+    expect(cubit.state.busy, isEmpty);
   });
 
   test('hideReported removes the folder from both lists', () async {
@@ -236,5 +283,51 @@ void main() {
     ]);
     expect(_ids(cubit.state.likeYourSaves), <String>['dreamy']);
     expect(cubit.state.likeYourSavesFailed, isFalse);
+  });
+
+  test('a previous viewer saves failure does not update the new viewer state', () async {
+    final Completer<Result<List<FavouriteWallEntity>>> oldRequest = Completer<Result<List<FavouriteWallEntity>>>();
+    favourites.fetchHandler = (_) => oldRequest.future;
+    final FolderDiscoverCubit cubit = cubitWith();
+    addTearDown(cubit.close);
+    await cubit.load();
+    final Future<void> oldLoad = cubit.loadLikeYourSaves();
+
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'other'
+      ..loggedIn = true;
+    favourites.fetchHandler = null;
+    await cubit.load();
+    oldRequest.complete(Result.error(const PublicFolderFailure('old viewer failed')));
+    await oldLoad;
+
+    expect(cubit.state.likeYourSavesFailed, isFalse);
+  });
+
+  test('a previous viewer saves success does not rank folders for the new viewer', () async {
+    final Completer<List<WallTraits>> oldTraits = Completer<List<WallTraits>>();
+    folders.discover = Result.success(
+      FolderDiscoverLists(
+        trending: <DiscoverFolder>[
+          _folder('dreamy', moods: const <String>['dreamy']),
+        ],
+      ),
+    );
+    favourites.saves = Result.success(<FavouriteWallEntity>[]);
+    final FolderDiscoverCubit cubit = cubitWith(saveTraits: (_) => oldTraits.future);
+    addTearDown(cubit.close);
+    await cubit.load();
+    final Future<void> oldLoad = cubit.loadLikeYourSaves();
+
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'other'
+      ..loggedIn = true;
+    await cubit.load();
+    oldTraits.complete(<WallTraits>[
+      const WallTraits(moods: <WallMood>[WallMood.dreamy]),
+    ]);
+    await oldLoad;
+
+    expect(cubit.state.likeYourSaves, isNull);
   });
 }

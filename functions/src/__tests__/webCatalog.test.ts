@@ -6,6 +6,7 @@ import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import * as remoteConfig from "firebase-admin/remote-config";
 import {db} from "../common";
+import {dropFromDiscovery} from "../folderSignals";
 import {
   buildPages,
   categorySlug,
@@ -510,6 +511,173 @@ test("buildPages drops the folders page when discover names only a hidden or non
   assert.equal(pages.has("folders"), false);
   const entries = pageOf(pages, "sitemap~categories-1").entries.split("\n").map((line) => line.split("\t")[0]);
   assert.equal(entries.includes("/folders"), false);
+});
+
+test("buildPages keeps a public folder page when its current name is unsafe for discovery", () => {
+  const folders = [
+    {id: "f1", name: "porn", owner: null, wallIds: ["W06"], updatedAt: NOW, discoveryEligible: false},
+  ];
+  const pages = buildPages(thirtyWalls(), [], folders, new Map(), {trending: ["f1"], new: []});
+
+  assert.ok(pages.has("folder~f1"));
+  assert.equal(pages.has("folders"), false);
+});
+
+test("rebuildWebCatalog keeps a public folder but drops an unsafe renamed folder from discovery", async (t) => {
+  stubDeps(t);
+  const store = installFakeDb(t, {
+    "walls/d1": liveWall(),
+    "publicFolders/F1": {ownerId: "u1", name: "Calm", itemCount: 8},
+    "publicFolders/F1/items/i1": {id: "W1"},
+    "folderTrending/current": {trending: [{id: "F1"}], new: []},
+  });
+
+  await rebuildWebCatalog();
+  assert.ok(store.has("webPages/folders"));
+  store.set("publicFolders/F1", {ownerId: "u1", name: "porn", itemCount: 8});
+
+  await rebuildWebCatalog();
+
+  assert.equal(store.has("webPages/folders"), false);
+  assert.equal(store.get("webPages/folder~F1")?.name, "porn");
+});
+
+test("rebuildWebCatalog drops folders below the live-wall discovery minimum", async (t) => {
+  stubDeps(t);
+  const store = installFakeDb(t, {
+    "walls/d1": liveWall(),
+    "publicFolders/F1": {ownerId: "u1", name: "Calm", itemCount: 8},
+    "publicFolders/F1/items/i1": {id: "W1"},
+    "folderTrending/current": {trending: [{id: "F1"}], new: []},
+  });
+
+  await rebuildWebCatalog();
+  store.set("publicFolders/F1", {ownerId: "u1", name: "Calm", itemCount: 7});
+
+  await rebuildWebCatalog();
+
+  assert.equal(store.has("webPages/folders"), false);
+  assert.ok(store.has("webPages/folder~F1"));
+});
+
+test("hiding a folder from discovery does not remove it from its creator page", () => {
+  const walls = thirtyWalls();
+  walls.set("W01", liveCard(1, {creator: {username: "sam", name: "Sam K"}}));
+  const folders = [
+    {id: "f1", name: "Calm", owner: {username: "sam", name: "Sam K", bio: "", photo: ""},
+      wallIds: ["W01"], total: 8, updatedAt: NOW, discoveryHidden: true},
+  ];
+  const pages = buildPages(walls, [], folders, new Map([["u1", samProfile as never]]), {
+    trending: ["f1"], new: [],
+  });
+
+  assert.equal(pages.has("folders"), false);
+  assert.ok(pages.has("folder~f1"));
+  assert.deepEqual((pages.get("creator~sam~1")?.folders as Array<{id: string}>).map((folder) => folder.id), ["f1"]);
+});
+
+test("rebuildWebCatalog restores the discover page after hide then unhide without a content hash change", async (t) => {
+  stubDeps(t);
+  const store = installFakeDb(t, {
+    "walls/d1": liveWall(),
+    "publicFolders/F1": {ownerId: "u1", name: "Faves", itemCount: 8},
+    "publicFolders/F1/items/i1": {id: "W1"},
+    "folderTrending/current": {trending: [{id: "F1"}], new: []},
+  });
+
+  await rebuildWebCatalog();
+  await dropFromDiscovery("F1");
+  store.set("folderTrending/current", {trending: [{id: "F1"}], new: []});
+
+  await rebuildWebCatalog();
+
+  assert.deepEqual((store.get("webPages/folders")?.trending as Array<{id: string}>).map((card) => card.id), ["F1"]);
+});
+
+test("a stale rebuild cannot restore a folder removed from discovery during its build", async (t) => {
+  stubDeps(t);
+  const store = installFakeDb(t, {
+    "walls/d1": liveWall(),
+    "walls/d2": liveWall({id: "W2", collections: ["abstract"]}),
+    "publicFolders/F1": {ownerId: "u1", name: "Faves", itemCount: 8},
+    "publicFolders/F1/items/i1": {id: "W1"},
+    "folderTrending/current": {trending: [{id: "F1"}], new: []},
+  });
+  const original = webCatalogDeps.blur;
+  let pause = false;
+  let entered!: () => void;
+  let release!: () => void;
+  const enteredPromise = new Promise<void>((resolve) => {
+    entered = resolve;
+  });
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  t.mock.method(webCatalogDeps, "blur", async (...args: Parameters<typeof original>) => {
+    if (pause) {
+      entered();
+      await gate;
+    }
+    return original(...args);
+  });
+  // Keep W1 live in the folder and use a separate wall for the slow blur.
+  pause = true;
+  const staleBuild = rebuildWebCatalog();
+  await enteredPromise;
+  store.set("folderTrending/current", {trending: [], new: []});
+  await dropFromDiscovery("F1");
+  release();
+  await staleBuild;
+
+  assert.equal(store.has("webPages/folders"), false);
+});
+
+test("a later stable rebuild deletes a stale discover page after the manifest already dropped its hash", async (t) => {
+  stubDeps(t);
+  const store = installFakeDb(t, {
+    "walls/d1": liveWall(),
+    "walls/d2": liveWall({id: "W2", collections: ["abstract"]}),
+    "publicFolders/F1": {ownerId: "u1", name: "Faves", itemCount: 8},
+    "publicFolders/F1/items/i1": {id: "W1"},
+    "folderTrending/current": {trending: [{id: "F1"}], new: []},
+  });
+  await rebuildWebCatalog();
+  assert.ok(store.has("webPages/folders"));
+
+  store.set("publicFolders/F1", {ownerId: "u1", name: "Faves", itemCount: 7});
+  let pause = false;
+  let entered!: () => void;
+  let release!: () => void;
+  const enteredPromise = new Promise<void>((resolve) => {
+    entered = resolve;
+  });
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const original = webCatalogDeps.blur;
+  t.mock.method(webCatalogDeps, "blur", async (...args: Parameters<typeof original>) => {
+    if (pause) {
+      entered();
+      await gate;
+    }
+    return original(...args);
+  });
+  store.set("walls/d2", liveWall({id: "W2", collections: ["abstract"],
+    wallpaper_thumb: "https://img.prismwalls.com/previews/W2-changed.img"}));
+  pause = true;
+  const staleBuild = rebuildWebCatalog();
+  await enteredPromise;
+  store.set("publicFolders/F1", {ownerId: "u1", name: "Faves", itemCount: 6});
+  release();
+  await staleBuild;
+
+  assert.ok(store.has("webPages/folders"), "the stale page remains until a stable snapshot can safely remove it");
+  const manifest = store.get("webCatalogState/pages")?.hashes as Record<string, string>;
+  assert.equal(manifest.folders, undefined);
+
+  await rebuildWebCatalog();
+
+  assert.equal(store.has("webPages/folders"), false);
 });
 
 test("rebuildWebCatalog publishes only profile photos from the app's photo hosts", async (t) => {

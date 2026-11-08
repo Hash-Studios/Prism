@@ -887,6 +887,30 @@ test('a missing webPages/folders doc serves the app landing, not the discover pa
   assert.equal(body.includes('Trending this week'), false);
 });
 
+test('an empty discover page refresh replaces stale discover HTML with the app landing', async (t) => {
+  const h = setup(t);
+  const clock = stubClock(t);
+  h.state.docs['webPages/folders'] = {
+    kind: 'folders',
+    trending: [{ id: 'F1', name: 'Calm', total: 3, covers: [THUMB], owner: null }],
+    new: [],
+  };
+  const initial = await h.get('/folders');
+  const initialBody = await initial.text();
+  assert.ok(initialBody.includes('Trending this week'));
+
+  h.state.docs['webPages/folders'] = { kind: 'folders', trending: [], new: [] };
+  clock.advance(601);
+  const stale = await h.get('/folders');
+  assert.ok((await stale.text()).includes('Trending this week'));
+  await h.flush();
+
+  const refreshed = await h.get('/folders');
+  const body = await refreshed.text();
+  assert.equal(body.includes('Trending this week'), false);
+  assert.equal(body.includes('Calm'), false);
+});
+
 test('sitemaps list the page sitemap and each wall sitemap with its lastmod', async (t) => {
   const h = setup(t);
 

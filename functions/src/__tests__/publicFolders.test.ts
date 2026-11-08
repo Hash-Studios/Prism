@@ -5,6 +5,7 @@ import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import * as pushGallery from "../pushGallery";
 import {db} from "../common";
+import * as folderSignals from "../folderSignals";
 import {folderSignalDeps} from "../folderSignals";
 import {changesPublicFolder} from "../folders";
 import {
@@ -513,6 +514,47 @@ test("turning a folder private removes the header, items and follow edges both w
 
   assert.deepEqual(keysUnder(store, "publicFolders/"), []);
   assert.equal(store.has("usersv2/b/followedFolders/f1"), false);
+});
+
+test("a cleanup keeps its fence until discovery lists are pruned", async (t) => {
+  const store = setup(t);
+  store.set("folderTrending/current", {trending: [{id: "f1"}], new: [{id: "f1"}]});
+  store.set("webPages/folders", {kind: "folders", trending: [{id: "f1"}], new: [{id: "f1"}]});
+  let begin!: () => void;
+  let release!: () => void;
+  const entered = new Promise<void>((resolve) => {
+    begin = resolve;
+  });
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const actualDrop = folderSignals.dropFromDiscovery;
+  let drops = 0;
+  t.mock.method(folderSignals, "dropFromDiscovery", async (folderId: string, generation?: string) => {
+    if (++drops === 1) {
+      begin();
+      await gate;
+    }
+    await actualDrop(folderId, generation);
+  });
+
+  const cleanup = removePublicFolder("f1");
+  await entered;
+  assert.equal(store.get("publicFolderState/f1")?.deleting, true);
+  // A second cleanup of the same generation completes while the first is paused.
+  await removePublicFolder("f1");
+  store.set("folders/f1", {...store.get("folders/f1"), public: true});
+  await syncPublicFolder("f1");
+  assert.ok(store.has("publicFolders/f1"));
+  store.set("folderTrending/current", {trending: [{id: "f1"}], new: [{id: "f1"}]});
+  store.set("webPages/folders", {kind: "folders", trending: [{id: "f1"}], new: [{id: "f1"}]});
+
+  // The delayed cleaner has the old generation and must not remove the republished folder.
+  release();
+  await cleanup;
+  assert.deepEqual(store.get("folderTrending/current"), {trending: [{id: "f1"}], new: [{id: "f1"}]});
+  assert.deepEqual(store.get("webPages/folders"), {kind: "folders", trending: [{id: "f1"}], new: [{id: "f1"}]});
+  assert.equal(store.get("publicFolderState/f1")?.deleting, false);
 });
 
 test("deleting the private folder removes its projection", async (t) => {

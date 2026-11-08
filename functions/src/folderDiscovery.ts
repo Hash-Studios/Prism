@@ -27,7 +27,6 @@ export const DISCOVERY_LIMITS = {
   dailyDocs: 50_000,
   trendingCandidates: 300,
   newCandidates: 300,
-  openReports: 1_000,
 } as const;
 
 type Doc = admin.firestore.DocumentData;
@@ -140,21 +139,19 @@ async function getDocs(refs: admin.firestore.DocumentReference[]): Promise<admin
 /**
  * Rebuilds `folderTrending/current`: up to 30 trending and 30 new public folders, at most 2 per owner. It reads the
  * last 7 days of `folderStatsDaily`, the headers of the 300 best scored folders and of the 300 newest eligible
- * folders, the open folder reports, and then 12 walls and one profile for each listed folder. Never all folders.
+ * folders, one bounded open-report lookup per candidate, and then 12 walls and one profile for each listed folder.
+ * Never all folders.
  */
 export async function rebuildFolderDiscovery(nowMs = Date.now()): Promise<{trending: number; fresh: number}> {
   const days = trendingDays(nowMs);
-  const [dailySnap, newSnap, reportSnap] = await Promise.all([
+  const [dailySnap, newSnap] = await Promise.all([
     db.collection(FOLDER_STATS_DAILY).where("day", "in", days).select("folderId", "day", "follows", "saves", "opens")
       .limit(DISCOVERY_LIMITS.dailyDocs).get(),
     db.collection(PUBLIC_FOLDERS)
       .where("discoveryEligibleAt", ">=", admin.firestore.Timestamp.fromMillis(nowMs - NEW_DAYS * DAY_MS))
       .orderBy("discoveryEligibleAt", "desc").limit(DISCOVERY_LIMITS.newCandidates).get(),
-    db.collection("contentReports").where("contentType", "==", "folder").where("status", "==", "open")
-      .select("targetFirestoreDocId").limit(DISCOVERY_LIMITS.openReports).get(),
   ]);
   if (dailySnap.size >= DISCOVERY_LIMITS.dailyDocs) logger.warn("folderDiscovery: daily docs hit the read cap.");
-  if (reportSnap.size >= DISCOVERY_LIMITS.openReports) logger.warn("folderDiscovery: open reports hit the read cap.");
 
   const scores = folderScores(dailySnap.docs.map((d) => d.data()).map((d) => ({
     folderId: str(d.folderId), day: str(d.day), follows: num(d.follows), saves: num(d.saves), opens: num(d.opens),
@@ -165,10 +162,18 @@ export async function rebuildFolderDiscovery(nowMs = Date.now()): Promise<{trend
   const headers = new Map<string, Doc>();
   for (const snap of [...bestHeaders, ...newSnap.docs]) if (snap.exists) headers.set(snap.id, snap.data() as Doc);
 
+  // Check reports per candidate so a large set of unrelated reports cannot hide an eligible candidate past a
+  // global limit. The union is bounded by trendingCandidates + newCandidates (600 maximum), with one result each.
+  const candidates = [...headers.keys()];
+  const reportChecks = await Promise.all(candidates.map((id) => db.collection("contentReports")
+    .where("contentType", "==", "folder").where("status", "==", "open").where("targetFirestoreDocId", "==", id)
+    .limit(1).get()));
+  const reported = new Set(candidates.filter((_, i) => reportChecks[i].size > 0));
+
   const ctx = {
     nowMs,
     owners: await folderDiscoveryDeps.owners([...new Set([...headers.values()].map((h) => str(h.ownerId)))].filter(Boolean)),
-    reported: new Set(reportSnap.docs.map((d) => str(d.data().targetFirestoreDocId))),
+    reported,
   };
   const eligible = (id: string) => discoveryRefusal(headers.get(id), ctx, id) === null;
   const rowOf = (id: string) => ({id, ownerId: str(headers.get(id)?.ownerId)});
@@ -184,11 +189,13 @@ export async function rebuildFolderDiscovery(nowMs = Date.now()): Promise<{trend
   const profileOf = new Map(ownerIds.map((uid, i) => [uid, profiles[i].data()]));
   const traitsOf = new Map(listed.map((id, i) => [id, traits[i]]));
 
-  // A folder hidden or made private while the job ran is dropped: the write rechecks each listed header.
+  // Recheck the live header: its name, size, owner and moderation state may have changed while the job ran.
   const ref = db.collection(FOLDER_TRENDING).doc(FOLDER_TRENDING_DOC);
   const result = await db.runTransaction(async (tx) => {
     const current = await Promise.all(listed.map((id) => tx.get(db.collection(PUBLIC_FOLDERS).doc(id))));
-    const live = new Map(current.filter((snap) => snap.exists && snap.data()?.discoveryHidden !== true)
+    const live = new Map(current.filter((snap) => snap.exists &&
+      discoveryRefusal(snap.data() as Doc, ctx, snap.id) === null &&
+      sameSourceIdentity(headers.get(snap.id), snap.data() as Doc))
       .map((snap) => [snap.id, snap.data() as Doc]));
     const entries = (rows: Array<{id: string}>) => rows.flatMap(({id}) => {
       const header = live.get(id);
@@ -200,6 +207,15 @@ export async function rebuildFolderDiscovery(nowMs = Date.now()): Promise<{trend
   });
   logger.info("folderDiscovery: rebuilt.", {...result, daily: dailySnap.size, candidates: headers.size});
   return result;
+}
+
+function sameSourceIdentity(candidate: Doc | undefined, current: Doc): boolean {
+  if (!candidate) return false;
+  if (typeof candidate.generation === "string" && candidate.generation !== current.generation) return false;
+  if (candidate.sourceCreatedAt instanceof admin.firestore.Timestamp &&
+      (!(current.sourceCreatedAt instanceof admin.firestore.Timestamp) ||
+        !candidate.sourceCreatedAt.isEqual(current.sourceCreatedAt))) return false;
+  return true;
 }
 
 export const computeFolderDiscovery = onSchedule(

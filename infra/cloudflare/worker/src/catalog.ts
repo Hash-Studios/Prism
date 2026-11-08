@@ -154,7 +154,7 @@ export async function handleCatalogRequest(
     if (route.kind === 'desktop-image') return await renderDesktopImage(route.id, route.version, env);
     const response = await cached(key, ctx, () => route.kind === 'not-found'
       ? renderMissing(404, 'page', env)
-      : render(route, env));
+      : render(route, env, landing));
     return withMethod(request, response);
   } catch (error) {
     if (!(error instanceof FirestoreUnavailable)) throw error;
@@ -310,11 +310,11 @@ function withMethod(request: Request, response: Response): Response {
   return request.method === 'HEAD' ? new Response(null, { status: response.status, headers: response.headers }) : response;
 }
 
-async function render(route: Route, env: CatalogEnv): Promise<Response> {
+async function render(route: Route, env: CatalogEnv, landing: () => Response): Promise<Response> {
   switch (route.kind) {
     case 'wall': return renderWall(route.id, route.desktop, env);
     case 'folder': return renderFolder(route.id, env);
-    case 'folders': return renderFoldersDiscover(env);
+    case 'folders': return renderFoldersDiscover(env, landing);
     case 'hub': return renderHub(route.list, route.slug, route.page, env);
     case 'desktop-hub': return renderDesktopHub(route.list, route.page, env);
     case 'creator': return renderCreator(route.username, route.page, env);
@@ -828,11 +828,11 @@ function discoverRowHtml(title: string, cards: DiscoverCard[]): string {
 }
 
 /** The public folders people follow and save this week, and the new ones. One document read. */
-async function renderFoldersDiscover(env: CatalogEnv): Promise<Response> {
+async function renderFoldersDiscover(env: CatalogEnv, landing: () => Response): Promise<Response> {
   const stored = await readDoc<unknown>(env, 'webPages/folders');
   const data = stored == null ? null : parseDiscoverPage(stored, env);
   // No list yet: /folders is also an app link, so the app landing serves it.
-  if (data == null || (!data.trending.length && !data.fresh.length)) throw new FirestoreUnavailable('no discover folders');
+  if (data == null || (!data.trending.length && !data.fresh.length)) return landing();
   const canonical = `${SITE}/folders`;
   const title = 'Public wallpaper folders | Prism';
   const description = 'Folders of wallpapers that people on Prism follow and save this week, and new folders. '
