@@ -75,6 +75,19 @@ void main() {
     expect(style.decoration, isNot(TextDecoration.underline));
   });
 
+  testWidgets('a control in the lower half with room under it gets the bubble below, not over the content above', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(_host(alignment: const Alignment(0, 0.3))));
+    await _settle(tester);
+    final Rect control = tester.getRect(find.byKey(const Key('control')));
+    final Rect bubble = tester.getRect(
+      find.ancestor(of: find.text(_copy), matching: find.byType(ScaleTransition)).first,
+    );
+    expect(control.center.dy, greaterThan(300));
+    expect(bubble.top, greaterThan(control.bottom));
+  });
+
   testWidgets('disabling restarts the full dwell interval', (tester) async {
     await tester.pumpWidget(_app(_host()));
     await tester.pump(const Duration(milliseconds: 500));

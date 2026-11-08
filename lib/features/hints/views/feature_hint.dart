@@ -227,6 +227,7 @@ class _HintCallout extends StatefulWidget {
 class _HintCalloutState extends State<_HintCallout> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(vsync: this);
   late final CurvedAnimation _curve = CurvedAnimation(parent: _controller, curve: PrismCurves.enter);
+  final ValueNotifier<bool> _below = ValueNotifier<bool>(true);
 
   @override
   void didChangeDependencies() {
@@ -242,6 +243,7 @@ class _HintCalloutState extends State<_HintCallout> with SingleTickerProviderSta
   @override
   void dispose() {
     _curve.dispose();
+    _below.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -254,7 +256,6 @@ class _HintCalloutState extends State<_HintCallout> with SingleTickerProviderSta
       return const SizedBox.shrink();
     }
     final Rect target = anchor.localToGlobal(Offset.zero, ancestor: overlay) & anchor.size;
-    final bool below = target.center.dy < overlay.size.height / 2;
     final ColorScheme cs = Theme.of(context).colorScheme;
     final TextStyle text = PrismTextStyles.caption(context).copyWith(color: cs.onInverseSurface);
     final Widget bubble = DecoratedBox(
@@ -317,7 +318,7 @@ class _HintCalloutState extends State<_HintCallout> with SingleTickerProviderSta
     return Material(
       type: MaterialType.transparency,
       child: CustomMultiChildLayout(
-        delegate: _CalloutLayout(target: target, below: below, padding: MediaQuery.paddingOf(context)),
+        delegate: _CalloutLayout(target: target, below: _below, padding: MediaQuery.paddingOf(context)),
         children: <Widget>[
           LayoutId(
             id: _CalloutPart.arrow,
@@ -325,7 +326,7 @@ class _HintCalloutState extends State<_HintCallout> with SingleTickerProviderSta
               opacity: _curve,
               child: CustomPaint(
                 size: const Size(_arrowWidth, _arrowHeight),
-                painter: _ArrowPainter(color: cs.inverseSurface, up: below),
+                painter: _ArrowPainter(color: cs.inverseSurface, up: _below),
               ),
             ),
           ),
@@ -338,11 +339,7 @@ class _HintCalloutState extends State<_HintCallout> with SingleTickerProviderSta
                 liveRegion: defaultTargetPlatform != TargetPlatform.iOS,
                 child: FadeTransition(
                   opacity: _curve,
-                  child: ScaleTransition(
-                    scale: Tween<double>(begin: 0.95, end: 1).animate(_curve),
-                    alignment: below ? Alignment.topCenter : Alignment.bottomCenter,
-                    child: bubble,
-                  ),
+                  child: ScaleTransition(scale: Tween<double>(begin: 0.95, end: 1).animate(_curve), child: bubble),
                 ),
               ),
             ),
@@ -363,8 +360,10 @@ enum _CalloutPart { arrow, bubble }
 class _CalloutLayout extends MultiChildLayoutDelegate {
   _CalloutLayout({required this.target, required this.below, required this.padding});
 
+  /// Set during layout: true when the bubble sits below the control. The arrow reads it when it paints.
+
   final Rect target;
-  final bool below;
+  final ValueNotifier<bool> below;
   final EdgeInsets padding;
 
   @override
@@ -380,8 +379,11 @@ class _CalloutLayout extends MultiChildLayoutDelegate {
       left + PrismRadius.sm,
       math.max(left + PrismRadius.sm, left + bubble.width - PrismRadius.sm - _arrowWidth),
     );
-    final double arrowTop = below ? target.bottom + _gap : target.top - _gap - _arrowHeight;
-    final double bubbleTop = below ? arrowTop + _arrowHeight : arrowTop - bubble.height;
+    // Below the control when the bubble fits there, so it does not cover the actions above a bottom control.
+    final double room = _gap + _arrowHeight + bubble.height;
+    below.value = target.bottom + room <= size.height - padding.bottom || target.top - room < padding.top;
+    final double arrowTop = below.value ? target.bottom + _gap : target.top - _gap - _arrowHeight;
+    final double bubbleTop = below.value ? arrowTop + _arrowHeight : arrowTop - bubble.height;
     positionChild(_CalloutPart.arrow, Offset(arrowLeft, arrowTop));
     positionChild(
       _CalloutPart.bubble,
@@ -390,19 +392,18 @@ class _CalloutLayout extends MultiChildLayoutDelegate {
   }
 
   @override
-  bool shouldRelayout(_CalloutLayout oldDelegate) =>
-      target != oldDelegate.target || below != oldDelegate.below || padding != oldDelegate.padding;
+  bool shouldRelayout(_CalloutLayout oldDelegate) => target != oldDelegate.target || padding != oldDelegate.padding;
 }
 
 class _ArrowPainter extends CustomPainter {
-  const _ArrowPainter({required this.color, required this.up});
+  _ArrowPainter({required this.color, required this.up}) : super(repaint: up);
 
   final Color color;
-  final bool up;
+  final ValueListenable<bool> up;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Path path = up
+    final Path path = up.value
         ? (Path()
             ..moveTo(0, size.height)
             ..lineTo(size.width / 2, 0)
