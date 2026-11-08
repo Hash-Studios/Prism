@@ -238,10 +238,9 @@ class FavouritesSyncService {
 
   /// [opKey] plus every doc that holds the operation's wall: its key doc and an older build's raw-ID doc.
   Future<Set<String>> _docIdsToDelete(String uid, String opKey, Map<String, Object?> operation) async {
-    final Object? payload = operation['wall'];
-    if (payload is! Map || payload.isEmpty) return <String>{opKey};
+    if (operation['wall'] == null) return <String>{opKey};
     final FavouriteWallEntity wall = mapFavouriteWallDoc(
-      FavouriteWallDocDto.fromJson(Map<String, dynamic>.from(payload)),
+      FavouriteWallDocDto.fromJson(Map<String, dynamic>.from(operation['wall']! as Map)),
       opKey,
     );
     return <String>{
