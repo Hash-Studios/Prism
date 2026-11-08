@@ -8,9 +8,10 @@ export const USAGE = `Usage: node lib/scripts/qualifyFavouriteKeys.js [--apply]
 Moves Wallhaven and Pexels favourites in usersv2/{uid}/images from the raw wall id to the key that new builds
 write, <provider>_<id> (#524). The two sources can share an id. Prism favourites keep the raw id.
 A dry run is the default. It reads only and prints counts, collisions and 10 sample ids.
---apply copies each doc to its new key (unless that key exists) and deletes the raw doc, one transaction per doc,
-so a stopped run can run again. Builds before #524 cannot delete a moved favourite, so run --apply only after most
-users run a build with #524, and only with the owner's OK.
+--apply copies each doc to its new key, or fills missing pin/favourite timestamps on a matching existing key, then
+deletes the raw doc in one transaction per doc. A key for a different favourite is left untouched; a stopped run can
+run again. Builds before #524 cannot delete a moved favourite, so run --apply only after most users run a build with
+#524, and only with the owner's OK.
 Credentials come from Application Default Credentials, as in the other backfills.`;
 
 export type FavouriteKeyCounts = {
@@ -84,13 +85,27 @@ export async function qualifyFavouriteKeys(
       }
       if (!options.apply) continue;
       try {
-        await db.runTransaction(async (tx) => {
+        const moved = await db.runTransaction(async (tx) => {
           const [raw, target] = await Promise.all([tx.get(doc.ref), tx.get(targetRef)]);
-          if (!raw.exists) return;
-          if (!target.exists) tx.set(targetRef, raw.data() ?? {});
+          if (!raw.exists) return false;
+          const data = raw.data() ?? {};
+          const freshPlan = planFavouriteKey(doc.id, data);
+          if (typeof freshPlan !== "object" || freshPlan.target !== plan.target) return false;
+          if (target.exists) {
+            const existing = target.data() ?? {};
+            if (existing.id !== data.id || typeof existing.provider !== "string" ||
+              existing.provider.toLowerCase() !== data.provider.toLowerCase()) return false;
+            const timestamps = Object.fromEntries(["pinnedAt", "favouritedAt"]
+              .filter((field) => existing[field] === undefined && data[field] !== undefined)
+              .map((field) => [field, data[field]]));
+            if (Object.keys(timestamps).length > 0) tx.set(targetRef, timestamps, {merge: true});
+          } else {
+            tx.set(targetRef, data);
+          }
           tx.delete(doc.ref);
+          return true;
         });
-        counts.moved += 1;
+        if (moved) counts.moved += 1;
       } catch {
         counts.failed += 1;
       }

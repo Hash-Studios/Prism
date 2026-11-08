@@ -42,11 +42,52 @@ test("--apply moves raw docs, keeps an existing key doc, and a second run change
   assert.equal(counts.moved, 2);
   assert.deepEqual(store.get("usersv2/u1/images/wallhaven_abc123"), {id: "abc123", provider: "WallHaven"});
   assert.equal(store.get("usersv2/u1/images/abc123"), undefined);
-  assert.deepEqual(store.get("usersv2/u1/images/pexels_777"), {id: "777", provider: "Pexels"});
+  assert.deepEqual(store.get("usersv2/u1/images/pexels_777"), {id: "777", provider: "Pexels", pinnedAt: "p"});
   assert.equal(store.get("usersv2/u1/images/777"), undefined);
   assert.deepEqual(store.get("usersv2/u1/images/AB1C"), {id: "AB1C", provider: "Prism"});
 
   const again = await qualifyFavouriteKeys(db, {apply: true}, () => undefined);
   assert.equal(again.toMove, 0);
   assert.equal(again.moved, 0);
+});
+
+test("collision preserves source pin and favourite timestamps without overwriting target timestamps", async (t) => {
+  const store = installFakeDb(t, {
+    "usersv2/u1/images/777": {id: "777", provider: "Pexels", pinnedAt: "source-pin", favouritedAt: "source-fav"},
+    "usersv2/u1/images/pexels_777": {id: "777", provider: "Pexels", pinnedAt: "target-pin"},
+  });
+
+  await qualifyFavouriteKeys(db, {apply: true}, () => undefined);
+
+  assert.deepEqual(store.get("usersv2/u1/images/pexels_777"), {id: "777", provider: "Pexels",
+    pinnedAt: "target-pin", favouritedAt: "source-fav"});
+  assert.equal(store.has("usersv2/u1/images/777"), false);
+});
+
+test("collision with a different logical favourite leaves the raw document untouched", async (t) => {
+  const store = installFakeDb(t, {
+    "usersv2/u1/images/777": {id: "777", provider: "Pexels", favouritedAt: "source-fav"},
+    "usersv2/u1/images/pexels_777": {id: "other", provider: "Pexels", pinnedAt: "other-pin"},
+  });
+
+  await qualifyFavouriteKeys(db, {apply: true}, () => undefined);
+
+  assert.deepEqual(store.get("usersv2/u1/images/777"), {id: "777", provider: "Pexels", favouritedAt: "source-fav"});
+  assert.deepEqual(store.get("usersv2/u1/images/pexels_777"), {id: "other", provider: "Pexels", pinnedAt: "other-pin"});
+});
+
+test("transaction rechecks the raw document after a concurrent key update", async (t) => {
+  const store = installFakeDb(t, {
+    "usersv2/u1/images/777": {id: "777", provider: "Pexels", favouritedAt: "source-fav"},
+  });
+  const transaction = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", (callback: Parameters<typeof db.runTransaction>[0]) => {
+    store.set("usersv2/u1/images/777", {id: "777", provider: "Prism", favouritedAt: "source-fav"});
+    return transaction(callback);
+  });
+
+  await qualifyFavouriteKeys(db, {apply: true}, () => undefined);
+
+  assert.deepEqual(store.get("usersv2/u1/images/777"), {id: "777", provider: "Prism", favouritedAt: "source-fav"});
+  assert.equal(store.has("usersv2/u1/images/pexels_777"), false);
 });

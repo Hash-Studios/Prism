@@ -604,6 +604,40 @@ void main() {
     expect(operation['status'], 'pending');
   });
 
+  test('an old raw-key queued add writes at the source-qualified key', () async {
+    final wall = wallhavenFav('777');
+    await local.createFavouriteOperation(
+      'u',
+      wall.id,
+      desired: true,
+      wall: Map<String, Object?>.from(favouriteWallToDoc(wall)),
+    );
+
+    await service.start('u');
+    await local.waitForStatus(wall.id, 'synced');
+
+    expect(firestore.writes.single.id, 'wallhaven_777');
+  });
+
+  test('an old raw-key queued delete does not delete a different source with the same id', () async {
+    final wall = wallhavenFav('777');
+    await local.createFavouriteOperation(
+      'u',
+      wall.id,
+      desired: false,
+      wall: Map<String, Object?>.from(favouriteWallToDoc(wall)),
+    );
+    firestore.docs['usersv2/u/images'] = <String, Map<String, dynamic>>{
+      '777': <String, dynamic>{'id': '777', 'provider': 'pexels'},
+    };
+
+    await service.start('u');
+    await local.waitForStatus(wall.id, 'synced');
+
+    expect(firestore.docs['usersv2/u/images']!.containsKey('777'), isTrue);
+    expect(firestore.writes.where((write) => write.op == 'delete').map((write) => write.id), <String>['wallhaven_777']);
+  });
+
   for (final DateTime? nextPin in <DateTime?>[DateTime.utc(2026, 5, 6), null]) {
     final String action = nextPin == null ? 'unpin' : 'pin';
     test('a pending favourite retry preserves a later $action', () async {

@@ -42,6 +42,13 @@ const FeedItemEntity _item = PrismFeedItem(
   ),
 );
 
+const FeedItemEntity _pexelsItem = PexelsFeedItem(
+  id: 'shared-id',
+  wallpaper: PexelsWallpaper(
+    core: WallpaperCore(id: 'shared-id', source: WallpaperSource.pexels, fullUrl: '', thumbnailUrl: ''),
+  ),
+);
+
 void main() {
   setUpFavouriteCounts();
   late FavoritesLocalDataSource favourites;
@@ -89,7 +96,7 @@ void main() {
     await getIt.reset();
   });
 
-  Future<void> pumpTile(WidgetTester tester, {VoidCallback? onShowLess}) {
+  Future<void> pumpTile(WidgetTester tester, {VoidCallback? onShowLess, FeedItemEntity item = _item}) {
     return tester.pumpWidget(
       MaterialApp(
         builder: favouriteTestBuilder,
@@ -102,7 +109,7 @@ void main() {
             body: SizedBox(
               width: 120,
               height: 240,
-              child: WallpaperTile(item: _item, index: 0, onShowLessLikeThis: onShowLess),
+              child: WallpaperTile(item: item, index: 0, onShowLessLikeThis: onShowLess),
             ),
           ),
         ),
@@ -131,6 +138,17 @@ void main() {
     await tester.pump();
     expect(find.bySemanticsLabel('Share link'), findsNothing);
     expect(events, isEmpty);
+  });
+
+  testWidgets('a raw-ID favourite from another source does not change this tile menu', (tester) async {
+    await favourites.setWallFavourite('u', 'shared-id', true);
+    await pumpTile(tester, item: _pexelsItem);
+
+    final gesture = await hold(tester);
+
+    expect(find.bySemanticsLabel('Favourite'), findsNWidgets(2));
+    expect(find.bySemanticsLabel('Unfavourite'), findsNothing);
+    await gesture.up();
   });
 
   testWidgets('release on see less calls the real callback once on the closing frame', (tester) async {

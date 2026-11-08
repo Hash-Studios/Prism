@@ -35,7 +35,7 @@ Future<List<String>> existingFavouriteDocIds(
     return <String>[if (found[0] != null) key, if (found[1] == source) id];
   } catch (error, stackTrace) {
     logger.w('Could not look up the docs of favourite $key.', tag: 'Favourites', error: error, stackTrace: stackTrace);
-    return <String>[key];
+    rethrow;
   }
 }
 

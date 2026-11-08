@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/features/favourite_walls/data/favourite_wall_doc_mapper.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -62,6 +63,53 @@ void main() {
     await Future.wait([write, clear]);
     expect(await source.readWallSnapshot('owner'), isEmpty);
     expect(await DurableJsonStore('favorites-lock-test', directory: directory).readAll(), isEmpty);
+  });
+
+  test('a queued legacy raw-ID add overlays the qualified wall once', () async {
+    final wall = wallhavenFav('same-id');
+    await source.createFavouriteOperation(
+      'owner',
+      wall.id,
+      desired: true,
+      wall: Map<String, Object?>.from(favouriteWallToDoc(wall)),
+    );
+
+    final walls = await source.mergeServerWallSnapshot('owner', <FavouriteWallEntity>[wall]);
+
+    expect(walls.map((item) => item.key), <String>['wallhaven_same-id']);
+    expect(walls.single.syncStatus, FavouriteSyncStatus.pending);
+    expect(source.isWallFavourite('owner', 'wallhaven_same-id'), isTrue);
+    expect(source.isWallFavourite('owner', 'same-id'), isFalse);
+  });
+
+  test('a legacy raw-ID operation status does not leak to another source', () async {
+    await source.updateWallSnapshot('owner', (_) => <FavouriteWallEntity>[wallhavenFav('same-id')]);
+    await source.createFavouriteOperation(
+      'owner',
+      'same-id',
+      desired: true,
+      wall: Map<String, Object?>.from(favouriteWallToDoc(pexelsFav('same-id'))),
+    );
+
+    final walls = await source.readWallSnapshot('owner');
+
+    expect(walls.single.key, 'wallhaven_same-id');
+    expect(walls.single.syncStatus, FavouriteSyncStatus.synced);
+  });
+
+  test('a legacy raw-ID operation status does not leak to Prism with the same key', () async {
+    await source.updateWallSnapshot('owner', (_) => <FavouriteWallEntity>[prismFav('shared-id')]);
+    await source.createFavouriteOperation(
+      'owner',
+      'shared-id',
+      desired: true,
+      wall: Map<String, Object?>.from(favouriteWallToDoc(pexelsFav('shared-id'))),
+    );
+
+    final walls = await source.readWallSnapshot('owner');
+
+    expect(walls.single.source, WallpaperSource.prism);
+    expect(walls.single.syncStatus, FavouriteSyncStatus.synced);
   });
 
   test('multi-shard snapshots retain unicode, dates and pins, then remove old shards', () async {

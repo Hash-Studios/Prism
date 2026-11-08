@@ -438,6 +438,24 @@ void main() {
       expect(bloc.state.items.map((wall) => wall.id), <String>['a', 'b', 'c']);
     });
 
+    testWidgets('selection keeps same-ID favourites from different sources distinct', (tester) async {
+      createBlocWith(<FavouriteWallEntity>[wallhavenFav('shared'), pexelsFav('shared', author: 'Pexels')]);
+      await pumpLoaded(tester);
+
+      await selectWithHold(tester, find.byType(FavouriteTileImage).first);
+      await tester.pump();
+      await tester.tap(find.byType(FavouriteTileImage).last);
+      await tester.pump();
+
+      expect(find.text('2 selected'), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel('Remove from favourites'));
+      await tester.pump();
+      await tester.pump();
+
+      final params = verify(() => clearUseCase(captureAny())).captured.single as ClearFavouriteWallsParams;
+      expect(params.wallIds, unorderedEquals(<String>['wallhaven_shared', 'pexels_shared']));
+    });
+
     testWidgets('an unavailable favourite Remove emits one tap haptic and removes the wall', (tester) async {
       final List<String> haptics = recordHaptics(tester);
       createBlocWith(<FavouriteWallEntity>[prismFav('a', author: 'Ada')]);

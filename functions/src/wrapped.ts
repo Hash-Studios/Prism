@@ -4,6 +4,7 @@ import {localDateKeyFromUtc, resolveTimezoneOffset, storedTimezoneOffset} from "
 import {DEFAULT_CATEGORY} from "./wallCategory";
 import {PALETTE} from "./wallColors";
 import {isPrismFavourite} from "./wallStats";
+import {favouriteIdentity} from "./favouriteIdentity";
 
 export const WRAPPED_YEAR = 2026;
 export const WRAPPED_VERSION = 1;
@@ -333,8 +334,12 @@ export async function readWrappedSignals(
     const data = doc.data();
     const savedAt = toMillis(data.favouritedAt) ?? toMillis(data.createdAt);
     if (!inWindow(savedAt, window)) continue;
-    saves.set(doc.id, {
-      wallId: str(data.id) || doc.id,
+    const wallId = str(data.id) || doc.id;
+    const identity = favouriteIdentity(doc.id, data);
+    const previous = saves.get(identity);
+    if (previous && previous.savedAt >= savedAt) continue;
+    saves.set(identity, {
+      wallId,
       prism: isPrismFavourite(doc.id, data),
       thumb: str(data.thumb),
       savedAt,

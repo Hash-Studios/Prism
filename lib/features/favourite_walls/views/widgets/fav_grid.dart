@@ -119,7 +119,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
     PrismHaptics.tap();
     setState(() {
       final Set<String> selection = _selection ??= <String>{};
-      if (!selection.remove(wall.id)) selection.add(wall.id);
+      if (!selection.remove(wall.key)) selection.add(wall.key);
     });
   }
 
@@ -164,7 +164,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
   }
 
   List<FavouriteWallEntity> _selectedWalls(List<FavouriteWallEntity> all) {
-    final Map<String, FavouriteWallEntity> byId = <String, FavouriteWallEntity>{for (final wall in all) wall.id: wall};
+    final Map<String, FavouriteWallEntity> byId = <String, FavouriteWallEntity>{for (final wall in all) wall.key: wall};
     return _selected.map((id) => byId[id]).whereType<FavouriteWallEntity>().toList(growable: false);
   }
 
@@ -500,7 +500,7 @@ class _FavouriteGridState extends State<FavouriteGrid> {
   Widget _tile(BuildContext context, List<FavouriteWallEntity> walls, int index) {
     final FavouriteWallEntity wall = walls[index];
     final ColorScheme cs = Theme.of(context).colorScheme;
-    final bool isSelected = _selected.contains(wall.id);
+    final bool isSelected = _selected.contains(wall.key);
     final bool dark = Theme.of(context).brightness == Brightness.dark;
     return KeyedSubtree(
       key: ValueKey<String>(wall.key),

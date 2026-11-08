@@ -93,7 +93,8 @@ class FavoritesLocalDataSource {
     }
     final operations = await readFavouriteOperations(scope);
     final withStatus = walls.map((wall) {
-      final FavouriteSyncStatus status = switch ((operations[wall.key] ?? operations[wall.id])?['status']) {
+      final Map<String, Object?>? operation = _matchingOperation(operations[wall.key] ?? operations[wall.id], wall);
+      final FavouriteSyncStatus status = switch (operation?['status']) {
         'pending' => FavouriteSyncStatus.pending,
         'rejected' => FavouriteSyncStatus.rejected,
         _ => FavouriteSyncStatus.synced,
@@ -101,6 +102,17 @@ class FavoritesLocalDataSource {
       return wall.withSyncStatus(status);
     }).toList();
     return withStatus..sort(compareByCreatedAtDesc);
+  }
+
+  Map<String, Object?>? _matchingOperation(Map<String, Object?>? operation, FavouriteWallEntity wall) {
+    if (operation == null) return null;
+    final Object? payload = operation['wall'];
+    if (payload is! Map || payload.isEmpty) return null;
+    final FavouriteWallEntity operationWall = mapFavouriteWallDoc(
+      FavouriteWallDocDto.fromJson(Map<String, dynamic>.from(payload)),
+      wall.id,
+    );
+    return operationWall.key == wall.key ? operation : null;
   }
 
   Future<void> updateWallSnapshot(

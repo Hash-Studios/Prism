@@ -9,32 +9,16 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart' show visibleForTesting;
 
 /// Longest wait for one FCM call. Without Google Play services, FCM calls on Android never answer.
 const Duration fcmCallTimeout = Duration(seconds: 5);
 
-@visibleForTesting
-bool defaultTopicCallsNeedFcmToken() => Platform.isAndroid;
-
-/// Android topic calls go through only after FCM gives a token. Apple devices wait for the APNS token instead.
-@visibleForTesting
-bool Function() topicCallsNeedFcmToken = defaultTopicCallsNeedFcmToken;
-
-bool _fcmTokenTimedOut = false;
-
-@visibleForTesting
-void resetFcmTokenGuard() => _fcmTokenTimedOut = false;
-
-/// The FCM token, or null when FCM does not answer in [fcmCallTimeout]. That means Google Play services is missing,
-/// so later reads in this run return null at once. Other errors reach the caller.
+/// The FCM token, or null when FCM does not answer in [fcmCallTimeout]. A later call can retry.
 Future<String?> readFcmToken(FirebaseMessaging messaging) async {
-  if (_fcmTokenTimedOut) return null;
   try {
     return await messaging.getToken().timeout(fcmCallTimeout);
   } on TimeoutException {
-    _fcmTokenTimedOut = true;
-    logger.w('FCM gave no token in time. Push topics wait until the next launch.', tag: 'Push');
+    logger.w('FCM gave no token in time. Push topic sync will retry on a later call.', tag: 'Push');
     return null;
   }
 }
@@ -365,23 +349,22 @@ Future<bool> _changeTopic(
       return false;
     }
     if (subscribe) {
-      await messaging.subscribeToTopic(localizationTopic).timeout(fcmCallTimeout);
+      final bool localizedJoined = await _callTopic(messaging.subscribeToTopic(localizationTopic), noun, fields);
       if (!(isCurrent?.call() ?? true)) return false;
       if (legacyTopic != localizationTopic) {
-        await messaging.unsubscribeFromTopic(legacyTopic).timeout(fcmCallTimeout);
+        final bool legacyLeft = await _callTopic(messaging.unsubscribeFromTopic(legacyTopic), noun, fields);
+        return localizedJoined && legacyLeft;
       }
+      return localizedJoined;
     } else {
-      await messaging.unsubscribeFromTopic(legacyTopic).timeout(fcmCallTimeout);
+      final bool legacyLeft = await _callTopic(messaging.unsubscribeFromTopic(legacyTopic), noun, fields);
       if (!(isCurrent?.call() ?? true)) return false;
       if (legacyTopic != localizationTopic) {
-        await messaging.unsubscribeFromTopic(localizationTopic).timeout(fcmCallTimeout);
+        final bool localizedLeft = await _callTopic(messaging.unsubscribeFromTopic(localizationTopic), noun, fields);
+        return legacyLeft && localizedLeft;
       }
+      return legacyLeft;
     }
-    return true;
-  } on TimeoutException {
-    // On Android, FCM keeps a queued topic change and can still finish it later.
-    logger.w('Topic $noun did not answer in time.', tag: 'Push', fields: fields);
-    return false;
   } catch (error, stackTrace) {
     if (_isApnsTokenMissing(error)) {
       logger.w(
@@ -405,10 +388,6 @@ Future<bool> _changeTopic(
 }
 
 Future<bool> _canProceedWithTopicCall(FirebaseMessaging messaging, {bool Function()? isCurrent}) async {
-  if (topicCallsNeedFcmToken()) {
-    final String? token = await readFcmToken(messaging);
-    return token != null && token.trim().isNotEmpty;
-  }
   if (!(Platform.isIOS || Platform.isMacOS)) {
     return true;
   }
@@ -422,6 +401,17 @@ Future<bool> _canProceedWithTopicCall(FirebaseMessaging messaging, {bool Functio
     await Future<void>.delayed(Duration(milliseconds: 300 * (attempt + 1)));
   }
   return false;
+}
+
+Future<bool> _callTopic(Future<void> call, String noun, Map<String, Object?> fields) async {
+  try {
+    await call.timeout(fcmCallTimeout);
+    return true;
+  } on TimeoutException {
+    // Keep dispatching the paired topic change. FCM can finish the timed-out request later.
+    logger.w('Topic $noun did not answer in time.', tag: 'Push', fields: fields);
+    return false;
+  }
 }
 
 bool _isApnsTokenMissing(Object error) {

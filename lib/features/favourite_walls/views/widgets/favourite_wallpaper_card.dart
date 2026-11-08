@@ -91,8 +91,11 @@ class _FavouriteWallpaperFooterState extends State<FavouriteWallpaperFooter> {
     builder: (context, state) {
       final loaded = state.userId == app_state.prismUser.id && state.status == LoadStatus.success;
       final saved = loaded
-          ? state.items.any((wall) => wall.id == widget.item.id && wall.source == widget.item.source)
-          : getIt<FavoritesLocalDataSource>().isWallFavourite(app_state.prismUser.id, widget.item.id);
+          ? state.items.any((wall) => wall.key == favouriteKey(widget.item.source, widget.item.id))
+          : getIt<FavoritesLocalDataSource>().isWallFavourite(
+              app_state.prismUser.id,
+              favouriteKey(widget.item.source, widget.item.id),
+            );
       return _row(saved);
     },
   );

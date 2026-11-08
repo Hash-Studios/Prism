@@ -111,6 +111,18 @@ test("the category backfill with --apply writes the new category with a precondi
   assert.deepEqual(store.get("walls/c"), SEED["walls/c"]);
 });
 
+test("the category backfill rerun is idempotent after the first apply", async (t) => {
+  installFakeDb(t, SEED);
+  const {writes} = installBulkWriter(t);
+
+  const first = await backfillWallCategories(db, parseWallCategoryArgs(["--apply"]), () => undefined);
+  const second = await backfillWallCategories(db, parseWallCategoryArgs(["--apply"]), () => undefined);
+
+  assert.equal(first.written, 2);
+  assert.equal(second.changed, 0);
+  assert.equal(writes.length, 2);
+});
+
 test("the category backfill paginates all approved walls without creating a writer in dry-run mode", async (t) => {
   const seed = Object.fromEntries(Array.from({length: 301}, (_, i) => [`walls/${String(i).padStart(3, "0")}`,
     {review: true, category: "General", visionLabels: ["PC game"]}]));

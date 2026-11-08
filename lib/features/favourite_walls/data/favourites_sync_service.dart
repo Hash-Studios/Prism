@@ -180,10 +180,11 @@ class FavouritesSyncService {
               <String, String>{entry.key: operationId},
               () async {
                 if (operation['desired'] == true && operation['wall'] != null) {
+                  final FavouriteWallEntity wall = _operationWall(entry.key, operation)!;
                   await _firestoreClient
                       .setDoc(
                         _imagesPath(uid),
-                        entry.key,
+                        wall.key,
                         FavouriteWallDocDto.fromJson(Map<String, dynamic>.from(operation['wall']! as Map)).toJson(),
                         sourceTag: 'favourite_walls.retry.set',
                       )
@@ -244,7 +245,6 @@ class FavouritesSyncService {
       opKey,
     );
     return <String>{
-      opKey,
       wall.key,
       ...await existingFavouriteDocIds(_firestoreClient, _imagesPath(uid), wall.source, wall.id),
     };

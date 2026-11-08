@@ -83,6 +83,24 @@ class _MetadataFirestore extends FakeFirestoreClient {
   }
 }
 
+class _HangingLegacyLookupFirestore extends _MetadataFirestore {
+  _HangingLegacyLookupFirestore({required this.hangingId}) : super();
+
+  final String hangingId;
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) {
+    if (id == hangingId) return Completer<T?>().future;
+    return super.getById(collection, id, map, sourceTag: sourceTag, preferCacheFirst: preferCacheFirst);
+  }
+}
+
 class _NeverServerControllerFirestore extends _MetadataFirestore {
   bool cancelled = false;
   Object? cancelError;
@@ -952,6 +970,27 @@ void main() {
       expect(fetched.data, hasLength(1));
       await repository.toggleFavourite(userId: 'u', wall: wallhavenFav('abc123'), currentlyFavourited: true);
       expect(firestore.docs[images], isEmpty);
+    });
+
+    test('an offline legacy lookup keeps the delete pending and does not delete a colliding source doc', () async {
+      final _HangingLegacyLookupFirestore offline = _HangingLegacyLookupFirestore(hangingId: '777');
+      offline.docs[images] = <String, Map<String, dynamic>>{
+        '777': <String, dynamic>{'id': '777', 'provider': 'pexels'},
+      };
+      final local = _local();
+      final repo = FavouriteWallsRepositoryImpl(
+        offline,
+        local,
+        unusedGuestStore(),
+        EmptyCanonicalWallpaperRepository(),
+      );
+
+      final result = await repo.toggleFavourite(userId: 'u', wall: wallhavenFav('777'), currentlyFavourited: true);
+
+      expect(result.isSuccess, isTrue);
+      expect(offline.docs[images]!.containsKey('777'), isTrue);
+      final operations = await local.readFavouriteOperations('u');
+      expect(operations['wallhaven_777']?['status'], 'pending');
     });
   });
 
