@@ -12,12 +12,12 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/biz/smart_folder_builder_cubit.dart';
+import 'package:Prism/features/folders/data/smart_folder_creators.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/smart_rule.dart';
 import 'package:Prism/features/folders/domain/repositories/smart_folders_repository.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/moods/views/mood_copy.dart';
-import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -78,15 +78,6 @@ List<String> smartRuleKindsForAnalytics(List<SmartRule> rules) => <String>[
   for (final SmartRuleKind kind in smartRulesByKind(rules).keys) kind.wire,
 ];
 
-Future<List<UserSummaryEntity>> _loadCreators(String uid, Iterable<String> picked) async {
-  final PublicProfileRepository profiles = getIt<PublicProfileRepository>();
-  final List<String> following =
-      (await profiles.fetchRelationIds(profileUid: uid, kind: UserRelationKind.following)).data ?? const <String>[];
-  final List<String> ids = <String>{...picked, ...following}.toList();
-  if (ids.isEmpty) return const <UserSummaryEntity>[];
-  return (await profiles.fetchUserSummariesPage(userIds: ids, page: 0)).data?.items ?? const <UserSummaryEntity>[];
-}
-
 String _refusalMessage(Object? failure, AppLocalizations l10n) {
   if (failure is! SmartFolderFailure) return l10n.foldersSmartSaveFailed;
   return switch (failure.refusal) {
@@ -117,7 +108,7 @@ Future<void> showSmartFolderSheet(
     initialRules: initial,
     loadCreators:
         loadCreators ??
-        () => _loadCreators(uid, <String>[
+        () => loadSmartFolderCreators(getIt<PublicProfileRepository>(), uid, <String>[
           for (final SmartRule rule in initial)
             if (rule.kind == SmartRuleKind.creator) rule.value,
         ]),
@@ -154,6 +145,7 @@ class SmartFolderSheet extends StatefulWidget {
 
 class _SmartFolderSheetState extends State<SmartFolderSheet> {
   final TextEditingController _name = TextEditingController();
+  final String _ownerId = app_state.prismUser.id;
 
   bool get _creating => widget.folder == null;
 
@@ -170,13 +162,14 @@ class _SmartFolderSheetState extends State<SmartFolderSheet> {
   }
 
   bool _canSave(SmartFolderBuilderState state) {
-    if (state.rules.isEmpty || state.saving) return false;
+    if (_ownerId.isEmpty || app_state.prismUser.id != _ownerId || state.rules.isEmpty || state.saving) return false;
     if (_creating) return normalizeFolderName(_name.text) != null;
     final List<SmartRule> before = sortSmartRules(widget.folder!.smartRules ?? const <SmartRule>[]);
     return before.length != state.rules.length || before.indexed.any((entry) => state.rules[entry.$1] != entry.$2);
   }
 
   Future<void> _save() async {
+    if (_ownerId.isEmpty || app_state.prismUser.id != _ownerId) return;
     final SmartFolderBuilderCubit cubit = context.read<SmartFolderBuilderCubit>();
     final AppLocalizations l10n = context.l10n;
     final NavigatorState navigator = Navigator.of(context);
@@ -314,16 +307,19 @@ class SmartRuleBuilder extends StatelessWidget {
         ),
         _RuleGroup(
           title: l10n.foldersSmartKindCreator,
-          empty: creators != null && creators.isEmpty ? l10n.foldersSmartNoCreators : null,
-          chips: creators == null
-              ? const <Widget>[PrismSkeleton(child: PrismBone(width: 160, height: 36, radius: 18))]
-              : <Widget>[
-                  for (final UserSummaryEntity user in creators)
-                    chip(
-                      SmartRule(SmartRuleKind.creator, user.id),
-                      leading: PrismAvatar(url: user.profilePhoto, name: user.name, size: 20),
-                    ),
-                ],
+          empty: creators != null && creators.isEmpty && !state.rules.any((rule) => rule.kind == SmartRuleKind.creator)
+              ? l10n.foldersSmartNoCreators
+              : null,
+          chips: <Widget>[
+            if (creators == null) const PrismSkeleton(child: PrismBone(width: 160, height: 36, radius: 18)),
+            for (final UserSummaryEntity user in creators ?? const <UserSummaryEntity>[])
+              chip(
+                SmartRule(SmartRuleKind.creator, user.id),
+                leading: PrismAvatar(url: user.profilePhoto, name: user.name, size: 20),
+              ),
+            for (final SmartRule rule in state.rules)
+              if (rule.kind == SmartRuleKind.creator && !names.containsKey(rule.value)) chip(rule),
+          ],
         ),
         _RuleGroup(
           title: l10n.foldersSmartKindOnly,

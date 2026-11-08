@@ -98,6 +98,19 @@ test("createFolderInvite returns a 10-character code and a single-use invite tha
   assert.equal(ms(saved?.expiresAt), ms(saved?.createdAt) + 7 * DAY);
 });
 
+test("smart folders refuse invites, invite previews and joins", async (t) => {
+  const store = setup(t, {...validInvite(), "folders/f1": folder("a", [], {
+    smartRules: [{kind: "colour", value: "blue"}],
+  })});
+  await assert.rejects(call(createFolderInvite, "a", {folderId: "f1"}),
+    {code: "failed-precondition", message: "smart"});
+  assert.deepEqual(await call(getFolderInvite, "c", {code: CODE}), {status: "not_found"});
+  await assert.rejects(call(joinFolder, "c", {code: CODE}),
+    {code: "failed-precondition", message: "not_found"});
+  assert.deepEqual(store.get("folders/f1")?.memberIds, []);
+  assert.equal(store.get(`folderInvites/${CODE}`)?.usedBy, null);
+});
+
 test("createFolderInvite refuses a caller who is not the owner", async (t) => {
   setup(t);
   await assert.rejects(call(createFolderInvite, "b", {folderId: "f1"}),

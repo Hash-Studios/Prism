@@ -538,6 +538,7 @@ service cloud.firestore {
                       || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['sections']))
                   && validFolderFields(request.resource.data))
               || (request.auth.uid in resource.data.get('memberIds', [])
+                  && !('smartRules' in resource.data)
                   && folderWritesOpen(resource.data.ownerId)
                   && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sections'])
                   && validSections(request.resource.data)));
@@ -599,6 +600,10 @@ service cloud.firestore {
     }
 
     match /smartWallKeys/{wallId} {
+      allow read, write: if false;
+    }
+
+    match /smartFolderOwners/{uid} {
       allow read, write: if false;
     }
 

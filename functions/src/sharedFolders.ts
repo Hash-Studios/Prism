@@ -126,7 +126,7 @@ export function joinDecision(input: {
   accountOpen?: boolean;
 }): JoinDecision {
   const {invite, folder, uid} = input;
-  if (!invite || !folder) return "not_found";
+  if (!invite || !folder || Array.isArray(folder.smartRules)) return "not_found";
   if (!sameTimestamp(invite.folderCreatedAt, input.folderCreatedAt)) {
     return "not_found";
   }

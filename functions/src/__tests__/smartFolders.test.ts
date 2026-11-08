@@ -11,6 +11,11 @@ import {
   changesSmartKeys,
   createSmartFolder,
   matchesSmartRules,
+  fillSmartFolder,
+  findSmartMatches,
+  onWallSmartFolders,
+  onSmartFollowWritten,
+  updateSmartFolderRules,
   parseSmartRules,
   removeOwnerSmartFolders,
   removeSmartFolder,
@@ -18,6 +23,8 @@ import {
   wallSmartKeys,
   type SmartRule,
 } from "../smartFolders";
+import {MOODS} from "../wallMoods";
+import {PALETTE} from "../wallColors";
 import type {Doc} from "./fakeDb";
 import {installFakeDb} from "./fakeDb";
 
@@ -60,12 +67,12 @@ function fakeBatch() {
   return batch;
 }
 
-function setup(t: TestContext, seed: Record<string, Doc> = {}) {
+function setup(t: TestContext, seed: Record<string, Doc> = {}, observed?: Parameters<typeof installFakeDb>[2]) {
   t.mock.method(publicFolderDeps, "premium", async () => PREMIUM);
   t.mock.method(db, "batch", (() => fakeBatch()) as unknown as typeof db.batch);
   t.mock.method(db, "getAll", ((...refs: Array<{get: () => Promise<unknown>}>) =>
     Promise.all(refs.map((ref) => ref.get()))) as unknown as typeof db.getAll);
-  return installFakeDb(t, seed);
+  return installFakeDb(t, seed, observed);
 }
 
 function gatedWall(overrides: Doc = {}): Doc {
@@ -302,10 +309,14 @@ test("removeOwnerSmartFolders deletes only the given owner's index entries", asy
   const store = setup(t, {
     ...smartFolderSeed("sf1", [{kind: "colour", value: "blue"}], "colour", ["colour:blue"], "u1"),
     ...smartFolderSeed("sf2", [{kind: "colour", value: "blue"}], "colour", ["colour:blue"], "u2"),
+    "smartFolderOwners/u1": {ownerId: "u1"},
+    "smartFolderOwners/u2": {ownerId: "u2"},
   });
   await removeOwnerSmartFolders("u1");
   assert.equal(store.has("smartFolderIndex/sf1"), false, "the owner's index entry must be deleted");
   assert.equal(store.has("smartFolderIndex/sf2"), true, "another owner's index entry must be kept");
+  assert.equal(store.has("smartFolderOwners/u1"), false, "the owner's create lock must be deleted");
+  assert.equal(store.has("smartFolderOwners/u2"), true, "another owner's create lock must be kept");
 });
 
 test("changesSmartKeys ignores counter-only writes and reacts to key fields and creates or deletes", () => {
@@ -315,4 +326,283 @@ test("changesSmartKeys ignores counter-only writes and reacts to key fields and 
     "a colour change must change smart keys");
   assert.equal(changesSmartKeys(undefined, {review: true}), true, "a created wall must change smart keys");
   assert.equal(changesSmartKeys({review: true}, undefined), true, "a deleted wall must change smart keys");
+});
+
+test("counter-only trigger events do no database or premium reads", async (t) => {
+  setup(t);
+  t.mock.method(db, "collection", () => {
+    throw new Error("unexpected read");
+  });
+  t.mock.method(publicFolderDeps, "premium", async () => {
+    throw new Error("unexpected premium read");
+  });
+  const before = gatedWall({views: 1});
+  await onWallSmartFolders.run({params: {wallId: "W1"}, data: {
+    before: {data: () => before}, after: {data: () => ({...before, views: 2})},
+  }} as unknown as Parameters<typeof onWallSmartFolders.run>[0]);
+});
+
+test("sync does not bill manual saves as held smart items and writes derived keys transactionally", async (t) => {
+  const seed = {
+    ...seedWall("W1", gatedWall()),
+    ...smartFolderSeed("sf1", [{kind: "colour", value: "blue"}], "colour", ["colour:blue"]),
+  };
+  for (let i = 0; i < 100; i++) seed[`folders/manual${i}/items/prism_w1`] = {wallpaperDocumentId: "W1"};
+  const observed = {reads: 0, writes: 0, outsideReads: 0, outsideWrites: 0};
+  const store = setup(t, seed, observed);
+  await syncWallSmartFolders("W1");
+  assert.ok(store.has("folders/sf1/items/prism_w1"));
+  assert.ok(observed.outsideReads < 10, "manual saves must not increase approval reads");
+  assert.equal(observed.outsideWrites, 0, "derived keys must commit against a transactionally read wall");
+});
+
+for (const change of ["rules", "reject", "delete"] as const) {
+  test(`fill rechecks a ${change} change after candidate discovery`, async (t) => {
+    const store = setup(t, {
+      ...seedWall("W1", gatedWall()),
+      ...smartFolderSeed("sf1", [{kind: "colour", value: "blue"}], "colour", ["colour:blue"]),
+    });
+    const transact = db.runTransaction.bind(db);
+    let first = true;
+    t.mock.method(db, "runTransaction", ((callback: Parameters<typeof db.runTransaction>[0]) => {
+      if (first) {
+        first = false;
+        if (change === "rules") store.set("folders/sf1", {ownerId: "u1", smartRules: [{kind: "colour", value: "teal"}]});
+        if (change === "reject") store.set("walls/W1", gatedWall({review: false}));
+        if (change === "delete") store.delete("folders/sf1");
+      }
+      return transact(callback);
+    }) as typeof db.runTransaction);
+    await fillSmartFolder("sf1");
+    assert.deepEqual(itemIds(store, "sf1"), [], "stale fill candidates must not be written");
+  });
+}
+
+test("fill does not delete a live matching item because its derived keys are stale", async (t) => {
+  const store = setup(t, {
+    ...seedWall("W1", gatedWall(), false),
+    ...smartFolderSeed("sf1", [{kind: "colour", value: "blue"}], "colour", ["colour:blue"]),
+    ...smartItemSeed("sf1", "w1", "W1"),
+  });
+  await fillSmartFolder("sf1");
+  assert.deepEqual(itemIds(store, "sf1"), ["prism_w1"]);
+  assert.equal((store.get("folders/sf1/items/prism_w1")?.addedAt as admin.firestore.Timestamp).toMillis(), BASE);
+});
+
+test("unfollow removes existing items even when followed is not the anchor", async (t) => {
+  const store = setup(t, {
+    ...seedWall("W1", gatedWall()),
+    ...smartFolderSeed("sf1", [{kind: "creator", value: "c1"}, {kind: "followed", value: ""}], "creator", ["creator:c1"]),
+    ...smartItemSeed("sf1", "w1", "W1"),
+  });
+  await onSmartFollowWritten.run({params: {uid: "u1", targetUid: "c1"}, data: {
+    before: {exists: true}, after: {exists: false},
+  }} as unknown as Parameters<typeof onSmartFollowWritten.run>[0]);
+  assert.deepEqual(itemIds(store, "sf1"), []);
+  assert.deepEqual(store.get("smartFolderIndex/sf1")?.anchors, ["creator:c1"]);
+});
+
+test("late follow events use the live edge and cannot mutate a rewritten anchor", async (t) => {
+  const store = setup(t, {
+    ...smartFolderSeed("sf1", [{kind: "followed", value: ""}], "followed", []),
+  });
+  const event = {params: {uid: "u1", targetUid: "c1"}, data: {before: {exists: false}, after: {exists: true}}};
+  await onSmartFollowWritten.run(event as unknown as Parameters<typeof onSmartFollowWritten.run>[0]);
+  assert.deepEqual(store.get("smartFolderIndex/sf1")?.anchors, [], "a late follow must not undo an unfollow");
+  store.set("profiles/u1/following/c1", {});
+  await onSmartFollowWritten.run({...event, data: {before: {exists: true}, after: {exists: false}}} as unknown as
+    Parameters<typeof onSmartFollowWritten.run>[0]);
+  assert.deepEqual(store.get("smartFolderIndex/sf1")?.anchors, ["creator:c1"], "a late unfollow must not undo a follow");
+  const transact = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", ((callback: Parameters<typeof db.runTransaction>[0]) => {
+    store.set("folders/sf1", {ownerId: "u1", smartRules: [{kind: "colour", value: "blue"}]});
+    store.set("smartFolderIndex/sf1", {ownerId: "u1", anchorKind: "colour", anchors: ["colour:blue"]});
+    return transact(callback);
+  }) as typeof db.runTransaction);
+  await onSmartFollowWritten.run(event as unknown as Parameters<typeof onSmartFollowWritten.run>[0]);
+  assert.deepEqual(store.get("smartFolderIndex/sf1")?.anchors, ["colour:blue"]);
+});
+
+test("old fill candidates cannot evict more recently added items at the cap", async (t) => {
+  const seed: Record<string, Doc> = {
+    ...seedWall("W1", gatedWall({createdAt: at(BASE - 1000)})),
+    ...smartFolderSeed("sf1", [{kind: "colour", value: "blue"}], "colour", ["colour:blue"]),
+  };
+  for (let i = 0; i < 500; i++) {
+    seed[`folders/sf1/items/old${i}`] = {
+      id: `old${i}`, smart: true, wallpaperDocumentId: `OLD${i}`, addedAt: at(BASE + i),
+    };
+  }
+  const store = setup(t, seed);
+  const addWithTime: (folder: string, wall: string, premium: string[], at: admin.firestore.Timestamp) => Promise<boolean> =
+    addWallToSmartFolder;
+  assert.equal(await addWithTime("sf1", "W1", PREMIUM, at(BASE - 1000)), false);
+  assert.equal(itemIds(store, "sf1").length, 500);
+  assert.ok(store.has("folders/sf1/items/old0"));
+});
+
+test("missing preview configuration fails before creating a folder or deleting its items", async (t) => {
+  const store = setup(t, {
+    "usersv2/u1": {},
+    ...smartFolderSeed("sf1", [{kind: "colour", value: "blue"}], "colour", ["colour:blue"]),
+    ...smartItemSeed("sf1", "w1", "W1"),
+  });
+  const base = process.env.R2_PREVIEW_BASE_URL;
+  delete process.env.R2_PREVIEW_BASE_URL;
+  try {
+    await assert.rejects(callCreate("u1", {name: "Blue", rules: [{kind: "colour", value: "blue"}]}), /R2_PREVIEW_BASE_URL/);
+    await assert.rejects(fillSmartFolder("sf1"), /R2_PREVIEW_BASE_URL/);
+    assert.equal(keysUnder(store, "folders/").filter((key) => key.split("/").length === 2).length, 1);
+    assert.ok(store.has("folders/sf1/items/prism_w1"));
+  } finally {
+    process.env.R2_PREVIEW_BASE_URL = base;
+  }
+});
+
+test("simultaneous smart folder creation cannot exceed the owner limit", async (t) => {
+  const seed: Record<string, Doc> = {"usersv2/u1": {}};
+  for (let i = 0; i < 19; i++) {
+    Object.assign(seed,
+      smartFolderSeed(`sf${i}`, [{kind: "colour", value: "blue"}], "colour", ["colour:blue"]));
+  }
+  const store = setup(t, seed);
+  const result = await Promise.allSettled([1, 2].map(() =>
+    callCreate("u1", {name: "Blue", rules: [{kind: "colour", value: "blue"}]})));
+  assert.equal(result.filter((outcome) => outcome.status === "fulfilled").length, 1);
+  assert.equal(keysUnder(store, "smartFolderIndex/").length, 20);
+});
+
+test("rule edits read follows in the same transaction as the rewritten anchor", async (t) => {
+  const store = setup(t, {
+    ...smartFolderSeed("sf1", [{kind: "colour", value: "blue"}], "colour", ["colour:blue"]),
+    "profiles/u1/following/c1": {},
+  });
+  const transact = db.runTransaction.bind(db);
+  let transactions = 0;
+  t.mock.method(db, "runTransaction", ((callback: Parameters<typeof db.runTransaction>[0]) => {
+    if (++transactions === 2) store.delete("profiles/u1/following/c1");
+    return transact(callback);
+  }) as typeof db.runTransaction);
+  await updateSmartFolderRules.run({auth: {uid: "u1"}, data: {folderId: "sf1", rules: [{kind: "followed"}]}} as
+    Parameters<typeof updateSmartFolderRules.run>[0]);
+  assert.deepEqual(store.get("smartFolderIndex/sf1")?.anchors, []);
+});
+
+test("canonical wall identity changes remove the old item and add its current identity", async (t) => {
+  const store = setup(t, {
+    ...seedWall("W1", gatedWall({id: "new"})),
+    ...smartFolderSeed("sf1", [{kind: "colour", value: "blue"}], "colour", ["colour:blue"]),
+    ...smartItemSeed("sf1", "w1", "W1"),
+  });
+  await syncWallSmartFolders("W1");
+  assert.deepEqual(itemIds(store, "sf1"), ["prism_new"]);
+});
+
+test("concurrent boundary adds share a folder write fence and retain 500 items", async (t) => {
+  const seed: Record<string, Doc> = {
+    ...seedWall("W1", gatedWall()), ...seedWall("W2", gatedWall({id: "w2"})),
+    ...smartFolderSeed("sf1", [{kind: "colour", value: "blue"}], "colour", ["colour:blue"]),
+  };
+  for (let i = 0; i < 500; i++) seed[`folders/sf1/items/old${i}`] = {addedAt: at(BASE + i)};
+  const store = setup(t, seed);
+  await Promise.all([addWallToSmartFolder("sf1", "W1", PREMIUM), addWallToSmartFolder("sf1", "W2", PREMIUM)]);
+  assert.equal(itemIds(store, "sf1").length, 500);
+  assert.equal(store.has("folders/sf1/items/old0"), false);
+  assert.equal(store.has("folders/sf1/items/old1"), false);
+  assert.ok(store.get("folders/sf1")?.updatedAt instanceof admin.firestore.Timestamp,
+    "each add must write the folder that it read so concurrent adds conflict and retry");
+});
+
+test("all wall key kinds fit one array-contains-any and every matching anchor intersects", () => {
+  assert.ok(MOODS.length + PALETTE.length + 4 <= 30, "all moods, colours, category, creator, desktop and choice must fit");
+  const keys = wallSmartKeys(gatedWall({colors: PALETTE.map((colour) => colour.id),
+    tags: ["duo"], spatial: {tier: "great"}, depth: {tier: "auto"}, desktopVariant: DESKTOP, editorsChoiceAt: at(NOW)}), PREMIUM);
+  for (const rule of keys.map((key) => {
+    const [kind, value = ""] = key.split(":");
+    return {kind: kind as SmartRule["kind"], value};
+  }).concat([{kind: "followed", value: ""}])) {
+    const rules = [rule];
+    assert.ok(matchesSmartRules(rules, keys, true));
+    assert.ok(anchorFor(rules, ["c1"]).keys.some((key) => keys.includes(key)));
+  }
+});
+
+for (const [reason, override] of Object.entries({
+  premium: {collections: ["abstract"]}, drop: {dropReserved: true}, dropWeek: {dropWeek: "week"},
+  streak: {is_streak_exclusive: true}, held: {originalProtected: false}, rejected: {review: false},
+  badPreview: {wallpaper_thumb: "https://evil.example/a.jpg"},
+})) {
+  test(`${reason} walls leave smart folders and cannot be added`, async (t) => {
+    const store = setup(t, {
+      ...seedWall("W1", gatedWall(override)),
+      ...smartFolderSeed("sf1", [{kind: "colour", value: "blue"}], "colour", ["colour:blue"]),
+      ...smartItemSeed("sf1", "w1", "W1"),
+    });
+    await syncWallSmartFolders("W1");
+    assert.deepEqual(itemIds(store, "sf1"), []);
+    assert.equal(store.has("smartWallKeys/W1"), false);
+    assert.equal(await addWallToSmartFolder("sf1", "W1", PREMIUM), false);
+  });
+}
+
+
+test("a followed fill reports a truncated search even when the scanned creators have no matches", async (t) => {
+  setup(t, seedWall("W1", gatedWall({creatorUid: "c300"})));
+  const follows = Array.from({length: 301}, (_, i) => `c${i}`);
+  assert.deepEqual(await findSmartMatches([{kind: "followed", value: ""}], follows, 100), {matches: [], more: true});
+});
+
+test("derived wall keys have no nontransactional writes that can overtake a newer event", async (t) => {
+  const observed = {reads: 0, writes: 0, outsideWrites: 0};
+  const store = setup(t, seedWall("W1", gatedWall(), false), observed);
+  await syncWallSmartFolders("W1");
+  assert.ok(store.has("smartWallKeys/W1"));
+  assert.equal(observed.outsideWrites, 0);
+});
+
+test("account closure between validation and create prevents a late folder", async (t) => {
+  const store = setup(t, {"usersv2/u1": {}});
+  const transact = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", ((callback: Parameters<typeof db.runTransaction>[0]) => {
+    store.set("creatorDeletionState/u1", {closed: true});
+    return transact(callback);
+  }) as typeof db.runTransaction);
+  await assert.rejects(callCreate("u1", {name: "Blue", rules: [{kind: "colour", value: "blue"}]}),
+    {code: "failed-precondition"});
+  assert.deepEqual(keysUnder(store, "smartFolderIndex/"), []);
+});
+
+test("a failed fill transaction can be retried without losing matching items", async (t) => {
+  const store = setup(t, {
+    ...seedWall("W1", gatedWall()),
+    ...smartFolderSeed("sf1", [{kind: "colour", value: "blue"}], "colour", ["colour:blue"]),
+  });
+  const transact = db.runTransaction.bind(db);
+  let first = true;
+  t.mock.method(db, "runTransaction", ((callback: Parameters<typeof db.runTransaction>[0]) => {
+    if (first) {
+      first = false;
+      return Promise.reject(new Error("injected retryable failure"));
+    }
+    return transact(callback);
+  }) as typeof db.runTransaction);
+  await assert.rejects(fillSmartFolder("sf1"), /injected/);
+  assert.deepEqual(itemIds(store, "sf1"), []);
+  assert.equal(await fillSmartFolder("sf1"), 1);
+  assert.deepEqual(itemIds(store, "sf1"), ["prism_w1"]);
+});
+
+
+test("creator and followed anchors include custom UIDs with hyphens and underscores", async (t) => {
+  const uid = "creator-a_1";
+  assert.deepEqual(parseSmartRules([{kind: "creator", value: uid}]), [{kind: "creator", value: uid}]);
+  assert.deepEqual(anchorFor([{kind: "followed", value: ""}], [uid]), {kind: "followed", keys: [`creator:${uid}`]});
+  assert.ok(wallSmartKeys(gatedWall({creatorUid: uid}), PREMIUM).includes(`creator:${uid}`));
+  const store = setup(t, {
+    ...seedWall("W1", gatedWall({creatorUid: uid})),
+    ...smartFolderSeed("sf1", [{kind: "followed", value: ""}], "followed", [`creator:${uid}`]),
+    [`profiles/u1/following/${uid}`]: {},
+  });
+  assert.deepEqual(await syncWallSmartFolders("W1"), {added: 1, checked: 1});
+  assert.deepEqual(itemIds(store, "sf1"), ["prism_w1"]);
 });

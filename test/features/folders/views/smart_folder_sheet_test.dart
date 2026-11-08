@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/folders/biz/smart_folder_builder_cubit.dart';
@@ -32,6 +34,7 @@ class _FakeSmartRepo implements SmartFoldersRepository {
   bool more = false;
   List<SmartPreviewWall> walls = const <SmartPreviewWall>[];
   bool failPreview = false;
+  int creates = 0;
 
   /// One entry per preview call, with the rules it got.
   final List<List<SmartRule>> previewCalls = <List<SmartRule>>[];
@@ -47,8 +50,10 @@ class _FakeSmartRepo implements SmartFoldersRepository {
   }
 
   @override
-  Future<Result<({String folderId, int count})>> create({required String name, required List<SmartRule> rules}) async =>
-      Result.success<({String folderId, int count})>((folderId: 'new', count: count));
+  Future<Result<({String folderId, int count})>> create({required String name, required List<SmartRule> rules}) async {
+    creates++;
+    return Result.success<({String folderId, int count})>((folderId: 'new', count: count));
+  }
 
   @override
   Future<Result<int>> updateRules(String folderId, List<SmartRule> rules) async {
@@ -115,8 +120,66 @@ Future<void> _pumpBody(WidgetTester tester, SmartFolderBuilderCubit cubit, {Text
     );
 
 void main() {
-  setUp(() => AnalyticsRuntime.instance = FakeAppAnalytics());
+  setUp(() {
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'me';
+  });
+  tearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
   tearDown(AnalyticsRuntime.reset);
+
+  testWidgets('a sheet opened by another account cannot create a folder', (tester) async {
+    final _FakeSmartRepo repo = _FakeSmartRepo();
+    final SmartFolderBuilderCubit cubit = _cubit(repo, initial: const <SmartRule>[_blue]);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: TextButton(
+                onPressed: () => unawaited(
+                  showPrismSheet<void>(
+                    context,
+                    builder: (_) =>
+                        BlocProvider<SmartFolderBuilderCubit>.value(value: cubit, child: const SmartFolderSheet()),
+                  ),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await _settle(tester);
+    await tester.enterText(find.byType(TextField).first, 'My smart folder');
+    await tester.pump();
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'someoneElse';
+    await tester.tap(find.byKey(const ValueKey<String>('smart-folder-save')));
+    await _settle(tester);
+
+    expect(repo.creates, 0);
+  });
+
+  testWidgets('a selected creator without a profile still has a removable rule chip', (tester) async {
+    final SmartFolderBuilderCubit cubit = _cubit(
+      _FakeSmartRepo(),
+      initial: const <SmartRule>[SmartRule(SmartRuleKind.creator, 'missingCreator')],
+    );
+    await _pumpBody(tester, cubit);
+    await _settle(tester);
+
+    final Finder chip = find.byKey(const ValueKey<String>('smart-rule-creator-missingCreator'));
+    expect(chip, findsOneWidget);
+    await tester.ensureVisible(chip);
+    await tester.tap(chip);
+    await _settle(tester);
+
+    expect(cubit.state.rules, isEmpty);
+  });
 
   testWidgets('tapping a colour chip selects it and shows its count, and tapping it again deselects it', (
     tester,

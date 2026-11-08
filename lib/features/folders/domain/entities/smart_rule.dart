@@ -78,7 +78,7 @@ bool _validValue(SmartRuleKind kind, String value) => switch (kind) {
   SmartRuleKind.mood => WallMood.parse(value) != null,
   SmartRuleKind.colour => prismPalette.any((colour) => colour.id == value),
   SmartRuleKind.category => smartCategoryNames.contains(value),
-  SmartRuleKind.creator => RegExp(r'^[A-Za-z0-9]{1,128}$').hasMatch(value),
+  SmartRuleKind.creator => RegExp(r'^[A-Za-z0-9_-]{1,128}$').hasMatch(value),
   SmartRuleKind.followed || SmartRuleKind.desktop || SmartRuleKind.editorsChoice => value.isEmpty,
 };
 

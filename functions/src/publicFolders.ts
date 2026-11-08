@@ -188,6 +188,7 @@ export async function projectedItem(
   if (!wall?.exists || !isPublicWall(data, await publicFolderDeps.premium())) return null;
   const thumb = str(data.wallpaper_thumb);
   const wallId = str(data.id) || wall.id;
+  if (!process.env.R2_PREVIEW_BASE_URL) throw new Error("R2_PREVIEW_BASE_URL is not configured");
   if (!isPreviewUrl(thumb)) return null;
   const now = admin.firestore.Timestamp.now();
   const added = item.addedAt instanceof admin.firestore.Timestamp && item.addedAt.toMillis() <= now.toMillis() ?

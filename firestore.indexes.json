@@ -1689,6 +1689,20 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "items",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "wallpaperDocumentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "smart",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [

@@ -14,10 +14,11 @@ type Tx = admin.firestore.Transaction;
 
 export const SMART_WALL_KEYS = "smartWallKeys";
 export const SMART_FOLDER_INDEX = "smartFolderIndex";
+const SMART_FOLDER_OWNERS = "smartFolderOwners";
 const FOLDERS = "folders";
 const ITEMS = "items";
 const FOLDER_ID = /^[A-Za-z0-9_-]{1,128}$/;
-const UID = /^[A-Za-z0-9]{1,128}$/;
+const UID = /^[A-Za-z0-9_-]{1,128}$/;
 export const MAX_SMART_KINDS = 3;
 export const MAX_VALUES_PER_KIND = 6;
 export const MAX_SMART_FOLDERS = 20;
@@ -170,13 +171,14 @@ interface Match {docId: string; wallId: string; thumb: string; createdAt: admin.
  */
 export async function findSmartMatches(rules: readonly SmartRule[], follows: readonly string[], limit: number):
   Promise<{matches: Match[]; more: boolean}> {
+  requirePreviewBase();
   const anchor = anchorFor(rules, follows);
   const followed = new Set(follows);
   const chunks: string[][] = [];
   for (let i = 0; i < anchor.keys.length && chunks.length < MAX_FOLLOW_CHUNKS; i += ANY_LIMIT) {
     chunks.push(anchor.keys.slice(i, i + ANY_LIMIT));
   }
-  let more = false;
+  let more = anchor.keys.length > MAX_FOLLOW_CHUNKS * ANY_LIMIT;
   const found = await Promise.all(chunks.map(async (chunk) => {
     const out: Match[] = [];
     let last: admin.firestore.QueryDocumentSnapshot | undefined;
@@ -218,7 +220,9 @@ async function trimPlan(tx: Tx, folderId: string, adding: number): Promise<admin
  * Adds one wall to one smart folder when it still matches. The transaction reads the folder rules, the wall and the
  * follow edge at commit time, so a stale trigger, a rule edit or a reject in between cannot add a wrong wall.
  */
-export async function addWallToSmartFolder(folderId: string, wallDocId: string, premium: string[]): Promise<boolean> {
+export async function addWallToSmartFolder(folderId: string, wallDocId: string, premium: string[],
+  addedAt = admin.firestore.Timestamp.now()): Promise<boolean> {
+  requirePreviewBase();
   return db.runTransaction(async (tx) => {
     const [folder, wall] = await Promise.all([tx.get(folderRef(folderId)), tx.get(db.collection("walls").doc(wallDocId))]);
     const rules = parseSmartRules(folder.data()?.smartRules);
@@ -231,8 +235,14 @@ export async function addWallToSmartFolder(folderId: string, wallDocId: string, 
     if (!matchesSmartRules(rules, keys, follows)) return false;
     const itemRef = folderRef(folderId).collection(ITEMS).doc(smartItemKey(data, wallDocId));
     if ((await tx.get(itemRef)).exists) return false;
-    for (const ref of await trimPlan(tx, folderId, 1)) tx.delete(ref);
-    tx.set(itemRef, smartItemDoc(data, wallDocId, ownerId, admin.firestore.Timestamp.now()));
+    const trimmed = await trimPlan(tx, folderId, 1);
+    if (trimmed.length) {
+      const oldest = await tx.get(trimmed[trimmed.length - 1]);
+      if (asTimestamp(oldest.data()?.addedAt).toMillis() > addedAt.toMillis()) return false;
+    }
+    for (const ref of trimmed) tx.delete(ref);
+    tx.set(itemRef, smartItemDoc(data, wallDocId, ownerId, addedAt));
+    tx.update(folderRef(folderId), {updatedAt: admin.firestore.FieldValue.serverTimestamp()});
     return true;
   });
 }
@@ -250,7 +260,8 @@ async function reconcileSmartItem(folderId: string, itemKey: string, premium: st
     const creator = creatorOf(keys);
     const ownerId = str(folder.data()?.ownerId);
     const follows = rules && needsFollows(rules) && creator && ownerId ? (await tx.get(followRef(ownerId, creator))).exists : false;
-    if (!rules || !folder.exists || !matchesSmartRules(rules, keys, follows)) tx.delete(item);
+    if (!rules || !folder.exists || !matchesSmartRules(rules, keys, follows) ||
+      itemKey !== smartItemKey(wall.data() ?? {}, wall.id)) tx.delete(item);
   });
 }
 
@@ -270,33 +281,35 @@ export function changesSmartKeys(before: Doc | undefined, after: Doc | undefined
 /**
  * Brings every smart folder up to date for one wall. It reads the wall again, so a late or repeated event converges on
  * the current wall. Existing smart items are checked again. New candidates come from the rule index: one
- * `array-contains-any` query with the wall's keys (at most 14) returns only the folders whose anchor the wall has.
+ * `array-contains-any` query with the wall's keys (at most 23) returns only the folders whose anchor the wall has.
  */
 export async function syncWallSmartFolders(wallDocId: string): Promise<{added: number; checked: number}> {
   requirePreviewBase();
-  const wall = await db.collection("walls").doc(wallDocId).get();
   const premium = await publicFolderDeps.premium();
-  const keys = wallSmartKeys(wall.data(), premium);
-  if (keys.length === 0) {
-    await keysRef(wallDocId).delete();
-  } else {
-    const data = wall.data() ?? {};
-    await keysRef(wallDocId).set({keys, wallId: wallIdOf(data, wallDocId), thumb: str(data.wallpaper_thumb),
-      createdAt: asTimestamp(data.createdAt)});
-  }
-  const held = (await db.collectionGroup(ITEMS).where("wallpaperDocumentId", "==", wallDocId).get()).docs
+  const keys = await db.runTransaction(async (tx) => {
+    const wall = await tx.get(db.collection("walls").doc(wallDocId));
+    const keys = wallSmartKeys(wall.data(), premium);
+    if (keys.length === 0) tx.delete(keysRef(wallDocId));
+    else {
+      const data = wall.data() ?? {};
+      tx.set(keysRef(wallDocId), {keys, wallId: wallIdOf(data, wallDocId), thumb: str(data.wallpaper_thumb),
+        createdAt: asTimestamp(data.createdAt)});
+    }
+    return keys;
+  });
+  const held = (await db.collectionGroup(ITEMS).where("wallpaperDocumentId", "==", wallDocId)
+    .where("smart", "==", true).get()).docs
     .map((item) => ({path: item.ref.path.split("/"), smart: item.data().smart === true}))
     .filter(({path, smart}) => smart && path.length === 4 && path[0] === FOLDERS && path[2] === ITEMS);
   await inChunks(held, ({path}) => reconcileSmartItem(path[1], path[3], premium));
   if (keys.length === 0) return {added: 0, checked: held.length};
-  const heldFolders = new Set(held.map(({path}) => path[1]));
   const candidates = (await db.collection(SMART_FOLDER_INDEX)
-    .where("anchors", "array-contains-any", keys.slice(0, ANY_LIMIT)).get()).docs.filter((doc) => !heldFolders.has(doc.id));
+    .where("anchors", "array-contains-any", keys.slice(0, ANY_LIMIT)).get()).docs;
   let added = 0;
   await inChunks(candidates, async (candidate) => {
     if (await addWallToSmartFolder(candidate.id, wallDocId, premium)) added++;
   });
-  return {added, checked: held.length + candidates.length};
+  return {added, checked: new Set([...held.map(({path}) => path[1]), ...candidates.map((candidate) => candidate.id)]).size};
 }
 
 export const onWallSmartFolders = onDocumentWritten(
@@ -313,13 +326,28 @@ export const onSmartFollowWritten = onDocumentWritten(
   async (event) => {
     const {uid, targetUid} = event.params;
     if (!UID.test(targetUid) || Boolean(event.data?.before?.exists) === Boolean(event.data?.after?.exists)) return;
-    const following = Boolean(event.data?.after?.exists);
-    const folders = await db.collection(SMART_FOLDER_INDEX).where("ownerId", "==", uid)
-      .where("anchorKind", "==", "followed").get();
-    await Promise.all(folders.docs.map((doc) => doc.ref.update({
-      anchors: following ? admin.firestore.FieldValue.arrayUnion(creatorKey(targetUid)) :
-        admin.firestore.FieldValue.arrayRemove(creatorKey(targetUid)),
-    })));
+    requirePreviewBase();
+    const folders = await db.collection(SMART_FOLDER_INDEX).where("ownerId", "==", uid).get();
+    const premium = await publicFolderDeps.premium();
+    await inChunks(folders.docs, async (entry) => {
+      const relevant = await db.runTransaction(async (tx) => {
+        const [folder, index, edge] = await Promise.all([
+          tx.get(folderRef(entry.id)), tx.get(indexRef(entry.id)), tx.get(followRef(uid, targetUid)),
+        ]);
+        const rules = parseSmartRules(folder.data()?.smartRules);
+        if (!folder.exists || !index.exists || folder.data()?.ownerId !== uid || !rules || !needsFollows(rules)) return false;
+        if (anchorFor(rules, []).kind === "followed") {
+          tx.update(indexRef(entry.id), {
+            anchors: edge.exists ? admin.firestore.FieldValue.arrayUnion(creatorKey(targetUid)) :
+              admin.firestore.FieldValue.arrayRemove(creatorKey(targetUid)),
+          });
+        }
+        return true;
+      });
+      if (!relevant) return;
+      const items = await folderRef(entry.id).collection(ITEMS).where("smart", "==", true).get();
+      await inChunks(items.docs, (item) => reconcileSmartItem(entry.id, item.id, premium));
+    });
   },
 );
 
@@ -334,33 +362,17 @@ export async function fillSmartFolder(folderId: string): Promise<number> {
   const ownerId = str(folder.data()?.ownerId);
   if (!folder.exists || !rules || !ownerId) return 0;
   const follows = needsFollows(rules) ? await followsOf(ownerId) : [];
-  const followed = new Set(follows);
   const premium = await publicFolderDeps.premium();
   const {matches} = await findSmartMatches(rules, follows, SMART_FILL_LIMIT);
   const items = await folderRef(folderId).collection(ITEMS).get();
-  const present = new Map(items.docs.map((item) => [str(item.data().wallpaperDocumentId), item]));
-  const keyDocs = items.empty ? [] : await db.getAll(...items.docs.map((item) =>
-    keysRef(str(item.data().wallpaperDocumentId) || "-")));
-  const stale = items.docs.filter((item, i) => {
-    const keys = Array.isArray(keyDocs[i]?.data()?.keys) ? (keyDocs[i].data()?.keys as unknown[]).map(str) : [];
-    return !matchesSmartRules(rules, keys, followed.has(creatorOf(keys)));
-  });
-  const fresh = matches.filter((match) => !present.has(match.docId));
-  const walls = fresh.length === 0 ? [] : await db.getAll(...fresh.map((match) => db.collection("walls").doc(match.docId)));
-  const writes: Array<(batch: admin.firestore.WriteBatch) => void> = stale.map((item) => (batch) => batch.delete(item.ref));
-  walls.forEach((wall, i) => {
-    const data = wall.data();
-    if (!data || !matchesSmartRules(rules, wallSmartKeys(data, premium), followed.has(str(data.creatorUid)))) return;
-    const ref = folderRef(folderId).collection(ITEMS).doc(smartItemKey(data, wall.id));
-    writes.push((batch) => batch.set(ref, smartItemDoc(data, wall.id, ownerId, fresh[i].createdAt)));
-  });
-  for (let i = 0; i < writes.length; i += 400) {
-    const batch = db.batch();
-    writes.slice(i, i + 400).forEach((write) => write(batch));
-    await batch.commit();
-  }
+  await inChunks(items.docs, (item) => reconcileSmartItem(folderId, item.id, premium));
+  for (const match of matches) await addWallToSmartFolder(folderId, match.docId, premium, match.createdAt);
   await db.runTransaction(async (tx) => {
-    for (const ref of await trimPlan(tx, folderId, 0)) tx.delete(ref);
+    const folder = await tx.get(folderRef(folderId));
+    if (!folder.exists) return;
+    const trimmed = await trimPlan(tx, folderId, 0);
+    for (const ref of trimmed) tx.delete(ref);
+    if (trimmed.length) tx.update(folderRef(folderId), {updatedAt: admin.firestore.FieldValue.serverTimestamp()});
   });
   return (await folderRef(folderId).collection(ITEMS).count().get()).data().count;
 }
@@ -378,8 +390,9 @@ export async function removeSmartFolder(folderId: string): Promise<void> {
 
 /** Account deletion: the user's rule index entries. Their folders and items go with the other owned folders. */
 export async function removeOwnerSmartFolders(uid: string): Promise<void> {
-  const owned = await db.collection(SMART_FOLDER_INDEX).where("ownerId", "==", uid).get();
-  await Promise.all(owned.docs.map((doc) => doc.ref.delete()));
+  const [owned, locks] = await Promise.all([SMART_FOLDER_INDEX, SMART_FOLDER_OWNERS]
+    .map((collection) => db.collection(collection).where("ownerId", "==", uid).get()));
+  await Promise.all([...owned.docs, ...locks.docs].map((doc) => doc.ref.delete()));
 }
 
 async function accountOpen(uid: string): Promise<boolean> {
@@ -429,31 +442,42 @@ export const previewSmartFolder = onCall(OPTIONS, async (request: CallableReques
 });
 
 export const createSmartFolder = onCall(OPTIONS, async (request: CallableRequest<{name?: unknown; rules?: unknown}>) => {
+  requirePreviewBase();
   const uid = signedIn(request);
   const name = folderName(request.data?.name);
   const rules = requireRules(request.data?.rules);
   if (!(await accountOpen(uid))) throw new HttpsError("failed-precondition", "account");
-  const owned = (await db.collection(SMART_FOLDER_INDEX).where("ownerId", "==", uid).count().get()).data().count;
-  if (owned >= MAX_SMART_FOLDERS) throw new HttpsError("resource-exhausted", "limit");
-  const follows = needsFollows(rules) ? await followsOf(uid) : [];
   const ref = db.collection(FOLDERS).doc();
   const now = admin.firestore.FieldValue.serverTimestamp();
-  const batch = db.batch();
-  batch.create(ref, {ownerId: uid, name, createdAt: now, updatedAt: now, itemCount: 0, covers: [], smartRules: rules});
-  batch.set(indexRef(ref.id), indexDoc(uid, rules, follows));
-  await batch.commit();
+  await db.runTransaction(async (tx) => {
+    const user = db.collection("usersv2").doc(uid);
+    const [account, barrier] = await Promise.all([tx.get(user), tx.get(db.collection("creatorDeletionState").doc(uid))]);
+    if (!account.exists || account.data()?.deleted === true || barrier.data()?.closed === true) {
+      throw new HttpsError("failed-precondition", "account");
+    }
+    const owned = await tx.get(db.collection(SMART_FOLDER_INDEX).where("ownerId", "==", uid).count());
+    if (owned.data().count >= MAX_SMART_FOLDERS) throw new HttpsError("resource-exhausted", "limit");
+    const follows = needsFollows(rules) ? (await tx.get(db.collection("profiles").doc(uid).collection("following")))
+      .docs.map((edge) => edge.id) : [];
+    tx.create(ref, {ownerId: uid, name, createdAt: now, updatedAt: now, itemCount: 0, covers: [], smartRules: rules});
+    tx.set(indexRef(ref.id), indexDoc(uid, rules, follows));
+    // Concurrent creates both read the count, so they also write one owner doc and the second one retries.
+    tx.set(db.collection(SMART_FOLDER_OWNERS).doc(uid), {ownerId: uid, updatedAt: now});
+  });
   return {folderId: ref.id, count: await fillSmartFolder(ref.id)};
 });
 
 export const updateSmartFolderRules = onCall(OPTIONS, async (request: CallableRequest<{folderId?: unknown; rules?: unknown}>) => {
+  requirePreviewBase();
   const uid = signedIn(request);
   const folderId = typeof request.data?.folderId === "string" && FOLDER_ID.test(request.data.folderId) ?
     request.data.folderId : "";
   if (!folderId) throw new HttpsError("invalid-argument", "folderId");
   const rules = requireRules(request.data?.rules);
   await spendDaily(EDIT_RATE, uid, MAX_RULE_EDITS_PER_DAY);
-  const follows = needsFollows(rules) ? await followsOf(uid) : [];
   await db.runTransaction(async (tx) => {
+    const follows = needsFollows(rules) ? (await tx.get(db.collection("profiles").doc(uid).collection("following")))
+      .docs.map((edge) => edge.id) : [];
     const folder = await tx.get(folderRef(folderId));
     if (!folder.exists || str(folder.data()?.ownerId) !== uid || !Array.isArray(folder.data()?.smartRules)) {
       throw new HttpsError("permission-denied", "Only the owner can edit the rules.");

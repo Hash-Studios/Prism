@@ -213,11 +213,13 @@ const seed = () => Promise.all([
   req('PATCH', 'folders/sections1/items/wallhaven_s1', itemFields('a', 's1'), 'owner'),
   req('PATCH', 'folders/sections1/items/wallhaven_s2', { ...itemFields('a', 's2'), addedBy: str('e') }, 'owner'),
   req('PATCH', 'folders/smart1', folderFields('alice', 'Blue', { smartRules: smartRules(['colour', 'blue']) }), 'owner'),
+  req('PATCH', 'folders/smart-shared', folderFields('a', 'Smart shared', { smartRules: smartRules(['colour', 'blue']), memberIds: arr(['a', 'e']), members: sharedMembers }), 'owner'),
   req('PATCH', 'folders/smart1/items/prism_w1', { ...itemFields('alice', 'w1', 'Prism'), smart: { booleanValue: true } }, 'owner'),
   req('PATCH', 'folders/alice-normal', folderFields('alice', 'Plain'), 'owner'),
   req('PATCH', 'folders/alice-normal/items/prism_w1', itemFields('alice', 'w1', 'Prism'), 'owner'),
   req('PATCH', 'smartFolderIndex/smart1', { folderId: str('smart1') }, 'owner'),
   req('PATCH', 'smartWallKeys/W1', { wallId: str('W1') }, 'owner'),
+  req('PATCH', 'smartFolderOwners/alice', { ownerId: str('alice') }, 'owner'),
   commitDocs('owner', [
     ['folders/sections-batch', folderFields('a', 'Batch', { memberIds: arr(['e']), members: sharedMembers })],
     ...Array.from({ length: 399 }, (_, i) => [`folders/sections-batch/items/wallhaven_b${i}`, itemFields('a', `b${i}`)]),
@@ -1251,10 +1253,12 @@ const cases = [
   ['alice cannot add smartRules when creating a normal folder', () => req('PATCH', 'folders/smart-forged', folderFields('alice', 'Forged', { smartRules: smartRules(['colour', 'blue']) }), ALICE), 403],
   ['alice cannot change smartRules on a smart folder', () => req('PATCH', 'folders/smart1', { smartRules: smartRules(['colour', 'red']) }, ALICE, ['smartRules']), 403],
   ['alice cannot write sections on a smart folder', () => req('PATCH', 'folders/smart1', { sections: secs(sec('lock', 'Lock screens')) }, ALICE, ['sections']), 403],
+  ['editor cannot write sections on a smart folder', () => req('PATCH', 'folders/smart-shared', { sections: secs(sec('lock', 'Lock')) }, Ed, ['sections']), 403],
+  ['owner listed as member cannot write smart sections', () => req('PATCH', 'folders/smart-shared', { sections: secs(sec('lock', 'Lock')) }, A, ['sections']), 403],
   ['alice can read a smart folder', () => req('GET', 'folders/smart1', null, ALICE), 200],
   ['alice can list smart folder items', () => runQuery(ALICE, [ownerFilter('alice')], 'items', 'folders/smart1'), 200],
   ['alice can rename a smart folder', () => req('PATCH', 'folders/smart1', { name: str('Blue renamed'), updatedAt: ts() }, ALICE, ['name', 'updatedAt']), 200],
-  ...[['alice', ALICE], ['bob', Bu]].flatMap(([role, auth]) => ['smartFolderIndex/smart1', 'smartWallKeys/W1'].flatMap((path) => [
+  ...[['alice', ALICE], ['bob', Bu]].flatMap(([role, auth]) => ['smartFolderIndex/smart1', 'smartWallKeys/W1', 'smartFolderOwners/alice'].flatMap((path) => [
     [`${role} cannot read ${path}`, () => req('GET', path, null, auth), 403],
     [`${role} cannot create ${path}`, () => req('PATCH', path, { folderId: str('x') }, auth), 403],
     [`${role} cannot update ${path}`, () => req('PATCH', path, { folderId: str('x') }, auth, ['folderId']), 403],
