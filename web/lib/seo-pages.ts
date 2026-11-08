@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import { APP_NAME, OG_IMAGE, SITE_URL } from "@/lib/site-config";
 
-export type SeoRouteContent = {
-  slug: "4k-wallpapers" | "amoled-wallpapers" | "collections";
+export type TopicPage = {
+  slug: "4k-wallpapers" | "amoled-wallpapers" | "open-source-android-wallpaper-app" | "collections";
   navLabel: string;
   title: string;
   description: string;
+};
+
+export type SeoRouteContent = TopicPage & {
+  slug: "4k-wallpapers" | "collections";
   h1: string;
   intro: string;
   bullets: [string, string, string];
@@ -32,24 +36,6 @@ export const seoRouteContent: Record<SeoRouteContent["slug"], SeoRouteContent> =
     sectionBody:
       "Prism focuses on visual quality and browsing quality together, so finding your next 4K wallpaper feels faster, cleaner, and more intentional.",
   },
-  "amoled-wallpapers": {
-    slug: "amoled-wallpapers",
-    navLabel: "AMOLED Wallpapers",
-    title: `AMOLED Wallpapers App for Android | ${APP_NAME}`,
-    description:
-      "Find AMOLED-friendly wallpapers with Prism Wallpapers. Explore dark, high-contrast styles and curated collections for Android personalization lovers.",
-    h1: "AMOLED wallpapers that look clean, bold, and intentional",
-    intro:
-      "Prism makes it easy to browse dark and contrast-rich wallpapers that pair well with AMOLED displays, while still giving you curated personalization flows.",
-    bullets: [
-      "Browse deep-tone wallpapers made for AMOLED visual impact.",
-      "Explore curated aesthetics, not only individual images.",
-      "Find looks that pair naturally with icon packs and widgets.",
-    ],
-    sectionTitle: "A better AMOLED browsing experience",
-    sectionBody:
-      "Prism is designed for people who care about how their phone feels daily. The app combines style discovery and premium browsing polish.",
-  },
   collections: {
     slug: "collections",
     navLabel: "Collections",
@@ -70,14 +56,33 @@ export const seoRouteContent: Record<SeoRouteContent["slug"], SeoRouteContent> =
   },
 };
 
-export const seoRouteOrder: SeoRouteContent["slug"][] = [
+export const topicPages: Record<TopicPage["slug"], TopicPage> = {
+  ...seoRouteContent,
+  "amoled-wallpapers": {
+    slug: "amoled-wallpapers",
+    navLabel: "AMOLED Wallpapers",
+    title: `AMOLED Wallpapers with Black Backgrounds | ${APP_NAME}`,
+    description:
+      "Preview six dark AMOLED wallpapers by Prism Studio, with creator credits and descriptions. Get the full 1440 × 3200 wallpapers in Prism.",
+  },
+  "open-source-android-wallpaper-app": {
+    slug: "open-source-android-wallpaper-app",
+    navLabel: "Open-source app",
+    title: `Open-Source Wallpaper App for Android | ${APP_NAME}`,
+    description:
+      "Prism is a wallpaper app for Android with its code on GitHub under the BSD 3-Clause licence. Free on Google Play, with an optional Pro subscription.",
+  },
+};
+
+export const seoRouteOrder: TopicPage["slug"][] = [
   "4k-wallpapers",
   "amoled-wallpapers",
+  "open-source-android-wallpaper-app",
   "collections",
 ];
 
-export function seoMetadata(slug: SeoRouteContent["slug"]): Metadata {
-  const { title, description } = seoRouteContent[slug];
+export function seoMetadata(slug: TopicPage["slug"]): Metadata {
+  const { title, description } = topicPages[slug];
 
   return {
     title,
