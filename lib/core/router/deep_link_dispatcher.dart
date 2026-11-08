@@ -52,7 +52,6 @@ class DeepLinkDispatcher {
   PageRouteInfo? _dailyMomentTarget;
   final Map<String, Future<DeepLinkDispatchResult>> _sharedImages = <String, Future<DeepLinkDispatchResult>>{};
   final Map<String, Future<DeepLinkDispatchResult>> _pendingSharedTexts = <String, Future<DeepLinkDispatchResult>>{};
-  String? _visibleSharedText;
 
   void _onRouterChanged() => scheduleMicrotask(_updateDailyMomentGate);
 
@@ -91,9 +90,6 @@ class DeepLinkDispatcher {
     final String text = action.text ?? '';
     final Future<DeepLinkDispatchResult>? existing = id != null ? _sharedImages[id] : _pendingSharedTexts[text];
     if (existing != null) return existing;
-    if (id == null && text == _visibleSharedText && _router.topRoute.name == ShareInRoute.name) {
-      return Future<DeepLinkDispatchResult>.value(DeepLinkDispatchResult.navigated);
-    }
     final Future<DeepLinkDispatchResult> result = _enqueue(action, source: source, isRetry: isRetry);
     if (id != null) {
       _sharedImages[id] = result;
@@ -105,9 +101,7 @@ class DeepLinkDispatcher {
         if (id == null && identical(_pendingSharedTexts[text], result)) {
           _pendingSharedTexts.remove(text);
         }
-        if (outcome == DeepLinkDispatchResult.navigated) {
-          _visibleSharedText = id == null && _router.topRoute.name == ShareInRoute.name ? text : null;
-        } else if (id != null && identical(_sharedImages[id], result)) {
+        if (outcome != DeepLinkDispatchResult.navigated && id != null && identical(_sharedImages[id], result)) {
           _sharedImages.remove(id);
         }
       }),
@@ -228,7 +222,6 @@ class DeepLinkDispatcher {
   }
 
   void cancel() {
-    _visibleSharedText = null;
     _pendingSharedTexts.clear();
     for (final request in _deferred) {
       _record(

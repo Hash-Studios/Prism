@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
+import 'package:Prism/core/router/deep_link_dispatcher.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/ai_wallpaper/views/pages/photo_wallpaper_page.dart';
@@ -133,6 +135,57 @@ void main() {
     await router.navigatorKey.currentState!.maybePop();
     await _settleSheet(tester);
     expect(router.topRoute.name, 'Host');
+  });
+
+  testWidgets('the same link shared again while its sheet is open opens a new sheet', (tester) async {
+    final DeepLinkDispatcher dispatcher = DeepLinkDispatcher(
+      router: router,
+      whenReady: () async => true,
+      track: (_) async {},
+    );
+    addTearDown(dispatcher.dispose);
+    await tester.pumpWidget(
+      MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router.config(
+          deepLinkBuilder: (PlatformDeepLink link) {
+            if (link.initial) return DeepLink.defaultPath;
+            unawaited(dispatcher.openUri(link.uri, source: DeepLinkSourceValue.appLinks));
+            return DeepLink.none;
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    Future<void> deliver(String delivery) async {
+      final Element? before = find.byType(ShareInSheet).evaluate().firstOrNull;
+      await tester.runAsync(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
+          SystemChannels.navigation.name,
+          SystemChannels.navigation.codec.encodeMethodCall(
+            MethodCall('pushRouteInformation', <String, Object?>{
+              'location': 'prism://share-in?text=not%20a%20link#$delivery',
+              'state': null,
+            }),
+          ),
+          (_) {},
+        ),
+      );
+      await waitForRealIo(
+        tester,
+        () => find.byType(ShareInSheet).evaluate().any((Element sheet) => sheet != before),
+        reason: 'link sheet for delivery $delivery',
+      );
+      await _settleSheet(tester);
+    }
+
+    await deliver('11111111-1111-4111-8111-111111111111');
+    await deliver('22222222-2222-4222-8222-222222222222');
+
+    expect(router.topRoute.name, ShareInRoute.name);
+    expect(find.byType(ShareInSheet), findsOneWidget);
   });
 
   testWidgets('a missing native image keeps the image error message', (tester) async {
