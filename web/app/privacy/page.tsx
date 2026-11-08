@@ -372,6 +372,34 @@ export default function PrivacyPage() {
             </p>
           </Section>
 
+          <Section heading="This Website">
+            <p>Website analytics notice updated November 8, 2026.</p>
+            <p>
+              {SITE_URL} uses Mixpanel to count visits and the clicks that lead to Prism. Website analytics does not use
+              cookies. It records these events:
+            </p>
+            <ul className="list-disc space-y-1 pl-5">
+              <li>A page was viewed.</li>
+              <li>
+                A Google Play, App Store, download page or APK link was clicked, or the Google Play QR code was shown.
+              </li>
+              <li>
+                A wallpaper was downloaded from a wallpaper page. Our server sends this count with the wallpaper ID and
+                the file, and nothing from your browser.
+              </li>
+            </ul>
+            <p>
+              Each event from your browser carries the page path, the first page of your visit, any utm_ campaign tags in
+              the link you followed, and a random ID that the browser tab keeps until you close it. An APK click also
+              carries the app version. Events do not carry the rest of the address, the page you came from, or account
+              details. The request asks Mixpanel not to use your IP address for location.
+            </p>
+            <p>
+              If your browser sends Do Not Track or Global Privacy Control, the website sends no events from your
+              browser.
+            </p>
+          </Section>
+
           <Section heading="Children's Privacy">
             <p>
               This service does not knowingly collect personal information from children under

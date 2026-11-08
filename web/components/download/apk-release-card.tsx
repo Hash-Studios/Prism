@@ -61,6 +61,7 @@ export function ApkDownloadLink() {
   return (
     <a
       href={release?.url ?? (missing ? RELEASES_URL : LATEST_RELEASE_URL)}
+      data-analytics-apk
       className={`${actionBase} border border-neutral-300 bg-white text-black hover:bg-neutral-50 dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:bg-white/10`}
     >
       {missing ? null : <Download aria-hidden="true" className="size-5 shrink-0" strokeWidth={1.75} />}

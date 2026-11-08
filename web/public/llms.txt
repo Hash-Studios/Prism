@@ -19,6 +19,8 @@ Prism Wallpapers is an open-source wallpaper discovery and personalization app f
 - [Pricing](/pricing.md)
 - [Authentication guide](/auth.md)
 - [Wallpaper discovery](/wallpapers)
+- [AMOLED wallpapers by Prism Studio](/amoled-wallpapers)
+- [Open-source wallpaper app for Android](/open-source-android-wallpaper-app)
 - [GitHub repository](https://github.com/Hash-Studios/Prism)
 - [Documentation index](/docs/llms.txt)
 - [Wallpaper index](/wallpapers/llms.txt)

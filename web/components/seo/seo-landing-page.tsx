@@ -3,7 +3,7 @@ import { Footer } from "@/components/sections/footer";
 import { Header } from "@/components/sections/header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { seoRouteContent, seoRouteOrder, type SeoRouteContent } from "@/lib/seo-pages";
+import { seoRouteOrder, topicPages, type SeoRouteContent } from "@/lib/seo-pages";
 import { APP_NAME, APP_STORE_URL, PLAY_STORE_URL } from "@/lib/site-config";
 
 type SeoLandingPageProps = {
@@ -13,7 +13,7 @@ type SeoLandingPageProps = {
 export function SeoLandingPage({ content }: SeoLandingPageProps) {
   const relatedPages = seoRouteOrder
     .filter((slug) => slug !== content.slug)
-    .map((slug) => seoRouteContent[slug]);
+    .map((slug) => topicPages[slug]);
 
   return (
     <>

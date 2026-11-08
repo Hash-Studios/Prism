@@ -1,9 +1,12 @@
 import Image from "next/image";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/site-config";
 
-export function Header() {
+export function Header({ surface = "dark" }: { surface?: "dark" | "light" }) {
+  const navigationColor = surface === "light"
+    ? "text-neutral-700 hover:text-black hover:bg-black/5 dark:text-white/80 dark:hover:text-white dark:hover:bg-white/10"
+    : "text-white/80 hover:text-white hover:bg-white/10";
   return (
-    <nav className="fixed w-full top-0 z-40 flex items-center justify-between animate-down transition-all duration-200 bg-transparent p-6">
+    <nav className={`fixed w-full top-0 z-40 flex items-center justify-between animate-down transition-all duration-200 p-6 ${surface === "light" ? "bg-neutral-100/95 dark:bg-base-900/95" : "bg-transparent"}`}>
       <div className="w-[140px] flex items-start">
         <a
           className="relative w-12 h-12 squircle overflow-hidden group cursor-pointer block shrink-0"
@@ -34,13 +37,13 @@ export function Header() {
       <div className="flex items-center gap-1">
         {/* Served by the links Worker: deploy it before this site. */}
         <a
-          className="hidden md:flex items-center text-base font-semibold py-2.5 px-4 rounded-3xl transition-colors text-white/80 hover:text-white hover:bg-white/10"
+          className={`hidden md:flex items-center text-base font-semibold py-2.5 px-4 rounded-3xl transition-colors ${navigationColor}`}
           href="/wallpapers"
         >
           Wallpapers
         </a>
         <a
-          className="hidden md:flex items-center text-base font-semibold py-2.5 px-4 rounded-3xl transition-colors text-white/80 hover:text-white hover:bg-white/10"
+          className={`hidden md:flex items-center text-base font-semibold py-2.5 px-4 rounded-3xl transition-colors ${navigationColor}`}
           href="/desktop-wallpapers"
         >
           Desktop

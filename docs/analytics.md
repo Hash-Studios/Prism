@@ -93,8 +93,11 @@ applied by this code change.
 
 The static export sends direct HTTPS Mixpanel requests only when built with
 `NEXT_PUBLIC_MIXPANEL_TOKEN`. It records `web_landing_viewed`,
-`web_store_clicked` and `web_qr_viewed`, with path, store and allowlisted UTM
-campaign values. It sends no account ID or arbitrary query string; transport
+`web_store_clicked`, `web_qr_viewed`, `web_download_clicked` and `web_apk_clicked`.
+Events carry allowlisted `path` and first-visit `entry_path` values, with unknown paths reported as `other`,
+and validated UTM campaign values. Store clicks include `store`; APK clicks include the version, not the URL.
+Do Not Track and Global Privacy Control disable browser events.
+See [the landing-page event reference](../web/docs/search-landing-pages.md#analytics). It sends no account ID or arbitrary query string; transport
 failure cannot block navigation. Session storage is best effort. Configure
 the public token in the hosting build environment and rebuild the export to
 enable collection; no hosting settings or deployment are changed here.

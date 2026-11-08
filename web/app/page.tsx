@@ -60,7 +60,7 @@ export default function HomePage() {
           <section>
             <h2 className="text-3xl font-bold tracking-tight">Browse wallpapers</h2>
             <div className="mt-5 flex flex-wrap gap-3">
-              {[["Wallpapers", "/wallpapers"], ["Desktop wallpapers", "/desktop-wallpapers"], ["Popular wallpapers", "/wallpapers/popular"], ["Collections", "/collections"]].map(([label, href]) => (
+              {[["Wallpapers", "/wallpapers"], ["Desktop wallpapers", "/desktop-wallpapers"], ["Popular wallpapers", "/wallpapers/popular"], ["AMOLED wallpapers", "/amoled-wallpapers"], ["Collections", "/collections"]].map(([label, href]) => (
                 <a key={href} href={href} className="rounded-full bg-white px-5 py-3 font-semibold text-accent shadow-sm">{label}</a>
               ))}
             </div>
@@ -89,7 +89,7 @@ export default function HomePage() {
             </div>
           </section>
           <nav aria-label="More Prism resources" className="flex flex-wrap gap-x-6 gap-y-3 font-semibold text-accent">
-            <a href="/docs">API docs</a><a href="/developers">Developers</a><a href="/mcp">MCP server</a><a href="/pricing.md">Pricing</a>
+            <a href="/open-source-android-wallpaper-app">Open source</a><a href="/docs">API docs</a><a href="/developers">Developers</a><a href="/mcp">MCP server</a><a href="/pricing.md">Pricing</a>
           </nav>
         </div>
       </main>
