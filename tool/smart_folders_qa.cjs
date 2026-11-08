@@ -422,15 +422,16 @@ async function itemIds(db, folderId) {
 }
 
 // Approves wall 9, as a moderator would. onWallSmartFolders then adds it to every smart folder that matches.
-async function approve() {
-  const {db} = loadBackend();
-  await db.doc(`walls/${wallId(PENDING)}`).update({review: true, createdAt: require(path.join(runtime, 'functions/node_modules/firebase-admin')).firestore.Timestamp.now()});
+async function approve(backend = loadBackend()) {
+  const {admin, db} = backend;
+  await db.doc(`walls/${wallId(PENDING)}`).update({review: true, createdAt: admin.firestore.Timestamp.now()});
   console.log(`Approved ${wallId(PENDING)}. Smart folders with matching rules get it within a few seconds.`);
 }
 
 // Backend proof with the real callables and trigger. Writes evidence.json.
 async function evidence() {
-  const {db} = loadBackend();
+  const backend = loadBackend();
+  const {db} = backend;
   const checks = [];
   const check = async (name, run) => {
     try { await run(); checks.push({name, ok: true}); } catch (error) { checks.push({name, ok: false, error: error.message}); }
@@ -456,7 +457,7 @@ async function evidence() {
     assert.deepEqual(await itemIds(db, folderId), [1, 2, 3].map(wallId));
   });
   await check('approving wall 9 adds it through the rule index', async () => {
-    await approve();
+    await approve(backend);
     await waitFor(async () => (await itemIds(db, folderId)).includes(wallId(PENDING)), 'wall 9 in the smart folder');
   });
   await check('editing the rules to Pastel refills the folder', async () => {
@@ -476,7 +477,7 @@ async function evidence() {
 }
 
 const commands = {
-  preflight, prepare, emulators, serve, seed, approve, assert: evidence,
+  preflight, prepare, emulators, serve, seed, approve: () => approve(), assert: evidence,
   'build-apk': () => buildApk(user), 'build-ios': () => buildIos(user),
 };
 if (!commands[command]) throw Error('Commands: preflight, prepare, emulators, serve, seed, approve, assert, build-apk, build-ios');

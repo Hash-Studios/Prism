@@ -11347,17 +11347,17 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get foldersSmartIntro =>
-      'Escolha as regras uma vez. Os papéis de parede novos que correspondam entram sozinhos.';
+      'Escolha as regras uma vez. Os papéis de parede novos que combinarem entram sozinhos.';
 
   @override
   String get foldersSmartRulesTitle => 'Regras';
 
   @override
   String get foldersSmartRulesHint =>
-      'Um papel de parede tem de corresponder a cada tipo que escolher. Dentro de um tipo, qualquer opção conta.';
+      'Um papel de parede precisa combinar com cada tipo que você escolher. Dentro de um tipo, qualquer opção vale.';
 
   @override
-  String get foldersSmartKindMood => 'Ambiente';
+  String get foldersSmartKindMood => 'Clima';
 
   @override
   String get foldersSmartKindColour => 'Cor';
@@ -11366,16 +11366,16 @@ class AppLocalizationsPt extends AppLocalizations {
   String get foldersSmartKindCategory => 'Categoria';
 
   @override
-  String get foldersSmartKindFollowed => 'Criadores que sigo';
+  String get foldersSmartKindFollowed => 'Criadores que eu sigo';
 
   @override
   String get foldersSmartKindCreator => 'Criador';
 
   @override
-  String get foldersSmartKindDesktop => 'Tem versão para computador';
+  String get foldersSmartKindDesktop => 'Tem versão para desktop';
 
   @override
-  String get foldersSmartKindOnly => 'Apenas';
+  String get foldersSmartKindOnly => 'Só';
 
   @override
   String get foldersSmartNoCreators => 'Siga criadores para escolher um aqui.';
@@ -11388,8 +11388,8 @@ class AppLocalizationsPt extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Pode usar até $countString tipos de regra.',
-      one: 'Pode usar 1 tipo de regra.',
+      other: 'Você pode usar até $countString tipos de regra.',
+      one: 'Você pode usar 1 tipo de regra.',
     );
     return '$_temp0';
   }
@@ -11402,14 +11402,14 @@ class AppLocalizationsPt extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Pode escolher até $countString opções num tipo.',
-      one: 'Pode escolher 1 opção num tipo.',
+      other: 'Você pode escolher até $countString opções em um tipo.',
+      one: 'Você pode escolher 1 opção em um tipo.',
     );
     return '$_temp0';
   }
 
   @override
-  String get foldersSmartPreviewTitle => 'Pré-visualização';
+  String get foldersSmartPreviewTitle => 'Prévia';
 
   @override
   String foldersSmartMatches(int count) {
@@ -11437,19 +11437,19 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get foldersSmartNoMatchesHint =>
-      'Ainda nenhum papel de parede corresponde a todas estas regras. Remova uma regra para ver mais, ou guarde a pasta e as novas correspondências entram quando chegarem.';
+      'Nenhum papel de parede combina com todas essas regras ainda. Remova uma regra para ver mais, ou salve a pasta e as novas correspondências entram quando chegarem.';
 
   @override
-  String get foldersSmartPickRule => 'Escolha uma regra para ver os papéis de parede que correspondem.';
+  String get foldersSmartPickRule => 'Escolha uma regra para ver os papéis de parede que combinam.';
 
   @override
-  String get foldersSmartPreviewError => 'Não foi possível carregar a pré-visualização.';
+  String get foldersSmartPreviewError => 'Não foi possível carregar a prévia.';
 
   @override
   String get foldersSmartCreate => 'Criar pasta inteligente';
 
   @override
-  String get foldersSmartSaveRules => 'Guardar regras';
+  String get foldersSmartSaveRules => 'Salvar regras';
 
   @override
   String get foldersSmartEditRules => 'Editar regras';
@@ -11464,7 +11464,7 @@ class AppLocalizationsPt extends AppLocalizations {
       locale: localeName,
       other: 'Pasta inteligente criada com $countString papéis de parede.',
       one: 'Pasta inteligente criada com 1 papel de parede.',
-      zero: 'Pasta inteligente criada. As novas correspondências entram quando chegarem.',
+      zero: 'Pasta inteligente criada. Novas correspondências entram quando chegarem.',
     );
     return '$_temp0';
   }
@@ -11477,9 +11477,9 @@ class AppLocalizationsPt extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Regras guardadas. $countString papéis de parede correspondem.',
-      one: 'Regras guardadas. 1 papel de parede corresponde.',
-      zero: 'Regras guardadas. Ainda não há correspondências.',
+      other: 'Regras salvas. $countString papéis de parede combinam.',
+      one: 'Regras salvas. 1 papel de parede combina.',
+      zero: 'Regras salvas. Ainda não há correspondências.',
     );
     return '$_temp0';
   }
@@ -11492,23 +11492,23 @@ class AppLocalizationsPt extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Pode ter até $countString pastas inteligentes. Elimine uma para criar outra.',
+      other: 'Você pode ter até $countString pastas inteligentes. Exclua uma para criar outra.',
     );
     return '$_temp0';
   }
 
   @override
-  String get foldersSmartTooManyChanges => 'Demasiadas alterações hoje. Tente novamente amanhã.';
+  String get foldersSmartTooManyChanges => 'Muitas alterações hoje. Tente de novo amanhã.';
 
   @override
   String get foldersSmartSaveFailed =>
-      'Não foi possível guardar a pasta inteligente. Verifique a ligação e tente novamente.';
+      'Não foi possível salvar a pasta inteligente. Verifique sua conexão e tente de novo.';
 
   @override
   String get foldersSmartEmptyTitle => 'Ainda não há correspondências';
 
   @override
-  String get foldersSmartEmptyBody => 'Os papéis de parede novos que cumpram as regras entram sozinhos.';
+  String get foldersSmartEmptyBody => 'Papéis de parede novos que combinarem com as regras entram sozinhos.';
 
   @override
   String foldersSmartRuleSummary(String kind, String values) {
