@@ -17758,7 +17758,7 @@ abstract class AppLocalizations {
   /// Rule: only wallpapers that also have a desktop version.
   ///
   /// In en, this message translates to:
-  /// **'Has a desktop version'**
+  /// **'Desktop version'**
   String get foldersSmartKindDesktop;
 
   /// Heading above the on or off rules: Creators I follow, Has a desktop version, Editors' Choice.

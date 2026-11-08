@@ -10435,7 +10435,7 @@
   "@foldersSmartKindFollowed": {"description": "Rule: only wallpapers from creators the user follows."},
   "foldersSmartKindCreator": "Creator",
   "@foldersSmartKindCreator": {"description": "Rule kind: wallpapers from one chosen creator."},
-  "foldersSmartKindDesktop": "Has a desktop version",
+  "foldersSmartKindDesktop": "Desktop version",
   "@foldersSmartKindDesktop": {"description": "Rule: only wallpapers that also have a desktop version."},
   "foldersSmartKindOnly": "Only",
   "@foldersSmartKindOnly": {"description": "Heading above the on or off rules: Creators I follow, Has a desktop version, Editors' Choice."},

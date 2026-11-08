@@ -486,7 +486,7 @@ The `sections` field is in the folder doc, not in a subcollection. At most 20 se
 
 ## Smart folders
 
-A **smart folder** fills itself from rules. The user sets the rules once. When a new wallpaper is approved and matches the rules, the server adds it to the folder. Examples: "Dark and quiet walls from creators I follow", "Pastel and blue", "Has a desktop version".
+A **smart folder** fills itself from rules. The user sets the rules once. When a new wallpaper is approved and matches the rules, the server adds it to the folder. Examples: "Dark and quiet walls from creators I follow", "Pastel and blue", "Desktop version".
 
 ### Rules
 
@@ -499,7 +499,7 @@ A rule has a kind and a value.
 | Category | `category` | A name from `CATEGORY_NAMES`, for example `Pastel` | `walls.category` is the name. |
 | Creators I follow | `followed` | Empty | The folder owner follows `walls.creatorUid` (`profiles/{owner}/following/{creator}` exists). |
 | Creator | `creator` | A creator uid | `walls.creatorUid` is the uid. |
-| Has a desktop version | `desktop` | Empty | `parseDesktopVariant(walls.desktopVariant)` is not null. |
+| Desktop version | `desktop` | Empty | `parseDesktopVariant(walls.desktopVariant)` is not null. |
 | Editors' Choice | `editorsChoice` | Empty | `walls.editorsChoiceAt` is set. |
 
 - A smart folder has 1 to 3 kinds. Different kinds join with AND.

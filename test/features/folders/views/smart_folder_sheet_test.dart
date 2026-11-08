@@ -164,6 +164,20 @@ void main() {
     expect(repo.creates, 0);
   });
 
+  testWidgets('on or off rule chips pass their icon to the chip, so a selected chip tints it', (tester) async {
+    final SmartFolderBuilderCubit cubit = _cubit(
+      _FakeSmartRepo(),
+      initial: const <SmartRule>[SmartRule(SmartRuleKind.followed)],
+    );
+    await _pumpBody(tester, cubit);
+    await _settle(tester);
+
+    final PrismChip followed = tester.widget<PrismChip>(find.byKey(const ValueKey<String>('smart-rule-followed-')));
+    expect(followed.selected, isTrue);
+    expect(followed.icon, Icons.people_alt_rounded);
+    expect(followed.leading, isNull);
+  });
+
   testWidgets('a selected creator without a profile still has a removable rule chip', (tester) async {
     final SmartFolderBuilderCubit cubit = _cubit(
       _FakeSmartRepo(),

@@ -268,10 +268,11 @@ class SmartRuleBuilder extends StatelessWidget {
         user.id: smartCreatorName(user),
     };
 
-    Widget chip(SmartRule rule, {Widget? leading}) => PrismChip(
+    Widget chip(SmartRule rule, {Widget? leading, IconData? icon}) => PrismChip(
       key: ValueKey<String>('smart-rule-${rule.kind.wire}-${rule.value}'),
       label: smartValueLabel(rule, l10n, creatorNames: names),
       leading: leading,
+      icon: icon,
       selected: state.rules.contains(rule),
       onTap: () {
         PrismHaptics.selection();
@@ -324,12 +325,9 @@ class SmartRuleBuilder extends StatelessWidget {
         _RuleGroup(
           title: l10n.foldersSmartKindOnly,
           chips: <Widget>[
-            chip(const SmartRule(SmartRuleKind.followed), leading: const Icon(Icons.people_alt_rounded, size: 18)),
-            chip(const SmartRule(SmartRuleKind.desktop), leading: const Icon(Icons.desktop_windows_rounded, size: 18)),
-            chip(
-              const SmartRule(SmartRuleKind.editorsChoice),
-              leading: const Icon(Icons.workspace_premium_rounded, size: 18),
-            ),
+            chip(const SmartRule(SmartRuleKind.followed), icon: Icons.people_alt_rounded),
+            chip(const SmartRule(SmartRuleKind.desktop), icon: Icons.desktop_windows_rounded),
+            chip(const SmartRule(SmartRuleKind.editorsChoice), icon: Icons.workspace_premium_rounded),
           ],
         ),
       ],

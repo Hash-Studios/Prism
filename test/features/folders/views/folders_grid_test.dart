@@ -382,6 +382,7 @@ void main() {
     expect(find.text('No folders yet'), findsOneWidget);
     expect(find.text('Hold the heart on a wallpaper to save it to a folder.'), findsOneWidget);
     expect(find.text('New folder'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('folders-empty-new-smart-folder')), findsOneWidget);
 
     await tester.tap(find.text('New folder'));
     await settle(tester);

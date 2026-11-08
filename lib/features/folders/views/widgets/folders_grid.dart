@@ -231,12 +231,24 @@ class _FoldersGridState extends State<FoldersGrid> {
         final List<FolderEntity> shared = state.folders.where((folder) => !folder.isOwnedBy(state.userId)).toList();
         if (owned.isEmpty && shared.isEmpty && followed.isEmpty) {
           return _message(
-            GlintState(
-              kind: GlintStateKind.empty,
-              title: l10n.foldersLibraryEmptyTitle,
-              body: l10n.foldersLibraryEmptyBody,
-              actionLabel: l10n.foldersNewFolder,
-              onAction: () => unawaited(createFolderFromLibrary(context)),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                GlintState(
+                  kind: GlintStateKind.empty,
+                  title: l10n.foldersLibraryEmptyTitle,
+                  body: l10n.foldersLibraryEmptyBody,
+                  actionLabel: l10n.foldersNewFolder,
+                  onAction: () => unawaited(createFolderFromLibrary(context)),
+                ),
+                PrismButton(
+                  key: const ValueKey<String>('folders-empty-new-smart-folder'),
+                  label: l10n.foldersSmartNew,
+                  icon: Icons.auto_awesome_rounded,
+                  variant: PrismButtonVariant.ghost,
+                  onPressed: () => unawaited(showSmartFolderSheet(context)),
+                ),
+              ],
             ),
           );
         }

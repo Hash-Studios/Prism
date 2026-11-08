@@ -11030,7 +11030,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get foldersSmartKindCreator => 'Creator';
 
   @override
-  String get foldersSmartKindDesktop => 'Has a desktop version';
+  String get foldersSmartKindDesktop => 'Desktop version';
 
   @override
   String get foldersSmartKindOnly => 'Only';
