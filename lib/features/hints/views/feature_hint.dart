@@ -339,7 +339,11 @@ class _HintCalloutState extends State<_HintCallout> with SingleTickerProviderSta
                 liveRegion: defaultTargetPlatform != TargetPlatform.iOS,
                 child: FadeTransition(
                   opacity: _curve,
-                  child: ScaleTransition(scale: Tween<double>(begin: 0.95, end: 1).animate(_curve), child: bubble),
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.95, end: 1).animate(_curve),
+                    // A tap anywhere on the bubble closes it, so a bubble over another control costs one tap.
+                    child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: widget.onGotIt, child: bubble),
+                  ),
                 ),
               ),
             ),

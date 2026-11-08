@@ -5,8 +5,8 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/features/hints/data/feature_hints.dart';
 import 'package:Prism/features/hints/domain/feature_hint.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
 

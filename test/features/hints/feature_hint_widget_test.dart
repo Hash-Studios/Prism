@@ -1,17 +1,17 @@
 import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
-import 'package:Prism/core/widgets/prism_sheet/prism_sheet_route.dart';
 import 'package:Prism/core/startup/startup_sheet.dart';
+import 'package:Prism/core/widgets/prism_sheet/prism_sheet_route.dart';
 import 'package:Prism/features/hints/data/feature_hints.dart';
 import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
@@ -88,6 +88,15 @@ void main() {
     expect(bubble.top, greaterThan(control.bottom));
   });
 
+  testWidgets('a tap on the bubble text closes the hint like Got it', (tester) async {
+    await tester.pumpWidget(_app(_host()));
+    await _settle(tester);
+    await tester.tap(find.text(_copy));
+    await tester.pumpAndSettle();
+    expect(find.text(_copy), findsNothing);
+    expect(_hints.active, isNull);
+  });
+
   testWidgets('disabling restarts the full dwell interval', (tester) async {
     await tester.pumpWidget(_app(_host()));
     await tester.pump(const Duration(milliseconds: 500));
@@ -112,13 +121,13 @@ void main() {
   testWidgets('a clipped control counts a view but never shows a hint', (tester) async {
     await tester.pumpWidget(
       _app(
-        Scaffold(
+        const Scaffold(
           body: Center(
             child: SizedBox(
               width: 100,
               height: 20,
               child: SingleChildScrollView(
-                child: FeatureHint(id: HintId.variantDots, child: const SizedBox(width: 44, height: 44)),
+                child: FeatureHint(id: HintId.variantDots, child: SizedBox(width: 44, height: 44)),
               ),
             ),
           ),
@@ -162,7 +171,7 @@ void main() {
   });
 
   testWidgets('offstage controls never show hints', (tester) async {
-    await tester.pumpWidget(_app(Offstage(offstage: true, child: _host())));
+    await tester.pumpWidget(_app(Offstage(child: _host())));
     await _settle(tester);
     expect(_hints.record(HintId.variantDots).views, 1);
     expect(_hints.active, isNull);
@@ -171,7 +180,7 @@ void main() {
   testWidgets('a hint cannot appear during a slow route transition', (tester) async {
     await tester.pumpWidget(_app(const Scaffold(body: Text('Start'))));
     Navigator.of(tester.element(find.text('Start'))).push(
-      PageRouteBuilder<void>(transitionDuration: const Duration(seconds: 2), pageBuilder: (_, __, ___) => _host()),
+      PageRouteBuilder<void>(transitionDuration: const Duration(seconds: 2), pageBuilder: (_, _, _) => _host()),
     );
     await tester.pump();
     await tester.pump(FeatureHint.settle);
