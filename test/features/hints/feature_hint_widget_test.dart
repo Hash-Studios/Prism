@@ -68,6 +68,13 @@ void main() {
     AnalyticsRuntime.reset();
   });
 
+  testWidgets('the callout text uses a theme style, not the missing-Material debug underline', (tester) async {
+    await tester.pumpWidget(_app(_host()));
+    await _settle(tester);
+    final TextStyle style = DefaultTextStyle.of(tester.element(find.text(_copy))).style;
+    expect(style.decoration, isNot(TextDecoration.underline));
+  });
+
   testWidgets('disabling restarts the full dwell interval', (tester) async {
     await tester.pumpWidget(_app(_host()));
     await tester.pump(const Duration(milliseconds: 500));

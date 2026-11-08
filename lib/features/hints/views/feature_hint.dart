@@ -11,7 +11,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 
 /// Wraps the real control of a feature. Each time the control has been on screen for a moment it counts a view, and
@@ -89,7 +88,7 @@ class _FeatureHintState extends State<FeatureHint> {
     final ModalRoute<dynamic>? route = ModalRoute.of(context);
     return _routeCurrent &&
         openPrismSheetCount == 0 &&
-        TickerMode.of(context) &&
+        TickerMode.valuesOf(context).enabled &&
         (route?.animation?.status ?? AnimationStatus.completed) == AnimationStatus.completed &&
         (route?.secondaryAnimation?.status ?? AnimationStatus.dismissed) == AnimationStatus.dismissed &&
         _anchorOnScreen();
@@ -314,38 +313,42 @@ class _HintCalloutState extends State<_HintCallout> with SingleTickerProviderSta
         ),
       ),
     );
-    return CustomMultiChildLayout(
-      delegate: _CalloutLayout(target: target, below: below, padding: MediaQuery.paddingOf(context)),
-      children: <Widget>[
-        LayoutId(
-          id: _CalloutPart.arrow,
-          child: FadeTransition(
-            opacity: _curve,
-            child: CustomPaint(
-              size: const Size(_arrowWidth, _arrowHeight),
-              painter: _ArrowPainter(color: cs.inverseSurface, up: below),
+    // The overlay sits outside any Material, so give the text a theme style.
+    return Material(
+      type: MaterialType.transparency,
+      child: CustomMultiChildLayout(
+        delegate: _CalloutLayout(target: target, below: below, padding: MediaQuery.paddingOf(context)),
+        children: <Widget>[
+          LayoutId(
+            id: _CalloutPart.arrow,
+            child: FadeTransition(
+              opacity: _curve,
+              child: CustomPaint(
+                size: const Size(_arrowWidth, _arrowHeight),
+                painter: _ArrowPainter(color: cs.inverseSurface, up: below),
+              ),
             ),
           ),
-        ),
-        LayoutId(
-          id: _CalloutPart.bubble,
-          child: TapRegion(
-            onTapOutside: (_) => widget.onTapOutside(),
-            child: Semantics(
-              container: true,
-              liveRegion: defaultTargetPlatform != TargetPlatform.iOS,
-              child: FadeTransition(
-                opacity: _curve,
-                child: ScaleTransition(
-                  scale: Tween<double>(begin: 0.95, end: 1).animate(_curve),
-                  alignment: below ? Alignment.topCenter : Alignment.bottomCenter,
-                  child: bubble,
+          LayoutId(
+            id: _CalloutPart.bubble,
+            child: TapRegion(
+              onTapOutside: (_) => widget.onTapOutside(),
+              child: Semantics(
+                container: true,
+                liveRegion: defaultTargetPlatform != TargetPlatform.iOS,
+                child: FadeTransition(
+                  opacity: _curve,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.95, end: 1).animate(_curve),
+                    alignment: below ? Alignment.topCenter : Alignment.bottomCenter,
+                    child: bubble,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
