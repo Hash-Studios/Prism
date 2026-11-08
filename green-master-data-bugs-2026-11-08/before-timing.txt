@@ -1,0 +1,7 @@
+BEFORE (master 6acf2087e), same emulator, debug APK, real Firebase (Doppler dev)
+10:46:20.554  launch; sign-in screen
+10:48:02.049  app resumed -> refreshWotdTopics -> subscribeToTopic: no result logged, ever (master logs only on failure)
+10:48:49.129  VM probe: FirebaseMessaging.subscribeToTopic("drops_loc_v1") and getToken() started
+10:48:49.624  PROBE token error [firebase_messaging/unknown] java.io.IOException: MISSING_INSTANCEID_SERVICE  (fails in 0.5 s)
+              PROBE subscribe: no "done" and no "error" by 10:52:04 -> still pending
+10:49:02.138  Weekly Drops tapped off (switch flips; the unsubscribe behind it never settles, no log)
