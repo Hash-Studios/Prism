@@ -49,7 +49,6 @@ class ReadabilityTips {
 
   /// A result that arrives later than this after the check starts is dropped, so a tip never pops in late.
   /// Widget tests raise it, because a cold image decode on a loaded test host can take longer.
-  @visibleForTesting
   static Duration budget = const Duration(seconds: 2);
 
   final Set<String> _shown = <String>{};
