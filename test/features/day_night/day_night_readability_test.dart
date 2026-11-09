@@ -485,6 +485,7 @@ void main() {
 
     tearDown(() async {
       DayNightRepositoryImpl.runsOnDeviceOverride = null;
+      DayNightRepositoryImpl.fixedFolderOverride = null;
       DayNightRepositoryImpl.fixedCopyMaker = originalFixedCopy;
       DayNightRepositoryImpl.downloadedOriginalOverride = null;
       debugDefaultTargetPlatformOverride = null;
@@ -537,6 +538,36 @@ void main() {
           'https://example.com/night.jpg',
         ]);
       });
+    });
+
+    test('a new iOS publish deletes the fixed copies of older publishes, and unpublish deletes the rest', () async {
+      final Directory folder = Directory(path.join(root.path, 'prism', 'offline', 'assets', 'day_night_fixed'));
+      DayNightRepositoryImpl.fixedFolderOverride = folder;
+      final File old = File(path.join(folder.path, 'day-old', 'wall.png'));
+      await old.create(recursive: true);
+      int made = 0;
+      DayNightRepositoryImpl.fixedCopyMaker = (DayNightSlot slot, DayNightWall wall, String source) async {
+        final File copy = File(path.join(folder.path, '${slot.name}-${made++}', 'wall.png'));
+        await copy.create(recursive: true);
+        return copy;
+      };
+      final DayNightPair pair = DayNightPair(
+        day: _httpsDay.withFixes(const <ReadabilityFix>[_clockDim]),
+        night: _httpsNight.withFixes(const <ReadabilityFix>[_clockDim]),
+      );
+
+      await repository.publish(pair);
+
+      expect(old.parent.existsSync(), isFalse);
+      expect(folder.listSync().map((entry) => path.basename(entry.path)).toSet(), <String>{'day-0', 'night-1'});
+
+      await repository.publish(pair);
+
+      expect(folder.listSync().map((entry) => path.basename(entry.path)).toSet(), <String>{'day-2', 'night-3'});
+
+      await repository.unpublish();
+
+      expect(folder.listSync(), isEmpty);
     });
 
     test('the iOS snapshot points the fixed day wall at its asset and maps the asset to a relative path', () async {

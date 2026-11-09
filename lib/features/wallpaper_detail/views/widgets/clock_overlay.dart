@@ -913,13 +913,20 @@ class _ClockOverlayState extends State<ClockOverlay> {
         text: TextSpan(
           text: DateFormat.MMMMEEEEd(context.l10n.localeName).format(DateTime.now()),
           style: theme.textTheme.bodyMedium!.merge(
-            const TextStyle(fontFamily: 'CupertinoSystemText', fontSize: 20, fontWeight: FontWeight.w600),
+            const TextStyle(
+              fontFamily: 'CupertinoSystemText',
+              fontSize: IosLockLayout.dateSize,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         textDirection: Directionality.of(context),
       )..layout(maxWidth: size.width);
-      final double widgetsBottom =
-          MediaQuery.viewPaddingOf(context).top + 24 + date.height + 96 * 1.1 + 6 + math.min(size.width * 0.15, 72);
+      final double widgetsBottom = IosLockLayout.widgetsBottom(
+        statusBar: MediaQuery.viewPaddingOf(context).top,
+        width: size.width,
+        dateHeight: date.height,
+      );
       date.dispose();
       clockTipTop = math.max(clockTipTop, widgetsBottom + PrismSpace.xs);
     }
