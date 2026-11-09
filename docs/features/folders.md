@@ -774,7 +774,7 @@ The job never reads all folders. These are the most reads for one run.
 | Headers of scored folders, 100 at a time until Trending is full | At most 1,000. Usually 100. | 0 |
 | New folders query | At most 300 | 0 |
 | Open report check, 1 query for each candidate | At most 1,300. Usually 400. | 0 |
-| Owner accounts | 0 (Auth `getUsers`, at most 6 calls of 100) | 0 |
+| Owner accounts | 0 (Auth `getUsers`, at most 13 calls of 100: 3 for New, 10 for Trending) | 0 |
 | Traits: 12 items and 12 walls for each listed folder | At most 1,440 | 0 |
 | Owner profiles | At most 60 | 0 |
 | Final transaction | At most 60 | 1 |
