@@ -4,6 +4,7 @@ export {sendWinBackPushes} from "./winBack";
 export {sendFollowDigests} from "./followDigest";
 export {recordNotificationSignal} from "./notificationScoreboard";
 export {onWallApproved} from "./onWallApproved";
+export {releaseScheduledWalls} from "./wallRelease";
 export {onWallRemixWritten} from "./wallRemix";
 export {onWallVariantWritten} from "./wallVariants";
 export {onCreatorWallWritten, onCreatorFavouriteCreated} from "./creatorProgress";

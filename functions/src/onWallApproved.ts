@@ -9,6 +9,7 @@ import {notificationCopyPayload} from "./notificationCatalog";
 import {getOwnedWallDelivery, ownedAssetStorageEnabled, ownedThumbnailUrl} from "./ownedAssetDelivery";
 import {fileWallInCollection} from "./wallCollections";
 import {fillRequestFromWall, notifyRequestFilled} from "./wallRequests";
+import {claimReleaseNotices} from "./wallRelease";
 import {
   emailHash,
   emailToTopic,
@@ -55,6 +56,10 @@ export const onWallApproved = onDocumentUpdated(
       throw err;
     }
     if (!sameWallIncarnation(expected, current) || current.data()?.review !== true) return;
+    // The release job stamps publishedAt in the write that makes a scheduled wall public. Other approvals get it here.
+    if (!wasApproved && current.data()?.publishedAt == null) {
+      await expected.ref.update({publishedAt: admin.firestore.FieldValue.serverTimestamp()});
+    }
     // Approval sets collections to community, so the category collection is added after it.
     if (!wasApproved) await fileWallInCollection(expected.ref);
     const studio = await isStudioWall(wallId, current.data() ?? {});
@@ -85,6 +90,10 @@ export const onWallApproved = onDocumentUpdated(
     }
 
     const artist = await resolveUserByEmail(artistEmail);
+    if (announced.releaseNotice === "pending") {
+      await announceRelease(await claimReleaseNotices(artistEmail), artistEmail, artistName, artist);
+      return;
+    }
     const artistPayload = {
       ...notificationCopyPayload({kind: "wallApprovedForArtist", wallTitle}),
       data: {
@@ -170,6 +179,50 @@ export const onWallApproved = onDocumentUpdated(
     }
   },
 );
+
+/** One push to the creator and one to their followers for every wall of a scheduled release. */
+async function announceRelease(
+  walls: Array<{id: string; data: admin.firestore.DocumentData}>,
+  artistEmail: string,
+  artistName: string,
+  artist: Awaited<ReturnType<typeof findUserByEmail>>,
+): Promise<void> {
+  const newest = walls[0];
+  if (!newest) return;
+  const wallCount = walls.length;
+  const wallTitle = str(newest.data.title);
+  const imageUrl = str(newest.data.wallpaper_thumb) || undefined;
+  const data = {route: "wall", wall_id: newest.id, notification_kind: "walls_released", wall_count: String(wallCount)};
+  const artistData = artist?.data();
+  await sendToUser({
+    ...notificationCopyPayload({kind: "wallsReleasedForArtist", wallCount, wallTitle}),
+    data,
+    imageUrl,
+    modifier: artistEmail,
+    channelId: "posts",
+    scoreKind: "post",
+    collapseKey: `release_${newest.id}`,
+  }, {uid: artist?.id, email: artistEmail, loggedOut: isLoggedOut(artistData), legacyToken: artistData?.fcmToken});
+
+  const copy = wallCount === 1 ?
+    notificationCopyPayload({kind: "wallLiveForFollowers", artistName, wallTitle: wallTitle || "Untitled"}) :
+    notificationCopyPayload({kind: "wallsReleasedForFollowers", artistName, wallCount});
+  const topics = [`${emailToTopic(artistEmail)}_posts`, ...(artist ? [postsTopic(artist.id)] : [])];
+  for (const topic of topics) {
+    await sendNotification({
+      ...copy,
+      data: {...data, artist_email: artistEmail},
+      imageUrl,
+      modifier: artistEmail,
+      channelId: "posts",
+      scoreKind: "post",
+      fcmTarget: {topic},
+      pushOnly: true,
+      collapseKey: postsCollapseKey(artistEmail),
+    });
+  }
+  logger.info("onWallApproved: release pushes sent.", {wallId: newest.id, wallCount, topics});
+}
 
 /** Same key on every followers push of one creator, short enough for apns-collapse-id (64 bytes). */
 export function postsCollapseKey(artistEmail: string): string {

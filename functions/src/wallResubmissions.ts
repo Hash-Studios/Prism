@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import {defineSecret} from "firebase-functions/params";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
+import {validReleaseAt} from "./wallRelease";
 import {isDeepStrictEqual} from "node:util";
 import {isAdminCaller} from "./adminConfig";
 import {CALLABLE_REGIONS, db} from "./common";
@@ -58,7 +59,8 @@ async function validArchive(tx: admin.firestore.Transaction, archive: admin.fire
 export const submitWallResubmission = onCall({...options, secrets: [githubToken, ...r2Secrets], timeoutSeconds: 120},
   async (request: CallableRequest<unknown>) => {
     const uid = signedIn(request);
-    const input = exactKeys(request.data, ["operationId", "sourceRejectedDocId", "original", "thumbnail", "metadata", "presentation"]);
+    const required = ["operationId", "sourceRejectedDocId", "original", "thumbnail", "metadata", "presentation"];
+    const input = exactKeys(request.data, [...required, "releaseAt"], required);
     const op = operationId(input.operationId);
     const parentDocId = wallDocumentId(input.sourceRejectedDocId);
     const original = parseFileReference(input.original);
@@ -96,6 +98,8 @@ export const submitWallResubmission = onCall({...options, secrets: [githubToken,
         throw new HttpsError("failed-precondition", "rejected-descendant-identity-mismatch");
       }
       if (!parentLedger && archived.resubmitOf !== undefined) throw new HttpsError("failed-precondition", "unverified-lineage");
+      const releaseAt = input.releaseAt == null ? null : validReleaseAt(input.releaseAt, Date.now());
+      if (input.releaseAt != null && !releaseAt) throw new HttpsError("invalid-argument", "release-time-out-of-range");
       const rootRef = parentLedger ? db.collection(RESUBMISSION_ROOTS).doc(parentLedger.rootKey) : rootRefFor(parentDocId);
       const root = (await tx.get(rootRef)).data();
       if (root && (root.ownerUid !== uid || !parentLedger &&
@@ -134,7 +138,7 @@ export const submitWallResubmission = onCall({...options, secrets: [githubToken,
         wallpaper_path: original.path, wallpaper_sha: original.sha, wallpaper_source_kind: original.sourceKind,
         thumb_path: thumbnail.path, thumb_sha: thumbnail.sha, thumb_source_kind: thumbnail.sourceKind,
         ...metadata, category, ...presentation, review: false, isAiGenerated: false, createdAt: at,
-        collections: ["community"], resubmitOf: parentDocId};
+        collections: ["community"], resubmitOf: parentDocId, ...(releaseAt ? {releaseAt} : {})};
       tx.create(wallRef, {...wall, searchTerms: wallSearchTermsFor(wall)});
       tx.create(db.collection(RESUBMISSIONS).doc(wallDocId), {ownerUid: uid, parentDocId, rootKey: rootRef.id,
         rootDocId: root?.rootDocId ?? parentDocId, attempt, operationId: op, digest: hash, result,

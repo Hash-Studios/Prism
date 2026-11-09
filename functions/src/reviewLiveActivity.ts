@@ -34,7 +34,8 @@ type ActivitySnapshot = {id: string; data: () => Record<string, unknown> | undef
 type ActivityRef = ReturnType<ReturnType<typeof db.collection>["doc"]>;
 
 export function isPendingWall(data: Record<string, unknown> | undefined): boolean {
-  return data !== undefined && data.review === false && (data.dropWeek === undefined || data.dropWeek === null);
+  return data !== undefined && data.review === false && (data.dropWeek === undefined || data.dropWeek === null) &&
+    data.releaseApprovedAt == null;
 }
 
 function toMillis(value: unknown): number | null {

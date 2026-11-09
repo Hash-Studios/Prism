@@ -6,6 +6,8 @@ export type NotificationCopy =
   | { kind: "desktopVersionApproved"; wallTitle: string }
   | { kind: "desktopVersionRejected"; wallTitle: string; reason: string }
   | { kind: "wallLiveForFollowers"; artistName: string; wallTitle: string }
+  | { kind: "wallsReleasedForArtist"; wallCount: number; wallTitle: string }
+  | { kind: "wallsReleasedForFollowers"; artistName: string; wallCount: number }
   | { kind: "wallApprovedForAdmin"; wallTitle: string; artistName: string }
   | { kind: "wallRemixed"; remixerName: string; wallTitle: string }
   | { kind: "editorsChoicePicked"; wallTitle: string }
@@ -195,6 +197,22 @@ export function renderNotificationCopy(
       args: {},
       title: "Prism misses you",
       body: "Your next favourite wall is a tap away.",
+    };
+  case "wallsReleasedForArtist":
+    return {
+      kind: copy.kind,
+      args: {wallCount: copy.wallCount, wallTitle: copy.wallTitle},
+      title: copy.wallCount === 1 ? "Your wall is live" : "Your walls are live",
+      body: copy.wallCount !== 1 ?
+        `${copy.wallCount} walls are now public on Prism.` :
+        copy.wallTitle ? `"${copy.wallTitle}" is now public on Prism.` : "Your wall is now public on Prism.",
+    };
+  case "wallsReleasedForFollowers":
+    return {
+      kind: copy.kind,
+      args: {artistName: copy.artistName, wallCount: copy.wallCount},
+      title: `${copy.artistName} released ${copy.wallCount} walls`,
+      body: "See the new set on Prism.",
     };
   case "dropLive":
     return {
@@ -430,6 +448,8 @@ export function nativeNotificationLocalization(
   if (kind === "wallCommented") return null;
   // Installed builds lack notif_push_desktop_version_* resources, so banners stay English and the inbox localizes.
   if (kind === "desktopVersionApproved" || kind === "desktopVersionRejected") return null;
+  // Installed builds lack notif_push_walls_released_* resources, so release banners stay English and the inbox localizes.
+  if (kind === "wallsReleasedForArtist" || kind === "wallsReleasedForFollowers") return null;
   // A shared folder owner can be on a build without notif_push_folder_activity_* keys, so this copy stays English.
   if (kind === "folderActivity") return null;
 
