@@ -77,7 +77,7 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
       reportsStream ?? Stream<List<FirestoreDocument>>.value(reportsList ?? const <FirestoreDocument>[]);
 
   @override
-  Future<void> approveWall(
+  Future<bool> approveWall(
     FirestoreDocument wall, {
     List<String>? collections,
     bool? streakExclusive,
@@ -85,6 +85,7 @@ class _FakeAdminReviewRepository extends AdminModerationRepository {
   }) async {
     approvals++;
     await approveAction?.call();
+    return false;
   }
 
   @override

@@ -2,6 +2,7 @@ import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/features/wallpaper_upload/data/repositories/wall_metadata_repository.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' show FieldValue;
 import 'package:cloud_functions/cloud_functions.dart' as cf;
 import 'package:flutter_test/flutter_test.dart';
 
@@ -112,18 +113,21 @@ void main() {
 
   Matcher failure(WallMetadataFailure value) => isA<WallMetadataException>().having((e) => e.failure, 'failure', value);
 
-  test('pending compare-and-set writes exactly four metadata fields and invalidates caches', () async {
-    final expected = await repository.load('wall_1.jpg', approved: false);
-    final saved = await repository.updatePending('wall_1.jpg', next, expected: expected);
+  test(
+    'pending compare-and-set writes the four metadata fields plus the release time and invalidates caches',
+    () async {
+      final expected = await repository.load('wall_1.jpg', approved: false);
+      final saved = await repository.updatePending('wall_1.jpg', next, expected: expected);
 
-    expect(client.patches.single, next.toMap());
-    expect(client.patches.single.keys.toSet(), {'title', 'desc', 'tags', 'category'});
-    expect(client.wall!['coins'], 500);
-    expect(client.wall!['review'], false);
-    expect(saved.metadata, next);
-    expect(cacheInvalidations, 1);
-    expect(calls, isEmpty);
-  });
+      expect(Map<String, dynamic>.of(client.patches.single)..remove('releaseAt'), next.toMap());
+      expect(client.patches.single.keys.toSet(), {'title', 'desc', 'tags', 'category', 'releaseAt'});
+      expect(client.wall!['coins'], 500);
+      expect(client.wall!['review'], false);
+      expect(saved.metadata, next);
+      expect(cacheInvalidations, 1);
+      expect(calls, isEmpty);
+    },
+  );
 
   test('pending save refuses concurrent metadata edits, preserving the other edit', () async {
     final expected = await repository.load('doc', approved: false);
@@ -280,5 +284,62 @@ void main() {
       throwsA(failure(WallMetadataFailure.conflict)),
     );
     expect(client.patches, isEmpty);
+  });
+
+  group('release time', () {
+    final DateTime releaseAt = DateTime.utc(2026, 11, 20, 12, 30);
+
+    test('load reports a scheduled wall when releaseApprovedAt is present', () async {
+      client.wall!
+        ..['releaseApprovedAt'] = DateTime.utc(2026, 11, 5)
+        ..['releaseAt'] = releaseAt;
+      final snapshot = await repository.load('doc', approved: false);
+      expect(snapshot.scheduled, isTrue);
+      expect(snapshot.metadata.releaseAt, releaseAt);
+    });
+
+    test('load reports an unscheduled pending wall as not scheduled', () async {
+      expect((await repository.load('doc', approved: false)).scheduled, isFalse);
+    });
+
+    test('a pending wall saves its release time', () async {
+      final expected = await repository.load('doc', approved: false);
+      await repository.updatePending('doc', next.copyWith(releaseAt: () => releaseAt), expected: expected);
+
+      expect(client.patches.single['releaseAt'], releaseAt);
+      expect(client.patches.single.keys.toSet(), {'title', 'desc', 'tags', 'category', 'releaseAt'});
+    });
+
+    test('a pending wall clears its release time with a delete sentinel', () async {
+      client.wall!['releaseAt'] = releaseAt;
+      final expected = await repository.load('doc', approved: false);
+      await repository.updatePending('doc', next.copyWith(releaseAt: () => null), expected: expected);
+
+      expect(client.patches.single['releaseAt'], isA<FieldValue>());
+    });
+
+    test('a scheduled wall writes only releaseAt', () async {
+      client.wall!
+        ..['releaseApprovedAt'] = DateTime.utc(2026, 11, 5)
+        ..['releaseAt'] = releaseAt;
+      final expected = await repository.load('doc', approved: false);
+      final DateTime moved = releaseAt.add(const Duration(days: 1));
+      await repository.updatePending('doc', next.copyWith(releaseAt: () => moved), expected: expected);
+
+      expect(client.patches.single.keys.toSet(), {'releaseAt'});
+      expect(client.patches.single['releaseAt'], moved);
+    });
+
+    test('a scheduled wall cannot clear its release time', () async {
+      client.wall!
+        ..['releaseApprovedAt'] = DateTime.utc(2026, 11, 5)
+        ..['releaseAt'] = releaseAt;
+      final expected = await repository.load('doc', approved: false);
+      await expectLater(
+        repository.updatePending('doc', next.copyWith(releaseAt: () => null), expected: expected),
+        throwsA(failure(WallMetadataFailure.statusChanged)),
+      );
+      expect(client.patches, isEmpty);
+    });
   });
 }
