@@ -2060,6 +2060,24 @@
   "actionClose": "बंद करें",
   "actionDone": "हो गया",
   "actionRetry": "फिर कोशिश करें",
+  "adminReleaseApproved": "मंज़ूर। {when} पर प्रकाशित होगा",
+  "@adminReleaseApproved": {
+    "description": "Moderator-facing status for an approved wall with a scheduled release.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "adminReleaseRequested": "क्रिएटर का प्रकाशन समय: {when}",
+  "@adminReleaseRequested": {
+    "description": "Moderator-facing label for the release time the creator asked for, shown before approval.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
   "adminAllCaughtUp": "सब कुछ देख लिया गया",
   "adminAllUsers": "सभी यूज़र",
   "adminAnnouncementInbox": "घोषणा (इनबॉक्स)",
@@ -6470,6 +6488,36 @@
     }
   },
   "notifPushWallApprovedArtistBodyUntitled": "आपका वॉलपेपर मंज़ूर हो गया है और अब सभी को दिख रहा है।",
+  "notifPushWallsReleasedArtistTitle": "आपका वॉलपेपर लाइव है",
+  "@notifPushWallsReleasedArtistTitle": {
+    "description": "Push notification title when one scheduled wall goes live."
+  },
+  "notifPushWallsReleasedArtistTitleMany": "आपके वॉलपेपर लाइव हैं",
+  "@notifPushWallsReleasedArtistTitleMany": {
+    "description": "Push notification title when several scheduled walls go live together."
+  },
+  "notifPushWallsReleasedArtistBody": "\"{wallTitle}\" अब Prism पर सार्वजनिक है।",
+  "@notifPushWallsReleasedArtistBody": {
+    "description": "Push notification body for one released wall that has a title.",
+    "placeholders": {
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushWallsReleasedArtistBodyUntitled": "आपका वॉलपेपर अब Prism पर सार्वजनिक है।",
+  "@notifPushWallsReleasedArtistBodyUntitled": {
+    "description": "Push notification body for one released wall without a title."
+  },
+  "notifPushWallsReleasedArtistBodyMany": "{count} वॉलपेपर अब Prism पर सार्वजनिक हैं।",
+  "@notifPushWallsReleasedArtistBodyMany": {
+    "description": "Push notification body when several walls go live together.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "notifPushWallApprovedArtistTitle": "आपका वॉलपेपर लाइव है! 🎉",
   "notifPushDesktopVersionApprovedTitle": "आपका डेस्कटॉप वर्शन लाइव है",
   "@notifPushDesktopVersionApprovedTitle": {
@@ -11593,6 +11641,70 @@
       }
     }
   },
+  "wallReleaseTitle": "प्रकाशन",
+  "@wallReleaseTitle": {
+    "description": "Section heading for when a wall goes live."
+  },
+  "wallReleaseWhenApproved": "मंज़ूरी के बाद",
+  "@wallReleaseWhenApproved": {
+    "description": "Release option that publishes as soon as a moderator approves."
+  },
+  "wallReleaseAtTime": "तय समय पर",
+  "@wallReleaseAtTime": {
+    "description": "Release option that publishes at a chosen time after approval."
+  },
+  "wallReleaseWhenApprovedHelp": "मॉडरेटर द्वारा मंज़ूर होते ही यह लाइव हो जाएगा।",
+  "@wallReleaseWhenApprovedHelp": {
+    "description": "Help text under the When approved release option."
+  },
+  "wallReleaseAtTimeHelp": "मंज़ूरी के बाद भी यह इस समय तक छिपा रहेगा। एक साथ लाइव होने वाले वॉलपेपर आपके फ़ॉलोअर्स को एक ही सूचना भेजते हैं।",
+  "@wallReleaseAtTimeHelp": {
+    "description": "Help text under the At a set time release option."
+  },
+  "wallReleaseDateLabel": "प्रकाशन तिथि: {date}",
+  "@wallReleaseDateLabel": {
+    "description": "Label for the chosen release date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "wallReleaseTimeLabel": "प्रकाशन समय: {time}",
+  "@wallReleaseTimeLabel": {
+    "description": "Label for the chosen release time.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "wallReleaseTimeZone": "समय आपके समय क्षेत्र ({zone}) के अनुसार है।",
+  "@wallReleaseTimeZone": {
+    "description": "Note that shows which time zone the release time uses.",
+    "placeholders": {
+      "zone": {
+        "type": "String"
+      }
+    }
+  },
+  "wallReleaseTooSoon": "कम से कम 15 मिनट बाद का समय चुनें।",
+  "@wallReleaseTooSoon": {
+    "description": "Validation error when the release time is less than 15 minutes away."
+  },
+  "wallReleaseTooLate": "अगले 30 दिनों के भीतर का समय चुनें।",
+  "@wallReleaseTooLate": {
+    "description": "Validation error when the release time is more than 30 days away."
+  },
+  "wallReleaseLabel": "{when} पर प्रकाशित होगा",
+  "@wallReleaseLabel": {
+    "description": "Short label on a scheduled upload showing its release time.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
   "wallMetadataDescription": "विवरण",
   "wallMetadataEdit": "जानकारी संपादित करें",
   "wallResubmitAction": "सुधारें और फिर से भेजें",
@@ -11713,6 +11825,10 @@
   "wallVariantDroppedAspect": "इसका आकार मूल से अलग है।",
   "@wallVariantDroppedAspect": {
     "description": "Reason line."
+  },
+  "wallMetadataScheduledHelp": "मंज़ूर और शेड्यूल किया गया। आप प्रकाशन समय बदल सकते हैं। वॉलपेपर लाइव होने पर बाकी विवरण खुल जाएंगे।",
+  "@wallMetadataScheduledHelp": {
+    "description": "Help text on the details screen of an approved, scheduled wall."
   },
   "wallMetadataApprovedHelp": "शीर्षक, विवरण और टैग बदलें। चित्र और श्रेणी वही रहेंगे।",
   "wallMetadataPendingHelp": "वॉलपेपर की समीक्षा से पहले यह जानकारी अपडेट करें।",

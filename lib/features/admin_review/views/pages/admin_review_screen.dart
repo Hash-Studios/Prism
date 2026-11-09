@@ -22,6 +22,7 @@ import 'package:Prism/features/admin_review/views/widgets/wall_resubmission_noti
 import 'package:Prism/features/desktop_submission/desktop_submission.dart';
 import 'package:Prism/features/editors_choice/biz/editors_choice_cubit.dart';
 import 'package:Prism/features/editors_choice/domain/editors_choice_repository.dart';
+import 'package:Prism/features/wallpaper_upload/biz/wall_release.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -62,7 +63,9 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
     _pendingWallsStream = _repository.watchPendingWalls();
     _openReportsStream = _repository.watchOpenContentReports();
     _pendingCountsStream = Rx.combineLatest3<int, int, int, (int, int, int)>(
-      _repository.watchPendingWalls().map((List<FirestoreDocument> list) => list.length),
+      _repository.watchPendingWalls().map(
+        (List<FirestoreDocument> list) => list.where((wall) => !AdminModerationRepository.awaitsRelease(wall)).length,
+      ),
       _repository.watchOpenContentReports().map((List<FirestoreDocument> list) => list.length),
       _desktopRepository.watchReviewQueue().map((List<DesktopSubmission> list) => list.length),
       (int a, int b, int c) => (a, b, c),
@@ -189,6 +192,27 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
     );
   }
 
+  /// "Fri 18:00 · Fri 14 Nov, 12:30 UTC": the admin's local time and UTC, since creators pick in their own zone.
+  String? _releaseWhen(BuildContext context, FirestoreDocument wall) {
+    final DateTime? releaseAt = WallRelease.of(wall).releaseAt;
+    if (releaseAt == null) return null;
+    final String local = releaseWhenText(
+      releaseAt,
+      now: DateTime.now(),
+      locale: context.l10n.localeName,
+      use24h: MediaQuery.alwaysUse24HourFormatOf(context),
+    );
+    return '$local · ${releaseUtcText(releaseAt)}';
+  }
+
+  String? _releaseFact(BuildContext context, FirestoreDocument wall) {
+    final String? when = _releaseWhen(context, wall);
+    if (when == null) return null;
+    return AdminModerationRepository.awaitsRelease(wall)
+        ? context.l10n.adminReleaseApproved(when)
+        : context.l10n.adminReleaseRequested(when);
+  }
+
   Widget _wallCard(
     BuildContext context,
     FirestoreDocument wall,
@@ -214,6 +238,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
         (context.l10n.adminDepth, depthTierLabel(context.l10n, wallDepthTier(wall))),
         if (reserved) (context.l10n.adminDrop, context.l10n.adminReservedForNextDrop),
         if (requestText != null) (context.l10n.adminFillsRequest, requestText),
+        if (_releaseFact(context, wall) case final String release) (context.l10n.wallReleaseTitle, release),
       ],
       reserved: reserved,
       moderation: wallModeration(wall),
@@ -230,8 +255,9 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
             }
           : null,
       onApprove: () async {
-        await _repository.approveWall(wall);
-        toasts.success(l10n.adminWallpaperApproved);
+        final String? release = _releaseWhen(context, wall);
+        final bool scheduled = await _repository.approveWall(wall);
+        toasts.success(scheduled && release != null ? l10n.adminReleaseApproved(release) : l10n.adminWallpaperApproved);
       },
       onApproveAndPick: reserved
           ? null

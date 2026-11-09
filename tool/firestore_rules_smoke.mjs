@@ -76,6 +76,8 @@ const publicWall = {
 };
 const str = (v) => ({ stringValue: v });
 const ts = () => ({ timestampValue: new Date().toISOString() });
+const MIN = 60_000, HOUR = 60 * MIN, DAY = 24 * HOUR;
+const at = (ms) => ({ timestampValue: new Date(Date.now() + ms).toISOString() });
 const folderFields = (owner, name = 'Blue walls', extra = {}) => ({ ownerId: str(owner), name: str(name), createdAt: ts(), updatedAt: ts(), itemCount: { integerValue: '0' }, covers: arr([]), ...extra });
 const itemFields = (owner, id = 'abc', provider = 'WallHaven') => ({ id: str(id), provider: str(provider), ownerId: str(owner), addedAt: ts(), url: str('https://example.com/f.jpg'), thumb: str('https://example.com/t.jpg') });
 const requestFields = (owner, extra = {}) => ({
@@ -145,6 +147,15 @@ const seed = () => Promise.all([
   req('PATCH', 'walls/w14', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, searchTerms: arr(['sunset']), visionLabels: arr(['sky']), spatial: spatial('great') }, 'owner'),
   req('PATCH', 'walls/remix-src', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, title: { stringValue: 'Remix source' }, remixOf: { stringValue: 'orig_1' } }, 'owner'),
   req('PATCH', 'walls/variant-src', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, title: { stringValue: 'Variant source' }, variantOf: { stringValue: 'orig_1' } }, 'owner'),
+  req('PATCH', 'walls/rel-pending', { email: str('b@x.com'), review: { booleanValue: false }, releaseAt: at(2 * HOUR) }, 'owner'),
+  req('PATCH', 'walls/rel-owner-set', { email: str('b@x.com'), review: { booleanValue: false } }, 'owner'),
+  req('PATCH', 'walls/rel-owner-clear', { email: str('b@x.com'), review: { booleanValue: false }, releaseAt: at(2 * HOUR) }, 'owner'),
+  req('PATCH', 'walls/rel-sched', { email: str('b@x.com'), review: { booleanValue: false }, releaseApprovedAt: at(-HOUR), releaseAt: at(2 * HOUR) }, 'owner'),
+  req('PATCH', 'walls/rel-held', { email: str('b@x.com'), review: { booleanValue: false }, releaseApprovedAt: at(-2 * HOUR), publishedAt: at(-HOUR), releaseAt: at(-90 * MIN) }, 'owner'),
+  req('PATCH', 'walls/rel-hold', { email: str('b@x.com'), review: { booleanValue: false }, releaseAt: at(2 * HOUR) }, 'owner'),
+  req('PATCH', 'walls/rel-stamp', { email: str('b@x.com'), review: { booleanValue: false } }, 'owner'),
+  req('PATCH', 'walls/rel-past', { email: str('b@x.com'), review: { booleanValue: false }, releaseAt: at(-HOUR) }, 'owner'),
+  req('PATCH', 'walls/rel-none', { email: str('b@x.com'), review: { booleanValue: false } }, 'owner'),
   req('PATCH', 'setups/s9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true } }, 'owner'),
   req('PATCH', 'rejectedWalls/rw1', { email: { stringValue: 'b@x.com' } }, 'owner'),
   req('PATCH', 'rejectedWalls/rw2', { email: { stringValue: 'b@x.com' } }, 'owner'),
@@ -260,6 +271,26 @@ const topicFields = {
 };
 const topicSession = (fields) => req('PATCH', 'usersv2/u1/private/session', fields, U1);
 const withTopics = (followedTopics) => ({ ...topicFields, followedTopics: arr(followedTopics) });
+// Sets a server timestamp field through a commit transform, as the client SDK's serverTimestamp() does.
+const serverStamp = async (auth, path, field) => {
+  const r = await fetch(`${B}:commit`, {
+    method: 'POST', headers: { Authorization: `Bearer ${auth}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ writes: [{ transform: {
+      document: `projects/${P}/databases/(default)/documents/${path}`,
+      fieldTransforms: [{ fieldPath: field, setToServerValue: 'REQUEST_TIME' }],
+    } }] }),
+  });
+  return r.status;
+};
+// Returns 200 when the reviewed-wall query is allowed and the wall is missing from its rows, else 500.
+const listHidesWall = async (auth, path) => {
+  const r = await fetch(`${B}:runQuery`, {
+    method: 'POST', headers: { Authorization: `Bearer ${auth}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'walls' }], where: fieldEquals('review', { booleanValue: true }) } }),
+  });
+  const rows = await r.json();
+  return r.status === 200 && !rows.some((row) => row.document?.name?.endsWith(`/${path}`)) ? 200 : 500;
+};
 const cases = [
   ['new wall accepts valid challenge and resubmission links together', () => req('PATCH', 'walls/linked-challenge', {
     email: str('b@x.com'), review: { booleanValue: false }, challengeId: str('2026-11-02'), resubmitOf: str('wall_old.png'),
@@ -1293,6 +1324,35 @@ const cases = [
     [`${role} cannot delete ${path}`, () => req('DELETE', path, null, auth), 403],
   ])),
   ['alice can delete a smart folder', () => req('DELETE', 'folders/smart1', null, ALICE), 200],
+  // Scheduled release on walls. Times are relative to now; the server checks them again.
+  ['owner creates pending wall with releaseAt +20m', () => req('PATCH', 'walls/rel-create-ok', { email: str('b@x.com'), review: { booleanValue: false }, releaseAt: at(20 * MIN) }, Bu), 200],
+  ['owner creates wall with releaseAt +5m', () => req('PATCH', 'walls/rel-create-soon', { email: str('b@x.com'), review: { booleanValue: false }, releaseAt: at(5 * MIN) }, Bu), 403],
+  ['owner creates wall with releaseAt +31d', () => req('PATCH', 'walls/rel-create-late', { email: str('b@x.com'), review: { booleanValue: false }, releaseAt: at(31 * DAY) }, Bu), 403],
+  ['owner creates wall with a string releaseAt', () => req('PATCH', 'walls/rel-create-str', { email: str('b@x.com'), review: { booleanValue: false }, releaseAt: str('2026-12-01') }, Bu), 403],
+  ['owner creates wall with publishedAt', () => req('PATCH', 'walls/rel-create-published', { email: str('b@x.com'), review: { booleanValue: false }, publishedAt: at(0) }, Bu), 403],
+  ['owner creates wall with releaseApprovedAt', () => req('PATCH', 'walls/rel-create-approved', { email: str('b@x.com'), review: { booleanValue: false }, releaseApprovedAt: at(0) }, Bu), 403],
+  ['owner creates wall with releaseNotice', () => req('PATCH', 'walls/rel-create-notice', { email: str('b@x.com'), review: { booleanValue: false }, releaseNotice: str('sent') }, Bu), 403],
+  ['owner sets publishedAt on own pending wall', () => req('PATCH', 'walls/rel-pending', { publishedAt: at(0) }, Bu, ['publishedAt']), 403],
+  ['admin sets publishedAt on a pending wall', () => req('PATCH', 'walls/rel-pending', { publishedAt: at(0) }, ADM, ['publishedAt']), 403],
+  ['admin sets releaseNotice on a pending wall', () => req('PATCH', 'walls/rel-pending', { releaseNotice: str('sent') }, ADM, ['releaseNotice']), 403],
+  ['owner sets releaseAt +2h on own pending wall', () => req('PATCH', 'walls/rel-owner-set', { releaseAt: at(2 * HOUR) }, Bu, ['releaseAt']), 200],
+  ['owner removes releaseAt from own pending wall', () => req('PATCH', 'walls/rel-owner-clear', {}, Bu, ['releaseAt']), 200],
+  ['owner moves releaseAt on scheduled wall', () => req('PATCH', 'walls/rel-sched', { releaseAt: at(3 * HOUR) }, Bu, ['releaseAt']), 200],
+  ['owner edits title on scheduled wall', () => req('PATCH', 'walls/rel-sched', { title: str('Scheduled edit') }, Bu, ['title']), 403],
+  ['owner removes releaseAt from scheduled wall', () => req('PATCH', 'walls/rel-sched', {}, Bu, ['releaseAt']), 403],
+  ['owner edits title on a wall held after release', () => req('PATCH', 'walls/rel-held', { title: str('Held edit') }, Bu, ['title']), 200],
+  ['owner removes releaseAt from a wall held after release', () => req('PATCH', 'walls/rel-held', {}, Bu, ['releaseAt']), 200],
+  ['admin cannot clear releaseAt before approving', () => req('PATCH', 'walls/rel-hold', {}, ADM, ['releaseAt']), 403],
+  ['admin cannot move releaseAt to the past', () => req('PATCH', 'walls/rel-hold', { releaseAt: at(-HOUR) }, ADM, ['releaseAt']), 403],
+  ['admin cannot clear releaseAt while approving', () => req('PATCH', 'walls/rel-hold', { review: { booleanValue: true } }, ADM, ['review', 'releaseAt']), 403],
+  ['admin approves wall with releaseAt +2h', () => req('PATCH', 'walls/rel-hold', { review: { booleanValue: true } }, ADM, ['review']), 403],
+  ['admin stamps releaseApprovedAt and leaves review false', () => serverStamp(ADM, 'walls/rel-stamp', 'releaseApprovedAt'), 200],
+  ['admin approves wall whose releaseAt passed an hour ago', () => req('PATCH', 'walls/rel-past', { review: { booleanValue: true } }, ADM, ['review']), 200],
+  ['admin approves wall with no releaseAt', () => req('PATCH', 'walls/rel-none', { review: { booleanValue: true } }, ADM, ['review']), 200],
+  ['stranger cannot get scheduled wall', () => req('GET', 'walls/rel-sched', null, C), 403],
+  ['stranger reviewed-wall list omits scheduled wall', () => listHidesWall(C, 'walls/rel-sched'), 200],
+  ['owner gets scheduled wall', () => req('GET', 'walls/rel-sched', null, Bu), 200],
+  ['admin gets scheduled wall', () => req('GET', 'walls/rel-sched', null, ADM), 200],
 ];
 await seed();
 let bad = 0;

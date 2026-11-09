@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:Prism/core/firestore/converters/firestore_json_converters.dart';
 import 'package:collection/collection.dart';
 
 String newWallMetadataOperationId() {
@@ -36,30 +37,49 @@ class WallTextMetadata {
 }
 
 class PendingWallMetadata {
-  const PendingWallMetadata({required this.text, this.category = 'General'});
+  const PendingWallMetadata({required this.text, this.category = 'General', this.releaseAt});
 
   final WallTextMetadata text;
   final String category;
 
+  /// UTC. Null means the wall goes live when it is approved.
+  final DateTime? releaseAt;
+
   factory PendingWallMetadata.fromMap(Map<String, dynamic> data) => PendingWallMetadata(
     text: WallTextMetadata.fromMap(data),
     category: data['category'] is String ? data['category'] as String : 'General',
+    releaseAt: data['releaseAt'] is String
+        ? null
+        : const FirestoreDateTimeConverter().fromJson(data['releaseAt'])?.toUtc(),
   );
 
-  Map<String, dynamic> toMap() => <String, dynamic>{...text.toMap(), 'category': category};
+  Map<String, dynamic> toMap() => <String, dynamic>{
+    ...text.toMap(),
+    'category': category,
+    if (releaseAt != null) 'releaseAt': releaseAt,
+  };
+
+  PendingWallMetadata copyWith({WallTextMetadata? text, String? category, DateTime? Function()? releaseAt}) =>
+      PendingWallMetadata(
+        text: text ?? this.text,
+        category: category ?? this.category,
+        releaseAt: releaseAt == null ? this.releaseAt : releaseAt(),
+      );
 
   List<String> changedFields(PendingWallMetadata other, {required bool approved}) => <String>[
     if (text.title != other.text.title) 'title',
     if (text.description != other.text.description) 'desc',
     if (!const ListEquality<String>().equals(text.tags, other.text.tags)) 'tags',
     if (!approved && category != other.category) 'category',
+    if (!approved && releaseAt != other.releaseAt) 'releaseAt',
   ];
 
   @override
-  bool operator ==(Object other) => other is PendingWallMetadata && text == other.text && category == other.category;
+  bool operator ==(Object other) =>
+      other is PendingWallMetadata && text == other.text && category == other.category && releaseAt == other.releaseAt;
 
   @override
-  int get hashCode => Object.hash(text, category);
+  int get hashCode => Object.hash(text, category, releaseAt);
 }
 
 class WallMetadataSnapshot {
@@ -68,16 +88,22 @@ class WallMetadataSnapshot {
     required this.approved,
     this.revision = '',
     this.expectedPendingFields = const <String, dynamic>{},
+    this.scheduled = false,
   });
 
   final PendingWallMetadata metadata;
   final bool approved;
+
+  /// Approved for a later release: only the release time can change.
+  final bool scheduled;
   final String revision;
   final Map<String, dynamic> expectedPendingFields;
 
   static Map<String, dynamic> pendingFields(Map<String, dynamic> data) => <String, dynamic>{
     for (final String key in const ['title', 'desc', 'tags', 'category'])
       if (data.containsKey(key)) key: data[key] is List ? List<Object?>.of(data[key] as List) : data[key],
+    if (PendingWallMetadata.fromMap(data).releaseAt case final DateTime releaseAt)
+      'releaseAt': releaseAt.millisecondsSinceEpoch,
   };
 }
 

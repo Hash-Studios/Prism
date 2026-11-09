@@ -1599,6 +1599,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get actionRetry => 'Intentar de nuevo';
 
   @override
+  String adminReleaseApproved(String when) {
+    return 'Aprobado. Se publica $when';
+  }
+
+  @override
+  String adminReleaseRequested(String when) {
+    return 'Fecha pedida por el creador: $when';
+  }
+
+  @override
   String get adminAllCaughtUp => 'Estás al día';
 
   @override
@@ -7506,6 +7516,25 @@ class AppLocalizationsEs extends AppLocalizations {
       'Tu fondo de pantalla se aprobó y ya está disponible para todos.';
 
   @override
+  String get notifPushWallsReleasedArtistTitle => 'Tu fondo de pantalla ya está publicado';
+
+  @override
+  String get notifPushWallsReleasedArtistTitleMany => 'Tus fondos de pantalla ya están publicados';
+
+  @override
+  String notifPushWallsReleasedArtistBody(String wallTitle) {
+    return '«$wallTitle» ya es público en Prism.';
+  }
+
+  @override
+  String get notifPushWallsReleasedArtistBodyUntitled => 'Tu fondo de pantalla ya es público en Prism.';
+
+  @override
+  String notifPushWallsReleasedArtistBodyMany(int count) {
+    return '$count fondos de pantalla ya son públicos en Prism.';
+  }
+
+  @override
   String get notifPushWallApprovedArtistTitle => '¡Tu fondo de pantalla ya está publicado! 🎉';
 
   @override
@@ -12061,6 +12090,48 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get wallReleaseTitle => 'Publicación';
+
+  @override
+  String get wallReleaseWhenApproved => 'Al aprobarse';
+
+  @override
+  String get wallReleaseAtTime => 'A una hora programada';
+
+  @override
+  String get wallReleaseWhenApprovedHelp => 'Se publica en cuanto un moderador lo aprueba.';
+
+  @override
+  String get wallReleaseAtTimeHelp =>
+      'Permanece oculto después de aprobarse hasta esta hora. Los fondos que se publican a la vez envían a tus seguidores una sola notificación.';
+
+  @override
+  String wallReleaseDateLabel(String date) {
+    return 'Fecha de publicación: $date';
+  }
+
+  @override
+  String wallReleaseTimeLabel(String time) {
+    return 'Hora de publicación: $time';
+  }
+
+  @override
+  String wallReleaseTimeZone(String zone) {
+    return 'Las horas usan tu zona horaria ($zone).';
+  }
+
+  @override
+  String get wallReleaseTooSoon => 'Elige una hora de al menos 15 minutos a partir de ahora.';
+
+  @override
+  String get wallReleaseTooLate => 'Elige una hora dentro de los próximos 30 días.';
+
+  @override
+  String wallReleaseLabel(String when) {
+    return 'Se publica $when';
+  }
+
+  @override
   String get wallMetadataDescription => 'Descripción';
 
   @override
@@ -12185,6 +12256,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get wallVariantDroppedAspect => 'Tiene una forma distinta a la del original.';
+
+  @override
+  String get wallMetadataScheduledHelp =>
+      'Aprobado y programado. Puedes cambiar la hora de publicación. El resto de los detalles se desbloquea cuando el fondo se publique.';
 
   @override
   String get wallMetadataApprovedHelp =>

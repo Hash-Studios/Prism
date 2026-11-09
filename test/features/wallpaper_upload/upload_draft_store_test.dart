@@ -286,4 +286,43 @@ void main() {
     );
     expect(await filesDirectory.list(recursive: true).any((entity) => entity is File), isFalse);
   });
+
+  test('a draft keeps its scheduled release instant as the same UTC time after restart', () async {
+    final File original = File('${root.path}/scheduled.png')..writeAsBytesSync(<int>[1, 2, 3, 4]);
+    final DurableJsonStore records = DurableJsonStore('upload_test_release', directory: recordsDirectory);
+    final UploadDraftStore drafts = UploadDraftStore(store: records, directory: filesDirectory);
+    await drafts.save(
+      owner: 'account',
+      draftId: 'scheduled',
+      selectedFile: original,
+      metadata: SubmissionMetadata(title: 'Later', releaseAt: DateTime.utc(2026, 11, 20, 12, 30)),
+    );
+
+    final UploadDraftStore restarted = UploadDraftStore(
+      store: DurableJsonStore('upload_test_release', directory: recordsDirectory),
+      directory: filesDirectory,
+    );
+    final UploadDraft restored = (await restarted.read(owner: 'account', draftId: 'scheduled'))!;
+
+    expect(restored.metadata.releaseAt, DateTime.utc(2026, 11, 20, 12, 30));
+    expect(restored.metadata.releaseAt!.isUtc, isTrue);
+  });
+
+  test('a draft without a release time restores a null releaseAt', () async {
+    final File original = File('${root.path}/immediate.png')..writeAsBytesSync(<int>[1, 2, 3, 4]);
+    final UploadDraftStore drafts = UploadDraftStore(
+      store: DurableJsonStore('upload_test_no_release', directory: recordsDirectory),
+      directory: filesDirectory,
+    );
+    await drafts.save(
+      owner: 'account',
+      draftId: 'immediate',
+      selectedFile: original,
+      metadata: const SubmissionMetadata(title: 'Now'),
+    );
+
+    final UploadDraft restored = (await drafts.read(owner: 'account', draftId: 'immediate'))!;
+
+    expect(restored.metadata.releaseAt, isNull);
+  });
 }

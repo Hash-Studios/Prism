@@ -23,6 +23,9 @@ class UploadBatch {
   ChallengeSeed? challengeSeed;
   final List<UploadItemOutcome> outcomes;
   ({int coins, String ownerId})? confirmedUploadAward;
+
+  /// The release time of the last submitted wall, so a set picked together can go live together.
+  DateTime? releaseAt;
   int index = 0;
 
   int get total => files.length;

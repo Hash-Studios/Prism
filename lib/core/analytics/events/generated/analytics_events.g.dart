@@ -3021,6 +3021,51 @@ class WallPendingEditedEvent extends AnalyticsEvent {
   }
 }
 
+class WallReleaseScheduledEvent extends AnalyticsEvent {
+  const WallReleaseScheduledEvent({required this.hoursAhead, required this.resubmission});
+
+  final int hoursAhead;
+  final bool resubmission;
+
+  @override
+  String get eventName => 'wall_release_scheduled';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'hours_ahead': hoursAhead, 'resubmission': resubmission ? 1 : 0};
+  }
+}
+
+class WallReleaseChangedEvent extends AnalyticsEvent {
+  const WallReleaseChangedEvent({required this.assetId, required this.cleared, required this.hoursAhead});
+
+  final String assetId;
+  final bool cleared;
+  final int hoursAhead;
+
+  @override
+  String get eventName => 'wall_release_changed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'asset_id': assetId, 'cleared': cleared ? 1 : 0, 'hours_ahead': hoursAhead};
+  }
+}
+
+class WallsReleasedEvent extends AnalyticsEvent {
+  const WallsReleasedEvent({required this.wallCount});
+
+  final int wallCount;
+
+  @override
+  String get eventName => 'walls_released';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'wall_count': wallCount};
+  }
+}
+
 class WallApprovedMetadataEditedEvent extends AnalyticsEvent {
   const WallApprovedMetadataEditedEvent({required this.assetId, required this.fields});
 

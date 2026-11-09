@@ -115,6 +115,7 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
     },
     builder: (context, state) {
       final PendingWallMetadata? draft = state.draft;
+      final bool scheduled = state.snapshot?.scheduled ?? false;
       if (state.formVersion != _formVersion) {
         _formVersion = state.formVersion;
         _formKey = GlobalKey<SubmissionMetadataFormState>();
@@ -141,7 +142,11 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
                   padding: const EdgeInsets.all(PrismSpace.page),
                   children: <Widget>[
                     Text(
-                      widget.approved ? context.l10n.wallMetadataApprovedHelp : context.l10n.wallMetadataPendingHelp,
+                      widget.approved
+                          ? context.l10n.wallMetadataApprovedHelp
+                          : scheduled
+                          ? context.l10n.wallMetadataScheduledHelp
+                          : context.l10n.wallMetadataPendingHelp,
                       style: PrismTextStyles.body(context),
                     ),
                     const SizedBox(height: PrismSpace.xl),
@@ -152,13 +157,18 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
                         description: draft.text.description,
                         tags: draft.text.tags,
                         category: draft.category,
+                        releaseAt: draft.releaseAt,
                       ),
                       showCategory: !widget.approved,
+                      showRelease: !widget.approved,
+                      textEnabled: !scheduled,
+                      releaseScheduled: scheduled,
                       enabled: !state.busy,
                       onChanged: (value) => _cubit.change(
                         PendingWallMetadata(
                           text: WallTextMetadata(title: value.title, description: value.description, tags: value.tags),
                           category: value.category,
+                          releaseAt: value.releaseAt,
                         ),
                       ),
                     ),

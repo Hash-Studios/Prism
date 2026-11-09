@@ -96,6 +96,7 @@ class SubmissionMetadata {
     this.variantThumb = '',
     this.variantTitle = '',
     this.variantRemoved = false,
+    this.releaseAt,
   });
 
   final String title;
@@ -117,6 +118,9 @@ class SubmissionMetadata {
   final String variantThumb;
   final String variantTitle;
   final bool variantRemoved;
+
+  /// UTC. Null means the wall goes live when it is approved.
+  final DateTime? releaseAt;
   ChallengeSeed? get challengeSeed =>
       challengeId.isEmpty ? null : ChallengeSeed(id: challengeId, theme: challengeTheme);
   VariantSeed? get variantSeed => variantOf.isEmpty
@@ -143,6 +147,7 @@ class SubmissionMetadata {
     String? variantThumb,
     String? variantTitle,
     bool? variantRemoved,
+    DateTime? Function()? releaseAt,
   }) => SubmissionMetadata(
     title: title ?? this.title,
     description: description ?? this.description,
@@ -157,5 +162,6 @@ class SubmissionMetadata {
     variantThumb: variantThumb ?? this.variantThumb,
     variantTitle: variantTitle ?? this.variantTitle,
     variantRemoved: variantRemoved ?? this.variantRemoved,
+    releaseAt: releaseAt == null ? this.releaseAt : releaseAt(),
   );
 }

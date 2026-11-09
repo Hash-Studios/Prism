@@ -8,6 +8,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/upload/wallpaper/wall_files.dart';
+import 'package:Prism/features/wallpaper_upload/biz/wall_release.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/resubmit_wall_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/wall_metadata_editor.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/rejection_feedback.dart';
@@ -103,6 +104,15 @@ class _WallTileState extends State<WallTile> {
     final DateTime? createdAt = wallpaper.createdAt;
     final String facts = _formatFacts(wallpaper.resolution, wallpaper.size);
     final Widget? variantStatus = _variantStatus(context);
+    final WallRelease release = WallRelease.of(wallpaper);
+    final String? releaseWhen = release.releaseAt == null
+        ? null
+        : releaseWhenText(
+            release.releaseAt!,
+            now: DateTime.now(),
+            locale: context.l10n.localeName,
+            use24h: MediaQuery.alwaysUse24HourFormatOf(context),
+          );
     return PrismCard(
       padding: const EdgeInsets.all(PrismSpace.sm),
       child: Column(
@@ -117,11 +127,26 @@ class _WallTileState extends State<WallTile> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    PrismTag(
-                      label: rejected ? context.l10n.wallpaperUploadRejected : context.l10n.wallpaperUploadInReview,
-                      tone: rejected ? PrismTone.danger : PrismTone.warning,
-                      icon: rejected ? Icons.close_rounded : Icons.schedule_rounded,
-                    ),
+                    if (!rejected && release.state == WallReleaseState.scheduled && releaseWhen != null)
+                      PrismTag(
+                        label: context.l10n.wallReleaseLabel(releaseWhen),
+                        tone: PrismTone.accent,
+                        icon: Icons.event_available_rounded,
+                      )
+                    else ...<Widget>[
+                      PrismTag(
+                        label: rejected ? context.l10n.wallpaperUploadRejected : context.l10n.wallpaperUploadInReview,
+                        tone: rejected ? PrismTone.danger : PrismTone.warning,
+                        icon: rejected ? Icons.close_rounded : Icons.schedule_rounded,
+                      ),
+                      if (!rejected && releaseWhen != null) ...<Widget>[
+                        const SizedBox(height: PrismSpace.xxs),
+                        Text(
+                          context.l10n.wallReleaseLabel(releaseWhen),
+                          style: PrismTextStyles.caption(context).copyWith(color: cs.onSurface),
+                        ),
+                      ],
+                    ],
                     if (createdAt != null) ...<Widget>[
                       const SizedBox(height: PrismSpace.xs),
                       Text(

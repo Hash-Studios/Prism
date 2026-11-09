@@ -30,6 +30,12 @@ test("isPendingWall counts only unapproved walls outside drops", () => {
   assert.equal(isPendingWall(undefined), false);
 });
 
+test("isPendingWall skips a scheduled wall but counts a wall held after release", () => {
+  const at = (ms: number) => admin.firestore.Timestamp.fromMillis(ms);
+  assert.equal(isPendingWall({review: false, releaseApprovedAt: at(1000), releaseAt: at(5000)}), false);
+  assert.equal(isPendingWall({review: false, releaseApprovedAt: at(1000), publishedAt: at(2000), releaseAt: at(1500)}), true);
+});
+
 test("summarizeQueue keeps pending walls and reads the newest and oldest", () => {
   const docs = [
     {review: false, by: "  Ana ", createdAt: new Date("2026-10-21T10:00:00Z")},
@@ -738,4 +744,21 @@ test("a perpetually renewed lease fails for retry instead of acknowledging unsyn
 
   assert.equal(store.get("adminLiveActivities/admin")?.syncLeaseOwner, "renewing-owner");
   assert.equal(store.get("adminLiveActivities/admin")?.syncRequested, true);
+});
+
+test("live activity excludes scheduled walls after projecting queue fields", async (t) => {
+  const store = installFakeDb(t, {
+    "adminLiveActivities/admin": {activityToken: TOKEN, lastStateKey: "old"},
+    "usersv2/admin": {loggedIn: true},
+    "walls/pending": {review: false, by: "Ana", createdAt: new Date("2026-10-20T10:00:00Z")},
+    "walls/scheduled": {review: false, by: "Scheduled", createdAt: new Date("2026-10-21T10:00:00Z"),
+      releaseApprovedAt: admin.firestore.Timestamp.now(), releaseAt: admin.firestore.Timestamp.fromMillis(Date.now() + 3600000)},
+  });
+  t.mock.method(admin.auth(), "getUser", async () => ({customClaims: {admin: true}}) as never);
+  t.mock.method(adminConfig, "isAdminCaller", async () => true);
+  t.mock.method(notificationHelper, "userPushTokens", async () => [{token: FCM, nativeLocalization: false}]);
+  const send = t.mock.method(admin.messaging(), "send", async () => "message-id");
+  await syncReviewLiveActivities();
+  assert.equal(send.mock.callCount(), 1);
+  assert.equal(store.get("adminLiveActivities/admin")?.lastStateKey, "1|Ana|1792490400");
 });

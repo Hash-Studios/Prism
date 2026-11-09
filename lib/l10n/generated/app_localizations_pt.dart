@@ -1601,6 +1601,16 @@ class AppLocalizationsPt extends AppLocalizations {
   String get actionRetry => 'Tentar novamente';
 
   @override
+  String adminReleaseApproved(String when) {
+    return 'Aprovado. Publica $when';
+  }
+
+  @override
+  String adminReleaseRequested(String when) {
+    return 'Publicação pedida pelo criador: $when';
+  }
+
+  @override
   String get adminAllCaughtUp => 'Tudo em dia';
 
   @override
@@ -7681,6 +7691,25 @@ class AppLocalizationsPt extends AppLocalizations {
       'Seu papel de parede foi aprovado e agora está visível para todos.';
 
   @override
+  String get notifPushWallsReleasedArtistTitle => 'Seu papel de parede está ativo';
+
+  @override
+  String get notifPushWallsReleasedArtistTitleMany => 'Seus papéis de parede estão ativos';
+
+  @override
+  String notifPushWallsReleasedArtistBody(String wallTitle) {
+    return '\"$wallTitle\" agora está público no Prism.';
+  }
+
+  @override
+  String get notifPushWallsReleasedArtistBodyUntitled => 'Seu papel de parede agora está público no Prism.';
+
+  @override
+  String notifPushWallsReleasedArtistBodyMany(int count) {
+    return '$count papéis de parede agora estão públicos no Prism.';
+  }
+
+  @override
   String get notifPushWallApprovedArtistTitle => 'Seu papel de parede está ativo! 🎉';
 
   @override
@@ -12245,6 +12274,48 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get wallReleaseTitle => 'Publicação';
+
+  @override
+  String get wallReleaseWhenApproved => 'Após a aprovação';
+
+  @override
+  String get wallReleaseAtTime => 'Em um horário definido';
+
+  @override
+  String get wallReleaseWhenApprovedHelp => 'Fica no ar assim que um moderador aprovar.';
+
+  @override
+  String get wallReleaseAtTimeHelp =>
+      'Fica oculto após a aprovação até este horário. Papéis de parede publicados juntos enviam aos seus seguidores uma única notificação.';
+
+  @override
+  String wallReleaseDateLabel(String date) {
+    return 'Data de publicação: $date';
+  }
+
+  @override
+  String wallReleaseTimeLabel(String time) {
+    return 'Horário de publicação: $time';
+  }
+
+  @override
+  String wallReleaseTimeZone(String zone) {
+    return 'Os horários usam seu fuso horário ($zone).';
+  }
+
+  @override
+  String get wallReleaseTooSoon => 'Escolha um horário com pelo menos 15 minutos a partir de agora.';
+
+  @override
+  String get wallReleaseTooLate => 'Escolha um horário nos próximos 30 dias.';
+
+  @override
+  String wallReleaseLabel(String when) {
+    return 'Publica $when';
+  }
+
+  @override
   String get wallMetadataDescription => 'Descrição';
 
   @override
@@ -12369,6 +12440,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallVariantDroppedAspect => 'Ele tem um formato diferente do original.';
+
+  @override
+  String get wallMetadataScheduledHelp =>
+      'Aprovado e agendado. Você pode mudar o horário de publicação. Os outros detalhes são desbloqueados quando o papel de parede for publicado.';
 
   @override
   String get wallMetadataApprovedHelp =>
@@ -17377,6 +17452,16 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get actionRetry => 'Tentar novamente';
 
   @override
+  String adminReleaseApproved(String when) {
+    return 'Aprovado. Publica $when';
+  }
+
+  @override
+  String adminReleaseRequested(String when) {
+    return 'Publicação pedida pelo criador: $when';
+  }
+
+  @override
   String get adminAllCaughtUp => 'Tudo em dia';
 
   @override
@@ -23457,6 +23542,25 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
       'Seu papel de parede foi aprovado e agora está visível para todos.';
 
   @override
+  String get notifPushWallsReleasedArtistTitle => 'Seu papel de parede está ativo';
+
+  @override
+  String get notifPushWallsReleasedArtistTitleMany => 'Seus papéis de parede estão ativos';
+
+  @override
+  String notifPushWallsReleasedArtistBody(String wallTitle) {
+    return '\"$wallTitle\" agora está público no Prism.';
+  }
+
+  @override
+  String get notifPushWallsReleasedArtistBodyUntitled => 'Seu papel de parede agora está público no Prism.';
+
+  @override
+  String notifPushWallsReleasedArtistBodyMany(int count) {
+    return '$count papéis de parede agora estão públicos no Prism.';
+  }
+
+  @override
   String get notifPushWallApprovedArtistTitle => 'Seu papel de parede está ativo! 🎉';
 
   @override
@@ -28021,6 +28125,48 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
+  String get wallReleaseTitle => 'Publicação';
+
+  @override
+  String get wallReleaseWhenApproved => 'Após a aprovação';
+
+  @override
+  String get wallReleaseAtTime => 'Em um horário definido';
+
+  @override
+  String get wallReleaseWhenApprovedHelp => 'Fica no ar assim que um moderador aprovar.';
+
+  @override
+  String get wallReleaseAtTimeHelp =>
+      'Fica oculto após a aprovação até este horário. Papéis de parede publicados juntos enviam aos seus seguidores uma única notificação.';
+
+  @override
+  String wallReleaseDateLabel(String date) {
+    return 'Data de publicação: $date';
+  }
+
+  @override
+  String wallReleaseTimeLabel(String time) {
+    return 'Horário de publicação: $time';
+  }
+
+  @override
+  String wallReleaseTimeZone(String zone) {
+    return 'Os horários usam seu fuso horário ($zone).';
+  }
+
+  @override
+  String get wallReleaseTooSoon => 'Escolha um horário com pelo menos 15 minutos a partir de agora.';
+
+  @override
+  String get wallReleaseTooLate => 'Escolha um horário nos próximos 30 dias.';
+
+  @override
+  String wallReleaseLabel(String when) {
+    return 'Publica $when';
+  }
+
+  @override
   String get wallMetadataDescription => 'Descrição';
 
   @override
@@ -28145,6 +28291,10 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get wallVariantDroppedAspect => 'Ele tem um formato diferente do original.';
+
+  @override
+  String get wallMetadataScheduledHelp =>
+      'Aprovado e agendado. Você pode mudar o horário de publicação. Os outros detalhes são desbloqueados quando o papel de parede for publicado.';
 
   @override
   String get wallMetadataApprovedHelp =>

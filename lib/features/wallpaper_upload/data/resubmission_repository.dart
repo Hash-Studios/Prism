@@ -137,6 +137,7 @@ class ResubmissionRepository {
           'category': metadata.category,
         },
         'presentation': <String, Object?>{'resolution': resolution, 'size': size},
+        if (metadata.releaseAt case final DateTime releaseAt) 'releaseAt': releaseAt.millisecondsSinceEpoch,
       });
     } on FirebaseFunctionsException catch (error) {
       if (error.code == 'resource-exhausted' && error.message == 'resubmission-limit') {

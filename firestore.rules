@@ -159,11 +159,42 @@ service cloud.firestore {
     }
 
     function wallServerKeysAbsent() {
-      return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantGroupId', 'variantIndex', 'variantLink']);
+      return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantGroupId', 'variantIndex', 'variantLink', 'releaseApprovedAt']);
     }
 
     function wallServerKeysUntouched() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantOf', 'variantGroupId', 'variantIndex', 'variantLink']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantOf', 'variantGroupId', 'variantIndex', 'variantLink', 'releaseApprovedAt']);
+    }
+
+    // Optional creator release time: 15 minutes to 30 days after the write. The server checks it again.
+    function validReleaseAt() {
+      return !('releaseAt' in request.resource.data)
+          || (request.resource.data.releaseAt is timestamp
+              && request.resource.data.releaseAt >= request.time + duration.value(15, 'm')
+              && request.resource.data.releaseAt <= request.time + duration.value(30, 'd'));
+    }
+
+    // Nobody makes a wall public before its release time. Old clients list review == true, so review is the gate.
+    function notReleasedEarly() {
+      return request.resource.data.review != true
+          || !('releaseAt' in request.resource.data)
+          || request.resource.data.releaseAt <= request.time;
+    }
+
+    // A wall held after release keeps an approval older than publishedAt. Only a newer approval schedules it.
+    function awaitsRelease() {
+      return 'releaseApprovedAt' in resource.data
+          && (!('publishedAt' in resource.data)
+              || !(resource.data.publishedAt is timestamp && resource.data.releaseApprovedAt is timestamp
+                  && resource.data.releaseApprovedAt <= resource.data.publishedAt));
+    }
+
+    // After a scheduled approval the owner may only move the release time.
+    function ownerReleaseEditOk() {
+      return (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['releaseAt']) || validReleaseAt())
+          && (!awaitsRelease()
+              || ('releaseAt' in request.resource.data
+                  && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['releaseAt'])));
     }
 
     // Optional link to the wall this one remixes. The server removes a link it cannot verify.
@@ -249,26 +280,31 @@ service cloud.firestore {
       allow get: if resource == null || wallReadable();
       allow list: if resource == null || wallReadable();
       // Admins re-create a rejected wall when they undo the rejection.
-      allow create: if !request.resource.data.keys().hasAny(['editorsChoiceAt', 'editorsChoiceBy', 'byStudio'])
-          && validChallengeId() && (isConfiguredAdmin()
+      allow create: if !request.resource.data.keys().hasAny(['editorsChoiceAt', 'editorsChoiceBy', 'byStudio',
+            'publishedAt', 'releaseNotice'])
+          && validChallengeId() && notReleasedEarly() && (isConfiguredAdmin()
           || (isSignedIn()
               && isEmailOwner(request.resource.data.email)
               && request.resource.data.review != true
               && wallServerKeysAbsent()
               && validRemixOf()
               && validVariantOf()
-              && validResubmitOf()));
+              && validResubmitOf()
+              && validReleaseAt()));
       // delete: request.resource is null — do not use request.resource.data here.
       allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny([
             'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantOf', 'variantGroupId', 'variantIndex',
-            'variantLink'
+            'variantLink', 'publishedAt', 'releaseNotice'
           ])
-          && (isConfiguredAdmin()
+          && notReleasedEarly()
+          && ((isConfiguredAdmin()
+                && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['releaseAt']))
           || (isEmailOwner(resource.data.email)
               && wallServerKeysUntouched()
               && request.resource.data.email == resource.data.email
               && resource.data.review != true
-              && request.resource.data.review != true));
+              && request.resource.data.review != true
+              && ownerReleaseEditOk()));
       allow delete: if isConfiguredAdmin()
           || (isEmailOwner(resource.data.email) && resource.data.review != true);
 
