@@ -24276,6 +24276,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Shared image'**
   String get shareInPreviewSemantics;
+
+  /// Button that closes a feature hint callout.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get hintGotIt;
+
+  /// One-line feature hint, shown once next to the control it names.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold the heart to save this wallpaper to a folder.'**
+  String get hintFolderHold;
+
+  /// One-line feature hint, shown once next to the control it names.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a dot to see this wallpaper in another colour.'**
+  String get hintVariantDots;
+
+  /// One-line feature hint, shown once next to the control it names.
+  ///
+  /// In en, this message translates to:
+  /// **'Find wallpapers that match a photo from your gallery.'**
+  String get hintPhotoSearch;
+
+  /// One-line feature hint, shown once next to the control it names.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow this category to see when it gets new wallpapers.'**
+  String get hintFollowCategory;
+
+  /// One-line feature hint, shown once next to the control it names.
+  ///
+  /// In en, this message translates to:
+  /// **'A smart folder fills itself with wallpapers that match your rules.'**
+  String get hintSmartFolders;
+
+  /// One-line feature hint, shown once next to the control it names.
+  ///
+  /// In en, this message translates to:
+  /// **'Open More options, then Suggest sections, to sort this folder.'**
+  String get hintFolderSections;
+
+  /// One-line feature hint, shown once next to the control it names.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn your own photo into a wallpaper that fits your screen.'**
+  String get hintPhotoFit;
+
+  /// One-line feature hint, shown once next to the control it names.
+  ///
+  /// In en, this message translates to:
+  /// **'Save this wallpaper as a Live Photo for a moving Lock Screen.'**
+  String get hintLivePhoto;
+
+  /// Settings switch that turns feature hints on or off.
+  ///
+  /// In en, this message translates to:
+  /// **'Show tips'**
+  String get settingsShowTipsTitle;
+
+  /// Subtitle of the Show tips switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Short hints about features you have not used yet.'**
+  String get settingsShowTipsBody;
+
+  /// Settings row that lets every feature hint show again.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset tips'**
+  String get settingsResetTipsTitle;
+
+  /// Subtitle of the Reset tips row.
+  ///
+  /// In en, this message translates to:
+  /// **'Show every tip again.'**
+  String get settingsResetTipsBody;
+
+  /// Toast after the user resets feature hints.
+  ///
+  /// In en, this message translates to:
+  /// **'Tips will show again.'**
+  String get settingsResetTipsDone;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -15283,4 +15283,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shareInPreviewSemantics => 'Shared image';
+
+  @override
+  String get hintGotIt => 'Got it';
+
+  @override
+  String get hintFolderHold => 'Hold the heart to save this wallpaper to a folder.';
+
+  @override
+  String get hintVariantDots => 'Tap a dot to see this wallpaper in another colour.';
+
+  @override
+  String get hintPhotoSearch => 'Find wallpapers that match a photo from your gallery.';
+
+  @override
+  String get hintFollowCategory => 'Follow this category to see when it gets new wallpapers.';
+
+  @override
+  String get hintSmartFolders => 'A smart folder fills itself with wallpapers that match your rules.';
+
+  @override
+  String get hintFolderSections => 'Open More options, then Suggest sections, to sort this folder.';
+
+  @override
+  String get hintPhotoFit => 'Turn your own photo into a wallpaper that fits your screen.';
+
+  @override
+  String get hintLivePhoto => 'Save this wallpaper as a Live Photo for a moving Lock Screen.';
+
+  @override
+  String get settingsShowTipsTitle => 'Show tips';
+
+  @override
+  String get settingsShowTipsBody => 'Short hints about features you have not used yet.';
+
+  @override
+  String get settingsResetTipsTitle => 'Reset tips';
+
+  @override
+  String get settingsResetTipsBody => 'Show every tip again.';
+
+  @override
+  String get settingsResetTipsDone => 'Tips will show again.';
 }

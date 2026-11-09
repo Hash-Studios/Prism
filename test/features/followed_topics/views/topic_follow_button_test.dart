@@ -18,6 +18,9 @@ import 'package:Prism/features/category_feed/views/pages/collection_view_screen.
 import 'package:Prism/features/followed_topics/data/followed_topics_store.dart';
 import 'package:Prism/features/followed_topics/domain/entities/followed_topic.dart';
 import 'package:Prism/features/followed_topics/views/widgets/topic_follow_button.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
+import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -39,6 +42,19 @@ class _MockCategoryFeedBloc extends MockBloc<CategoryFeedEvent, CategoryFeedStat
 
 class _HoldingFollowFirestore extends TransactionFirestoreClient {
   Completer<void>? followGate;
+  Completer<void>? loadGate;
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async {
+    if (sourceTag == 'followed_topics.load') await loadGate?.future;
+    return super.getById(collection, id, map, sourceTag: sourceTag, preferCacheFirst: preferCacheFirst);
+  }
 
   @override
   Future<T> runTransaction<T>(
@@ -114,6 +130,91 @@ void main() {
     AnalyticsRuntime.reset();
     app_state.prismUser = app_constants.createGuestPrismUser();
     await getIt.reset();
+  });
+
+  testWidgets('Follow button carries the followCategory feature hint, on for an unfollowed category only', (
+    tester,
+  ) async {
+    Finder hintOf(Finder control) => find.ancestor(
+      of: control,
+      matching: find.byWidgetPredicate((Widget w) => w is FeatureHint && w.id == HintId.followCategory),
+    );
+
+    await tester.pumpWidget(_app(TopicFollowButton(topic: pastel)));
+    await tester.pumpAndSettle();
+    expect(hintOf(find.text('Follow')), findsOneWidget);
+    expect(tester.widget<FeatureHint>(hintOf(find.text('Follow'))).enabled, isTrue);
+
+    await tester.tap(find.text('Follow'));
+    await tester.pumpAndSettle();
+    expect(hintOf(find.text('Following')), findsOneWidget);
+    expect(tester.widget<FeatureHint>(hintOf(find.text('Following'))).enabled, isFalse);
+    // The success toast leaves a one second timer in fluttertoast. Let it finish.
+    await tester.pump(const Duration(seconds: 1));
+
+    await tester.pumpWidget(_app(TopicFollowButton(topic: FollowedTopic.mood(WallMood.dreamy))));
+    await tester.pumpAndSettle();
+    expect(hintOf(find.text('Follow')), findsOneWidget);
+    expect(tester.widget<FeatureHint>(hintOf(find.text('Follow'))).enabled, isFalse);
+  });
+
+  testWidgets('the follow hint waits for the account follow list', (tester) async {
+    firestore.loadGate = Completer<void>();
+    firestore.docs['usersv2/${app_state.prismUser.id}/private'] = <String, Map<String, dynamic>>{
+      'session': <String, dynamic>{
+        'followedTopics': <String>[pastel.key],
+      },
+    };
+    await tester.pumpWidget(_app(TopicFollowButton(topic: pastel)));
+    await tester.pump(const Duration(milliseconds: 701));
+    final Finder hint = find.byWidgetPredicate((Widget w) => w is FeatureHint && w.id == HintId.followCategory);
+    final bool hintEnabledBeforeLoad = tester.widget<FeatureHint>(hint).enabled;
+    firestore.loadGate!.complete();
+    await tester.pumpAndSettle();
+    expect(hintEnabledBeforeLoad, isFalse);
+    expect(find.text('Following'), findsOneWidget);
+    expect(tester.widget<FeatureHint>(hint).enabled, isFalse);
+  });
+
+  testWidgets('opening a topic still marks it seen when loading finishes after page removal', (tester) async {
+    final String userId = app_state.prismUser.id;
+    final String seenKey = 'followed_topics.seen.$userId.${pastel.key}';
+    final SettingsLocalDataSource settings = getIt<SettingsLocalDataSource>();
+    await settings.set(seenKey, 1);
+    firestore.loadGate = Completer<void>();
+    firestore.docs['usersv2/$userId/private'] = <String, Map<String, dynamic>>{
+      'session': <String, dynamic>{
+        'followedTopics': <String>[pastel.key],
+      },
+    };
+    firestore.docs['topicNews'] = <String, Map<String, dynamic>>{
+      'current': <String, dynamic>{
+        'latest': <String, int>{pastel.key: 2},
+      },
+    };
+    await tester.pumpWidget(_app(TopicFollowButton(topic: pastel)));
+    await tester.pumpWidget(_app(const SizedBox.shrink()));
+    firestore.loadGate!.complete();
+    await tester.pumpAndSettle();
+    expect(settings.get<int>(seenKey), 2);
+    expect(store.hasNew(pastel), isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the follow hint is off while sign-in disables its control', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final Completer<bool> signIn = Completer<bool>();
+    signedInActionSignIn = (_) => signIn.future;
+    await tester.pumpWidget(_app(TopicFollowButton(topic: pastel)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Follow'));
+    await tester.pump();
+    final Finder hint = find.byWidgetPredicate((Widget w) => w is FeatureHint && w.id == HintId.followCategory);
+    final bool hintEnabledWhileBusy = tester.widget<FeatureHint>(hint).enabled;
+    signIn.complete(false);
+    await tester.pumpAndSettle();
+    expect(hintEnabledWhileBusy, isFalse);
+    expect(tester.widget<FeatureHint>(hint).enabled, isTrue);
   });
 
   testWidgets('a signed-in tap follows the topic and the label changes to Following', (tester) async {

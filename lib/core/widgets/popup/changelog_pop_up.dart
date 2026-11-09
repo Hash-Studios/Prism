@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -30,6 +31,7 @@ const String _changelogCacheKey = 'remote_changelog_markdown_cache';
 /// Opens the "What's new" sheet. [func] runs when the sheet closes.
 void showChangelog(BuildContext context, [VoidCallback? func]) {
   final AppLocalizations l10n = context.l10n;
+  StartupModalSlot.markPromptShown();
   showPrismSheet<void>(
     context,
     useRootNavigator: true,

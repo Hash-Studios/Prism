@@ -5,10 +5,10 @@ import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
@@ -19,6 +19,8 @@ import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
@@ -27,6 +29,7 @@ import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_s
 import 'package:Prism/features/wallpaper_detail/domain/entities/variant_group.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/variant_dots.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -235,6 +238,17 @@ void main() {
       tester.getSemantics(find.bySemanticsLabel('Variant 2 of 3, Red')),
       isSemantics(isButton: true, isSelected: false),
     );
+  });
+
+  testWidgets('the variant dots carry the variantDots feature hint', (tester) async {
+    await pumpDetail(tester, _state(entity: _entity(_v0), variants: _group));
+
+    final Finder hint = find.ancestor(
+      of: find.byType(VariantDots),
+      matching: find.byWidgetPredicate((Widget w) => w is FeatureHint && w.id == HintId.variantDots),
+    );
+    expect(hint, findsOneWidget);
+    expect(tester.widget<FeatureHint>(hint).enabled, isTrue);
   });
 
   testWidgets('each dot has a 44 point target', (tester) async {

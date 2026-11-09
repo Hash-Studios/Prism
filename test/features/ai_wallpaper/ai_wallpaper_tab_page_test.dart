@@ -14,6 +14,7 @@ import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
@@ -24,13 +25,15 @@ import 'package:Prism/features/ai_wallpaper/views/pages/ai_wallpaper_tab_page.da
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_history_strip.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_prompt_field.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/photo_wallpaper_widgets.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/features/weekly_challenges/biz/challenge_admission_tracker.dart';
 import 'package:Prism/features/weekly_challenges/biz/confirm_challenge_submission.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
-import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -214,6 +217,35 @@ Future<void> _openRecent(WidgetTester tester) async {
 void main() {
   setUp(AnalyticsRuntime.reset);
   tearDown(AnalyticsRuntime.reset);
+
+  testWidgets('From your photo card carries the photoFit feature hint', (tester) async {
+    tester.view.physicalSize = const Size(1000, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService(online: false));
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(
+          repository: _FakeAiGenerationRepository(_record(), Completer<AiSubmissionMetadata>(), local: [_record()]),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final Finder hint = find.ancestor(
+      of: find.byType(AiFromPhotoCard),
+      matching: find.byWidgetPredicate((Widget w) => w is FeatureHint && w.id == HintId.photoFit),
+    );
+    expect(hint, findsOneWidget);
+    expect(tester.widget<FeatureHint>(hint).enabled, isTrue);
+  });
 
   testWidgets('offline history uses retained records without fetching remote history', (tester) async {
     tester.view.physicalSize = const Size(1000, 2200);

@@ -75,6 +75,7 @@ import 'package:Prism/features/favourite_walls/favourite_walls.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_quick_tile_listener.dart';
 import 'package:Prism/features/folders/folders.dart';
 import 'package:Prism/features/folders/views/widgets/folder_write_failure_listener.dart';
+import 'package:Prism/features/hints/data/feature_hints.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/ios_shortcuts/views/widgets/shortcuts_favourites_listener.dart';
 import 'package:Prism/features/ios_shortcuts/views/widgets/shortcuts_folders_listener.dart';
@@ -522,6 +523,8 @@ Future<void> _configureAnalyticsRuntime({required bool firebaseInitialized}) asy
   }
 
   AnalyticsRuntime.instance = ProviderBackedAppAnalytics(provider: CompositeAnalyticsProvider(providers));
+  // Starts listening for feature use, so a hint retires once its feature is used.
+  FeatureHints.instance.attach();
 }
 
 Future<AnalyticsProvider?> _buildMixpanelProvider({required bool enabled}) async {

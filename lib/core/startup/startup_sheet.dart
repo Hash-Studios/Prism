@@ -10,15 +10,25 @@ import 'package:flutter/material.dart';
 abstract final class StartupModalSlot {
   static final ValueNotifier<bool> shown = ValueNotifier<bool>(false);
 
+  /// When Prism last showed a prompt on its own. Feature hints wait 10 minutes after it.
+  static final ValueNotifier<DateTime?> lastPromptAt = ValueNotifier<DateTime?>(null);
+
   /// Takes the slot. Returns false when another startup sheet already has it.
   static bool tryClaim() {
     if (shown.value) return false;
     shown.value = true;
+    markPromptShown();
     return true;
   }
 
+  /// Records a prompt that does not take the slot, such as What's new or the daily moment.
+  static void markPromptShown() => lastPromptAt.value = DateTime.now();
+
   @visibleForTesting
-  static void reset() => shown.value = false;
+  static void reset() {
+    shown.value = false;
+    lastPromptAt.value = null;
+  }
 }
 
 /// A one-line question in a bottom sheet. Resolves to true only when the user taps [confirmLabel].

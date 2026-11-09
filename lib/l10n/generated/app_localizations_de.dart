@@ -15532,4 +15532,48 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get shareInPreviewSemantics => 'Geteiltes Bild';
+
+  @override
+  String get hintGotIt => 'Verstanden';
+
+  @override
+  String get hintFolderHold => 'Halte das Herz gedrückt, um dieses Hintergrundbild in einem Ordner zu speichern.';
+
+  @override
+  String get hintVariantDots => 'Tippe auf einen Punkt, um dieses Hintergrundbild in einer anderen Farbe zu sehen.';
+
+  @override
+  String get hintPhotoSearch => 'Finde Hintergrundbilder, die zu einem Foto aus deiner Galerie passen.';
+
+  @override
+  String get hintFollowCategory => 'Folge dieser Kategorie, um zu sehen, wann sie neue Hintergrundbilder bekommt.';
+
+  @override
+  String get hintSmartFolders =>
+      'Ein Smart-Ordner füllt sich selbst mit Hintergrundbildern, die zu deinen Regeln passen.';
+
+  @override
+  String get hintFolderSections =>
+      'Öffne Weitere Optionen und dann Abschnitte vorschlagen, um diesen Ordner zu sortieren.';
+
+  @override
+  String get hintPhotoFit => 'Mach aus deinem eigenen Foto ein Hintergrundbild, das auf deinen Bildschirm passt.';
+
+  @override
+  String get hintLivePhoto => 'Speichere dieses Hintergrundbild als Live-Foto für einen bewegten Sperrbildschirm.';
+
+  @override
+  String get settingsShowTipsTitle => 'Tipps anzeigen';
+
+  @override
+  String get settingsShowTipsBody => 'Kurze Hinweise zu Funktionen, die du noch nicht genutzt hast.';
+
+  @override
+  String get settingsResetTipsTitle => 'Tipps zurücksetzen';
+
+  @override
+  String get settingsResetTipsBody => 'Alle Tipps erneut anzeigen.';
+
+  @override
+  String get settingsResetTipsDone => 'Tipps werden wieder angezeigt.';
 }

@@ -16,6 +16,8 @@ import 'package:Prism/features/folders/domain/repositories/public_folders_reposi
 import 'package:Prism/features/folders/views/folders_access.dart';
 import 'package:Prism/features/folders/views/widgets/folder_card.dart';
 import 'package:Prism/features/folders/views/widgets/smart_folder_sheet.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -262,7 +264,11 @@ class _FoldersGridState extends State<FoldersGrid> {
               return _NewFolderTile(size: width, onTap: () => unawaited(createFolderFromLibrary(context)));
             }
             if (index == 1) {
-              return _NewFolderTile(size: width, smart: true, onTap: () => unawaited(showSmartFolderSheet(context)));
+              return FeatureHint(
+                id: HintId.smartFolders,
+                enabled: owned.length >= 2 && !owned.any((FolderEntity f) => f.isSmart),
+                child: _NewFolderTile(size: width, smart: true, onTap: () => unawaited(showSmartFolderSheet(context))),
+              );
             }
             final FolderEntity folder = owned[index - 2];
             return FolderCard(

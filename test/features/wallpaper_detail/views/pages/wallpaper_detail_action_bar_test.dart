@@ -7,7 +7,6 @@ import 'package:Prism/core/cache/prism_image_cache.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -15,6 +14,7 @@ import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/platform/wallpaper_capability.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/wall_ai_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -29,6 +29,8 @@ import 'package:Prism/core/widgets/menu_button/share_button.dart';
 import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wall_remix/biz/remix_credit_cubit.dart';
 import 'package:Prism/features/wall_remix/biz/remixes_cubit.dart';
@@ -255,6 +257,28 @@ void main() {
     await tester.pump();
     return bloc;
   }
+
+  testWidgets('Favourite button carries the folderHold feature hint, enabled when signed in', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'test-user'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    await pumpDetail(
+      tester,
+      WallpaperDetailLoaded(
+        recommendations: const RecommendationState.exhausted(),
+        entity: _prism(),
+        paletteLoading: false,
+      ),
+    );
+
+    final Finder hint = find.ancestor(
+      of: find.byType(FavouriteWallpaperButton),
+      matching: find.byWidgetPredicate((Widget w) => w is FeatureHint && w.id == HintId.folderHold),
+    );
+    expect(hint, findsOneWidget);
+    expect(tester.widget<FeatureHint>(hint).enabled, isTrue);
+  });
 
   testWidgets('Android shows a labelled Set action and icon actions with tooltips, on the details panel', (
     tester,

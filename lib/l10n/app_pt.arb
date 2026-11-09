@@ -4139,5 +4139,61 @@
   "shareInLinkUnusableDetail": "Compartilhe uma imagem ou um link para uma página com imagem.",
   "shareInImageUnreadable": "O Prism não pode abrir esta imagem.",
   "shareInImageUnreadableDetail": "Compartilhe de novo ou compartilhe outra imagem.",
-  "shareInPreviewSemantics": "Imagem compartilhada"
+  "shareInPreviewSemantics": "Imagem compartilhada",
+  "hintGotIt": "Entendi",
+  "@hintGotIt": {
+    "description": "Button that closes a feature hint callout."
+  },
+  "hintFolderHold": "Toque e segure o coração para salvar este papel de parede em uma pasta.",
+  "@hintFolderHold": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintVariantDots": "Toque em um ponto para ver este papel de parede em outra cor.",
+  "@hintVariantDots": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintPhotoSearch": "Encontre papéis de parede que combinam com uma foto da sua galeria.",
+  "@hintPhotoSearch": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintFollowCategory": "Siga esta categoria para saber quando ela tiver papéis de parede novos.",
+  "@hintFollowCategory": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintSmartFolders": "Uma pasta inteligente se enche sozinha com papéis de parede que seguem suas regras.",
+  "@hintSmartFolders": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintFolderSections": "Abra Mais opções e depois Sugerir seções para organizar esta pasta.",
+  "@hintFolderSections": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintPhotoFit": "Transforme sua própria foto em um papel de parede que cabe na sua tela.",
+  "@hintPhotoFit": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintLivePhoto": "Salve este papel de parede como Foto Live para uma Tela Bloqueada com movimento.",
+  "@hintLivePhoto": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "settingsShowTipsTitle": "Mostrar dicas",
+  "@settingsShowTipsTitle": {
+    "description": "Settings switch that turns feature hints on or off."
+  },
+  "settingsShowTipsBody": "Dicas curtas sobre recursos que você ainda não usou.",
+  "@settingsShowTipsBody": {
+    "description": "Subtitle of the Show tips switch."
+  },
+  "settingsResetTipsTitle": "Redefinir dicas",
+  "@settingsResetTipsTitle": {
+    "description": "Settings row that lets every feature hint show again."
+  },
+  "settingsResetTipsBody": "Mostrar todas as dicas de novo.",
+  "@settingsResetTipsBody": {
+    "description": "Subtitle of the Reset tips row."
+  },
+  "settingsResetTipsDone": "As dicas vão aparecer de novo.",
+  "@settingsResetTipsDone": {
+    "description": "Toast after the user resets feature hints."
+  }
 }

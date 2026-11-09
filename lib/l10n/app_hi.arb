@@ -15424,5 +15424,61 @@
   "shareInPreviewSemantics": "शेयर की गई इमेज",
   "@shareInPreviewSemantics": {
     "description": "Screen reader label for the preview of the shared image."
+  },
+  "hintGotIt": "समझ गया",
+  "@hintGotIt": {
+    "description": "Button that closes a feature hint callout."
+  },
+  "hintFolderHold": "इस वॉलपेपर को फ़ोल्डर में सेव करने के लिए दिल को दबाकर रखें।",
+  "@hintFolderHold": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintVariantDots": "इस वॉलपेपर को दूसरे रंग में देखने के लिए किसी बिंदु पर टैप करें।",
+  "@hintVariantDots": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintPhotoSearch": "अपनी गैलरी की किसी फ़ोटो से मेल खाते वॉलपेपर खोजें।",
+  "@hintPhotoSearch": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintFollowCategory": "इस कैटेगरी को फ़ॉलो करें ताकि नए वॉलपेपर आने पर आपको पता चले।",
+  "@hintFollowCategory": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintSmartFolders": "स्मार्ट फ़ोल्डर आपके नियमों से मेल खाते वॉलपेपर अपने आप जोड़ता है।",
+  "@hintSmartFolders": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintFolderSections": "इस फ़ोल्डर को छाँटने के लिए और विकल्प खोलें, फिर सेक्शन सुझाएँ चुनें।",
+  "@hintFolderSections": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintPhotoFit": "अपनी फ़ोटो को ऐसा वॉलपेपर बनाएँ जो आपकी स्क्रीन पर फ़िट हो।",
+  "@hintPhotoFit": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintLivePhoto": "चलती लॉक स्क्रीन के लिए इस वॉलपेपर को लाइव फ़ोटो के रूप में सेव करें।",
+  "@hintLivePhoto": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "settingsShowTipsTitle": "टिप्स दिखाएँ",
+  "@settingsShowTipsTitle": {
+    "description": "Settings switch that turns feature hints on or off."
+  },
+  "settingsShowTipsBody": "उन फ़ीचर के छोटे संकेत जिन्हें आपने अभी तक इस्तेमाल नहीं किया।",
+  "@settingsShowTipsBody": {
+    "description": "Subtitle of the Show tips switch."
+  },
+  "settingsResetTipsTitle": "टिप्स रीसेट करें",
+  "@settingsResetTipsTitle": {
+    "description": "Settings row that lets every feature hint show again."
+  },
+  "settingsResetTipsBody": "सभी टिप्स फिर से दिखाएँ।",
+  "@settingsResetTipsBody": {
+    "description": "Subtitle of the Reset tips row."
+  },
+  "settingsResetTipsDone": "टिप्स फिर से दिखेंगे।",
+  "@settingsResetTipsDone": {
+    "description": "Toast after the user resets feature hints."
   }
 }

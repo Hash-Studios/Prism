@@ -15439,4 +15439,46 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get shareInPreviewSemantics => 'शेयर की गई इमेज';
+
+  @override
+  String get hintGotIt => 'समझ गया';
+
+  @override
+  String get hintFolderHold => 'इस वॉलपेपर को फ़ोल्डर में सेव करने के लिए दिल को दबाकर रखें।';
+
+  @override
+  String get hintVariantDots => 'इस वॉलपेपर को दूसरे रंग में देखने के लिए किसी बिंदु पर टैप करें।';
+
+  @override
+  String get hintPhotoSearch => 'अपनी गैलरी की किसी फ़ोटो से मेल खाते वॉलपेपर खोजें।';
+
+  @override
+  String get hintFollowCategory => 'इस कैटेगरी को फ़ॉलो करें ताकि नए वॉलपेपर आने पर आपको पता चले।';
+
+  @override
+  String get hintSmartFolders => 'स्मार्ट फ़ोल्डर आपके नियमों से मेल खाते वॉलपेपर अपने आप जोड़ता है।';
+
+  @override
+  String get hintFolderSections => 'इस फ़ोल्डर को छाँटने के लिए और विकल्प खोलें, फिर सेक्शन सुझाएँ चुनें।';
+
+  @override
+  String get hintPhotoFit => 'अपनी फ़ोटो को ऐसा वॉलपेपर बनाएँ जो आपकी स्क्रीन पर फ़िट हो।';
+
+  @override
+  String get hintLivePhoto => 'चलती लॉक स्क्रीन के लिए इस वॉलपेपर को लाइव फ़ोटो के रूप में सेव करें।';
+
+  @override
+  String get settingsShowTipsTitle => 'टिप्स दिखाएँ';
+
+  @override
+  String get settingsShowTipsBody => 'उन फ़ीचर के छोटे संकेत जिन्हें आपने अभी तक इस्तेमाल नहीं किया।';
+
+  @override
+  String get settingsResetTipsTitle => 'टिप्स रीसेट करें';
+
+  @override
+  String get settingsResetTipsBody => 'सभी टिप्स फिर से दिखाएँ।';
+
+  @override
+  String get settingsResetTipsDone => 'टिप्स फिर से दिखेंगे।';
 }

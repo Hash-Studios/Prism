@@ -33,6 +33,7 @@ import 'package:Prism/features/day_night/day_night_support.dart';
 import 'package:Prism/features/day_night/views/pages/day_night_screen.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/followed_topics/views/widgets/followed_topics_sheet.dart';
+import 'package:Prism/features/hints/views/hint_settings_rows.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/ios_widgets/views/widget_guide_sheet.dart';
@@ -366,6 +367,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         trailing: Switch(value: _haptics, onChanged: _setHaptics),
       ),
     ),
+    const ShowTipsRow(),
+    const ResetTipsRow(),
   ];
 
   void _setHaptics(bool value) {

@@ -10,6 +10,7 @@ import 'package:Prism/core/purchases/purchase_analytics.dart';
 import 'package:Prism/core/purchases/purchase_constants.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/purchases/trial_reminder.dart';
+import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
 import 'package:Prism/features/in_app_notifications/views/widgets/notification_settings_sheet.dart';
@@ -241,6 +242,7 @@ class PaywallOrchestrator {
         return PaywallResultValue.noOffering;
       }
 
+      StartupModalSlot.markPromptShown();
       PaywallResultValue? timelineResult;
       final TrialOfferLookup trial = await PurchasesService.instance
           .trialOffer(offering)

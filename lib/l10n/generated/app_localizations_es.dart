@@ -15489,4 +15489,46 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get shareInPreviewSemantics => 'Imagen compartida';
+
+  @override
+  String get hintGotIt => 'Entendido';
+
+  @override
+  String get hintFolderHold => 'Mantén pulsado el corazón para guardar este fondo en una carpeta.';
+
+  @override
+  String get hintVariantDots => 'Toca un punto para ver este fondo en otro color.';
+
+  @override
+  String get hintPhotoSearch => 'Encuentra fondos que combinen con una foto de tu galería.';
+
+  @override
+  String get hintFollowCategory => 'Sigue esta categoría para saber cuándo tiene fondos nuevos.';
+
+  @override
+  String get hintSmartFolders => 'Una carpeta inteligente se llena sola con fondos que cumplen tus reglas.';
+
+  @override
+  String get hintFolderSections => 'Abre Más opciones y luego Sugerir secciones para ordenar esta carpeta.';
+
+  @override
+  String get hintPhotoFit => 'Convierte tu propia foto en un fondo que se ajuste a tu pantalla.';
+
+  @override
+  String get hintLivePhoto => 'Guarda este fondo como foto en directo para una pantalla de bloqueo con movimiento.';
+
+  @override
+  String get settingsShowTipsTitle => 'Mostrar consejos';
+
+  @override
+  String get settingsShowTipsBody => 'Pistas breves sobre funciones que aún no has usado.';
+
+  @override
+  String get settingsResetTipsTitle => 'Restablecer consejos';
+
+  @override
+  String get settingsResetTipsBody => 'Volver a mostrar todos los consejos.';
+
+  @override
+  String get settingsResetTipsDone => 'Los consejos volverán a aparecer.';
 }

@@ -15486,5 +15486,61 @@
   "shareInPreviewSemantics": "Shared image",
   "@shareInPreviewSemantics": {
     "description": "Screen reader label for the preview of the shared image."
+  },
+  "hintGotIt": "Got it",
+  "@hintGotIt": {
+    "description": "Button that closes a feature hint callout."
+  },
+  "hintFolderHold": "Hold the heart to save this wallpaper to a folder.",
+  "@hintFolderHold": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintVariantDots": "Tap a dot to see this wallpaper in another colour.",
+  "@hintVariantDots": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintPhotoSearch": "Find wallpapers that match a photo from your gallery.",
+  "@hintPhotoSearch": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintFollowCategory": "Follow this category to see when it gets new wallpapers.",
+  "@hintFollowCategory": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintSmartFolders": "A smart folder fills itself with wallpapers that match your rules.",
+  "@hintSmartFolders": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintFolderSections": "Open More options, then Suggest sections, to sort this folder.",
+  "@hintFolderSections": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintPhotoFit": "Turn your own photo into a wallpaper that fits your screen.",
+  "@hintPhotoFit": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "hintLivePhoto": "Save this wallpaper as a Live Photo for a moving Lock Screen.",
+  "@hintLivePhoto": {
+    "description": "One-line feature hint, shown once next to the control it names."
+  },
+  "settingsShowTipsTitle": "Show tips",
+  "@settingsShowTipsTitle": {
+    "description": "Settings switch that turns feature hints on or off."
+  },
+  "settingsShowTipsBody": "Short hints about features you have not used yet.",
+  "@settingsShowTipsBody": {
+    "description": "Subtitle of the Show tips switch."
+  },
+  "settingsResetTipsTitle": "Reset tips",
+  "@settingsResetTipsTitle": {
+    "description": "Settings row that lets every feature hint show again."
+  },
+  "settingsResetTipsBody": "Show every tip again.",
+  "@settingsResetTipsBody": {
+    "description": "Subtitle of the Reset tips row."
+  },
+  "settingsResetTipsDone": "Tips will show again.",
+  "@settingsResetTipsDone": {
+    "description": "Toast after the user resets feature hints."
   }
 }

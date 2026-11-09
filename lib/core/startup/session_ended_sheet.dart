@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 /// Tells the user the session ended and offers the usual sign-in sheet. [onSignedIn] runs after a successful sign-in.
 Future<void> showSessionEndedSheet(BuildContext context, {required VoidCallback onSignedIn}) async {
   StartupModalSlot.shown.value = true;
+  StartupModalSlot.markPromptShown();
   final bool signIn = await showStartupChoiceSheet(
     context,
     message: context.l10n.wallpaperSessionEnded,

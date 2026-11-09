@@ -21,6 +21,8 @@ import 'package:Prism/features/folders/domain/repositories/public_folders_reposi
 import 'package:Prism/features/folders/domain/repositories/shared_folders_repository.dart';
 import 'package:Prism/features/folders/views/pages/folder_screen.dart';
 import 'package:Prism/features/folders/views/widgets/folder_members_row.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
@@ -584,11 +586,14 @@ void main() {
     WidgetTester tester, {
     required String folderId,
     required AutoRotateState rotation,
+    List<FolderEntity>? folders,
+    List<FavouriteWallEntity> walls = const <FavouriteWallEntity>[],
   }) async {
     app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     addTearDown(() => getIt.unregister<ConnectivityService>());
-    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work')]);
+    final repo = _FakeFoldersRepository(folders: folders ?? <FolderEntity>[_folder('work', 'Work')]);
+    repo.items[folderId] = walls;
     final bloc = FoldersBloc(repo, _NoPublicFolders());
     addTearDown(bloc.close);
     final _MockStackRouter router = _MockStackRouter();
@@ -613,6 +618,85 @@ void main() {
     );
     await settle(tester);
   }
+
+  testWidgets('the more button carries the folderSections feature hint, on for a large unsectioned folder', (
+    tester,
+  ) async {
+    final FolderEntity large = FolderEntity(
+      id: 'work',
+      ownerId: 'u1',
+      name: 'Work',
+      createdAt: _at,
+      updatedAt: _at,
+      itemCount: 12,
+      covers: const <String>[],
+    );
+
+    await pumpFolderPage(
+      tester,
+      folderId: 'work',
+      rotation: AutoRotateState.initial(),
+      folders: <FolderEntity>[large],
+      walls: const <FavouriteWallEntity>[
+        PrismFavouriteWall(
+          id: 'wall_1',
+          wallpaper: PrismWallpaper(
+            core: WallpaperCore(id: 'wall_1', source: WallpaperSource.prism, fullUrl: '', thumbnailUrl: ''),
+          ),
+        ),
+      ],
+    );
+
+    final Finder hint = find.ancestor(
+      of: find.byIcon(Icons.more_vert_rounded),
+      matching: find.byWidgetPredicate((Widget w) => w is FeatureHint && w.id == HintId.folderSections),
+    );
+    expect(hint, findsOneWidget);
+    expect(tester.widget<FeatureHint>(hint).enabled, isTrue);
+  });
+
+  testWidgets('the sections hint is off when stale metadata has no loaded wallpapers', (tester) async {
+    await pumpFolderPage(
+      tester,
+      folderId: 'work',
+      rotation: AutoRotateState.initial(),
+      folders: <FolderEntity>[_folder('work', 'Work', itemCount: 12)],
+    );
+    final Finder hint = find.byWidgetPredicate((Widget w) => w is FeatureHint && w.id == HintId.folderSections);
+    expect(tester.widget<FeatureHint>(hint).enabled, isFalse);
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await settle(tester);
+    expect(find.text('Suggest sections'), findsNothing);
+  });
+
+  testWidgets('the more button carries the folderSections feature hint, off once the folder has a section', (
+    tester,
+  ) async {
+    final FolderEntity sectioned = FolderEntity(
+      id: 'work',
+      ownerId: 'u1',
+      name: 'Work',
+      createdAt: _at,
+      updatedAt: _at,
+      itemCount: 12,
+      covers: const <String>[],
+      sections: const <FolderSection>[FolderSection(id: 'lock', name: 'Lock screens')],
+    );
+
+    await pumpFolderPage(
+      tester,
+      folderId: 'work',
+      rotation: AutoRotateState.initial(),
+      folders: <FolderEntity>[sectioned],
+    );
+
+    final Finder hint = find.ancestor(
+      of: find.byIcon(Icons.more_vert_rounded),
+      matching: find.byWidgetPredicate((Widget w) => w is FeatureHint && w.id == HintId.folderSections),
+    );
+    expect(hint, findsOneWidget);
+    expect(tester.widget<FeatureHint>(hint).enabled, isFalse);
+  });
 
   testWidgets('the Android overflow menu offers Rotate this folder', (tester) async {
     await pumpFolderPage(tester, folderId: 'work', rotation: AutoRotateState.initial());

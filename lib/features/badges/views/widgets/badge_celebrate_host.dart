@@ -1,4 +1,5 @@
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/features/badges/domain/repositories/badge_repository.dart';
 import 'package:Prism/features/badges/views/widgets/badge_celebrate_sheet.dart';
 import 'package:flutter/material.dart';
@@ -67,6 +68,7 @@ class _BadgeCelebrateHostState extends State<BadgeCelebrateHost> with WidgetsBin
     final EarnedBadge badge = _repository.unseen.value.first;
     _repository.markSeen(badge.id);
     _showing = true;
+    StartupModalSlot.markPromptShown();
     await showBadgeCelebrateSheet(context, badge, onSeeRewards: widget.onSeeRewards);
     _showing = false;
     if (mounted) _schedule();
