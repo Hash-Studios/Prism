@@ -1087,7 +1087,7 @@ class _StatPill extends StatelessWidget {
 
 /// The profile stats in one centred row, with a short divider in each gap. [gaps] is the space on each side of each
 /// divider. When the row does not fit, as with large text on a narrow phone, the stats stack, centred and with no
-/// dividers, so that no word breaks in half.
+/// dividers, so words that fit the available width do not break in half.
 class _StatsLine extends MultiChildRenderObjectWidget {
   const _StatsLine({required this.gaps, required this.dividerColor, required super.children});
 

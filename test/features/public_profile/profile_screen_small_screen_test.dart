@@ -54,6 +54,14 @@ class _SmallProfileRouter extends RootStackRouter {
       page: PageInfo(ProfileRoute.name, builder: (_) => const ProfileScreen()),
     ),
     AutoRoute(
+      path: '/following',
+      page: PageInfo(FollowingListRoute.name, builder: (_) => const Scaffold(body: Text('Following destination'))),
+    ),
+    AutoRoute(
+      path: '/followers',
+      page: PageInfo(FollowersRoute.name, builder: (_) => const Scaffold(body: Text('Followers destination'))),
+    ),
+    AutoRoute(
       path: '/stats',
       page: PageInfo(CreatorStatsRoute.name, builder: (_) => const Scaffold(body: Text('Stats destination'))),
     ),
@@ -318,69 +326,184 @@ void main() {
 
   // Issue #548: at 360 points and 2x text the stats row gave each item a third of the width and broke words in half.
   for (final double width in <double>[320, 360, 412]) {
-    for (final double scale in <double>[1, 2]) {
-      testWidgets('stats keep every word on one line at $width points and ${scale}x text', (tester) async {
-        whenListen(
-          bloc,
-          const Stream<PublicProfileState>.empty(),
-          initialState: PublicProfileState.initial().copyWith(profileId: 'u2', status: LoadStatus.success),
-        );
-        tester.view.physicalSize = Size(width * 2, 1600);
+    for (final double scale in <double>[1, 2, 3]) {
+      for (final bool dark in <bool>[false, true]) {
+        for (final TextDirection direction in TextDirection.values) {
+          testWidgets('stats keep every word on one line at $width points and ${scale}x text $dark $direction', (
+            tester,
+          ) async {
+            whenListen(
+              bloc,
+              const Stream<PublicProfileState>.empty(),
+              initialState: PublicProfileState.initial().copyWith(profileId: 'u2', status: LoadStatus.success),
+            );
+            tester.view.physicalSize = Size(width * 2, 1600);
+            tester.view.devicePixelRatio = 2;
+            addTearDown(tester.view.reset);
+            await tester.pumpWidget(
+              MaterialApp(
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
+                theme: dark ? kDarkTheme : kLightTheme,
+                home: const ProfileScreen(profileIdentifier: 'u2'),
+                builder: (context, child) => MediaQuery(
+                  data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
+                  child: Directionality(textDirection: direction, child: favouriteTestBuilder(context, child)),
+                ),
+              ),
+            );
+            repository.profiles.add(
+              const PublicProfileEntity(
+                id: 'u2',
+                name: 'Akshay Maurya',
+                email: '',
+                username: 'codenameakshay',
+                profilePhoto: '',
+                bio: '',
+                links: <String, String>{},
+                coverPhoto: '',
+                followerCount: 6930,
+                followingCount: 23,
+                xp: 5000,
+              ),
+            );
+            await tester.pump(const Duration(milliseconds: 400));
+            await tester.pump(const Duration(milliseconds: 500));
+
+            final List<Finder> stats = <Finder>[
+              find.textContaining('Following', findRichText: true),
+              find.textContaining('Followers', findRichText: true),
+              find.descendant(of: find.byType(RankInfoChip), matching: find.byType(RichText)),
+            ];
+            for (final Finder stat in stats) {
+              expect(stat, findsOneWidget);
+              final RenderParagraph paragraph = tester.renderObject(stat);
+              final String text = paragraph.text.toPlainText();
+              for (final RegExpMatch word in RegExp(r'\S+').allMatches(text)) {
+                final List<TextBox> boxes = paragraph.getBoxesForSelection(
+                  TextSelection(baseOffset: word.start, extentOffset: word.end),
+                );
+                expect(boxes.map((TextBox box) => box.top).toSet(), hasLength(1), reason: '"${word[0]}" in "$text"');
+              }
+              final Rect rect = tester.getRect(stat);
+              expect(rect.left, greaterThanOrEqualTo(0));
+              expect(rect.right, lessThanOrEqualTo(width));
+            }
+            final Rect following = tester.getRect(stats[0]);
+            final Rect followers = tester.getRect(stats[1]);
+            final Rect rank = tester.getRect(stats[2]);
+            if (scale == 1 && width >= 360) {
+              expect(following.center.dy, closeTo(followers.center.dy, 1));
+              expect(followers.center.dy, closeTo(rank.center.dy, 1));
+              expect(
+                direction == TextDirection.ltr ? following.right < followers.left : followers.right < following.left,
+                isTrue,
+              );
+            } else {
+              expect(following.bottom, lessThan(followers.top));
+              expect(followers.bottom, lessThan(rank.top));
+              expect(following.center.dx, closeTo(width / 2, 1));
+              expect(followers.center.dx, closeTo(width / 2, 1));
+              expect(rank.center.dx, closeTo(width / 2, 1));
+            }
+            expect(find.byType(RankInfoChip).hitTestable(), findsOneWidget);
+            if (width == 320 && scale == 3 && dark) {
+              await tester.tap(find.byType(RankInfoChip));
+              await tester.pump();
+              await tester.pump(const Duration(milliseconds: 500));
+              expect(find.byType(XpExplanationSheet), findsOneWidget);
+            }
+
+            expect(tester.takeException(), isNull);
+          });
+        }
+      }
+    }
+  }
+
+  for (final TextDirection direction in TextDirection.values) {
+    testWidgets('stacked own counts retain tap targets at 320 and 3x $direction', (tester) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      final _SmallProfileRouter router = _SmallProfileRouter();
+      try {
+        tester.view.physicalSize = const Size(640, 2000);
         tester.view.devicePixelRatio = 2;
         addTearDown(tester.view.reset);
         await tester.pumpWidget(
-          MaterialApp(
+          MaterialApp.router(
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
-            theme: kLightTheme,
-            home: const ProfileScreen(profileIdentifier: 'u2'),
+            theme: kDarkTheme,
+            routerConfig: router.config(),
             builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
-              child: favouriteTestBuilder(context, child),
+              data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(3)),
+              child: Directionality(textDirection: direction, child: favouriteTestBuilder(context, child)),
             ),
           ),
         );
-        repository.profiles.add(
-          const PublicProfileEntity(
-            id: 'u2',
-            name: 'Akshay Maurya',
-            email: '',
-            username: 'codenameakshay',
-            profilePhoto: '',
-            bio: '',
-            links: <String, String>{},
-            coverPhoto: '',
-            followerCount: 6930,
-            followingCount: 23,
-            xp: 5000,
-          ),
-        );
-        await tester.pump(const Duration(milliseconds: 400));
+        unawaited(router.push(ProfileRoute()));
+        await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
-
-        final List<Finder> stats = <Finder>[
-          find.textContaining('Following', findRichText: true),
-          find.textContaining('Followers', findRichText: true),
-          find.descendant(of: find.byType(RankInfoChip), matching: find.byType(RichText)),
-        ];
-        for (final Finder stat in stats) {
-          expect(stat, findsOneWidget);
-          final RenderParagraph paragraph = tester.renderObject(stat);
-          final String text = paragraph.text.toPlainText();
-          for (final RegExpMatch word in RegExp(r'\S+').allMatches(text)) {
-            final List<TextBox> boxes = paragraph.getBoxesForSelection(
-              TextSelection(baseOffset: word.start, extentOffset: word.end),
-            );
-            expect(boxes.map((TextBox box) => box.top).toSet(), hasLength(1), reason: '"${word[0]}" in "$text"');
+        final List<String> labels = <String>[];
+        void collectLabels(SemanticsNode node) {
+          labels.add(node.label);
+          for (final SemanticsNode child in node.debugListChildrenInOrder(DebugSemanticsDumpOrder.traversalOrder)) {
+            collectLabels(child);
           }
-          final Rect rect = tester.getRect(stat);
-          expect(rect.left, greaterThanOrEqualTo(0));
-          expect(rect.right, lessThanOrEqualTo(width));
+        }
+
+        collectLabels(tester.getSemantics(find.byType(ProfileScreen)));
+        expect(labels.indexOf('0 Following'), greaterThanOrEqualTo(0));
+        expect(labels.indexOf('0 Following'), lessThan(labels.indexOf('0 Followers')));
+        for (final String label in <String>['Following', 'Followers']) {
+          expect(
+            tester.getSemantics(find.bySemanticsLabel('0 $label')),
+            matchesSemantics(label: '0 $label', isButton: true, hasTapAction: true),
+          );
+          await tester.tap(find.textContaining(label, findRichText: true));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 700));
+          expect(find.text('$label destination'), findsOneWidget);
+          router.pop();
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 700));
         }
         expect(tester.takeException(), isNull);
-      });
-    }
+      } finally {
+        await tester.pumpWidget(const SizedBox());
+        router.dispose();
+        semantics.dispose();
+      }
+    });
   }
+
+  testWidgets('an individually oversized stat wraps within its available width', (tester) async {
+    await pumpSmallScreen(tester, isDark: false);
+    final Widget line = tester.widget(
+      find.byWidgetPredicate((widget) => widget.runtimeType.toString() == '_StatsLine'),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        home: Center(child: SizedBox(width: 80, child: line)),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(3)),
+          child: child!,
+        ),
+      ),
+    );
+    final RenderParagraph following = tester.renderObject(find.textContaining('Following', findRichText: true));
+    final String text = following.text.toPlainText();
+    final int start = text.indexOf('Following');
+    final List<TextBox> boxes = following.getBoxesForSelection(
+      TextSelection(baseOffset: start, extentOffset: text.length),
+    );
+    expect(boxes.map((box) => box.top).toSet().length, greaterThan(1));
+    expect(following.size.width, lessThanOrEqualTo(80));
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('stats follow the reading order right to left', (tester) async {
     whenListen(

@@ -85,7 +85,7 @@ A Prism Pro member shows a Pro badge on the public profile. The badge sits above
 ## Header layout
 
 - The header photo has a 4 point accent ring (`cs.primary`) when no frame is equipped. The ring is painted in front of the photo. The photo goes to the middle of the ring, so no other colour shows between the ring and the photo (#558). The visible photo is 78 points across.
-- The counts row shows **Following**, **Followers** and, on another creator's profile, the rank. A short divider is between each item. If the row does not fit, for example with large text on a narrow phone, the items stack in a centred column with no dividers. A word never breaks across two lines (#548).
+- The counts row shows **Following**, **Followers** and, on another creator's profile, the rank. A short divider is between each item. If the row does not fit, for example with large text on a narrow phone, the items stack in a centred column with no dividers. Words that fit the available width do not break across lines (#548). A single word wider than the available width still wraps.
 
 ## Limits
 
