@@ -93,6 +93,18 @@ test("a wall past its release time that was never approved for release stays hid
   assert.equal(store.get("walls/w1")?.publishedAt, undefined);
 });
 
+test("a wall approved for release after an undone approval is published at its release time", async (t) => {
+  const {store} = harness(t, {"walls/w1": scheduled(A, NOW - MIN, {publishedAt: at(NOW - 2 * HOUR)})});
+  assert.deepEqual(await releaseDueWalls(NOW), {released: 1, creators: 1});
+  assert.equal(store.get("walls/w1")?.review, true);
+});
+
+test("a wall held after release keeps its older approval and stays hidden", async (t) => {
+  const {store} = harness(t, {"walls/w1": scheduled(A, NOW - 2 * HOUR, {publishedAt: at(NOW - 30 * MIN)})});
+  assert.deepEqual(await releaseDueWalls(NOW), {released: 0, creators: 0});
+  assert.equal(store.get("walls/w1")?.review, false);
+});
+
 test("running the release job twice publishes a wall once", async (t) => {
   harness(t, {"walls/w1": scheduled(A, NOW - MIN)});
   assert.deepEqual(await releaseDueWalls(NOW), {released: 1, creators: 1});

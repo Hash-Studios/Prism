@@ -95,6 +95,18 @@ void main() {
       );
       expect(release.state, WallReleaseState.pending);
     });
+
+    test('an approval newer than publishedAt (after an undone approval) is scheduled', () {
+      final WallRelease release = WallRelease.of(
+        FirestoreDocument('d', <String, dynamic>{
+          'review': false,
+          'publishedAt': DateTime.utc(2026, 11, 5),
+          'releaseApprovedAt': DateTime.utc(2026, 11, 6),
+          'releaseAt': DateTime.utc(2026, 11, 20),
+        }),
+      );
+      expect(release.state, WallReleaseState.scheduled);
+    });
   });
 
   group('utcOffsetText', () {

@@ -35,7 +35,10 @@ class WallRelease {
   factory WallRelease.of(FirestoreDocument wall) {
     final DateTime? releaseAt = _utc(wall.payload['releaseAt']);
     if (wall.review) return WallRelease(WallReleaseState.published, releaseAt);
-    final bool scheduled = wall.payload['releaseApprovedAt'] != null && wall.payload['publishedAt'] == null;
+    final DateTime? approved = _utc(wall.payload['releaseApprovedAt']);
+    final DateTime? published = _utc(wall.payload['publishedAt']);
+    final bool scheduled =
+        approved != null && (wall.payload['publishedAt'] == null || (published != null && approved.isAfter(published)));
     return WallRelease(
       scheduled && releaseAt != null ? WallReleaseState.scheduled : WallReleaseState.pending,
       releaseAt,

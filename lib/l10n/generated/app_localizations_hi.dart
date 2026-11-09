@@ -12114,7 +12114,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String wallReleaseLabel(String when) {
-    return '$when पर प्रकाशित';
+    return '$when पर प्रकाशित होगा';
   }
 
   @override

@@ -6608,7 +6608,7 @@
   "@notifPushWallsReleasedArtistTitle": {
     "description": "Push notification title when one scheduled wall goes live."
   },
-  "notifPushWallsReleasedArtistTitleMany": "Semua wallpaper Anda kini tayang",
+  "notifPushWallsReleasedArtistTitleMany": "Beberapa wallpaper Anda kini tayang",
   "@notifPushWallsReleasedArtistTitleMany": {
     "description": "Push notification title when several scheduled walls go live together."
   },

@@ -19,10 +19,15 @@ function millis(value: unknown): number | null {
   return value instanceof Timestamp ? value.toMillis() : null;
 }
 
-/** Approved for a later release and not public yet. */
+/**
+ * Approved for a later release and not public yet. An approval after the last publication counts too: undo keeps
+ * `publishedAt`, because no client can clear it. A wall held after release keeps its older approval, so it stays held.
+ */
 export function isScheduledWall(wall: Wall | undefined): boolean {
-  return !!wall && wall.review !== true && wall.releaseApprovedAt != null && wall.publishedAt == null &&
-    millis(wall.releaseAt) !== null;
+  if (!wall || wall.review === true || millis(wall.releaseAt) === null) return false;
+  const approved = millis(wall.releaseApprovedAt);
+  const published = millis(wall.publishedAt);
+  return approved !== null && (wall.publishedAt == null || (published !== null && approved > published));
 }
 
 /** The release time a client may ask for at `nowMs` (epoch ms), or null when it is not 15 minutes to 30 days ahead. */

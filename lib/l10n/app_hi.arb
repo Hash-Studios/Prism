@@ -11696,7 +11696,7 @@
   "@wallReleaseTooLate": {
     "description": "Validation error when the release time is more than 30 days away."
   },
-  "wallReleaseLabel": "{when} पर प्रकाशित",
+  "wallReleaseLabel": "{when} पर प्रकाशित होगा",
   "@wallReleaseLabel": {
     "description": "Short label on a scheduled upload showing its release time.",
     "placeholders": {

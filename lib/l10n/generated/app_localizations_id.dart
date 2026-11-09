@@ -7467,7 +7467,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get notifPushWallsReleasedArtistTitle => 'Wallpaper Anda kini tayang';
 
   @override
-  String get notifPushWallsReleasedArtistTitleMany => 'Semua wallpaper Anda kini tayang';
+  String get notifPushWallsReleasedArtistTitleMany => 'Beberapa wallpaper Anda kini tayang';
 
   @override
   String notifPushWallsReleasedArtistBody(String wallTitle) {
