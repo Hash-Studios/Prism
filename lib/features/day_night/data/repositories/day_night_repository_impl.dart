@@ -355,9 +355,10 @@ class DayNightRepositoryImpl implements DayNightRepository {
         olderThan.millisecondsSinceEpoch ~/ 1000 * 1000,
       ).subtract(const Duration(seconds: 1));
       await for (final FileSystemEntity entry in folder.list()) {
-        if (generation != _publishGeneration) return;
         if (keep.any((kept) => kept == entry.path || path.isWithin(entry.path, kept))) continue;
         if (!(await entry.stat()).modified.isBefore(cutoff)) continue;
+        // Checked last, right before the delete. A newer operation's folders are also newer than [olderThan].
+        if (generation != _publishGeneration) return;
         await entry.delete(recursive: true);
       }
     } catch (error, stackTrace) {
