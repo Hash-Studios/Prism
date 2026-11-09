@@ -2398,6 +2398,30 @@ events:
       - name: fields
         key: fields
         type: string_list
+  - id: wall_release_scheduled
+    fields:
+      - name: hours_ahead
+        key: hours_ahead
+        type: int
+      - name: resubmission
+        key: resubmission
+        type: bool
+  - id: wall_release_changed
+    fields:
+      - name: asset_id
+        key: asset_id
+        type: string
+      - name: cleared
+        key: cleared
+        type: bool
+      - name: hours_ahead
+        key: hours_ahead
+        type: int
+  - id: walls_released
+    fields:
+      - name: wall_count
+        key: wall_count
+        type: int
   - id: wall_approved_metadata_edited
     fields:
       - name: asset_id
