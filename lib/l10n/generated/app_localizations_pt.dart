@@ -12280,10 +12280,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get wallReleaseWhenApproved => 'Após a aprovação';
 
   @override
-  String get wallReleaseAtTime => 'Num horário definido';
+  String get wallReleaseAtTime => 'Em um horário definido';
 
   @override
-  String get wallReleaseWhenApprovedHelp => 'Fica público assim que um moderador o aprovar.';
+  String get wallReleaseWhenApprovedHelp => 'Fica no ar assim que um moderador aprovar.';
 
   @override
   String get wallReleaseAtTimeHelp =>
@@ -12301,7 +12301,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String wallReleaseTimeZone(String zone) {
-    return 'Os horários usam o seu fuso horário ($zone).';
+    return 'Os horários usam seu fuso horário ($zone).';
   }
 
   @override
@@ -12443,7 +12443,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get wallMetadataScheduledHelp =>
-      'Aprovado e agendado. Pode alterar o horário de publicação. Os outros detalhes são desbloqueados quando o papel de parede for publicado.';
+      'Aprovado e agendado. Você pode mudar o horário de publicação. Os outros detalhes são desbloqueados quando o papel de parede for publicado.';
 
   @override
   String get wallMetadataApprovedHelp =>

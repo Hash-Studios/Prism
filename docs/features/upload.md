@@ -120,6 +120,89 @@ The image must be landscape, 16:10 or 16:9, and at least 1920 px wide. The app c
 
 The upload counts against the daily upload limit. It does not use the weekly wall quota. See [desktop-companions.md](desktop-companions.md#creator-desktop-versions).
 
+### Scheduled release
+
+A creator can set the time when an approved wall goes live. Use this to release a set together, for example on Friday at 18:00. The followers then get one push for the set.
+
+#### The Release row
+
+- The upload form and the pending **Edit details** form show a **Release** row (`ReleaseTimeRow`, `lib/features/wallpaper_upload/views/widgets/release_time_row.dart`).
+- **When approved** is the default. The wall goes live when a moderator approves it.
+- **At a set time** shows a date button and a time button. The creator picks the time in the time zone of the device. The row shows that time zone, for example "Times use your time zone (IST, UTC+05:30).".
+- The time must be 15 minutes to 30 days after the save. The picker starts 20 minutes ahead, so a slow upload stays in the window. The app shows an error next to the row if the time is outside the window.
+- In a batch, the next image starts with the release time of the last submitted image.
+- The app stores `releaseAt` as a UTC timestamp. A date after a daylight saving change uses the offset of that date.
+
+#### Data
+
+| Field | Who writes it | Meaning |
+|---|---|---|
+| `releaseAt` | Creator (rules check the window), or `submitWallResubmission` (the server checks the window) | The time the wall can go live. Absent means "when approved". |
+| `releaseApprovedAt` | Admin | The admin approved the wall for a later release. Owners cannot write it. |
+| `review` | Admin, or the server | `true` only when the wall is public. This is the public gate for every client, old or new. |
+| `publishedAt` | Server only | The moment the wall went public. No client can write it. |
+| `releaseNotice` | Server only | `"pending"` until the grouped release push is sent. |
+
+The states are:
+
+1. Pending: `review == false`, no `releaseApprovedAt`.
+2. Scheduled: `review == false`, `releaseApprovedAt` set, no `publishedAt`.
+3. Published: `review == true`, `publishedAt` set.
+
+#### Approval
+
+- If `releaseAt` is in the future, **Approve** writes `releaseApprovedAt` and keeps `review` false. The wall stays hidden, and no push is sent.
+- If `releaseAt` has passed, or there is no `releaseAt`, **Approve** writes `review: true` as before. The wall goes live at once. `onWallApproved` stamps `publishedAt`.
+- The rules refuse `review: true` while `releaseAt` is in the future, also for admins and old admin builds.
+- The review queue shows the release time in the admin's time and in UTC. A scheduled wall stays in the `review == false` list with "Approved. Releases ...". The pending count and the swipe queue skip it.
+- **Undo** of an approval removes `releaseApprovedAt`.
+
+#### The release job
+
+`releaseScheduledWalls` (`functions/src/wallRelease.ts`) runs every 5 minutes (UTC).
+
+1. It finds scheduled walls with `releaseAt` in the past.
+2. For each creator, one transaction sets `review: true`, `publishedAt`, `createdAt` and `releaseNotice: "pending"` on all due walls of that creator.
+3. The change of `review` starts the normal approval fan-out: collections, smart Folders, variants, the web catalogue, requests, topic digests and the other triggers.
+4. `onWallApproved` claims the approval notice of each wall when its delivery is ready. The last ready wall of the set sends one push to the creator ("Your walls are live") and one push to the followers ("<name> released 4 walls"). A single wall uses the normal follower copy.
+
+A second run, or a retry, releases nothing again, because the transaction checks the state. The release push is claimed before it is sent, so a retry cannot send it twice.
+
+A colour variant waits while its parent wall exists and is not public, unless both are released in the same run. A desktop version cannot be added to a wall that is not public, so it waits too.
+
+#### Old clients
+
+Old clients list walls with `review == true`. The rules let other users read a wall only when `review == true`. A scheduled wall keeps `review == false` until the job releases it. So old clients, the web catalogue, the public API, search, and every push skip it.
+
+#### Edit before release
+
+- A pending wall: the creator can change or remove the release time with the other details.
+- A scheduled wall: the creator can only move the release time, within the same window. The other details unlock when the wall goes live. The rules enforce this.
+- A creator can withdraw a scheduled wall. The job skips a deleted wall.
+
+#### Backfill and deploy order
+
+Approved walls from before this change have no `publishedAt`. `functions/src/scripts/backfillPublishedAt.ts` sets it to `reviewedAt`, or to `createdAt` when `reviewedAt` is absent.
+
+- Dry run: `cd functions && npm run migrate:published-at`.
+- Write: add `-- --apply`. Do this only with approval.
+
+Do these steps in this order. Each step needs approval.
+
+1. Deploy the Firestore indexes (`walls`: `review`, `releaseAt`).
+2. Deploy the Firestore rules.
+3. Deploy the functions: `releaseScheduledWalls`, `onWallApproved`, `submitWallResubmission`, `onReviewQueueChanged`.
+4. Run the backfill dry run, then the backfill with `--apply`.
+5. Release the app.
+
+#### Analytics
+
+| Event | Fields |
+|---|---|
+| `wall_release_scheduled` | `hours_ahead`, `resubmission` |
+| `wall_release_changed` | `asset_id`, `cleared`, `hours_ahead` |
+| `walls_released` | `wall_count`, sent when the creator opens the release push |
+
 ### AI original image
 
 The wall record no longer holds `aiOriginalImageUrl` (the image without the watermark). Nothing in the app or the functions read the field.
