@@ -11412,7 +11412,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get foldersDiscoverNewEmptyBody =>
-      'Las carpetas públicas aparecen aquí durante una semana después de llegar a 8 fondos de pantalla.';
+      'Las carpetas públicas pueden aparecer aquí durante una semana después de llegar a 8 fondos de pantalla.';
 
   @override
   String get foldersDiscoverSavesEmptyTitle => 'Aún no hay nada parecido a tus guardados';

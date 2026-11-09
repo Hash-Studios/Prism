@@ -10584,7 +10584,7 @@
   "@foldersDiscoverNewEmptyTitle": {
     "description": "Empty state title of the New tab."
   },
-  "foldersDiscoverNewEmptyBody": "Public folders show here for a week after they reach 8 wallpapers.",
+  "foldersDiscoverNewEmptyBody": "Public folders can show here for a week after they reach 8 wallpapers.",
   "@foldersDiscoverNewEmptyBody": {
     "description": "Empty state body of the New tab."
   },

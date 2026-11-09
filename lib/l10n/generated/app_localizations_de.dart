@@ -11438,7 +11438,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get foldersDiscoverNewEmptyBody =>
-      'Öffentliche Ordner erscheinen hier eine Woche lang, nachdem sie 8 Hintergrundbilder erreicht haben.';
+      'Öffentliche Ordner können hier eine Woche lang erscheinen, nachdem sie 8 Hintergrundbilder erreicht haben.';
 
   @override
   String get foldersDiscoverSavesEmptyTitle => 'Noch nichts wie deine Gespeicherten';

@@ -11409,7 +11409,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get foldersDiscoverNewEmptyTitle => 'इस हफ़्ते कोई नया फ़ोल्डर नहीं';
 
   @override
-  String get foldersDiscoverNewEmptyBody => 'सार्वजनिक फ़ोल्डर 8 वॉलपेपर होने के बाद एक हफ़्ते तक यहाँ दिखते हैं।';
+  String get foldersDiscoverNewEmptyBody => 'सार्वजनिक फ़ोल्डर 8 वॉलपेपर होने के बाद एक हफ़्ते तक यहाँ दिख सकते हैं।';
 
   @override
   String get foldersDiscoverSavesEmptyTitle => 'आपके सेव जैसा अभी कुछ नहीं';

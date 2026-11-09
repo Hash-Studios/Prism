@@ -10528,7 +10528,7 @@
   "@foldersDiscoverNewEmptyTitle": {
     "description": "Empty state title of the New tab."
   },
-  "foldersDiscoverNewEmptyBody": "Folder publik muncul di sini selama seminggu setelah berisi 8 wallpaper.",
+  "foldersDiscoverNewEmptyBody": "Folder publik dapat muncul di sini selama seminggu setelah berisi 8 wallpaper.",
   "@foldersDiscoverNewEmptyBody": {
     "description": "Empty state body of the New tab."
   },

@@ -11607,7 +11607,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get foldersDiscoverNewEmptyBody =>
-      'Pastas públicas aparecem aqui por uma semana depois de chegarem a 8 papéis de parede.';
+      'Pastas públicas podem aparecer aqui por uma semana depois de chegarem a 8 papéis de parede.';
 
   @override
   String get foldersDiscoverSavesEmptyTitle => 'Ainda nada parecido com seus salvos';
@@ -27341,7 +27341,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get foldersDiscoverNewEmptyBody =>
-      'Pastas públicas aparecem aqui por uma semana depois de chegarem a 8 papéis de parede.';
+      'Pastas públicas podem aparecer aqui por uma semana depois de chegarem a 8 papéis de parede.';
 
   @override
   String get foldersDiscoverSavesEmptyTitle => 'Ainda nada parecido com seus salvos';

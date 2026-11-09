@@ -10705,7 +10705,7 @@
   "@foldersDiscoverNewEmptyTitle": {
     "description": "Empty state title of the New tab."
   },
-  "foldersDiscoverNewEmptyBody": "सार्वजनिक फ़ोल्डर 8 वॉलपेपर होने के बाद एक हफ़्ते तक यहाँ दिखते हैं।",
+  "foldersDiscoverNewEmptyBody": "सार्वजनिक फ़ोल्डर 8 वॉलपेपर होने के बाद एक हफ़्ते तक यहाँ दिख सकते हैं।",
   "@foldersDiscoverNewEmptyBody": {
     "description": "Empty state body of the New tab."
   },

@@ -11262,7 +11262,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get foldersDiscoverNewEmptyTitle => 'No new folders this week';
 
   @override
-  String get foldersDiscoverNewEmptyBody => 'Public folders show here for a week after they reach 8 wallpapers.';
+  String get foldersDiscoverNewEmptyBody => 'Public folders can show here for a week after they reach 8 wallpapers.';
 
   @override
   String get foldersDiscoverSavesEmptyTitle => 'Nothing like your saves yet';

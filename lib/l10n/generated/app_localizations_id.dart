@@ -11323,7 +11323,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get foldersDiscoverNewEmptyTitle => 'Tidak ada folder baru minggu ini';
 
   @override
-  String get foldersDiscoverNewEmptyBody => 'Folder publik muncul di sini selama seminggu setelah berisi 8 wallpaper.';
+  String get foldersDiscoverNewEmptyBody =>
+      'Folder publik dapat muncul di sini selama seminggu setelah berisi 8 wallpaper.';
 
   @override
   String get foldersDiscoverSavesEmptyTitle => 'Belum ada yang mirip simpananmu';

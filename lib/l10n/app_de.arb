@@ -10531,7 +10531,7 @@
   "@foldersDiscoverNewEmptyTitle": {
     "description": "Empty state title of the New tab."
   },
-  "foldersDiscoverNewEmptyBody": "Öffentliche Ordner erscheinen hier eine Woche lang, nachdem sie 8 Hintergrundbilder erreicht haben.",
+  "foldersDiscoverNewEmptyBody": "Öffentliche Ordner können hier eine Woche lang erscheinen, nachdem sie 8 Hintergrundbilder erreicht haben.",
   "@foldersDiscoverNewEmptyBody": {
     "description": "Empty state body of the New tab."
   },

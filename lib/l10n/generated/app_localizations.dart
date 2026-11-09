@@ -18034,7 +18034,7 @@ abstract class AppLocalizations {
   /// Empty state body of the New tab.
   ///
   /// In en, this message translates to:
-  /// **'Public folders show here for a week after they reach 8 wallpapers.'**
+  /// **'Public folders can show here for a week after they reach 8 wallpapers.'**
   String get foldersDiscoverNewEmptyBody;
 
   /// Empty state title of the Like your saves tab.
