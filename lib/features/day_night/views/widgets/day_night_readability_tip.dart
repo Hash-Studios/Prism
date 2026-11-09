@@ -81,7 +81,7 @@ class _DayNightReadabilityTipState extends State<DayNightReadabilityTip> {
     if (!_tipsOn || widget.wall.thumbnailUrl.trim().isEmpty) return;
     final int generation = ++_generation;
     _timeout?.cancel();
-    _timeout = Timer(const Duration(seconds: 2), () {
+    _timeout = Timer(ReadabilityTips.budget, () {
       if (mounted && generation == _generation && _result == null) setState(() => _tipsOn = false);
     });
     final Size screen = MediaQuery.sizeOf(context);

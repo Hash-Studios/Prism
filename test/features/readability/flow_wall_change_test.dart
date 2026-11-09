@@ -27,6 +27,7 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
     ReadabilityTips.instance.reset();
     ReadabilityTips.useIsolate = false;
+    ReadabilityTips.budget = const Duration(minutes: 1);
     analyses = 0;
     ReadabilityTips.analyzer =
         (
@@ -58,6 +59,7 @@ void main() {
     ReadabilityTips.instance.reset();
     ReadabilityTips.analyzer = analyzeReadability;
     ReadabilityTips.useIsolate = true;
+    ReadabilityTips.budget = const Duration(seconds: 2);
   });
 
   testWidgets('changing the wall rechecks whether its tip has shown this session', (tester) async {

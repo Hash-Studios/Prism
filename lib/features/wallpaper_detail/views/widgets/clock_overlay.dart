@@ -53,9 +53,6 @@ enum ClockPreviewMode { lock, home }
 /// Width of the decode used to pick the clock text colour.
 const int _sampleWidth = 32;
 
-/// A readability result that arrives later than this after the screen opens is dropped, so a tip never pops in late.
-const Duration _readabilityBudget = Duration(seconds: 2);
-
 /// What the Set screen shows and offers. [SetWallpaperFlow] builds it.
 class SetScreenRequest {
   const SetScreenRequest({
@@ -539,7 +536,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
         () => decodeForFrame(provider, frameHeight * 2),
         tint: _tint,
       );
-      if (!mounted || generation != _inputGeneration || _completed || timer.elapsed > _readabilityBudget) return;
+      if (!mounted || generation != _inputGeneration || _completed || timer.elapsed > ReadabilityTips.budget) return;
       setState(() => _readability = result);
     } catch (error, stackTrace) {
       logger.w('ClockOverlay: readability check failed', error: error, stackTrace: stackTrace);

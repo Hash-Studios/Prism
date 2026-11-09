@@ -204,6 +204,7 @@ void main() {
 
   setUp(() {
     ReadabilityTips.useIsolate = false;
+    ReadabilityTips.budget = const Duration(minutes: 1);
     _stubAnalyzer(_zones(clock: _busyClock, icons: _okIcons));
     _analyses = 0;
     _applied.clear();
@@ -218,6 +219,7 @@ void main() {
     readabilityFrameRenderer = renderReadabilityFrame;
     ReadabilityTips.analyzer = analyzeReadability;
     ReadabilityTips.useIsolate = true;
+    ReadabilityTips.budget = const Duration(seconds: 2);
     ReadabilityTips.instance.reset();
     await getIt.reset();
     app_state.prismUser = app_constants.createGuestPrismUser();
@@ -479,6 +481,18 @@ void main() {
     );
     expect(opacity.opacity, 1.0);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('a result that arrives after the budget shows no tip', (tester) async {
+    ReadabilityTips.budget = Duration.zero;
+    final List<SetWallpaperChoice?> results = <SetWallpaperChoice?>[];
+    await _pumpSetScreen(tester, _request(), results);
+    await tester.tap(find.text('Lock screen'));
+    await tester.pump();
+    await _settle(tester);
+
+    expect(_analyses, greaterThan(0));
+    expect(find.byKey(_clockChipKey), findsNothing);
+  });
 
   testWidgets('a failing analysis shows no tip and Set still pops the chosen target', (tester) async {
     _stubAnalyzerThrows();
