@@ -2046,6 +2046,24 @@
   "actionClose": "Close",
   "actionDone": "Done",
   "actionRetry": "Try again",
+  "adminReleaseApproved": "Approved. Releases {when}",
+  "@adminReleaseApproved": {
+    "description": "Moderator-facing status for an approved wall with a scheduled release.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "adminReleaseRequested": "Creator release: {when}",
+  "@adminReleaseRequested": {
+    "description": "Moderator-facing label for the release time the creator asked for, shown before approval.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
   "adminAllCaughtUp": "All caught up",
   "adminAllUsers": "All users",
   "adminAnnouncementInbox": "Announcement (inbox)",
@@ -6482,6 +6500,36 @@
     }
   },
   "notifPushWallApprovedArtistBodyUntitled": "Your wallpaper has been approved and is now visible to everyone.",
+  "notifPushWallsReleasedArtistTitle": "Your wall is live",
+  "@notifPushWallsReleasedArtistTitle": {
+    "description": "Push notification title when one scheduled wall goes live."
+  },
+  "notifPushWallsReleasedArtistTitleMany": "Your walls are live",
+  "@notifPushWallsReleasedArtistTitleMany": {
+    "description": "Push notification title when several scheduled walls go live together."
+  },
+  "notifPushWallsReleasedArtistBody": "\"{wallTitle}\" is now public on Prism.",
+  "@notifPushWallsReleasedArtistBody": {
+    "description": "Push notification body for one released wall that has a title.",
+    "placeholders": {
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushWallsReleasedArtistBodyUntitled": "Your wall is now public on Prism.",
+  "@notifPushWallsReleasedArtistBodyUntitled": {
+    "description": "Push notification body for one released wall without a title."
+  },
+  "notifPushWallsReleasedArtistBodyMany": "{count} walls are now public on Prism.",
+  "@notifPushWallsReleasedArtistBodyMany": {
+    "description": "Push notification body when several walls go live together.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "notifPushWallApprovedArtistTitle": "Your wallpaper is live! 🎉",
   "notifPushDesktopVersionApprovedTitle": "Your desktop version is live",
   "@notifPushDesktopVersionApprovedTitle": {
@@ -11472,6 +11520,70 @@
       }
     }
   },
+  "wallReleaseTitle": "Release",
+  "@wallReleaseTitle": {
+    "description": "Section heading for when a wall goes live."
+  },
+  "wallReleaseWhenApproved": "When approved",
+  "@wallReleaseWhenApproved": {
+    "description": "Release option that publishes as soon as a moderator approves."
+  },
+  "wallReleaseAtTime": "At a set time",
+  "@wallReleaseAtTime": {
+    "description": "Release option that publishes at a chosen time after approval."
+  },
+  "wallReleaseWhenApprovedHelp": "Goes live as soon as a moderator approves it.",
+  "@wallReleaseWhenApprovedHelp": {
+    "description": "Help text under the When approved release option."
+  },
+  "wallReleaseAtTimeHelp": "Stays hidden after approval until this time. Walls that go live together send your followers one notification.",
+  "@wallReleaseAtTimeHelp": {
+    "description": "Help text under the At a set time release option."
+  },
+  "wallReleaseDateLabel": "Release date: {date}",
+  "@wallReleaseDateLabel": {
+    "description": "Label for the chosen release date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "wallReleaseTimeLabel": "Release time: {time}",
+  "@wallReleaseTimeLabel": {
+    "description": "Label for the chosen release time.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "wallReleaseTimeZone": "Times use your time zone ({zone}).",
+  "@wallReleaseTimeZone": {
+    "description": "Note that shows which time zone the release time uses.",
+    "placeholders": {
+      "zone": {
+        "type": "String"
+      }
+    }
+  },
+  "wallReleaseTooSoon": "Choose a time at least 15 minutes from now.",
+  "@wallReleaseTooSoon": {
+    "description": "Validation error when the release time is less than 15 minutes away."
+  },
+  "wallReleaseTooLate": "Choose a time within the next 30 days.",
+  "@wallReleaseTooLate": {
+    "description": "Validation error when the release time is more than 30 days away."
+  },
+  "wallReleaseLabel": "Releases {when}",
+  "@wallReleaseLabel": {
+    "description": "Short label on a scheduled upload showing its release time.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
   "wallMetadataDescription": "Description",
   "wallMetadataEdit": "Edit details",
   "wallResubmitAction": "Fix and resubmit",
@@ -11592,6 +11704,10 @@
   "wallVariantDroppedAspect": "It has a different shape from the original.",
   "@wallVariantDroppedAspect": {
     "description": "Reason line."
+  },
+  "wallMetadataScheduledHelp": "Approved and scheduled. You can change the release time. Other details unlock when the wall goes live.",
+  "@wallMetadataScheduledHelp": {
+    "description": "Help text on the details screen of an approved, scheduled wall."
   },
   "wallMetadataApprovedHelp": "Change the title, description and tags. The image and category stay the same.",
   "wallMetadataPendingHelp": "Update these details before your wallpaper is reviewed.",

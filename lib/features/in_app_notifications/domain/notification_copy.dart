@@ -93,6 +93,7 @@ String _topicDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
         ? fallbackBody
         : l10n.notifPushDesktopVersionRejectedBody(_stringArg(args, 'reason')),
   ),
+  'wallsReleasedForArtist' => _wallsReleasedForArtist(args, l10n),
   'wallLiveForFollowers' => (
     title: l10n.notifPushWallLiveFollowersTitle(_stringArg(args, 'artistName')),
     body: l10n.notifPushWallLiveFollowersBody(_stringArg(args, 'wallTitle')),
@@ -213,3 +214,18 @@ String _topicDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
   ),
   _ => (title: fallbackTitle, body: fallbackBody),
 };
+
+({String title, String body}) _wallsReleasedForArtist(Map<String, Object?> args, AppLocalizations l10n) {
+  final Object? rawCount = args['wallCount'];
+  final int count = rawCount is num ? rawCount.toInt() : int.tryParse('$rawCount') ?? 1;
+  final String wallTitle = _stringArg(args, 'wallTitle').trim();
+  if (count > 1) {
+    return (title: l10n.notifPushWallsReleasedArtistTitleMany, body: l10n.notifPushWallsReleasedArtistBodyMany(count));
+  }
+  return (
+    title: l10n.notifPushWallsReleasedArtistTitle,
+    body: wallTitle.isEmpty
+        ? l10n.notifPushWallsReleasedArtistBodyUntitled
+        : l10n.notifPushWallsReleasedArtistBody(wallTitle),
+  );
+}

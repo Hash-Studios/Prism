@@ -2769,6 +2769,18 @@ abstract class AppLocalizations {
   /// **'Try again'**
   String get actionRetry;
 
+  /// Moderator-facing status for an approved wall with a scheduled release.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved. Releases {when}'**
+  String adminReleaseApproved(String when);
+
+  /// Moderator-facing label for the release time the creator asked for, shown before approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Creator release: {when}'**
+  String adminReleaseRequested(String when);
+
   /// No description provided for @adminAllCaughtUp.
   ///
   /// In en, this message translates to:
@@ -11503,6 +11515,36 @@ abstract class AppLocalizations {
   /// **'Your wallpaper has been approved and is now visible to everyone.'**
   String get notifPushWallApprovedArtistBodyUntitled;
 
+  /// Push notification title when one scheduled wall goes live.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wall is live'**
+  String get notifPushWallsReleasedArtistTitle;
+
+  /// Push notification title when several scheduled walls go live together.
+  ///
+  /// In en, this message translates to:
+  /// **'Your walls are live'**
+  String get notifPushWallsReleasedArtistTitleMany;
+
+  /// Push notification body for one released wall that has a title.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{wallTitle}\" is now public on Prism.'**
+  String notifPushWallsReleasedArtistBody(String wallTitle);
+
+  /// Push notification body for one released wall without a title.
+  ///
+  /// In en, this message translates to:
+  /// **'Your wall is now public on Prism.'**
+  String get notifPushWallsReleasedArtistBodyUntitled;
+
+  /// Push notification body when several walls go live together.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} walls are now public on Prism.'**
+  String notifPushWallsReleasedArtistBodyMany(int count);
+
   /// No description provided for @notifPushWallApprovedArtistTitle.
   ///
   /// In en, this message translates to:
@@ -19045,6 +19087,72 @@ abstract class AppLocalizations {
   /// **'{remixerName} remixed your wallpaper.'**
   String notifPushWallRemixedBodyUntitled(String remixerName);
 
+  /// Section heading for when a wall goes live.
+  ///
+  /// In en, this message translates to:
+  /// **'Release'**
+  String get wallReleaseTitle;
+
+  /// Release option that publishes as soon as a moderator approves.
+  ///
+  /// In en, this message translates to:
+  /// **'When approved'**
+  String get wallReleaseWhenApproved;
+
+  /// Release option that publishes at a chosen time after approval.
+  ///
+  /// In en, this message translates to:
+  /// **'At a set time'**
+  String get wallReleaseAtTime;
+
+  /// Help text under the When approved release option.
+  ///
+  /// In en, this message translates to:
+  /// **'Goes live as soon as a moderator approves it.'**
+  String get wallReleaseWhenApprovedHelp;
+
+  /// Help text under the At a set time release option.
+  ///
+  /// In en, this message translates to:
+  /// **'Stays hidden after approval until this time. Walls that go live together send your followers one notification.'**
+  String get wallReleaseAtTimeHelp;
+
+  /// Label for the chosen release date.
+  ///
+  /// In en, this message translates to:
+  /// **'Release date: {date}'**
+  String wallReleaseDateLabel(String date);
+
+  /// Label for the chosen release time.
+  ///
+  /// In en, this message translates to:
+  /// **'Release time: {time}'**
+  String wallReleaseTimeLabel(String time);
+
+  /// Note that shows which time zone the release time uses.
+  ///
+  /// In en, this message translates to:
+  /// **'Times use your time zone ({zone}).'**
+  String wallReleaseTimeZone(String zone);
+
+  /// Validation error when the release time is less than 15 minutes away.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a time at least 15 minutes from now.'**
+  String get wallReleaseTooSoon;
+
+  /// Validation error when the release time is more than 30 days away.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a time within the next 30 days.'**
+  String get wallReleaseTooLate;
+
+  /// Short label on a scheduled upload showing its release time.
+  ///
+  /// In en, this message translates to:
+  /// **'Releases {when}'**
+  String wallReleaseLabel(String when);
+
   /// No description provided for @wallMetadataDescription.
   ///
   /// In en, this message translates to:
@@ -19272,6 +19380,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'It has a different shape from the original.'**
   String get wallVariantDroppedAspect;
+
+  /// Help text on the details screen of an approved, scheduled wall.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved and scheduled. You can change the release time. Other details unlock when the wall goes live.'**
+  String get wallMetadataScheduledHelp;
 
   /// No description provided for @wallMetadataApprovedHelp.
   ///

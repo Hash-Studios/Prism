@@ -1936,6 +1936,24 @@
   "actionClose": "Schließen",
   "actionDone": "Fertig",
   "actionRetry": "Erneut versuchen",
+  "adminReleaseApproved": "Freigegeben. Veröffentlicht {when}",
+  "@adminReleaseApproved": {
+    "description": "Moderator-facing status for an approved wall with a scheduled release.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "adminReleaseRequested": "Wunschtermin des Creators: {when}",
+  "@adminReleaseRequested": {
+    "description": "Moderator-facing label for the release time the creator asked for, shown before approval.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
   "adminAllCaughtUp": "Alles erledigt",
   "adminAllUsers": "Alle Nutzer",
   "adminAnnouncementInbox": "Ankündigung (Posteingang)",
@@ -6360,6 +6378,36 @@
     }
   },
   "notifPushWallApprovedArtistBodyUntitled": "Dein Hintergrundbild wurde freigegeben und ist jetzt für alle sichtbar.",
+  "notifPushWallsReleasedArtistTitle": "Dein Hintergrundbild ist online",
+  "@notifPushWallsReleasedArtistTitle": {
+    "description": "Push notification title when one scheduled wall goes live."
+  },
+  "notifPushWallsReleasedArtistTitleMany": "Deine Hintergrundbilder sind online",
+  "@notifPushWallsReleasedArtistTitleMany": {
+    "description": "Push notification title when several scheduled walls go live together."
+  },
+  "notifPushWallsReleasedArtistBody": "„{wallTitle}“ ist jetzt öffentlich auf Prism.",
+  "@notifPushWallsReleasedArtistBody": {
+    "description": "Push notification body for one released wall that has a title.",
+    "placeholders": {
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushWallsReleasedArtistBodyUntitled": "Dein Hintergrundbild ist jetzt öffentlich auf Prism.",
+  "@notifPushWallsReleasedArtistBodyUntitled": {
+    "description": "Push notification body for one released wall without a title."
+  },
+  "notifPushWallsReleasedArtistBodyMany": "{count} Hintergrundbilder sind jetzt öffentlich auf Prism.",
+  "@notifPushWallsReleasedArtistBodyMany": {
+    "description": "Push notification body when several walls go live together.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "notifPushWallApprovedArtistTitle": "Dein Hintergrundbild ist online! 🎉",
   "notifPushDesktopVersionApprovedTitle": "Deine Desktop-Version ist online",
   "@notifPushDesktopVersionApprovedTitle": {
@@ -11419,6 +11467,70 @@
       }
     }
   },
+  "wallReleaseTitle": "Veröffentlichung",
+  "@wallReleaseTitle": {
+    "description": "Section heading for when a wall goes live."
+  },
+  "wallReleaseWhenApproved": "Nach Freigabe",
+  "@wallReleaseWhenApproved": {
+    "description": "Release option that publishes as soon as a moderator approves."
+  },
+  "wallReleaseAtTime": "Zu einer festen Zeit",
+  "@wallReleaseAtTime": {
+    "description": "Release option that publishes at a chosen time after approval."
+  },
+  "wallReleaseWhenApprovedHelp": "Wird veröffentlicht, sobald ein Moderator es freigibt.",
+  "@wallReleaseWhenApprovedHelp": {
+    "description": "Help text under the When approved release option."
+  },
+  "wallReleaseAtTimeHelp": "Bleibt nach der Freigabe bis zu dieser Zeit verborgen. Hintergrundbilder, die zusammen live gehen, senden deinen Followern eine einzige Benachrichtigung.",
+  "@wallReleaseAtTimeHelp": {
+    "description": "Help text under the At a set time release option."
+  },
+  "wallReleaseDateLabel": "Veröffentlichungsdatum: {date}",
+  "@wallReleaseDateLabel": {
+    "description": "Label for the chosen release date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "wallReleaseTimeLabel": "Veröffentlichungszeit: {time}",
+  "@wallReleaseTimeLabel": {
+    "description": "Label for the chosen release time.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "wallReleaseTimeZone": "Zeiten gelten in deiner Zeitzone ({zone}).",
+  "@wallReleaseTimeZone": {
+    "description": "Note that shows which time zone the release time uses.",
+    "placeholders": {
+      "zone": {
+        "type": "String"
+      }
+    }
+  },
+  "wallReleaseTooSoon": "Wähle eine Zeit, die mindestens 15 Minuten in der Zukunft liegt.",
+  "@wallReleaseTooSoon": {
+    "description": "Validation error when the release time is less than 15 minutes away."
+  },
+  "wallReleaseTooLate": "Wähle eine Zeit innerhalb der nächsten 30 Tage.",
+  "@wallReleaseTooLate": {
+    "description": "Validation error when the release time is more than 30 days away."
+  },
+  "wallReleaseLabel": "Veröffentlicht {when}",
+  "@wallReleaseLabel": {
+    "description": "Short label on a scheduled upload showing its release time.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
   "wallMetadataDescription": "Beschreibung",
   "wallMetadataEdit": "Details bearbeiten",
   "wallResubmitAction": "Korrigieren und erneut einreichen",
@@ -11457,6 +11569,10 @@
   "wallVariantDroppedNotApproved": "Das Original ist nicht freigegeben.",
   "wallVariantDroppedFull": "Das Set hat bereits 5 Farben.",
   "wallVariantDroppedAspect": "Es hat ein anderes Format als das Original.",
+  "wallMetadataScheduledHelp": "Freigegeben und geplant. Du kannst die Veröffentlichungszeit ändern. Weitere Details werden freigeschaltet, sobald das Hintergrundbild live geht.",
+  "@wallMetadataScheduledHelp": {
+    "description": "Help text on the details screen of an approved, scheduled wall."
+  },
   "wallMetadataApprovedHelp": "Ändere Titel, Beschreibung und Tags. Bild und Kategorie bleiben gleich.",
   "wallMetadataPendingHelp": "Aktualisiere diese Angaben, bevor dein Hintergrundbild geprüft wird.",
   "wallMetadataSave": "Details speichern",

@@ -1583,6 +1583,16 @@ class AppLocalizationsHi extends AppLocalizations {
   String get actionRetry => 'फिर कोशिश करें';
 
   @override
+  String adminReleaseApproved(String when) {
+    return 'मंज़ूर। $when पर प्रकाशित होगा';
+  }
+
+  @override
+  String adminReleaseRequested(String when) {
+    return 'क्रिएटर का प्रकाशन समय: $when';
+  }
+
+  @override
   String get adminAllCaughtUp => 'सब कुछ देख लिया गया';
 
   @override
@@ -7553,6 +7563,25 @@ class AppLocalizationsHi extends AppLocalizations {
   String get notifPushWallApprovedArtistBodyUntitled => 'आपका वॉलपेपर मंज़ूर हो गया है और अब सभी को दिख रहा है।';
 
   @override
+  String get notifPushWallsReleasedArtistTitle => 'आपका वॉलपेपर लाइव है';
+
+  @override
+  String get notifPushWallsReleasedArtistTitleMany => 'आपके वॉलपेपर लाइव हैं';
+
+  @override
+  String notifPushWallsReleasedArtistBody(String wallTitle) {
+    return '\"$wallTitle\" अब Prism पर सार्वजनिक है।';
+  }
+
+  @override
+  String get notifPushWallsReleasedArtistBodyUntitled => 'आपका वॉलपेपर अब Prism पर सार्वजनिक है।';
+
+  @override
+  String notifPushWallsReleasedArtistBodyMany(int count) {
+    return '$count वॉलपेपर अब Prism पर सार्वजनिक हैं।';
+  }
+
+  @override
   String get notifPushWallApprovedArtistTitle => 'आपका वॉलपेपर लाइव है! 🎉';
 
   @override
@@ -12047,6 +12076,48 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get wallReleaseTitle => 'प्रकाशन';
+
+  @override
+  String get wallReleaseWhenApproved => 'मंज़ूरी के बाद';
+
+  @override
+  String get wallReleaseAtTime => 'तय समय पर';
+
+  @override
+  String get wallReleaseWhenApprovedHelp => 'मॉडरेटर द्वारा मंज़ूर होते ही यह लाइव हो जाएगा।';
+
+  @override
+  String get wallReleaseAtTimeHelp =>
+      'मंज़ूरी के बाद भी यह इस समय तक छिपा रहेगा। एक साथ लाइव होने वाले वॉलपेपर आपके फ़ॉलोअर्स को एक ही सूचना भेजते हैं।';
+
+  @override
+  String wallReleaseDateLabel(String date) {
+    return 'प्रकाशन तिथि: $date';
+  }
+
+  @override
+  String wallReleaseTimeLabel(String time) {
+    return 'प्रकाशन समय: $time';
+  }
+
+  @override
+  String wallReleaseTimeZone(String zone) {
+    return 'समय आपके समय क्षेत्र ($zone) के अनुसार है।';
+  }
+
+  @override
+  String get wallReleaseTooSoon => 'कम से कम 15 मिनट बाद का समय चुनें।';
+
+  @override
+  String get wallReleaseTooLate => 'अगले 30 दिनों के भीतर का समय चुनें।';
+
+  @override
+  String wallReleaseLabel(String when) {
+    return '$when पर प्रकाशित';
+  }
+
+  @override
   String get wallMetadataDescription => 'विवरण';
 
   @override
@@ -12168,6 +12239,10 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get wallVariantDroppedAspect => 'इसका आकार मूल से अलग है।';
+
+  @override
+  String get wallMetadataScheduledHelp =>
+      'मंज़ूर और शेड्यूल किया गया। आप प्रकाशन समय बदल सकते हैं। वॉलपेपर लाइव होने पर बाकी विवरण खुल जाएंगे।';
 
   @override
   String get wallMetadataApprovedHelp => 'शीर्षक, विवरण और टैग बदलें। चित्र और श्रेणी वही रहेंगे।';

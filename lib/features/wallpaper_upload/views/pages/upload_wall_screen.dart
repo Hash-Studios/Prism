@@ -22,6 +22,7 @@ import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_quality.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_session.dart';
 import 'package:Prism/features/wallpaper_upload/biz/variant_seed.dart';
+import 'package:Prism/features/wallpaper_upload/biz/wall_release.dart';
 import 'package:Prism/features/wallpaper_upload/data/last_submission_defaults_store.dart';
 import 'package:Prism/features/wallpaper_upload/data/resubmission_repository.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
@@ -220,6 +221,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         variantThumb: variant.thumbnailUrl,
         variantTitle: variant.title ?? '',
       );
+    }
+    if (widget.batch?.releaseAt case final DateTime releaseAt?) {
+      _metadata = _metadata.copyWith(releaseAt: () => releaseAt);
     }
     if (widget.resumedDraft case final draft? when draft.owner == _draftOwner) {
       _draftId = draft.draftId;
@@ -555,6 +559,15 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       return;
     }
     if (_formKey.currentState?.flush() == false) return;
+    if (_metadata.releaseAt case final DateTime releaseAt?) {
+      final ReleaseTimeProblem? problem = releaseTimeProblem(releaseAt, DateTime.now());
+      if (problem != null) {
+        toasts.error(
+          problem == ReleaseTimeProblem.tooSoon ? context.l10n.wallReleaseTooSoon : context.l10n.wallReleaseTooLate,
+        );
+        return;
+      }
+    }
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       _stage = _UploadStage.uploading;
@@ -616,6 +629,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               },
               challengeId: _metadata.challengeId,
               variantOf: _metadata.variantRemoved ? '' : _metadata.variantOf,
+              releaseAt: _metadata.releaseAt,
             );
       if (result == WallSubmissionResult.quotaExceeded && _submissionUnresolved) {
         setState(() {
@@ -703,8 +717,17 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         category: _metadata.category,
       ),
     );
+    if (_metadata.releaseAt case final DateTime releaseAt?) {
+      analytics.track(
+        WallReleaseScheduledEvent(
+          hoursAhead: releaseAt.difference(DateTime.now()).inHours,
+          resubmission: _rejectedDocId.isNotEmpty,
+        ),
+      );
+    }
     _trackStage('submitted');
     if (!mounted || _leaving || _activeDraftOwner != _draftOwner) return;
+    widget.batch?.releaseAt = _metadata.releaseAt;
     widget.batch?.finishCurrent(UploadItemOutcome.submitted);
     await _goToNextOrFinish();
   }
@@ -1112,6 +1135,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 SubmissionMetadataForm(
                   key: _formKey,
                   initial: _metadata,
+                  showRelease: true,
                   onChanged: (SubmissionMetadata value) {
                     _metadata = value.copyWith(
                       requestId: _metadata.requestId,

@@ -3,6 +3,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
+import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
@@ -63,6 +64,7 @@ class WallMetadataRepositoryImpl implements WallMetadataRepository {
         metadata: PendingWallMetadata.fromMap(data!),
         approved: false,
         expectedPendingFields: WallMetadataSnapshot.pendingFields(data),
+        scheduled: data['releaseApprovedAt'] != null,
       );
     } catch (error) {
       throw _failure(error);
@@ -105,14 +107,32 @@ class WallMetadataRepositoryImpl implements WallMetadataRepository {
           )) {
             throw const WallMetadataException(WallMetadataFailure.conflict);
           }
-          transaction.updateDoc(FirebaseCollections.walls, wallDocId, metadata.toMap());
+          final bool scheduled = current['releaseApprovedAt'] != null;
+          if (scheduled != expected.scheduled || (scheduled && metadata.releaseAt == null)) {
+            throw const WallMetadataException(WallMetadataFailure.statusChanged);
+          }
+          transaction.updateDoc(
+            FirebaseCollections.walls,
+            wallDocId,
+            scheduled
+                ? <String, dynamic>{'releaseAt': metadata.releaseAt}
+                : <String, dynamic>{
+                    ...metadata.toMap(),
+                    'releaseAt': metadata.releaseAt ?? FirestoreSentinels.delete(),
+                  },
+          );
         },
         sourceTag: 'wall_metadata.update_pending',
         collection: FirebaseCollections.walls,
         docId: wallDocId,
       );
       await _afterSave();
-      return WallMetadataSnapshot(metadata: metadata, approved: false, expectedPendingFields: metadata.toMap());
+      return WallMetadataSnapshot(
+        metadata: metadata,
+        approved: false,
+        expectedPendingFields: WallMetadataSnapshot.pendingFields(metadata.toMap()),
+        scheduled: expected.scheduled,
+      );
     } catch (error) {
       throw _failure(error);
     }

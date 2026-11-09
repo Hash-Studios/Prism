@@ -2162,6 +2162,24 @@
   "actionClose": "Tutup",
   "actionDone": "Selesai",
   "actionRetry": "Coba lagi",
+  "adminReleaseApproved": "Disetujui. Tayang {when}",
+  "@adminReleaseApproved": {
+    "description": "Moderator-facing status for an approved wall with a scheduled release.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "adminReleaseRequested": "Rilis pilihan kreator: {when}",
+  "@adminReleaseRequested": {
+    "description": "Moderator-facing label for the release time the creator asked for, shown before approval.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
   "adminAllCaughtUp": "Semua sudah ditinjau",
   "adminAllUsers": "Semua pengguna",
   "adminAnnouncementInbox": "Pengumuman (kotak masuk)",
@@ -6586,6 +6604,36 @@
     }
   },
   "notifPushWallApprovedArtistBodyUntitled": "Wallpaper Anda telah disetujui dan kini dapat dilihat semua orang.",
+  "notifPushWallsReleasedArtistTitle": "Wallpaper Anda kini tayang",
+  "@notifPushWallsReleasedArtistTitle": {
+    "description": "Push notification title when one scheduled wall goes live."
+  },
+  "notifPushWallsReleasedArtistTitleMany": "Semua wallpaper Anda kini tayang",
+  "@notifPushWallsReleasedArtistTitleMany": {
+    "description": "Push notification title when several scheduled walls go live together."
+  },
+  "notifPushWallsReleasedArtistBody": "\"{wallTitle}\" kini sudah publik di Prism.",
+  "@notifPushWallsReleasedArtistBody": {
+    "description": "Push notification body for one released wall that has a title.",
+    "placeholders": {
+      "wallTitle": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPushWallsReleasedArtistBodyUntitled": "Wallpaper Anda kini publik di Prism.",
+  "@notifPushWallsReleasedArtistBodyUntitled": {
+    "description": "Push notification body for one released wall without a title."
+  },
+  "notifPushWallsReleasedArtistBodyMany": "{count} wallpaper kini publik di Prism.",
+  "@notifPushWallsReleasedArtistBodyMany": {
+    "description": "Push notification body when several walls go live together.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "notifPushWallApprovedArtistTitle": "Wallpaper Anda kini tayang! 🎉",
   "notifPushDesktopVersionApprovedTitle": "Versi desktop Anda sudah tayang",
   "@notifPushDesktopVersionApprovedTitle": {
@@ -11416,6 +11464,70 @@
       }
     }
   },
+  "wallReleaseTitle": "Rilis",
+  "@wallReleaseTitle": {
+    "description": "Section heading for when a wall goes live."
+  },
+  "wallReleaseWhenApproved": "Setelah disetujui",
+  "@wallReleaseWhenApproved": {
+    "description": "Release option that publishes as soon as a moderator approves."
+  },
+  "wallReleaseAtTime": "Pada waktu yang ditentukan",
+  "@wallReleaseAtTime": {
+    "description": "Release option that publishes at a chosen time after approval."
+  },
+  "wallReleaseWhenApprovedHelp": "Langsung tayang setelah moderator menyetujuinya.",
+  "@wallReleaseWhenApprovedHelp": {
+    "description": "Help text under the When approved release option."
+  },
+  "wallReleaseAtTimeHelp": "Tetap tersembunyi setelah disetujui sampai waktu ini. Wallpaper yang tayang bersamaan mengirim satu notifikasi ke pengikut Anda.",
+  "@wallReleaseAtTimeHelp": {
+    "description": "Help text under the At a set time release option."
+  },
+  "wallReleaseDateLabel": "Tanggal rilis: {date}",
+  "@wallReleaseDateLabel": {
+    "description": "Label for the chosen release date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "wallReleaseTimeLabel": "Waktu rilis: {time}",
+  "@wallReleaseTimeLabel": {
+    "description": "Label for the chosen release time.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "wallReleaseTimeZone": "Waktu mengikuti zona waktu Anda ({zone}).",
+  "@wallReleaseTimeZone": {
+    "description": "Note that shows which time zone the release time uses.",
+    "placeholders": {
+      "zone": {
+        "type": "String"
+      }
+    }
+  },
+  "wallReleaseTooSoon": "Pilih waktu setidaknya 15 menit dari sekarang.",
+  "@wallReleaseTooSoon": {
+    "description": "Validation error when the release time is less than 15 minutes away."
+  },
+  "wallReleaseTooLate": "Pilih waktu dalam 30 hari ke depan.",
+  "@wallReleaseTooLate": {
+    "description": "Validation error when the release time is more than 30 days away."
+  },
+  "wallReleaseLabel": "Tayang {when}",
+  "@wallReleaseLabel": {
+    "description": "Short label on a scheduled upload showing its release time.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
   "wallMetadataDescription": "Deskripsi",
   "wallMetadataEdit": "Edit detail",
   "wallResubmitAction": "Perbaiki dan kirim ulang",
@@ -11454,6 +11566,10 @@
   "wallVariantDroppedNotApproved": "Wallpaper asli belum disetujui.",
   "wallVariantDroppedFull": "Set sudah memiliki 5 warna.",
   "wallVariantDroppedAspect": "Bentuknya berbeda dari aslinya.",
+  "wallMetadataScheduledHelp": "Disetujui dan dijadwalkan. Anda dapat mengubah waktu rilis. Detail lain terbuka saat wallpaper tayang.",
+  "@wallMetadataScheduledHelp": {
+    "description": "Help text on the details screen of an approved, scheduled wall."
+  },
   "wallMetadataApprovedHelp": "Ubah judul, deskripsi, dan tag. Gambar dan kategori tetap sama.",
   "wallMetadataPendingHelp": "Perbarui detail ini sebelum wallpaper Anda ditinjau.",
   "wallMetadataSave": "Simpan detail",

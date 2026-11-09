@@ -44,6 +44,7 @@ Future<WallSubmissionResult> createRecord(
   void Function(CoinMutationResult result)? onUploadAward,
   String challengeId = '',
   String variantOf = '',
+  DateTime? releaseAt,
 }) async {
   final user = app_state.prismUser;
   final bool isPremium = user.premium;
@@ -111,6 +112,7 @@ Future<WallSubmissionResult> createRecord(
       if (requestId.isNotEmpty) 'requestId': requestId,
       if (challengeId.isNotEmpty) 'challengeId': challengeId,
       if (variantOf.isNotEmpty) 'variantOf': variantOf,
+      if (releaseAt != null) 'releaseAt': releaseAt.toUtc(),
     },
     docId: docId,
     awardFirstUpload: () {

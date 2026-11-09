@@ -134,6 +134,16 @@ class WallMetadataCubit extends Cubit<WallMetadataState> {
         analytics.track(WallApprovedMetadataEditedEvent(assetId: wallDocId, fields: fields));
       } else {
         analytics.track(WallPendingEditedEvent(assetId: wallDocId, fields: fields));
+        if (fields.contains('releaseAt')) {
+          final DateTime? releaseAt = draft.releaseAt;
+          analytics.track(
+            WallReleaseChangedEvent(
+              assetId: wallDocId,
+              cleared: releaseAt == null,
+              hoursAhead: releaseAt == null ? 0 : releaseAt.difference(DateTime.now()).inHours,
+            ),
+          );
+        }
       }
       emit(
         WallMetadataState(

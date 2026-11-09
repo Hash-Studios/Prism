@@ -144,7 +144,7 @@ InAppNotificationEntity _toEntity(Map<String, dynamic> raw) {
   final InAppNotificationKind? kind = switch (data['notification_kind']) {
     'follower' => InAppNotificationKind.follower,
     'wall_live' => InAppNotificationKind.wallLive,
-    'wall_approved' => InAppNotificationKind.wallApproved,
+    'wall_approved' || 'walls_released' => InAppNotificationKind.wallApproved,
     'wall_of_the_day' => InAppNotificationKind.wallOfTheDay,
     'generic' => InAppNotificationKind.generic,
     _ => null,

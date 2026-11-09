@@ -211,7 +211,7 @@ async function announceRelease(
   for (const topic of topics) {
     await sendNotification({
       ...copy,
-      data: {...data, artist_email: artistEmail},
+      data: {...data, notification_kind: "wall_live", artist_email: artistEmail},
       imageUrl,
       modifier: artistEmail,
       channelId: "posts",

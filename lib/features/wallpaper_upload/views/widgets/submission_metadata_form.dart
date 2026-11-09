@@ -1,6 +1,8 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
+import 'package:Prism/features/wallpaper_upload/biz/wall_release.dart';
+import 'package:Prism/features/wallpaper_upload/views/widgets/release_time_row.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
@@ -13,13 +15,21 @@ class SubmissionMetadataForm extends StatefulWidget {
     required this.onChanged,
     this.initial = const SubmissionMetadata(),
     this.showCategory = true,
+    this.showRelease = false,
     this.enabled = true,
+    this.textEnabled = true,
+    this.releaseScheduled = false,
   });
 
   final SubmissionMetadata initial;
   final ValueChanged<SubmissionMetadata> onChanged;
   final bool showCategory;
+  final bool showRelease;
   final bool enabled;
+
+  /// False for an approved and scheduled wall: only the release time can change.
+  final bool textEnabled;
+  final bool releaseScheduled;
 
   @override
   SubmissionMetadataFormState createState() => SubmissionMetadataFormState();
@@ -36,6 +46,7 @@ class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
   final TextEditingController _tagInput = TextEditingController();
   late String _category = widget.initial.category;
   late List<String> _tags = List<String>.of(widget.initial.tags);
+  late DateTime? _releaseAt = widget.initial.releaseAt;
   bool _invalid = false;
 
   @override
@@ -52,6 +63,7 @@ class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
       description: _description.text.trim(),
       category: _category,
       tags: List.of(_tags),
+      releaseAt: () => _releaseAt,
     ),
   );
 
@@ -62,7 +74,11 @@ class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
       widget.initial.copyWith(title: _title.text, description: _description.text, tags: _tags),
     );
     setState(() => _invalid = !valid);
-    return valid;
+    final DateTime? releaseAt = _releaseAt;
+    return valid &&
+        (releaseAt == null ||
+            releaseAt == widget.initial.releaseAt ||
+            releaseTimeProblem(releaseAt, DateTime.now()) == null);
   }
 
   void useDetails({required String category, required List<String> tags}) {
@@ -112,7 +128,7 @@ class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
         const SizedBox(height: 12),
         TextField(
           controller: _title,
-          enabled: widget.enabled,
+          enabled: widget.enabled && widget.textEnabled,
           maxLength: maxSubmissionTitleLength,
           inputFormatters: [_lineBreaksToSpaces],
           textCapitalization: TextCapitalization.sentences,
@@ -126,7 +142,7 @@ class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
         const SizedBox(height: 8),
         TextField(
           controller: _description,
-          enabled: widget.enabled,
+          enabled: widget.enabled && widget.textEnabled,
           maxLength: maxSubmissionDescriptionLength,
           inputFormatters: [_lineBreaksToSpaces],
           minLines: 2,
@@ -148,7 +164,7 @@ class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
                 ChoiceChip(
                   label: Text(category),
                   selected: _category == category,
-                  onSelected: !widget.enabled
+                  onSelected: !widget.enabled || !widget.textEnabled
                       ? null
                       : (_) {
                           setState(() => _category = category);
@@ -161,7 +177,7 @@ class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
         const SizedBox(height: 16),
         TextField(
           controller: _tagInput,
-          enabled: widget.enabled && !tagsFull,
+          enabled: widget.enabled && widget.textEnabled && !tagsFull,
           textInputAction: TextInputAction.done,
           decoration: InputDecoration(
             labelText: context.l10n.wallpaperUploadTags,
@@ -172,7 +188,7 @@ class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
             suffixIcon: PrismIconButton(
               icon: Icons.add,
               tooltip: context.l10n.wallpaperUploadAddTag,
-              onPressed: tagsFull || !widget.enabled
+              onPressed: tagsFull || !widget.enabled || !widget.textEnabled
                   ? null
                   : () {
                       PrismHaptics.selection();
@@ -194,9 +210,22 @@ class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
                 InputChip(
                   label: Text(tag),
                   deleteButtonTooltipMessage: context.l10n.wallpaperUploadRemoveTag(tag),
-                  onDeleted: !widget.enabled ? null : () => _removeTag(tag),
+                  onDeleted: !widget.enabled || !widget.textEnabled ? null : () => _removeTag(tag),
                 ),
             ],
+          ),
+        ],
+        if (widget.showRelease) ...<Widget>[
+          const SizedBox(height: PrismSpace.xl),
+          ReleaseTimeRow(
+            releaseAt: _releaseAt,
+            enabled: widget.enabled,
+            allowWhenApproved: !widget.releaseScheduled,
+            onChanged: (DateTime? value) {
+              PrismHaptics.selection();
+              setState(() => _releaseAt = value);
+              _emit();
+            },
           ),
         ],
       ],

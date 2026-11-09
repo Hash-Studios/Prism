@@ -9,6 +9,7 @@ import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/features/admin_review/biz/depth_override.dart';
 import 'package:Prism/features/admin_review/biz/drop_reserve.dart';
+import 'package:Prism/features/wallpaper_upload/biz/wall_release.dart';
 import 'package:Prism/features/wallpaper_upload/data/repositories/wall_metadata_repository.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/domain/usecases/wall_metadata_actions.dart';
@@ -65,6 +66,9 @@ class AdminModerationRepository {
         .map((List<FirestoreDocument> walls) => walls.where((wall) => !isInDrop(wall)).toList(growable: false));
   }
 
+  /// Approved walls that wait for their release time. They stay in the `review == false` queue until they go live.
+  static bool awaitsRelease(FirestoreDocument wall) => WallRelease.of(wall).state == WallReleaseState.scheduled;
+
   Stream<List<FirestoreDocument>> watchOpenContentReports() {
     return _client.watchQuery<FirestoreDocument>(
       const FirestoreQuerySpec(
@@ -114,21 +118,25 @@ class AdminModerationRepository {
   }
 
   /// onWallApproved writes the artist's inbox entry and push, so approval adds none here.
+  /// A wall with a future `releaseAt` stays hidden: approval writes `releaseApprovedAt`, and the server release job
+  /// makes it public at that time. The rules refuse `review: true` before `releaseAt`. Returns true for that case.
   /// A creator can write any `collections` or streak value on a pending wall. Approval therefore files the wall under
   /// `community` and removes the streak fields, unless the admin passes values.
-  Future<void> approveWall(
+  Future<bool> approveWall(
     FirestoreDocument wall, {
     List<String>? collections,
     bool? streakExclusive,
     int? streakShopCoinCost,
   }) async {
+    final DateTime? releaseAt = WallRelease.of(wall).releaseAt;
+    final bool scheduled = releaseAt != null && releaseAt.isAfter(DateTime.now());
     await _client.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
-      'review': true,
+      if (scheduled) 'releaseApprovedAt': FirestoreSentinels.serverTimestamp() else 'review': true,
       'collections': collections == null || collections.isEmpty ? <String>['community'] : collections,
       'is_streak_exclusive': streakExclusive ?? FirestoreSentinels.delete(),
       'streak_shop_coin_cost': streakShopCoinCost ?? FirestoreSentinels.delete(),
       'reviewedAt': DateTime.now().toUtc(),
-      'createdAt': DateTime.now().toUtc(),
+      if (!scheduled) 'createdAt': DateTime.now().toUtc(),
     }, sourceTag: 'admin_review.approve_wall');
     final Object? requestId = wall.data()['requestId'];
     if (requestId is String && requestId.isNotEmpty) {
@@ -138,6 +146,7 @@ class AdminModerationRepository {
         ),
       );
     }
+    return scheduled;
   }
 
   Future<void> rejectWall(FirestoreDocument wall, {required String reason}) async {
@@ -245,6 +254,7 @@ class AdminModerationRepository {
   Future<void> undoApproveWall(FirestoreDocument wall) {
     return _client.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
       'review': false,
+      'releaseApprovedAt': FirestoreSentinels.delete(),
       'collections': wall.collections,
       if (wall.payload.containsKey('is_streak_exclusive')) 'is_streak_exclusive': wall.payload['is_streak_exclusive'],
       if (wall.payload.containsKey('streak_shop_coin_cost'))

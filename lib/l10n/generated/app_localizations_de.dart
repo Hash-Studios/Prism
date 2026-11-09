@@ -1605,6 +1605,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get actionRetry => 'Erneut versuchen';
 
   @override
+  String adminReleaseApproved(String when) {
+    return 'Freigegeben. Veröffentlicht $when';
+  }
+
+  @override
+  String adminReleaseRequested(String when) {
+    return 'Wunschtermin des Creators: $when';
+  }
+
+  @override
   String get adminAllCaughtUp => 'Alles erledigt';
 
   @override
@@ -7505,6 +7515,25 @@ class AppLocalizationsDe extends AppLocalizations {
       'Dein Hintergrundbild wurde freigegeben und ist jetzt für alle sichtbar.';
 
   @override
+  String get notifPushWallsReleasedArtistTitle => 'Dein Hintergrundbild ist online';
+
+  @override
+  String get notifPushWallsReleasedArtistTitleMany => 'Deine Hintergrundbilder sind online';
+
+  @override
+  String notifPushWallsReleasedArtistBody(String wallTitle) {
+    return '„$wallTitle“ ist jetzt öffentlich auf Prism.';
+  }
+
+  @override
+  String get notifPushWallsReleasedArtistBodyUntitled => 'Dein Hintergrundbild ist jetzt öffentlich auf Prism.';
+
+  @override
+  String notifPushWallsReleasedArtistBodyMany(int count) {
+    return '$count Hintergrundbilder sind jetzt öffentlich auf Prism.';
+  }
+
+  @override
   String get notifPushWallApprovedArtistTitle => 'Dein Hintergrundbild ist online! 🎉';
 
   @override
@@ -12083,6 +12112,48 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get wallReleaseTitle => 'Veröffentlichung';
+
+  @override
+  String get wallReleaseWhenApproved => 'Nach Freigabe';
+
+  @override
+  String get wallReleaseAtTime => 'Zu einer festen Zeit';
+
+  @override
+  String get wallReleaseWhenApprovedHelp => 'Wird veröffentlicht, sobald ein Moderator es freigibt.';
+
+  @override
+  String get wallReleaseAtTimeHelp =>
+      'Bleibt nach der Freigabe bis zu dieser Zeit verborgen. Hintergrundbilder, die zusammen live gehen, senden deinen Followern eine einzige Benachrichtigung.';
+
+  @override
+  String wallReleaseDateLabel(String date) {
+    return 'Veröffentlichungsdatum: $date';
+  }
+
+  @override
+  String wallReleaseTimeLabel(String time) {
+    return 'Veröffentlichungszeit: $time';
+  }
+
+  @override
+  String wallReleaseTimeZone(String zone) {
+    return 'Zeiten gelten in deiner Zeitzone ($zone).';
+  }
+
+  @override
+  String get wallReleaseTooSoon => 'Wähle eine Zeit, die mindestens 15 Minuten in der Zukunft liegt.';
+
+  @override
+  String get wallReleaseTooLate => 'Wähle eine Zeit innerhalb der nächsten 30 Tage.';
+
+  @override
+  String wallReleaseLabel(String when) {
+    return 'Veröffentlicht $when';
+  }
+
+  @override
   String get wallMetadataDescription => 'Beschreibung';
 
   @override
@@ -12209,6 +12280,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get wallVariantDroppedAspect => 'Es hat ein anderes Format als das Original.';
+
+  @override
+  String get wallMetadataScheduledHelp =>
+      'Freigegeben und geplant. Du kannst die Veröffentlichungszeit ändern. Weitere Details werden freigeschaltet, sobald das Hintergrundbild live geht.';
 
   @override
   String get wallMetadataApprovedHelp => 'Ändere Titel, Beschreibung und Tags. Bild und Kategorie bleiben gleich.';

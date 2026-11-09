@@ -4,6 +4,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/features/admin_review/biz/drop_reserve.dart';
+import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:injectable/injectable.dart';
@@ -37,7 +38,7 @@ class ReviewBatchRepository {
         startAfterDocId: cursor,
       );
       final walls = await _firestoreClient.query(querySpec, (data, docId) => FirestoreDocument(docId, data));
-      eligible.addAll(walls.where((wall) => !isInDrop(wall)));
+      eligible.addAll(walls.where((wall) => !isInDrop(wall) && !AdminModerationRepository.awaitsRelease(wall)));
       if (walls.length < _pageSize) break;
       cursor = walls.last.id;
     }
@@ -67,6 +68,6 @@ class ReviewBatchRepository {
       filters: <FirestoreFilter>[FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: false)],
     );
     final walls = await _firestoreClient.query(querySpec, (data, docId) => FirestoreDocument(docId, data));
-    return walls.where((wall) => !isInDrop(wall)).length;
+    return walls.where((wall) => !isInDrop(wall) && !AdminModerationRepository.awaitsRelease(wall)).length;
   }
 }

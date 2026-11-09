@@ -1581,6 +1581,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get actionRetry => 'Coba lagi';
 
   @override
+  String adminReleaseApproved(String when) {
+    return 'Disetujui. Tayang $when';
+  }
+
+  @override
+  String adminReleaseRequested(String when) {
+    return 'Rilis pilihan kreator: $when';
+  }
+
+  @override
   String get adminAllCaughtUp => 'Semua sudah ditinjau';
 
   @override
@@ -7454,6 +7464,25 @@ class AppLocalizationsId extends AppLocalizations {
       'Wallpaper Anda telah disetujui dan kini dapat dilihat semua orang.';
 
   @override
+  String get notifPushWallsReleasedArtistTitle => 'Wallpaper Anda kini tayang';
+
+  @override
+  String get notifPushWallsReleasedArtistTitleMany => 'Semua wallpaper Anda kini tayang';
+
+  @override
+  String notifPushWallsReleasedArtistBody(String wallTitle) {
+    return '\"$wallTitle\" kini sudah publik di Prism.';
+  }
+
+  @override
+  String get notifPushWallsReleasedArtistBodyUntitled => 'Wallpaper Anda kini publik di Prism.';
+
+  @override
+  String notifPushWallsReleasedArtistBodyMany(int count) {
+    return '$count wallpaper kini publik di Prism.';
+  }
+
+  @override
   String get notifPushWallApprovedArtistTitle => 'Wallpaper Anda kini tayang! 🎉';
 
   @override
@@ -11961,6 +11990,48 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get wallReleaseTitle => 'Rilis';
+
+  @override
+  String get wallReleaseWhenApproved => 'Setelah disetujui';
+
+  @override
+  String get wallReleaseAtTime => 'Pada waktu yang ditentukan';
+
+  @override
+  String get wallReleaseWhenApprovedHelp => 'Langsung tayang setelah moderator menyetujuinya.';
+
+  @override
+  String get wallReleaseAtTimeHelp =>
+      'Tetap tersembunyi setelah disetujui sampai waktu ini. Wallpaper yang tayang bersamaan mengirim satu notifikasi ke pengikut Anda.';
+
+  @override
+  String wallReleaseDateLabel(String date) {
+    return 'Tanggal rilis: $date';
+  }
+
+  @override
+  String wallReleaseTimeLabel(String time) {
+    return 'Waktu rilis: $time';
+  }
+
+  @override
+  String wallReleaseTimeZone(String zone) {
+    return 'Waktu mengikuti zona waktu Anda ($zone).';
+  }
+
+  @override
+  String get wallReleaseTooSoon => 'Pilih waktu setidaknya 15 menit dari sekarang.';
+
+  @override
+  String get wallReleaseTooLate => 'Pilih waktu dalam 30 hari ke depan.';
+
+  @override
+  String wallReleaseLabel(String when) {
+    return 'Tayang $when';
+  }
+
+  @override
   String get wallMetadataDescription => 'Deskripsi';
 
   @override
@@ -12084,6 +12155,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get wallVariantDroppedAspect => 'Bentuknya berbeda dari aslinya.';
+
+  @override
+  String get wallMetadataScheduledHelp =>
+      'Disetujui dan dijadwalkan. Anda dapat mengubah waktu rilis. Detail lain terbuka saat wallpaper tayang.';
 
   @override
   String get wallMetadataApprovedHelp => 'Ubah judul, deskripsi, dan tag. Gambar dan kategori tetap sama.';

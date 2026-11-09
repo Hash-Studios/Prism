@@ -279,6 +279,7 @@ class UploadDraftStore {
       'variantThumb': metadata.variantThumb,
       'variantTitle': metadata.variantTitle,
       'variantRemoved': metadata.variantRemoved,
+      if (metadata.releaseAt case final DateTime releaseAt) 'releaseAt': releaseAt.toUtc().toIso8601String(),
     },
     'savedAtUtc': DateTime.now().toUtc().toIso8601String(),
   };
@@ -322,6 +323,7 @@ class UploadDraftStore {
       variantTitle: raw['variantTitle'] is String ? raw['variantTitle'] as String : '',
       variantRemoved: raw['variantRemoved'] == true,
       requestText: raw['requestText'] is String ? raw['requestText'] as String : '',
+      releaseAt: raw['releaseAt'] is String ? DateTime.tryParse(raw['releaseAt'] as String)?.toUtc() : null,
     );
   }
 

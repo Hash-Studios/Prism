@@ -1588,6 +1588,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionRetry => 'Try again';
 
   @override
+  String adminReleaseApproved(String when) {
+    return 'Approved. Releases $when';
+  }
+
+  @override
+  String adminReleaseRequested(String when) {
+    return 'Creator release: $when';
+  }
+
+  @override
   String get adminAllCaughtUp => 'All caught up';
 
   @override
@@ -7425,6 +7435,25 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your wallpaper has been approved and is now visible to everyone.';
 
   @override
+  String get notifPushWallsReleasedArtistTitle => 'Your wall is live';
+
+  @override
+  String get notifPushWallsReleasedArtistTitleMany => 'Your walls are live';
+
+  @override
+  String notifPushWallsReleasedArtistBody(String wallTitle) {
+    return '\"$wallTitle\" is now public on Prism.';
+  }
+
+  @override
+  String get notifPushWallsReleasedArtistBodyUntitled => 'Your wall is now public on Prism.';
+
+  @override
+  String notifPushWallsReleasedArtistBodyMany(int count) {
+    return '$count walls are now public on Prism.';
+  }
+
+  @override
   String get notifPushWallApprovedArtistTitle => 'Your wallpaper is live! 🎉';
 
   @override
@@ -11895,6 +11924,48 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get wallReleaseTitle => 'Release';
+
+  @override
+  String get wallReleaseWhenApproved => 'When approved';
+
+  @override
+  String get wallReleaseAtTime => 'At a set time';
+
+  @override
+  String get wallReleaseWhenApprovedHelp => 'Goes live as soon as a moderator approves it.';
+
+  @override
+  String get wallReleaseAtTimeHelp =>
+      'Stays hidden after approval until this time. Walls that go live together send your followers one notification.';
+
+  @override
+  String wallReleaseDateLabel(String date) {
+    return 'Release date: $date';
+  }
+
+  @override
+  String wallReleaseTimeLabel(String time) {
+    return 'Release time: $time';
+  }
+
+  @override
+  String wallReleaseTimeZone(String zone) {
+    return 'Times use your time zone ($zone).';
+  }
+
+  @override
+  String get wallReleaseTooSoon => 'Choose a time at least 15 minutes from now.';
+
+  @override
+  String get wallReleaseTooLate => 'Choose a time within the next 30 days.';
+
+  @override
+  String wallReleaseLabel(String when) {
+    return 'Releases $when';
+  }
+
+  @override
   String get wallMetadataDescription => 'Description';
 
   @override
@@ -12016,6 +12087,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get wallVariantDroppedAspect => 'It has a different shape from the original.';
+
+  @override
+  String get wallMetadataScheduledHelp =>
+      'Approved and scheduled. You can change the release time. Other details unlock when the wall goes live.';
 
   @override
   String get wallMetadataApprovedHelp =>
