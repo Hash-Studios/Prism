@@ -115,7 +115,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
         if (!await prefs.setString(_snapshotKey, snapshot)) {
           throw StateError('Day and night snapshot could not be persisted');
         }
-        if (isCurrent()) await _pruneFixedCopies(keep: fixedCopies, olderThan: startedAt);
+        if (isCurrent()) await _pruneFixedCopies(keep: fixedCopies, olderThan: startedAt, generation: generation);
       },
     );
   }
@@ -136,7 +136,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
           throw StateError('Day and night snapshot could not be removed');
         }
         if (generation == _publishGeneration) {
-          await _pruneFixedCopies(keep: const <String>{}, olderThan: startedAt);
+          await _pruneFixedCopies(keep: const <String>{}, olderThan: startedAt, generation: generation);
         }
       },
     );
@@ -222,7 +222,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
         await _settings.set(PersistenceKeys.autoRotateEnabled, false);
         await _settings.set(_lastSlotKey, pair.times.slotNow().name);
         started = true;
-        if (generation == _publishGeneration) await _pruneFixedCopies(keep: fixedCopies, olderThan: startedAt);
+        await _pruneFixedCopies(keep: fixedCopies, olderThan: startedAt, generation: generation);
       });
     } finally {
       if (!started) coordinator.releaseDayNight(claim);
@@ -239,9 +239,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
         final aw.WallpaperResult result = await aw.AsyncWallpaper.stopDailySchedule();
         if (!result.isSuccess) throw StateError('Day and night could not stop the device schedule');
         await _settings.delete(_lastSlotKey);
-        if (generation == _publishGeneration) {
-          await _pruneFixedCopies(keep: const <String>{}, olderThan: startedAt);
-        }
+        await _pruneFixedCopies(keep: const <String>{}, olderThan: startedAt, generation: generation);
       } finally {
         coordinator.releaseDayNight(claim);
       }
@@ -343,8 +341,13 @@ class DayNightRepositoryImpl implements DayNightRepository {
   ///
   /// A publish renders its copies before it waits its turn, so a newer publish can have copies on disk that this
   /// operation does not know. Only folders from before [olderThan] go, with one second of margin for file systems
-  /// that store whole seconds. A newer folder stays until the next publish cleans up.
-  static Future<void> _pruneFixedCopies({required Set<String> keep, required DateTime olderThan}) async {
+  /// that store whole seconds. A newer folder stays until the next publish cleans up. Cleanup stops as soon as a newer
+  /// operation than [generation] starts.
+  static Future<void> _pruneFixedCopies({
+    required Set<String> keep,
+    required DateTime olderThan,
+    required int generation,
+  }) async {
     try {
       final Directory folder = await _fixedFolder();
       if (!await folder.exists()) return;
@@ -352,6 +355,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
         olderThan.millisecondsSinceEpoch ~/ 1000 * 1000,
       ).subtract(const Duration(seconds: 1));
       await for (final FileSystemEntity entry in folder.list()) {
+        if (generation != _publishGeneration) return;
         if (keep.any((kept) => kept == entry.path || path.isWithin(entry.path, kept))) continue;
         if (!(await entry.stat()).modified.isBefore(cutoff)) continue;
         await entry.delete(recursive: true);
