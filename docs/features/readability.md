@@ -81,7 +81,7 @@ A fix never changes the source wall. It always writes a new file.
 
 - Android: **Apply** calls `SetScreenRequest.onApplyFixes`. The flow gets consent for the original first (as Adjust does), then `PlacedWallpaper.render` draws the original with the placement and the fixes. Set then uses that file, as after the Position studio. A new placement from the studio clears the fixes, and the tip can show again for the new image.
 - iOS: **Apply** draws the fix on the preview. **Save** passes the fixes to `saveAction`. The detail screen adds them to the `DownloadVariant` (after the colour variation, when there is one). The saved copy has the screen size. Fixed copies stay in the temp folder because a previous Save may still be reading them.
-- Day and night: **Apply** adds the fix to the slot wall (`DayNightWall.fixes`, saved in the pair). When the mode publishes, the repository renders a copy to `<app support>/prism/offline/assets/day_night_fixed/<slot>.png`. Android schedules that file. iOS adds it to the Shortcuts snapshot as the asset `daynight-fixed-<slot>`.
+- Day and night: **Apply** adds the fix to the slot wall (`DayNightWall.fixes`, saved in the pair). When the mode publishes, the repository renders a copy to `<app support>/prism/offline/assets/day_night_fixed/<slot>-<random>/wall.png`. Each publish uses new folders. After the schedule starts (Android) or the snapshot is saved (iOS), the repository deletes the folders of older publishes. Unpublish deletes the rest. Android schedules that file. iOS adds it to the Shortcuts snapshot as the asset `daynight-fixed-<slot>`.
 
 The fix works for Home, Lock and Both, because Set uses one file for the chosen target. It works for both walls of a day and night pair.
 
