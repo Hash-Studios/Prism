@@ -1134,6 +1134,8 @@ class _ClockOverlayState extends State<ClockOverlay> {
                                         Center(
                                           child: FeatureHint(
                                             id: HintId.livePhoto,
+                                            // One quiet prompt at a time: the hint waits while a readability tip shows.
+                                            enabled: tip == null,
                                             child: Tooltip(
                                               message: l10n.livePhotoActionTooltip,
                                               child: _QuietButton(

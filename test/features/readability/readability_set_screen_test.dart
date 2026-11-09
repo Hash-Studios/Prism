@@ -7,6 +7,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/readability/data/readability_render.dart';
 import 'package:Prism/features/readability/data/readability_tips.dart';
 import 'package:Prism/features/readability/domain/readability.dart';
@@ -510,4 +511,55 @@ void main() {
     await tester.pumpAndSettle();
     expect(results.single?.target, WallpaperTarget.lock);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('on iOS the Live Photo hint waits while the clock tip shows, and Save gets the applied fix', (
+    tester,
+  ) async {
+    final List<List<ReadabilityFix>> saved = <List<ReadabilityFix>>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => pushClockPreview(
+              context,
+              link: _previewPath,
+              file: true,
+              wallpaperId: 'ios-wall',
+              saveAction: (label, fixes) => PrismButton(label: label, onPressed: () => saved.add(fixes)),
+              livePhotoAction: (_, _) {},
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await _waitUntil(tester, _shown(_clockChipKey), reason: 'the clock tip shows on iOS');
+
+    expect(tester.widget<FeatureHint>(find.byType(FeatureHint)).enabled, isFalse);
+
+    await tester.tap(find.byKey(_clockChipKey));
+    await tester.pump();
+    await _waitUntil(
+      tester,
+      () =>
+          find.byKey(const ValueKey<String>('readability-apply')).evaluate().isNotEmpty &&
+          tester.widget<PrismButton>(find.byKey(const ValueKey<String>('readability-apply'))).onPressed != null,
+      reason: 'Apply is ready',
+    );
+    // The 800 x 600 test screen puts Apply below the fold of the sheet, so press it the way the button does.
+    tester.widget<PrismButton>(find.byKey(const ValueKey<String>('readability-apply'))).onPressed!();
+    await tester.pump();
+    await _waitUntil(tester, () => find.byKey(_clockChipKey).evaluate().isEmpty, reason: 'the tip leaves after Apply');
+    await _settle(tester);
+
+    expect(tester.widget<FeatureHint>(find.byType(FeatureHint)).enabled, isTrue);
+    await tester.tap(find.text(l10n.wallpaperSaveToPhotos));
+    expect(saved, <List<ReadabilityFix>>[
+      <ReadabilityFix>[const ReadabilityFix(ReadabilityZone.clock, ReadabilityFixKind.dim)],
+    ]);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 }
