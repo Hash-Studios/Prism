@@ -129,6 +129,8 @@ type Route =
   | { kind: 'not-found' };
 
 class FirestoreUnavailable extends Error {}
+/** /folders has no list yet. The app landing differs by platform, so it is served per request, never cached. */
+class NoDiscoverList extends Error {}
 
 const activeRefreshes = new WeakMap<Cache, Map<string, Promise<void>>>();
 
@@ -154,9 +156,10 @@ export async function handleCatalogRequest(
     if (route.kind === 'desktop-image') return await renderDesktopImage(route.id, route.version, env);
     const response = await cached(key, ctx, () => route.kind === 'not-found'
       ? renderMissing(404, 'page', env)
-      : render(route, env, landing));
+      : render(route, env));
     return withMethod(request, response);
   } catch (error) {
+    if (error instanceof NoDiscoverList) return withMethod(request, landing());
     if (!(error instanceof FirestoreUnavailable)) throw error;
     console.warn('[catalog] firestore_unavailable', { route: route.kind, error: `${error.message}` });
     if (route.kind === 'wall' || route.kind === 'folder' || route.kind === 'folders') return withMethod(request, landing());
@@ -250,6 +253,11 @@ async function cached(key: string, ctx: ExecutionContext, render: () => Promise<
       await cache.put(cacheKey, storable(response.clone()));
     }
   };
+  // A list that went empty must not leave its old HTML in the cache.
+  const dropIfEmpty = async (error: unknown) => {
+    if (cache && error instanceof NoDiscoverList) await cache.delete(cacheKey);
+    throw error;
+  };
   if (hit) {
     const fresh = hit.status === 200 ? FRESH_SECONDS : MISS_SECONDS;
     if (age <= fresh) return forClient(hit);
@@ -262,14 +270,15 @@ async function cached(key: string, ctx: ExecutionContext, render: () => Promise<
         }
         let refresh = inFlight.get(key);
         if (!refresh) {
-          refresh = render().then(store)
+          refresh = render().then(store, dropIfEmpty)
             .catch((error) => console.warn('[catalog] revalidate_failed', `${error}`))
             .finally(() => inFlight?.delete(key));
           inFlight.set(key, refresh);
         }
         ctx.waitUntil(refresh);
       } else {
-        ctx.waitUntil(render().then(store).catch((error) => console.warn('[catalog] revalidate_failed', `${error}`)));
+        ctx.waitUntil(render().then(store, dropIfEmpty)
+          .catch((error) => console.warn('[catalog] revalidate_failed', `${error}`)));
       }
       return forClient(hit);
     }
@@ -280,7 +289,7 @@ async function cached(key: string, ctx: ExecutionContext, render: () => Promise<
     return forClient(response);
   } catch (error) {
     if (hit && age <= FRESH_SECONDS + STALE_SECONDS && error instanceof FirestoreUnavailable) return forClient(hit);
-    throw error;
+    return dropIfEmpty(error);
   }
 }
 
@@ -310,11 +319,11 @@ function withMethod(request: Request, response: Response): Response {
   return request.method === 'HEAD' ? new Response(null, { status: response.status, headers: response.headers }) : response;
 }
 
-async function render(route: Route, env: CatalogEnv, landing: () => Response): Promise<Response> {
+async function render(route: Route, env: CatalogEnv): Promise<Response> {
   switch (route.kind) {
     case 'wall': return renderWall(route.id, route.desktop, env);
     case 'folder': return renderFolder(route.id, env);
-    case 'folders': return renderFoldersDiscover(env, landing);
+    case 'folders': return renderFoldersDiscover(env);
     case 'hub': return renderHub(route.list, route.slug, route.page, env);
     case 'desktop-hub': return renderDesktopHub(route.list, route.page, env);
     case 'creator': return renderCreator(route.username, route.page, env);
@@ -828,11 +837,11 @@ function discoverRowHtml(title: string, cards: DiscoverCard[]): string {
 }
 
 /** The public folders people follow and save this week, and the new ones. One document read. */
-async function renderFoldersDiscover(env: CatalogEnv, landing: () => Response): Promise<Response> {
+async function renderFoldersDiscover(env: CatalogEnv): Promise<Response> {
   const stored = await readDoc<unknown>(env, 'webPages/folders');
   const data = stored == null ? null : parseDiscoverPage(stored, env);
-  // No list yet: /folders is also an app link, so the app landing serves it.
-  if (data == null || (!data.trending.length && !data.fresh.length)) return landing();
+  // No list yet: /folders is also an app link, so the caller serves the app landing outside the cache.
+  if (data == null || (!data.trending.length && !data.fresh.length)) throw new NoDiscoverList();
   const canonical = `${SITE}/folders`;
   const title = 'Public wallpaper folders | Prism';
   const description = 'Folders of wallpapers that people on Prism follow and save this week, and new folders. '

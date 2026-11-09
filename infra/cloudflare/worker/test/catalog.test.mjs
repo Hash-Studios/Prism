@@ -35,6 +35,10 @@ class FakeCache {
     return entry ? new Response(entry.body, { status: entry.status, headers: entry.headers }) : undefined;
   }
 
+  async delete(request) {
+    return this.entries.delete(request.url);
+  }
+
   async put(request, response) {
     this.entries.set(request.url, {
       status: response.status,
@@ -885,6 +889,18 @@ test('a missing webPages/folders doc serves the app landing, not the discover pa
 
   assert.equal(response.status, 200);
   assert.equal(body.includes('Trending this week'), false);
+});
+
+test('the /folders app landing is never stored in the shared edge cache', async (t) => {
+  const h = setup(t);
+
+  const android = await h.get('/folders', ANDROID_UA);
+  assert.equal(android.status, 200);
+  await h.flush();
+
+  assert.equal([...h.cache.entries.keys()].some((key) => key.endsWith('/__catalog/v1/folders')), false);
+  const desktop = await (await h.get('/folders')).text();
+  assert.notEqual(desktop, await (await h.get('/folders', ANDROID_UA)).text());
 });
 
 test('an empty discover page refresh replaces stale discover HTML with the app landing', async (t) => {

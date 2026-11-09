@@ -11412,7 +11412,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get foldersDiscoverNewEmptyBody =>
-      'Las carpetas públicas con 8 o más fondos de pantalla aparecen aquí durante su primera semana.';
+      'Las carpetas públicas aparecen aquí durante una semana después de llegar a 8 fondos de pantalla.';
 
   @override
   String get foldersDiscoverSavesEmptyTitle => 'Aún no hay nada parecido a tus guardados';
@@ -14064,7 +14064,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get coreContentReportComment => 'comentario';
 
   @override
-  String get coreContentReportFolder => 'carpeta';
+  String get coreContentReportWhyFolder => '¿Por qué denuncias esta carpeta?';
 
   @override
   String get commentsAction => 'Comentarios';

@@ -115,8 +115,6 @@ String _contentTypeLabel(String contentType, AppLocalizations l10n) {
       return l10n.coreContentReportUser;
     case 'comment':
       return l10n.coreContentReportComment;
-    case 'folder':
-      return l10n.coreContentReportFolder;
     default:
       return l10n.coreContentReportWallpaper;
   }
@@ -217,7 +215,10 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
     final String? subtitle = widget.subtitle;
     return PrismSheetBody(
       title: l10n.coreReport,
-      message: subtitle == null || subtitle.isEmpty
+      // Some languages need the article to agree with "folder", so the folder prompt is its own sentence.
+      message: widget.contentType == 'folder'
+          ? l10n.coreContentReportWhyFolder
+          : subtitle == null || subtitle.isEmpty
           ? l10n.coreContentReportWhy(label)
           : l10n.coreContentReportWhyWithDetails(label, subtitle),
       actions: <Widget>[

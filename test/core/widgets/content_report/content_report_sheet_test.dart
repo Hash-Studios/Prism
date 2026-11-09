@@ -310,6 +310,18 @@ void main() {
     expect(find.text('Why are you reporting this folder?'), findsOneWidget);
   });
 
+  test('the folder report prompt agrees with the folder word in every language', () async {
+    final Map<String, String> expected = <String, String>{
+      'de': 'Warum meldest du diesen Ordner?',
+      'es': '¿Por qué denuncias esta carpeta?',
+      'pt': 'Por que você está denunciando esta pasta?',
+    };
+    for (final MapEntry<String, String> entry in expected.entries) {
+      final AppLocalizations l10n = await AppLocalizations.delegate.load(Locale(entry.key));
+      expect(l10n.coreContentReportWhyFolder, entry.value);
+    }
+  });
+
   testWidgets('an unknown initial reason selects nothing', (tester) async {
     await pumpBody(tester, initialReason: 'bogus');
 

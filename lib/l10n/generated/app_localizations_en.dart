@@ -11262,7 +11262,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get foldersDiscoverNewEmptyTitle => 'No new folders this week';
 
   @override
-  String get foldersDiscoverNewEmptyBody => 'Public folders with 8 or more wallpapers show here in their first week.';
+  String get foldersDiscoverNewEmptyBody => 'Public folders show here for a week after they reach 8 wallpapers.';
 
   @override
   String get foldersDiscoverSavesEmptyTitle => 'Nothing like your saves yet';
@@ -13878,7 +13878,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get coreContentReportComment => 'comment';
 
   @override
-  String get coreContentReportFolder => 'folder';
+  String get coreContentReportWhyFolder => 'Why are you reporting this folder?';
 
   @override
   String get commentsAction => 'Comments';

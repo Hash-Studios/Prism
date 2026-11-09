@@ -11438,7 +11438,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get foldersDiscoverNewEmptyBody =>
-      'Öffentliche Ordner mit 8 oder mehr Hintergrundbildern erscheinen hier in ihrer ersten Woche.';
+      'Öffentliche Ordner erscheinen hier eine Woche lang, nachdem sie 8 Hintergrundbilder erreicht haben.';
 
   @override
   String get foldersDiscoverSavesEmptyTitle => 'Noch nichts wie deine Gespeicherten';
@@ -14098,7 +14098,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get coreContentReportComment => 'Kommentar';
 
   @override
-  String get coreContentReportFolder => 'Ordner';
+  String get coreContentReportWhyFolder => 'Warum meldest du diesen Ordner?';
 
   @override
   String get commentsAction => 'Kommentare';

@@ -11607,7 +11607,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get foldersDiscoverNewEmptyBody =>
-      'Pastas públicas com 8 ou mais papéis de parede aparecem aqui na primeira semana.';
+      'Pastas públicas aparecem aqui por uma semana depois de chegarem a 8 papéis de parede.';
 
   @override
   String get foldersDiscoverSavesEmptyTitle => 'Ainda nada parecido com seus salvos';
@@ -14249,7 +14249,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get coreContentReportComment => 'comentário';
 
   @override
-  String get coreContentReportFolder => 'pasta';
+  String get coreContentReportWhyFolder => 'Por que você está denunciando esta pasta?';
 
   @override
   String get commentsAction => 'Comentários';
@@ -27341,7 +27341,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get foldersDiscoverNewEmptyBody =>
-      'Pastas públicas com 8 ou mais papéis de parede aparecem aqui na primeira semana.';
+      'Pastas públicas aparecem aqui por uma semana depois de chegarem a 8 papéis de parede.';
 
   @override
   String get foldersDiscoverSavesEmptyTitle => 'Ainda nada parecido com seus salvos';
@@ -29983,7 +29983,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get coreContentReportComment => 'comentário';
 
   @override
-  String get coreContentReportFolder => 'pasta';
+  String get coreContentReportWhyFolder => 'Por que você está denunciando esta pasta?';
 
   @override
   String get commentsAction => 'Comentários';

@@ -10584,7 +10584,7 @@
   "@foldersDiscoverNewEmptyTitle": {
     "description": "Empty state title of the New tab."
   },
-  "foldersDiscoverNewEmptyBody": "Public folders with 8 or more wallpapers show here in their first week.",
+  "foldersDiscoverNewEmptyBody": "Public folders show here for a week after they reach 8 wallpapers.",
   "@foldersDiscoverNewEmptyBody": {
     "description": "Empty state body of the New tab."
   },
@@ -13950,9 +13950,9 @@
   "@coreContentReportComment": {
     "description": "Content type word in the report prompt for a wall comment, lower case as in the sentence"
   },
-  "coreContentReportFolder": "folder",
-  "@coreContentReportFolder": {
-    "description": "Content type word in the report prompt for a public folder, lower case as in the sentence"
+  "coreContentReportWhyFolder": "Why are you reporting this folder?",
+  "@coreContentReportWhyFolder": {
+    "description": "Prompt at the top of the report sheet for a public folder."
   },
   "commentsAction": "Comments",
   "@commentsAction": {

@@ -11409,8 +11409,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get foldersDiscoverNewEmptyTitle => 'इस हफ़्ते कोई नया फ़ोल्डर नहीं';
 
   @override
-  String get foldersDiscoverNewEmptyBody =>
-      '8 या ज़्यादा वॉलपेपर वाले सार्वजनिक फ़ोल्डर अपने पहले हफ़्ते में यहाँ दिखते हैं।';
+  String get foldersDiscoverNewEmptyBody => 'सार्वजनिक फ़ोल्डर 8 वॉलपेपर होने के बाद एक हफ़्ते तक यहाँ दिखते हैं।';
 
   @override
   String get foldersDiscoverSavesEmptyTitle => 'आपके सेव जैसा अभी कुछ नहीं';
@@ -14036,7 +14035,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get coreContentReportComment => 'टिप्पणी';
 
   @override
-  String get coreContentReportFolder => 'फ़ोल्डर';
+  String get coreContentReportWhyFolder => 'आप इस फ़ोल्डर की रिपोर्ट क्यों कर रहे हैं?';
 
   @override
   String get commentsAction => 'टिप्पणियाँ';

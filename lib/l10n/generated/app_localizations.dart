@@ -18034,7 +18034,7 @@ abstract class AppLocalizations {
   /// Empty state body of the New tab.
   ///
   /// In en, this message translates to:
-  /// **'Public folders with 8 or more wallpapers show here in their first week.'**
+  /// **'Public folders show here for a week after they reach 8 wallpapers.'**
   String get foldersDiscoverNewEmptyBody;
 
   /// Empty state title of the Like your saves tab.
@@ -22345,11 +22345,11 @@ abstract class AppLocalizations {
   /// **'comment'**
   String get coreContentReportComment;
 
-  /// Content type word in the report prompt for a public folder, lower case as in the sentence
+  /// Prompt at the top of the report sheet for a public folder.
   ///
   /// In en, this message translates to:
-  /// **'folder'**
-  String get coreContentReportFolder;
+  /// **'Why are you reporting this folder?'**
+  String get coreContentReportWhyFolder;
 
   /// Wall detail action bar: tooltip of the button that opens the comments sheet
   ///

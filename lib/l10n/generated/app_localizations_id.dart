@@ -11323,8 +11323,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get foldersDiscoverNewEmptyTitle => 'Tidak ada folder baru minggu ini';
 
   @override
-  String get foldersDiscoverNewEmptyBody =>
-      'Folder publik dengan 8 wallpaper atau lebih akan muncul di sini pada minggu pertamanya.';
+  String get foldersDiscoverNewEmptyBody => 'Folder publik muncul di sini selama seminggu setelah berisi 8 wallpaper.';
 
   @override
   String get foldersDiscoverSavesEmptyTitle => 'Belum ada yang mirip simpananmu';
@@ -13938,7 +13937,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get coreContentReportComment => 'komentar';
 
   @override
-  String get coreContentReportFolder => 'folder';
+  String get coreContentReportWhyFolder => 'Mengapa Anda melaporkan folder ini?';
 
   @override
   String get commentsAction => 'Komentar';
