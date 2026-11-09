@@ -60,6 +60,8 @@ export async function countFolderSignal(
   return db.runTransaction(async (tx) => {
     const [rate, header] = await Promise.all([tx.get(rateRef), tx.get(headerRef)]);
     if (!header.exists || header.data()?.ownerId !== ownerId) return false;
+    // A folder that cannot be listed must not take one of the job's scored candidate slots.
+    if (header.data()?.discoveryHidden === true || Number(header.data()?.itemCount ?? 0) < MIN_DISCOVER_WALLS) return false;
     const lastAt = rate.data()?.lastAt;
     if (lastAt instanceof admin.firestore.Timestamp && nowMs - lastAt.toMillis() < SIGNAL_COOLDOWN_MS) return false;
     tx.set(rateRef, {

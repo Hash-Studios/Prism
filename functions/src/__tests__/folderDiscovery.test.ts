@@ -221,7 +221,7 @@ test("setDiscoveryHidden removes a folder from every list and rebuild keeps it o
 
 test("countFolderSignal skips own, repeated, and young-account signals, and counts the rest", async (t) => {
   const created = new Map<string, number>([["young", NOW - 2 * DAY]]);
-  const store = installFakeDb(t, {"publicFolders/f1": {ownerId: "o1"}});
+  const store = installFakeDb(t, {"publicFolders/f1": {ownerId: "o1", itemCount: 8}});
   t.mock.method(folderSignalDeps, "accountCreatedMs", async (uid: string) => {
     if (uid === "racer") store.delete("publicFolders/f1");
     return created.get(uid) ?? NOW - 30 * DAY;
@@ -246,12 +246,26 @@ test("countFolderSignal skips own, repeated, and young-account signals, and coun
 
   assert.equal(await countFolderSignal("racer", "f1", "o1", "open", NOW), false);
   assert.equal(store.has("folderSignalRate/racer_f1_open"), false);
-  store.set("publicFolders/f1", {ownerId: "o1"});
+  store.set("publicFolders/f1", {ownerId: "o1", itemCount: 8});
 
   assert.equal(await countFolderSignal("u2", "f1", "o1", "follow", NOW), true);
   assert.equal(await countFolderSignal("u3", "f1", "o1", "save", NOW), true);
   assert.equal(store.get(`folderStatsDaily/${TODAY}_f1`)?.follows, 1);
   assert.equal(store.get(`folderStatsDaily/${TODAY}_f1`)?.saves, 1);
+});
+
+test("countFolderSignal skips folders that cannot be listed: under 8 walls or hidden from discovery", async (t) => {
+  t.mock.method(folderSignalDeps, "accountCreatedMs", async () => NOW - 30 * DAY);
+  const store = installFakeDb(t, {
+    "publicFolders/small": {ownerId: "o1", itemCount: 7},
+    "publicFolders/hidden": {ownerId: "o1", itemCount: 12, discoveryHidden: true},
+  });
+
+  assert.equal(await countFolderSignal("u1", "small", "o1", "open", NOW), false);
+  assert.equal(await countFolderSignal("u1", "hidden", "o1", "follow", NOW), false);
+  assert.equal(store.has(`folderStatsDaily/${TODAY}_small`), false);
+  assert.equal(store.has(`folderStatsDaily/${TODAY}_hidden`), false);
+  assert.equal(store.has("folderSignalRate/u1_small_open"), false);
 });
 
 test("failed Auth and transaction commits do not spend a signal claim; duplicates skip Auth", async (t) => {
@@ -261,7 +275,7 @@ test("failed Auth and transaction commits do not spend a signal claim; duplicate
     if (uid === "auth-fails") throw new Error("Auth unavailable");
     return NOW - 30 * DAY;
   });
-  const store = installFakeDb(t, {"publicFolders/f1": {ownerId: "o1"}}, undefined, {failCommits: 1});
+  const store = installFakeDb(t, {"publicFolders/f1": {ownerId: "o1", itemCount: 8}}, undefined, {failCommits: 1});
 
   await assert.rejects(countFolderSignal("auth-fails", "f1", "o1", "open", NOW), /Auth unavailable/);
   assert.equal(store.has("folderSignalRate/auth-fails_f1_open"), false);

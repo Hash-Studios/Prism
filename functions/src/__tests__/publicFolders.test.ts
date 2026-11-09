@@ -1169,7 +1169,7 @@ test("removing a projection drops its folder from the discover lists", async (t)
 test("a new follow counts once in the folder's daily stats, and a repeat follow does not", async (t) => {
   const store = setup(t);
   t.mock.method(folderSignalDeps, "accountCreatedMs", async () => Date.now() - 30 * 24 * 60 * 60 * 1000);
-  store.set("publicFolders/f1", {ownerId: "a", name: "Night", itemCount: 1, followerCount: 0, covers: []});
+  store.set("publicFolders/f1", {ownerId: "a", name: "Night", itemCount: 8, followerCount: 0, covers: []});
   const daily = `folderStatsDaily/${TODAY.replace(/-/g, "")}_f1`;
 
   assert.deepEqual(await followCall("b", {folderId: "f1", following: true}), {following: true});

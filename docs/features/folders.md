@@ -722,6 +722,7 @@ Each list entry has `id`, `ownerId`, `ownerName`, `ownerUsername`, `ownerPhoto`,
 - One account counts once for each folder and signal in 7 days. The claim is `folderSignalRate/{uid}_{folderId}_{signal}`.
 - An account that is younger than 7 days does not count. The age check runs before the claim, so the account counts once it is 7 days old.
 - A folder that is not public does not count. The claim and the count run in one transaction that reads the header again.
+- A folder that has fewer than 8 public walls, or that a moderator hid from discovery, does not count. It cannot be listed, so it must not take one of the 300 scored candidate slots.
 
 A counted signal adds 1 to `folderStatsDaily/{yyyymmdd}_{folderId}`. A TTL policy deletes the stats docs after 14 days and the claims after 7 days.
 

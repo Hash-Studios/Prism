@@ -11444,13 +11444,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get adminFolderReport => 'Denuncia de carpeta';
 
   @override
-  String get adminHideFromDiscovery => 'Ocultar de descubrir';
+  String get adminHideFromDiscovery => 'Ocultar de las listas de descubrimiento';
 
   @override
   String get adminKeepFolder => 'Mantener carpeta';
 
   @override
-  String get adminFolderHiddenFromDiscovery => 'Oculta de descubrir. La carpeta sigue abriéndose con el enlace.';
+  String get adminFolderHiddenFromDiscovery =>
+      'Oculta de las listas de descubrimiento. La carpeta sigue abriéndose con el enlace.';
 
   @override
   String get adminFolderKept => 'Carpeta conservada';
