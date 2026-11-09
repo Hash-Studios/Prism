@@ -48,7 +48,9 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:url_launcher/url_launcher.dart';
@@ -563,14 +565,20 @@ class _ProfileChildState extends State<_ProfileChild> {
     // 86 points across with the frame or the accent ring.
     final Widget headerAvatar = ProfileFrame.draws(cosmetics.frame, premium: cosmetics.premium)
         ? ProfileFrame(frameId: cosmetics.frame, premium: cosmetics.premium, size: _headerAvatarSize, child: photo)
+        // The accent ring follows the theme, like the camera badge in the edit panel. It is drawn over a photo that
+        // reaches the middle of the ring, so the photo edge does not blend with the ring edge.
         : Container(
-            decoration: BoxDecoration(
+            width: _headerAvatarSize,
+            height: _headerAvatarSize,
+            padding: const EdgeInsets.all(2),
+            foregroundDecoration: BoxDecoration(
               shape: BoxShape.circle,
-              // The accent ring follows the theme, like the camera badge in the edit panel.
               border: Border.all(color: cs.primary, width: 4),
-              color: cs.onSurface,
             ),
-            child: photo,
+            child: DecoratedBox(
+              decoration: BoxDecoration(shape: BoxShape.circle, color: cs.onSurface),
+              child: photo,
+            ),
           );
     // As the header collapses, the avatar shrinks and moves into the bar next to the name, so the page keeps its
     // identity. With reduce motion it stays in the header, and a small copy fades in with the name.
@@ -899,57 +907,40 @@ class _ProfileChildState extends State<_ProfileChild> {
                     const SizedBox(height: PrismSpace.sm),
                     SizedBox(
                       width: headerWidth * 0.9,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      child: _StatsLine(
+                        gaps: const <double>[PrismSpace.md, PrismSpace.xs],
+                        dividerColor: cs.onSurface.withValues(alpha: 0.2),
                         children: <Widget>[
-                          Flexible(
-                            child: Semantics(
-                              excludeSemantics: true,
-                              label: context.l10n.accountFollowingCountLabel(
-                                _compactCount(context, _profile.followingCount),
-                              ),
-                              button: ownProfile,
+                          Semantics(
+                            excludeSemantics: true,
+                            label: context.l10n.accountFollowingCountLabel(
+                              _compactCount(context, _profile.followingCount),
+                            ),
+                            button: ownProfile,
+                            onTap: ownProfile ? _openFollowingList : null,
+                            child: GestureDetector(
+                              excludeFromSemantics: true,
                               onTap: ownProfile ? _openFollowingList : null,
-                              child: GestureDetector(
-                                excludeFromSemantics: true,
-                                onTap: ownProfile ? _openFollowingList : null,
-                                child: _StatPill(count: _profile.followingCount, label: context.l10n.accountFollowing),
-                              ),
+                              child: _StatPill(count: _profile.followingCount, label: context.l10n.accountFollowing),
                             ),
                           ),
-                          Container(
-                            width: 1,
-                            height: 16,
-                            margin: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
-                            color: cs.onSurface.withValues(alpha: 0.2),
-                          ),
-                          Flexible(
-                            child: Semantics(
-                              excludeSemantics: true,
-                              label: context.l10n.accountFollowersCountLabel(
-                                _compactCount(context, _profile.followerCount),
-                              ),
-                              button: true,
+                          Semantics(
+                            excludeSemantics: true,
+                            label: context.l10n.accountFollowersCountLabel(
+                              _compactCount(context, _profile.followerCount),
+                            ),
+                            button: true,
+                            onTap: _openFollowersList,
+                            child: GestureDetector(
+                              excludeFromSemantics: true,
                               onTap: _openFollowersList,
-                              child: GestureDetector(
-                                excludeFromSemantics: true,
-                                onTap: _openFollowersList,
-                                child: _StatPill(
-                                  count: _profile.followerCount,
-                                  label: context.l10n.accountFollowersLabel(_profile.followerCount),
-                                ),
+                              child: _StatPill(
+                                count: _profile.followerCount,
+                                label: context.l10n.accountFollowersLabel(_profile.followerCount),
                               ),
                             ),
                           ),
-                          if (!ownProfile) ...<Widget>[
-                            Container(
-                              width: 1,
-                              height: 16,
-                              margin: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
-                              color: cs.onSurface.withValues(alpha: 0.2),
-                            ),
-                            Flexible(child: RankInfoChip(xp: cosmetics.xp)),
-                          ],
+                          if (!ownProfile) RankInfoChip(xp: cosmetics.xp),
                         ],
                       ),
                     ),
@@ -1092,6 +1083,123 @@ class _StatPill extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The profile stats in one centred row, with a short divider in each gap. [gaps] is the space on each side of each
+/// divider. When the row does not fit, as with large text on a narrow phone, the stats stack, centred and with no
+/// dividers, so words that fit the available width do not break in half.
+class _StatsLine extends MultiChildRenderObjectWidget {
+  const _StatsLine({required this.gaps, required this.dividerColor, required super.children});
+
+  final List<double> gaps;
+  final Color dividerColor;
+
+  @override
+  _RenderStatsLine createRenderObject(BuildContext context) =>
+      _RenderStatsLine(gaps, dividerColor, Directionality.of(context));
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderStatsLine renderObject) => renderObject
+    ..gaps = gaps
+    ..dividerColor = dividerColor
+    ..textDirection = Directionality.of(context);
+}
+
+class _StatsLineParentData extends ContainerBoxParentData<RenderBox> {}
+
+class _RenderStatsLine extends RenderBox
+    with
+        ContainerRenderObjectMixin<RenderBox, _StatsLineParentData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, _StatsLineParentData> {
+  _RenderStatsLine(this._gaps, this._dividerColor, this._textDirection);
+
+  static const double _dividerHeight = 16;
+
+  List<double> _gaps;
+  List<double> get gaps => _gaps;
+  set gaps(List<double> value) {
+    if (listEquals(value, _gaps)) return;
+    _gaps = value;
+    markNeedsLayout();
+  }
+
+  Color _dividerColor;
+  Color get dividerColor => _dividerColor;
+  set dividerColor(Color value) {
+    if (value == _dividerColor) return;
+    _dividerColor = value;
+    markNeedsPaint();
+  }
+
+  TextDirection _textDirection;
+  TextDirection get textDirection => _textDirection;
+  set textDirection(TextDirection value) {
+    if (value == _textDirection) return;
+    _textDirection = value;
+    markNeedsLayout();
+  }
+
+  /// The divider rectangles of the last layout. Empty when the stats are stacked.
+  final List<Rect> _dividers = <Rect>[];
+
+  @override
+  void setupParentData(RenderBox child) {
+    if (child.parentData is! _StatsLineParentData) child.parentData = _StatsLineParentData();
+  }
+
+  @override
+  void performLayout() {
+    final List<RenderBox> items = getChildrenAsList();
+    for (final RenderBox item in items) {
+      item.layout(BoxConstraints(maxWidth: constraints.maxWidth), parentUsesSize: true);
+    }
+    double rowWidth = 0;
+    double rowHeight = 0;
+    for (int i = 0; i < items.length; i++) {
+      rowWidth += items[i].size.width + (i == 0 ? 0 : 2 * _gaps[i - 1] + 1);
+      rowHeight = math.max(rowHeight, items[i].size.height);
+    }
+    _dividers.clear();
+    if (rowWidth <= constraints.maxWidth) {
+      size = constraints.constrain(Size(rowWidth, rowHeight));
+      final bool rtl = _textDirection == TextDirection.rtl;
+      double start = (size.width - rowWidth) / 2;
+      for (int i = 0; i < items.length; i++) {
+        final Size item = items[i].size;
+        final double left = rtl ? size.width - start - item.width : start;
+        (items[i].parentData! as _StatsLineParentData).offset = Offset(left, (rowHeight - item.height) / 2);
+        start += item.width;
+        if (i == items.length - 1) break;
+        start += _gaps[i];
+        _dividers.add(
+          Rect.fromLTWH(rtl ? size.width - start - 1 : start, (rowHeight - _dividerHeight) / 2, 1, _dividerHeight),
+        );
+        start += 1 + _gaps[i];
+      }
+      return;
+    }
+    final double width = items.fold<double>(0, (double widest, RenderBox item) => math.max(widest, item.size.width));
+    size = constraints.constrain(Size(width, 0));
+    double top = 0;
+    for (final RenderBox item in items) {
+      (item.parentData! as _StatsLineParentData).offset = Offset((size.width - item.size.width) / 2, top);
+      top += item.size.height + PrismSpace.xxs;
+    }
+    size = constraints.constrain(Size(size.width, math.max(0, top - PrismSpace.xxs)));
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final Paint paint = Paint()..color = _dividerColor;
+    for (final Rect divider in _dividers) {
+      context.canvas.drawRect(divider.shift(offset), paint);
+    }
+    defaultPaint(context, offset);
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) =>
+      defaultHitTestChildren(result, position: position);
 }
 
 const double _headerAvatarSize = 86;

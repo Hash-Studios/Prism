@@ -82,6 +82,11 @@ A Prism Pro member shows a Pro badge on the public profile. The badge sits above
 - The change reaches the public profile through `projectUserProfile`.
 - Analytics: `pro_badge_toggled` with `shown`.
 
+## Header layout
+
+- The header photo has a 4 point accent ring (`cs.primary`) when no frame is equipped. The ring is painted in front of the photo. The photo goes to the middle of the ring, so no other colour shows between the ring and the photo (#558). The visible photo is 78 points across.
+- The counts row shows **Following**, **Followers** and, on another creator's profile, the rank. A short divider is between each item. If the row does not fit, for example with large text on a narrow phone, the items stack in a centred column with no dividers. Words that fit the available width do not break across lines (#548). A single word wider than the available width still wraps.
+
 ## Limits
 
 - The profile still keys follows and lookups by email. The email also stays on each approved wall. A later server change must add a `uid` field and remove the email. Until then, the email is readable in the wall record.
@@ -96,4 +101,5 @@ A Prism Pro member shows a Pro badge on the public profile. The badge sits above
 4. Follow a creator. Turn on airplane mode before you tap, then tap. Check that the button goes back and the failure message shows.
 5. Clear your username in a test account, then tap **Share your Profile**. Check the message and the edit panel.
 6. Open Share Prism with no network. Check the retry state. Turn the network on and tap **Try again**.
-7. Run `fvm flutter test test/core/constants test/core/widgets/popup/edit_profile_panel_test.dart test/features/public_profile test/features/session/share_prism_screen_test.dart test/data/share`.
+7. Set the text size to the largest value on a 360 point phone. Open another creator's profile. Check that each count and label shows full words.
+8. Run `fvm flutter test test/core/constants test/core/widgets/popup/edit_profile_panel_test.dart test/features/public_profile test/features/session/share_prism_screen_test.dart test/data/share`.
