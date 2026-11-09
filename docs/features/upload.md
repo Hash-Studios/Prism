@@ -131,6 +131,8 @@ A creator can set the time when an approved wall goes live. Use this to release 
 - **At a set time** shows a date button and a time button. The creator picks the time in the time zone of the device. The row shows that time zone, for example "Times use your time zone (IST, UTC+05:30).".
 - The time must be 15 minutes to 30 days after the save. The picker starts 20 minutes ahead, so a slow upload stays in the window. The app shows an error next to the row if the time is outside the window.
 - In a batch, the next image starts with the release time of the last submitted image.
+- The 15-minute check uses the device clock. Network delay or device/server clock skew can still cause the server to refuse a boundary value. The 20-minute default is a cushion, not clock synchronization.
+- A local time that does not exist on the spring DST change day (for example 02:30 in New York) moves forward by one hour. The row shows the moved time, so the creator sees the time that is saved.
 - The app stores `releaseAt` as a UTC timestamp. A date after a daylight saving change uses the offset of that date.
 
 #### Data
@@ -159,14 +161,16 @@ The states are:
 
 #### The release job
 
-`releaseScheduledWalls` (`functions/src/wallRelease.ts`) runs every 5 minutes (UTC).
+`releaseScheduledWalls` (`functions/src/wallReleaseSchedule.ts`, with publishing in `wallRelease.ts`) runs every 5 minutes (UTC).
 
 1. It finds scheduled walls with `releaseAt` in the past.
 2. For each creator, one transaction sets `review: true`, `publishedAt`, `createdAt` and `releaseNotice: "pending"` on all due walls of that creator.
 3. The change of `review` starts the normal approval fan-out: collections, smart Folders, variants, the web catalogue, requests, topic digests and the other triggers.
-4. `onWallApproved` claims the approval notice of each wall when its delivery is ready. The last ready wall of the set sends one push to the creator ("Your walls are live") and one push to the followers ("<name> released 4 walls"). A single wall uses the normal follower copy.
+4. `onWallApproved` claims the approval notice of each wall when its delivery is ready. The last ready wall of the set sends one push to the creator ("Your walls are live") and one push to the followers ("<name> released 4 walls"). A single wall uses the normal follower copy. Each scheduled run also drains ready pending notices. This recovers a crash after the per-wall approval stamp, or a set whose last waiting wall was held or deleted. Studio walls do not hold up a creator's release notice.
 
-A second run, or a retry, releases nothing again, because the transaction checks the state. The release push is claimed before it is sent, so a retry cannot send it twice.
+A second run, or a retry, releases nothing again, because the transaction checks the state. The release push is claimed before it is sent, so a retry cannot send it twice. This is at-most-once delivery, not guaranteed delivery. A crash after the claim can lose all or part of the push fan-out. Choosing retries that may send a duplicate instead requires a product decision.
+
+All due walls of one creator use one transaction. An exceptionally large set that exceeds Firestore transaction size limits fails and retries without partial publication. Splitting such a set would require changing the all-at-once release contract.
 
 A colour variant waits while its parent wall exists and is not public, unless both are released in the same run. A desktop version cannot be added to a wall that is not public, so it waits too.
 
@@ -189,9 +193,11 @@ Approved walls from before this change have no `publishedAt`. `functions/src/scr
 
 Do these steps in this order. Each step needs approval.
 
+Before deploying rules, any admin build that restores entire rejected records must use the callable-based restore flow. Legacy direct restores containing server-owned `publishedAt` or `releaseNotice` fields are refused.
+
 1. Deploy the Firestore indexes (`walls`: `review`, `releaseAt`).
 2. Deploy the Firestore rules.
-3. Deploy the functions: `releaseScheduledWalls`, `onWallApproved`, `submitWallResubmission`, `onReviewQueueChanged`.
+3. Deploy the functions: `releaseScheduledWalls`, `onWallApproved`, `submitWallResubmission`, `onReviewQueueChanged`, `registerReviewLiveActivity`, `planWeeklyDrop`.
 4. Run the backfill dry run, then the backfill with `--apply`.
 5. Release the app.
 

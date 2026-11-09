@@ -3,7 +3,7 @@ import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import sharp from "sharp";
 import {db} from "../common";
-import {onWallApproved} from "../onWallApproved";
+import {drainReleaseNotices, onWallApproved} from "../onWallApproved";
 import {submitDesktopVersion} from "../desktopSubmissions";
 import {isScheduledWall, releaseDueWalls, validReleaseAt} from "../wallRelease";
 import {type Doc, installFakeDb} from "./fakeDb";
@@ -192,4 +192,69 @@ test("approval of an unscheduled wall stamps publishedAt", async (t) => {
     wallpaper_thumb: "https://example.com/thumb.jpg"}});
   await onWallApproved.run(await event("w1"));
   assert.ok(store.get("walls/w1")?.publishedAt instanceof admin.firestore.Timestamp);
+});
+
+test("a retry after the approval stamp can finish a pending release notice", async (t) => {
+  const {store, sent, event} = harness(t, {
+    "walls/a1": {...scheduled(A, NOW - MIN), review: true, releaseNotice: "pending", approvedNotifiedAt: at(NOW)},
+  });
+  await onWallApproved.run(await event("a1"));
+  assert.equal(sent.length, 2);
+  assert.equal(store.get("walls/a1")?.releaseNotice, undefined);
+});
+
+test("more than 100 due walls of one creator release and announce together", async (t) => {
+  const seed: Record<string, Doc> = {};
+  for (let i = 0; i < 101; i++) seed[`walls/w${i}`] = scheduled(A, NOW - MIN);
+  const {store, sent, event} = harness(t, seed);
+  assert.deepEqual(await releaseDueWalls(NOW), {released: 101, creators: 1});
+  for (let i = 0; i < 101; i++) await onWallApproved.run(await event(`w${i}`));
+  assert.equal(sent.length, 2);
+  assert.equal(sent[0].title, "Artist released 101 walls");
+  assert.equal([...store.values()].filter((wall) => wall.releaseNotice === "pending").length, 0);
+});
+
+for (const removed of ["held", "deleted", "studio"]) {
+  test(`the periodic drain recovers ready siblings when the last waiting wall is ${removed}`, async (t) => {
+    const {store, sent} = harness(t, {
+      "walls/a1": {...scheduled(A, NOW - MIN), review: true, releaseNotice: "pending", approvedNotifiedAt: at(NOW)},
+      "walls/a2": {...scheduled(A, NOW - MIN), review: true, releaseNotice: "pending"},
+    });
+    await drainReleaseNotices();
+    assert.equal(sent.length, 0);
+    if (removed === "deleted") store.delete("walls/a2");
+    else store.set("walls/a2", {...store.get("walls/a2"), ...(removed === "held" ? {review: false} : {byStudio: true})});
+    await drainReleaseNotices();
+    assert.equal(sent.length, 2);
+    assert.equal(store.get("walls/a1")?.releaseNotice, undefined);
+    await drainReleaseNotices();
+    assert.equal(sent.length, 2);
+  });
+}
+
+test("a failing creator does not block other pending release notices", async (t) => {
+  const {sent} = harness(t, {
+    "walls/a1": {...scheduled(A, NOW - MIN), review: true, releaseNotice: "pending", approvedNotifiedAt: at(NOW)},
+    "walls/b1": {...scheduled(B, NOW - MIN), review: true, releaseNotice: "pending", approvedNotifiedAt: at(NOW)},
+  });
+  const runTransaction = db.runTransaction.bind(db);
+  let calls = 0;
+  t.mock.method(db, "runTransaction", async (...args: Parameters<typeof db.runTransaction>) => {
+    if (calls++ === 0) throw new Error("claim unavailable");
+    return runTransaction(...args);
+  });
+  await assert.rejects(drainReleaseNotices());
+  assert.equal(sent.length, 2);
+  assert.equal(sent[0].topic, "creatorb_posts");
+});
+
+test("a due variant waits when its due parent is itself waiting for an unreleased ancestor", async (t) => {
+  const {store} = harness(t, {
+    "walls/root": scheduled(A, NOW + HOUR),
+    "walls/parent": scheduled(A, NOW - MIN, {variantOf: "root"}),
+    "walls/child": scheduled(A, NOW - MIN, {variantOf: "parent"}),
+  });
+  assert.deepEqual(await releaseDueWalls(NOW), {released: 0, creators: 1});
+  assert.equal(store.get("walls/child")?.review, false);
+  assert.deepEqual(await releaseDueWalls(NOW + 2 * HOUR), {released: 3, creators: 1});
 });

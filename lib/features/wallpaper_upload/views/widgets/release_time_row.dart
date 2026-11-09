@@ -32,11 +32,18 @@ class ReleaseTimeRow extends StatelessWidget {
 
   Future<void> _pickDate(BuildContext context, DateTime local) async {
     final DateTime today = now();
+    final DateTime firstDate = DateUtils.dateOnly(today);
+    final DateTime lastDate = DateUtils.dateOnly(today.add(maxReleaseLead));
+    final DateTime initialDate = local.isBefore(firstDate)
+        ? firstDate
+        : local.isAfter(lastDate)
+        ? lastDate
+        : local;
     final DateTime? day = await showDatePicker(
       context: context,
-      initialDate: local,
-      firstDate: DateTime(today.year, today.month, today.day),
-      lastDate: today.add(maxReleaseLead),
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
     );
     if (day == null) return;
     onChanged(DateTime(day.year, day.month, day.day, local.hour, local.minute).toUtc());

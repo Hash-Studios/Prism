@@ -127,7 +127,7 @@ class _WallTileState extends State<WallTile> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    if (release.state == WallReleaseState.scheduled && releaseWhen != null)
+                    if (!rejected && release.state == WallReleaseState.scheduled && releaseWhen != null)
                       PrismTag(
                         label: context.l10n.wallReleaseLabel(releaseWhen),
                         tone: PrismTone.accent,

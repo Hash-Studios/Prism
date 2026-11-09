@@ -139,7 +139,7 @@ export async function syncReviewLiveActivities(onlyUid?: string): Promise<void> 
           const walls = await db.collection("walls")
             .where("review", "==", false)
             .orderBy("createdAt", "desc")
-            .select("by", "createdAt", "dropWeek", "review")
+            .select("by", "createdAt", "dropWeek", "review", "releaseApprovedAt")
             .get();
           const state = summarizeQueue(walls.docs.map((d) => d.data()));
           const doc: ActivityDoc = {

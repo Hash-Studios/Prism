@@ -289,7 +289,8 @@ service cloud.firestore {
             'variantLink', 'publishedAt', 'releaseNotice'
           ])
           && notReleasedEarly()
-          && (isConfiguredAdmin()
+          && ((isConfiguredAdmin()
+                && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['releaseAt']))
           || (isEmailOwner(resource.data.email)
               && wallServerKeysUntouched()
               && request.resource.data.email == resource.data.email

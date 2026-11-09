@@ -31,6 +31,10 @@ void main() {
   });
 
   group('earliestReleasePick', () {
+    test('rounds seconds up instead of shortening the picker lead', () {
+      expect(earliestReleasePick(DateTime(2026, 11, 14, 10, 5, 1)), DateTime(2026, 11, 14, 10, 30));
+    });
+
     test('adds the 20 minute picker lead and rounds up to 5 minutes', () {
       expect(earliestReleasePick(DateTime(2026, 11, 14, 10, 3)), DateTime(2026, 11, 14, 10, 25));
       expect(earliestReleasePick(DateTime(2026, 11, 14, 10, 5)), DateTime(2026, 11, 14, 10, 25));
@@ -110,6 +114,12 @@ void main() {
   });
 
   group('releaseWhenText', () {
+    test('seven calendar days uses a date even across the spring DST change', () {
+      final DateTime now = DateTime(2026, 3, 7, 10);
+      final DateTime releaseAt = DateTime(2026, 3, 14, 18);
+      expect(releaseWhenText(releaseAt, now: now, locale: 'en', use24h: true), 'Mar 14 18:00');
+    });
+
     final DateTime now = DateTime(2026, 11, 5, 10);
 
     test('a release within 6 days shows the weekday and local 24h time', () {

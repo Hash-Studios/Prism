@@ -42,3 +42,24 @@ test("the publishedAt backfill is a dry run by default and writes nothing", asyn
   assert.deepEqual(counts, {scanned: 4, already: 1, planned: 2, noTime: 1, written: 0});
   assert.equal(JSON.stringify([...store.entries()]), before);
 });
+
+test("the backfill writes only approved missing timestamps and is idempotent", async (t) => {
+  const store = installFakeDb(t, {...seed(),
+    "walls/scheduled": {review: false, releaseApprovedAt: at(1), releaseAt: at(2), createdAt: at(1)},
+  });
+  t.mock.method(db, "batch", () => {
+    const writes: Array<() => Promise<unknown>> = [];
+    return {
+      update: (ref: admin.firestore.DocumentReference, data: admin.firestore.UpdateData<Doc>,
+        precondition: admin.firestore.Precondition) => writes.push(() => ref.update(data, precondition)),
+      commit: async () => Promise.all(writes.map((write) => write())),
+    };
+  });
+  const first = await backfillPublishedAt(db, {apply: true}, () => undefined);
+  assert.deepEqual(first, {scanned: 4, already: 1, planned: 2, noTime: 1, written: 2});
+  assert.equal((store.get("walls/b")?.publishedAt as admin.firestore.Timestamp).toMillis(), 1_700_000_100_000);
+  assert.equal((store.get("walls/c")?.publishedAt as admin.firestore.Timestamp).toMillis(), 1_700_000_000_000);
+  assert.equal(store.get("walls/scheduled")?.publishedAt, undefined);
+  const second = await backfillPublishedAt(db, {apply: true}, () => undefined);
+  assert.deepEqual(second, {scanned: 4, already: 3, planned: 0, noTime: 1, written: 0});
+});

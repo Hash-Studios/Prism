@@ -20,7 +20,9 @@ ReleaseTimeProblem? releaseTimeProblem(DateTime releaseAt, DateTime now) {
 /// The earliest time the picker offers: [pickerReleaseLead] ahead, rounded up to the next 5 minutes.
 DateTime earliestReleasePick(DateTime now) {
   final DateTime lead = now.add(pickerReleaseLead);
-  final int extra = (5 - lead.minute % 5) % 5;
+  final int extra = lead.minute % 5 == 0 && lead.second == 0 && lead.millisecond == 0 && lead.microsecond == 0
+      ? 0
+      : 5 - lead.minute % 5;
   return DateTime(lead.year, lead.month, lead.day, lead.hour, lead.minute + extra);
 }
 
@@ -52,8 +54,9 @@ class WallRelease {
 /// "Fri 18:00" inside the next 6 days, else "14 Nov 18:00", in the device time zone.
 String releaseWhenText(DateTime releaseAt, {required DateTime now, required String locale, required bool use24h}) {
   final DateTime local = releaseAt.toLocal();
-  final DateTime today = DateTime(now.year, now.month, now.day);
-  final int days = DateTime(local.year, local.month, local.day).difference(today).inDays;
+  final DateTime localNow = now.toLocal();
+  final DateTime today = DateTime.utc(localNow.year, localNow.month, localNow.day);
+  final int days = DateTime.utc(local.year, local.month, local.day).difference(today).inDays;
   final DateFormat day = days >= 0 && days < 7 ? DateFormat.E(locale) : DateFormat.MMMd(locale);
   return '${day.format(local)} ${(use24h ? DateFormat.Hm(locale) : DateFormat.jm(locale)).format(local)}';
 }

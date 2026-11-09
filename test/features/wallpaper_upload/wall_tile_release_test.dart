@@ -11,6 +11,7 @@ Future<void> _pumpTile(
   ThemeData? theme,
   double textScale = 1,
   bool narrow = false,
+  bool rejected = false,
 }) async {
   tester.view.physicalSize = narrow ? const Size(320, 800) : const Size(800, 1600);
   tester.view.devicePixelRatio = 1;
@@ -25,7 +26,7 @@ Future<void> _pumpTile(
         builder: (BuildContext context) => MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
           child: Scaffold(
-            body: SingleChildScrollView(child: WallTile(FirestoreDocument('S1', payload), rejected: false)),
+            body: SingleChildScrollView(child: WallTile(FirestoreDocument('S1', payload), rejected: rejected)),
           ),
         ),
       ),
@@ -49,6 +50,13 @@ void main() {
     'releaseApprovedAt': DateTime.utc(2026, 11, 10),
     'releaseAt': DateTime.now().add(const Duration(days: 2)).toUtc(),
   };
+
+  testWidgets('a rejected scheduled wall shows Rejected, never Releases', (tester) async {
+    await _pumpTile(tester, scheduled(), rejected: true);
+
+    expect(find.text('Rejected'), findsOneWidget);
+    expect(_textStartingWith('Releases '), findsNothing);
+  });
 
   testWidgets('a scheduled wall shows a Releases tag and not In review', (tester) async {
     await _pumpTile(tester, scheduled());

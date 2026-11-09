@@ -884,3 +884,47 @@ test("normalizeDropTitle keeps a 40 character title", () => {
 test("normalizeDropTitle rejects a number", () => {
   assert.equal(normalizeDropTitle(12), null);
 });
+
+test("the planner does not expose reserved walls before their release time", async (t) => {
+  const store = installFakeDb(t, reservedWalls(5, {
+    releaseAt: admin.firestore.Timestamp.fromMillis(MONDAY + 60 * 60 * 1000),
+    releaseApprovedAt: admin.firestore.Timestamp.fromMillis(MONDAY - 60 * 60 * 1000),
+  }));
+  await plan(t);
+  assert.equal(store.has(`drops/${KEY}`), false);
+  assert.equal(store.get("walls/W1")?.dropReserved, true);
+});
+
+test("old drop release waits for a future releaseAt and retries when due", async (t) => {
+  const due = MONDAY + 60 * 60 * 1000;
+  const store = installFakeDb(t, {
+    "drops/2026-W30": {endsAt: MONDAY - 40 * 86_400_000, walls: [{id: "W1"}]},
+    "walls/W1": wall(1, {dropWeek: "2026-W30", releaseAt: admin.firestore.Timestamp.fromMillis(due)}),
+  });
+  assert.equal(await releaseOldDrops(MONDAY), 0);
+  assert.equal(store.get("walls/W1")?.review, false);
+  assert.notEqual(store.get("drops/2026-W30")?.released, true);
+  assert.equal(await releaseOldDrops(due), 1);
+  assert.equal(store.get("walls/W1")?.review, true);
+});
+
+test("the planner scans past scheduled walls to find ready reservations", async (t) => {
+  const store = installFakeDb(t, {
+    ...reservedWalls(10, {releaseAt: admin.firestore.Timestamp.fromMillis(MONDAY + 3600000)}),
+    ...Object.fromEntries([11, 12, 13, 14].map((n) => [`walls/W${n}`, wall(n)])),
+  });
+  await plan(t);
+  assert.equal(store.get(`drops/${KEY}`)?.count, 4);
+  assert.equal(store.get("walls/W1")?.dropReserved, true);
+});
+
+test("the planner rechecks a release time changed after its query", async (t) => {
+  const store = installFakeDb(t, reservedWalls(4));
+  const runTransaction = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", async (callback: Parameters<typeof db.runTransaction>[0]) => {
+    store.set("walls/W1", wall(1, {releaseAt: admin.firestore.Timestamp.fromMillis(MONDAY + 3600000)}));
+    return runTransaction(callback);
+  });
+  await plan(t);
+  assert.equal(store.has(`drops/${KEY}`), false);
+});

@@ -74,6 +74,7 @@ export const onWallApproved = onDocumentUpdated(
     if (!str(current.data()?.email)) return;
     const announced = await claimApprovalNotice(expected, owned);
     if (!announced) {
+      if (current.data()?.releaseNotice === "pending") await announcePendingRelease(str(current.data()?.email));
       logger.info("onWallApproved: wall is unavailable or already announced, skipping.", {wallId});
       return;
     }
@@ -179,6 +180,27 @@ export const onWallApproved = onDocumentUpdated(
     }
   },
 );
+
+export async function announcePendingRelease(email: string): Promise<void> {
+  const artist = await resolveUserByEmail(email);
+  const walls = await claimReleaseNotices(email);
+  await announceRelease(walls, email, str(walls[0]?.data.by) || "An artist", artist);
+}
+
+export async function drainReleaseNotices(): Promise<void> {
+  const pending = await db.collection("walls").where("releaseNotice", "==", "pending").get();
+  const emails = new Set(pending.docs.map((doc) => str(doc.data().email)).filter(Boolean));
+  let failed = 0;
+  for (const email of emails) {
+    try {
+      await announcePendingRelease(email);
+    } catch (err) {
+      failed += 1;
+      logger.warn("onWallApproved: could not drain a release notice.", {emailHash: emailHash(email), err});
+    }
+  }
+  if (failed > 0) throw new Error(`onWallApproved: ${failed} release notices failed`);
+}
 
 /** One push to the creator and one to their followers for every wall of a scheduled release. */
 async function announceRelease(

@@ -39,6 +39,23 @@ Finder _textStartingWith(String prefix) =>
     find.byWidgetPredicate((Widget widget) => widget is Text && (widget.data ?? '').startsWith(prefix));
 
 void main() {
+  for (final int days in <int>[-1, 40]) {
+    testWidgets('can repair a release date $days days from today', (tester) async {
+      await _pump(
+        tester,
+        ReleaseTimeRow(
+          releaseAt: _now.add(Duration(days: days)).toUtc(),
+          onChanged: (_) {},
+          now: () => _now,
+        ),
+      );
+      await tester.tap(find.byIcon(Icons.calendar_today_outlined));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+    });
+  }
+
   testWidgets('with no time set shows the segments and the when-approved help, and no date or time buttons', (
     tester,
   ) async {

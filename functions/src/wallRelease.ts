@@ -1,7 +1,6 @@
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
-import {onSchedule} from "firebase-functions/v2/scheduler";
-import {db, REGION, str} from "./common";
+import {db, str} from "./common";
 
 /**
  * Scheduled release. A creator may set `releaseAt`. An admin approval of such a wall writes `releaseApprovedAt` and
@@ -12,7 +11,6 @@ import {db, REGION, str} from "./common";
 export const RELEASE_MIN_MS = 15 * 60 * 1000;
 export const RELEASE_MAX_MS = 30 * 24 * 60 * 60 * 1000;
 const PAGE = 200;
-const MAX_PER_CREATOR = 100;
 
 type Wall = admin.firestore.DocumentData;
 const {FieldValue, Timestamp} = admin.firestore;
@@ -47,7 +45,7 @@ export async function releaseDueWalls(nowMs: number): Promise<{released: number;
       const email = str(doc.data().email);
       if (!email || !isScheduledWall(doc.data())) continue;
       const refs = byCreator.get(email) ?? [];
-      if (refs.length < MAX_PER_CREATOR) refs.push(doc.ref);
+      refs.push(doc.ref);
       byCreator.set(email, refs);
     }
     if (page.size < PAGE) break;
@@ -86,7 +84,14 @@ export async function publishCreatorWalls(email: string, refs: admin.firestore.D
       .filter((id) => id && !id.includes("/") && !releasing.has(id));
     const parents = await Promise.all(parentIds.map((id) => tx.get(db.collection("walls").doc(id))));
     const waiting = new Set(parents.filter((p) => p.exists && p.data()?.review !== true).map((p) => p.id));
-    const go = due.filter((snap) => !waiting.has(str(snap.data()?.variantOf)));
+    let previousSize: number;
+    do {
+      previousSize = waiting.size;
+      for (const snap of due) {
+        if (waiting.has(str(snap.data()?.variantOf))) waiting.add(snap.id);
+      }
+    } while (waiting.size !== previousSize);
+    const go = due.filter((snap) => !waiting.has(snap.id));
     for (const snap of go) {
       tx.update(snap.ref, {
         review: true,
@@ -108,10 +113,14 @@ export async function claimReleaseNotices(email: string): Promise<Array<{id: str
   if (!email) return [];
   return db.runTransaction(async (tx) => {
     const rows = await tx.get(db.collection("walls").where("email", "==", email)
-      .where("releaseNotice", "==", "pending").limit(MAX_PER_CREATOR));
-    const live = rows.docs.filter((doc) => doc.data().review === true);
+      .where("releaseNotice", "==", "pending"));
+    const live = rows.docs.filter((doc) => doc.data().review === true && doc.data().byStudio !== true);
     if (live.length === 0 || live.some((doc) => doc.data().approvedNotifiedAt == null)) {
-      for (const doc of rows.docs) if (doc.data().review !== true) tx.update(doc.ref, {releaseNotice: FieldValue.delete()});
+      for (const doc of rows.docs) {
+        if (doc.data().review !== true || doc.data().byStudio === true) {
+          tx.update(doc.ref, {releaseNotice: FieldValue.delete()});
+        }
+      }
       return [];
     }
     for (const doc of rows.docs) tx.update(doc.ref, {releaseNotice: FieldValue.delete()});
@@ -120,10 +129,3 @@ export async function claimReleaseNotices(email: string): Promise<Array<{id: str
       .sort((a, b) => (millis(b.data.releaseAt) ?? 0) - (millis(a.data.releaseAt) ?? 0));
   });
 }
-
-export const releaseScheduledWalls = onSchedule(
-  {schedule: "*/5 * * * *", region: REGION, timeZone: "UTC", retryCount: 2},
-  async () => {
-    await releaseDueWalls(Date.now());
-  },
-);
