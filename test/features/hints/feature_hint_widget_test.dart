@@ -179,9 +179,9 @@ void main() {
 
   testWidgets('a hint cannot appear during a slow route transition', (tester) async {
     await tester.pumpWidget(_app(const Scaffold(body: Text('Start'))));
-    Navigator.of(tester.element(find.text('Start'))).push(
-      PageRouteBuilder<void>(transitionDuration: const Duration(seconds: 2), pageBuilder: (_, _, _) => _host()),
-    );
+    Navigator.of(
+      tester.element(find.text('Start')),
+    ).push(PageRouteBuilder<void>(transitionDuration: const Duration(seconds: 2), pageBuilder: (_, _, _) => _host()));
     await tester.pump();
     await tester.pump(FeatureHint.settle);
     expect(_hints.record(HintId.variantDots).views, 1);
