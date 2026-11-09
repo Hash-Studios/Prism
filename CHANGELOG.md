@@ -1,5 +1,12 @@
 ## Changelog
 
+### v3.26.0
+- Discover public folders in Search, with trending folders to follow
+- Creators can pick when an approved wall goes live
+- Short tips point out features you have not tried yet. Turn them off in Settings
+- The profile ring and large-text counts look right again
+- Security and stability fixes
+
 ### v3.25.0
 - Make a wallpaper from your own photo: extend it to fit your screen, or upscale it
 - Share images and links from other apps straight into Prism
