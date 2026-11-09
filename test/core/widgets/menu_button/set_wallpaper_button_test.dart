@@ -221,8 +221,13 @@ void main() {
   /// A PNG in a folder of its own, as the studio hands it back. The flow deletes that folder after a set.
   String placedWallFile() {
     final Directory dir = Directory.systemTemp.createTempSync('set-screen-placed');
+    // The flow discards the folder without waiting, so it can vanish between a check and the delete.
     addTearDown(() async {
-      if (await dir.exists()) await dir.delete(recursive: true);
+      try {
+        await dir.delete(recursive: true);
+      } on PathNotFoundException {
+        return;
+      }
     });
     final File file = File('${dir.path}/placed.png')..writeAsBytesSync(File(wallFilePath).readAsBytesSync());
     assets.mapSource(file.path, file);
