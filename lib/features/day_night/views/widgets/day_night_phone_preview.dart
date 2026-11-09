@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
+import 'package:Prism/features/readability/views/readability_views.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 /// The time of [time] as the device shows it, for example 7:00 AM or 19:00.
@@ -124,7 +126,14 @@ class _WallScreen extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: <Widget>[
-        PrismImageTile(url: wall.thumbnailUrl, borderRadius: BorderRadius.circular(PrismRadius.md)),
+        if (wall.fixes.isEmpty)
+          PrismImageTile(url: wall.thumbnailUrl, borderRadius: BorderRadius.circular(PrismRadius.md))
+        else
+          ReadabilityFixedImage(
+            key: const ValueKey<String>('day-night-fixed-wall'),
+            provider: CachedNetworkImageProvider(wall.thumbnailUrl),
+            fixes: wall.fixes,
+          ),
         Align(
           alignment: const Alignment(0, -0.8),
           child: _Clock(time: time, color: Colors.white),

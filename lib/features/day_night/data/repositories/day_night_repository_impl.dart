@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
@@ -7,14 +8,18 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
 import 'package:Prism/features/auto_rotate/data/android_schedule_coordinator.dart';
 import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/features/day_night/domain/repositories/day_night_repository.dart';
 import 'package:Prism/features/ios_shortcuts/data/native_asset_paths_store.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb, visibleForTesting;
 import 'package:injectable/injectable.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 @LazySingleton(as: DayNightRepository)
@@ -32,6 +37,10 @@ class DayNightRepositoryImpl implements DayNightRepository {
 
   @visibleForTesting
   static bool? runsOnDeviceOverride;
+
+  /// Renders the readability fixes of a wall from [source] into a file. Tests replace it.
+  @visibleForTesting
+  static Future<File> Function(DayNightSlot slot, DayNightWall wall, String source) fixedCopyMaker = _fixedCopy;
 
   final SettingsLocalDataSource _settings;
 
@@ -216,8 +225,13 @@ class DayNightRepositoryImpl implements DayNightRepository {
     });
   }
 
-  /// A public wall loads from its https URL. A protected wall needs its downloaded original.
+  /// A public wall loads from its https URL. A protected wall needs its downloaded original. A wall with readability
+  /// fixes loads from a fixed copy of either.
   Future<aw.WallpaperRotationSource> _scheduleSource(DayNightSlot slot, DayNightWall wall) async {
+    if (wall.fixes.isNotEmpty) {
+      final File fixed = await fixedCopyMaker(slot, wall, await _fixSource(slot, wall));
+      return aw.WallpaperRotationSource(sourceType: aw.WallpaperSourceType.file, source: fixed.path);
+    }
     if (wall.hasPublicImage) {
       return aw.WallpaperRotationSource(sourceType: aw.WallpaperSourceType.url, source: wall.fullUrl.trim());
     }
@@ -227,6 +241,14 @@ class DayNightRepositoryImpl implements DayNightRepository {
   }
 
   Future<Map<String, Object?>> _snapshotItem(DayNightSlot slot, DayNightWall wall, Map<String, String> paths) async {
+    if (wall.fixes.isNotEmpty) {
+      final File fixed = await fixedCopyMaker(slot, wall, await _fixSource(slot, wall));
+      final String? relativePath = await NativeAssetPathsStore.originalRelativePath(fixed);
+      if (relativePath == null) throw DayNightPrepareException(DayNightPrepareFailure.offlineCopyFailed, slot: slot);
+      final String asset = 'daynight-fixed-${slot.name}';
+      paths[asset] = relativePath;
+      return <String, Object?>{'id': wall.id, 'asset': asset};
+    }
     final String url = wall.fullUrl.trim();
     if (wall.hasPublicImage) {
       try {
@@ -245,6 +267,35 @@ class DayNightRepositoryImpl implements DayNightRepository {
     final String asset = NativeAssetPathsStore.originalAssetKeyFor(wall.source, wall.id);
     paths[asset] = relativePath;
     return <String, Object?>{'id': wall.id, 'asset': asset};
+  }
+
+  /// Where a fix renders from: the public URL, or the downloaded original of a protected wall.
+  Future<String> _fixSource(DayNightSlot slot, DayNightWall wall) async {
+    if (wall.hasPublicImage) return wall.fullUrl.trim();
+    final File? original = await _downloadedOriginal(wall);
+    if (original == null) throw DayNightPrepareException(DayNightPrepareFailure.needsDownload, slot: slot);
+    return original.path;
+  }
+
+  /// A screen-size copy of the wall with its fixes, kept under the offline assets root so iOS Shortcuts can read it.
+  static Future<File> _fixedCopy(DayNightSlot slot, DayNightWall wall, String source) async {
+    final ui.FlutterView view =
+        ui.PlatformDispatcher.instance.implicitView ?? ui.PlatformDispatcher.instance.views.first;
+    final ui.Size px = view.physicalSize;
+    final ui.Size portrait = ui.Size(px.shortestSide, px.longestSide);
+    final PlacedWallpaper placed = await PlacedWallpaper.render(
+      source,
+      WallpaperPlacement(fixes: wall.fixes),
+      portrait,
+    );
+    try {
+      final Directory support = await getApplicationSupportDirectory();
+      final Directory folder = Directory(path.join(support.path, 'prism', 'offline', 'assets', 'day_night_fixed'));
+      await folder.create(recursive: true);
+      return await File(placed.path).copy(path.join(folder.path, '${slot.name}.png'));
+    } finally {
+      await placed.discard();
+    }
   }
 
   Future<File?> _downloadedOriginal(DayNightWall wall) {

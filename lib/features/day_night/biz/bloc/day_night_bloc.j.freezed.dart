@@ -61,12 +61,13 @@ extension DayNightEventPatterns on DayNightEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _EntitlementChanged value)?  entitlementChanged,TResult Function( _WallPicked value)?  wallPicked,TResult Function( _VariantsPicked value)?  variantsPicked,TResult Function( _TimesChanged value)?  timesChanged,TResult Function( _TargetChanged value)?  targetChanged,TResult Function( _Toggled value)?  toggled,TResult Function( _RetryPressed value)?  retryPressed,TResult Function( _ProLapseAcknowledged value)?  proLapseAcknowledged,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _EntitlementChanged value)?  entitlementChanged,TResult Function( _WallPicked value)?  wallPicked,TResult Function( _FixesChanged value)?  fixesChanged,TResult Function( _VariantsPicked value)?  variantsPicked,TResult Function( _TimesChanged value)?  timesChanged,TResult Function( _TargetChanged value)?  targetChanged,TResult Function( _Toggled value)?  toggled,TResult Function( _RetryPressed value)?  retryPressed,TResult Function( _ProLapseAcknowledged value)?  proLapseAcknowledged,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _EntitlementChanged() when entitlementChanged != null:
 return entitlementChanged(_that);case _WallPicked() when wallPicked != null:
-return wallPicked(_that);case _VariantsPicked() when variantsPicked != null:
+return wallPicked(_that);case _FixesChanged() when fixesChanged != null:
+return fixesChanged(_that);case _VariantsPicked() when variantsPicked != null:
 return variantsPicked(_that);case _TimesChanged() when timesChanged != null:
 return timesChanged(_that);case _TargetChanged() when targetChanged != null:
 return targetChanged(_that);case _Toggled() when toggled != null:
@@ -90,12 +91,13 @@ return proLapseAcknowledged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _EntitlementChanged value)  entitlementChanged,required TResult Function( _WallPicked value)  wallPicked,required TResult Function( _VariantsPicked value)  variantsPicked,required TResult Function( _TimesChanged value)  timesChanged,required TResult Function( _TargetChanged value)  targetChanged,required TResult Function( _Toggled value)  toggled,required TResult Function( _RetryPressed value)  retryPressed,required TResult Function( _ProLapseAcknowledged value)  proLapseAcknowledged,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _EntitlementChanged value)  entitlementChanged,required TResult Function( _WallPicked value)  wallPicked,required TResult Function( _FixesChanged value)  fixesChanged,required TResult Function( _VariantsPicked value)  variantsPicked,required TResult Function( _TimesChanged value)  timesChanged,required TResult Function( _TargetChanged value)  targetChanged,required TResult Function( _Toggled value)  toggled,required TResult Function( _RetryPressed value)  retryPressed,required TResult Function( _ProLapseAcknowledged value)  proLapseAcknowledged,}){
 final _that = this;
 switch (_that) {
 case _EntitlementChanged():
 return entitlementChanged(_that);case _WallPicked():
-return wallPicked(_that);case _VariantsPicked():
+return wallPicked(_that);case _FixesChanged():
+return fixesChanged(_that);case _VariantsPicked():
 return variantsPicked(_that);case _TimesChanged():
 return timesChanged(_that);case _TargetChanged():
 return targetChanged(_that);case _Toggled():
@@ -118,12 +120,13 @@ return proLapseAcknowledged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _EntitlementChanged value)?  entitlementChanged,TResult? Function( _WallPicked value)?  wallPicked,TResult? Function( _VariantsPicked value)?  variantsPicked,TResult? Function( _TimesChanged value)?  timesChanged,TResult? Function( _TargetChanged value)?  targetChanged,TResult? Function( _Toggled value)?  toggled,TResult? Function( _RetryPressed value)?  retryPressed,TResult? Function( _ProLapseAcknowledged value)?  proLapseAcknowledged,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _EntitlementChanged value)?  entitlementChanged,TResult? Function( _WallPicked value)?  wallPicked,TResult? Function( _FixesChanged value)?  fixesChanged,TResult? Function( _VariantsPicked value)?  variantsPicked,TResult? Function( _TimesChanged value)?  timesChanged,TResult? Function( _TargetChanged value)?  targetChanged,TResult? Function( _Toggled value)?  toggled,TResult? Function( _RetryPressed value)?  retryPressed,TResult? Function( _ProLapseAcknowledged value)?  proLapseAcknowledged,}){
 final _that = this;
 switch (_that) {
 case _EntitlementChanged() when entitlementChanged != null:
 return entitlementChanged(_that);case _WallPicked() when wallPicked != null:
-return wallPicked(_that);case _VariantsPicked() when variantsPicked != null:
+return wallPicked(_that);case _FixesChanged() when fixesChanged != null:
+return fixesChanged(_that);case _VariantsPicked() when variantsPicked != null:
 return variantsPicked(_that);case _TimesChanged() when timesChanged != null:
 return timesChanged(_that);case _TargetChanged() when targetChanged != null:
 return targetChanged(_that);case _Toggled() when toggled != null:
@@ -146,11 +149,12 @@ return proLapseAcknowledged(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isPro,  String userId,  DateTime? passUntil)?  entitlementChanged,TResult Function( DayNightSlot slot,  DayNightWall wall)?  wallPicked,TResult Function( DayNightWall day,  DayNightWall night)?  variantsPicked,TResult Function( DayTime dayStart,  DayTime nightStart)?  timesChanged,TResult Function( WallpaperTarget target)?  targetChanged,TResult Function( bool enabled)?  toggled,TResult Function()?  retryPressed,TResult Function()?  proLapseAcknowledged,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( bool isPro,  String userId,  DateTime? passUntil)?  entitlementChanged,TResult Function( DayNightSlot slot,  DayNightWall wall)?  wallPicked,TResult Function( DayNightSlot slot,  List<ReadabilityFix> fixes)?  fixesChanged,TResult Function( DayNightWall day,  DayNightWall night)?  variantsPicked,TResult Function( DayTime dayStart,  DayTime nightStart)?  timesChanged,TResult Function( WallpaperTarget target)?  targetChanged,TResult Function( bool enabled)?  toggled,TResult Function()?  retryPressed,TResult Function()?  proLapseAcknowledged,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _EntitlementChanged() when entitlementChanged != null:
 return entitlementChanged(_that.isPro,_that.userId,_that.passUntil);case _WallPicked() when wallPicked != null:
-return wallPicked(_that.slot,_that.wall);case _VariantsPicked() when variantsPicked != null:
+return wallPicked(_that.slot,_that.wall);case _FixesChanged() when fixesChanged != null:
+return fixesChanged(_that.slot,_that.fixes);case _VariantsPicked() when variantsPicked != null:
 return variantsPicked(_that.day,_that.night);case _TimesChanged() when timesChanged != null:
 return timesChanged(_that.dayStart,_that.nightStart);case _TargetChanged() when targetChanged != null:
 return targetChanged(_that.target);case _Toggled() when toggled != null:
@@ -174,11 +178,12 @@ return proLapseAcknowledged();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isPro,  String userId,  DateTime? passUntil)  entitlementChanged,required TResult Function( DayNightSlot slot,  DayNightWall wall)  wallPicked,required TResult Function( DayNightWall day,  DayNightWall night)  variantsPicked,required TResult Function( DayTime dayStart,  DayTime nightStart)  timesChanged,required TResult Function( WallpaperTarget target)  targetChanged,required TResult Function( bool enabled)  toggled,required TResult Function()  retryPressed,required TResult Function()  proLapseAcknowledged,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( bool isPro,  String userId,  DateTime? passUntil)  entitlementChanged,required TResult Function( DayNightSlot slot,  DayNightWall wall)  wallPicked,required TResult Function( DayNightSlot slot,  List<ReadabilityFix> fixes)  fixesChanged,required TResult Function( DayNightWall day,  DayNightWall night)  variantsPicked,required TResult Function( DayTime dayStart,  DayTime nightStart)  timesChanged,required TResult Function( WallpaperTarget target)  targetChanged,required TResult Function( bool enabled)  toggled,required TResult Function()  retryPressed,required TResult Function()  proLapseAcknowledged,}) {final _that = this;
 switch (_that) {
 case _EntitlementChanged():
 return entitlementChanged(_that.isPro,_that.userId,_that.passUntil);case _WallPicked():
-return wallPicked(_that.slot,_that.wall);case _VariantsPicked():
+return wallPicked(_that.slot,_that.wall);case _FixesChanged():
+return fixesChanged(_that.slot,_that.fixes);case _VariantsPicked():
 return variantsPicked(_that.day,_that.night);case _TimesChanged():
 return timesChanged(_that.dayStart,_that.nightStart);case _TargetChanged():
 return targetChanged(_that.target);case _Toggled():
@@ -201,11 +206,12 @@ return proLapseAcknowledged();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isPro,  String userId,  DateTime? passUntil)?  entitlementChanged,TResult? Function( DayNightSlot slot,  DayNightWall wall)?  wallPicked,TResult? Function( DayNightWall day,  DayNightWall night)?  variantsPicked,TResult? Function( DayTime dayStart,  DayTime nightStart)?  timesChanged,TResult? Function( WallpaperTarget target)?  targetChanged,TResult? Function( bool enabled)?  toggled,TResult? Function()?  retryPressed,TResult? Function()?  proLapseAcknowledged,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( bool isPro,  String userId,  DateTime? passUntil)?  entitlementChanged,TResult? Function( DayNightSlot slot,  DayNightWall wall)?  wallPicked,TResult? Function( DayNightSlot slot,  List<ReadabilityFix> fixes)?  fixesChanged,TResult? Function( DayNightWall day,  DayNightWall night)?  variantsPicked,TResult? Function( DayTime dayStart,  DayTime nightStart)?  timesChanged,TResult? Function( WallpaperTarget target)?  targetChanged,TResult? Function( bool enabled)?  toggled,TResult? Function()?  retryPressed,TResult? Function()?  proLapseAcknowledged,}) {final _that = this;
 switch (_that) {
 case _EntitlementChanged() when entitlementChanged != null:
 return entitlementChanged(_that.isPro,_that.userId,_that.passUntil);case _WallPicked() when wallPicked != null:
-return wallPicked(_that.slot,_that.wall);case _VariantsPicked() when variantsPicked != null:
+return wallPicked(_that.slot,_that.wall);case _FixesChanged() when fixesChanged != null:
+return fixesChanged(_that.slot,_that.fixes);case _VariantsPicked() when variantsPicked != null:
 return variantsPicked(_that.day,_that.night);case _TimesChanged() when timesChanged != null:
 return timesChanged(_that.dayStart,_that.nightStart);case _TargetChanged() when targetChanged != null:
 return targetChanged(_that.target);case _Toggled() when toggled != null:
@@ -363,6 +369,86 @@ class __$WallPickedCopyWithImpl<$Res>
 null == slot ? _self.slot : slot // ignore: cast_nullable_to_non_nullable
 as DayNightSlot,null == wall ? _self.wall : wall // ignore: cast_nullable_to_non_nullable
 as DayNightWall,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class _FixesChanged with DiagnosticableTreeMixin implements DayNightEvent {
+  const _FixesChanged(this.slot, final  List<ReadabilityFix> fixes): _fixes = fixes;
+  
+
+ final  DayNightSlot slot;
+ final  List<ReadabilityFix> _fixes;
+ List<ReadabilityFix> get fixes {
+  if (_fixes is EqualUnmodifiableListView) return _fixes;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_fixes);
+}
+
+
+/// Create a copy of DayNightEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$FixesChangedCopyWith<_FixesChanged> get copyWith => __$FixesChangedCopyWithImpl<_FixesChanged>(this, _$identity);
+
+
+@override
+void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+  properties
+    ..add(DiagnosticsProperty('type', 'DayNightEvent.fixesChanged'))
+    ..add(DiagnosticsProperty('slot', slot))..add(DiagnosticsProperty('fixes', fixes));
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _FixesChanged&&(identical(other.slot, slot) || other.slot == slot)&&const DeepCollectionEquality().equals(other._fixes, _fixes));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,slot,const DeepCollectionEquality().hash(_fixes));
+
+@override
+String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+  return 'DayNightEvent.fixesChanged(slot: $slot, fixes: $fixes)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$FixesChangedCopyWith<$Res> implements $DayNightEventCopyWith<$Res> {
+  factory _$FixesChangedCopyWith(_FixesChanged value, $Res Function(_FixesChanged) _then) = __$FixesChangedCopyWithImpl;
+@useResult
+$Res call({
+ DayNightSlot slot, List<ReadabilityFix> fixes
+});
+
+
+
+
+}
+/// @nodoc
+class __$FixesChangedCopyWithImpl<$Res>
+    implements _$FixesChangedCopyWith<$Res> {
+  __$FixesChangedCopyWithImpl(this._self, this._then);
+
+  final _FixesChanged _self;
+  final $Res Function(_FixesChanged) _then;
+
+/// Create a copy of DayNightEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? slot = null,Object? fixes = null,}) {
+  return _then(_FixesChanged(
+null == slot ? _self.slot : slot // ignore: cast_nullable_to_non_nullable
+as DayNightSlot,null == fixes ? _self._fixes : fixes // ignore: cast_nullable_to_non_nullable
+as List<ReadabilityFix>,
   ));
 }
 

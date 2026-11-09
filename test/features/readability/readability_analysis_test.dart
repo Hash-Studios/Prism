@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'dart:ui' show Color, Rect;
 
 import 'package:Prism/features/readability/domain/readability.dart';

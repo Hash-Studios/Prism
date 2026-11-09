@@ -54,6 +54,16 @@ class ReadabilityFix extends Equatable {
   /// Safe in a file name, for example `clock-dim`.
   String get key => '${zone.name}-${kind.name}';
 
+  /// The fix a [key] names, or null for an unknown key.
+  static ReadabilityFix? fromKey(Object? key) {
+    for (final ReadabilityZone zone in ReadabilityZone.values) {
+      for (final ReadabilityFixKind kind in ReadabilityFixKind.values) {
+        if (key == '${zone.name}-${kind.name}') return ReadabilityFix(zone, kind);
+      }
+    }
+    return null;
+  }
+
   @override
   List<Object?> get props => <Object?>[zone, kind];
 }

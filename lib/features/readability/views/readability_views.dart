@@ -317,3 +317,76 @@ class _ReadabilityTipsRowState extends State<ReadabilityTipsRow> {
     onChanged: _set,
   );
 }
+
+/// [provider] covering its box with [fixes] painted on, through the same painter as the file that gets set.
+/// It shows the plain image until the fixed one is drawn.
+class ReadabilityFixedImage extends StatefulWidget {
+  const ReadabilityFixedImage({super.key, required this.provider, required this.fixes});
+
+  final ImageProvider provider;
+  final List<ReadabilityFix> fixes;
+
+  @override
+  State<ReadabilityFixedImage> createState() => _ReadabilityFixedImageState();
+}
+
+class _ReadabilityFixedImageState extends State<ReadabilityFixedImage> {
+  ui.Image? _image;
+  Object? _drawn;
+  int _generation = 0;
+
+  Future<void> _draw(Size size, double dpr) async {
+    final Object job = (widget.provider, Object.hashAll(widget.fixes), size, dpr);
+    if (job == _drawn) return;
+    _drawn = job;
+    final int generation = ++_generation;
+    final int width = (size.width * dpr).round();
+    final int height = (size.height * dpr).round();
+    if (width < 2 || height < 2) return;
+    try {
+      final ui.Image decoded = await decodeForFrame(widget.provider, height);
+      final ui.Image drawn;
+      try {
+        drawn = await renderReadabilityFrame(
+          decoded,
+          width: width,
+          height: height,
+          platform: defaultTargetPlatform,
+          fixes: widget.fixes,
+        );
+      } finally {
+        decoded.dispose();
+      }
+      if (!mounted || generation != _generation) {
+        drawn.dispose();
+        return;
+      }
+      final ui.Image? old = _image;
+      setState(() => _image = drawn);
+      old?.dispose();
+    } catch (error, stackTrace) {
+      logger.w('Readability: could not draw the fixed preview', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  @override
+  void dispose() {
+    _generation++;
+    _image?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final double dpr = MediaQuery.devicePixelRatioOf(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        unawaited(_draw(constraints.biggest, dpr));
+        final ui.Image? image = _image;
+        return image == null
+            ? Image(image: widget.provider, fit: BoxFit.cover)
+            : RawImage(image: image, fit: BoxFit.cover);
+      },
+    );
+  }
+}

@@ -12,6 +12,7 @@ import 'package:Prism/features/day_night/biz/bloc/day_night_bloc.j.dart';
 import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/features/day_night/views/widgets/day_night_guide_sheet.dart';
 import 'package:Prism/features/day_night/views/widgets/day_night_phone_preview.dart';
+import 'package:Prism/features/day_night/views/widgets/day_night_readability_tip.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/material.dart';
@@ -49,20 +50,32 @@ class DayNightScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Expanded(
-                child: DayNightPhonePreview(
-                  slot: DayNightSlot.day,
-                  wall: pair.day,
-                  time: dayTime,
-                  needsDownload: state.issue == DayNightIssue.needsDownloadDay,
+                child: Column(
+                  children: <Widget>[
+                    DayNightPhonePreview(
+                      slot: DayNightSlot.day,
+                      wall: pair.day,
+                      time: dayTime,
+                      needsDownload: state.issue == DayNightIssue.needsDownloadDay,
+                    ),
+                    if (pair.day case final DayNightWall wall)
+                      DayNightReadabilityTip(slot: DayNightSlot.day, wall: wall, target: pair.target),
+                  ],
                 ),
               ),
               const SizedBox(width: PrismSpace.md),
               Expanded(
-                child: DayNightPhonePreview(
-                  slot: DayNightSlot.night,
-                  wall: pair.night,
-                  time: nightTime,
-                  needsDownload: state.issue == DayNightIssue.needsDownloadNight,
+                child: Column(
+                  children: <Widget>[
+                    DayNightPhonePreview(
+                      slot: DayNightSlot.night,
+                      wall: pair.night,
+                      time: nightTime,
+                      needsDownload: state.issue == DayNightIssue.needsDownloadNight,
+                    ),
+                    if (pair.night case final DayNightWall wall)
+                      DayNightReadabilityTip(slot: DayNightSlot.night, wall: wall, target: pair.target),
+                  ],
                 ),
               ),
             ],
