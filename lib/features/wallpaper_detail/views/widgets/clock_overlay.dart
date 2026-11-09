@@ -45,6 +45,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:intl/intl.dart';
 
 export 'package:Prism/core/platform/wallpaper_service.dart' show WallpaperTarget;
 
@@ -906,10 +907,22 @@ class _ClockOverlayState extends State<ClockOverlay> {
       ReadabilityZone.clock,
       defaultTargetPlatform,
     ).map((rect) => rect.bottom).reduce(math.max);
-    // ponytail: the iOS lock preview draws a widget row under the clock that ends near 34% of the height. The tip
-    // sits under it so it never covers a widget. Read the row's frame if LockPreviewLayer changes its layout.
-    final double clockTipTop =
-        math.max(clockZoneBottom, defaultTargetPlatform == TargetPlatform.iOS ? 0.34 : 0) * size.height + PrismSpace.xs;
+    double clockTipTop = clockZoneBottom * size.height + PrismSpace.xs;
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final TextPainter date = TextPainter(
+        text: TextSpan(
+          text: DateFormat.MMMMEEEEd(context.l10n.localeName).format(DateTime.now()),
+          style: theme.textTheme.bodyMedium!.merge(
+            const TextStyle(fontFamily: 'CupertinoSystemText', fontSize: 20, fontWeight: FontWeight.w600),
+          ),
+        ),
+        textDirection: Directionality.of(context),
+      )..layout(maxWidth: size.width);
+      final double widgetsBottom =
+          MediaQuery.viewPaddingOf(context).top + 24 + date.height + 96 * 1.1 + 6 + math.min(size.width * 0.15, 72);
+      date.dispose();
+      clockTipTop = math.max(clockTipTop, widgetsBottom + PrismSpace.xs);
+    }
     final Widget layers = Stack(
       fit: StackFit.expand,
       children: <Widget>[

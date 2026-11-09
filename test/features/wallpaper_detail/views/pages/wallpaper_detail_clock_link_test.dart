@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
@@ -7,7 +10,9 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/ads/views/widgets/download_button.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/readability/domain/readability.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
@@ -15,6 +20,8 @@ import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart'
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
+import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
+import 'package:Prism/features/wallpaper_position/domain/repositories/wallpaper_position_repository.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
@@ -30,6 +37,29 @@ import '../../../../support/offline_asset_fixture.dart';
 
 class _MockWallpaperDetailBloc extends MockBloc<WallpaperDetailEvent, WallpaperDetailState>
     implements WallpaperDetailBloc {}
+
+class _FixedCopyRepository implements WallpaperPositionRepository {
+  _FixedCopyRepository(this.directory);
+
+  final Directory directory;
+  int renders = 0;
+
+  @override
+  Future<PlacementSource> load(String url) async {
+    final recorder = ui.PictureRecorder();
+    ui.Canvas(recorder);
+    final picture = recorder.endRecording();
+    final image = await picture.toImage(1, 1);
+    picture.dispose();
+    return PlacementSource(image: image, dominantColor: const Color(0xFF000000));
+  }
+
+  @override
+  Future<File> render(PlacementSource source, WallpaperPlacement placement, Size outputSize) async {
+    final folder = Directory('${directory.path}/fixed-${renders++}')..createSync();
+    return File('assets/images/prism.webp').copySync('${folder.path}/fixed.webp');
+  }
+}
 
 const String _previewLink =
     'https://us-central1-123.cloudfunctions.net/wallpaperPreview?id=clock-wall&thumb=https%3A%2F%2Fimg.test%2Fthumb.jpg';
@@ -128,6 +158,28 @@ void main() {
       await tester.pumpAndSettle();
       return tester.widget<ClockOverlay>(find.byType(ClockOverlay));
     }
+
+    testWidgets('preparing another fixed Save leaves the first Save source readable', (tester) async {
+      getIt.registerSingleton<WallpaperPositionRepository>(_FixedCopyRepository(offlineAssets.directory));
+      final overlay = await openPreview(tester, _wallhaven());
+      final firstSave =
+          overlay.saveAction!('Save', const <ReadabilityFix>[
+                ReadabilityFix(ReadabilityZone.clock, ReadabilityFixKind.dim),
+              ])
+              as DownloadButton;
+      final secondSave =
+          overlay.saveAction!('Save', const <ReadabilityFix>[
+                ReadabilityFix(ReadabilityZone.icons, ReadabilityFixKind.dim),
+              ])
+              as DownloadButton;
+      await tester.runAsync(() async {
+        final first = await firstSave.variant!.prepareAuthorized!('unused');
+        final second = await secondSave.variant!.prepareAuthorized!('unused');
+        await Future<void>.delayed(Duration.zero);
+        expect(await File(first).readAsBytes(), isNotEmpty);
+        expect(await File(second).readAsBytes(), isNotEmpty);
+      });
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
     testWidgets('the iOS phone preview of a Prism wall shows its display derivative, not the thumbnail', (
       tester,

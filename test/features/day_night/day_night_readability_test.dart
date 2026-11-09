@@ -216,6 +216,45 @@ void main() {
     expect(find.byType(ReadabilityChip), findsNothing);
   });
 
+  testWidgets('a result just before the shared budget keeps its tip after the deadline', (tester) async {
+    ReadabilityTips.instance.reset();
+    final Duration previousBudget = ReadabilityTips.budget;
+    ReadabilityTips.budget = const Duration(milliseconds: 100);
+    final Completer<Map<ReadabilityZone, ReadabilityResult>> pending =
+        Completer<Map<ReadabilityZone, ReadabilityResult>>();
+    DayNightReadabilityTip.checkOverride = (ReadabilityKey _, Future<ui.Image> Function() _) => pending.future;
+    addTearDown(() {
+      DayNightReadabilityTip.checkOverride = null;
+      ReadabilityTips.budget = previousBudget;
+      ReadabilityTips.instance.reset();
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: DayNightReadabilityTip(slot: DayNightSlot.day, wall: _httpsDay, target: WallpaperTarget.lock),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 99));
+    expect(find.byType(ReadabilityChip), findsNothing);
+    pending.complete(<ReadabilityZone, ReadabilityResult>{
+      ReadabilityZone.clock: const ReadabilityResult(
+        zone: ReadabilityZone.clock,
+        lowContrastShare: 0.5,
+        edgeShare: 0,
+        fix: ReadabilityFixKind.dim,
+      ),
+    });
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(ReadabilityChip), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(ReadabilityChip), findsOneWidget);
+  });
+
   testWidgets('tracking resets when the widget changes to another wall', (tester) async {
     ReadabilityTips.instance.reset();
     await ReadabilityTips.instance.setEnabled(true);

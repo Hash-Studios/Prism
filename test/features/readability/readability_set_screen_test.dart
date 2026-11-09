@@ -7,6 +7,8 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/hints/data/feature_hints.dart';
+import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/readability/data/readability_render.dart';
 import 'package:Prism/features/readability/data/readability_tips.dart';
@@ -317,6 +319,37 @@ void main() {
     expect(results.single?.placed?.fromStudio, isFalse);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
+  testWidgets('a fix after Adjust keeps the studio fit and origin', (tester) async {
+    final List<SetWallpaperChoice?> results = <SetWallpaperChoice?>[];
+    await _pumpSetScreen(
+      tester,
+      SetScreenRequest(
+        url: _previewPath,
+        onAdjust: (context) => _recordFix(context, const WallpaperPlacement(fit: PlacementFit.fitColor)),
+        onApplyFixes: _recordFix,
+      ),
+      results,
+    );
+    await tester.tap(find.byKey(const ValueKey<String>('set-screen-adjust')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lock screen'));
+    await tester.pump();
+    await _waitUntil(tester, _shown(_clockChipKey), reason: 'the adjusted wall gets a clock tip');
+    await tester.tap(find.byKey(_clockChipKey));
+    await tester.pumpAndSettle();
+    await _waitUntil(
+      tester,
+      () => tester.widget<PrismButton>(find.byKey(_applyKey)).onPressed != null,
+      reason: 'the fixed preview is ready',
+    );
+    await tester.tap(find.byKey(_applyKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(_setKey));
+    await tester.pumpAndSettle();
+    expect(results.single!.placed!.fromStudio, isTrue);
+    expect(results.single!.placed!.fitLabel, 'studio_fitColor');
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
   testWidgets('Keep as is closes the sheet, never renders a fix, and keeps the chip', (tester) async {
     final List<SetWallpaperChoice?> results = <SetWallpaperChoice?>[];
     await _pumpSetScreen(tester, _request(), results);
@@ -522,6 +555,25 @@ void main() {
   testWidgets('on iOS the Live Photo hint waits while the clock tip shows, and Save gets the applied fix', (
     tester,
   ) async {
+    final FeatureHints previousHints = FeatureHints.instance;
+    final Map<String, Object?> hintStore = <String, Object?>{};
+    final FeatureHints hints = FeatureHints(
+      read: <T>(String key, T fallback) => (hintStore[key] ?? fallback) as T,
+      write: (key, value) async {
+        hintStore[key] = value;
+      },
+      clock: () => DateTime(2026, 11, 9, 12),
+      session: () => 5,
+      userId: () => 'readability-test',
+      remoteConfig: (_) => '',
+      openSheets: () => 0,
+    );
+    FeatureHints.instance = hints;
+    hints.view(HintId.livePhoto, canShow: false);
+    addTearDown(() {
+      FeatureHints.instance = previousHints;
+      hints.dispose();
+    });
     final List<List<ReadabilityFix>> saved = <List<ReadabilityFix>>[];
     await tester.pumpWidget(
       MaterialApp(
@@ -546,6 +598,16 @@ void main() {
     await tester.pumpAndSettle();
     await _waitUntil(tester, _shown(_clockChipKey), reason: 'the clock tip shows on iOS');
 
+    await tester.pump(FeatureHint.settle);
+    expect(hints.record(HintId.livePhoto).views, 1);
+    final Rect widgetRowIcon = tester.getRect(find.byIcon(Icons.directions_walk_rounded));
+    final Rect chip = tester.getRect(find.byKey(_clockChipKey));
+    expect(
+      chip.top,
+      greaterThanOrEqualTo(widgetRowIcon.center.dy + 36),
+      reason: 'the tip clears the full 72 point lock widget, not just its glyph',
+    );
+
     expect(tester.widget<FeatureHint>(find.byType(FeatureHint)).enabled, isFalse);
 
     await tester.tap(find.byKey(_clockChipKey));
@@ -564,6 +626,13 @@ void main() {
     await _settle(tester);
 
     expect(tester.widget<FeatureHint>(find.byType(FeatureHint)).enabled, isTrue);
+    await tester.pump(FeatureHint.settle);
+    await tester.pump();
+    expect(hints.record(HintId.livePhoto).views, 2);
+    expect(hints.record(HintId.livePhoto).shownAt, isNotNull);
+    expect(hints.active, HintId.livePhoto);
+    await tester.tap(find.text(l10n.hintGotIt));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(l10n.wallpaperSaveToPhotos));
     expect(saved, <List<ReadabilityFix>>[
       <ReadabilityFix>[const ReadabilityFix(ReadabilityZone.clock, ReadabilityFixKind.dim)],
