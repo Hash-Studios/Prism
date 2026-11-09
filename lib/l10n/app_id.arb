@@ -14955,5 +14955,77 @@
   "settingsResetTipsDone": "Tips akan muncul lagi.",
   "@settingsResetTipsDone": {
     "description": "Toast after the user resets feature hints."
+  },
+  "readabilityClockChip": "Jam mungkin sulit dibaca",
+  "@readabilityClockChip": {
+    "description": "Small chip on the Set screen next to the lock screen clock when the wallpaper makes the clock hard to read."
+  },
+  "readabilityIconsChip": "Ikon mungkin sulit dibaca",
+  "@readabilityIconsChip": {
+    "description": "Small chip on the Set screen near the home screen icons when the wallpaper makes icon labels hard to read."
+  },
+  "readabilityChipHint": "Menampilkan pratinjau sebelum dan sesudah",
+  "@readabilityChipHint": {
+    "description": "Screen reader hint for the readability chip."
+  },
+  "readabilityClockBody": "Jam mungkin sulit dibaca di wallpaper ini. Wallpaper asli tetap seperti semula.",
+  "@readabilityClockBody": {
+    "description": "Body of the readability sheet for the clock."
+  },
+  "readabilityIconsBody": "Ikon mungkin sulit dibaca di wallpaper ini. Wallpaper asli tetap seperti semula.",
+  "@readabilityIconsBody": {
+    "description": "Body of the readability sheet for the icons."
+  },
+  "readabilityDimClockTitle": "Redupkan di belakang jam?",
+  "@readabilityDimClockTitle": {
+    "description": "Sheet title when the fix is a soft dark shade behind the clock."
+  },
+  "readabilityBlurClockTitle": "Lembutkan di belakang jam?",
+  "@readabilityBlurClockTitle": {
+    "description": "Sheet title when the fix is a small blur behind the clock."
+  },
+  "readabilityDimIconsTitle": "Redupkan di belakang ikon?",
+  "@readabilityDimIconsTitle": {
+    "description": "Sheet title when the fix is a soft dark shade behind the icons."
+  },
+  "readabilityBlurIconsTitle": "Lembutkan di belakang ikon?",
+  "@readabilityBlurIconsTitle": {
+    "description": "Sheet title when the fix is a small blur behind the icons."
+  },
+  "readabilityBefore": "Sebelum",
+  "@readabilityBefore": {
+    "description": "Label under the wallpaper preview without the fix."
+  },
+  "readabilityAfter": "Sesudah",
+  "@readabilityAfter": {
+    "description": "Label under the wallpaper preview with the fix."
+  },
+  "readabilityBeforeSemantic": "Wallpaper tanpa perbaikan",
+  "@readabilityBeforeSemantic": {
+    "description": "Screen reader label of the before preview image."
+  },
+  "readabilityAfterSemantic": "Wallpaper dengan perbaikan",
+  "@readabilityAfterSemantic": {
+    "description": "Screen reader label of the after preview image."
+  },
+  "readabilityApply": "Terapkan",
+  "@readabilityApply": {
+    "description": "Button that applies the readability fix to the wallpaper the user sets."
+  },
+  "readabilityKeep": "Biarkan seperti ini",
+  "@readabilityKeep": {
+    "description": "Button that closes the sheet and keeps the wallpaper unchanged."
+  },
+  "readabilityApplyFailed": "Perbaikan tidak dapat diterapkan. Coba lagi.",
+  "@readabilityApplyFailed": {
+    "description": "Error toast when the fix could not be rendered."
+  },
+  "settingsReadabilityTipsTitle": "Tips keterbacaan",
+  "@settingsReadabilityTipsTitle": {
+    "description": "Settings switch that turns readability tips on or off."
+  },
+  "settingsReadabilityTipsBody": "Tampilkan tips saat jam atau ikon mungkin sulit dibaca di wallpaper.",
+  "@settingsReadabilityTipsBody": {
+    "description": "Subtitle of the Readability tips switch."
   }
 }

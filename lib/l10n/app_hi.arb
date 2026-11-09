@@ -15578,5 +15578,77 @@
   "settingsResetTipsDone": "टिप्स फिर से दिखेंगे।",
   "@settingsResetTipsDone": {
     "description": "Toast after the user resets feature hints."
+  },
+  "readabilityClockChip": "घड़ी पढ़ने में मुश्किल हो सकती है",
+  "@readabilityClockChip": {
+    "description": "Small chip on the Set screen next to the lock screen clock when the wallpaper makes the clock hard to read."
+  },
+  "readabilityIconsChip": "आइकन पढ़ने में मुश्किल हो सकते हैं",
+  "@readabilityIconsChip": {
+    "description": "Small chip on the Set screen near the home screen icons when the wallpaper makes icon labels hard to read."
+  },
+  "readabilityChipHint": "पहले और बाद की झलक दिखाता है",
+  "@readabilityChipHint": {
+    "description": "Screen reader hint for the readability chip."
+  },
+  "readabilityClockBody": "इस वॉलपेपर पर घड़ी पढ़ने में मुश्किल हो सकती है। मूल वॉलपेपर वैसा ही रहेगा।",
+  "@readabilityClockBody": {
+    "description": "Body of the readability sheet for the clock."
+  },
+  "readabilityIconsBody": "इस वॉलपेपर पर आइकन पढ़ने में मुश्किल हो सकते हैं। मूल वॉलपेपर वैसा ही रहेगा।",
+  "@readabilityIconsBody": {
+    "description": "Body of the readability sheet for the icons."
+  },
+  "readabilityDimClockTitle": "घड़ी के पीछे हल्का अंधेरा करें?",
+  "@readabilityDimClockTitle": {
+    "description": "Sheet title when the fix is a soft dark shade behind the clock."
+  },
+  "readabilityBlurClockTitle": "घड़ी के पीछे हल्का धुंधलापन करें?",
+  "@readabilityBlurClockTitle": {
+    "description": "Sheet title when the fix is a small blur behind the clock."
+  },
+  "readabilityDimIconsTitle": "आइकन के पीछे हल्का अंधेरा करें?",
+  "@readabilityDimIconsTitle": {
+    "description": "Sheet title when the fix is a soft dark shade behind the icons."
+  },
+  "readabilityBlurIconsTitle": "आइकन के पीछे हल्का धुंधलापन करें?",
+  "@readabilityBlurIconsTitle": {
+    "description": "Sheet title when the fix is a small blur behind the icons."
+  },
+  "readabilityBefore": "पहले",
+  "@readabilityBefore": {
+    "description": "Label under the wallpaper preview without the fix."
+  },
+  "readabilityAfter": "बाद में",
+  "@readabilityAfter": {
+    "description": "Label under the wallpaper preview with the fix."
+  },
+  "readabilityBeforeSemantic": "बिना सुधार वाला वॉलपेपर",
+  "@readabilityBeforeSemantic": {
+    "description": "Screen reader label of the before preview image."
+  },
+  "readabilityAfterSemantic": "सुधार वाला वॉलपेपर",
+  "@readabilityAfterSemantic": {
+    "description": "Screen reader label of the after preview image."
+  },
+  "readabilityApply": "लागू करें",
+  "@readabilityApply": {
+    "description": "Button that applies the readability fix to the wallpaper the user sets."
+  },
+  "readabilityKeep": "जैसा है वैसा रखें",
+  "@readabilityKeep": {
+    "description": "Button that closes the sheet and keeps the wallpaper unchanged."
+  },
+  "readabilityApplyFailed": "सुधार लागू नहीं हो सका। फिर से कोशिश करें।",
+  "@readabilityApplyFailed": {
+    "description": "Error toast when the fix could not be rendered."
+  },
+  "settingsReadabilityTipsTitle": "पठनीयता सुझाव",
+  "@settingsReadabilityTipsTitle": {
+    "description": "Settings switch that turns readability tips on or off."
+  },
+  "settingsReadabilityTipsBody": "जब घड़ी या आइकन किसी वॉलपेपर पर पढ़ने में मुश्किल लग सकते हों, तब सुझाव दिखाएँ।",
+  "@settingsReadabilityTipsBody": {
+    "description": "Subtitle of the Readability tips switch."
   }
 }

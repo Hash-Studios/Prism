@@ -59,6 +59,7 @@ import 'package:Prism/features/public_profile/views/pages/followers_screen.dart'
 import 'package:Prism/features/public_profile/views/pages/following_list_screen.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/quick_tiles/views/quick_tile_settings_screen.dart';
+import 'package:Prism/features/readability/domain/readability.dart';
 import 'package:Prism/features/rewards/views/pages/coin_history_page.dart';
 import 'package:Prism/features/rewards/views/pages/rewards_page.dart';
 import 'package:Prism/features/session/views/pages/about_screen.dart';

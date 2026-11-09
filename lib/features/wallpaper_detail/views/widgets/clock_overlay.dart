@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -23,11 +24,16 @@ import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/core/widgets/progressive_wallpaper_image.dart';
 import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/hints/views/feature_hint.dart';
+import 'package:Prism/features/readability/data/readability_render.dart';
+import 'package:Prism/features/readability/data/readability_tips.dart';
+import 'package:Prism/features/readability/domain/readability.dart';
+import 'package:Prism/features/readability/views/readability_views.dart';
 import 'package:Prism/features/wallpaper_detail/biz/top_third_text_color.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_scheme.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/duo_reveal_view.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_tilt_view.dart';
+import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -45,6 +51,9 @@ enum ClockPreviewMode { lock, home }
 /// Width of the decode used to pick the clock text colour.
 const int _sampleWidth = 32;
 
+/// A readability result that arrives later than this after the screen opens is dropped, so a tip never pops in late.
+const Duration _readabilityBudget = Duration(seconds: 2);
+
 /// What the Set screen shows and offers. [SetWallpaperFlow] builds it.
 class SetScreenRequest {
   const SetScreenRequest({
@@ -55,6 +64,7 @@ class SetScreenRequest {
     this.tint,
     this.notes = const <String>[],
     this.onAdjust,
+    this.onApplyFixes,
     this.duoReveal = false,
     this.allowDuo = false,
   });
@@ -75,6 +85,10 @@ class SetScreenRequest {
 
   /// Opens the position studio. Null hides Adjust and More.
   final Future<StudioResult?> Function(BuildContext context)? onAdjust;
+
+  /// Renders the wall as [WallpaperPlacement] says, readability fixes included, for Set to use. Null hides the
+  /// readability tips. It returns null when the user cancels, for example at the consent step.
+  final Future<PlacedWallpaper?> Function(BuildContext context, WallpaperPlacement placement)? onApplyFixes;
 }
 
 /// What the Set screen shows for [request]: a file on the device as is, a Prism wall's display derivative (never its
@@ -112,6 +126,7 @@ Future<SetWallpaperChoice?> showSetScreen(BuildContext context, SetScreenRequest
     tint: request.tint,
     notes: request.notes,
     onAdjust: request.onAdjust,
+    onApplyFixes: request.onApplyFixes,
     duoReveal: request.duoReveal,
     allowDuo: request.allowDuo,
   );
@@ -169,8 +184,8 @@ class ClockOverlay extends StatefulWidget {
   /// The colour variation the user picked. When set, the image is shown with this hue.
   final Color? tint;
 
-  /// iOS only: builds Save to Photos with [label].
-  final Widget Function(String label)? saveAction;
+  /// iOS only: builds Save to Photos with [label]. It saves the wall with the readability [fixes] the user applied.
+  final Widget Function(String label, List<ReadabilityFix> fixes)? saveAction;
 
   /// Makes this the flow's Set screen.
   final SetScreenRequest? request;
@@ -217,6 +232,15 @@ class _ClockOverlayState extends State<ClockOverlay> {
   bool _placedHandedOff = false;
   int _inputGeneration = 0;
   int _adjustGeneration = 0;
+
+  /// Readability tips: the fixes the user applied, the analysis, and the zones whose tip was tracked.
+  List<ReadabilityFix> _fixes = const <ReadabilityFix>[];
+  Map<ReadabilityZone, ReadabilityResult>? _readability;
+  final Set<ReadabilityZone> _tipsTracked = <ReadabilityZone>{};
+  late final bool _tipsOn = ReadabilityTips.instance.enabled && !ReadabilityTips.instance.shownFor(_wallKey);
+
+  /// iOS only: the wall with the fixes, as Save will store it. Android sets a rendered file instead.
+  ui.Image? _fixedPreview;
   ImageStream? _sampleStream;
   ImageStreamListener? _sampleListener;
   Future<File?>? _localFileFuture;
@@ -281,6 +305,11 @@ class _ClockOverlayState extends State<ClockOverlay> {
   ];
 
   bool get _canAdjust => widget.request?.onAdjust != null;
+
+  String get _wallKey => widget.wallpaperId ?? widget.link;
+
+  /// True when this screen can apply a fix: Set renders it on Android, Save stores it on iOS.
+  bool get _canFix => hideSetWallpaperUi ? widget.saveAction != null : widget.request?.onApplyFixes != null;
 
   bool get _canPair =>
       _canAdjust && _capabilities != null && _supported(WallpaperTarget.home) && _supported(WallpaperTarget.lock);
@@ -354,6 +383,8 @@ class _ClockOverlayState extends State<ClockOverlay> {
     _textColor = null;
     _scheme = null;
     _schemeRead = false;
+    _readability = null;
+    _clearFixedPreview();
     unawaited(_sampleText());
     _readSchemeOnce();
   }
@@ -464,7 +495,10 @@ class _ClockOverlayState extends State<ClockOverlay> {
   Future<void> _applySample(ui.Image image, int generation) async {
     try {
       final Color color = await textColorForTopThird(image, tint: _tint);
-      if (mounted && generation == _inputGeneration) setState(() => _textColor = color);
+      if (mounted && generation == _inputGeneration) {
+        setState(() => _textColor = color);
+        unawaited(_checkReadability(generation, color));
+      }
     } finally {
       image.dispose();
     }
@@ -477,8 +511,149 @@ class _ClockOverlayState extends State<ClockOverlay> {
     _sampleStream = null;
   }
 
+  /// Analyzes the wall as Set will use it. A failure or a late result shows no tip and never touches Set.
+  Future<void> _checkReadability(int generation, Color clockText) async {
+    final ImageProvider? provider = _provider;
+    if (!_tipsOn || !_canFix || provider == null || !mounted) return;
+    final Size screen = MediaQuery.sizeOf(context);
+    if (screen.isEmpty) return;
+    final int frameHeight = (analysisWidth * screen.height / screen.width).round();
+    final ReadabilityKey key = (
+      wall: _wallKey,
+      image: _file ? _link : '',
+      placement: _placed?.placement,
+      tint: _tint?.toARGB32(),
+      platform: defaultTargetPlatform,
+      clockText: clockText.toARGB32(),
+      frameHeight: frameHeight,
+    );
+    final Stopwatch timer = Stopwatch()..start();
+    try {
+      final Map<ReadabilityZone, ReadabilityResult> result = await ReadabilityTips.instance.check(
+        key,
+        () => decodeForFrame(provider, frameHeight * 2),
+        tint: _tint,
+      );
+      if (!mounted || generation != _inputGeneration || _completed || timer.elapsed > _readabilityBudget) return;
+      setState(() => _readability = result);
+    } catch (error, stackTrace) {
+      logger.w('ClockOverlay: readability check failed', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  /// The zone whose tip shows now: the zone of the mock on screen, when it is busy and not fixed yet.
+  ReadabilityZone? get _tipZone {
+    if (_duo || _spatial || !_canFix) return null;
+    final ReadabilityZone zone = _mode == ClockPreviewMode.lock ? ReadabilityZone.clock : ReadabilityZone.icons;
+    final ReadabilityResult? result = _readability?[zone];
+    if (result == null || !result.busy || _fixes.any((fix) => fix.zone == zone)) return null;
+    return zone;
+  }
+
+  void _trackTipShown(ReadabilityZone zone) {
+    if (!_tipsTracked.add(zone)) return;
+    ReadabilityTips.instance.markShown(_wallKey);
+    analytics.track(ReadabilityTipShownEvent(zone: zone));
+  }
+
+  Future<void> _openFix(ReadabilityZone zone) async {
+    final ReadabilityFixKind? kind = _readability?[zone]?.fix;
+    final ImageProvider? provider = _provider;
+    if (kind == null || provider == null || _busy) return;
+    final ReadabilityFix fix = ReadabilityFix(zone, kind);
+    final bool? apply = await showReadabilityFixSheet(
+      context,
+      ReadabilityPreviewSource(
+        provider: provider,
+        screen: MediaQuery.sizeOf(context),
+        textColor: _textColor ?? Colors.white,
+        tint: _tint,
+      ),
+      fix,
+    );
+    if (!mounted || _completed) return;
+    if (apply == false) analytics.track(ReadabilityFixKeptEvent(zone: zone));
+    if (apply != true) return;
+    if (await _applyFixes(<ReadabilityFix>[..._fixes, fix])) {
+      analytics.track(ReadabilityFixAppliedEvent(zone: zone, fixKind: kind));
+    }
+  }
+
+  /// Makes the wall that Set or Save will use carry [fixes]. The source wall never changes.
+  Future<bool> _applyFixes(List<ReadabilityFix> fixes) async {
+    final AppLocalizations l10n = context.l10n;
+    if (hideSetWallpaperUi) {
+      final ImageProvider? provider = _provider;
+      if (provider == null) return false;
+      final Size px = MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context);
+      final int generation = _inputGeneration;
+      try {
+        final ui.Image decoded = await decodeForFrame(provider, px.height.round());
+        final ui.Image fixed;
+        try {
+          fixed = await renderReadabilityFrame(
+            decoded,
+            width: px.width.round(),
+            height: px.height.round(),
+            platform: defaultTargetPlatform,
+            tint: _tint,
+            fixes: fixes,
+          );
+        } finally {
+          decoded.dispose();
+        }
+        if (!mounted || generation != _inputGeneration) {
+          fixed.dispose();
+          return false;
+        }
+        _clearFixedPreview();
+        setState(() {
+          _fixes = fixes;
+          _fixedPreview = fixed;
+        });
+        return true;
+      } catch (error, stackTrace) {
+        logger.w('ClockOverlay: could not draw the fix', error: error, stackTrace: stackTrace);
+        toasts.error(l10n.readabilityApplyFailed, haptic: false);
+        return false;
+      }
+    }
+    final Future<PlacedWallpaper?> Function(BuildContext, WallpaperPlacement)? render = widget.request?.onApplyFixes;
+    if (render == null) return false;
+    final int generation = _adjustGeneration;
+    setState(() => _busy = true);
+    PlacedWallpaper? placed;
+    try {
+      placed = await render(context, (_placed?.placement ?? const WallpaperPlacement()).copyWith(fixes: fixes));
+    } catch (error, stackTrace) {
+      logger.w('ClockOverlay: could not render the fix', error: error, stackTrace: stackTrace);
+      toasts.error(l10n.readabilityApplyFailed, haptic: false);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+    if (placed == null) return false;
+    if (!mounted || _completed || generation != _adjustGeneration) {
+      unawaited(placed.discard());
+      return false;
+    }
+    final PlacedWallpaper? previous = _placed;
+    setState(() {
+      _placed = placed;
+      _fixes = fixes;
+    });
+    if (previous != null) unawaited(previous.discard());
+    _reloadImage();
+    return true;
+  }
+
+  void _clearFixedPreview() {
+    _fixedPreview?.dispose();
+    _fixedPreview = null;
+  }
+
   @override
   void dispose() {
+    _clearFixedPreview();
     _stopSampling();
     final PlacedWallpaper? placed = _placed;
     if (!_placedHandedOff && placed != null) unawaited(placed.discard());
@@ -493,6 +668,13 @@ class _ClockOverlayState extends State<ClockOverlay> {
 
   Widget _image(BuildContext context, Size size) {
     final Color placeholder = Theme.of(context).primaryColor;
+    final ui.Image? fixed = _fixedPreview;
+    if (fixed != null && !_duo) {
+      return ColoredBox(
+        color: placeholder,
+        child: RawImage(image: fixed, fit: BoxFit.cover),
+      );
+    }
     final WallpaperDisplaySource display = _displaySource;
     return ColoredBox(
       color: placeholder,
@@ -581,7 +763,11 @@ class _ClockOverlayState extends State<ClockOverlay> {
     switch (result) {
       case final PlacedWallpaper placed:
         final PlacedWallpaper? previous = _placed;
-        setState(() => _placed = placed);
+        // A new placement starts without fixes. The tip checks the new image and can offer the fix again.
+        setState(() {
+          _placed = placed;
+          _fixes = const <ReadabilityFix>[];
+        });
         if (previous != null) unawaited(previous.discard());
         _reloadImage();
       case SystemEditorRequested():
@@ -621,7 +807,9 @@ class _ClockOverlayState extends State<ClockOverlay> {
   /// The one filled button: Set on the chosen screen, or Save to Photos on iOS. Null when nothing can be set here.
   Widget? _primary(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
-    if (hideSetWallpaperUi) return widget.saveAction?.call(l10n.wallpaperSaveToPhotos);
+    if (hideSetWallpaperUi) {
+      return widget.saveAction?.call(l10n.wallpaperSaveToPhotos, _duo ? const <ReadabilityFix>[] : _fixes);
+    }
     final VoidCallback? onSet = widget.request != null
         ? _set
         : widget.file
@@ -694,6 +882,15 @@ class _ClockOverlayState extends State<ClockOverlay> {
     final Widget? primary = _primary(context);
     final List<String> notes = widget.request?.notes ?? const <String>[];
     final double duoControlsHeight = (size.height * 0.55).clamp(0.0, 300.0);
+    final ReadabilityZone? tipZone = _tipZone;
+    if (tipZone != null) WidgetsBinding.instance.addPostFrameCallback((_) => _trackTipShown(tipZone));
+    final Widget? tip = tipZone == null
+        ? null
+        : ReadabilityChip(key: ValueKey<ReadabilityZone>(tipZone), zone: tipZone, onTap: () => _openFix(tipZone));
+    final double clockTipTop =
+        readabilityZoneRects(ReadabilityZone.clock, defaultTargetPlatform).map((rect) => rect.bottom).reduce(math.max) *
+            size.height +
+        PrismSpace.xs;
     final Widget layers = Stack(
       fit: StackFit.expand,
       children: <Widget>[
@@ -786,161 +983,185 @@ class _ClockOverlayState extends State<ClockOverlay> {
                   opacity: _controls ? 1 : 0,
                   duration: fade,
                   curve: PrismCurves.enter,
-                  child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: SafeArea(
-                      top: false,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(PrismSpace.sm, 0, PrismSpace.sm, PrismSpace.xs),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            _EnterFromBelow(
-                              child: _ControlCard(
-                                maxHeight: _duo ? duoControlsHeight : null,
-                                children: <Widget>[
-                                  // Home icon styles: small chips on top of the card, above the screen choice. The card
-                                  // grows upwards, so Lock, Home and Save never move. The chips only fade.
-                                  AnimatedSwitcher(
-                                    duration: fade,
-                                    switchInCurve: PrismCurves.enter,
-                                    switchOutCurve: PrismCurves.exitReverse,
-                                    child: !lock && styles.length > 1
-                                        ? KeyedSubtree(
-                                            key: const ValueKey<String>('icon-styles'),
-                                            child: Padding(
-                                              padding: const EdgeInsets.only(bottom: PrismSpace.xs),
-                                              child: Semantics(
-                                                container: true,
-                                                label: l10n.wallpaperPreviewIconStyle,
-                                                child: Wrap(
-                                                  alignment: WrapAlignment.center,
-                                                  spacing: PrismSpace.xs,
-                                                  children: <Widget>[
-                                                    for (final PreviewIconStyle style in styles)
-                                                      PrismChip(
-                                                        label: switch (style) {
-                                                          PreviewIconStyle.standard => l10n.wallpaperPreviewIconDefault,
-                                                          PreviewIconStyle.dark => l10n.wallpaperPreviewIconDark,
-                                                          PreviewIconStyle.clear => l10n.wallpaperPreviewIconClear,
-                                                          PreviewIconStyle.tinted => l10n.wallpaperPreviewIconTinted,
-                                                          PreviewIconStyle.themed => l10n.wallpaperPreviewIconThemed,
-                                                        },
-                                                        compact: true,
-                                                        selected: style == _iconStyle,
-                                                        onTap: () => _pickIconStyle(style),
-                                                      ),
-                                                  ],
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: <Widget>[
+                      // The clock tip sits under the clock. The icons tip sits on top of the controls, by the dock.
+                      if (tip != null && tipZone == ReadabilityZone.clock)
+                        Positioned(
+                          top: clockTipTop,
+                          left: PrismSpace.md,
+                          right: PrismSpace.md,
+                          child: Center(child: tip),
+                        ),
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: SafeArea(
+                          top: false,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(PrismSpace.sm, 0, PrismSpace.sm, PrismSpace.xs),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                if (tip != null && tipZone == ReadabilityZone.icons)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: PrismSpace.xs),
+                                    child: tip,
+                                  ),
+                                _EnterFromBelow(
+                                  child: _ControlCard(
+                                    maxHeight: _duo ? duoControlsHeight : null,
+                                    children: <Widget>[
+                                      // Home icon styles: small chips on top of the card, above the screen choice. The card
+                                      // grows upwards, so Lock, Home and Save never move. The chips only fade.
+                                      AnimatedSwitcher(
+                                        duration: fade,
+                                        switchInCurve: PrismCurves.enter,
+                                        switchOutCurve: PrismCurves.exitReverse,
+                                        child: !lock && styles.length > 1
+                                            ? KeyedSubtree(
+                                                key: const ValueKey<String>('icon-styles'),
+                                                child: Padding(
+                                                  padding: const EdgeInsets.only(bottom: PrismSpace.xs),
+                                                  child: Semantics(
+                                                    container: true,
+                                                    label: l10n.wallpaperPreviewIconStyle,
+                                                    child: Wrap(
+                                                      alignment: WrapAlignment.center,
+                                                      spacing: PrismSpace.xs,
+                                                      children: <Widget>[
+                                                        for (final PreviewIconStyle style in styles)
+                                                          PrismChip(
+                                                            label: switch (style) {
+                                                              PreviewIconStyle.standard =>
+                                                                l10n.wallpaperPreviewIconDefault,
+                                                              PreviewIconStyle.dark => l10n.wallpaperPreviewIconDark,
+                                                              PreviewIconStyle.clear => l10n.wallpaperPreviewIconClear,
+                                                              PreviewIconStyle.tinted =>
+                                                                l10n.wallpaperPreviewIconTinted,
+                                                              PreviewIconStyle.themed =>
+                                                                l10n.wallpaperPreviewIconThemed,
+                                                            },
+                                                            compact: true,
+                                                            selected: style == _iconStyle,
+                                                            onTap: () => _pickIconStyle(style),
+                                                          ),
+                                                      ],
+                                                    ),
+                                                  ),
                                                 ),
+                                              )
+                                            : const SizedBox.shrink(),
+                                      ),
+                                      if (widget.allowDuo || widget.duoReveal || _wideObserved) ...<Widget>[
+                                        PrismSegmented<bool>(
+                                          values: const <bool>[false, true],
+                                          selected: _duo,
+                                          labelOf: (duo) => duo ? l10n.duoDeviceName : l10n.duoPhoneDevice,
+                                          onChanged: (duo) {
+                                            setState(() {
+                                              _duo = duo;
+                                              _spatial = false;
+                                            });
+                                            if (duo) _trackDuoOpened();
+                                          },
+                                        ),
+                                        const SizedBox(height: PrismSpace.xs),
+                                      ],
+                                      if (_duo) ...<Widget>[
+                                        Text(
+                                          hideSetWallpaperUi ? l10n.duoPresetNotice : l10n.duoAndroidCropNotice,
+                                          style: PrismTextStyles.caption(context),
+                                        ),
+                                        const SizedBox(height: PrismSpace.xs),
+                                        Semantics(
+                                          button: true,
+                                          toggled: _unfolded,
+                                          label: _unfolded ? l10n.duoFold : l10n.duoUnfold,
+                                          child: Tooltip(
+                                            message: _unfolded ? l10n.duoFold : l10n.duoUnfold,
+                                            child: PrismButton(
+                                              label: _unfolded ? l10n.duoFold : l10n.duoUnfold,
+                                              variant: PrismButtonVariant.tonal,
+                                              onPressed: _toggleFold,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: PrismSpace.xs),
+                                      ],
+                                      if (notes.isNotEmpty) ...<Widget>[
+                                        _NoteChips(notes: notes),
+                                        const SizedBox(height: PrismSpace.sm),
+                                      ],
+                                      if (!_duo || !hideSetWallpaperUi) ...<Widget>[
+                                        _choices(context),
+                                        const SizedBox(height: PrismSpace.sm),
+                                      ],
+                                      Row(
+                                        children: <Widget>[
+                                          PrismIconButton(
+                                            icon: Icons.close_rounded,
+                                            tooltip: widget.request == null
+                                                ? l10n.wallpaperClosePreview
+                                                : l10n.setScreenClose,
+                                            filled: true,
+                                            size: 48,
+                                            onPressed: _close,
+                                          ),
+                                          if (widget.spatialMapUrl != null && !_duo) ...<Widget>[
+                                            const SizedBox(width: PrismSpace.xs),
+                                            _SpatialToggle(
+                                              on: _spatial,
+                                              onChanged: (on) => setState(() => _spatial = on),
+                                            ),
+                                          ],
+                                          if (primary != null) ...<Widget>[
+                                            const SizedBox(width: PrismSpace.sm),
+                                            Expanded(child: primary),
+                                          ],
+                                        ],
+                                      ),
+                                      if (hideSetWallpaperUi && widget.livePhotoAction != null && !_duo) ...<Widget>[
+                                        const SizedBox(height: PrismSpace.xxs),
+                                        Center(
+                                          child: FeatureHint(
+                                            id: HintId.livePhoto,
+                                            child: Tooltip(
+                                              message: l10n.livePhotoActionTooltip,
+                                              child: _QuietButton(
+                                                key: const ValueKey<String>('set-screen-live-photo'),
+                                                icon: Icons.motion_photos_on_rounded,
+                                                label: l10n.livePhotoAction,
+                                                onPressed: () => widget.livePhotoAction!(context, _provider),
                                               ),
                                             ),
-                                          )
-                                        : const SizedBox.shrink(),
-                                  ),
-                                  if (widget.allowDuo || widget.duoReveal || _wideObserved) ...<Widget>[
-                                    PrismSegmented<bool>(
-                                      values: const <bool>[false, true],
-                                      selected: _duo,
-                                      labelOf: (duo) => duo ? l10n.duoDeviceName : l10n.duoPhoneDevice,
-                                      onChanged: (duo) {
-                                        setState(() {
-                                          _duo = duo;
-                                          _spatial = false;
-                                        });
-                                        if (duo) _trackDuoOpened();
-                                      },
-                                    ),
-                                    const SizedBox(height: PrismSpace.xs),
-                                  ],
-                                  if (_duo) ...<Widget>[
-                                    Text(
-                                      hideSetWallpaperUi ? l10n.duoPresetNotice : l10n.duoAndroidCropNotice,
-                                      style: PrismTextStyles.caption(context),
-                                    ),
-                                    const SizedBox(height: PrismSpace.xs),
-                                    Semantics(
-                                      button: true,
-                                      toggled: _unfolded,
-                                      label: _unfolded ? l10n.duoFold : l10n.duoUnfold,
-                                      child: Tooltip(
-                                        message: _unfolded ? l10n.duoFold : l10n.duoUnfold,
-                                        child: PrismButton(
-                                          label: _unfolded ? l10n.duoFold : l10n.duoUnfold,
-                                          variant: PrismButtonVariant.tonal,
-                                          onPressed: _toggleFold,
+                                          ),
                                         ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: PrismSpace.xs),
-                                  ],
-                                  if (notes.isNotEmpty) ...<Widget>[
-                                    _NoteChips(notes: notes),
-                                    const SizedBox(height: PrismSpace.sm),
-                                  ],
-                                  if (!_duo || !hideSetWallpaperUi) ...<Widget>[
-                                    _choices(context),
-                                    const SizedBox(height: PrismSpace.sm),
-                                  ],
-                                  Row(
-                                    children: <Widget>[
-                                      PrismIconButton(
-                                        icon: Icons.close_rounded,
-                                        tooltip: widget.request == null
-                                            ? l10n.wallpaperClosePreview
-                                            : l10n.setScreenClose,
-                                        filled: true,
-                                        size: 48,
-                                        onPressed: _close,
-                                      ),
-                                      if (widget.spatialMapUrl != null && !_duo) ...<Widget>[
-                                        const SizedBox(width: PrismSpace.xs),
-                                        _SpatialToggle(on: _spatial, onChanged: (on) => setState(() => _spatial = on)),
                                       ],
-                                      if (primary != null) ...<Widget>[
-                                        const SizedBox(width: PrismSpace.sm),
-                                        Expanded(child: primary),
+                                      if (widget.request != null && !hideSetWallpaperUi) ...<Widget>[
+                                        const SizedBox(height: PrismSpace.xxs),
+                                        _RememberCheck(
+                                          value: _remember,
+                                          onChanged: (value) => setState(() => _remember = value),
+                                        ),
+                                        if (_canAdjust)
+                                          _QuietActions(
+                                            busy: _busy,
+                                            onAdjust: _adjust,
+                                            onPair: _canPair
+                                                ? () => _choose(SetWallpaperChoice.pair(targetChanged: _targetChanged))
+                                                : null,
+                                          ),
                                       ],
                                     ],
                                   ),
-                                  if (hideSetWallpaperUi && widget.livePhotoAction != null && !_duo) ...<Widget>[
-                                    const SizedBox(height: PrismSpace.xxs),
-                                    Center(
-                                      child: FeatureHint(
-                                        id: HintId.livePhoto,
-                                        child: Tooltip(
-                                          message: l10n.livePhotoActionTooltip,
-                                          child: _QuietButton(
-                                            key: const ValueKey<String>('set-screen-live-photo'),
-                                            icon: Icons.motion_photos_on_rounded,
-                                            label: l10n.livePhotoAction,
-                                            onPressed: () => widget.livePhotoAction!(context, _provider),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                  if (widget.request != null && !hideSetWallpaperUi) ...<Widget>[
-                                    const SizedBox(height: PrismSpace.xxs),
-                                    _RememberCheck(
-                                      value: _remember,
-                                      onChanged: (value) => setState(() => _remember = value),
-                                    ),
-                                    if (_canAdjust)
-                                      _QuietActions(
-                                        busy: _busy,
-                                        onAdjust: _adjust,
-                                        onPair: _canPair
-                                            ? () => _choose(SetWallpaperChoice.pair(targetChanged: _targetChanged))
-                                            : null,
-                                      ),
-                                  ],
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),
@@ -1276,7 +1497,7 @@ Future<void> pushClockPreview(
   WallpaperSource? wallpaperSource,
   String? thumbnailUrl,
   Color? tint,
-  Widget Function(String label)? saveAction,
+  Widget Function(String label, List<ReadabilityFix> fixes)? saveAction,
   String? spatialMapUrl,
   void Function(BuildContext context, ImageProvider? preview)? livePhotoAction,
   bool duoReveal = false,
@@ -1310,7 +1531,7 @@ Future<void> showDuoPreview(
   String? thumbnailUrl,
   String? wallpaperId,
   WallpaperSource? wallpaperSource,
-  Widget Function(String label)? saveAction,
+  Widget Function(String label, List<ReadabilityFix> fixes)? saveAction,
 }) => pushClockPreview(
   context,
   link: link,

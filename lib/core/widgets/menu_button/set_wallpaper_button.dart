@@ -253,6 +253,11 @@ class SetWallpaperFlow {
           if (source == null || !screenContext.mounted || !_isSignedInOwner(owner)) return null;
           return studioOpener(screenContext, url: source, thumbnailUrl: thumbnailUrl, entryPoint: entryPoint);
         },
+        onApplyFixes: (screenContext, placement) async {
+          final String? source = await authorize(screenContext);
+          if (source == null || !screenContext.mounted || !_isSignedInOwner(owner)) return null;
+          return PlacedWallpaper.render(source, placement, screenPixels(screenContext));
+        },
       ),
     );
     if (choice == null || !context.mounted || !_isSignedInOwner(owner)) {
@@ -329,6 +334,9 @@ class SetWallpaperFlow {
           : historyOriginalIdentity,
     );
   }
+
+  /// The screen in physical pixels: the size a placed or fixed wall renders at.
+  static Size screenPixels(BuildContext context) => MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context);
 
   /// True when the device can set [target]. If the plugin cannot answer, the answer is yes and the apply reports any error.
   static Future<bool> supportsTarget(WallpaperTarget target) async {

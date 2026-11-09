@@ -218,7 +218,7 @@ void main() {
           context,
           link: _setScreenWall,
           file: true,
-          saveAction: (String label) => PrismButton(label: label, onPressed: () {}),
+          saveAction: (String label, _) => PrismButton(label: label, onPressed: () {}),
         ),
       );
       await shot.settle(frames: 10);

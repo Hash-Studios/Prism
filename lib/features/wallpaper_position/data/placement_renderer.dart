@@ -2,9 +2,11 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:Prism/features/readability/data/readability_render.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart';
 import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
 import 'package:Prism/features/wallpaper_position/domain/placement_geometry.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/painting.dart';
 import 'package:palette_generator/palette_generator.dart';
 
@@ -13,13 +15,15 @@ const int _paletteSide = 64;
 
 /// Draws [source] as [placement] says onto a canvas of [width] x [height] pixels and returns PNG bytes.
 ///
-/// It uses the same recorder and rasterize steps as the editor export.
+/// It uses the same recorder and rasterize steps as the editor export. [WallpaperPlacement.fixes] go on top, on the
+/// zones of [platform].
 Future<Uint8List> renderPlacementPng(
   ui.Image source,
   WallpaperPlacement placement, {
   required int width,
   required int height,
   required ui.Color fillColor,
+  TargetPlatform? platform,
 }) async {
   final ui.Size frame = ui.Size(width.toDouble(), height.toDouble());
   final ui.Size image = ui.Size(source.width.toDouble(), source.height.toDouble());
@@ -29,40 +33,54 @@ Future<Uint8List> renderPlacementPng(
   canvas.clipRect(bounds);
   final ui.Size content = PlacementGeometry.contentSize(image, frame, placement.fit);
   final Offset shift = PlacementGeometry.translation(content, frame, placement);
-  canvas
-    ..save()
-    ..translate(shift.dx, shift.dy)
-    ..scale(placement.zoom);
   final Rect sourceRect = Offset.zero & image;
-  final Paint photo = Paint()..filterQuality = FilterQuality.high;
-  switch (placement.fit) {
-    case PlacementFit.fill:
-      canvas.drawImageRect(source, sourceRect, Offset.zero & content, photo);
-    case PlacementFit.fitBlur:
-      final double cover = PlacementGeometry.coverScale(image, frame);
-      final Rect coverRect = Rect.fromCenter(
-        center: bounds.center,
-        width: image.width * cover,
-        height: image.height * cover,
-      );
-      final double sigma = PlacementGeometry.blurFraction * math.min(frame.width, frame.height);
-      canvas.drawImageRect(
-        source,
-        sourceRect,
-        coverRect,
-        Paint()
-          ..filterQuality = FilterQuality.medium
-          ..imageFilter = ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma, tileMode: TileMode.mirror),
-      );
-      canvas.drawImageRect(source, sourceRect, PlacementGeometry.containRect(image, frame), photo);
-    case PlacementFit.fitColor:
-      canvas.drawRect(bounds, Paint()..color = fillColor);
-      canvas.drawImageRect(source, sourceRect, PlacementGeometry.containRect(image, frame), photo);
+  void drawWall(Canvas canvas, Paint photo) {
+    switch (placement.fit) {
+      case PlacementFit.fill:
+        canvas.drawImageRect(source, sourceRect, Offset.zero & content, photo);
+      case PlacementFit.fitBlur:
+        final double cover = PlacementGeometry.coverScale(image, frame);
+        final Rect coverRect = Rect.fromCenter(
+          center: bounds.center,
+          width: image.width * cover,
+          height: image.height * cover,
+        );
+        final double sigma = PlacementGeometry.blurFraction * math.min(frame.width, frame.height);
+        canvas.drawImageRect(
+          source,
+          sourceRect,
+          coverRect,
+          Paint()
+            ..filterQuality = FilterQuality.medium
+            ..imageFilter = ui.ImageFilter.blur(sigmaX: sigma, sigmaY: sigma, tileMode: TileMode.mirror),
+        );
+        canvas.drawImageRect(source, sourceRect, PlacementGeometry.containRect(image, frame), photo);
+      case PlacementFit.fitColor:
+        canvas.drawRect(bounds, Paint()..color = fillColor);
+        canvas.drawImageRect(source, sourceRect, PlacementGeometry.containRect(image, frame), photo);
+    }
   }
-  canvas.restore();
-  if (placement.dim > 0) {
-    canvas.drawRect(bounds, Paint()..color = ui.Color.fromRGBO(0, 0, 0, placement.dim));
+
+  void drawPlaced(Canvas canvas, Paint photo) {
+    canvas
+      ..save()
+      ..translate(shift.dx, shift.dy)
+      ..scale(placement.zoom);
+    drawWall(canvas, photo);
+    canvas.restore();
+    if (placement.dim > 0) {
+      canvas.drawRect(bounds, Paint()..color = ui.Color.fromRGBO(0, 0, 0, placement.dim));
+    }
   }
+
+  drawPlaced(canvas, Paint()..filterQuality = FilterQuality.high);
+  paintReadabilityFixes(
+    canvas,
+    frame,
+    placement.fixes,
+    platform: platform ?? defaultTargetPlatform,
+    redraw: drawPlaced,
+  );
   final ui.Image rendered = await rasterizePicture(recorder.endRecording(), width, height);
   try {
     final ByteData? data = await rendered.toByteData(format: ui.ImageByteFormat.png);

@@ -15463,4 +15463,58 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settingsResetTipsDone => 'Tips akan muncul lagi.';
+
+  @override
+  String get readabilityClockChip => 'Jam mungkin sulit dibaca';
+
+  @override
+  String get readabilityIconsChip => 'Ikon mungkin sulit dibaca';
+
+  @override
+  String get readabilityChipHint => 'Menampilkan pratinjau sebelum dan sesudah';
+
+  @override
+  String get readabilityClockBody => 'Jam mungkin sulit dibaca di wallpaper ini. Wallpaper asli tetap seperti semula.';
+
+  @override
+  String get readabilityIconsBody => 'Ikon mungkin sulit dibaca di wallpaper ini. Wallpaper asli tetap seperti semula.';
+
+  @override
+  String get readabilityDimClockTitle => 'Redupkan di belakang jam?';
+
+  @override
+  String get readabilityBlurClockTitle => 'Lembutkan di belakang jam?';
+
+  @override
+  String get readabilityDimIconsTitle => 'Redupkan di belakang ikon?';
+
+  @override
+  String get readabilityBlurIconsTitle => 'Lembutkan di belakang ikon?';
+
+  @override
+  String get readabilityBefore => 'Sebelum';
+
+  @override
+  String get readabilityAfter => 'Sesudah';
+
+  @override
+  String get readabilityBeforeSemantic => 'Wallpaper tanpa perbaikan';
+
+  @override
+  String get readabilityAfterSemantic => 'Wallpaper dengan perbaikan';
+
+  @override
+  String get readabilityApply => 'Terapkan';
+
+  @override
+  String get readabilityKeep => 'Biarkan seperti ini';
+
+  @override
+  String get readabilityApplyFailed => 'Perbaikan tidak dapat diterapkan. Coba lagi.';
+
+  @override
+  String get settingsReadabilityTipsTitle => 'Tips keterbacaan';
+
+  @override
+  String get settingsReadabilityTipsBody => 'Tampilkan tips saat jam atau ikon mungkin sulit dibaca di wallpaper.';
 }

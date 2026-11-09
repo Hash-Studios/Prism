@@ -309,7 +309,7 @@ class ClockPreviewRoute extends PageRouteInfo<ClockPreviewRouteArgs> {
     WallpaperSource? wallpaperSource,
     String? thumbnailUrl,
     Color? tint,
-    Widget Function(String)? saveAction,
+    Widget Function(String, List<ReadabilityFix>)? saveAction,
     SetScreenRequest? request,
     String? spatialMapUrl,
     void Function(BuildContext, ImageProvider<Object>?)? livePhotoAction,
@@ -392,7 +392,7 @@ class ClockPreviewRouteArgs {
 
   final Color? tint;
 
-  final Widget Function(String)? saveAction;
+  final Widget Function(String, List<ReadabilityFix>)? saveAction;
 
   final SetScreenRequest? request;
 

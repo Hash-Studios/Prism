@@ -15604,4 +15604,61 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsResetTipsDone => 'Los consejos volverán a aparecer.';
+
+  @override
+  String get readabilityClockChip => 'La hora puede ser difícil de leer';
+
+  @override
+  String get readabilityIconsChip => 'Los iconos pueden ser difíciles de leer';
+
+  @override
+  String get readabilityChipHint => 'Muestra una vista previa de antes y después';
+
+  @override
+  String get readabilityClockBody =>
+      'La hora puede ser difícil de leer en este fondo de pantalla. El fondo original no cambia.';
+
+  @override
+  String get readabilityIconsBody =>
+      'Los iconos pueden ser difíciles de leer en este fondo de pantalla. El fondo original no cambia.';
+
+  @override
+  String get readabilityDimClockTitle => '¿Oscurecer detrás de la hora?';
+
+  @override
+  String get readabilityBlurClockTitle => '¿Suavizar detrás de la hora?';
+
+  @override
+  String get readabilityDimIconsTitle => '¿Oscurecer detrás de los iconos?';
+
+  @override
+  String get readabilityBlurIconsTitle => '¿Suavizar detrás de los iconos?';
+
+  @override
+  String get readabilityBefore => 'Antes';
+
+  @override
+  String get readabilityAfter => 'Después';
+
+  @override
+  String get readabilityBeforeSemantic => 'Fondo de pantalla sin la corrección';
+
+  @override
+  String get readabilityAfterSemantic => 'Fondo de pantalla con la corrección';
+
+  @override
+  String get readabilityApply => 'Aplicar';
+
+  @override
+  String get readabilityKeep => 'Dejar como está';
+
+  @override
+  String get readabilityApplyFailed => 'No se pudo aplicar la corrección. Inténtalo de nuevo.';
+
+  @override
+  String get settingsReadabilityTipsTitle => 'Consejos de legibilidad';
+
+  @override
+  String get settingsReadabilityTipsBody =>
+      'Muestra un consejo cuando la hora o los iconos puedan ser difíciles de leer en un fondo de pantalla.';
 }

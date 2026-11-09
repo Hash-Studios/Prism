@@ -15396,4 +15396,60 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsResetTipsDone => 'Tips will show again.';
+
+  @override
+  String get readabilityClockChip => 'Clock may be hard to read';
+
+  @override
+  String get readabilityIconsChip => 'Icons may be hard to read';
+
+  @override
+  String get readabilityChipHint => 'Shows a before and after preview';
+
+  @override
+  String get readabilityClockBody =>
+      'The clock may be hard to read on this wallpaper. The original wallpaper stays as it is.';
+
+  @override
+  String get readabilityIconsBody =>
+      'Icons may be hard to read on this wallpaper. The original wallpaper stays as it is.';
+
+  @override
+  String get readabilityDimClockTitle => 'Dim behind the clock?';
+
+  @override
+  String get readabilityBlurClockTitle => 'Soften behind the clock?';
+
+  @override
+  String get readabilityDimIconsTitle => 'Dim behind the icons?';
+
+  @override
+  String get readabilityBlurIconsTitle => 'Soften behind the icons?';
+
+  @override
+  String get readabilityBefore => 'Before';
+
+  @override
+  String get readabilityAfter => 'After';
+
+  @override
+  String get readabilityBeforeSemantic => 'Wallpaper without the fix';
+
+  @override
+  String get readabilityAfterSemantic => 'Wallpaper with the fix';
+
+  @override
+  String get readabilityApply => 'Apply';
+
+  @override
+  String get readabilityKeep => 'Keep as is';
+
+  @override
+  String get readabilityApplyFailed => 'Couldn\'t apply the fix. Try again.';
+
+  @override
+  String get settingsReadabilityTipsTitle => 'Readability tips';
+
+  @override
+  String get settingsReadabilityTipsBody => 'Show a tip when the clock or icons may be hard to read on a wallpaper.';
 }

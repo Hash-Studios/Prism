@@ -60,9 +60,11 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/photo_wallpaper_widget
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/hints/views/feature_hint.dart';
+import 'package:Prism/features/readability/domain/readability.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
+import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
 import 'package:Prism/features/weekly_challenges/biz/challenge_admission_tracker.dart';
 import 'package:Prism/features/weekly_challenges/biz/confirm_challenge_submission.dart';
@@ -974,7 +976,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         file: !hideSetWallpaperUi,
         wallpaperId: record.id,
         wallpaperSource: WallpaperSource.downloaded,
-        saveAction: (label) => PrismButton(label: label, onPressed: () => _save(record)),
+        saveAction: (label, fixes) => PrismButton(
+          label: label,
+          onPressed: () => _save(record, fixes: fixes),
+        ),
       );
     } catch (error) {
       if (mounted && ownsSession()) toasts.error(aiDownloadFailureMessage(context.l10n, error));
@@ -1022,7 +1027,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     }
   }
 
-  Future<void> _save(AiGenerationRecord record) async {
+  Future<void> _save(AiGenerationRecord record, {List<ReadabilityFix> fixes = const <ReadabilityFix>[]}) async {
     if (_saving || !_isLoggedIn || record.userId != app_state.prismUser.id) return;
     final int ownerSession = CoinsService.instance.economySession;
     bool ownsSession() =>
@@ -1030,11 +1035,18 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     final AppLocalizations l10n = context.l10n;
     _saving = true;
     final link = record.displayUrl(isPremium: app_state.prismUser.premium);
+    final Size screenPixels = SetWallpaperFlow.screenPixels(context);
+    PlacedWallpaper? fixed;
     try {
       final File localFile = await OfflineAssetStore.instance.resolve(link).timeout(aiAssetTransferTimeout);
       if (!ownsSession()) return;
+      // A readability fix saves a new copy at screen size. The AI original stays as it is.
+      if (fixes.isNotEmpty) {
+        fixed = await PlacedWallpaper.render(localFile.path, WallpaperPlacement(fixes: fixes), screenPixels);
+        if (!ownsSession()) return;
+      }
       final request = DownloadRequest(
-        link: localFile.path,
+        link: fixed?.path ?? localFile.path,
         filenameWithoutExtension: downloadBaseName(link),
         isLocalFile: true,
       );
@@ -1060,6 +1072,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       logger.w('AI gallery save failed', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
       if (ownsSession()) toasts.error(aiDownloadFailureMessage(l10n, error));
     } finally {
+      unawaited(fixed?.discard());
       _saving = false;
     }
   }

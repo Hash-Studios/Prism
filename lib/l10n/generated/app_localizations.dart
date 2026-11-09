@@ -24492,6 +24492,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tips will show again.'**
   String get settingsResetTipsDone;
+
+  /// Small chip on the Set screen next to the lock screen clock when the wallpaper makes the clock hard to read.
+  ///
+  /// In en, this message translates to:
+  /// **'Clock may be hard to read'**
+  String get readabilityClockChip;
+
+  /// Small chip on the Set screen near the home screen icons when the wallpaper makes icon labels hard to read.
+  ///
+  /// In en, this message translates to:
+  /// **'Icons may be hard to read'**
+  String get readabilityIconsChip;
+
+  /// Screen reader hint for the readability chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows a before and after preview'**
+  String get readabilityChipHint;
+
+  /// Body of the readability sheet for the clock.
+  ///
+  /// In en, this message translates to:
+  /// **'The clock may be hard to read on this wallpaper. The original wallpaper stays as it is.'**
+  String get readabilityClockBody;
+
+  /// Body of the readability sheet for the icons.
+  ///
+  /// In en, this message translates to:
+  /// **'Icons may be hard to read on this wallpaper. The original wallpaper stays as it is.'**
+  String get readabilityIconsBody;
+
+  /// Sheet title when the fix is a soft dark shade behind the clock.
+  ///
+  /// In en, this message translates to:
+  /// **'Dim behind the clock?'**
+  String get readabilityDimClockTitle;
+
+  /// Sheet title when the fix is a small blur behind the clock.
+  ///
+  /// In en, this message translates to:
+  /// **'Soften behind the clock?'**
+  String get readabilityBlurClockTitle;
+
+  /// Sheet title when the fix is a soft dark shade behind the icons.
+  ///
+  /// In en, this message translates to:
+  /// **'Dim behind the icons?'**
+  String get readabilityDimIconsTitle;
+
+  /// Sheet title when the fix is a small blur behind the icons.
+  ///
+  /// In en, this message translates to:
+  /// **'Soften behind the icons?'**
+  String get readabilityBlurIconsTitle;
+
+  /// Label under the wallpaper preview without the fix.
+  ///
+  /// In en, this message translates to:
+  /// **'Before'**
+  String get readabilityBefore;
+
+  /// Label under the wallpaper preview with the fix.
+  ///
+  /// In en, this message translates to:
+  /// **'After'**
+  String get readabilityAfter;
+
+  /// Screen reader label of the before preview image.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpaper without the fix'**
+  String get readabilityBeforeSemantic;
+
+  /// Screen reader label of the after preview image.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallpaper with the fix'**
+  String get readabilityAfterSemantic;
+
+  /// Button that applies the readability fix to the wallpaper the user sets.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get readabilityApply;
+
+  /// Button that closes the sheet and keeps the wallpaper unchanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep as is'**
+  String get readabilityKeep;
+
+  /// Error toast when the fix could not be rendered.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t apply the fix. Try again.'**
+  String get readabilityApplyFailed;
+
+  /// Settings switch that turns readability tips on or off.
+  ///
+  /// In en, this message translates to:
+  /// **'Readability tips'**
+  String get settingsReadabilityTipsTitle;
+
+  /// Subtitle of the Readability tips switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Show a tip when the clock or icons may be hard to read on a wallpaper.'**
+  String get settingsReadabilityTipsBody;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -1974,7 +1974,7 @@ void main() {
             link: _previewPath,
             file: true,
             request: _request(onAdjust: _noAdjust),
-            saveAction: (label) => PrismButton(label: label, onPressed: () {}),
+            saveAction: (label, _) => PrismButton(label: label, onPressed: () {}),
           ),
         ),
       );
@@ -2181,7 +2181,7 @@ void main() {
           home: ClockOverlay(
             link: _previewPath,
             file: true,
-            saveAction: (label) => PrismButton(label: label, expand: true, onPressed: () {}),
+            saveAction: (label, _) => PrismButton(label: label, expand: true, onPressed: () {}),
           ),
         ),
       );

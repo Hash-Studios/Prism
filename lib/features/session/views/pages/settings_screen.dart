@@ -44,6 +44,7 @@ import 'package:Prism/features/promo_codes/views/redeem_code_sheet.dart';
 import 'package:Prism/features/promo_codes/views/store_code_redemption.dart';
 import 'package:Prism/features/public_profile/views/widgets/show_pro_badge_row.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
+import 'package:Prism/features/readability/views/readability_views.dart';
 import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/session/data/report_problem_service.dart' show ReportTrigger;
 import 'package:Prism/features/session/data/shake_to_report.dart';
@@ -368,6 +369,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     ),
     const ShowTipsRow(),
+    const ReadabilityTipsRow(),
     const ResetTipsRow(),
   ];
 

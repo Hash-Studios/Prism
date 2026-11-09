@@ -20,6 +20,18 @@ enums:
       - got_it
       - tap_outside
       - interrupted
+  - name: readability_zone
+    dart_type: ReadabilityZone
+    import: package:Prism/features/readability/domain/readability.dart
+    values:
+      - clock
+      - icons
+  - name: readability_fix_kind
+    dart_type: ReadabilityFixKind
+    import: package:Prism/features/readability/domain/readability.dart
+    values:
+      - dim
+      - blur
   - name: daily_moment_step
     dart_type: DailyMomentStepValue
     values:
@@ -3756,3 +3768,25 @@ events:
         key: hint_id
         type: enum
         enum: HintId
+  - id: readability_tip_shown
+    fields:
+      - name: zone
+        key: zone
+        type: enum
+        enum: ReadabilityZone
+  - id: readability_fix_applied
+    fields:
+      - name: zone
+        key: zone
+        type: enum
+        enum: ReadabilityZone
+      - name: fix_kind
+        key: fix_kind
+        type: enum
+        enum: ReadabilityFixKind
+  - id: readability_fix_kept
+    fields:
+      - name: zone
+        key: zone
+        type: enum
+        enum: ReadabilityZone

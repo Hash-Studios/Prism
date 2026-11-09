@@ -538,6 +538,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
           url: path,
           onAdjust: (screenContext) =>
               SetWallpaperFlow.openStudio(screenContext, url: path, entryPoint: 'wallpaper_filter'),
+          onApplyFixes: (screenContext, placement) =>
+              PlacedWallpaper.render(path, placement, SetWallpaperFlow.screenPixels(screenContext)),
         ),
       );
       if (!mounted ||
