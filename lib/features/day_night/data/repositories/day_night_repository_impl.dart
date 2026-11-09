@@ -47,6 +47,10 @@ class DayNightRepositoryImpl implements DayNightRepository {
   @visibleForTesting
   static Directory? fixedFolderOverride;
 
+  /// The clock that dates each publish and unpublish, so cleanup knows which fixed copies came before it.
+  @visibleForTesting
+  static DateTime Function() clock = DateTime.now;
+
   final SettingsLocalDataSource _settings;
 
   @override
@@ -75,6 +79,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
   @override
   Future<void> publish(DayNightPair pair) async {
     if (runsOnDevice) return _startSchedule(pair);
+    final DateTime startedAt = clock();
     final int generation = ++_publishGeneration;
     final String owner = app_state.prismUser.id.trim();
     final bool loggedIn = app_state.prismUser.loggedIn;
@@ -110,7 +115,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
         if (!await prefs.setString(_snapshotKey, snapshot)) {
           throw StateError('Day and night snapshot could not be persisted');
         }
-        if (isCurrent()) await _pruneFixedCopies(keep: fixedCopies);
+        if (isCurrent()) await _pruneFixedCopies(keep: fixedCopies, olderThan: startedAt);
       },
     );
   }
@@ -118,6 +123,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
   @override
   Future<void> unpublish() async {
     if (runsOnDevice) return _stopSchedule();
+    final DateTime startedAt = clock();
     final int generation = ++_publishGeneration;
     await NativeAssetPathsStore.replaceGroup(
       _group,
@@ -129,7 +135,9 @@ class DayNightRepositoryImpl implements DayNightRepository {
         if (!await prefs.remove(_snapshotKey)) {
           throw StateError('Day and night snapshot could not be removed');
         }
-        if (generation == _publishGeneration) await _pruneFixedCopies(keep: const <String>{});
+        if (generation == _publishGeneration) {
+          await _pruneFixedCopies(keep: const <String>{}, olderThan: startedAt);
+        }
       },
     );
   }
@@ -171,6 +179,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
 
   /// Starts the Android schedule. Entry 0 is the day wall and entry 1 the night wall.
   Future<void> _startSchedule(DayNightPair pair) async {
+    final DateTime startedAt = clock();
     final int generation = ++_publishGeneration;
     final String owner = app_state.prismUser.id.trim();
     if (!app_state.prismUser.loggedIn || owner.isEmpty) return;
@@ -213,7 +222,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
         await _settings.set(PersistenceKeys.autoRotateEnabled, false);
         await _settings.set(_lastSlotKey, pair.times.slotNow().name);
         started = true;
-        await _pruneFixedCopies(keep: fixedCopies);
+        if (generation == _publishGeneration) await _pruneFixedCopies(keep: fixedCopies, olderThan: startedAt);
       });
     } finally {
       if (!started) coordinator.releaseDayNight(claim);
@@ -221,7 +230,8 @@ class DayNightRepositoryImpl implements DayNightRepository {
   }
 
   Future<void> _stopSchedule() async {
-    ++_publishGeneration;
+    final DateTime startedAt = clock();
+    final int generation = ++_publishGeneration;
     final AndroidScheduleCoordinator coordinator = AndroidScheduleCoordinator.forSettings(_settings);
     final int claim = coordinator.claim;
     await coordinator.run(() async {
@@ -229,7 +239,9 @@ class DayNightRepositoryImpl implements DayNightRepository {
         final aw.WallpaperResult result = await aw.AsyncWallpaper.stopDailySchedule();
         if (!result.isSuccess) throw StateError('Day and night could not stop the device schedule');
         await _settings.delete(_lastSlotKey);
-        await _pruneFixedCopies(keep: const <String>{});
+        if (generation == _publishGeneration) {
+          await _pruneFixedCopies(keep: const <String>{}, olderThan: startedAt);
+        }
       } finally {
         coordinator.releaseDayNight(claim);
       }
@@ -328,12 +340,20 @@ class DayNightRepositoryImpl implements DayNightRepository {
 
   /// Deletes the fixed copies of earlier publishes. It runs only after the schedule or snapshot that uses [keep] is in
   /// place, so it deletes a copy only once nothing points at it. A failure keeps the files and never fails the publish.
-  static Future<void> _pruneFixedCopies({required Set<String> keep}) async {
+  ///
+  /// A publish renders its copies before it waits its turn, so a newer publish can have copies on disk that this
+  /// operation does not know. Only folders from before [olderThan] go, with one second of margin for file systems
+  /// that store whole seconds. A newer folder stays until the next publish cleans up.
+  static Future<void> _pruneFixedCopies({required Set<String> keep, required DateTime olderThan}) async {
     try {
       final Directory folder = await _fixedFolder();
       if (!await folder.exists()) return;
+      final DateTime cutoff = DateTime.fromMillisecondsSinceEpoch(
+        olderThan.millisecondsSinceEpoch ~/ 1000 * 1000,
+      ).subtract(const Duration(seconds: 1));
       await for (final FileSystemEntity entry in folder.list()) {
         if (keep.any((kept) => kept == entry.path || path.isWithin(entry.path, kept))) continue;
+        if (!(await entry.stat()).modified.isBefore(cutoff)) continue;
         await entry.delete(recursive: true);
       }
     } catch (error, stackTrace) {

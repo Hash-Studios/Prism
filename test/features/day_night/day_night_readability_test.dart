@@ -486,6 +486,7 @@ void main() {
     tearDown(() async {
       DayNightRepositoryImpl.runsOnDeviceOverride = null;
       DayNightRepositoryImpl.fixedFolderOverride = null;
+      DayNightRepositoryImpl.clock = DateTime.now;
       DayNightRepositoryImpl.fixedCopyMaker = originalFixedCopy;
       DayNightRepositoryImpl.downloadedOriginalOverride = null;
       debugDefaultTargetPlatformOverride = null;
@@ -543,6 +544,8 @@ void main() {
     test('a new iOS publish deletes the fixed copies of older publishes, and unpublish deletes the rest', () async {
       final Directory folder = Directory(path.join(root.path, 'prism', 'offline', 'assets', 'day_night_fixed'));
       DayNightRepositoryImpl.fixedFolderOverride = folder;
+      // Each operation starts after every folder made so far, as when the user edits the pair a while later.
+      DayNightRepositoryImpl.clock = () => DateTime.now().add(const Duration(hours: 1));
       final File old = File(path.join(folder.path, 'day-old', 'wall.png'));
       await old.create(recursive: true);
       int made = 0;
@@ -568,6 +571,32 @@ void main() {
       await repository.unpublish();
 
       expect(folder.listSync(), isEmpty);
+    });
+
+    test('a publish keeps the copies of a newer publish that rendered while it ran', () async {
+      final Directory folder = Directory(path.join(root.path, 'prism', 'offline', 'assets', 'day_night_fixed'));
+      DayNightRepositoryImpl.fixedFolderOverride = folder;
+      final DateTime startedAt = DateTime.now();
+      DayNightRepositoryImpl.clock = () => startedAt;
+      final Directory old = await Directory(path.join(folder.path, 'day-old')).create(recursive: true);
+      final ProcessResult touched = await Process.run('touch', <String>['-t', '202001010000', old.path]);
+      expect(touched.exitCode, 0);
+      late Directory newer;
+      DayNightRepositoryImpl.fixedCopyMaker = (DayNightSlot slot, DayNightWall wall, String source) async {
+        // Another publish renders its copy while this one runs.
+        newer = await Directory(path.join(folder.path, 'day-newer')).create(recursive: true);
+        final File copy = File(path.join(folder.path, '${slot.name}-0', 'wall.png'));
+        await copy.create(recursive: true);
+        return copy;
+      };
+
+      await repository.publish(
+        DayNightPair(day: _httpsDay.withFixes(const <ReadabilityFix>[_clockDim]), night: _httpsNight),
+      );
+
+      expect(old.existsSync(), isFalse);
+      expect(newer.existsSync(), isTrue);
+      expect(folder.listSync().map((entry) => path.basename(entry.path)).toSet(), <String>{'day-0', 'day-newer'});
     });
 
     test('the iOS snapshot points the fixed day wall at its asset and maps the asset to a relative path', () async {
