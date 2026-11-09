@@ -818,6 +818,7 @@ The cards use `FolderCover`, `PressScale` and `PrismButton`. Each card is one Se
 - The lists change once a day. A follow count on a card can be up to a day old.
 - The server lists do not know who blocked the viewer. A folder whose owner blocked the viewer shows on the card, and the folder page shows "This folder is private or no longer exists".
 - `hasBlockedWord` checks English words only.
+- There is no daily cap on how many different folders one account can send signals for. Each folder counts an account once in 7 days, and `recordFolderSignal` runs with at most 10 instances. This was a product decision on 2026-11-09.
 
 ### Deploy order
 
