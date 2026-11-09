@@ -15457,7 +15457,7 @@
   "@hintPhotoFit": {
     "description": "One-line feature hint, shown once next to the control it names."
   },
-  "hintLivePhoto": "चलती लॉक स्क्रीन के लिए इस वॉलपेपर को Live Photo के रूप में सेव करें।",
+  "hintLivePhoto": "चलती लॉक स्क्रीन के लिए इस वॉलपेपर को लाइव फ़ोटो के रूप में सेव करें।",
   "@hintLivePhoto": {
     "description": "One-line feature hint, shown once next to the control it names."
   },

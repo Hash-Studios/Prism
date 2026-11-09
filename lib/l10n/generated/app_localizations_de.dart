@@ -15550,7 +15550,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get hintSmartFolders =>
-      'Ein intelligenter Ordner füllt sich selbst mit Hintergrundbildern, die zu deinen Regeln passen.';
+      'Ein Smart-Ordner füllt sich selbst mit Hintergrundbildern, die zu deinen Regeln passen.';
 
   @override
   String get hintFolderSections =>
@@ -15560,7 +15560,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get hintPhotoFit => 'Mach aus deinem eigenen Foto ein Hintergrundbild, das auf deinen Bildschirm passt.';
 
   @override
-  String get hintLivePhoto => 'Speichere dieses Hintergrundbild als Live Photo für einen bewegten Sperrbildschirm.';
+  String get hintLivePhoto => 'Speichere dieses Hintergrundbild als Live-Foto für einen bewegten Sperrbildschirm.';
 
   @override
   String get settingsShowTipsTitle => 'Tipps anzeigen';

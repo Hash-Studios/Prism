@@ -14834,7 +14834,7 @@
   "@hintPhotoFit": {
     "description": "One-line feature hint, shown once next to the control it names."
   },
-  "hintLivePhoto": "Simpan wallpaper ini sebagai Live Photo untuk Layar Terkunci yang bergerak.",
+  "hintLivePhoto": "Simpan wallpaper ini sebagai Foto Live untuk Layar Terkunci yang bergerak.",
   "@hintLivePhoto": {
     "description": "One-line feature hint, shown once next to the control it names."
   },

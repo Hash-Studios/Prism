@@ -15515,7 +15515,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get hintPhotoFit => 'Convierte tu propia foto en un fondo que se ajuste a tu pantalla.';
 
   @override
-  String get hintLivePhoto => 'Guarda este fondo como Live Photo para una pantalla de bloqueo con movimiento.';
+  String get hintLivePhoto => 'Guarda este fondo como foto en directo para una pantalla de bloqueo con movimiento.';
 
   @override
   String get settingsShowTipsTitle => 'Mostrar consejos';

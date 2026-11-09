@@ -15465,7 +15465,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get hintPhotoFit => 'अपनी फ़ोटो को ऐसा वॉलपेपर बनाएँ जो आपकी स्क्रीन पर फ़िट हो।';
 
   @override
-  String get hintLivePhoto => 'चलती लॉक स्क्रीन के लिए इस वॉलपेपर को Live Photo के रूप में सेव करें।';
+  String get hintLivePhoto => 'चलती लॉक स्क्रीन के लिए इस वॉलपेपर को लाइव फ़ोटो के रूप में सेव करें।';
 
   @override
   String get settingsShowTipsTitle => 'टिप्स दिखाएँ';

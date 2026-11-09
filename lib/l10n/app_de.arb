@@ -14694,7 +14694,7 @@
   "@hintFollowCategory": {
     "description": "One-line feature hint, shown once next to the control it names."
   },
-  "hintSmartFolders": "Ein intelligenter Ordner füllt sich selbst mit Hintergrundbildern, die zu deinen Regeln passen.",
+  "hintSmartFolders": "Ein Smart-Ordner füllt sich selbst mit Hintergrundbildern, die zu deinen Regeln passen.",
   "@hintSmartFolders": {
     "description": "One-line feature hint, shown once next to the control it names."
   },
@@ -14706,7 +14706,7 @@
   "@hintPhotoFit": {
     "description": "One-line feature hint, shown once next to the control it names."
   },
-  "hintLivePhoto": "Speichere dieses Hintergrundbild als Live Photo für einen bewegten Sperrbildschirm.",
+  "hintLivePhoto": "Speichere dieses Hintergrundbild als Live-Foto für einen bewegten Sperrbildschirm.",
   "@hintLivePhoto": {
     "description": "One-line feature hint, shown once next to the control it names."
   },

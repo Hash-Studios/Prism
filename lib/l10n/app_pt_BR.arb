@@ -4172,7 +4172,7 @@
   "@hintPhotoFit": {
     "description": "One-line feature hint, shown once next to the control it names."
   },
-  "hintLivePhoto": "Salve este papel de parede como Live Photo para uma tela bloqueada com movimento.",
+  "hintLivePhoto": "Salve este papel de parede como Foto Live para uma Tela Bloqueada com movimento.",
   "@hintLivePhoto": {
     "description": "One-line feature hint, shown once next to the control it names."
   },

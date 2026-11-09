@@ -15373,7 +15373,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get hintPhotoFit => 'Ubah fotomu sendiri menjadi wallpaper yang pas di layarmu.';
 
   @override
-  String get hintLivePhoto => 'Simpan wallpaper ini sebagai Live Photo untuk Layar Terkunci yang bergerak.';
+  String get hintLivePhoto => 'Simpan wallpaper ini sebagai Foto Live untuk Layar Terkunci yang bergerak.';
 
   @override
   String get settingsShowTipsTitle => 'Tampilkan tips';

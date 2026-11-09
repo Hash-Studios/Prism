@@ -15692,7 +15692,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get hintPhotoFit => 'Transforme sua própria foto em um papel de parede que cabe na sua tela.';
 
   @override
-  String get hintLivePhoto => 'Salve este papel de parede como Live Photo para uma tela bloqueada com movimento.';
+  String get hintLivePhoto => 'Salve este papel de parede como Foto Live para uma Tela Bloqueada com movimento.';
 
   @override
   String get settingsShowTipsTitle => 'Mostrar dicas';
@@ -31396,7 +31396,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get hintPhotoFit => 'Transforme sua própria foto em um papel de parede que cabe na sua tela.';
 
   @override
-  String get hintLivePhoto => 'Salve este papel de parede como Live Photo para uma tela bloqueada com movimento.';
+  String get hintLivePhoto => 'Salve este papel de parede como Foto Live para uma Tela Bloqueada com movimento.';
 
   @override
   String get settingsShowTipsTitle => 'Mostrar dicas';

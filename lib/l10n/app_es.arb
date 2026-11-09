@@ -4316,7 +4316,7 @@
   "@hintPhotoFit": {
     "description": "One-line feature hint, shown once next to the control it names."
   },
-  "hintLivePhoto": "Guarda este fondo como Live Photo para una pantalla de bloqueo con movimiento.",
+  "hintLivePhoto": "Guarda este fondo como foto en directo para una pantalla de bloqueo con movimiento.",
   "@hintLivePhoto": {
     "description": "One-line feature hint, shown once next to the control it names."
   },
