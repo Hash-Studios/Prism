@@ -79,7 +79,7 @@ void main() {
           link: 'assets/images/prism.webp',
           file: false,
           spatialMapUrl: 'https://x/m.png',
-          saveAction: (label) => PrismButton(label: label, onPressed: () {}),
+          saveAction: (label, _) => PrismButton(label: label, onPressed: () {}),
         ),
       ),
     );

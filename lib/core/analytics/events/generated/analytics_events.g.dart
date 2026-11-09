@@ -10,6 +10,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart'
 import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
 import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
+import 'package:Prism/features/readability/domain/readability.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/crop_spec.dart';
@@ -19,6 +20,8 @@ import 'package:Prism/features/weekly_challenges/domain/entities/weekly_challeng
 Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'hint_id': HintId.values.map((value) => value.wireValue).toList(),
   'hint_dismiss_method': HintDismissMethod.values.map((value) => value.wireValue).toList(),
+  'readability_zone': ReadabilityZone.values.map((value) => value.wireValue).toList(),
+  'readability_fix_kind': ReadabilityFixKind.values.map((value) => value.wireValue).toList(),
   'daily_moment_step': DailyMomentStepValue.values.map((value) => value.wireValue).toList(),
   'challenge_entry_source': ChallengeEntrySource.values.map((value) => value.wireValue).toList(),
   'wallpaper_target': WallpaperTarget.values.map((value) => value.wireValue).toList(),
@@ -5878,5 +5881,48 @@ class HintFeatureUsedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'hint_id': hintId.wireValue};
+  }
+}
+
+class ReadabilityTipShownEvent extends AnalyticsEvent {
+  const ReadabilityTipShownEvent({required this.zone});
+
+  final ReadabilityZone zone;
+
+  @override
+  String get eventName => 'readability_tip_shown';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'zone': zone.wireValue};
+  }
+}
+
+class ReadabilityFixAppliedEvent extends AnalyticsEvent {
+  const ReadabilityFixAppliedEvent({required this.zone, required this.fixKind});
+
+  final ReadabilityZone zone;
+  final ReadabilityFixKind fixKind;
+
+  @override
+  String get eventName => 'readability_fix_applied';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'zone': zone.wireValue, 'fix_kind': fixKind.wireValue};
+  }
+}
+
+class ReadabilityFixKeptEvent extends AnalyticsEvent {
+  const ReadabilityFixKeptEvent({required this.zone});
+
+  final ReadabilityZone zone;
+
+  @override
+  String get eventName => 'readability_fix_kept';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'zone': zone.wireValue};
   }
 }

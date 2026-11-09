@@ -346,7 +346,7 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
           l10n: l10n,
           target: choice.target,
           setContext: WallpaperSetContext(
-            fit: placed == null ? WallpaperFit.fill.name : 'studio_${placed.placement.fit.name}',
+            fit: placed == null ? WallpaperFit.fill.name : placed.fitLabel,
             entryPoint: 'wallpaper_filter',
             targetChanged: choice.targetChanged,
           ),
@@ -538,6 +538,8 @@ class _WallpaperFilterScreenState extends State<WallpaperFilterScreen> with Sing
           url: path,
           onAdjust: (screenContext) =>
               SetWallpaperFlow.openStudio(screenContext, url: path, entryPoint: 'wallpaper_filter'),
+          onApplyFixes: (screenContext, placement) =>
+              PlacedWallpaper.render(path, placement, SetWallpaperFlow.screenPixels(screenContext)),
         ),
       );
       if (!mounted ||

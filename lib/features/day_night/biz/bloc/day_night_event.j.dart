@@ -6,6 +6,9 @@ abstract class DayNightEvent with _$DayNightEvent {
   const factory DayNightEvent.entitlementChanged({required bool isPro, required String userId, DateTime? passUntil}) =
       _EntitlementChanged;
   const factory DayNightEvent.wallPicked(DayNightSlot slot, DayNightWall wall) = _WallPicked;
+
+  /// The user applied readability [fixes] to the wall of [slot].
+  const factory DayNightEvent.fixesChanged(DayNightSlot slot, List<ReadabilityFix> fixes) = _FixesChanged;
   const factory DayNightEvent.variantsPicked({required DayNightWall day, required DayNightWall night}) =
       _VariantsPicked;
   const factory DayNightEvent.timesChanged({required DayTime dayStart, required DayTime nightStart}) = _TimesChanged;

@@ -77,6 +77,7 @@ import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/live_photo/views/open_live_photo.dart';
 import 'package:Prism/features/public_profile/domain/creator_label.dart';
+import 'package:Prism/features/readability/domain/readability.dart';
 import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
 import 'package:Prism/features/theme_mode/domain/custom_accent.dart';
 import 'package:Prism/features/theme_mode/views/theme_mode_bloc_utils.dart';
@@ -113,6 +114,7 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_recommen
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_tag_chips.dart';
 import 'package:Prism/features/wallpaper_history/domain/recently_viewed_rules.dart';
 import 'package:Prism/features/wallpaper_history/wallpaper_history.dart';
+import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
 import 'package:Prism/features/wallpaper_upload/biz/variant_seed.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/wall_metadata_editor.dart';
@@ -713,7 +715,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   StreamSubscription<BlockedCreators>? _blockedCreatorSubscription;
 
   /// iOS only: builds Save to Photos for the phone preview.
-  Widget Function(String label)? _saveAction;
+  Widget Function(String label, List<ReadabilityFix> fixes)? _saveAction;
 
   /// iOS only: builds the compact Save for the solid header.
   Widget Function()? _headerSave;
@@ -2906,14 +2908,39 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       final String? savedKey = _savedTintKeyOf(localFile.path);
       if (savedKey != null) variant = DownloadVariant(key: savedKey, prepare: () async => localFile.path);
     }
+    // A readability fix saves a screen-size copy with the fix, made from the variation or the authorized original.
+    DownloadVariant? variantWith(List<ReadabilityFix> fixes) {
+      if (fixes.isEmpty || desktop != null) return variant;
+      final Size screenPixels = _screenPixels(context);
+      Future<String> fix(String path) async =>
+          (await PlacedWallpaper.render(path, WallpaperPlacement(fixes: fixes), screenPixels)).path;
+
+      final DownloadVariant? base = variant;
+      final String key = <String?>[base?.key, readabilityFixesKey(fixes)].nonNulls.join('-');
+      if (base == null) {
+        return DownloadVariant(key: key, prepare: () => fix(source), prepareAuthorized: localFile == null ? fix : null);
+      }
+      final Future<String> Function(String)? baseAuthorized = base.prepareAuthorized;
+      return DownloadVariant(
+        key: key,
+        prepare: () async => fix(await base.prepare()),
+        prepareAuthorized: baseAuthorized == null ? null : (authorized) async => fix(await baseAuthorized(authorized)),
+      );
+    }
+
     // The round icon buttons and the compact button press-scale themselves. Only the labelled pill needs the wrapper.
-    Widget downloadButton({String? label, bool compact = false, bool expand = false}) {
+    Widget downloadButton({
+      String? label,
+      bool compact = false,
+      bool expand = false,
+      List<ReadabilityFix> fixes = const <ReadabilityFix>[],
+    }) {
       final Widget button = DownloadButton(
         label: label,
         primary: compact || expand,
         expand: expand,
         link: source,
-        variant: variant,
+        variant: variantWith(fixes),
         desktop: desktop,
         isPremiumContent: isPremiumFeedItem(entity, app_state.premiumCollections),
         contentId: entity.id,
@@ -2980,7 +3007,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           ),
       ],
     );
-    _saveAction = hideSetWallpaperUi ? (label) => downloadButton(label: label, expand: true) : null;
+    _saveAction = hideSetWallpaperUi
+        ? (label, fixes) => downloadButton(label: label, expand: true, fixes: fixes)
+        : null;
     _headerSave = hideSetWallpaperUi ? () => downloadButton(label: context.l10n.wallpaperSave, compact: true) : null;
     final primary = hideSetWallpaperUi
         ? WallpaperBarAction(

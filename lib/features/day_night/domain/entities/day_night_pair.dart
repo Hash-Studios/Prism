@@ -1,6 +1,8 @@
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/readability/domain/readability.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 
 enum DayNightSlot { day, night }
 
@@ -85,6 +87,7 @@ final class DayNightWall {
     required this.fullUrl,
     required this.thumbnailUrl,
     this.mainColor,
+    this.fixes = const <ReadabilityFix>[],
   });
 
   factory DayNightWall.fromFeedItem(FeedItemEntity item) => DayNightWall(
@@ -105,6 +108,7 @@ final class DayNightWall {
     final Object? fullUrl = json['fullUrl'];
     final Object? thumbnailUrl = json['thumbnailUrl'];
     final Object? mainColor = json['mainColor'];
+    final Object? fixes = json['fixes'];
     if (id is! String || id.trim().isEmpty || fullUrl is! String || thumbnailUrl is! String) return null;
     return DayNightWall(
       id: id,
@@ -112,6 +116,7 @@ final class DayNightWall {
       fullUrl: fullUrl,
       thumbnailUrl: thumbnailUrl,
       mainColor: mainColor is String ? mainColor : null,
+      fixes: fixes is List ? fixes.map(ReadabilityFix.fromKey).nonNulls.toList() : const <ReadabilityFix>[],
     );
   }
 
@@ -123,6 +128,18 @@ final class DayNightWall {
   /// The most dominant stored colour: a Prism palette id or a hex value such as "#663399".
   final String? mainColor;
 
+  /// Readability fixes the user applied. The schedule sets a fixed copy, never the wall itself.
+  final List<ReadabilityFix> fixes;
+
+  DayNightWall withFixes(List<ReadabilityFix> fixes) => DayNightWall(
+    id: id,
+    source: source,
+    fullUrl: fullUrl,
+    thumbnailUrl: thumbnailUrl,
+    mainColor: mainColor,
+    fixes: fixes,
+  );
+
   /// A protected Prism original has no public https image. Only its downloaded original can serve it.
   bool get hasPublicImage => fullUrl.trim().startsWith('https://');
 
@@ -132,6 +149,7 @@ final class DayNightWall {
     'fullUrl': fullUrl,
     'thumbnailUrl': thumbnailUrl,
     if (mainColor != null) 'mainColor': mainColor,
+    if (fixes.isNotEmpty) 'fixes': <String>[for (final ReadabilityFix fix in fixes) fix.key],
   };
 
   @override
@@ -141,10 +159,11 @@ final class DayNightWall {
       other.source == source &&
       other.fullUrl == fullUrl &&
       other.thumbnailUrl == thumbnailUrl &&
-      other.mainColor == mainColor;
+      other.mainColor == mainColor &&
+      listEquals(other.fixes, fixes);
 
   @override
-  int get hashCode => Object.hash(id, source, fullUrl, thumbnailUrl, mainColor);
+  int get hashCode => Object.hash(id, source, fullUrl, thumbnailUrl, mainColor, Object.hashAll(fixes));
 }
 
 /// The user's day and night walls, the times they switch, and where they apply.

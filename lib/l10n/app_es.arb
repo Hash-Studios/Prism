@@ -4380,5 +4380,77 @@
   "settingsResetTipsDone": "Los consejos volverán a aparecer.",
   "@settingsResetTipsDone": {
     "description": "Toast after the user resets feature hints."
+  },
+  "readabilityClockChip": "La hora puede ser difícil de leer",
+  "@readabilityClockChip": {
+    "description": "Small chip on the Set screen next to the lock screen clock when the wallpaper makes the clock hard to read."
+  },
+  "readabilityIconsChip": "Los iconos pueden ser difíciles de leer",
+  "@readabilityIconsChip": {
+    "description": "Small chip on the Set screen near the home screen icons when the wallpaper makes icon labels hard to read."
+  },
+  "readabilityChipHint": "Muestra una vista previa de antes y después",
+  "@readabilityChipHint": {
+    "description": "Screen reader hint for the readability chip."
+  },
+  "readabilityClockBody": "La hora puede ser difícil de leer en este fondo de pantalla. El fondo original no cambia.",
+  "@readabilityClockBody": {
+    "description": "Body of the readability sheet for the clock."
+  },
+  "readabilityIconsBody": "Los iconos pueden ser difíciles de leer en este fondo de pantalla. El fondo original no cambia.",
+  "@readabilityIconsBody": {
+    "description": "Body of the readability sheet for the icons."
+  },
+  "readabilityDimClockTitle": "¿Oscurecer detrás de la hora?",
+  "@readabilityDimClockTitle": {
+    "description": "Sheet title when the fix is a soft dark shade behind the clock."
+  },
+  "readabilityBlurClockTitle": "¿Suavizar detrás de la hora?",
+  "@readabilityBlurClockTitle": {
+    "description": "Sheet title when the fix is a small blur behind the clock."
+  },
+  "readabilityDimIconsTitle": "¿Oscurecer detrás de los iconos?",
+  "@readabilityDimIconsTitle": {
+    "description": "Sheet title when the fix is a soft dark shade behind the icons."
+  },
+  "readabilityBlurIconsTitle": "¿Suavizar detrás de los iconos?",
+  "@readabilityBlurIconsTitle": {
+    "description": "Sheet title when the fix is a small blur behind the icons."
+  },
+  "readabilityBefore": "Antes",
+  "@readabilityBefore": {
+    "description": "Label under the wallpaper preview without the fix."
+  },
+  "readabilityAfter": "Después",
+  "@readabilityAfter": {
+    "description": "Label under the wallpaper preview with the fix."
+  },
+  "readabilityBeforeSemantic": "Fondo de pantalla sin la corrección",
+  "@readabilityBeforeSemantic": {
+    "description": "Screen reader label of the before preview image."
+  },
+  "readabilityAfterSemantic": "Fondo de pantalla con la corrección",
+  "@readabilityAfterSemantic": {
+    "description": "Screen reader label of the after preview image."
+  },
+  "readabilityApply": "Aplicar",
+  "@readabilityApply": {
+    "description": "Button that applies the readability fix to the wallpaper the user sets."
+  },
+  "readabilityKeep": "Dejar como está",
+  "@readabilityKeep": {
+    "description": "Button that closes the sheet and keeps the wallpaper unchanged."
+  },
+  "readabilityApplyFailed": "No se pudo aplicar la corrección. Inténtalo de nuevo.",
+  "@readabilityApplyFailed": {
+    "description": "Error toast when the fix could not be rendered."
+  },
+  "settingsReadabilityTipsTitle": "Consejos de legibilidad",
+  "@settingsReadabilityTipsTitle": {
+    "description": "Settings switch that turns readability tips on or off."
+  },
+  "settingsReadabilityTipsBody": "Muestra un consejo cuando la hora o los iconos puedan ser difíciles de leer en un fondo de pantalla.",
+  "@settingsReadabilityTipsBody": {
+    "description": "Subtitle of the Readability tips switch."
   }
 }

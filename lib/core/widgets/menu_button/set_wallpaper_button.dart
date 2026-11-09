@@ -253,6 +253,11 @@ class SetWallpaperFlow {
           if (source == null || !screenContext.mounted || !_isSignedInOwner(owner)) return null;
           return studioOpener(screenContext, url: source, thumbnailUrl: thumbnailUrl, entryPoint: entryPoint);
         },
+        onApplyFixes: (screenContext, placement) async {
+          final String? source = await authorize(screenContext);
+          if (source == null || !screenContext.mounted || !_isSignedInOwner(owner)) return null;
+          return PlacedWallpaper.render(source, placement, screenPixels(screenContext));
+        },
       ),
     );
     if (choice == null || !context.mounted || !_isSignedInOwner(owner)) {
@@ -330,6 +335,9 @@ class SetWallpaperFlow {
     );
   }
 
+  /// The screen in physical pixels: the size a placed or fixed wall renders at.
+  static Size screenPixels(BuildContext context) => MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context);
+
   /// True when the device can set [target]. If the plugin cannot answer, the answer is yes and the apply reports any error.
   static Future<bool> supportsTarget(WallpaperTarget target) async {
     try {
@@ -404,7 +412,7 @@ class SetWallpaperFlow {
             restore: <WallpaperRestore>[...priorResult.restore, ...serviceResult.restore],
             historyIds: <String>[...priorResult.historyIds, ...serviceResult.historyIds],
           );
-    if (placed != null) _trackPlacement(placed, choice.target, result);
+    if (placed != null && placed.fromStudio) _trackPlacement(placed, choice.target, result);
     Future<void> retry(WallpaperTarget retryTarget, {required bool systemScreen}) async {
       if (!_isSignedInOwner(owner)) return;
       // The phone's own wallpaper screen does its own placement, so it takes the original.
@@ -462,7 +470,7 @@ class SetWallpaperFlow {
       target: choice.target,
       messenger: host,
       setContext: WallpaperSetContext(
-        fit: placed == null ? WallpaperFit.fill.name : 'studio_${placed.placement.fit.name}',
+        fit: placed == null ? WallpaperFit.fill.name : placed.fitLabel,
         entryPoint: entryPoint,
         usedDefault: usedDefault,
         targetChanged: choice.targetChanged,

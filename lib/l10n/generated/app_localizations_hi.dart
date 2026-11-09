@@ -15628,4 +15628,59 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get settingsResetTipsDone => 'टिप्स फिर से दिखेंगे।';
+
+  @override
+  String get readabilityClockChip => 'घड़ी पढ़ने में मुश्किल हो सकती है';
+
+  @override
+  String get readabilityIconsChip => 'आइकन पढ़ने में मुश्किल हो सकते हैं';
+
+  @override
+  String get readabilityChipHint => 'पहले और बाद की झलक दिखाता है';
+
+  @override
+  String get readabilityClockBody => 'इस वॉलपेपर पर घड़ी पढ़ने में मुश्किल हो सकती है। मूल वॉलपेपर वैसा ही रहेगा।';
+
+  @override
+  String get readabilityIconsBody => 'इस वॉलपेपर पर आइकन पढ़ने में मुश्किल हो सकते हैं। मूल वॉलपेपर वैसा ही रहेगा।';
+
+  @override
+  String get readabilityDimClockTitle => 'घड़ी के पीछे हल्का अंधेरा करें?';
+
+  @override
+  String get readabilityBlurClockTitle => 'घड़ी के पीछे हल्का धुंधलापन करें?';
+
+  @override
+  String get readabilityDimIconsTitle => 'आइकन के पीछे हल्का अंधेरा करें?';
+
+  @override
+  String get readabilityBlurIconsTitle => 'आइकन के पीछे हल्का धुंधलापन करें?';
+
+  @override
+  String get readabilityBefore => 'पहले';
+
+  @override
+  String get readabilityAfter => 'बाद में';
+
+  @override
+  String get readabilityBeforeSemantic => 'बिना सुधार वाला वॉलपेपर';
+
+  @override
+  String get readabilityAfterSemantic => 'सुधार वाला वॉलपेपर';
+
+  @override
+  String get readabilityApply => 'लागू करें';
+
+  @override
+  String get readabilityKeep => 'जैसा है वैसा रखें';
+
+  @override
+  String get readabilityApplyFailed => 'सुधार लागू नहीं हो सका। फिर से कोशिश करें।';
+
+  @override
+  String get settingsReadabilityTipsTitle => 'पठनीयता सुझाव';
+
+  @override
+  String get settingsReadabilityTipsBody =>
+      'जब घड़ी या आइकन किसी वॉलपेपर पर पढ़ने में मुश्किल लग सकते हों, तब सुझाव दिखाएँ।';
 }

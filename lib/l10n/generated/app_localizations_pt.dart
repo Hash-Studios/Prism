@@ -15855,6 +15855,63 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsResetTipsDone => 'As dicas vão aparecer de novo.';
+
+  @override
+  String get readabilityClockChip => 'O relógio pode ser difícil de ler';
+
+  @override
+  String get readabilityIconsChip => 'Os ícones podem ser difíceis de ler';
+
+  @override
+  String get readabilityChipHint => 'Mostra uma prévia de antes e depois';
+
+  @override
+  String get readabilityClockBody =>
+      'O relógio pode ser difícil de ler neste papel de parede. O papel de parede original não muda.';
+
+  @override
+  String get readabilityIconsBody =>
+      'Os ícones podem ser difíceis de ler neste papel de parede. O papel de parede original não muda.';
+
+  @override
+  String get readabilityDimClockTitle => 'Escurecer atrás do relógio?';
+
+  @override
+  String get readabilityBlurClockTitle => 'Suavizar atrás do relógio?';
+
+  @override
+  String get readabilityDimIconsTitle => 'Escurecer atrás dos ícones?';
+
+  @override
+  String get readabilityBlurIconsTitle => 'Suavizar atrás dos ícones?';
+
+  @override
+  String get readabilityBefore => 'Antes';
+
+  @override
+  String get readabilityAfter => 'Depois';
+
+  @override
+  String get readabilityBeforeSemantic => 'Papel de parede sem a correção';
+
+  @override
+  String get readabilityAfterSemantic => 'Papel de parede com a correção';
+
+  @override
+  String get readabilityApply => 'Aplicar';
+
+  @override
+  String get readabilityKeep => 'Manter como está';
+
+  @override
+  String get readabilityApplyFailed => 'Não foi possível aplicar a correção. Tente novamente.';
+
+  @override
+  String get settingsReadabilityTipsTitle => 'Dicas de legibilidade';
+
+  @override
+  String get settingsReadabilityTipsBody =>
+      'Mostra uma dica quando o relógio ou os ícones puderem ser difíceis de ler em um papel de parede.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -31706,4 +31763,61 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get settingsResetTipsDone => 'As dicas vão aparecer de novo.';
+
+  @override
+  String get readabilityClockChip => 'O relógio pode ser difícil de ler';
+
+  @override
+  String get readabilityIconsChip => 'Os ícones podem ser difíceis de ler';
+
+  @override
+  String get readabilityChipHint => 'Mostra uma prévia de antes e depois';
+
+  @override
+  String get readabilityClockBody =>
+      'O relógio pode ser difícil de ler neste papel de parede. O papel de parede original não muda.';
+
+  @override
+  String get readabilityIconsBody =>
+      'Os ícones podem ser difíceis de ler neste papel de parede. O papel de parede original não muda.';
+
+  @override
+  String get readabilityDimClockTitle => 'Escurecer atrás do relógio?';
+
+  @override
+  String get readabilityBlurClockTitle => 'Suavizar atrás do relógio?';
+
+  @override
+  String get readabilityDimIconsTitle => 'Escurecer atrás dos ícones?';
+
+  @override
+  String get readabilityBlurIconsTitle => 'Suavizar atrás dos ícones?';
+
+  @override
+  String get readabilityBefore => 'Antes';
+
+  @override
+  String get readabilityAfter => 'Depois';
+
+  @override
+  String get readabilityBeforeSemantic => 'Papel de parede sem a correção';
+
+  @override
+  String get readabilityAfterSemantic => 'Papel de parede com a correção';
+
+  @override
+  String get readabilityApply => 'Aplicar';
+
+  @override
+  String get readabilityKeep => 'Manter como está';
+
+  @override
+  String get readabilityApplyFailed => 'Não foi possível aplicar a correção. Tente novamente.';
+
+  @override
+  String get settingsReadabilityTipsTitle => 'Dicas de legibilidade';
+
+  @override
+  String get settingsReadabilityTipsBody =>
+      'Mostra uma dica quando o relógio ou os ícones puderem ser difíceis de ler em um papel de parede.';
 }

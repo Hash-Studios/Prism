@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
@@ -7,14 +8,19 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
 import 'package:Prism/features/auto_rotate/data/android_schedule_coordinator.dart';
 import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/features/day_night/domain/repositories/day_night_repository.dart';
 import 'package:Prism/features/ios_shortcuts/data/native_asset_paths_store.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:async_wallpaper/async_wallpaper.dart' as aw;
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb, visibleForTesting;
 import 'package:injectable/injectable.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 @LazySingleton(as: DayNightRepository)
@@ -32,6 +38,18 @@ class DayNightRepositoryImpl implements DayNightRepository {
 
   @visibleForTesting
   static bool? runsOnDeviceOverride;
+
+  /// Renders the readability fixes of a wall from [source] into a file. Tests replace it.
+  @visibleForTesting
+  static Future<File> Function(DayNightSlot slot, DayNightWall wall, String source) fixedCopyMaker = _fixedCopy;
+
+  /// The folder that holds the fixed copies. Tests point it at a temp folder.
+  @visibleForTesting
+  static Directory? fixedFolderOverride;
+
+  /// The clock that dates each publish and unpublish, so cleanup knows which fixed copies came before it.
+  @visibleForTesting
+  static DateTime Function() clock = DateTime.now;
 
   final SettingsLocalDataSource _settings;
 
@@ -61,6 +79,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
   @override
   Future<void> publish(DayNightPair pair) async {
     if (runsOnDevice) return _startSchedule(pair);
+    final DateTime startedAt = clock();
     final int generation = ++_publishGeneration;
     final String owner = app_state.prismUser.id.trim();
     final bool loggedIn = app_state.prismUser.loggedIn;
@@ -75,8 +94,9 @@ class DayNightRepositoryImpl implements DayNightRepository {
       throw StateError('Day and night needs a day wall and a night wall.');
     }
     final Map<String, String> paths = <String, String>{};
-    final Map<String, Object?> dayItem = await _snapshotItem(DayNightSlot.day, day, paths);
-    final Map<String, Object?> nightItem = await _snapshotItem(DayNightSlot.night, night, paths);
+    final Set<String> fixedCopies = <String>{};
+    final Map<String, Object?> dayItem = await _snapshotItem(DayNightSlot.day, day, paths, fixedCopies);
+    final Map<String, Object?> nightItem = await _snapshotItem(DayNightSlot.night, night, paths, fixedCopies);
     if (!isCurrent()) return;
     final String snapshot = jsonEncode(<String, Object?>{
       'dayStart': pair.times.dayStart.minutes,
@@ -95,6 +115,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
         if (!await prefs.setString(_snapshotKey, snapshot)) {
           throw StateError('Day and night snapshot could not be persisted');
         }
+        if (isCurrent()) await _pruneFixedCopies(keep: fixedCopies, olderThan: startedAt, generation: generation);
       },
     );
   }
@@ -102,6 +123,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
   @override
   Future<void> unpublish() async {
     if (runsOnDevice) return _stopSchedule();
+    final DateTime startedAt = clock();
     final int generation = ++_publishGeneration;
     await NativeAssetPathsStore.replaceGroup(
       _group,
@@ -112,6 +134,9 @@ class DayNightRepositoryImpl implements DayNightRepository {
         if (generation != _publishGeneration) return;
         if (!await prefs.remove(_snapshotKey)) {
           throw StateError('Day and night snapshot could not be removed');
+        }
+        if (generation == _publishGeneration) {
+          await _pruneFixedCopies(keep: const <String>{}, olderThan: startedAt, generation: generation);
         }
       },
     );
@@ -154,6 +179,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
 
   /// Starts the Android schedule. Entry 0 is the day wall and entry 1 the night wall.
   Future<void> _startSchedule(DayNightPair pair) async {
+    final DateTime startedAt = clock();
     final int generation = ++_publishGeneration;
     final String owner = app_state.prismUser.id.trim();
     if (!app_state.prismUser.loggedIn || owner.isEmpty) return;
@@ -166,8 +192,9 @@ class DayNightRepositoryImpl implements DayNightRepository {
     final int claim = coordinator.claimDayNight();
     bool started = false;
     try {
-      final aw.WallpaperRotationSource daySource = await _scheduleSource(DayNightSlot.day, day);
-      final aw.WallpaperRotationSource nightSource = await _scheduleSource(DayNightSlot.night, night);
+      final Set<String> fixedCopies = <String>{};
+      final aw.WallpaperRotationSource daySource = await _scheduleSource(DayNightSlot.day, day, fixedCopies);
+      final aw.WallpaperRotationSource nightSource = await _scheduleSource(DayNightSlot.night, night, fixedCopies);
       if (generation != _publishGeneration || !app_state.prismUser.loggedIn || app_state.prismUser.id.trim() != owner) {
         return;
       }
@@ -195,6 +222,7 @@ class DayNightRepositoryImpl implements DayNightRepository {
         await _settings.set(PersistenceKeys.autoRotateEnabled, false);
         await _settings.set(_lastSlotKey, pair.times.slotNow().name);
         started = true;
+        await _pruneFixedCopies(keep: fixedCopies, olderThan: startedAt, generation: generation);
       });
     } finally {
       if (!started) coordinator.releaseDayNight(claim);
@@ -202,7 +230,8 @@ class DayNightRepositoryImpl implements DayNightRepository {
   }
 
   Future<void> _stopSchedule() async {
-    ++_publishGeneration;
+    final DateTime startedAt = clock();
+    final int generation = ++_publishGeneration;
     final AndroidScheduleCoordinator coordinator = AndroidScheduleCoordinator.forSettings(_settings);
     final int claim = coordinator.claim;
     await coordinator.run(() async {
@@ -210,14 +239,25 @@ class DayNightRepositoryImpl implements DayNightRepository {
         final aw.WallpaperResult result = await aw.AsyncWallpaper.stopDailySchedule();
         if (!result.isSuccess) throw StateError('Day and night could not stop the device schedule');
         await _settings.delete(_lastSlotKey);
+        await _pruneFixedCopies(keep: const <String>{}, olderThan: startedAt, generation: generation);
       } finally {
         coordinator.releaseDayNight(claim);
       }
     });
   }
 
-  /// A public wall loads from its https URL. A protected wall needs its downloaded original.
-  Future<aw.WallpaperRotationSource> _scheduleSource(DayNightSlot slot, DayNightWall wall) async {
+  /// A public wall loads from its https URL. A protected wall needs its downloaded original. A wall with readability
+  /// fixes loads from a fixed copy of either.
+  Future<aw.WallpaperRotationSource> _scheduleSource(
+    DayNightSlot slot,
+    DayNightWall wall,
+    Set<String> fixedCopies,
+  ) async {
+    if (wall.fixes.isNotEmpty) {
+      final File fixed = await fixedCopyMaker(slot, wall, await _fixSource(slot, wall));
+      fixedCopies.add(fixed.path);
+      return aw.WallpaperRotationSource(sourceType: aw.WallpaperSourceType.file, source: fixed.path);
+    }
     if (wall.hasPublicImage) {
       return aw.WallpaperRotationSource(sourceType: aw.WallpaperSourceType.url, source: wall.fullUrl.trim());
     }
@@ -226,7 +266,21 @@ class DayNightRepositoryImpl implements DayNightRepository {
     return aw.WallpaperRotationSource(sourceType: aw.WallpaperSourceType.file, source: original.path);
   }
 
-  Future<Map<String, Object?>> _snapshotItem(DayNightSlot slot, DayNightWall wall, Map<String, String> paths) async {
+  Future<Map<String, Object?>> _snapshotItem(
+    DayNightSlot slot,
+    DayNightWall wall,
+    Map<String, String> paths,
+    Set<String> fixedCopies,
+  ) async {
+    if (wall.fixes.isNotEmpty) {
+      final File fixed = await fixedCopyMaker(slot, wall, await _fixSource(slot, wall));
+      fixedCopies.add(fixed.path);
+      final String? relativePath = await NativeAssetPathsStore.originalRelativePath(fixed);
+      if (relativePath == null) throw DayNightPrepareException(DayNightPrepareFailure.offlineCopyFailed, slot: slot);
+      final String asset = 'daynight-fixed-${slot.name}';
+      paths[asset] = relativePath;
+      return <String, Object?>{'id': wall.id, 'asset': asset};
+    }
     final String url = wall.fullUrl.trim();
     if (wall.hasPublicImage) {
       try {
@@ -245,6 +299,71 @@ class DayNightRepositoryImpl implements DayNightRepository {
     final String asset = NativeAssetPathsStore.originalAssetKeyFor(wall.source, wall.id);
     paths[asset] = relativePath;
     return <String, Object?>{'id': wall.id, 'asset': asset};
+  }
+
+  /// Where a fix renders from: the public URL, or the downloaded original of a protected wall.
+  Future<String> _fixSource(DayNightSlot slot, DayNightWall wall) async {
+    if (wall.hasPublicImage) return wall.fullUrl.trim();
+    final File? original = await _downloadedOriginal(wall);
+    if (original == null) throw DayNightPrepareException(DayNightPrepareFailure.needsDownload, slot: slot);
+    return original.path;
+  }
+
+  /// A screen-size copy of the wall with its fixes, kept under the offline assets root so iOS Shortcuts can read it.
+  static Future<File> _fixedCopy(DayNightSlot slot, DayNightWall wall, String source) async {
+    final ui.FlutterView view =
+        ui.PlatformDispatcher.instance.implicitView ?? ui.PlatformDispatcher.instance.views.first;
+    final ui.Size px = view.physicalSize;
+    final ui.Size portrait = ui.Size(px.shortestSide, px.longestSide);
+    final PlacedWallpaper placed = await PlacedWallpaper.render(
+      source,
+      WallpaperPlacement(fixes: wall.fixes),
+      portrait,
+    );
+    try {
+      final Directory folder = await _fixedFolder();
+      await folder.create(recursive: true);
+      final Directory destination = await Directory(folder.path).createTemp('${slot.name}-');
+      return await File(placed.path).copy(path.join(destination.path, 'wall.png'));
+    } finally {
+      await placed.discard();
+    }
+  }
+
+  static Future<Directory> _fixedFolder() async =>
+      fixedFolderOverride ??
+      Directory(
+        path.join((await getApplicationSupportDirectory()).path, 'prism', 'offline', 'assets', 'day_night_fixed'),
+      );
+
+  /// Deletes the fixed copies of earlier publishes. It runs only after the schedule or snapshot that uses [keep] is in
+  /// place, so it deletes a copy only once nothing points at it. A failure keeps the files and never fails the publish.
+  ///
+  /// A publish renders its copies before it waits its turn, so a newer publish can have copies on disk that this
+  /// operation does not know. Only folders from before [olderThan] go, with one second of margin for file systems
+  /// that store whole seconds. A newer folder stays until the next publish cleans up. Cleanup stops as soon as a newer
+  /// operation than [generation] starts.
+  static Future<void> _pruneFixedCopies({
+    required Set<String> keep,
+    required DateTime olderThan,
+    required int generation,
+  }) async {
+    try {
+      final Directory folder = await _fixedFolder();
+      if (!await folder.exists()) return;
+      final DateTime cutoff = DateTime.fromMillisecondsSinceEpoch(
+        olderThan.millisecondsSinceEpoch ~/ 1000 * 1000,
+      ).subtract(const Duration(seconds: 1));
+      await for (final FileSystemEntity entry in folder.list()) {
+        if (keep.any((kept) => kept == entry.path || path.isWithin(entry.path, kept))) continue;
+        if (!(await entry.stat()).modified.isBefore(cutoff)) continue;
+        // Checked last, right before the delete. A newer operation's folders are also newer than [olderThan].
+        if (generation != _publishGeneration) return;
+        await entry.delete(recursive: true);
+      }
+    } catch (error, stackTrace) {
+      logger.w('Day and night could not delete old fixed copies', error: error, stackTrace: stackTrace);
+    }
   }
 
   Future<File?> _downloadedOriginal(DayNightWall wall) {

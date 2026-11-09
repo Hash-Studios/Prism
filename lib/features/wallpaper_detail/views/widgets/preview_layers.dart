@@ -163,6 +163,27 @@ class _AppIcon extends StatelessWidget {
 
 /// The clock and date of a lock screen, drawn over a wallpaper. It fills the space it gets.
 /// On iOS it also draws a row of lock screen widgets and the flashlight and camera buttons.
+/// The iOS lock preview's layout at full size, in logical points. The Set screen reads it to keep its readability tip
+/// under the widget row.
+// ignore: avoid_classes_with_only_static_members
+abstract final class IosLockLayout {
+  /// Space between the status bar and the date.
+  static const double top = 24;
+  static const double dateSize = 20;
+  static const double clockSize = 96;
+  static const double clockLineHeight = 1.1;
+
+  /// Space between the clock and the widget row.
+  static const double gap = 6;
+
+  /// Width and height of one round lock screen widget on a screen [width] points wide.
+  static double widgetSize(double width) => math.min(width * 0.15, 72);
+
+  /// Where the widget row ends, from the top of a full screen. [dateHeight] is the laid-out height of the date line.
+  static double widgetsBottom({required double statusBar, required double width, required double dateHeight}) =>
+      statusBar + top + dateHeight + clockSize * clockLineHeight + gap + widgetSize(width);
+}
+
 class LockPreviewLayer extends StatelessWidget {
   const LockPreviewLayer({super.key, required this.textColor, this.now});
 
@@ -184,7 +205,7 @@ class LockPreviewLayer extends StatelessWidget {
           final double w = constraints.hasBoundedWidth
               ? constraints.maxWidth / scale
               : MediaQuery.sizeOf(context).width;
-          final double widget = math.min(w * 0.15, 72) * scale;
+          final double widget = IosLockLayout.widgetSize(w) * scale;
           final double button = math.min(w * 0.125, 56) * scale;
           final double buttonSide = w * 0.11 * scale;
           final double buttonBottom = (MediaQuery.viewPaddingOf(context).bottom + 8) * scale;
@@ -203,7 +224,7 @@ class LockPreviewLayer extends StatelessWidget {
                 Align(
                   alignment: Alignment.topCenter,
                   child: Padding(
-                    padding: EdgeInsets.only(top: inset + 24 * scale),
+                    padding: EdgeInsets.only(top: inset + IosLockLayout.top * scale),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
@@ -212,7 +233,7 @@ class LockPreviewLayer extends StatelessWidget {
                           style: TextStyle(
                             color: textColor,
                             fontFamily: 'CupertinoSystemText',
-                            fontSize: 20 * scale,
+                            fontSize: IosLockLayout.dateSize * scale,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -221,12 +242,12 @@ class LockPreviewLayer extends StatelessWidget {
                           style: TextStyle(
                             color: textColor,
                             fontFamily: 'CupertinoSystemDisplay',
-                            fontSize: 96 * scale,
+                            fontSize: IosLockLayout.clockSize * scale,
                             fontWeight: FontWeight.w700,
-                            height: 1.1,
+                            height: IosLockLayout.clockLineHeight,
                           ),
                         ),
-                        SizedBox(height: 6 * scale),
+                        SizedBox(height: IosLockLayout.gap * scale),
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[

@@ -87,7 +87,7 @@ void main() {
           context,
           link: _wall.path,
           file: true,
-          saveAction: (String label) => PrismButton(label: label, onPressed: () {}),
+          saveAction: (String label, _) => PrismButton(label: label, onPressed: () {}),
           livePhotoAction: (_, _) {},
         ),
       );

@@ -6,6 +6,7 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/features/day_night/domain/repositories/day_night_repository.dart';
+import 'package:Prism/features/readability/domain/readability.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/foundation.dart';
@@ -23,6 +24,15 @@ class DayNightBloc extends Bloc<DayNightEvent, DayNightState> {
       (event, emit) => event.map<Future<void>>(
         entitlementChanged: (event) => _onEntitlementChanged(event, emit),
         wallPicked: (event) => _applyChange(state.pair.withWall(event.slot, event.wall), emit),
+        fixesChanged: (event) async {
+          final DayNightWall? wall = state.pair.wallFor(event.slot);
+          if (wall == null) return;
+          final DayNightWall fixed = wall.withFixes(event.fixes);
+          await _applyChange(
+            event.slot == DayNightSlot.day ? state.pair.copyWith(day: fixed) : state.pair.copyWith(night: fixed),
+            emit,
+          );
+        },
         variantsPicked: (event) =>
             _applyChange(state.pair.copyWith(day: event.day, night: event.night, fromVariants: true), emit),
         timesChanged: (event) => _onTimesChanged(event, emit),

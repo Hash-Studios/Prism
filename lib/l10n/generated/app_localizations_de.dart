@@ -15725,4 +15725,61 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get settingsResetTipsDone => 'Tipps werden wieder angezeigt.';
+
+  @override
+  String get readabilityClockChip => 'Uhr ist eventuell schlecht lesbar';
+
+  @override
+  String get readabilityIconsChip => 'Symbole sind eventuell schlecht lesbar';
+
+  @override
+  String get readabilityChipHint => 'Zeigt eine Vorher-nachher-Vorschau';
+
+  @override
+  String get readabilityClockBody =>
+      'Die Uhr ist auf diesem Hintergrundbild eventuell schlecht lesbar. Das Originalbild bleibt unverändert.';
+
+  @override
+  String get readabilityIconsBody =>
+      'Die Symbole sind auf diesem Hintergrundbild eventuell schlecht lesbar. Das Originalbild bleibt unverändert.';
+
+  @override
+  String get readabilityDimClockTitle => 'Hinter der Uhr abdunkeln?';
+
+  @override
+  String get readabilityBlurClockTitle => 'Hinter der Uhr weichzeichnen?';
+
+  @override
+  String get readabilityDimIconsTitle => 'Hinter den Symbolen abdunkeln?';
+
+  @override
+  String get readabilityBlurIconsTitle => 'Hinter den Symbolen weichzeichnen?';
+
+  @override
+  String get readabilityBefore => 'Vorher';
+
+  @override
+  String get readabilityAfter => 'Nachher';
+
+  @override
+  String get readabilityBeforeSemantic => 'Hintergrundbild ohne Korrektur';
+
+  @override
+  String get readabilityAfterSemantic => 'Hintergrundbild mit Korrektur';
+
+  @override
+  String get readabilityApply => 'Anwenden';
+
+  @override
+  String get readabilityKeep => 'So lassen';
+
+  @override
+  String get readabilityApplyFailed => 'Korrektur konnte nicht angewendet werden. Versuch es erneut.';
+
+  @override
+  String get settingsReadabilityTipsTitle => 'Lesbarkeitstipps';
+
+  @override
+  String get settingsReadabilityTipsBody =>
+      'Zeigt einen Tipp, wenn die Uhr oder die Symbole auf einem Hintergrundbild schlecht lesbar sein könnten.';
 }

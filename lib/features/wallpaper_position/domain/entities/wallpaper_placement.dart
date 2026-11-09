@@ -1,3 +1,4 @@
+import 'package:Prism/features/readability/domain/readability.dart';
 import 'package:equatable/equatable.dart';
 
 /// How the wall fills the screen frame.
@@ -27,6 +28,7 @@ class WallpaperPlacement extends Equatable {
     this.zoom = minZoom,
     this.dim = 0,
     this.previewMode = PlacementPreviewMode.lock,
+    this.fixes = const <ReadabilityFix>[],
   });
 
   static const double minZoom = 1;
@@ -42,6 +44,9 @@ class WallpaperPlacement extends Equatable {
   final double dim;
   final PlacementPreviewMode previewMode;
 
+  /// Readability fixes drawn over the placed wall, after the dim.
+  final List<ReadabilityFix> fixes;
+
   bool get isZoomed => zoom > minZoom + 0.01;
 
   /// Dim in steps of 10%, for analytics.
@@ -54,6 +59,7 @@ class WallpaperPlacement extends Equatable {
     double? zoom,
     double? dim,
     PlacementPreviewMode? previewMode,
+    List<ReadabilityFix>? fixes,
   }) {
     return WallpaperPlacement(
       fit: fit ?? this.fit,
@@ -62,9 +68,10 @@ class WallpaperPlacement extends Equatable {
       zoom: (zoom ?? this.zoom).clamp(minZoom, maxZoom),
       dim: (dim ?? this.dim).clamp(0.0, maxDim),
       previewMode: previewMode ?? this.previewMode,
+      fixes: fixes ?? this.fixes,
     );
   }
 
   @override
-  List<Object?> get props => <Object?>[fit, dx, dy, zoom, dim, previewMode];
+  List<Object?> get props => <Object?>[fit, dx, dy, zoom, dim, previewMode, fixes];
 }
