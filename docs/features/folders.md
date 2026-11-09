@@ -4,7 +4,7 @@ A **folder** is a named group of saved wallpapers. A **smart folder** fills itse
 
 The owner can invite up to 10 people to add and remove wallpapers in a folder. These people are editors. See Shared folders. The owner and the editors can split a folder into named sections. See Sections.
 
-The Library page ([library.md](library.md)) covers the Folders tab, the folder grid and the Save to folder sheet. This page covers public and shared folders.
+The Library page ([library.md](library.md)) covers the Folders tab, the folder grid and the Save to folder sheet. This page covers public and shared folders. See Discover folders for the Search row and the discover page.
 
 ## Where to find it
 
@@ -669,6 +669,184 @@ Creation rechecks account deletion state and the 20-folder count inside the fold
 | Rules | `tool/firestore_rules_smoke.mjs` (smart folder cases) |
 | App | `test/features/folders/biz/smart_folder_builder_cubit_test.dart`, `test/features/folders/views/smart_folder_sheet_test.dart`, `test/features/folders/views/smart_rules_line_test.dart` |
 
+## Discover folders
+
+Users can find good public folders in Search. They do not need a creator profile or a link. Discovery has three lists: **Trending**, **New** and **Like your saves**.
+
+### Where to find it
+
+| Surface | What the user sees |
+|---|---|
+| Search, before a search | A **Folders to follow** row after **Creators to follow**. It shows up to 10 trending folders, or new folders when nothing trends. **See all** opens the discover page. The row does not show for guests or when both lists are empty. |
+| Discover page (`/folders`) | The title **Discover folders** and three tabs: **Trending**, **New** and **Like your saves**. |
+| Folder card | A 2x2 cover of the newest walls, the name, "By <owner>", the wall count, **Follow** and a menu with **Report folder**. A tap opens the folder page. |
+| Admin review | A **Folder report** card for each open folder report, with **Keep folder** and **Hide from discovery**. |
+| Web | `https://prismwalls.com/folders` shows **Trending this week** and **New this week**. |
+
+### Eligibility
+
+The daily job lists a public folder only when all of these are true:
+
+1. The folder is public. The header `publicFolders/{id}` exists.
+2. The header has 8 or more public walls (`itemCount`).
+3. The name passes `publicFolderName` and `hasBlockedWord` (`functions/src/textSafety.ts`) finds no blocked word.
+4. The owner account is 7 or more days old and the Auth user is not disabled.
+5. The folder has no open report (`contentReports`, `contentType == folder`, `status == open`). The job checks each candidate with its own query, so unrelated reports cannot push a report past a cap.
+6. A moderator did not hide it from discovery (`discoveryHidden` is not `true`).
+
+The app removes the viewer's own folders and the folders of creators that the viewer blocked. The server lists do not depend on the viewer.
+
+### Ranking
+
+`computeFolderDiscovery` (`functions/src/folderDiscovery.ts`) runs every day at 03:10 UTC. It writes `folderTrending/current`.
+
+- **Score.** For each of the last 7 UTC days: `follows * 3 + saves * 2 + opens`, times `0.8` for each day of age. The job adds the days.
+- **Trending.** The job reads the scored folders in score order, 100 at a time, and keeps the eligible ones. It stops when Trending has 30 folders, or after 1,000 folders. A folder that became ineligible after it scored, for example hidden or reported, does not block the folders below it.
+- **New.** Folders with `discoveryEligibleAt` in the last 7 days, newest first. The job keeps the eligible ones.
+- **Owner cap.** One owner has at most 2 folders in each list.
+- **Size.** Each list has at most 30 folders.
+
+Each list entry has `id`, `ownerId`, `ownerName`, `ownerUsername`, `ownerPhoto`, `name`, `itemCount`, `covers`, `followerCount`, `moods` and `categories`. The moods and categories are the 3 most common of the 12 newest public walls. The job writes the doc in a transaction that reads each listed header again and applies the eligibility rules again. A folder that was hidden, renamed to a blocked name, made smaller or made private while the job ran is not written.
+
+### Signals
+
+| Signal | When | Writer |
+|---|---|---|
+| Follow | A new follow edge in `setFolderFollow`. | Server. |
+| Save | The viewer starts **Save all** on a folder. | The app calls `recordFolderSignal` with `signal: save`. |
+| Open | The public folder page loads. A reload of the same page does not count. | The app calls `recordFolderSignal` with `signal: open`. |
+
+`countFolderSignal` (`functions/src/folderSignals.ts`) decides if a signal counts:
+
+- The owner never counts.
+- One account counts once for each folder and signal in 7 days. The claim is `folderSignalRate/{uid}_{folderId}_{signal}`.
+- An account that is younger than 7 days does not count. The age check runs before the claim, so the account counts once it is 7 days old.
+- A folder that is not public does not count. The claim and the count run in one transaction that reads the header again.
+- A folder that has fewer than 8 public walls, or that a moderator hid from discovery, does not count. It cannot be listed, so its score must not push eligible folders out of the scan.
+
+A counted signal adds 1 to `folderStatsDaily/{yyyymmdd}_{folderId}`. A TTL policy deletes the stats docs after 14 days and the claims after 7 days.
+
+### New
+
+The projection writes `discoveryEligibleAt` the first time a public folder has 8 public walls. The time goes on the private folder `folders/{id}` and on the header. Because the time is on the private folder, a folder that is made private and public again does not become new again.
+
+### Like your saves
+
+The app ranks this tab on the device. It uses no new server data and sends nothing about the user.
+
+1. The app reads the user's favourites and keeps the 30 newest Prism walls.
+2. It reads the moods and the category of those walls from `walls` (`WallTraitsSource`, 30 ids for each query).
+3. Each save gives weight to its moods and its category. A newer save counts more: each older save counts 0.95 times the one before. The category "General" counts 0.
+4. A folder from the Trending and New lists scores the weight of each mood and category it shares.
+5. The app shows folders with a score above 0, best first, at most 2 for each owner. Ties keep the server order.
+
+### Moderation
+
+- **Report folder** on a card opens the content report sheet with `contentType: folder`. This is the report kind that the folder page already uses. After the server accepts the report, the card leaves the viewer's lists.
+- An open report removes the folder from discovery at the next job run. The folder stays public.
+- 3 trusted reporters still hide the whole folder (`moderationHidden`). See Reports and moderation.
+- **Hide from discovery** calls `setFolderDiscoveryHidden` (admins only). It sets `discoveryHidden` on the private folder and on the header in one transaction. Then it removes the folder from `folderTrending/current` and from `webPages/folders` at once. The folder stays public and opens by link.
+- **Keep folder** marks the report as reviewed. The folder can show again at the next job run.
+- When a folder leaves the projection (private, deleted, hidden, or the owner closed), `finishRemoval` removes it from both lists at once.
+
+### Data
+
+| Path | Writer | Readers | Contents |
+|---|---|---|---|
+| `folderTrending/current` | Server only | Signed-in users | `trending`, `new`, `updatedAt`. |
+| `folderStatsDaily/{yyyymmdd}_{folderId}` | Server only | Nobody | `folderId`, `day`, `follows`, `saves`, `opens`, `expireAt`. |
+| `folderSignalRate/{uid}_{folderId}_{signal}` | Server only | Nobody | `lastAt`, `expireAt`. |
+| `folders/{id}` fields `discoveryHidden`, `discoveryEligibleAt` | Server only | Owner and editors | The discovery state. The rules key lists do not include them, so no client writes them. |
+| `publicFolders/{id}` fields `discoveryHidden`, `discoveryEligibleAt` | Server only | Signed-in users | Copies for the job and the web catalogue. |
+| `webPages/folders` | `buildWebCatalog` | The Worker | The web discover page. |
+
+### Web
+
+`buildWebCatalog` reads `folderTrending/current` (1 read for each build) and the public folder headers that it already reads. It writes `webPages/folders` with the listed folders that are public, not hidden from discovery, still have 8 walls and a clean name, and have a live wall. The Worker reads 1 doc for each `/folders` page. Before the first list, `/folders` shows the app landing. The page is edge cached like other catalogue pages, so a hide reaches each edge location in about 10 minutes.
+
+### Cost at 50,000 public folders
+
+The job never reads all folders. These are the most reads for one run.
+
+| Step | Reads | Writes |
+|---|---|---|
+| `folderStatsDaily` for 7 days | At most 50,000 (cap, with a warning). With 5,000 active folders on 3 days each: about 15,000. | 0 |
+| Headers of scored folders, 100 at a time until Trending is full | At most 1,000. Usually 100. | 0 |
+| New folders query | At most 300 | 0 |
+| Open report check, 1 query for each candidate | At most 1,300. Usually 400. | 0 |
+| Owner accounts | 0 (Auth `getUsers`, at most 13 calls of 100: 3 for New, 10 for Trending) | 0 |
+| Traits: 12 items and 12 walls for each listed folder | At most 1,440 | 0 |
+| Owner profiles | At most 60 | 0 |
+| Final transaction | At most 60 | 1 |
+| **Total** | **At most 54,160. About 17,400 in the example.** | **1** |
+
+Other costs:
+
+| Event | Reads | Writes |
+|---|---|---|
+| Open or Save all of a public folder | 2 (header and claim). 4 when it counts (the transaction reads the claim and the header again) | 2 when it counts (claim and stats), 0 when it does not |
+| New follow | 1 (claim). 3 when it counts | 2 when it counts |
+| Discover page open in the app | 1 (`folderTrending/current`) + the user's followed folders (at least 1) | 0 |
+| "Like your saves" tab | The user's favourites + 1 for each 30 saved walls | 0 |
+| A folder leaves the projection | 4 (the fence and each list, in 2 transactions) | 0 to 2 |
+| Each `buildWebCatalog` run | 1 | 0 or 1 |
+
+### App
+
+| File | Role |
+|---|---|
+| `lib/features/folders/domain/entities/discover_folder.dart` | `DiscoverFolder`, the lists, the block filter and `rankLikeYourSaves`. |
+| `lib/features/folders/biz/folder_discover_cubit.dart` | Loads the lists and the follows, follow with undo, report hide, block changes. |
+| `lib/features/folders/views/widgets/discover_folders.dart` | `DiscoverFolderCard` and the Search row. |
+| `lib/features/folders/views/pages/folders_discover_page.dart` | The discover page and its tabs. |
+| `lib/features/admin_review/views/widgets/report_cards.dart` | `FolderReportCard`. |
+
+The cards use `FolderCover`, `PressScale` and `PrismButton`. Each card is one Semantics button with the name, the owner and the count. The Follow button has the label "Follow <name>" or "Unfollow <name>". The page shows cards in rows, not a grid with a fixed height, so a card grows with large text. The tab chips scroll sideways at large text. A tab change does not animate.
+
+### Analytics
+
+| Event | Fields |
+|---|---|
+| `folder_discover_opened` | `tab` (`trending`, `new` or `like_your_saves`), `source` (`search`, `link` or `tab`) |
+| `folder_discover_followed` | `tab` |
+| `folder_reported` | `source` (`discover` or `folder_page`) |
+
+### Limits
+
+- Trending starts empty. Signals count from the functions deploy (follows) and from the app release (opens and saves).
+- Public folders that had 8 walls before the deploy get `discoveryEligibleAt` at their next header refresh. Until then, they are not new.
+- One open report removes a folder from discovery until an admin reviews it. A false report hides a good folder for up to a day.
+- The lists change once a day. A follow count on a card can be up to a day old.
+- The server lists do not know who blocked the viewer. A folder whose owner blocked the viewer shows on the card, and the folder page shows "This folder is private or no longer exists".
+- `hasBlockedWord` checks English words only.
+- There is no daily cap on how many different folders one account can send signals for. Each folder counts an account once in 7 days, and `recordFolderSignal` runs with at most 10 instances. This was a product decision on 2026-11-09.
+
+### Deploy order
+
+1. Firestore rules and indexes: `firebase deploy --only firestore:rules,firestore:indexes --project prism-wallpapers`. The new rules only add a read rule for `folderTrending`. The indexes add the TTL policies on `folderStatsDaily.expireAt` and `folderSignalRate.expireAt`. No composite index is new.
+2. `make functions-env`.
+3. Cloud Functions. New: `computeFolderDiscovery`, `recordFolderSignal`, `setFolderDiscoveryHidden`. Changed: `setFolderFollow`, `setFolderPublic`, `setFolderHidden`, `onFolderWritten`, `onFolderItemWritten`, `onWallPublicGateChanged`, `onContentReportCreated`, `deleteAccount`, `projectUserProfile`, `blockUser` and `buildWebCatalog` (they use the changed projection).
+4. Run `computeFolderDiscovery` once from Cloud Scheduler.
+5. Cloudflare Worker: `infra/cloudflare/worker`, for `/folders` and its app link. This change does not deploy it.
+6. The app release.
+
+### How to test
+
+1. Sign in as user A, with an account older than 7 days. Make a folder with 8 Prism walls public.
+2. As users B and C, open the folder and follow it.
+3. Run `computeFolderDiscovery`. Open Search. Make sure that **Folders to follow** shows A's folder.
+4. Tap **See all**. Make sure that the three tabs show. Tap **Follow** on a card. Make sure that the button changes to **Following**.
+5. Open the card menu. Tap **Report folder**. Send the report. Make sure that the card goes away.
+6. Sign in as an admin. Open the review queue. Tap **Hide from discovery** on the folder report. Run the job again. Make sure that the folder is not in the lists, and that its link still opens.
+
+| Area | Files |
+|---|---|
+| Job, score, eligibility, cap, hide, signals, cost | `functions/src/__tests__/folderDiscovery.test.ts` |
+| Projection fields, follow signal, list removal | `functions/src/__tests__/publicFolders.test.ts` |
+| Web page data | `functions/src/__tests__/webCatalog.test.ts`, `infra/cloudflare/worker/test/catalog.test.mjs` |
+| Rules | `tool/firestore_rules_smoke.mjs` (discover cases) |
+| App | `test/features/folders/domain/discover_folder_test.dart`, `test/features/folders/biz/folder_discover_cubit_test.dart`, `test/features/folders/views/folders_discover_page_test.dart` |
+
 ## Deploy order
 
 Do these steps in this order. No backfill is necessary, because every folder starts private.
@@ -693,7 +871,7 @@ The rules accept every write that shipped clients make, so the rules can go firs
 
 - Wallhaven and Pexels spending has no server-side price cap. If its price changes after planning, a spend above the plan's cap stops the save and attempts a refund. Pending recovery blocks another charge for the same wall until it settles. Preventing that initial debit needs a backend change.
 
-- Prism has no word filter for public user text. Folder names get the length and hidden-character check. Reports and the moderation hide cover the rest.
+- Folder names get the length and hidden-character check. Discovery also checks `hasBlockedWord`, which knows English words only. Reports and the moderation hide cover the rest.
 - Prism has no suspension state. A disabled Firebase Auth user counts as suspended at the next sync, follow or digest. No event starts a sync when Auth disables a user. A moderator can hide the folders at once with `setFolderHidden`.
 - Wallhaven and Pexels wallpapers do not show in public folders.
 - A wall that becomes eligible again (for example, approved after a hold) shows in a public folder at the next sync of that folder.

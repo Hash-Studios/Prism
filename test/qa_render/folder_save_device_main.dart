@@ -20,6 +20,7 @@ import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_en
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
 import 'package:Prism/features/folders/biz/folder_save/folder_save_bloc.j.dart';
 import 'package:Prism/features/folders/data/folder_save_gateway_impl.dart';
+import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_save_plan.dart';
 import 'package:Prism/features/folders/domain/entities/folder_save_run.dart';
@@ -144,6 +145,15 @@ class _QaFolders implements FoldersRepository {
 }
 
 class _QaPublicFolders implements PublicFoldersRepository {
+  @override
+  Future<Result<Set<String>>> fetchFollowedIds(String userId) async => Result.success(<String>{});
+
+  @override
+  Future<Result<FolderDiscoverLists>> fetchDiscover() async => Result.success(FolderDiscoverLists.empty);
+
+  @override
+  Future<void> recordSignal(String folderId, FolderSignal signal) async {}
+
   @override
   Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success<PublicFolderEntity?>(null);
 

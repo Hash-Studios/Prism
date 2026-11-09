@@ -11582,6 +11582,75 @@ class AppLocalizationsPt extends AppLocalizations {
   String get foldersReport => 'Denunciar pasta';
 
   @override
+  String get foldersDiscoverSectionTitle => 'Pastas para seguir';
+
+  @override
+  String get foldersDiscoverTitle => 'Descobrir pastas';
+
+  @override
+  String get foldersDiscoverTabTrending => 'Em alta';
+
+  @override
+  String get foldersDiscoverTabNew => 'Novas';
+
+  @override
+  String get foldersDiscoverTabLikeYourSaves => 'Parecidas com seus salvos';
+
+  @override
+  String get foldersDiscoverTrendingEmptyTitle => 'Ainda não há pastas em alta';
+
+  @override
+  String get foldersDiscoverTrendingEmptyBody => 'Aqui aparecem as pastas que as pessoas seguem e salvam esta semana.';
+
+  @override
+  String get foldersDiscoverNewEmptyTitle => 'Nenhuma pasta nova esta semana';
+
+  @override
+  String get foldersDiscoverNewEmptyBody =>
+      'Pastas públicas podem aparecer aqui por uma semana depois de chegarem a 8 papéis de parede.';
+
+  @override
+  String get foldersDiscoverSavesEmptyTitle => 'Ainda nada parecido com seus salvos';
+
+  @override
+  String get foldersDiscoverSavesEmptyBody =>
+      'Salve os papéis de parede que você gosta. Aqui aparecem as pastas com os mesmos ambientes e categorias.';
+
+  @override
+  String get foldersDiscoverSeeTrending => 'Ver pastas em alta';
+
+  @override
+  String get foldersDiscoverLoadError => 'Não foi possível carregar as pastas';
+
+  @override
+  String get foldersDiscoverSavesError => 'Não foi possível ler seus salvos';
+
+  @override
+  String foldersDiscoverFollowNamed(String name) {
+    return 'Seguir $name';
+  }
+
+  @override
+  String foldersDiscoverUnfollowNamed(String name) {
+    return 'Deixar de seguir $name';
+  }
+
+  @override
+  String get adminFolderReport => 'Denúncia de pasta';
+
+  @override
+  String get adminHideFromDiscovery => 'Ocultar da descoberta';
+
+  @override
+  String get adminKeepFolder => 'Manter pasta';
+
+  @override
+  String get adminFolderHiddenFromDiscovery => 'Ocultada da descoberta. A pasta continua abrindo pelo link.';
+
+  @override
+  String get adminFolderKept => 'Pasta mantida';
+
+  @override
   String get foldersUnavailableTitle => 'Esta pasta é privada ou não existe mais';
 
   @override
@@ -14178,6 +14247,9 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get coreContentReportComment => 'comentário';
+
+  @override
+  String get coreContentReportWhyFolder => 'Por que você está denunciando esta pasta?';
 
   @override
   String get commentsAction => 'Comentários';
@@ -27286,6 +27358,75 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get foldersReport => 'Denunciar pasta';
 
   @override
+  String get foldersDiscoverSectionTitle => 'Pastas para seguir';
+
+  @override
+  String get foldersDiscoverTitle => 'Descobrir pastas';
+
+  @override
+  String get foldersDiscoverTabTrending => 'Em alta';
+
+  @override
+  String get foldersDiscoverTabNew => 'Novas';
+
+  @override
+  String get foldersDiscoverTabLikeYourSaves => 'Parecidas com seus salvos';
+
+  @override
+  String get foldersDiscoverTrendingEmptyTitle => 'Ainda não há pastas em alta';
+
+  @override
+  String get foldersDiscoverTrendingEmptyBody => 'Aqui aparecem as pastas que as pessoas seguem e salvam esta semana.';
+
+  @override
+  String get foldersDiscoverNewEmptyTitle => 'Nenhuma pasta nova esta semana';
+
+  @override
+  String get foldersDiscoverNewEmptyBody =>
+      'Pastas públicas podem aparecer aqui por uma semana depois de chegarem a 8 papéis de parede.';
+
+  @override
+  String get foldersDiscoverSavesEmptyTitle => 'Ainda nada parecido com seus salvos';
+
+  @override
+  String get foldersDiscoverSavesEmptyBody =>
+      'Salve os papéis de parede que você gosta. Aqui aparecem as pastas com os mesmos ambientes e categorias.';
+
+  @override
+  String get foldersDiscoverSeeTrending => 'Ver pastas em alta';
+
+  @override
+  String get foldersDiscoverLoadError => 'Não foi possível carregar as pastas';
+
+  @override
+  String get foldersDiscoverSavesError => 'Não foi possível ler seus salvos';
+
+  @override
+  String foldersDiscoverFollowNamed(String name) {
+    return 'Seguir $name';
+  }
+
+  @override
+  String foldersDiscoverUnfollowNamed(String name) {
+    return 'Deixar de seguir $name';
+  }
+
+  @override
+  String get adminFolderReport => 'Denúncia de pasta';
+
+  @override
+  String get adminHideFromDiscovery => 'Ocultar da descoberta';
+
+  @override
+  String get adminKeepFolder => 'Manter pasta';
+
+  @override
+  String get adminFolderHiddenFromDiscovery => 'Ocultada da descoberta. A pasta continua abrindo pelo link.';
+
+  @override
+  String get adminFolderKept => 'Pasta mantida';
+
+  @override
   String get foldersUnavailableTitle => 'Esta pasta é privada ou não existe mais';
 
   @override
@@ -29882,6 +30023,9 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get coreContentReportComment => 'comentário';
+
+  @override
+  String get coreContentReportWhyFolder => 'Por que você está denunciando esta pasta?';
 
   @override
   String get commentsAction => 'Comentários';

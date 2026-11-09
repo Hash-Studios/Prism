@@ -4,6 +4,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/widgets/profile_folders_row.dart';
@@ -17,6 +18,15 @@ import 'package:mocktail/mocktail.dart';
 class _MockStackRouter extends Mock implements StackRouter {}
 
 class _FakePublicFoldersRepository implements PublicFoldersRepository {
+  @override
+  Future<Result<Set<String>>> fetchFollowedIds(String userId) async => Result.success(<String>{});
+
+  @override
+  Future<Result<FolderDiscoverLists>> fetchDiscover() async => Result.success(FolderDiscoverLists.empty);
+
+  @override
+  Future<void> recordSignal(String folderId, FolderSignal signal) async {}
+
   List<PublicFolderEntity> ownerFolders = const <PublicFolderEntity>[];
   Result<List<PublicFolderEntity>>? ownerFoldersResult;
   Future<Result<List<PublicFolderEntity>>> Function(String ownerId)? ownerFoldersHandler;

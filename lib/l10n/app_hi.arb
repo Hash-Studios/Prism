@@ -10673,6 +10673,100 @@
   "@foldersReport": {
     "description": "Menu action that reports a public folder."
   },
+  "foldersDiscoverSectionTitle": "फ़ॉलो करने लायक फ़ोल्डर",
+  "@foldersDiscoverSectionTitle": {
+    "description": "Title of the Folders row in Search."
+  },
+  "foldersDiscoverTitle": "फ़ोल्डर खोजें",
+  "@foldersDiscoverTitle": {
+    "description": "Title of the page that lists public folders to follow."
+  },
+  "foldersDiscoverTabTrending": "ट्रेंडिंग",
+  "@foldersDiscoverTabTrending": {
+    "description": "Discover folders tab: folders people follow, save and open most this week."
+  },
+  "foldersDiscoverTabNew": "नए",
+  "@foldersDiscoverTabNew": {
+    "description": "Discover folders tab: folders that became public with enough wallpapers this week."
+  },
+  "foldersDiscoverTabLikeYourSaves": "आपके सेव जैसे",
+  "@foldersDiscoverTabLikeYourSaves": {
+    "description": "Discover folders tab: folders with the same moods and categories as the wallpapers the user saved."
+  },
+  "foldersDiscoverTrendingEmptyTitle": "अभी कोई ट्रेंडिंग फ़ोल्डर नहीं",
+  "@foldersDiscoverTrendingEmptyTitle": {
+    "description": "Empty state title of the Trending tab."
+  },
+  "foldersDiscoverTrendingEmptyBody": "इस हफ़्ते जिन फ़ोल्डरों को लोग फ़ॉलो और सेव करते हैं, वे यहाँ दिखेंगे।",
+  "@foldersDiscoverTrendingEmptyBody": {
+    "description": "Empty state body of the Trending tab."
+  },
+  "foldersDiscoverNewEmptyTitle": "इस हफ़्ते कोई नया फ़ोल्डर नहीं",
+  "@foldersDiscoverNewEmptyTitle": {
+    "description": "Empty state title of the New tab."
+  },
+  "foldersDiscoverNewEmptyBody": "सार्वजनिक फ़ोल्डर 8 वॉलपेपर होने के बाद एक हफ़्ते तक यहाँ दिख सकते हैं।",
+  "@foldersDiscoverNewEmptyBody": {
+    "description": "Empty state body of the New tab."
+  },
+  "foldersDiscoverSavesEmptyTitle": "आपके सेव जैसा अभी कुछ नहीं",
+  "@foldersDiscoverSavesEmptyTitle": {
+    "description": "Empty state title of the Like your saves tab."
+  },
+  "foldersDiscoverSavesEmptyBody": "पसंद के वॉलपेपर सेव करें। एक जैसे मूड और कैटेगरी वाले फ़ोल्डर यहाँ दिखेंगे।",
+  "@foldersDiscoverSavesEmptyBody": {
+    "description": "Empty state body of the Like your saves tab."
+  },
+  "foldersDiscoverSeeTrending": "ट्रेंडिंग फ़ोल्डर देखें",
+  "@foldersDiscoverSeeTrending": {
+    "description": "Button in an empty discover tab that opens the Trending tab."
+  },
+  "foldersDiscoverLoadError": "फ़ोल्डर लोड नहीं हो सके",
+  "@foldersDiscoverLoadError": {
+    "description": "Error when the discover folders lists do not load."
+  },
+  "foldersDiscoverSavesError": "आपके सेव नहीं पढ़े जा सके",
+  "@foldersDiscoverSavesError": {
+    "description": "Error when the Like your saves tab cannot read the user's saved wallpapers."
+  },
+  "foldersDiscoverFollowNamed": "{name} को फ़ॉलो करें",
+  "@foldersDiscoverFollowNamed": {
+    "description": "Screen reader label of the Follow button on a discover folder card.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "foldersDiscoverUnfollowNamed": "{name} को अनफ़ॉलो करें",
+  "@foldersDiscoverUnfollowNamed": {
+    "description": "Screen reader label of the Following button on a discover folder card.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminFolderReport": "फ़ोल्डर की शिकायत",
+  "@adminFolderReport": {
+    "description": "Tag on an admin review card for a reported public folder."
+  },
+  "adminHideFromDiscovery": "खोज से छिपाएँ",
+  "@adminHideFromDiscovery": {
+    "description": "Admin action: remove a reported folder from the discover lists. The folder stays public by link."
+  },
+  "adminKeepFolder": "फ़ोल्डर रखें",
+  "@adminKeepFolder": {
+    "description": "Admin action: close a folder report and keep the folder in discovery."
+  },
+  "adminFolderHiddenFromDiscovery": "खोज से छिपा दिया गया। फ़ोल्डर अब भी लिंक से खुलता है।",
+  "@adminFolderHiddenFromDiscovery": {
+    "description": "Toast after an admin hides a folder from discovery."
+  },
+  "adminFolderKept": "फ़ोल्डर रखा गया",
+  "@adminFolderKept": {
+    "description": "Toast after an admin keeps a reported folder."
+  },
   "foldersUnavailableTitle": "यह फ़ोल्डर निजी है या अब मौजूद नहीं है",
   "@foldersUnavailableTitle": {
     "description": "Title when a shared folder cannot be shown."
@@ -13791,6 +13885,10 @@
     "description": "Push notification body for an Editors' Choice pick when the wallpaper has no title."
   },
   "coreContentReportComment": "टिप्पणी",
+  "coreContentReportWhyFolder": "आप इस फ़ोल्डर की रिपोर्ट क्यों कर रहे हैं?",
+  "@coreContentReportWhyFolder": {
+    "description": "Prompt at the top of the report sheet for a public folder."
+  },
   "@coreContentReportComment": {
     "description": "Content type word in the report prompt for a wall comment, lower case as in the sentence"
   },

@@ -35,6 +35,10 @@ class FakeCache {
     return entry ? new Response(entry.body, { status: entry.status, headers: entry.headers }) : undefined;
   }
 
+  async delete(request) {
+    return this.entries.delete(request.url);
+  }
+
   async put(request, response) {
     this.entries.set(request.url, {
       status: response.status,
@@ -837,6 +841,90 @@ test('creator page looks up the lower-case username and renders the profile', as
   const missing = await h.get('/creator/nobody');
   await missing.text();
   assert.equal(missing.status, 404);
+});
+
+test('the /folders discover page lists trending and new folders and escapes their names', async (t) => {
+  const h = setup(t);
+  h.state.docs['webPages/folders'] = {
+    kind: 'folders',
+    trending: [{ id: 'F1', name: 'Calm <b>Bold</b>', total: 3, covers: [THUMB], owner: null }],
+    new: [{ id: 'F2', name: 'Fresh', total: 1, covers: [THUMB], owner: { username: 'sam', name: 'Sam K', hasPage: true } }],
+  };
+
+  const response = await h.get('/folders');
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.ok(body.includes('Trending this week'));
+  assert.ok(body.includes('New this week'));
+  assert.ok(body.includes('Calm &lt;b&gt;Bold&lt;/b&gt;'));
+  assert.equal(body.includes('<b>Bold</b>'), false);
+  assert.ok(body.includes('href="/folder/F1"'));
+  assert.ok(body.includes('href="/folder/F2"'));
+});
+
+test('a discover card with a cover that is not a public preview thumb falls back to the app landing', async (t) => {
+  const h = setup(t);
+  const badCover = 'https://example.com/original.jpg';
+  h.state.docs['webPages/folders'] = {
+    kind: 'folders',
+    trending: [{ id: 'F1', name: 'Calm', total: 3, covers: [badCover], owner: null }],
+    new: [],
+  };
+
+  const response = await h.get('/folders');
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.equal(body.includes('Trending this week'), false);
+  assert.equal(body.includes(badCover), false);
+});
+
+test('a missing webPages/folders doc serves the app landing, not the discover page', async (t) => {
+  const h = setup(t);
+  assert.equal(Object.hasOwn(h.state.docs, 'webPages/folders'), false);
+
+  const response = await h.get('/folders');
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.equal(body.includes('Trending this week'), false);
+});
+
+test('the /folders app landing is never stored in the shared edge cache', async (t) => {
+  const h = setup(t);
+
+  const android = await h.get('/folders', ANDROID_UA);
+  assert.equal(android.status, 200);
+  await h.flush();
+
+  assert.equal([...h.cache.entries.keys()].some((key) => key.endsWith('/__catalog/v1/folders')), false);
+  const desktop = await (await h.get('/folders')).text();
+  assert.notEqual(desktop, await (await h.get('/folders', ANDROID_UA)).text());
+});
+
+test('an empty discover page refresh replaces stale discover HTML with the app landing', async (t) => {
+  const h = setup(t);
+  const clock = stubClock(t);
+  h.state.docs['webPages/folders'] = {
+    kind: 'folders',
+    trending: [{ id: 'F1', name: 'Calm', total: 3, covers: [THUMB], owner: null }],
+    new: [],
+  };
+  const initial = await h.get('/folders');
+  const initialBody = await initial.text();
+  assert.ok(initialBody.includes('Trending this week'));
+
+  h.state.docs['webPages/folders'] = { kind: 'folders', trending: [], new: [] };
+  clock.advance(601);
+  const stale = await h.get('/folders');
+  assert.ok((await stale.text()).includes('Trending this week'));
+  await h.flush();
+
+  const refreshed = await h.get('/folders');
+  const body = await refreshed.text();
+  assert.equal(body.includes('Trending this week'), false);
+  assert.equal(body.includes('Calm'), false);
 });
 
 test('sitemaps list the page sitemap and each wall sitemap with its lastmod', async (t) => {

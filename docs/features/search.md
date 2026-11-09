@@ -323,6 +323,8 @@ The callable also costs one Cloud Functions call and up to three Firestore trans
 
 The Creators to follow row also shows in the Discover view. The details are in [creator-directory.md](creator-directory.md).
 
+The Folders to follow row comes after it. The details are in [folders.md](folders.md), section Discover folders.
+
 ### Errors and empty states
 
 | State | What the user sees |

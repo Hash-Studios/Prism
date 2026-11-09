@@ -144,6 +144,7 @@ class _PublicFolderViewState extends State<PublicFolderView> with WidgetsBinding
                     context,
                     target: FolderSaveTarget(folderId: folder.id, name: folder.name, ownerId: app_state.prismUser.id),
                     walls: folderSaveWallsOfPrism(l10n, state.walls),
+                    onStarted: _cubit.recordSave,
                   ),
                 ),
               ),
@@ -151,8 +152,14 @@ class _PublicFolderViewState extends State<PublicFolderView> with WidgetsBinding
               PopupMenuButton<_PublicFolderMenuAction>(
                 tooltip: l10n.foldersMoreOptions,
                 icon: const Icon(Icons.more_vert_rounded),
-                onSelected: (_) =>
-                    unawaited(showContentReportSheet(context, contentType: 'folder', targetFirestoreDocId: folder.id)),
+                onSelected: (_) => unawaited(
+                  showContentReportSheet(
+                    context,
+                    contentType: 'folder',
+                    targetFirestoreDocId: folder.id,
+                    onSubmitted: () => analytics.track(const FolderReportedEvent(source: 'folder_page')),
+                  ),
+                ),
                 itemBuilder: (context) => <PopupMenuEntry<_PublicFolderMenuAction>>[
                   PopupMenuItem<_PublicFolderMenuAction>(
                     value: _PublicFolderMenuAction.report,

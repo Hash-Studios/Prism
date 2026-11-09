@@ -11298,6 +11298,77 @@ class AppLocalizationsId extends AppLocalizations {
   String get foldersReport => 'Laporkan folder';
 
   @override
+  String get foldersDiscoverSectionTitle => 'Folder untuk diikuti';
+
+  @override
+  String get foldersDiscoverTitle => 'Jelajahi folder';
+
+  @override
+  String get foldersDiscoverTabTrending => 'Sedang tren';
+
+  @override
+  String get foldersDiscoverTabNew => 'Baru';
+
+  @override
+  String get foldersDiscoverTabLikeYourSaves => 'Mirip yang kamu simpan';
+
+  @override
+  String get foldersDiscoverTrendingEmptyTitle => 'Belum ada folder yang sedang tren';
+
+  @override
+  String get foldersDiscoverTrendingEmptyBody =>
+      'Folder yang diikuti dan disimpan orang minggu ini akan muncul di sini.';
+
+  @override
+  String get foldersDiscoverNewEmptyTitle => 'Tidak ada folder baru minggu ini';
+
+  @override
+  String get foldersDiscoverNewEmptyBody =>
+      'Folder publik dapat muncul di sini selama seminggu setelah berisi 8 wallpaper.';
+
+  @override
+  String get foldersDiscoverSavesEmptyTitle => 'Belum ada yang mirip simpananmu';
+
+  @override
+  String get foldersDiscoverSavesEmptyBody =>
+      'Simpan wallpaper yang kamu suka. Folder dengan suasana dan kategori yang sama akan muncul di sini.';
+
+  @override
+  String get foldersDiscoverSeeTrending => 'Lihat folder yang sedang tren';
+
+  @override
+  String get foldersDiscoverLoadError => 'Folder tidak dapat dimuat';
+
+  @override
+  String get foldersDiscoverSavesError => 'Tidak dapat membaca simpananmu';
+
+  @override
+  String foldersDiscoverFollowNamed(String name) {
+    return 'Ikuti $name';
+  }
+
+  @override
+  String foldersDiscoverUnfollowNamed(String name) {
+    return 'Berhenti mengikuti $name';
+  }
+
+  @override
+  String get adminFolderReport => 'Laporan folder';
+
+  @override
+  String get adminHideFromDiscovery => 'Sembunyikan dari penjelajahan';
+
+  @override
+  String get adminKeepFolder => 'Pertahankan folder';
+
+  @override
+  String get adminFolderHiddenFromDiscovery =>
+      'Disembunyikan dari penjelajahan. Folder tetap bisa dibuka lewat tautan.';
+
+  @override
+  String get adminFolderKept => 'Folder dipertahankan';
+
+  @override
   String get foldersUnavailableTitle => 'Folder ini privat atau sudah tidak ada';
 
   @override
@@ -13865,6 +13936,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get coreContentReportComment => 'komentar';
+
+  @override
+  String get coreContentReportWhyFolder => 'Mengapa Anda melaporkan folder ini?';
 
   @override
   String get commentsAction => 'Komentar';

@@ -56,6 +56,7 @@ Future<void> openFolderSave(
   BuildContext context, {
   required FolderSaveTarget target,
   required List<FolderSaveWall> walls,
+  VoidCallback? onStarted,
 }) async {
   final FolderSaveBloc bloc = getIt<FolderSaveBloc>();
   final FolderSaveState current = bloc.state;
@@ -74,6 +75,10 @@ Future<void> openFolderSave(
     ),
   );
   final FolderSaveState after = bloc.state;
+  if ((after is FolderSaveRunning && after.target.folderId == target.folderId) ||
+      (after is FolderSaveFinished && after.target.folderId == target.folderId)) {
+    onStarted?.call();
+  }
   if (after is FolderSavePlanning || after is FolderSavePlanned || after is FolderSavePlanFailed) {
     bloc.add(const FolderSaveEvent.dismissed());
   }

@@ -11412,6 +11412,77 @@ class AppLocalizationsDe extends AppLocalizations {
   String get foldersReport => 'Ordner melden';
 
   @override
+  String get foldersDiscoverSectionTitle => 'Ordner zum Folgen';
+
+  @override
+  String get foldersDiscoverTitle => 'Ordner entdecken';
+
+  @override
+  String get foldersDiscoverTabTrending => 'Im Trend';
+
+  @override
+  String get foldersDiscoverTabNew => 'Neu';
+
+  @override
+  String get foldersDiscoverTabLikeYourSaves => 'Wie deine Gespeicherten';
+
+  @override
+  String get foldersDiscoverTrendingEmptyTitle => 'Noch keine trendenden Ordner';
+
+  @override
+  String get foldersDiscoverTrendingEmptyBody =>
+      'Ordner, denen Leute diese Woche folgen und die sie speichern, erscheinen hier.';
+
+  @override
+  String get foldersDiscoverNewEmptyTitle => 'Diese Woche keine neuen Ordner';
+
+  @override
+  String get foldersDiscoverNewEmptyBody =>
+      'Öffentliche Ordner können hier eine Woche lang erscheinen, nachdem sie 8 Hintergrundbilder erreicht haben.';
+
+  @override
+  String get foldersDiscoverSavesEmptyTitle => 'Noch nichts wie deine Gespeicherten';
+
+  @override
+  String get foldersDiscoverSavesEmptyBody =>
+      'Speichere Hintergrundbilder, die dir gefallen. Ordner mit denselben Stimmungen und Kategorien erscheinen hier.';
+
+  @override
+  String get foldersDiscoverSeeTrending => 'Im Trend liegende Ordner ansehen';
+
+  @override
+  String get foldersDiscoverLoadError => 'Ordner konnten nicht geladen werden';
+
+  @override
+  String get foldersDiscoverSavesError => 'Deine Gespeicherten konnten nicht gelesen werden';
+
+  @override
+  String foldersDiscoverFollowNamed(String name) {
+    return '$name folgen';
+  }
+
+  @override
+  String foldersDiscoverUnfollowNamed(String name) {
+    return '$name entfolgen';
+  }
+
+  @override
+  String get adminFolderReport => 'Ordnermeldung';
+
+  @override
+  String get adminHideFromDiscovery => 'Aus Entdecken ausblenden';
+
+  @override
+  String get adminKeepFolder => 'Ordner behalten';
+
+  @override
+  String get adminFolderHiddenFromDiscovery =>
+      'Aus Entdecken ausgeblendet. Der Ordner bleibt über den Link erreichbar.';
+
+  @override
+  String get adminFolderKept => 'Ordner behalten';
+
+  @override
   String get foldersUnavailableTitle => 'Dieser Ordner ist privat oder existiert nicht mehr';
 
   @override
@@ -14025,6 +14096,9 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get coreContentReportComment => 'Kommentar';
+
+  @override
+  String get coreContentReportWhyFolder => 'Warum meldest du diesen Ordner?';
 
   @override
   String get commentsAction => 'Kommentare';

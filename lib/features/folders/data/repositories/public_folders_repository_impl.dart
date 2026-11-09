@@ -7,6 +7,7 @@ import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
+import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_section.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
@@ -30,6 +31,35 @@ PublicFolderEntity publicFolderFromDoc(Map<String, dynamic> data, String id) {
     shareImage: parseString(data['shareImage']),
     sections: folderSectionsFromDoc(data['sections']),
   );
+}
+
+DiscoverFolder discoverFolderFromMap(Map<String, dynamic> data) {
+  List<String> strings(Object? value, int max) =>
+      value is List ? value.whereType<String>().take(max).toList(growable: false) : const <String>[];
+  int count(Object? value) => value is num ? math.max(0, value.toInt()) : 0;
+  return DiscoverFolder(
+    id: parseString(data['id']),
+    ownerId: parseString(data['ownerId']),
+    ownerName: parseString(data['ownerName']),
+    ownerPhoto: parseString(data['ownerPhoto']),
+    name: parseString(data['name']),
+    itemCount: count(data['itemCount']),
+    covers: strings(data['covers'], folderMaxCovers),
+    followerCount: count(data['followerCount']),
+    moods: strings(data['moods'], 3),
+    categories: strings(data['categories'], 3),
+  );
+}
+
+FolderDiscoverLists folderDiscoverListsFromDoc(Map<String, dynamic> data) {
+  List<DiscoverFolder> list(Object? value) => value is List
+      ? value
+            .whereType<Map<Object?, Object?>>()
+            .map((entry) => discoverFolderFromMap(Map<String, dynamic>.from(entry)))
+            .where((folder) => folder.id.isNotEmpty && folder.ownerId.isNotEmpty && folder.name.isNotEmpty)
+            .toList(growable: false)
+      : const <DiscoverFolder>[];
+  return FolderDiscoverLists(trending: list(data['trending']), fresh: list(data['new']));
 }
 
 /// Maps a callable error to the refusal the UI explains. The server sends the reason in the message.
@@ -163,6 +193,39 @@ class PublicFoldersRepositoryImpl implements PublicFoldersRepository {
         ) ??
         false,
   );
+
+  @override
+  Future<Result<Set<String>>> fetchFollowedIds(String userId) => _guard(
+    'load followed folder ids',
+    () async => (await _firestoreClient.query<String>(
+      FirestoreQuerySpec(
+        collection: FirebaseCollections.followedFolders(userId),
+        sourceTag: 'public_folders.followed_ids',
+      ),
+      (data, docId) => docId,
+    )).toSet(),
+  );
+
+  @override
+  Future<Result<FolderDiscoverLists>> fetchDiscover() => _guard(
+    'load discover folders',
+    () async =>
+        await _firestoreClient.getById<FolderDiscoverLists>(
+          FirebaseCollections.folderTrending,
+          'current',
+          (data, docId) => folderDiscoverListsFromDoc(data),
+          sourceTag: 'public_folders.discover',
+        ) ??
+        FolderDiscoverLists.empty,
+  );
+
+  @override
+  Future<void> recordSignal(String folderId, FolderSignal signal) async {
+    await _guard(
+      'record folder ${signal.name}',
+      () => _call('recordFolderSignal', <String, Object?>{'folderId': folderId, 'signal': signal.name}),
+    );
+  }
 
   @override
   Future<Result<void>> setFollowing(String folderId, {required bool following}) => _guard(

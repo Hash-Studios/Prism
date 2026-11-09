@@ -11384,6 +11384,75 @@ class AppLocalizationsHi extends AppLocalizations {
   String get foldersReport => 'फ़ोल्डर की शिकायत करें';
 
   @override
+  String get foldersDiscoverSectionTitle => 'फ़ॉलो करने लायक फ़ोल्डर';
+
+  @override
+  String get foldersDiscoverTitle => 'फ़ोल्डर खोजें';
+
+  @override
+  String get foldersDiscoverTabTrending => 'ट्रेंडिंग';
+
+  @override
+  String get foldersDiscoverTabNew => 'नए';
+
+  @override
+  String get foldersDiscoverTabLikeYourSaves => 'आपके सेव जैसे';
+
+  @override
+  String get foldersDiscoverTrendingEmptyTitle => 'अभी कोई ट्रेंडिंग फ़ोल्डर नहीं';
+
+  @override
+  String get foldersDiscoverTrendingEmptyBody =>
+      'इस हफ़्ते जिन फ़ोल्डरों को लोग फ़ॉलो और सेव करते हैं, वे यहाँ दिखेंगे।';
+
+  @override
+  String get foldersDiscoverNewEmptyTitle => 'इस हफ़्ते कोई नया फ़ोल्डर नहीं';
+
+  @override
+  String get foldersDiscoverNewEmptyBody => 'सार्वजनिक फ़ोल्डर 8 वॉलपेपर होने के बाद एक हफ़्ते तक यहाँ दिख सकते हैं।';
+
+  @override
+  String get foldersDiscoverSavesEmptyTitle => 'आपके सेव जैसा अभी कुछ नहीं';
+
+  @override
+  String get foldersDiscoverSavesEmptyBody =>
+      'पसंद के वॉलपेपर सेव करें। एक जैसे मूड और कैटेगरी वाले फ़ोल्डर यहाँ दिखेंगे।';
+
+  @override
+  String get foldersDiscoverSeeTrending => 'ट्रेंडिंग फ़ोल्डर देखें';
+
+  @override
+  String get foldersDiscoverLoadError => 'फ़ोल्डर लोड नहीं हो सके';
+
+  @override
+  String get foldersDiscoverSavesError => 'आपके सेव नहीं पढ़े जा सके';
+
+  @override
+  String foldersDiscoverFollowNamed(String name) {
+    return '$name को फ़ॉलो करें';
+  }
+
+  @override
+  String foldersDiscoverUnfollowNamed(String name) {
+    return '$name को अनफ़ॉलो करें';
+  }
+
+  @override
+  String get adminFolderReport => 'फ़ोल्डर की शिकायत';
+
+  @override
+  String get adminHideFromDiscovery => 'खोज से छिपाएँ';
+
+  @override
+  String get adminKeepFolder => 'फ़ोल्डर रखें';
+
+  @override
+  String get adminFolderHiddenFromDiscovery => 'खोज से छिपा दिया गया। फ़ोल्डर अब भी लिंक से खुलता है।';
+
+  @override
+  String get adminFolderKept => 'फ़ोल्डर रखा गया';
+
+  @override
   String get foldersUnavailableTitle => 'यह फ़ोल्डर निजी है या अब मौजूद नहीं है';
 
   @override
@@ -13964,6 +14033,9 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get coreContentReportComment => 'टिप्पणी';
+
+  @override
+  String get coreContentReportWhyFolder => 'आप इस फ़ोल्डर की रिपोर्ट क्यों कर रहे हैं?';
 
   @override
   String get commentsAction => 'टिप्पणियाँ';

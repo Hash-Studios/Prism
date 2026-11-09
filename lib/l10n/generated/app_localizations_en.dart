@@ -11238,6 +11238,74 @@ class AppLocalizationsEn extends AppLocalizations {
   String get foldersReport => 'Report folder';
 
   @override
+  String get foldersDiscoverSectionTitle => 'Folders to follow';
+
+  @override
+  String get foldersDiscoverTitle => 'Discover folders';
+
+  @override
+  String get foldersDiscoverTabTrending => 'Trending';
+
+  @override
+  String get foldersDiscoverTabNew => 'New';
+
+  @override
+  String get foldersDiscoverTabLikeYourSaves => 'Like your saves';
+
+  @override
+  String get foldersDiscoverTrendingEmptyTitle => 'No trending folders yet';
+
+  @override
+  String get foldersDiscoverTrendingEmptyBody => 'Folders that people follow and save this week show here.';
+
+  @override
+  String get foldersDiscoverNewEmptyTitle => 'No new folders this week';
+
+  @override
+  String get foldersDiscoverNewEmptyBody => 'Public folders can show here for a week after they reach 8 wallpapers.';
+
+  @override
+  String get foldersDiscoverSavesEmptyTitle => 'Nothing like your saves yet';
+
+  @override
+  String get foldersDiscoverSavesEmptyBody =>
+      'Save wallpapers you like. Folders with the same moods and categories show here.';
+
+  @override
+  String get foldersDiscoverSeeTrending => 'See trending folders';
+
+  @override
+  String get foldersDiscoverLoadError => 'Couldn\'t load folders';
+
+  @override
+  String get foldersDiscoverSavesError => 'Couldn\'t read your saves';
+
+  @override
+  String foldersDiscoverFollowNamed(String name) {
+    return 'Follow $name';
+  }
+
+  @override
+  String foldersDiscoverUnfollowNamed(String name) {
+    return 'Unfollow $name';
+  }
+
+  @override
+  String get adminFolderReport => 'Folder report';
+
+  @override
+  String get adminHideFromDiscovery => 'Hide from discovery';
+
+  @override
+  String get adminKeepFolder => 'Keep folder';
+
+  @override
+  String get adminFolderHiddenFromDiscovery => 'Hidden from discovery. The folder still opens by link.';
+
+  @override
+  String get adminFolderKept => 'Folder kept';
+
+  @override
   String get foldersUnavailableTitle => 'This folder is private or no longer exists';
 
   @override
@@ -13808,6 +13876,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreContentReportComment => 'comment';
+
+  @override
+  String get coreContentReportWhyFolder => 'Why are you reporting this folder?';
 
   @override
   String get commentsAction => 'Comments';

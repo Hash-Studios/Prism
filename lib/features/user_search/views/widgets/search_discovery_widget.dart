@@ -3,13 +3,14 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/creator_directory/views/widgets/creators_section.dart';
+import 'package:Prism/features/folders/views/widgets/discover_folders.dart';
 import 'package:Prism/features/user_search/views/widgets/search_discovery_sections.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 
 /// What the search tab shows before a search. Imagery leads: one chip row of recent searches and tags, trending walls,
-/// categories, colours and creators. The text rows (creators, requests, depth, spatial) close the page as one group.
+/// categories, colours, creators and folders. The text rows (creators, requests, depth, spatial) close the page as one group.
 class SearchDiscoveryWidget extends StatelessWidget {
   const SearchDiscoveryWidget({
     super.key,
@@ -74,6 +75,7 @@ class SearchDiscoveryWidget extends StatelessWidget {
                 const CategorySection(),
                 if (onColorPressed != null) ColourSection(onPressed: onColorPressed!),
                 const CreatorsSection(source: 'search'),
+                const FoldersDiscoverSection(),
                 const SizedBox(height: PrismSpace.xl),
                 Padding(
                   padding: PrismSpace.pageInsets,

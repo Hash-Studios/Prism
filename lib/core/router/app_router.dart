@@ -38,6 +38,7 @@ import 'package:Prism/features/editors_choice/views/pages/editors_choice_screen.
 import 'package:Prism/features/favourite_walls/views/pages/favourite_wall_screen.dart';
 import 'package:Prism/features/folders/views/pages/folder_invite_screen.dart';
 import 'package:Prism/features/folders/views/pages/folder_screen.dart';
+import 'package:Prism/features/folders/views/pages/folders_discover_page.dart';
 import 'package:Prism/features/in_app_notifications/views/pages/notification_screen.dart';
 import 'package:Prism/features/ios_shortcuts/views/pages/ios_shortcuts_guide_screen.dart';
 import 'package:Prism/features/layout_prefs/views/pages/layout_settings_page.dart';
@@ -230,6 +231,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/gallery', page: GalleryRoute.page),
     AutoRoute(path: '/requests', page: WallRequestsRoute.page),
     AutoRoute(path: '/creators', page: CreatorsRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/folders', page: FoldersDiscoverRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/wrapped', page: PrismWrappedRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/challenges/:challengeId', page: WeeklyChallengeRoute.page),
     AutoRoute(path: '/user/:identifier', page: ProfileRoute.page),

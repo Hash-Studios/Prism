@@ -95,6 +95,7 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.weeklyChallenge => WeeklyChallengeRoute(challengeId: match.pathParams['challengeId']!),
     DeepLinkPageTarget.wallRequests => WallRequestsRoute(tab: query['tab'] ?? 'top'),
     DeepLinkPageTarget.creators => CreatorsRoute(source: 'link'),
+    DeepLinkPageTarget.foldersDiscover => FoldersDiscoverRoute(source: 'link'),
     DeepLinkPageTarget.wrapped => PrismWrappedRoute(source: wrappedSourceFrom(intent.source)),
     DeepLinkPageTarget.uploadInput => _inputRoute(DeepLinkInputWorkflow.uploadWall),
     DeepLinkPageTarget.editWallInput => _inputRoute(DeepLinkInputWorkflow.editWall),

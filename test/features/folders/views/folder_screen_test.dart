@@ -12,6 +12,7 @@ import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
+import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_member.dart';
 import 'package:Prism/features/folders/domain/entities/folder_section.dart';
@@ -188,6 +189,15 @@ Finder _menuItem(String label) =>
     find.ancestor(of: find.text(label), matching: find.byWidgetPredicate((widget) => widget is PopupMenuItem));
 
 class _NoPublicFolders implements PublicFoldersRepository {
+  @override
+  Future<Result<Set<String>>> fetchFollowedIds(String userId) async => Result.success(<String>{});
+
+  @override
+  Future<Result<FolderDiscoverLists>> fetchDiscover() async => Result.success(FolderDiscoverLists.empty);
+
+  @override
+  Future<void> recordSignal(String folderId, FolderSignal signal) async {}
+
   @override
   Future<Result<PublicFolderEntity?>> fetchFolder(String folderId) async => Result.success<PublicFolderEntity?>(null);
 

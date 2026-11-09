@@ -305,6 +305,16 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
             repository: _repository,
           );
         }
+        if (ct == 'folder' && tid.isNotEmpty) {
+          return FolderReportCard(
+            report: r,
+            folderId: tid,
+            reason: reason,
+            reporterUid: uid,
+            timeStr: timeStr,
+            repository: _repository,
+          );
+        }
         return GenericReportCard(
           report: r,
           contentType: ct,

@@ -236,6 +236,11 @@ class AdminModerationRepository {
     );
   }
 
+  /// Takes a public folder out of the discover lists, or puts it back. The folder stays public by link.
+  Future<void> setFolderDiscoveryHidden(String folderId, {required bool hidden}) async {
+    await _call('setFolderDiscoveryHidden', <String, Object?>{'folderId': folderId, 'hidden': hidden});
+  }
+
   /// Sends an approved wall back to review with the values it had before approval.
   Future<void> undoApproveWall(FirestoreDocument wall) {
     return _client.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{

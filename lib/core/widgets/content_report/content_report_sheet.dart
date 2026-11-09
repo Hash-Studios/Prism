@@ -29,13 +29,15 @@ String _contentReportReasonLabel(String wire, AppLocalizations l10n) => switch (
 
 /// Opens the report sheet. A guest gets the sign-in sheet first, and the report sheet opens again after sign-in.
 ///
-/// [onBlockCreator] adds "Also block this creator" to the "Report sent" snackbar.
+/// [onBlockCreator] adds "Also block this creator" to the "Report sent" snackbar. [onSubmitted] runs after the server
+/// accepts the report.
 Future<void> showContentReportSheet(
   BuildContext context, {
   required String contentType,
   required String targetFirestoreDocId,
   String? subtitle,
   VoidCallback? onBlockCreator,
+  VoidCallback? onSubmitted,
   String? initialReason,
   String? initialDetails,
 }) async {
@@ -53,6 +55,7 @@ Future<void> showContentReportSheet(
           targetFirestoreDocId: targetFirestoreDocId,
           subtitle: subtitle,
           onBlockCreator: onBlockCreator,
+          onSubmitted: onSubmitted,
           initialReason: initialReason,
           initialDetails: initialDetails,
         ),
@@ -71,6 +74,7 @@ Future<void> showContentReportSheet(
         targetFirestoreDocId: targetFirestoreDocId,
         subtitle: subtitle,
         onBlockCreator: onBlockCreator,
+        onSubmitted: onSubmitted,
         initialReason: initialReason,
         initialDetails: initialDetails,
       );
@@ -86,6 +90,7 @@ class ContentReportSheetBody extends StatefulWidget {
     required this.targetFirestoreDocId,
     this.subtitle,
     this.onBlockCreator,
+    this.onSubmitted,
     this.initialReason,
     this.initialDetails,
   });
@@ -94,6 +99,7 @@ class ContentReportSheetBody extends StatefulWidget {
   final String targetFirestoreDocId;
   final String? subtitle;
   final VoidCallback? onBlockCreator;
+  final VoidCallback? onSubmitted;
 
   /// Preselected reason. Ignored unless it is in [kContentReportReasons].
   final String? initialReason;
@@ -181,6 +187,7 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
           ContentReportSubmitEvent(contentType: widget.contentType, result: BinaryResultValue.success, reason: reason),
         );
         final ScaffoldMessengerState? messenger = ScaffoldMessenger.maybeOf(context);
+        widget.onSubmitted?.call();
         final VoidCallback? blockCreator = widget.onBlockCreator;
         Navigator.of(context).pop();
         if (messenger == null || blockCreator == null) {
@@ -208,7 +215,10 @@ class ContentReportSheetBodyState extends State<ContentReportSheetBody> {
     final String? subtitle = widget.subtitle;
     return PrismSheetBody(
       title: l10n.coreReport,
-      message: subtitle == null || subtitle.isEmpty
+      // Some languages need the article to agree with "folder", so the folder prompt is its own sentence.
+      message: widget.contentType == 'folder'
+          ? l10n.coreContentReportWhyFolder
+          : subtitle == null || subtitle.isEmpty
           ? l10n.coreContentReportWhy(label)
           : l10n.coreContentReportWhyWithDetails(label, subtitle),
       actions: <Widget>[
