@@ -19,6 +19,7 @@ import 'package:Prism/features/public_profile/domain/entities/user_summary_entit
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/public_profile/views/widgets/gift_pass_sheet.dart';
+import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
@@ -314,6 +315,104 @@ void main() {
       expectNoOverflow(errors);
     });
   }
+
+  // Issue #548: at 360 points and 2x text the stats row gave each item a third of the width and broke words in half.
+  for (final double width in <double>[320, 360, 412]) {
+    for (final double scale in <double>[1, 2]) {
+      testWidgets('stats keep every word on one line at $width points and ${scale}x text', (tester) async {
+        whenListen(
+          bloc,
+          const Stream<PublicProfileState>.empty(),
+          initialState: PublicProfileState.initial().copyWith(profileId: 'u2', status: LoadStatus.success),
+        );
+        tester.view.physicalSize = Size(width * 2, 1600);
+        tester.view.devicePixelRatio = 2;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            theme: kLightTheme,
+            home: const ProfileScreen(profileIdentifier: 'u2'),
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
+              child: favouriteTestBuilder(context, child),
+            ),
+          ),
+        );
+        repository.profiles.add(
+          const PublicProfileEntity(
+            id: 'u2',
+            name: 'Akshay Maurya',
+            email: '',
+            username: 'codenameakshay',
+            profilePhoto: '',
+            bio: '',
+            links: <String, String>{},
+            coverPhoto: '',
+            followerCount: 6930,
+            followingCount: 23,
+            xp: 5000,
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.pump(const Duration(milliseconds: 500));
+
+        final List<Finder> stats = <Finder>[
+          find.textContaining('Following', findRichText: true),
+          find.textContaining('Followers', findRichText: true),
+          find.descendant(of: find.byType(RankInfoChip), matching: find.byType(RichText)),
+        ];
+        for (final Finder stat in stats) {
+          expect(stat, findsOneWidget);
+          final RenderParagraph paragraph = tester.renderObject(stat);
+          final String text = paragraph.text.toPlainText();
+          for (final RegExpMatch word in RegExp(r'\S+').allMatches(text)) {
+            final List<TextBox> boxes = paragraph.getBoxesForSelection(
+              TextSelection(baseOffset: word.start, extentOffset: word.end),
+            );
+            expect(boxes.map((TextBox box) => box.top).toSet(), hasLength(1), reason: '"${word[0]}" in "$text"');
+          }
+          final Rect rect = tester.getRect(stat);
+          expect(rect.left, greaterThanOrEqualTo(0));
+          expect(rect.right, lessThanOrEqualTo(width));
+        }
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
+
+  testWidgets('stats follow the reading order right to left', (tester) async {
+    whenListen(
+      bloc,
+      const Stream<PublicProfileState>.empty(),
+      initialState: PublicProfileState.initial().copyWith(profileId: 'u2', status: LoadStatus.success),
+    );
+    tester.view.physicalSize = const Size(824, 1600);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        home: const ProfileScreen(profileIdentifier: 'u2'),
+        builder: (context, child) =>
+            Directionality(textDirection: TextDirection.rtl, child: favouriteTestBuilder(context, child)),
+      ),
+    );
+    repository.profiles.add(_longProfile);
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final Rect following = tester.getRect(find.textContaining('Following', findRichText: true));
+    final Rect followers = tester.getRect(find.textContaining('Followers', findRichText: true));
+    final Rect rank = tester.getRect(find.byType(RankInfoChip));
+    expect(following.left, greaterThan(followers.right));
+    expect(followers.left, greaterThan(rank.right));
+    expect(following.center.dy, closeTo(followers.center.dy, 1));
+    expect(tester.takeException(), isNull);
+  });
 
   // Issue #558: where the accent ring meets the photo, a pixel may only mix the ring and the photo colours.
   for (final bool isDark in <bool>[false, true]) {
