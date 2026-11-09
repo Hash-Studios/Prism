@@ -1,0 +1,3 @@
+@e2 [other] "Find wallpapers that match a photo from your gallery."
+@e3 [button] "Got it"
+@e7 [button] "Search by photo"
