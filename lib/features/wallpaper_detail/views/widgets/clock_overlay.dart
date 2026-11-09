@@ -628,7 +628,18 @@ class _ClockOverlayState extends State<ClockOverlay> {
     setState(() => _busy = true);
     PlacedWallpaper? placed;
     try {
-      placed = await render(context, (_placed?.placement ?? const WallpaperPlacement()).copyWith(fixes: fixes));
+      final PlacedWallpaper? rendered = await render(
+        context,
+        (_placed?.placement ?? const WallpaperPlacement()).copyWith(fixes: fixes),
+      );
+      // A fix on top of a studio placement still counts as that placement.
+      placed = rendered == null
+          ? null
+          : PlacedWallpaper(
+              path: rendered.path,
+              placement: rendered.placement,
+              fromStudio: _placed?.fromStudio ?? false,
+            );
     } catch (error, stackTrace) {
       logger.w('ClockOverlay: could not render the fix', error: error, stackTrace: stackTrace);
       toasts.error(l10n.readabilityApplyFailed, haptic: false);

@@ -308,6 +308,13 @@ void main() {
     ]);
     expect(find.byKey(_clockChipKey), findsNothing);
     expect(find.byType(ReadabilityFixSheet), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey<String>('set-screen-set')));
+    await tester.pumpAndSettle();
+    expect(results.single?.placed?.placement.fixes, <ReadabilityFix>[
+      const ReadabilityFix(ReadabilityZone.clock, ReadabilityFixKind.dim),
+    ]);
+    expect(results.single?.placed?.fromStudio, isFalse);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('Keep as is closes the sheet, never renders a fix, and keeps the chip', (tester) async {

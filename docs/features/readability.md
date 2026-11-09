@@ -80,7 +80,7 @@ One analysis of a 108 x 234 frame takes less than 1 ms on a laptop. The test bou
 A fix never changes the source wall. It always writes a new file.
 
 - Android: **Apply** calls `SetScreenRequest.onApplyFixes`. The flow gets consent for the original first (as Adjust does), then `PlacedWallpaper.render` draws the original with the placement and the fixes. Set then uses that file, as after the Position studio. A new placement from the studio clears the fixes, and the tip can show again for the new image.
-- iOS: **Apply** draws the fix on the preview. **Save** passes the fixes to `saveAction`. The detail screen adds them to the `DownloadVariant` (after the colour variation, when there is one). The saved copy has the screen size.
+- iOS: **Apply** draws the fix on the preview. **Save** passes the fixes to `saveAction`. The detail screen adds them to the `DownloadVariant` (after the colour variation, when there is one). The saved copy has the screen size. The detail screen keeps only its last fixed copy in the temp folder.
 - Day and night: **Apply** adds the fix to the slot wall (`DayNightWall.fixes`, saved in the pair). When the mode publishes, the repository renders a copy to `<app support>/prism/offline/assets/day_night_fixed/<slot>.png`. Android schedules that file. iOS adds it to the Shortcuts snapshot as the asset `daynight-fixed-<slot>`.
 
 The fix works for Home, Lock and Both, because Set uses one file for the chosen target. It works for both walls of a day and night pair.
@@ -118,6 +118,8 @@ The tip is not a feature hint. It does not use the hint budget, and **Show tips*
 | `readability_tip_shown` | `zone` | A chip shows for the first time on a screen. |
 | `readability_fix_applied` | `zone`, `fix_kind` | The fix is applied. |
 | `readability_fix_kept` | `zone` | The user taps **Keep as is**. |
+
+A set whose wall only a fix shaped tracks `set_wall` with `fit` = `readability_fix` and no `wallpaper_placement_applied`. A fix on top of a Position studio placement keeps the studio `fit` and its placement event.
 
 ## Safety
 

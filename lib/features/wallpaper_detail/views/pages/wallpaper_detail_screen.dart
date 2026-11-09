@@ -717,6 +717,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   /// iOS only: builds Save to Photos for the phone preview.
   Widget Function(String label, List<ReadabilityFix> fixes)? _saveAction;
 
+  /// The last readability-fixed copy Save made. Each new one replaces it, so at most one stays in the temp folder.
+  PlacedWallpaper? _fixedSaveCopy;
+
   /// iOS only: builds the compact Save for the solid header.
   Widget Function()? _headerSave;
   static const double _sheetHPad = PrismSpace.md;
@@ -2912,8 +2915,18 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     DownloadVariant? variantWith(List<ReadabilityFix> fixes) {
       if (fixes.isEmpty || desktop != null) return variant;
       final Size screenPixels = _screenPixels(context);
-      Future<String> fix(String path) async =>
-          (await PlacedWallpaper.render(path, WallpaperPlacement(fixes: fixes), screenPixels)).path;
+      Future<String> fix(String path) async {
+        final PlacedWallpaper rendered = await PlacedWallpaper.render(
+          path,
+          WallpaperPlacement(fixes: fixes),
+          screenPixels,
+        );
+        final PlacedWallpaper? previous = _fixedSaveCopy;
+        _fixedSaveCopy = rendered;
+        if (previous != null) unawaited(previous.discard());
+        return rendered.path;
+      }
+
       final DownloadVariant? base = variant;
       final String key = <String?>[base?.key, readabilityFixesKey(fixes)].nonNulls.join('-');
       if (base == null) {

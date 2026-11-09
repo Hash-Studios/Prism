@@ -412,7 +412,7 @@ class SetWallpaperFlow {
             restore: <WallpaperRestore>[...priorResult.restore, ...serviceResult.restore],
             historyIds: <String>[...priorResult.historyIds, ...serviceResult.historyIds],
           );
-    if (placed != null) _trackPlacement(placed, choice.target, result);
+    if (placed != null && placed.fromStudio) _trackPlacement(placed, choice.target, result);
     Future<void> retry(WallpaperTarget retryTarget, {required bool systemScreen}) async {
       if (!_isSignedInOwner(owner)) return;
       // The phone's own wallpaper screen does its own placement, so it takes the original.
@@ -470,7 +470,7 @@ class SetWallpaperFlow {
       target: choice.target,
       messenger: host,
       setContext: WallpaperSetContext(
-        fit: placed == null ? WallpaperFit.fill.name : 'studio_${placed.placement.fit.name}',
+        fit: placed == null ? WallpaperFit.fill.name : placed.fitLabel,
         entryPoint: entryPoint,
         usedDefault: usedDefault,
         targetChanged: choice.targetChanged,
