@@ -2,10 +2,12 @@ import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_sentinels.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/wallpaper_upload/biz/wall_release.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/domain/repositories/wall_metadata_repository.dart';
 import 'package:cloud_functions/cloud_functions.dart' as cf;
@@ -64,12 +66,15 @@ class WallMetadataRepositoryImpl implements WallMetadataRepository {
         metadata: PendingWallMetadata.fromMap(data!),
         approved: false,
         expectedPendingFields: WallMetadataSnapshot.pendingFields(data),
-        scheduled: data['releaseApprovedAt'] != null,
+        scheduled: _scheduled(wallDocId, data),
       );
     } catch (error) {
       throw _failure(error);
     }
   }
+
+  static bool _scheduled(String id, Map<String, dynamic> data) =>
+      WallRelease.of(FirestoreDocument(id, data)).state == WallReleaseState.scheduled;
 
   WallMetadataOwner _requireOwner() {
     final WallMetadataOwner owner = _owner();
@@ -107,7 +112,7 @@ class WallMetadataRepositoryImpl implements WallMetadataRepository {
           )) {
             throw const WallMetadataException(WallMetadataFailure.conflict);
           }
-          final bool scheduled = current['releaseApprovedAt'] != null;
+          final bool scheduled = _scheduled(wallDocId, current);
           if (scheduled != expected.scheduled || (scheduled && metadata.releaseAt == null)) {
             throw const WallMetadataException(WallMetadataFailure.statusChanged);
           }

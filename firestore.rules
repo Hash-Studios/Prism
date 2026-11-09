@@ -181,10 +181,18 @@ service cloud.firestore {
           || request.resource.data.releaseAt <= request.time;
     }
 
+    // A wall held after release keeps an approval older than publishedAt. Only a newer approval schedules it.
+    function awaitsRelease() {
+      return 'releaseApprovedAt' in resource.data
+          && (!('publishedAt' in resource.data)
+              || !(resource.data.publishedAt is timestamp && resource.data.releaseApprovedAt is timestamp
+                  && resource.data.releaseApprovedAt <= resource.data.publishedAt));
+    }
+
     // After a scheduled approval the owner may only move the release time.
     function ownerReleaseEditOk() {
       return (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['releaseAt']) || validReleaseAt())
-          && (!('releaseApprovedAt' in resource.data)
+          && (!awaitsRelease()
               || ('releaseAt' in request.resource.data
                   && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['releaseAt'])));
     }

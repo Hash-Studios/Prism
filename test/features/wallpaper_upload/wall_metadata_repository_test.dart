@@ -298,6 +298,17 @@ void main() {
       expect(snapshot.metadata.releaseAt, releaseAt);
     });
 
+    test('a wall held after release keeps its old approval, so its details stay editable', () async {
+      client.wall!
+        ..['releaseApprovedAt'] = DateTime.utc(2026, 11, 5)
+        ..['publishedAt'] = DateTime.utc(2026, 11, 6)
+        ..['releaseAt'] = DateTime.utc(2026, 11, 6);
+      final expected = await repository.load('doc', approved: false);
+      expect(expected.scheduled, isFalse);
+      await repository.updatePending('doc', next, expected: expected);
+      expect(client.patches.single['title'], next.text.title);
+    });
+
     test('load reports an unscheduled pending wall as not scheduled', () async {
       expect((await repository.load('doc', approved: false)).scheduled, isFalse);
     });

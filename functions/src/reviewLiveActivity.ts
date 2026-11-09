@@ -8,6 +8,7 @@ import {logger} from "firebase-functions/v2";
 import {db, REGION, CALLABLE_REGIONS} from "./common";
 import {isAdminCaller} from "./adminConfig";
 import {userPushTokens} from "./notificationHelper";
+import {isScheduledWall} from "./wallRelease";
 
 const LIVE_ACTIVITIES = "adminLiveActivities";
 const START_COOLDOWN_MS = 120_000;
@@ -35,7 +36,7 @@ type ActivityRef = ReturnType<ReturnType<typeof db.collection>["doc"]>;
 
 export function isPendingWall(data: Record<string, unknown> | undefined): boolean {
   return data !== undefined && data.review === false && (data.dropWeek === undefined || data.dropWeek === null) &&
-    data.releaseApprovedAt == null;
+    !isScheduledWall(data);
 }
 
 function toMillis(value: unknown): number | null {
@@ -139,7 +140,7 @@ export async function syncReviewLiveActivities(onlyUid?: string): Promise<void> 
           const walls = await db.collection("walls")
             .where("review", "==", false)
             .orderBy("createdAt", "desc")
-            .select("by", "createdAt", "dropWeek", "review", "releaseApprovedAt")
+            .select("by", "createdAt", "dropWeek", "review", "releaseApprovedAt", "publishedAt", "releaseAt")
             .get();
           const state = summarizeQueue(walls.docs.map((d) => d.data()));
           const doc: ActivityDoc = {
