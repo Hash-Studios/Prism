@@ -891,10 +891,14 @@ class _ClockOverlayState extends State<ClockOverlay> {
     final Widget? tip = tipZone == null
         ? null
         : ReadabilityChip(key: ValueKey<ReadabilityZone>(tipZone), zone: tipZone, onTap: () => _openFix(tipZone));
+    final double clockZoneBottom = readabilityZoneRects(
+      ReadabilityZone.clock,
+      defaultTargetPlatform,
+    ).map((rect) => rect.bottom).reduce(math.max);
+    // ponytail: the iOS lock preview draws a widget row under the clock that ends near 34% of the height. The tip
+    // sits under it so it never covers a widget. Read the row's frame if LockPreviewLayer changes its layout.
     final double clockTipTop =
-        readabilityZoneRects(ReadabilityZone.clock, defaultTargetPlatform).map((rect) => rect.bottom).reduce(math.max) *
-            size.height +
-        PrismSpace.xs;
+        math.max(clockZoneBottom, defaultTargetPlatform == TargetPlatform.iOS ? 0.34 : 0) * size.height + PrismSpace.xs;
     final Widget layers = Stack(
       fit: StackFit.expand,
       children: <Widget>[
