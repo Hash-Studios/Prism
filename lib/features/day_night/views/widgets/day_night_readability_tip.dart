@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -19,6 +20,17 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 class DayNightReadabilityTip extends StatefulWidget {
   const DayNightReadabilityTip({super.key, required this.slot, required this.wall, required this.target});
 
+  @visibleForTesting
+  static Future<Map<ReadabilityZone, ReadabilityResult>> Function(
+    ReadabilityKey key,
+    Future<ui.Image> Function() decode,
+  )?
+  checkOverride;
+
+  @visibleForTesting
+  static Future<bool?> Function(BuildContext context, ReadabilityPreviewSource source, ReadabilityFix fix)?
+  sheetOverride;
+
   final DayNightSlot slot;
   final DayNightWall wall;
   final WallpaperTarget target;
@@ -34,6 +46,7 @@ class _DayNightReadabilityTipState extends State<DayNightReadabilityTip> {
   late bool _tipsOn = _eligible;
   final Set<ReadabilityZone> _tracked = <ReadabilityZone>{};
   int _generation = 0;
+  Timer? _timeout;
 
   bool get _eligible => ReadabilityTips.instance.enabled && !ReadabilityTips.instance.shownFor(widget.wall.id);
 
@@ -49,20 +62,34 @@ class _DayNightReadabilityTipState extends State<DayNightReadabilityTip> {
   void didUpdateWidget(DayNightReadabilityTip oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.wall.id == widget.wall.id && oldWidget.wall.thumbnailUrl == widget.wall.thumbnailUrl) return;
+    _generation++;
     _result = null;
+    _tracked.clear();
+    _timeout?.cancel();
     _tipsOn = _eligible;
     unawaited(_check());
+  }
+
+  @override
+  void dispose() {
+    _generation++;
+    _timeout?.cancel();
+    super.dispose();
   }
 
   Future<void> _check() async {
     if (!_tipsOn || widget.wall.thumbnailUrl.trim().isEmpty) return;
     final int generation = ++_generation;
+    _timeout?.cancel();
+    _timeout = Timer(const Duration(seconds: 2), () {
+      if (mounted && generation == _generation && _result == null) setState(() => _tipsOn = false);
+    });
     final Size screen = MediaQuery.sizeOf(context);
     if (screen.isEmpty) return;
     final int frameHeight = (analysisWidth * screen.longestSide / screen.shortestSide).round();
     final ImageProvider provider = _provider;
     try {
-      final Map<ReadabilityZone, ReadabilityResult> result = await ReadabilityTips.instance.check((
+      final ReadabilityKey key = (
         wall: widget.wall.id,
         image: widget.wall.thumbnailUrl,
         placement: null,
@@ -70,10 +97,17 @@ class _DayNightReadabilityTipState extends State<DayNightReadabilityTip> {
         platform: defaultTargetPlatform,
         clockText: _clockText.toARGB32(),
         frameHeight: frameHeight,
-      ), () => decodeForFrame(provider, frameHeight * 2));
+      );
+      final Map<ReadabilityZone, ReadabilityResult> result =
+          await (DayNightReadabilityTip.checkOverride ?? ReadabilityTips.instance.check)(
+            key,
+            () => decodeForFrame(provider, frameHeight * 2),
+          );
       if (mounted && generation == _generation) setState(() => _result = result);
     } catch (error, stackTrace) {
       logger.w('Day and night: readability check failed', error: error, stackTrace: stackTrace);
+    } finally {
+      if (generation == _generation) _timeout?.cancel();
     }
   }
 
@@ -100,17 +134,29 @@ class _DayNightReadabilityTipState extends State<DayNightReadabilityTip> {
   Future<void> _open(ReadabilityZone zone) async {
     final ReadabilityFixKind? kind = _result?[zone]?.fix;
     if (kind == null) return;
+    final int generation = _generation;
+    final String wallId = widget.wall.id;
+    final DayNightSlot slot = widget.slot;
+    final WallpaperTarget target = widget.target;
     final ReadabilityFix fix = ReadabilityFix(zone, kind);
     final DayNightBloc bloc = context.read<DayNightBloc>();
-    final bool? apply = await showReadabilityFixSheet(
+    final Future<bool?> Function(BuildContext, ReadabilityPreviewSource, ReadabilityFix) showSheet =
+        DayNightReadabilityTip.sheetOverride ?? showReadabilityFixSheet;
+    final bool? apply = await showSheet(
       context,
       ReadabilityPreviewSource(provider: _provider, screen: MediaQuery.sizeOf(context), textColor: _clockText),
       fix,
     );
-    if (!mounted) return;
+    if (!mounted ||
+        generation != _generation ||
+        wallId != widget.wall.id ||
+        slot != widget.slot ||
+        target != widget.target) {
+      return;
+    }
     if (apply == false) analytics.track(ReadabilityFixKeptEvent(zone: zone));
     if (apply != true) return;
-    bloc.add(DayNightEvent.fixesChanged(widget.slot, <ReadabilityFix>[...widget.wall.fixes, fix]));
+    bloc.add(DayNightEvent.fixesChanged(slot, <ReadabilityFix>[...widget.wall.fixes, fix]));
     analytics.track(ReadabilityFixAppliedEvent(zone: zone, fixKind: kind));
   }
 

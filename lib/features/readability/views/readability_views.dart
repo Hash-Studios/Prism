@@ -12,6 +12,19 @@ import 'package:Prism/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+typedef ReadabilityFrameRenderer =
+    Future<ui.Image> Function(
+      ui.Image source, {
+      required int width,
+      required int height,
+      required TargetPlatform platform,
+      ui.Color? tint,
+      List<ReadabilityFix> fixes,
+    });
+
+@visibleForTesting
+ReadabilityFrameRenderer readabilityFrameRenderer = renderReadabilityFrame;
+
 /// A quiet pill next to a zone that may be hard to read. It fades in once and never blocks the screen.
 class ReadabilityChip extends StatelessWidget {
   const ReadabilityChip({super.key, required this.zone, required this.onTap});
@@ -135,21 +148,27 @@ class _ReadabilityFixSheetState extends State<ReadabilityFixSheet> {
       final ui.Image decoded = await decodeForFrame(widget.source.provider, height);
       try {
         final TargetPlatform platform = defaultTargetPlatform;
-        final ui.Image before = await renderReadabilityFrame(
+        final ui.Image before = await readabilityFrameRenderer(
           decoded,
           width: width,
           height: height,
           platform: platform,
           tint: widget.source.tint,
         );
-        final ui.Image after = await renderReadabilityFrame(
-          decoded,
-          width: width,
-          height: height,
-          platform: platform,
-          tint: widget.source.tint,
-          fixes: <ReadabilityFix>[widget.fix],
-        );
+        late final ui.Image after;
+        try {
+          after = await readabilityFrameRenderer(
+            decoded,
+            width: width,
+            height: height,
+            platform: platform,
+            tint: widget.source.tint,
+            fixes: <ReadabilityFix>[widget.fix],
+          );
+        } catch (_) {
+          before.dispose();
+          rethrow;
+        }
         if (!mounted) {
           before.dispose();
           after.dispose();
@@ -193,7 +212,7 @@ class _ReadabilityFixSheetState extends State<ReadabilityFixSheet> {
           key: const ValueKey<String>('readability-apply'),
           label: l10n.readabilityApply,
           // Apply waits for the preview, so the user sees the change before they take it.
-          onPressed: _after == null && !_failed ? null : () => Navigator.of(context).pop(true),
+          onPressed: _after == null ? null : () => Navigator.of(context).pop(true),
         ),
         PrismButton(
           key: const ValueKey<String>('readability-keep'),
@@ -340,6 +359,8 @@ class _ReadabilityFixedImageState extends State<ReadabilityFixedImage> {
     if (job == _drawn) return;
     _drawn = job;
     final int generation = ++_generation;
+    _image?.dispose();
+    _image = null;
     final int width = (size.width * dpr).round();
     final int height = (size.height * dpr).round();
     if (width < 2 || height < 2) return;
@@ -347,7 +368,7 @@ class _ReadabilityFixedImageState extends State<ReadabilityFixedImage> {
       final ui.Image decoded = await decodeForFrame(widget.provider, height);
       final ui.Image drawn;
       try {
-        drawn = await renderReadabilityFrame(
+        drawn = await readabilityFrameRenderer(
           decoded,
           width: width,
           height: height,

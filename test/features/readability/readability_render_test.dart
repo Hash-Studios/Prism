@@ -3,10 +3,10 @@ import 'dart:ui' as ui;
 
 import 'package:Prism/features/readability/data/readability_render.dart';
 import 'package:Prism/features/readability/domain/readability.dart';
+import 'package:Prism/features/readability/views/readability_views.dart';
 import 'package:Prism/features/wallpaper_position/data/placement_renderer.dart';
 import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
-import 'package:flutter/foundation.dart' show TargetPlatform;
-import 'package:flutter/painting.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const Color _red = Color(0xFFFF0000);
@@ -71,6 +71,68 @@ Future<_Decoded> _frame(
 }
 
 void main() {
+  testWidgets('changing the source disposes the old fixed preview before decoding the replacement', (tester) async {
+    final (Uint8List, Uint8List)? pngs = await tester.runAsync(() async {
+      final ui.Image firstSource = await _solid(40, 80, _white);
+      final ui.Image secondSource = await _solid(40, 80, _red);
+      final Uint8List firstBytes = (await firstSource.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List();
+      final Uint8List secondBytes = (await secondSource.toByteData(
+        format: ui.ImageByteFormat.png,
+      ))!.buffer.asUint8List();
+      firstSource.dispose();
+      secondSource.dispose();
+      return (firstBytes, secondBytes);
+    });
+    final (Uint8List firstPng, Uint8List secondPng) = pngs!;
+    ui.Image? firstDrawn;
+    readabilityFrameRenderer =
+        (source, {required width, required height, required platform, tint, fixes = const []}) async {
+          final ui.Image image = await renderReadabilityFrame(
+            source,
+            width: width,
+            height: height,
+            platform: platform,
+            tint: tint,
+            fixes: fixes,
+          );
+          firstDrawn ??= image;
+          return image;
+        };
+    try {
+      Widget view(Uint8List bytes) => MaterialApp(
+        home: SizedBox(
+          width: 200,
+          height: 400,
+          child: ReadabilityFixedImage(provider: MemoryImage(bytes), fixes: const <ReadabilityFix>[]),
+        ),
+      );
+      await tester.pumpWidget(view(firstPng));
+      for (int i = 0; i < 20 && firstDrawn == null; i++) {
+        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+        await tester.pump();
+      }
+      expect(firstDrawn, isNotNull);
+      expect(firstDrawn!.debugDisposed, isFalse);
+
+      await tester.pumpWidget(view(secondPng));
+      expect(firstDrawn!.debugDisposed, isTrue);
+    } finally {
+      readabilityFrameRenderer = renderReadabilityFrame;
+    }
+  });
+
+  testWidgets('decodeForFrame bounds both dimensions for a wide source', (tester) async {
+    await tester.runAsync(() async {
+      final ui.Image source = await _solid(1000, 10, _white);
+      final Uint8List png = (await source.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List();
+      source.dispose();
+      final ui.Image decoded = await decodeForFrame(MemoryImage(png), 100);
+      expect(decoded.width, lessThanOrEqualTo(100));
+      expect(decoded.height, lessThanOrEqualTo(100));
+      decoded.dispose();
+    });
+  });
+
   testWidgets('a clock dim darkens the top of a white wall and leaves the bottom alone', (tester) async {
     await tester.runAsync(() async {
       final ui.Image source = await _solid(40, 80, _white);

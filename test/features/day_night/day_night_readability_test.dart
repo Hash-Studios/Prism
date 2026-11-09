@@ -1,20 +1,32 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
+import 'dart:ui' as ui;
 
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/day_night/biz/bloc/day_night_bloc.j.dart';
 import 'package:Prism/features/day_night/data/repositories/day_night_repository_impl.dart';
 import 'package:Prism/features/day_night/domain/entities/day_night_pair.dart';
 import 'package:Prism/features/day_night/domain/repositories/day_night_repository.dart';
+import 'package:Prism/features/day_night/views/widgets/day_night_readability_tip.dart';
 import 'package:Prism/features/ios_shortcuts/data/native_asset_paths_store.dart';
+import 'package:Prism/features/readability/data/readability_tips.dart';
 import 'package:Prism/features/readability/domain/readability.dart';
+import 'package:Prism/features/readability/views/readability_views.dart';
+import 'package:Prism/features/wallpaper_position/domain/entities/wallpaper_placement.dart';
+import 'package:Prism/features/wallpaper_position/domain/repositories/wallpaper_position_repository.dart';
+import 'package:Prism/l10n/generated/app_localizations.dart';
 import 'package:async_wallpaper/pigeon_impl_api.dart' as pigeon;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, debugDefaultTargetPlatformOverride;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:path/path.dart' as path;
@@ -80,6 +92,34 @@ class _FakeOfflineStore extends OfflineAssetStore {
 
 class _MockDayNightRepository extends Mock implements DayNightRepository {}
 
+class _MockDayNightBloc extends MockBloc<DayNightEvent, DayNightState> implements DayNightBloc {}
+
+class _CopyPositionRepository implements WallpaperPositionRepository {
+  _CopyPositionRepository(this.png, this.output);
+
+  final Uint8List png;
+  final Directory output;
+  int renders = 0;
+
+  @override
+  Future<PlacementSource> load(String url) async {
+    final ui.Codec codec = await ui.instantiateImageCodec(png);
+    final ui.FrameInfo frame = await codec.getNextFrame();
+    codec.dispose();
+    return PlacementSource(image: frame.image, dominantColor: const ui.Color(0xFF000000));
+  }
+
+  @override
+  Future<File> render(PlacementSource source, WallpaperPlacement placement, ui.Size outputSize) async {
+    final ByteData data = (await source.image.toByteData(format: ui.ImageByteFormat.png))!;
+    final Directory renderDirectory = Directory(path.join(output.path, 'render-${renders++}'))
+      ..createSync(recursive: true);
+    final File file = File(path.join(renderDirectory.path, 'wall.png'));
+    await file.writeAsBytes(data.buffer.asUint8List());
+    return file;
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -131,6 +171,182 @@ void main() {
       expect(fixed.thumbnailUrl, colored.thumbnailUrl);
       expect(fixed.mainColor, colored.mainColor);
       expect(fixed.fixes, const <ReadabilityFix>[_iconsBlur]);
+    });
+  });
+
+  testWidgets('a check that completes after two seconds does not show a late tip', (tester) async {
+    ReadabilityTips.instance.reset();
+    await ReadabilityTips.instance.setEnabled(true);
+    expect(ReadabilityTips.instance.enabled, isTrue);
+    expect(ReadabilityTips.instance.shownFor(_httpsDay.id), isFalse);
+    final Completer<Map<ReadabilityZone, ReadabilityResult>> pending =
+        Completer<Map<ReadabilityZone, ReadabilityResult>>();
+    bool started = false;
+    DayNightReadabilityTip.checkOverride = (ReadabilityKey _, Future<ui.Image> Function() _) {
+      started = true;
+      return pending.future;
+    };
+    addTearDown(() {
+      DayNightReadabilityTip.checkOverride = null;
+      ReadabilityTips.instance.reset();
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: DayNightReadabilityTip(slot: DayNightSlot.day, wall: _httpsDay, target: WallpaperTarget.lock),
+        ),
+      ),
+    );
+    expect(started, isTrue);
+    await tester.pump(const Duration(seconds: 2));
+    pending.complete(<ReadabilityZone, ReadabilityResult>{
+      ReadabilityZone.clock: const ReadabilityResult(
+        zone: ReadabilityZone.clock,
+        lowContrastShare: 0.5,
+        edgeShare: 0,
+        fix: ReadabilityFixKind.dim,
+      ),
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byType(ReadabilityChip), findsNothing);
+  });
+
+  testWidgets('tracking resets when the widget changes to another wall', (tester) async {
+    ReadabilityTips.instance.reset();
+    await ReadabilityTips.instance.setEnabled(true);
+    DayNightReadabilityTip.checkOverride = (ReadabilityKey key, Future<ui.Image> Function() _) async =>
+        <ReadabilityZone, ReadabilityResult>{
+          ReadabilityZone.clock: const ReadabilityResult(
+            zone: ReadabilityZone.clock,
+            lowContrastShare: 0.5,
+            edgeShare: 0,
+            fix: ReadabilityFixKind.dim,
+          ),
+        };
+    addTearDown(() {
+      DayNightReadabilityTip.checkOverride = null;
+      ReadabilityTips.instance.reset();
+    });
+    const DayNightWall otherWall = DayNightWall(
+      id: 'other',
+      source: WallpaperSource.prism,
+      fullUrl: 'https://example.com/other.jpg',
+      thumbnailUrl: 'https://example.com/other-thumb.jpg',
+    );
+
+    Widget screen(DayNightWall wall) => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: DayNightReadabilityTip(slot: DayNightSlot.day, wall: wall, target: WallpaperTarget.lock),
+      ),
+    );
+
+    await tester.pumpWidget(screen(_httpsDay));
+    await tester.pump();
+    await tester.pump();
+    expect(ReadabilityTips.instance.shownFor(_httpsDay.id), isTrue);
+    await tester.pumpWidget(screen(otherWall));
+    await tester.pump();
+    await tester.pump();
+
+    expect(ReadabilityTips.instance.shownFor(otherWall.id), isTrue);
+  });
+
+  testWidgets('a fix sheet opened for an old wall cannot apply to its replacement', (tester) async {
+    ReadabilityTips.instance.reset();
+    await ReadabilityTips.instance.setEnabled(true);
+    final Completer<bool?> decision = Completer<bool?>();
+    DayNightReadabilityTip.checkOverride = (ReadabilityKey _, Future<ui.Image> Function() _) async =>
+        <ReadabilityZone, ReadabilityResult>{
+          ReadabilityZone.clock: const ReadabilityResult(
+            zone: ReadabilityZone.clock,
+            lowContrastShare: 0.5,
+            edgeShare: 0,
+            fix: ReadabilityFixKind.dim,
+          ),
+        };
+    DayNightReadabilityTip.sheetOverride = (BuildContext _, ReadabilityPreviewSource _, ReadabilityFix _) =>
+        decision.future;
+    addTearDown(() {
+      DayNightReadabilityTip.checkOverride = null;
+      DayNightReadabilityTip.sheetOverride = null;
+      ReadabilityTips.instance.reset();
+    });
+    const DayNightWall replacement = DayNightWall(
+      id: 'replacement',
+      source: WallpaperSource.prism,
+      fullUrl: 'https://example.com/replacement.jpg',
+      thumbnailUrl: 'https://example.com/replacement-thumb.jpg',
+    );
+    final _MockDayNightBloc bloc = _MockDayNightBloc();
+
+    Widget screen(DayNightWall wall) => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: BlocProvider<DayNightBloc>.value(
+        value: bloc,
+        child: Scaffold(
+          body: DayNightReadabilityTip(slot: DayNightSlot.day, wall: wall, target: WallpaperTarget.lock),
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(screen(_httpsDay));
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(find.byType(ReadabilityChip));
+    await tester.pump();
+    await tester.pumpWidget(screen(replacement));
+    decision.complete(true);
+    await tester.pump();
+    await tester.pump();
+
+    verifyNever(() => bloc.add(const DayNightEvent.fixesChanged(DayNightSlot.day, <ReadabilityFix>[_clockDim])));
+  });
+
+  testWidgets('the default fixed-copy renderer gives each publish an isolated output path', (tester) async {
+    await tester.runAsync(() async {
+      final Directory root = await Directory.systemTemp.createTemp('day-night-fixed-copy');
+      final Directory support = Directory(path.join(root.path, 'support'))..createSync(recursive: true);
+      final Directory renderOutput = Directory(path.join(root.path, 'rendered'))..createSync(recursive: true);
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      Canvas(recorder).drawRect(const Rect.fromLTWH(0, 0, 8, 8), Paint()..color = const Color(0xFFABCDEF));
+      final ui.Image image = await recorder.endRecording().toImage(8, 8);
+      final ByteData data = (await image.toByteData(format: ui.ImageByteFormat.png))!;
+      final Uint8List png = data.buffer.asUint8List();
+      image.dispose();
+      final _CopyPositionRepository position = _CopyPositionRepository(png, renderOutput);
+      getIt.registerSingleton<WallpaperPositionRepository>(position);
+      const MethodChannel channel = MethodChannel('plugins.flutter.io/path_provider');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        (call) async => support.path,
+      );
+      try {
+        DayNightRepositoryImpl.fixedCopyMaker = originalFixedCopy;
+        const ReadabilityFix fix = ReadabilityFix(ReadabilityZone.clock, ReadabilityFixKind.dim);
+        final File first = await originalFixedCopy(DayNightSlot.day, _httpsDay.withFixes(<ReadabilityFix>[fix]), 'one');
+        final List<int> firstBytes = await first.readAsBytes();
+        final File second = await originalFixedCopy(
+          DayNightSlot.day,
+          _httpsDay.withFixes(<ReadabilityFix>[fix]),
+          'two',
+        );
+
+        expect(first.path, isNot(second.path));
+        expect(await first.readAsBytes(), firstBytes);
+        expect(await second.exists(), isTrue);
+      } finally {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
+        await getIt.unregister<WallpaperPositionRepository>();
+        await root.delete(recursive: true);
+      }
     });
   });
 

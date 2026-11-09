@@ -292,7 +292,8 @@ class DayNightRepositoryImpl implements DayNightRepository {
       final Directory support = await getApplicationSupportDirectory();
       final Directory folder = Directory(path.join(support.path, 'prism', 'offline', 'assets', 'day_night_fixed'));
       await folder.create(recursive: true);
-      return await File(placed.path).copy(path.join(folder.path, '${slot.name}.png'));
+      final Directory destination = await Directory(folder.path).createTemp('${slot.name}-');
+      return await File(placed.path).copy(path.join(destination.path, 'wall.png'));
     } finally {
       await placed.discard();
     }

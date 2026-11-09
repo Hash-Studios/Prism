@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
@@ -6,6 +7,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_choice.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/readability/data/readability_render.dart';
 import 'package:Prism/features/readability/data/readability_tips.dart';
 import 'package:Prism/features/readability/domain/readability.dart';
 import 'package:Prism/features/readability/views/readability_views.dart';
@@ -213,6 +215,7 @@ void main() {
 
   tearDown(() async {
     aw.AsyncWallpaper.debugResetClient();
+    readabilityFrameRenderer = renderReadabilityFrame;
     ReadabilityTips.analyzer = analyzeReadability;
     ReadabilityTips.useIsolate = true;
     ReadabilityTips.instance.reset();
@@ -325,6 +328,36 @@ void main() {
     expect(_applied, isEmpty);
     expect(find.byType(ReadabilityFixSheet), findsNothing);
     expect(find.byKey(_clockChipKey), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('a failed after render disposes Before and keeps Apply disabled', (tester) async {
+    final List<SetWallpaperChoice?> results = <SetWallpaperChoice?>[];
+    int renders = 0;
+    ui.Image? before;
+    readabilityFrameRenderer =
+        (source, {required width, required height, required platform, tint, fixes = const []}) async {
+          renders++;
+          if (renders == 2) throw StateError('after render failed');
+          before = await renderReadabilityFrame(
+            source,
+            width: width,
+            height: height,
+            platform: platform,
+            tint: tint,
+            fixes: fixes,
+          );
+          return before!;
+        };
+    await _pumpSetScreen(tester, _request(), results);
+    await tester.tap(find.text('Lock screen'));
+    await tester.pump();
+    await _waitUntil(tester, _shown(_clockChipKey), reason: 'the clock chip shows in Lock mode');
+    await tester.tap(find.byKey(_clockChipKey));
+    await tester.pumpAndSettle();
+    await _waitUntil(tester, () => renders == 2 && before?.debugDisposed == true, reason: 'Before is disposed');
+    await _waitUntil(tester, () => find.text('Before').evaluate().isEmpty, reason: 'the failed preview clears');
+
+    expect(tester.widget<PrismButton>(find.byKey(_applyKey)).onPressed, isNull);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('the 3D live preview hides the clock chip', (tester) async {

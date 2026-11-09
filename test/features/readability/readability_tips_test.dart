@@ -85,6 +85,16 @@ void main() {
     });
   });
 
+  testWidgets('the default analyzer runs in an isolate with its decoded frame payload', (tester) async {
+    await tester.runAsync(() async {
+      ReadabilityTips.analyzer = analyzeReadability;
+      ReadabilityTips.useIsolate = true;
+      final Map<ReadabilityZone, ReadabilityResult> result = await _check(_key());
+      expect(result[ReadabilityZone.clock]?.fix, ReadabilityFixKind.dim);
+      expect(result[ReadabilityZone.icons]?.fix, ReadabilityFixKind.dim);
+    });
+  });
+
   testWidgets('a key that differs in one field misses the cache', (tester) async {
     await tester.runAsync(() async {
       await _check(_key());

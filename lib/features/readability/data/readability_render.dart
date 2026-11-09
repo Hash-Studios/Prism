@@ -127,11 +127,15 @@ Future<ReadabilityFrame> readabilityFrameOf(ui.Image image) async {
   return ReadabilityFrame(rgba: data.buffer.asUint8List(), width: image.width, height: image.height);
 }
 
-/// Decodes [provider] [height] pixels tall. A wall that is wider than the screen still covers it at this height.
-/// The caller owns the image and disposes it.
+/// Decodes [provider] with its long side at most [height] pixels. The caller owns the image and disposes it.
 Future<ui.Image> decodeForFrame(ImageProvider provider, int height) {
   final Completer<ui.Image> done = Completer<ui.Image>();
-  final ImageStream stream = ResizeImage(provider, height: height).resolve(ImageConfiguration.empty);
+  final ImageStream stream = ResizeImage(
+    provider,
+    width: height,
+    height: height,
+    policy: ResizeImagePolicy.fit,
+  ).resolve(ImageConfiguration.empty);
   late final ImageStreamListener listener;
   listener = ImageStreamListener(
     (info, _) {

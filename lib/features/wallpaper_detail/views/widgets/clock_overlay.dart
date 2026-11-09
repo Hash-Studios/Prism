@@ -30,6 +30,8 @@ import 'package:Prism/features/readability/domain/readability.dart';
 import 'package:Prism/features/readability/views/readability_views.dart';
 import 'package:Prism/features/wallpaper_detail/biz/top_third_text_color.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_scheme.dart';
+import 'package:Prism/features/wallpaper_detail/views/wallpaper_edit/wallpaper_edit_pipeline.dart'
+    show exportSize, maxExportLongSide;
 import 'package:Prism/features/wallpaper_detail/views/widgets/duo_reveal_view.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/preview_layers.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_tilt_view.dart';
@@ -237,7 +239,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
   List<ReadabilityFix> _fixes = const <ReadabilityFix>[];
   Map<ReadabilityZone, ReadabilityResult>? _readability;
   final Set<ReadabilityZone> _tipsTracked = <ReadabilityZone>{};
-  late final bool _tipsOn = ReadabilityTips.instance.enabled && !ReadabilityTips.instance.shownFor(_wallKey);
+  late bool _tipsOn = ReadabilityTips.instance.enabled && !ReadabilityTips.instance.shownFor(_wallKey);
 
   /// iOS only: the wall with the fixes, as Save will store it. Android sets a rendered file instead.
   ui.Image? _fixedPreview;
@@ -369,6 +371,9 @@ class _ClockOverlayState extends State<ClockOverlay> {
     _duo = widget.duoReveal;
     _unfolded = false;
     _wideObserved = false;
+    _fixes = const <ReadabilityFix>[];
+    _tipsTracked.clear();
+    _tipsOn = ReadabilityTips.instance.enabled && !ReadabilityTips.instance.shownFor(_wallKey);
     final PlacedWallpaper? placed = _placed;
     _placed = null;
     if (placed != null) unawaited(placed.discard());
@@ -560,6 +565,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
     final ReadabilityFixKind? kind = _readability?[zone]?.fix;
     final ImageProvider? provider = _provider;
     if (kind == null || provider == null || _busy) return;
+    final int generation = _inputGeneration;
     final ReadabilityFix fix = ReadabilityFix(zone, kind);
     final bool? apply = await showReadabilityFixSheet(
       context,
@@ -571,7 +577,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
       ),
       fix,
     );
-    if (!mounted || _completed) return;
+    if (!mounted || _completed || generation != _inputGeneration) return;
     if (apply == false) analytics.track(ReadabilityFixKeptEvent(zone: zone));
     if (apply != true) return;
     if (await _applyFixes(<ReadabilityFix>[..._fixes, fix])) {
@@ -586,15 +592,16 @@ class _ClockOverlayState extends State<ClockOverlay> {
       final ImageProvider? provider = _provider;
       if (provider == null) return false;
       final Size px = MediaQuery.sizeOf(context) * MediaQuery.devicePixelRatioOf(context);
+      final ({int width, int height}) output = exportSize(px.width.round(), px.height.round());
       final int generation = _inputGeneration;
       try {
-        final ui.Image decoded = await decodeForFrame(provider, px.height.round());
+        final ui.Image decoded = await decodeForFrame(provider, math.min(px.height.round(), maxExportLongSide));
         final ui.Image fixed;
         try {
           fixed = await renderReadabilityFrame(
             decoded,
-            width: px.width.round(),
-            height: px.height.round(),
+            width: output.width,
+            height: output.height,
             platform: defaultTargetPlatform,
             tint: _tint,
             fixes: fixes,
@@ -672,7 +679,7 @@ class _ClockOverlayState extends State<ClockOverlay> {
     if (fixed != null && !_duo) {
       return ColoredBox(
         color: placeholder,
-        child: RawImage(image: fixed, fit: BoxFit.cover),
+        child: RawImage(key: const ValueKey<String>('readability-fixed-preview'), image: fixed, fit: BoxFit.cover),
       );
     }
     final WallpaperDisplaySource display = _displaySource;
