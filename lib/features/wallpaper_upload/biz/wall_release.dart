@@ -1,5 +1,5 @@
+import 'package:Prism/core/firestore/converters/firestore_json_converters.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
 /// The server window for `releaseAt`, measured from the write (functions/src/wallRelease.ts and firestore.rules).
@@ -45,11 +45,8 @@ class WallRelease {
   /// UTC, or null when the wall goes live on approval.
   final DateTime? releaseAt;
 
-  static DateTime? _utc(Object? value) => switch (value) {
-    final Timestamp stamp => stamp.toDate().toUtc(),
-    final DateTime date => date.toUtc(),
-    _ => null,
-  };
+  static DateTime? _utc(Object? value) =>
+      value is String ? null : const FirestoreDateTimeConverter().fromJson(value)?.toUtc();
 }
 
 /// "Fri 18:00" inside the next 6 days, else "14 Nov 18:00", in the device time zone.

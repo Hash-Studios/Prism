@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:Prism/core/firestore/converters/firestore_json_converters.dart';
+import 'package:collection/collection.dart';
 
 String newWallMetadataOperationId() {
   final Random random = Random.secure();
@@ -47,11 +48,9 @@ class PendingWallMetadata {
   factory PendingWallMetadata.fromMap(Map<String, dynamic> data) => PendingWallMetadata(
     text: WallTextMetadata.fromMap(data),
     category: data['category'] is String ? data['category'] as String : 'General',
-    releaseAt: switch (data['releaseAt']) {
-      final Timestamp stamp => stamp.toDate().toUtc(),
-      final DateTime date => date.toUtc(),
-      _ => null,
-    },
+    releaseAt: data['releaseAt'] is String
+        ? null
+        : const FirestoreDateTimeConverter().fromJson(data['releaseAt'])?.toUtc(),
   );
 
   Map<String, dynamic> toMap() => <String, dynamic>{
