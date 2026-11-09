@@ -563,14 +563,20 @@ class _ProfileChildState extends State<_ProfileChild> {
     // 86 points across with the frame or the accent ring.
     final Widget headerAvatar = ProfileFrame.draws(cosmetics.frame, premium: cosmetics.premium)
         ? ProfileFrame(frameId: cosmetics.frame, premium: cosmetics.premium, size: _headerAvatarSize, child: photo)
+        // The accent ring follows the theme, like the camera badge in the edit panel. It is drawn over a photo that
+        // reaches the middle of the ring, so the photo edge does not blend with the ring edge.
         : Container(
-            decoration: BoxDecoration(
+            width: _headerAvatarSize,
+            height: _headerAvatarSize,
+            padding: const EdgeInsets.all(2),
+            foregroundDecoration: BoxDecoration(
               shape: BoxShape.circle,
-              // The accent ring follows the theme, like the camera badge in the edit panel.
               border: Border.all(color: cs.primary, width: 4),
-              color: cs.onSurface,
             ),
-            child: photo,
+            child: DecoratedBox(
+              decoration: BoxDecoration(shape: BoxShape.circle, color: cs.onSurface),
+              child: photo,
+            ),
           );
     // As the header collapses, the avatar shrinks and moves into the bar next to the name, so the page keeps its
     // identity. With reduce motion it stays in the header, and a small copy fades in with the name.

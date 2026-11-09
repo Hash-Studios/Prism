@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
@@ -310,6 +312,66 @@ void main() {
       }
       expect(tester.takeException(), isNull);
       expectNoOverflow(errors);
+    });
+  }
+
+  // Issue #558: where the accent ring meets the photo, a pixel may only mix the ring and the photo colours.
+  for (final bool isDark in <bool>[false, true]) {
+    testWidgets('header avatar ring meets the photo with no third colour, ${isDark ? 'dark' : 'light'}', (
+      tester,
+    ) async {
+      app_state.prismUser = profileUser(id: 'me', profilePhoto: '');
+      final GlobalKey boundaryKey = GlobalKey();
+      tester.view.physicalSize = const Size(780, 1688);
+      tester.view.devicePixelRatio = 2;
+      addTearDown(tester.view.reset);
+      final ThemeData theme = isDark ? kDarkTheme : kLightTheme;
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: boundaryKey,
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            theme: theme,
+            home: const ProfileScreen(),
+            builder: favouriteTestBuilder,
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+
+      final Offset centre = tester.getCenter(find.byKey(const ValueKey<String>('profile-carried-avatar')));
+      final RenderRepaintBoundary boundary = tester.renderObject(find.byKey(boundaryKey));
+      final ByteData bytes = (await tester.runAsync<ByteData?>(() async {
+        final ui.Image image = await boundary.toImage(pixelRatio: 2);
+        final ByteData? data = await image.toByteData();
+        image.dispose();
+        return data;
+      }))!;
+      final int width = (boundary.size.width * 2).round();
+      final ColorScheme cs = theme.colorScheme;
+      // The photo is the default person tile, cs.surface. The ring is cs.primary.
+      final List<Color> allowed = <Color>[cs.primary, cs.surface];
+      double channel(Color c, int i) => <double>[c.r, c.g, c.b][i];
+      final List<String> stray = <String>[];
+      for (int step = 0; step < 72; step++) {
+        final double angle = step * math.pi / 36;
+        for (double radius = 37; radius <= 41; radius += 0.5) {
+          final int x = ((centre.dx + radius * math.cos(angle)) * 2).round();
+          final int y = ((centre.dy + radius * math.sin(angle)) * 2).round();
+          final int offset = (y * width + x) * 4;
+          final List<double> pixel = <double>[for (int i = 0; i < 3; i++) bytes.getUint8(offset + i) / 255];
+          for (int i = 0; i < 3; i++) {
+            final double low = allowed.map((Color c) => channel(c, i)).reduce(math.min) - 0.04;
+            final double high = allowed.map((Color c) => channel(c, i)).reduce(math.max) + 0.04;
+            if (pixel[i] < low || pixel[i] > high) {
+              stray.add('r=$radius angle=$step rgb=$pixel');
+              break;
+            }
+          }
+        }
+      }
+      expect(stray, isEmpty, reason: stray.take(5).join('\n'));
     });
   }
 

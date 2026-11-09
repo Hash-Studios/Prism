@@ -360,7 +360,8 @@ void main() {
       // Expanded: the full avatar sits centred on the cover edge.
       final Rect expanded = carriedAvatar(tester);
       expect(expanded.center.dx, closeTo(195, 1));
-      expect(expanded.width, closeTo(78, 1));
+      // The photo is clipped 82 across. The 4 point ring covers its outer 2 points, so 78 shows.
+      expect(expanded.width, closeTo(82, 1));
 
       // Half way: smaller and higher, on its way to the bar.
       await tester.drag(find.byType(CustomScrollView), const Offset(0, -70));
@@ -376,7 +377,7 @@ void main() {
       final Rect collapsed = carriedAvatar(tester);
       expect(collapsed.center.dx, closeTo(slot.center.dx, 0.5));
       expect(collapsed.center.dy, closeTo(slot.center.dy, 0.5));
-      expect(collapsed.width, closeTo(78 * 28 / 86, 0.5));
+      expect(collapsed.width, closeTo(82 * 28 / 86, 0.5));
       final String name = identifier == null ? 'Me Myself' : 'Ana Rivera';
       final Rect title = tester.getRect(find.descendant(of: find.byType(AppBar), matching: find.text(name)));
       expect(title.left, greaterThan(slot.right));
