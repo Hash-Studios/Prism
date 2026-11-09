@@ -701,7 +701,7 @@ The app removes the viewer's own folders and the folders of creators that the vi
 `computeFolderDiscovery` (`functions/src/folderDiscovery.ts`) runs every day at 03:10 UTC. It writes `folderTrending/current`.
 
 - **Score.** For each of the last 7 UTC days: `follows * 3 + saves * 2 + opens`, times `0.8` for each day of age. The job adds the days.
-- **Trending.** The 300 best scored folders are the candidates. The job keeps the eligible ones in score order.
+- **Trending.** The job reads the scored folders in score order, 100 at a time, and keeps the eligible ones. It stops when Trending has 30 folders, or after 1,000 folders. A folder that became ineligible after it scored, for example hidden or reported, does not block the folders below it.
 - **New.** Folders with `discoveryEligibleAt` in the last 7 days, newest first. The job keeps the eligible ones.
 - **Owner cap.** One owner has at most 2 folders in each list.
 - **Size.** Each list has at most 30 folders.
@@ -722,7 +722,7 @@ Each list entry has `id`, `ownerId`, `ownerName`, `ownerUsername`, `ownerPhoto`,
 - One account counts once for each folder and signal in 7 days. The claim is `folderSignalRate/{uid}_{folderId}_{signal}`.
 - An account that is younger than 7 days does not count. The age check runs before the claim, so the account counts once it is 7 days old.
 - A folder that is not public does not count. The claim and the count run in one transaction that reads the header again.
-- A folder that has fewer than 8 public walls, or that a moderator hid from discovery, does not count. It cannot be listed, so it must not take one of the 300 scored candidate slots.
+- A folder that has fewer than 8 public walls, or that a moderator hid from discovery, does not count. It cannot be listed, so its score must not push eligible folders out of the scan.
 
 A counted signal adds 1 to `folderStatsDaily/{yyyymmdd}_{folderId}`. A TTL policy deletes the stats docs after 14 days and the claims after 7 days.
 
@@ -771,14 +771,14 @@ The job never reads all folders. These are the most reads for one run.
 | Step | Reads | Writes |
 |---|---|---|
 | `folderStatsDaily` for 7 days | At most 50,000 (cap, with a warning). With 5,000 active folders on 3 days each: about 15,000. | 0 |
-| Headers of the 300 best scored folders | At most 300 | 0 |
+| Headers of scored folders, 100 at a time until Trending is full | At most 1,000. Usually 100. | 0 |
 | New folders query | At most 300 | 0 |
-| Open report check, 1 query for each candidate | At most 600 | 0 |
+| Open report check, 1 query for each candidate | At most 1,300. Usually 400. | 0 |
 | Owner accounts | 0 (Auth `getUsers`, at most 6 calls of 100) | 0 |
 | Traits: 12 items and 12 walls for each listed folder | At most 1,440 | 0 |
 | Owner profiles | At most 60 | 0 |
 | Final transaction | At most 60 | 1 |
-| **Total** | **At most 52,760. About 17,800 in the example.** | **1** |
+| **Total** | **At most 54,160. About 17,400 in the example.** | **1** |
 
 Other costs:
 

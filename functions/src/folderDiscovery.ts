@@ -25,7 +25,8 @@ const CHUNK = 100;
 export const DISCOVERY_LIMITS = {
   listSize: 30,
   dailyDocs: 50_000,
-  trendingCandidates: 300,
+  /** Scored folders read in score order, 100 at a time, until Trending is full. Ineligible ones do not block it. */
+  trendingScan: 1_000,
   newCandidates: 300,
 } as const;
 
@@ -138,8 +139,8 @@ async function getDocs(refs: admin.firestore.DocumentReference[]): Promise<admin
 
 /**
  * Rebuilds `folderTrending/current`: up to 30 trending and 30 new public folders, at most 2 per owner. It reads the
- * last 7 days of `folderStatsDaily`, the headers of the 300 best scored folders and of the 300 newest eligible
- * folders, one bounded open-report lookup per candidate, and then 12 walls and one profile for each listed folder.
+ * last 7 days of `folderStatsDaily`, the headers of the 300 newest eligible folders, then scored folders in score
+ * order, 100 at a time, until Trending is full (at most 1,000), one bounded open-report lookup per candidate, and then 12 walls and one profile for each listed folder.
  * Never all folders.
  */
 export async function rebuildFolderDiscovery(nowMs = Date.now()): Promise<{trending: number; fresh: number}> {
@@ -156,29 +157,38 @@ export async function rebuildFolderDiscovery(nowMs = Date.now()): Promise<{trend
   const scores = folderScores(dailySnap.docs.map((d) => d.data()).map((d) => ({
     folderId: str(d.folderId), day: str(d.day), follows: num(d.follows), saves: num(d.saves), opens: num(d.opens),
   })), days);
-  const best = [...scores].filter(([, score]) => score > 0)
-    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, DISCOVERY_LIMITS.trendingCandidates);
-  const bestHeaders = await getDocs(best.map(([id]) => db.collection(PUBLIC_FOLDERS).doc(id)));
+  const ranked = [...scores].filter(([, score]) => score > 0)
+    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).map(([id]) => id);
+
   const headers = new Map<string, Doc>();
-  for (const snap of [...bestHeaders, ...newSnap.docs]) if (snap.exists) headers.set(snap.id, snap.data() as Doc);
-
-  // Check reports per candidate so a large set of unrelated reports cannot hide an eligible candidate past a
-  // global limit. The union is bounded by trendingCandidates + newCandidates (600 maximum), with one result each.
-  const candidates = [...headers.keys()];
-  const reportChecks = await Promise.all(candidates.map((id) => db.collection("contentReports")
-    .where("contentType", "==", "folder").where("status", "==", "open").where("targetFirestoreDocId", "==", id)
-    .limit(1).get()));
-  const reported = new Set(candidates.filter((_, i) => reportChecks[i].size > 0));
-
-  const ctx = {
-    nowMs,
-    owners: await folderDiscoveryDeps.owners([...new Set([...headers.values()].map((h) => str(h.ownerId)))].filter(Boolean)),
-    reported,
+  const reported = new Set<string>();
+  const owners = new Map<string, OwnerAccount>();
+  const ctx = {nowMs, owners, reported};
+  // Reports are checked per candidate, so unrelated reports cannot push a report past a global limit.
+  const load = async (snaps: admin.firestore.DocumentSnapshot[]) => {
+    const found = snaps.filter((snap) => snap.exists && !headers.has(snap.id));
+    for (const snap of found) headers.set(snap.id, snap.data() as Doc);
+    const checks = await Promise.all(found.map((snap) => db.collection("contentReports")
+      .where("contentType", "==", "folder").where("status", "==", "open").where("targetFirestoreDocId", "==", snap.id)
+      .limit(1).get()));
+    found.forEach((snap, i) => {
+      if (checks[i].size > 0) reported.add(snap.id);
+    });
+    const uids = [...new Set(found.map((snap) => str(snap.data()?.ownerId)))].filter((uid) => uid && !owners.has(uid));
+    if (uids.length) for (const [uid, account] of await folderDiscoveryDeps.owners(uids)) owners.set(uid, account);
   };
   const eligible = (id: string) => discoveryRefusal(headers.get(id), ctx, id) === null;
   const rowOf = (id: string) => ({id, ownerId: str(headers.get(id)?.ownerId)});
-  const trending = capPerOwner(best.map(([id]) => id).filter(eligible).map(rowOf), DISCOVERY_LIMITS.listSize);
+
+  await load(newSnap.docs);
   const fresh = capPerOwner(newSnap.docs.map((d) => d.id).filter(eligible).map(rowOf), DISCOVERY_LIMITS.listSize);
+  let trending: Array<{id: string; ownerId: string}> = [];
+  const scan = Math.min(ranked.length, DISCOVERY_LIMITS.trendingScan);
+  for (let i = 0; i < scan && trending.length < DISCOVERY_LIMITS.listSize; i += CHUNK) {
+    const chunk = ranked.slice(i, Math.min(i + CHUNK, scan)).filter((id) => !headers.has(id));
+    await load(await getDocs(chunk.map((id) => db.collection(PUBLIC_FOLDERS).doc(id))));
+    trending = capPerOwner(ranked.slice(0, Math.min(i + CHUNK, scan)).filter(eligible).map(rowOf), DISCOVERY_LIMITS.listSize);
+  }
 
   const listed = [...new Set([...trending, ...fresh].map((row) => row.id))];
   const ownerIds = [...new Set(listed.map((id) => str(headers.get(id)?.ownerId)))];

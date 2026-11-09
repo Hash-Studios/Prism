@@ -254,6 +254,20 @@ test("countFolderSignal skips own, repeated, and young-account signals, and coun
   assert.equal(store.get(`folderStatsDaily/${TODAY}_f1`)?.saves, 1);
 });
 
+test("rebuild reads past 300 high-scored ineligible folders to fill Trending", async (t) => {
+  stubOwners(t);
+  const seed: Seed = {};
+  for (let i = 0; i < 310; i++) {
+    Object.assign(seed, header(`h${i}`, `ho${i}`, {discoveryHidden: true}), daily(`h${i}`, TODAY, {opens: 50}));
+  }
+  Object.assign(seed, header("ok", "o-ok"), daily("ok", TODAY, {opens: 1}));
+  const store = installFakeDb(t, seed);
+
+  await rebuildFolderDiscovery(NOW);
+
+  assert.deepEqual(ids(readListing(store).trending), ["ok"]);
+});
+
 test("countFolderSignal skips folders that cannot be listed: under 8 walls or hidden from discovery", async (t) => {
   t.mock.method(folderSignalDeps, "accountCreatedMs", async () => NOW - 30 * DAY);
   const store = installFakeDb(t, {
@@ -329,6 +343,6 @@ test("a rebuild reads a bounded number of documents and writes only the list doc
   assert.ok(observed.reads + observed.outsideReads <= bound,
     `reads ${observed.reads + observed.outsideReads} > bound ${bound}`);
   assert.deepEqual(DISCOVERY_LIMITS, {
-    listSize: 30, dailyDocs: 50000, trendingCandidates: 300, newCandidates: 300,
+    listSize: 30, dailyDocs: 50000, trendingScan: 1000, newCandidates: 300,
   });
 });
