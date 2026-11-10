@@ -6,6 +6,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/creator_directory/biz/creator_directory_cubit.dart';
+import 'package:Prism/features/creator_directory/views/creator_directory_session_scope.dart';
 import 'package:Prism/features/creator_directory/views/widgets/creator_directory_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
@@ -21,7 +22,7 @@ const EdgeInsets _sectionHeaderPadding = EdgeInsets.fromLTRB(
   PrismSpace.sm,
 );
 
-/// The "Creators to follow" row on Home and Search. It hides while the directory is empty or for guests.
+/// The "Creators to follow" row on Home and Search. It hides while the directory is empty.
 class CreatorsSection extends StatefulWidget {
   const CreatorsSection({super.key, required this.source, this.refreshRevision = 0});
 
@@ -47,22 +48,19 @@ class _CreatorsSectionState extends State<CreatorsSection> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: <BlocProvider<dynamic>>[
-        BlocProvider<CreatorDirectoryCubit>(
-          create: (_) {
-            final CreatorDirectoryCubit cubit = getIt<CreatorDirectoryCubit>();
-            _directoryCubit = cubit;
-            cubit.loadRow();
-            return cubit;
-          },
+    return CreatorDirectorySessionScope(
+      child: BlocProvider<CreatorDirectoryCubit>(
+        create: (_) {
+          final CreatorDirectoryCubit cubit = getIt<CreatorDirectoryCubit>();
+          _directoryCubit = cubit;
+          cubit.loadRow();
+          return cubit;
+        },
+        child: BlocListener<PublicProfileBloc, PublicProfileState>(
+          listenWhen: (prev, curr) => curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
+          listener: (context, state) => showFollowOutcomeToast(context, state.followOutcome!),
+          child: BlocBuilder<CreatorDirectoryCubit, CreatorDirectoryState>(builder: _buildSection),
         ),
-        BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
-      ],
-      child: BlocListener<PublicProfileBloc, PublicProfileState>(
-        listenWhen: (prev, curr) => curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
-        listener: (context, state) => showFollowOutcomeToast(context, state.followOutcome!),
-        child: BlocBuilder<CreatorDirectoryCubit, CreatorDirectoryState>(builder: _buildSection),
       ),
     );
   }

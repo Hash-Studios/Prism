@@ -8,6 +8,7 @@ import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
+import 'package:Prism/features/creator_directory/views/creator_directory_session_scope.dart';
 import 'package:Prism/features/creator_directory/views/creator_follow_changes.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
@@ -41,7 +42,16 @@ class CreatorFollowButton extends StatelessWidget {
   Widget _button(BuildContext context, bool following) {
     final String name = creator.displayName;
     Future<void> onTap() async {
-      if (await requireSignedInAction(context) && context.mounted) _toggle(context, follow: !following);
+      final Future<PublicProfileBloc?> Function()? signIn = CreatorDirectorySessionScope.signInForFollowOf(context);
+      final PublicProfileBloc? bloc;
+      if (signIn != null) {
+        bloc = await signIn();
+      } else {
+        if (!await requireSignedInAction(context) || !context.mounted) return;
+        bloc = context.read<PublicProfileBloc>();
+      }
+      if (bloc == null || bloc.isClosed) return;
+      _toggle(bloc, follow: !following);
     }
 
     // excludeSemantics drops the button's own tap action, so the wrapper carries it for screen readers.
@@ -59,16 +69,12 @@ class CreatorFollowButton extends StatelessWidget {
     );
   }
 
-  void _toggle(BuildContext context, {required bool follow}) {
+  void _toggle(PublicProfileBloc bloc, {required bool follow}) {
     // PrismButton plays the tap haptic, so none here.
     if (follow) {
-      analytics.track(
-        source == 'similar'
-            ? SimilarCreatorFollowedEvent(creatorId: creator.uid)
-            : CreatorCardFollowedEvent(source: source, creatorId: creator.uid),
-      );
+      _trackFollow();
     }
-    context.read<PublicProfileBloc>().add(
+    bloc.add(
       PublicProfileEvent.followChangeRequested(
         follow: follow,
         currentUserId: app_state.prismUser.id,
@@ -77,6 +83,14 @@ class CreatorFollowButton extends StatelessWidget {
         targetUserEmail: '',
         targetName: creator.displayName,
       ),
+    );
+  }
+
+  void _trackFollow() {
+    analytics.track(
+      source == 'similar'
+          ? SimilarCreatorFollowedEvent(creatorId: creator.uid)
+          : CreatorCardFollowedEvent(source: source, creatorId: creator.uid),
     );
   }
 }
