@@ -169,8 +169,6 @@ void main() {
 
   Future<List<EditWallRouteArgs>> pickWith(WidgetTester tester, _Picker picker) async {
     final opened = await openPanel(tester, picker);
-    await tester.tap(find.text('Upload wallpaper'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Photo'));
     await tester.pumpAndSettle();
     return opened;
@@ -203,7 +201,7 @@ void main() {
         return true;
       });
 
-      await tester.tap(find.text('Upload wallpaper'));
+      await tester.tap(find.text('Photo'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
       expect(find.text('Continue with Google'), findsOneWidget);
@@ -219,7 +217,7 @@ void main() {
       expect(storeCalls, isEmpty);
       expect(toasts, isEmpty);
       expect(settings.get<int>('uploadsThisWeek', defaultValue: -1), uploads);
-      expect(find.text('Upload wallpaper'), findsOneWidget);
+      expect(find.text('Photo'), findsOneWidget);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   }
 
@@ -259,11 +257,9 @@ void main() {
     final picker = PendingImagePicker();
     final opened = await openPanel(tester, picker);
 
-    await tester.tap(find.text('Upload wallpaper'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Photo'));
     await tester.pump();
-    await tester.tap(find.text('Upload wallpaper'));
+    await tester.tap(find.text('Photo'));
     await tester.pump();
 
     expect(picker.calls, 1);
@@ -277,14 +273,12 @@ void main() {
     final opened = await openPanel(tester, picker);
     unawaited(picker.getImageFromSource(source: ImageSource.gallery));
 
-    await tester.tap(find.text('Upload wallpaper'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Photo'));
     await tester.pumpAndSettle();
 
     expect(picker.calls, 2);
     expect(opened, isEmpty);
-    expect(find.text('Upload wallpaper'), findsOneWidget);
+    expect(find.text('Photo'), findsOneWidget);
   });
 
   testWidgets('resumes the latest owner draft from its retained copy without opening the picker', (tester) async {

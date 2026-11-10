@@ -15144,8 +15144,6 @@
   "@settingsReadabilityTipsBody": {
     "description": "Subtitle of the Readability tips switch."
   },
-  "uploadKindTitle": "Unggah wallpaper",
-  "@uploadKindTitle": {"description": "Title of the sheet where the creator picks a photo or a live wallpaper to upload."},
   "uploadKindPhoto": "Foto",
   "@uploadKindPhoto": {"description": "Option: upload a still image wallpaper."},
   "uploadKindPhotoBody": "Gambar diam",

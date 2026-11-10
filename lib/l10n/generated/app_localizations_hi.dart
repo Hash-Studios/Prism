@@ -15685,9 +15685,6 @@ class AppLocalizationsHi extends AppLocalizations {
       'जब घड़ी या आइकन किसी वॉलपेपर पर पढ़ने में मुश्किल लग सकते हों, तब सुझाव दिखाएँ।';
 
   @override
-  String get uploadKindTitle => 'वॉलपेपर अपलोड करें';
-
-  @override
   String get uploadKindPhoto => 'फ़ोटो';
 
   @override
@@ -15704,7 +15701,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String liveUploadFacts(String seconds, int width, int height) {
-    return '$seconds s · $width × $height';
+    return '$seconds सेकंड · $width × $height';
   }
 
   @override

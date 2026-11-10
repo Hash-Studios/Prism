@@ -4309,7 +4309,6 @@
   "@settingsReadabilityTipsBody": {
     "description": "Subtitle of the Readability tips switch."
   },
-  "uploadKindTitle": "Enviar um papel de parede",
   "uploadKindPhoto": "Foto",
   "uploadKindPhotoBody": "Uma imagem fixa",
   "uploadKindLive": "Animado",

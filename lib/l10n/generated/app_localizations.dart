@@ -24715,12 +24715,6 @@ abstract class AppLocalizations {
   /// **'Show a tip when the clock or icons may be hard to read on a wallpaper.'**
   String get settingsReadabilityTipsBody;
 
-  /// Title of the sheet where the creator picks a photo or a live wallpaper to upload.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload a wallpaper'**
-  String get uploadKindTitle;
-
   /// Option: upload a still image wallpaper.
   ///
   /// In en, this message translates to:

@@ -15594,9 +15594,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsReadabilityTipsBody => 'Tampilkan tips saat jam atau ikon mungkin sulit dibaca di wallpaper.';
 
   @override
-  String get uploadKindTitle => 'Unggah wallpaper';
-
-  @override
   String get uploadKindPhoto => 'Foto';
 
   @override

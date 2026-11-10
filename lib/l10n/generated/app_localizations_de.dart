@@ -15784,9 +15784,6 @@ class AppLocalizationsDe extends AppLocalizations {
       'Zeigt einen Tipp, wenn die Uhr oder die Symbole auf einem Hintergrundbild schlecht lesbar sein könnten.';
 
   @override
-  String get uploadKindTitle => 'Ein Hintergrundbild hochladen';
-
-  @override
   String get uploadKindPhoto => 'Foto';
 
   @override

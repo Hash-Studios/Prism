@@ -15829,8 +15829,6 @@
   "@settingsReadabilityTipsBody": {
     "description": "Subtitle of the Readability tips switch."
   },
-  "uploadKindTitle": "Upload a wallpaper",
-  "@uploadKindTitle": {"description": "Title of the sheet where the creator picks a photo or a live wallpaper to upload."},
   "uploadKindPhoto": "Photo",
   "@uploadKindPhoto": {"description": "Option: upload a still image wallpaper."},
   "uploadKindPhotoBody": "A still image",

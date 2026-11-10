@@ -15767,8 +15767,6 @@
   "@settingsReadabilityTipsBody": {
     "description": "Subtitle of the Readability tips switch."
   },
-  "uploadKindTitle": "वॉलपेपर अपलोड करें",
-  "@uploadKindTitle": {"description": "Title of the sheet where the creator picks a photo or a live wallpaper to upload."},
   "uploadKindPhoto": "फ़ोटो",
   "@uploadKindPhoto": {"description": "Option: upload a still image wallpaper."},
   "uploadKindPhotoBody": "एक स्थिर छवि",
@@ -15779,7 +15777,7 @@
   "@uploadKindLiveBody": {"description": "Subtitle of the Live option."},
   "liveUploadChecking": "आपका वीडियो जाँचा जा रहा है",
   "@liveUploadChecking": {"description": "Shown while the app reads the picked video and makes the poster frame."},
-  "liveUploadFacts": "{seconds} s · {width} × {height}",
+  "liveUploadFacts": "{seconds} सेकंड · {width} × {height}",
   "@liveUploadFacts": {"description": "Facts of the picked video: length in seconds, then the size in pixels.", "placeholders": {"seconds": {"type": "String"}, "width": {"type": "int"}, "height": {"type": "int"}}},
   "liveUploadErrorFormat": "MP4 वीडियो इस्तेमाल करें। Prism यह फ़ाइल नहीं पढ़ सकता।",
   "@liveUploadErrorFormat": {"description": "Error: the picked file is not an MP4 video."},

@@ -64,6 +64,48 @@ The ready step shows a note, and never blocks the upload, when:
 
 A free user who reaches the weekly limit in a batch sees the normal "Upload limit reached" step. The batch ends there.
 
+### Live walls
+
+A creator can send a short looping video instead of a photo. The video goes through the same review as a photo. For the video rules and where the wall appears, see [live-wallpapers.md](live-wallpapers.md#creator-live-walls).
+
+1. In the Create sheet, tap **Wallpapers**. The kind sheet opens.
+2. Choose **Live**. The kind sheet also offers **Photo** (`showUploadKindSheet`, `lib/features/wallpaper_upload/views/widgets/upload_kind_sheet.dart`).
+3. Pick one video from the gallery. The gallery limits the clip to 15 seconds (`_pickLiveVideo`, `lib/features/navigation/views/widgets/upload_bottom_panel.dart`).
+4. Wait while the app shows **Checking your video**.
+5. If the app refuses the video, read the message. Then choose **Choose another video**.
+
+The messages below are the English text.
+
+| Reason | Message |
+|---|---|
+| Not an MP4 | "Use an MP4 video. Prism can't read this file." |
+| Not H.264 | "This video isn't in H.264. Export it as H.264 MP4, then try again." |
+| Longer than 15 seconds | "This clip is longer than 15 seconds. Trim it, then try again." |
+| Larger than 20 MB | "This clip is larger than 20 MB. Use a shorter or smaller clip." |
+| Landscape or square | "Use a portrait clip that is taller than it is wide." |
+| Larger than 1440 × 3200 pixels | "This clip is larger than 1440 × 3200 pixels. Use a smaller clip." |
+| Damaged or unreadable | "Prism couldn't read this video. Try another clip." |
+
+The app makes the poster and three frames on the device. The poster is the first frame. The three frames show the start, the middle and the end of the clip (`prepareLiveVideo`, `lib/features/wallpaper_upload/data/live_video_preparer.dart`).
+
+The app uploads these files for one live wall:
+
+`<name>` is the wall file name. `<stem>` is the same name without its extension.
+
+| File | Role | Counts against the weekly quota |
+|---|---|---|
+| `<name>` | The poster, the still image of the wall | No |
+| `thumb_<name>` | The thumbnail of the poster | Yes |
+| `live_<stem>.mp4` | The video | No |
+| `frame_<n>_<stem>.jpg` | A moderation frame. `n` is 1, 2 or 3. | No |
+
+- A live wall uses one weekly upload, because only the `thumb_` file counts (`isWallSubmissionUpload` in `functions/src/githubContent.ts`).
+- Every file counts against the daily cap of 30 calls (`MAX_UPLOADS_PER_DAY`). A live wall uses 6 calls.
+- A live wall is never saved as a draft (`_draftsEnabled` in `lib/features/wallpaper_upload/views/pages/upload_wall_screen.dart`).
+- A live wall is never sent in a batch. The Live path opens one wall.
+- If the server refuses the video, the app shows the same message from the table. The reason comes from the `liveVideo` detail of the error (`_liveRefusalMessage` in `lib/features/wallpaper_upload/views/pages/upload_wall_screen.dart`).
+- Withdraw a pending live wall to delete all six files. The poster, its thumbnail, the video and the three frames are removed (`deleteWallFiles`, `lib/data/upload/wallpaper/wall_files.dart`).
+
 ### Withdraw a pending wallpaper
 
 - In **Review status**, **Withdraw upload** removes a pending wallpaper after confirmation.
@@ -225,6 +267,10 @@ The wall record no longer holds `aiOriginalImageUrl` (the image without the wate
 | `wall_resubmitted` | `asset_id`, lifetime `attempt` |
 | `upload_last_details_used` | No fields |
 | `upload_withdrawn` | `asset_id` |
+| `live_wall_upload_started` | No fields |
+| `live_wall_submitted` | `duration_ms` |
+| `live_wall_preview_played` | `surface`: `feed`, `detail` or `review` |
+| `live_wall_set` | `platform`, `action`, `result`. See [live-wallpapers.md](live-wallpapers.md#analytics). |
 
 ## Limits
 

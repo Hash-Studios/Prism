@@ -4453,7 +4453,6 @@
   "@settingsReadabilityTipsBody": {
     "description": "Subtitle of the Readability tips switch."
   },
-  "uploadKindTitle": "Sube un fondo de pantalla",
   "uploadKindPhoto": "Foto",
   "uploadKindPhotoBody": "Una imagen fija",
   "uploadKindLive": "Animado",

@@ -237,7 +237,7 @@ async function prepare() {
   fs.copyFileSync(path.join(harnessDir, 'fake_r2.cjs'), runtimeFile('functions/lib/live_walls_fake_r2.cjs'));
   write('functions/lib/r2Storage.js', `'use strict';\n// QA runtime only: disk stand-in for the R2 client. The real module is r2Storage.real.js.\n` +
     `const real = require('./r2Storage.real.js');\nconst {makeDiskR2Storage} = require('./live_walls_fake_r2.cjs');\n` +
-    `module.exports = {...real, R2Storage: makeDiskR2Storage(${JSON.stringify(fs.realpathSync(runtime))})};\n`);
+    `module.exports = {...real, R2Storage: makeDiskR2Storage(${JSON.stringify(path.join(fs.realpathSync(runtime), 'r2'))})};\n`);
   allowPreviewPort();
   fs.copyFileSync(path.join(harnessDir, 'guard.cjs'), runtimeFile('backend.cjs'));
   fs.copyFileSync(path.join(repo, 'firestore.rules'), runtimeFile('firestore.rules'));

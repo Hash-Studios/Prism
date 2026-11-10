@@ -16,7 +16,6 @@ import 'package:Prism/features/wallpaper_upload/biz/live_upload_limits.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
 import 'package:Prism/features/wallpaper_upload/data/live_video_preparer.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
-import 'package:Prism/features/wallpaper_upload/views/widgets/upload_kind_sheet.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -171,7 +170,7 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
     return pickAnother ?? false;
   }
 
-  Future<void> _onWallpaperTap() async {
+  Future<void> _onWallpaperTap(WallKind kind) async {
     if (_picking) return;
     if (!await requireSignedInAction(context) || !mounted) return;
     analytics.track(
@@ -194,8 +193,6 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
     PrismHaptics.tap();
     _picking = true;
     try {
-      final WallKind? kind = await showUploadKindSheet(context);
-      if (!mounted || kind == null) return;
       if (kind == WallKind.live) {
         await _pickLiveVideo();
       } else {
@@ -237,9 +234,15 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
             children: <Widget>[
               PrismRow(
                 icon: Icons.photo_library_rounded,
-                title: context.l10n.wallpaperUploadTitle,
-                subtitle: context.l10n.wallpaperUploadFromGallery,
-                onTap: _onWallpaperTap,
+                title: context.l10n.uploadKindPhoto,
+                subtitle: context.l10n.uploadKindPhotoBody,
+                onTap: () => _onWallpaperTap(WallKind.still),
+              ),
+              PrismRow(
+                icon: Icons.motion_photos_on_rounded,
+                title: context.l10n.uploadKindLive,
+                subtitle: context.l10n.uploadKindLiveBody,
+                onTap: () => _onWallpaperTap(WallKind.live),
               ),
               if (_visibleDraft case final draft?)
                 PrismRow(

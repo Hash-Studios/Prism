@@ -15914,9 +15914,6 @@ class AppLocalizationsPt extends AppLocalizations {
       'Mostra uma dica quando o relógio ou os ícones puderem ser difíceis de ler em um papel de parede.';
 
   @override
-  String get uploadKindTitle => 'Enviar um papel de parede';
-
-  @override
   String get uploadKindPhoto => 'Foto';
 
   @override
@@ -15940,10 +15937,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get liveUploadErrorFormat => 'Use um vídeo MP4. O Prism não consegue ler este arquivo.';
 
   @override
-  String get liveUploadErrorCodec => 'Este vídeo não está em H.264. Exporte como MP4 H.264 e tente de novo.';
+  String get liveUploadErrorCodec => 'Este vídeo não está em H.264. Exporte como MP4 H.264 e tente novamente.';
 
   @override
-  String get liveUploadErrorTooLong => 'Este clipe tem mais de 15 segundos. Corte-o e tente de novo.';
+  String get liveUploadErrorTooLong => 'Este clipe tem mais de 15 segundos. Corte-o e tente novamente.';
 
   @override
   String get liveUploadErrorTooLarge => 'Este clipe tem mais de 20 MB. Use um clipe menor ou mais curto.';
@@ -15979,7 +15976,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get liveWallPreparing => 'Carregando o vídeo';
 
   @override
-  String get liveWallSetFailed => 'Não foi possível definir o papel de parede animado. Tente de novo.';
+  String get liveWallSetFailed => 'Não foi possível definir o papel de parede animado. Tente novamente.';
 
   @override
   String get liveWallIosTitle => 'Usar este papel de parede animado';
@@ -15996,7 +15993,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get liveWallSaveVideoFailed =>
-      'Não foi possível salvar o vídeo. Permita o acesso a Fotos nos Ajustes e tente de novo.';
+      'Não foi possível salvar o vídeo. Permita o acesso a Fotos nos Ajustes e tente novamente.';
 
   @override
   String get liveWallSetPoster => 'Definir o pôster como papel de parede';
@@ -31919,9 +31916,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get settingsReadabilityTipsBody =>
       'Mostra uma dica quando o relógio ou os ícones puderem ser difíceis de ler em um papel de parede.';
-
-  @override
-  String get uploadKindTitle => 'Enviar um papel de parede';
 
   @override
   String get uploadKindPhoto => 'Foto';

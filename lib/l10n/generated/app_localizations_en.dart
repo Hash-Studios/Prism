@@ -15529,9 +15529,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsReadabilityTipsBody => 'Show a tip when the clock or icons may be hard to read on a wallpaper.';
 
   @override
-  String get uploadKindTitle => 'Upload a wallpaper';
-
-  @override
   String get uploadKindPhoto => 'Photo';
 
   @override

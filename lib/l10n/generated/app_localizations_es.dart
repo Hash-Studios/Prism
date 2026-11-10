@@ -15738,9 +15738,6 @@ class AppLocalizationsEs extends AppLocalizations {
       'Muestra un consejo cuando la hora o los iconos puedan ser difíciles de leer en un fondo de pantalla.';
 
   @override
-  String get uploadKindTitle => 'Sube un fondo de pantalla';
-
-  @override
   String get uploadKindPhoto => 'Foto';
 
   @override
