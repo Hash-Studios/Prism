@@ -4,7 +4,7 @@ import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {isAdminCaller} from "../adminConfig";
-import {db, REGION, CALLABLE_REGIONS, utcDateString} from "../common";
+import {db, REGION, CALLABLE_REGIONS, utcDateString, ADMIN_CALLABLE} from "../common";
 import {loadStudioConfig, STUDIO_MAX_CANDIDATES_PER_DAY} from "./config";
 import {type Rng, studioCandidateId} from "./ids";
 import {buildDailyPlan, requestPlanItem, type StudioPlanItem} from "./plan";
@@ -132,7 +132,7 @@ export const planStudioBatch = onSchedule(
 
 /** Admin only: plans a run now. Input `{count, seriesId?}`, returns `{runId, count}`. */
 export const runStudioBatch = onCall(
-  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
+  {...ADMIN_CALLABLE, region: CALLABLE_REGIONS, cors: true},
   async (request: CallableRequest<unknown>) => {
     if (!request.auth) throw new HttpsError("unauthenticated", "Sign in to run Prism Studio.");
     const hasAdminClaim = request.auth.token.admin === true;

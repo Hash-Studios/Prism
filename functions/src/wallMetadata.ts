@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {isDeepStrictEqual} from "node:util";
 import {isAdminCaller} from "./adminConfig";
-import {CALLABLE_REGIONS, db, utcDateString} from "./common";
+import {CALLABLE_REGIONS, db, utcDateString, ADMIN_CALLABLE} from "./common";
 import {activeWallOwner, digest, expectedRevision, openAccount, revisionOf, sameTimestamp, signedIn,
   stableJson, timestampKey} from "./wallEditingCommon";
 import {exactKeys, operationId, parseWallText, wallDocumentId, wallTextForEdit, type WallText} from "./wallMetadataValidation";
@@ -12,6 +12,7 @@ export const METADATA_EDITS = "wallMetadataEdits";
 export const METADATA_OPERATIONS = "wallMetadataOperations";
 export const METADATA_RATES = "wallMetadataEditRates";
 const options = {region: CALLABLE_REGIONS, cors: true};
+const adminOptions = {...ADMIN_CALLABLE, ...options};
 const textKeys = ["title", "desc", "tags"];
 const presentText = (data: admin.firestore.DocumentData): admin.firestore.DocumentData =>
   Object.fromEntries(textKeys.filter((k) => Object.prototype.hasOwnProperty.call(data, k)).map((k) => [k, data[k]]));
@@ -21,7 +22,7 @@ async function requireAdmin(request: CallableRequest<unknown>): Promise<string> 
   if (!await isAdminCaller(request.auth)) throw new HttpsError("permission-denied", "Only admins can read or revert edits.");
   return uid;
 }
-export const getWallMetadataForEdit = onCall(options, async (request: CallableRequest<unknown>) => {
+export const getWallMetadataForEdit = onCall(adminOptions, async (request: CallableRequest<unknown>) => {
   const uid = signedIn(request);
   const data = exactKeys(request.data, ["wallDocId"]);
   const wallDocId = wallDocumentId(data.wallDocId);
@@ -113,10 +114,10 @@ async function save(request: CallableRequest<unknown>, revert: boolean): Promise
   });
   return operationResult(opRef);
 }
-export const editWallMetadata = onCall(options, (request: CallableRequest<unknown>) => save(request, false));
-export const revertWallMetadata = onCall(options, (request: CallableRequest<unknown>) => save(request, true));
+export const editWallMetadata = onCall(adminOptions, (request: CallableRequest<unknown>) => save(request, false));
+export const revertWallMetadata = onCall(adminOptions, (request: CallableRequest<unknown>) => save(request, true));
 
-export const listWallMetadataEdits = onCall(options, async (request: CallableRequest<unknown>) => {
+export const listWallMetadataEdits = onCall(adminOptions, async (request: CallableRequest<unknown>) => {
   await requireAdmin(request);
   const input = exactKeys(request.data, ["wallDocId", "cursor", "limit"], ["wallDocId"]);
   const wallDocId = wallDocumentId(input.wallDocId);

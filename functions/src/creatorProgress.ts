@@ -278,7 +278,7 @@ async function recordCreator(source: Source): Promise<void> {
 }
 
 export const onCreatorWallWritten = onDocumentWritten(
-  {document: "walls/{wallId}", region: REGION, retry: true},
+  {document: "walls/{wallId}", region: REGION, retry: true, maxInstances: 2},
   async (event) => {
     const after = event.data?.after;
     const data = after?.data();
@@ -292,7 +292,7 @@ export const onCreatorWallWritten = onDocumentWritten(
 );
 
 export const onCreatorFavouriteCreated = onDocumentCreated(
-  {document: "usersv2/{uid}/images/{wallId}", region: REGION, retry: true},
+  {document: "usersv2/{uid}/images/{wallId}", region: REGION, retry: true, maxInstances: 2},
   async (event) => {
     const source = event.data;
     const data = source?.data();

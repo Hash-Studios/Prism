@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import {randomUUID} from "node:crypto";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
-import {db, CALLABLE_REGIONS, readDailyCount, REGION, str, utcDateString} from "./common";
+import {db, CALLABLE_REGIONS, readDailyCount, REGION, str, utcDateString, ADMIN_CALLABLE} from "./common";
 import {isAdminCaller} from "./adminConfig";
 import {buildPushGallery, isPreviewUrl, type GalleryDeps} from "./pushGallery";
 import {r2Secrets} from "./r2Storage";
@@ -494,7 +494,7 @@ function isRelevantWallChange(before: Doc | undefined, after: Doc | undefined): 
 }
 
 export const onWallPublicGateChanged = onDocumentWritten(
-  {document: "walls/{wallId}", region: REGION, retry: true, secrets: r2Secrets, memory: "512MiB"},
+  {document: "walls/{wallId}", region: REGION, retry: true, secrets: r2Secrets, memory: "512MiB", maxInstances: 2},
   async (event) => refreshWallInPublicFolders(event.params.wallId, event.data?.before?.data(), event.data?.after?.data()),
 );
 
@@ -622,7 +622,7 @@ export const setFolderFollow = onCall(
 
 /** Moderators hide or show one public folder. A hidden folder cannot be made public again by its owner. */
 export const setFolderHidden = onCall(
-  {region: CALLABLE_REGIONS, cors: true, secrets: r2Secrets, memory: "512MiB"},
+  {...ADMIN_CALLABLE, region: CALLABLE_REGIONS, cors: true, secrets: r2Secrets, memory: "512MiB"},
   async (request: CallableRequest<{folderId?: unknown; hidden?: unknown}>): Promise<{ok: true}> => {
     if (!(await isAdminCaller(request.auth))) throw new HttpsError("permission-denied", "Admins only.");
     const folderId = folderIdFrom(request.data?.folderId);

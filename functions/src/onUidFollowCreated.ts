@@ -6,7 +6,7 @@ import {isLoggedOut, sendToUser} from "./notificationHelper";
 import {notificationCopyPayload} from "./notificationCatalog";
 
 export const onUidFollowCreated = onDocumentCreated(
-  {document: "profiles/{targetUid}/followers/{followerUid}", region: REGION},
+  {document: "profiles/{targetUid}/followers/{followerUid}", region: REGION, maxInstances: 2},
   async (event) => {
     const {targetUid, followerUid} = event.params;
     if (!targetUid || !followerUid || targetUid === followerUid) return;

@@ -373,6 +373,7 @@ export const sendStreakReminders = onSchedule(
     timeZone: "UTC",
     region: REGION,
     timeoutSeconds: 540,
+    cpu: "gcf_gen1",
   },
   async () => {
     const nowTs = admin.firestore.Timestamp.now();

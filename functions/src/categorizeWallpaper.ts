@@ -2,7 +2,7 @@ import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall} from "firebase-functions/v2/https";
 import {isAdminCaller} from "./adminConfig";
 import {DEFAULT_CATEGORY, detectLabels, mapLabelsToCategory} from "./wallCategory";
-import {db, CALLABLE_REGIONS} from "./common";
+import {db, CALLABLE_REGIONS, ADMIN_CALLABLE} from "./common";
 import {wallColorsFor} from "./wallColors";
 import {writeWallCategorization} from "./wallCategorizationWrite";
 
@@ -18,6 +18,7 @@ export function parseWallId(raw: unknown): string {
 
 export const categorizeWallpaper = onCall(
   {
+    ...ADMIN_CALLABLE,
     region: CALLABLE_REGIONS,
     timeoutSeconds: 120,
   },

@@ -4,7 +4,7 @@ import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {isAdminCaller} from "./adminConfig";
 import {isValidRequestId} from "./coinsCallables";
-import {CALLABLE_REGIONS, db, int, str, utcDateString} from "./common";
+import {CALLABLE_REGIONS, db, int, str, utcDateString, ADMIN_CALLABLE} from "./common";
 import {notificationCopyPayload} from "./notificationCatalog";
 import {isLoggedOut, type PersonalPayload, type PushRecipient, sendToUser} from "./notificationHelper";
 import {hasBlockedWord, HIDDEN_CHARACTERS, TEXT_SEGMENTER} from "./textSafety";
@@ -175,7 +175,7 @@ function statsRef(wall: admin.firestore.DocumentData | undefined, comment?: admi
 const countBy = (n: number) => ({comments: admin.firestore.FieldValue.increment(n)});
 
 /** Adds a comment and counts it in one transaction. Refusals come back as a reason, not an error. */
-export const addComment = onCall({region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
+export const addComment = onCall({region: CALLABLE_REGIONS, cors: true},
   async (request: CallableRequest<unknown>): Promise<AddCommentResponse> => {
     const uid = signedIn(request);
     const wallId = docIdFrom(field(request.data, "wallId"), "wallId");
@@ -365,7 +365,7 @@ async function removeComment(wallId: string, commentId: string, expectAuthor?: s
 }
 
 /** The author, the wall's creator, or an admin deletes a comment. */
-export const deleteComment = onCall({region: CALLABLE_REGIONS, cors: true},
+export const deleteComment = onCall({...ADMIN_CALLABLE, region: CALLABLE_REGIONS, cors: true},
   async (request: CallableRequest<unknown>): Promise<{ok: true; deleted: boolean; role: DeleteRole | ""}> => {
     const uid = signedIn(request);
     const wallId = docIdFrom(field(request.data, "wallId"), "wallId");
@@ -386,7 +386,7 @@ export const deleteComment = onCall({region: CALLABLE_REGIONS, cors: true},
   });
 
 /** Admin only: hides a comment, or shows a comment that reports hid. */
-export const setCommentHidden = onCall({region: CALLABLE_REGIONS, cors: true},
+export const setCommentHidden = onCall({...ADMIN_CALLABLE, region: CALLABLE_REGIONS, cors: true},
   async (request: CallableRequest<unknown>): Promise<{ok: true; changed: boolean}> => {
     const uid = signedIn(request);
     if (!(await isAdminCaller(request.auth))) throw new HttpsError("permission-denied", "Only admins can hide comments.");

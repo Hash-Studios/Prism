@@ -4,7 +4,7 @@ import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/ht
 import {validReleaseAt} from "./wallRelease";
 import {isDeepStrictEqual} from "node:util";
 import {isAdminCaller} from "./adminConfig";
-import {CALLABLE_REGIONS, db} from "./common";
+import {CALLABLE_REGIONS, db, ADMIN_CALLABLE} from "./common";
 import {activeWallOwner, digest, expectedRevision, openAccount, revisionOf, sameTimestamp, signedIn, stableJson} from "./wallEditingCommon";
 import {boundedDisplayText, boundedText, exactKeys, operationId, parseWallText, wallDocumentId} from "./wallMetadataValidation";
 import {parseFileReference, proveCompletedWallUpload} from "./completedWallUpload";
@@ -20,6 +20,7 @@ export const RESUBMISSIONS = "wallResubmissions";
 export const RESUBMISSION_OPERATIONS = "wallResubmissionOperations";
 export const RESUBMISSION_CONSUMPTIONS = "wallResubmissionConsumptions";
 const options = {region: CALLABLE_REGIONS, cors: true};
+const adminOptions = {...ADMIN_CALLABLE, ...options};
 const githubToken = defineSecret("GH_TOKEN");
 const identityFields = ["id", "creatorUid", "email", "wallpaper_url", "wallpaper_thumb", "wallpaper_path", "wallpaper_sha",
   "thumb_path", "thumb_sha", "wallpaper_source_kind", "thumb_source_kind", "resubmitOf", "originalProtected", "originalObjectId"];
@@ -176,7 +177,7 @@ async function adminUid(request: CallableRequest<unknown>): Promise<string> {
   if (!await isAdminCaller(request.auth)) throw new HttpsError("permission-denied", "Only admins can inspect resubmissions.");
   return uid;
 }
-export const getWallResubmissionContext = onCall(options, async (request: CallableRequest<unknown>) => {
+export const getWallResubmissionContext = onCall(adminOptions, async (request: CallableRequest<unknown>) => {
   await adminUid(request);
   const input = exactKeys(request.data, ["wallDocIds"]);
   if (!Array.isArray(input.wallDocIds) || input.wallDocIds.length < 1 || input.wallDocIds.length > 50) {
@@ -200,7 +201,7 @@ export const getWallResubmissionContext = onCall(options, async (request: Callab
 });
 
 /** Admin undo is a continuation, not another admission. It cannot race or hide an already admitted child. */
-export const undoWallRejection = onCall(options, async (request: CallableRequest<unknown>) => {
+export const undoWallRejection = onCall(adminOptions, async (request: CallableRequest<unknown>) => {
   const uid = await adminUid(request);
   const input = exactKeys(request.data, ["wallDocId", "expectedRejectionRevision", "operationId"]);
   const id = wallDocumentId(input.wallDocId);
@@ -269,7 +270,7 @@ export const undoWallRejection = onCall(options, async (request: CallableRequest
 });
 
 /** SDK client snapshots do not expose createTime. Capture rejection identity on the server instead. */
-export const rejectWallForReview = onCall(options, async (request: CallableRequest<unknown>) => {
+export const rejectWallForReview = onCall(adminOptions, async (request: CallableRequest<unknown>) => {
   const uid = await adminUid(request);
   const input = exactKeys(request.data, ["wallDocId", "expectedWallRevision", "expectedReview", "rejectionOperationId", "reason"]);
   if (typeof input.expectedReview !== "boolean") throw new HttpsError("invalid-argument", "expectedReview must be boolean.");

@@ -28,6 +28,7 @@ export const onWallApproved = onDocumentUpdated(
     document: "walls/{wallId}",
     region: REGION,
     retry: true,
+    maxInstances: 2,
   },
   async (event) => {
     const before = event.data?.before?.data();

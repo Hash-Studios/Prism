@@ -106,7 +106,7 @@ export async function syncPublicProfile(uid: string): Promise<boolean> {
 }
 
 export const projectUserProfile = onDocumentWritten(
-  {document: "usersv2/{uid}", region: REGION, retry: true},
+  {document: "usersv2/{uid}", region: REGION, retry: true, maxInstances: 2},
   async (event) => {
     const shouldCleanFolders = await syncPublicProfile(event.params.uid);
     if (shouldCleanFolders) {
@@ -186,7 +186,7 @@ export async function applyFollowEdge(
 }
 
 export const setFollow = onCall(
-  {region: CALLABLE_REGIONS, cors: true},
+  {region: CALLABLE_REGIONS, cors: true, maxInstances: 3},
   async (request: CallableRequest<{targetUid?: unknown; following?: unknown}>): Promise<{ok: true}> => {
     const callerUid = request.auth?.uid;
     if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to follow users.");

@@ -129,7 +129,7 @@ function ownedIds(badges: unknown): Set<string> {
 }
 
 export const checkBadges = onCall(
-  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true, maxInstances: 2},
   async (request: CallableRequest<unknown>) => {
     const uid = request.auth?.uid?.trim() ?? "";
     if (!uid) throw new HttpsError("unauthenticated", "Sign in to earn badges.");

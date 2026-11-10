@@ -605,7 +605,7 @@ export async function sendDueFolderActivity(nowMs: number): Promise<number> {
 }
 
 export const sendFolderActivityPushes = onSchedule(
-  {schedule: "*/10 * * * *", timeZone: "UTC", region: REGION, retryCount: 0, timeoutSeconds: 300},
+  {schedule: "*/10 * * * *", timeZone: "UTC", region: REGION, retryCount: 0, timeoutSeconds: 300, cpu: "gcf_gen1"},
   async (event) => {
     const ms = Date.parse(event.scheduleTime);
     await sendDueFolderActivity(Number.isFinite(ms) ? ms : Date.now());

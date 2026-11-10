@@ -428,7 +428,7 @@ export async function removeDesktopCompanion(shareId: string, deps: Pick<Desktop
 }
 
 export const onStudioWallDesktop = onDocumentWritten({document: "walls/{wallId}", region: REGION, retry: true,
-  memory: "1GiB", timeoutSeconds: 300, maxInstances: 2, secrets: [studioSecret, ...r2Secrets]}, async (event) => {
+  memory: "1GiB", timeoutSeconds: 300, secrets: [studioSecret, ...r2Secrets]}, async (event) => {
   const before = event.data?.before?.data();
   const after = event.data?.after?.data();
   const deps: DesktopDeps = {worker: {base: workerBaseUrl(), secret: studioSecret.value()},

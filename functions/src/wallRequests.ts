@@ -5,7 +5,7 @@ import {createHash} from "node:crypto";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {isAdminCaller} from "./adminConfig";
-import {db, CALLABLE_REGIONS, findUserByEmail, readDailyCount, str, utcDateString} from "./common";
+import {db, CALLABLE_REGIONS, findUserByEmail, readDailyCount, str, utcDateString, ADMIN_CALLABLE} from "./common";
 import {notificationCopyPayload} from "./notificationCatalog";
 import {sendToUser} from "./notificationHelper";
 import {isPreviewUrl, similarWallIds} from "./pushGallery";
@@ -634,7 +634,7 @@ function signedIn(request: CallableRequest<unknown>): string {
 const field = (data: unknown, key: string): unknown =>
   typeof data === "object" && data !== null ? (data as Record<string, unknown>)[key] : undefined;
 
-export const createWallRequestCallable = onCall({region: CALLABLE_REGIONS, cors: true},
+export const createWallRequestCallable = onCall({region: CALLABLE_REGIONS, cors: true, maxInstances: 2},
   async (request: CallableRequest<unknown>) => createWallRequest(signedIn(request), request.data));
 
 export const setWallRequestVoteCallable = onCall({region: CALLABLE_REGIONS, cors: true},
@@ -645,14 +645,14 @@ export const setWallRequestVoteCallable = onCall({region: CALLABLE_REGIONS, cors
     return setWallRequestVote(uid, requestIdFrom(field(request.data, "requestId")), vote);
   });
 
-export const listWallRequestsCallable = onCall({region: CALLABLE_REGIONS, cors: true},
+export const listWallRequestsCallable = onCall({region: CALLABLE_REGIONS, cors: true, maxInstances: 2},
   async (request: CallableRequest<unknown>) => {
     const tab = tabFrom(field(request.data, "tab"));
     const isAdmin = Boolean(request.auth) && await isAdminCaller(request.auth);
     return {requests: await listWallRequests(request.auth?.uid ?? "", tab, isAdmin)};
   });
 
-export const setWallRequestHiddenCallable = onCall({region: CALLABLE_REGIONS, cors: true},
+export const setWallRequestHiddenCallable = onCall({...ADMIN_CALLABLE, region: CALLABLE_REGIONS, cors: true},
   async (request: CallableRequest<unknown>) => {
     const uid = signedIn(request);
     if (!(await isAdminCaller(request.auth))) throw new HttpsError("permission-denied", "Only admins can hide requests.");

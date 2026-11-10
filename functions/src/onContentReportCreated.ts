@@ -99,6 +99,7 @@ export const onContentReportCreated = onDocumentCreated(
     document: "contentReports/{reportId}",
     region: REGION,
     retry: true,
+    cpu: "gcf_gen1",
   },
   async (event) => {
     const data = event.data?.data() as ReportDoc | undefined;

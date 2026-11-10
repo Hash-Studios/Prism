@@ -26,7 +26,7 @@ const EVENT_RATE = "questEventRate";
 const DAY_MS = 86_400_000;
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
 const EVENT_ID_HISTORY = 20;
-const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true, maxInstances: 10};
+const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true};
 
 function callerUid(request: CallableRequest<unknown>): string {
   const uid = request.auth?.uid?.trim() ?? "";
@@ -186,7 +186,7 @@ async function runProgress(uid: string, event: QuestEvent | null, eventId: strin
 }
 
 export const progressQuest = onCall(
-  CALLABLE_OPTIONS,
+  {...CALLABLE_OPTIONS, maxInstances: 2},
   async (request: CallableRequest<ProgressQuestRequest>) => {
     const uid = callerUid(request);
     const rawEvent = request.data?.event;

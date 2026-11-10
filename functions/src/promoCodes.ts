@@ -4,7 +4,7 @@ import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {isAdminCaller} from "./adminConfig";
 import {isValidRequestId} from "./coinsCallables";
-import {CALLABLE_REGIONS, coinTransactionDoc, db, int, str} from "./common";
+import {CALLABLE_REGIONS, coinTransactionDoc, db, int, str, ADMIN_CALLABLE} from "./common";
 
 // The uppercase half of the short-link alphabet in infra/cloudflare/worker/src/index.ts: no I, O, 0 or 1, so a code
 // read aloud or off a screenshot has one spelling. Lowercase input is uppercased first.
@@ -25,7 +25,8 @@ const MAX_LIFETIME_MS = 366 * DAY_MS;
 
 const CODES = "promoCodes";
 const RATES = "promoRedeemRate";
-const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true, maxInstances: 10};
+const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true};
+const adminOptions = {...ADMIN_CALLABLE, ...CALLABLE_OPTIONS};
 
 export type PromoReward = {type: "coins"; coins: number} | {type: "premiumDays"; days: number};
 
@@ -440,7 +441,7 @@ async function requireAdmin(request: CallableRequest<unknown>): Promise<string> 
 }
 
 /** Admin only. Creates one promo code; codes and their counts are never readable by clients. */
-export const createPromoCode = onCall(CALLABLE_OPTIONS, async (request: CallableRequest<unknown>) => {
+export const createPromoCode = onCall(adminOptions, async (request: CallableRequest<unknown>) => {
   const createdBy = await requireAdmin(request);
   const nowMs = Date.now();
   const code = await writePromoCode(parsePromoCodeInput(request.data, nowMs), createdBy, nowMs);
@@ -448,7 +449,7 @@ export const createPromoCode = onCall(CALLABLE_OPTIONS, async (request: Callable
 });
 
 /** Admin only. The 50 newest codes with their redemption counts. */
-export const listPromoCodes = onCall(CALLABLE_OPTIONS, async (request: CallableRequest<unknown>) => {
+export const listPromoCodes = onCall(adminOptions, async (request: CallableRequest<unknown>) => {
   await requireAdmin(request);
   const snap = await db.collection(CODES).orderBy("createdAt", "desc").limit(50).get();
   return {
@@ -474,7 +475,7 @@ export const listPromoCodes = onCall(CALLABLE_OPTIONS, async (request: CallableR
 
 /** Admin only. Turns a leaked or finished code off, or back on. */
 export const setPromoCodeDisabled = onCall(
-  CALLABLE_OPTIONS,
+  adminOptions,
   async (request: CallableRequest<{code?: unknown; disabled?: unknown}>) => {
     await requireAdmin(request);
     const code = normalizePromoCode(request.data?.code);

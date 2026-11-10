@@ -334,7 +334,7 @@ export function isCatalogChange(before: Doc | undefined, after: Doc | undefined)
 }
 
 export const onWallWebCatalog = onDocumentWritten(
-  {document: "walls/{wallId}", region: REGION, retry: true, memory: "512MiB", secrets: r2Secrets},
+  {document: "walls/{wallId}", region: REGION, retry: true, memory: "512MiB", secrets: r2Secrets, maxInstances: 2},
   async (event) => {
     const before = event.data?.before?.data();
     const after = event.data?.after?.data();

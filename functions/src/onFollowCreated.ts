@@ -21,7 +21,7 @@ function emails(list: unknown): Map<string, string> {
  * still write into UID edges. The follow push comes from onUidFollowCreated.
  */
 export const onFollowCreated = onDocumentUpdated(
-  {document: "usersv2/{userId}", region: REGION},
+  {document: "usersv2/{userId}", region: REGION, maxInstances: 2},
   async (event) => {
     const before = event.data?.before?.data();
     const after = event.data?.after?.data();

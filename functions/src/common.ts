@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import {setGlobalOptions} from "firebase-functions/v2";
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -8,6 +9,20 @@ export const db = admin.firestore();
 export const REGION = "asia-south1";
 export const US_REGION = "us-central1";
 export const CALLABLE_REGIONS = [REGION, US_REGION];
+
+/** Cloud Run "Total CPU allocation" quota (run.googleapis.com/cpu_allocation) in each region, in vCPU. */
+export const REGION_CPU_QUOTA_VCPU = 200;
+/**
+ * The sum of maxInstances x vCPU over the functions in one region stays at or under this. The quota counts every live
+ * instance, idle ones too, and a deploy starts one new instance per function next to the old ones.
+ */
+export const REGION_CPU_BUDGET_VCPU = REGION_CPU_QUOTA_VCPU * 0.8;
+
+// Every function module imports this file, so this runs before any function is defined.
+setGlobalOptions({maxInstances: 1});
+
+/** Admin-only callables: 1st gen CPU for the memory size, so one request per instance. */
+export const ADMIN_CALLABLE = {cpu: "gcf_gen1", maxInstances: 2} as const;
 
 export function utcDateString(d = new Date()): string {
   return d.toISOString().slice(0, 10);

@@ -92,7 +92,7 @@ async function fetchClassification(): Promise<string[]> {
   }
 }
 
-export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: true, maxInstances: 10, secrets: r2Secrets},
+export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: true, secrets: r2Secrets},
   async (request: CallableRequest<Input>) => {
     const uid = request.auth?.uid;
     if (!uid || request.auth?.token.firebase?.sign_in_provider === "anonymous") {

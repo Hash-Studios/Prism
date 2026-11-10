@@ -535,7 +535,6 @@ export const createPhotoWallpaper = onCall({
   region: CALLABLE_REGIONS,
   timeoutSeconds: 180,
   memory: "1GiB",
-  maxInstances: 10,
   secrets: [falKey, ...r2Secrets],
 }, async (request): Promise<PhotoJobResult & {balance?: number}> => {
   const uid = request.auth?.uid;
@@ -664,6 +663,7 @@ export async function sweepStalePhotoJobsOnce(nowMs = Date.now()): Promise<numbe
 
 export const sweepStalePhotoJobs = onSchedule({
   schedule: "every 15 minutes", region: REGION, timeoutSeconds: 180, retryCount: 1, secrets: [falKey, ...r2Secrets],
+  cpu: "gcf_gen1",
 }, async () => {
   const refunded = await sweepStalePhotoJobsOnce();
   if (refunded > 0) logger.info("photoWallpaper: refunded stale jobs.", {refunded});

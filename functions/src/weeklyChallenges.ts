@@ -154,7 +154,7 @@ export async function admitChallengeWall(snapshot: Snap, authId?: string, authTy
 }
 
 export const onChallengeWallSubmitted = onDocumentCreatedWithAuthContext(
-  {document: "walls/{wallId}", region: REGION, retry: true},
+  {document: "walls/{wallId}", region: REGION, retry: true, cpu: "gcf_gen1"},
   async (event) => {
     if (event.data) await admitChallengeWall(event.data, event.authId, event.authType);
   },
@@ -187,7 +187,8 @@ export async function reconcileChallengeWall(wallId: string, challengeId: string
     if (changed) tx.update(challenge.ref, {revision: int(challenge.data()?.revision) + 1});
   });
 }
-export const onChallengeWallWritten = onDocumentWritten({document: "walls/{wallId}", region: REGION, retry: true},
+export const onChallengeWallWritten = onDocumentWritten(
+  {document: "walls/{wallId}", region: REGION, retry: true, maxInstances: 2},
   async (event) => {
     const before = event.data?.before.data();
     const after = event.data?.after.data();
@@ -610,7 +611,7 @@ export async function removeChallengeVotesForAccount(uid: string): Promise<void>
   for (const rate of rates.docs) await rate.ref.delete();
 }
 
-export const listWeeklyChallenges = onCall({region: CALLABLE_REGIONS, cors: true}, async (request) => {
+export const listWeeklyChallenges = onCall({region: CALLABLE_REGIONS, cors: true, maxInstances: 2}, async (request) => {
   const kind = request.data?.kind;
   if (kind !== "open" && kind !== "past") throw new HttpsError("invalid-argument", "Invalid challenge kind.");
   let query = challenges().where("state", "in", kind === "open" ? ["scheduled", "open"] :

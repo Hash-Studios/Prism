@@ -266,6 +266,48 @@ The client code for consent is `lib/features/ads/data/ad_consent.dart`. It asks 
 | UMP message not published | Users in the EEA and the UK see no consent form. What the ads SDK then allows in those regions is not confirmed. |
 | `firebase deploy --force` | Can delete a live index or a function that the file or `index.ts` does not list. |
 
+## Cloud Run CPU budget
+
+Each 2nd gen function is one Cloud Run service. Cloud Run has one CPU quota for each project and region. Its name is "Total CPU allocation" (`run.googleapis.com/cpu_allocation`). The quota is 200 vCPU in `asia-south1` and 200 vCPU in `us-central1`.
+
+### What uses the quota
+
+- Each live instance uses its vCPU. An idle instance also uses its vCPU.
+- A deploy starts one new instance for each function that it updates. The old instances of that function stay live for some minutes.
+- The configured `maxInstances` does not use the quota. It only sets how far traffic can scale a function.
+
+On 2026-11-09, the full 3.26.0 deploy had 200 instances live in `asia-south1` from 14:51 to 14:57 UTC. Each instance had 1 vCPU. During that time, `onWallModerate`, `onCreatorStatsDailyWritten`, and `processCreatorStatsDailyQueueScheduled` could not start their new revisions. On other days, the region had a median of 7 live instances and a 99th percentile of 46.
+
+### The rule
+
+1. `functions/src/common.ts` sets `maxInstances: 1` for every function with `setGlobalOptions`.
+2. Set a higher `maxInstances` on a function only when its 30-day peak of active instances needs it.
+3. Do not set `maxInstances` lower than the 30-day peak of a user-facing callable.
+4. Admin-only callables use `ADMIN_CALLABLE` from `common.ts`. It sets 1st gen CPU and 2 instances.
+5. Use `cpu: "gcf_gen1"` for a light job. A job is light when its p95 run time at 1st gen CPU is less than half of its timeout and less than half of its schedule interval. 1st gen CPU is 1/6 vCPU at 256 MiB and 1/3 vCPU at 512 MiB.
+6. Do not use `cpu: "gcf_gen1"` with `concurrency` above 1. The deploy fails.
+7. In each region, the sum of `maxInstances` x vCPU must be at or below `REGION_CPU_BUDGET_VCPU`. This is 80% of the quota (160 vCPU). The other 20% is for deploys.
+
+`functions/src/__tests__/cpuBudget.test.ts` checks rules 1, 6, and 7. The `functions` CI job runs it on each change in `functions/`. The test counts a function without `maxInstances` as 100 instances, because Cloud Run uses 100.
+
+If the test fails, do one of these:
+
+- Lower a `maxInstances` that is higher than its 30-day peak.
+- Move a light function to `cpu: "gcf_gen1"`.
+- Ask the owner to request a quota increase. After Google grants it, change `REGION_CPU_QUOTA_VCPU` in `common.ts`.
+
+### Find the 30-day peak
+
+Use the Cloud Monitoring metric `run.googleapis.com/container/instance_count` with `metric.label.state="active"`. Filter on `resource.label.location`, align to 60 seconds, and sum by `resource.label.service_name`. Take the maximum for each service. Do not count the minutes of a full deploy, because both revisions are live then. The service name is the function name in lower case.
+
+### If a deploy fails on the quota
+
+The error is "Quota exceeded for total allowable CPU per project per region". The old revision continues to serve.
+
+1. Search the deploy log for each failed function name.
+2. Wait 15 minutes. The idle instances of the deploy stop.
+3. Deploy only the failed functions: `firebase deploy --only functions:<name1>,functions:<name2> --project prism-wallpapers --account <email> --non-interactive`.
+
 ## Fix wave (second round of this release)
 
 The fix wave adds backend changes on top of the steps above. Ship them in this order. Each step needs the human owner's yes.
