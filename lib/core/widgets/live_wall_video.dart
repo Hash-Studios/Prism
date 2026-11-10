@@ -43,13 +43,15 @@ class LiveWallVideo extends StatefulWidget {
   State<LiveWallVideo> createState() => _LiveWallVideoState();
 }
 
-/// The one feed card that may hold a player. ponytail: first visible card wins; pick the most visible if it matters.
+/// The one feed card that may hold a player.
 final ValueNotifier<State<LiveWallVideo>?> _feedSlot = ValueNotifier<State<LiveWallVideo>?>(null);
 
 class _LiveWallVideoState extends State<LiveWallVideo> with WidgetsBindingObserver {
   final Set<ScrollPosition> _positions = <ScrollPosition>{};
   Animation<double>? _secondaryAnimation;
   VideoPlayerController? _controller;
+  Future<bool>? _initializationFuture;
+  Future<void>? _releaseFuture;
   bool _visible = false;
   bool _userPaused = false;
   bool _userStarted = false;
@@ -95,6 +97,7 @@ class _LiveWallVideoState extends State<LiveWallVideo> with WidgetsBindingObserv
   @override
   void didUpdateWidget(LiveWallVideo oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.surface != widget.surface) _release();
     if (oldWidget.live.videoUrl != widget.live.videoUrl) {
       _release();
       _userPaused = false;
@@ -105,7 +108,14 @@ class _LiveWallVideoState extends State<LiveWallVideo> with WidgetsBindingObserv
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) => _scheduleCheck();
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _scheduleCheck();
+      return;
+    }
+    if (_visible) setState(() => _visible = false);
+    unawaited(_sync());
+  }
 
   void _scheduleCheck() {
     if (_checkScheduled || !mounted) return;
@@ -140,7 +150,6 @@ class _LiveWallVideoState extends State<LiveWallVideo> with WidgetsBindingObserv
     bool visible = _onScreen();
     if (widget.surface == LiveSurface.feed) {
       if (!visible || _limited) {
-        if (_feedSlot.value == this) _feedSlot.value = null;
         visible = false;
       } else if (_feedSlot.value == null) {
         _feedSlot.value = this;
@@ -152,14 +161,21 @@ class _LiveWallVideoState extends State<LiveWallVideo> with WidgetsBindingObserv
   }
 
   Future<void> _sync() async {
+    final Future<void>? release = _releaseFuture;
+    if (release != null) {
+      await release;
+      if (mounted) _scheduleCheck();
+      return;
+    }
     if (!_shouldPlay) {
       if (widget.surface == LiveSurface.feed) {
-        _release();
+        await _release();
       } else {
         await _controller?.pause();
       }
       return;
     }
+    if (widget.surface == LiveSurface.feed && (_feedSlot.value != this || !_visible)) return;
     final VideoPlayerController controller = _controller ??= _create();
     if (!controller.value.isInitialized) return;
     await controller.play();
@@ -172,17 +188,30 @@ class _LiveWallVideoState extends State<LiveWallVideo> with WidgetsBindingObserv
   VideoPlayerController _create() {
     final VideoPlayerController controller = LiveWallVideo.createController(Uri.parse(widget.live.videoUrl));
     controller.addListener(_onValue);
-    unawaited(() async {
-      try {
-        await controller.setVolume(0);
-        await controller.setLooping(widget.live.loop);
-        await controller.initialize();
-        if (mounted && identical(_controller, controller)) unawaited(_sync());
-      } catch (_) {
-        // The poster stays. A wall whose video can't load is still a wall.
-      }
-    }());
+    final Future<bool> initialization = _initialize(controller);
+    _initializationFuture = initialization;
+    unawaited(
+      initialization.then((initialized) {
+        if (!mounted || !identical(_controller, controller)) return;
+        if (!initialized) {
+          unawaited(_release());
+        } else {
+          unawaited(_sync());
+        }
+      }),
+    );
     return controller;
+  }
+
+  Future<bool> _initialize(VideoPlayerController controller) async {
+    try {
+      await controller.setVolume(0);
+      await controller.setLooping(widget.live.loop);
+      await controller.initialize();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   void _onValue() {
@@ -191,13 +220,32 @@ class _LiveWallVideoState extends State<LiveWallVideo> with WidgetsBindingObserv
     if (show && !_showVideo && mounted) setState(() => _showVideo = true);
   }
 
-  void _release({bool rebuild = true}) {
+  Future<void> _release({bool rebuild = true}) {
+    final Future<void>? release = _releaseFuture;
+    if (release != null) return release;
     final VideoPlayerController? controller = _controller;
+    final Future<bool>? initialization = _initializationFuture;
     _controller = null;
+    _initializationFuture = null;
     if (_showVideo && rebuild) setState(() => _showVideo = false);
-    if (controller == null) return;
+    if (controller == null) {
+      if (_feedSlot.value == this) _feedSlot.value = null;
+      return Future<void>.value();
+    }
     controller.removeListener(_onValue);
-    unawaited(controller.dispose());
+    late final Future<void> releaseFuture;
+    releaseFuture = () async {
+      try {
+        final Future<void> disposal = controller.dispose();
+        if (initialization != null) await initialization;
+        await disposal;
+      } finally {
+        if (_feedSlot.value == this) _feedSlot.value = null;
+        if (identical(_releaseFuture, releaseFuture)) _releaseFuture = null;
+      }
+    }();
+    _releaseFuture = releaseFuture;
+    return releaseFuture;
   }
 
   void _toggle() {
@@ -218,12 +266,11 @@ class _LiveWallVideoState extends State<LiveWallVideo> with WidgetsBindingObserv
     WidgetsBinding.instance.removeObserver(this);
     LowDataMode.enabled.removeListener(_scheduleCheck);
     _feedSlot.removeListener(_scheduleCheck);
-    if (_feedSlot.value == this) _feedSlot.value = null;
     _secondaryAnimation?.removeListener(_scheduleCheck);
     for (final ScrollPosition position in _positions) {
       position.removeListener(_scheduleCheck);
     }
-    _release(rebuild: false);
+    unawaited(_release(rebuild: false));
     super.dispose();
   }
 
