@@ -88,7 +88,9 @@ STEPS = (
 # Pure compare logic. Unit tests in tool/deploy_drift_test.py cover these.
 
 def normalize_rules(text):
-    return ' '.join(text.split())
+    # Keep strings and comments intact, including the newline that ends a line comment.
+    tokens = re.findall(r""""(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|//[^\n]*(?:\n|$)|/\*[\s\S]*?\*/|\w+|==|!=|<=|>=|&&|\|\||[^\s]""", text)
+    return tuple(tokens)
 
 
 def compare_rules(local_text, live_text, live_time, prs):
@@ -113,7 +115,12 @@ def _field_key(f):
 
 def index_key(collection_group, query_scope, fields):
     # Firestore adds __name__ to live indexes on its own.
-    parts = [_field_key(f) for f in fields if f['fieldPath'] != '__name__']
+    fields = list(fields)
+    ordered = [f['order'] for f in fields if f['fieldPath'] != '__name__' and 'order' in f]
+    implicit_order = ordered[-1] if ordered else 'ASCENDING'
+    if fields and fields[-1] == {'fieldPath': '__name__', 'order': implicit_order}:
+        fields.pop()
+    parts = [_field_key(f) for f in fields]
     return f"{collection_group} [{query_scope or 'COLLECTION'}] ({', '.join(parts)})"
 
 
@@ -220,6 +227,8 @@ def compare_functions(endpoints, live_fns, code_times, prs_since):
     items = []
     for name, endpoint in sorted(endpoints.items()):
         want = want_options(endpoint)
+        if not endpoint.get('region'):
+            items.append(DriftItem(FUNCTION, name, '', '', UNKNOWN, 'manifest has no resolved region'))
         for region in endpoint.get('region', []):
             key = f'{region}/{name}'
             if key not in live:
@@ -232,8 +241,11 @@ def compare_functions(endpoints, live_fns, code_times, prs_since):
             if fn.get('state') != 'ACTIVE':
                 items.append(DriftItem(FUNCTION, key, fmt_options(want), fn.get('state', '?'), DIFFERENT,
                                        'live function is not ACTIVE'))
-            elif landed is None or landed > deployed.timestamp():
-                landed_text = 'unknown' if landed is None else _iso(landed)
+            elif landed is None:
+                items.append(DriftItem(FUNCTION, key, '', f'deployed {_iso(deployed)}', UNKNOWN,
+                                       'function history is not available'))
+            elif landed > deployed.timestamp():
+                landed_text = _iso(landed)
                 items.append(DriftItem(FUNCTION, key, f'code landed {landed_text}', f'deployed {_iso(deployed)}',
                                        DIFFERENT, 'code landed on master after the live deploy',
                                        prs_since(name, deployed.timestamp())))
@@ -251,7 +263,9 @@ def compare_functions(endpoints, live_fns, code_times, prs_since):
 
 def compare_worker(name, live_deployed, landed, prs):
     if live_deployed is None:
-        return DriftItem(WORKER_KIND, name, f'changed {_iso(landed)}', 'no deployment', MISSING_LIVE, prs=prs)
+        return DriftItem(WORKER_KIND, name, f'changed {_iso(landed) if landed is not None else UNKNOWN}', 'no deployment', MISSING_LIVE, prs=prs)
+    if landed is None:
+        return DriftItem(WORKER_KIND, name, '', '', UNKNOWN, 'worker history is not available')
     deployed = parse_time(live_deployed)
     if landed > deployed.timestamp():
         return DriftItem(WORKER_KIND, name, f'changed {_iso(landed)}', f'deployed {_iso(deployed)}', DIFFERENT,
@@ -269,7 +283,7 @@ def compare_remote_config(read_keys, template_keys):
             items.append(DriftItem(REMOTE_CONFIG, key, where, '', MISSING_LIVE, 'not in the template, so the code '
                                    'default applies'))
     items += [DriftItem(REMOTE_CONFIG, key, '', 'published', LIVE_ONLY,
-                         'no code on master reads it; old app builds may')
+                         'no resolved code read on master; old app builds may')
               for key in sorted(template_keys) if key not in read_keys]
     return items
 
@@ -306,7 +320,9 @@ class History:
     """First-parent history of HEAD, so a time is when a change landed on master, not when it was written."""
 
     def __init__(self):
-        out = git('log', '--first-parent', '--format=%x00%ct%x09%H%x09%s', '--name-only', 'HEAD', '--',
+        # A shallow boundary commit lists every file as added at its own time. That time is later than the true
+        # landing, so a shallow checkout can show a false "different" but never a false "in sync".
+        out = git('log', '--first-parent', '--diff-merges=first-parent', '--format=%x00%ct%x09%H%x09%s', '--name-only', 'HEAD', '--',
                   *HISTORY_PATHS)
         self.commits = []
         for chunk in out.split('\x00')[1:]:
@@ -341,10 +357,10 @@ def _unique(values):
 
 
 def git(*args):
-    return subprocess.run(['git', *args], cwd=ROOT, check=True, capture_output=True, text=True).stdout
+    return run(['git', *args])
 
 
-def pr_for_line(path, line):
+def _pr_for_line(path, line):
     """The PR that last changed this line, through the merge that brought its commit onto master."""
     blame = git('blame', '--porcelain', '-L', f'{line},{line}', 'HEAD', '--', path)
     sha = blame.split()[0]
@@ -353,6 +369,13 @@ def pr_for_line(path, line):
         descendants = set(git('rev-list', '--ancestry-path', f'{sha}..HEAD').split())
         sha = [c for c in first_parent if c in descendants][-1]
     return pr_label(git('log', '-1', '--format=%s', sha).strip(), sha)
+
+
+def pr_for_line(path, line):
+    try:
+        return _pr_for_line(path, line) if line else ''
+    except Exception:
+        return ''
 
 
 def line_of(path, pattern, nth=0):
@@ -365,7 +388,7 @@ def function_modules():
     """{export name: module path} from functions/src/index.ts."""
     text = (FUNCTIONS / 'src/index.ts').read_text()
     out = {}
-    for names, module in re.findall(r'export\s*\{([^}]*)\}\s*from\s*"([^"]+)"', text):
+    for names, module in re.findall(r"export\s*\{([^}]*)\}\s*from\s*['\"]([^'\"]+)['\"]", text):
         for name in names.split(','):
             name = name.strip()
             if name:
@@ -375,22 +398,36 @@ def function_modules():
 
 def resolve_ts(base, module):
     path = (base / module).resolve()
-    for candidate in (path.with_suffix('.ts'), path / 'index.ts'):
+    for candidate in (path if path.suffix == '.ts' else Path(str(path) + '.ts'),
+                      path.with_suffix('.ts') if path.suffix == '.js' else path / 'index.ts'):
         if candidate.exists():
             return candidate
     return None
 
 
 def import_closure(start):
-    seen, todo = set(), [start]
+    seen, todo = set(), [start and start.resolve()]
     while todo:
         path = todo.pop()
         if path is None or path in seen:
             continue
         seen.add(path)
-        for module in re.findall(r'(?:from|import|require\()\s*"(\.{1,2}/[^"]+)"', path.read_text()):
-            todo.append(resolve_ts(path.parent, module))
-    return {str(p.relative_to(ROOT)) for p in seen}
+        text = path.read_text()
+        for call in re.finditer(r'\b(?:import|require)\s*\(', text):
+            if not re.match(r'''\s*(['"])[^'"]+\1\s*\)''', text[call.end():]):
+                raise DriftError('dynamic import could not be resolved')
+        for module in re.findall(r"(?:\bfrom\s*|\bimport\s*(?:\(\s*)?|\brequire\s*\(\s*)['\"](\.{1,2}/[^'\"]+)['\"]", path.read_text()):
+            resolved = resolve_ts(path.parent, module)
+            if resolved is None:
+                raise DriftError('relative import could not be resolved')
+            todo.append(resolved)
+    return {str(p.relative_to(ROOT.resolve())) for p in seen}
+
+
+def require_clean(paths):
+    if git('diff', '--name-only', 'HEAD', '--', *paths).strip() or git(
+            'ls-files', '--others', '--exclude-standard', '--', *paths).strip():
+        raise DriftError('source differs from HEAD')
 
 
 def functions_manifest():
@@ -405,58 +442,103 @@ def functions_manifest():
         return json.loads(out.read_text())['endpoints']
 
 
-RC_READ = re.compile(r'(?:[Rr]emote[Cc]onfig\w*|\brc)\??\.get(?:String|Bool|Int|Double|Value)\(\s*([\w.\']+)')
-RC_CALL = re.compile(r'\b(_?\w*[Rr]emote[Cc]onfig\w*)\(\s*([\w.\']+)\s*\)')
-RC_DEFAULT = re.compile(r'^\s*([\w.\']+)\s*:', re.M)
-SERVER_RC = re.compile(r'parameters\?*\.(\w+)')
+RC_TOKEN = r"(?:'[^'\n]*'|\"[^\"\n]*\"|[\w.]+)"
+RC_START = r'(?:[Rr]emote[Cc]onfig\w*|\brc)\??\.get(?:String|Bool|Int|Double|Value)\('
+RC_READ = re.compile(RC_START + r'\s*(' + RC_TOKEN + r')\s*\)')
+RC_DEFAULT = re.compile(r'^\s*(' + RC_TOKEN + r')\s*:', re.M)
+# A call through a function value named for Remote Config, such as `_remoteConfig(remoteEnabledKey)`.
+RC_CALL = re.compile(r'\b\w*[Rr]emote[Cc]onfig\w*\(\s*(' + RC_TOKEN + r')\s*\)')
+SERVER_RC = re.compile(r"parameters\?*\.(\w+)|parameters\??\.?(?:\[)\s*['\"]([^'\"]+)['\"]\s*\]")
+
+
+class RemoteConfigReads(dict):
+    def __init__(self):
+        super().__init__()
+        self.unresolved = []
 
 
 def remote_config_reads():
-    """{key: first file:line that reads it}. Literal keys, string constants, and one level of wrapper call."""
+    """Resolve static literals, constants, conditional literals, and wrapper calls.
+
+    Unresolved reads remain visible, rather than proving that a template key is unused.
+    """
     files = [p for p in (ROOT / 'lib').rglob('*.dart') if '/generated/' not in str(p) and not p.name.endswith('.g.dart')]
     texts = {p: p.read_text() for p in files}
-    consts = {}
-    for text in texts.values():
-        for name, value in re.findall(r"\b(\w+)\s*=\s*'([^'$]+)'\s*;", text):
-            consts.setdefault(name, set()).add(value)
-    keys = {}
+    consts, local = {}, {}
+    for path, text in texts.items():
+        local[path] = {}
+        classes = list(re.finditer(r'\bclass\s+(\w+)', text))
+        for match in re.finditer(r'\b(\w+)\s*=\s*([^;]+);', text):
+            name, expression = match.group(1), match.group(2).strip()
+            values = re.findall(r"['\"]([^'\"$]+)['\"]", expression)
+            literal = re.fullmatch(r"['\"][^'\"$]+['\"]", expression)
+            conditional = re.fullmatch(r"[^?]+\?\s*['\"][^'\"$]+['\"]\s*:\s*['\"][^'\"$]+['\"]", expression)
+            if not (literal or conditional):
+                continue
+            local[path].setdefault(name, set()).update(values)
+            consts.setdefault(name, set()).update(values)
+            preceding = [c for c in classes if c.start() < match.start()]
+            if preceding:
+                consts.setdefault(preceding[-1].group(1) + '.' + name, set()).update(values)
+    keys = RemoteConfigReads()
+    wrappers = set()
 
-    def add(token, path, text, pos, local_consts):
-        token = token.split('.')[-1]
-        if token.startswith("'"):
-            value = token.strip("'")
-        elif token in local_consts:
-            value = local_consts[token]
-        elif len(consts.get(token, ())) == 1:
-            value = next(iter(consts[token]))
+    def add(token, path, pos):
+        text = texts[path]
+        if token.startswith(("'", '\"')):
+            values = {token[1:-1]} if '$' not in token else set()
         else:
-            return False
-        keys.setdefault(value, f'{path.relative_to(ROOT)}:{text.count(chr(10), 0, pos) + 1}')
-        return True
+            values = local[path].get(token, set()) if '.' not in token else set()
+            values = values or consts.get(token, set())
+            if len(values) > 1 and token not in local[path]:
+                values = set()
+        for value in values:
+            keys.setdefault(value, f'{path.relative_to(ROOT)}:{text.count(chr(10), 0, pos) + 1}')
+        return bool(values)
+
+    def unresolved(token, path, pos):
+        text = texts[path]
+        declarations = list(re.finditer(r'\b(\w+)\(\s*String\s+' + re.escape(token) + r'\b', text[:pos]))
+        if declarations and not re.search(r'[};]', text[declarations[-1].end():pos]):
+            name = declarations[-1].group(1)
+            wrappers.add((path if name.startswith('_') else None, name))
+        else:
+            location = f'{path.relative_to(ROOT)}:{text.count(chr(10), 0, pos) + 1}'
+            if location not in keys.unresolved:
+                keys.unresolved.append(location)
 
     for path, text in texts.items():
-        if not re.search(r'[Rr]emote[Cc]onfig', text):
-            continue
-        local_consts = dict(re.findall(r"\b(\w+)\s*=\s*'([^'$]+)'\s*;", text))
-        for match in RC_READ.finditer(text):
-            if not add(match.group(1), path, text, match.start(), local_consts):
-                wrapper = re.findall(r'(\w+)\(\s*String\s+' + re.escape(match.group(1)) + r'\b',
-                                     text[:match.start()])
-                if wrapper:
-                    for call in re.finditer(r'\b' + re.escape(wrapper[-1]) + r'\(\s*([\w.\']+)\s*\)', text):
-                        add(call.group(1), path, text, call.start(), local_consts)
-        for match in RC_CALL.finditer(text):
-            add(match.group(2), path, text, match.start(), local_consts)
-        block = re.search(r'setDefaults\(<String, dynamic>\{(.*?)\}\)', text, re.S)
-        if block:
+        resolved_calls = {m.start() for m in RC_READ.finditer(text)}
+        for match in re.finditer(RC_START, text):
+            if match.start() not in resolved_calls:
+                keys.unresolved.append(f'{path.relative_to(ROOT)}:{text.count(chr(10), 0, match.start()) + 1}')
+        for match in [*RC_READ.finditer(text), *RC_CALL.finditer(text)]:
+            if not add(match.group(1), path, match.start()):
+                unresolved(match.group(1), path, match.start())
+        for block in re.finditer(r'setDefaults\(<String, dynamic>\{(.*?)\}\)', text, re.S):
             for match in RC_DEFAULT.finditer(block.group(1)):
-                add(match.group(1), path, text, block.start(1) + match.start(), local_consts)
+                if not add(match.group(1), path, block.start(1) + match.start()):
+                    unresolved(match.group(1), path, block.start(1) + match.start())
+    processed = set()
+    while wrappers - processed:
+        scope, name = next(iter(wrappers - processed))
+        processed.add((scope, name))
+        call = re.compile(r'\b' + re.escape(name) + r'\(\s*(' + RC_TOKEN + r')\s*\)')
+        for path, text in texts.items():
+            if scope is not None and scope != path:
+                continue
+            for match in call.finditer(text):
+                if not add(match.group(1), path, match.start()):
+                    unresolved(match.group(1), path, match.start())
     for path in (FUNCTIONS / 'src').rglob('*.ts'):
         if '__tests__' in path.parts:
             continue
         text = path.read_text()
         for match in SERVER_RC.finditer(text):
-            keys.setdefault(match.group(1), f'{path.relative_to(ROOT)}:{text.count(chr(10), 0, match.start()) + 1}')
+            key = match.group(1) or match.group(2)
+            keys.setdefault(key, f'{path.relative_to(ROOT)}:{text.count(chr(10), 0, match.start()) + 1}')
+        if re.search(r'parameters\??\.?\[\s*[^\s\"\']', text):
+            keys.unresolved.append(str(path.relative_to(ROOT)))
     return keys
 
 
@@ -475,11 +557,14 @@ class DriftError(Exception):
 
 
 def run(cmd, cwd=ROOT, env=None):
-    proc = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True)
+    # The program and subcommand names only. Command output and arguments never go into the message.
+    program = ' '.join([Path(cmd[0]).name, *cmd[1:2]])
+    try:
+        proc = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True)
+    except Exception:
+        raise DriftError(f'{program} could not start') from None
     if proc.returncode != 0:
-        # Only the command name and the last stderr line, so no output with a value in it reaches the log.
-        last = (proc.stderr.strip().splitlines() or [''])[-1][:200]
-        raise DriftError(f'{" ".join(cmd[:4])} exited {proc.returncode}: {last}')
+        raise DriftError(f'{program} exited {proc.returncode}') from None
     return proc.stdout
 
 
@@ -496,7 +581,9 @@ def google_get(url, project):
                 return json.load(response)
         except urllib.error.HTTPError as error:
             if error.code < 500 or attempt:
-                raise DriftError(f'GET {url} returned HTTP {error.code}') from None
+                raise DriftError(f'GET returned HTTP {error.code}') from None
+        except Exception:
+            raise DriftError('GET failed') from None
 
 
 def live_rules(project):
@@ -522,11 +609,15 @@ def live_template_keys(project):
 
 def live_worker():
     config = tomllib.loads((WORKER / 'wrangler.toml').read_text())
-    version = json.loads((ROOT / 'web/package.json').read_text())['devDependencies']['wrangler'].lstrip('^~')
+    executable = ROOT / 'web/node_modules/.bin/wrangler'
+    if not executable.is_file():
+        raise DriftError('install the web packages before the check')
     env = dict(os.environ)
     # BROWSER_RENDERING_ACCOUNT_ID is the Cloudflare account that owns this worker.
     env.setdefault('CLOUDFLARE_ACCOUNT_ID', config.get('vars', {}).get('BROWSER_RENDERING_ACCOUNT_ID', ''))
-    out = run(['npx', '--yes', f'wrangler@{version}', 'deployments', 'list', '--json', '--name', config['name']],
+    # WRANGLER_LOG=none also hides the JSON on stdout, and a WRANGLER_LOG_PATH of /dev/null makes Wrangler fail.
+    env.update(WRANGLER_SEND_METRICS='false', NO_UPDATE_NOTIFIER='1')
+    out = run([str(executable), 'deployments', 'list', '--json', '--name', config['name']],
               cwd=WORKER, env=env)
     deployments = json.loads(out)
     return config['name'], max((d['created_on'] for d in deployments), default=None)
@@ -536,39 +627,56 @@ def live_worker():
 
 def collect(project):
     items, errors = [], []
-    history = History()
+    try:
+        history = History()
+    except Exception:
+        history = None
 
     def attempt(label, fn):
         try:
             fn()
-        except (DriftError, OSError, KeyError, ValueError, subprocess.CalledProcessError) as error:
+        except DriftError as error:
+            # DriftError text is built in this file from fixed strings, never from command or API output.
             errors.append(f'{label}: {error}')
-            items.append(DriftItem(label, '*', '', '', UNKNOWN, f'could not read: {error}'))
+            items.append(DriftItem(label, '*', '', '', UNKNOWN, f'could not read source: {error}'))
+        except Exception:
+            errors.append(f'{label}: could not read source')
+            items.append(DriftItem(label, '*', '', '', UNKNOWN, 'could not read source'))
 
     def rules():
         text, released = live_rules(project)
-        prs = history.prs_since({'firestore.rules'}, released.timestamp())
+        prs = history.prs_since({'firestore.rules'}, released.timestamp()) if history else []
         items.append(compare_rules((ROOT / 'firestore.rules').read_text(), text, _iso(released), prs))
 
     def indexes():
         local = json.loads((ROOT / 'firestore.indexes.json').read_text())
         found = compare_indexes(local, gcloud_json('firestore', 'indexes', 'composite', 'list', f'--project={project}'))
-        found += compare_ttls(local, gcloud_json('firestore', 'fields', 'ttls', 'list', f'--project={project}'))
         keys = [index_key(i['collectionGroup'], i.get('queryScope'), i['fields']) for i in local['indexes']]
-        overrides = [f"{o['collectionGroup']}.{o['fieldPath']}" for o in local.get('fieldOverrides', [])]
         for item in found:
             if item.status == MISSING_LIVE and item.kind == INDEX:
                 item.prs = [pr_for_line('firestore.indexes.json',
                                         line_of('firestore.indexes.json', r'"collectionGroup"', keys.index(item.name)))]
-            elif item.status == MISSING_LIVE and item.kind == TTL:
-                nth = len(keys) + overrides.index(item.name)
+        items.extend(found)
+
+    def ttls():
+        local = json.loads((ROOT / 'firestore.indexes.json').read_text())
+        found = compare_ttls(local, gcloud_json('firestore', 'fields', 'ttls', 'list', f'--project={project}'))
+        overrides = [f"{o['collectionGroup']}.{o['fieldPath']}" for o in local.get('fieldOverrides', [])]
+        for item in found:
+            if item.status == MISSING_LIVE:
+                nth = len(local['indexes']) + overrides.index(item.name)
                 item.prs = [pr_for_line('firestore.indexes.json', line_of('firestore.indexes.json', r'"collectionGroup"', nth))]
         items.extend(found)
 
     def functions():
+        if history is None:
+            raise DriftError('function history is not available')
+        require_clean(('functions/src', *FUNCTIONS_SHARED_FILES))
         endpoints = functions_manifest()
         modules = function_modules()
-        closures = {name: import_closure(modules.get(name)) | set(FUNCTIONS_SHARED_FILES) for name in endpoints}
+        entrypoint_paths = import_closure(FUNCTIONS / 'src/index.ts')
+        closures = {name: import_closure(modules.get(name) or FUNCTIONS / 'src/index.ts') |
+                          entrypoint_paths | set(FUNCTIONS_SHARED_FILES) for name in endpoints}
         code_times = {name: history.landed(paths) for name, paths in closures.items()}
         found = compare_functions(endpoints, live_functions(project), code_times,
                                   lambda name, since: history.prs_since(closures[name], since))
@@ -579,6 +687,9 @@ def collect(project):
         items.extend(found)
 
     def worker():
+        if history is None:
+            raise DriftError('worker history is not available')
+        require_clean(('infra/cloudflare/worker',))
         name, deployed = live_worker()
         prefix, exclude = 'infra/cloudflare/worker/', ('infra/cloudflare/worker/test/',)
         landed = history.landed_under(prefix, exclude)
@@ -588,6 +699,8 @@ def collect(project):
     def remote_config():
         reads = remote_config_reads()
         found = compare_remote_config(reads, live_template_keys(project))
+        if getattr(reads, 'unresolved', []):
+            found.append(DriftItem(REMOTE_CONFIG, '*', '', '', UNKNOWN, 'some key reads could not be resolved: ' + ', '.join(reads.unresolved)))
         for item in found:
             if item.status == MISSING_LIVE:
                 path, line = item.master.rsplit(':', 1)
@@ -600,6 +713,7 @@ def collect(project):
 
     attempt(RULES, rules)
     attempt(INDEX, indexes)
+    attempt(TTL, ttls)
     attempt(FUNCTION, functions)
     attempt(WORKER_KIND, worker)
     attempt(REMOTE_CONFIG, remote_config)
@@ -643,7 +757,7 @@ def render_plan(plan):
     return '\n'.join(lines)
 
 
-def main(argv=None):
+def _main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--project', default=json.loads((ROOT / '.firebaserc').read_text())['projects']['default'])
     parser.add_argument('--json', action='store_true', help='print the same data as JSON')
@@ -662,6 +776,14 @@ def main(argv=None):
         for error in errors:
             print(f'\nCould not read {error}', file=sys.stderr)
     return 1 if errors else 0
+
+
+def main(argv=None):
+    try:
+        return _main(argv)
+    except Exception:
+        print('Deploy drift: could not complete the check.', file=sys.stderr)
+        return 1
 
 
 if __name__ == '__main__':
