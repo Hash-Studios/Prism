@@ -44,7 +44,7 @@ class _StatsRouter extends RootStackRouter {
             ),
           ),
         ),
-        guards: route.guards,
+        guards: [...AppRouter().guards, ...route.guards],
       ),
   ];
   static Widget _entry() => const Scaffold(body: StatsEntryButton(source: 'profile'));
