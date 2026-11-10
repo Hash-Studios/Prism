@@ -1,17 +1,19 @@
 import * as admin from "firebase-admin";
-import {createHash} from "node:crypto";
+import {createHash, timingSafeEqual} from "node:crypto";
 import {logger} from "firebase-functions/v2";
+import {onRequest} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {db, REGION, str} from "../common";
 import {R2Storage, r2Secrets} from "../r2Storage";
 import {postDay} from "../studio/telegram";
 import {assertFits, gridContent, panoramaContent, type Pipeline, type SocialContent, stillContent} from "./content";
 import {
-  type ApprovalPress, socialBotToken, socialOwnerChatId, socialTelegramSecrets, type Telegram, telegramClient,
+  type ApprovalPress, parsePress, socialBotToken, socialOwnerChatId, socialTelegramSecrets, type Telegram, telegramClient,
+  webhookSecret,
 } from "./telegram";
 import {type XClient, xClient, XError, xSecrets, xAccessSecret, xAccessToken, xApiKey, xApiSecret} from "./x";
 
-// The X posting queue: prepare (build and preview), publish (approve, post, reply, reconcile), measure.
+// The X posting queue: prepare (build and preview), webhook (approve), publish (post, reply, reconcile), measure.
 // Every post is one doc, socialPosts/{day}_{slot}. A run never sends a post twice: anything that may have reached X
 // is reconciled against the account's own posts, and the owner decides when that check finds nothing.
 
@@ -26,7 +28,8 @@ export const SLOTS: Record<Slot, {time: string; pipeline: Pipeline}> = {
   eve: {time: "17:00", pipeline: "still"},
   night: {time: "20:00", pipeline: "still"},
 };
-const OFFSET_MAX_MS = 12 * 60_000;
+/** Each post is scheduled up to this far before or after its slot time, uniformly. */
+export const JITTER_MS = 15 * 60_000;
 export const EXPIRE_AFTER_MS = 2 * 3_600_000;
 export const STALE_POSTING_MS = 10 * 60_000;
 export const UNCERTAIN_AFTER_MS = 30 * 60_000;
@@ -61,9 +64,9 @@ export async function loadSocialConfig(): Promise<SocialConfig> {
   };
 }
 
-/** The slot time in IST plus a random offset, so posts do not land on the same minute every day. */
+/** The slot time in IST plus or minus up to 15 minutes, uniformly at random. */
 export function scheduledAt(day: string, slot: Slot, random = Math.random): Date {
-  return new Date(Date.parse(`${day}T${SLOTS[slot].time}:00+05:30`) + Math.floor(random() * OFFSET_MAX_MS));
+  return new Date(Date.parse(`${day}T${SLOTS[slot].time}:00+05:30`) + Math.round((random() * 2 - 1) * JITTER_MS));
 }
 
 export const contentHash = (mediaShas: string[], text: string, replyText: string,
@@ -112,20 +115,34 @@ export const defaultBuilders: Builders = {
     wotd: slot === "night" && isSunday(day), salt: slot === "eve" ? 0 : 1}),
 };
 
-/** Builds today's posts. A slot that already has a doc is left alone, so a second run does nothing. */
+/** States a dry-run trigger may replace. Never anything that reached, or may have reached, X. */
+const DRY_RUN_REBUILDS = new Set(["pending_approval", "approved", "dry_run", "skipped", "failed"]);
+
+/** Builds missing posts, or rebuilds never-attempted posts in dry run. */
 export async function prepareDay(deps: SocialDeps, builders: Builders = defaultBuilders): Promise<string[]> {
   const {config, now} = deps;
   if (!config.enabled) return [];
   const day = postDay(now);
   const exclude = await recentlyPosted(now, config.blockedIds);
   const existing = await db.collection(SOCIAL_POSTS).where("day", "==", day).get();
+  const kept = new Set<string>();
   for (const doc of existing.docs) {
     for (const id of doc.data().source?.ids ?? []) exclude.add(String(id));
+    // In a dry run, every trigger rebuilds today's unposted posts with new walls, so the owner can try many sets.
+    const removed = config.dryRun && await db.runTransaction(async (tx) => {
+      const post = (await tx.get(doc.ref)).data();
+      // Recheck under the publisher's claim lock. Owner drop/retry changes the status but retains attemptAt.
+      if (!post || !DRY_RUN_REBUILDS.has(str(post.status)) ||
+          post.attemptAt || post.attemptId || post.dispatchedAt || post.tweetId || post.postedAt) return false;
+      tx.delete(doc.ref);
+      return true;
+    });
+    if (!removed) kept.add(doc.id);
   }
   const made: string[] = [];
   for (const slot of Object.keys(SLOTS) as Slot[]) {
     const postId = `${day}_${slot}`;
-    if (!config.slots[slot] || existing.docs.some((doc) => doc.id === postId)) continue;
+    if (!config.slots[slot] || kept.has(postId)) continue;
     // Wall of the Day is picked at 09:00 IST, so the Sunday night post waits for the 10:00 run.
     if (slot === "night" && isSunday(day) && Number(istHour(now)) < 10) continue;
     const pipeline = SLOTS[slot].pipeline;
@@ -239,20 +256,19 @@ export async function applyPress(press: ApprovalPress): Promise<string> {
   });
 }
 
-async function readPresses(deps: SocialDeps): Promise<void> {
-  if (!deps.telegram) return;
-  const stateRef = db.collection(STATE).doc("telegram");
-  const offset = Number((await stateRef.get()).data()?.offset) || 0;
-  const {presses, nextOffset} = await deps.telegram.presses(offset);
-  for (const press of presses) {
-    const reply = await applyPress(press);
-    await deps.telegram.answer(press.callbackId, reply).catch(() => null);
-  }
-  if (nextOffset > offset) {
-    await db.runTransaction(async (tx) => {
-      const current = Number((await tx.get(stateRef)).data()?.offset) || 0;
-      if (nextOffset > current) tx.set(stateRef, {offset: nextOffset}, {merge: true});
-    });
+const DECIDED = new Set(["Approved.", "Skipped.", "Will post again.", "Dropped.", "Will reply again.", "Reply dropped."]);
+
+/**
+ * One Telegram webhook update. Applies an owner press at once, shows the result as a toast, and replaces the buttons
+ * with the outcome. Anything that is not an owner press is ignored.
+ */
+export async function handleTelegramUpdate(update: unknown, telegram: Telegram, ownerChatId: string): Promise<void> {
+  const press = parsePress(update, ownerChatId);
+  if (!press) return;
+  const reply = await applyPress(press);
+  await telegram.answer(press.callbackId, reply).catch(() => null);
+  if (DECIDED.has(reply) && press.messageId > 0) {
+    await telegram.markDone(press.messageId, `${press.postId}: ${reply.replace(/\.$/, "")} ✅`).catch(() => null);
   }
 }
 
@@ -438,11 +454,6 @@ const ms = (value: unknown) => (value as admin.firestore.Timestamp | undefined)?
 /** One publish pass, including unfinished work from earlier days. */
 export async function publishDue(deps: SocialDeps): Promise<void> {
   if (!deps.config.enabled) return;
-  try {
-    await readPresses(deps);
-  } catch {
-    logger.error("social: approval polling failed.");
-  }
   const now = deps.now.getTime();
   // Open work in any state, plus recent posts that may still need their reply. Old posted docs are never read again.
   const [open, recent] = await Promise.all([
@@ -555,7 +566,7 @@ async function liveDeps(withX: boolean, withTelegram: boolean): Promise<SocialDe
   };
 }
 
-/** A lease so two publish runs never read Telegram updates or post at the same time. */
+/** A lease so two publish runs never post at the same time. */
 async function withLease(name: string, ttlMs: number, run: () => Promise<void>): Promise<void> {
   const ref = db.collection(STATE).doc(`lease_${name}`);
   const owner = Math.random().toString(36).slice(2);
@@ -575,13 +586,39 @@ async function withLease(name: string, ttlMs: number, run: () => Promise<void>):
   }
 }
 
+const WEBHOOK_FUNCTION = "socialTelegramWebhook";
+const projectId = () => process.env.GCLOUD_PROJECT || JSON.parse(process.env.FIREBASE_CONFIG ?? "{}").projectId;
+
 export const socialPrepare = onSchedule({schedule: "0 7,10 * * *", timeZone: "Asia/Kolkata", region: REGION,
   memory: "1GiB", timeoutSeconds: 540, retryCount: 1, secrets: [...socialTelegramSecrets, ...r2Secrets]}, async () => {
-  const made = await prepareDay(await liveDeps(false, true));
+  const deps = await liveDeps(false, true);
+  // Points the approval bot at the webhook. Idempotent, so every run repairs a lost or changed registration.
+  await deps.telegram?.setWebhook(`https://${REGION}-${projectId()}.cloudfunctions.net/${WEBHOOK_FUNCTION}`,
+    webhookSecret(socialBotToken.value())).catch(() => logger.error("social: setWebhook failed."));
+  const made = await prepareDay(deps);
   logger.info("social: prepared.", {made});
 });
 
-export const socialPublish = onSchedule({schedule: "every 15 minutes", region: REGION, memory: "512MiB",
+/** Telegram calls this on every approval button press. Only requests with the bot's secret header count. */
+export const socialTelegramWebhook = onRequest({region: REGION, invoker: "public", maxInstances: 1, cpu: "gcf_gen1", timeoutSeconds: 30,
+  memory: "256MiB", secrets: socialTelegramSecrets}, async (req, res) => {
+  const token = socialBotToken.value();
+  const supplied = Buffer.from(req.get("X-Telegram-Bot-Api-Secret-Token") ?? "");
+  const expected = Buffer.from(webhookSecret(token));
+  if (req.method !== "POST" || !token || supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
+    res.sendStatus(403);
+    return;
+  }
+  try {
+    await handleTelegramUpdate(req.body, telegramClient(token, socialOwnerChatId.value()), socialOwnerChatId.value());
+  } catch {
+    logger.error("social: approval press failed.");
+  }
+  // Always 200 for a real Telegram call, so Telegram does not resend the same press.
+  res.sendStatus(200);
+});
+
+export const socialPublish = onSchedule({schedule: "every 5 minutes", region: REGION, memory: "512MiB",
   timeoutSeconds: 300, secrets: [...xSecrets, ...socialTelegramSecrets, ...r2Secrets]}, async () => {
   await withLease("publish", 6 * 60_000, async () => publishDue(await liveDeps(true, true)));
 });
