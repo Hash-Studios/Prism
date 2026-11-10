@@ -39,7 +39,7 @@ class DiscoverFolderCard extends StatelessWidget {
     final Widget menu = PopupMenuButton<_CardAction>(
       tooltip: l10n.foldersMoreOptions,
       icon: const Icon(Icons.more_horiz_rounded),
-      onSelected: (_) => _report(context),
+      onSelected: (_) => unawaited(_report(context)),
       itemBuilder: (_) => <PopupMenuEntry<_CardAction>>[
         PopupMenuItem<_CardAction>(value: _CardAction.report, child: Text(l10n.foldersReport)),
       ],
@@ -113,18 +113,18 @@ class DiscoverFolderCard extends StatelessWidget {
     context.router.push(FolderRoute(folderId: folder.id));
   }
 
-  void _report(BuildContext context) {
+  Future<void> _report(BuildContext context) async {
     final FolderDiscoverCubit cubit = context.read<FolderDiscoverCubit>();
-    unawaited(
-      showContentReportSheet(
-        context,
-        contentType: 'folder',
-        targetFirestoreDocId: folder.id,
-        onSubmitted: () {
-          analytics.track(const FolderReportedEvent(source: 'discover'));
-          cubit.hideReported(folder.id);
-        },
-      ),
+    final BuildContext reportContext = ModalRoute.of(context)?.subtreeContext ?? context;
+    if (!await requireSignedInAction(reportContext) || !reportContext.mounted || cubit.isClosed) return;
+    await showContentReportSheet(
+      reportContext,
+      contentType: 'folder',
+      targetFirestoreDocId: folder.id,
+      onSubmitted: () {
+        analytics.track(const FolderReportedEvent(source: 'discover'));
+        if (!cubit.isClosed) cubit.hideReported(folder.id);
+      },
     );
   }
 }

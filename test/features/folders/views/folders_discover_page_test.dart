@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
@@ -5,6 +7,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/favourite_walls/domain/repositories/favourite_walls_repository.dart';
 import 'package:Prism/features/folders/biz/folder_discover_cubit.dart';
@@ -12,8 +15,12 @@ import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/domain/section_suggester.dart';
 import 'package:Prism/features/folders/views/pages/folders_discover_page.dart';
+import 'package:Prism/features/folders/views/widgets/discover_folders.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core_platform_interface/test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -22,10 +29,11 @@ import '../../../support/fake_user_block_repository.dart';
 
 class _FakePublicFolders extends Fake implements PublicFoldersRepository {
   FolderDiscoverLists discover = FolderDiscoverLists.empty;
+  Completer<Result<FolderDiscoverLists>>? pendingDiscover;
   final List<({String id, bool following})> followCalls = <({String id, bool following})>[];
 
   @override
-  Future<Result<FolderDiscoverLists>> fetchDiscover() async => Result.success(discover);
+  Future<Result<FolderDiscoverLists>> fetchDiscover() async => pendingDiscover?.future ?? Result.success(discover);
 
   @override
   Future<Result<Set<String>>> fetchFollowedIds(String userId) async => Result.success(<String>{});
@@ -47,6 +55,20 @@ class _FakeFavourites extends Fake implements FavouriteWallsRepository {
 }
 
 class _FakeFirestore extends Fake implements FirestoreClient {}
+
+class _SignedInFirebase extends MockFirebaseApp {
+  @override
+  Future<List<CoreInitializeResponse>> initializeCore() async {
+    final List<CoreInitializeResponse> apps = await super.initializeCore();
+    apps.single.pluginConstants['plugins.flutter.io/firebase_auth'] = <String, Object?>{
+      'APP_CURRENT_USER': <Object?>[
+        <Object?>['me', null, null, null, null, false, true, null, null, null, null, null],
+        <Object?>[],
+      ],
+    };
+    return apps;
+  }
+}
 
 const DiscoverFolder _trendingFolder = DiscoverFolder(
   id: 'trend-1',
@@ -247,6 +269,72 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Report folder'), findsOneWidget);
+  });
+
+  testWidgets('guest report continues when signing in replaces its discover card with a skeleton', (tester) async {
+    final previousSignIn = signedInActionSignIn;
+    final Completer<bool> signIn = Completer<bool>();
+    int prompts = 0;
+    signedInActionSignIn = (_) {
+      prompts++;
+      return signIn.future;
+    };
+    addTearDown(() => signedInActionSignIn = previousSignIn);
+    registerCubit(discover: const FolderDiscoverLists(trending: <DiscoverFolder>[_trendingFolder]), signedIn: false);
+    final FolderDiscoverCubit cubit = getIt<FolderDiscoverCubit>();
+    await _pumpPage(tester);
+    await tester.tap(find.byTooltip('More options'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Report folder'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(prompts, 1);
+
+    final Completer<Result<FolderDiscoverLists>> baseline = Completer<Result<FolderDiscoverLists>>();
+    folders.pendingDiscover = baseline;
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'me'
+      ..loggedIn = true;
+    await tester.runAsync(() async {
+      TestFirebaseCoreHostApi.setUp(_SignedInFirebase());
+      await Firebase.initializeApp();
+    });
+    expect(FirebaseAuth.instance.currentUser?.uid, 'me');
+    final Future<void> reload = cubit.load();
+    await tester.pump();
+    expect(find.byType(DiscoverFolderCard), findsNothing);
+    signIn.complete(true);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byType(ContentReportSheetBody), findsOneWidget);
+    baseline.complete(Result.success(folders.discover));
+    await reload;
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('a guest canceling Report sign-in stays on Discover without opening the report sheet', (tester) async {
+    final previousSignIn = signedInActionSignIn;
+    int prompts = 0;
+    signedInActionSignIn = (_) async {
+      prompts++;
+      return false;
+    };
+    addTearDown(() => signedInActionSignIn = previousSignIn);
+    registerCubit(discover: const FolderDiscoverLists(trending: <DiscoverFolder>[_trendingFolder]), signedIn: false);
+    await _pumpPage(tester);
+    await tester.tap(find.byTooltip('More options'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Report folder'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(prompts, 1);
+    expect(find.byType(ContentReportSheetBody), findsNothing);
+    expect(find.text('Ocean Walls'), findsOneWidget);
+    expect(folders.followCalls, isEmpty);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('large text keeps the card without overflow', (tester) async {
