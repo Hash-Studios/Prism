@@ -1,11 +1,15 @@
+import 'dart:ui' as ui;
+
 import 'package:Prism/core/widgets/prism/prism_chip.dart';
 import 'package:Prism/core/widgets/prism/prism_field.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/core/widgets/prism_sheet/device_corner_radius.dart';
 import 'package:Prism/features/moods/views/widgets/mood_chip_row.dart';
+import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../support/a11y_guidelines.dart';
@@ -125,6 +129,168 @@ void main() {
     semantics.dispose();
   });
 
+  for (final String dimension in <String>['width', 'height']) {
+    testWidgets('the sheet trailing action has a 48 dp hit target $dimension on Android', (tester) async {
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      await tester.pumpWidget(
+        a11yApp(
+          Theme(
+            data: kLightTheme.copyWith(platform: TargetPlatform.android),
+            child: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => showPrismSheet<void>(
+                  context,
+                  builder: (_) => PrismSheetBody(
+                    title: 'Filters',
+                    trailingAction: PrismSheetAction(label: 'X', onTap: () {}),
+                  ),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      final Rect target = tester.getSemantics(find.bySemanticsLabel('X')).rect;
+      expect(dimension == 'width' ? target.width : target.height, greaterThanOrEqualTo(48));
+      semantics.dispose();
+    });
+  }
+
+  testWidgets('the sheet trailing action can be activated by a screen reader', (tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    int taps = 0;
+    await tester.pumpWidget(
+      a11yApp(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showPrismSheet<void>(
+              context,
+              builder: (_) => PrismSheetBody(
+                title: 'Filters',
+                trailingAction: PrismSheetAction(label: 'Reset', onTap: () => taps++),
+              ),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    final node = tester.getSemantics(find.bySemanticsLabel('Reset'));
+    expect(node.getSemanticsData().hasAction(ui.SemanticsAction.tap), isTrue);
+    node.owner!.performAction(node.id, ui.SemanticsAction.tap);
+    await tester.pump();
+    expect(taps, 1);
+    expect(find.text('Filters'), findsOneWidget);
+    semantics.dispose();
+  });
+
+  testWidgets('the sheet trailing action keeps a 44 pt target on iOS', (tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme.copyWith(platform: TargetPlatform.iOS),
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showPrismSheet<void>(
+              context,
+              builder: (_) => PrismSheetBody(
+                title: 'Filters',
+                trailingAction: PrismSheetAction(label: 'X', onTap: () {}),
+              ),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    final Rect target = tester.getSemantics(find.bySemanticsLabel('X')).rect;
+    expect(target.width, greaterThanOrEqualTo(44));
+    expect(target.height, greaterThanOrEqualTo(44));
+    expect(target.width, lessThan(48));
+    expect(target.height, lessThan(48));
+    semantics.dispose();
+  });
+
+  testWidgets('sheet header screen-reader order stays close, title, action in LTR and RTL', (tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    for (final TextDirection direction in TextDirection.values) {
+      await tester.pumpWidget(
+        a11yApp(
+          Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showPrismSheet<void>(
+                context,
+                builder: (_) => PrismSheetBody(
+                  title: 'Filters',
+                  trailingAction: PrismSheetAction(label: 'Reset', onTap: () {}),
+                ),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+          variant: A11yVariant(Brightness.light, 1, direction),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      final List<String> labels = _semanticsTraversalLabels(tester);
+      final int closeIndex = labels.indexOf('Close');
+      final int titleIndex = labels.indexOf('Filters');
+      final int actionIndex = labels.indexOf('Reset');
+      expect(closeIndex, greaterThanOrEqualTo(0), reason: '$direction: $labels');
+      expect(closeIndex, lessThan(titleIndex), reason: '$direction: $labels');
+      expect(titleIndex, lessThan(actionIndex), reason: '$direction: $labels');
+      expect(tester.getSemantics(find.byTooltip('Close')).getSemanticsData().hasAction(ui.SemanticsAction.tap), isTrue);
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Reset')).getSemanticsData().hasAction(ui.SemanticsAction.tap),
+        isTrue,
+      );
+      await tester.tap(find.byTooltip('Close'));
+      await tester.pumpAndSettle();
+    }
+    semantics.dispose();
+  });
+
+  testWidgets('the sheet header fits a translated trailing action at 2x text on a narrow phone', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(320, 640);
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      a11yApp(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showPrismSheet<void>(
+              context,
+              builder: (_) => PrismSheetBody(
+                title: 'Filters',
+                trailingAction: PrismSheetAction(label: 'Zurücksetzen', onTap: () {}),
+              ),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+        variant: const A11yVariant(Brightness.light, 2, TextDirection.ltr),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    final Rect target = tester.getSemantics(find.bySemanticsLabel('Zurücksetzen')).rect;
+    expect(target.width, greaterThanOrEqualTo(48));
+    expect(target.height, greaterThanOrEqualTo(48));
+    expect(tester.getRect(find.text('Filters')).center.dx, closeTo(160, 0.5));
+  });
+
   testWidgets('PrismTextField puts its label at the start edge in RTL', (tester) async {
     await tester.pumpWidget(
       a11yApp(
@@ -172,4 +338,19 @@ void main() {
     final Finder pill = find.descendant(of: find.byType(PrismChip), matching: find.byType(AnimatedContainer));
     expect(tester.getSize(pill).height, 34.0);
   });
+}
+
+List<String> _semanticsTraversalLabels(WidgetTester tester) {
+  final SemanticsNode? root = tester.getSemantics(find.byTooltip('Close')).owner?.rootSemanticsNode;
+  if (root == null) return const <String>[];
+
+  Iterable<String> labels(SemanticsNode node) sync* {
+    final String label = node.label.isNotEmpty ? node.label : node.getSemanticsData().tooltip;
+    if (label.isNotEmpty) yield label;
+    for (final SemanticsNode child in node.debugListChildrenInOrder(DebugSemanticsDumpOrder.traversalOrder)) {
+      yield* labels(child);
+    }
+  }
+
+  return labels(root).toList();
 }

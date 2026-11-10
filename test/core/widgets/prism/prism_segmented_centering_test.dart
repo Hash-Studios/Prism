@@ -21,9 +21,55 @@ Widget _host(Widget child, {double scale = 1}) => MaterialApp(
   ),
 );
 
+Widget _directionalHost(Widget child, {required TargetPlatform platform, required TextDirection direction}) =>
+    MaterialApp(
+      theme: prismLightThemes.first.theme.copyWith(platform: platform),
+      home: Directionality(
+        textDirection: direction,
+        child: MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+          child: Scaffold(
+            body: Center(child: SizedBox(width: 360, child: child)),
+          ),
+        ),
+      ),
+    );
+
 double _dy(WidgetTester tester, Finder finder) => tester.getCenter(finder).dy;
 
 void main() {
+  for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS]) {
+    for (final TextDirection direction in <TextDirection>[TextDirection.ltr, TextDirection.rtl]) {
+      for (final int selected in <int>[0, 2]) {
+        testWidgets('thumb centers on selected segment for $direction, $platform, index $selected at 2x text', (
+          tester,
+        ) async {
+          await tester.pumpWidget(
+            _directionalHost(
+              PrismSegmented<int>(
+                values: const <int>[0, 1, 2],
+                selected: selected,
+                labelOf: (value) => <String>['Home', 'Lock', 'Both'][value],
+                onChanged: (_) {},
+              ),
+              platform: platform,
+              direction: direction,
+            ),
+          );
+          await tester.pump(const Duration(milliseconds: 300));
+
+          final String selectedLabel = <String>['Home', 'Lock', 'Both'][selected];
+          final Finder selectedSegment = find.ancestor(
+            of: find.text(selectedLabel),
+            matching: find.byType(GestureDetector),
+          );
+          final Finder thumb = find.descendant(of: find.byType(AnimatedAlign), matching: find.byType(DecoratedBox));
+          expect(tester.getCenter(thumb).dx, closeTo(tester.getCenter(selectedSegment).dx, 0.5));
+        });
+      }
+    }
+  }
+
   for (final double scale in <double>[1, 1.5]) {
     testWidgets('segmented labels and icons sit on the vertical centre of the control at $scale x text', (
       tester,

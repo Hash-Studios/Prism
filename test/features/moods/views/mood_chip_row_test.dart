@@ -93,7 +93,7 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('mood chips are compact pills with a 44 pt tap target and a 13 pt label', (tester) async {
+  testWidgets('mood chips are compact pills with a 48 dp Android target and a 13 pt label', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -110,7 +110,7 @@ void main() {
 
     final Finder chip = find.byType(PrismChip);
     expect(tester.widget<PrismChip>(chip).compact, isTrue);
-    expect(tester.getSize(chip).height, 44);
+    expect(tester.getSize(chip).height, 48);
     final Finder pill = find.descendant(of: chip, matching: find.byType(AnimatedContainer));
     expect(tester.getSize(pill).height, 34);
     expect(tester.widget<Text>(find.text('Dreamy')).style?.fontSize, 13);
@@ -118,45 +118,49 @@ void main() {
 
   for (final ThemeMode mode in <ThemeMode>[ThemeMode.light, ThemeMode.dark]) {
     for (final double scale in <double>[1.5, 2, 3]) {
-      testWidgets('compact mood labels fit the 44 pt row at ${scale}x in ${mode.name} mode', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            theme: kLightTheme,
-            darkTheme: kDarkTheme,
-            themeMode: mode,
-            builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
-              child: child!,
-            ),
-            home: const Scaffold(
-              body: MoodChipRow(
-                moods: <MoodList>[
-                  MoodList(mood: WallMood.dreamy, wallIds: <String>['wall']),
-                  MoodList(mood: WallMood.darkQuiet, wallIds: <String>['wall']),
-                ],
+      for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS]) {
+        testWidgets('compact mood labels fit ${platform.name} row at ${scale}x in ${mode.name} mode', (tester) async {
+          final double targetSize = platform == TargetPlatform.android ? 48 : 44;
+          await tester.pumpWidget(
+            MaterialApp(
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              theme: kLightTheme.copyWith(platform: platform),
+              darkTheme: kDarkTheme.copyWith(platform: platform),
+              themeMode: mode,
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
+                child: child!,
+              ),
+              home: const Scaffold(
+                body: MoodChipRow(
+                  moods: <MoodList>[
+                    MoodList(mood: WallMood.dreamy, wallIds: <String>['wall']),
+                    MoodList(mood: WallMood.darkQuiet, wallIds: <String>['wall']),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
+          );
 
-        expect(tester.getSize(find.byType(ListView)).height, 44);
-        for (final String label in <String>['Dreamy', 'Dark and quiet']) {
-          final Finder text = find.text(label);
-          final RenderParagraph paragraph = tester.renderObject(text);
-          final Finder chip = find.ancestor(of: text, matching: find.byType(PrismChip));
-          final Finder pill = find.descendant(of: chip, matching: find.byType(AnimatedContainer));
-          expect(tester.getSize(chip).height, 44);
-          expect(tester.getSize(pill).height, 34);
-          expect(paragraph.didExceedMaxLines, isFalse);
-          expect(paragraph.textScaler.scale(13), scale.clamp(0, 2) * 13);
-          expect(paragraph.size.height, greaterThanOrEqualTo(paragraph.getMaxIntrinsicHeight(paragraph.size.width)));
-          expect(tester.getRect(text).top, greaterThanOrEqualTo(tester.getRect(pill).top));
-          expect(tester.getRect(text).bottom, lessThanOrEqualTo(tester.getRect(pill).bottom));
-        }
-        expect(tester.takeException(), isNull);
-      });
+          await tester.pumpAndSettle();
+          expect(tester.getSize(find.byType(ListView)).height, targetSize);
+          for (final String label in <String>['Dreamy', 'Dark and quiet']) {
+            final Finder text = find.text(label);
+            final RenderParagraph paragraph = tester.renderObject(text);
+            final Finder chip = find.ancestor(of: text, matching: find.byType(PrismChip));
+            final Finder pill = find.descendant(of: chip, matching: find.byType(AnimatedContainer));
+            expect(tester.getSize(chip).height, targetSize);
+            expect(tester.getSize(pill).height, 34);
+            expect(paragraph.didExceedMaxLines, isFalse);
+            expect(paragraph.textScaler.scale(13), scale.clamp(0, 2) * 13);
+            expect(paragraph.size.height, greaterThanOrEqualTo(paragraph.getMaxIntrinsicHeight(paragraph.size.width)));
+            expect(tester.getRect(text).top, greaterThanOrEqualTo(tester.getRect(pill).top));
+            expect(tester.getRect(text).bottom, lessThanOrEqualTo(tester.getRect(pill).bottom));
+          }
+          expect(tester.takeException(), isNull);
+        });
+      }
     }
   }
 }

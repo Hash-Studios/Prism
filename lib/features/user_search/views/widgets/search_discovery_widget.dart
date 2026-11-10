@@ -145,14 +145,17 @@ class _QueryChips extends StatelessWidget {
             small: true,
           ),
         if (chips.isNotEmpty)
-          SizedBox(
-            height: prismTapTarget(context),
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: PrismSpace.pageInsets,
-              itemCount: chips.length,
-              separatorBuilder: (_, _) => const SizedBox(width: PrismSpace.xs),
-              itemBuilder: (_, index) => Center(child: chips[index]),
+          // The row takes the chip height, so a chip keeps its whole label at large text.
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: PrismSpace.pageInsets,
+            child: Row(
+              children: <Widget>[
+                for (int i = 0; i < chips.length; i++) ...<Widget>[
+                  if (i > 0) const SizedBox(width: PrismSpace.xs),
+                  chips[i],
+                ],
+              ],
             ),
           ),
       ],

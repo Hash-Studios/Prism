@@ -7,6 +7,7 @@ import 'package:Prism/core/widgets/prism_sheet/prism_sheet_route.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:smooth_sheets/smooth_sheets.dart';
 
 /// A text action in the header's trailing slot, opposite the close button. Use it for an action that does not commit
@@ -168,16 +169,19 @@ class _PrismSheetHeader extends StatelessWidget {
     if (!showHandle && !hasRow) return const SizedBox(height: PrismSpace.md);
     final ColorScheme cs = Theme.of(context).colorScheme;
     final Widget? close = showCloseButton
-        ? PrismIconButton(
-            icon: Icons.close_rounded,
-            tooltip: context.l10n.actionClose,
-            filled: true,
-            size: PrismBottomSheet.closeButtonSize,
-            iconSize: 20,
-            onPressed: () {
-              PrismHaptics.tap();
-              Navigator.of(context).maybePop();
-            },
+        ? Semantics(
+            sortKey: const OrdinalSortKey(0),
+            child: PrismIconButton(
+              icon: Icons.close_rounded,
+              tooltip: context.l10n.actionClose,
+              filled: true,
+              size: PrismBottomSheet.closeButtonSize,
+              iconSize: 20,
+              onPressed: () {
+                PrismHaptics.tap();
+                Navigator.of(context).maybePop();
+              },
+            ),
           )
         : null;
     final Widget? action = trailingAction == null ? null : _TrailingAction(action: trailingAction!);
@@ -209,33 +213,42 @@ class _PrismSheetHeader extends StatelessWidget {
               padding: PrismBottomSheet.headerPadding,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: PrismBottomSheet.headerRowHeight),
-                child: Row(
-                  children: <Widget>[
-                    SizedBox(
-                      width: slot,
-                      child: Align(alignment: Alignment.centerLeft, child: close),
-                    ),
-                    const SizedBox(width: PrismSpace.xs),
-                    Expanded(
-                      child: title == null
-                          ? const SizedBox.shrink()
-                          : Semantics(
-                              header: true,
-                              child: Text(
-                                title!,
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: PrismTextStyles.cardTitle(context),
-                              ),
-                            ),
-                    ),
-                    const SizedBox(width: PrismSpace.xs),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(minWidth: slot),
-                      child: Align(alignment: Alignment.centerRight, widthFactor: 1, child: action),
-                    ),
-                  ],
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final double slotWidth = math.min(
+                      slot,
+                      math.max(prismTapTarget(context), (constraints.maxWidth - 2 * PrismSpace.xs) / 3),
+                    );
+                    return Row(
+                      children: <Widget>[
+                        SizedBox(
+                          width: slotWidth,
+                          child: Align(alignment: Alignment.centerLeft, child: close),
+                        ),
+                        const SizedBox(width: PrismSpace.xs),
+                        Expanded(
+                          child: title == null
+                              ? const SizedBox.shrink()
+                              : Semantics(
+                                  sortKey: const OrdinalSortKey(1),
+                                  header: true,
+                                  child: Text(
+                                    title!,
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: PrismTextStyles.cardTitle(context),
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(width: PrismSpace.xs),
+                        SizedBox(
+                          width: slotWidth,
+                          child: Align(alignment: Alignment.centerRight, widthFactor: 1, child: action),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -271,15 +284,17 @@ class _TrailingAction extends StatelessWidget {
     final bool enabled = action.onTap != null;
     return Semantics(
       button: true,
+      sortKey: const OrdinalSortKey(2),
       enabled: enabled,
       label: action.label,
       excludeSemantics: true,
+      onTap: action.onTap,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: action.onTap,
         // Align with a width factor: an aligned Container would fill the toolbar and push the title off centre.
-        child: SizedBox(
-          height: PrismBottomSheet.headerRowHeight,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: prismTapTarget(context), minHeight: prismTapTarget(context)),
           child: Align(
             alignment: Alignment.centerRight,
             widthFactor: 1,
@@ -287,7 +302,6 @@ class _TrailingAction extends StatelessWidget {
               padding: _padding,
               child: Text(
                 action.label,
-                maxLines: 1,
                 style: PrismTextStyles.button.copyWith(
                   color: enabled ? cs.primary : cs.onSurface.withValues(alpha: 0.38),
                 ),

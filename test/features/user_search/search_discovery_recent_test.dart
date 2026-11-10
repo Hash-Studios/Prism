@@ -6,6 +6,7 @@ import 'package:Prism/features/user_search/views/widgets/search_discovery_widget
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -48,6 +49,45 @@ void main() {
     await tester.pump();
 
     expect(tester.widget<Text>(find.text('Recent searches')).style?.color, isNot(Colors.black));
+  });
+
+  testWidgets('a recent search chip keeps its whole label inside the pill at 2x text', (tester) async {
+    const state = SearchDiscoveryState(status: LoadStatus.success, trendingWalls: []);
+    final bloc = _MockSearchDiscoveryBloc();
+    when(() => bloc.state).thenReturn(state);
+    whenListen(bloc, const Stream<SearchDiscoveryState>.empty(), initialState: state);
+    await tester.pumpWidget(
+      BlocProvider<SearchDiscoveryBloc>.value(
+        value: bloc,
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: Scaffold(
+            body: SearchDiscoveryWidget(
+              tags: const <String>[],
+              selectedTag: '',
+              onTagPressed: (_) {},
+              recentSearches: const <String>['space'],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final RenderParagraph paragraph = tester.renderObject(find.text('space'));
+    final TextPainter painter = TextPainter(
+      text: paragraph.text,
+      textDirection: paragraph.textDirection,
+      textScaler: paragraph.textScaler,
+    )..layout(maxWidth: paragraph.size.width);
+    final double lineHeight = painter.computeLineMetrics().single.height;
+    painter.dispose();
+    expect(paragraph.size.height, greaterThanOrEqualTo(lineHeight));
   });
 
   group('Browse by colour', () {

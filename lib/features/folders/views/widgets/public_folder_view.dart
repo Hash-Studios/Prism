@@ -268,6 +268,7 @@ class PublicFolderHeader extends StatelessWidget {
             : (owner?.username.trim().isNotEmpty ?? false)
             ? '@${owner!.username.trim()}'
             : l10n.accountCreatorFallback;
+        void openOwner() => unawaited(context.router.push(ProfileRoute(profileIdentifier: folder.ownerId)));
         return Padding(
           padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.md),
           child: Column(
@@ -278,9 +279,10 @@ class PublicFolderHeader extends StatelessWidget {
                 button: true,
                 label: l10n.foldersByOwner(ownerName),
                 excludeSemantics: true,
+                onTap: openOwner,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(PrismRadius.pill),
-                  onTap: () => unawaited(context.router.push(ProfileRoute(profileIdentifier: folder.ownerId))),
+                  onTap: openOwner,
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: prismTapTarget(context)),
                     child: Row(

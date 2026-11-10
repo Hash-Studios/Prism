@@ -185,7 +185,7 @@ class PrismSegmented<T> extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(_inset),
               child: AnimatedAlign(
-                alignment: Alignment(x, 0),
+                alignment: AlignmentDirectional(x, 0),
                 duration: context.motion(PrismDurations.fast),
                 curve: PrismCurves.move,
                 child: FractionallySizedBox(

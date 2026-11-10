@@ -4,6 +4,7 @@ import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -30,6 +31,7 @@ import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -134,12 +136,17 @@ PublicFolderEntity _folder({String ownerId = 'owner', int followerCount = 1}) =>
 
 late _MockStackRouter _router;
 
-Widget _host(Widget child, {ThemeData? theme}) => MaterialApp(
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
-  supportedLocales: AppLocalizations.supportedLocales,
-  theme: theme ?? kLightTheme,
-  home: StackRouterScope(controller: _router, stateHash: 0, child: child),
-);
+Widget _host(Widget child, {ThemeData? theme, double textScale = 1, TextDirection direction = TextDirection.ltr}) =>
+    MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      theme: theme ?? kLightTheme,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+        child: Directionality(textDirection: direction, child: child!),
+      ),
+      home: StackRouterScope(controller: _router, stateHash: 0, child: child),
+    );
 
 // The page loads from the fake repositories; pump a fixed time rather than settle.
 Future<void> _settle(WidgetTester tester) async {
@@ -151,6 +158,7 @@ Future<void> _settle(WidgetTester tester) async {
 void main() {
   setUpAll(() {
     registerFallbackValue(const FolderSaveWall(id: 'fallback', source: WallpaperSource.prism));
+    registerFallbackValue(ProfileRoute(profileIdentifier: 'fallback'));
   });
 
   setUp(() {
@@ -508,4 +516,85 @@ void main() {
     expect(tester.getSemantics(owner).rect.height, greaterThanOrEqualTo(48.0));
     handle.dispose();
   });
+
+  testWidgets('the owner row remains actionable by screen readers', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+    when(() => _router.push(any())).thenAnswer((_) async => null);
+    final repo = _FakePublicFoldersRepository()..folder = _folder();
+    final PublicFolderCubit cubit = PublicFolderCubit(repo, _FakeMoodRepository());
+    addTearDown(cubit.close);
+    await tester.pumpWidget(_host(PublicFolderView(folderId: 'f1', cubit: cubit)));
+    await _settle(tester);
+
+    final SemanticsNode owner = tester.getSemantics(find.bySemanticsLabel('By Prism creator'));
+    expect(owner.flagsCollection.isButton, isTrue);
+    expect(owner.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+    owner.owner!.performAction(owner.id, SemanticsAction.tap);
+    await tester.pump();
+    verify(() => _router.push(any(that: isA<ProfileRoute>()))).called(1);
+    handle.dispose();
+  });
+
+  for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS]) {
+    for (final Size size in <Size>[const Size(360, 740), const Size(1024, 1366)]) {
+      testWidgets('owner and Follow stay separate at 2x dark RTL on $platform $size', (tester) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final SemanticsHandle handle = tester.ensureSemantics();
+        when(() => _router.push(any())).thenAnswer((_) async => null);
+        var follows = 0;
+        await tester.pumpWidget(
+          _host(
+            Scaffold(
+              body: PublicFolderHeader(folder: _folder(), following: false, source: 'test', onFollow: () => follows++),
+            ),
+            theme: kDarkTheme.copyWith(platform: platform),
+            textScale: 2,
+            direction: TextDirection.rtl,
+          ),
+        );
+        await _settle(tester);
+        expect(tester.takeException(), isNull);
+        final SemanticsNode owner = tester.getSemantics(find.bySemanticsLabel('By Prism creator'));
+        final SemanticsNode follow = tester.getSemantics(find.bySemanticsLabel('Follow'));
+        final SemanticsNode share = tester.getSemantics(find.byTooltip('Share folder'));
+        expect(<int>{owner.id, follow.id, share.id}, hasLength(3));
+        final List<SemanticsNode> traversal = _semanticsInTraversalOrder(owner);
+        final int ownerPosition = traversal.indexWhere((node) => node.id == owner.id);
+        final int followPosition = traversal.indexWhere((node) => node.id == follow.id);
+        final int sharePosition = traversal.indexWhere((node) => node.id == share.id);
+        expect(ownerPosition, lessThan(followPosition));
+        expect(ownerPosition, lessThan(sharePosition));
+        for (final SemanticsNode node in <SemanticsNode>[owner, follow, share]) {
+          expect(node.flagsCollection.isButton, isTrue);
+          expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+          expect(node.rect.height, greaterThanOrEqualTo(platform == TargetPlatform.iOS ? 44 : 48));
+        }
+        owner.owner!.performAction(owner.id, SemanticsAction.tap);
+        await tester.pump();
+        final ProfileRoute route = verify(() => _router.push(captureAny())).captured.single as ProfileRoute;
+        expect(route.args!.profileIdentifier, 'owner');
+        expect(follows, 0);
+        follow.owner!.performAction(follow.id, SemanticsAction.tap);
+        await tester.pump();
+        expect(follows, 1);
+        handle.dispose();
+      });
+    }
+  }
+}
+
+List<SemanticsNode> _semanticsInTraversalOrder(SemanticsNode member) {
+  final SemanticsNode root = member.owner!.rootSemanticsNode!;
+  final List<SemanticsNode> nodes = <SemanticsNode>[];
+  void visit(SemanticsNode node) {
+    nodes.add(node);
+    for (final SemanticsNode child in node.debugListChildrenInOrder(DebugSemanticsDumpOrder.traversalOrder)) {
+      visit(child);
+    }
+  }
+
+  visit(root);
+  return nodes;
 }

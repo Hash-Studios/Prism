@@ -11,6 +11,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 
 typedef ReadabilityFrameRenderer =
     Future<ui.Image> Function(
@@ -230,6 +231,7 @@ class _ReadabilityFixSheetState extends State<ReadabilityFixSheet> {
                   image: _before,
                   label: l10n.readabilityBefore,
                   semanticLabel: l10n.readabilityBeforeSemantic,
+                  traversalOrder: 0,
                   zone: fix.zone,
                   source: widget.source,
                 ),
@@ -239,6 +241,7 @@ class _ReadabilityFixSheetState extends State<ReadabilityFixSheet> {
                   image: _after,
                   label: l10n.readabilityAfter,
                   semanticLabel: l10n.readabilityAfterSemantic,
+                  traversalOrder: 1,
                   zone: fix.zone,
                   source: widget.source,
                 ),
@@ -255,6 +258,7 @@ class _Thumb extends StatelessWidget {
     required this.image,
     required this.label,
     required this.semanticLabel,
+    required this.traversalOrder,
     required this.zone,
     required this.source,
   });
@@ -262,6 +266,7 @@ class _Thumb extends StatelessWidget {
   final ui.Image? image;
   final String label;
   final String semanticLabel;
+  final double traversalOrder;
   final ReadabilityZone zone;
   final ReadabilityPreviewSource source;
 
@@ -272,40 +277,43 @@ class _Thumb extends StatelessWidget {
     return Flexible(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: _ReadabilityFixSheetState._thumbWidth),
-        child: MergeSemantics(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Semantics(
-                image: true,
-                label: semanticLabel,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(PrismRadius.lg),
-                  child: AspectRatio(
-                    aspectRatio: screen.width / screen.height,
-                    child: ExcludeSemantics(
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: <Widget>[
-                          AnimatedSwitcher(
-                            duration: context.motion(PrismDurations.fast),
-                            child: shown == null
-                                ? ColoredBox(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06))
-                                : RawImage(key: ValueKey<ui.Image>(shown), image: shown, fit: BoxFit.cover),
-                          ),
-                          if (shown != null && zone == ReadabilityZone.clock)
-                            LockPreviewLayer(textColor: source.textColor)
-                          else if (shown != null)
-                            const HomePreviewLayer(textColor: Colors.white),
-                        ],
+        child: Semantics(
+          sortKey: OrdinalSortKey(traversalOrder),
+          child: MergeSemantics(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Semantics(
+                  image: true,
+                  label: semanticLabel,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(PrismRadius.lg),
+                    child: AspectRatio(
+                      aspectRatio: screen.width / screen.height,
+                      child: ExcludeSemantics(
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: <Widget>[
+                            AnimatedSwitcher(
+                              duration: context.motion(PrismDurations.fast),
+                              child: shown == null
+                                  ? ColoredBox(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06))
+                                  : RawImage(key: ValueKey<ui.Image>(shown), image: shown, fit: BoxFit.cover),
+                            ),
+                            if (shown != null && zone == ReadabilityZone.clock)
+                              LockPreviewLayer(textColor: source.textColor)
+                            else if (shown != null)
+                              const HomePreviewLayer(textColor: Colors.white),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: PrismSpace.xs),
-              Text(label, style: PrismTextStyles.caption(context), textAlign: TextAlign.center),
-            ],
+                const SizedBox(height: PrismSpace.xs),
+                Text(label, style: PrismTextStyles.caption(context), textAlign: TextAlign.center),
+              ],
+            ),
           ),
         ),
       ),

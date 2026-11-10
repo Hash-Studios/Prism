@@ -5,21 +5,24 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// One theme, text size and reading direction that a screen must work in.
 class A11yVariant {
-  const A11yVariant(this.brightness, this.textScale, this.direction);
+  const A11yVariant(this.brightness, this.textScale, this.direction, {this.platform = TargetPlatform.android});
 
   final Brightness brightness;
   final double textScale;
   final TextDirection direction;
+  final TargetPlatform platform;
 
   @override
-  String toString() => '${brightness.name}, ${textScale}x text, ${direction.name}';
+  String toString() => '${platform.name}, ${brightness.name}, ${textScale}x text, ${direction.name}';
 }
 
-/// Light and dark, 1x and 2x text, LTR and RTL.
+/// Android and iOS, light and dark, 1x and 2x text, LTR and RTL.
 final List<A11yVariant> a11yVariants = <A11yVariant>[
-  for (final Brightness brightness in Brightness.values)
-    for (final double textScale in <double>[1, 2])
-      for (final TextDirection direction in TextDirection.values) A11yVariant(brightness, textScale, direction),
+  for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS])
+    for (final Brightness brightness in Brightness.values)
+      for (final double textScale in <double>[1, 2])
+        for (final TextDirection direction in TextDirection.values)
+          A11yVariant(brightness, textScale, direction, platform: platform),
 ];
 
 /// Wraps [home] in the app's theme and localizations for one [variant].
@@ -30,7 +33,7 @@ Widget a11yApp(
 }) => MaterialApp(
   localizationsDelegates: AppLocalizations.localizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
-  theme: variant.brightness == Brightness.light ? kLightTheme : kDarkTheme,
+  theme: (variant.brightness == Brightness.light ? kLightTheme : kDarkTheme).copyWith(platform: variant.platform),
   builder: (BuildContext context, Widget? child) => MediaQuery(
     data: MediaQuery.of(
       context,
@@ -57,8 +60,11 @@ Future<void> expectA11yGuidelines(
     await tester.pumpWidget(a11yApp(build(), variant: variant));
     await (settle ?? (WidgetTester t) => t.pumpAndSettle())(tester);
     expect(tester.takeException(), isNull, reason: '$variant');
-    await expectLater(tester, meetsGuideline(androidTapTargetGuideline), reason: '$variant');
-    await expectLater(tester, meetsGuideline(iOSTapTargetGuideline), reason: '$variant');
+    await expectLater(
+      tester,
+      meetsGuideline(variant.platform == TargetPlatform.android ? androidTapTargetGuideline : iOSTapTargetGuideline),
+      reason: '$variant',
+    );
     await expectLater(tester, meetsGuideline(labeledTapTargetGuideline), reason: '$variant');
     if (contrast) await expectLater(tester, meetsGuideline(textContrastGuideline), reason: '$variant');
     await tester.pumpWidget(const SizedBox.shrink());
