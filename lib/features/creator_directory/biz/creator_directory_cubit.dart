@@ -102,19 +102,18 @@ class CreatorDirectoryCubit extends Cubit<CreatorDirectoryState> {
     return super.close();
   }
 
-  /// Loads the Home or search row. Signed-out guests cannot read the directory, so the row stays empty for them.
+  /// The signed-in user's id, or empty for a guest. Guests can read the directory.
+  static String get _viewer => app_state.prismUser.loggedIn ? app_state.prismUser.id : '';
+
+  /// Loads the Home or search row.
   Future<void> loadRow() async {
     final int load = ++_load;
-    if (!app_state.prismUser.loggedIn) {
-      emit(const CreatorDirectoryState(status: CreatorDirectoryStatus.loaded));
-      return;
-    }
-    final String viewer = app_state.prismUser.id;
+    final String viewer = _viewer;
     try {
       final CreatorPage page = await _repository.fetchPage(limit: rowSize);
       final Set<String> followed = await _repository.followedAmong(_uids(page.creators));
       if (isClosed || load != _load) return;
-      if (!app_state.prismUser.loggedIn || app_state.prismUser.id != viewer) {
+      if (_viewer != viewer) {
         emit(const CreatorDirectoryState(status: CreatorDirectoryStatus.loaded));
         return;
       }
@@ -133,17 +132,13 @@ class CreatorDirectoryCubit extends Cubit<CreatorDirectoryState> {
   /// Loads the first page of See all, filtered to [category] when set.
   Future<void> loadPage({String? category}) async {
     final int load = ++_load;
-    if (!app_state.prismUser.loggedIn) {
-      emit(const CreatorDirectoryState(status: CreatorDirectoryStatus.loaded));
-      return;
-    }
-    final String viewer = app_state.prismUser.id;
+    final String viewer = _viewer;
     emit(state.copyWith(status: CreatorDirectoryStatus.loading, category: () => category, loadingMore: false));
     try {
       final CreatorPage page = await _repository.fetchPage(category: category);
       final Set<String> followed = await _repository.followedAmong(_uids(page.creators));
       if (isClosed || load != _load) return;
-      if (!app_state.prismUser.loggedIn || app_state.prismUser.id != viewer) {
+      if (_viewer != viewer) {
         emit(const CreatorDirectoryState(status: CreatorDirectoryStatus.loaded));
         return;
       }
@@ -163,12 +158,7 @@ class CreatorDirectoryCubit extends Cubit<CreatorDirectoryState> {
   }
 
   Future<void> loadMore() async {
-    if (!app_state.prismUser.loggedIn) {
-      ++_load;
-      emit(const CreatorDirectoryState(status: CreatorDirectoryStatus.loaded));
-      return;
-    }
-    final String viewer = app_state.prismUser.id;
+    final String viewer = _viewer;
     final int? after = state.nextRank;
     if (after == null || state.loadingMore || state.status != CreatorDirectoryStatus.loaded) return;
     final int load = _load;
@@ -177,7 +167,7 @@ class CreatorDirectoryCubit extends Cubit<CreatorDirectoryState> {
       final CreatorPage page = await _repository.fetchPage(category: state.category, afterRank: after);
       final Set<String> followed = await _repository.followedAmong(_uids(page.creators));
       if (isClosed || load != _load) return;
-      if (!app_state.prismUser.loggedIn || app_state.prismUser.id != viewer) {
+      if (_viewer != viewer) {
         emit(const CreatorDirectoryState(status: CreatorDirectoryStatus.loaded));
         return;
       }

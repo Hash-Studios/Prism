@@ -79,11 +79,12 @@ void main() {
     }
   });
 
-  test('guests are sent to sign in before the Creators page, which needs a signed-in directory read', () {
-    final RouteMatch? match = AppRouter().matcher.match('/creators')?.last;
-
-    expect(match?.name, CreatorsRoute.name);
-    final SignedInGuard guard = match!.guards.whereType<SignedInGuard>().single;
-    expect(guard.allowGuests, isFalse);
+  test('guests can open a public Folder, Discover Folders, the Creators page and a profile', () {
+    final router = AppRouter();
+    for (final path in ['/folder/f1', '/folders', '/creators', '/user/alice']) {
+      final RouteMatch? match = router.matcher.match(path)?.last;
+      expect(match, isNotNull, reason: path);
+      expect(match!.guards.whereType<SignedInGuard>(), isEmpty, reason: path);
+    }
   });
 }

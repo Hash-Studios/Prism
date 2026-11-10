@@ -17,7 +17,7 @@ The creator directory lists public creators. The app shows them in a "Creators t
 | More like sheet | Lists up to 6 similar creators, each with a **Follow** button. Following does not close the sheet. |
 | Settings | The switch **Show me in Creators to follow**. Off removes the creator from the directory. |
 
-Guests do not see the row. Guests do not see the "Followed by" line.
+Guests on iOS see the row and the See all page. **Follow** asks them to sign in. Guests do not see the "Followed by" line.
 
 ## Platforms and plans
 
@@ -29,7 +29,7 @@ Android and iOS. Every plan sees the same directory. No coin, premium or Pro gat
 
 | Path | Writer | Readers | Contents |
 |---|---|---|---|
-| `creatorDirectory/{uid}` | Server only (`buildCreatorDirectory`, `projectUserProfile`) | Signed-in users | The fields below. |
+| `creatorDirectory/{uid}` | Server only (`buildCreatorDirectory`, `projectUserProfile`) | Anyone, guests too | The fields below. |
 | `followedByCache/{sha256 of viewer and creator}` | Server only | Nobody | `matches` (uids), `expireAt`. |
 | `followedByRateDaily/{viewerUid}` | Server only | Nobody | `day`, `count`, `expireAt`. |
 
@@ -120,7 +120,7 @@ A cache miss costs at most about 500 + 17 reads for the scan, plus about 10 read
 The code is in `lib/features/creator_directory/`. The cubit `biz/creator_directory_cubit.dart` holds the row and See all state. The repository `data/creator_directory_repository_impl.dart` reads the directory, the follows and the callable. The views are in `views/`. The See all route is `/creators`.
 
 - The row loads 10 creators from the first page. It removes the creators the viewer already follows, so it can show fewer than 10.
-- The row hides while the directory is empty. A guest gets an empty row.
+- The row hides while the directory is empty. A guest gets the same row, without the follow filter.
 - A failed load shows a message and a **Try again** action.
 - The Follow button changes at once. It goes back if the server refuses.
 - The See all page loads more creators when less than 600 pixels remain below the list.
@@ -169,7 +169,7 @@ The app hides the row while the directory is empty. So the app can ship before t
 5. After the manual run, open `creatorDirectory` in the console. Check that the docs exist and that rank 1 has the most activity.
 6. Sign in and open Home. The row shows creators you do not follow. Tap **Follow**. Check that the toast shows **More like <name>**. Open it and check the sheet.
 7. Open a profile you follow others from. Check the "Followed by" line.
-8. Sign out. Check that the row is gone.
+8. On iOS, sign out and tap **Browse without an account**. Check that the row shows. Tap **Follow** and check that sign-in opens.
 9. In Settings, turn off **Show me in Creators to follow**. Check that the creator's doc is deleted.
 
 | Area | Files |

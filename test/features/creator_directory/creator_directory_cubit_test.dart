@@ -43,19 +43,19 @@ void main() {
     final cubit = CreatorDirectoryCubit(repo, EmptyCreatorBlocks());
     final pending = cubit.loadRow();
     app_state.prismUser = profileUser(loggedIn: false);
-    await cubit.loadRow();
     gate.complete();
     await pending;
     expect(cubit.state.creators, isEmpty);
     await cubit.close();
   });
 
-  test('guests cannot load See all', () async {
+  test('guests load See all', () async {
     app_state.prismUser = profileUser(loggedIn: false);
+    repo.pages[(null, null)] = creatorPage(<DirectoryCreator>[directoryCreator('a')]);
     final cubit = CreatorDirectoryCubit(repo, EmptyCreatorBlocks());
     await cubit.loadPage();
-    expect(cubit.state.isEmpty, isTrue);
-    expect(repo.fetchCalls, isEmpty);
+    expect(cubit.state.creators.map((c) => c.uid), <String>['a']);
+    expect(repo.fetchCalls, <({String? category, int? afterRank})>[(category: null, afterRank: null)]);
     await cubit.close();
   });
 
@@ -84,12 +84,17 @@ void main() {
     );
 
     blocTest<CreatorDirectoryCubit, CreatorDirectoryState>(
-      'signed-out viewer emits loaded empty without calling the repository',
+      'a guest gets the row from the public directory',
       setUp: () => app_state.prismUser = profileUser(loggedIn: false),
-      build: () => CreatorDirectoryCubit(repo, EmptyCreatorBlocks()),
+      build: () {
+        repo.pages[(null, null)] = creatorPage(<DirectoryCreator>[directoryCreator('a')]);
+        return CreatorDirectoryCubit(repo, EmptyCreatorBlocks());
+      },
       act: (cubit) => cubit.loadRow(),
-      expect: () => <Matcher>[_state(status: CreatorDirectoryStatus.loaded, uids: <String>[])],
-      verify: (_) => expect(repo.fetchCalls, isEmpty),
+      expect: () => <Matcher>[
+        _state(status: CreatorDirectoryStatus.loaded, uids: <String>['a']),
+      ],
+      verify: (_) => expect(repo.fetchCalls, hasLength(1)),
     );
 
     blocTest<CreatorDirectoryCubit, CreatorDirectoryState>(

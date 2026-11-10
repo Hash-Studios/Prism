@@ -12,6 +12,7 @@ import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
+import 'package:Prism/features/folders/biz/public_folder_cubit.dart';
 import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_member.dart';
@@ -25,6 +26,8 @@ import 'package:Prism/features/folders/views/widgets/folder_members_row.dart';
 import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
+import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
+import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -188,6 +191,18 @@ PrismFavouriteWall _wall(String id) => PrismFavouriteWall(
 Finder _menuItem(String label) =>
     find.ancestor(of: find.text(label), matching: find.byWidgetPredicate((widget) => widget is PopupMenuItem));
 
+class _NoMoodWalls implements MoodRepository {
+  @override
+  Future<List<MoodList>> fetchMoods() async => const <MoodList>[];
+
+  @override
+  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids, {bool keepOrder = false}) async =>
+      const <PrismWallpaper>[];
+
+  @override
+  Stream<void> watchVisibilityChanges() => const Stream<void>.empty();
+}
+
 class _NoPublicFolders implements PublicFoldersRepository {
   @override
   Future<Result<Set<String>>> fetchFollowedIds(String userId) async => Result.success(<String>{});
@@ -274,6 +289,9 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     addTearDown(() => getIt.unregister<ConnectivityService>());
+    // A guest gets the public projection, and this folder has none.
+    getIt.registerFactory<PublicFolderCubit>(() => PublicFolderCubit(_NoPublicFolders(), _NoMoodWalls()));
+    addTearDown(() => getIt.unregister<PublicFolderCubit>());
     // Both accounts have a folder with this id, so the page loads it as the owner each time.
     final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work')]);
     final bloc = FoldersBloc(repo, _NoPublicFolders());
@@ -309,7 +327,8 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser();
     bloc.add(const FoldersEvent.cleared());
     await settle(tester);
-    expect(find.text('Sign in to use folders'), findsOneWidget);
+    expect(find.text('This folder is private or no longer exists'), findsOneWidget);
+    expect(find.text('Work'), findsNothing);
   });
 
   testWidgets('a folder page reused for another folder loads and shows that folder', (tester) async {

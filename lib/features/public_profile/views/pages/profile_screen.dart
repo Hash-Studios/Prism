@@ -5,6 +5,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/profile_links.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -103,9 +104,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // usersV2 reads require auth per firestore.rules; guests (iOS browse-without-account)
-    // must sign in first, for both their own profile and other users' profiles.
-    if (!app_state.prismUser.loggedIn) {
+    // A guest (iOS browse-without-account) has no profile of their own, so it asks them to sign in. Other users'
+    // public profiles are readable without an account; their actions ask for sign-in.
+    if (!app_state.prismUser.loggedIn && _isOwnProfile) {
       return PrismPage(
         title: context.l10n.accountProfile,
         actions: <Widget>[
@@ -350,7 +351,8 @@ class _ProfileChildState extends State<_ProfileChild> {
     widget.onProfileEdited?.call();
   }
 
-  void _toggleFollow({required bool following}) {
+  Future<void> _toggleFollow({required bool following}) async {
+    if (!await requireSignedInAction(context) || !mounted) return;
     _trackAction(
       following ? AnalyticsActionValue.unfollowTapped : AnalyticsActionValue.followTapped,
       sourceContext: 'profile_screen_follow_action',
@@ -385,9 +387,10 @@ class _ProfileChildState extends State<_ProfileChild> {
     context.router.push(FollowersRoute(userId: _profile.id));
   }
 
-  void _openGiftSheet() {
+  Future<void> _openGiftSheet() async {
     PrismHaptics.tap();
-    showPrismSheet<void>(
+    if (!await requireSignedInAction(context) || !mounted) return;
+    await showPrismSheet<void>(
       context,
       builder: (BuildContext sheetContext) => GiftPassSheet(
         recipientUid: _profile.id,
@@ -423,7 +426,7 @@ class _ProfileChildState extends State<_ProfileChild> {
         }
         await showContentReportSheet(context, contentType: 'user', targetFirestoreDocId: uid);
       case _ProfileMenuAction.block:
-        if (uid.isEmpty) {
+        if (uid.isEmpty || !await requireSignedInAction(context) || !mounted) {
           return;
         }
         await confirmAndBlockUser(
@@ -707,7 +710,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                   _HeaderButton(
                     tooltip: context.l10n.accountGiftPassTooltip,
                     icon: Icons.card_giftcard_rounded,
-                    onPressed: _openGiftSheet,
+                    onPressed: () => unawaited(_openGiftSheet()),
                   ),
                   const SizedBox(width: PrismSpace.xxs),
                   // The same glass look as PrismIconButton(glass: true) while the cover shows: the shadow sits under
@@ -970,7 +973,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                                   variant: following ? PrismButtonVariant.tonal : PrismButtonVariant.primary,
                                   size: PrismButtonSize.compact,
                                   expand: true,
-                                  onPressed: () => _toggleFollow(following: following),
+                                  onPressed: () => unawaited(_toggleFollow(following: following)),
                                 ),
                               ),
                               ?linkButtons,

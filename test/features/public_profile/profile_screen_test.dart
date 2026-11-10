@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -182,6 +183,7 @@ void main() {
 
   tearDown(() async {
     AnalyticsRuntime.reset();
+    app_state.prismUser = profileUser(loggedIn: false);
     await repository.profiles.close();
     await getIt.reset();
   });
@@ -211,6 +213,54 @@ void main() {
 
     expect(find.text('Sign in to use your profile'), findsOneWidget);
     expect(find.byTooltip('Back'), findsOneWidget);
+  });
+
+  testWidgets('a guest sees another user\'s profile, not the sign-in prompt', (tester) async {
+    app_state.prismUser = profileUser(loggedIn: false);
+
+    await pumpScreen(tester, identifier: 'u2');
+    repository.profiles.add(_ana);
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final AppLocalizationsEn l10n = AppLocalizationsEn();
+    expect(find.text('Ana Rivera'), findsOneWidget);
+    expect(find.widgetWithText(PrismButton, 'Follow'), findsOneWidget);
+    expect(find.text(l10n.coreSignInFeatureTitle(l10n.accountYourProfile)), findsNothing);
+    expect(find.text(l10n.coreSignInFeatureTitle(l10n.accountProfiles)), findsNothing);
+  });
+
+  testWidgets('a guest who taps Follow is asked to sign in, and cancelling follows no one', (tester) async {
+    final Future<bool> Function(BuildContext) signIn = signedInActionSignIn;
+    addTearDown(() => signedInActionSignIn = signIn);
+    int prompts = 0;
+    signedInActionSignIn = (_) async {
+      prompts++;
+      return false;
+    };
+    app_state.prismUser = profileUser(loggedIn: false);
+
+    await pumpScreen(tester, identifier: 'u2');
+    repository.profiles.add(_ana);
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await tester.tap(find.widgetWithText(PrismButton, 'Follow'));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(prompts, 1);
+    expect(find.widgetWithText(PrismButton, 'Follow'), findsOneWidget);
+    // No follow event reaches the bloc. The guest's id and email come from profileUser(loggedIn: false).
+    verifyNever(
+      () => bloc.add(
+        const PublicProfileEvent.followChangeRequested(
+          follow: true,
+          currentUserId: 'u1',
+          currentUserEmail: 'user@example.com',
+          targetUserId: 'u2',
+          targetUserEmail: '',
+          targetName: 'Ana Rivera',
+        ),
+      ),
+    );
   });
 
   testWidgets('own profile: current header, completeness card and the redesign empty gallery', (tester) async {

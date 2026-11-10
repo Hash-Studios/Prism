@@ -105,14 +105,12 @@ class FolderDiscoverCubit extends Cubit<FolderDiscoverState> {
     return super.close();
   }
 
-  /// Signed-out guests cannot read the lists, so they get empty lists.
+  /// The signed-in user's id, or empty for a guest. Guests can read the lists, but follow nothing.
+  static String get _currentViewer => app_state.prismUser.loggedIn ? app_state.prismUser.id : '';
+
   Future<void> load() async {
     final int load = ++_load;
-    if (!app_state.prismUser.loggedIn) {
-      _resetForViewer(null);
-      return emit(const FolderDiscoverState(status: FolderDiscoverStatus.ready));
-    }
-    final String viewer = app_state.prismUser.id;
+    final String viewer = _currentViewer;
     if (_viewerId != viewer) {
       _resetForViewer(viewer);
       emit(const FolderDiscoverState());
@@ -120,10 +118,12 @@ class FolderDiscoverCubit extends Cubit<FolderDiscoverState> {
     if (state.status != FolderDiscoverStatus.ready) emit(state.copyWith(status: FolderDiscoverStatus.loading));
     final (Result<FolderDiscoverLists> lists, Result<Set<String>> followed, BlockedCreators _) = await (
       _folders.fetchDiscover(),
-      _folders.fetchFollowedIds(viewer),
+      viewer.isEmpty
+          ? Future<Result<Set<String>>>.value(Result.success(<String>{}))
+          : _folders.fetchFollowedIds(viewer),
       _blocks.loadBlockedCreators(),
     ).wait;
-    if (isClosed || load != _load || app_state.prismUser.id != viewer) return;
+    if (isClosed || load != _load || _currentViewer != viewer) return;
     if (lists.isFailure) {
       if (state.status != FolderDiscoverStatus.ready) emit(state.copyWith(status: FolderDiscoverStatus.failed));
       return;
@@ -159,7 +159,9 @@ class FolderDiscoverCubit extends Cubit<FolderDiscoverState> {
 
   /// Follows or unfollows at once, and undoes the change if the server refuses. Returns the failure, or null.
   Future<PublicFolderFailure?> toggleFollow(DiscoverFolder folder) async {
-    if (state.busy.contains(folder.id)) return null;
+    // A guest who just signed in to follow first loads the follows of the new account.
+    if (_viewerId != _currentViewer) await load();
+    if (isClosed || state.busy.contains(folder.id)) return null;
     final String viewer = app_state.prismUser.id;
     final bool next = !state.followed.contains(folder.id);
     Set<String> withFollow(bool on) =>
@@ -187,11 +189,11 @@ class FolderDiscoverCubit extends Cubit<FolderDiscoverState> {
 
   void _show() {
     if (isClosed) return;
-    if (!app_state.prismUser.loggedIn || _viewerId != app_state.prismUser.id) {
+    if (_viewerId != _currentViewer) {
       emit(state.copyWith(lists: FolderDiscoverLists.empty, likeYourSaves: () => const <DiscoverFolder>[]));
       return;
     }
-    final FolderDiscoverLists visible = _all.visibleTo(app_state.prismUser.id, _blocks.blockedCreators);
+    final FolderDiscoverLists visible = _all.visibleTo(_currentViewer, _blocks.blockedCreators);
     bool kept(DiscoverFolder f) => !_reported.contains(f.id);
     final FolderDiscoverLists lists = FolderDiscoverLists(
       trending: visible.trending.where(kept).toList(growable: false),

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/generated/analytics_events.g.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -139,7 +140,9 @@ class _FollowButton extends StatelessWidget {
     final AppLocalizations l10n = context.l10n;
     final bool following = context.select<FolderDiscoverCubit, bool>((c) => c.state.followed.contains(folder.id));
     Future<void> onTap() async {
-      final PublicFolderFailure? failure = await context.read<FolderDiscoverCubit>().toggleFollow(folder);
+      final FolderDiscoverCubit cubit = context.read<FolderDiscoverCubit>();
+      if (!await requireSignedInAction(context)) return;
+      final PublicFolderFailure? failure = await cubit.toggleFollow(folder);
       if (failure != null) {
         toasts.error(l10n.foldersFollowFailed);
       } else if (!following) {

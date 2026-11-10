@@ -87,7 +87,9 @@ The Guard column gives the guard in `AppRouter`:
 - `prompt`: no route guard. A guest sees a sign-in prompt in place of the content.
 - `admin`: `AdminGuard`.
 
-Some app pages show public or shared data, but their Firestore reads currently require sign-in. The table names those rules where they explain a guard or an in-page sign-in prompt. "Needs rules change" records the current mismatch; it does not authorize exposing data to guests. These pages keep their current route guard or sign-in prompt until product policy and rules agree.
+Some app pages show public data, but their Firestore reads require sign-in. "Needs rules change" marks them. These pages keep their route guard or sign-in prompt until the rules let a guest read the data.
+
+A guest can read `profiles/{uid}`, `usernames/{name}`, `publicFolders/{id}` and its `items`, `folderTrending` and `creatorDirectory`. These hold only public projections. A signed-in reader still does not see a public Folder of a creator they block, or who blocks them.
 
 `test/core/router/route_guards_test.dart` reads this table. The test fails when an `AppRouter` route, redirect, wildcard, or route-catalog target has no row, and when a row does not agree with the effective guard. Redirect rows use `-` for the target because their destination already owns the catalog target. A new route must add a row.
 
@@ -98,7 +100,7 @@ Some app pages show public or shared data, but their Firestore reads currently r
 | `/dashboard` | `dashboard` | The app shell. | guests on iOS | public | Guest browsing on iOS (#768). |
 | `/dashboard/home` | `home` | The Home feed. | guests on iOS | public | Walls are public on the web. |
 | `/dashboard/search` | `searchTab` | Wallpaper search. | guests on iOS | public | Walls are public on the web. |
-| `/dashboard/search/users` | `userSearch` | Creator search. | prompt | account | Needs rules change: `usernames` and `profiles` reads require sign-in in `firestore.rules`. A guest sees the sign-in prompt on the page. |
+| `/dashboard/search/users` | `userSearch` | Creator search. | prompt | account | A guest sees the sign-in prompt on the page. Creator search is not open to guests. |
 | `/dashboard/rewards` | `rewardsTab` | The user's coins, streak and rewards. | sign-in | owner | Data of one user. |
 | `/dashboard/streak` | - | Redirects to `/dashboard/rewards`. | sign-in | owner | Uses the destination route's guard. |
 | `/dashboard/collection` | `collectionTab` | The Collections tab. | guests on iOS | public | Collections are public on the web. |
@@ -122,7 +124,7 @@ Some app pages show public or shared data, but their Firestore reads currently r
 | `/fav-walls` | `favourites` | The user's favourites. | sign-in | owner | Data of one user. |
 | `/downloads` | `downloads` | The user's downloads. | sign-in | owner | Data of one user. |
 | `/library` | `library`, `wallpaperHistory` | The user's Library. | sign-in | owner | Data of one user. |
-| `/folder/:folderId` | `folder` | One Folder. | sign-in | account | Needs rules change: `publicFolders/{id}` and its `items` require sign-in in `firestore.rules`. A private Folder is limited to its owner and editors. |
+| `/folder/:folderId` | `folder` | One Folder. | none | public | A guest sees the public Folder. Follow asks for sign-in. A private Folder shows only to its owner and editors; a guest gets "This folder is not available". |
 | `/folder/invite/:code` | `folderInvite` | The join page of a Folder invite. | sign-in | account | An invite is for one person to join. The inviter name reads `profiles/{uid}`, which needs sign-in. The page opens after sign-in. |
 | `/upload-wall` | - | The upload form. | sign-in | owner | The user's own upload. |
 | `/edit-wall` | - | The edit form of a submitted wall. | sign-in | owner | The user's own wall. |
@@ -135,11 +137,11 @@ Some app pages show public or shared data, but their Firestore reads currently r
 | `/editors-choice` | `editorsChoice` | Editors' Choice walls. | none | public | Walls are public on the web. |
 | `/gallery` | `gallery` | A set of 2 to 12 walls. | none | public | Walls are public on the web. |
 | `/requests` | `wallRequests` | Wall requests. | none | public | The list callable needs no sign-in. A vote or a request asks for sign-in. |
-| `/creators` | `creators` | The creator directory. | sign-in | account | Needs rules change: `creatorDirectory` reads require sign-in in `firestore.rules`. The website has no creator directory page. |
-| `/folders` | `foldersDiscover` | Discover Folders. | sign-in | account | Needs rules change: `folderTrending` and `publicFolders` reads require sign-in in `firestore.rules`. The website has no Discover Folders page. |
+| `/creators` | `creators` | The creator directory. | none | public | Anyone can read `creatorDirectory`. Follow asks for sign-in. |
+| `/folders` | `foldersDiscover` | Discover Folders. | none | public | Anyone can read `folderTrending`. Follow asks for sign-in. A guest has no saves, so "Like your saves" shows its empty message. |
 | `/wrapped` | `wrapped` | The user's Wrapped. | sign-in | owner | Data of one user. |
 | `/challenges/:challengeId` | `weeklyChallenge` | One weekly challenge. | none | public | Anyone can read challenges. A submission asks for sign-in. |
-| `/user/:identifier` | `profile` | One creator profile. | prompt | account | Needs rules change: `profiles` and `usernames` reads require sign-in in `firestore.rules`. A guest sees the sign-in prompt on the page. |
+| `/user/:identifier` | `profile` | One creator profile. | none | public | Anyone can read `profiles` and `usernames`. Follow, Gift, Tip, Block and Report ask for sign-in. A guest's own profile shows the sign-in prompt. |
 | `/followers` | `followers` | The followers of one profile. | sign-in | account | Needs rules change: `profiles/{uid}/followers` reads require sign-in. |
 | `/following` | `following` | The accounts that one profile follows. | sign-in | account | Needs rules change: `profiles/{uid}/following` reads require sign-in. |
 | `/admin-review` | `adminReview` | The admin review queue. | admin | admin | Admin work. |

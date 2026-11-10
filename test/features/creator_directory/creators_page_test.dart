@@ -1,13 +1,27 @@
+import 'package:Prism/core/auth/require_signed_in_action.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/creator_directory/views/pages/creators_page.dart';
 import 'package:Prism/features/creator_directory/views/widgets/creator_directory_card.dart';
+import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import '../../support/favourite_test_scope.dart';
+import '../../support/profile_user_fixture.dart';
 import 'creator_directory_test_support.dart';
 
-Future<void> _pumpPage(WidgetTester tester, FakeCreatorDirectoryRepository repo) async {
-  await pumpCreators(tester, const CreatorsPage(), repository: repo, profileBloc: publicProfileBlocWith());
+Future<void> _pumpPage(
+  WidgetTester tester,
+  FakeCreatorDirectoryRepository repo, {
+  PublicProfileBloc? profileBloc,
+}) async {
+  await pumpCreators(
+    tester,
+    const CreatorsPage(),
+    repository: repo,
+    profileBloc: profileBloc ?? publicProfileBlocWith(),
+  );
   // The first page loads in microtasks, then rebuilds once.
   await tester.pump();
   await tester.pump();
@@ -22,6 +36,8 @@ void main() {
   late FakeCreatorDirectoryRepository repo;
 
   setUpFavouriteCounts();
+
+  setUpAll(() => registerFallbackValue(const PublicProfileEvent.refreshRequested()));
 
   setUp(() {
     setUpCreatorDirectoryGlobals();
@@ -99,5 +115,34 @@ void main() {
 
     expect(repo.fetchCalls.last, (category: null, afterRank: 12));
     expect(find.text('Creator c13'), findsOneWidget);
+  });
+
+  testWidgets('a guest sees the creators', (tester) async {
+    app_state.prismUser = profileUser(loggedIn: false);
+    repo.pages[(null, null)] = creatorPage(<DirectoryCreator>[directoryCreator('a')]);
+    await _pumpPage(tester, repo);
+
+    expect(find.text('Creator a'), findsOneWidget);
+  });
+
+  testWidgets('a guest who taps Follow is asked to sign in, and cancelling follows no one', (tester) async {
+    app_state.prismUser = profileUser(loggedIn: false);
+    final bloc = publicProfileBlocWith();
+    final signIn = signedInActionSignIn;
+    addTearDown(() => signedInActionSignIn = signIn);
+    int signInCalls = 0;
+    signedInActionSignIn = (_) async {
+      signInCalls++;
+      return false;
+    };
+    repo.pages[(null, null)] = creatorPage(<DirectoryCreator>[directoryCreator('a')]);
+    await _pumpPage(tester, repo, profileBloc: bloc);
+
+    await tester.tap(find.text('Follow'));
+    await _settle(tester);
+
+    expect(signInCalls, 1);
+    expect(find.text('Follow'), findsOneWidget);
+    verifyNever(() => bloc.add(any()));
   });
 }

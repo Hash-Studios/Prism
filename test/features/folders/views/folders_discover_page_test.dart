@@ -1,4 +1,5 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -178,6 +179,62 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     await tester.pump(const Duration(milliseconds: 100));
 
+    expect(folders.followCalls, <({String id, bool following})>[(id: 'trend-1', following: true)]);
+    expect(find.text('Following'), findsOneWidget);
+  });
+
+  testWidgets('a guest sees the trending folders', (tester) async {
+    registerCubit(discover: const FolderDiscoverLists(trending: <DiscoverFolder>[_trendingFolder]), signedIn: false);
+
+    await _pumpPage(tester);
+
+    expect(find.text('Trending'), findsOneWidget);
+    expect(find.text('New'), findsOneWidget);
+    expect(find.text('Like your saves'), findsOneWidget);
+    expect(find.text('Ocean Walls'), findsOneWidget);
+    expect(find.text('By Ana'), findsOneWidget);
+    expect(find.text('12 wallpapers'), findsOneWidget);
+  });
+
+  testWidgets('a guest who cancels sign-in on Follow does not follow', (tester) async {
+    final original = signedInActionSignIn;
+    addTearDown(() => signedInActionSignIn = original);
+    var prompts = 0;
+    signedInActionSignIn = (_) async {
+      prompts++;
+      return false;
+    };
+    registerCubit(discover: const FolderDiscoverLists(trending: <DiscoverFolder>[_trendingFolder]), signedIn: false);
+    await _pumpPage(tester);
+
+    await tester.tap(find.text('Follow'));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(prompts, 1);
+    expect(folders.followCalls, isEmpty);
+    expect(find.text('Follow'), findsOneWidget);
+  });
+
+  testWidgets('a guest who signs in on Follow follows the folder', (tester) async {
+    final original = signedInActionSignIn;
+    addTearDown(() => signedInActionSignIn = original);
+    var prompts = 0;
+    signedInActionSignIn = (_) async {
+      prompts++;
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'me'
+        ..loggedIn = true;
+      return true;
+    };
+    registerCubit(discover: const FolderDiscoverLists(trending: <DiscoverFolder>[_trendingFolder]), signedIn: false);
+    await _pumpPage(tester);
+
+    await tester.tap(find.text('Follow'));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(prompts, 1);
     expect(folders.followCalls, <({String id, bool following})>[(id: 'trend-1', following: true)]);
     expect(find.text('Following'), findsOneWidget);
   });

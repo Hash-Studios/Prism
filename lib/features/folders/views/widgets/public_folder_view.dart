@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -106,6 +107,7 @@ class _PublicFolderViewState extends State<PublicFolderView> with WidgetsBinding
 
   Future<void> _toggleFollow() async {
     PrismHaptics.tap();
+    if (!await requireSignedInAction(context) || !mounted) return;
     final AppLocalizations l10n = context.l10n;
     final bool following = !_cubit.state.following;
     final PublicFolderFailure? failure = await _cubit.toggleFollow();

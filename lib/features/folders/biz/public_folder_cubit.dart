@@ -135,7 +135,8 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
         ),
       );
       // A quiet reload is the same visit, so only the first load counts as an open for discovery.
-      if (!keep) unawaited(_repository.recordSignal(folderId, FolderSignal.open));
+      // The signal callable needs sign-in, so a guest open is not counted.
+      if (!keep && viewerId.isNotEmpty) unawaited(_repository.recordSignal(folderId, FolderSignal.open));
     } catch (error, stackTrace) {
       logger.w('[PublicFolderCubit] walls failed', error: error, stackTrace: stackTrace);
       if (keep) return;

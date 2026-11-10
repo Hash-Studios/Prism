@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
@@ -52,8 +53,10 @@ class _FakePublicFoldersRepository implements PublicFoldersRepository {
   @override
   Future<Result<FolderDiscoverLists>> fetchDiscover() async => Result.success(FolderDiscoverLists.empty);
 
+  final List<FolderSignal> signals = <FolderSignal>[];
+
   @override
-  Future<void> recordSignal(String folderId, FolderSignal signal) async {}
+  Future<void> recordSignal(String folderId, FolderSignal signal) async => signals.add(signal);
 
   PublicFolderEntity? folder;
   List<String> wallIds = const <String>[];
@@ -157,7 +160,9 @@ void main() {
     _router = _MockStackRouter();
     when(() => _router.stack).thenReturn(const <AutoRoutePage<dynamic>>[]);
     AnalyticsRuntime.instance = FakeAppAnalytics();
-    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'viewer';
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'viewer'
+      ..loggedIn = true;
   });
 
   tearDown(() {
@@ -226,6 +231,43 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
+
+  for (final bool signsIn in <bool>[false, true]) {
+    testWidgets('a guest sees a public folder, and Follow asks for sign-in (${signsIn ? 'signs in' : 'cancels'})', (
+      tester,
+    ) async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      int prompts = 0;
+      final previous = signedInActionSignIn;
+      signedInActionSignIn = (_) async {
+        prompts++;
+        if (signsIn) {
+          app_state.prismUser = app_constants.createGuestPrismUser()
+            ..id = 'viewer'
+            ..loggedIn = true;
+        }
+        return signsIn;
+      };
+      addTearDown(() => signedInActionSignIn = previous);
+      final repo = _FakePublicFoldersRepository()..folder = _folder();
+      final PublicFolderCubit cubit = PublicFolderCubit(repo, _FakeMoodRepository());
+      addTearDown(cubit.close);
+      await tester.pumpWidget(_host(PublicFolderView(folderId: 'f1', cubit: cubit)));
+      await _settle(tester);
+
+      expect(find.text('Night Owl'), findsOneWidget);
+      expect(find.text('Follow'), findsOneWidget);
+      // The open signal needs sign-in, so a guest open is not sent.
+      expect(repo.signals, isEmpty);
+
+      await tester.tap(find.text('Follow'));
+      await _settle(tester);
+
+      expect(prompts, 1);
+      expect(repo.followCalls, signsIn ? <(String, bool)>[('f1', true)] : isEmpty);
+      expect(find.text(signsIn ? 'Following' : 'Follow'), findsOneWidget);
+    });
+  }
 
   testWidgets('a viewer follows a public folder and the button and count change', (tester) async {
     final repo = _FakePublicFoldersRepository()..folder = _folder();
@@ -397,7 +439,9 @@ void main() {
   });
 
   testWidgets('the owner sees no follow button but can share the folder', (tester) async {
-    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'owner';
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'owner'
+      ..loggedIn = true;
     final repo = _FakePublicFoldersRepository()..folder = _folder();
     final PublicFolderCubit cubit = PublicFolderCubit(repo, _FakeMoodRepository());
     addTearDown(cubit.close);

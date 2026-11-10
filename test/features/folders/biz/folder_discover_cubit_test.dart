@@ -119,31 +119,58 @@ void main() {
     expect(cubit.state.followed, <String>{'t1'});
   });
 
-  test('load for a guest emits ready with empty lists and does not call the repo', () async {
+  test('a guest sees the public lists and follows nothing', () async {
     app_state.prismUser = app_constants.createGuestPrismUser();
-    folders.discover = Result.success(FolderDiscoverLists(trending: <DiscoverFolder>[_folder('t1', owner: 'a')]));
+    folders
+      ..discover = Result.success(FolderDiscoverLists(trending: <DiscoverFolder>[_folder('t1', owner: 'a')]))
+      ..followed = Result.success(<String>{'t1'});
     final FolderDiscoverCubit cubit = cubitWith();
     addTearDown(cubit.close);
 
     await cubit.load();
 
     expect(cubit.state.status, FolderDiscoverStatus.ready);
-    expect(cubit.state.lists.isEmpty, isTrue);
-    expect(folders.discoverCalls, 0);
+    expect(_ids(cubit.state.lists.trending), <String>['t1']);
+    expect(folders.discoverCalls, 1);
+    // A guest has no follows, so the cubit does not read them.
+    expect(cubit.state.followed, isEmpty);
   });
 
-  test('a guest cannot see cached folders after the block stream updates', () async {
-    folders.discover = Result.success(FolderDiscoverLists(trending: <DiscoverFolder>[_folder('t1', owner: 'a')]));
+  test('a guest after sign-out keeps the public lists but not the follows of the last account', () async {
+    folders
+      ..discover = Result.success(FolderDiscoverLists(trending: <DiscoverFolder>[_folder('t1', owner: 'a')]))
+      ..followed = Result.success(<String>{'t1'});
     final FolderDiscoverCubit cubit = cubitWith();
     addTearDown(cubit.close);
 
     await cubit.load();
+    expect(cubit.state.followed, <String>{'t1'});
     app_state.prismUser = app_constants.createGuestPrismUser();
     await cubit.load();
     blocks.completeInitial(<String>{});
     await Future<void>.delayed(Duration.zero);
 
-    expect(cubit.state.lists.isEmpty, isTrue);
+    expect(_ids(cubit.state.lists.trending), <String>['t1']);
+    expect(cubit.state.followed, isEmpty);
+  });
+
+  test('a guest who signs in to follow first loads the follows of the new account', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    folders
+      ..discover = Result.success(FolderDiscoverLists(trending: <DiscoverFolder>[_folder('t1', owner: 'a')]))
+      ..followed = Result.success(<String>{'t1'});
+    final FolderDiscoverCubit cubit = cubitWith();
+    addTearDown(cubit.close);
+    await cubit.load();
+
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'me'
+      ..loggedIn = true;
+    await cubit.toggleFollow(_folder('t1'));
+
+    // The new account already follows t1, so the tap unfollows it instead of a second follow.
+    expect(folders.followCalls, <({String id, bool following})>[(id: 't1', following: false)]);
+    expect(cubit.state.followed, isEmpty);
   });
 
   test('a fetchDiscover failure emits failed', () async {
