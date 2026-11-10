@@ -318,7 +318,7 @@ Use the Cloud Monitoring metric `run.googleapis.com/container/instance_count` wi
 The error is "Quota exceeded for total allowable CPU per project per region". The old revision continues to serve.
 
 1. Search the deploy log for each failed function name.
-2. Look at the CPU use in the region of the failed function: the Cloud Monitoring metric `serviceruntime.googleapis.com/quota/rate/net_usage` with `quota_metric="run.googleapis.com/cpu_allocation"` and `resource.label.location` set to that region. Wait until it is well below 200,000 (mCPU). Samples can arrive up to 240 seconds late, so use only a sample that is later than the end of the failed deploy. Do not use a fixed wait time.
+2. Look at the CPU use in the region of the failed function: the Cloud Monitoring metric `serviceruntime.googleapis.com/quota/rate/net_usage` with `quota_metric="run.googleapis.com/cpu_allocation"` and `resource.label.location` set to that region. Align it with a 60-second sum (`ALIGN_SUM`), not a rate. A rate shows the value divided by 60. Each point is then the allocated mCPU. The "Current usage" column for "Total CPU allocation" on the IAM & Admin > Quotas page shows the same value. Wait until it is well below the current quota of that region (200,000 mCPU, unless Google granted more). Samples can arrive up to 240 seconds late, so use only a sample that is later than the end of the failed deploy. Do not use a fixed wait time.
 3. Get the owner's yes. Then deploy only the failed functions: `firebase deploy --only functions:<name1>,functions:<name2> --project prism-wallpapers --account <email> --non-interactive`.
 
 ## Fix wave (second round of this release)
