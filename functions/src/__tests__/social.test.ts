@@ -989,3 +989,25 @@ test("dry-run rebuild preserves uncertain history after owner drop or retry", as
     });
   }
 });
+
+test("repeated dry runs never show a wall from any earlier run that day", async (t) => {
+  const store = installSocialDb(t);
+  const pool = "ABCDEFGHIJKLMN".split("");
+  // Like the toplist: always the first wall that is not excluded.
+  const build = async (_day: string, exclude: Set<string>, slot: string) => {
+    const id = pool.find((wall) => !exclude.has(wall));
+    return id ? {pipeline: "still" as const, source: {kind: "prism" as const, ids: [id]},
+      media: [{jpeg: BYTES, alt: slot, sensitive: false}], text: "wall", replyText: ""} : null;
+  };
+  const builders = {grid: build, panorama: build, still: build};
+  const shown: string[] = [];
+  // The repeat showed on the third run: A, B, A. Three runs prove every earlier run is remembered.
+  for (let run = 0; run < 3; run++) {
+    await prepareDay(deps(null, NOW, config({dryRun: true})), builders);
+    for (const [key, doc] of store) {
+      if (key.startsWith("socialPosts/")) shown.push(...(doc.source as {ids: string[]}).ids);
+    }
+  }
+  assert.equal(new Set(shown).size, shown.length, `a wall came back: ${shown.join(",")}`);
+  assert.equal(shown.length, 12);
+});

@@ -125,9 +125,17 @@ export async function prepareDay(deps: SocialDeps, builders: Builders = defaultB
   const day = postDay(now);
   const exclude = await recentlyPosted(now, config.blockedIds);
   const existing = await db.collection(SOCIAL_POSTS).where("day", "==", day).get();
+  // Every wall previewed in today's earlier dry runs, so a rebuild never shows an older set again.
+  const drySeenRef = db.collection(STATE).doc("dryRunSeen");
+  const drySeen = config.dryRun ? (await drySeenRef.get()).data() : undefined;
+  const previewed = new Set<string>(drySeen?.day === day && Array.isArray(drySeen.ids) ? drySeen.ids.map(String) : []);
+  for (const id of previewed) exclude.add(id);
   const kept = new Set<string>();
   for (const doc of existing.docs) {
-    for (const id of doc.data().source?.ids ?? []) exclude.add(String(id));
+    for (const id of doc.data().source?.ids ?? []) {
+      exclude.add(String(id));
+      if (config.dryRun) previewed.add(String(id));
+    }
     // In a dry run, every trigger rebuilds today's unposted posts with new walls, so the owner can try many sets.
     const removed = config.dryRun && await db.runTransaction(async (tx) => {
       const post = (await tx.get(doc.ref)).data();
@@ -139,6 +147,8 @@ export async function prepareDay(deps: SocialDeps, builders: Builders = defaultB
     });
     if (!removed) kept.add(doc.id);
   }
+  // ponytail: one doc of ids per day; about 6 walls a dry run, so even 100 runs stay far under the doc size limit.
+  if (config.dryRun && previewed.size > 0) await drySeenRef.set({day, ids: [...previewed]});
   const made: string[] = [];
   for (const slot of Object.keys(SLOTS) as Slot[]) {
     const postId = `${day}_${slot}`;

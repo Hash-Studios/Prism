@@ -195,9 +195,10 @@ async function wallhavenJson(path: string): Promise<any> {
 export async function wallhavenCandidates(): Promise<Array<{id: string; purity: string}>> {
   const seen = new Set<string>();
   const out: Array<{id: string; purity: string}> = [];
-  for (const topRange of ["3d", "1w"]) {
+  // Two pages per range: page 1 alone is about 24 walls, mostly sketchy, so the same top walls would win every day.
+  for (const [topRange, page] of [["3d", "1"], ["3d", "2"], ["1w", "1"], ["1w", "2"]]) {
     const query = new URLSearchParams({categories: "111", purity: "110", sorting: "toplist", topRange,
-      ratios: "portrait", atleast: "1080x1920"});
+      ratios: "portrait", atleast: "1080x1920", page});
     const data = (await wallhavenJson(`/search?${query}`))?.data;
     for (const item of Array.isArray(data) ? data : []) {
       const id = str(item?.id);
