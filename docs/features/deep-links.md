@@ -106,7 +106,7 @@ A Public route needs `firestore.rules` to let a signed-out user read what the pa
 | `/user/:identifier` | `profile` | Creator profile | Public | `profiles` and `usernames` are public reads. Follow, Gift, Block and Report ask for sign-in. Tip is hidden from guests. A guest's own profile shows the sign-in prompt. |
 | `/followers`, `/following` | `followers`, `following` | Follower lists | Account | `profiles/*/followers` and `profiles/*/following` need sign-in. A guest relation link opens the public profile. |
 | `/creators` | `creators` | Creator directory | Public | `creatorDirectory` is a public read. Follow asks for sign-in. |
-| `/folders` | `foldersDiscover` | Discover folders | Public | `folderTrending` and `publicFolders` are public reads. Follow asks for sign-in. A guest has no saves, so "Like your saves" shows its empty message. |
+| `/folders` | `foldersDiscover` | Discover folders | Public | `folderTrending` and `publicFolders` are public reads. Follow asks for sign-in. A guest has no saves, so "Like your saves" shows its empty message. The app hides creators the viewer blocked. A creator who blocked the viewer can still show; their Folder then opens as "This folder is private or no longer exists". |
 | `/folder/:folderId` | `folder` | One folder | Public | A guest sees the public folder. Follow asks for sign-in. A private folder shows only to its owner and members; a guest gets "This folder is private or no longer exists". |
 | `/folder/invite/:code` | `folderInvite` | Folder invite | Account | An invite joins a private folder. |
 | `/ai` | `ai` | AI wallpapers | Account | Generation spends coins. |

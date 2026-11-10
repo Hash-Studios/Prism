@@ -31,11 +31,7 @@ class SaveMediaRequest {
   final bool isLocalFile;
   final SaveMediaKind kind;
 
-  SaveMediaRequest({
-    required this.link,
-    required this.isLocalFile,
-    required this.kind,
-  });
+  SaveMediaRequest({required this.link, required this.isLocalFile, required this.kind});
 }
 
 class DownloadRequest {
@@ -44,12 +40,7 @@ class DownloadRequest {
   final bool isLocalFile;
   final String? album;
 
-  DownloadRequest({
-    required this.link,
-    required this.filenameWithoutExtension,
-    required this.isLocalFile,
-    this.album,
-  });
+  DownloadRequest({required this.link, required this.filenameWithoutExtension, required this.isLocalFile, this.album});
 }
 
 class OperationResult {
@@ -66,12 +57,7 @@ class DownloadItemsResult {
   final String? errorCode;
   final String? message;
 
-  DownloadItemsResult({
-    required this.success,
-    required this.items,
-    this.errorCode,
-    this.message,
-  });
+  DownloadItemsResult({required this.success, required this.items, this.errorCode, this.message});
 }
 
 enum SaveMediaKind { wallpaper, setup }
