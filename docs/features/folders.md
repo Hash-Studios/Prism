@@ -1,6 +1,6 @@
 # Folders: private, public and shared
 
-A **folder** is a named group of saved wallpapers. A **smart folder** fills itself from rules. See Smart folders. Each folder is private when the user makes it. The owner can make a folder **public**. Other signed-in users can then see the folder, follow it, and share its link. Followers get one "New in <folder>" push a day when the owner adds wallpapers. The user can save all the wallpapers of a folder at once with **Save all**.
+A **folder** is a named group of saved wallpapers. A **smart folder** fills itself from rules. See Smart folders. Each folder is private when the user makes it. The owner can make a folder **public**. Other signed-in users can then see the folder, follow it, and share its link. On iOS, guests can see public folders too, but must sign in to follow one. Followers get one "New in <folder>" push a day when the owner adds wallpapers. The user can save all the wallpapers of a folder at once with **Save all**.
 
 The owner can invite up to 10 people to add and remove wallpapers in a folder. These people are editors. See Shared folders. The owner and the editors can split a folder into named sections. See Sections.
 

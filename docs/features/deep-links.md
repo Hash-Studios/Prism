@@ -87,7 +87,7 @@ The Guard column gives the guard in `AppRouter`:
 - `prompt`: no route guard. A guest sees a sign-in prompt in place of the content.
 - `admin`: `AdminGuard`.
 
-Some app pages show public data, but their Firestore reads require sign-in. "Needs rules change" marks them. These pages keep their route guard or sign-in prompt until the rules let a guest read the data.
+The route guard controls navigation, not data visibility. The route's public-read rules and account actions are described below.
 
 A guest can read `profiles/{uid}`, `usernames/{name}`, `publicFolders/{id}` and its `items`, `folderTrending` and `creatorDirectory`. These hold only public projections. A signed-in reader still does not see a public Folder of a creator they block, or who blocks them.
 
@@ -125,7 +125,7 @@ A guest can read `profiles/{uid}`, `usernames/{name}`, `publicFolders/{id}` and 
 | `/downloads` | `downloads` | The user's downloads. | sign-in | owner | Data of one user. |
 | `/library` | `library`, `wallpaperHistory` | The user's Library. | sign-in | owner | Data of one user. |
 | `/folder/:folderId` | `folder` | One Folder. | none | public | A guest sees the public Folder. Follow asks for sign-in. A private Folder shows only to its owner and editors; a guest gets "This folder is not available". |
-| `/folder/invite/:code` | `folderInvite` | The join page of a Folder invite. | sign-in | account | An invite is for one person to join. The inviter name reads `profiles/{uid}`, which needs sign-in. The page opens after sign-in. |
+| `/folder/invite/:code` | `folderInvite` | The join page of a Folder invite. | sign-in | account | Joining a Folder is an account action. The page opens after sign-in. |
 | `/upload-wall` | - | The upload form. | sign-in | owner | The user's own upload. |
 | `/edit-wall` | - | The edit form of a submitted wall. | sign-in | owner | The user's own wall. |
 | `/creator-stats` | `creatorStats` | The user's creator stats. | sign-in | owner | Data of one user. |
@@ -141,9 +141,9 @@ A guest can read `profiles/{uid}`, `usernames/{name}`, `publicFolders/{id}` and 
 | `/folders` | `foldersDiscover` | Discover Folders. | none | public | Anyone can read `folderTrending`. Follow asks for sign-in. A guest has no saves, so "Like your saves" shows its empty message. |
 | `/wrapped` | `wrapped` | The user's Wrapped. | sign-in | owner | Data of one user. |
 | `/challenges/:challengeId` | `weeklyChallenge` | One weekly challenge. | none | public | Anyone can read challenges. A submission asks for sign-in. |
-| `/user/:identifier` | `profile` | One creator profile. | none | public | Anyone can read `profiles` and `usernames`. Follow, Gift, Tip, Block and Report ask for sign-in. A guest's own profile shows the sign-in prompt. |
-| `/followers` | `followers` | The followers of one profile. | sign-in | account | Needs rules change: `profiles/{uid}/followers` reads require sign-in. |
-| `/following` | `following` | The accounts that one profile follows. | sign-in | account | Needs rules change: `profiles/{uid}/following` reads require sign-in. |
+| `/user/:identifier` | `profile` | One creator profile. | none | public | Anyone can read `profiles` and `usernames`. Follow, Gift, Block and Report ask for sign-in. Tip is hidden from guests. A guest's own profile shows the sign-in prompt. |
+| `/followers` | `followers` | The followers of one profile. | sign-in | account | The relation list is available after sign-in. |
+| `/following` | `following` | The accounts that one profile follows. | sign-in | account | The relation list is available after sign-in. |
 | `/admin-review` | `adminReview` | The admin review queue. | admin | admin | Admin work. |
 | `/admin-review/swipe` | `swipeReview` | The swipe review. | admin | admin | Admin work. |
 | `/admin-review/image` | `adminImage` | The full image of a wall in review. | admin | admin | Admin work. |
