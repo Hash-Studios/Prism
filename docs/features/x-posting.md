@@ -18,7 +18,8 @@ Each post gets a random 0 to 12 minute offset. Posts carry no link and no link r
 | Function | When | Does |
 |---|---|---|
 | `socialPrepare` | 07:00 and 10:00 IST | Builds today's missing posts into `socialPosts/{day}_{slot}`, stores the images in R2 (`social/<postId>/<sha256>.jpg`, private bucket), sends previews to Telegram |
-| `socialPublish` | Every 15 minutes | Reads approval presses, posts what is due, reconciles unknown results |
+| `socialPublish` | Every 15 minutes | Posts what is due, reconciles unknown results |
+| `socialTelegramWebhook` | On each button press | Applies the press at once, shows a toast, and replaces the buttons with the outcome |
 | `socialMeasure` | 06:30 IST | Reads X metrics for posts and replies at 24 hours and 7 days into `metrics` |
 
 ## Post states
@@ -43,7 +44,7 @@ A post with a non-empty `replyText` also gets a reply, with the same rules on `r
 | `panorama` | Until `autoApprove.panorama` is `true` |
 | `still` | Not needed unless `autoApprove.still` is `false` |
 
-An approval binds to `contentHash` (image hashes, text, link reply, alt text, and sensitive flags). The publisher recomputes it and requires a matching owner approval for every grid. Only presses from the owner in the owner's chat count. Telegram offsets never move backwards. Failed approval previews retry during publish passes until delivered or expired. No decision by 2 hours after the slot: skipped.
+An approval binds to `contentHash` (image hashes, text, link reply, alt text, and sensitive flags). The publisher recomputes it and requires a matching owner approval for every grid. Only presses from the owner in the owner's chat count. Telegram calls `socialTelegramWebhook` with a secret header derived from the bot token; any other request gets 403. `socialPrepare` registers the webhook on every run. Failed approval previews retry during publish passes until delivered or expired. No decision by 2 hours after the slot: skipped.
 
 ## Grid checks
 
@@ -57,7 +58,7 @@ An approval binds to `contentHash` (image hashes, text, link reply, alt text, an
 ## Setup
 
 1. Secrets (Secret Manager): `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET` (OAuth 1.0a user tokens for @PrismWallpapers, Read and Write), `SOCIAL_TELEGRAM_BOT_TOKEN` (a new bot, not the channel bot), `SOCIAL_TELEGRAM_OWNER_CHAT_ID` (the owner's private chat with that bot). All six must exist before deploy, even in dry run.
-2. Deploy `socialPrepare`, `socialPublish`, `socialMeasure`.
+2. Deploy `socialPrepare`, `socialPublish`, `socialMeasure`, `socialTelegramWebhook`. Then force-run `socialPrepare` once, so it registers the Telegram webhook.
 3. Create `socialConfig/current`:
 
    ```json

@@ -1,3 +1,4 @@
+import {createHash} from "node:crypto";
 import {defineSecret} from "firebase-functions/params";
 
 // A private approval bot, separate from the channel bot in studio/telegram.ts. Only the owner's chat is accepted.
@@ -9,15 +10,22 @@ export const socialTelegramSecrets = [socialBotToken, socialOwnerChatId];
 export type ApprovalAction = "approve" | "skip" | "retry" | "drop";
 const ACTION_CODES: Record<string, ApprovalAction> = {a: "approve", s: "skip", r: "retry", d: "drop"};
 
-export interface ApprovalPress {updateId: number; callbackId: string; action: ApprovalAction; postId: string; hash: string}
+export interface ApprovalPress {
+  updateId: number; callbackId: string; messageId: number; action: ApprovalAction; postId: string; hash: string;
+}
+
+/** Telegram sends this in every webhook call, so only Telegram can press a button. Derived from the bot token. */
+export const webhookSecret = (token: string) =>
+  createHash("sha256").update(`prism-social-webhook:${token}`).digest("hex").slice(0, 48);
 
 export interface Telegram {
   sendPhotos(caption: string, photos: Buffer[]): Promise<void>;
   sendButtons(text: string, buttons: Array<{label: string; action: ApprovalAction; postId: string; hash: string}>): Promise<void>;
   sendText(text: string): Promise<void>;
-  /** Owner presses after `offset`. Presses from anyone else are dropped here. Returns the next offset. */
-  presses(offset: number): Promise<{presses: ApprovalPress[]; nextOffset: number}>;
   answer(callbackId: string, text: string): Promise<void>;
+  /** Replaces a button message with the outcome, so the buttons go away. */
+  markDone(messageId: number, text: string): Promise<void>;
+  setWebhook(url: string, secret: string): Promise<void>;
 }
 
 export const callbackData = (action: ApprovalAction, postId: string, hash: string) =>
@@ -30,8 +38,8 @@ export function parsePress(update: any, ownerChatId: string): ApprovalPress | nu
   if (String(query.from?.id) !== ownerChatId || String(query.message?.chat?.id) !== ownerChatId) return null;
   const match = /^([asrd]):([A-Za-z0-9_-]{1,64}):([a-f0-9]{12})$/.exec(String(query.data ?? ""));
   if (!match) return null;
-  return {updateId: update.update_id, callbackId: String(query.id), action: ACTION_CODES[match[1]], postId: match[2],
-    hash: match[3]};
+  return {updateId: update.update_id, callbackId: String(query.id), messageId: Number(query.message?.message_id) || 0,
+    action: ACTION_CODES[match[1]], postId: match[2], hash: match[3]};
 }
 
 export function telegramClient(token: string, ownerChatId: string, request: typeof fetch = fetch): Telegram {
@@ -76,15 +84,14 @@ export function telegramClient(token: string, ownerChatId: string, request: type
     async sendText(text) {
       await call("sendMessage", {chat_id: ownerChatId, text});
     },
-    async presses(offset) {
-      const updates = await call("getUpdates", {offset, timeout: 0, allowed_updates: ["callback_query"]});
-      const list = Array.isArray(updates) ? updates : [];
-      const presses = list.map((u) => parsePress(u, ownerChatId)).filter((p): p is ApprovalPress => p !== null);
-      const last = list.reduce((max, u) => typeof u?.update_id === "number" ? Math.max(max, u.update_id) : max, offset - 1);
-      return {presses, nextOffset: last + 1};
-    },
     async answer(callbackId, text) {
       await call("answerCallbackQuery", {callback_query_id: callbackId, text: text.slice(0, 200)});
+    },
+    async markDone(messageId, text) {
+      await call("editMessageText", {chat_id: ownerChatId, message_id: messageId, text});
+    },
+    async setWebhook(url, secret) {
+      await call("setWebhook", {url, secret_token: secret, allowed_updates: ["callback_query"]});
     },
   };
 }

@@ -1,13 +1,15 @@
 import * as admin from "firebase-admin";
 import {createHash} from "node:crypto";
 import {logger} from "firebase-functions/v2";
+import {onRequest} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {db, REGION, str} from "../common";
 import {R2Storage, r2Secrets} from "../r2Storage";
 import {postDay} from "../studio/telegram";
 import {assertFits, gridContent, panoramaContent, type Pipeline, type SocialContent, stillContent} from "./content";
 import {
-  type ApprovalPress, socialBotToken, socialOwnerChatId, socialTelegramSecrets, type Telegram, telegramClient,
+  type ApprovalPress, parsePress, socialBotToken, socialOwnerChatId, socialTelegramSecrets, type Telegram, telegramClient,
+  webhookSecret,
 } from "./telegram";
 import {type XClient, xClient, XError, xSecrets, xAccessSecret, xAccessToken, xApiKey, xApiSecret} from "./x";
 
@@ -239,20 +241,19 @@ export async function applyPress(press: ApprovalPress): Promise<string> {
   });
 }
 
-async function readPresses(deps: SocialDeps): Promise<void> {
-  if (!deps.telegram) return;
-  const stateRef = db.collection(STATE).doc("telegram");
-  const offset = Number((await stateRef.get()).data()?.offset) || 0;
-  const {presses, nextOffset} = await deps.telegram.presses(offset);
-  for (const press of presses) {
-    const reply = await applyPress(press);
-    await deps.telegram.answer(press.callbackId, reply).catch(() => null);
-  }
-  if (nextOffset > offset) {
-    await db.runTransaction(async (tx) => {
-      const current = Number((await tx.get(stateRef)).data()?.offset) || 0;
-      if (nextOffset > current) tx.set(stateRef, {offset: nextOffset}, {merge: true});
-    });
+const DECIDED = new Set(["Approved.", "Skipped.", "Will post again.", "Dropped.", "Will reply again.", "Reply dropped."]);
+
+/**
+ * One Telegram webhook update. Applies an owner press at once, shows the result as a toast, and replaces the buttons
+ * with the outcome. Anything that is not an owner press is ignored.
+ */
+export async function handleTelegramUpdate(update: unknown, telegram: Telegram, ownerChatId: string): Promise<void> {
+  const press = parsePress(update, ownerChatId);
+  if (!press) return;
+  const reply = await applyPress(press);
+  await telegram.answer(press.callbackId, reply).catch(() => null);
+  if (DECIDED.has(reply) && press.messageId > 0) {
+    await telegram.markDone(press.messageId, `${press.postId}: ${reply.replace(/\.$/, "")} ✅`).catch(() => null);
   }
 }
 
@@ -438,11 +439,6 @@ const ms = (value: unknown) => (value as admin.firestore.Timestamp | undefined)?
 /** One publish pass, including unfinished work from earlier days. */
 export async function publishDue(deps: SocialDeps): Promise<void> {
   if (!deps.config.enabled) return;
-  try {
-    await readPresses(deps);
-  } catch {
-    logger.error("social: approval polling failed.");
-  }
   const now = deps.now.getTime();
   // Open work in any state, plus recent posts that may still need their reply. Old posted docs are never read again.
   const [open, recent] = await Promise.all([
@@ -575,10 +571,34 @@ async function withLease(name: string, ttlMs: number, run: () => Promise<void>):
   }
 }
 
+const WEBHOOK_FUNCTION = "socialTelegramWebhook";
+const projectId = () => process.env.GCLOUD_PROJECT || JSON.parse(process.env.FIREBASE_CONFIG ?? "{}").projectId;
+
 export const socialPrepare = onSchedule({schedule: "0 7,10 * * *", timeZone: "Asia/Kolkata", region: REGION,
   memory: "1GiB", timeoutSeconds: 540, retryCount: 1, secrets: [...socialTelegramSecrets, ...r2Secrets]}, async () => {
-  const made = await prepareDay(await liveDeps(false, true));
+  const deps = await liveDeps(false, true);
+  // Points the approval bot at the webhook. Idempotent, so every run repairs a lost or changed registration.
+  await deps.telegram?.setWebhook(`https://${REGION}-${projectId()}.cloudfunctions.net/${WEBHOOK_FUNCTION}`,
+    webhookSecret(socialBotToken.value())).catch(() => logger.error("social: setWebhook failed."));
+  const made = await prepareDay(deps);
   logger.info("social: prepared.", {made});
+});
+
+/** Telegram calls this on every approval button press. Only requests with the bot's secret header count. */
+export const socialTelegramWebhook = onRequest({region: REGION, invoker: "public", maxInstances: 2, timeoutSeconds: 30,
+  memory: "256MiB", secrets: socialTelegramSecrets}, async (req, res) => {
+  const token = socialBotToken.value();
+  if (req.method !== "POST" || req.get("X-Telegram-Bot-Api-Secret-Token") !== webhookSecret(token)) {
+    res.sendStatus(403);
+    return;
+  }
+  try {
+    await handleTelegramUpdate(req.body, telegramClient(token, socialOwnerChatId.value()), socialOwnerChatId.value());
+  } catch {
+    logger.error("social: approval press failed.");
+  }
+  // Always 200 for a real Telegram call, so Telegram does not resend the same press.
+  res.sendStatus(200);
 });
 
 export const socialPublish = onSchedule({schedule: "every 15 minutes", region: REGION, memory: "512MiB",

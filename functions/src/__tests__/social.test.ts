@@ -6,8 +6,8 @@ import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {db} from "../common";
 import {gridContent, gridVisionDecision, panoramaPanels, YOUTH_TAG, type WallhavenWall} from "../social/content";
-import {applyPress, contentHash, loadSocialConfig, measurePosts, normalizePostText, prepareDay, publishDue, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
-import {parsePress, telegramClient, type Telegram} from "../social/telegram";
+import {applyPress, contentHash, handleTelegramUpdate, loadSocialConfig, measurePosts, normalizePostText, prepareDay, publishDue, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
+import {parsePress, telegramClient, type Telegram, webhookSecret} from "../social/telegram";
 import {oauthHeader, xClient, xWeightedLength, XError, type XClient, type XOwnPost} from "../social/x";
 import {postDay} from "../studio/telegram";
 import {installFakeDb, type Doc} from "./fakeDb";
@@ -110,11 +110,11 @@ test("gridContent picks three, limits sketchy, drops youth tags and excluded ids
 
 test("parsePress accepts only the owner's press with well-formed data", () => {
   const update = (fromId: number, data: string) => ({update_id: 7, callback_query: {id: "cb1", from: {id: fromId},
-    message: {chat: {id: 42}}, data}});
+    message: {message_id: 5, chat: {id: 42}}, data}});
   const data = "a:2026-11-12_am:0123456789ab";
   assert.equal(parsePress(update(99, data), "42"), null);
-  assert.deepEqual(parsePress(update(42, data), "42"), {updateId: 7, callbackId: "cb1", action: "approve",
-    postId: "2026-11-12_am", hash: "0123456789ab"});
+  assert.deepEqual(parsePress(update(42, data), "42"), {updateId: 7, callbackId: "cb1", messageId: 5,
+    action: "approve", postId: "2026-11-12_am", hash: "0123456789ab"});
   assert.equal(parsePress(update(42, "a:bad"), "42"), null);
   assert.equal(parsePress(update(42, "z:2026-11-12_am:0123456789ab"), "42"), null);
 });
@@ -145,7 +145,7 @@ function installSocialDb(t: TestContext, seed: Record<string, Doc> = {},
 
 const HASH = "0123456789abcdef0123456789abcdef";
 const press = (action: "approve" | "skip" | "retry" | "drop", hash = HASH.slice(0, 12)) =>
-  ({updateId: 1, callbackId: "c", action, postId: "p1", hash});
+  ({updateId: 1, callbackId: "c", messageId: 7, action, postId: "p1", hash});
 
 test("applyPress honors the hash and moves the status", async (t) => {
   const store = installSocialDb(t, {
@@ -527,7 +527,7 @@ test("failed uncertain alerts are retried until delivered", async (t) => {
   const store = installSocialDb(t, {[PATH]: postDoc({status: "uncertain", attemptId: "A"})});
   let attempts = 0;
   const tg: Telegram = {sendPhotos: async () => undefined, sendText: async () => undefined,
-    answer: async () => undefined, presses: async (offset) => ({presses: [], nextOffset: offset}),
+    answer: async () => undefined, markDone: async () => undefined, setWebhook: async () => undefined,
     sendButtons: async () => {
       if (++attempts === 1) throw new Error("offline");
     }};
@@ -585,7 +585,7 @@ test("publisher retries a failed preview without requiring a new queue document"
   sendButtons: async () => {
     buttons++;
   }, sendText: async () => undefined, answer: async () => undefined,
-  presses: async (offset) => ({presses: [], nextOffset: offset})};
+  markDone: async () => undefined, setWebhook: async () => undefined};
   const d = {...deps(null, NOW), telegram: tg};
   await publishDue(d);
   assert.equal(store.get(PATH)?.previewSentAt, undefined);
@@ -652,19 +652,6 @@ test("prepare surfaces queue write failures so the scheduler can retry", async (
   await assert.rejects(prepareDay(deps(null, NOW), {grid: build, panorama: build, still: build}), /unavailable/);
 });
 
-test("approval polling failure does not starve approved posts", async (t) => {
-  const store = installSocialDb(t, {[PATH]: postDoc()});
-  const {x, creates} = fakeX();
-  const tg: Telegram = {sendPhotos: async () => undefined, sendButtons: async () => undefined,
-    sendText: async () => undefined, answer: async () => undefined,
-    presses: async () => {
-      throw new Error("offline");
-    }};
-  await publishDue({...deps(x, NOW), telegram: tg});
-  assert.equal(store.get(PATH)?.status, "posted");
-  assert.equal(creates.length, 1);
-});
-
 test("metrics still measure an old queue document reconciled recently", async (t) => {
   const store = installSocialDb(t, {[PATH]: postDoc({day: "2026-01-01", status: "posted", tweetId: "T",
     postedAt: ts(NOW.getTime() - 86400000)})});
@@ -708,4 +695,42 @@ test("a post with no reply text never sends a reply", async (t) => {
   await publishDue(deps(x, NOW));
   assert.equal(store.get(PATH)?.replyStatus, undefined);
   assert.equal(creates.length, 0);
+});
+
+const pressUpdate = (data: string, from = "42") =>
+  ({update_id: 9, callback_query: {id: "cb", from: {id: Number(from)}, message: {message_id: 77, chat: {id: 42}}, data}});
+
+test("a webhook press applies at once, answers, and replaces the buttons", async (t) => {
+  const store = installSocialDb(t, {"socialPosts/p1": {status: "pending_approval", contentHash: HASH, approval: {required: true}}});
+  const answers: string[] = [];
+  const done: Array<[number, string]> = [];
+  const tg: Telegram = {sendPhotos: async () => undefined, sendButtons: async () => undefined, sendText: async () => undefined,
+    answer: async (_id, text) => {
+      answers.push(text);
+    },
+    markDone: async (id, text) => {
+      done.push([id, text]);
+    },
+    setWebhook: async () => undefined};
+  await handleTelegramUpdate(pressUpdate(`a:p1:${HASH.slice(0, 12)}`), tg, "42");
+  assert.equal(store.get("socialPosts/p1")?.status, "approved");
+  assert.deepEqual(answers, ["Approved."]);
+  assert.deepEqual(done, [[77, "p1: Approved ✅"]]);
+
+  // Another user's press changes nothing and gets no answer.
+  store.set("socialPosts/p2", {status: "pending_approval", contentHash: HASH, approval: {required: true}});
+  await handleTelegramUpdate({...pressUpdate(`a:p2:${HASH.slice(0, 12)}`, "99")}, tg, "42");
+  assert.equal(store.get("socialPosts/p2")?.status, "pending_approval");
+  assert.equal(answers.length, 1);
+
+  // A stale press answers but keeps the buttons.
+  await handleTelegramUpdate(pressUpdate("a:p2:ffffffffffff"), tg, "42");
+  assert.equal(store.get("socialPosts/p2")?.status, "pending_approval");
+  assert.equal(done.length, 1);
+});
+
+test("the webhook secret is stable per token and differs between tokens", () => {
+  assert.equal(webhookSecret("a"), webhookSecret("a"));
+  assert.notEqual(webhookSecret("a"), webhookSecret("b"));
+  assert.match(webhookSecret("a"), /^[a-f0-9]{48}$/);
 });
