@@ -206,7 +206,11 @@ export const YOUTH_TAG = /\b(lolis?|lolicon|shota|shotacon|child(?:ren)?|kids?|(
 
 export interface WallhavenWall {id: string; purity: string; path: string; tags: string[]}
 
-/** Grid rules on Vision SafeSearch. Never nudity; a very racy image gets X's sensitive flag. */
+/**
+ * Grid rules on Vision SafeSearch. Wallhaven's sketchy level already excludes nudity, yet Vision rates almost every
+ * sketchy wall adult POSSIBLE or higher. So only adult VERY_LIKELY, the closest to nudity, rejects. Anything adult
+ * POSSIBLE or LIKELY, or racy VERY_LIKELY, carries X's sensitive flag, as X's adult content rule asks.
+ */
 export function gridVisionDecision(safe: Record<string, unknown> | null | undefined):
   {ok: false; reason: string} | {ok: true; sensitive: boolean} {
   if (!safe) return {ok: false, reason: "no_safe_search"};
@@ -214,12 +218,17 @@ export function gridVisionDecision(safe: Record<string, unknown> | null | undefi
   if ([rank("adult"), rank("racy"), rank("violence"), rank("medical")].some((r) => r === 0)) {
     return {ok: false, reason: "unknown_safe_search"};
   }
-  if (rank("adult") >= 3) return {ok: false, reason: "adult"}; // POSSIBLE or higher
+  if (rank("adult") >= 5) return {ok: false, reason: "adult"}; // VERY_LIKELY
   if (rank("violence") >= 4 || rank("medical") >= 4) return {ok: false, reason: "violence_or_medical"}; // LIKELY+
-  return {ok: true, sensitive: rank("racy") >= 5}; // VERY_LIKELY
+  return {ok: true, sensitive: rank("adult") >= 3 || rank("racy") >= 5}; // adult POSSIBLE+, racy VERY_LIKELY
 }
 
 const WALLHAVEN = "https://wallhaven.cc/api/v1";
+/**
+ * Candidates checked per grid. At 15, a pool of mostly rejected sketchy walls left no grid at all. 30 details plus 4
+ * searches stay under Wallhaven's 45 requests a minute for one run.
+ */
+export const GRID_DETAIL_BUDGET = 30;
 
 async function wallhavenJson(path: string): Promise<any> {
   const res = await fetch(`${WALLHAVEN}${path}`, {signal: AbortSignal.timeout(20_000),
@@ -265,7 +274,7 @@ export async function gridContent(day: string, exclude: Set<string>, config: {sk
   let checked = 0;
   const blocked = config.blockedTags.map((t) => t.toLowerCase());
   for (const candidate of await deps.candidates()) {
-    if (picked.length === 3 || checked >= 15) break;
+    if (picked.length === 3 || checked >= GRID_DETAIL_BUDGET) break;
     if (exclude.has(candidate.id) || (candidate.purity === "sketchy" && sketchy >= config.sketchyPerPost)) continue;
     checked++;
     const wall = await deps.details(candidate.id);

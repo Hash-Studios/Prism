@@ -5,7 +5,7 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {db} from "../common";
-import {assertFits, DARK_STILL_TAILS, GRID_LINES, gridContent, gridVisionDecision, PANORAMA_LINES, panoramaPanels, STILL_TAILS, stillCaption, stillContent, wallhavenCandidates, YOUTH_TAG, type WallhavenWall} from "../social/content";
+import {assertFits, DARK_STILL_TAILS, GRID_DETAIL_BUDGET, GRID_LINES, gridContent, gridVisionDecision, PANORAMA_LINES, panoramaPanels, STILL_TAILS, stillCaption, stillContent, wallhavenCandidates, YOUTH_TAG, type WallhavenWall} from "../social/content";
 import {applyPress, contentHash, defaultBuilders, handleTelegramUpdate, JITTER_MS, loadSocialConfig, measurePosts, normalizePostText, prepareDay, publishDue, scheduledAt, socialPrepare, socialTelegramWebhook, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
 import {parsePress, socialBotToken, socialOwnerChatId, telegramClient, type Telegram, webhookSecret} from "../social/telegram";
 import {R2Storage} from "../r2Storage";
@@ -54,7 +54,10 @@ test("panoramaPanels cuts three panels and counts flat ones", async () => {
 test("gridVisionDecision applies the grid safety rules", () => {
   const all = (v: string) => ({adult: v, racy: v, violence: v, medical: v});
   const U = "VERY_UNLIKELY";
-  assert.deepEqual(gridVisionDecision({...all(U), adult: "POSSIBLE"}), {ok: false, reason: "adult"});
+  // Sketchy walls: only adult VERY_LIKELY rejects; adult POSSIBLE or LIKELY posts with the sensitive flag.
+  assert.deepEqual(gridVisionDecision({...all(U), adult: "VERY_LIKELY"}), {ok: false, reason: "adult"});
+  assert.deepEqual(gridVisionDecision({...all(U), adult: "POSSIBLE"}), {ok: true, sensitive: true});
+  assert.deepEqual(gridVisionDecision({...all(U), adult: "LIKELY", racy: "VERY_LIKELY"}), {ok: true, sensitive: true});
   for (const key of ["adult", "racy", "violence", "medical"]) {
     assert.equal(gridVisionDecision({...all(U), [key]: "UNKNOWN"}).ok, false, `${key} UNKNOWN`);
     const missing: Record<string, unknown> = all(U);
@@ -1086,29 +1089,32 @@ test("dry-run history resets at IST midnight, not UTC midnight", async (t) => {
   assert.deepEqual(store.get("socialState/dryRunSeen"), {day: postDay(after), ids: ["A"]});
 });
 
-test("Wallhaven reads four search pages, deduplicates, and keeps the detail budget at 15", async (t) => {
+test("Wallhaven reads four search pages, deduplicates, and keeps the detail budget", async (t) => {
   const requests: URL[] = [];
   t.mock.method(globalThis, "fetch", async (input: string | URL | Request) => {
     const url = new URL(String(input));
     assert.equal(url.origin, "https://wallhaven.cc");
     requests.push(url);
+    // Page 1 of each range repeats the same ids, so deduplication is visible; page 2 adds new ones.
+    const page2 = url.searchParams.get("page") === "2" ? `${url.searchParams.get("topRange")}x` : "";
     return {ok: true, json: async () => ({data: Array.from({length: 24}, (_, i) =>
-      ({id: `w${i}`, purity: "sfw"}))})} as Response;
+      ({id: `w${page2}${i}`, purity: "sfw"}))})} as Response;
   });
   const candidates = await wallhavenCandidates();
-  assert.equal(candidates.length, 24);
+  assert.equal(candidates.length, 72);
   assert.deepEqual(requests.map((url) => [url.searchParams.get("topRange"), url.searchParams.get("page")]),
     [["3d", "1"], ["1w", "1"], ["3d", "2"], ["1w", "2"]]);
-  const d = await gridDeps(candidates, Object.fromEntries(candidates.slice(0, 15).map(({id}) => [id, ["loli"]])));
+  const budget = GRID_DETAIL_BUDGET;
+  const d = await gridDeps(candidates, Object.fromEntries(candidates.slice(0, budget).map(({id}) => [id, ["loli"]])));
   const details = t.mock.fn(d.details);
   // Safe walls exist later, but rejection-heavy pools deliberately stop at the request budget.
   assert.equal(await gridContent("2026-11-12", new Set(), {sketchyPerPost: 2, blockedTags: []},
     {...d, details}), null);
-  assert.equal(details.mock.callCount(), 15);
+  assert.equal(details.mock.callCount(), budget);
   details.mock.resetCalls();
-  const content = await gridContent("2026-11-12", new Set(candidates.slice(0, 15).map(({id}) => id)),
+  const content = await gridContent("2026-11-12", new Set(candidates.slice(0, budget).map(({id}) => id)),
     {sketchyPerPost: 2, blockedTags: []}, {...d, details});
-  assert.deepEqual(content?.source.ids, ["w15", "w16", "w17"]);
+  assert.deepEqual(content?.source.ids, candidates.slice(budget, budget + 3).map(({id}) => id));
   assert.equal(details.mock.callCount(), 3, "excluded ids do not consume the detail budget");
 });
 
@@ -1228,4 +1234,11 @@ test("a failed page-2 search keeps the page-1 walls; a failed page-1 search stil
   assert.deepEqual((await wallhavenCandidates()).map(({id}) => id), ["3dp1", "1wp1"]);
   failPage = "1";
   await assert.rejects(wallhavenCandidates());
+});
+
+test("a pool where the first 15 candidates fail still fills the grid", async () => {
+  const candidates = Array.from({length: 20}, (_, i) => ({id: `c${i}`, purity: "sketchy"}));
+  const d = await gridDeps(candidates, Object.fromEntries(candidates.slice(0, 16).map(({id}) => [id, ["loli"]])));
+  const content = await gridContent("2026-11-12", new Set(), {sketchyPerPost: 3, blockedTags: []}, d);
+  assert.deepEqual(content?.source.ids, ["c16", "c17", "c18"]);
 });
