@@ -112,6 +112,22 @@ test("a scheduled live wall is released like a still wall and keeps its kind and
   assert.deepEqual(wall?.live, live);
 });
 
+test("scheduled live walls wait for a successful server proof", async (t) => {
+  const {store} = harness(t, {
+    "walls/pending": scheduled(A, NOW - MIN, {kind: "live", live: {video: "pending"}}),
+    "walls/failed": scheduled(A, NOW - MIN, {kind: "live", live: {verified: false, error: "unproven_file"}}),
+    "walls/still": scheduled(A, NOW - MIN),
+  });
+  assert.deepEqual(await releaseDueWalls(NOW), {released: 1, creators: 1});
+  for (const id of ["pending", "failed"]) {
+    assert.equal(store.get(`walls/${id}`)?.review, false);
+    assert.equal(store.get(`walls/${id}`)?.publishedAt, undefined);
+  }
+  await db.doc("walls/pending").update({"live.verified": true});
+  assert.deepEqual(await releaseDueWalls(NOW), {released: 1, creators: 1});
+  assert.equal(store.get("walls/pending")?.review, true);
+});
+
 test("a wall held after release keeps its older approval and stays hidden", async (t) => {
   const {store} = harness(t, {"walls/w1": scheduled(A, NOW - 2 * HOUR, {publishedAt: at(NOW - 30 * MIN)})});
   assert.deepEqual(await releaseDueWalls(NOW), {released: 0, creators: 0});

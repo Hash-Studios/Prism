@@ -54,6 +54,167 @@ void main() {
   tearDown(AnalyticsRuntime.reset);
 
   group('LiveSetButton', () {
+    for (final LiveApplyStatus status in LiveApplyStatus.values) {
+      testWidgets('records a successful set only when the native result is $status', (tester) async {
+        int recorded = 0;
+        await pumpWidget(
+          tester,
+          LiveSetButton(
+            live: live,
+            wallId: 'wall-1',
+            download: (_) async => video,
+            apply: (_) async => LiveApplyOutcome(status),
+            onSet: () => Future<void>.sync(() => recorded++),
+          ),
+        );
+
+        await tester.tap(find.text(l10n.liveWallSetLive));
+        await tester.pumpAndSettle();
+
+        expect(recorded, status == LiveApplyStatus.applied ? 1 : 0);
+      });
+    }
+
+    testWidgets('a failed accounting callback does not relabel a native success as failure', (tester) async {
+      int recorded = 0;
+      await pumpWidget(
+        tester,
+        LiveSetButton(
+          live: live,
+          wallId: 'wall-1',
+          download: (_) async => video,
+          apply: (_) async => const LiveApplyOutcome(LiveApplyStatus.applied),
+          onSet: () {
+            recorded++;
+            return Future<void>.error(StateError('receipt unavailable'), StackTrace.empty);
+          },
+        ),
+      );
+
+      await tester.tap(find.text(l10n.liveWallSetLive));
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.wallpaperLiveApplied), findsOneWidget);
+      expect(find.text(l10n.liveWallSetFailed), findsNothing);
+      expect(recorded, 1);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('an apply already started records the original wall after the button is disposed', (tester) async {
+      final Completer<LiveApplyOutcome> pending = Completer<LiveApplyOutcome>();
+      int recorded = 0;
+      await pumpWidget(
+        tester,
+        LiveSetButton(
+          live: live,
+          wallId: 'wall-1',
+          download: (_) async => video,
+          apply: (_) => pending.future,
+          onSet: () => Future<void>.sync(() => recorded++),
+        ),
+      );
+      await tester.tap(find.text(l10n.liveWallSetLive));
+      await tester.pump();
+      await pumpWidget(tester, const SizedBox.shrink());
+
+      pending.complete(const LiveApplyOutcome(LiveApplyStatus.applied));
+      await tester.pumpAndSettle();
+
+      expect(recorded, 1);
+    });
+
+    testWidgets('an apply already started records its original wall when the widget changes', (tester) async {
+      final Completer<LiveApplyOutcome> pending = Completer<LiveApplyOutcome>();
+      final List<String> recorded = <String>[];
+      await pumpWidget(
+        tester,
+        LiveSetButton(
+          live: live,
+          wallId: 'wall-1',
+          download: (_) async => video,
+          apply: (_) => pending.future,
+          onSet: () => Future<void>.sync(() => recorded.add('old')),
+        ),
+      );
+      await tester.tap(find.text(l10n.liveWallSetLive));
+      await tester.pump();
+      await pumpWidget(
+        tester,
+        LiveSetButton(
+          live: const WallLive(videoUrl: 'https://cdn.example.com/new.mp4'),
+          wallId: 'wall-2',
+          onSet: () => Future<void>.sync(() => recorded.add('new')),
+        ),
+      );
+
+      pending.complete(const LiveApplyOutcome(LiveApplyStatus.applied));
+      await tester.pumpAndSettle();
+
+      expect(recorded, <String>['old']);
+      expect(find.text(l10n.wallpaperLiveApplied), findsNothing);
+    });
+
+    testWidgets('does not apply a download after its button is disposed', (tester) async {
+      final Completer<File> pending = Completer<File>();
+      final List<String> applied = <String>[];
+      await pumpWidget(
+        tester,
+        LiveSetButton(
+          live: live,
+          wallId: 'wall-1',
+          download: (_) => pending.future,
+          apply: (path) async {
+            applied.add(path);
+            return const LiveApplyOutcome(LiveApplyStatus.applied);
+          },
+        ),
+      );
+      await tester.tap(find.text(l10n.liveWallSetLive));
+      await pumpWidget(tester, const SizedBox.shrink());
+
+      pending.complete(video);
+      await tester.pumpAndSettle();
+
+      expect(applied, isEmpty);
+    });
+
+    testWidgets('changing walls ignores the old download and allows the new wall to apply', (tester) async {
+      final Completer<File> pending = Completer<File>();
+      final List<String> applied = <String>[];
+      await pumpWidget(
+        tester,
+        LiveSetButton(
+          live: live,
+          wallId: 'wall-1',
+          download: (_) => pending.future,
+          apply: (path) async {
+            applied.add('old:$path');
+            return const LiveApplyOutcome(LiveApplyStatus.applied);
+          },
+        ),
+      );
+      await tester.tap(find.text(l10n.liveWallSetLive));
+      await pumpWidget(
+        tester,
+        LiveSetButton(
+          live: const WallLive(videoUrl: 'https://cdn.example.com/new.mp4'),
+          wallId: 'wall-2',
+          download: (_) async => File('/tmp/new.mp4'),
+          apply: (path) async {
+            applied.add('new:$path');
+            return const LiveApplyOutcome(LiveApplyStatus.applied);
+          },
+        ),
+      );
+      pending.complete(video);
+      await tester.pumpAndSettle();
+
+      expect(applied, isEmpty);
+      await tester.tap(find.text(l10n.liveWallSetLive));
+      await tester.pumpAndSettle();
+      expect(applied, <String>['new:/tmp/new.mp4']);
+    });
+
     testWidgets('tap downloads the video, then applies the downloaded file', (tester) async {
       final List<String> calls = <String>[];
       await pumpWidget(
@@ -118,6 +279,67 @@ void main() {
   });
 
   group('LiveSaveVideoButton', () {
+    testWidgets('does not save a download after its button is disposed', (tester) async {
+      final Completer<File> pending = Completer<File>();
+      final List<String> saved = <String>[];
+      await pumpWidget(
+        tester,
+        LiveSaveVideoButton(
+          live: live,
+          download: (_) => pending.future,
+          save: (path) async {
+            saved.add(path);
+            return OperationResult(success: true);
+          },
+        ),
+      );
+      await tester.tap(find.text(l10n.liveWallSaveVideo));
+      await pumpWidget(tester, const SizedBox.shrink());
+
+      pending.complete(video);
+      await tester.pumpAndSettle();
+
+      expect(saved, isEmpty);
+    });
+
+    testWidgets('changing videos does not save the old download as the new video', (tester) async {
+      final List<MethodCall> toasts = <MethodCall>[];
+      captureToasts(tester, toasts);
+      final Completer<File> pending = Completer<File>();
+      final List<String> saved = <String>[];
+      await pumpWidget(
+        tester,
+        LiveSaveVideoButton(
+          live: live,
+          download: (_) => pending.future,
+          save: (path) async {
+            saved.add('old:$path');
+            return OperationResult(success: true);
+          },
+        ),
+      );
+      await tester.tap(find.text(l10n.liveWallSaveVideo));
+      await pumpWidget(
+        tester,
+        LiveSaveVideoButton(
+          live: const WallLive(videoUrl: 'https://cdn.example.com/new.mp4'),
+          download: (_) async => File('/tmp/new.mp4'),
+          save: (path) async {
+            saved.add('new:$path');
+            return OperationResult(success: true);
+          },
+        ),
+      );
+      pending.complete(video);
+      await tester.pumpAndSettle();
+
+      expect(saved, isEmpty);
+      await tester.tap(find.text(l10n.liveWallSaveVideo));
+      await tester.pumpAndSettle();
+      expect(saved, <String>['new:/tmp/new.mp4']);
+      await tester.pump(const Duration(seconds: 5));
+    });
+
     testWidgets('tap saves the downloaded file and shows the saved message', (tester) async {
       final List<MethodCall> toasts = <MethodCall>[];
       captureToasts(tester, toasts);

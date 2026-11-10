@@ -42,28 +42,27 @@ Future<int> deleteWallFiles(
         logger.w('Could not delete a file of a removed wall.', tag: 'Upload', error: error, stackTrace: stackTrace);
       }
     }
-    if (failed && throwOnFailure) throw StateError('Some wallpaper files could not be deleted.');
-    return deleted;
-  }
-  for (final (String pathField, String shaField, String kindField) in <(String, String, String)>[
-    (WallFileFields.wallpaperPath, WallFileFields.wallpaperSha, WallFileFields.wallpaperSourceKind),
-    (WallFileFields.thumbPath, WallFileFields.thumbSha, WallFileFields.thumbSourceKind),
-  ]) {
-    final Object? path = wallData[pathField];
-    final Object? sha = wallData[shaField];
-    if (path is! String || path.isEmpty || sha is! String || sha.isEmpty) continue;
-    try {
-      await api.deleteFile(
-        repo: targetRepo,
-        path: path,
-        sha: sha,
-        message: path,
-        sourceKind: UploadSourceKind.fromData(wallData[kindField]),
-      );
-      deleted++;
-    } catch (error, stackTrace) {
-      failed = true;
-      logger.w('Could not delete a file of a removed wall.', tag: 'Upload', error: error, stackTrace: stackTrace);
+  } else {
+    for (final (String pathField, String shaField, String kindField) in <(String, String, String)>[
+      (WallFileFields.wallpaperPath, WallFileFields.wallpaperSha, WallFileFields.wallpaperSourceKind),
+      (WallFileFields.thumbPath, WallFileFields.thumbSha, WallFileFields.thumbSourceKind),
+    ]) {
+      final Object? path = wallData[pathField];
+      final Object? sha = wallData[shaField];
+      if (path is! String || path.isEmpty || sha is! String || sha.isEmpty) continue;
+      try {
+        await api.deleteFile(
+          repo: targetRepo,
+          path: path,
+          sha: sha,
+          message: path,
+          sourceKind: UploadSourceKind.fromData(wallData[kindField]),
+        );
+        deleted++;
+      } catch (error, stackTrace) {
+        failed = true;
+        logger.w('Could not delete a file of a removed wall.', tag: 'Upload', error: error, stackTrace: stackTrace);
+      }
     }
   }
   // A pending live wall also has its video and 3 moderation frames, all owned by Prism.

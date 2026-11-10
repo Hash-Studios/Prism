@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -12,34 +13,83 @@ import 'package:Prism/features/live_wallpaper/domain/entities/live_apply_outcome
 import 'package:Prism/features/live_wallpaper/domain/entities/live_capabilities.dart';
 import 'package:Prism/features/live_wallpaper/domain/repositories/live_wallpaper_repository.dart';
 import 'package:Prism/features/live_wallpaper/views/widgets/live_wallpaper_view.dart' show liveOutcomeMessage;
+import 'package:Prism/features/wallpaper_upload/biz/live_upload_limits.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 typedef LiveVideoDownloader = Future<File> Function(String url);
 
+final Map<String, Future<File>> _downloads = <String, Future<File>>{};
+
 /// Downloads a live wall's MP4 to the temp folder. A file kept from an earlier tap is reused.
-Future<File> downloadLiveVideo(String url) async {
+Future<File> downloadLiveVideo(String url) => _downloads.putIfAbsent(
+  url,
+  () => _downloadLiveVideo(url).whenComplete(() {
+    _downloads.remove(url);
+  }),
+);
+
+Future<File> _downloadLiveVideo(String url) async {
   final Directory dir = await getTemporaryDirectory();
-  final File file = File('${dir.path}/prism_live_${url.hashCode.toUnsigned(32)}.mp4');
-  if (await file.exists() && await file.length() > 0) return file;
-  final http.Response response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 60));
-  if (response.statusCode != 200) {
-    throw HttpException('Live video download failed with ${response.statusCode}', uri: Uri.parse(url));
+  final File file = File('${dir.path}/prism_live_${sha256.convert(utf8.encode(url))}.mp4');
+  final FileStat cached = await file.stat();
+  if (cached.type == FileSystemEntityType.file) {
+    if (cached.size > 0 && cached.size <= LiveUploadLimits.maxBytes) return file;
+    await file.delete();
   }
-  await file.writeAsBytes(response.bodyBytes, flush: true);
-  return file;
+  final Uri uri = Uri.parse(url);
+  final http.Client client = http.Client();
+  final Stopwatch elapsed = Stopwatch()..start();
+  const Duration timeout = Duration(seconds: 60);
+  Directory? staging;
+  RandomAccessFile? output;
+  StreamIterator<List<int>>? chunks;
+  try {
+    final http.StreamedResponse response = await client.send(http.Request('GET', uri)).timeout(timeout);
+    if (response.statusCode != 200) {
+      throw HttpException('Live video download failed with ${response.statusCode}', uri: uri);
+    }
+    if (response.contentLength == 0 || (response.contentLength ?? 0) > LiveUploadLimits.maxBytes) {
+      throw HttpException('Invalid live video size', uri: uri);
+    }
+    staging = await dir.createTemp('prism_live_');
+    final File partial = File('${staging.path}/video.part');
+    output = await partial.open(mode: FileMode.write);
+    chunks = StreamIterator<List<int>>(response.stream);
+    int length = 0;
+    while (await chunks.moveNext().timeout(timeout - elapsed.elapsed)) {
+      final List<int> chunk = chunks.current;
+      length += chunk.length;
+      if (length > LiveUploadLimits.maxBytes) throw HttpException('Live video is too large', uri: uri);
+      await output.writeFrom(chunk);
+    }
+    if (length == 0 || (response.contentLength != null && length != response.contentLength)) {
+      throw HttpException('Incomplete live video download', uri: uri);
+    }
+    await output.flush();
+    await output.close();
+    output = null;
+    return await partial.rename(file.path);
+  } finally {
+    client.close();
+    await chunks?.cancel();
+    await output?.close();
+    await staging?.delete(recursive: true);
+  }
 }
 
-/// Android: downloads the video and sets it as the live wallpaper.
 class LiveSetButton extends StatefulWidget {
   const LiveSetButton({
     required this.live,
     required this.wallId,
     this.download = downloadLiveVideo,
     this.apply,
+    this.onSet,
     super.key,
   });
 
@@ -47,8 +97,8 @@ class LiveSetButton extends StatefulWidget {
   final String wallId;
   final LiveVideoDownloader download;
 
-  /// Applies the downloaded file. Null uses the live wallpaper repository.
   final Future<LiveApplyOutcome> Function(String path)? apply;
+  final Future<void> Function()? onSet;
 
   @override
   State<LiveSetButton> createState() => _LiveSetButtonState();
@@ -56,28 +106,49 @@ class LiveSetButton extends StatefulWidget {
 
 class _LiveSetButtonState extends State<LiveSetButton> {
   bool _busy = false;
+  int _request = 0;
+
+  @override
+  void didUpdateWidget(LiveSetButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.wallId != widget.wallId || oldWidget.live.videoUrl != widget.live.videoUrl) {
+      _request++;
+      _busy = false;
+    }
+  }
 
   Future<void> _run() async {
     if (_busy) return;
+    final int request = ++_request;
+    final Future<LiveApplyOutcome> Function(String path)? apply = widget.apply;
+    final Future<void> Function()? onSet = widget.onSet;
     final AppLocalizations l10n = context.l10n;
     setState(() => _busy = true);
     LiveApplyOutcome? outcome;
     try {
       final File file = await widget.download(widget.live.videoUrl);
-      outcome = await (widget.apply ?? getIt<LiveWallpaperRepository>().applyVideo)(file.path);
+      if (!mounted || request != _request) return;
+      outcome = await (apply ?? getIt<LiveWallpaperRepository>().applyVideo)(file.path);
     } catch (_) {
       outcome = null;
     }
+    if (outcome?.status == LiveApplyStatus.applied && onSet != null) {
+      unawaited(
+        Future<void>.sync(onSet).catchError((Object error, StackTrace stackTrace) {
+          logger.w('Live wall set accounting failed', error: error, stackTrace: stackTrace);
+        }),
+      );
+    }
     final String result = outcome == null ? 'failed' : _resultOf(outcome.status);
     unawaited(analytics.track(LiveWallSetEvent(platform: 'android', action: 'live', result: result)));
-    if (!mounted) return;
+    if (!mounted || request != _request) return;
     setState(() => _busy = false);
     if (outcome == null) {
       _toast(l10n.liveWallSetFailed, PrismToastKind.error);
       return;
     }
     final bool perScreen = outcome.status == LiveApplyStatus.confirmInPreview && await _supportsPerScreen();
-    if (!mounted) return;
+    if (!mounted || request != _request) return;
     final String message = liveOutcomeMessage(l10n, outcome, perScreen);
     if (message.isEmpty) return;
     _toast(
@@ -109,14 +180,12 @@ class _LiveSetButtonState extends State<LiveSetButton> {
   }
 }
 
-/// iOS: downloads the video and saves it to Photos.
 class LiveSaveVideoButton extends StatefulWidget {
   const LiveSaveVideoButton({required this.live, this.download = downloadLiveVideo, this.save, super.key});
 
   final WallLive live;
   final LiveVideoDownloader download;
 
-  /// Saves the downloaded file. Null uses the media host API.
   final Future<OperationResult> Function(String path)? save;
 
   @override
@@ -125,20 +194,33 @@ class LiveSaveVideoButton extends StatefulWidget {
 
 class _LiveSaveVideoButtonState extends State<LiveSaveVideoButton> {
   bool _busy = false;
+  int _request = 0;
+
+  @override
+  void didUpdateWidget(LiveSaveVideoButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.live.videoUrl != widget.live.videoUrl) {
+      _request++;
+      _busy = false;
+    }
+  }
 
   Future<void> _run() async {
     if (_busy) return;
+    final int request = ++_request;
+    final Future<OperationResult> Function(String path)? save = widget.save;
     final AppLocalizations l10n = context.l10n;
     setState(() => _busy = true);
     bool saved;
     try {
       final File file = await widget.download(widget.live.videoUrl);
-      saved = (await (widget.save ?? PrismMediaHostApi().saveVideo)(file.path)).success;
+      if (!mounted || request != _request) return;
+      saved = (await (save ?? PrismMediaHostApi().saveVideo)(file.path)).success;
     } catch (_) {
       saved = false;
     }
     unawaited(analytics.track(LiveWallSetEvent(platform: 'ios', action: 'video', result: saved ? 'ok' : 'failed')));
-    if (!mounted) return;
+    if (!mounted || request != _request) return;
     setState(() => _busy = false);
     if (saved) {
       toasts.success(l10n.liveWallSaveVideoDone);
@@ -160,7 +242,6 @@ class _LiveSaveVideoButtonState extends State<LiveSaveVideoButton> {
   }
 }
 
-/// The iOS note under a live wall: live walls cannot be set on iOS, so the poster is set instead.
 class LiveIosNote extends StatelessWidget {
   const LiveIosNote({super.key});
 

@@ -693,7 +693,7 @@ test("challenge admission has its own retrying auth trigger; legacy submission k
   assert.equal(trigger?.eventFilterPathPatterns?.document, "walls/{wallId}");
   assert.equal(trigger?.retry, true);
   assert.equal(onWallSubmitted.__endpoint.eventTrigger?.eventType, "google.cloud.firestore.document.v1.created");
-  assert.notEqual(onWallSubmitted.__endpoint.eventTrigger?.retry, true);
+  assert.equal(onWallSubmitted.__endpoint.eventTrigger?.retry, true);
 });
 
 test("challenge trigger propagates transient identity errors and admits on redelivery", async (t) => {

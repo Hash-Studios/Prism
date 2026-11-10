@@ -1,7 +1,58 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import {readFileSync} from "node:fs";
+import {resolve} from "node:path";
 import {inspectLiveVideo, isLiveFramePath, isLiveVideoPath} from "../liveVideo";
-import {mp4} from "./mp4Fixture";
+import {box, mp4} from "./mp4Fixture";
+
+test("real encoded fixtures are accepted and metadata cannot disguise their media", () => {
+  const real = (name: string) => readFileSync(resolve(__dirname, '../../../test/fixtures/live', name));
+  assert.equal(inspectLiveVideo(real('p.mp4')).ok, true);
+  assert.equal(inspectLiveVideo(real('rot.mp4')).ok, true);
+  assert.deepEqual(inspectLiveVideo(real('h.mp4')), {ok: false, error: 'codec'});
+  const long = real('long.mp4');
+  long.writeUInt32BE(1000, long.indexOf(Buffer.from('mvhd')) + 20);
+  assert.deepEqual(inspectLiveVideo(long), {ok: false, error: 'too_long'});
+  const outside = real('p.mp4');
+  outside.writeUInt32BE(outside.length + 1, outside.indexOf(Buffer.from('stco')) + 12);
+  assert.equal(inspectLiveVideo(outside).ok, false);
+  const absentConfig = real('p.mp4');
+  absentConfig.write('free', absentConfig.indexOf(Buffer.from('avcC')));
+  assert.equal(inspectLiveVideo(absentConfig).ok, false);
+});
+
+test("sample metadata, SPS dimensions, local references and unit rotations are enforced", () => {
+  const real = () => readFileSync(resolve(__dirname, '../../../test/fixtures/live/p.mp4'));
+  const mutate = (type: string, offset: number, value: number) => {
+    const bytes = real();
+    bytes.writeUInt32BE(value, bytes.indexOf(Buffer.from(type), type === 'avc1' ? 32 : 0) + offset);
+    return bytes;
+  };
+  assert.equal(inspectLiveVideo(mutate('stsd', 8, 0)).ok, false);
+  assert.equal(inspectLiveVideo(mutate('stsz', 12, 999999)).ok, false);
+  assert.equal(inspectLiveVideo(mutate('url ', 4, 0)).ok, false);
+  assert.equal(inspectLiveVideo(mutate('tkhd', 44, 0)).ok, false);
+  assert.equal(inspectLiveVideo(mutate('avc1', 28, (1080 << 16) | 1920)).ok, false);
+  assert.equal(inspectLiveVideo(mutate('mdat', 4, 0xffffffff)).ok, false);
+  assert.equal(inspectLiveVideo(Buffer.concat([real(), box('moof')])).ok, false);
+});
+
+test("empty media, absent track timing, and an empty codec entry are not a playable MP4", () => {
+  assert.equal(inspectLiveVideo(mp4({headerOnly: true})).ok, false);
+});
+
+test("an in-band SPS cannot change the encoded frame size after avcC", () => {
+  const video = mp4();
+  const other = mp4({width: 1600, height: 3200});
+  const cfg = other.indexOf(Buffer.from("avcC"));
+  const sps = other.subarray(cfg + 12, cfg + 12 + other.readUInt16BE(cfg + 10));
+  const length = Buffer.alloc(4); length.writeUInt32BE(sps.length);
+  const mdat = video.indexOf(Buffer.from("mdat"));
+  const payload = Buffer.concat([length, sps, video.subarray(mdat + 4)]);
+  video.writeUInt32BE(payload.length, video.indexOf(Buffer.from("stsz")) + 8);
+  const changed = Buffer.concat([video.subarray(0, mdat - 4), box("mdat", payload)]);
+  assert.equal(inspectLiveVideo(changed).ok, false);
+});
 
 test("a portrait H.264 clip is read from its box headers", () => {
   const bytes = mp4();

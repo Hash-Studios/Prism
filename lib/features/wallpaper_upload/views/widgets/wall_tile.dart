@@ -288,6 +288,21 @@ Future<void> _deleteDoc({
   Map<String, dynamic>? pendingWallData,
 }) async {
   try {
+    if (pendingWallData?['kind'] == 'live') {
+      // Live asset deletion is blocked while the wall still references those assets.
+      await firestoreClient.deleteDoc(collection, id, sourceTag: sourceTag);
+      analytics.track(UploadWithdrawnEvent(assetId: id));
+      try {
+        await deleteWallFiles(pendingWallData!, throwOnFailure: true);
+      } catch (error, stackTrace) {
+        logger.e('live wall was withdrawn, but file cleanup failed ($sourceTag)', error: error, stackTrace: stackTrace);
+        toasts.error('$successToast. ${l10n.wallpaperUploadDeleteError}');
+        return;
+      }
+      toasts.success(successToast);
+      return;
+    }
+
     // A pending wall still holds a weekly upload slot. Deleting its files gives the slot back.
     if (pendingWallData != null) await deleteWallFiles(pendingWallData, throwOnFailure: true);
     await firestoreClient.deleteDoc(collection, id, sourceTag: sourceTag);

@@ -36,7 +36,7 @@ final class WallLive {
     final Object? video = value['video'];
     final Uri? uri = video is String ? Uri.tryParse(video) : null;
     if (uri == null || !uri.isScheme('https') || uri.host.isEmpty) return null;
-    int? positive(Object? raw) => raw is num && raw > 0 ? raw.toInt() : null;
+    int? positive(Object? raw) => raw is num && raw.isFinite && raw > 0 ? raw.toInt() : null;
     return WallLive(
       videoUrl: video! as String,
       durationMs: positive(value['durationMs']),

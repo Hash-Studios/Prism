@@ -11,6 +11,24 @@ function configure() {
   process.env.R2_PREVIEW_BASE_URL = "https://images.example.com";
 }
 
+test("R2 GET accepts exactly 20 MiB and rejects oversized declared or streamed bodies", async (t) => {
+  const previous = {...process.env};
+  t.after(() => { process.env = previous; });
+  configure();
+  const limit = 20 * 1024 * 1024;
+  const valid = new R2Storage(async () => new Response(Buffer.alloc(limit), {headers: {"content-length": String(limit)}}));
+  assert.equal((await valid.get("private", "large")).length, limit);
+  const declared = new R2Storage(async () => new Response(null, {headers: {"content-length": String(limit + 1)}}));
+  await assert.rejects(declared.get("private", "large"), /size is invalid/);
+  let cancelled = false;
+  const streamed = new R2Storage(async () => new Response(new ReadableStream({start(controller) {
+    controller.enqueue(new Uint8Array(limit));
+    controller.enqueue(new Uint8Array(1));
+  }, cancel() { cancelled = true; }}), {headers: {"content-length": String(limit)}}));
+  await assert.rejects(streamed.get("private", "large"), /too large/);
+  assert.equal(cancelled, true);
+});
+
 test("R2 signs conditional create, HEAD, GET, and exact DELETE with SigV4", async (t) => {
   const previous = {...process.env};
   t.after(() => {

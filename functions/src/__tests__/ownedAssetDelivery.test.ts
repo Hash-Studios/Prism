@@ -7,6 +7,35 @@ import {ownedAssetStorageEnabled, ownedThumbnailUrl, retainUpload, deleteRetaine
   signOriginalDelivery, bindOwnedWall, cleanupDeletedOwnedWall, sweepR2Tombstones, type StoredUpload} from "../ownedAssetDelivery";
 import {r2ObjectId} from "../r2Storage";
 import {installFakeDb} from "./fakeDb";
+import {R2Storage} from "../r2Storage";
+import * as ownerAuth from "../authoredContentUid";
+
+test("ISO BMFF image previews retain image MIME types instead of video/mp4", async (t) => {
+  const previous = {...process.env};
+  t.after(() => { process.env = previous; });
+  configured();
+  installFakeDb(t);
+  for (const [brand, mime] of [['avif', 'image/avif'], ['heic', 'image/heic'], ['mif1', 'image/heif']]) {
+    const bytes = Buffer.alloc(24);
+    bytes.writeUInt32BE(24);
+    bytes.write('ftyp', 4);
+    bytes.write(brand, 8);
+    const sha = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
+    const digest = createHash('sha256').update(bytes).digest('hex');
+    const identity = {repo: 'walls', path: `thumb_wall.${brand}`, sha, uid: 'owner', sourceKind: 'owned' as const};
+    const objectId = r2ObjectId(identity, digest);
+    const put = t.mock.method(R2Storage.prototype, 'put', async (...args: Parameters<R2Storage['put']>) => {
+      const type = args[4];
+      assert.equal(type, mime);
+      return true;
+    });
+    const head = t.mock.method(R2Storage.prototype, 'head', async () => ({size: bytes.length, sha256: digest, objectId,
+      uid: 'owner', repo: 'walls', path: identity.path, gitSha: sha, uploadId: 'imported', contentType: mime}));
+    const get = t.mock.method(R2Storage.prototype, 'get', async () => bytes);
+    await retainUpload({...identity, bytes});
+    put.mock.restore(); head.mock.restore(); get.mock.restore();
+  }
+});
 
 const configured = () => {
   process.env.R2_ACCOUNT_ID = "a".repeat(32);
@@ -101,6 +130,64 @@ test("retention verifies Git blob SHA, create-only object metadata, bytes, and p
   await assert.rejects(retainUpload({repo: "walls", path: "../thumb_wall.jpg", sha, uid: "owner", bytes, sourceKind: "owned"}),
     /Invalid upload identity/);
   assert.equal(store.size, docCount);
+});
+
+test("live upload cannot start after creator deletion closes the upload barrier", async (t) => {
+  const previous = {...process.env};
+  t.after(() => { process.env = previous; });
+  configured();
+  const store = installFakeDb(t, {"usersv2/owner": {deleted: true}, "creatorDeletionState/owner": {closed: true}});
+  const puts = t.mock.method(R2Storage.prototype, "put", async () => true);
+  const bytes = Buffer.from("live video bytes");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  const digest = createHash("sha256").update(bytes).digest("hex");
+  const identity = {repo: "walls", path: "live_recording.mp4", sha, uid: "owner", sourceKind: "owned" as const};
+  const objectId = r2ObjectId(identity, digest);
+  t.mock.method(R2Storage.prototype, "head", async () => ({size: bytes.length, sha256: digest, objectId, uid: "owner",
+    repo: "walls", path: identity.path, gitSha: sha, uploadId: "imported", contentType: "video/mp4"}));
+  t.mock.method(R2Storage.prototype, "get", async () => bytes);
+  await assert.rejects(retainUpload({repo: "walls", path: "live_recording.mp4", sha, uid: "owner", bytes,
+    sourceKind: "owned"}), /account is closed/);
+  assert.equal(puts.mock.callCount(), 0, "closed accounts cannot write live bytes to R2");
+  assert.equal(store.has(`r2ObjectRegistry/${objectId}`), false, "a closed account gets no upload registry row");
+});
+
+test("live upload raced by creator deletion is tombstoned and cleaned after readback", async (t) => {
+  const previous = {...process.env};
+  t.after(() => { process.env = previous; });
+  configured();
+  const store = installFakeDb(t, {"usersv2/owner": {deleted: false}, "creatorDeletionState/owner": {closed: false}});
+  const bytes = Buffer.from("live video bytes");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  const digest = createHash("sha256").update(bytes).digest("hex");
+  const identity = {repo: "walls", path: "live_recording.mp4", sha, uid: "owner", sourceKind: "owned" as const};
+  const objectId = r2ObjectId(identity, digest);
+  const objects = new Set<string>();
+  t.mock.method(R2Storage.prototype, "put", async (kind: string, object: string) => {
+    objects.add(`${kind}/${object}`);
+    return true;
+  });
+  t.mock.method(R2Storage.prototype, "head", async (kind: string, object: string) => ({size: bytes.length,
+    sha256: digest, objectId, uid: "owner", repo: "walls", path: identity.path, gitSha: sha,
+    uploadId: "imported", contentType: "video/mp4"}));
+  t.mock.method(R2Storage.prototype, "get", async (kind: string) => {
+    if (kind === "preview") {
+      store.set("usersv2/owner", {deleted: true});
+      store.set("creatorDeletionState/owner", {closed: true});
+    }
+    return bytes;
+  });
+  const deletes: string[] = [];
+  t.mock.method(R2Storage.prototype, "delete", async (kind: string, object: string) => {
+    deletes.push(`${kind}/${object}`);
+    objects.delete(`${kind}/${object}`);
+  });
+  await assert.rejects(retainUpload({...identity, bytes}), /deleted during upload/);
+  assert.equal(store.get(`r2ObjectRegistry/${objectId}`)?.status, "tombstoned");
+  assert.ok(deletes.includes(`private/private-originals/${objectId}`));
+  assert.ok(deletes.includes(`preview/previews/${objectId}.img`));
+  assert.equal(objects.size, 0, "the private original and preview are both removed");
+  assert.notEqual(store.get(`r2ObjectRegistry/${objectId}`)?.status, "active");
 });
 
 test("deletion tombstones manifest and registry before bytes and cannot resurrect key", async (t) => {
@@ -272,6 +359,45 @@ test("wall binding accepts matching GitHub receipts and redacts source URLs", as
   assert.equal(store.get("walls/wall")?.wallpaper_thumb,
     `https://images.example.com/previews/${assets[1].objectId}.img`);
   assert.deepEqual(store.get("ownedAssets/wall")?.original, assets[0]);
+});
+
+test("live rejection preserves exact protected poster incarnation for undo, not a stale archive", async (t) => {
+  const previous = {...process.env};
+  t.after(() => { process.env = previous; });
+  configured();
+  const asset = (path: string, preview = false): StoredUpload => {
+    const identity = {uid: "owner", repo: "walls", path, sha: "a".repeat(40), sourceKind: "owned" as const};
+    const sha256 = (preview ? "c" : "b").repeat(64);
+    const objectId = r2ObjectId(identity, sha256);
+    return {...identity, sha256, objectId, object: `private-originals/${objectId}`, bucket: "private-assets",
+      ...(preview ? {previewObjectId: objectId} : {})};
+  };
+  const original = asset("photo.jpg"), thumb = asset("thumb_photo.jpg", true);
+  const created = new admin.firestore.Timestamp(1, 20);
+  const archive = {kind: "live", id: "wall", creatorUid: "owner", sourceWallCreateTime: created,
+    originalProtected: true, originalObjectId: original.objectId, wallpaper_url: "", wallpaper_path: "", wallpaper_sha: "",
+    thumb_path: "", thumb_sha: "", wallpaper_thumb: ownedThumbnailUrl(thumb)};
+  const store = installFakeDb(t, {"ownedAssets/wall": {status: "ready", canonicalPath: "walls/doc", incarnation: created.toMillis(),
+    incarnationNanos: 20, original, thumb}, "rejectedWalls/doc": archive,
+  [`r2ObjectRegistry/${original.objectId}`]: {...original, status: "active", uploadId: "imported"},
+  [`r2ObjectRegistry/${thumb.objectId}`]: {...thumb, status: "active", uploadId: "imported"}});
+  const deletion = t.mock.method(R2Storage.prototype, "delete", async () => undefined);
+  const cleanup = () => cleanupDeletedOwnedWall({wallId: "wall", canonicalPath: "walls/doc", incarnation: created.toMillis(),
+    incarnationNanos: 20});
+  await cleanup();
+  assert.equal(store.get("ownedAssets/wall")?.status, "ready");
+  assert.equal(store.get(`r2ObjectRegistry/${original.objectId}`)?.status, "active");
+  assert.equal(deletion.mock.callCount(), 0);
+  const lookup = t.mock.method(ownerAuth, "verifiedUidForEmail", async () => "owner");
+  store.set("rejectedWalls/doc", {...archive, creatorUid: undefined, email: "owner@example.com"});
+  await cleanup();
+  assert.equal(store.get("ownedAssets/wall")?.status, "ready", "Auth ownership fills a pending creatorUid");
+  assert.equal(lookup.mock.callCount(), 1);
+  store.set("rejectedWalls/doc", {...archive, sourceWallCreateTime: new admin.firestore.Timestamp(1, 21)});
+  await cleanup();
+  assert.equal(store.get("ownedAssets/wall")?.status, "deleted");
+  assert.equal(store.get(`r2ObjectRegistry/${original.objectId}`)?.status, "tombstoned");
+  assert.equal(deletion.mock.callCount(), 1);
 });
 
 test("deleted wall cleanup tombstones unshared original and thumb registries and retries safely", async (t) => {

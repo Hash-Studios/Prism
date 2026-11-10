@@ -430,3 +430,25 @@ test("a live wall's frames are checked too, and a flag from a frame reaches the 
   const moderation = store.get("walls/w1")?.moderation as Doc;
   assert.ok((moderation.flags as string[]).includes("unsafe"));
 });
+
+test("a live wall with partial moderation frames is not marked checked", async (t) => {
+  quiet(t);
+  const wall = {wallpaper_url: url("a"), kind: "live", live: {frames: [{url: "https://evil.example/a.jpg"}]}};
+  const store = installFakeDb(t, {"walls/w1": wall});
+  let calls = 0;
+  await moderateWall("w1", wall, {fetchImage: async () => { calls++; return gradient("down"); }, annotate: async () => CLEAR});
+  assert.equal(calls, 0);
+  assert.equal(store.get("walls/w1")?.moderation, undefined);
+});
+
+test("a delayed moderation result cannot write into a recreated wall", async (t) => {
+  quiet(t);
+  const wall = {wallpaper_url: url("a")};
+  const store = installFakeDb(t, {"walls/w1": wall});
+  await moderateWall("w1", wall, {fetchImage: async () => gradient("down"), annotate: async () => {
+    await db.doc("walls/w1").delete();
+    await db.doc("walls/w1").set(wall);
+    return CLEAR;
+  }});
+  assert.equal(store.get("walls/w1")?.moderation, undefined);
+});

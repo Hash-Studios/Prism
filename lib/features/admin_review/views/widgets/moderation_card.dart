@@ -63,6 +63,12 @@ class _ModerationCardState extends State<ModerationCard> {
   Future<void> Function()? _approvalAction;
   bool _isReserving = false;
 
+  bool get _liveApprovalBlocked {
+    final Map<String, dynamic>? data = widget.liveData;
+    if (data == null || WallKind.parse(data['kind']) != WallKind.live) return false;
+    return WallLive.parse(kind: data['kind'], value: data['live'])?.verified != true;
+  }
+
   Future<void> _toggleReserve() async {
     if (_isReserving) return;
     final AppLocalizations l10n = context.l10n;
@@ -82,7 +88,7 @@ class _ModerationCardState extends State<ModerationCard> {
   Future<void> _approveAndPick() => _runApproval(widget.onApproveAndPick!);
 
   Future<void> _runApproval(Future<void> Function() action) async {
-    if (_isApproving || _isApproved) return;
+    if (_isApproving || _isApproved || _liveApprovalBlocked) return;
     _approvalAction = action;
     setState(() {
       _isApproving = true;
@@ -242,13 +248,13 @@ class _ModerationCardState extends State<ModerationCard> {
                         variant: PrismButtonVariant.tonal,
                         icon: Icons.auto_awesome_rounded,
                         loading: _isApproving,
-                        onPressed: locked ? null : _approveAndPick,
+                        onPressed: locked || _liveApprovalBlocked ? null : _approveAndPick,
                       ),
                     PrismButton(
                       label: _isApproved ? context.l10n.adminApproved : context.l10n.adminApprove,
                       size: PrismButtonSize.compact,
                       loading: _isApproving,
-                      onPressed: locked ? null : _approve,
+                      onPressed: locked || _liveApprovalBlocked ? null : _approve,
                     ),
                   ],
                 ),

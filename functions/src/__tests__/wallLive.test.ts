@@ -1,17 +1,24 @@
 import assert from "node:assert/strict";
 import {createHash} from "node:crypto";
+import {readFileSync} from "node:fs";
+import {resolve} from "node:path";
+import * as admin from "firebase-admin";
 import test, {type TestContext} from "node:test";
 import {logger} from "firebase-functions/v2";
-import {uploadFileKey} from "../completedWallUpload";
+import {uploadFileKey, uploadPathKey} from "../completedWallUpload";
 import {db} from "../common";
-import {ownedThumbnailUrl, type StoredUpload} from "../ownedAssetDelivery";
-import {r2ObjectId} from "../r2Storage";
+import {bindOwnedWall, cleanupDeletedOwnedWall, ownedThumbnailUrl, type StoredUpload} from "../ownedAssetDelivery";
+import {R2Storage, r2ObjectId} from "../r2Storage";
+import {getWallResubmissionContext, rejectWallForReview, undoWallRejection} from "../wallResubmissions";
 import {
   liveModerationFrameUrls,
+  liveAssetReferenced,
   type LiveProofDeps,
   parseClientLive,
   proveLiveSubmission,
   tombstoneLiveAssets,
+  tombstoneUnreferencedLiveUploads,
+  onRejectedLiveWallDeleted,
   verifyLiveWall,
 } from "../wallLive";
 import {type Doc, installFakeDb} from "./fakeDb";
@@ -34,14 +41,14 @@ function env(t: TestContext) {
 type Owned = {path: string; sha: string; bytes: Buffer; asset: StoredUpload; url: string};
 
 /** A file the owner uploaded through githubPutFile, stored privately with its preview. Needs env(t) first. */
-function owned(path: string, bytes: Buffer): Owned {
+function owned(path: string, bytes: Buffer, preview = true): Owned {
   const sha = sha1(bytes);
   const digest = sha256(bytes);
-  const identity = {uid: "owner", repo: "walls", path, sha, sourceKind: "owned" as const};
+  const identity = {uid: "owner", repo: "walls", path, sha, sourceKind: "owned" as const, uploadId: "upload-1"};
   const objectId = r2ObjectId(identity, digest);
   const asset: StoredUpload = {...identity, bucket: "private-assets", object: `private-originals/${objectId}`,
-    objectId, sha256: digest, previewObjectId: objectId};
-  return {path, sha, bytes, asset, url: ownedThumbnailUrl(asset)};
+    objectId, sha256: digest, ...(preview ? {previewObjectId: objectId} : {})};
+  return {path, sha, bytes, asset, url: preview ? ownedThumbnailUrl(asset) : ""};
 }
 
 function fixture(t: TestContext, video: Buffer = mp4()) {
@@ -51,15 +58,26 @@ function fixture(t: TestContext, video: Buffer = mp4()) {
   const [videoFile, ...frames] = all;
   const live = {video: videoFile.url, videoPath: videoFile.path, videoSha: videoFile.sha,
     frames: frames.map((frame) => ({url: frame.url, path: frame.path, sha: frame.sha}))};
-  return {all, live};
+  const png = readFileSync(resolve(__dirname, "../../../assets/icon/ic_background.png"));
+  const posters = [owned("owner_1234567890123_a.jpg", png, false), owned("thumb_owner_1234567890123_a.jpg", png)];
+  const wall = {id: "w1", email: "owner@example.com", kind: "live", review: false, live,
+    wallpaper_url: "", wallpaper_thumb: posters[1].url, wallpaper_path: posters[0].path, wallpaper_sha: posters[0].sha,
+    thumb_path: posters[1].path, thumb_sha: posters[1].sha, wallpaper_source_kind: "owned", thumb_source_kind: "owned"};
+  return {all, live, posters, wall};
 }
 
 /** Git upload receipts with their stored assets, as githubPutFile writes them. */
 function receipts(files: Owned[]): Record<string, Doc> {
-  return Object.fromEntries(files.map((file) => [
-    `githubUploads/${uploadFileKey("walls", {path: file.path, sha: file.sha, sourceKind: "owned"})}`,
-    {uid: "owner", repo: "walls", path: file.path, sha: file.sha, sourceKind: "owned", retainedAsset: file.asset},
-  ]));
+  return Object.fromEntries(files.flatMap((file) => {
+    const reference = {path: file.path, sha: file.sha, sourceKind: "owned" as const};
+    const record = {uid: "owner", repo: "walls", ...reference, generation: "generation-1", retainedAsset: file.asset};
+    return [
+      [`githubUploads/${uploadFileKey("walls", reference)}`, record],
+      [`githubUploadIntents/${uploadPathKey("walls", reference)}`, {...record, status: "complete", blobSha: file.sha,
+        uploadId: file.asset.uploadId, response: {sourceKind: "owned", content: {path: file.path, sha: file.sha, download_url: file.url}}}],
+      [`r2ObjectRegistry/${file.asset.objectId}`, {...file.asset, status: "active"}],
+    ];
+  }));
 }
 
 function deps(files: Owned[], patch: Partial<LiveProofDeps> = {}): LiveProofDeps {
@@ -99,7 +117,9 @@ test("liveModerationFrameUrls keeps only exact previews on the R2 preview host o
   process.env.R2_PREVIEW_BASE_URL = "https://img.example.com";
   const good = `https://img.example.com/previews/${"a".repeat(64)}.img`;
   assert.deepEqual(liveModerationFrameUrls({kind: "live", live: {frames: [{url: good},
-    {url: "https://evil.example/x.jpg"}]}}), [good]);
+    {url: "https://evil.example/x.jpg"}]}}), []);
+  const valid = ["a", "b", "c"].map((c) => `https://img.example.com/previews/${c.repeat(64)}.img`);
+  assert.deepEqual(liveModerationFrameUrls({kind: "live", live: {frames: valid.map((url) => ({url}))}}), valid);
   assert.deepEqual(liveModerationFrameUrls({kind: "still", live: {frames: [{url: good}]}}), []);
 });
 
@@ -144,9 +164,9 @@ test("a file whose preview is not in the R2 preview bucket is unproven", async (
 });
 
 test("verifyLiveWall writes the header facts onto a proven wall", async (t) => {
-  const {all, live} = fixture(t);
-  const store = installFakeDb(t, {...receipts(all), "walls/w1": {kind: "live", review: false, live}});
-  await verifyLiveWall(await db.doc("walls/w1").get(), "owner", deps(all));
+  const {all, posters, wall} = fixture(t);
+  const store = installFakeDb(t, {...receipts([...all, ...posters]), "usersv2/owner": {}, "walls/w1": wall});
+  await verifyLiveWall(await db.doc("walls/w1").get(), "owner", deps([...all, ...posters]));
   const saved = store.get("walls/w1")?.live as Doc;
   assert.equal(saved.verified, true);
   assert.equal(saved.durationMs, 5000);
@@ -165,9 +185,7 @@ test("verifyLiveWall marks a failed proof as unverified with its error", async (
 
 test("tombstoneLiveAssets marks the four R2 objects of an approved live wall", async (t) => {
   const {all, live} = fixture(t);
-  const registry: Record<string, Doc> = Object.fromEntries(all.map((file) => [`r2ObjectRegistry/${file.asset.objectId}`,
-    {status: "active", object: file.asset.object, sha256: file.asset.sha256, path: file.path}]));
-  const store = installFakeDb(t, {...receipts(all), ...registry});
+  const store = installFakeDb(t, receipts(all));
   const before = {kind: "live", review: true, live: {...live, verified: true}};
   assert.equal(await tombstoneLiveAssets(before), 4);
   for (const file of all) {
@@ -175,13 +193,268 @@ test("tombstoneLiveAssets marks the four R2 objects of an approved live wall", a
   }
 });
 
-test("tombstoneLiveAssets leaves the objects of a wall that is not approved", async (t) => {
+test("deletion of an unverified foreign submission cannot tombstone someone else's objects", async (t) => {
   const {all, live} = fixture(t);
-  const registry: Record<string, Doc> = Object.fromEntries(all.map((file) => [`r2ObjectRegistry/${file.asset.objectId}`,
-    {status: "active", object: file.asset.object, sha256: file.asset.sha256, path: file.path}]));
-  const store = installFakeDb(t, {...receipts(all), ...registry});
-  assert.equal(await tombstoneLiveAssets({kind: "live", review: false, live: {...live, verified: true}}), 0);
+  const store = installFakeDb(t, receipts(all));
+  assert.equal(await tombstoneLiveAssets({kind: "live", review: false, creatorUid: "attacker", live}), 0);
   for (const file of all) {
     assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "active");
   }
+});
+
+test("terminal deletion of an owner-proven pending live wall schedules all four files", async (t) => {
+  const {all, wall} = fixture(t);
+  const store = installFakeDb(t, receipts(all));
+  assert.equal(await tombstoneLiveAssets({...wall, creatorUid: "owner"}), 4);
+  for (const file of all) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "tombstoned");
+});
+
+test("tombstoned assets and incomplete upload intents cannot prove a live submission", async (t) => {
+  const {all, live} = fixture(t);
+  const store = installFakeDb(t, receipts(all));
+  const registry = `r2ObjectRegistry/${all[0].asset.objectId}`;
+  store.set(registry, {...store.get(registry), status: "tombstoned"});
+  assert.deepEqual(await proveLiveSubmission("owner", live, deps(all)), {ok: false, error: "unproven_file"});
+  store.set(registry, {...store.get(registry), status: "active"});
+  const intent = `githubUploadIntents/${uploadPathKey("walls", {...all[0], sourceKind: "owned"})}`;
+  store.set(intent, {...store.get(intent), status: "uploading"});
+  assert.deepEqual(await proveLiveSubmission("owner", live, deps(all)), {ok: false, error: "unproven_file"});
+});
+
+test("a receipt cannot substitute a retained asset from another path", async (t) => {
+  const {all, live} = fixture(t);
+  const store = installFakeDb(t, receipts(all));
+  const key = `githubUploads/${uploadFileKey("walls", {...all[0], sourceKind: "owned"})}`;
+  store.set(key, {...store.get(key), retainedAsset: all[1].asset});
+  assert.deepEqual(await proveLiveSubmission("owner", live, deps(all)), {ok: false, error: "unproven_file"});
+});
+
+test("verification fences a tombstone made while the file bytes are being checked", async (t) => {
+  const {all, posters, wall} = fixture(t);
+  const files = [...all, ...posters];
+  const store = installFakeDb(t, {...receipts(files), "usersv2/owner": {}, "walls/w1": wall});
+  const dependencies = deps(files);
+  await verifyLiveWall(await db.doc("walls/w1").get(), "owner", {...dependencies, readPrivate: async (asset) => {
+    const key = `r2ObjectRegistry/${all[0].asset.objectId}`;
+    store.set(key, {...store.get(key), status: "tombstoned"});
+    return dependencies.readPrivate(asset);
+  }});
+  assert.equal((store.get("walls/w1")?.live as Doc).verified, false);
+  assert.equal((store.get("walls/w1")?.live as Doc).error, "unproven_file");
+});
+
+for (const change of ["recreated", "email", "kind"] as const) {
+  test(`an old submission proof cannot write into a wall whose ${change} changed`, async (t) => {
+    const {all, posters, wall} = fixture(t);
+    const files = [...all, ...posters];
+    const store = installFakeDb(t, {...receipts(files), "usersv2/owner": {}, "walls/w1": wall});
+    const snapshot = await db.doc("walls/w1").get();
+    if (change === "recreated") {
+      await db.doc("walls/w1").delete();
+      await db.doc("walls/w1").set(wall);
+    } else await db.doc("walls/w1").update({[change]: change === "email" ? "other@example.com" : "still"});
+    await verifyLiveWall(snapshot, "owner", deps(files));
+    assert.equal((store.get("walls/w1")?.live as Doc).verified, undefined);
+  });
+}
+
+test("a transient storage failure stays pending and the next delivery can verify it", async (t) => {
+  const {all, posters, wall, live} = fixture(t);
+  const files = [...all, ...posters];
+  const store = installFakeDb(t, {...receipts(files), "usersv2/owner": {}, "walls/w1": wall});
+  const snapshot = await db.doc("walls/w1").get();
+  await assert.rejects(() => verifyLiveWall(snapshot, "owner", deps(files, {readPrivate: async () => {
+    throw new Error("temporary R2 failure");
+  }})), /temporary R2 failure/);
+  assert.deepEqual(store.get("walls/w1")?.live, live);
+  await verifyLiveWall(snapshot, "owner", deps(files));
+  assert.equal((store.get("walls/w1")?.live as Doc).verified, true);
+});
+
+for (const invalid of ["video", "foreign", "truncated"] as const) {
+  test(`a live wall with a ${invalid} poster is not verified`, async (t) => {
+    const {all, posters, wall} = fixture(t);
+    if (invalid === "video") wall.wallpaper_thumb = all[0].url;
+    if (invalid === "truncated") {
+      posters[0] = owned(posters[0].path, posters[0].bytes.subarray(0, 40), false);
+      wall.wallpaper_sha = posters[0].sha;
+    }
+    const files = [...all, ...posters];
+    const seed = receipts(files);
+    if (invalid === "foreign") {
+      const key = `githubUploads/${uploadFileKey("walls", {...posters[0], sourceKind: "owned"})}`;
+      seed[key].uid = "other-owner";
+    }
+    const store = installFakeDb(t, {...seed, "usersv2/owner": {}, "walls/w1": wall});
+    await verifyLiveWall(await db.doc("walls/w1").get(), "owner", deps(files));
+    assert.equal((store.get("walls/w1")?.live as Doc).verified, false);
+    assert.equal((store.get("walls/w1")?.live as Doc).error, "unproven_poster");
+  });
+}
+
+test("server-enriched live references are re-proved on a protected wall", async (t) => {
+  const {all, posters, wall, live} = fixture(t);
+  const protectedWall = {...wall, live: {...live, verified: true, durationMs: 999}, originalProtected: true,
+    originalObjectId: posters[0].asset.objectId, wallpaper_path: "", wallpaper_sha: "", thumb_path: "", thumb_sha: ""};
+  const files = [...all, ...posters];
+  const store = installFakeDb(t, {...receipts(files), "usersv2/owner": {}, "walls/w1": protectedWall,
+    "ownedAssets/w1": {status: "ready", canonicalPath: "walls/w1", incarnation: 1, incarnationNanos: 1_000_000,
+      original: posters[0].asset, thumb: posters[1].asset}});
+  await verifyLiveWall(await db.doc("walls/w1").get(), "owner", deps(files));
+  assert.equal((store.get("walls/w1")?.live as Doc).verified, true);
+  assert.equal((store.get("walls/w1")?.live as Doc).durationMs, 5000);
+  const manifest = store.get("ownedAssets/w1")!;
+  store.set("ownedAssets/w1", {...manifest, incarnation: 0});
+  await verifyLiveWall(await db.doc("walls/w1").get(), "owner", deps(files));
+  assert.equal((store.get("walls/w1")?.live as Doc).verified, false);
+  assert.equal((store.get("walls/w1")?.live as Doc).error, "unproven_poster");
+});
+
+for (const collection of ["walls", "rejectedWalls"]) {
+  test(`cleanup preserves shared video and frame assets referenced by ${collection}`, async (t) => {
+    const {all, live} = fixture(t);
+    const before = {kind: "live", review: true, live: {...live, verified: true}};
+    const store = installFakeDb(t, {...receipts(all), [`${collection}/replacement`]: before});
+    assert.equal(await tombstoneLiveAssets(before), 0);
+    for (const file of all) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "active");
+    await db.doc(`${collection}/replacement`).delete();
+    assert.equal(await tombstoneLiveAssets(before), 4);
+  });
+}
+
+test("an unverified foreign wall cannot pin another owner's assets", async (t) => {
+  const {all, wall, live} = fixture(t);
+  installFakeDb(t, {...receipts(all), "walls/foreign": {...wall, creatorUid: "attacker"}});
+  assert.equal(await tombstoneLiveAssets({kind: "live", review: true, live: {...live, verified: true}}), 4);
+});
+
+test("a pending canonical owner reference protects an upload before verification", async (t) => {
+  const {all, wall} = fixture(t);
+  installFakeDb(t, {...receipts(all), "walls/pending": {...wall, creatorUid: "owner"}});
+  assert.equal(await db.runTransaction((tx) => liveAssetReferenced(tx, all[0].asset)), true);
+  assert.equal(await db.runTransaction((tx) => liveAssetReferenced(tx, all[1].asset)), true);
+});
+
+test("registry identity still permits deleted-account cleanup after upload receipts are removed", async (t) => {
+  const {all, live} = fixture(t);
+  const seed = receipts(all);
+  for (const path of Object.keys(seed)) if (path.startsWith("githubUploads/")) delete seed[path];
+  const store = installFakeDb(t, seed);
+  assert.equal(await tombstoneLiveAssets({kind: "live", review: true, live: {...live, verified: true}}), 4);
+  for (const file of all) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "tombstoned");
+});
+
+test("a protected live rejection keeps its files and undo binds the new wall incarnation before re-proof", async (t) => {
+  const {all, posters, wall, live} = fixture(t);
+  Object.assign(process.env, {GH_USERNAME: "github-owner", R2_ACCOUNT_ID: "a".repeat(32), R2_ACCESS_KEY_ID: "access",
+    R2_SECRET_ACCESS_KEY: "secret", R2_PREVIEW_BUCKET: "public-previews"});
+  const files = [...all, ...posters];
+  const protectedWall = {...wall, creatorUid: "owner", review: true, live: {...live, verified: true}, originalProtected: true,
+    originalObjectId: posters[0].asset.objectId, wallpaper_path: "", wallpaper_sha: "", thumb_path: "", thumb_sha: ""};
+  const store = installFakeDb(t, {...receipts(files), "usersv2/owner": {}, "usersv2/moderator": {}, "walls/w1": protectedWall,
+    "ownedAssets/w1": {status: "ready", canonicalPath: "walls/w1", incarnation: 1, incarnationNanos: 1_000_000,
+      original: posters[0].asset, thumb: posters[1].asset, originalUrl: "", thumbUrl: posters[1].url}});
+  t.mock.method(admin.auth(), "getUser", async () => ({uid: "owner", email: wall.email, emailVerified: true}));
+  t.mock.method(R2Storage.prototype, "head", async (_bucket: "private" | "preview", object: string) => {
+    const file = files.find((file) => file.asset.object === object);
+    assert.ok(file);
+    return {size: file.bytes.length, contentType: "image/png", sha256: file.asset.sha256, uid: "owner",
+      objectId: file.asset.objectId, repo: "walls", path: file.path, gitSha: file.sha, uploadId: "upload-1"};
+  });
+  const auth = {uid: "moderator", token: {admin: true}};
+  const context = () => getWallResubmissionContext.run({auth, data: {wallDocIds: ["w1"]}} as never);
+  const before = await db.doc("walls/w1").get();
+  await rejectWallForReview.run({auth, data: {wallDocId: "w1", expectedWallRevision: (await context()).contexts.w1.wallRevision,
+    expectedReview: true, rejectionOperationId: "reject-live", reason: "Review again"}} as never);
+  assert.equal(await tombstoneLiveAssets(before.data()), 0);
+  await cleanupDeletedOwnedWall({wallId: "w1", canonicalPath: "walls/w1", incarnation: before.createTime?.toMillis(),
+    incarnationNanos: before.createTime?.nanoseconds});
+  assert.equal(store.get("ownedAssets/w1")?.status, "ready");
+  const archive = await db.doc("rejectedWalls/w1").get();
+  await undoWallRejection.run({auth, data: {wallDocId: "w1", expectedRejectionRevision: (await context()).contexts.w1.rejectionRevision,
+    operationId: "undo-live"}} as never);
+  assert.equal(store.has("ownedAssets/w1"), false);
+  assert.equal(store.get("walls/w1")?.originalProtected, undefined);
+  assert.equal(store.get("walls/w1")?.wallpaper_path, posters[0].path);
+  await onRejectedLiveWallDeleted.run({data: archive, params: {wallId: "w1"}} as never);
+  for (const file of files) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "active");
+  await bindOwnedWall("w1");
+  const recreated = await db.doc("walls/w1").get();
+  assert.notEqual(recreated.createTime?.toMillis(), before.createTime?.toMillis());
+  assert.equal(store.get("ownedAssets/w1")?.incarnation, recreated.createTime?.toMillis());
+  assert.equal(store.get("walls/w1")?.originalProtected, true);
+  await verifyLiveWall(recreated, "owner", deps(files));
+  assert.equal((store.get("walls/w1")?.live as Doc).verified, true);
+  assert.equal((store.get("walls/w1")?.live as Doc).durationMs, 5000);
+  assert.equal(store.get("walls/w1")?.review, true);
+});
+
+test("terminal deletion of rejected live history cleans all six owned files", async (t) => {
+  const {all, posters, wall, live} = fixture(t);
+  Object.assign(process.env, {R2_ACCOUNT_ID: "a".repeat(32), R2_ACCESS_KEY_ID: "access", R2_SECRET_ACCESS_KEY: "secret",
+    R2_PREVIEW_BUCKET: "public-previews"});
+  const files = [...all, ...posters];
+  const archive = {...wall, creatorUid: "owner", live: {...live, verified: true}, originalProtected: true,
+    originalObjectId: posters[0].asset.objectId, wallpaper_path: "", wallpaper_sha: "", thumb_path: "", thumb_sha: "",
+    sourceWallCreateTime: admin.firestore.Timestamp.fromMillis(1)};
+  const store = installFakeDb(t, {...receipts(files), "rejectedWalls/w1": archive,
+    "ownedAssets/w1": {status: "ready", canonicalPath: "walls/w1", incarnation: 1, incarnationNanos: 1_000_000,
+      original: posters[0].asset, thumb: posters[1].asset}});
+  const removed = await db.doc("rejectedWalls/w1").get();
+  await db.doc("rejectedWalls/w1").delete();
+  t.mock.method(R2Storage.prototype, "delete", async () => undefined);
+  await onRejectedLiveWallDeleted.run({data: removed, params: {wallId: "w1"}} as never);
+  for (const file of files) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "tombstoned");
+  assert.equal(store.get("ownedAssets/w1")?.status, "deleted");
+  assert.equal(onRejectedLiveWallDeleted.__endpoint.eventTrigger?.retry, true);
+});
+
+test("account closure tombstones orphan live uploads and preserves retained canonical and archive references", async (t) => {
+  const {all, live} = fixture(t);
+  const orphanVideo = owned("live_orphan.mp4", mp4());
+  const orphanFrame = owned("frame_1_orphan.jpg", Buffer.from("orphan frame"));
+  const files = [...all, orphanVideo, orphanFrame];
+  const store = installFakeDb(t, {...receipts(files), "walls/retained": {kind: "live", live: {...live, verified: true}}});
+  assert.equal(await tombstoneUnreferencedLiveUploads("owner"), 2);
+  for (const file of all) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "active");
+  assert.equal(store.get(`r2ObjectRegistry/${orphanVideo.asset.objectId}`)?.status, "tombstoned");
+  assert.equal(store.get(`r2ObjectRegistry/${orphanFrame.asset.objectId}`)?.status, "tombstoned");
+  await db.doc("walls/retained").delete();
+  await db.doc("rejectedWalls/retained").set({kind: "live", creatorUid: "owner", live});
+  assert.equal(await tombstoneUnreferencedLiveUploads("owner"), 0);
+});
+
+test("rejection before binding followed by history deletion schedules all six raw live assets", async (t) => {
+  const {all, posters, wall} = fixture(t);
+  const files = [...all, ...posters];
+  const archive = {...wall, creatorUid: "owner", sourceWallCreateTime: admin.firestore.Timestamp.fromMillis(1)};
+  const store = installFakeDb(t, {...receipts(files), "rejectedWalls/w1": archive});
+  const removed = await db.doc("rejectedWalls/w1").get();
+  await db.doc("rejectedWalls/w1").delete();
+  await onRejectedLiveWallDeleted.run({data: removed, params: {wallId: "w1"}} as never);
+  for (const file of files) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "tombstoned");
+});
+
+test("raw live cleanup preserves all six files of a recreated canonical wall", async (t) => {
+  const {all, posters, wall} = fixture(t);
+  const files = [...all, ...posters];
+  const store = installFakeDb(t, {...receipts(files), "walls/recreated": {...wall, creatorUid: "owner"}});
+  assert.equal(await tombstoneLiveAssets({...wall, creatorUid: "owner"}), 0);
+  for (const file of files) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "active");
+});
+
+test("a shared owned manifest preserves raw live posters without retaining unrelated video files", async (t) => {
+  const {all, posters, wall} = fixture(t);
+  const files = [...all, ...posters];
+  const store = installFakeDb(t, {...receipts(files), "ownedAssets/shared": {status: "ready",
+    original: posters[0].asset, thumb: posters[1].asset}});
+  assert.equal(await tombstoneLiveAssets({...wall, creatorUid: "owner"}), 4);
+  for (const file of posters) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "active");
+});
+
+test("foreign raw poster claims cannot pin someone else's live assets", async (t) => {
+  const {all, posters, wall} = fixture(t);
+  const store = installFakeDb(t, {...receipts([...all, ...posters]), "walls/foreign": {...wall, creatorUid: "attacker"}});
+  assert.equal(await tombstoneLiveAssets({...wall, creatorUid: "owner"}), 6);
+  for (const file of [...all, ...posters]) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "tombstoned");
 });

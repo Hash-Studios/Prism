@@ -26,6 +26,7 @@ export type Mp4Options = {
   video?: boolean;
   mdat?: boolean;
   mvhdVersion?: 0 | 1;
+  headerOnly?: boolean;
 };
 
 /** A minimal MP4: ftyp, moov (mvhd, one trak) and mdat. Stored width and height are the tkhd values. */
@@ -49,11 +50,39 @@ export function mp4(options: Mp4Options = {}): Buffer {
     ints(width * 65536, height * 65536));
   const hdlr = box("hdlr", Buffer.alloc(4), Buffer.alloc(4), Buffer.from(video ? "vide" : "soun", "latin1"),
     Buffer.alloc(12), Buffer.from([0]));
-  const stsd = box("stsd", Buffer.alloc(4), ints(1), box(codec, Buffer.alloc(78)));
-  const trak = box("trak", tkhd, box("mdia", hdlr, box("minf", box("stbl", stsd))));
+  const fields: number[] = [];
+  const bits = (value: number, count: number) => {
+    for (let i = count - 1; i >= 0; i--) fields.push((value >>> i) & 1);
+  };
+  const ue = (value: number) => {
+    const size = Math.floor(Math.log2(value + 1)); bits(0, size); bits(value + 1, size + 1);
+  };
+  bits(66, 8); bits(0, 8); bits(40, 8);
+  ue(0); ue(0); ue(0); ue(0); ue(1); bits(0, 1);
+  ue(Math.ceil(width / 16) - 1); ue(Math.ceil(height / 16) - 1); bits(1, 1); bits(1, 1); bits(1, 1);
+  ue(0); ue((Math.ceil(width / 16) * 16 - width) / 2); ue(0); ue((Math.ceil(height / 16) * 16 - height) / 2);
+  bits(0, 1); bits(1, 1);
+  while (fields.length % 8) fields.push(0);
+  const sps = Buffer.from([0x67, ...Array.from({length: fields.length / 8}, (_, i) =>
+    fields.slice(i * 8, i * 8 + 8).reduce((n, b) => n * 2 + b, 0))]);
+  const spsSize = Buffer.alloc(2); spsSize.writeUInt16BE(sps.length);
+  const avcC = box("avcC", Buffer.from([1, 66, 0, 40, 255, 225]), spsSize, sps,
+    Buffer.from([1, 0, 2, 0x68, 0x80]));
+  const visual = Buffer.alloc(78);
+  visual.writeUInt16BE(1, 6);
+  visual.writeUInt16BE(width, 24); visual.writeUInt16BE(height, 26);
+  const stsd = box("stsd", Buffer.alloc(4), ints(1), box(codec, visual, ...(options.headerOnly ? [] : [avcC])));
+  const sample = Buffer.from([0, 0, 0, 2, 0x65, 0x80]);
+  const stco = box("stco", ints(0, 1, 0));
+  const tables = options.headerOnly ? [] : [box("stts", ints(0, 1, 1, duration)), box("stsz", ints(0, sample.length, 1)),
+    box("stsc", ints(0, 1, 1, 1, 1)), stco];
+  const mdhd = box("mdhd", Buffer.alloc(12), ints(timescale, duration), Buffer.alloc(4));
+  const trak = box("trak", tkhd, box("mdia", hdlr, ...(options.headerOnly ? [] : [mdhd]),
+    box("minf", box("dinf", box("dref", ints(0, 1), box("url ", ints(1)))), box("stbl", stsd, ...tables))));
   const moov = box("moov", mvhd, trak);
+  if (!options.headerOnly) moov.writeUInt32BE(ftyp.length + moov.length + 8, moov.indexOf(Buffer.from("stco")) + 12);
 
   const parts = [ftyp, moov];
-  if (mdat) parts.push(box("mdat"));
+  if (mdat) parts.push(box("mdat", ...(options.headerOnly ? [] : [sample])));
   return Buffer.concat(parts);
 }

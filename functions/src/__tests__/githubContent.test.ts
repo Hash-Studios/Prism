@@ -6,6 +6,8 @@ import * as ownedAssets from "../ownedAssetDelivery";
 import {r2ObjectId} from "../r2Storage";
 import {AI_LEGACY_UID, AI_STORAGE_REPO, aiUploadId} from "../aiWallSource";
 import {mp4} from "./mp4Fixture";
+import sharp from "sharp";
+import {installFakeDb} from "./fakeDb";
 
 import {
   canDeleteUpload,
@@ -19,6 +21,51 @@ import {
 } from "../githubContent";
 
 const env = {GH_REPO_WALLS: "walls", GH_REPO_SETUPS: "setups"};
+
+test("public live frames require image decoding before quotas or storage writes", async (t) => {
+  testGithubEnvironment(t);
+  const docs = uploadStore(t, {});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  const retain = t.mock.method(ownedAssets, "retainUpload", async () => { throw new Error("validated image reached storage"); });
+  const upload = (bytes: Buffer) => run(githubPutFile, {auth: {uid: "u"}, data: {
+    repo: "walls", path: "frame_1_a.jpg", message: "upload", purpose: "wallpaper", contentBase64: bytes.toString("base64"),
+  }});
+  await assert.rejects(upload(Buffer.from([255, 216, 255])), {code: "invalid-argument"});
+  assert.equal(docs.size, 0);
+  assert.equal(retain.mock.callCount(), 0);
+  const image = await sharp({create: {width: 16, height: 32, channels: 3, background: "red"}}).jpeg().toBuffer();
+  await assert.rejects(upload(image), /validated image reached storage/);
+  assert.equal(retain.mock.callCount(), 1);
+});
+
+test("live upload runtime bounds large requests to one invocation per instance", () => {
+  assert.equal(githubPutFile.__endpoint.concurrency, 1);
+  assert.equal(githubPutFile.__endpoint.availableMemoryMb, 512);
+});
+
+for (const path of ["live_a.mp4", "frame_1_a.jpg"]) {
+  test(`direct deletion preserves referenced live upload ${path} until its wall is deleted`, async (t) => {
+    testGithubEnvironment(t);
+    const sha = "a".repeat(40);
+    const asset = retainedFixture(path, sha, "owned");
+    const retainedAsset = {...asset, previewObjectId: asset.objectId};
+    const url = ownedAssets.ownedThumbnailUrl(retainedAsset);
+    const id = createHash("sha256").update(`walls\0${path}\0${sha}`).digest("hex");
+    const wall = {kind: "live", creatorUid: "u", review: true, live: path.endsWith(".mp4") ?
+      {videoPath: path, videoSha: sha, video: url} : {frames: [{path, sha, url}]}};
+    const docs = installFakeDb(t, {"walls/wall": wall,
+      [`githubUploads/owned_file_${id}`]: {uid: "u", repo: "walls", path, sha, sourceKind: "owned", generation: "g",
+        retainedAsset}});
+    const remove = () => run(githubDeleteFile, {auth: {uid: "u"}, data: {repo: "walls", path, sha,
+      sourceKind: "owned", message: "delete"}});
+    const deletion = t.mock.method(ownedAssets, "deleteRetainedUpload", async () => undefined);
+    await assert.rejects(remove, {code: "failed-precondition"});
+    assert.equal(deletion.mock.callCount(), 0);
+    docs.delete("walls/wall");
+    assert.deepEqual(await remove(), {ok: true});
+    assert.equal(deletion.mock.callCount(), 1);
+  });
+}
 function retainedFixture(path: string, sha: string, sourceKind?: "owned", uid = "u", uploadId?: string) {
   process.env.R2_PRIVATE_BUCKET = "owned";
   process.env.R2_PREVIEW_BASE_URL = "https://images.example.com";

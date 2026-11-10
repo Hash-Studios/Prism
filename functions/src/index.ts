@@ -11,6 +11,7 @@ export {onCreatorWallWritten, onCreatorFavouriteCreated} from "./creatorProgress
 export {onFollowCreated} from "./onFollowCreated";
 export {onUidFollowCreated} from "./onUidFollowCreated";
 export {onWallSubmitted} from "./onWallSubmitted";
+export {onRejectedLiveWallDeleted} from "./wallLive";
 export {getWallMetadataForEdit, editWallMetadata, listWallMetadataEdits, revertWallMetadata} from "./wallMetadata";
 export {submitWallResubmission, getWallResubmissionContext, undoWallRejection, rejectWallForReview} from "./wallResubmissions";
 export {registerReviewLiveActivity, onReviewQueueChanged} from "./reviewLiveActivity";

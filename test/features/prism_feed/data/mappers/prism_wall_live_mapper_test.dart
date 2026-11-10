@@ -60,6 +60,25 @@ void main() {
     }
   });
 
+  test('nonfinite video facts do not stop a live wall from loading', () {
+    final wall = _map(
+      _doc(<String, dynamic>{
+        'kind': 'live',
+        'live': <String, dynamic>{
+          'video': _video,
+          'durationMs': double.infinity,
+          'width': double.nan,
+          'height': double.negativeInfinity,
+        },
+      }),
+    );
+    expect(wall.live?.videoUrl, _video);
+    expect(wall.live?.durationMs, isNull);
+    expect(wall.live?.width, isNull);
+    expect(wall.live?.height, isNull);
+    expect(wall.thumbnailUrl, _poster);
+  });
+
   test('an unknown kind is a still wall', () {
     expect(
       _map(

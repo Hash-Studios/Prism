@@ -51,9 +51,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart' as path;
 
-export 'package:Prism/features/wallpaper_upload/biz/resubmission_seed.dart' show ResubmissionSeed;
 // The generated routes name these types in their arguments.
 export 'package:Prism/features/wallpaper_upload/biz/live_upload_input.dart' show LiveUploadInput;
+export 'package:Prism/features/wallpaper_upload/biz/resubmission_seed.dart' show ResubmissionSeed;
 export 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart' show SubmissionMetadata;
 export 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart' show UploadBatch;
 export 'package:Prism/features/wallpaper_upload/biz/variant_seed.dart' show VariantSeed;
@@ -536,8 +536,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         return false;
       }
       if (widget.live case final LiveUploadInput live?) {
-        await _uploadLiveFiles(github, live, baseName);
-        if (!mounted || _leaving) {
+        if (!await _uploadLiveFiles(github, live, baseName)) {
           await _deleteFile();
           return false;
         }
@@ -545,7 +544,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       return true;
     } catch (error) {
       logger.w('Wallpaper upload failed: $error');
-      if (!mounted || _leaving) {
+      if (!mounted || _leaving || _activeDraftOwner != _draftOwner) {
         await _deleteFile();
         return false;
       }
@@ -561,7 +560,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   /// Uploads the live video, then its frames. A file that already has its details is not uploaded again.
-  Future<void> _uploadLiveFiles(GitHubContentApi github, LiveUploadInput live, String baseName) async {
+  Future<bool> _uploadLiveFiles(GitHubContentApi github, LiveUploadInput live, String baseName) async {
     final String stem = path.basenameWithoutExtension(baseName);
     final String repo = Env.normalize(Env.ghRepoWalls);
     Future<GitHubContent> put(String name, File source, {Duration? timeout}) async {
@@ -578,12 +577,19 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       return _requireCompleteFile(value);
     }
 
+    if (!_canContinueUpload) return false;
     _liveVideo ??= await put('live_$stem.mp4', live.video, timeout: const Duration(minutes: 3));
+    if (!_canContinueUpload) return false;
     while (_liveFrames.length < live.framePaths.length) {
+      if (!_canContinueUpload) return false;
       final int index = _liveFrames.length;
       _liveFrames.add(await put('frame_${index + 1}_$stem.jpg', File(live.framePaths[index])));
+      if (!_canContinueUpload) return false;
     }
+    return true;
   }
+
+  bool get _canContinueUpload => mounted && !_leaving && _activeDraftOwner == _draftOwner;
 
   Future<void> _removeLiveFile(GitHubContentApi github, GitHubContent file) async {
     final String filePath = file.path!;

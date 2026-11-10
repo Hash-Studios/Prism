@@ -3051,7 +3051,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             child: FutureBuilder<bool>(
               future: _liveVideoSupport ??= _probeLiveVideo(),
               builder: (_, AsyncSnapshot<bool> snapshot) => snapshot.data == true
-                  ? LiveSetButton(live: live, wallId: entity.id)
+                  ? LiveSetButton(live: live, wallId: entity.id, onSet: () => _onWallpaperSet(entity))
                   : setButton(label: context.l10n.wallpaperSet),
             ),
           );

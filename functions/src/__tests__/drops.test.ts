@@ -113,6 +113,30 @@ test("the planner skips under four studio walls", async (t) => {
   assert.equal(store.get("walls/W1")?.dropReserved, true);
 });
 
+test("the planner does not put an unverified live wall in a drop", async (t) => {
+  const store = installFakeDb(t, {...reservedWalls(3), "walls/W4": wall(4, {kind: "live", live: {verified: false}})});
+  await plan(t);
+  assert.equal(store.has(`drops/${KEY}`), false);
+  assert.equal(store.get("walls/W4")?.dropReserved, true);
+});
+
+test("old drops keep unverified live walls hidden until the proof succeeds", async (t) => {
+  const key = "2026-W01";
+  const store = installFakeDb(t, {
+    [`drops/${key}`]: {endsAt: MONDAY - 31 * 86_400_000, walls: [{id: "W1"}, {id: "W2"}]},
+    "walls/W1": wall(1, {dropWeek: key, kind: "live", live: {verified: false}}),
+    "walls/W2": wall(2, {dropWeek: key}),
+  });
+  assert.equal(await releaseOldDrops(MONDAY), 0);
+  assert.equal(store.get("walls/W1")?.review, false);
+  assert.equal(store.get("walls/W1")?.dropWeek, key);
+  assert.equal(store.get("walls/W2")?.review, true);
+  assert.notEqual(store.get(`drops/${key}`)?.released, true);
+  await db.doc("walls/W1").update({"live.verified": true});
+  assert.equal(await releaseOldDrops(MONDAY), 1);
+  assert.equal(store.get("walls/W1")?.review, true);
+});
+
 test("the planner writes snapshots, prices and flips the wall flags", async (t) => {
   const store = installFakeDb(t, {
     ...reservedWalls(12),

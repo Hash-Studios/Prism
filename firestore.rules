@@ -199,6 +199,12 @@ service cloud.firestore {
 
     // A creator live wall: kind and the client keys of live are written once, on create. onWallSubmitted proves the
     // files and writes the video facts and live.verified. Old clients read the poster in wallpaper_url.
+    function validLiveFrame(frame) {
+      return frame is map && frame.keys().hasOnly(['url', 'path', 'sha'])
+          && frame.keys().hasAll(['url', 'path', 'sha'])
+          && frame.url is string && frame.path is string && frame.sha is string;
+    }
+
     function validLiveCreate() {
       let d = request.resource.data;
       let live = d.get('live', null);
@@ -208,14 +214,26 @@ service cloud.firestore {
               && live.keys().hasOnly(['video', 'videoPath', 'videoSha', 'frames'])
               && live.keys().hasAll(['video', 'videoPath', 'videoSha', 'frames'])
               && live.video is string && live.videoPath is string && live.videoSha is string
-              && live.frames is list && live.frames.size() == 3));
+              && live.frames is list && live.frames.size() == 3
+              && validLiveFrame(live.frames[0]) && validLiveFrame(live.frames[1]) && validLiveFrame(live.frames[2])));
     }
 
     // A live wall goes public only after the server proved its video.
     function liveReviewOk() {
-      return request.resource.data.review != true
-          || request.resource.data.get('kind', 'still') != 'live'
-          || request.resource.data.get('live', {}).get('verified', false) == true;
+      let d = request.resource.data;
+      let scheduledApproval = 'releaseApprovedAt' in d && (resource == null
+          || !('releaseApprovedAt' in resource.data) || d.releaseApprovedAt != resource.data.releaseApprovedAt);
+      return (d.review != true && !scheduledApproval)
+          || d.get('kind', 'still') != 'live'
+          || d.get('live', {}).get('verified', false) == true;
+    }
+
+    function livePosterUntouched() {
+      return resource.data.get('kind', 'still') != 'live'
+          || !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'wallpaper_url', 'wallpaper_thumb', 'wallpaper_path', 'wallpaper_sha', 'thumb_path', 'thumb_sha',
+            'wallpaper_source_kind', 'thumb_source_kind'
+          ]);
     }
 
     // Optional link to the wall this one remixes. The server removes a link it cannot verify.
@@ -303,12 +321,11 @@ service cloud.firestore {
       // Admins re-create a rejected wall when they undo the rejection.
       allow create: if !request.resource.data.keys().hasAny(['editorsChoiceAt', 'editorsChoiceBy', 'byStudio',
             'publishedAt', 'releaseNotice'])
-          && validChallengeId() && notReleasedEarly() && liveReviewOk() && (isConfiguredAdmin()
+          && validChallengeId() && notReleasedEarly() && liveReviewOk() && validLiveCreate() && (isConfiguredAdmin()
           || (isSignedIn()
               && isEmailOwner(request.resource.data.email)
               && request.resource.data.review != true
               && wallServerKeysAbsent()
-              && validLiveCreate()
               && validRemixOf()
               && validVariantOf()
               && validResubmitOf()
@@ -320,6 +337,7 @@ service cloud.firestore {
           ])
           && notReleasedEarly()
           && liveReviewOk()
+          && livePosterUntouched()
           && ((isConfiguredAdmin()
                 && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['releaseAt']))
           || (isEmailOwner(resource.data.email)
@@ -561,7 +579,7 @@ service cloud.firestore {
         return data.keys().hasOnly([
               'id', 'url', 'thumb', 'provider', 'category', 'views', 'resolution', 'fav', 'size',
               'photographer', 'collections', 'depth', 'spatial', 'createdAt', 'favouritedAt', 'ownerId', 'addedAt',
-              'wallpaperDocumentId', 'addedBy', 'sectionId'
+              'wallpaperDocumentId', 'addedBy', 'sectionId', 'kind', 'live'
             ])
             && data.id is string && data.id.size() > 0
             && data.provider is string
@@ -571,6 +589,14 @@ service cloud.firestore {
                 || (data.wallpaperDocumentId is string && data.wallpaperDocumentId.size() > 0))
             // The favourite mapper copies a Spatial Scene wall's {tier, map}.
             && (!('spatial' in data) || data.spatial is map)
+            && (!('kind' in data) || data.kind in ['still', 'live'])
+            && (!('live' in data) || (data.live is map && data.get('kind', 'still') == 'live'
+                && data.live.keys().hasOnly(['video', 'durationMs', 'width', 'height', 'loop', 'verified'])
+                && data.live.keys().hasAll(['video', 'loop', 'verified'])
+                && data.live.video is string && data.live.loop is bool && data.live.verified is bool
+                && (!('durationMs' in data.live) || data.live.durationMs is int)
+                && (!('width' in data.live) || data.live.width is int)
+                && (!('height' in data.live) || data.live.height is int)))
             && (!('sectionId' in data) || validSectionId(data.sectionId))
             && data.ownerId == folderOwner
             && (('addedBy' in data && data.addedBy == request.auth.uid)

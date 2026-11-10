@@ -9,6 +9,7 @@ import {R2Storage, r2Env, r2ObjectId, r2Secrets} from "./r2Storage";
 import {STUDIO_ACCOUNT} from "./studio/account";
 import {STUDIO_ASSET_BASE, verifiedStudioSource} from "./studio/assetSource";
 import {isLiveFramePath, isLiveVideoPath} from "./liveVideo";
+import {isActiveContentOwner, verifiedUidForEmail} from "./authoredContentUid";
 
 const hash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 const validId = (value: unknown): value is string => typeof value === "string" &&
@@ -73,8 +74,18 @@ export async function retainUpload(input: UploadIdentity & {uid: string; bytes: 
   const bucket = r2Env("R2_PRIVATE_BUCKET");
   if (!bucket) throw new Error("R2 private bucket is not configured");
   const registry = db.collection("r2ObjectRegistry").doc(objectId);
+  const accountFencedAsset = input.sourceKind === "owned" &&
+    (isLiveVideoPath(input.path) || isLiveFramePath(input.path));
+  const ownerRef = accountFencedAsset ? db.collection("usersv2").doc(input.uid) : undefined;
+  const deletionStateRef = accountFencedAsset ? db.collection("creatorDeletionState").doc(input.uid) : undefined;
   const registryData = await db.runTransaction(async (tx) => {
-    const current = await tx.get(registry);
+    const [current, owner, deletionState] = await Promise.all([
+      tx.get(registry),
+      ...(ownerRef && deletionStateRef ? [tx.get(ownerRef), tx.get(deletionStateRef)] : []),
+    ]);
+    if (accountFencedAsset && !isActiveContentOwner(owner!, deletionState!)) {
+      throw new PermanentOwnedAssetError("Creator account is closed");
+    }
     if (current.exists && current.data()?.status === "tombstoned") throw new PermanentOwnedAssetError("Retained object was deleted");
     if (current.exists && (current.data()?.object !== object || current.data()?.uid !== input.uid ||
       current.data()?.sha256 !== digest)) throw new PermanentOwnedAssetError("Retained object identity conflict");
@@ -107,9 +118,17 @@ export async function retainUpload(input: UploadIdentity & {uid: string; bytes: 
       hash(await client.get("preview", `previews/${objectId}.img`)) !== digest) throw new PermanentOwnedAssetError("Retained preview mismatch");
   }
   const active = await db.runTransaction(async (tx) => {
-    const current = await tx.get(registry);
+    const [current, owner, deletionState] = await Promise.all([
+      tx.get(registry),
+      ...(ownerRef && deletionStateRef ? [tx.get(ownerRef), tx.get(deletionStateRef)] : []),
+    ]);
     const data = current.data();
     if (!data || data.status === "tombstoned" || data.object !== object || data.sha256 !== digest) return false;
+    if (accountFencedAsset && !isActiveContentOwner(owner!, deletionState!)) {
+      tx.update(registry, {status: "tombstoned", cleanupNotBeforeMs: Date.now(),
+        deletedAt: admin.firestore.FieldValue.serverTimestamp()});
+      return false;
+    }
     if (data.status === "writing") tx.update(registry, {status: "active"});
     return true;
   });
@@ -222,7 +241,13 @@ export function stored(value: unknown): value is StoredUpload {
         ...(asset.uploadId ? {uploadId: asset.uploadId} : {})}) === true));
 }
 function contentType(bytes: Buffer): string {
-  if (bytes.subarray(4, 8).toString("latin1") === "ftyp") return "video/mp4";
+  if (bytes.subarray(4, 8).toString("latin1") === "ftyp") {
+    const brand = bytes.subarray(8, 12).toString("latin1");
+    if (brand === "avif") return "image/avif";
+    if (["heic", "heix", "hevc", "heim", "heis"].includes(brand)) return "image/heic";
+    if (["mif1", "msf1"].includes(brand)) return "image/heif";
+    return "video/mp4";
+  }
   return bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ? "image/png" :
     bytes.subarray(8, 12).toString() === "WEBP" ? "image/webp" : /^GIF8[79]a$/.test(bytes.subarray(0, 6).toString()) ?
       "image/gif" : "image/jpeg";
@@ -571,6 +596,20 @@ export async function cleanupDeletedOwnedWall(input: {wallId: string; canonicalP
     const original = manifest.original;
     const thumb = manifest.thumb;
     if (!stored(original) || !stored(thumb) || !thumb.previewObjectId) return undefined;
+    const archive = (await tx.get(db.collection("rejectedWalls").doc(input.canonicalPath.split("/").pop()!))).data();
+    if (manifest.status === "ready" && archive?.kind === "live" && archive.id === input.wallId &&
+      archive.sourceWallCreateTime instanceof admin.firestore.Timestamp &&
+      archive.sourceWallCreateTime.toMillis() === input.incarnation &&
+      archive.sourceWallCreateTime.nanoseconds === input.incarnationNanos &&
+      original.uid === thumb.uid &&
+      archive.originalProtected === true && archive.originalObjectId === original.objectId &&
+      archive.wallpaper_url === "" && archive.wallpaper_path === "" && archive.wallpaper_sha === "" &&
+      archive.thumb_path === "" && archive.thumb_sha === "" && archive.wallpaper_thumb === ownedThumbnailUrl(thumb)) {
+      const email = typeof archive.email === "string" ? archive.email.trim() : "";
+      const owner = archive.creatorUid !== undefined ? archive.creatorUid :
+        email && !email.includes("/") ? await verifiedUidForEmail(email, tx) : null;
+      if (owner === original.uid) return undefined;
+    }
     const assets = [original, thumb];
     const sharedRows = await Promise.all(assets.map((asset) => Promise.all([
       tx.get(db.collection("ownedAssets").where("original.objectId", "==", asset.objectId)),

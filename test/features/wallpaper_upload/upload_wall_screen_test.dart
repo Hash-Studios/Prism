@@ -12,6 +12,7 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/upload/github_content_api.dart';
+import 'package:Prism/features/wallpaper_upload/biz/live_upload_limits.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_session.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
@@ -1583,6 +1584,117 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('stops live-file uploads when the active account changes during the video upload', (tester) async {
+    signInUploadUser();
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    final videoUpload = Completer<GitHubContent>();
+    final liveCalls = <String>[];
+    var saves = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: UploadWallScreen(
+          image: image,
+          prepareImageForTesting: () async {},
+          live: LiveUploadInput(
+            video: image,
+            info: const LiveVideoInfo(durationMs: 1000, width: 100, height: 100, codec: 'avc1', bytes: 10),
+            framePaths: const <String>['frame-1.jpg', 'frame-2.jpg', 'frame-3.jpg'],
+          ),
+          uploadFileForTesting: ({required isThumbnail}) async => GitHubContent(
+            downloadUrl: 'https://example.test/${isThumbnail ? 'thumb' : 'wall'}.png',
+            path: isThumbnail ? 'thumb.png' : 'wall.png',
+            sha: isThumbnail ? 'thumb-sha' : 'wall-sha',
+          ),
+          uploadLiveFileForTesting: ({required path}) {
+            liveCalls.add(path);
+            return videoUpload.future;
+          },
+          createRecordForTesting: () async {
+            saves++;
+            return WallSubmissionResult.submitted;
+          },
+        ),
+      ),
+    );
+    await pumpImagePreparation(tester);
+    await tester.tap(find.text('Upload'));
+    await tester.pump();
+    expect(liveCalls, hasLength(1));
+
+    app_state.prismUser.id = 'different-account';
+    videoUpload.complete(
+      const GitHubContent(downloadUrl: 'https://example.test/video.mp4', path: 'video.mp4', sha: 'v'),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(liveCalls, hasLength(1));
+    expect(saves, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('stops live-file uploads when the screen is popped during the video upload', (tester) async {
+    signInUploadUser();
+    await setViewport(tester);
+    final image = await makeImage(tester);
+    final videoUpload = Completer<GitHubContent>();
+    final liveCalls = <String>[];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute<void>(
+                  builder: (_) => UploadWallScreen(
+                    image: image,
+                    prepareImageForTesting: () async {},
+                    live: LiveUploadInput(
+                      video: image,
+                      info: const LiveVideoInfo(durationMs: 1000, width: 100, height: 100, codec: 'avc1', bytes: 10),
+                      framePaths: const <String>['frame-1.jpg', 'frame-2.jpg', 'frame-3.jpg'],
+                    ),
+                    uploadFileForTesting: ({required isThumbnail}) async => GitHubContent(
+                      downloadUrl: 'https://example.test/${isThumbnail ? 'thumb' : 'wall'}.png',
+                      path: isThumbnail ? 'thumb.png' : 'wall.png',
+                      sha: isThumbnail ? 'thumb-sha' : 'wall-sha',
+                    ),
+                    uploadLiveFileForTesting: ({required path}) {
+                      liveCalls.add(path);
+                      return videoUpload.future;
+                    },
+                  ),
+                ),
+              ),
+              child: const Text('Open uploader'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open uploader'));
+    await pumpImagePreparation(tester);
+    await tester.tap(find.text('Upload'));
+    await tester.pump();
+    expect(liveCalls, hasLength(1));
+
+    Navigator.of(tester.element(find.text('Uploading wallpaper'))).pop();
+    await tester.pumpAndSettle();
+    videoUpload.complete(
+      const GitHubContent(downloadUrl: 'https://example.test/video.mp4', path: 'video.mp4', sha: 'v'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(liveCalls, hasLength(1));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('challenge seed prefills upload metadata and can be removed independently', (tester) async {
     await setViewport(tester);
     final image = await makeImage(tester);
@@ -1596,7 +1708,7 @@ void main() {
           prepareImageForTesting: () async {},
           challengeSeed: const ChallengeSeed(id: '2026-10-26', theme: 'Quiet oceans'),
           uploadFileForTesting: ({required isThumbnail}) async =>
-              GitHubContent(downloadUrl: 'https://example.com/image.png', path: 'image.png', sha: 'sha'),
+              const GitHubContent(downloadUrl: 'https://example.com/image.png', path: 'image.png', sha: 'sha'),
           createRecordWithMetadataForTesting: ({required id, required metadata}) async {
             submitted = metadata;
             return WallSubmissionResult.quotaExceeded;

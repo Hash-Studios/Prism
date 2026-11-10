@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_live.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
@@ -98,5 +99,6 @@ class PublicProfileSnapshotCodec {
         aiModel: dto.aiModel.isEmpty ? null : dto.aiModel,
         depthTier: WallDepthTier.parse(dto.depth['tier']),
         spatial: WallSpatial.parse(dto.spatial),
+        live: WallLive.parse(kind: dto.kind, value: dto.live),
       );
 }

@@ -15,6 +15,7 @@ import {sanitizeSubmissionText} from "./wallSubmissionSafety";
 import {checkSubmittedVariantOf} from "./wallVariants";
 import {isLiveWall, verifyLiveWall} from "./wallLive";
 import {r2Secrets} from "./r2Storage";
+import {verifiedUidForEmail} from "./authoredContentUid";
 
 const GITHUB_RAW_HOST = "raw.githubusercontent.com";
 const studioSecret = defineSecret("STUDIO_SECRET");
@@ -43,6 +44,9 @@ export const onWallSubmitted = onDocumentCreated(
     region: REGION,
     secrets: [studioSecret, ...r2Secrets],
     timeoutSeconds: 120,
+    memory: "512MiB",
+    concurrency: 1,
+    retry: true,
   },
   async (event) => {
     const data = event.data?.data();
@@ -84,11 +88,11 @@ export const onWallSubmitted = onDocumentCreated(
     const artistEmail = str(data.email);
     if (isLiveWall(data) && event.data) {
       try {
-        const owner = artistEmail ? await findUserByEmail(artistEmail) : null;
-        await verifyLiveWall(event.data, owner?.id ?? null);
+        const ownerUid = artistEmail ? await verifiedUidForEmail(artistEmail) : null;
+        await verifyLiveWall(event.data, ownerUid);
       } catch (err) {
         logger.warn("onWallSubmitted: live wall check failed.", {wallId, err});
-        await event.data.ref.update({"live.verified": false, "live.error": "check_failed"}).catch(() => undefined);
+        throw err;
       }
     }
     const wallTitle = str(data.title) || "Untitled";
