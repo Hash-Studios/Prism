@@ -4,9 +4,18 @@ import 'dart:io';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/auth_navigation_continuation.dart';
+import 'package:Prism/core/router/deep_link_action_entity.dart';
+import 'package:Prism/core/router/deep_link_catalog_resolver.dart';
 import 'package:Prism/core/router/deep_link_route_catalog.dart';
 import 'package:Prism/core/router/route_guards.dart';
+import 'package:Prism/core/startup/session_ended_navigation.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/daily_flow/daily_moment_config.dart';
+import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -41,7 +50,6 @@ class _HistoryGuardRouter extends AppRouter {
         );
 }
 
-/// One row of the Access table in docs/features/deep-links.md.
 typedef _AccessRow = ({String route, Set<String> targets, String guard, String access});
 
 List<_AccessRow> _accessTable() {
@@ -49,7 +57,7 @@ List<_AccessRow> _accessTable() {
   final String section = doc.split('\n## Access table\n')[1].split('\n## ').first;
   return <_AccessRow>[
     for (final String line in section.split('\n'))
-      if (line.startsWith('| `/'))
+      if (line.startsWith('| `/') || line.startsWith('| `*`'))
         () {
           final List<String> cells = line.split('|').map((cell) => cell.trim()).toList();
           return (
@@ -63,30 +71,47 @@ List<_AccessRow> _accessTable() {
 }
 
 /// The real guard of each route path: `admin`, `sign-in` or `open`.
-Map<String, Set<String>> _routerGuards(
-  List<AutoRoute> routes, [
-  String prefix = '',
-  List<AutoRouteGuard> inherited = const [],
-]) {
+Map<String, Set<String>> _routerGuards(List<AutoRoute> routes) {
   final Map<String, Set<String>> result = <String, Set<String>>{};
-  for (final AutoRoute route in routes) {
-    if (route is RedirectRoute) continue;
-    final String path = route.path.startsWith('/') || route.path.isEmpty
-        ? '$prefix${route.path}'
-        : '$prefix/${route.path}';
-    final List<AutoRouteGuard> guards = <AutoRouteGuard>[...inherited, ...route.guards];
-    final String kind = guards.any((g) => g is AdminGuard)
-        ? 'admin'
-        : guards.any((g) => g is SignedInGuard && !g.allowGuests)
-        ? 'sign-in'
-        : 'open';
-    result.putIfAbsent(path, () => <String>{}).add(kind);
-    _routerGuards(route.children ?? const [], path, guards).forEach((p, kinds) {
-      result.putIfAbsent(p, () => <String>{}).addAll(kinds);
-    });
+  final Map<String, String> redirects = <String, String>{};
+  void visit(List<AutoRoute> routes, String prefix, List<AutoRouteGuard> inherited) {
+    for (final AutoRoute route in routes) {
+      final String path = _routePath(prefix, route.path);
+      if (route is RedirectRoute) {
+        redirects[path] = _routePath(prefix, route.redirectTo);
+        continue;
+      }
+      final List<AutoRouteGuard> guards = <AutoRouteGuard>[...inherited, ...route.guards];
+      final String kind = guards.any((g) => g is AdminGuard)
+          ? 'admin'
+          : guards.any((g) => g is SignedInGuard && !g.allowGuests)
+          ? 'sign-in'
+          : 'open';
+      result.putIfAbsent(path, () => <String>{}).add(kind);
+      visit(route.children ?? const [], path, guards);
+    }
+  }
+
+  visit(routes, '', const []);
+  for (final entry in redirects.entries) {
+    result[entry.key] = result[entry.value]!;
   }
   return result;
 }
+
+String _routePath(String prefix, String path) => path.startsWith('/') || prefix.isEmpty
+    ? path
+    : path.isEmpty
+    ? prefix
+    : '$prefix/$path';
+
+Map<String, String> _pagePaths(List<AutoRoute> routes, [String prefix = '']) => <String, String>{
+  for (final route in routes)
+    if (route is! RedirectRoute) ...{
+      route.page.name: _routePath(prefix, route.path),
+      ..._pagePaths(route.children ?? const [], _routePath(prefix, route.path)),
+    },
+};
 
 void main() {
   group('Access table', () {
@@ -105,9 +130,29 @@ void main() {
     };
     final List<_AccessRow> rows = _accessTable();
 
+    test('wrapper and default child may share a path, but cannot disagree on access', () {
+      final List<AutoRoute> routes = <AutoRoute>[
+        AutoRoute(
+          path: '/same',
+          page: const PageInfo.emptyShell('WrapperRoute'),
+          children: [
+            AutoRoute(path: '', page: const PageInfo.emptyShell('DefaultRoute'), guards: const [SignedInGuard()]),
+          ],
+        ),
+      ];
+
+      expect(_routerGuards(routes)['/same'], {'open', 'sign-in'});
+      expect(_routerGuards(AppRouter().routes)['/dashboard/search'], {'open'});
+    });
+
     test('every route has one Access rule that agrees with its guard', () {
       final Map<String, Set<String>> router = _routerGuards(AppRouter().routes);
       expect(rows.map((row) => row.route).toList()..sort(), router.keys.toList()..sort());
+      expect(
+        router.entries.where((entry) => entry.value.length != 1).map((entry) => entry.key),
+        isEmpty,
+        reason: 'Routes sharing a URL must agree on its access rule.',
+      );
       for (final _AccessRow row in rows) {
         expect(guardsOfAccess[row.access], contains(row.guard), reason: row.route);
         expect(router[row.route], {guardKinds[row.guard]}, reason: row.route);
@@ -119,11 +164,76 @@ void main() {
       expect(targets, DeepLinkPageTarget.values.map((target) => target.name).toList()..sort());
     });
 
+    test('target rules describe the resolved page, including explicit fallback destinations', () async {
+      final paths = _pagePaths(AppRouter().routes);
+      const profile = PublicProfileEntity(
+        id: 'alice-id',
+        name: 'Alice',
+        email: '',
+        username: 'alice',
+        profilePhoto: '',
+        bio: '',
+        links: {},
+        coverPhoto: '',
+      );
+      const wallpaper = PrismFeedItem(
+        id: 'wall1',
+        wallpaper: PrismWallpaper(
+          core: WallpaperCore(
+            id: 'wall1',
+            source: WallpaperSource.prism,
+            fullUrl: 'https://prismwalls.com/api/ai/assets/ai/studio/wall.jpg',
+            thumbnailUrl: 'https://prismwalls.com/api/ai/assets/ai/studio/thumb_wall.jpg',
+          ),
+        ),
+      );
+      addTearDown(() => DailyMomentConfig.enabledOverride = null);
+      for (final enabled in [false, true]) {
+        DailyMomentConfig.enabledOverride = enabled;
+        for (final signedIn in [false, true]) {
+          app_state.prismUser = createGuestPrismUser()..loggedIn = signedIn;
+          for (final example in DeepLinkRouteCatalog.examples) {
+            final target = example.target;
+            final rule = rows.singleWhere((row) => row.targets.contains(target.name));
+            final route = await routeForPageLink(
+              PageLinkIntent(path: example.uri, rawUri: example.uri),
+              profileLookup: (_) async => profile,
+              wallpaperLookup: ({required String wallId, required WallpaperSource source}) async => wallpaper,
+            );
+            expect(route, isNotNull, reason: example.uri);
+            final destination = route!.flattened.last;
+            final String expectedPath = switch (target) {
+              DeepLinkPageTarget.splash => '/dashboard',
+              DeepLinkPageTarget.wallpaperFilterInput => '/choose-wallpaper',
+              DeepLinkPageTarget.downloadWallpaperInput ||
+              DeepLinkPageTarget.wallpaperPositionInput ||
+              DeepLinkPageTarget.liveWallpaperInput =>
+                example.uri.contains('wallpaperId=') || example.uri.contains('/wallpaper/')
+                    ? '/wallpaper-detail'
+                    : '/choose-wallpaper',
+              DeepLinkPageTarget.followers || DeepLinkPageTarget.following when !signedIn => '/user/:identifier',
+              DeepLinkPageTarget.dailyMoment => enabled ? '/daily-moment' : '/rewards',
+              DeepLinkPageTarget.dailyChest || DeepLinkPageTarget.spinWheel when enabled => '/daily-moment',
+              _ => rule.route,
+            };
+            expect(paths[destination.routeName], expectedPath, reason: '${example.uri}, signedIn=$signedIn');
+          }
+        }
+      }
+    });
+
     for (final _AccessRow row in rows) {
-      final String path = row.route.replaceAll(RegExp(':[A-Za-z]+'), 'x');
+      final String path = row.route == '*' ? '/unknown-destination' : row.route.replaceAll(RegExp(':[A-Za-z]+'), 'x');
+      final String expectedPath = switch (row.route) {
+        '/paywall' => '/premium',
+        '/coin-transactions' || '/streak' => '/rewards',
+        '/dashboard/streak' => '/dashboard/rewards',
+        '*' => '/not-found',
+        _ => path,
+      };
       for (final TargetPlatform platform in [TargetPlatform.android, TargetPlatform.iOS]) {
         final bool opens = platform == TargetPlatform.android
-            ? const {'/', '/onboarding/v2', '/about', '/not-found'}.contains(row.route)
+            ? const {'/', '/onboarding/v2', '/about', '/not-found'}.contains(expectedPath)
             : guardKinds[row.guard] == 'open';
         testWidgets('a signed-out $platform user ${opens ? 'opens' : 'gets sign-in before'} ${row.route}', (
           tester,
@@ -132,20 +242,39 @@ void main() {
           final appRouter = _HistoryGuardRouter(includeChildren: true);
           final continuation = AuthNavigationContinuation.of(appRouter);
           addTearDown(continuation.dispose);
-          await tester.pumpWidget(MaterialApp.router(routerConfig: appRouter.config()));
-          await tester.pumpAndSettle();
-          unawaited(appRouter.replaceAll([AboutRoute()]));
-          await tester.pumpAndSettle();
-
-          unawaited(appRouter.pushPath(path));
+          await tester.pumpWidget(
+            MaterialApp.router(
+              routerConfig: appRouter.config(
+                deepLinkBuilder: platform == TargetPlatform.android ? (_) => DeepLink.path(path) : null,
+              ),
+            ),
+          );
+          if (platform == TargetPlatform.iOS) {
+            await tester.pumpAndSettle();
+            unawaited(appRouter.replaceAll([AboutRoute()]));
+            await tester.pumpAndSettle();
+            unawaited(appRouter.pushPath(path));
+          }
           await tester.pumpAndSettle();
 
           if (opens) {
-            expect(appRouter.currentUrl, startsWith(path));
+            expect(appRouter.currentUrl, startsWith(expectedPath));
             expect(continuation.pendingNavigation, isNull);
           } else {
             expect(appRouter.current.name, OnboardingV2ShellRoute.name);
             expect(continuation.pendingNavigation, isNotNull);
+          }
+          if (platform == TargetPlatform.android) {
+            expect(
+              appRouter.stackData.map((route) => route.name).toSet().difference({
+                SplashWidgetRoute.name,
+                OnboardingV2ShellRoute.name,
+                AboutRoute.name,
+                NotFoundRoute.name,
+              }),
+              isEmpty,
+              reason: 'A cold guest link must not leave a protected page below sign-in.',
+            );
           }
         }, variant: TargetPlatformVariant({platform}));
       }
@@ -390,6 +519,94 @@ void main() {
       expect(appRouter.current.path, path);
       expect(continuation.pendingNavigation, isNull);
     }
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  for (final relation in ['followers', 'following']) {
+    testWidgets('Android guest relation resolver fallback cannot bypass sign-in: $relation', (tester) async {
+      final appRouter = _HistoryGuardRouter();
+      final continuation = AuthNavigationContinuation.of(appRouter);
+      addTearDown(continuation.dispose);
+      await tester.pumpWidget(MaterialApp.router(routerConfig: appRouter.config()));
+      await tester.pumpAndSettle();
+      final path = '/user/alice/$relation';
+      final route = await routeForPageLink(
+        PageLinkIntent(path: path, rawUri: path),
+        profileLookup: (_) async => throw StateError('Guest must not read profiles'),
+      );
+      expect(route, isA<ProfileRoute>());
+
+      unawaited(appRouter.push(route!));
+      await tester.pumpAndSettle();
+
+      expect(appRouter.current.name, OnboardingV2ShellRoute.name);
+      expect(find.text(ProfileRoute.name), findsNothing);
+      expect(continuation.pendingNavigation, isNotNull);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+  }
+
+  testWidgets('Android sign-in cancellation allows retry without reviving the cancelled path', (tester) async {
+    final appRouter = _HistoryGuardRouter();
+    final continuation = AuthNavigationContinuation.of(appRouter);
+    addTearDown(continuation.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: appRouter.config()));
+    await tester.pumpAndSettle();
+    unawaited(appRouter.replaceAll([AboutRoute()]));
+    await tester.pumpAndSettle();
+    unawaited(appRouter.pushPath('/coin-history'));
+    await tester.pumpAndSettle();
+    final cancelled = continuation.pendingNavigation!;
+    expect(await appRouter.maybePop(), isTrue);
+    await tester.pumpAndSettle();
+    expect(await cancelled, isFalse);
+    expect(continuation.pendingNavigation, isNull);
+
+    unawaited(appRouter.pushPath('/settings'));
+    await tester.pumpAndSettle();
+    expect(appRouter.current.name, OnboardingV2ShellRoute.name);
+    final retried = continuation.pendingNavigation!;
+    app_state.prismUser.loggedIn = true;
+    continuation.markBootstrapCompleted();
+    unawaited(appRouter.replaceAll([const DashboardRoute()]));
+    await tester.pumpAndSettle();
+
+    expect(await retried, isTrue);
+    expect(appRouter.currentUrl, '/settings');
+    expect(appRouter.stackData.where((route) => route.name == CoinHistoryRoute.name), isEmpty);
+    expect(continuation.pendingNavigation, isNull);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('Android sign-out clears the stack and stale protected paths require sign-in again', (tester) async {
+    app_state.prismUser.loggedIn = true;
+    final appRouter = _HistoryGuardRouter();
+    final continuation = AuthNavigationContinuation.of(appRouter);
+    addTearDown(continuation.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: appRouter.config()));
+    await tester.pumpAndSettle();
+    unawaited(appRouter.pushPath('/coin-history'));
+    await tester.pumpAndSettle();
+    expect(appRouter.current.name, CoinHistoryRoute.name);
+
+    unawaited(
+      handleSessionEndedNavigation(
+        router: appRouter,
+        signOut: () async {
+          app_state.prismUser = createGuestPrismUser();
+          return true;
+        },
+        isMounted: () => true,
+        showGuestPrompt: () async => fail('Android must not enter guest mode'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(appRouter.stackData.map((route) => route.name), [OnboardingV2ShellRoute.name]);
+    expect(continuation.pendingNavigation, isNull);
+
+    unawaited(appRouter.pushPath('/coin-history'));
+    await tester.pumpAndSettle();
+    expect(appRouter.current.name, OnboardingV2ShellRoute.name);
+    expect(find.text(CoinHistoryRoute.name), findsNothing);
+    expect(appRouter.stackData.where((route) => route.name == OnboardingV2ShellRoute.name), hasLength(1));
+    expect(continuation.pendingNavigation, isNotNull);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   for (final cancel in [false, true]) {

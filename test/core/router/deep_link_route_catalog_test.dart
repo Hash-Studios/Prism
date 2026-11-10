@@ -188,6 +188,51 @@ void main() {
     }
   });
 
+  test('catalog rejects blank, oversized, and unsafe dynamic identifiers', () {
+    for (final String uri in <String>[
+      '/folder/%20',
+      '/folder/${'f' * 129}',
+      '/folder/${'f' * 129}?invite=ABCDEFGHJK',
+      '/folder/a%5Cb',
+      '/mood/%20',
+      '/collection/%20',
+      '/drops/%20',
+      '/wallpaper/%20',
+      '/wallpaper/${'w' * 201}',
+      '/user/%20',
+      '/user/alice/followers?user=%20',
+      '/wallpaper-detail?wallId=%20',
+      '/wallpaper-detail?wallId=${'w' * 201}',
+      '/wallpaper-detail?wallId=..',
+      '/wallpaper-detail?wallId=a%2Fb',
+      '/folder/AbC123_x-9?invite=bad',
+      '/folder/AbC123_x-9?invite=ABCDEFGHJK2',
+      '/folder/invite/ABCDEFGHJK?invite=1234567890',
+      '/folder/invite/AAAAAAAAAA%2F',
+      '/library?user=other',
+      '/fav-walls?user=other',
+      '/notifications?user=other',
+      '/coin-history?user=other',
+      '/collection/${Uri.encodeComponent('é' * 751)}',
+    ]) {
+      expect(DeepLinkRouteCatalog.match(Uri.parse(uri)), isNull, reason: uri);
+    }
+
+    expect(
+      DeepLinkRouteCatalog.match(Uri.parse('/collection/%E6%97%A5%E6%9C%AC%E8%AA%9E'))?.path,
+      '/collection/%E6%97%A5%E6%9C%AC%E8%AA%9E',
+    );
+    expect(DeepLinkRouteCatalog.match(Uri.parse('/folder/AbC123_x-9'))?.path, '/folder/AbC123_x-9');
+    expect(DeepLinkRouteCatalog.match(Uri.parse('/folder/invite'))?.target, DeepLinkPageTarget.folder);
+    expect(DeepLinkRouteCatalog.match(Uri.parse('/wallpaper/${'w' * 200}'))?.path, '/wallpaper/${'w' * 200}');
+    expect(DeepLinkRouteCatalog.match(Uri.parse('/folder/invite/ABCDEFGHJK'))?.target, DeepLinkPageTarget.folderInvite);
+    final DeepLinkRouteMatch? folderInvite = DeepLinkRouteCatalog.match(
+      Uri.parse('/folder/AbC123_x-9?invite=ABCDEFGHJK'),
+    );
+    expect(folderInvite?.target, DeepLinkPageTarget.folderInvite);
+    expect(folderInvite?.pathParams['folderId'], 'AbC123_x-9');
+  });
+
   test('catalog examples and picker destinations cover every app page', () async {
     final Set<String> reachablePages = <String>{};
     const PublicProfileEntity profile = PublicProfileEntity(

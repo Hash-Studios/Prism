@@ -81,7 +81,7 @@ void main() {
 
   test('id-only short links open the exact wallpaper detail route args', () async {
     final http.Client client = MockClient((request) async {
-      expect(request.url.toString(), 'https://prismwalls.com/api/links/short-code');
+      expect(request.url.toString(), 'https://prismwalls.com/api/links/short123');
       return http.Response(
         jsonEncode(<String, dynamic>{'canonical_url': 'https://prismwalls.com/share?id=short-wall&provider=Prism'}),
         200,
@@ -92,7 +92,7 @@ void main() {
 
     final route = await DeepLinkNavigation(
       httpClient: client,
-    ).routeForUri(Uri.parse('https://prismwalls.com/l/short-code'));
+    ).routeForUri(Uri.parse('https://prismwalls.com/l/short123'));
 
     expect(route, isA<WallpaperDetailRoute>());
     final WallpaperDetailRouteArgs args = (route! as WallpaperDetailRoute).args!;
@@ -150,10 +150,10 @@ void main() {
     var calls = 0;
     final client = MockClient((_) async {
       calls++;
-      return http.Response(jsonEncode(<String, String>{'canonical_url': 'prism://l/other'}), 200);
+      return http.Response(jsonEncode(<String, String>{'canonical_url': 'prism://l/other123'}), 200);
     });
     final navigation = DeepLinkNavigation(httpClient: client);
-    expect(await navigation.routeForUri(Uri.parse('prism://l/abc')), isNull);
+    expect(await navigation.routeForUri(Uri.parse('prism://l/abc1234')), isNull);
     expect(calls, 1);
   });
 
@@ -162,7 +162,7 @@ void main() {
       (_) async => http.Response(jsonEncode(<String, String>{'canonical_url': 'prism://user/alice'}), 200),
     );
     final navigation = DeepLinkNavigation(httpClient: client);
-    final route = await navigation.routeForUri(Uri.parse('prism://l/abc'));
+    final route = await navigation.routeForUri(Uri.parse('prism://l/abc1234'));
     expect(route, isA<ProfileRoute>());
     expect((route! as ProfileRoute).args?.profileIdentifier, 'alice');
     client.close();

@@ -35,7 +35,7 @@ Paths below work with either HTTPS host or the `prism:` scheme. "Sign-in" means 
 | Settings, theme, and About | `/settings`, `/theme`, `/about` | Opens the selected page. |
 | Notifications | `/notifications` | Opens the notification inbox. |
 | Favourites and downloads | `/fav-walls`, `/downloads` | Opens the selected page. |
-| Library tabs | `/library?tab=favourites`, `/library?tab=folders`, `/library?tab=downloads`, `/library?tab=history`, `/wallpaper-history` | Opens the Library on the selected tab. Defaults to Favourites when `tab` is absent. Other `tab` values are rejected. `/wallpaper-history` opens the History tab. On iOS, which has no History tab, the history targets open Favourites. |
+| Library tabs | `/library?tab=favourites`, `/library?tab=folders`, `/library?tab=downloads`, `/library?tab=history`, `/wallpaper-history` | Opens the Library on the selected tab. Defaults to Favourites when `tab` is absent. Other `tab` values are rejected. `/wallpaper-history` opens the History tab on both platforms. |
 | Upload and edit wallpaper | `/upload-wall`, `/edit-wall` | Opens the image picker page, then requires sign-in for the upload or edit page. |
 | Submission review | `/review` | Sign-in. Shows the user's pending and rejected submissions. |
 | Rewards and coin history | `/rewards`, `/coin-history` | Opens the selected page. |
@@ -60,13 +60,15 @@ The picker workflows are `uploadWall`, `editWall`, `wallpaperFilter`, `downloadW
 
 The catalog rejects unknown query keys, repeated query keys, missing required resources, and unsupported selector values. The optional `utm_source`, `utm_medium`, and `utm_campaign` keys are accepted and removed before navigation.
 
+Catalog validation limits folder IDs to ASCII letters, digits, `_` and `-` (1 to 128 characters), and wallpaper IDs to ASCII letters, digits, `.`, `_` and `-` (1 to 200 characters). General identifiers may contain Unicode but are limited to 1,500 UTF-8 bytes, cannot contain path separators or control characters, and cannot equal `.` or `..`. Short-link codes contain 7 to 10 ASCII letters or digits. Folder invite query values must be exactly 10 ASCII letters or digits; malformed, repeated, or path-conflicting invite queries are refused.
+
 ## Access table
 
 Each route has one access rule.
 
 | Access | Meaning |
 |---|---|
-| public | A guest on iOS can view the page. The content is public on the web too. |
+| public | A signed-out iOS user can open the page. This does not mean that the same page exists on the website. |
 | account | The page needs sign-in. |
 | owner | The page needs sign-in and shows only the data of the signed-in user. |
 | admin | The page needs an admin account. |
@@ -74,6 +76,8 @@ Each route has one access rule.
 An action on public content still asks for sign-in at the moment of the action. Save to a Folder, Follow, Favourite, Comment and Set are actions. They use `requireSignedInAction`.
 
 Android has no guests. A signed-out Android user can open only `/`, `/onboarding/v2`, `/about` and `/not-found`. Each other route opens sign-in first and resumes after it.
+
+On iOS, an expired or revoked session does not currently clear Library favourites or history already held in memory. Signing out from Settings restarts the app. A route guard controls navigation; it does not clear cached data.
 
 The Guard column gives the guard in `AppRouter`:
 
@@ -83,9 +87,9 @@ The Guard column gives the guard in `AppRouter`:
 - `prompt`: no route guard. A guest sees a sign-in prompt in place of the content.
 - `admin`: `AdminGuard`.
 
-"Needs rules change" marks a page whose content is public on the web, but `firestore.rules` refuses the read of a signed-out user. Such a page keeps its guard until the rules change. Without the guard, a guest gets an empty page.
+Some app pages show public or shared data, but their Firestore reads currently require sign-in. The table names those rules where they explain a guard or an in-page sign-in prompt. "Needs rules change" records the current mismatch; it does not authorize exposing data to guests. These pages keep their current route guard or sign-in prompt until product policy and rules agree.
 
-`test/core/router/route_guards_test.dart` reads this table. The test fails when a route in `AppRouter` or a target in the route catalog has no row, and when a row does not agree with the guard. A new route must add a row.
+`test/core/router/route_guards_test.dart` reads this table. The test fails when an `AppRouter` route, redirect, wildcard, or route-catalog target has no row, and when a row does not agree with the effective guard. Redirect rows use `-` for the target because their destination already owns the catalog target. A new route must add a row.
 
 | Route | Deep link targets | Shows | Guard | Access | Why |
 |---|---|---|---|---|---|
@@ -94,8 +98,9 @@ The Guard column gives the guard in `AppRouter`:
 | `/dashboard` | `dashboard` | The app shell. | guests on iOS | public | Guest browsing on iOS (#768). |
 | `/dashboard/home` | `home` | The Home feed. | guests on iOS | public | Walls are public on the web. |
 | `/dashboard/search` | `searchTab` | Wallpaper search. | guests on iOS | public | Walls are public on the web. |
-| `/dashboard/search/users` | `userSearch` | Creator search. | prompt | account | Needs rules change: `usernames` and `profiles` reads need sign-in. A guest sees the sign-in prompt on the page. |
+| `/dashboard/search/users` | `userSearch` | Creator search. | prompt | account | Needs rules change: `usernames` and `profiles` reads require sign-in in `firestore.rules`. A guest sees the sign-in prompt on the page. |
 | `/dashboard/rewards` | `rewardsTab` | The user's coins, streak and rewards. | sign-in | owner | Data of one user. |
+| `/dashboard/streak` | - | Redirects to `/dashboard/rewards`. | sign-in | owner | Uses the destination route's guard. |
 | `/dashboard/collection` | `collectionTab` | The Collections tab. | guests on iOS | public | Collections are public on the web. |
 | `/ai` | `ai` | AI wallpaper generation. | sign-in | account | Generation spends the user's coins. |
 | `/wallpaper-detail` | `wallpaperDetail` | One wallpaper. | none | public | Walls are public on the web. Set, Save and Favourite ask for sign-in. |
@@ -105,6 +110,7 @@ The Guard column gives the guard in `AppRouter`:
 | `/choose-wallpaper` | `chooseImage`, `uploadInput`, `editWallInput` | The image picker page. | sign-in | account | Each workflow is an action. |
 | `/share-in` | - | A share from another app. Only the `prism:` scheme opens it. | none | public | The page shows the item that the user shared. See [share-to-prism.md](share-to-prism.md). |
 | `/premium` | `premium` | The Premium plans. | none | public | iOS permits guest purchases. |
+| `/paywall` | - | Redirects to `/premium`. | none | public | Uses the destination route's guard. |
 | `/photo-preview` | `photoPreview` | The full photo preview. | sign-in | account | It is a step of Set and Download. |
 | `/clock-preview` | `clockPreview` | The lock and home screen preview. | none | public | A preview changes nothing. |
 | `/edit-profile` | `editProfile` | The user's profile editor. | sign-in | owner | Data of one user. |
@@ -116,8 +122,8 @@ The Guard column gives the guard in `AppRouter`:
 | `/fav-walls` | `favourites` | The user's favourites. | sign-in | owner | Data of one user. |
 | `/downloads` | `downloads` | The user's downloads. | sign-in | owner | Data of one user. |
 | `/library` | `library`, `wallpaperHistory` | The user's Library. | sign-in | owner | Data of one user. |
-| `/folder/:folderId` | `folder` | One Folder. | sign-in | account | Needs rules change: `publicFolders/{id}` and its `items` need sign-in. A public Folder is public on the web. A private Folder stays with its owner and editors. |
-| `/folder/invite/:code` | `folderInvite` | The join page of a Folder invite. | none | public | The invite code is the key. **Join folder** asks for sign-in. |
+| `/folder/:folderId` | `folder` | One Folder. | sign-in | account | Needs rules change: `publicFolders/{id}` and its `items` require sign-in in `firestore.rules`. A private Folder is limited to its owner and editors. |
+| `/folder/invite/:code` | `folderInvite` | The join page of a Folder invite. | none | public | The invite callable allows guest preview. Owner attribution reads `profiles/{uid}`, which requires sign-in, so the inviter name may not load for a guest. **Join folder** asks for sign-in. |
 | `/upload-wall` | - | The upload form. | sign-in | owner | The user's own upload. |
 | `/edit-wall` | - | The edit form of a submitted wall. | sign-in | owner | The user's own wall. |
 | `/creator-stats` | `creatorStats` | The user's creator stats. | sign-in | owner | Data of one user. |
@@ -129,13 +135,13 @@ The Guard column gives the guard in `AppRouter`:
 | `/editors-choice` | `editorsChoice` | Editors' Choice walls. | none | public | Walls are public on the web. |
 | `/gallery` | `gallery` | A set of 2 to 12 walls. | none | public | Walls are public on the web. |
 | `/requests` | `wallRequests` | Wall requests. | none | public | The list callable needs no sign-in. A vote or a request asks for sign-in. |
-| `/creators` | `creators` | The creator directory. | sign-in | account | Needs rules change: `creatorDirectory` needs sign-in. The web has no creator directory page. |
-| `/folders` | `foldersDiscover` | Discover Folders. | sign-in | account | Needs rules change: `folderTrending` and `publicFolders` need sign-in. The page is public on the web. |
+| `/creators` | `creators` | The creator directory. | sign-in | account | Needs rules change: `creatorDirectory` reads require sign-in in `firestore.rules`. The website has no creator directory page. |
+| `/folders` | `foldersDiscover` | Discover Folders. | sign-in | account | Needs rules change: `folderTrending` and `publicFolders` reads require sign-in in `firestore.rules`. The website has no Discover Folders page. |
 | `/wrapped` | `wrapped` | The user's Wrapped. | sign-in | owner | Data of one user. |
 | `/challenges/:challengeId` | `weeklyChallenge` | One weekly challenge. | none | public | Anyone can read challenges. A submission asks for sign-in. |
-| `/user/:identifier` | `profile` | One creator profile. | prompt | account | Needs rules change: `profiles` and `usernames` need sign-in. A guest sees the sign-in prompt on the page. The profile is public on the web. |
-| `/followers` | `followers` | The followers of one profile. | sign-in | account | Needs rules change: `profiles/{uid}/followers` needs sign-in. |
-| `/following` | `following` | The accounts that one profile follows. | sign-in | account | Needs rules change: `profiles/{uid}/following` needs sign-in. |
+| `/user/:identifier` | `profile` | One creator profile. | prompt | account | Needs rules change: `profiles` and `usernames` reads require sign-in in `firestore.rules`. A guest sees the sign-in prompt on the page. |
+| `/followers` | `followers` | The followers of one profile. | sign-in | account | Needs rules change: `profiles/{uid}/followers` reads require sign-in. |
+| `/following` | `following` | The accounts that one profile follows. | sign-in | account | Needs rules change: `profiles/{uid}/following` reads require sign-in. |
 | `/admin-review` | `adminReview` | The admin review queue. | admin | admin | Admin work. |
 | `/admin-review/swipe` | `swipeReview` | The swipe review. | admin | admin | Admin work. |
 | `/admin-review/image` | `adminImage` | The full image of a wall in review. | admin | admin | Admin work. |
@@ -150,6 +156,7 @@ The Guard column gives the guard in `AppRouter`:
 | `/rewards` | `rewards`, `redeemCode` | The user's rewards. | sign-in | owner | Data of one user. |
 | `/daily-moment` | `dailyMoment` | The user's daily moment. | sign-in | owner | Data of one user. |
 | `/coin-history` | `coinHistory` | The user's coin history. | sign-in | owner | Data of one user. |
+| `/coin-transactions` | - | Redirects to `/rewards`. | sign-in | owner | Uses the destination route's guard. |
 | `/daily-chest` | `dailyChest` | The user's daily chest. | sign-in | owner | Data of one user. |
 | `/spin-wheel` | `spinWheel` | The user's spin wheel. | sign-in | owner | Data of one user. |
 | `/shop` | `shop` | The coin shop. | sign-in | account | A purchase spends the user's coins. |
@@ -159,6 +166,8 @@ The Guard column gives the guard in `AppRouter`:
 | `/leaderboard` | `leaderboard` | The leaderboard. | sign-in | account | `leaderboards` needs sign-in. |
 | `/draw` | `draw` | The weekly draw. | sign-in | account | `draws` needs sign-in. |
 | `/not-found` | `notFound` | The unavailable page. | none | public | No user data. Android also opens it signed out. |
+| `/streak` | - | Redirects to `/rewards`. | sign-in | owner | Uses the destination route's guard. |
+| `*` | - | Redirects unmatched router paths to `/not-found`. | none | public | The unavailable page is public. |
 
 ## Shared entry pipeline
 
@@ -186,19 +195,18 @@ A network failure during short-code resolution can defer the request until conne
 
 Native code turns a share into a `prism://share-in` link. Android uses `ShareTargetActivity`. iOS uses the Share Extension. The dispatcher handles this link like any other link. It waits for startup, then records `deep_link_received` with `target_type` `shared_item`. For the share flow, see [share-to-prism.md](share-to-prism.md).
 
-## Preserved aliases
+## Preserved aliases and intents
 
-| Alias | Destination or behavior |
+| Link | Destination or behavior |
 |---|---|
-| `/streak`, `/coin-transactions` | Standalone Rewards page. |
-| `/dashboard/streak` | Dashboard Rewards tab. |
-| `/paywall` | Premium page. |
-| `/share/wall1?source=prism&thumb=ENCODED_HTTPS_IMAGE_URL` | Legacy wallpaper share. Requires an ID and an image or thumbnail value. The detail page resolves the wallpaper by ID. |
-| `/profile/alice`, `/fprofile/alice`, `/follower-profile/alice` | Public profile. Existing profile query aliases remain in `DeepLinkParser`. |
-| `/setup`, `/share-setup` | Reports that home screen setups are unavailable and opens Home. |
-| `/refer/INVITER_ID`, `/referral/INVITER_ID` | Saves the referral and opens Rewards. A signed-out user can sign in later to claim an eligible reward. |
-| `/l/SHORT_CODE`, `/l?code=SHORT_CODE` | Resolves the short code, then validates its canonical URL through the same parser. |
-| `prism://share-in?id=ID`, `prism://share-in?text=TEXT` | A share from another app. Only the `prism:` scheme. See [share-to-prism.md](share-to-prism.md). |
+| `/share/wall1?source=prism&thumb=ENCODED_HTTPS_IMAGE_URL` | Legacy wallpaper-share intent. The wall ID is required; image and thumbnail URLs are optional. `id` can supply the ID in the query. `source`, `provider`, and `wallpaper_provider` can supply the source. `url`, `wallpaperUrl`, and `wallpaper_url` can supply the image URL. `thumb`, `thumbUrl`, `thumbnail`, `thumbnailUrl`, and `wallpaper_thumb` can supply a thumbnail. The detail page resolves the wall by ID. |
+| `/profile/alice`, `/fprofile/alice`, `/follower-profile/alice`, `/user?username=alice` | User-profile intent. Roots are `profile`, `fprofile`, `follower-profile`, and `user`. The identifier can also come from `identifier`, `username`, `user`, or `email`. The `/user/alice` page route is handled by the page catalog. |
+| `/setup`, `/share-setup` | Setup intent. Shows the unavailable-setup message and opens the Home tab. |
+| `/refer/INVITER_ID`, `/referral/INVITER_ID` | Referral intent. Saves the referral and opens the Dashboard Rewards tab. |
+| `/l/SHORT_CODE`, `/l?code=SHORT_CODE` | Short-code intent. Resolves the code, then validates its canonical URL through the same parser. Network failures can defer one retry. |
+| `prism://share-in?id=ID`, `prism://share-in?text=TEXT` | Share-in intent from another app. Only the `prism:` scheme is accepted. Supply either a 36-character lowercase hex-and-hyphen `id` or non-empty `text` up to 2,048 characters. See [share-to-prism.md](share-to-prism.md). |
+
+The `share`, profile, setup, referral, short-code, and share-in entries are legacy intents parsed by `DeepLinkParser`. They are not additional `AppRouter` pages. `/paywall`, `/coin-transactions`, `/streak`, and `/dashboard/streak` are actual `RedirectRoute`s. Their access rules match their destinations. The router's `*` redirect sends unmatched paths to `/not-found`.
 
 Short links with `type: "page"` accept only catalogued app paths and preserve validated query parameters. Canonical paths with invalid queries cannot fall through to permissive legacy aliases.
 
