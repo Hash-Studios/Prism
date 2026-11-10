@@ -108,6 +108,7 @@ void main() {
 
   test('concurrent taps share one download and only reuse its complete bytes', () async {
     final Completer<void> release = Completer<void>();
+    final Completer<void> started = Completer<void>();
     int requests = 0;
     Stream<List<int>> body() async* {
       yield <int>[1, 2];
@@ -117,16 +118,15 @@ void main() {
 
     final MockClient client = MockClient.streaming((_, _) async {
       requests++;
+      if (!started.isCompleted) started.complete();
       return http.StreamedResponse(body(), 200);
     });
 
     await http.runWithClient(() async {
       final Future<File> first = downloadLiveVideo('https://cdn.example.com/shared.mp4');
       final Future<File> second = downloadLiveVideo('https://cdn.example.com/shared.mp4');
-      // A slow runner can need more than one turn before the first request starts.
-      for (int turn = 0; turn < 50 && requests == 0; turn++) {
-        await pumpEventQueue();
-      }
+      // The download stats its cache file first, which is real I/O, so wait for the request itself.
+      await started.future.timeout(const Duration(seconds: 10));
       await pumpEventQueue();
       final int requestsBeforeCompletion = requests;
       expect((await directory.list().toList()).whereType<File>().where((file) => file.path.endsWith('.mp4')), isEmpty);
