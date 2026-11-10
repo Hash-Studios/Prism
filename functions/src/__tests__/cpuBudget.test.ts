@@ -109,7 +109,7 @@ test("fractional CPU functions take one request per instance", () => {
 
 test("gcf_gen1 CPU follows firebase-tools memory mapping, including larger sizes", () => {
   assert.deepEqual(
-    Object.entries(GEN1_VCPU).map(([memory, cpu]) => [Number(memory), vcpu({cpu: "gcf_gen1", availableMemoryMb: Number(memory)})]),
+    Object.entries(GEN1_VCPU).map(([memory]) => [Number(memory), vcpu({cpu: "gcf_gen1", availableMemoryMb: Number(memory)})]),
     [[128, 0.0833], [256, 0.1666], [512, 0.3333], [1024, 0.5833], [2048, 1], [4096, 2], [8192, 2], [16384, 4], [32768, 8]],
   );
 });

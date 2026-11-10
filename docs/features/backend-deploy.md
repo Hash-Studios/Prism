@@ -273,28 +273,41 @@ Each 2nd gen function is one Cloud Run service. Cloud Run has one CPU quota for 
 ### What uses the quota
 
 - Each live instance uses its vCPU. An idle instance also uses its vCPU.
-- `REGION_CPU_BUDGET_VCPU` is 160 vCPU, an 80% steady configured bound against the 200-vCPU quota. It does not guarantee a deploy will fit: old and new revisions can overlap, and old revision configurations can remain live.
-- `maxInstances` bounds a revision's scale; it is not a reservation or an instantaneous project-wide ceiling during deploys.
+- A deploy starts one new instance for each function that it updates. The old instances of that function can stay live at the same time.
+- `maxInstances` does not reserve CPU. It sets how far traffic can scale one revision.
 
-On 2026-11-09, the full 3.26.0 deploy had 200 instances live in `asia-south1` from 14:51 to 14:57 UTC. Each instance had 1 vCPU. During that time, `onWallModerate`, `onCreatorStatsDailyWritten`, and `processCreatorStatsDailyQueueScheduled` could not start their new revisions. On other days, the region had a median of 7 live instances and a 99th percentile of 46. A 40-vCPU reserve under the configured bound is useful headroom, not proof that a deploy will succeed.
+On 2026-11-09, the full 3.26.0 deploy had 200 instances live in `asia-south1` from 14:51 to 14:57 UTC. Each instance had 1 vCPU. During that time, `onWallModerate`, `onCreatorStatsDailyWritten`, and `processCreatorStatsDailyQueueScheduled` could not start their new revisions. On other days, the region had a median of 7 live instances and a 99th percentile of 46.
 
 ### The rule
 
 1. `functions/src/common.ts` sets `maxInstances: 1` for every function with `setGlobalOptions`.
 2. Set a higher `maxInstances` on a function only when its 30-day peak of active instances needs it.
 3. Do not set `maxInstances` lower than the 30-day peak of a user-facing callable.
-4. Admin-only callables use `ADMIN_CALLABLE` from `common.ts`. It sets 1st gen CPU and one instance, matching the observed peak of one across all 17 admin callables.
-5. Consider `cpu: "gcf_gen1"` only when its slower CPU behavior is qualified for the job. The heuristic of p95 runtime below half the timeout and half the schedule interval is not production-validated here: available production timings are from full CPU, not fractional CPU. Firebase CLI 15.34.0 maps `gcf_gen1` at 128, 256, 512, 1024, 2048, 4096, and 8192 MiB to 0.0833, 0.1666, 0.3333, 0.5833, 1, 2, and 2 vCPU, respectively. Fractional-CPU schedule timing remains unqualified; these observations do not establish a failure caused by fractional CPU.
-6. Do not use concurrency above 1 when effective CPU is fractional (below 1 vCPU); at 2 GiB or more, `gcf_gen1` provides at least 1 vCPU.
-7. In each region, keep the sum of `maxInstances` x vCPU at or below `REGION_CPU_BUDGET_VCPU` (160 vCPU) as a steady configured bound. The remaining 40 vCPU is not a deploy guarantee; account for revision overlap and live old configurations.
+4. A callable that only an admin can use takes `ADMIN_CALLABLE` from `common.ts`. It sets 1st gen CPU and 1 instance. If a user can call it on any path, it is a user-facing callable.
+5. Use `cpu: "gcf_gen1"` only for a light job. A job is light when its p95 run time, multiplied by 6, is less than half of its timeout and less than half of its schedule interval. The production p95 values come from full CPU, so this is an estimate. Check the logs of the job after the deploy.
+6. 1st gen CPU is 0.0833, 0.1666, 0.3333, 0.5833, 1, 2, and 2 vCPU at 128, 256, 512, 1024, 2048, 4096, and 8192 MiB. Below 1 vCPU, do not set `concurrency` above 1. The deploy fails.
+7. In each region, the sum of `maxInstances` x vCPU must be at or below `REGION_CPU_BUDGET_VCPU`. This is 80% of the quota (160 vCPU).
 
-`onWallModerate` remains capped at one instance with concurrency one against an observed peak of two; its p95 wall time is 16.9 seconds against a 120-second timeout. When moderation is absent, review pills are not shown. Other caps are also below observed peaks: `onOwnedWallWritten` is capped at 3 against peak 20, concurrency one, and the client requires `originalProtected` before showing feed entries, so limited capacity can delay visibility. `onWallCategorize` is capped at 2 against peak 8, concurrency one; if it completes after asset protection changes the source, it skips its write and returns successfully, so it is not retried. Restoring these peaks requires a different allocation within 160 vCPU or an approved quota/budget increase; no allocation is chosen here.
+The budget limits the CPU that traffic can use. It does not make sure that a deploy fits. During a deploy, old and new revisions are live together.
 
-Do not infer delivery behavior solely from `retry: false`: Firestore event 429 responses are redelivered, while HTTP/callable requests queue for about 30 seconds and then return 429. Treat the trigger source's delivery semantics separately.
+`functions/src/__tests__/cpuBudget.test.ts` checks rules 1, 6, and 7. `callableCpuPolicy.test.ts` checks rules 3 and 4. The `functions` CI job runs them on each change in `functions/`. The budget test counts a function without `maxInstances` as 100 instances, because Cloud Run uses 100.
 
-`functions/src/__tests__/cpuBudget.test.ts` checks rules 1, 6, and 7. The `functions` CI job runs it on each change in `functions/`. The test counts a function without `maxInstances` as 100 instances, because Cloud Run uses 100.
+If the budget test fails, do one of these:
 
-If the configured-bound test fails, review the allocation against observed demand and the full regional budget before changing it. Do not automatically lower a cap below observed peaks or move a function to fractional CPU based on the unqualified timing heuristic. A quota increase requires Google's approval; only then update `REGION_CPU_QUOTA_VCPU` in `common.ts`.
+- Lower a `maxInstances` that is higher than its 30-day peak.
+- Move a light job to `cpu: "gcf_gen1"` (rule 5).
+- Ask the owner to request a quota increase. After Google grants it, change `REGION_CPU_QUOTA_VCPU` in `common.ts`.
+
+### Known limits of the current caps
+
+| Function | Cap | 30-day peak | Effect when traffic is above the cap |
+|---|---|---|---|
+| `onOwnedWallWritten` | 3, concurrency 1 | 20 | Conversions wait. A new wall shows in feeds only after `originalProtected` is set. |
+| `onWallCategorize` | 2, concurrency 1 | 8 | Categories come later. |
+| `onWallModerate` | 1, concurrency 1 | 2 | Moderation signals come later in the review queue. |
+| Other triggers | 1 or 2 | up to 10 | Events wait. Firestore events that get a 429 are delivered again. |
+
+Callables and HTTP functions are different. A request at the cap waits for about 30 seconds and then gets a 429. To set these three triggers back to their peaks, the region needs 24 more vCPU. That needs a quota increase.
 
 ### Find the 30-day peak
 
@@ -304,9 +317,9 @@ Use the Cloud Monitoring metric `run.googleapis.com/container/instance_count` wi
 
 The error is "Quota exceeded for total allowable CPU per project per region". The old revision continues to serve.
 
-1. Search the deploy log for each failed function name and identify the exact affected services.
-2. Prepare targeted, staged updates for those services. Each batch needs the owner's approval; before starting the next batch, observe live CPU allocation and confirm quota headroom for that update and its revision overlap.
-3. Do not assume a fixed wait (including 15 minutes) drains idle instances or that old revision configurations have disappeared. After approval and observed headroom, deploy only the failed functions: `firebase deploy --only functions:<name1>,functions:<name2> --project prism-wallpapers --account <email> --non-interactive`.
+1. Search the deploy log for each failed function name.
+2. Look at the live CPU use: the Cloud Monitoring metric `serviceruntime.googleapis.com/quota/rate/net_usage` with `quota_metric="run.googleapis.com/cpu_allocation"`. Wait until it is well below 200,000 (mCPU). Do not use a fixed wait time.
+3. Get the owner's yes. Then deploy only the failed functions: `firebase deploy --only functions:<name1>,functions:<name2> --project prism-wallpapers --account <email> --non-interactive`.
 
 ## Fix wave (second round of this release)
 
