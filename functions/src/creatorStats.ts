@@ -141,7 +141,7 @@ export async function readCreatorStats(uid: string, input: unknown, now = Date.n
   });
 }
 export const getCreatorStats = onCall(
-  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10, timeoutSeconds: 120},
+  {region: CALLABLE_REGIONS, cors: true, timeoutSeconds: 120},
   async (request: CallableRequest<unknown>) => readCreatorStats(request.auth?.uid ?? "", request.data),
 );
 export async function deliverCreatorWeek(uid: string, now: number): Promise<boolean> {

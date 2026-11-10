@@ -302,7 +302,8 @@ export async function rebuildCreatorDirectory(nowMs = Date.now()): Promise<{list
 }
 
 export const buildCreatorDirectory = onSchedule(
-  {schedule: "30 2 * * *", timeZone: "UTC", region: REGION, retryCount: 1, timeoutSeconds: 540, memory: "512MiB"},
+  {schedule: "30 2 * * *", timeZone: "UTC", region: REGION, retryCount: 1, timeoutSeconds: 540, memory: "512MiB",
+    cpu: "gcf_gen1"},
   async (event) => {
     const ms = Date.parse(event.scheduleTime);
     await rebuildCreatorDirectory(Number.isFinite(ms) ? ms : Date.now());
@@ -392,7 +393,7 @@ export async function followedBy(viewerUid: string, creatorUid: string, nowMs = 
 }
 
 export const getFollowedBy = onCall(
-  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true},
   async (request: CallableRequest<{creatorUid?: unknown}>): Promise<FollowedBy> => {
     const viewerUid = request.auth?.uid;
     if (!viewerUid) throw new HttpsError("unauthenticated", "Sign in to see who you follow.");

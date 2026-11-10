@@ -11,7 +11,7 @@ const GRACE_MS = 86_400_000;
 const ID = /^[A-Za-z0-9_-]{8,64}$/;
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
 const sessionRef = (uid: string, requestId: string) => db.doc(`rewardedAdSessions/${digest(`${uid}:${requestId}`)}`);
-const options = {region: "us-central1", cors: true, maxInstances: 10};
+const options = {region: "us-central1", cors: true};
 type Pending = Record<string, number>;
 export function liveReservations(raw: unknown, now: number): Pending {
   const result: Pending = {};
@@ -105,7 +105,7 @@ export const beginRewardedSession = onCall(options, async (request: CallableRequ
   });
 });
 
-export const getRewardedSession = onCall(options, async (request: CallableRequest<unknown>) => {
+export const getRewardedSession = onCall({...options, maxInstances: 2}, async (request: CallableRequest<unknown>) => {
   const uid = caller(request);
   const data = fields(request.data, ["sessionId", "requestId"]);
   if ((data.sessionId === undefined) === (data.requestId === undefined)) throw new HttpsError("invalid-argument", "Supply one ID.");
@@ -187,7 +187,7 @@ export async function settleVerifiedReward(params: URLSearchParams): Promise<voi
 }
 
 const verifier = new GoogleSsvVerifier();
-export const admobRewardedSsv = onRequest({region: "us-central1", maxInstances: 10}, async (request, response) => {
+export const admobRewardedSsv = onRequest({region: "us-central1"}, async (request, response) => {
   if (request.method !== "GET") {
     response.status(405).send("GET required"); return;
   }

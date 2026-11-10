@@ -16,6 +16,7 @@ export const onWallCategorize = onDocumentCreated(
     concurrency: 1,
     secrets: [falKey, ...r2Secrets],
     retry: true,
+    maxInstances: 2,
   },
   async (event) => {
     const data = event.data?.data();

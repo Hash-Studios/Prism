@@ -44,7 +44,7 @@ export function sameTerms(stored: unknown, terms: string[]): boolean {
 }
 
 export const onWallSearchTerms = onDocumentWritten(
-  {document: "walls/{wallId}", region: REGION},
+  {document: "walls/{wallId}", region: REGION, maxInstances: 2},
   async (event) => {
     const after = event.data?.after;
     const data = after?.data();

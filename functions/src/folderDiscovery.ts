@@ -3,7 +3,7 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
 import {isAdminCaller} from "./adminConfig";
-import {db, CALLABLE_REGIONS, REGION, str} from "./common";
+import {db, CALLABLE_REGIONS, REGION, str, ADMIN_CALLABLE} from "./common";
 import {
   countFolderSignal, dropFromDiscovery, FOLDER_STATS_DAILY, FOLDER_TRENDING, FOLDER_TRENDING_DOC, MIN_DISCOVER_WALLS,
 } from "./folderSignals";
@@ -229,7 +229,7 @@ function sameSourceIdentity(candidate: Doc | undefined, current: Doc): boolean {
 }
 
 export const computeFolderDiscovery = onSchedule(
-  {schedule: "10 3 * * *", timeZone: "UTC", region: REGION, retryCount: 1, timeoutSeconds: 540},
+  {schedule: "10 3 * * *", timeZone: "UTC", region: REGION, retryCount: 1, timeoutSeconds: 540, cpu: "gcf_gen1"},
   async () => {
     await rebuildFolderDiscovery();
   },
@@ -237,7 +237,7 @@ export const computeFolderDiscovery = onSchedule(
 
 /** The app reports a public folder open or a Save all. `countFolderSignal` decides if it counts. */
 export const recordFolderSignal = onCall(
-  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true},
   async (request: CallableRequest<{folderId?: unknown; signal?: unknown}>): Promise<{counted: boolean}> => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "Sign in to open folders.");
@@ -252,7 +252,7 @@ export const recordFolderSignal = onCall(
 
 /** Moderators take a public folder out of the discover lists. It stays public and opens by link. */
 export const setFolderDiscoveryHidden = onCall(
-  {region: CALLABLE_REGIONS, cors: true},
+  {...ADMIN_CALLABLE, region: CALLABLE_REGIONS, cors: true},
   async (request: CallableRequest<{folderId?: unknown; hidden?: unknown}>): Promise<{ok: true}> => {
     if (!(await isAdminCaller(request.auth))) throw new HttpsError("permission-denied", "Admins only.");
     const folderId = folderIdFrom(request.data?.folderId);

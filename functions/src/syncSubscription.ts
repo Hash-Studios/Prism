@@ -127,7 +127,7 @@ async function applySubscription(
 }
 
 export const syncSubscription = onCall(
-  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10, secrets: [revenueCatSecret]},
+  {region: CALLABLE_REGIONS, cors: true, maxInstances: 3, secrets: [revenueCatSecret]},
   async (request: CallableRequest<unknown>) => {
     const callerUid = request.auth?.uid;
     if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to sync your subscription.");
@@ -153,7 +153,6 @@ export const reconcileSubscriptions = onSchedule(
     timeZone: "UTC",
     region: REGION,
     timeoutSeconds: 540,
-    maxInstances: 1,
     secrets: [revenueCatSecret],
   },
   async () => {

@@ -151,7 +151,7 @@ function stored(data: admin.firestore.DocumentData, txId: string): TipResponse {
 
 /** Moves a fixed coin tip from the caller to a creator, with both ledger entries, in one transaction. */
 export const tipCreator = onCall(
-  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true},
   async (
     request: CallableRequest<{
       creatorUid?: unknown;

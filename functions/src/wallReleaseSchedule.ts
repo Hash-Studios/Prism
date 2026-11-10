@@ -4,7 +4,7 @@ import {drainReleaseNotices} from "./onWallApproved";
 import {releaseDueWalls} from "./wallRelease";
 
 export const releaseScheduledWalls = onSchedule(
-  {schedule: "*/5 * * * *", region: REGION, timeZone: "UTC", retryCount: 2},
+  {schedule: "*/5 * * * *", region: REGION, timeZone: "UTC", retryCount: 2, cpu: "gcf_gen1"},
   async () => {
     try {
       await releaseDueWalls(Date.now());

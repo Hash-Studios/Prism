@@ -5,7 +5,7 @@ import {setTimeout as delay} from "node:timers/promises";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
-import {db, REGION, CALLABLE_REGIONS} from "./common";
+import {db, REGION, CALLABLE_REGIONS, ADMIN_CALLABLE} from "./common";
 import {isAdminCaller} from "./adminConfig";
 import {userPushTokens} from "./notificationHelper";
 import {isScheduledWall} from "./wallRelease";
@@ -335,9 +335,9 @@ async function recordSuccessfulSend(
 
 export const registerReviewLiveActivity = onCall(
   {
+    ...ADMIN_CALLABLE,
     region: CALLABLE_REGIONS,
     cors: true,
-    maxInstances: 10,
   },
   async (request: CallableRequest<{pushToStartToken?: string | null; activityToken?: string | null}>) => {
     const uid = request.auth?.uid;
@@ -383,6 +383,7 @@ export const onReviewQueueChanged = onDocumentWritten(
     region: REGION,
     retry: true,
     timeoutSeconds: 540,
+    maxInstances: 2,
   },
   async (event) => {
     const before = event.data?.before?.data();

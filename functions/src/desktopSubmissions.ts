@@ -4,7 +4,7 @@ import {logger} from "firebase-functions/v2";
 import {onDocumentDeleted} from "firebase-functions/v2/firestore";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {isAdminCaller} from "./adminConfig";
-import {CALLABLE_REGIONS, db, REGION, str} from "./common";
+import {CALLABLE_REGIONS, db, REGION, str, ADMIN_CALLABLE} from "./common";
 import {base64DecodedBytes, isAllowedImageContent, isValidBase64, reserveUploadSlot} from "./githubContent";
 import {notificationCopyPayload} from "./notificationCatalog";
 import {isLoggedOut, sendToUser} from "./notificationHelper";
@@ -377,7 +377,8 @@ async function notifyCreator(submission: admin.firestore.DocumentData, id: strin
   }, {uid, email, loggedOut: isLoggedOut(user), legacyToken: user?.fcmToken});
 }
 
-export const reviewDesktopSubmission = onCall({region: CALLABLE_REGIONS, cors: true, secrets: r2Secrets},
+export const reviewDesktopSubmission = onCall(
+  {...ADMIN_CALLABLE, region: CALLABLE_REGIONS, cors: true, secrets: r2Secrets},
   async (request: CallableRequest<unknown>) => {
     if (!request.auth?.uid || !(await isAdminCaller(request.auth))) {
       throw new HttpsError("permission-denied", "Only admins can review desktop versions.");
@@ -419,6 +420,6 @@ export async function removeDesktopSubmissionsForAccount(uid: string): Promise<v
 }
 
 export const onDesktopSubmissionWallDeleted = onDocumentDeleted({document: "walls/{wallId}", region: REGION, retry: true,
-  secrets: r2Secrets}, async (event) => {
+  secrets: r2Secrets, cpu: "gcf_gen1"}, async (event) => {
   await removeDesktopSubmissionsForWall(event.params.wallId);
 });

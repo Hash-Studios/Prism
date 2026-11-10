@@ -8,7 +8,7 @@ import {type CosmeticSlot, shopItem, type ShopItem, shopPrice, slotFor} from "./
 
 const USERS = "usersv2";
 const TRANSACTIONS = "coinTransactions";
-const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true, maxInstances: 10};
+const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true};
 
 export type ShopRefusal = "shop_item_owned" | "shop_item_pro_only" | "shop_item_rank_locked" | "shop_item_expired";
 

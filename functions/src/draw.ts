@@ -101,7 +101,7 @@ const num = (value: unknown) =>
   typeof value === "number" && Number.isFinite(value) ? Math.trunc(value) : 0;
 
 export const buyDrawTicket = onCall(
-  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true},
   async (request: CallableRequest<{ requestId?: unknown }>) => {
     const callerUid = request.auth?.uid?.trim() ?? "";
     if (!callerUid) {
