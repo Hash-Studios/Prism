@@ -644,20 +644,21 @@ service cloud.firestore {
     }
 
     // Public folders: the server projection of a folder its owner made public (functions/src/publicFolders.ts).
-    // Only the Admin SDK writes it. A block in either direction hides it, and items need a live header.
+    // Only the Admin SDK writes it. Guests can read it. For a signed-in reader, a block in either direction hides it.
+    // Items need a live header.
     match /publicFolders/{folderId} {
       function notBlocked(ownerId) {
         return !exists(/databases/$(database)/documents/usersv2/$(ownerId)/blockedUsers/$(request.auth.uid))
             && !exists(/databases/$(database)/documents/usersv2/$(request.auth.uid)/blockedUsers/$(ownerId));
       }
 
-      allow read: if isSignedIn() && notBlocked(resource.data.ownerId);
+      allow read: if !isSignedIn() || notBlocked(resource.data.ownerId);
       allow write: if false;
 
       match /items/{itemKey} {
-        allow read: if isSignedIn()
-            && exists(/databases/$(database)/documents/publicFolders/$(folderId))
-            && notBlocked(get(/databases/$(database)/documents/publicFolders/$(folderId)).data.ownerId);
+        allow read: if exists(/databases/$(database)/documents/publicFolders/$(folderId))
+            && (!isSignedIn()
+                || notBlocked(get(/databases/$(database)/documents/publicFolders/$(folderId)).data.ownerId));
         allow write: if false;
       }
 
@@ -675,23 +676,23 @@ service cloud.firestore {
     }
 
     // Discover folders: the daily trending and new public folders (functions/src/folderDiscovery.ts). Only the Admin
-    // SDK writes it. The app hides folders of creators the viewer blocked.
+    // SDK writes it. Guests can read it. The app hides folders of creators the viewer blocked.
     match /folderTrending/{docId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if false;
     }
 
     // Creator directory: the server projection of public profiles and walls (functions/src/creatorDirectory.ts).
-    // Only the Admin SDK writes it. The app hides blocked creators on its side.
+    // Only the Admin SDK writes it. Guests can read it. The app hides blocked creators on its side.
     match /creatorDirectory/{uid} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if false;
     }
 
-    // Public profile documents contain only the server-projected profile allowlist.
-    // Writes use the Admin SDK, which bypasses these client rules.
+    // Public profile documents contain only the server-projected profile allowlist, so guests can read them.
+    // The follow lists below still need sign-in. Writes use the Admin SDK, which bypasses these client rules.
     match /profiles/{uid} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if false;
 
       match /followers/{followerUid} {
@@ -880,9 +881,9 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Username registry (claimUsername callable). Signed-in users can read it.
+    // Username registry (claimUsername callable). Anyone can read it, so a guest can open a profile by username.
     match /usernames/{name} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if false;
     }
 
