@@ -125,9 +125,21 @@ export async function prepareDay(deps: SocialDeps, builders: Builders = defaultB
   const day = postDay(now);
   const exclude = await recentlyPosted(now, config.blockedIds);
   const existing = await db.collection(SOCIAL_POSTS).where("day", "==", day).get();
+  // Every wall previewed in today's earlier dry runs, so a rebuild never shows an older set again.
+  const drySeenRef = db.collection(STATE).doc("dryRunSeen");
+  const drySeen = config.dryRun ? (await drySeenRef.get()).data() : undefined;
+  const previewed = new Set<string>(drySeen?.day === day && Array.isArray(drySeen.ids) ? drySeen.ids.map(String) : []);
+  for (const id of previewed) exclude.add(id);
+  for (const doc of existing.docs) {
+    for (const id of doc.data().source?.ids ?? []) {
+      exclude.add(String(id));
+      if (config.dryRun) previewed.add(String(id));
+    }
+  }
+  // Save before deleting previews: a failed history write must leave their ids available for a retry.
+  if (config.dryRun && previewed.size > 0) await drySeenRef.set({day, ids: [...previewed]});
   const kept = new Set<string>();
   for (const doc of existing.docs) {
-    for (const id of doc.data().source?.ids ?? []) exclude.add(String(id));
     // In a dry run, every trigger rebuilds today's unposted posts with new walls, so the owner can try many sets.
     const removed = config.dryRun && await db.runTransaction(async (tx) => {
       const post = (await tx.get(doc.ref)).data();

@@ -32,18 +32,52 @@ export function rotate(lines: readonly string[], day: string, salt = 0): string 
   return lines[((index % lines.length) + lines.length) % lines.length];
 }
 
+// Captions follow the research: the picture does the work, the words stay short. Hashtags are light or absent, and
+// the only sales line is "available in prism". Each list holds 14 lines, so a line comes back only after 14 days.
+
+/** Curator voice, like @Papers_app ("Epic Wallpapers I found Today 🤩"): casual, at most one emoji. */
 export const GRID_LINES = [
-  "Wallpapers I found today 🤩", "Fresh walls for your lock screen", "3 walls, pick one", "Today's finds",
-  "Your next wallpaper is here", "Saved these for you", "Lock screen upgrade", "Which one are you taking?",
-  "Walls worth a swipe", "Found these today", "New walls, no notes", "Pick your favourite", "Today's wallpaper drop",
-  "Three for your phone",
+  "Wallpapers I found today 🤩", "Fresh wallpapers for you ✨", "Cool wallpapers I found today",
+  "Today's wallpaper finds 🔥", "Pick one for your lock screen 👀", "New walls just dropped",
+  "Wallpapers you didn't know you needed", "Your next lock screen is here", "Found these, had to share 🤩",
+  "Wallpaper dump 📱", "Which one are you taking? 👇", "3 walls, 0 regrets", "Fresh finds for your home screen ✨",
+  "Saved all three. No notes",
 ] as const;
 
+/** Two quiet lowercase lines, like the panorama reference ("no wasted emotions / just composition"). */
 export const PANORAMA_LINES = [
-  "swipe →", "one view, three screens", "swipe for the full view", "one wall, three panels", "keep swiping →",
-  "the whole scene, in three", "swipe across", "one picture, three phones", "panorama →", "three panels, one view",
-  "swipe to see it all", "split in three", "the full picture →", "scroll the view →",
+  "one view\nthree screens", "slow down\nlet it breathe", "nothing loud\njust light", "keep swiping\nit keeps going",
+  "less noise\nmore horizon", "quiet frame\nquiet mind", "one picture\nsplit three ways", "stay a while\nswipe slow",
+  "no clutter\njust space", "the view\ndoesn't end here →", "long nights\nsoft light", "calm\nthen calmer",
+  "made to be swiped", "every screen\na piece of it",
 ] as const;
+
+/** Second line under a still's title. Empty lines keep some posts to the title alone. */
+export const STILL_TAILS = [
+  "", "lock screen or home screen?", "available in prism", "", "save it for later", "#wallpaper", "",
+  "which phone is this going on?", "new in prism", "", "set it and forget it", "#wallpaper", "", "made to be looked at",
+] as const;
+/** The same idea for After Dark walls, where true black and AMOLED tags fit. */
+export const DARK_STILL_TAILS = [
+  "", "#amoled #wallpaper", "true black, made for oled", "", "available in prism", "lock screen or home screen?", "",
+  "#amoled", "dark mode, but make it a wallpaper", "", "save it for tonight", "#wallpaper #amoled", "",
+  "easy on the eyes",
+] as const;
+
+/** "Deep Lure · Jade" over a tail line, all lowercase like the reference posts. */
+export function stillCaption(title: string, day: string, salt: number, dark: boolean): string {
+  const tail = rotate(dark ? DARK_STILL_TAILS : STILL_TAILS, day, salt);
+  return captionWithTitle(title, "", tail ? `\n${tail}` : "");
+}
+
+/** Wall of the Day can be a creator wall with an unbounded legacy title. Keep the fixed caption lines intact. */
+function captionWithTitle(title: string, prefix: string, suffix: string): string {
+  const lower = title.toLowerCase();
+  if (xWeightedLength(`${prefix}${lower}${suffix}`) <= 280) return `${prefix}${lower}${suffix}`;
+  const chars = Array.from(lower).slice(0, 280);
+  while (chars.length > 0 && xWeightedLength(`${prefix}${chars.join("")}…${suffix}`) > 280) chars.pop();
+  return `${prefix}${chars.join("")}…${suffix}`;
+}
 
 // ---------- P1 panorama ----------
 
@@ -152,12 +186,15 @@ export async function stillContent(day: string, exclude: Set<string>, options: {
   }
   if (!picked) return null;
   const jpeg = await fitFiveMb(await downloadJpeg(await studioImageUrl(picked.id, picked.wall)));
-  const scene = picked.wall.origin === "studio" ? sceneOf(picked.wall) : str(picked.wall.title) || "Wall of the Day";
+  const wallTitle = typeof picked.wall.title === "string" ? picked.wall.title.trim() : "";
+  const scene = picked.wall.origin === "studio" ? sceneOf(picked.wall) : wallTitle || "Wall of the Day";
+  const title = wallTitle || scene;
   return {
     pipeline: "still",
     source: {kind: "prism", ids: [picked.id]},
     media: [{jpeg, sensitive: false, alt: `${scene}. Phone wallpaper from Prism.`}],
-    text: picked.wotd ? "Wall of the Day. Which one is going on your phone this week?" : `${scene}.`,
+    text: picked.wotd ? captionWithTitle(title, "wall of the day ✨\n", "\nlock screen or home screen?") :
+      stillCaption(title, day, options.salt, picked.wall.seriesId === "after-dark"),
     replyText: NO_REPLY,
   };
 }
@@ -195,10 +232,19 @@ async function wallhavenJson(path: string): Promise<any> {
 export async function wallhavenCandidates(): Promise<Array<{id: string; purity: string}>> {
   const seen = new Set<string>();
   const out: Array<{id: string; purity: string}> = [];
-  for (const topRange of ["3d", "1w"]) {
+  // Two pages per range: page 1 alone is about 24 walls, mostly sketchy, so the same top walls would win every day.
+  // Keep both original page-1 pools first so page 2 cannot exhaust the detail budget before the weekly fallback.
+  for (const [topRange, page] of [["3d", "1"], ["1w", "1"], ["3d", "2"], ["1w", "2"]]) {
     const query = new URLSearchParams({categories: "111", purity: "110", sorting: "toplist", topRange,
-      ratios: "portrait", atleast: "1080x1920"});
-    const data = (await wallhavenJson(`/search?${query}`))?.data;
+      ratios: "portrait", atleast: "1080x1920", page});
+    let data: unknown;
+    try {
+      data = (await wallhavenJson(`/search?${query}`))?.data;
+    } catch (err) {
+      // Page 2 only widens the pool. Its failure (a 429, a timeout) keeps the page-1 walls already collected.
+      if (page === "1") throw err;
+      continue;
+    }
     for (const item of Array.isArray(data) ? data : []) {
       const id = str(item?.id);
       if (/^[a-z0-9]{1,16}$/.test(id) && !seen.has(id) && ["sfw", "sketchy"].includes(str(item?.purity))) {
