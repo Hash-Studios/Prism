@@ -50,10 +50,12 @@ The webhook accepts only POST requests and compares the secret in constant time.
 
 ## Grid checks
 
-- Wallhaven `purity=110`, `categories=111`, toplist 3 days then 1 week, portrait, at least 1080 x 1920.
+- Wallhaven `purity=110` (SFW and sketchy, never NSFW), `categories=111`, toplist 3 days then 1 week, portrait, at least 1080 x 1920. Search and detail responses must have matching SFW or sketchy purity.
+- Four searches (two pages per range) and at most 30 details use at most 34 API requests per grid run. This is below Wallhaven's 45/minute limit for one run, not a shared limit across overlapping runs.
 - At most `sketchyPerPost` sketchy walls (default 2).
 - Youth-coded tags reject, including teenage, schoolboy, student, minor, and young-child variants. `blockedTags` and `blockedIds` reject. Grid source tags are retained so current blocklists can be checked again before posting.
-- Vision SafeSearch: `adult` POSSIBLE or higher rejects, `violence` or `medical` LIKELY or higher rejects, any UNKNOWN rejects. `racy` VERY_LIKELY sets X's sensitive flag on that image.
+- Vision SafeSearch: `adult` VERY_LIKELY rejects. `violence` or `medical` LIKELY or higher rejects. Any UNKNOWN or missing rating rejects.
+- `adult` POSSIBLE or LIKELY sets X's sensitive flag on that image. `racy` VERY_LIKELY also sets the flag. Approval hashes include these flags, and previews show the count under "Sensitive flags". If X's metadata call fails for any sensitive image, the entire post stops before publication.
 - Cooldowns: Wallhaven walls 180 days, Prism walls 60 days (`socialSeen`).
 - Takedown: delete the post on X and add the Wallhaven id to `blockedIds`.
 
