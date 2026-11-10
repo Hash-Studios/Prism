@@ -494,4 +494,18 @@ void main() {
     expect(find.bySemanticsLabel('By Prism creator'), findsOneWidget);
     handle.dispose();
   });
+
+  testWidgets('the owner row has a 48 dp tap area on Android', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+    final repo = _FakePublicFoldersRepository()..folder = _folder();
+    final PublicFolderCubit cubit = PublicFolderCubit(repo, _FakeMoodRepository());
+    addTearDown(cubit.close);
+    await tester.pumpWidget(_host(PublicFolderView(folderId: 'f1', cubit: cubit)));
+    await _settle(tester);
+
+    final Finder owner = find.bySemanticsLabel(RegExp('^By '));
+    expect(owner, findsOneWidget);
+    expect(tester.getSemantics(owner).rect.height, greaterThanOrEqualTo(48.0));
+    handle.dispose();
+  });
 }

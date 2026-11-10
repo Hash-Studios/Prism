@@ -120,4 +120,15 @@ void main() {
     await tester.pump();
     expect(find.textContaining('Check the'), findsOneWidget);
   });
+
+  testWidgets('the Details title is a heading', (tester) async {
+    final handle = tester.ensureSemantics();
+    final key = GlobalKey<SubmissionMetadataFormState>();
+    await pump(tester, key, (_) {});
+    expect(
+      tester.getSemantics(find.text('Details (optional)')),
+      matchesSemantics(label: 'Details (optional)', isHeader: true),
+    );
+    handle.dispose();
+  });
 }

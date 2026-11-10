@@ -486,7 +486,47 @@ void main() {
     expect(find.text(_copy), findsNothing);
     expect(FeatureHints.instance.record(HintId.variantDots).views, 0);
   });
+
+  testWidgets('Got it has a 48 dp tap area on Android', (tester) async {
+    await tester.pumpWidget(_app(_host()));
+    await _settle(tester);
+    final SemanticsHandle handle = tester.ensureSemantics();
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    handle.dispose();
+    final Rect rect = tester.getSemantics(_gotItButton()).rect;
+    expect(rect.height, greaterThanOrEqualTo(48.0));
+    expect(rect.width, greaterThanOrEqualTo(48.0));
+  });
+
+  testWidgets('Got it keeps a 44 pt tap area on iOS', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      await tester.pumpWidget(_app(_host(), platform: TargetPlatform.iOS));
+      await _settle(tester);
+      final SemanticsHandle handle = tester.ensureSemantics();
+      await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+      handle.dispose();
+      expect(tester.getSemantics(_gotItButton()).rect.height, 44.0);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
+  testWidgets('the hint bubble meets the tap target, label and contrast guidelines in RTL at 2x text', (tester) async {
+    await tester.pumpWidget(_app(_host(), textScale: 2, direction: TextDirection.rtl));
+    await _settle(tester);
+    final SemanticsHandle handle = tester.ensureSemantics();
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(textContrastGuideline));
+    handle.dispose();
+  });
 }
+
+Finder _gotItButton() => find.ancestor(
+  of: find.text(_gotIt),
+  matching: find.byWidgetPredicate((Widget w) => w is Semantics && w.properties.button == true),
+);
 
 Future<void> _settle(WidgetTester tester) async {
   await tester.pump(FeatureHint.settle);
@@ -521,10 +561,11 @@ Widget _app(
   bool reduceMotion = false,
   double textScale = 1,
   TextDirection direction = TextDirection.ltr,
+  TargetPlatform? platform,
 }) => MaterialApp(
   localizationsDelegates: AppLocalizations.localizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
-  theme: kLightTheme,
+  theme: kLightTheme.copyWith(platform: platform),
   builder: (BuildContext context, Widget? child) => MediaQuery(
     data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion, textScaler: TextScaler.linear(textScale)),
     child: Directionality(textDirection: direction, child: child!),
