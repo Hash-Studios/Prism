@@ -1,0 +1,132 @@
+{
+  "functions/src/backfillFavouriteContributions.ts": {
+    "npm": "migrate:favourite-contributions",
+    "pr": "#642",
+    "note": "No run note found. PR #642 has a test command only. npm script points at lib/backfillFavouriteContributions.js."
+  },
+  "functions/src/scripts/backfillAiGenerationReceipts.ts": {
+    "npm": "migrate:ai-receipts",
+    "pr": "#620",
+    "note": "Owner notes: #616, #617, #620 merged 2026-10-21. The backfill waits for the owner OK."
+  },
+  "functions/src/scripts/backfillCreatorUids.ts": {
+    "npm": "migrate:creator-uids",
+    "pr": "#653",
+    "note": "No run note found."
+  },
+  "functions/src/scripts/backfillDesktopCompanions.ts": {
+    "npm": "studio:desktop-backfill",
+    "pr": "#783",
+    "note": "Owner notes: deployed 2026-11-02. A nightly task runs the backfill. No run note in the PR body."
+  },
+  "functions/src/scripts/backfillPublicProfiles.ts": {
+    "npm": "migrate:profiles",
+    "pr": "#653",
+    "note": "No run note found."
+  },
+  "functions/src/scripts/backfillPublishedAt.ts": {
+    "npm": "migrate:published-at",
+    "pr": "#851",
+    "note": "PR #851: 'Not run.' PR #853: apply with owner OK before release. Pending."
+  },
+  "functions/src/scripts/backfillSmartWallKeys.ts": {
+    "npm": "",
+    "pr": "#845",
+    "note": "PR #845: backfill only with owner OK. PR #846: run before the release. No apply note."
+  },
+  "functions/src/scripts/backfillUsernameLower.ts": {
+    "npm": "migrate:username-lower",
+    "pr": "#369",
+    "note": "No run note found. PR #369 says dry run by default, --apply to write."
+  },
+  "functions/src/scripts/backfillWallAuthors.ts": {
+    "npm": "migrate:wall-authors",
+    "pr": "#610",
+    "note": "No run note found. PR #610 is a search top hit (title match), not verified."
+  },
+  "functions/src/scripts/backfillWallCategories.ts": {
+    "npm": "migrate:wall-categories",
+    "pr": "#843",
+    "note": "PR #843: dry run done (848 walls, 17 classified-only). Apply is a later step in #843 and #846. No apply note."
+  },
+  "functions/src/scripts/backfillWallCollections.ts": {
+    "npm": "migrate:wall-collections",
+    "pr": "#517",
+    "note": "No run note found. PR #517 shows the --apply command only."
+  },
+  "functions/src/scripts/backfillWallColors.ts": {
+    "npm": "",
+    "pr": "#480",
+    "note": "backend-deploy.md (Colour search): 'I did not run it with --apply.' PR #480: dry run, then apply needs owner go. Not run per doc."
+  },
+  "functions/src/scripts/backfillWallDepth.ts": {
+    "npm": "",
+    "pr": "#514",
+    "note": "backend-deploy.md (Depth Effect): calibration sample and --apply are listed as steps, no run note. Apply needs owner OK."
+  },
+  "functions/src/scripts/backfillWallSearchTerms.ts": {
+    "npm": "migrate:wall-search-terms",
+    "pr": "#607",
+    "note": "No run note found."
+  },
+  "functions/src/scripts/backfillWallSignatures.ts": {
+    "npm": "",
+    "pr": "#608",
+    "note": "No run note found. PR #608: dry run by default."
+  },
+  "functions/src/scripts/backfillWallSpatial.ts": {
+    "npm": "migrate:wall-spatial",
+    "pr": "#721",
+    "note": "Owner notes: merged, deployed and backfilled 2026-10-28 (411 great, 661 ok). The PR body has only the commands."
+  },
+  "functions/src/scripts/backfillWallStudio.ts": {
+    "npm": "",
+    "pr": "#797",
+    "note": "PR #797: dry run by default, 'not run against production'. Apply needs owner OK (also backend-deploy.md Editors' Choice step 4)."
+  },
+  "functions/src/scripts/buildWrapped.ts": {
+    "npm": "",
+    "pr": "#786",
+    "note": "PR #786: job runs 'with your OK'. No run note."
+  },
+  "functions/src/scripts/dedupeWallIds.ts": {
+    "npm": "migrate:dedupe-wall-ids",
+    "pr": "#604",
+    "note": "No run note found. PR #604 says apply path tested, no prod run note."
+  },
+  "functions/src/scripts/economyConfig.ts": {
+    "npm": "economy:config",
+    "pr": "#491",
+    "note": "backend-deploy.md (Coin economy v2) step 4: --init --apply, no run note. PR #491 is a title match, not verified."
+  },
+  "functions/src/scripts/grantTestCoins.ts": {
+    "npm": "",
+    "pr": "",
+    "note": "No note in a PR or the docs. Ops script for test accounts, not a backfill."
+  },
+  "functions/src/scripts/migrateGithubToR2.ts": {
+    "npm": "migrate:github-to-r2",
+    "pr": "#609",
+    "note": "Owner notes: 2,426 of 2,434 walls moved to R2 on 2026-10-21. 8 are blocked."
+  },
+  "functions/src/scripts/qualifyFavouriteKeys.ts": {
+    "npm": "migrate:favourite-keys",
+    "pr": "#843",
+    "note": "PR #843: prod dry run (read only) done. --apply waits for most users on the build (PR #846 step 5). Not applied per PR text."
+  },
+  "functions/src/scripts/reserveDrop.ts": {
+    "npm": "drops:reserve",
+    "pr": "",
+    "note": "No note in a PR or the docs. Ops script, not a backfill."
+  },
+  "functions/src/scripts/seedChallengeThemes.ts": {
+    "npm": "",
+    "pr": "#759",
+    "note": "No run note found. PR #759 shows the --apply command only."
+  },
+  "functions/src/scripts/setupStudioAccount.ts": {
+    "npm": "studio:account",
+    "pr": "#472",
+    "note": "No note in a PR or the docs. One-time Studio setup script."
+  }
+}
