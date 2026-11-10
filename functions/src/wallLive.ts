@@ -89,11 +89,12 @@ async function proveFile(uid: string, file: LiveFile, deps: LiveProofDeps): Prom
 }
 
 /** Checks a live wall's files from storage. The video facts come from its MP4 headers, never from the client. */
-export async function proveLiveSubmission(uid: string | null, raw: unknown, deps: LiveProofDeps = defaultDeps()):
+export async function proveLiveSubmission(uid: string | null, raw: unknown, injected?: LiveProofDeps):
   Promise<{ok: true; live: Record<string, unknown>} | {ok: false; error: LiveProofError}> {
   const live = parseClientLive(raw);
   if (!live) return {ok: false, error: "bad_fields"};
   if (!uid) return {ok: false, error: "no_owner"};
+  const deps = injected ?? defaultDeps();
   const video = await proveFile(uid, {url: live.video, path: live.videoPath, sha: live.videoSha}, deps);
   if (!video) return {ok: false, error: "unproven_file"};
   const check = inspectLiveVideo(video);

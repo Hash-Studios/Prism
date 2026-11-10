@@ -5,6 +5,8 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.media.MediaMetadataRetriever
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
@@ -17,6 +19,7 @@ import android.webkit.MimeTypeMap
 import android.widget.Toast
 import com.hash.prism.pigeon.DownloadItemsResult
 import com.hash.prism.pigeon.DownloadRequest
+import com.hash.prism.pigeon.FlutterError
 import com.hash.prism.pigeon.OperationResult
 import com.hash.prism.pigeon.PrismMediaHostApi
 import com.hash.prism.pigeon.SaveMediaKind
@@ -29,6 +32,7 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
+import kotlin.math.roundToInt
 
 internal class PrismMediaHostApiImpl(
     context: Context,
@@ -227,6 +231,105 @@ internal class PrismMediaHostApiImpl(
         }
     }
 
+    override fun extractVideoFrames(
+        path: String,
+        timesMs: List<Long>,
+        maxEdge: Long,
+        quality: Long,
+        callback: (Result<List<String>>) -> Unit,
+    ) {
+        runInBackground<Result<List<String>>>(
+            { callback(it.getOrThrow()) },
+            { Result.failure(FlutterError(mediaFailureCode("frame-failed", it), it.message)) },
+        ) {
+            Result.success(extractFrames(path, timesMs, maxEdge, quality))
+        }
+    }
+
+    override fun saveVideo(path: String, callback: (Result<OperationResult>) -> Unit) {
+        withWritePermission(callback) {
+            runInBackground(callback, {
+                OperationResult(success = false, errorCode = mediaFailureCode("save-failed", it), message = it.message)
+            }) {
+                publishVideo(File(path), "prism_live_${System.currentTimeMillis()}.mp4")
+                OperationResult(success = true)
+            }
+        }
+    }
+
+    private fun extractFrames(path: String, timesMs: List<Long>, maxEdge: Long, quality: Long): List<String> {
+        val retriever = MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(path)
+            val width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull()
+            val height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull()
+            require(width != null && height != null && width > 0 && height > 0) { "Unreadable video" }
+            val rotation = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull() ?: 0
+            // Frames come back in display orientation, so a 90 or 270 degree video swaps its edges.
+            val (displayWidth, displayHeight) = if (rotation == 90 || rotation == 270) height to width else width to height
+            val scale = minOf(1f, maxEdge.toFloat() / maxOf(displayWidth, displayHeight))
+            val targetWidth = (displayWidth * scale).roundToInt().coerceAtLeast(1)
+            val targetHeight = (displayHeight * scale).roundToInt().coerceAtLeast(1)
+            val id = UUID.randomUUID()
+            return timesMs.mapIndexed { index, ms ->
+                val frame = frameAt(retriever, ms * 1000L, targetWidth, targetHeight) ?: throw IOException("No frame at $ms ms")
+                try {
+                    val file = File(context.cacheDir, "prism_live_frame_${id}_$index.jpg")
+                    file.outputStream().use { check(frame.compress(Bitmap.CompressFormat.JPEG, quality.toInt(), it)) { "JPEG encoding failed" } }
+                    file.absolutePath
+                } finally {
+                    frame.recycle()
+                }
+            }
+        } finally {
+            retriever.release()
+        }
+    }
+
+    private fun frameAt(retriever: MediaMetadataRetriever, timeUs: Long, width: Int, height: Int): Bitmap? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            retriever.getScaledFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC, width, height)
+        } else {
+            retriever.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                ?.let { Bitmap.createScaledBitmap(it, width, height, true) }
+        }
+
+    private fun publishVideo(source: File, filename: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val resolver = context.contentResolver
+            val values = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                put(MediaStore.MediaColumns.MIME_TYPE, VIDEO_MIME)
+                put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_MOVIES}/Prism/")
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+            val uri = resolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values) ?: throw IOException("Could not create video")
+            try {
+                val output = resolver.openOutputStream(uri) ?: throw IOException("Could not open video")
+                output.use { out -> source.inputStream().use { it.copyTo(out) } }
+                if (resolver.update(uri, ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }, null, null) != 1) {
+                    throw IOException("Could not publish video")
+                }
+            } catch (error: Exception) {
+                try { resolver.delete(uri, null, null) } catch (cleanup: Exception) { error.addSuppressed(cleanup) }
+                throw error
+            }
+        } else {
+            val directory = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "Prism")
+            if (!directory.isDirectory && !directory.mkdirs()) throw IOException("Could not create video directory")
+            var target = File(directory, filename)
+            var suffix = 1
+            while (target.exists()) target = File(directory, "${filename.substringBeforeLast('.')} (${suffix++}).mp4")
+            try {
+                target.outputStream().use { out -> source.inputStream().use { it.copyTo(out) } }
+                MediaScannerConnection.scanFile(context, arrayOf(target.absolutePath), arrayOf(VIDEO_MIME), null)
+            } catch (error: Exception) {
+                if (!target.delete() && target.exists()) Log.w(TAG, "Could not remove incomplete video")
+                throw error
+            }
+        }
+    }
+
     private fun deleteMediaStoreDownload(path: String): Boolean {
         val resolver = context.contentResolver
         val cacheRoot = File(context.cacheDir, DOWNLOAD_CACHE_DIRECTORY).canonicalFile
@@ -305,6 +408,7 @@ internal class PrismMediaHostApiImpl(
 
     private companion object {
         const val TAG = "PrismMedia"
+        const val VIDEO_MIME = "video/mp4"
         const val DOWNLOAD_CACHE_DIRECTORY = "prism_downloads"
         val storageLock = Any()
         const val DOWNLOAD_SELECTION = "(${MediaStore.Images.Media.RELATIVE_PATH}=? OR ${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?)"

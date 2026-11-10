@@ -10,6 +10,7 @@ import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/gesture_hint.dart';
+import 'package:Prism/core/widgets/live_tag.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -94,6 +95,7 @@ class WallpaperTile extends StatelessWidget {
   Widget? _overlay(BuildContext context, {required bool holdHint}) {
     final List<Widget> layers = <Widget>[
       ?overlay,
+      ?liveFeedLayerFor(item, radius: PrismWallGrid.tileRadius),
       ?depthTagFor(depthTierOf(item)),
       ?spatialTagFor(spatialOf(item)?.tier),
       if (holdHint)

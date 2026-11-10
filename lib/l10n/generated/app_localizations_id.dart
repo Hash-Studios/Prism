@@ -15592,4 +15592,102 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settingsReadabilityTipsBody => 'Tampilkan tips saat jam atau ikon mungkin sulit dibaca di wallpaper.';
+
+  @override
+  String get uploadKindTitle => 'Unggah wallpaper';
+
+  @override
+  String get uploadKindPhoto => 'Foto';
+
+  @override
+  String get uploadKindPhotoBody => 'Gambar diam';
+
+  @override
+  String get uploadKindLive => 'Live';
+
+  @override
+  String get uploadKindLiveBody => 'Video berulang, hingga 15 detik';
+
+  @override
+  String get liveUploadChecking => 'Memeriksa video kamu';
+
+  @override
+  String liveUploadFacts(String seconds, int width, int height) {
+    return '$seconds s · $width × $height';
+  }
+
+  @override
+  String get liveUploadErrorFormat => 'Gunakan video MP4. Prism tidak bisa membaca file ini.';
+
+  @override
+  String get liveUploadErrorCodec => 'Video ini tidak memakai H.264. Ekspor sebagai MP4 H.264, lalu coba lagi.';
+
+  @override
+  String get liveUploadErrorTooLong => 'Klip ini lebih dari 15 detik. Potong, lalu coba lagi.';
+
+  @override
+  String get liveUploadErrorTooLarge => 'Klip ini lebih dari 20 MB. Gunakan klip yang lebih pendek atau lebih kecil.';
+
+  @override
+  String get liveUploadErrorLandscape => 'Gunakan klip potret yang lebih tinggi daripada lebarnya.';
+
+  @override
+  String get liveUploadErrorFrameSize => 'Klip ini lebih besar dari 1440 × 3200 piksel. Gunakan klip yang lebih kecil.';
+
+  @override
+  String get liveUploadErrorUnreadable => 'Prism tidak bisa membaca video ini. Coba klip lain.';
+
+  @override
+  String get liveUploadPickAnother => 'Pilih video lain';
+
+  @override
+  String get coreLiveBadge => 'Live';
+
+  @override
+  String get coreLiveBadgeSemantic => 'Wallpaper bergerak';
+
+  @override
+  String get liveWallPlay => 'Putar video';
+
+  @override
+  String get liveWallPause => 'Jeda video';
+
+  @override
+  String get liveWallSetLive => 'Atur wallpaper bergerak';
+
+  @override
+  String get liveWallPreparing => 'Mengambil video';
+
+  @override
+  String get liveWallSetFailed => 'Wallpaper bergerak tidak bisa diatur. Coba lagi.';
+
+  @override
+  String get liveWallIosTitle => 'Gunakan wallpaper bergerak ini';
+
+  @override
+  String get liveWallIosBody =>
+      'iPhone tidak bisa memakai video sebagai wallpaper. Simpan videonya, atau atur poster sebagai wallpaper diam.';
+
+  @override
+  String get liveWallSaveVideo => 'Simpan video ke Foto';
+
+  @override
+  String get liveWallSaveVideoDone => 'Video disimpan ke Foto.';
+
+  @override
+  String get liveWallSaveVideoFailed => 'Video tidak bisa disimpan. Izinkan akses Foto di Pengaturan, lalu coba lagi.';
+
+  @override
+  String get liveWallSetPoster => 'Atur poster sebagai wallpaper';
+
+  @override
+  String get adminLiveChecking => 'Memeriksa video';
+
+  @override
+  String get adminLiveFailed => 'Video gagal dicek server';
+
+  @override
+  String adminLiveFacts(String seconds) {
+    return 'Live · $seconds s';
+  }
 }

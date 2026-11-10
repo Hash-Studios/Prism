@@ -63,6 +63,12 @@ internal class PrismMediaPluginTest {
         }
         override fun clearDownloads(callback: (Result<OperationResult>) -> Unit) { pending.add(callback) }
         override fun deleteDownload(path: String, callback: (Result<OperationResult>) -> Unit) { pending.add(callback) }
+        override fun extractVideoFrames(path: String, timesMs: List<Long>, maxEdge: Long, quality: Long, callback: (Result<List<String>>) -> Unit) {
+            callback(Result.failure(IllegalStateException("Not used in this test")))
+        }
+        override fun saveVideo(path: String, callback: (Result<OperationResult>) -> Unit) {
+            callback(Result.failure(IllegalStateException("Not used in this test")))
+        }
         override fun close() { closes++ }
     }
 

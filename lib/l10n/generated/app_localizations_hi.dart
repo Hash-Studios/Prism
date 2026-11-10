@@ -15683,4 +15683,104 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get settingsReadabilityTipsBody =>
       'जब घड़ी या आइकन किसी वॉलपेपर पर पढ़ने में मुश्किल लग सकते हों, तब सुझाव दिखाएँ।';
+
+  @override
+  String get uploadKindTitle => 'वॉलपेपर अपलोड करें';
+
+  @override
+  String get uploadKindPhoto => 'फ़ोटो';
+
+  @override
+  String get uploadKindPhotoBody => 'एक स्थिर छवि';
+
+  @override
+  String get uploadKindLive => 'लाइव';
+
+  @override
+  String get uploadKindLiveBody => '15 सेकंड तक का लूपिंग वीडियो';
+
+  @override
+  String get liveUploadChecking => 'आपका वीडियो जाँचा जा रहा है';
+
+  @override
+  String liveUploadFacts(String seconds, int width, int height) {
+    return '$seconds s · $width × $height';
+  }
+
+  @override
+  String get liveUploadErrorFormat => 'MP4 वीडियो इस्तेमाल करें। Prism यह फ़ाइल नहीं पढ़ सकता।';
+
+  @override
+  String get liveUploadErrorCodec =>
+      'यह वीडियो H.264 में नहीं है। इसे H.264 MP4 के रूप में एक्सपोर्ट करें, फिर दोबारा कोशिश करें।';
+
+  @override
+  String get liveUploadErrorTooLong => 'यह क्लिप 15 सेकंड से लंबी है। इसे छोटा करें, फिर दोबारा कोशिश करें।';
+
+  @override
+  String get liveUploadErrorTooLarge => 'यह क्लिप 20 MB से बड़ी है। कोई छोटी या हल्की क्लिप इस्तेमाल करें।';
+
+  @override
+  String get liveUploadErrorLandscape => 'ऐसी क्लिप इस्तेमाल करें जो चौड़ाई से लंबी हो।';
+
+  @override
+  String get liveUploadErrorFrameSize => 'यह क्लिप 1440 × 3200 पिक्सल से बड़ी है। कोई छोटी क्लिप इस्तेमाल करें।';
+
+  @override
+  String get liveUploadErrorUnreadable => 'Prism यह वीडियो नहीं पढ़ सका। कोई और क्लिप आज़माएँ।';
+
+  @override
+  String get liveUploadPickAnother => 'कोई और वीडियो चुनें';
+
+  @override
+  String get coreLiveBadge => 'लाइव';
+
+  @override
+  String get coreLiveBadgeSemantic => 'लाइव वॉलपेपर';
+
+  @override
+  String get liveWallPlay => 'वीडियो चलाएँ';
+
+  @override
+  String get liveWallPause => 'वीडियो रोकें';
+
+  @override
+  String get liveWallSetLive => 'लाइव वॉलपेपर सेट करें';
+
+  @override
+  String get liveWallPreparing => 'वीडियो लिया जा रहा है';
+
+  @override
+  String get liveWallSetFailed => 'लाइव वॉलपेपर सेट नहीं हो सका। फिर से कोशिश करें।';
+
+  @override
+  String get liveWallIosTitle => 'यह लाइव वॉलपेपर इस्तेमाल करें';
+
+  @override
+  String get liveWallIosBody =>
+      'iPhone वीडियो को वॉलपेपर के रूप में इस्तेमाल नहीं कर सकता। वीडियो सेव करें, या पोस्टर को स्थिर वॉलपेपर बनाएँ।';
+
+  @override
+  String get liveWallSaveVideo => 'वीडियो Photos में सेव करें';
+
+  @override
+  String get liveWallSaveVideoDone => 'वीडियो Photos में सेव हो गया।';
+
+  @override
+  String get liveWallSaveVideoFailed =>
+      'वीडियो सेव नहीं हो सका। सेटिंग्स में Photos की अनुमति दें, फिर दोबारा कोशिश करें।';
+
+  @override
+  String get liveWallSetPoster => 'पोस्टर को वॉलपेपर बनाएँ';
+
+  @override
+  String get adminLiveChecking => 'वीडियो जाँचा जा रहा है';
+
+  @override
+  String get adminLiveFailed => 'वीडियो सर्वर जाँच में फ़ेल हो गया';
+
+  @override
+  String adminLiveFacts(String seconds) {
+    return 'लाइव · $seconds s';
+  }
 }

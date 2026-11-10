@@ -119,4 +119,45 @@ void main() {
     expect(count, 0);
     expect(github.deleted, isEmpty);
   });
+
+  test('a pending live wall also deletes its video and 3 frames, all owned by Prism', () async {
+    final github = _RecordingGitHub();
+
+    final count = await deleteWallFiles(
+      <String, dynamic>{
+        ...wall,
+        'kind': 'live',
+        'live': <String, dynamic>{
+          'video': 'https://x/live_u_1_a.mp4',
+          'videoPath': 'live_u_1_a.mp4',
+          'videoSha': 'sha-v',
+          'frames': <Map<String, dynamic>>[
+            {'url': 'https://x/f1.jpg', 'path': 'frame_1_u_1_a.jpg', 'sha': 'sha-f1'},
+            {'url': 'https://x/f2.jpg', 'path': 'frame_2_u_1_a.jpg', 'sha': 'sha-f2'},
+            {'url': 'https://x/f3.jpg', 'path': 'frame_3_u_1_a.jpg', 'sha': 'sha-f3'},
+          ],
+        },
+      },
+      github: github,
+      repo: 'org/walls',
+    );
+
+    expect(count, 6);
+    expect(github.deleted.map((d) => d.path), <String>[
+      'u_1_a.png',
+      'thumb_u_1_a.png',
+      'live_u_1_a.mp4',
+      'frame_1_u_1_a.jpg',
+      'frame_2_u_1_a.jpg',
+      'frame_3_u_1_a.jpg',
+    ]);
+    expect(github.sourceKinds, <UploadSourceKind?>[
+      null,
+      null,
+      UploadSourceKind.owned,
+      UploadSourceKind.owned,
+      UploadSourceKind.owned,
+      UploadSourceKind.owned,
+    ]);
+  });
 }

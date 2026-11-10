@@ -243,6 +243,7 @@ class _AdminReviewScreenState extends State<AdminReviewScreen> with SingleTicker
       reserved: reserved,
       moderation: wallModeration(wall),
       details: WallResubmissionNotice(wallDocId: wall.id),
+      liveData: wall.data(),
       onToggleReserve: canReserveForDrop(wall)
           ? () async {
               if (reserved) {

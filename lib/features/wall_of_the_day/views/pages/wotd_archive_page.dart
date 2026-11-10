@@ -10,6 +10,7 @@ import 'package:Prism/core/wallpaper/placeholder_color.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
+import 'package:Prism/core/widgets/live_tag.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
@@ -171,6 +172,7 @@ class _PickTile extends StatelessWidget {
                 dateLabel,
               ),
               overlay: stackTags(<Widget?>[
+                liveTagFor(pick.wallpaper.kind),
                 depthTagFor(pick.wallpaper.depthTier),
                 spatialTagFor(pick.wallpaper.spatial?.tier),
               ]),

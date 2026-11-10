@@ -5,6 +5,7 @@ import {db} from "../common";
 import * as ownedAssets from "../ownedAssetDelivery";
 import {r2ObjectId} from "../r2Storage";
 import {AI_LEGACY_UID, AI_STORAGE_REPO, aiUploadId} from "../aiWallSource";
+import {mp4} from "./mp4Fixture";
 
 import {
   canDeleteUpload,
@@ -415,6 +416,27 @@ test("invalid upload purpose is rejected before writes", async (t) => {
   }}), {code: "invalid-argument"});
   assert.equal(github.mock.callCount(), 0);
   assert.deepEqual([...docs.keys()], []);
+});
+
+test("live video uploads are refused before any GitHub or R2 call unless they are a valid MP4", async (t) => {
+  testGithubEnvironment(t);
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  const github = t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("No GitHub request allowed");
+  });
+  const upload = (path: string, bytes: Buffer, purpose: string | undefined = "wallpaper") => run(githubPutFile, {
+    auth: {uid: "u"}, data: {repo: "walls", path, message: "upload", contentBase64: bytes.toString("base64"),
+      ...(purpose ? {purpose} : {})},
+  });
+  const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(60)]);
+  await assert.rejects(upload("live_a.mp4", jpeg), {code: "invalid-argument", details: {liveVideo: "not_mp4"}});
+  await assert.rejects(upload("live_a.mp4", mp4({duration: 16000})), {code: "invalid-argument",
+    details: {liveVideo: "too_long"}});
+  await assert.rejects(upload("live_a.mp4", Buffer.concat([mp4(), Buffer.alloc(20 * 1024 * 1024)])),
+    {code: "invalid-argument", message: "File is too large."});
+  await assert.rejects(upload("clip.mp4", mp4(), undefined), {code: "invalid-argument",
+    message: "Only image files are allowed."});
+  assert.equal(github.mock.callCount(), 0);
 });
 
 test("profile upload deletion does not require an R2 receipt", async (t) => {

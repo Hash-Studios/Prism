@@ -14,6 +14,16 @@ abstract class PrismMediaHostApi {
   OperationResult clearDownloads();
   @async
   OperationResult deleteDownload(String path);
+
+  /// Writes one JPEG per entry of [timesMs] from the local video at [path], with the video's display rotation
+  /// applied. The long edge is at most [maxEdge] px. Returns the JPEG file paths in the same order. Throws when the
+  /// video can't be read.
+  @async
+  List<String> extractVideoFrames(String path, List<int> timesMs, int maxEdge, int quality);
+
+  /// Saves the local video at [path] to the user's photo library (iOS Photos, Android Movies/Prism).
+  @async
+  OperationResult saveVideo(String path);
 }
 
 class SaveMediaRequest {

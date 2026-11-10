@@ -171,6 +171,8 @@ void main() {
     final opened = await openPanel(tester, picker);
     await tester.tap(find.text('Upload wallpaper'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Photo'));
+    await tester.pumpAndSettle();
     return opened;
   }
 
@@ -258,6 +260,8 @@ void main() {
     final opened = await openPanel(tester, picker);
 
     await tester.tap(find.text('Upload wallpaper'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Photo'));
     await tester.pump();
     await tester.tap(find.text('Upload wallpaper'));
     await tester.pump();
@@ -274,6 +278,8 @@ void main() {
     unawaited(picker.getImageFromSource(source: ImageSource.gallery));
 
     await tester.tap(find.text('Upload wallpaper'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Photo'));
     await tester.pumpAndSettle();
 
     expect(picker.calls, 2);

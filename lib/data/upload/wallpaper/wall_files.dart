@@ -66,6 +66,28 @@ Future<int> deleteWallFiles(
       logger.w('Could not delete a file of a removed wall.', tag: 'Upload', error: error, stackTrace: stackTrace);
     }
   }
+  // A pending live wall also has its video and 3 moderation frames, all owned by Prism.
+  final List<(Object?, Object?)> liveFiles = <(Object?, Object?)>[];
+  final Object? live = wallData['live'];
+  if (wallData['kind'] == 'live' && live is Map) {
+    liveFiles.add((live['videoPath'], live['videoSha']));
+    final Object? frames = live['frames'];
+    if (frames is List) {
+      for (final Object? frame in frames) {
+        if (frame is Map) liveFiles.add((frame['path'], frame['sha']));
+      }
+    }
+  }
+  for (final (Object? path, Object? sha) in liveFiles) {
+    if (path is! String || path.isEmpty || sha is! String || sha.isEmpty) continue;
+    try {
+      await api.deleteFile(repo: targetRepo, path: path, sha: sha, message: path, sourceKind: UploadSourceKind.owned);
+      deleted++;
+    } catch (error, stackTrace) {
+      failed = true;
+      logger.w('Could not delete a file of a removed wall.', tag: 'Upload', error: error, stackTrace: stackTrace);
+    }
+  }
   if (failed && throwOnFailure) throw StateError('Some wallpaper files could not be deleted.');
   return deleted;
 }

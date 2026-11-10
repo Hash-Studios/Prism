@@ -2697,10 +2697,13 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
     UploadDraft? resumedDraft,
     ChallengeSeed? challengeSeed,
     VariantSeed? variantSeed,
+    LiveUploadInput? live,
     Size? imageSizeForTesting,
     Future<void> Function()? prepareImageForTesting,
     Future<GitHubContent> Function({required bool isThumbnail})?
     uploadFileForTesting,
+    Future<GitHubContent> Function({required String path})?
+    uploadLiveFileForTesting,
     Future<void> Function({required String path, required String sha})?
     deleteFileForTesting,
     Future<WallSubmissionResult> Function()? createRecordForTesting,
@@ -2724,9 +2727,11 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
            resumedDraft: resumedDraft,
            challengeSeed: challengeSeed,
            variantSeed: variantSeed,
+           live: live,
            imageSizeForTesting: imageSizeForTesting,
            prepareImageForTesting: prepareImageForTesting,
            uploadFileForTesting: uploadFileForTesting,
+           uploadLiveFileForTesting: uploadLiveFileForTesting,
            deleteFileForTesting: deleteFileForTesting,
            createRecordForTesting: createRecordForTesting,
            createRecordWithMetadataForTesting:
@@ -2753,9 +2758,11 @@ class UploadWallRoute extends PageRouteInfo<UploadWallRouteArgs> {
         resumedDraft: args.resumedDraft,
         challengeSeed: args.challengeSeed,
         variantSeed: args.variantSeed,
+        live: args.live,
         imageSizeForTesting: args.imageSizeForTesting,
         prepareImageForTesting: args.prepareImageForTesting,
         uploadFileForTesting: args.uploadFileForTesting,
+        uploadLiveFileForTesting: args.uploadLiveFileForTesting,
         deleteFileForTesting: args.deleteFileForTesting,
         createRecordForTesting: args.createRecordForTesting,
         createRecordWithMetadataForTesting:
@@ -2778,9 +2785,11 @@ class UploadWallRouteArgs {
     this.resumedDraft,
     this.challengeSeed,
     this.variantSeed,
+    this.live,
     this.imageSizeForTesting,
     this.prepareImageForTesting,
     this.uploadFileForTesting,
+    this.uploadLiveFileForTesting,
     this.deleteFileForTesting,
     this.createRecordForTesting,
     this.createRecordWithMetadataForTesting,
@@ -2804,12 +2813,17 @@ class UploadWallRouteArgs {
 
   final VariantSeed? variantSeed;
 
+  final LiveUploadInput? live;
+
   final Size? imageSizeForTesting;
 
   final Future<void> Function()? prepareImageForTesting;
 
   final Future<GitHubContent> Function({required bool isThumbnail})?
   uploadFileForTesting;
+
+  final Future<GitHubContent> Function({required String path})?
+  uploadLiveFileForTesting;
 
   final Future<void> Function({required String path, required String sha})?
   deleteFileForTesting;
@@ -2832,7 +2846,7 @@ class UploadWallRouteArgs {
 
   @override
   String toString() {
-    return 'UploadWallRouteArgs{key: $key, image: $image, batch: $batch, resubmission: $resubmission, resumedDraft: $resumedDraft, challengeSeed: $challengeSeed, variantSeed: $variantSeed, imageSizeForTesting: $imageSizeForTesting, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting, createRecordWithMetadataForTesting: $createRecordWithMetadataForTesting, presentPaywallForTesting: $presentPaywallForTesting, nowForTesting: $nowForTesting, draftStoreForTesting: $draftStoreForTesting, defaultsStoreForTesting: $defaultsStoreForTesting}';
+    return 'UploadWallRouteArgs{key: $key, image: $image, batch: $batch, resubmission: $resubmission, resumedDraft: $resumedDraft, challengeSeed: $challengeSeed, variantSeed: $variantSeed, live: $live, imageSizeForTesting: $imageSizeForTesting, prepareImageForTesting: $prepareImageForTesting, uploadFileForTesting: $uploadFileForTesting, uploadLiveFileForTesting: $uploadLiveFileForTesting, deleteFileForTesting: $deleteFileForTesting, createRecordForTesting: $createRecordForTesting, createRecordWithMetadataForTesting: $createRecordWithMetadataForTesting, presentPaywallForTesting: $presentPaywallForTesting, nowForTesting: $nowForTesting, draftStoreForTesting: $draftStoreForTesting, defaultsStoreForTesting: $defaultsStoreForTesting}';
   }
 
   @override
@@ -2846,6 +2860,7 @@ class UploadWallRouteArgs {
         resumedDraft == other.resumedDraft &&
         challengeSeed == other.challengeSeed &&
         variantSeed == other.variantSeed &&
+        live == other.live &&
         imageSizeForTesting == other.imageSizeForTesting &&
         draftStoreForTesting == other.draftStoreForTesting &&
         defaultsStoreForTesting == other.defaultsStoreForTesting;
@@ -2860,6 +2875,7 @@ class UploadWallRouteArgs {
       resumedDraft.hashCode ^
       challengeSeed.hashCode ^
       variantSeed.hashCode ^
+      live.hashCode ^
       imageSizeForTesting.hashCode ^
       draftStoreForTesting.hashCode ^
       defaultsStoreForTesting.hashCode;

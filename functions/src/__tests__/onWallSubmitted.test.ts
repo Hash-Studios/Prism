@@ -40,8 +40,9 @@ const wall = (extra: Doc = {}): Doc => ({
   wallpaper_url: `${RAW}/a.jpg`, wallpaper_thumb: `${RAW}/thumb_a.jpg`, ...extra,
 });
 
-test("the submission trigger binds STUDIO_SECRET", () => {
-  assert.deepEqual(onWallSubmitted.__endpoint.secretEnvironmentVariables?.map(({key}) => key), ["STUDIO_SECRET"]);
+test("the submission trigger binds STUDIO_SECRET and the R2 secrets", () => {
+  assert.deepEqual(onWallSubmitted.__endpoint.secretEnvironmentVariables?.map(({key}) => key),
+    ["STUDIO_SECRET", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"]);
 });
 
 test("by and userPhoto are rewritten from the owner's profile", async (t) => {
@@ -294,4 +295,26 @@ test("submission removes forged lineage and clears rejected text while preservin
   assert.equal(current.wallpaper_url, `${RAW}/a.jpg`);
   assert.equal(current.review, false);
   assert.equal(current.category, "Nature");
+});
+
+test("a live wall with a broken live map is marked unverified, and the rest of the trigger still runs", async (t) => {
+  const previous = {...process.env};
+  t.after(() => {
+    process.env = previous;
+  });
+  // The trigger binds the R2 secrets, so R2 is configured in production. The proof builds its client before it checks the shape.
+  Object.assign(process.env, {R2_ACCOUNT_ID: "a".repeat(32), R2_ACCESS_KEY_ID: "access", R2_SECRET_ACCESS_KEY: "secret",
+    R2_PRIVATE_BUCKET: "private-assets", R2_PREVIEW_BUCKET: "public-previews",
+    R2_PREVIEW_BASE_URL: "https://images.example.com", GH_REPO_WALLS: "walls"});
+  const sha = "a".repeat(40);
+  const broken = {video: `${RAW}/live_a.mp4`, videoPath: "live_a.mp4", videoSha: sha, frames: [
+    {url: `${RAW}/frame_1_a.jpg`, path: "frame_1_a.jpg", sha},
+    {url: `${RAW}/frame_2_a.jpg`, path: "frame_2_a.jpg", sha},
+  ]};
+  const {store} = setup(t, {name: "Real Maker"}, wall({kind: "live", live: broken}));
+  await fire(store);
+  const live = store.get("walls/w1")?.live as Doc;
+  assert.equal(live.verified, false);
+  assert.equal(live.error, "bad_fields");
+  assert.equal(store.get("walls/w1")?.by, "Real Maker");
 });

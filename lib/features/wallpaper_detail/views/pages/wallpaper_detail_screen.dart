@@ -34,6 +34,7 @@ import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_desktop.dart';
+import 'package:Prism/core/wallpaper/wall_live.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
@@ -44,6 +45,7 @@ import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/gesture_hint.dart';
+import 'package:Prism/core/widgets/live_wall_video.dart';
 import 'package:Prism/core/widgets/menu_button/edit_button.dart';
 import 'package:Prism/core/widgets/menu_button/fav_wallpaper_button.dart';
 import 'package:Prism/core/widgets/menu_button/original_access_prompt.dart';
@@ -76,6 +78,7 @@ import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
 import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/live_photo/views/open_live_photo.dart';
+import 'package:Prism/features/live_wallpaper/domain/repositories/live_wallpaper_repository.dart';
 import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/features/readability/domain/readability.dart';
 import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
@@ -105,6 +108,7 @@ import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart
 import 'package:Prism/features/wallpaper_detail/views/widgets/depth_effect_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/desktop_version_sheet.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/editors_choice_label.dart';
+import 'package:Prism/features/wallpaper_detail/views/widgets/live_wall_actions.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/make_it_live_button.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/spatial_scene_row.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/variant_dots.dart';
@@ -1283,6 +1287,23 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   String? _openedVariantId;
 
   /// The downloaded file this screen opened with, while that wall is on screen. Another colour variant never uses it.
+  /// The live video of [entity], or null for a still wall.
+  WallLive? _liveOf(FeedItemEntity entity) => switch (entity) {
+    PrismFeedItem(:final wallpaper) => wallpaper.live,
+    _ => null,
+  };
+
+  /// Asked once per screen, so rebuilds do not call the plugin again.
+  Future<bool>? _liveVideoSupport;
+
+  Future<bool> _probeLiveVideo() async {
+    try {
+      return (await getIt<LiveWallpaperRepository>().getCapabilities()).supportsVideo;
+    } catch (_) {
+      return false;
+    }
+  }
+
   File? _localFileFor(WallpaperDetailLoaded state) {
     final File? file = widget.localFile;
     if (file == null || state.variants == null) return file;
@@ -2097,7 +2118,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                               tint: state.tint,
                               saveAction: _saveAction,
                               spatialMapUrl: spatialOf(entity)?.mapUrl,
-                              livePhotoAction: isDuoWallpaper(entity)
+                              livePhotoAction: isDuoWallpaper(entity) || _liveOf(entity) != null
                                   ? null
                                   : (previewContext, preview) => _openLivePhoto(previewContext, state, preview),
                               duoReveal: isDuoWallpaper(entity),
@@ -2877,6 +2898,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     final url = entity.fullUrl;
     final String previewTitle = wallpaperPreviewTitle(context.l10n, entity);
     final File? localFile = _localFileFor(state);
+    final WallLive? live = localFile == null ? _liveOf(entity) : null;
     final DownloadedWallRef? localIdentity = localFile != null && getIt.isRegistered<DownloadedWallIndex>()
         ? getIt<DownloadedWallIndex>().resolve(localFile.path)
         : null;
@@ -2960,6 +2982,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         requestId: widget.requestId,
         onDownloaded: () {
           if (!mounted || historyOwner != (app_state.prismUser.id, app_state.prismUser.loggedIn)) return;
+          if (live != null) {
+            unawaited(analytics.track(const LiveWallSetEvent(platform: 'ios', action: 'poster', result: 'ok')));
+          }
           AdExperimentService.instance.recordSuccessfulWallpaperAction();
           final (String, int)? currentSession = getIt.isRegistered<SyncedHistoryStore>()
               ? getIt<SyncedHistoryStore>().recordingSession
@@ -3013,12 +3038,22 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     _headerSave = hideSetWallpaperUi ? () => downloadButton(label: context.l10n.wallpaperSave, compact: true) : null;
     final primary = hideSetWallpaperUi
         ? WallpaperBarAction(
-            label: context.l10n.wallpaperSaveToPhotos,
-            child: downloadButton(label: context.l10n.wallpaperSave),
+            label: live == null ? context.l10n.wallpaperSaveToPhotos : context.l10n.liveWallSetPoster,
+            child: downloadButton(label: live == null ? context.l10n.wallpaperSave : context.l10n.liveWallSetPoster),
           )
-        : WallpaperBarAction(
+        : live == null
+        ? WallpaperBarAction(
             label: context.l10n.wallpaperSetAsWallpaper,
             child: setButton(label: context.l10n.wallpaperSet),
+          )
+        : WallpaperBarAction(
+            label: context.l10n.liveWallSetLive,
+            child: FutureBuilder<bool>(
+              future: _liveVideoSupport ??= _probeLiveVideo(),
+              builder: (_, AsyncSnapshot<bool> snapshot) => snapshot.data == true
+                  ? LiveSetButton(live: live, wallId: entity.id)
+                  : setButton(label: context.l10n.wallpaperSet),
+            ),
           );
     // The bar keeps 8 at its end. This brings Save in to the page margin, in line with the rows under it.
     return Padding(
@@ -3027,6 +3062,11 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         primary: primary,
         secondary: [
           if (!hideSetWallpaperUi) WallpaperBarAction(label: context.l10n.wallpaperDownload, child: downloadButton()),
+          if (hideSetWallpaperUi && live != null)
+            WallpaperBarAction(
+              label: context.l10n.liveWallSaveVideo,
+              child: LiveSaveVideoButton(live: live),
+            ),
         ],
         actions: [
           WallpaperBarAction(
@@ -3427,7 +3467,10 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           ),
         ),
       if (showsWatchSet(entity)) padded(WatchSetRow(entity: entity)),
-      if (!hideSetWallpaperUi && (entity.fullUrl.trim().isNotEmpty || entity.source == WallpaperSource.prism))
+      if (hideSetWallpaperUi && _liveOf(entity) != null) padded(const LiveIosNote()),
+      if (_liveOf(entity) == null &&
+          !hideSetWallpaperUi &&
+          (entity.fullUrl.trim().isNotEmpty || entity.source == WallpaperSource.prism))
         padded(
           Align(
             alignment: Alignment.centerLeft,
@@ -3545,6 +3588,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
         ),
         if (!canonicalLoading &&
             !hideSetWallpaperUi &&
+            _liveOf(entity) == null &&
             (entity.fullUrl.trim().isNotEmpty || entity.source == WallpaperSource.prism))
           PositionedDirectional(
             start: _chromeInset,
@@ -3621,7 +3665,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   Widget _buildWallpaperImage(BuildContext context, WallpaperDetailLoaded state, bool paletteLoading) {
     final FeedItemEntity entity = state.entity;
     final File? localFile = _localFileFor(state);
-    final Widget image = localFile != null
+    final Widget still = localFile != null
         ? ProgressiveWallpaperImage(
             display: WallpaperDisplaySource(
               thumbnail: '',
@@ -3638,6 +3682,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             errorBuilder: (_, _) =>
                 Center(child: Icon(Icons.cancel_rounded, color: _chromeColor(context, paletteLoading, state))),
           );
+    // A live wall plays its video over the still, which is the poster frame.
+    final WallLive? live = localFile == null ? _liveOf(entity) : null;
+    final Widget image = live == null ? still : LiveWallVideo(live: live, poster: still, surface: LiveSurface.detail);
     // A colour variant cross-fades in over the one on screen, which stays opaque under it, so the card never dims.
     final Key shown = ValueKey<String>('${entity.source.name}:${entity.id}');
     return SizedBox.expand(

@@ -16,6 +16,8 @@ import 'package:Prism/data/upload/upload_id.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/wall_requests/domain/entities/wall_request.dart';
+import 'package:Prism/features/wallpaper_upload/biz/live_upload_input.dart';
+import 'package:Prism/features/wallpaper_upload/biz/live_upload_limits.dart';
 import 'package:Prism/features/wallpaper_upload/biz/resubmission_seed.dart';
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
@@ -24,6 +26,7 @@ import 'package:Prism/features/wallpaper_upload/biz/upload_session.dart';
 import 'package:Prism/features/wallpaper_upload/biz/variant_seed.dart';
 import 'package:Prism/features/wallpaper_upload/biz/wall_release.dart';
 import 'package:Prism/features/wallpaper_upload/data/last_submission_defaults_store.dart';
+import 'package:Prism/features/wallpaper_upload/data/live_video_preparer.dart';
 import 'package:Prism/features/wallpaper_upload/data/resubmission_repository.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_submission_result.dart';
@@ -43,12 +46,14 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart' as path;
 
 export 'package:Prism/features/wallpaper_upload/biz/resubmission_seed.dart' show ResubmissionSeed;
 // The generated routes name these types in their arguments.
+export 'package:Prism/features/wallpaper_upload/biz/live_upload_input.dart' show LiveUploadInput;
 export 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart' show SubmissionMetadata;
 export 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart' show UploadBatch;
 export 'package:Prism/features/wallpaper_upload/biz/variant_seed.dart' show VariantSeed;
@@ -67,9 +72,11 @@ class UploadWallScreen extends StatefulWidget {
     this.resumedDraft,
     this.challengeSeed,
     this.variantSeed,
+    this.live,
     @visibleForTesting this.imageSizeForTesting,
     @visibleForTesting this.prepareImageForTesting,
     @visibleForTesting this.uploadFileForTesting,
+    @visibleForTesting this.uploadLiveFileForTesting,
     @visibleForTesting this.deleteFileForTesting,
     @visibleForTesting this.createRecordForTesting,
     @visibleForTesting this.createRecordWithMetadataForTesting,
@@ -88,6 +95,9 @@ class UploadWallScreen extends StatefulWidget {
   final ChallengeSeed? challengeSeed;
   final VariantSeed? variantSeed;
 
+  /// Set for a live wall: the checked video and its moderation frames. [image] is then the poster frame.
+  final LiveUploadInput? live;
+
   @visibleForTesting
   final Size? imageSizeForTesting;
 
@@ -96,6 +106,9 @@ class UploadWallScreen extends StatefulWidget {
 
   @visibleForTesting
   final Future<GitHubContent> Function({required bool isThumbnail})? uploadFileForTesting;
+
+  @visibleForTesting
+  final Future<GitHubContent> Function({required String path})? uploadLiveFileForTesting;
 
   @visibleForTesting
   final Future<void> Function({required String path, required String sha})? deleteFileForTesting;
@@ -176,6 +189,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   bool _submissionUnresolved = false;
   bool _discarding = false;
   bool _leaving = false;
+  GitHubContent? _liveVideo;
+  final List<GitHubContent> _liveFrames = <GitHubContent>[];
 
   bool get _isBusy =>
       _stage == _UploadStage.processing ||
@@ -184,6 +199,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       _discarding;
   bool get _hasStagedFiles => wallpaperSha != null || thumbSha != null;
   File get _selectedImage => _draftImage ?? widget.image;
+  // A live wall is never saved as a draft, so a draft of the same poster cannot drop its video.
+  bool get _draftsEnabled => widget.live == null;
   String get _activeDraftOwner => app_state.prismUser.loggedIn && app_state.prismUser.id.trim().isNotEmpty
       ? app_state.prismUser.id
       : UploadDraftStore.guestOwner;
@@ -356,10 +373,12 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         _trackFailure('oversize');
         return;
       }
-      _draftId ??= _idForImage(imgList);
-      final UploadDraft? restoredDraft = await _draftStore.read(owner: _draftOwner, draftId: _draftId!);
-      if (restoredDraft != null) {
-        _restoreDraft(restoredDraft);
+      if (_draftsEnabled) {
+        _draftId ??= _idForImage(imgList);
+        final UploadDraft? restoredDraft = await _draftStore.read(owner: _draftOwner, draftId: _draftId!);
+        if (restoredDraft != null) {
+          _restoreDraft(restoredDraft);
+        }
       }
       final File selectedImage = _selectedImage;
       final decodedImage = await decodeImageFromList(imgList);
@@ -427,6 +446,14 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         thumbSha = null;
         wallpaperThumb = null;
         thumbSourceKind = null;
+      }
+      if (_liveVideo case final GitHubContent video?) {
+        await _removeLiveFile(github, video);
+        _liveVideo = null;
+      }
+      while (_liveFrames.isNotEmpty) {
+        await _removeLiveFile(github, _liveFrames.first);
+        _liveFrames.removeAt(0);
       }
       logger.d('Unsubmitted wallpaper files deleted');
       return true;
@@ -508,6 +535,13 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         await _deleteFile();
         return false;
       }
+      if (widget.live case final LiveUploadInput live?) {
+        await _uploadLiveFiles(github, live, baseName);
+        if (!mounted || _leaving) {
+          await _deleteFile();
+          return false;
+        }
+      }
       return true;
     } catch (error) {
       logger.w('Wallpaper upload failed: $error');
@@ -518,12 +552,80 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       final failure = UploadFailure.from(error);
       setState(() {
         _stage = _UploadStage.failedUpload;
-        _errorMessage = failure.message(context.l10n);
+        _errorMessage = _liveRefusalMessage(error) ?? failure.message(context.l10n);
       });
       _trackFailure(failure.weeklyLimit ? 'weekly_limit' : 'upload');
       if (failure.weeklyLimit) unawaited(_presentUploadLimitPaywall());
       return false;
     }
+  }
+
+  /// Uploads the live video, then its frames. A file that already has its details is not uploaded again.
+  Future<void> _uploadLiveFiles(GitHubContentApi github, LiveUploadInput live, String baseName) async {
+    final String stem = path.basenameWithoutExtension(baseName);
+    final String repo = Env.normalize(Env.ghRepoWalls);
+    Future<GitHubContent> put(String name, File source, {Duration? timeout}) async {
+      final GitHubContent value = widget.uploadLiveFileForTesting != null
+          ? await widget.uploadLiveFileForTesting!(path: name)
+          : await github.putFile(
+              repo: repo,
+              message: name,
+              contentBase64: base64Encode(await source.readAsBytes()),
+              path: name,
+              purpose: 'wallpaper',
+              timeout: timeout,
+            );
+      return _requireCompleteFile(value);
+    }
+
+    _liveVideo ??= await put('live_$stem.mp4', live.video, timeout: const Duration(minutes: 3));
+    while (_liveFrames.length < live.framePaths.length) {
+      final int index = _liveFrames.length;
+      _liveFrames.add(await put('frame_${index + 1}_$stem.jpg', File(live.framePaths[index])));
+    }
+  }
+
+  Future<void> _removeLiveFile(GitHubContentApi github, GitHubContent file) async {
+    final String filePath = file.path!;
+    final String sha = file.sha!;
+    if (widget.deleteFileForTesting case final deleteFileForTesting?) {
+      await deleteFileForTesting(path: filePath, sha: sha);
+      return;
+    }
+    await github.deleteFile(
+      repo: Env.normalize(Env.ghRepoWalls),
+      path: filePath,
+      sha: sha,
+      message: filePath,
+      sourceKind: file.sourceKind,
+    );
+  }
+
+  GitHubContent _requireCompleteFile(GitHubContent value) {
+    if (value.downloadUrl == null || value.path == null || value.sha == null) {
+      throw StateError('The live wall upload returned incomplete file details.');
+    }
+    return value;
+  }
+
+  /// The `live` map of the wall record. The server checks the video and replaces this map after proof.
+  Map<String, Object?> _liveRecordFields() => <String, Object?>{
+    'video': _liveVideo!.downloadUrl,
+    'videoPath': _liveVideo!.path,
+    'videoSha': _liveVideo!.sha,
+    'frames': <Map<String, Object?>>[
+      for (final GitHubContent frame in _liveFrames)
+        <String, Object?>{'url': frame.downloadUrl, 'path': frame.path, 'sha': frame.sha},
+    ],
+  };
+
+  /// The server refuses a video it cannot prove, and its details name the reason under `liveVideo`.
+  String? _liveRefusalMessage(Object error) {
+    if (error is! FirebaseFunctionsException || error.code != 'invalid-argument') return null;
+    final Object? details = error.details;
+    if (details is! Map || !details.containsKey('liveVideo')) return null;
+    final LiveVideoError reason = liveVideoErrorFromCode(details['liveVideo']) ?? LiveVideoError.malformed;
+    return liveVideoErrorMessage(context.l10n, reason);
   }
 
   void _trackStage(String stage) => unawaited(analytics.track(UploadStageEvent(stage: stage)));
@@ -630,6 +732,8 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
               challengeId: _metadata.challengeId,
               variantOf: _metadata.variantRemoved ? '' : _metadata.variantOf,
               releaseAt: _metadata.releaseAt,
+              kind: widget.live == null ? null : 'live',
+              live: widget.live == null ? null : _liveRecordFields(),
             );
       if (result == WallSubmissionResult.quotaExceeded && _submissionUnresolved) {
         setState(() {
@@ -707,6 +811,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       }
     }
     analytics.track(UploadWallpaperEvent(assetId: id, link: wallpaperUrl!));
+    if (widget.live case final LiveUploadInput live?) {
+      unawaited(analytics.track(LiveWallSubmittedEvent(durationMs: live.info.durationMs)));
+    }
     if (_admission case final admission?) {
       unawaited(analytics.track(WallResubmittedEvent(assetId: admission.wallDocId, attempt: admission.attempt)));
     }
@@ -886,6 +993,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   }
 
   Future<bool> _persistDraft() async {
+    if (!_draftsEnabled) return true;
     final String? draftId = _draftId;
     if (draftId == null || _submitted || _activeDraftOwner != _draftOwner) return false;
     final int generation = ++_draftSaveGeneration;
@@ -1081,6 +1189,29 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                 size: wallpaperSize,
                 loading: _stage == _UploadStage.processing,
               ),
+              if (widget.live case final LiveUploadInput live) ...<Widget>[
+                const SizedBox(height: PrismSpace.sm),
+                Row(
+                  children: <Widget>[
+                    Icon(
+                      Icons.motion_photos_on_rounded,
+                      size: 18,
+                      color: cs.onSurface.withValues(alpha: PrismInk.iconAlpha),
+                    ),
+                    const SizedBox(width: PrismSpace.xs),
+                    Expanded(
+                      child: Text(
+                        context.l10n.liveUploadFacts(
+                          (live.info.durationMs / 1000).toStringAsFixed(1),
+                          live.info.width,
+                          live.info.height,
+                        ),
+                        style: PrismTextStyles.caption(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               for (final UploadQualityWarning warning in _qualityWarnings) ...<Widget>[
                 const SizedBox(height: PrismSpace.sm),
                 _QualityWarningRow(

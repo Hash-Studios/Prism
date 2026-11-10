@@ -39,7 +39,8 @@ String _liveModeLabel(AppLocalizations l10n, _LiveMode mode) => switch (mode) {
   _LiveMode.video => l10n.wallpaperLiveModeVideo,
 };
 
-String _liveOutcomeMessage(AppLocalizations l10n, LiveApplyOutcome outcome, bool perScreen) => switch (outcome.status) {
+/// The user message for a live wallpaper apply. Make it live, Gradients, Video and live walls share it.
+String liveOutcomeMessage(AppLocalizations l10n, LiveApplyOutcome outcome, bool perScreen) => switch (outcome.status) {
   LiveApplyStatus.applied => l10n.wallpaperLiveApplied,
   LiveApplyStatus.confirmInPreview when outcome.fallback => l10n.wallpaperLiveSameWallBothScreens,
   LiveApplyStatus.confirmInPreview when !perScreen => l10n.wallpaperLiveConfirmPreview,
@@ -217,7 +218,7 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
       case LiveApplyStatus.unsupported:
         showPrismToast(
           Overlay.of(context),
-          _liveOutcomeMessage(context.l10n, outcome, bloc.state.capabilities.supportsPerScreen),
+          liveOutcomeMessage(context.l10n, outcome, bloc.state.capabilities.supportsPerScreen),
           kind: outcome.isError
               ? PrismToastKind.error
               : outcome.status == LiveApplyStatus.applied

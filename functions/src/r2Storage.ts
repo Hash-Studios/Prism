@@ -53,7 +53,10 @@ function pathEncode(value: string) {
   return encodeURIComponent(value).replace(/[!'()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`);
 }
 
-/** Minimal AWS SigV4 S3 client for Cloudflare R2. All request bodies are bounded image assets. */
+// The largest object Prism stores: a 20 MB live wall video (LIVE_VIDEO_LIMITS in liveVideo.ts). Images stay under 15 MB.
+const MAX_OBJECT_BYTES = 20 * 1024 * 1024;
+
+/** Minimal AWS SigV4 S3 client for Cloudflare R2. All request bodies are bounded image and video assets. */
 export class R2Storage {
   private readonly cfg = config();
   private readonly endpoint: string;
@@ -109,7 +112,7 @@ export class R2Storage {
     const response = await this.signed(kind, "GET", object);
     if (!response.ok) throw new Error(`R2 GET failed (${response.status})`);
     const declaredSize = Number(response.headers.get("content-length"));
-    if (!Number.isSafeInteger(declaredSize) || declaredSize < 1 || declaredSize > 15 * 1024 * 1024) {
+    if (!Number.isSafeInteger(declaredSize) || declaredSize < 1 || declaredSize > MAX_OBJECT_BYTES) {
       throw new Error("R2 object size is invalid");
     }
     const reader = response.body?.getReader();
@@ -120,7 +123,7 @@ export class R2Storage {
       const {done, value} = await reader.read();
       if (done) break;
       size += value.byteLength;
-      if (size > 15 * 1024 * 1024) {
+      if (size > MAX_OBJECT_BYTES) {
         await reader.cancel();
         throw new Error("R2 object is too large");
       }

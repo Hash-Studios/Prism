@@ -11,9 +11,11 @@ import {isStudioWall} from "../studio/isStudioWall";
 import {fetchImageBuffer} from "../wallColors";
 import {
   buildModeration,
+  type Moderation,
   type ModerationAnnotate,
   type ModerationDeps,
   type ModerationVisionResult,
+  mergeModeration,
   moderateWall,
   onWallModerate,
 } from "../wallModeration";
@@ -389,4 +391,42 @@ test("the signature backfill signs reviewed walls that have none and is a dry ru
 test("backfill arguments fall back to safe values", () => {
   assert.deepEqual(parseBackfillArgs(["--batch=9999", "--start-after="]), {apply: false, batchSize: 100, startAfter: undefined});
   assert.deepEqual(parseBackfillArgs(["--apply", "--batch=5", "--start-after=x"]), {apply: true, batchSize: 5, startAfter: "x"});
+});
+
+test("mergeModeration keeps the poster duplicate, orders the flags and dedupes the signals", () => {
+  const poster: Moderation = {v: 1, flags: ["unsafe", "text"], duplicate: {wallId: "old", similarity: 1, thumb: "t"},
+    web: [], words: ["BUY", "NOW"], logos: [], unsafe: ["adult"]};
+  const frame: Moderation = {v: 1, flags: ["logo", "duplicate", "web_match"],
+    duplicate: {wallId: "other", similarity: 0.9, thumb: "u"}, web: [{url: "https://x.example/a", host: "x.example"}],
+    words: ["NOW", "SALE"], logos: ["Nike"], unsafe: []};
+  assert.deepEqual(mergeModeration(poster, frame), {v: 1,
+    flags: ["duplicate", "web_match", "text", "logo", "unsafe"], duplicate: poster.duplicate, web: frame.web,
+    words: ["BUY", "NOW", "SALE"], logos: ["Nike"], unsafe: ["adult"]});
+  assert.deepEqual(mergeModeration({...poster, duplicate: null}, frame).duplicate, frame.duplicate);
+});
+
+test("a live wall's frames are checked too, and a flag from a frame reaches the reviewer", async (t) => {
+  quiet(t);
+  const previous = {...process.env};
+  t.after(() => {
+    process.env = previous;
+  });
+  process.env.R2_PREVIEW_BASE_URL = "https://img.example.com";
+  const UNSAFE_FRAME: ModerationVisionResult = {...CLEAR,
+    safeSearchAnnotation: {adult: "VERY_LIKELY", racy: "UNLIKELY", violence: "VERY_UNLIKELY", medical: "UNLIKELY"}};
+  const frames = ["a", "b", "c"].map((c) => `https://img.example.com/previews/${c.repeat(64)}.img`);
+  const image = await gradient("down");
+  const wall = {wallpaper_url: url("a"), kind: "live", live: {frames: frames.map((frameUrl) => ({url: frameUrl}))}};
+  const store = installFakeDb(t, {"walls/w1": wall});
+  let calls = 0;
+  await moderateWall("w1", wall, {
+    fetchImage: async () => image,
+    annotate: async () => {
+      calls++;
+      return calls === 3 ? UNSAFE_FRAME : CLEAR;
+    },
+  });
+  assert.equal(calls, 4);
+  const moderation = store.get("walls/w1")?.moderation as Doc;
+  assert.ok((moderation.flags as string[]).includes("unsafe"));
 });
