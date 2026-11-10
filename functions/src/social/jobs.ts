@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import {createHash} from "node:crypto";
+import {createHash, timingSafeEqual} from "node:crypto";
 import {logger} from "firebase-functions/v2";
 import {onRequest} from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
@@ -13,7 +13,7 @@ import {
 } from "./telegram";
 import {type XClient, xClient, XError, xSecrets, xAccessSecret, xAccessToken, xApiKey, xApiSecret} from "./x";
 
-// The X posting queue: prepare (build and preview), publish (approve, post, reply, reconcile), measure.
+// The X posting queue: prepare (build and preview), webhook (approve), publish (post, reply, reconcile), measure.
 // Every post is one doc, socialPosts/{day}_{slot}. A run never sends a post twice: anything that may have reached X
 // is reconciled against the account's own posts, and the owner decides when that check finds nothing.
 
@@ -551,7 +551,7 @@ async function liveDeps(withX: boolean, withTelegram: boolean): Promise<SocialDe
   };
 }
 
-/** A lease so two publish runs never read Telegram updates or post at the same time. */
+/** A lease so two publish runs never post at the same time. */
 async function withLease(name: string, ttlMs: number, run: () => Promise<void>): Promise<void> {
   const ref = db.collection(STATE).doc(`lease_${name}`);
   const owner = Math.random().toString(36).slice(2);
@@ -588,7 +588,9 @@ export const socialPrepare = onSchedule({schedule: "0 7,10 * * *", timeZone: "As
 export const socialTelegramWebhook = onRequest({region: REGION, invoker: "public", maxInstances: 2, timeoutSeconds: 30,
   memory: "256MiB", secrets: socialTelegramSecrets}, async (req, res) => {
   const token = socialBotToken.value();
-  if (req.method !== "POST" || req.get("X-Telegram-Bot-Api-Secret-Token") !== webhookSecret(token)) {
+  const supplied = Buffer.from(req.get("X-Telegram-Bot-Api-Secret-Token") ?? "");
+  const expected = Buffer.from(webhookSecret(token));
+  if (req.method !== "POST" || !token || supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) {
     res.sendStatus(403);
     return;
   }

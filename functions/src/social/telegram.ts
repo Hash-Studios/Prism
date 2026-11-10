@@ -43,7 +43,7 @@ export function parsePress(update: any, ownerChatId: string): ApprovalPress | nu
 }
 
 export function telegramClient(token: string, ownerChatId: string, request: typeof fetch = fetch): Telegram {
-  async function call(method: string, body: FormData | Record<string, unknown>): Promise<any> {
+  async function call(method: string, body: FormData | Record<string, unknown>, timeoutMs = 60_000): Promise<any> {
     const isForm = body instanceof FormData;
     let res: Response;
     try {
@@ -51,7 +51,7 @@ export function telegramClient(token: string, ownerChatId: string, request: type
         method: "POST",
         headers: isForm ? {} : {"Content-Type": "application/json"},
         body: isForm ? body : JSON.stringify(body),
-        signal: AbortSignal.timeout(60_000),
+        signal: AbortSignal.timeout(timeoutMs),
       });
     } catch {
       throw new Error(`Telegram ${method} request failed`);
@@ -85,10 +85,11 @@ export function telegramClient(token: string, ownerChatId: string, request: type
       await call("sendMessage", {chat_id: ownerChatId, text});
     },
     async answer(callbackId, text) {
-      await call("answerCallbackQuery", {callback_query_id: callbackId, text: text.slice(0, 200)});
+      // Both feedback calls must finish before the webhook's 30-second deadline, even if Telegram is unreachable.
+      await call("answerCallbackQuery", {callback_query_id: callbackId, text: text.slice(0, 200)}, 5000);
     },
     async markDone(messageId, text) {
-      await call("editMessageText", {chat_id: ownerChatId, message_id: messageId, text});
+      await call("editMessageText", {chat_id: ownerChatId, message_id: messageId, text}, 5000);
     },
     async setWebhook(url, secret) {
       await call("setWebhook", {url, secret_token: secret, allowed_updates: ["callback_query"]});

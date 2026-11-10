@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
-import {createHash} from "node:crypto";
+import crypto, {createHash} from "node:crypto";
 import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {db} from "../common";
 import {gridContent, gridVisionDecision, panoramaPanels, YOUTH_TAG, type WallhavenWall} from "../social/content";
-import {applyPress, contentHash, handleTelegramUpdate, loadSocialConfig, measurePosts, normalizePostText, prepareDay, publishDue, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
-import {parsePress, telegramClient, type Telegram, webhookSecret} from "../social/telegram";
+import {applyPress, contentHash, defaultBuilders, handleTelegramUpdate, loadSocialConfig, measurePosts, normalizePostText, prepareDay, publishDue, socialPrepare, socialTelegramWebhook, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
+import {parsePress, socialBotToken, socialOwnerChatId, telegramClient, type Telegram, webhookSecret} from "../social/telegram";
+import {R2Storage} from "../r2Storage";
 import {oauthHeader, xClient, xWeightedLength, XError, type XClient, type XOwnPost} from "../social/x";
 import {postDay} from "../studio/telegram";
 import {installFakeDb, type Doc} from "./fakeDb";
@@ -733,4 +734,157 @@ test("the webhook secret is stable per token and differs between tokens", () => 
   assert.equal(webhookSecret("a"), webhookSecret("a"));
   assert.notEqual(webhookSecret("a"), webhookSecret("b"));
   assert.match(webhookSecret("a"), /^[a-f0-9]{48}$/);
+});
+
+const BOT_TOKEN = "test-bot-token";
+function webhookSetup(t: TestContext, seed: Record<string, Doc> = {}) {
+  const store = installSocialDb(t, seed);
+  t.mock.method(socialBotToken, "value", () => BOT_TOKEN);
+  t.mock.method(socialOwnerChatId, "value", () => "42");
+  const calls: Array<{method: string; body: Record<string, unknown>}> = [];
+  t.mock.method(globalThis, "fetch", async (url: string | URL | Request, options?: RequestInit) => {
+    calls.push({method: String(url).split("/").pop() ?? "", body: JSON.parse(String(options?.body))});
+    return new Response(JSON.stringify({ok: true, result: true}));
+  });
+  const send = async (body: unknown, secret: string | null = webhookSecret(BOT_TOKEN), method = "POST") => {
+    const statuses: number[] = [];
+    await socialTelegramWebhook({body, method, headers: {},
+      get: (name: string) => name.toLowerCase() === "x-telegram-bot-api-secret-token" ? secret ?? undefined : undefined,
+    } as Parameters<typeof socialTelegramWebhook>[0], {
+      sendStatus: (status: number) => statuses.push(status),
+    } as unknown as Parameters<typeof socialTelegramWebhook>[1]);
+    assert.equal(statuses.length, 1);
+    return statuses[0];
+  };
+  return {store, calls, send};
+}
+
+test("the HTTP webhook rejects wrong secrets and methods before applying a press", async (t) => {
+  const {store, calls, send} = webhookSetup(t, {"socialPosts/p1": {status: "pending_approval", contentHash: HASH}});
+  const update = pressUpdate(`a:p1:${HASH.slice(0, 12)}`);
+  for (const secret of [null, "", "wrong", "0".repeat(48), "é".repeat(48), `${webhookSecret(BOT_TOKEN)}x`]) {
+    assert.equal(await send(update, secret), 403);
+  }
+  assert.equal(await send(update, webhookSecret(BOT_TOKEN), "GET"), 403);
+  assert.equal(store.get("socialPosts/p1")?.status, "pending_approval");
+  assert.equal(calls.length, 0);
+  assert.equal(await send(update), 200);
+  assert.equal(store.get("socialPosts/p1")?.status, "approved");
+  assert.deepEqual(calls.map((call) => call.method), ["answerCallbackQuery", "editMessageText"]);
+  assert.deepEqual(calls[1].body, {chat_id: "42", message_id: 77, text: "p1: Approved ✅"});
+});
+
+test("an empty bot token cannot authenticate with its publicly computable hash", async (t) => {
+  const {store, calls, send} = webhookSetup(t, {"socialPosts/p1": {status: "pending_approval", contentHash: HASH}});
+  t.mock.method(socialBotToken, "value", () => "");
+  assert.equal(await send(pressUpdate(`a:p1:${HASH.slice(0, 12)}`), webhookSecret("")), 403);
+  assert.equal(store.get("socialPosts/p1")?.status, "pending_approval");
+  assert.deepEqual(calls, []);
+});
+
+test("equal-length webhook secrets use the timing-safe comparison", async (t) => {
+  const {send} = webhookSetup(t);
+  const compare = t.mock.method(crypto, "timingSafeEqual");
+  assert.equal(await send({}, "0".repeat(48)), 403);
+  assert.equal(await send({}), 200);
+  assert.equal(compare.mock.callCount(), 2);
+  for (const call of compare.mock.calls) {
+    assert.deepEqual(call.arguments.map((bytes) => bytes.byteLength), [48, 48]);
+  }
+});
+
+test("the HTTP webhook ignores non-owner, wrong-chat, and malformed updates", async (t) => {
+  const {store, calls, send} = webhookSetup(t, {"socialPosts/p1": {status: "pending_approval", contentHash: HASH}});
+  const update = pressUpdate(`a:p1:${HASH.slice(0, 12)}`);
+  for (const body of [null, {}, {message: {}}, pressUpdate(update.callback_query.data, "99"),
+    {...update, callback_query: {...update.callback_query, message: {message_id: 77, chat: {id: 99}}}},
+    pressUpdate("a:p1:bad")]) {
+    assert.equal(await send(body), 200);
+  }
+  assert.equal(store.get("socialPosts/p1")?.status, "pending_approval");
+  assert.deepEqual(calls, []);
+});
+
+test("a thrown transaction error still returns 200 without a decision", async (t) => {
+  const {store, calls, send} = webhookSetup(t, {"socialPosts/p1": {status: "pending_approval", contentHash: HASH}});
+  t.mock.method(db, "runTransaction", async () => {
+    throw new Error("offline");
+  });
+  assert.equal(await send(pressUpdate(`a:p1:${HASH.slice(0, 12)}`)), 200);
+  assert.equal(store.get("socialPosts/p1")?.status, "pending_approval");
+  assert.deepEqual(calls, []);
+});
+
+test("stalled Telegram acknowledgements expire within the webhook deadline", async (t) => {
+  const {store, send} = webhookSetup(t, {"socialPosts/p1": {status: "pending_approval", contentHash: HASH}});
+  const timeouts: number[] = [];
+  t.mock.method(AbortSignal, "timeout", (ms: number) => {
+    timeouts.push(ms);
+    return AbortSignal.abort(new Error("timeout"));
+  });
+  t.mock.method(globalThis, "fetch", async (_url: unknown, options?: RequestInit) => {
+    options?.signal?.throwIfAborted();
+    throw new Error("expected an aborted request");
+  });
+  assert.equal(await send(pressUpdate(`a:p1:${HASH.slice(0, 12)}`)), 200);
+  assert.equal(store.get("socialPosts/p1")?.status, "approved");
+  assert.deepEqual(timeouts, [5000, 5000]);
+  assert.ok(timeouts.reduce((sum, ms) => sum + ms, 0) < Number(socialTelegramWebhook.__endpoint.timeoutSeconds) * 1000);
+});
+
+test("duplicate webhook deliveries cannot repeat approvals or main/reply retry decisions", async (t) => {
+  const {store, send} = webhookSetup(t);
+  for (const action of ["a", "s", "r", "d", "reply-r", "reply-d"]) {
+    const reply = action.startsWith("reply-");
+    const code = action.slice(-1);
+    const uncertain = code === "r" || code === "d";
+    store.set("socialPosts/p1", {contentHash: HASH, status: uncertain ? reply ? "posted" : "uncertain" : "pending_approval",
+      ...(reply ? {replyStatus: "uncertain", replyAttemptId: "A"} : uncertain ? {attemptId: "A"} : {})});
+    const hash = uncertain ? uncertaintyHash(HASH, "A", reply) : HASH;
+    const update = pressUpdate(`${code}:p1:${hash.slice(0, 12)}`);
+    await Promise.all([send(update), send(update)]);
+    const decided = store.get("socialPosts/p1");
+    assert.equal(decided?.status, reply ? "posted" : code === "s" || code === "d" ? "skipped" : "approved");
+    if (reply) assert.equal(decided?.replyStatus, code === "d" ? "dropped" : undefined);
+    await send(update);
+    assert.deepEqual(store.get("socialPosts/p1"), decided, action);
+    if (code === "r") {
+      store.set("socialPosts/p1", {...decided, ...(reply ? {replyStatus: "uncertain", replyAttemptId: "B"} :
+        {status: "uncertain", attemptId: "B"})});
+      const nextAttempt = store.get("socialPosts/p1");
+      await send(update);
+      assert.deepEqual(store.get("socialPosts/p1"), nextAttempt, `${action}: stale retry cannot retry a new attempt`);
+    }
+  }
+});
+
+test("prepare registers the v2 regional alias on every run and survives registration failure", async (t) => {
+  const {store, calls} = webhookSetup(t, {"socialConfig/current": {...config({slots: {am: false, noon: false, eve: true, night: false}})}});
+  const env = {...process.env};
+  t.after(() => {
+    process.env = env;
+  });
+  Object.assign(process.env, {GCLOUD_PROJECT: "test-project", FIREBASE_CONFIG: JSON.stringify({projectId: "fallback-project"}),
+    R2_ACCOUNT_ID: "a".repeat(32), R2_ACCESS_KEY_ID: "access", R2_SECRET_ACCESS_KEY: "secret",
+    R2_PRIVATE_BUCKET: "private", R2_PREVIEW_BUCKET: "preview", R2_PREVIEW_BASE_URL: "https://images.example.com"});
+  t.mock.method(logger, "info", () => undefined);
+  t.mock.method(globalThis, "fetch", async (url: unknown, options?: RequestInit) => {
+    calls.push({method: String(url).split("/").pop() ?? "", body: JSON.parse(String(options?.body))});
+    return new Response(JSON.stringify({ok: false}), {status: 500});
+  });
+  t.mock.method(R2Storage.prototype, "put", async () => true);
+  t.mock.method(defaultBuilders, "still", async () => ({pipeline: "still", source: {kind: "prism", ids: ["W"]},
+    media: [{jpeg: BYTES, alt: "alt", sensitive: false}], text: "wall", replyText: ""}));
+  await socialPrepare.run({scheduleTime: NOW.toISOString()});
+  assert.equal(store.get(`socialPosts/${postDay(new Date())}_eve`)?.status, "approved");
+  delete process.env.GCLOUD_PROJECT;
+  await socialPrepare.run({scheduleTime: NOW.toISOString()});
+  assert.deepEqual(calls, ["test-project", "fallback-project"].map((project) => ({method: "setWebhook", body: {
+    url: `https://asia-south1-${project}.cloudfunctions.net/socialTelegramWebhook`,
+    secret_token: webhookSecret(BOT_TOKEN), allowed_updates: ["callback_query"],
+  }})));
+  assert.equal(socialTelegramWebhook.__endpoint.platform, "gcfv2");
+  assert.deepEqual(socialTelegramWebhook.__endpoint.region, ["asia-south1"]);
+  assert.deepEqual(socialTelegramWebhook.__endpoint.httpsTrigger?.invoker, ["public"]);
+  assert.equal(store.has("socialState/telegram"), false);
 });

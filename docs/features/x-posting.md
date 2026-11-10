@@ -46,6 +46,8 @@ A post with a non-empty `replyText` also gets a reply, with the same rules on `r
 
 An approval binds to `contentHash` (image hashes, text, link reply, alt text, and sensitive flags). The publisher recomputes it and requires a matching owner approval for every grid. Only presses from the owner in the owner's chat count. Telegram calls `socialTelegramWebhook` with a secret header derived from the bot token; any other request gets 403. `socialPrepare` registers the webhook on every run. Failed approval previews retry during publish passes until delivered or expired. No decision by 2 hours after the slot: skipped.
 
+The webhook accepts only POST requests and compares the secret in constant time. An empty bot token fails closed. Authenticated updates return 200 even if processing fails, so Telegram does not repeat a failed press. The owner can press an unresolved button again. Telegram feedback calls each time out after 5 seconds, within the function's 30-second limit. Registration failures do not stop preparation.
+
 ## Grid checks
 
 - Wallhaven `purity=110`, `categories=111`, toplist 3 days then 1 week, portrait, at least 1080 x 1920.
