@@ -284,7 +284,7 @@ On 2026-11-09, the full 3.26.0 deploy had 200 instances live in `asia-south1` fr
 2. Set a higher `maxInstances` on a function only when its 30-day peak of active instances needs it, or when it is at its cap and turns work away. A peak that is equal to the cap does not show the refused demand. For a function at its cap, also look for 429 responses in its logs and for events that arrive late.
 3. Do not set `maxInstances` lower than the 30-day peak of a user-facing callable. A user-facing callable with `concurrency: 1` (for example `githubPutFile`) needs at least 2 instances.
 4. A callable that only an admin can use takes `ADMIN_CALLABLE` from `common.ts`. It sets 1st gen CPU and 1 instance. If a user can call it on any path, it is a user-facing callable.
-5. Use `cpu: "gcf_gen1"` only for a light job. A job is light when its p95 run time, multiplied by 6, is less than half of its timeout and less than half of its schedule interval. The production p95 values come from full CPU, so this is an estimate. Check the logs of the job after the deploy.
+5. Use `cpu: "gcf_gen1"` only for a light job. A job is light when its p95 run time, multiplied by the CPU ratio, is less than half of its timeout and less than half of its schedule interval. The CPU ratio is 1 divided by the 1st gen vCPU of its memory size: 12 at 128 MiB, 6 at 256 MiB, 3 at 512 MiB, and about 2 at 1024 MiB. The production p95 values come from full CPU, so this is an estimate. Check the logs of the job after the deploy.
 6. 1st gen CPU is 0.0833, 0.1666, 0.3333, 0.5833, 1, 2, and 2 vCPU at 128, 256, 512, 1024, 2048, 4096, and 8192 MiB. Below 1 vCPU, do not set `concurrency` above 1. The deploy fails.
 7. In each region, the sum of `maxInstances` x vCPU must be at or below `REGION_CPU_BUDGET_VCPU`. This is 80% of the quota (160 vCPU).
 
@@ -296,7 +296,7 @@ If the budget test fails, do one of these:
 
 - Lower a `maxInstances` that is higher than its 30-day peak.
 - Move a light job to `cpu: "gcf_gen1"` (rule 5).
-- Ask the owner to request a quota increase. After Google grants it, change `REGION_CPU_QUOTA_VCPU` in `common.ts`.
+- Ask the owner to request a quota increase. After Google grants it, change `REGION_CPU_QUOTA_VCPU` in `common.ts`. The test uses one quota for all regions, so set it to the lowest quota of the regions. If only asia-south1 gets more, `REGION_CPU_QUOTA_VCPU` stays at the us-central1 quota.
 
 ### Known limits of the current caps
 
@@ -311,7 +311,7 @@ Callables and HTTP functions are different. A request at the cap waits for about
 
 ### Find the 30-day peak
 
-Use the Cloud Monitoring metric `run.googleapis.com/container/instance_count` with `metric.label.state="active"`. Filter on `resource.label.location`, align to 60 seconds, and sum by `resource.label.service_name`. Take the maximum for each service. Do not count the minutes of a full deploy, because both revisions are live then. The service name is the function name in lower case.
+Use the Cloud Monitoring metric `run.googleapis.com/container/instance_count` with `metric.label.state="active"`. Filter on `resource.label.location`, align to 60 seconds, and sum by `resource.label.service_name`. Take the maximum for each service. Do not count the minutes of a full deploy, because both revisions are live then. The metric is sampled every 60 seconds, so a short burst can be higher than the peak. Before you lower the cap of a callable, also look for 429 responses and for bursts in its request logs. After the change, watch its logs for 429 responses. The service name is the function name in lower case.
 
 ### If a deploy fails on the quota
 
