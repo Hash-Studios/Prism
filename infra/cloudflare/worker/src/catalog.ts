@@ -639,10 +639,12 @@ async function renderWall(id: string, desktopView: boolean, env: CatalogEnv): Pr
   const creatorName = wall.creator?.name || wall.creatorName || '';
   const resolution = wall.width && wall.height ? `${wall.width} × ${wall.height}` : '';
   const title = `${wall.title || `${category} wallpaper ${id}`}${creatorName ? ` by ${creatorName}` : ''} | Prism`;
+  const subjects = (wall.tags ?? []).slice(0, 4).join(', ').toLowerCase();
   const description = clip(live
-    ? `${wall.description ? `${wall.description.replace(/[.!?…]+$/, '')}. ` : ''}${heading}, a ${category} phone wallpaper`
-      + `${wall.desktop ? ' with a matching desktop version' : ''}`
-      + `${creatorName ? ` by ${creatorName}` : ''}${resolution ? ` in ${resolution}` : ''}. Get it for Android and iPhone in Prism.`
+    ? `${heading}${creatorName ? ` by ${creatorName}` : ''}${resolution ? ` in ${resolution}` : ''}`
+      + `${subjects ? `: ${subjects}` : ''}. A free ${category === 'General' ? '' : `${category} `}phone wallpaper`
+      + `${wall.desktop ? ' with a matching desktop version' : ''} for Android and iPhone.`
+      + `${wall.description ? ` ${wall.description.replace(/[.!?…]+$/, '')}.` : ''}`
     : `${heading}${creatorName ? ` by ${creatorName}` : ''} is only in the Prism app. Get Prism for Android and iPhone.`, 160);
   const previewPath = `/api/catalog/preview/${id}.jpg`;
   const previewUrl = `${SITE}${previewPath}`;

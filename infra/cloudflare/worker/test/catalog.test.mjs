@@ -265,6 +265,8 @@ test('wall page renders the public metadata, structured data and related grid', 
   assert.equal(response.status, 200);
   assert.match(response.headers.get('content-type'), /^text\/html/);
   assert.ok(body.includes('<title>Sunset Ridge by Sam K | Prism</title>'));
+  assert.ok(body.includes('<meta name="description" content="Sunset Ridge by Sam K in 1080 × 2340: sky, hills. '
+    + 'A free Nature phone wallpaper for Android and iPhone. Warm light over hills.">'));
   assert.ok(body.includes('<link rel="canonical" href="https://prismwalls.com/wallpaper/W1">'));
   assert.ok(body.includes('property="og:title"'));
   assert.ok(body.includes('property="og:image" content="https://prismwalls.com/og/wall/W1.jpg?v='));

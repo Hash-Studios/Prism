@@ -113,6 +113,31 @@ test("syncWebWall projects a live wall into webWalls with only public fields", a
   });
 });
 
+test("syncWebWall titles and tags an untitled wall from its Vision labels", async (t) => {
+  stubDeps(t);
+  const cases: Array<[Doc, string, string[]]> = [
+    [{visionLabels: ["Graphics", "Rock", "Rubble", "Natural material"]}, "Rock and rubble wallpaper", ["Rock", "Rubble"]],
+    [{visionLabels: ["Blue", "Triangle", "Red"]}, "Blue triangle wallpaper", ["Triangle", "Blue", "Red"]],
+    [{visionLabels: ["Natural landscape", "Landscape", "Cloud"]}, "Natural landscape and cloud wallpaper",
+      ["Natural landscape", "Landscape", "Cloud"]],
+    [{visionLabels: ["White", "Grey"], category: "Minimal"}, "White and grey minimal wallpaper", ["White", "Grey"]],
+    [{visionLabels: ["Pink", "Purple"], category: "General"}, "Pink and purple wallpaper", ["Pink", "Purple"]],
+    [{visionLabels: ["Graphics"], category: "General"}, "", []],
+    [{visionLabels: ["Rock"], title: "Sunset", tags: ["sky"]}, "Sunset", ["sky"]],
+  ];
+  for (const [overrides, title, tags] of cases) {
+    installFakeDb(t, {"walls/d1": liveWall({title: "", tags: [], ...overrides}), "profiles/u1": samProfile});
+    await syncWebWall("W1");
+    const doc = (await db.collection("webWalls").doc("W1").get()).data();
+    assert.equal(doc?.title, title, JSON.stringify(overrides));
+    assert.deepEqual(doc?.tags, tags, JSON.stringify(overrides));
+  }
+});
+
+test("a Vision label change re-projects the wall", () => {
+  assert.equal(isCatalogChange({visionLabels: ["Rock"]}, {visionLabels: ["Sky"]}), true);
+});
+
 test("syncWebWall keeps legacy walls with no creator uid and uses their public display name", async (t) => {
   stubDeps(t);
   installFakeDb(t, {"walls/d1": liveWall({creatorUid: undefined, by: "Legacy creator"})});
