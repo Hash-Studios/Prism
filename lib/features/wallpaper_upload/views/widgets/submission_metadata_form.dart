@@ -121,9 +121,12 @@ class SubmissionMetadataFormState extends State<SubmissionMetadataForm> {
               style: PrismTextStyles.body(context).copyWith(color: colors.error),
             ),
           ),
-        Text(
-          context.l10n.wallpaperUploadDetailsOptional,
-          style: PrismTextStyles.rowTitle(context).copyWith(color: colors.onSurface),
+        Semantics(
+          header: true,
+          child: Text(
+            context.l10n.wallpaperUploadDetailsOptional,
+            style: PrismTextStyles.rowTitle(context).copyWith(color: colors.onSurface),
+          ),
         ),
         const SizedBox(height: 12),
         TextField(

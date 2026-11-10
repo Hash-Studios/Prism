@@ -75,7 +75,7 @@ The Wrapped card and the seasonal theme cards are cards in the Home carousel, no
 - There is no scrim. A tap outside the bubble closes it, and the tap also goes to what is under it.
 - A tap on the bubble closes it too. On the iOS Set screen there is no room under Live Photo, so the bubble is above it, over Save to Photos, until the user taps it.
 - It enters with a 240 ms fade and a scale from 0.95. With reduce motion, it shows at once.
-- VoiceOver reads the sentence when the hint shows (an announcement). TalkBack reads it from a live region. The hint does not take focus. **Got it** is a button with a 44 point target.
+- VoiceOver reads the sentence when the hint shows (an announcement). TalkBack reads it from a live region. The hint does not take focus. **Got it** is a button with a `prismTapTarget` target: 44 points on iOS and 48 dp on Android.
 - It is an `OverlayEntry` in the overlay of the route. It is not an `OverlayPortal`, because an `OverlayPortal` can empty the iOS accessibility tree (see `lib/core/widgets/prism/prism_slider.dart`).
 
 ## Storage

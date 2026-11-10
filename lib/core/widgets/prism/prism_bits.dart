@@ -57,11 +57,14 @@ enum PrismTone { neutral, accent, success, warning, danger }
 
 /// A small status label: "Pending", "Pro", "New". Not tappable.
 class PrismTag extends StatelessWidget {
-  const PrismTag({super.key, required this.label, this.tone = PrismTone.neutral, this.icon});
+  const PrismTag({super.key, required this.label, this.tone = PrismTone.neutral, this.icon, this.maxLines = 2});
 
   final String label;
   final PrismTone tone;
   final IconData? icon;
+
+  /// Null lets a label that holds a date or a time wrap at large text, so no part of it is cut.
+  final int? maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -87,8 +90,8 @@ class PrismTag extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              maxLines: maxLines,
+              overflow: maxLines == null ? TextOverflow.visible : TextOverflow.ellipsis,
               style: PrismTextStyles.caption(context).copyWith(fontSize: 12, fontWeight: FontWeight.w700, color: fg),
             ),
           ),
@@ -172,8 +175,7 @@ class PrismSegmented<T> extends StatelessWidget {
     final int index = values.indexOf(selected).clamp(0, values.length - 1);
     final double x = values.length == 1 ? 0 : -1 + 2 * index / (values.length - 1);
     final Color thumb = cs.brightness == Brightness.dark ? cs.surfaceContainerHighest : cs.surface;
-    // 44 points as on iOS; Android keeps Material's 48 dp touch target.
-    final double minHeight = Theme.of(context).platform == TargetPlatform.android ? 48 : 44;
+    final double minHeight = prismTapTarget(context);
     return Container(
       constraints: BoxConstraints(minHeight: minHeight),
       decoration: BoxDecoration(
@@ -186,7 +188,7 @@ class PrismSegmented<T> extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(_inset),
               child: AnimatedAlign(
-                alignment: Alignment(x, 0),
+                alignment: AlignmentDirectional(x, 0),
                 duration: context.motion(PrismDurations.fast),
                 curve: PrismCurves.move,
                 child: FractionallySizedBox(

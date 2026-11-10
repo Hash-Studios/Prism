@@ -350,7 +350,7 @@ class _FollowUpRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context);
     return SizedBox(
-      height: 44,
+      height: prismTapTarget(context),
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),

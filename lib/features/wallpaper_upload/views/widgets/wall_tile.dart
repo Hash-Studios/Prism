@@ -132,6 +132,7 @@ class _WallTileState extends State<WallTile> {
                         label: context.l10n.wallReleaseLabel(releaseWhen),
                         tone: PrismTone.accent,
                         icon: Icons.event_available_rounded,
+                        maxLines: null,
                       )
                     else ...<Widget>[
                       PrismTag(

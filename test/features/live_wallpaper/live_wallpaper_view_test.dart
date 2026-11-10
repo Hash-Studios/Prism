@@ -20,6 +20,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -692,6 +693,27 @@ void main() {
         expect(size.width, greaterThanOrEqualTo(44), reason: label);
         expect(size.height, greaterThanOrEqualTo(44), reason: label);
       }
+    });
+
+    testWidgets('a mode chip keeps its whole label at 2x text', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2340);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await _pumpScreen(tester, state: _readyState(), textScaler: const TextScaler.linear(2.0));
+
+      final RenderParagraph label = tester.renderObject(
+        find.descendant(of: find.byType(PrismChip), matching: find.byType(RichText)).first,
+      );
+      final TextPainter painter = TextPainter(
+        text: label.text,
+        textDirection: label.textDirection,
+        textScaler: label.textScaler,
+      )..layout(maxWidth: label.size.width);
+      final double lineHeight = painter.computeLineMetrics().first.height;
+      painter.dispose();
+      expect(label.size.height, greaterThanOrEqualTo(lineHeight));
     });
 
     testWidgets('access rules unchanged: a locked style still asks to unlock, with the choice shown', (tester) async {

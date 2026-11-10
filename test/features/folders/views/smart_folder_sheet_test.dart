@@ -15,6 +15,7 @@ import 'package:Prism/features/public_profile/domain/entities/user_summary_entit
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -162,6 +163,41 @@ void main() {
     await _settle(tester);
 
     expect(repo.creates, 0);
+  });
+
+  testWidgets('the name field reads its label once', (tester) async {
+    final SmartFolderBuilderCubit cubit = _cubit(_FakeSmartRepo());
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: TextButton(
+                onPressed: () => unawaited(
+                  showPrismSheet<void>(
+                    context,
+                    builder: (_) =>
+                        BlocProvider<SmartFolderBuilderCubit>.value(value: cubit, child: const SmartFolderSheet()),
+                  ),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await _settle(tester);
+
+    final SemanticsNode field = tester.getSemantics(find.byType(TextField).first);
+    final String spoken = '${field.label} ${field.hint}';
+    expect(RegExp('Folder name').allMatches(spoken), hasLength(1));
+    semantics.dispose();
   });
 
   testWidgets('an iOS-only mood picked on iOS stays as a removable chip on Android', (tester) async {

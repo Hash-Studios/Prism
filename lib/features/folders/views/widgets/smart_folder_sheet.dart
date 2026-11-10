@@ -238,7 +238,6 @@ class _SmartFolderSheetState extends State<SmartFolderSheet> {
                 key: const ValueKey<String>('smart-folder-name'),
                 controller: _name,
                 label: l10n.foldersNameHint,
-                hint: l10n.foldersNameHint,
               ),
               const SizedBox(height: PrismSpace.xl),
             ],

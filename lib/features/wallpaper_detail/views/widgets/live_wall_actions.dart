@@ -169,16 +169,20 @@ class LiveSetButtonState extends State<LiveSetButton> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
+    // Disabled while busy, like Save video, so a tap or a screen reader does not report an action that does nothing.
     return PrismButton(
       label: _busy ? l10n.liveWallPreparing : l10n.liveWallSetLive,
       size: PrismButtonSize.compact,
       trailing: _busy
           ? SizedBox.square(
               dimension: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onPrimary),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
             )
           : null,
-      onPressed: _run,
+      onPressed: _busy ? null : _run,
     );
   }
 }

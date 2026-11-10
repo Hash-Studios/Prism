@@ -251,6 +251,10 @@ abstract final class PrismFeedLayout {
   static const EdgeInsets gridPadding = EdgeInsets.symmetric(horizontal: PrismSpace.page);
 }
 
+/// The smallest tap area: 48 dp on Android, as Material asks, and 44 points everywhere else, as Apple asks.
+double prismTapTarget(BuildContext context) =>
+    Theme.of(context).platform == TargetPlatform.android ? kMinInteractiveDimension : 44;
+
 /// Visual parameters for the `PersonalizedFeedEditorialNote` pattern.
 ///
 /// Reuse these constants whenever you build a typographic call-out that follows
@@ -279,9 +283,6 @@ abstract final class PrismBottomSheet {
 
   /// Height of the header row that holds the close button, the title and the trailing action.
   static const double headerRowHeight = 44;
-
-  /// Width kept for the header's leading and trailing slots, so the title stays centred.
-  static const double headerSlotWidth = 44;
 
   static const double closeButtonSize = 40;
 

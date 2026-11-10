@@ -29,11 +29,11 @@ class MoodChipRow extends StatelessWidget {
       explicitChildNodes: true,
       child: Padding(
         padding: const EdgeInsets.only(top: PrismSpace.xxs, bottom: PrismSpace.xs),
-        // The row is 44 tall. Up to 2x text the compact label still fits its pill.
+        // The row is one tap target tall. Up to 2x text the compact label still fits its pill.
         child: MediaQuery.withClampedTextScaling(
           maxScaleFactor: 2,
           child: SizedBox(
-            height: 44,
+            height: prismTapTarget(context),
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: PrismFeedLayout.gridSpacing + PrismSpace.xxs),

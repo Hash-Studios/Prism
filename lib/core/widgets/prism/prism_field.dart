@@ -96,7 +96,7 @@ class PrismTextField extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.only(left: PrismSpace.md, bottom: PrismSpace.xs),
+          padding: const EdgeInsetsDirectional.only(start: PrismSpace.md, bottom: PrismSpace.xs),
           child: Text(
             label!,
             style: PrismTextStyles.caption(context).copyWith(fontSize: 13, fontWeight: FontWeight.w600),

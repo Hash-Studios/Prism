@@ -486,7 +486,128 @@ void main() {
     expect(find.text(_copy), findsNothing);
     expect(FeatureHints.instance.record(HintId.variantDots).views, 0);
   });
+
+  testWidgets('Got it has a 48 dp tap area on Android', (tester) async {
+    await tester.pumpWidget(_app(_host()));
+    await _settle(tester);
+    final SemanticsHandle handle = tester.ensureSemantics();
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    handle.dispose();
+    final Rect rect = tester.getSemantics(_gotItButton()).rect;
+    expect(rect.height, greaterThanOrEqualTo(48.0));
+    expect(rect.width, greaterThanOrEqualTo(48.0));
+  });
+
+  testWidgets('Got it keeps a 44 pt tap area on iOS', (tester) async {
+    await tester.pumpWidget(_app(_host(), platform: TargetPlatform.iOS));
+    await _settle(tester);
+    final SemanticsHandle handle = tester.ensureSemantics();
+    await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+    handle.dispose();
+    expect(tester.getSemantics(_gotItButton()).rect.height, 44.0);
+  });
+
+  testWidgets('the hint bubble meets the tap target, label and contrast guidelines in RTL at 2x text', (tester) async {
+    await tester.pumpWidget(_app(_host(), textScale: 2, direction: TextDirection.rtl));
+    await _settle(tester);
+    final SemanticsHandle handle = tester.ensureSemantics();
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(textContrastGuideline));
+    handle.dispose();
+  });
+
+  for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS]) {
+    for (final Size size in <Size>[const Size(360, 740), const Size(1024, 1366)]) {
+      for (final TextDirection direction in TextDirection.values) {
+        testWidgets('hint message precedes Got it and dismisses on $platform at 2x dark $direction $size', (
+          tester,
+        ) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.reset);
+          final SemanticsHandle handle = tester.ensureSemantics();
+          final FocusNode focus = FocusNode();
+          addTearDown(focus.dispose);
+          await tester.pumpWidget(
+            _app(
+              _host(
+                extra: Focus(focusNode: focus, child: const SizedBox()),
+              ),
+              platform: platform,
+              brightness: Brightness.dark,
+              textScale: 2,
+              direction: direction,
+            ),
+          );
+          focus.requestFocus();
+          await _settle(tester);
+          expect(FocusManager.instance.primaryFocus, same(focus));
+          expect(tester.takeException(), isNull);
+          final SemanticsNode message = tester.getSemantics(find.text(_copy));
+          final SemanticsNode button = tester.getSemantics(_gotItButton());
+          expect(message.id, isNot(button.id));
+          expect(message.label, contains(_copy));
+          expect(button.label, _gotIt);
+          expect(button.flagsCollection.isButton, isTrue);
+          expect(button.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+          final List<String> traversalLabels = _traversalLabels(button);
+          final int messageIndex = traversalLabels.indexWhere((label) => label.contains(_copy));
+          final int buttonIndex = traversalLabels.indexWhere((label) => label.contains(_gotIt));
+          expect(messageIndex, greaterThanOrEqualTo(0), reason: '$traversalLabels');
+          expect(buttonIndex, greaterThan(messageIndex), reason: '$traversalLabels');
+          final double minimum = platform == TargetPlatform.iOS ? 44 : 48;
+          expect(button.rect.height, greaterThanOrEqualTo(minimum));
+          expect(button.rect.width, greaterThanOrEqualTo(minimum));
+          final Rect bubble = tester.getRect(_bubble());
+          expect(bubble.left, greaterThanOrEqualTo(16));
+          expect(bubble.right, lessThanOrEqualTo(size.width - 16));
+          button.owner!.performAction(button.id, SemanticsAction.tap);
+          await tester.pumpAndSettle();
+          expect(_hints.active, isNull);
+          expect(find.text(_gotIt), findsNothing);
+          expect(FocusManager.instance.primaryFocus, same(focus));
+          handle.dispose();
+        });
+      }
+    }
+  }
+
+  for (final LogicalKeyboardKey key in <LogicalKeyboardKey>[LogicalKeyboardKey.enter, LogicalKeyboardKey.space]) {
+    testWidgets('Got it accepts keyboard $key after gaining focus', (tester) async {
+      await tester.pumpWidget(_app(_host()));
+      await _settle(tester);
+      final Finder detector = find.descendant(of: _gotItButton(), matching: find.byType(GestureDetector)).first;
+      final FocusNode gotItFocus = Focus.of(tester.element(detector));
+      gotItFocus.requestFocus();
+      await tester.pump();
+      expect(FocusManager.instance.primaryFocus, same(gotItFocus));
+      await tester.sendKeyEvent(key);
+      await tester.pumpAndSettle();
+      expect(find.text(_gotIt), findsNothing);
+      expect(_hints.active, isNull);
+    });
+  }
 }
+
+List<String> _traversalLabels(SemanticsNode node) {
+  final SemanticsNode? root = node.owner?.rootSemanticsNode;
+  if (root == null) return const <String>[];
+
+  Iterable<String> labels(SemanticsNode node) sync* {
+    if (node.label.isNotEmpty) yield node.label;
+    for (final SemanticsNode child in node.debugListChildrenInOrder(DebugSemanticsDumpOrder.traversalOrder)) {
+      yield* labels(child);
+    }
+  }
+
+  return labels(root).toList();
+}
+
+Finder _gotItButton() => find.ancestor(
+  of: find.text(_gotIt),
+  matching: find.byWidgetPredicate((Widget w) => w is Semantics && w.properties.button == true),
+);
 
 Future<void> _settle(WidgetTester tester) async {
   await tester.pump(FeatureHint.settle);
@@ -521,10 +642,12 @@ Widget _app(
   bool reduceMotion = false,
   double textScale = 1,
   TextDirection direction = TextDirection.ltr,
+  TargetPlatform? platform,
+  Brightness brightness = Brightness.light,
 }) => MaterialApp(
   localizationsDelegates: AppLocalizations.localizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
-  theme: kLightTheme,
+  theme: (brightness == Brightness.dark ? kDarkTheme : kLightTheme).copyWith(platform: platform),
   builder: (BuildContext context, Widget? child) => MediaQuery(
     data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion, textScaler: TextScaler.linear(textScale)),
     child: Directionality(textDirection: direction, child: child!),

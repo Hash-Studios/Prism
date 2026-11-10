@@ -24,13 +24,15 @@ class PrismChip extends StatelessWidget {
   /// Replaces [icon], for example a colour dot.
   final Widget? leading;
 
-  /// A smaller pill (34 tall, 13 pt label) for a scrolling row of shortcuts. The tap area stays 44 tall.
+  /// A smaller pill (34 tall, 13 pt label) for a scrolling row of shortcuts. The tap area keeps [prismTapTarget].
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme cs = Theme.of(context).colorScheme;
     final Color fg = selected ? cs.surface : cs.onSurface;
+    final double pill = compact ? 34 : 44;
+    final double tap = prismTapTarget(context);
     return PressScale(
       enabled: onTap != null,
       child: Semantics(
@@ -46,11 +48,11 @@ class PrismChip extends StatelessWidget {
                   onTap!();
                 },
           child: Padding(
-            padding: EdgeInsets.symmetric(vertical: compact ? 5 : 0),
+            padding: EdgeInsets.symmetric(vertical: (tap - pill) / 2),
             child: AnimatedContainer(
               duration: context.motion(PrismDurations.fast),
               curve: PrismCurves.enter,
-              constraints: BoxConstraints(minWidth: 44, minHeight: compact ? 34 : 44),
+              constraints: BoxConstraints(minWidth: tap, minHeight: pill),
               padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 14, vertical: compact ? 0 : PrismSpace.xs),
               decoration: BoxDecoration(
                 color: selected ? cs.onSurface : cs.onSurface.withValues(alpha: compact ? 0.08 : 0.06),

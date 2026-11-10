@@ -98,10 +98,12 @@ class PrismRow extends StatelessWidget {
       ),
     );
     if (onTap == null) return row;
-    return Material(
+    final Widget interactiveRow = Material(
       type: MaterialType.transparency,
       child: InkWell(onTap: onTap, child: row),
     );
+    // A switch row is merged with its trailing Switch by its caller. Keep the Switch's toggle role intact.
+    return trailing is Switch ? interactiveRow : Semantics(button: true, child: interactiveRow);
   }
 }
 

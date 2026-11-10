@@ -140,7 +140,7 @@ class _LogViewerPageState extends State<LogViewerPage> with AutomaticKeepAliveCl
           child: DebugSearchField(controller: _searchCtrl, hintText: context.l10n.debugSearchLogs),
         ),
         SizedBox(
-          height: 40,
+          height: prismTapTarget(context),
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),
             scrollDirection: Axis.horizontal,

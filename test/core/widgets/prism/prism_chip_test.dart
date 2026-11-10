@@ -8,18 +8,19 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Widget _host(Widget child, {ThemeData? theme, double scale = 1}) => MaterialApp(
-  theme: theme ?? kLightTheme,
-  builder: (context, app) => MediaQuery(
-    data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
-    child: app!,
-  ),
-  home: Scaffold(
-    body: Center(
-      child: RepaintBoundary(key: const Key('capture'), child: child),
-    ),
-  ),
-);
+Widget _host(Widget child, {ThemeData? theme, double scale = 1, TargetPlatform platform = TargetPlatform.iOS}) =>
+    MaterialApp(
+      theme: (theme ?? kLightTheme).copyWith(platform: platform),
+      builder: (context, app) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
+        child: app!,
+      ),
+      home: Scaffold(
+        body: Center(
+          child: RepaintBoundary(key: const Key('capture'), child: child),
+        ),
+      ),
+    );
 
 /// The pre-compact PrismChip's visual subtree from d1fd13bf4^.
 Widget _legacyChip(
@@ -165,39 +166,90 @@ void main() {
     }
   });
 
-  testWidgets('compact chip keeps a 44-point hit target and minimum width in a fixed row', (tester) async {
-    int taps = 0;
-    await tester.pumpWidget(
-      _host(
-        SizedBox(
-          height: 44,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: PrismChip(label: 'I', compact: true, onTap: () => taps++),
+  testWidgets('compact chip meets the platform tap target in a fixed-height row', (tester) async {
+    for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS]) {
+      var taps = 0;
+      final double targetSize = platform == TargetPlatform.android ? 48 : 44;
+      await tester.pumpWidget(
+        _host(
+          SizedBox(
+            height: targetSize,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: PrismChip(label: 'I', compact: true, onTap: () => taps++),
+            ),
           ),
+          platform: platform,
         ),
-      ),
-    );
-    final Rect target = tester.getRect(find.byType(PrismChip));
-    expect(target.height, 44);
-    expect(tester.getSize(find.byType(AnimatedContainer)).width, greaterThanOrEqualTo(44));
-    await tester.tapAt(Offset(target.center.dx, target.top + 1));
-    await tester.tapAt(Offset(target.center.dx, target.bottom - 1));
-    expect(taps, 2);
+      );
+      final Rect target = tester.getRect(find.byType(PrismChip));
+      expect(target.height, targetSize, reason: platform.name);
+      expect(
+        tester.getSize(find.byType(AnimatedContainer)).width,
+        greaterThanOrEqualTo(targetSize),
+        reason: platform.name,
+      );
+      await tester.tapAt(Offset(target.center.dx, target.top + 1));
+      await tester.tapAt(Offset(target.center.dx, target.bottom - 1));
+      expect(taps, 2, reason: platform.name);
+    }
+  });
+
+  testWidgets('a 2x query-style chip keeps its glyphs inside the pill on Android and iOS', (tester) async {
+    for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS]) {
+      await tester.pumpWidget(
+        _host(
+          Align(
+            alignment: Alignment.centerLeft,
+            child: PrismChip(label: 'Recent query', icon: Icons.history_rounded, onTap: () {}),
+          ),
+          scale: 2,
+          platform: platform,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final RenderParagraph paragraph = tester.renderObject(find.text('Recent query'));
+      final Finder pill = find.byType(AnimatedContainer);
+      final Rect pillBounds = tester.getRect(pill);
+      final Rect textBounds = tester.getRect(find.text('Recent query'));
+      expect(paragraph.didExceedMaxLines, isFalse, reason: platform.name);
+      final TextPainter painter = TextPainter(
+        text: paragraph.text,
+        textDirection: paragraph.textDirection,
+        textScaler: paragraph.textScaler,
+      )..layout(maxWidth: paragraph.size.width);
+      final List<ui.LineMetrics> lines = painter.computeLineMetrics();
+      painter.dispose();
+      expect(lines, hasLength(1), reason: platform.name);
+      expect(lines.single.height, lessThanOrEqualTo(paragraph.size.height), reason: platform.name);
+      expect(textBounds.top, greaterThanOrEqualTo(pillBounds.top), reason: platform.name);
+      expect(textBounds.bottom, lessThanOrEqualTo(pillBounds.bottom), reason: platform.name);
+    }
   });
 
   testWidgets('chip exposes button, label, selected state and tap semantics', (tester) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
     try {
-      for (final bool selected in <bool>[false, true]) {
-        await tester.pumpWidget(_host(PrismChip(label: 'Nature', compact: true, selected: selected, onTap: () {})));
-        final SemanticsData data = tester.getSemantics(find.bySemanticsLabel('Nature')).getSemanticsData();
-        expect(data.label, 'Nature');
-        expect(data.flagsCollection.isButton, isTrue);
-        expect(data.flagsCollection.isSelected, selected ? ui.Tristate.isTrue : ui.Tristate.isFalse);
-        expect(data.hasAction(ui.SemanticsAction.tap), isTrue);
-        expect(data.rect.height, 44);
-        expect(data.rect.width, greaterThanOrEqualTo(44));
+      for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.android, TargetPlatform.iOS]) {
+        for (final bool selected in <bool>[false, true]) {
+          await tester.pumpWidget(
+            _host(
+              PrismChip(label: 'Nature', compact: true, selected: selected, onTap: () {}),
+              platform: platform,
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(Theme.of(tester.element(find.byType(PrismChip))).platform, platform);
+          final SemanticsData data = tester.getSemantics(find.bySemanticsLabel('Nature')).getSemanticsData();
+          expect(data.label, 'Nature');
+          expect(data.flagsCollection.isButton, isTrue);
+          expect(data.flagsCollection.isSelected, selected ? ui.Tristate.isTrue : ui.Tristate.isFalse);
+          expect(data.hasAction(ui.SemanticsAction.tap), isTrue);
+          final double target = platform == TargetPlatform.android ? 48 : 44;
+          expect(data.rect.height, target);
+          expect(data.rect.width, greaterThanOrEqualTo(target));
+        }
       }
     } finally {
       semantics.dispose();
