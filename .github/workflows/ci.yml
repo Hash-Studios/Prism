@@ -217,6 +217,8 @@ jobs:
           cache: true
           cache-key: flutter-${{ runner.os }}-${{ steps.fvm.outputs.version }}
           pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+      # The test compiles lib/main.dart, which imports the gitignored firebase_options.dart.
+      - run: tool/write_firebase_options_stub.sh
       - name: Check notification-channel contract
         run: flutter test test/core/startup/notification_channels_test.dart
       - name: Exercise missing-channel regression fixture
