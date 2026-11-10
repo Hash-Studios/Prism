@@ -36,6 +36,9 @@ class LiveWallVideo extends StatefulWidget {
   final LiveSurface surface;
 
   /// Tests swap in a controller that needs no platform player. Local QA builds point it at the fixture server.
+  /// The longest a card waits for its old player to close before another card may play.
+  static const Duration releaseBudget = Duration(seconds: 2);
+
   static VideoPlayerController Function(Uri url) createController = (url) =>
       VideoPlayerController.networkUrl(url, videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true));
 
@@ -236,9 +239,19 @@ class _LiveWallVideoState extends State<LiveWallVideo> with WidgetsBindingObserv
     late final Future<void> releaseFuture;
     releaseFuture = () async {
       try {
-        final Future<void> disposal = controller.dispose();
-        if (initialization != null) await initialization;
-        await disposal;
+        // video_player 2.x never finishes dispose after a failed native create, so the feed slot waits a bounded time.
+        final Completer<void> closed = Completer<void>();
+        final Timer budget = Timer(LiveWallVideo.releaseBudget, closed.complete);
+        unawaited(
+          Future.wait<Object?>(<Future<Object?>>[
+            controller.dispose(),
+            ?initialization,
+          ]).then<void>((_) {}, onError: (Object _) {}).whenComplete(() {
+            budget.cancel();
+            if (!closed.isCompleted) closed.complete();
+          }),
+        );
+        await closed.future;
       } finally {
         if (_feedSlot.value == this) _feedSlot.value = null;
         if (identical(_releaseFuture, releaseFuture)) _releaseFuture = null;

@@ -95,6 +95,17 @@ Future<void> _pump(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 50));
 }
 
+/// Removes the players and opens their gates inside the test, so no release budget timer outlives it.
+Future<void> _finish(WidgetTester tester) async {
+  await tester.pumpWidget(_app(const SizedBox.shrink()));
+  for (final _GatedVideoController controller in _GatedVideoController.created) {
+    if (!controller.initializeGate.isCompleted) controller.initializeGate.complete();
+    if (!controller.disposeGate.isCompleted) controller.disposeGate.complete();
+  }
+  await _pump(tester);
+  await _pump(tester);
+}
+
 void _cleanUpAfterTest(WidgetTester tester) {
   addTearDown(() async {
     await tester.pumpWidget(_app(const SizedBox.shrink()));
@@ -149,6 +160,8 @@ void main() {
 
     expect(first.disposed, isTrue);
     expect(_GatedVideoController.created, hasLength(2));
+
+    await _finish(tester);
   });
 
   testWidgets('changing a keyed feed surface to detail releases its feed player', (WidgetTester tester) async {
@@ -181,6 +194,8 @@ void main() {
     await _pump(tester);
 
     expect(_GatedVideoController.created, hasLength(2));
+
+    await _finish(tester);
   });
 
   testWidgets('feed URL replacement waits for disposal before another visible feed acquires a player', (
@@ -225,6 +240,8 @@ void main() {
 
     expect(first.disposed, isTrue);
     expect(_GatedVideoController.created, hasLength(2));
+
+    await _finish(tester);
   });
 
   testWidgets('late initialization after removal never starts playback', (WidgetTester tester) async {
@@ -258,6 +275,8 @@ void main() {
 
     expect(controller.playCalls, 0);
     expect(controller.pauseCalls, greaterThan(0));
+
+    await _finish(tester);
   });
 
   testWidgets('pushing another route pauses the detail player', (WidgetTester tester) async {
@@ -288,6 +307,8 @@ void main() {
 
     expect(controller.pauseCalls, greaterThan(0));
     expect(controller.disposed, isFalse);
+
+    await _finish(tester);
   });
 
   testWidgets('video_player dispose stays pending after native creation fails', (WidgetTester tester) async {
