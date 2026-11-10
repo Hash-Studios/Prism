@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:Prism/auth/user_model.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators.dart';
@@ -11,6 +13,7 @@ import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/domain/section_suggester.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -26,6 +29,7 @@ class FolderDiscoverState {
     this.status = FolderDiscoverStatus.loading,
     this.lists = FolderDiscoverLists.empty,
     this.followed = const <String>{},
+    this.followStateReady = false,
     this.busy = const <String>{},
     this.likeYourSaves,
     this.likeYourSavesFailed = false,
@@ -36,6 +40,7 @@ class FolderDiscoverState {
   /// The server lists, without the viewer's own folders, blocked creators and folders the viewer reported.
   final FolderDiscoverLists lists;
   final Set<String> followed;
+  final bool followStateReady;
 
   /// Folders with a follow change on its way to the server.
   final Set<String> busy;
@@ -48,6 +53,7 @@ class FolderDiscoverState {
     FolderDiscoverStatus? status,
     FolderDiscoverLists? lists,
     Set<String>? followed,
+    bool? followStateReady,
     Set<String>? busy,
     List<DiscoverFolder>? Function()? likeYourSaves,
     bool? likeYourSavesFailed,
@@ -55,6 +61,7 @@ class FolderDiscoverState {
     status: status ?? this.status,
     lists: lists ?? this.lists,
     followed: followed ?? this.followed,
+    followStateReady: followStateReady ?? this.followStateReady,
     busy: busy ?? this.busy,
     likeYourSaves: likeYourSaves == null ? this.likeYourSaves : likeYourSaves(),
     likeYourSavesFailed: likeYourSavesFailed ?? this.likeYourSavesFailed,
@@ -74,6 +81,22 @@ class FolderDiscoverCubit extends Cubit<FolderDiscoverState> {
        _blocks = blocks,
        super(const FolderDiscoverState()) {
     _blockChanges = blocks.watchBlockedCreators().listen((_) => _show());
+    if (getIt.isRegistered<SessionRepository>()) {
+      String sessionViewer = _currentViewer;
+      _sessionChanges = getIt<SessionRepository>().watchCurrentUser().listen((user) {
+        final String viewer = user.loggedIn ? user.id : '';
+        if (viewer == sessionViewer) return;
+        sessionViewer = viewer;
+        if (_viewerId != viewer) {
+          ++_load;
+          _loading = null;
+          _loadingViewer = null;
+          _resetForViewer(viewer);
+          emit(const FolderDiscoverState());
+        }
+        if (viewer == _currentViewer) unawaited(_reloadForViewer());
+      });
+    }
   }
 
   /// The newest saves that "Like your saves" reads.
@@ -84,10 +107,15 @@ class FolderDiscoverCubit extends Cubit<FolderDiscoverState> {
   final UserBlockRepository _blocks;
   final SaveTraitsLoader _saveTraits;
   late final StreamSubscription<BlockedCreators> _blockChanges;
+  StreamSubscription<PrismUsersV2>? _sessionChanges;
   FolderDiscoverLists _all = FolderDiscoverLists.empty;
   final Set<String> _reported = <String>{};
   List<WallTraits>? _traits;
   int _load = 0;
+  int _viewerGeneration = 0;
+  String? _loadingViewer;
+  Future<void>? _loading;
+  bool _traitsRequested = false;
   String? _viewerId;
 
   /// The traits of each save that still has a public wall, in the order of [saves].
@@ -102,15 +130,29 @@ class FolderDiscoverCubit extends Cubit<FolderDiscoverState> {
   @override
   Future<void> close() async {
     await _blockChanges.cancel();
+    await _sessionChanges?.cancel();
     return super.close();
   }
 
   /// The signed-in user's id, or empty for a guest. Guests can read the lists, but follow nothing.
   static String get _currentViewer => app_state.prismUser.loggedIn ? app_state.prismUser.id : '';
 
-  Future<void> load() async {
-    final int load = ++_load;
+  Future<void> load() {
     final String viewer = _currentViewer;
+    if (_loadingViewer == viewer && _loading != null) return _loading!;
+    _loadingViewer = viewer;
+    final Future<void> pending = _loadForViewer(viewer);
+    _loading = pending;
+    return pending.whenComplete(() {
+      if (identical(_loading, pending)) {
+        _loading = null;
+        _loadingViewer = null;
+      }
+    });
+  }
+
+  Future<void> _loadForViewer(String viewer) async {
+    final int load = ++_load;
     if (_viewerId != viewer) {
       _resetForViewer(viewer);
       emit(const FolderDiscoverState());
@@ -129,14 +171,28 @@ class FolderDiscoverCubit extends Cubit<FolderDiscoverState> {
       return;
     }
     _all = lists.data!;
-    emit(state.copyWith(status: FolderDiscoverStatus.ready, followed: followed.data ?? state.followed));
+    emit(
+      state.copyWith(
+        status: FolderDiscoverStatus.ready,
+        followed: followed.data ?? state.followed,
+        followStateReady: viewer.isEmpty || followed.isSuccess,
+      ),
+    );
     _show();
+  }
+
+  Future<void> _reloadForViewer() async {
+    final bool reloadTraits = _traitsRequested;
+    await load();
+    if (reloadTraits && !isClosed) await loadLikeYourSaves();
   }
 
   /// Ranks "Like your saves" from the viewer's newest saves. It reads the saves once per page.
   Future<void> loadLikeYourSaves() async {
+    _traitsRequested = true;
     if (!app_state.prismUser.loggedIn) return emit(state.copyWith(likeYourSaves: () => const <DiscoverFolder>[]));
     final String viewer = app_state.prismUser.id;
+    final int viewerGeneration = _viewerGeneration;
     if (_traits != null) return _show();
     emit(state.copyWith(likeYourSaves: () => null, likeYourSavesFailed: false));
     try {
@@ -145,13 +201,21 @@ class FolderDiscoverCubit extends Cubit<FolderDiscoverState> {
       final List<FavouriteWallEntity> newest = saves.data!.whereType<PrismFavouriteWall>().toList()
         ..sort((a, b) => (b.addedAt ?? DateTime(0)).compareTo(a.addedAt ?? DateTime(0)));
       final List<WallTraits> traits = await _saveTraits(newest.take(savesRead).toList(growable: false));
-      if (!isClosed && app_state.prismUser.loggedIn && app_state.prismUser.id == viewer && _viewerId == viewer) {
+      if (!isClosed &&
+          app_state.prismUser.loggedIn &&
+          app_state.prismUser.id == viewer &&
+          _viewerId == viewer &&
+          _viewerGeneration == viewerGeneration) {
         _traits = traits;
         _show();
       }
     } catch (error, stackTrace) {
       logger.w('[FolderDiscover] saves failed', error: error, stackTrace: stackTrace);
-      if (!isClosed && app_state.prismUser.loggedIn && app_state.prismUser.id == viewer && _viewerId == viewer) {
+      if (!isClosed &&
+          app_state.prismUser.loggedIn &&
+          app_state.prismUser.id == viewer &&
+          _viewerId == viewer &&
+          _viewerGeneration == viewerGeneration) {
         emit(state.copyWith(likeYourSavesFailed: true));
       }
     }
@@ -160,15 +224,30 @@ class FolderDiscoverCubit extends Cubit<FolderDiscoverState> {
   /// Follows or unfollows at once, and undoes the change if the server refuses. Returns the failure, or null.
   Future<PublicFolderFailure?> toggleFollow(DiscoverFolder folder) async {
     // A guest who just signed in to follow first loads the follows of the new account.
-    if (_viewerId != _currentViewer) await load();
-    if (isClosed || state.busy.contains(folder.id)) return null;
+    final String startingViewer = _currentViewer;
+    final Future<void>? baseline =
+        _viewerId != startingViewer || _loadingViewer == startingViewer || !state.followStateReady ? load() : null;
+    final int viewerGeneration = _viewerGeneration;
+    if (baseline != null) await baseline;
+    if (isClosed ||
+        startingViewer.isEmpty ||
+        _currentViewer != startingViewer ||
+        _viewerGeneration != viewerGeneration ||
+        state.busy.contains(folder.id)) {
+      return null;
+    }
+    if (!state.followStateReady) return const PublicFolderFailure('Could not load follow state.');
     final String viewer = app_state.prismUser.id;
     final bool next = !state.followed.contains(folder.id);
     Set<String> withFollow(bool on) =>
         on ? <String>{...state.followed, folder.id} : (state.followed.toSet()..remove(folder.id));
     emit(state.copyWith(followed: withFollow(next), busy: <String>{...state.busy, folder.id}));
     final Result<void> result = await _folders.setFollowing(folder.id, following: next);
-    if (isClosed || !app_state.prismUser.loggedIn || app_state.prismUser.id != viewer || _viewerId != viewer) {
+    if (isClosed ||
+        !app_state.prismUser.loggedIn ||
+        app_state.prismUser.id != viewer ||
+        _viewerId != viewer ||
+        _viewerGeneration != viewerGeneration) {
       return null;
     }
     final Set<String> busy = state.busy.toSet()..remove(folder.id);
@@ -190,7 +269,15 @@ class FolderDiscoverCubit extends Cubit<FolderDiscoverState> {
   void _show() {
     if (isClosed) return;
     if (_viewerId != _currentViewer) {
-      emit(state.copyWith(lists: FolderDiscoverLists.empty, likeYourSaves: () => const <DiscoverFolder>[]));
+      emit(
+        state.copyWith(
+          lists: FolderDiscoverLists.empty,
+          followed: const <String>{},
+          followStateReady: false,
+          busy: const <String>{},
+          likeYourSaves: () => const <DiscoverFolder>[],
+        ),
+      );
       return;
     }
     final FolderDiscoverLists visible = _all.visibleTo(_currentViewer, _blocks.blockedCreators);
@@ -209,6 +296,7 @@ class FolderDiscoverCubit extends Cubit<FolderDiscoverState> {
   }
 
   void _resetForViewer(String? viewer) {
+    if (_viewerId != viewer) _viewerGeneration++;
     _viewerId = viewer;
     _all = FolderDiscoverLists.empty;
     _reported.clear();
