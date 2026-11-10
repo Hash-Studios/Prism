@@ -6,7 +6,7 @@ import {
   type CallableRequest,
 } from "firebase-functions/v2/https";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {coinTransactionDoc, db, int, REGION, CALLABLE_REGIONS, str} from "./common";
+import {coinTransactionDoc, db, int, REGION, CALLABLE_REGIONS, str, ADMIN_CALLABLE} from "./common";
 import {isValidRequestId} from "./coinsCallables";
 import {loadEconomy, proPrice, weekBounds, weekKey} from "./economy";
 import {isAdminCaller} from "./adminConfig";
@@ -148,7 +148,7 @@ export async function releaseOldDrops(nowMs: number): Promise<number> {
 }
 
 export const planWeeklyDrop = onSchedule(
-  {schedule: "30 0 * * 1", region: REGION, timeZone: "UTC", retryCount: 1},
+  {schedule: "30 0 * * 1", region: REGION, timeZone: "UTC", retryCount: 1, timeoutSeconds: 180, cpu: "gcf_gen1"},
   async () => {
     const nowMs = Date.now();
     await releaseOldDrops(nowMs);
@@ -242,7 +242,7 @@ const priceOr = (value: unknown, fallback: number): number => {
 };
 
 export const unlockDrop = onCall(
-  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true},
   async (
     request: CallableRequest<{
       weekKey?: unknown;
@@ -622,7 +622,7 @@ export const sendDropPushes = onSchedule(
 );
 
 export const setDropTitle = onCall(
-  {region: CALLABLE_REGIONS, cors: true, maxInstances: 5},
+  {...ADMIN_CALLABLE, region: CALLABLE_REGIONS, cors: true},
   async (request: CallableRequest<{weekKey?: unknown; title?: unknown}>) => {
     const uid = request.auth?.uid?.trim() ?? "";
     if (!uid) throw new HttpsError("unauthenticated", "You must be signed in.");

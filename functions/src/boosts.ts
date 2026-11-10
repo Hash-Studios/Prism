@@ -23,7 +23,7 @@ interface BoostResponse {
 
 /** Pays coins to put an approved wall at the front of Trending for 24 hours. */
 export const boostWall = onCall(
-  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true},
   async (request: CallableRequest<{wallId?: unknown; requestId?: unknown}>): Promise<BoostResponse> => {
     const uid = str(request.auth?.uid);
     if (!uid) throw new HttpsError("unauthenticated", "You must be signed in to boost a wallpaper.");

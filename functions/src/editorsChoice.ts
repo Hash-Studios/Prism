@@ -3,13 +3,14 @@ import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {isAdminCaller} from "./adminConfig";
 import {isValidRequestId} from "./coinsCallables";
-import {CALLABLE_REGIONS, db, findUserByEmail, str} from "./common";
+import {CALLABLE_REGIONS, db, findUserByEmail, str, ADMIN_CALLABLE} from "./common";
 import {notificationCopyPayload} from "./notificationCatalog";
 import {emailHash, isLoggedOut, sendToUser} from "./notificationHelper";
 import {isStudioWall} from "./studio/isStudioWall";
 import {isWotdEligible, premiumCollections, readyWall} from "./wallEligibility";
 
-const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true, maxInstances: 10};
+const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true};
+const adminOptions = {...ADMIN_CALLABLE, ...CALLABLE_OPTIONS};
 const WALL_ID = /^[A-Za-z0-9_-]{1,128}$/;
 const REQUESTS = "editorsChoiceRequests";
 /** One doc per wall that ever had the creator push. A pick, clear and pick again pushes once. */
@@ -48,7 +49,7 @@ export function parseEditorsChoiceInput(raw: unknown): EditorsChoiceInput {
  * daily pick (wallEligibility), because the Home row shows it to every user. A retried requestId replays its result.
  * The creator hears about a wall's first pick only.
  */
-export const setEditorsChoice = onCall(CALLABLE_OPTIONS, async (request: CallableRequest<unknown>) => {
+export const setEditorsChoice = onCall(adminOptions, async (request: CallableRequest<unknown>) => {
   if (!request.auth?.uid) throw new HttpsError("unauthenticated", "Sign in first.");
   if (!await isAdminCaller(request.auth)) throw new HttpsError("permission-denied", "Admins only.");
   const adminUid = request.auth.uid;

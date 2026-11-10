@@ -148,7 +148,7 @@ export const sendWinBackPushes = onSchedule(
     region: REGION,
     timeoutSeconds: 540,
     memory: "512MiB",
-    maxInstances: 1,
+    cpu: "gcf_gen1",
   },
   async (event) => {
     const nowMs = scheduledAtMs(event.scheduleTime);

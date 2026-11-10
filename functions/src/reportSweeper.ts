@@ -32,6 +32,7 @@ export const sweepOpenReports = onSchedule(
     timeZone: "UTC",
     region: REGION,
     retryCount: 1,
+    cpu: "gcf_gen1",
   },
   async () => {
     const nowMs = Date.now();

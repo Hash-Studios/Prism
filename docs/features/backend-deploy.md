@@ -266,6 +266,61 @@ The client code for consent is `lib/features/ads/data/ad_consent.dart`. It asks 
 | UMP message not published | Users in the EEA and the UK see no consent form. What the ads SDK then allows in those regions is not confirmed. |
 | `firebase deploy --force` | Can delete a live index or a function that the file or `index.ts` does not list. |
 
+## Cloud Run CPU budget
+
+Each 2nd gen function is one Cloud Run service. Cloud Run has one CPU quota for each project and region. Its name is "Total CPU allocation" (`run.googleapis.com/cpu_allocation`). The quota is 200 vCPU in `asia-south1` and 200 vCPU in `us-central1`.
+
+### What uses the quota
+
+- Each live instance uses its vCPU. An idle instance also uses its vCPU.
+- A deploy starts one new instance for each function that it updates. The old instances of that function can stay live at the same time.
+- `maxInstances` does not reserve CPU. It sets how far traffic can scale one revision.
+
+On 2026-11-09, the full 3.26.0 deploy had 200 instances live in `asia-south1` from 14:51 to 14:57 UTC. Each instance had 1 vCPU. During that time, `onWallModerate`, `onCreatorStatsDailyWritten`, and `processCreatorStatsDailyQueueScheduled` could not start their new revisions. On other days, the region had a median of 7 live instances and a 99th percentile of 46.
+
+### The rule
+
+1. `functions/src/common.ts` sets `maxInstances: 1` for every function with `setGlobalOptions`.
+2. Set a higher `maxInstances` on a function only when its 30-day peak of active instances needs it, or when it is at its cap and turns work away. A peak that is equal to the cap does not show the refused demand. For a function at its cap, also look for 429 responses in its logs and for events that arrive late.
+3. Do not set `maxInstances` lower than the 30-day peak of a user-facing callable. A user-facing callable with `concurrency: 1` (for example `githubPutFile`) needs at least 2 instances.
+4. A callable that only an admin can use takes `ADMIN_CALLABLE` from `common.ts`. It sets 1st gen CPU and 1 instance. If a user can call it on any path, it is a user-facing callable.
+5. Use `cpu: "gcf_gen1"` only for a light job. A job is light when its p95 run time, multiplied by the CPU ratio, is less than half of its timeout and less than half of its schedule interval. The CPU ratio is 1 divided by the 1st gen vCPU of its memory size: 12 at 128 MiB, 6 at 256 MiB, 3 at 512 MiB, and about 2 at 1024 MiB. The production p95 values come from full CPU, so this is an estimate. Check the logs of the job after the deploy.
+6. 1st gen CPU is 0.0833, 0.1666, 0.3333, 0.5833, 1, 2, and 2 vCPU at 128, 256, 512, 1024, 2048, 4096, and 8192 MiB. Below 1 vCPU, do not set `concurrency` above 1. The deploy fails.
+7. In each region, the sum of `maxInstances` x vCPU must be at or below `REGION_CPU_BUDGET_VCPU`. This is 80% of the quota (160 vCPU).
+
+The budget limits the CPU that traffic can use. It does not make sure that a deploy fits. During a deploy, old and new revisions are live together.
+
+`functions/src/__tests__/cpuBudget.test.ts` checks rules 1, 6, and 7. `callableCpuPolicy.test.ts` checks rules 3 and 4. The `functions` CI job runs them on each change in `functions/`. The budget test counts a function without `maxInstances` as 100 instances, because Cloud Run uses 100.
+
+If the budget test fails, do one of these:
+
+- Lower a `maxInstances` that is higher than its 30-day peak.
+- Move a light job to `cpu: "gcf_gen1"` (rule 5).
+- Ask the owner to request a quota increase. After Google grants it, change `REGION_CPU_QUOTA_VCPU` in `common.ts`. The test uses one quota for all regions, so set it to the lowest quota of the regions. If only asia-south1 gets more, `REGION_CPU_QUOTA_VCPU` stays at the us-central1 quota.
+
+### Known limits of the current caps
+
+| Function | Cap | 30-day peak | Effect when traffic is above the cap |
+|---|---|---|---|
+| `onOwnedWallWritten` | 3, concurrency 1 | 20 | Conversions wait. A new wall shows in feeds only after `originalProtected` is set. |
+| `onWallCategorize` | 2, concurrency 1 | 8 | Categories come later. |
+| `onWallModerate` | 1, concurrency 1 | 2 | Moderation signals come later in the review queue. |
+| Other triggers | 1 or 2 | up to 10 | Events wait. Firestore events that get a 429 are delivered again, for up to 24 hours (Eventarc retention). After 24 hours, Eventarc discards the event. If a backlog lasts that long, raise the cap and run a backfill for the records that were not processed. |
+
+Callables and HTTP functions are different. A request at the cap waits for about 30 seconds and then gets a 429. To set these three triggers back to their peaks, the region needs 24 more vCPU. That needs a quota increase.
+
+### Find the 30-day peak
+
+Use the Cloud Monitoring metric `run.googleapis.com/container/instance_count` with `metric.label.state="active"`. Filter on `resource.label.location`, align to 60 seconds, and sum by `resource.label.service_name`. Take the maximum for each service. Do not count the minutes of a full deploy, because both revisions are live then. The metric is sampled every 60 seconds, so a short burst can be higher than the peak. Before you lower the cap of a callable, also look for 429 responses and for bursts in its request logs. After the change, watch its logs for 429 responses. The service name is the function name in lower case.
+
+### If a deploy fails on the quota
+
+The error is "Quota exceeded for total allowable CPU per project per region". The old revision continues to serve.
+
+1. Search the deploy log for each failed function name.
+2. Look at the CPU use in the region of the failed function: the Cloud Monitoring metric `serviceruntime.googleapis.com/quota/rate/net_usage` with `quota_metric="run.googleapis.com/cpu_allocation"` and `resource.label.location` set to that region. Align it with a 60-second sum (`ALIGN_SUM`), not a rate. A rate shows the value divided by 60. Each point is then the allocated mCPU. The "Current usage" column for "Total CPU allocation" on the IAM & Admin > Quotas page shows the same value. Wait until it is well below the current quota of that region (200,000 mCPU, unless Google granted more). Samples can arrive up to 240 seconds late, so use only a sample that is later than the end of the failed deploy. Do not use a fixed wait time.
+3. Get the owner's yes. Then deploy only the failed functions: `firebase deploy --only functions:<name1>,functions:<name2> --project prism-wallpapers --account <email> --non-interactive`.
+
 ## Fix wave (second round of this release)
 
 The fix wave adds backend changes on top of the steps above. Ship them in this order. Each step needs the human owner's yes.

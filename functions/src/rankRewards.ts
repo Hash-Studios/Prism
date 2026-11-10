@@ -35,7 +35,7 @@ export function rankRewardsFor(
 }
 
 export const reconcileRankRewards = onCall(
-  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10},
+  {region: CALLABLE_REGIONS, cors: true, maxInstances: 2},
   async (request: CallableRequest<unknown>) => {
     const uid = request.auth?.uid?.trim() ?? "";
     if (!uid) throw new HttpsError("unauthenticated", "Sign in to receive rank rewards.");

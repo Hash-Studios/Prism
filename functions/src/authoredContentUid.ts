@@ -82,7 +82,7 @@ function unchangedOwner(event: {data?: {before: {exists: boolean; data: () => un
 }
 
 export const onWallAuthoredContentWritten = onDocumentWritten(
-  {document: "walls/{contentId}", region: REGION},
+  {document: "walls/{contentId}", region: REGION, maxInstances: 2},
   async (event) => {
     if (!event.data?.after.exists || unchangedOwner(event)) return;
     await syncAuthoredContentUid("walls", event.params.contentId, event.data.after.data()?.email);
@@ -90,7 +90,7 @@ export const onWallAuthoredContentWritten = onDocumentWritten(
 );
 
 export const onSetupAuthoredContentWritten = onDocumentWritten(
-  {document: "setups/{contentId}", region: REGION},
+  {document: "setups/{contentId}", region: REGION, maxInstances: 2},
   async (event) => {
     if (!event.data?.after.exists || unchangedOwner(event)) return;
     await syncAuthoredContentUid("setups", event.params.contentId, event.data.after.data()?.email);

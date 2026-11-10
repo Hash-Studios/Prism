@@ -131,6 +131,7 @@ export const recordWallpaperView = onCall(
   {
     region: CALLABLE_REGIONS,
     cors: true,
+    maxInstances: 2,
   },
   async (request: CallableRequest<{wallId?: string}>): Promise<RecordViewResponse> => {
     const uid = request.auth?.uid;

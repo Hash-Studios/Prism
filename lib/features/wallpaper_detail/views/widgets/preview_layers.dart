@@ -290,31 +290,35 @@ class LockPreviewLayer extends StatelessWidget {
         return _topThird(
           constraints,
           inset,
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Text(
-                clock,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: textColor,
-                  fontFamily: 'Roboto',
-                  fontSize: clockFontSize,
-                  fontWeight: FontWeight.w200,
+          // A long date ("Wednesday, September 30") wraps in a small preview, so scale the block down to fit.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  clock,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: textColor,
+                    fontFamily: 'Roboto',
+                    fontSize: clockFontSize,
+                    fontWeight: FontWeight.w200,
+                  ),
                 ),
-              ),
-              SizedBox(height: 5 * scale),
-              Text(
-                DateFormat.MMMMEEEEd(context.l10n.localeName).format(time),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: textColor,
-                  fontFamily: 'Roboto',
-                  fontSize: 20 * scale,
-                  fontWeight: FontWeight.w500,
+                SizedBox(height: 5 * scale),
+                Text(
+                  DateFormat.MMMMEEEEd(context.l10n.localeName).format(time),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: textColor,
+                    fontFamily: 'Roboto',
+                    fontSize: 20 * scale,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },

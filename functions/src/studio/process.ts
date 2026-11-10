@@ -547,7 +547,7 @@ export const processStudioCandidate = onDocumentCreated(
     memory: "1GiB",
     secrets: [studioSecret, falKey],
     retry: true,
-    maxInstances: 5,
+    maxInstances: 2,
   },
   async (event) => {
     await processCandidate(event.params.runId, event.params.candidateId, {

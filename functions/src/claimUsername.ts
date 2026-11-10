@@ -94,7 +94,6 @@ export const claimUsername = onCall(
   {
     region: CALLABLE_REGIONS,
     cors: true,
-    maxInstances: 10,
   },
   async (request: CallableRequest<{username?: string; initial?: boolean}>): Promise<{username: string; usernameLower: string}> => {
     const uid = request.auth?.uid;

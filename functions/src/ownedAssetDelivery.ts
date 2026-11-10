@@ -562,7 +562,8 @@ export async function signOriginalDelivery(wallId: string): Promise<{url: string
 const studioSecret = defineSecret("STUDIO_SECRET");
 // One conversion per instance: each holds and decodes full-size images, and 50 at once ran out of 512 MiB.
 export const onOwnedWallWritten = onDocumentWritten({document: "walls/{wallId}", region: REGION, retry: true,
-  secrets: [...r2Secrets, studioSecret], memory: "1GiB", concurrency: 1, timeoutSeconds: 120}, async (event) => {
+  secrets: [...r2Secrets, studioSecret], memory: "1GiB", concurrency: 1, timeoutSeconds: 120,
+  maxInstances: 3}, async (event) => {
   const after = event.data?.after;
   const before = event.data?.before;
   if (after?.exists) {
@@ -705,7 +706,7 @@ export async function sweepR2Tombstones(nowMs = Date.now()): Promise<number> {
   if (rows.size < 100) await stateRef.set({cursorId: ""}, {merge: true});
   return cleaned;
 }
-export const onR2TombstoneCleanup = onSchedule({schedule: "every 24 hours", region: REGION, maxInstances: 1, secrets: r2Secrets},
+export const onR2TombstoneCleanup = onSchedule({schedule: "every 24 hours", region: REGION, secrets: r2Secrets},
   async () => {
     await sweepR2Tombstones();
   });

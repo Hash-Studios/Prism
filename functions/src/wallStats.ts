@@ -38,7 +38,6 @@ export const recordWallpaperAction = onCall(
   {
     region: CALLABLE_REGIONS,
     cors: true,
-    maxInstances: 10,
   },
   async (request: CallableRequest<{wallId?: string; action?: string; requestId?: unknown}>) => {
     const uid = request.auth?.uid;

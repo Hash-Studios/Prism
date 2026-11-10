@@ -293,7 +293,7 @@ export async function takeLinkQuota(address: string, now = Date.now()): Promise<
  * limits abuse.
  */
 export const shareLinkImage = onCall(
-  {region: CALLABLE_REGIONS, cors: true, maxInstances: 10, timeoutSeconds: 15, memory: "256MiB"},
+  {region: CALLABLE_REGIONS, cors: true, timeoutSeconds: 15, memory: "256MiB"},
   async (request) => {
     const url = (request.data as {url?: unknown} | null)?.url;
     if (typeof url !== "string" || url.length === 0 || url.length > MAX_URL_LENGTH) {

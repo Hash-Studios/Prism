@@ -64,7 +64,8 @@ const REFERRAL_NEW_ACCOUNT_MS = 14 * 86_400_000;
 // Mirrors defaultProfilePhotoUrl in lib/core/constants/app_constants.dart.
 const DEFAULT_PROFILE_PHOTO =
   "https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4";
-const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true, maxInstances: 10};
+const CALLABLE_OPTIONS = {region: CALLABLE_REGIONS, cors: true};
+const spendCoinsOptions = {...CALLABLE_OPTIONS, maxInstances: 2};
 const AD_RATE_MIN_GAP_MS = 20_000;
 
 /** Unset preserves shipped clients. An invalid configured cutoff fails closed. */
@@ -903,7 +904,7 @@ export const spinWheel = onCall(
   },
 );
 
-export const spendCoins = onCall(CALLABLE_OPTIONS, async (request: CallableRequest<Record<string, unknown>>) => {
+export const spendCoins = onCall(spendCoinsOptions, async (request: CallableRequest<Record<string, unknown>>) => {
   const callerUid = uid(request);
   if (request.data?.expectedUserId !== undefined && request.data.expectedUserId !== callerUid) {
     throw new HttpsError("unauthenticated", "Spend owner is not signed in.");

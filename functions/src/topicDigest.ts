@@ -327,7 +327,7 @@ export async function sendDueTopicDigests(nowMs: number): Promise<number> {
 }
 
 export const sendTopicDigests = onSchedule(
-  {schedule: "*/15 * * * *", timeZone: "UTC", region: REGION, retryCount: 1, timeoutSeconds: 540},
+  {schedule: "*/15 * * * *", timeZone: "UTC", region: REGION, retryCount: 1, timeoutSeconds: 540, cpu: "gcf_gen1"},
   async (event) => {
     const ms = Date.parse(event.scheduleTime);
     await sendDueTopicDigests(Number.isFinite(ms) ? ms : Date.now());

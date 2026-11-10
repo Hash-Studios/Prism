@@ -35,6 +35,7 @@ export const onCampaignNotificationRequested = onDocumentCreated(
   {
     document: "notificationRequests/{requestId}",
     region: REGION,
+    cpu: "gcf_gen1",
   },
   async (event) => {
     const requestId = event.params.requestId;
