@@ -281,7 +281,7 @@ On 2026-11-09, the full 3.26.0 deploy had 200 instances live in `asia-south1` fr
 ### The rule
 
 1. `functions/src/common.ts` sets `maxInstances: 1` for every function with `setGlobalOptions`.
-2. Set a higher `maxInstances` on a function only when its 30-day peak of active instances needs it.
+2. Set a higher `maxInstances` on a function only when its 30-day peak of active instances needs it, or when it is at its cap and turns work away. A peak that is equal to the cap does not show the refused demand. For a function at its cap, also look for 429 responses in its logs and for events that arrive late.
 3. Do not set `maxInstances` lower than the 30-day peak of a user-facing callable. A user-facing callable with `concurrency: 1` (for example `githubPutFile`) needs at least 2 instances.
 4. A callable that only an admin can use takes `ADMIN_CALLABLE` from `common.ts`. It sets 1st gen CPU and 1 instance. If a user can call it on any path, it is a user-facing callable.
 5. Use `cpu: "gcf_gen1"` only for a light job. A job is light when its p95 run time, multiplied by 6, is less than half of its timeout and less than half of its schedule interval. The production p95 values come from full CPU, so this is an estimate. Check the logs of the job after the deploy.
@@ -305,7 +305,7 @@ If the budget test fails, do one of these:
 | `onOwnedWallWritten` | 3, concurrency 1 | 20 | Conversions wait. A new wall shows in feeds only after `originalProtected` is set. |
 | `onWallCategorize` | 2, concurrency 1 | 8 | Categories come later. |
 | `onWallModerate` | 1, concurrency 1 | 2 | Moderation signals come later in the review queue. |
-| Other triggers | 1 or 2 | up to 10 | Events wait. Firestore events that get a 429 are delivered again. |
+| Other triggers | 1 or 2 | up to 10 | Events wait. Firestore events that get a 429 are delivered again, for up to 24 hours (Eventarc retention). After 24 hours, Eventarc discards the event. If a backlog lasts that long, raise the cap and run a backfill for the records that were not processed. |
 
 Callables and HTTP functions are different. A request at the cap waits for about 30 seconds and then gets a 429. To set these three triggers back to their peaks, the region needs 24 more vCPU. That needs a quota increase.
 
@@ -318,7 +318,7 @@ Use the Cloud Monitoring metric `run.googleapis.com/container/instance_count` wi
 The error is "Quota exceeded for total allowable CPU per project per region". The old revision continues to serve.
 
 1. Search the deploy log for each failed function name.
-2. Look at the live CPU use: the Cloud Monitoring metric `serviceruntime.googleapis.com/quota/rate/net_usage` with `quota_metric="run.googleapis.com/cpu_allocation"`. Wait until it is well below 200,000 (mCPU). Do not use a fixed wait time.
+2. Look at the CPU use in the region of the failed function: the Cloud Monitoring metric `serviceruntime.googleapis.com/quota/rate/net_usage` with `quota_metric="run.googleapis.com/cpu_allocation"` and `resource.label.location` set to that region. Wait until it is well below 200,000 (mCPU). Samples can arrive up to 240 seconds late, so use only a sample that is later than the end of the failed deploy. Do not use a fixed wait time.
 3. Get the owner's yes. Then deploy only the failed functions: `firebase deploy --only functions:<name1>,functions:<name2> --project prism-wallpapers --account <email> --non-interactive`.
 
 ## Fix wave (second round of this release)
