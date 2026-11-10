@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
@@ -25,6 +26,7 @@ class PublicFolderState {
     this.folder,
     this.walls = const <PrismWallpaper>[],
     this.following = false,
+    this.followStateReady = false,
     this.followBusy = false,
     this.sectionOf = const <String, String>{},
   });
@@ -33,6 +35,7 @@ class PublicFolderState {
   final PublicFolderEntity? folder;
   final List<PrismWallpaper> walls;
   final bool following;
+  final bool followStateReady;
   final bool followBusy;
 
   /// Wall id to section id, for the walls in a section.
@@ -43,6 +46,7 @@ class PublicFolderState {
     PublicFolderEntity? folder,
     List<PrismWallpaper>? walls,
     bool? following,
+    bool? followStateReady,
     bool? followBusy,
     Map<String, String>? sectionOf,
   }) => PublicFolderState(
@@ -50,6 +54,7 @@ class PublicFolderState {
     folder: folder ?? this.folder,
     walls: walls ?? this.walls,
     following: following ?? this.following,
+    followStateReady: followStateReady ?? this.followStateReady,
     followBusy: followBusy ?? this.followBusy,
     sectionOf: sectionOf ?? this.sectionOf,
   );
@@ -69,7 +74,11 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
   final MoodRepository _walls;
   late final StreamSubscription<void> _visibility;
   ({String folderId, String viewerId})? _request;
+  ({String folderId, String viewerId})? _loadingRequest;
+  Future<void>? _loading;
   int _loadVersion = 0;
+
+  int get requestRevision => _loadVersion;
 
   @override
   Future<void> close() async {
@@ -81,8 +90,31 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
 
   /// The viewer started Save all on this folder. Discovery counts it as a save.
   void recordSave() {
-    final String? folderId = _request?.folderId;
-    if (folderId != null) unawaited(_repository.recordSignal(folderId, FolderSignal.save));
+    final ({String folderId, String viewerId})? request = _request;
+    if (request != null &&
+        request.viewerId.isNotEmpty &&
+        app_state.prismUser.loggedIn &&
+        app_state.prismUser.id == request.viewerId) {
+      unawaited(_repository.recordSignal(request.folderId, FolderSignal.save));
+    }
+  }
+
+  bool isReadyForViewer(String viewerId) =>
+      _request?.viewerId == viewerId && state.status == PublicFolderStatus.ready && state.followStateReady;
+
+  Future<void> loadForViewer(String folderId, {required String viewerId}) {
+    final request = (folderId: folderId, viewerId: viewerId);
+    if (_request?.folderId == folderId && isReadyForViewer(viewerId)) return Future<void>.value();
+    if (_loadingRequest == request && _loading != null) return _loading!;
+    _loadingRequest = request;
+    final Future<void> pending = load(folderId, viewerId: viewerId);
+    _loading = pending;
+    return pending.whenComplete(() {
+      if (identical(_loading, pending)) {
+        _loading = null;
+        _loadingRequest = null;
+      }
+    });
   }
 
   /// A [quiet] load keeps the shown folder until the new one arrives and on read errors.
@@ -128,6 +160,7 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
           folder: found,
           walls: walls,
           following: following.data ?? false,
+          followStateReady: viewerId.isEmpty || following.isSuccess,
           sectionOf: <String, String>{
             for (final PublicFolderWall wall in ids.data!)
               if (wall.sectionId case final String sectionId) wall.id: sectionId,
@@ -135,7 +168,10 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
         ),
       );
       // A quiet reload is the same visit, so only the first load counts as an open for discovery.
-      if (!keep) unawaited(_repository.recordSignal(folderId, FolderSignal.open));
+      // The signal callable needs sign-in, so a guest open is not counted.
+      if (!keep && viewerId.isNotEmpty && app_state.prismUser.loggedIn && app_state.prismUser.id == viewerId) {
+        unawaited(_repository.recordSignal(folderId, FolderSignal.open));
+      }
     } catch (error, stackTrace) {
       logger.w('[PublicFolderCubit] walls failed', error: error, stackTrace: stackTrace);
       if (keep) return;
@@ -146,7 +182,15 @@ class PublicFolderCubit extends Cubit<PublicFolderState> {
   /// Follows or unfollows at once, and undoes the change when the server refuses it. Returns the refusal.
   Future<PublicFolderFailure?> toggleFollow() async {
     final PublicFolderEntity? folder = state.folder;
-    if (folder == null || state.followBusy || state.status != PublicFolderStatus.ready) return null;
+    final String viewerId = app_state.prismUser.loggedIn ? app_state.prismUser.id : '';
+    if (viewerId.isEmpty ||
+        _request?.viewerId != viewerId ||
+        folder == null ||
+        state.followBusy ||
+        state.status != PublicFolderStatus.ready) {
+      return null;
+    }
+    if (!state.followStateReady) return const PublicFolderFailure('Could not load follow state.');
     final int version = ++_loadVersion;
     bool current() => !isClosed && version == _loadVersion;
     final bool next = !state.following;

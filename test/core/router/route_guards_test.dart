@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/auth_navigation_continuation.dart';
+import 'package:Prism/core/router/deep_link_action_entity.dart';
+import 'package:Prism/core/router/deep_link_catalog_resolver.dart';
 import 'package:Prism/core/router/route_guards.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:auto_route/auto_route.dart';
@@ -328,6 +330,39 @@ void main() {
         expect(find.text(UserSearchRoute.name), findsOneWidget);
       }
     }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+  }
+
+  for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+    for (final relation in ['followers', 'following']) {
+      testWidgets('signed-out $platform relation link falls back to a guarded public profile: $relation', (
+        tester,
+      ) async {
+        final appRouter = _HistoryGuardRouter();
+        final continuation = AuthNavigationContinuation.of(appRouter);
+        addTearDown(continuation.dispose);
+        await tester.pumpWidget(MaterialApp.router(routerConfig: appRouter.config()));
+        await tester.pumpAndSettle();
+        final path = '/user/alice/$relation';
+        final route = await routeForPageLink(
+          PageLinkIntent(path: path, rawUri: path),
+          profileLookup: (_) async => throw StateError('The relation fallback must not look up the profile'),
+        );
+        expect(route, isA<ProfileRoute>());
+
+        unawaited(appRouter.push(route!));
+        await tester.pumpAndSettle();
+
+        if (platform == TargetPlatform.android) {
+          expect(appRouter.current.name, OnboardingV2ShellRoute.name);
+          expect(find.text(ProfileRoute.name), findsNothing);
+          expect(continuation.pendingNavigation, isNotNull);
+        } else {
+          expect(appRouter.currentUrl, '/user/alice');
+          expect(find.text(ProfileRoute.name), findsOneWidget);
+          expect(continuation.pendingNavigation, isNull);
+        }
+      }, variant: TargetPlatformVariant.only(platform));
+    }
   }
 
   for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {

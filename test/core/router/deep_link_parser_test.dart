@@ -85,6 +85,26 @@ void main() {
     expect((action as ReferLinkIntent).inviterId, 'u123');
   });
 
+  test('legacy identifiers reject blank, ambiguous, and path-shaped values', () {
+    for (final String link in <String>[
+      'https://prismwalls.com/share?id=%20',
+      'prism://share/a%2Fb',
+      'https://prismwalls.com/profile/alice%2F..',
+      'https://prismwalls.com/profile/${Uri.encodeComponent('é' * 751)}',
+      'https://prismwalls.com/profile?username=alice%2F..',
+      'https://prismwalls.com/refer?userID=alice%2F..',
+      'https://prismwalls.com/share?id=first&id=second',
+    ]) {
+      expect(parser.parse(Uri.parse(link)), isA<UnknownIntent>(), reason: link);
+    }
+
+    expect(
+      parser.parse(Uri.parse('https://prismwalls.com/profile/%E6%97%A5%E6%9C%AC%E8%AA%9E')),
+      isA<UserLinkIntent>(),
+    );
+    expect(parser.parse(Uri.parse('https://prismwalls.com/l/abc1234')), isA<ShortCodeIntent>());
+  });
+
   test('parses the economy screen links', () {
     const Set<String> expected = <String>{'shop', 'drops', 'leaderboard', 'draw'};
     for (final String root in expected) {
@@ -149,9 +169,18 @@ void main() {
     expect(share.thumbnailUrl, thumb);
   });
 
-  test('a short code with an escaped percent sign parses without throwing', () {
-    final DeepLinkActionEntity action = parser.parse(parser.transform(Uri.parse('https://prismwalls.com/l/%25')));
-    expect((action as ShortCodeIntent).code, '%');
+  test('short codes match the resolver path contract', () {
+    for (final String link in <String>[
+      'https://prismwalls.com/l/abc',
+      'https://prismwalls.com/l/abc12345678',
+      'https://prismwalls.com/l/abc123456789',
+      'https://prismwalls.com/l/%25',
+      'https://prismwalls.com/l/a%2Fb1234',
+      'https://prismwalls.com/l?code=abc%3Fadmin=true',
+    ]) {
+      expect(parser.parse(parser.transform(Uri.parse(link))), isA<UnknownIntent>(), reason: link);
+    }
+    expect(parser.parse(Uri.parse('https://prismwalls.com/l/abc1234')), isA<ShortCodeIntent>());
   });
 
   test('malformed percent encoding returns unknown without throwing', () {
@@ -182,7 +211,7 @@ void main() {
       expect(parser.parse(Uri.parse('https://prismwalls.com/user/alice')), isA<PageLinkIntent>());
       expect(parser.parse(Uri.parse('https://prismwalls.com/setup/desk')), isA<SetupLinkIntent>());
       expect(parser.parse(Uri.parse('https://prismwalls.com/refer/u1')), isA<ReferLinkIntent>());
-      expect(parser.parse(Uri.parse('https://prismwalls.com/l/abc')), isA<ShortCodeIntent>());
+      expect(parser.parse(Uri.parse('https://prismwalls.com/l/abc1234')), isA<ShortCodeIntent>());
     });
 
     test('older aliases still resolve', () {
@@ -203,7 +232,7 @@ void main() {
       expect(parser.parse(parser.transform(Uri.parse('prism://share/abc?thumb=t'))), isA<ShareLinkIntent>());
       expect(parser.parse(parser.transform(Uri.parse('prism://user/alice'))), isA<PageLinkIntent>());
       expect(parser.parse(parser.transform(Uri.parse('prism://refer/u1'))), isA<ReferLinkIntent>());
-      expect(parser.parse(parser.transform(Uri.parse('prism://l/abc'))), isA<ShortCodeIntent>());
+      expect(parser.parse(parser.transform(Uri.parse('prism://l/abc1234'))), isA<ShortCodeIntent>());
     });
 
     test('web pages and look-alike paths stay unknown', () {

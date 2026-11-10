@@ -189,7 +189,9 @@ void main() {
     _router = _MockStackRouter();
     when(() => _router.stack).thenReturn(const <AutoRoutePage<dynamic>>[]);
     _publicRepo = _FakePublicFoldersRepository();
-    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'u1'
+      ..loggedIn = true;
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     getIt.registerSingleton<PublicFoldersRepository>(_publicRepo);
   });

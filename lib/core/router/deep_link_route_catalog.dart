@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 
 /// The path-only contract for every app route that can be opened from a URL.
@@ -226,6 +228,9 @@ final class DeepLinkRouteCatalog {
 
   static const Set<String> _utmKeys = <String>{'utm_source', 'utm_medium', 'utm_campaign'};
   static final RegExp _inviteCodePattern = RegExp(r'^[A-Za-z0-9]{10}$');
+  static final RegExp _folderIdPattern = RegExp(r'^[A-Za-z0-9_-]{1,128}$');
+  static final RegExp _wallpaperIdPattern = RegExp(r'^[A-Za-z0-9._-]{1,200}$');
+  static final RegExp _controlCharacter = RegExp(r'[\u0000-\u001F\u007F]');
   static const Map<DeepLinkPageTarget, Set<String>> _allowedQuery = <DeepLinkPageTarget, Set<String>>{
     DeepLinkPageTarget.wallpaperDetail: <String>{'wallId', 'id', 'source', 'provider'},
     DeepLinkPageTarget.library: <String>{'tab'},
@@ -343,9 +348,14 @@ final class DeepLinkRouteCatalog {
     if (target == null) return null;
 
     final String? inviteCode = query['invite'];
-    if (target == DeepLinkPageTarget.folder && inviteCode != null && _inviteCodePattern.hasMatch(inviteCode)) {
-      target = DeepLinkPageTarget.folderInvite;
-      pathParams['code'] = inviteCode;
+    if (inviteCode != null) {
+      if (!_inviteCodePattern.hasMatch(inviteCode)) return null;
+      if (target == DeepLinkPageTarget.folder) {
+        target = DeepLinkPageTarget.folderInvite;
+        pathParams['code'] = inviteCode;
+      } else if (target == DeepLinkPageTarget.folderInvite && pathParams['code'] != inviteCode) {
+        return null;
+      }
     }
 
     final Set<String> allowed = _allowedQuery[target] ?? const <String>{};
@@ -358,12 +368,29 @@ final class DeepLinkRouteCatalog {
 
     final String? identifier = pathParams['identifier'] ?? query['identifier'] ?? query['user'];
     if ((target == DeepLinkPageTarget.followers || target == DeepLinkPageTarget.following) &&
-        (identifier == null || identifier.trim().isEmpty)) {
+        (identifier == null || !_isSafeIdentifier(identifier))) {
       return null;
     }
     final String? wallId = pathParams['wallId'] ?? query['wallId'] ?? query['id'];
-    if (target == DeepLinkPageTarget.wallpaperDetail && (wallId == null || wallId.trim().isEmpty)) {
+    if (target == DeepLinkPageTarget.wallpaperDetail &&
+        (wallId == null || !_wallpaperIdPattern.hasMatch(wallId) || !_isSafeIdentifier(wallId))) {
       return null;
+    }
+    if (pathParams.containsKey('folderId') && !_folderIdPattern.hasMatch(pathParams['folderId']!)) return null;
+    if ((target == DeepLinkPageTarget.wallpaperPositionInput ||
+            target == DeepLinkPageTarget.downloadWallpaperInput ||
+            target == DeepLinkPageTarget.liveWallpaperInput) &&
+        pathParams.containsKey('wallpaperId') &&
+        !_wallpaperIdPattern.hasMatch(pathParams['wallpaperId']!)) {
+      return null;
+    }
+    for (final String key in <String>['identifier', 'user', 'wallId', 'id', 'wallpaperId']) {
+      final String? value = query[key];
+      if (value != null && value.isNotEmpty && !_isSafeIdentifier(value)) return null;
+    }
+    for (final String key in <String>['wallId', 'id', 'wallpaperId']) {
+      final String? value = query[key];
+      if (value != null && value.isNotEmpty && !_wallpaperIdPattern.hasMatch(value)) return null;
     }
     if (target == DeepLinkPageTarget.gallery && !_validGalleryIds(query['ids'] ?? '')) {
       return null;
@@ -431,9 +458,7 @@ final class DeepLinkRouteCatalog {
         (pathParams['identifier'] ?? '').contains('/')) {
       return null;
     }
-    if (pathParams.values.any(
-      (String value) => value == '.' || value == '..' || value.contains('/') || value.contains('\\'),
-    )) {
+    if (pathParams.values.any((String value) => !_isSafeIdentifier(value))) {
       return null;
     }
 
@@ -505,6 +530,15 @@ final class DeepLinkRouteCatalog {
     final List<String> ids = raw.split(',').map((id) => id.trim()).where((id) => id.isNotEmpty).toList();
     return ids.length >= 2 && ids.length <= 12 && ids.every(RegExp(r'^[A-Za-z0-9_-]{1,200}$').hasMatch);
   }
+
+  static bool _isSafeIdentifier(String value) =>
+      value.trim().isNotEmpty &&
+      utf8.encode(value).length <= 1500 &&
+      value != '.' &&
+      value != '..' &&
+      !value.contains('/') &&
+      !value.contains('\\') &&
+      !_controlCharacter.hasMatch(value);
 
   static const Map<String, DeepLinkPageTarget> _staticTargets = <String, DeepLinkPageTarget>{
     '/creator-stats': DeepLinkPageTarget.creatorStats,

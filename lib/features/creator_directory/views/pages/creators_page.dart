@@ -4,6 +4,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/features/creator_directory/biz/creator_directory_cubit.dart';
+import 'package:Prism/features/creator_directory/views/creator_directory_session_scope.dart';
 import 'package:Prism/features/creator_directory/views/widgets/creator_directory_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
@@ -21,19 +22,18 @@ class CreatorsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: <BlocProvider<dynamic>>[
-        BlocProvider<CreatorDirectoryCubit>(create: (_) => getIt<CreatorDirectoryCubit>()..loadPage()),
-        BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
-      ],
-      child: BlocListener<PublicProfileBloc, PublicProfileState>(
-        listenWhen: (prev, curr) => curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
-        listener: (context, state) => showFollowOutcomeToast(context, state.followOutcome!),
-        child: BlocBuilder<CreatorDirectoryCubit, CreatorDirectoryState>(
-          builder: (context, state) => PrismPage(
-            title: context.l10n.creatorsTitle,
-            headerBottom: state.categories.isEmpty ? null : _CategoryChips(state: state),
-            body: _Body(state: state),
+    return CreatorDirectorySessionScope(
+      child: BlocProvider<CreatorDirectoryCubit>(
+        create: (_) => getIt<CreatorDirectoryCubit>()..loadPage(),
+        child: BlocListener<PublicProfileBloc, PublicProfileState>(
+          listenWhen: (prev, curr) => curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
+          listener: (context, state) => showFollowOutcomeToast(context, state.followOutcome!),
+          child: BlocBuilder<CreatorDirectoryCubit, CreatorDirectoryState>(
+            builder: (context, state) => PrismPage(
+              title: context.l10n.creatorsTitle,
+              headerBottom: state.categories.isEmpty ? null : _CategoryChips(state: state),
+              body: _Body(state: state),
+            ),
           ),
         ),
       ),

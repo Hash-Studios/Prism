@@ -190,14 +190,60 @@ void main() {
     }
   });
 
+  test('catalog rejects blank, oversized, and unsafe dynamic identifiers', () {
+    for (final String uri in <String>[
+      '/folder/%20',
+      '/folder/${'f' * 129}',
+      '/folder/${'f' * 129}?invite=ABCDEFGHJK',
+      '/folder/a%5Cb',
+      '/mood/%20',
+      '/collection/%20',
+      '/drops/%20',
+      '/wallpaper/%20',
+      '/wallpaper/${'w' * 201}',
+      '/user/%20',
+      '/user/alice/followers?user=%20',
+      '/wallpaper-detail?wallId=%20',
+      '/wallpaper-detail?wallId=${'w' * 201}',
+      '/wallpaper-detail?wallId=..',
+      '/wallpaper-detail?wallId=a%2Fb',
+      '/folder/AbC123_x-9?invite=bad',
+      '/folder/AbC123_x-9?invite=ABCDEFGHJK2',
+      '/folder/invite/ABCDEFGHJK?invite=1234567890',
+      '/folder/invite/AAAAAAAAAA%2F',
+      '/library?user=other',
+      '/fav-walls?user=other',
+      '/notifications?user=other',
+      '/coin-history?user=other',
+      '/collection/${Uri.encodeComponent('é' * 751)}',
+    ]) {
+      expect(DeepLinkRouteCatalog.match(Uri.parse(uri)), isNull, reason: uri);
+    }
+
+    expect(
+      DeepLinkRouteCatalog.match(Uri.parse('/collection/%E6%97%A5%E6%9C%AC%E8%AA%9E'))?.path,
+      '/collection/%E6%97%A5%E6%9C%AC%E8%AA%9E',
+    );
+    expect(DeepLinkRouteCatalog.match(Uri.parse('/folder/AbC123_x-9'))?.path, '/folder/AbC123_x-9');
+    expect(DeepLinkRouteCatalog.match(Uri.parse('/folder/invite'))?.target, DeepLinkPageTarget.folder);
+    expect(DeepLinkRouteCatalog.match(Uri.parse('/wallpaper/${'w' * 200}'))?.path, '/wallpaper/${'w' * 200}');
+    expect(DeepLinkRouteCatalog.match(Uri.parse('/folder/invite/ABCDEFGHJK'))?.target, DeepLinkPageTarget.folderInvite);
+    final DeepLinkRouteMatch? folderInvite = DeepLinkRouteCatalog.match(
+      Uri.parse('/folder/AbC123_x-9?invite=ABCDEFGHJK'),
+    );
+    expect(folderInvite?.target, DeepLinkPageTarget.folderInvite);
+    expect(folderInvite?.pathParams['folderId'], 'AbC123_x-9');
+  });
+
   test('folder deep links are guarded or safely rejected after URI normalization', () async {
     final List<(String, String?)> cases = <(String, String?)>[
       ('/folder/', null),
       // Uri normalizes a dot segment before the catalog sees it, so this safely resumes at startup.
       ('/folder/%2E%2E', DashboardRoute.name),
       ('/folder/a%2Fb', null),
-      ('/folder/${'a' * 129}', FolderRoute.name),
-      ('/folder/caf%C3%A9', FolderRoute.name),
+      // Folder ids are ASCII letters, digits, `_` and `-`, 1 to 128 characters.
+      ('/folder/${'a' * 129}', null),
+      ('/folder/caf%C3%A9', null),
       ('/folder/invite', FolderRoute.name),
     ];
 
@@ -209,16 +255,12 @@ void main() {
         for (final String name in _routeNames(route)) {
           expect(routeAccess, contains(name), reason: '$uri resolves to unguarded route $name');
         }
-        expect(
-          routeAccess[route.routeName],
-          expectedRouteName == FolderRoute.name ? RouteAccess.owner : RouteAccess.public,
-          reason: uri,
-        );
+        expect(routeAccess[route.routeName], RouteAccess.public, reason: uri);
       }
     }
   });
 
-  test('folder invite queries resolve to a guarded invite or owner-only folder route', () async {
+  test('folder invite queries resolve to an account route or reject invalid codes', () async {
     const String code = 'ABCDEFGHJK';
     final DeepLinkRouteMatch? invite = DeepLinkRouteCatalog.match(Uri.parse('/folder/ignored-folder?invite=$code'));
     expect(invite?.target, DeepLinkPageTarget.folderInvite);
@@ -233,10 +275,13 @@ void main() {
 
     for (final String uri in <String>['/folder/ignored-folder?invite=short', '/folder/ignored-folder?invite=']) {
       final DeepLinkRouteMatch? match = DeepLinkRouteCatalog.match(Uri.parse(uri));
-      expect(match?.target, DeepLinkPageTarget.folder, reason: uri);
-      final PageRouteInfo? route = await routeForPageLink(parser.parse(Uri.parse(uri)) as PageLinkIntent);
-      expect(route, isA<FolderRoute>(), reason: uri);
-      expect(routeAccess[route!.routeName], RouteAccess.owner, reason: uri);
+      expect(match, isNull, reason: uri);
+      expect(parser.parse(Uri.parse(uri)), isA<UnknownIntent>(), reason: uri);
+      expect(
+        await routeForPageLink(PageLinkIntent(path: uri, rawUri: uri)),
+        isNull,
+        reason: uri,
+      );
     }
   });
 
@@ -368,6 +413,17 @@ void main() {
     ))!;
     expect((following.args! as FollowingListRouteArgs).userId, profile.id);
     expect(routeAccess[following.routeName], RouteAccess.account);
+  });
+
+  test('a guest relation link opens the public profile without a profile lookup', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    for (final String path in ['/user/alice/followers', '/user/alice/following']) {
+      final PageRouteInfo? route = await routeForPageLink(
+        parser.parse(Uri.parse(path)) as PageLinkIntent,
+        profileLookup: (String _) async => throw StateError('The relation fallback must not look up the profile'),
+      );
+      expect((route!.args! as ProfileRouteArgs).profileIdentifier, 'alice', reason: path);
+    }
   });
 
   test('read-only wallpaper lookup maps provider repositories to source entities', () async {

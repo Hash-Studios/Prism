@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/generated/analytics_events.g.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -11,6 +12,7 @@ import 'package:Prism/features/creator_directory/views/widgets/creator_directory
 import 'package:Prism/features/creator_directory/views/widgets/creators_section.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/usecases/public_profile_usecases.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -19,6 +21,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/favourite_test_scope.dart';
+import '../../support/profile_user_fixture.dart';
 import 'creator_directory_test_support.dart';
 
 class _MockWalls extends Mock implements FetchPublicProfileWallsUseCase {}
@@ -272,5 +275,44 @@ void main() {
 
     expect(find.text('Creator a'), findsNothing);
     expect(find.text('Creator b'), findsOneWidget);
+  });
+
+  testWidgets('logout restores filtered creators and clears the row follow override', (tester) async {
+    final FakeCreatorSessionRepository session = FakeCreatorSessionRepository(app_state.prismUser);
+    getIt.registerSingleton<SessionRepository>(session);
+    addTearDown(session.close);
+    final oldBloc = publicProfileBlocWith(
+      state: PublicProfileState.initial().copyWith(followOverrides: <String, bool>{'b': true}),
+    );
+    final List<PublicProfileBloc> blocs = <PublicProfileBloc>[oldBloc, publicProfileBlocWith()];
+    repo.followed = <String>{'a'};
+    repo.pages[(null, null)] = creatorPage(<DirectoryCreator>[directoryCreator('a'), directoryCreator('b')]);
+    await pumpCreators(
+      tester,
+      const Scaffold(
+        body: SingleChildScrollView(child: CreatorsSection(source: 'home')),
+      ),
+      repository: repo,
+      profileBloc: oldBloc,
+      profileBlocFactory: () => blocs.removeAt(0),
+    );
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Creator a'), findsNothing);
+    expect(find.text('Following'), findsOneWidget);
+
+    app_state.prismUser = profileUser(loggedIn: false);
+    session.setUser(app_state.prismUser);
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Creator a'), findsOneWidget);
+    expect(find.text('Creator b'), findsOneWidget);
+    expect(find.text('Following'), findsNothing);
+    expect(find.text('Follow'), findsNWidgets(2));
+    expect(repo.followedAmongCalls, hasLength(1));
+    verify(() => oldBloc.close()).called(1);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }

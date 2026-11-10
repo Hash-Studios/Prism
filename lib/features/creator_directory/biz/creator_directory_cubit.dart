@@ -76,8 +76,23 @@ class CreatorDirectoryCubit extends Cubit<CreatorDirectoryState> {
   List<DirectoryCreator> _all = const <DirectoryCreator>[];
 
   /// Shows a fixed list, for the More like sheet. Blocks still remove creators from it.
-  void show(List<DirectoryCreator> creators) =>
-      emit(CreatorDirectoryState(status: CreatorDirectoryStatus.loaded, creators: creators));
+  void show(List<DirectoryCreator> creators) {
+    _load++;
+    emit(CreatorDirectoryState(status: CreatorDirectoryStatus.loaded, creators: creators));
+    unawaited(_refreshFixedFollowState(_viewer));
+  }
+
+  Future<void> _refreshFixedFollowState(String viewer) async {
+    final int load = _load;
+    final List<DirectoryCreator> creators = state.creators;
+    try {
+      final Set<String> followed = await _followed(_uids(creators), viewer);
+      if (isClosed || load != _load || _viewer != viewer) return;
+      emit(state.copyWith(followed: followed));
+    } catch (error) {
+      logger.w('[CreatorDirectory] similar follow state failed', error: error);
+    }
+  }
 
   /// A creator the viewer blocks leaves the list at once, without a reload. Filtering [_all], not the shown list,
   /// brings back creators that an unknown block list hid.
@@ -102,19 +117,18 @@ class CreatorDirectoryCubit extends Cubit<CreatorDirectoryState> {
     return super.close();
   }
 
-  /// Loads the Home or search row. Signed-out guests cannot read the directory, so the row stays empty for them.
+  /// The signed-in user's id, or empty for a guest. Guests can read the directory.
+  static String get _viewer => app_state.prismUser.loggedIn ? app_state.prismUser.id : '';
+
+  /// Loads the Home or search row.
   Future<void> loadRow() async {
     final int load = ++_load;
-    if (!app_state.prismUser.loggedIn) {
-      emit(const CreatorDirectoryState(status: CreatorDirectoryStatus.loaded));
-      return;
-    }
-    final String viewer = app_state.prismUser.id;
+    final String viewer = _viewer;
     try {
       final CreatorPage page = await _repository.fetchPage(limit: rowSize);
-      final Set<String> followed = await _repository.followedAmong(_uids(page.creators));
+      final Set<String> followed = await _followed(_uids(page.creators), viewer);
       if (isClosed || load != _load) return;
-      if (!app_state.prismUser.loggedIn || app_state.prismUser.id != viewer) {
+      if (_viewer != viewer) {
         emit(const CreatorDirectoryState(status: CreatorDirectoryStatus.loaded));
         return;
       }
@@ -133,17 +147,13 @@ class CreatorDirectoryCubit extends Cubit<CreatorDirectoryState> {
   /// Loads the first page of See all, filtered to [category] when set.
   Future<void> loadPage({String? category}) async {
     final int load = ++_load;
-    if (!app_state.prismUser.loggedIn) {
-      emit(const CreatorDirectoryState(status: CreatorDirectoryStatus.loaded));
-      return;
-    }
-    final String viewer = app_state.prismUser.id;
+    final String viewer = _viewer;
     emit(state.copyWith(status: CreatorDirectoryStatus.loading, category: () => category, loadingMore: false));
     try {
       final CreatorPage page = await _repository.fetchPage(category: category);
-      final Set<String> followed = await _repository.followedAmong(_uids(page.creators));
+      final Set<String> followed = await _followed(_uids(page.creators), viewer);
       if (isClosed || load != _load) return;
-      if (!app_state.prismUser.loggedIn || app_state.prismUser.id != viewer) {
+      if (_viewer != viewer) {
         emit(const CreatorDirectoryState(status: CreatorDirectoryStatus.loaded));
         return;
       }
@@ -163,21 +173,16 @@ class CreatorDirectoryCubit extends Cubit<CreatorDirectoryState> {
   }
 
   Future<void> loadMore() async {
-    if (!app_state.prismUser.loggedIn) {
-      ++_load;
-      emit(const CreatorDirectoryState(status: CreatorDirectoryStatus.loaded));
-      return;
-    }
-    final String viewer = app_state.prismUser.id;
+    final String viewer = _viewer;
     final int? after = state.nextRank;
     if (after == null || state.loadingMore || state.status != CreatorDirectoryStatus.loaded) return;
     final int load = _load;
     emit(state.copyWith(loadingMore: true));
     try {
       final CreatorPage page = await _repository.fetchPage(category: state.category, afterRank: after);
-      final Set<String> followed = await _repository.followedAmong(_uids(page.creators));
+      final Set<String> followed = await _followed(_uids(page.creators), viewer);
       if (isClosed || load != _load) return;
-      if (!app_state.prismUser.loggedIn || app_state.prismUser.id != viewer) {
+      if (_viewer != viewer) {
         emit(const CreatorDirectoryState(status: CreatorDirectoryStatus.loaded));
         return;
       }
@@ -197,6 +202,9 @@ class CreatorDirectoryCubit extends Cubit<CreatorDirectoryState> {
   }
 
   static List<String> _uids(List<DirectoryCreator> creators) => creators.map((c) => c.uid).toList(growable: false);
+
+  Future<Set<String>> _followed(List<String> uids, String viewer) =>
+      viewer.isEmpty || _viewer != viewer ? Future<Set<String>>.value(<String>{}) : _repository.followedAmong(uids);
 
   static List<String> _chips(List<DirectoryCreator> creators) {
     final Map<String, int> counts = <String, int>{};

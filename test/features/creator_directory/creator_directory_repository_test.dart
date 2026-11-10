@@ -120,7 +120,7 @@ void main() {
   tearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
 
   group('CreatorDirectoryRepositoryImpl', () {
-    test('guests do not query the directory or call followedBy', () async {
+    test('guests read the directory but no follows, similar creators or followedBy', () async {
       app_state.prismUser = app_constants.createGuestPrismUser();
       final firestore = _FakeFirestore(directory: const <_Row>[]);
       int calls = 0;
@@ -129,9 +129,11 @@ void main() {
         return null;
       });
       expect((await repo.fetchPage()).creators, isEmpty);
+      expect(firestore.specs.map((spec) => spec.collection), <String>['creatorDirectory']);
+      expect(await repo.followedAmong(<String>['creator']), isEmpty);
       expect(await repo.similarTo('creator'), isEmpty);
       expect((await repo.followedBy('creator')).count, 0);
-      expect(firestore.specs, isEmpty);
+      expect(firestore.specs, hasLength(1));
       expect(calls, 0);
     });
 

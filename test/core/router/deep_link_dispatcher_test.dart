@@ -726,7 +726,7 @@ void main() {
       onRetryNeeded: (action, source) => retry = (action, source),
       track: (event) async => events.add(event),
     );
-    final first = dispatcher.openUri(Uri.parse('prism://l/code'), source: DeepLinkSourceValue.push);
+    final first = dispatcher.openUri(Uri.parse('prism://l/code123'), source: DeepLinkSourceValue.push);
     await tester.pumpAndSettle();
     expect(await first, DeepLinkDispatchResult.deferred);
     expect(results(), isEmpty);
@@ -752,7 +752,7 @@ void main() {
       onRetryNeeded: (_, _) {},
       track: (event) async => events.add(event),
     );
-    final result = dispatcher.openUri(Uri.parse('prism://l/code'), source: DeepLinkSourceValue.inApp);
+    final result = dispatcher.openUri(Uri.parse('prism://l/code123'), source: DeepLinkSourceValue.inApp);
     await tester.pumpAndSettle();
     expect(await result, DeepLinkDispatchResult.deferred);
     dispatcher.cancel();
