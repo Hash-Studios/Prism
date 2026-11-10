@@ -54,6 +54,18 @@ test("an in-band SPS cannot change the encoded frame size after avcC", () => {
   assert.equal(inspectLiveVideo(changed).ok, false);
 });
 
+test("an oversized in-band SPS is refused before it is copied", () => {
+  const video = mp4();
+  const cfg = video.indexOf(Buffer.from("avcC"));
+  const sps = Buffer.concat([video.subarray(cfg + 12, cfg + 12 + video.readUInt16BE(cfg + 10)), Buffer.alloc(4096)]);
+  const length = Buffer.alloc(4); length.writeUInt32BE(sps.length);
+  const mdat = video.indexOf(Buffer.from("mdat"));
+  const payload = Buffer.concat([length, sps, video.subarray(mdat + 4)]);
+  video.writeUInt32BE(payload.length, video.indexOf(Buffer.from("stsz")) + 8);
+  const padded = Buffer.concat([video.subarray(0, mdat - 4), box("mdat", payload)]);
+  assert.deepEqual(inspectLiveVideo(padded), {ok: false, error: "malformed"});
+});
+
 test("a portrait H.264 clip is read from its box headers", () => {
   const bytes = mp4();
   assert.deepEqual(inspectLiveVideo(bytes), {

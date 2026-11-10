@@ -379,7 +379,7 @@ Nothing is deployed for creator live walls. Each step needs owner approval.
 2. Run `make functions-env`. New functions get the R2 variables only from `functions/.env`.
 3. Deploy these functions.
    - `githubPutFile` and `githubDeleteFile`. The memory of `githubPutFile` rises from 256 MiB to 512 MiB. Deploy it after the asia-south1 CPU quota PR.
-   - `onWallSubmitted` and `onWallModerate`.
+   - `onWallSubmitted` and `onWallModerate`. `onWallSubmitted` now retries, and its memory rises to 512 MiB. Deploy it after the asia-south1 CPU quota PR.
    - `onOwnedWallWritten` and `onR2TombstoneCleanup`.
    - `releaseScheduledWalls`.
    - `planWeeklyDrop`, `sendDropPushes`, `setDropTitle` and `unlockDrop`.

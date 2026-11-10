@@ -712,6 +712,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
 
   /// The Set button in the action bar. On Android the phone preview opens its Set screen.
   final GlobalKey<SetWallpaperButtonState> _setButtonKey = GlobalKey<SetWallpaperButtonState>();
+  final GlobalKey<LiveSetButtonState> _liveSetKey = GlobalKey<LiveSetButtonState>();
+
+  /// The header Set and the Preview pill: a live wall with the live set button runs that flow instead.
+  Future<void> _openSet(String entryPoint) async {
+    if (_liveSetKey.currentState case final LiveSetButtonState live?) return live.run();
+    await _setButtonKey.currentState?.openSetScreen(entryPoint: entryPoint);
+  }
+
   final GlobalKey _cardHeroKey = GlobalKey();
 
   /// Creators the viewer has blocked. The Remix surfaces stay hidden while this is unknown.
@@ -2089,8 +2097,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                               PrismButton(
                                 label: context.l10n.wallpaperSet,
                                 size: PrismButtonSize.compact,
-                                onPressed: () =>
-                                    unawaited(_setButtonKey.currentState?.openSetScreen(entryPoint: 'detail_header')),
+                                onPressed: () => unawaited(_openSet('detail_header')),
                               ),
                     onClock: canonicalLoading
                         ? null
@@ -2104,7 +2111,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                             _actedOn(entity);
                             _trackAction(state, AnalyticsActionValue.clockOverlayOpened);
                             if (!hideSetWallpaperUi) {
-                              unawaited(_setButtonKey.currentState?.openSetScreen(entryPoint: 'wallpaper_preview'));
+                              unawaited(_openSet('wallpaper_preview'));
                               return;
                             }
                             final display = WallpaperDisplaySource.of(entity);
@@ -3051,7 +3058,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             child: FutureBuilder<bool>(
               future: _liveVideoSupport ??= _probeLiveVideo(),
               builder: (_, AsyncSnapshot<bool> snapshot) => snapshot.data == true
-                  ? LiveSetButton(live: live, wallId: entity.id, onSet: () => _onWallpaperSet(entity))
+                  ? LiveSetButton(key: _liveSetKey, live: live, wallId: entity.id, onSet: () => _onWallpaperSet(entity))
                   : setButton(label: context.l10n.wallpaperSet),
             ),
           );

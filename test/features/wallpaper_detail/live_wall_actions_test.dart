@@ -239,6 +239,32 @@ void main() {
       expect(calls, <String>['download:${live.videoUrl}', 'apply:${video.path}']);
     });
 
+    testWidgets('run on its state starts the same flow as a tap', (tester) async {
+      final GlobalKey<LiveSetButtonState> key = GlobalKey<LiveSetButtonState>();
+      final List<String> calls = <String>[];
+      await pumpWidget(
+        tester,
+        LiveSetButton(
+          key: key,
+          live: live,
+          wallId: 'wall-1',
+          download: (url) async {
+            calls.add('download:$url');
+            return video;
+          },
+          apply: (path) async {
+            calls.add('apply:$path');
+            return const LiveApplyOutcome(LiveApplyStatus.applied);
+          },
+        ),
+      );
+
+      unawaited(key.currentState!.run());
+      await tester.pumpAndSettle();
+
+      expect(calls, <String>['download:${live.videoUrl}', 'apply:${video.path}']);
+    });
+
     testWidgets('shows the preparing text while the download is pending', (tester) async {
       final Completer<File> pending = Completer<File>();
       await pumpWidget(

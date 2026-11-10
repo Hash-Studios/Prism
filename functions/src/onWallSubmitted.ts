@@ -165,6 +165,8 @@ export const onWallSubmitted = onDocumentCreated(
           modifier: adminEmail,
           channelId: "posts",
           scoreKind: "moderation",
+          // This trigger retries, so each wall keeps one inbox entry per admin.
+          docId: `wall_submitted_${wallId}`,
         },
         adminEmail,
       );

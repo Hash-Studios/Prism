@@ -146,6 +146,30 @@ void main() {
     expect(FakeVideoController.created.last.playCalls, greaterThanOrEqualTo(1));
   });
 
+  testWidgets('a feed card whose video fails to load does not retry by itself', (WidgetTester tester) async {
+    LiveWallVideo.createController = (url) => _FailingController(url);
+    await tester.pumpWidget(_app(Center(child: SizedBox(width: 300, height: 600, child: _video(LiveSurface.feed)))));
+    for (int i = 0; i < 10; i++) {
+      await _settle(tester);
+    }
+
+    expect(FakeVideoController.created, hasLength(1));
+  });
+
+  testWidgets('a detail video that fails to load tries again only on a tap', (WidgetTester tester) async {
+    LiveWallVideo.createController = (url) => _FailingController(url);
+    await tester.pumpWidget(_app(Center(child: SizedBox(width: 300, height: 600, child: _video(LiveSurface.detail)))));
+    for (int i = 0; i < 5; i++) {
+      await _settle(tester);
+    }
+    expect(FakeVideoController.created, hasLength(1));
+
+    await tester.tap(find.byTooltip('Play video'));
+    await _settle(tester);
+
+    expect(FakeVideoController.created, hasLength(2));
+  });
+
   testWidgets('only one feed card plays at a time', (WidgetTester tester) async {
     await tester.pumpWidget(
       _app(
@@ -303,4 +327,11 @@ class _StuckDisposeController extends FakeVideoController {
     disposed = true;
     return Completer<void>().future;
   }
+}
+
+class _FailingController extends FakeVideoController {
+  _FailingController(super.url);
+
+  @override
+  Future<void> initialize() => Future<void>.error(StateError('no video'));
 }

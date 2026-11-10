@@ -63,8 +63,12 @@ function mediaDuration(buf: Buffer, box: Box): number {
 }
 
 /** Reads SPS dimensions, not just the independently editable container display size. */
+const MAX_SPS_BYTES = 1024;
+
 function spsDimensions(nal: Buffer): [number, number] {
   if ((nal[0] & 31) !== 7) throw new Error("malformed");
+  // A real SPS is a few hundred bytes. A huge one would cost two JS arrays of its size before parsing.
+  if (nal.length > MAX_SPS_BYTES) throw new Error("malformed");
   const rbsp = Buffer.from([...nal.subarray(1)].filter((byte, i, all) =>
     !(byte === 3 && i >= 2 && all[i - 1] === 0 && all[i - 2] === 0)));
   let bit = 0;

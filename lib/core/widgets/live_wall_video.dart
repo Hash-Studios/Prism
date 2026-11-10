@@ -62,10 +62,13 @@ class _LiveWallVideoState extends State<LiveWallVideo> with WidgetsBindingObserv
   bool _checkScheduled = false;
   bool _tracked = false;
 
+  /// The video failed to load. Only a tap on play tries again, so a feed card does not retry in a loop.
+  bool _failed = false;
+
   bool get _limited =>
       widget.surface != LiveSurface.review && (MediaQuery.disableAnimationsOf(context) || LowDataMode.enabled.value);
 
-  bool get _shouldPlay => _visible && !_userPaused && (!_limited || _userStarted);
+  bool get _shouldPlay => _visible && !_userPaused && (!_limited || _userStarted) && !_failed;
 
   @override
   void initState() {
@@ -106,6 +109,7 @@ class _LiveWallVideoState extends State<LiveWallVideo> with WidgetsBindingObserv
       _userPaused = false;
       _userStarted = false;
       _tracked = false;
+      _failed = false;
     }
     _scheduleCheck();
   }
@@ -152,7 +156,7 @@ class _LiveWallVideoState extends State<LiveWallVideo> with WidgetsBindingObserv
   void _check() {
     bool visible = _onScreen();
     if (widget.surface == LiveSurface.feed) {
-      if (!visible || _limited) {
+      if (!visible || _limited || _failed) {
         visible = false;
       } else if (_feedSlot.value == null) {
         _feedSlot.value = this;
@@ -197,6 +201,7 @@ class _LiveWallVideoState extends State<LiveWallVideo> with WidgetsBindingObserv
       initialization.then((initialized) {
         if (!mounted || !identical(_controller, controller)) return;
         if (!initialized) {
+          setState(() => _failed = true);
           unawaited(_release());
         } else {
           unawaited(_sync());
@@ -269,6 +274,7 @@ class _LiveWallVideoState extends State<LiveWallVideo> with WidgetsBindingObserv
       } else {
         _userPaused = false;
         _userStarted = true;
+        _failed = false;
       }
     });
     unawaited(_sync());

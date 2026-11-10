@@ -537,6 +537,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       }
       if (widget.live case final LiveUploadInput live?) {
         if (!await _uploadLiveFiles(github, live, baseName)) {
+          if (mounted && !_leaving) throw StateError('The upload owner changed.');
           await _deleteFile();
           return false;
         }
@@ -544,10 +545,13 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       return true;
     } catch (error) {
       logger.w('Wallpaper upload failed: $error');
-      if (!mounted || _leaving || _activeDraftOwner != _draftOwner) {
+      if (!mounted || _leaving) {
         await _deleteFile();
         return false;
       }
+      // An owner change still leaves this screen open, so it must end in a failed state the user can leave.
+      if (_activeDraftOwner != _draftOwner) await _deleteFile();
+      if (!mounted || _leaving) return false;
       final failure = UploadFailure.from(error);
       setState(() {
         _stage = _UploadStage.failedUpload;

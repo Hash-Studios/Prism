@@ -101,10 +101,13 @@ class LiveSetButton extends StatefulWidget {
   final Future<void> Function()? onSet;
 
   @override
-  State<LiveSetButton> createState() => _LiveSetButtonState();
+  State<LiveSetButton> createState() => LiveSetButtonState();
 }
 
-class _LiveSetButtonState extends State<LiveSetButton> {
+class LiveSetButtonState extends State<LiveSetButton> {
+  /// Starts the set flow, as a tap does. The detail header and the Preview pill call it.
+  Future<void> run() => _run();
+
   bool _busy = false;
   int _request = 0;
 

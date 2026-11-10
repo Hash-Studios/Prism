@@ -346,3 +346,11 @@ test("a transient Auth failure retries without terminally rejecting the live wal
   await fire(store);
   assert.equal((store.get("walls/w1")?.live as Doc).error, "bad_fields");
 });
+
+test("a retried submission keeps one admin inbox entry per wall", async (t) => {
+  const {store} = setup(t, {name: "Maker", premium: true}, wall());
+  await fire(store);
+  await fire(store);
+  const inbox = [...store.keys()].filter((key) => key.startsWith("notifications/"));
+  assert.deepEqual(inbox, ["notifications/wall_submitted_w1"]);
+});

@@ -1633,6 +1633,9 @@ void main() {
 
     expect(liveCalls, hasLength(1));
     expect(saves, 0);
+    // The screen ends in the failed state, so the user can leave it instead of watching a spinner.
+    final AppLocalizations l10n = await AppLocalizations.delegate.load(const Locale('en'));
+    expect(find.text(l10n.wallpaperUploadStageUploadFailed), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
