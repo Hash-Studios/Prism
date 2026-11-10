@@ -105,10 +105,14 @@ class _FolderScreenState extends State<FolderScreen> {
     final String ownerId = app_state.prismUser.id;
     final String folderId = widget.folderId;
     final String key = '$ownerId/$folderId';
-    if (ownerId.isEmpty || _loadingKey == key) return;
+    if (!app_state.prismUser.loggedIn || ownerId.isEmpty || _loadingKey == key) return;
     _loadingKey = key;
     bool current() =>
-        mounted && widget.folderId == folderId && app_state.prismUser.id == ownerId && bloc.state.userId == ownerId;
+        mounted &&
+        app_state.prismUser.loggedIn &&
+        widget.folderId == folderId &&
+        app_state.prismUser.id == ownerId &&
+        bloc.state.userId == ownerId;
     try {
       await ensureFoldersLoaded(context);
       if (!current() || bloc.state.status != LoadStatus.success) return;
@@ -430,7 +434,8 @@ class _FolderScreenState extends State<FolderScreen> {
           previous.userId != current.userId ||
           (previous.status != current.status && current.status == LoadStatus.success),
       listener: (context, state) {
-        if (state.userId.isNotEmpty &&
+        if (app_state.prismUser.loggedIn &&
+            state.userId.isNotEmpty &&
             state.userId == app_state.prismUser.id &&
             !state.itemsStatus.containsKey(widget.folderId)) {
           unawaited(_load());
@@ -438,7 +443,9 @@ class _FolderScreenState extends State<FolderScreen> {
       },
       builder: (context, state) {
         // A guest has no folders of their own, so a folder link shows its public projection, if it has one.
-        if (app_state.prismUser.id.isEmpty) return PublicFolderView(folderId: widget.folderId);
+        if (!app_state.prismUser.loggedIn || app_state.prismUser.id.isEmpty) {
+          return PublicFolderView(folderId: widget.folderId);
+        }
         final FolderEntity? folder = state.userId == app_state.prismUser.id && state.userId.isNotEmpty
             ? state.folder(widget.folderId)
             : null;

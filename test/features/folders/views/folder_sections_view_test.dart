@@ -214,7 +214,9 @@ Future<_RecordingFoldersRepository> _pump(
   ValueNotifier<String>? route,
   List<FolderEntity> otherFolders = const <FolderEntity>[],
 }) async {
-  app_state.prismUser = app_constants.createGuestPrismUser()..id = _me;
+  app_state.prismUser = app_constants.createGuestPrismUser()
+    ..id = _me
+    ..loggedIn = true;
   getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
   final _RecordingFoldersRepository repo = _RecordingFoldersRepository(
     folders: <FolderEntity>[folder, ...otherFolders],

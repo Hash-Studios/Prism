@@ -6,7 +6,7 @@ The [route catalog](../../lib/core/router/deep_link_route_catalog.dart) owns pat
 
 ## Page catalog
 
-Paths below work with either HTTPS host or the `prism:` scheme. "Sign-in" means the destination resumes after successful sign-in. "Admin" requires an admin account. The [Access table](#access-table) gives the rule of each route.
+Paths below work with either HTTPS host or the `prism:` scheme. "Sign-in" means the destination resumes after successful sign-in. "Admin" requires an admin account. The [Access table](#access) gives the rule of each route.
 
 | Page family | Path or example | Input and access |
 |---|---|---|

@@ -260,7 +260,7 @@ void main() {
     }
   });
 
-  test('folder invite queries resolve to a guarded invite or the public folder route', () async {
+  test('folder invite queries resolve to an account route or reject invalid codes', () async {
     const String code = 'ABCDEFGHJK';
     final DeepLinkRouteMatch? invite = DeepLinkRouteCatalog.match(Uri.parse('/folder/ignored-folder?invite=$code'));
     expect(invite?.target, DeepLinkPageTarget.folderInvite);
@@ -275,10 +275,13 @@ void main() {
 
     for (final String uri in <String>['/folder/ignored-folder?invite=short', '/folder/ignored-folder?invite=']) {
       final DeepLinkRouteMatch? match = DeepLinkRouteCatalog.match(Uri.parse(uri));
-      expect(match?.target, DeepLinkPageTarget.folder, reason: uri);
-      final PageRouteInfo? route = await routeForPageLink(parser.parse(Uri.parse(uri)) as PageLinkIntent);
-      expect(route, isA<FolderRoute>(), reason: uri);
-      expect(routeAccess[route!.routeName], RouteAccess.public, reason: uri);
+      expect(match, isNull, reason: uri);
+      expect(parser.parse(Uri.parse(uri)), isA<UnknownIntent>(), reason: uri);
+      expect(
+        await routeForPageLink(PageLinkIntent(path: uri, rawUri: uri)),
+        isNull,
+        reason: uri,
+      );
     }
   });
 
@@ -412,12 +415,12 @@ void main() {
     expect(routeAccess[following.routeName], RouteAccess.account);
   });
 
-  test('a guest relation link opens the profile, which asks for sign-in, without a profile read', () async {
+  test('a guest relation link opens the public profile without a profile lookup', () async {
     app_state.prismUser = app_constants.createGuestPrismUser();
     for (final String path in ['/user/alice/followers', '/user/alice/following']) {
       final PageRouteInfo? route = await routeForPageLink(
         parser.parse(Uri.parse(path)) as PageLinkIntent,
-        profileLookup: (String _) async => throw StateError('a guest cannot read profiles'),
+        profileLookup: (String _) async => throw StateError('The relation fallback must not look up the profile'),
       );
       expect((route!.args! as ProfileRouteArgs).profileIdentifier, 'alice', reason: path);
     }

@@ -167,8 +167,8 @@ class _FollowButton extends StatelessWidget {
   }
 }
 
-/// "Folders to follow" in Search: the first trending folders, or the new ones when nothing trends yet. It hides for
-/// guests and while both lists are empty.
+/// "Folders to follow" in Search: the first trending folders, or the new ones when nothing trends yet. It hides
+/// while both lists are empty.
 class FoldersDiscoverSection extends StatelessWidget {
   const FoldersDiscoverSection({super.key});
 
