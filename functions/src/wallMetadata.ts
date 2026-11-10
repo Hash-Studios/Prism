@@ -22,7 +22,7 @@ async function requireAdmin(request: CallableRequest<unknown>): Promise<string> 
   if (!await isAdminCaller(request.auth)) throw new HttpsError("permission-denied", "Only admins can read or revert edits.");
   return uid;
 }
-export const getWallMetadataForEdit = onCall(adminOptions, async (request: CallableRequest<unknown>) => {
+export const getWallMetadataForEdit = onCall(options, async (request: CallableRequest<unknown>) => {
   const uid = signedIn(request);
   const data = exactKeys(request.data, ["wallDocId"]);
   const wallDocId = wallDocumentId(data.wallDocId);
@@ -114,7 +114,7 @@ async function save(request: CallableRequest<unknown>, revert: boolean): Promise
   });
   return operationResult(opRef);
 }
-export const editWallMetadata = onCall(adminOptions, (request: CallableRequest<unknown>) => save(request, false));
+export const editWallMetadata = onCall(options, (request: CallableRequest<unknown>) => save(request, false));
 export const revertWallMetadata = onCall(adminOptions, (request: CallableRequest<unknown>) => save(request, true));
 
 export const listWallMetadataEdits = onCall(adminOptions, async (request: CallableRequest<unknown>) => {

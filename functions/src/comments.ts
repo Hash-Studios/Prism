@@ -365,7 +365,7 @@ async function removeComment(wallId: string, commentId: string, expectAuthor?: s
 }
 
 /** The author, the wall's creator, or an admin deletes a comment. */
-export const deleteComment = onCall({...ADMIN_CALLABLE, region: CALLABLE_REGIONS, cors: true},
+export const deleteComment = onCall({region: CALLABLE_REGIONS, cors: true},
   async (request: CallableRequest<unknown>): Promise<{ok: true; deleted: boolean; role: DeleteRole | ""}> => {
     const uid = signedIn(request);
     const wallId = docIdFrom(field(request.data, "wallId"), "wallId");

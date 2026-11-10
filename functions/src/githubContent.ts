@@ -3,7 +3,7 @@ import {createHash, randomUUID} from "node:crypto";
 import {defineSecret} from "firebase-functions/params";
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
 import {isAdminCaller} from "./adminConfig";
-import {db, readDailyCount, CALLABLE_REGIONS, utcDateString, ADMIN_CALLABLE} from "./common";
+import {db, readDailyCount, CALLABLE_REGIONS, utcDateString} from "./common";
 import {deleteRetainedUpload, FIREBASE_STORAGE_REPO, ownedAssetStorageEnabled, ownedThumbnailUrl, retainUpload, stored,
   type StoredUpload} from "./ownedAssetDelivery";
 import {r2Secrets} from "./r2Storage";
@@ -721,7 +721,7 @@ export const githubPutFile = onCall(
 );
 
 export const githubDeleteFile = onCall(
-  {...ADMIN_CALLABLE, ...CALLABLE_OPTIONS, secrets: [githubToken, ...r2Secrets], timeoutSeconds: 60},
+  {...CALLABLE_OPTIONS, secrets: [githubToken, ...r2Secrets], timeoutSeconds: 60},
   async (request: CallableRequest<GithubContentData>) => {
     const callerUid = request.auth?.uid;
     if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to delete files.");
