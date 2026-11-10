@@ -457,6 +457,14 @@ interface PrismMediaHostApi {
   fun listDownloads(callback: (Result<DownloadItemsResult>) -> Unit)
   fun clearDownloads(callback: (Result<OperationResult>) -> Unit)
   fun deleteDownload(path: String, callback: (Result<OperationResult>) -> Unit)
+  /**
+   * Writes one JPEG per entry of [timesMs] from the local video at [path], with the video's display rotation
+   * applied. The long edge is at most [maxEdge] px. Returns the JPEG file paths in the same order. Throws when the
+   * video can't be read.
+   */
+  fun extractVideoFrames(path: String, timesMs: List<Long>, maxEdge: Long, quality: Long, callback: (Result<List<String>>) -> Unit)
+  /** Saves the local video at [path] to the user's photo library (iOS Photos, Android Movies/Prism). */
+  fun saveVideo(path: String, callback: (Result<OperationResult>) -> Unit)
 
   companion object {
     /** The codec used by PrismMediaHostApi. */
@@ -570,6 +578,49 @@ interface PrismMediaHostApi {
             val args = message as List<Any?>
             val pathArg = args[0] as String
             api.deleteDownload(pathArg) { result: Result<OperationResult> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PrismMediaApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(PrismMediaApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.Prism.PrismMediaHostApi.extractVideoFrames$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val pathArg = args[0] as String
+            val timesMsArg = args[1] as List<Long>
+            val maxEdgeArg = args[2] as Long
+            val qualityArg = args[3] as Long
+            api.extractVideoFrames(pathArg, timesMsArg, maxEdgeArg, qualityArg) { result: Result<List<String>> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(PrismMediaApiPigeonUtils.wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(PrismMediaApiPigeonUtils.wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.Prism.PrismMediaHostApi.saveVideo$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { message, reply ->
+            val args = message as List<Any?>
+            val pathArg = args[0] as String
+            api.saveVideo(pathArg) { result: Result<OperationResult> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(PrismMediaApiPigeonUtils.wrapError(error))

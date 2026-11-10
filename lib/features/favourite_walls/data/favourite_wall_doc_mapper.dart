@@ -1,6 +1,7 @@
 import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_live.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -65,6 +66,7 @@ FavouriteWallEntity mapFavouriteWallDoc(FavouriteWallDocDto dto, String docId) {
           firestoreDocumentId: docId,
           depthTier: WallDepthTier.parse(dto.depth['tier']),
           spatial: WallSpatial.parse(dto.spatial),
+          live: WallLive.parse(kind: dto.kind, value: dto.live),
         ),
       );
     case WallpaperSource.wallhaven:
@@ -156,6 +158,8 @@ Map<String, dynamic> favouriteWallToDoc(FavouriteWallEntity wall) {
         if (wall.wallpaper.collections != null) 'collections': wall.wallpaper.collections,
         if (wall.wallpaper.depthTier != null) 'depth': <String, Object?>{'tier': wall.wallpaper.depthTier!.name},
         if (wall.wallpaper.spatial != null) 'spatial': wall.wallpaper.spatial!.toJson(),
+        if (wall.wallpaper.live != null) 'kind': 'live',
+        if (wall.wallpaper.live != null) 'live': wall.wallpaper.live!.toJson(),
         'createdAt': wall.createdAt ?? DateTime.now().toUtc(),
         'favouritedAt': favouritedAt,
         if (wall.pinnedAt != null) 'pinnedAt': wall.pinnedAt,

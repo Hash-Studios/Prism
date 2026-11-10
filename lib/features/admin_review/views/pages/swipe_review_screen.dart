@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_live.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/bloc/review_batch_bloc.dart';
 import 'package:Prism/features/admin_review/biz/depth_override.dart';
@@ -96,7 +97,11 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
 
     if (dx.abs() > _swipeThreshold || vx.abs() > _velocityThreshold) {
       if (dx > 0 || vx > _velocityThreshold) {
-        _startDismissAnimation(approve: true);
+        if (_canApproveCurrentWall()) {
+          _startDismissAnimation(approve: true);
+        } else {
+          _startSnapBackAnimation();
+        }
       } else {
         unawaited(_askRejectReason());
       }
@@ -136,6 +141,7 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
 
   void _startDismissAnimation({required bool approve, String? reason}) {
     if (_bloc.state.isBusy) return;
+    if (approve && !_canApproveCurrentWall()) return;
     PrismHaptics.impact();
     final maxX = _maxDragX(MediaQuery.sizeOf(context).width);
     _startAnimation(
@@ -343,10 +349,18 @@ class _SwipeReviewScreenState extends State<SwipeReviewScreen> with SingleTicker
   void _dismissFromSemantics({required bool approve}) {
     if (_phase == _SwipePhase.animating || _bloc.state.isBusy) return;
     if (approve) {
-      _startDismissAnimation(approve: true);
+      if (_canApproveCurrentWall()) _startDismissAnimation(approve: true);
     } else {
       unawaited(_askRejectReason());
     }
+  }
+
+  bool _canApproveCurrentWall() {
+    final FirestoreDocument? wall = _bloc.state.currentWall;
+    if (wall == null) return false;
+    final Map<String, dynamic> data = wall.data();
+    if (WallKind.parse(data['kind']) != WallKind.live) return true;
+    return WallLive.parse(kind: data['kind'], value: data['live'])?.verified == true;
   }
 
   Widget _buildBottomBar(ReviewBatchState state) {

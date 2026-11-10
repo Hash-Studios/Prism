@@ -1,6 +1,7 @@
 import 'package:Prism/core/wallpaper/wall_ai_source.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_desktop.dart';
+import 'package:Prism/core/wallpaper/wall_live.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -24,6 +25,7 @@ final class PrismWallpaper {
     this.boostedUntil,
     this.depthTier,
     this.spatial,
+    this.live,
     this.desktop,
     this.aiSource,
     this.remixOf,
@@ -67,6 +69,12 @@ final class PrismWallpaper {
 
   /// Spatial Scene tier and depth map from `walls.spatial`. Null when the wall was not checked.
   final WallSpatial? spatial;
+
+  /// The video of a creator live wall. Null for a still wall: [fullUrl] and [thumbnailUrl] are then the image.
+  /// For a live wall they are its poster frame, so a still-only surface shows the poster.
+  final WallLive? live;
+
+  WallKind get kind => live == null ? WallKind.still : WallKind.live;
 
   /// Desktop companion from `walls.desktopVariant`. Null when the wall has none.
   final WallDesktopVariant? desktop;

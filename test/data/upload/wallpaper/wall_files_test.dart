@@ -119,4 +119,79 @@ void main() {
     expect(count, 0);
     expect(github.deleted, isEmpty);
   });
+
+  test('a pending live wall also deletes its video and 3 frames, all owned by Prism', () async {
+    final github = _RecordingGitHub();
+
+    final count = await deleteWallFiles(
+      <String, dynamic>{
+        ...wall,
+        'kind': 'live',
+        'live': <String, dynamic>{
+          'video': 'https://x/live_u_1_a.mp4',
+          'videoPath': 'live_u_1_a.mp4',
+          'videoSha': 'sha-v',
+          'frames': <Map<String, dynamic>>[
+            {'url': 'https://x/f1.jpg', 'path': 'frame_1_u_1_a.jpg', 'sha': 'sha-f1'},
+            {'url': 'https://x/f2.jpg', 'path': 'frame_2_u_1_a.jpg', 'sha': 'sha-f2'},
+            {'url': 'https://x/f3.jpg', 'path': 'frame_3_u_1_a.jpg', 'sha': 'sha-f3'},
+          ],
+        },
+      },
+      github: github,
+      repo: 'org/walls',
+    );
+
+    expect(count, 6);
+    expect(github.deleted.map((d) => d.path), <String>[
+      'u_1_a.png',
+      'thumb_u_1_a.png',
+      'live_u_1_a.mp4',
+      'frame_1_u_1_a.jpg',
+      'frame_2_u_1_a.jpg',
+      'frame_3_u_1_a.jpg',
+    ]);
+    expect(github.sourceKinds, <UploadSourceKind?>[
+      null,
+      null,
+      UploadSourceKind.owned,
+      UploadSourceKind.owned,
+      UploadSourceKind.owned,
+      UploadSourceKind.owned,
+    ]);
+  });
+
+  test('a protected pending live wall deletes its video and frames after its poster assets', () async {
+    final github = _RecordingGitHub();
+    final objectId = List<String>.filled(64, 'a').join();
+    final count = await deleteWallFiles(
+      <String, dynamic>{
+        'id': 'wall',
+        'originalProtected': true,
+        'originalObjectId': objectId,
+        'kind': 'live',
+        'live': <String, dynamic>{
+          'videoPath': 'live_u_1_a.mp4',
+          'videoSha': 'sha-v',
+          'frames': <Map<String, dynamic>>[
+            {'path': 'frame_1_u_1_a.jpg', 'sha': 'sha-f1'},
+            {'path': 'frame_2_u_1_a.jpg', 'sha': 'sha-f2'},
+            {'path': 'frame_3_u_1_a.jpg', 'sha': 'sha-f3'},
+          ],
+        },
+      },
+      github: github,
+      repo: 'org/walls',
+    );
+
+    expect(count, 6);
+    expect(github.assets.map((asset) => asset.assetRole), <String>['wallpaper', 'thumb']);
+    expect(github.deleted.map((file) => file.path), <String>[
+      'live_u_1_a.mp4',
+      'frame_1_u_1_a.jpg',
+      'frame_2_u_1_a.jpg',
+      'frame_3_u_1_a.jpg',
+    ]);
+    expect(github.sourceKinds, List<UploadSourceKind?>.filled(4, UploadSourceKind.owned));
+  });
 }

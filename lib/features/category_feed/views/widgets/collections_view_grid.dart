@@ -16,6 +16,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
+import 'package:Prism/core/widgets/live_tag.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/core/widgets/prism_refresh.dart';
@@ -327,6 +328,7 @@ class _CollectionViewGridState extends State<CollectionViewGrid> {
                   placeholderColor: placeholderColorOf(entity, Theme.of(context).colorScheme.surface),
                   semanticLabel: wallpaperSemanticLabel(_wallString(wall, 'by'), context.l10n),
                   overlay: stackTags(<Widget?>[
+                    liveFeedLayerFor(entity, radius: PrismWallGrid.tileRadius),
                     depthTagFor(depthTierOf(entity)),
                     spatialTagFor(spatialOf(entity)?.tier),
                   ]),

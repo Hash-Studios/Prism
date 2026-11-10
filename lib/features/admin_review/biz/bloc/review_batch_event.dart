@@ -38,3 +38,9 @@ class ReviewBatchUndoRequested extends ReviewBatchEvent {
 class ReviewBatchNextBatchRequested extends ReviewBatchEvent {
   const ReviewBatchNextBatchRequested();
 }
+
+class ReviewBatchLiveWallsUpdated extends ReviewBatchEvent {
+  const ReviewBatchLiveWallsUpdated(this.walls);
+
+  final List<FirestoreDocument> walls;
+}

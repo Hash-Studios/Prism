@@ -10,6 +10,7 @@ import {type Doc, installFakeDb} from "./fakeDb";
 const RAW = "https://raw.githubusercontent.com/owner/walls/main";
 
 function setup(t: TestContext, owner: Doc | null, wall: Doc) {
+  t.mock.method(admin.auth(), "getUserByEmail", async () => ({uid: "maker", email: "maker@example.com", emailVerified: true}));
   const store = installFakeDb(t, {
     "walls/w1": wall,
     ...(owner ? {"usersv2/maker": {email: "maker@example.com", ...owner}} : {}),
@@ -40,8 +41,12 @@ const wall = (extra: Doc = {}): Doc => ({
   wallpaper_url: `${RAW}/a.jpg`, wallpaper_thumb: `${RAW}/thumb_a.jpg`, ...extra,
 });
 
-test("the submission trigger binds STUDIO_SECRET", () => {
-  assert.deepEqual(onWallSubmitted.__endpoint.secretEnvironmentVariables?.map(({key}) => key), ["STUDIO_SECRET"]);
+test("the submission trigger binds STUDIO_SECRET and the R2 secrets", () => {
+  assert.deepEqual(onWallSubmitted.__endpoint.secretEnvironmentVariables?.map(({key}) => key),
+    ["STUDIO_SECRET", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"]);
+  assert.equal(onWallSubmitted.__endpoint.availableMemoryMb, 512);
+  assert.equal(onWallSubmitted.__endpoint.concurrency, 1);
+  assert.equal(onWallSubmitted.__endpoint.eventTrigger?.retry, true);
 });
 
 test("by and userPhoto are rewritten from the owner's profile", async (t) => {
@@ -294,4 +299,58 @@ test("submission removes forged lineage and clears rejected text while preservin
   assert.equal(current.wallpaper_url, `${RAW}/a.jpg`);
   assert.equal(current.review, false);
   assert.equal(current.category, "Nature");
+});
+
+test("a live wall with a broken live map is marked unverified, and the rest of the trigger still runs", async (t) => {
+  const previous = {...process.env};
+  t.after(() => {
+    process.env = previous;
+  });
+  // The trigger binds the R2 secrets, so R2 is configured in production. The proof builds its client before it checks the shape.
+  Object.assign(process.env, {R2_ACCOUNT_ID: "a".repeat(32), R2_ACCESS_KEY_ID: "access", R2_SECRET_ACCESS_KEY: "secret",
+    R2_PRIVATE_BUCKET: "private-assets", R2_PREVIEW_BUCKET: "public-previews",
+    R2_PREVIEW_BASE_URL: "https://images.example.com", GH_REPO_WALLS: "walls"});
+  const sha = "a".repeat(40);
+  const broken = {video: `${RAW}/live_a.mp4`, videoPath: "live_a.mp4", videoSha: sha, frames: [
+    {url: `${RAW}/frame_1_a.jpg`, path: "frame_1_a.jpg", sha},
+    {url: `${RAW}/frame_2_a.jpg`, path: "frame_2_a.jpg", sha},
+  ]};
+  const {store} = setup(t, {name: "Real Maker"}, wall({kind: "live", live: broken}));
+  await fire(store);
+  const live = store.get("walls/w1")?.live as Doc;
+  assert.equal(live.verified, false);
+  assert.equal(live.error, "bad_fields");
+  assert.equal(store.get("walls/w1")?.by, "Real Maker");
+});
+
+test("a profile email cannot authorize live files when Auth has not verified its owner", async (t) => {
+  const sha = "a".repeat(40);
+  const live = {video: "https://images.example/live.mp4", videoPath: "live_a.mp4", videoSha: sha,
+    frames: [1, 2, 3].map((n) => ({url: `https://images.example/frame${n}.jpg`, path: `frame_${n}_a.jpg`, sha}))};
+  const {store} = setup(t, {name: "Real Maker", premium: false}, wall({kind: "live", live}));
+  t.mock.method(admin.auth(), "getUserByEmail", async () => ({uid: "maker", email: "maker@example.com", emailVerified: false}));
+  await fire(store);
+  assert.equal((store.get("walls/w1")?.live as Doc).verified, false);
+  assert.equal((store.get("walls/w1")?.live as Doc).error, "no_owner");
+});
+
+test("a transient Auth failure retries without terminally rejecting the live wall", async (t) => {
+  const live = {video: "pending"};
+  const {store} = setup(t, {name: "Maker", premium: false}, wall({kind: "live", live}));
+  t.mock.method(admin.auth(), "getUserByEmail", async () => {
+    throw new Error("temporary Auth failure");
+  });
+  await assert.rejects(() => fire(store), /temporary Auth failure/);
+  assert.deepEqual(store.get("walls/w1")?.live, live);
+  t.mock.method(admin.auth(), "getUserByEmail", async () => ({uid: "maker", email: "maker@example.com", emailVerified: true}));
+  await fire(store);
+  assert.equal((store.get("walls/w1")?.live as Doc).error, "bad_fields");
+});
+
+test("a retried submission keeps one admin inbox entry per wall", async (t) => {
+  const {store} = setup(t, {name: "Maker", premium: true}, wall());
+  await fire(store);
+  await fire(store);
+  const inbox = [...store.keys()].filter((key) => key.startsWith("notifications/"));
+  assert.deepEqual(inbox, ["notifications/wall_submitted_w1"]);
 });

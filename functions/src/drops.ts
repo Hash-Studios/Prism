@@ -130,7 +130,7 @@ export async function releaseOldDrops(nowMs: number): Promise<number> {
         // Original access refuses a wall that still has drop markers, so a released wall drops them.
         const wall = snap.data();
         if (wall && wall.dropWeek === doc.id) {
-          if (!releaseTimeReached(wall, nowMs)) {
+          if (!releaseTimeReached(wall, nowMs) || wall.kind === "live" && wall.live?.verified !== true) {
             waiting = true;
             continue;
           }
@@ -164,7 +164,8 @@ export const planWeeklyDrop = onSchedule(
       .limit(MAX_DROP_WALLS);
     while (docs.length < MAX_DROP_WALLS) {
       const reserved = await query.get();
-      docs.push(...reserved.docs.filter((doc) => doc.data().origin === "studio" && releaseTimeReached(doc.data(), nowMs))
+      docs.push(...reserved.docs.filter((doc) => doc.data().origin === "studio" && releaseTimeReached(doc.data(), nowMs) &&
+        (doc.data().kind !== "live" || doc.data().live?.verified === true))
         .slice(0, MAX_DROP_WALLS - docs.length));
       if (reserved.size < MAX_DROP_WALLS) break;
       query = query.startAfter(reserved.docs[reserved.docs.length - 1]);
@@ -207,7 +208,8 @@ export const planWeeklyDrop = onSchedule(
       const currentWalls = await Promise.all(docs.map((doc) => tx.get(doc.ref)));
       if (currentWalls.some((snapshot) => {
         const wall = snapshot.data();
-        return !wall || wall.review !== false || wall.dropReserved !== true || !releaseTimeReached(wall, nowMs);
+        return !wall || wall.review !== false || wall.dropReserved !== true || !releaseTimeReached(wall, nowMs) ||
+          wall.kind === "live" && wall.live?.verified !== true;
       })) return false;
       const titles = currentConfig.data()?.dropTitles;
       const configuredTitle =

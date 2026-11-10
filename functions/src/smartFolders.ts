@@ -159,6 +159,7 @@ function smartItemDoc(wall: Doc, docId: string, ownerId: string, addedAt: admin.
     ...(Array.isArray(wall.collections) ? {collections: wall.collections} : {}),
     ...(wall.depth && typeof wall.depth === "object" ? {depth: wall.depth} : {}),
     ...(wall.spatial && typeof wall.spatial === "object" ? {spatial: wall.spatial} : {}),
+    ...(wall.kind === "live" && wall.live && typeof wall.live === "object" ? {kind: "live", live: wall.live} : {}),
     createdAt: asTimestamp(wall.createdAt), favouritedAt: now, ownerId, addedAt: addedAt.toMillis() > now.toMillis() ? now : addedAt,
     wallpaperDocumentId: docId, smart: true,
   };

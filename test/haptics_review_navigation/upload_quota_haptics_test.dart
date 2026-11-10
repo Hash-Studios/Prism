@@ -68,7 +68,7 @@ void main() {
     );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(l10n.wallpaperUploadTitle));
+    await tester.tap(find.text(l10n.uploadKindPhoto));
     await tester.pumpAndSettle();
 
     expect(haptics, <String>['error']);

@@ -45,6 +45,8 @@ Future<WallSubmissionResult> createRecord(
   String challengeId = '',
   String variantOf = '',
   DateTime? releaseAt,
+  String? kind,
+  Map<String, Object?>? live,
 }) async {
   final user = app_state.prismUser;
   final bool isPremium = user.premium;
@@ -113,6 +115,8 @@ Future<WallSubmissionResult> createRecord(
       if (challengeId.isNotEmpty) 'challengeId': challengeId,
       if (variantOf.isNotEmpty) 'variantOf': variantOf,
       if (releaseAt != null) 'releaseAt': releaseAt.toUtc(),
+      if (kind != null) 'kind': kind,
+      if (live != null) 'live': live,
     },
     docId: docId,
     awardFirstUpload: () {

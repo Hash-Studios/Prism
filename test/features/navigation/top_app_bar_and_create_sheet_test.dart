@@ -129,11 +129,13 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('offers an upload and an AI wallpaper, and shows the weekly quota to free users', (tester) async {
+    testWidgets('offers photo, live and AI wallpapers, and shows the weekly quota to free users', (tester) async {
       await pumpSheet(tester, premium: false);
 
       expect(find.text('Create'), findsOneWidget);
-      expect(find.text('Upload wallpaper'), findsOneWidget);
+      expect(find.text('Photo'), findsOneWidget);
+      expect(find.text('Live'), findsOneWidget);
+      expect(find.text('A looping video, up to 15 seconds'), findsOneWidget);
       expect(find.text('AI wallpaper'), findsOneWidget);
       expect(find.text('New'), findsOneWidget);
       expect(find.text('3 of 3 free uploads left this week'), findsOneWidget);
@@ -144,7 +146,7 @@ void main() {
       await pumpSheet(tester, premium: true);
 
       expect(find.textContaining('free uploads left'), findsNothing);
-      expect(find.text('Upload wallpaper'), findsOneWidget);
+      expect(find.text('Photo'), findsOneWidget);
     });
   });
 }

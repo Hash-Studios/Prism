@@ -448,6 +448,12 @@ protocol PrismMediaHostApi {
   func listDownloads(completion: @escaping (Result<DownloadItemsResult, Error>) -> Void)
   func clearDownloads(completion: @escaping (Result<OperationResult, Error>) -> Void)
   func deleteDownload(path: String, completion: @escaping (Result<OperationResult, Error>) -> Void)
+  /// Writes one JPEG per entry of [timesMs] from the local video at [path], with the video's display rotation
+  /// applied. The long edge is at most [maxEdge] px. Returns the JPEG file paths in the same order. Throws when the
+  /// video can't be read.
+  func extractVideoFrames(path: String, timesMs: [Int64], maxEdge: Int64, quality: Int64, completion: @escaping (Result<[String], Error>) -> Void)
+  /// Saves the local video at [path] to the user's photo library (iOS Photos, Android Movies/Prism).
+  func saveVideo(path: String, completion: @escaping (Result<OperationResult, Error>) -> Void)
 }
 
 /// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
@@ -553,6 +559,47 @@ class PrismMediaHostApiSetup {
       }
     } else {
       deleteDownloadChannel.setMessageHandler(nil)
+    }
+    /// Writes one JPEG per entry of [timesMs] from the local video at [path], with the video's display rotation
+    /// applied. The long edge is at most [maxEdge] px. Returns the JPEG file paths in the same order. Throws when the
+    /// video can't be read.
+    let extractVideoFramesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.Prism.PrismMediaHostApi.extractVideoFrames\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      extractVideoFramesChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let pathArg = args[0] as! String
+        let timesMsArg = args[1] as! [Int64]
+        let maxEdgeArg = args[2] as! Int64
+        let qualityArg = args[3] as! Int64
+        api.extractVideoFrames(path: pathArg, timesMs: timesMsArg, maxEdge: maxEdgeArg, quality: qualityArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      extractVideoFramesChannel.setMessageHandler(nil)
+    }
+    /// Saves the local video at [path] to the user's photo library (iOS Photos, Android Movies/Prism).
+    let saveVideoChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.Prism.PrismMediaHostApi.saveVideo\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      saveVideoChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let pathArg = args[0] as! String
+        api.saveVideo(path: pathArg) { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      saveVideoChannel.setMessageHandler(nil)
     }
   }
 }

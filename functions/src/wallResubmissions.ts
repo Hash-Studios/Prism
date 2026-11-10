@@ -12,7 +12,8 @@ import {wallSearchTermsFor} from "./wallSearchTerms";
 import {r2Secrets} from "./r2Storage";
 import {authorOf} from "./wallAuthor";
 import {verifiedUidForEmail} from "./authoredContentUid";
-import {ownedThumbnailUrl, stored} from "./ownedAssetDelivery";
+import {ownedThumbnailUrl, stored, verifyStoredUploadRegistry} from "./ownedAssetDelivery";
+import {liveArchiveAssetsActive} from "./wallLive";
 
 export const RESUBMISSION_ROOTS = "wallResubmissionRoots";
 export const RESUBMISSIONS = "wallResubmissions";
@@ -231,10 +232,35 @@ export const undoWallRejection = onCall(options, async (request: CallableRequest
       throw new HttpsError("aborted", "root-identity-mismatch");
     }
     const restored = {...archive.data()!};
+    let retiredManifest: admin.firestore.DocumentReference | undefined;
+    if (restored.kind === "live" && restored.originalProtected === true) {
+      const sourceTime = restored.sourceWallCreateTime;
+      const manifestRef = db.collection("ownedAssets").doc(restored.id);
+      const manifest = (await tx.get(manifestRef)).data();
+      if (!ownerUid || !(sourceTime instanceof admin.firestore.Timestamp) || !manifest || manifest.status !== "ready" ||
+        manifest.canonicalPath !== wallRef.path || manifest.incarnation !== sourceTime.toMillis() ||
+        manifest.incarnationNanos !== sourceTime.nanoseconds || !stored(manifest.original) || !stored(manifest.thumb) ||
+        manifest.original.uid !== ownerUid || manifest.thumb.uid !== ownerUid || manifest.original.sourceKind !== "owned" ||
+        manifest.thumb.sourceKind !== "owned" || manifest.original.previewObjectId || !manifest.thumb.previewObjectId ||
+        restored.originalObjectId !== manifest.original.objectId || restored.wallpaper_url !== "" ||
+        restored.wallpaper_thumb !== ownedThumbnailUrl(manifest.thumb) ||
+        ["wallpaper_path", "wallpaper_sha", "thumb_path", "thumb_sha"].some((key) => restored[key] !== "") ||
+        !await liveArchiveAssetsActive(tx, restored, ownerUid)) {
+        throw new HttpsError("failed-precondition", "live-rejection-assets-unavailable");
+      }
+      await Promise.all([verifyStoredUploadRegistry(manifest.original, tx), verifyStoredUploadRegistry(manifest.thumb, tx)]);
+      Object.assign(restored, {wallpaper_url: "", wallpaper_thumb: ownedThumbnailUrl(manifest.thumb),
+        wallpaper_path: manifest.original.path, wallpaper_sha: manifest.original.sha, wallpaper_source_kind: "owned",
+        thumb_path: manifest.thumb.path, thumb_sha: manifest.thumb.sha, thumb_source_kind: "owned"});
+      delete restored.originalProtected;
+      delete restored.originalObjectId;
+      retiredManifest = manifestRef;
+    }
     for (const key of ["rejectedAt", "rejectionReason", "rejectionOperationId", "sourceWallCreateTime"]) delete restored[key];
     const at = admin.firestore.FieldValue.serverTimestamp();
     tx.create(wallRef, restored);
     tx.delete(archiveRef);
+    if (retiredManifest) tx.delete(retiredManifest);
     if (ledger) tx.update(ledgerSnap.ref, {continuedAt: at, identity: identityOf(restored)});
     const result = {wallDocId: id, operationId: op};
     tx.create(opRef, {ownerUid, actorUid: uid, kind: "undo", digest: hash, operationId: op, result, createdAt: at});
@@ -269,7 +295,8 @@ export const rejectWallForReview = onCall(options, async (request: CallableReque
     const ownerUid = await moderationOwner(tx, wall.data()!);
     const at = admin.firestore.FieldValue.serverTimestamp();
     const result = {wallDocId: id, rejectionOperationId: op};
-    tx.create(archiveRef, {...wall.data(), rejectionReason: reason, rejectionOperationId: op,
+    tx.create(archiveRef, {...wall.data(), ...(wall.data()?.kind === "live" && ownerUid ? {creatorUid: ownerUid} : {}),
+      rejectionReason: reason, rejectionOperationId: op,
       sourceWallCreateTime: wall.createTime, rejectedAt: at});
     tx.delete(wallRef);
     tx.create(opRef, {ownerUid, actorUid: uid, kind: "reject", digest: hash, operationId: op, result, createdAt: at});

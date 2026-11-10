@@ -1,11 +1,12 @@
 import 'dart:io';
 
-import 'package:Prism/core/constants/app_constants.dart';
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_catalog_resolver.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/deep_link_route_catalog.dart';
+import 'package:Prism/core/router/route_access.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -25,11 +26,12 @@ void main() {
   const DeepLinkParser parser = DeepLinkParser();
   setUp(() {
     DailyMomentConfig.enabledOverride = false;
-    // Relation links read a profile, which needs sign-in. The guest case sets its own user.
-    app_state.prismUser = createGuestPrismUser()..loggedIn = true;
+    app_state.prismUser = app_constants.createGuestPrismUser()..loggedIn = true;
   });
-  tearDown(() => app_state.prismUser = createGuestPrismUser());
-  tearDown(() => DailyMomentConfig.enabledOverride = null);
+  tearDown(() {
+    DailyMomentConfig.enabledOverride = null;
+    app_state.prismUser = app_constants.createGuestPrismUser();
+  });
 
   test('daily moment links respect the feature flag', () async {
     for (final enabled in <bool>[false, true]) {
@@ -233,6 +235,84 @@ void main() {
     expect(folderInvite?.pathParams['folderId'], 'AbC123_x-9');
   });
 
+  test('folder deep links are guarded or safely rejected after URI normalization', () async {
+    final List<(String, String?)> cases = <(String, String?)>[
+      ('/folder/', null),
+      // Uri normalizes a dot segment before the catalog sees it, so this safely resumes at startup.
+      ('/folder/%2E%2E', DashboardRoute.name),
+      ('/folder/a%2Fb', null),
+      // Folder ids are ASCII letters, digits, `_` and `-`, 1 to 128 characters.
+      ('/folder/${'a' * 129}', null),
+      ('/folder/caf%C3%A9', null),
+      ('/folder/invite', FolderRoute.name),
+    ];
+
+    for (final (String uri, String? expectedRouteName) in cases) {
+      final DeepLinkActionEntity action = parser.parse(Uri.parse(uri));
+      final PageRouteInfo? route = action is PageLinkIntent ? await routeForPageLink(action) : null;
+      expect(route?.routeName, expectedRouteName, reason: uri);
+      if (route != null) {
+        for (final String name in _routeNames(route)) {
+          expect(routeAccess, contains(name), reason: '$uri resolves to unguarded route $name');
+        }
+        expect(routeAccess[route.routeName], RouteAccess.public, reason: uri);
+      }
+    }
+  });
+
+  test('folder invite queries resolve to a guarded invite or the public folder route', () async {
+    const String code = 'ABCDEFGHJK';
+    final DeepLinkRouteMatch? invite = DeepLinkRouteCatalog.match(Uri.parse('/folder/ignored-folder?invite=$code'));
+    expect(invite?.target, DeepLinkPageTarget.folderInvite);
+    // The folder id is harmless extra match metadata; the resolver opens only the invite-code route.
+    expect(invite?.pathParams, <String, String>{'folderId': 'ignored-folder', 'code': code});
+    final PageRouteInfo? inviteRoute = await routeForPageLink(
+      parser.parse(Uri.parse('/folder/ignored-folder?invite=$code')) as PageLinkIntent,
+    );
+    expect(inviteRoute, isA<FolderInviteRoute>());
+    expect((inviteRoute! as FolderInviteRoute).args!.code, code);
+    expect(routeAccess[inviteRoute.routeName], RouteAccess.account);
+
+    for (final String uri in <String>['/folder/ignored-folder?invite=short', '/folder/ignored-folder?invite=']) {
+      final DeepLinkRouteMatch? match = DeepLinkRouteCatalog.match(Uri.parse(uri));
+      expect(match?.target, DeepLinkPageTarget.folder, reason: uri);
+      final PageRouteInfo? route = await routeForPageLink(parser.parse(Uri.parse(uri)) as PageLinkIntent);
+      expect(route, isA<FolderRoute>(), reason: uri);
+      expect(routeAccess[route!.routeName], RouteAccess.public, reason: uri);
+    }
+  });
+
+  test('catalog resolver routes and nested children all have global access rules', () async {
+    final Directory tempDirectory = await Directory.systemTemp.createTemp('deep-link-access-');
+    final File localImage = File('${tempDirectory.path}/wallpaper.jpg')..writeAsBytesSync(<int>[1]);
+    addTearDown(() => tempDirectory.delete(recursive: true));
+
+    for (final DeepLinkRouteExample example in DeepLinkRouteCatalog.examples) {
+      final PageLinkIntent intent = parser.parse(Uri.parse(example.uri)) as PageLinkIntent;
+      final PageRouteInfo? route = await routeForPageLink(
+        intent,
+        profileLookup: (_) async => const PublicProfileEntity(
+          id: 'alice-id',
+          name: 'Alice',
+          email: 'alice@example.com',
+          username: 'alice',
+          profilePhoto: '',
+          bio: '',
+          links: <String, String>{},
+          coverPhoto: '',
+        ),
+        wallpaperLookup: ({required String wallId, required WallpaperSource source}) async =>
+            _prismWithSeparateThumbnail(),
+        localFileResolver:
+            ({required String imageUrl, required String wallId, required WallpaperSource source}) async => localImage,
+      );
+      expect(route, isNotNull, reason: example.uri);
+      for (final String name in _routeNames(route!)) {
+        expect(routeAccess, contains(name), reason: '${example.uri} resolves to unguarded route $name');
+      }
+    }
+  });
+
   test('catalog examples and picker destinations cover every app page', () async {
     final Set<String> reachablePages = <String>{};
     const PublicProfileEntity profile = PublicProfileEntity(
@@ -323,10 +403,17 @@ void main() {
       profileLookup: (String _) async => profile,
     ))!;
     expect((relation.args! as FollowersRouteArgs).userId, profile.id);
+    expect(routeAccess[relation.routeName], RouteAccess.account);
+    final PageRouteInfo following = (await routeForPageLink(
+      parser.parse(Uri.parse('/user/alice/following')) as PageLinkIntent,
+      profileLookup: (String _) async => profile,
+    ))!;
+    expect((following.args! as FollowingListRouteArgs).userId, profile.id);
+    expect(routeAccess[following.routeName], RouteAccess.account);
   });
 
   test('a guest relation link opens the profile, which asks for sign-in, without a profile read', () async {
-    app_state.prismUser = createGuestPrismUser();
+    app_state.prismUser = app_constants.createGuestPrismUser();
     for (final String path in ['/user/alice/followers', '/user/alice/following']) {
       final PageRouteInfo? route = await routeForPageLink(
         parser.parse(Uri.parse(path)) as PageLinkIntent,
@@ -602,6 +689,24 @@ void main() {
     expect(DeepLinkRouteCatalog.match(Uri.parse('/library?tab=folders'))?.target, DeepLinkPageTarget.library);
     expect(DeepLinkRouteCatalog.match(Uri.parse('/library?tab=bogus')), isNull);
   });
+
+  for (final String uri in <String>['/user/alice/followers', '/following?user=alice']) {
+    test('a guest $uri link opens the profile without a profile lookup', () async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      var lookups = 0;
+      final PageRouteInfo? route = await routeForPageLink(
+        parser.parse(Uri.parse(uri)) as PageLinkIntent,
+        profileLookup: (String _) async {
+          lookups++;
+          return null;
+        },
+      );
+
+      expect(route, isA<ProfileRoute>());
+      expect((route!.args! as ProfileRouteArgs).profileIdentifier, 'alice');
+      expect(lookups, 0);
+    });
+  }
 }
 
 FeedItemEntity _wallpaper(String url) => PrismFeedItem(

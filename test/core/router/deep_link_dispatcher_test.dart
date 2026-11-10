@@ -177,6 +177,71 @@ void main() {
     expect(resolutions, 3);
   });
 
+  testWidgets('identical text merges only while pending and resolves again after completion', (tester) async {
+    await mount(tester);
+    dispatcher.dispose();
+    int resolutions = 0;
+    final Completer<bool> ready = Completer<bool>();
+    final Completer<DeepLinkRouteResolution> resolution = Completer<DeepLinkRouteResolution>();
+    dispatcher = create(
+      whenReady: () => ready.future,
+      navigation: _ResolvingNavigation((_) async {
+        resolutions++;
+        if (resolutions == 1) return resolution.future;
+        return DeepLinkRouteResolution.route(ShareInRoute(key: UniqueKey(), kind: SharedItemKind.url));
+      }),
+    );
+    final Uri text = Uri.parse('prism://share-in?text=not%20a%20link');
+    final first = dispatcher.openUri(text, source: DeepLinkSourceValue.appLinks);
+    expect(dispatcher.openUri(text, source: DeepLinkSourceValue.appLinks), same(first));
+    await tester.pump();
+    expect(resolutions, 0);
+
+    ready.complete(true);
+    await tester.pumpAndSettle();
+    expect(resolutions, 1);
+    expect(dispatcher.openUri(text, source: DeepLinkSourceValue.appLinks), same(first));
+    resolution.complete(DeepLinkRouteResolution.route(ShareInRoute(key: UniqueKey(), kind: SharedItemKind.url)));
+    await tester.pumpAndSettle();
+    expect(await first, DeepLinkDispatchResult.navigated);
+
+    final repeated = dispatcher.openUri(text, source: DeepLinkSourceValue.appLinks);
+    expect(repeated, isNot(same(first)));
+    await tester.pumpAndSettle();
+    expect(await repeated, DeepLinkDispatchResult.navigated);
+    expect(resolutions, 2);
+    expect(events.whereType<DeepLinkReceivedEvent>(), hasLength(2));
+    expect(results().map((event) => event.result), everyElement(EventResultValue.navigated));
+  });
+
+  testWidgets('cancelled pending text can be shared again without waiting for its old readiness', (tester) async {
+    await mount(tester);
+    dispatcher.dispose();
+    final Completer<bool> firstReady = Completer<bool>();
+    int readinessChecks = 0;
+    int resolutions = 0;
+    dispatcher = create(
+      whenReady: () => ++readinessChecks == 1 ? firstReady.future : Future<bool>.value(true),
+      navigation: _ResolvingNavigation((_) async {
+        resolutions++;
+        return DeepLinkRouteResolution.route(ShareInRoute(key: UniqueKey(), kind: SharedItemKind.url));
+      }),
+    );
+    final Uri text = Uri.parse('prism://share-in?text=not%20a%20link');
+    final cancelled = dispatcher.openUri(text, source: DeepLinkSourceValue.appLinks);
+    await tester.pump();
+    dispatcher.cancel();
+    final retried = dispatcher.openUri(text, source: DeepLinkSourceValue.appLinks);
+    expect(retried, isNot(same(cancelled)));
+    await tester.pumpAndSettle();
+    expect(await cancelled, DeepLinkDispatchResult.cancelled);
+    expect(await retried, DeepLinkDispatchResult.navigated);
+    expect(resolutions, 1);
+    firstReady.complete(true);
+    await tester.pumpAndSettle();
+    expect(resolutions, 1, reason: 'late readiness must not revive the cancelled share');
+  });
+
   setUp(() {
     router = _LinkTestRouter();
     events = <AnalyticsEvent>[];

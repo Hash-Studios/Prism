@@ -1,4 +1,5 @@
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/auth_navigation_continuation.dart';
 import 'package:Prism/features/onboarding_v2/src/views/onboarding_v2_shell.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -14,7 +15,7 @@ class _OnboardingRouteTestRouter extends AppRouter {
   List<AutoRoute> get routes => <AutoRoute>[
     AutoRoute(
       path: '/',
-      page: PageInfo('OnboardingRouteTestHost', builder: (_) => const Scaffold(body: Text('host'))),
+      page: PageInfo(SplashWidgetRoute.name, builder: (_) => const Scaffold(body: Text('host'))),
     ),
     AutoRoute(
       path: '/onboarding/v2',
@@ -36,6 +37,8 @@ void main() {
     Future<bool> signOutForRecovery() async => true;
     OnboardingV2Shell? builtShell;
     final router = _OnboardingRouteTestRouter((shell) => builtShell = shell);
+    final continuation = AuthNavigationContinuation.of(router);
+    addTearDown(continuation.dispose);
 
     await tester.pumpWidget(
       MaterialApp.router(
@@ -46,6 +49,8 @@ void main() {
     );
     await router.navigatePath('/');
     await tester.pumpAndSettle();
+    expect(router.current.name, SplashWidgetRoute.name);
+    expect(continuation.pendingNavigation, isNull);
     await router.replaceAll(<PageRouteInfo>[OnboardingV2ShellRoute(key: key, signOutForRecovery: signOutForRecovery)]);
     await tester.pumpAndSettle();
 

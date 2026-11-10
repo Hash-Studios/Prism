@@ -14,6 +14,9 @@ import {
 } from "./studio/gates";
 import {isStudioWall} from "./studio/isStudioWall";
 import {fetchImageBuffer} from "./wallColors";
+import {liveModerationFrameUrls} from "./wallLive";
+import {isDeepStrictEqual} from "node:util";
+import {sameTimestamp} from "./wallEditingCommon";
 
 /** Flags are signals for the reviewer. Nothing is rejected on them. */
 export type ModerationFlag = "duplicate" | "web_match" | "text" | "logo" | "unsafe";
@@ -103,6 +106,23 @@ export function buildModeration(
   };
 }
 
+const union = <T>(a: T[], b: T[], max: number, key: (x: T) => string = String) =>
+  [...a, ...b].filter((x, i, all) => all.findIndex((y) => key(y) === key(x)) === i).slice(0, max);
+
+/** One reviewer signal set for a live wall: the poster's duplicate hit plus every flag a frame raised. */
+export function mergeModeration(a: Moderation, b: Moderation): Moderation {
+  const order: ModerationFlag[] = ["duplicate", "web_match", "text", "logo", "unsafe"];
+  return {
+    v: 1,
+    flags: order.filter((flag) => a.flags.includes(flag) || b.flags.includes(flag)),
+    duplicate: a.duplicate ?? b.duplicate,
+    web: union(a.web, b.web, MAX_WEB, (x) => x.url),
+    words: union(a.words, b.words, MAX_WORDS),
+    logos: union(a.logos, b.logos, MAX_LOGOS),
+    unsafe: union(a.unsafe, b.unsafe, Number.MAX_SAFE_INTEGER),
+  };
+}
+
 let visionClient: ImageAnnotatorClient | undefined;
 
 const annotateForModeration: ModerationAnnotate = async (jpeg) => {
@@ -189,8 +209,14 @@ export async function moderateWall(
   wallId: string,
   data: admin.firestore.DocumentData,
   deps: ModerationDeps = defaultDeps,
+  expectedCreateTime?: admin.firestore.Timestamp,
 ): Promise<void> {
   if (data.moderation != null || await isStudioWall(wallId, data)) return;
+  const ref = db.collection("walls").doc(wallId);
+  const source = await ref.get();
+  if (!source.exists || expectedCreateTime && !sameTimestamp(source.createTime, expectedCreateTime)) return;
+  const frames = liveModerationFrameUrls(data);
+  if (data.kind === "live" && frames.length !== 3) return;
 
   const image = await readWallImage(wallId, data, deps.fetchImage);
   if (!image) {
@@ -208,6 +234,9 @@ export async function moderateWall(
   let moderation: Moderation;
   try {
     moderation = buildModeration(duplicate, await deps.annotate(await visionJpeg(image.bytes)));
+    for (const url of frames) {
+      moderation = mergeModeration(moderation, buildModeration(null, await deps.annotate(await visionJpeg(await deps.fetchImage(url)))));
+    }
   } catch (error) {
     logger.error("onWallModerate: Vision check failed", {
       wallId,
@@ -217,8 +246,13 @@ export async function moderateWall(
   }
 
   try {
-    await db.collection("walls").doc(wallId).update({
-      moderation: {...moderation, checkedAt: admin.firestore.FieldValue.serverTimestamp()},
+    await db.runTransaction(async (tx) => {
+      const current = await tx.get(ref);
+      if (!sameTimestamp(current.createTime, source.createTime) || current.data()?.moderation != null) return;
+      if (data.kind === "live" && (current.data()?.kind !== "live" ||
+        !isDeepStrictEqual(liveModerationFrameUrls(current.data()!), frames) ||
+        current.data()?.live?.video !== data.live?.video || current.data()?.wallpaper_thumb !== data.wallpaper_thumb)) return;
+      tx.update(ref, {moderation: {...moderation, checkedAt: admin.firestore.FieldValue.serverTimestamp()}});
     });
   } catch (error) {
     if ((error as {code?: unknown}).code !== 5) throw error;
@@ -233,6 +267,6 @@ export const onWallModerate = onDocumentCreated(
   async (event) => {
     const data = event.data?.data();
     if (!data) return;
-    await moderateWall(event.params.wallId, data);
+    await moderateWall(event.params.wallId, data, defaultDeps, event.data?.createTime);
   },
 );

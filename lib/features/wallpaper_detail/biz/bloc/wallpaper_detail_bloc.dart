@@ -101,6 +101,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
         boostedUntil: wall.boostedUntil,
         depthTier: wall.depthTier,
         spatial: wall.spatial,
+        live: wall.live,
         desktop: wall.desktop,
         aiSource: wall.aiSource,
         remixOf: wall.remixOf,

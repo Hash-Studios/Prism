@@ -99,6 +99,35 @@ test("a wall approved for release after an undone approval is published at its r
   assert.equal(store.get("walls/w1")?.review, true);
 });
 
+test("a scheduled live wall is released like a still wall and keeps its kind and live map", async (t) => {
+  const live = {video: "https://x.example/live_a.mp4", videoPath: "live_a.mp4", videoSha: "a".repeat(40),
+    frames: [1, 2, 3].map((n) => ({url: `https://x.example/frame_${n}_a.jpg`, path: `frame_${n}_a.jpg`, sha: "b".repeat(40)})),
+    durationMs: 5000, width: 1080, height: 1920, codec: "avc1", bytes: 1000, loop: true, verified: true};
+  const {store} = harness(t, {"walls/w1": scheduled(A, NOW - MIN, {kind: "live", live})});
+  assert.deepEqual(await releaseDueWalls(NOW), {released: 1, creators: 1});
+  const wall = store.get("walls/w1");
+  assert.equal(wall?.review, true);
+  assert.ok(wall?.publishedAt instanceof admin.firestore.Timestamp);
+  assert.equal(wall?.kind, "live");
+  assert.deepEqual(wall?.live, live);
+});
+
+test("scheduled live walls wait for a successful server proof", async (t) => {
+  const {store} = harness(t, {
+    "walls/pending": scheduled(A, NOW - MIN, {kind: "live", live: {video: "pending"}}),
+    "walls/failed": scheduled(A, NOW - MIN, {kind: "live", live: {verified: false, error: "unproven_file"}}),
+    "walls/still": scheduled(A, NOW - MIN),
+  });
+  assert.deepEqual(await releaseDueWalls(NOW), {released: 1, creators: 1});
+  for (const id of ["pending", "failed"]) {
+    assert.equal(store.get(`walls/${id}`)?.review, false);
+    assert.equal(store.get(`walls/${id}`)?.publishedAt, undefined);
+  }
+  await db.doc("walls/pending").update({"live.verified": true});
+  assert.deepEqual(await releaseDueWalls(NOW), {released: 1, creators: 1});
+  assert.equal(store.get("walls/pending")?.review, true);
+});
+
 test("a wall held after release keeps its older approval and stays hidden", async (t) => {
   const {store} = harness(t, {"walls/w1": scheduled(A, NOW - 2 * HOUR, {publishedAt: at(NOW - 30 * MIN)})});
   assert.deepEqual(await releaseDueWalls(NOW), {released: 0, creators: 0});

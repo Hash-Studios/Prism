@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_document.dart';
+import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/features/admin_review/biz/bloc/review_batch_bloc.dart';
 import 'package:Prism/features/admin_review/biz/depth_override.dart';
@@ -14,6 +16,18 @@ import 'fake_review_callables.dart';
 
 class _BatchFirestoreClient extends FakeFirestoreClient {
   _BatchFirestoreClient({super.docs});
+
+  final StreamController<List<FakeDocRow>> pendingWallUpdates = StreamController<List<FakeDocRow>>.broadcast(
+    sync: true,
+  );
+
+  @override
+  Stream<List<T>> watchQuery<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) {
+    if (spec.sourceTag != 'admin_review.pending_walls') return Stream<List<T>>.empty();
+    return pendingWallUpdates.stream.map(
+      (List<FakeDocRow> rows) => rows.map((row) => map(row.data, row.id)).toList(growable: false),
+    );
+  }
 
   @override
   Future<void> runBatch(Future<void> Function(FirestoreBatch batch) action, {required String sourceTag}) {
@@ -121,7 +135,10 @@ void main() {
     );
   });
 
-  tearDown(() => bloc.close());
+  tearDown(() async {
+    await bloc.close();
+    await client.pendingWallUpdates.close();
+  });
 
   Future<void> loaded() async {
     bloc.add(const ReviewBatchLoadRequested());
@@ -150,6 +167,59 @@ void main() {
     bloc.add(const ReviewBatchNextBatchRequested());
     await pumpEventQueue();
     expect(bloc.state.status, ReviewBatchStatus.loaded);
+  });
+
+  test('live verification updates the fetched swipe snapshot without reloading the batch', () async {
+    Map<String, dynamic> liveRecord(FirestoreDocument? wall) {
+      final Object? rawLive = wall?.data()['live'];
+      return rawLive is Map<String, dynamic> ? rawLive : <String, dynamic>{};
+    }
+
+    final Map<String, dynamic> unverifiedLive = <String, dynamic>{
+      'review': false,
+      'kind': 'live',
+      'live': <String, dynamic>{'video': 'https://example.com/video.mp4'},
+      'email': 'uploader@example.com',
+      'title': 'Sunset',
+      'category': 'Nature',
+      'collections': <String>['nature'],
+      'wallpaper_thumb': 'https://example.com/t.jpg',
+      'createdAt': DateTime.utc(2026, 1, 2),
+    };
+    client.docs[FirebaseCollections.walls]!['w1'] = Map<String, dynamic>.of(unverifiedLive);
+
+    await loaded();
+    expect(liveRecord(bloc.state.currentWall)['verified'], isNull);
+
+    bloc.add(const ReviewBatchSwipeApproved());
+    await pumpEventQueue();
+    expect(bloc.state.currentIndex, 0);
+    expect(client.docs[FirebaseCollections.walls]!['w1']!['review'], isFalse);
+
+    client.pendingWallUpdates.add(<FakeDocRow>[
+      (
+        id: 'w1',
+        data: <String, dynamic>{
+          ...unverifiedLive,
+          'live': <String, dynamic>{
+            'video': 'https://example.com/video.mp4',
+            'verified': true,
+            'durationMs': 1000,
+            'width': 100,
+            'height': 100,
+          },
+        },
+      ),
+    ]);
+    final state = await bloc.stream.firstWhere((s) => liveRecord(s.currentWall)['verified'] == true);
+
+    expect(liveRecord(state.currentWall)['verified'], isTrue);
+    expect(state.currentIndex, 0);
+    expect(client.querySpecs.where((spec) => spec.sourceTag == 'review_batch.pending_walls'), hasLength(2));
+
+    bloc.add(const ReviewBatchSwipeApproved());
+    await bloc.stream.firstWhere((s) => s.currentIndex == 1);
+    expect(client.docs[FirebaseCollections.walls]!['w1']!['review'], isTrue);
   });
 
   for (final bool fail in <bool>[false, true]) {

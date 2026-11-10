@@ -103,7 +103,6 @@ part 'app_router.gr.dart';
 class AppRouter extends RootStackRouter {
   AppRouter({super.navigatorKey});
 
-  final SignedInGuard _signedInGuard = const SignedInGuard();
   final AdminGuard _adminGuard = const AdminGuard();
 
   @override
@@ -142,7 +141,6 @@ class AppRouter extends RootStackRouter {
     AutoRoute(
       path: '/dashboard',
       page: DashboardRoute.page,
-      guards: const [SignedInGuard(allowGuests: true)],
       children: [
         // Home tab
         AutoRoute(path: 'home', page: HomeTabRoute.page),
@@ -156,7 +154,7 @@ class AppRouter extends RootStackRouter {
           ],
         ),
         // Rewards tab (was Streak)
-        AutoRoute(path: 'rewards', page: RewardsTabRoute.page, guards: [_signedInGuard]),
+        AutoRoute(path: 'rewards', page: RewardsTabRoute.page),
         RedirectRoute(path: 'streak', redirectTo: 'rewards'),
         // Collection tab
         AutoRoute(path: 'collection', page: CollectionTabRoute.page),
@@ -164,16 +162,16 @@ class AppRouter extends RootStackRouter {
     ),
 
     // Global routes (pushed over entire shell as full-screen dialogs)
-    AutoRoute(path: '/ai', page: AiTabRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/ai', page: AiTabRoute.page),
     CustomRoute(
       path: '/wallpaper-detail',
       page: WallpaperDetailRoute.page,
       customRouteBuilder: wallpaperDetailRouteBuilder,
     ),
     AutoRoute(path: '/wotd-archive', page: WotdArchiveRoute.page),
-    AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/choose-wallpaper', page: DeepLinkInputRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/download-wallpaper', page: DownloadWallpaperRoute.page),
+    AutoRoute(path: '/wallpaper-filter', page: WallpaperFilterRoute.page),
+    AutoRoute(path: '/choose-wallpaper', page: DeepLinkInputRoute.page),
     CustomRoute(
       path: '/share-in',
       page: ShareInRoute.page,
@@ -184,12 +182,7 @@ class AppRouter extends RootStackRouter {
     ),
     AutoRoute(path: '/premium', page: PremiumRoute.page),
     RedirectRoute(path: '/paywall', redirectTo: '/premium'),
-    AutoRoute(
-      path: '/photo-preview',
-      page: ReviewPhotoPreviewRoute.page,
-      fullscreenDialog: true,
-      guards: [_signedInGuard],
-    ),
+    AutoRoute(path: '/photo-preview', page: ReviewPhotoPreviewRoute.page, fullscreenDialog: true),
     CustomRoute(
       path: '/clock-preview',
       page: ClockPreviewRoute.page,
@@ -207,25 +200,25 @@ class AppRouter extends RootStackRouter {
     // Standalone path so Edit Profile works when ProfileScreen was opened via
     // root-level ProfileRoute (/user/:id), e.g. home header avatar — nested
     // /dashboard/profile/edit is not reachable from that stack.
-    AutoRoute(path: '/edit-profile', page: EditProfilePanelRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/edit-profile', page: EditProfilePanelRoute.page),
     // Same reason: the Streak tab's "Invite a friend" opens the referral screen outside the profile tab.
-    AutoRoute(path: '/share-prism', page: SharePrismRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/share-prism', page: SharePrismRoute.page),
     AutoRoute(path: '/settings', page: SettingsRoute.page),
     AutoRoute(path: '/layout', page: LayoutSettingsRoute.page),
-    AutoRoute(path: '/blocked-accounts', page: BlockedAccountsRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/blocked-accounts', page: BlockedAccountsRoute.page),
     AutoRoute(path: '/about', page: AboutRoute.page),
-    AutoRoute(path: '/fav-walls', page: FavouriteWallpaperRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/downloads', page: DownloadRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/library', page: LibraryRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/fav-walls', page: FavouriteWallpaperRoute.page),
+    AutoRoute(path: '/downloads', page: DownloadRoute.page),
+    AutoRoute(path: '/library', page: LibraryRoute.page),
     AutoRoute(path: '/folder/:folderId', page: FolderRoute.page),
-    AutoRoute(path: '/folder/invite/:code', page: FolderInviteRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/upload-wall', page: UploadWallRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/edit-wall', page: EditWallRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/creator-stats', page: CreatorStatsRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/review', page: ReviewRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/folder/invite/:code', page: FolderInviteRoute.page),
+    AutoRoute(path: '/upload-wall', page: UploadWallRoute.page),
+    AutoRoute(path: '/edit-wall', page: EditWallRoute.page),
+    AutoRoute(path: '/creator-stats', page: CreatorStatsRoute.page),
+    AutoRoute(path: '/review', page: ReviewRoute.page),
     RedirectRoute(path: '/coin-transactions', redirectTo: '/rewards'),
     AutoRoute(path: '/theme', page: ThemeViewRoute.page),
-    AutoRoute(path: '/notifications', page: NotificationRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/notifications', page: NotificationRoute.page),
     AutoRoute(path: '/collection-view', page: CollectionViewRoute.page),
     AutoRoute(path: '/mood/:moodId', page: MoodRoute.page),
     AutoRoute(path: '/editors-choice', page: EditorsChoiceRoute.page),
@@ -233,29 +226,28 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/requests', page: WallRequestsRoute.page),
     AutoRoute(path: '/creators', page: CreatorsRoute.page),
     AutoRoute(path: '/folders', page: FoldersDiscoverRoute.page),
-    AutoRoute(path: '/wrapped', page: PrismWrappedRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/wrapped', page: PrismWrappedRoute.page),
     AutoRoute(path: '/challenges/:challengeId', page: WeeklyChallengeRoute.page),
     AutoRoute(path: '/user/:identifier', page: ProfileRoute.page),
-    AutoRoute(path: '/followers', page: FollowersRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/following', page: FollowingListRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/followers', page: FollowersRoute.page),
+    AutoRoute(path: '/following', page: FollowingListRoute.page),
     AutoRoute(path: '/admin-review', page: AdminReviewRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/admin-review/swipe', page: SwipeReviewRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/admin-review/image', page: FullScreenImageRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/admin-firestore-telemetry', page: FirestoreTelemetryRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/admin-promo-codes', page: PromoCodesAdminRoute.page, guards: [_adminGuard]),
     AutoRoute(path: '/debug-panel', page: DebugPanelRoute.page, guards: [_adminGuard]),
-    AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/auto-rotate', page: AutoRotateRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/ios-shortcuts', page: IosShortcutsGuideRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/wallpaper-position', page: WallpaperPositionRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/rewards', page: RewardsRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/daily-moment', page: DailyMomentRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/coin-history', page: CoinHistoryRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/quick-tile-settings', page: QuickTileSettingsRoute.page),
+    AutoRoute(path: '/auto-rotate', page: AutoRotateRoute.page),
+    AutoRoute(path: '/ios-shortcuts', page: IosShortcutsGuideRoute.page),
+    AutoRoute(path: '/wallpaper-position', page: WallpaperPositionRoute.page),
+    AutoRoute(path: '/live-wallpaper', page: LiveWallpaperRoute.page),
+    AutoRoute(path: '/rewards', page: RewardsRoute.page),
+    AutoRoute(path: '/daily-moment', page: DailyMomentRoute.page),
+    AutoRoute(path: '/coin-history', page: CoinHistoryRoute.page),
     CustomRoute(
       path: '/daily-chest',
       page: DailyChestRoute.page,
-      guards: [_signedInGuard],
       duration: PrismDurations.base,
       reverseDuration: PrismDurations.fast,
       transitionsBuilder: _rewardTransition,
@@ -263,12 +255,11 @@ class AppRouter extends RootStackRouter {
     CustomRoute(
       path: '/spin-wheel',
       page: SpinWheelRoute.page,
-      guards: [_signedInGuard],
       duration: PrismDurations.base,
       reverseDuration: PrismDurations.fast,
       transitionsBuilder: _rewardTransition,
     ),
-    AutoRoute(path: '/shop', page: ShopRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/shop', page: ShopRoute.page),
     AutoRoute(path: '/drops', page: DropsRoute.page),
     AutoRoute(path: '/drops/:weekKey', page: DropDetailRoute.page),
     CustomRoute(
@@ -280,8 +271,8 @@ class AppRouter extends RootStackRouter {
       transitionsBuilder: (context, animation, secondaryAnimation, child) =>
           _previewTransition(context, animation, child),
     ),
-    AutoRoute(path: '/leaderboard', page: LeaderboardRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/draw', page: DrawRoute.page, guards: [_signedInGuard]),
+    AutoRoute(path: '/leaderboard', page: LeaderboardRoute.page),
+    AutoRoute(path: '/draw', page: DrawRoute.page),
     RedirectRoute(path: '/streak', redirectTo: '/rewards'),
     AutoRoute(path: '/not-found', page: NotFoundRoute.page),
     RedirectRoute(path: '*', redirectTo: '/not-found'),

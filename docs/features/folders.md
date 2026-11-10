@@ -27,7 +27,7 @@ The Library page ([library.md](library.md)) covers the Folders tab, the folder g
 | Android | Full. |
 | iOS | Full. |
 
-On iOS, a guest can open a public folder link. The page shows the public folder. **Follow** asks the guest to sign in. A guest cannot open a private folder. Android has no guests.
+On iOS, a guest can open a public folder link. The page shows the public folder. **Follow** asks the guest to sign in. A guest cannot open a private folder. Android has no guests. See the Access table in [deep-links.md](deep-links.md#access).
 
 ## Free and Pro
 
@@ -290,7 +290,7 @@ The app reads the folder again each time a member opens it, so a join, a leave o
 ### Invite and join
 
 - The owner taps **Invite**. The `createFolderInvite` callable makes a code. The code has 10 characters and no look-alike characters. It works once and is valid for 7 days. The app makes a short link and opens the share sheet.
-- Opening the link shows the join page. It shows the covers, the name, "<owner> invited you…", the counts and **Join folder**. A signed-out user signs in first. Then the join page opens.
+- Opening the link shows the join page. It shows the covers, the name, "<owner> invited you…", the counts and **Join folder**. A guest goes to sign-in first. After sign-in, the join page opens.
 - The page reads the folder through the `getFolderInvite` callable. The rules refuse a read by a non-member.
 - A refused code shows only its reason. It never shows the folder. A blocked caller or a caller with a closed account gets the generic unavailable status, not a status that reveals the block.
 - `joinFolder` refuses a join in one transaction when:

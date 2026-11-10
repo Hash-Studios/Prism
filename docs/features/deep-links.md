@@ -43,7 +43,7 @@ Paths below work with either HTTPS host or the `prism:` scheme. "Sign-in" means 
 | Daily chest and spin wheel | `/daily-chest`, `/spin-wheel` | Sign-in. Opening a page does not open a chest, spin, or spend coins. |
 | Shop | `/shop` | Sign-in. Purchases require the normal confirmation. |
 | Premium plans | `/premium`, `/paywall` | Opens the Premium page. **View plans** uses the existing native paywall. iOS permits guest purchases. Android requires sign-in. No purchase starts automatically. |
-| Drops | `/drops` | Opens the live Drop and vault. |
+| Drops | `/drops` | Opens the live Drop and vault. Buying asks for sign-in. |
 | Drop detail | `/drops/2026-W42` | Requires a week key that exists in the Drops repository. |
 | Drop preview | `/drops/2026-W42/preview/wall1` | Loads the requested week and wall without unlocking it. Missing resources show an unavailable state. |
 | Leaderboard and draw | `/leaderboard`, `/draw` | Sign-in. Opening the draw page does not enter a draw. |
@@ -62,114 +62,71 @@ The catalog rejects unknown query keys, repeated query keys, missing required re
 
 Catalog validation limits folder IDs to ASCII letters, digits, `_` and `-` (1 to 128 characters), and wallpaper IDs to ASCII letters, digits, `.`, `_` and `-` (1 to 200 characters). General identifiers may contain Unicode but are limited to 1,500 UTF-8 bytes, cannot contain path separators or control characters, and cannot equal `.` or `..`. Short-link codes contain 7 to 10 ASCII letters or digits. Folder invite query values must be exactly 10 ASCII letters or digits; malformed, repeated, or path-conflicting invite queries are refused.
 
-## Access table
+## Access
 
-Each route has one access rule.
+`lib/core/router/route_access.dart` gives each app route one access rule. `PlatformAccountGuard` reads this table when AutoRoute invokes the guard; it does not run for every tab selection. The dashboard shell is guarded when entered, so a signed-out Android user is stopped there. An iOS guest can select Rewards, where `RewardsPage` shows its own sign-in prompt.
 
-| Access | Meaning |
+A standalone `/rewards` deep link still passes through the global access guard. A route without a row needs an account. `test/core/router/route_access_test.dart` fails when a route has no row, or when a row names no route.
+
+| Rule | Who can open the route |
 |---|---|
-| public | A signed-out iOS user can open the page. This does not mean that the same page exists on the website. |
-| account | The page needs sign-in. |
-| owner | The page needs sign-in and shows only the data of the signed-in user. |
-| admin | The page needs an admin account. |
+| Open | Anyone. This includes a signed-out Android user. Only startup, sign-in, About and Not found use it. |
+| Public | Guests can open it on iOS. Android has no guests, so a signed-out Android user goes to sign-in. Actions on the content (save, favourite, follow, comment, Set) ask for sign-in when the guest taps them. |
+| Account | Any signed-in user. A guest goes to sign-in. After sign-in, the app opens the route. |
+| Owner | The signed-in user's own data. The guard needs an account. The Firestore rules and the page check the owner. |
+| Admin | Admins. The route also keeps its `AdminGuard`. |
 
-An action on public content still asks for sign-in at the moment of the action. Save to a Folder, Follow, Favourite, Comment and Set are actions. They use `requireSignedInAction`.
+A Public route needs `firestore.rules` to let a signed-out user read what the page shows. A guest can read `profiles/{uid}`, `usernames/{name}`, `publicFolders/{id}` and its `items`, `folderTrending` and `creatorDirectory`. These hold only public projections. A signed-in reader still does not see a public Folder of a creator they block, or who blocks them. Follower lists, private `folders` and every write need sign-in.
 
-Android has no guests. A signed-out Android user can open only `/`, `/onboarding/v2`, `/about` and `/not-found`. Each other route opens sign-in first and resumes after it.
+| Route | Deep link targets | Shows | Rule | Why |
+|---|---|---|---|---|
+| `/` | `splash` | Startup | Open | Startup must run before sign-in. |
+| `/onboarding/v2` | `onboarding` | Welcome and sign-in | Open | This is the sign-in page. |
+| `/about` | `about` | About Prism | Open | Legal and app information. |
+| `/not-found` | `notFound` | Unavailable page | Open | Unknown links land here. |
+| `/dashboard` | `dashboard` | App shell | Public | Guests browse on iOS. |
+| `/dashboard/home` | `home` | Home feed | Public | Walls are public. The creators and folders rows show for guests too. |
+| `/dashboard/search` | `searchTab` | Search | Public | Walls are public. |
+| `/dashboard/search/users` | `userSearch` | Creator search | Public | The page shows its own sign-in prompt to a guest. Creator search is not open to guests. |
+| `/dashboard/collection` | `collectionTab` | Curated collections | Public | `collections` is public. |
+| `/dashboard/rewards` | `rewardsTab` | Coins and streak | Owner | The user's own coins. |
+| `/wallpaper-detail` | `wallpaperDetail` | One wall | Public | Reviewed walls are public. Save, favourite and Set ask for sign-in. |
+| `/wotd-archive` | `wotdArchive` | Wall of the day archive | Public | `wall_of_the_day` is public. |
+| `/share-in` | none | Share to Prism sheet | Public | The sheet asks a guest to sign in before it saves. |
+| `/premium` | `premium` | Premium plans | Public | iOS guests can see plans. Purchase asks for sign-in. |
+| `/clock-preview` | `clockPreview` | Lock screen preview | Public | Passive preview. Save asks for sign-in. |
+| `/settings`, `/layout`, `/theme` | `settings`, `layoutSettings`, `theme` | Device settings | Public | Local settings only. |
+| `/collection-view` | `collectionView` | One collection or category | Public | Walls are public. |
+| `/mood/:moodId` | `mood` | One mood | Public | `moods` is public. |
+| `/editors-choice` | `editorsChoice` | Editors' Choice | Public | Reviewed walls are public. |
+| `/gallery` | `gallery` | A set of walls | Public | Walls are public. |
+| `/requests` | `wallRequests` | Wall requests | Public | `listWallRequests` serves guests. Vote and Ask ask for sign-in. |
+| `/challenges/:challengeId` | `weeklyChallenge` | Weekly challenge | Public | `weeklyChallenges` is public. Entry asks for sign-in. |
+| `/drops`, `/drops/:weekKey`, `/drops/:weekKey/preview/:wallId` | `drops`, `dropDetail`, `dropPreview` | Weekly Drop | Public | `drops` is public. Buying asks for sign-in. |
+| `/user/:identifier` | `profile` | Creator profile | Public | `profiles` and `usernames` are public reads. Follow, Gift, Block and Report ask for sign-in. Tip is hidden from guests. A guest's own profile shows the sign-in prompt. |
+| `/followers`, `/following` | `followers`, `following` | Follower lists | Account | `profiles/*/followers` and `profiles/*/following` need sign-in. A guest relation link opens the public profile. |
+| `/creators` | `creators` | Creator directory | Public | `creatorDirectory` is a public read. Follow asks for sign-in. |
+| `/folders` | `foldersDiscover` | Discover folders | Public | `folderTrending` and `publicFolders` are public reads. Follow asks for sign-in. A guest has no saves, so "Like your saves" shows its empty message. |
+| `/folder/:folderId` | `folder` | One folder | Public | A guest sees the public folder. Follow asks for sign-in. A private folder shows only to its owner and members; a guest gets "This folder is private or no longer exists". |
+| `/folder/invite/:code` | `folderInvite` | Folder invite | Account | An invite joins a private folder. |
+| `/ai` | `ai` | AI wallpapers | Account | Generation spends coins. |
+| `/download-wallpaper`, `/wallpaper-filter`, `/choose-wallpaper`, `/photo-preview` | `downloadWallpaperInput`, `wallpaperFilterInput`, `chooseImage`, `photoPreview` | Wallpaper tools | Account | These save or edit images. |
+| `/wallpaper-position`, `/live-wallpaper` | `wallpaperPositionInput`, `liveWallpaperInput` | Set tools | Account | These set a wallpaper. |
+| `/upload-wall` | `uploadInput` | Upload | Account | Uploads belong to an account. |
+| `/quick-tile-settings`, `/auto-rotate`, `/ios-shortcuts` | `quickTileSettings`, `autoRotate`, `iosShortcuts` | Set automation | Account | These set wallpapers from the user's folders. |
+| `/daily-moment`, `/daily-chest`, `/spin-wheel` | `dailyMoment`, `dailyChest`, `spinWheel` | Daily rewards | Account | Rewards go to an account. |
+| `/shop`, `/leaderboard`, `/draw` | `shop`, `leaderboard`, `draw` | Coin economy | Account | `boosts`, `leaderboards` and `draws` need sign-in. |
+| `/rewards`, `/coin-history` | `rewards`, `redeemCode`, `coinHistory` | Coins | Owner | The user's own coins. |
+| `/edit-profile`, `/share-prism`, `/blocked-accounts` | `editProfile`, `sharePrism`, `blockedAccounts` | Account settings | Owner | The user's own account. |
+| `/fav-walls`, `/downloads`, `/library` | `favourites`, `downloads`, `library`, `wallpaperHistory` | Library | Owner | The user's own saves. |
+| `/edit-wall`, `/review`, `/creator-stats` | `editWallInput`, `review`, `creatorStats` | Creator tools | Owner | The user's own walls. |
+| `/notifications` | `notifications` | Inbox | Owner | The user's own notifications. |
+| `/wrapped` | `wrapped` | Wrapped | Owner | The user's own year. |
+| `/admin-review`, `/admin-review/swipe`, `/admin-review/image`, `/admin-firestore-telemetry`, `/admin-promo-codes`, `/debug-panel` | `adminReview`, `swipeReview`, `adminImage`, `adminTelemetry`, `adminPromoCodes`, `debugPanel` | Admin tools | Admin | Admins only. |
 
-On iOS, an expired or revoked session does not currently clear Library favourites or history already held in memory. Signing out from Settings restarts the app. A route guard controls navigation; it does not clear cached data.
+Redirects use the rule of their target. `/paywall` uses `/premium`. `/streak` and `/coin-transactions` use `/rewards`.
 
-The Guard column gives the guard in `AppRouter`:
-
-- `none`: no route guard.
-- `guests on iOS`: `SignedInGuard(allowGuests: true)`, on the route or on its parent.
-- `sign-in`: `SignedInGuard`. Sign-in opens first. The page opens after it.
-- `prompt`: no route guard. A guest sees a sign-in prompt in place of the content.
-- `admin`: `AdminGuard`.
-
-The route guard controls navigation, not data visibility. The route's public-read rules and account actions are described below.
-
-A guest can read `profiles/{uid}`, `usernames/{name}`, `publicFolders/{id}` and its `items`, `folderTrending` and `creatorDirectory`. These hold only public projections. A signed-in reader still does not see a public Folder of a creator they block, or who blocks them.
-
-`test/core/router/route_guards_test.dart` reads this table. The test fails when an `AppRouter` route, redirect, wildcard, or route-catalog target has no row, and when a row does not agree with the effective guard. Redirect rows use `-` for the target because their destination already owns the catalog target. A new route must add a row.
-
-| Route | Deep link targets | Shows | Guard | Access | Why |
-|---|---|---|---|---|---|
-| `/` | `splash` | Startup. Then the dashboard, or sign-in on Android. | none | public | Startup holds no user data. |
-| `/onboarding/v2` | `onboarding` | Sign-in and onboarding. | none | public | This is the sign-in page. |
-| `/dashboard` | `dashboard` | The app shell. | guests on iOS | public | Guest browsing on iOS (#768). |
-| `/dashboard/home` | `home` | The Home feed. | guests on iOS | public | Walls are public on the web. |
-| `/dashboard/search` | `searchTab` | Wallpaper search. | guests on iOS | public | Walls are public on the web. |
-| `/dashboard/search/users` | `userSearch` | Creator search. | prompt | account | A guest sees the sign-in prompt on the page. Creator search is not open to guests. |
-| `/dashboard/rewards` | `rewardsTab` | The user's coins, streak and rewards. | sign-in | owner | Data of one user. |
-| `/dashboard/streak` | - | Redirects to `/dashboard/rewards`. | sign-in | owner | Uses the destination route's guard. |
-| `/dashboard/collection` | `collectionTab` | The Collections tab. | guests on iOS | public | Collections are public on the web. |
-| `/ai` | `ai` | AI wallpaper generation. | sign-in | account | Generation spends the user's coins. |
-| `/wallpaper-detail` | `wallpaperDetail` | One wallpaper. | none | public | Walls are public on the web. Set, Save and Favourite ask for sign-in. |
-| `/wotd-archive` | `wotdArchive` | Past Wall of the Day picks. | none | public | Anyone can read the picks. |
-| `/download-wallpaper` | `downloadWallpaperInput` | The download preview. | sign-in | account | A download is an action. |
-| `/wallpaper-filter` | `wallpaperFilterInput` | The filter editor. | sign-in | account | An edit is an action. |
-| `/choose-wallpaper` | `chooseImage`, `uploadInput`, `editWallInput` | The image picker page. | sign-in | account | Each workflow is an action. |
-| `/share-in` | - | A share from another app. Only the `prism:` scheme opens it. | none | public | The page shows the item that the user shared. See [share-to-prism.md](share-to-prism.md). |
-| `/premium` | `premium` | The Premium plans. | none | public | iOS permits guest purchases. |
-| `/paywall` | - | Redirects to `/premium`. | none | public | Uses the destination route's guard. |
-| `/photo-preview` | `photoPreview` | The full photo preview. | sign-in | account | It is a step of Set and Download. |
-| `/clock-preview` | `clockPreview` | The lock and home screen preview. | none | public | A preview changes nothing. |
-| `/edit-profile` | `editProfile` | The user's profile editor. | sign-in | owner | Data of one user. |
-| `/share-prism` | `sharePrism` | The user's referral page. | sign-in | owner | Data of one user. |
-| `/settings` | `settings` | Settings. | none | public | Device settings. Account rows ask for sign-in. |
-| `/layout` | `layoutSettings` | Layout settings. | none | public | Device settings. |
-| `/blocked-accounts` | `blockedAccounts` | The user's blocked accounts. | sign-in | owner | Data of one user. |
-| `/about` | `about` | About Prism. | none | public | No user data. Android also opens it signed out. |
-| `/fav-walls` | `favourites` | The user's favourites. | sign-in | owner | Data of one user. |
-| `/downloads` | `downloads` | The user's downloads. | sign-in | owner | Data of one user. |
-| `/library` | `library`, `wallpaperHistory` | The user's Library. | sign-in | owner | Data of one user. |
-| `/folder/:folderId` | `folder` | One Folder. | none | public | A guest sees the public Folder. Follow asks for sign-in. A private Folder shows only to its owner and editors; a guest gets "This folder is private or no longer exists". |
-| `/folder/invite/:code` | `folderInvite` | The join page of a Folder invite. | sign-in | account | Joining a Folder is an account action. The page opens after sign-in. |
-| `/upload-wall` | - | The upload form. | sign-in | owner | The user's own upload. |
-| `/edit-wall` | - | The edit form of a submitted wall. | sign-in | owner | The user's own wall. |
-| `/creator-stats` | `creatorStats` | The user's creator stats. | sign-in | owner | Data of one user. |
-| `/review` | `review` | The user's pending and rejected submissions. | sign-in | owner | Data of one user. |
-| `/theme` | `theme` | Themes. | none | public | Device settings. |
-| `/notifications` | `notifications` | The user's inbox. | sign-in | owner | Data of one user. |
-| `/collection-view` | `collectionView` | One collection or category. | none | public | Collections are public on the web. |
-| `/mood/:moodId` | `mood` | One mood. | none | public | Anyone can read moods. |
-| `/editors-choice` | `editorsChoice` | Editors' Choice walls. | none | public | Walls are public on the web. |
-| `/gallery` | `gallery` | A set of 2 to 12 walls. | none | public | Walls are public on the web. |
-| `/requests` | `wallRequests` | Wall requests. | none | public | The list callable needs no sign-in. A vote or a request asks for sign-in. |
-| `/creators` | `creators` | The creator directory. | none | public | Anyone can read `creatorDirectory`. Follow asks for sign-in. |
-| `/folders` | `foldersDiscover` | Discover Folders. | none | public | Anyone can read `folderTrending`. Follow asks for sign-in. A guest has no saves, so "Like your saves" shows its empty message. |
-| `/wrapped` | `wrapped` | The user's Wrapped. | sign-in | owner | Data of one user. |
-| `/challenges/:challengeId` | `weeklyChallenge` | One weekly challenge. | none | public | Anyone can read challenges. A submission asks for sign-in. |
-| `/user/:identifier` | `profile` | One creator profile. | none | public | Anyone can read `profiles` and `usernames`. Follow, Gift, Block and Report ask for sign-in. Tip is hidden from guests. A guest's own profile shows the sign-in prompt. |
-| `/followers` | `followers` | The followers of one profile. | sign-in | account | The relation list is available after sign-in. |
-| `/following` | `following` | The accounts that one profile follows. | sign-in | account | The relation list is available after sign-in. |
-| `/admin-review` | `adminReview` | The admin review queue. | admin | admin | Admin work. |
-| `/admin-review/swipe` | `swipeReview` | The swipe review. | admin | admin | Admin work. |
-| `/admin-review/image` | `adminImage` | The full image of a wall in review. | admin | admin | Admin work. |
-| `/admin-firestore-telemetry` | `adminTelemetry` | Firestore telemetry. | admin | admin | Admin work. |
-| `/admin-promo-codes` | `adminPromoCodes` | Promo codes. | admin | admin | Admin work. |
-| `/debug-panel` | `debugPanel` | The debug pages. | admin | admin | Admin work. |
-| `/quick-tile-settings` | `quickTileSettings` | The user's quick tile setup. | sign-in | owner | It uses the user's Library. |
-| `/auto-rotate` | `autoRotate` | The user's auto-rotate setup. | sign-in | owner | It uses the user's Library. |
-| `/ios-shortcuts` | `iosShortcuts` | The user's Shortcuts guide. | sign-in | owner | It uses the user's Folders. |
-| `/wallpaper-position` | `wallpaperPositionInput` | The position editor. | sign-in | account | It is a step of Set. |
-| `/live-wallpaper` | `liveWallpaperInput` | The live wallpaper editor. | sign-in | account | It is a step of Set. |
-| `/rewards` | `rewards`, `redeemCode` | The user's rewards. | sign-in | owner | Data of one user. |
-| `/daily-moment` | `dailyMoment` | The user's daily moment. | sign-in | owner | Data of one user. |
-| `/coin-history` | `coinHistory` | The user's coin history. | sign-in | owner | Data of one user. |
-| `/coin-transactions` | - | Redirects to `/rewards`. | sign-in | owner | Uses the destination route's guard. |
-| `/daily-chest` | `dailyChest` | The user's daily chest. | sign-in | owner | Data of one user. |
-| `/spin-wheel` | `spinWheel` | The user's spin wheel. | sign-in | owner | Data of one user. |
-| `/shop` | `shop` | The coin shop. | sign-in | account | A purchase spends the user's coins. |
-| `/drops` | `drops` | The live Drop and the vault. | none | public | Anyone can read Drops. A purchase asks for sign-in. |
-| `/drops/:weekKey` | `dropDetail` | One Drop. | none | public | Anyone can read Drops. |
-| `/drops/:weekKey/preview/:wallId` | `dropPreview` | One Drop wall, with a watermark. | none | public | A preview unlocks nothing. |
-| `/leaderboard` | `leaderboard` | The leaderboard. | sign-in | account | `leaderboards` needs sign-in. |
-| `/draw` | `draw` | The weekly draw. | sign-in | account | `draws` needs sign-in. |
-| `/not-found` | `notFound` | The unavailable page. | none | public | No user data. Android also opens it signed out. |
-| `/streak` | - | Redirects to `/rewards`. | sign-in | owner | Uses the destination route's guard. |
-| `*` | - | Redirects unmatched router paths to `/not-found`. | none | public | The unavailable page is public. |
+To add a route, add a row to `routeAccess`. Choose the most strict rule that the Firestore rules let the page read.
 
 ## Shared entry pipeline
 

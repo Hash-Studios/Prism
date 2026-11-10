@@ -1,5 +1,6 @@
 import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_live.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -31,6 +32,29 @@ WallDepthTier? _depthTierAfterRoundTrip(PrismFavouriteWall wall) {
 }
 
 void main() {
+  test('a live favourite and folder item keeps its video through persisted and retry docs', () {
+    const wall = PrismFavouriteWall(
+      id: 'live-1',
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(
+          id: 'live-1',
+          source: WallpaperSource.prism,
+          fullUrl: 'https://example.test/poster.jpg',
+          thumbnailUrl: 'https://example.test/thumb.jpg',
+        ),
+        live: WallLive(videoUrl: 'https://example.test/loop.mp4', durationMs: 1200, verified: true),
+      ),
+    );
+    final stored = FavouriteWallDocDto.fromJson(favouriteWallToDoc(wall)).toJson();
+    final restored = mapFavouriteWallDoc(FavouriteWallDocDto.fromJson(stored), 'live-1') as PrismFavouriteWall;
+    expect(restored.wallpaper.kind, WallKind.live);
+    expect(restored.wallpaper.live?.videoUrl, 'https://example.test/loop.mp4');
+    expect(restored.wallpaper.live?.durationMs, 1200);
+    expect(restored.wallpaper.live?.verified, isTrue);
+    expect(restored.fullUrl, 'https://example.test/poster.jpg');
+    expect(restored.thumbnailUrl, 'https://example.test/thumb.jpg');
+  });
+
   test('a Prism favourite keeps its Depth Effect tier through the doc', () {
     for (final WallDepthTier tier in WallDepthTier.values) {
       expect(_depthTierAfterRoundTrip(_prismFav(depthTier: tier)), tier, reason: tier.name);

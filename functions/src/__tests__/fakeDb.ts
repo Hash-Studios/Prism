@@ -1,5 +1,6 @@
 import type {TestContext} from "node:test";
 import * as admin from "firebase-admin";
+import {isDeepStrictEqual} from "node:util";
 import {db} from "../common";
 
 export type Doc = Record<string, unknown>;
@@ -64,8 +65,9 @@ function matches(value: unknown, op: string, expected: unknown): boolean {
   case ">": return a !== undefined && a > b;
   case ">=": return a !== undefined && a >= b;
   case "in": return (expected as unknown[]).map(comparable).includes(a);
-  case "array-contains": return Array.isArray(value) && value.includes(expected);
-  case "array-contains-any": return Array.isArray(value) && (expected as unknown[]).some((x) => value.includes(x));
+  case "array-contains": return Array.isArray(value) && value.some((item) => isDeepStrictEqual(item, expected));
+  case "array-contains-any": return Array.isArray(value) &&
+    (expected as unknown[]).some((x) => value.some((item) => isDeepStrictEqual(item, x)));
   default: throw new Error(`fakeDb: unsupported operator ${op}`);
   }
 }

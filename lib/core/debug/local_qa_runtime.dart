@@ -13,6 +13,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/persistence/migrations/persistence_migration_runner.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/live_wall_video.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/domain/repositories/ads_repository.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
@@ -23,6 +24,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
+import 'package:video_player/video_player.dart';
 
 class LocalQaRuntime {
   LocalQaRuntime._();
@@ -44,6 +46,12 @@ class LocalQaRuntime {
     }
     if (base64Decode(Env.localQaCertificate).isEmpty) throw StateError('Missing exact fixture DER certificate.');
     HttpOverrides.global = _LocalQaHttpOverrides();
+    // Native video players skip HttpOverrides and do not trust the fixture certificate. Debug builds allow plain
+    // HTTP to localhost, so they read the same fixture server on its HTTP port.
+    LiveWallVideo.createController = (url) => VideoPlayerController.networkUrl(
+      url.host == 'localhost' && url.port == 19375 ? url.replace(scheme: 'http', port: 19380) : url,
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+    );
     AnalyticsRuntime.instance = const NoopAppAnalytics();
   }
 

@@ -284,3 +284,131 @@ Command:
 ```sh
 fvm flutter test --no-pub test/features/live_wallpaper
 ```
+
+## Creator live walls
+
+A creator can upload a short looping MP4. The video is the live wall. Its poster is a still image of the first frame. Feeds show a Live badge and play a silent preview. Android can set the video as a live wallpaper. iOS cannot use a video as a wallpaper.
+
+To upload a live wall, see [upload.md](upload.md#live-walls).
+
+### Data
+
+| Field | Written by | Meaning |
+|---|---|---|
+| `kind` | Creator, on create | `live` for a live wall. `still`, or no value, means a still wall. |
+| `live.video`, `live.videoPath`, `live.videoSha` | Creator, on create | The MP4 URL, its repo path and its blob SHA. |
+| `live.frames` | Creator, on create | Three moderation frames. They show the start, the middle and the end. Each frame has `url`, `path` and `sha`. |
+| `live.durationMs`, `live.width`, `live.height`, `live.codec`, `live.bytes`, `live.loop` | Server | Facts read from the MP4 headers. `loop` is `true` after a check. |
+| `live.verified` | Server | `true` when the server proves every file. |
+| `live.error` | Server | The reason for a failed check. Present only when `verified` is `false`. |
+| `wallpaper_url`, `wallpaper_thumb` | Creator | The poster. The poster is the still image of the first frame. |
+
+The server replaces the `live` map after its check (`verifyLiveWall` in `functions/src/wallLive.ts`). The rules allow the creator to write `kind` and the client keys of `live` only on create (`validLiveCreate` in `firestore.rules`).
+
+### Old clients
+
+Old clients read the poster in `wallpaper_url`. They show it as a still wall, and they can set it as a still wallpaper.
+
+Old clients list only walls with `review == true`. A live wall uses the same gate. The rules refuse `review == true` until the server verifies the video (`liveReviewOk` in `firestore.rules`). So a live wall is public only when its video is proven.
+
+### Video limits
+
+| Limit | Value | Checked on the device | Checked on the server |
+|---|---|---|---|
+| Container | MP4. QuickTime files are refused. | `inspectLiveVideo` in `lib/features/wallpaper_upload/biz/live_upload_limits.dart` | `inspectLiveVideo` in `functions/src/liveVideo.ts` |
+| Codec | H.264, in an `avc1` or `avc3` sample entry. | Same as above | Same as above |
+| Duration | 15 seconds at most. | Same as above. The picker also stops at 15 seconds. | Same as above |
+| Size | 20 MB at most. | `prepareLiveVideo` in `lib/features/wallpaper_upload/data/live_video_preparer.dart` | `githubPutFile` in `functions/src/githubContent.ts` |
+| Orientation | Portrait. Height is more than width. | Same as above | Same as above |
+| Display size | 1440 × 3200 pixels at most. Track rotation counts. | Same as above | Same as above |
+
+The device reads the MP4 box headers. The server also reads the SPS sizes and the AVC configuration. It checks the sample tables against the track. It does not decode the video.
+
+### Surfaces
+
+| Surface | What the user sees | Code |
+|---|---|---|
+| Home and collection grids | Live badge. One silent preview plays at a time. | `lib/features/category_feed/views/widgets/wallpaper_tile.dart`, `lib/features/category_feed/views/widgets/collections_view_grid.dart`, `lib/core/widgets/live_tag.dart` |
+| Search and Wall of the Day archive | Live badge over the poster. No preview. | `lib/features/user_search/views/widgets/search_grid.dart`, `lib/features/wall_of_the_day/views/pages/wotd_archive_page.dart` |
+| Wall detail | Plays muted and loops. Pauses off screen. A pause button shows. | `lib/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart`, `lib/core/widgets/live_wall_video.dart` |
+| Reduced motion or data saver | Feed shows the poster only. Detail shows the poster with a play button. | `lib/core/widgets/live_wall_video.dart` |
+| Review queue | Plays even with reduced motion or data saver. Shows "Checking the video" or "The video failed the server check" until the check passes. | `lib/features/admin_review/views/widgets/swipe_wallpaper_card.dart` |
+| Folders, smart Folders and favourites | The poster. No badge and no preview. Smart Folder items copy `kind` and `live`. | `lib/features/favourite_walls/data/favourite_wall_doc_mapper.dart`, `functions/src/smartFolders.ts` |
+| Profile | The poster. No badge and no preview. | `lib/features/public_profile/domain/public_profile_snapshot_codec.dart` |
+| Push images | The poster. | `functions/src/onWallApproved.ts` |
+| iOS widgets | The cached still image. | `ios/PrismLiveActivities/PrismWidgets.swift` |
+| Share cards | The still image. | `lib/core/share/share_sheet.dart` |
+| Web catalogue | The poster. The web app has no live code. | `web/` |
+
+### Set a live wall
+
+- On Android, the **Set live wallpaper** button downloads the MP4. Then it opens the system preview through `LiveWallpaperRepository.applyVideo`. The user taps **Set wallpaper** there. Code: `LiveSetButton` in `lib/features/wallpaper_detail/views/widgets/live_wall_actions.dart`.
+- On iOS, the wall detail shows a note under the actions. The note says that iPhone cannot use a video as a wallpaper. The action bar has two options.
+  - **Set poster as wallpaper** saves the poster to Photos, like the Save button of a still wall.
+  - **Save video** saves the MP4 to Photos. Code: `LiveSaveVideoButton` and `LiveIosNote` in `lib/features/wallpaper_detail/views/widgets/live_wall_actions.dart`.
+- The Live Photo export is hidden for live walls. So are the **Make it live** button and chip. Live Photo animates one still image. It cannot use the creator's video.
+
+### Memory
+
+- The feed holds one video player at a time. The slot is `_feedSlot` in `lib/core/widgets/live_wall_video.dart`.
+- A feed card closes its player when the card leaves the screen.
+- A detail page or review card pauses its player when it leaves the screen.
+- A player that does not close frees its slot after 2 seconds (`LiveWallVideo.releaseBudget`).
+
+### Analytics
+
+| Event | Fields |
+|---|---|
+| `live_wall_upload_started` | None |
+| `live_wall_submitted` | `duration_ms` |
+| `live_wall_preview_played` | `surface`: `feed`, `detail` or `review` |
+| `live_wall_set` | `platform`, `action` and `result`. Android sends `action` `live`. iOS sends `poster` or `video`. |
+
+### Limits and known gaps
+
+- The creator makes the poster and the frames on the device. A creator can upload clean frames for a bad video. The admin must watch the clip before approval.
+- The server checks the H.264 structure. It does not decode the video.
+- Uploads that never become a wall stay in R2 while the account is active. The owner must decide a retention rule. Deleting the account removes them (`tombstoneUnreferencedLiveUploads` in `functions/src/wallLive.ts`).
+- iOS users with an HEVC clip must export H.264 first. The app does not transcode.
+
+### Deploy order
+
+Nothing is deployed for creator live walls. Each step needs owner approval.
+
+1. Deploy the Firestore rules.
+2. Run `make functions-env`. New functions get the R2 variables only from `functions/.env`.
+3. Deploy these functions.
+   - `githubPutFile` and `githubDeleteFile`. The memory of `githubPutFile` rises from 256 MiB to 512 MiB. Deploy it after the asia-south1 CPU quota PR.
+   - `onWallSubmitted` and `onWallModerate`. `onWallSubmitted` now retries, and its memory rises to 512 MiB. Deploy it after the asia-south1 CPU quota PR.
+   - `onOwnedWallWritten` and `onR2TombstoneCleanup`.
+   - `releaseScheduledWalls`.
+   - `planWeeklyDrop`, `sendDropPushes`, `setDropTitle` and `unlockDrop`.
+   - `deleteAccount`.
+   - `rejectWallForReview`, `undoWallRejection`, `submitWallResubmission` and `getWallResubmissionContext`.
+   - The smart Folder functions: `createSmartFolder`, `updateSmartFolderRules`, `previewSmartFolder`, `onWallSmartFolders` and `onSmartFollowWritten`.
+   - `onRejectedLiveWallDeleted`. This function is new and runs in asia-south1. Deploy it only after the asia-south1 CPU quota PR.
+4. Release the app.
+
+### How to test
+
+- Local QA harness: see [tool/live_walls_qa/README.md](../../tool/live_walls_qa/README.md).
+- Functions tests, run with `cd functions && npm run build && node --test 'lib/__tests__/*.test.js'`:
+  - `functions/src/__tests__/liveVideo.test.ts`
+  - `functions/src/__tests__/wallLive.test.ts`
+  - `functions/src/__tests__/githubContent.test.ts`
+  - `functions/src/__tests__/wallModeration.test.ts`
+  - `functions/src/__tests__/onWallSubmitted.test.ts`
+  - `functions/src/__tests__/wallRelease.test.ts`
+  - `functions/src/__tests__/drops.test.ts`
+  - `functions/src/__tests__/r2Storage.test.ts`
+- Rules smoke test: `tool/firestore_rules_smoke.mjs`. It has live wall fixtures.
+- Dart tests, run with `fvm flutter test --no-pub` and the file paths below:
+  - `test/core/widgets/live_wall_video_test.dart`
+  - `test/core/widgets/live_wall_video_lifecycle_test.dart`
+  - `test/core/widgets/live_tag_test.dart`
+  - `test/features/wallpaper_upload/live_upload_limits_test.dart`
+  - `test/features/wallpaper_upload/live_video_preparer_test.dart`
+  - `test/features/admin_review/live_review_card_test.dart`
+  - `test/features/wallpaper_detail/live_wall_actions_test.dart`
+  - `test/features/wallpaper_detail/live_video_download_test.dart`
+  - `test/features/prism_feed/data/mappers/prism_wall_live_mapper_test.dart`
