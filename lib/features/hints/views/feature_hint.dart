@@ -295,7 +295,7 @@ class _HintCalloutState extends State<_HintCallout> with SingleTickerProviderSta
                   behavior: HitTestBehavior.opaque,
                   onTap: widget.onGotIt,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    constraints: BoxConstraints(minWidth: prismTapTarget(context), minHeight: prismTapTarget(context)),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs),
                       child: Center(

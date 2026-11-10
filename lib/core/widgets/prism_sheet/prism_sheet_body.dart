@@ -183,7 +183,7 @@ class _PrismSheetHeader extends StatelessWidget {
     final Widget? action = trailingAction == null ? null : _TrailingAction(action: trailingAction!);
     // Both sides take the width of the wider one, so the title stays centred on the row.
     final double slot = math.max(
-      PrismBottomSheet.headerSlotWidth,
+      prismTapTarget(context),
       trailingAction == null ? 0 : _TrailingAction.width(context, trailingAction!.label),
     );
     return Material(

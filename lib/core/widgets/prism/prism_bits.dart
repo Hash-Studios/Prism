@@ -172,8 +172,7 @@ class PrismSegmented<T> extends StatelessWidget {
     final int index = values.indexOf(selected).clamp(0, values.length - 1);
     final double x = values.length == 1 ? 0 : -1 + 2 * index / (values.length - 1);
     final Color thumb = cs.brightness == Brightness.dark ? cs.surfaceContainerHighest : cs.surface;
-    // 44 points as on iOS; Android keeps Material's 48 dp touch target.
-    final double minHeight = Theme.of(context).platform == TargetPlatform.android ? 48 : 44;
+    final double minHeight = prismTapTarget(context);
     return Container(
       constraints: BoxConstraints(minHeight: minHeight),
       decoration: BoxDecoration(

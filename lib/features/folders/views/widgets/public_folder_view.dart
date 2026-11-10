@@ -281,8 +281,8 @@ class PublicFolderHeader extends StatelessWidget {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(PrismRadius.pill),
                   onTap: () => unawaited(context.router.push(ProfileRoute(profileIdentifier: folder.ownerId))),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: PrismSpace.xxs),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: prismTapTarget(context)),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
