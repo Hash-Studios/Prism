@@ -27,6 +27,66 @@ The backend serves Android and iOS. Two items are iOS only:
 
 No change. No step in the first release of this guide touches coins, premium, or subscription rules, and that release does not change `firestore.rules`. Later sections that change rules, such as Wall requests, include their own rules step. Follow the order in each section.
 
+## Check drift
+
+Use this check before a release to see what master has that production does not.
+
+```sh
+make deploy-drift          # table and deploy plan
+make deploy-drift JSON=1   # the same data as JSON
+```
+
+The command is read only. It builds `functions/lib` on your machine, and then it only lists, gets, or describes. It does not deploy, write, run `--apply`, or publish Remote Config. It prints names, states, times, and options. It does not print secret values or environment values.
+
+Before you run it:
+
+1. Log in to gcloud with an account that can read `prism-wallpapers`.
+2. Install the functions packages: `cd functions && npm ci`.
+3. Log in to Wrangler (`npx wrangler login`). The check gets the Cloudflare account from `CLOUDFLARE_ACCOUNT_ID`. If that is not set, it uses `BROWSER_RENDERING_ACCOUNT_ID` in the worker `wrangler.toml`.
+
+What it compares:
+
+| Kind | Master | Live |
+|---|---|---|
+| Rules | `firestore.rules` | The released ruleset (Firebase Rules API). Whitespace changes are not drift. |
+| Index | `indexes` in `firestore.indexes.json` | `gcloud firestore indexes composite list`. Live `__name__` fields are ignored. |
+| TTL | `fieldOverrides` with `ttl: true` | `gcloud firestore fields ttls list` |
+| Function | The deploy manifest from `functions/lib`, per region | `gcloud functions list --v2` |
+| Function options | Memory, CPU, and max instances, with the firebase-tools defaults | The same fields on the live function |
+| Worker | The last master change under `infra/cloudflare/worker/` (not `test/`) | The last Wrangler deployment |
+| Remote Config key | The keys that `lib/` and `functions/src` read | The published template |
+| Migration | Every script in `functions/src` that accepts `--apply` | Cannot be read. See below. |
+
+Each item gets one status:
+
+- `in sync`: master and production agree.
+- `missing live`: master has it, production does not.
+- `different`: both have it, but they do not agree.
+- `live only`: production has it, master does not.
+- `unknown`: the check cannot read it. Ask the owner.
+
+How a function is `different`:
+
+- The live function is not `ACTIVE`.
+- A file in the function's import graph, or `functions/package.json`, landed on master after the live deploy time. This catches a function that has the same name but old code. The time is when the merge landed on master, not when the commit was written.
+- An option that the source sets is not the live value. If the source does not set max instances, the check does not compare it.
+
+Limits:
+
+- A deploy from a branch before its merge shows `different` until the next deploy. This is safe.
+- A deploy from an old checkout after a merge shows `in sync`. The check reads deploy times, not the deployed code.
+- A Remote Config key that the app reads through a dynamic name is not found.
+- The check cannot see whether someone ran a migration with `--apply`. Each migration shows `unknown` and the note from its PR or this page. The notes are in `tool/deploy_drift_migrations.json`. When you run an `--apply`, update its note.
+
+The plan uses the order in the `prism-release` skill: rules, indexes and TTLs, functions, migrations, worker, Remote Config keys. Each step shows the reason, the command, and the PR that added each item. The check does not run the commands. Each deploy still needs the owner's yes.
+
+Two results need special care:
+
+- A `live only` index. `firestore.indexes.json` must list every live index. A deploy with `--force` deletes the index. Add it to the file before you deploy indexes.
+- A `live only` function. A non-interactive functions deploy stops on it. Delete it by hand, or deploy with `--only functions:<name>`.
+
+The command exits with 1 when it cannot read a live source. Drift alone does not make it fail.
+
 ## How it works
 
 ### Before you start

@@ -1,4 +1,4 @@
-.PHONY: public-apk setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard rules-test no-dynamic-guard no-shape-parse-guard guard-test env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab release-android release-ios patch patch-list patch-promote patch-rollback ensure-shorebird size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test cloudflare-worker-check find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy hooks repo-assets-check store-listings-check
+.PHONY: public-apk setup setup-dev ensure-fvm get doppler-check doppler-login secrets-print update-flutter format fmt format-check analyze analytics-gen analytics-guard analytics-check firestore-guard rules-test no-dynamic-guard no-shape-parse-guard guard-test env-guard system-ui-guard secrets-guard version-sync version-guard file-gen pigeon-gen run build build-aab release-android release-ios patch patch-list patch-promote patch-rollback ensure-shorebird size-android sentry-size-upload attach ios-setup build-ios build-ipa ci test cloudflare-worker-check find-unused find-unused-html find-unused-ci gradle-reset functions-env functions-secrets-sync functions-deploy deploy-drift hooks repo-assets-check store-listings-check
 
 DART_FORMAT_LINE_LENGTH ?= 120
 DART_FORMAT_PATHS ?= lib test
@@ -163,7 +163,7 @@ no-shape-parse-guard:
 
 guard-test:
 	@bash tool/search_guard_test.sh
-	@python3 -m unittest tool.release_tools_test tool.release_workflows_test tool.ios_ci_signing_test tool.app_size_workflow_test tool.ci_workflow_test tool.shorebird_ota_test tool.public_apk_test
+	@python3 -m unittest tool.release_tools_test tool.release_workflows_test tool.ios_ci_signing_test tool.app_size_workflow_test tool.ci_workflow_test tool.shorebird_ota_test tool.public_apk_test tool.deploy_drift_test
 	@node --test tool/ai_style_samples.test.mjs tool/shared_folders_qa.test.mjs
 
 .PHONY: notification-contract-fixture-test
@@ -336,6 +336,10 @@ functions-secrets-sync:
 functions-deploy: functions-env
 	@cd functions && npm run build
 	@firebase deploy --only functions,firestore:indexes $(FIREBASE_ARGS)
+
+deploy-drift: ## Read only: compare master with production and print the deploy plan (JSON=1 for JSON)
+	@cd functions && npm run build
+	@python3 tool/deploy_drift.py $(if $(JSON),--json,)
 
 gradle-reset:
 	@echo "Stopping Gradle daemons and clearing transform cache..."
