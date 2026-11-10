@@ -148,7 +148,7 @@ export async function releaseOldDrops(nowMs: number): Promise<number> {
 }
 
 export const planWeeklyDrop = onSchedule(
-  {schedule: "30 0 * * 1", region: REGION, timeZone: "UTC", retryCount: 1},
+  {schedule: "30 0 * * 1", region: REGION, timeZone: "UTC", retryCount: 1, timeoutSeconds: 180, cpu: "gcf_gen1"},
   async () => {
     const nowMs = Date.now();
     await releaseOldDrops(nowMs);

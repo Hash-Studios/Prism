@@ -39,11 +39,14 @@ const callables: Record<string, Endpoint> = Object.fromEntries(Object.entries(en
   .filter(([, endpoint]) => Object.prototype.hasOwnProperty.call(endpoint, "callableTrigger")));
 const users = Object.entries(callables).filter(([name]) => !ADMIN_ONLY.has(name));
 
-test("every user callable keeps full CPU and concurrent request handling", () => {
+test("every user callable keeps full CPU and more than one request in flight", () => {
   assert.ok(users.length > 60, "expected the complete exported user-callable inventory");
+  // A callable may take one request per instance (githubPutFile holds a large upload in memory), but then it needs
+  // at least 2 instances, so a second user does not wait on the first.
   const serialized = users.filter(([, endpoint]) => endpoint.cpu === "gcf_gen1" ||
     typeof endpoint.cpu === "number" && endpoint.cpu < 1 ||
-    typeof endpoint.concurrency === "number" && endpoint.concurrency < 2);
+    typeof endpoint.concurrency === "number" && endpoint.concurrency < 2 &&
+      !(typeof endpoint.maxInstances === "number" && endpoint.maxInstances >= 2));
   assert.deepEqual(serialized.map(([name]) => name), []);
 });
 

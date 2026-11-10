@@ -572,7 +572,7 @@ export async function verifyGithubUpload(repo: string, path: string, sha: string
 
 // ponytail: 512MiB and 120 s hold a 20 MB live video (base64 body, decoded bytes, R2 read-back) in one request.
 export const githubPutFile = onCall(
-  {...CALLABLE_OPTIONS, secrets: [githubToken, ...r2Secrets], timeoutSeconds: 120, memory: "512MiB", concurrency: 1},
+  {...CALLABLE_OPTIONS, secrets: [githubToken, ...r2Secrets], timeoutSeconds: 120, memory: "512MiB", concurrency: 1, maxInstances: 2},
   async (request: CallableRequest<GithubContentData>) => {
     const callerUid = request.auth?.uid;
     if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to upload files.");

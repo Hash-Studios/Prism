@@ -282,7 +282,7 @@ On 2026-11-09, the full 3.26.0 deploy had 200 instances live in `asia-south1` fr
 
 1. `functions/src/common.ts` sets `maxInstances: 1` for every function with `setGlobalOptions`.
 2. Set a higher `maxInstances` on a function only when its 30-day peak of active instances needs it.
-3. Do not set `maxInstances` lower than the 30-day peak of a user-facing callable.
+3. Do not set `maxInstances` lower than the 30-day peak of a user-facing callable. A user-facing callable with `concurrency: 1` (for example `githubPutFile`) needs at least 2 instances.
 4. A callable that only an admin can use takes `ADMIN_CALLABLE` from `common.ts`. It sets 1st gen CPU and 1 instance. If a user can call it on any path, it is a user-facing callable.
 5. Use `cpu: "gcf_gen1"` only for a light job. A job is light when its p95 run time, multiplied by 6, is less than half of its timeout and less than half of its schedule interval. The production p95 values come from full CPU, so this is an estimate. Check the logs of the job after the deploy.
 6. 1st gen CPU is 0.0833, 0.1666, 0.3333, 0.5833, 1, 2, and 2 vCPU at 128, 256, 512, 1024, 2048, 4096, and 8192 MiB. Below 1 vCPU, do not set `concurrency` above 1. The deploy fails.

@@ -122,6 +122,8 @@ export const planStudioBatch = onSchedule(
     timeZone: "UTC",
     region: REGION,
     retryCount: 2,
+    timeoutSeconds: 180,
+    cpu: "gcf_gen1",
   },
   async (event) => {
     const scheduledMs = Date.parse(event.scheduleTime);

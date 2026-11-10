@@ -383,7 +383,7 @@ export async function tombstoneLiveAssets(before: admin.firestore.DocumentData |
 
 /** Rejections retain their files for undo, until the creator explicitly removes that history or deletes the account. */
 export const onRejectedLiveWallDeleted = onDocumentDeleted({document: "rejectedWalls/{wallId}", region: REGION,
-  retry: true, secrets: r2Secrets, concurrency: 1, timeoutSeconds: 120}, async (event) => {
+  retry: true, secrets: r2Secrets, concurrency: 1, timeoutSeconds: 120, cpu: "gcf_gen1"}, async (event) => {
   const data = event.data?.data();
   if (!isLiveWall(data) || !data) return;
   await tombstoneLiveAssets(data);
