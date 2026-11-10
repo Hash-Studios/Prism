@@ -2,7 +2,9 @@ import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/wall_tile.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Future<void> _pumpTile(
@@ -93,5 +95,26 @@ void main() {
     await _pumpTile(tester, scheduled(), theme: ThemeData.dark());
 
     expect(_textStartingWith('Releases '), findsOneWidget);
+  });
+
+  testWidgets('the Releases tag shows its whole label at 2x text on a 320 px screen', (tester) async {
+    await _pumpTile(tester, scheduled(), textScale: 2, narrow: true);
+
+    final RenderParagraph label = tester.renderObject(
+      find.descendant(of: find.byType(PrismTag), matching: _textStartingWith('Releases ')),
+    );
+    expect(label.didExceedMaxLines, isFalse);
+  });
+
+  testWidgets('a scheduled tile meets the tap target, label and contrast guidelines in light and dark', (tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    for (final ThemeData theme in <ThemeData>[kLightTheme, kDarkTheme]) {
+      await _pumpTile(tester, scheduled(), theme: theme);
+      await tester.pump();
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(textContrastGuideline));
+    }
+    semantics.dispose();
   });
 }

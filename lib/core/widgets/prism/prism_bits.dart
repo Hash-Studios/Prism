@@ -57,11 +57,14 @@ enum PrismTone { neutral, accent, success, warning, danger }
 
 /// A small status label: "Pending", "Pro", "New". Not tappable.
 class PrismTag extends StatelessWidget {
-  const PrismTag({super.key, required this.label, this.tone = PrismTone.neutral, this.icon});
+  const PrismTag({super.key, required this.label, this.tone = PrismTone.neutral, this.icon, this.maxLines = 2});
 
   final String label;
   final PrismTone tone;
   final IconData? icon;
+
+  /// Null lets a label that holds a date or a time wrap at large text, so no part of it is cut.
+  final int? maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -87,8 +90,8 @@ class PrismTag extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              maxLines: maxLines,
+              overflow: maxLines == null ? TextOverflow.visible : TextOverflow.ellipsis,
               style: PrismTextStyles.caption(context).copyWith(fontSize: 12, fontWeight: FontWeight.w700, color: fg),
             ),
           ),
