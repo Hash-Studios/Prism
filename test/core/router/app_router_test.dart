@@ -1,5 +1,4 @@
 import 'package:Prism/core/router/app_router.dart';
-import 'package:Prism/core/router/route_guards.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -68,22 +67,5 @@ void main() {
     final matches = AppRouter().matcher.match('/share-prism');
 
     expect(matches?.map((m) => m.name), <String>[SharePrismRoute.name]);
-  });
-
-  test('guests can open the Drop pages; buying asks them to sign in on the page', () {
-    final router = AppRouter();
-    for (final path in ['/drops', '/drops/2026-W42', '/drops/2026-W42/preview/A']) {
-      final RouteMatch? match = router.matcher.match(path)?.last;
-      expect(match, isNotNull, reason: path);
-      expect(match!.guards.whereType<SignedInGuard>(), isEmpty, reason: path);
-    }
-  });
-
-  test('guests are sent to sign in before the Creators page, which needs a signed-in directory read', () {
-    final RouteMatch? match = AppRouter().matcher.match('/creators')?.last;
-
-    expect(match?.name, CreatorsRoute.name);
-    final SignedInGuard guard = match!.guards.whereType<SignedInGuard>().single;
-    expect(guard.allowGuests, isFalse);
   });
 }

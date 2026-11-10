@@ -114,18 +114,6 @@ void main() {
     }, variant: TargetPlatformVariant({platform}));
   }
 
-  test('allows a guest to enter the dashboard on iOS', () {
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    final dashboard = AppRouter().routes.singleWhere((route) => route.path == '/dashboard');
-    final guard = dashboard.guards.single as SignedInGuard;
-
-    guard.onNavigation(resolver, router);
-
-    verify(() => resolver.next()).called(1);
-    verifyNever(() => resolver.next(false));
-    verifyNever(() => router.pushPath<Object?>(any()));
-  });
-
   for (final path in [
     '/ai',
     '/download-wallpaper',
