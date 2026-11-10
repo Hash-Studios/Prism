@@ -8,7 +8,6 @@ import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/router/push_tap_startup.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -273,21 +272,6 @@ class DeepLinkDispatcher {
     required TargetTypeValue receivedTargetType,
   }) async {
     TargetTypeValue targetType = receivedTargetType;
-    bool authenticationCancelled = false;
-    Future<bool> authenticate() async {
-      if (_disposed.isCompleted || cancellation.isCompleted) {
-        authenticationCancelled = true;
-        return false;
-      }
-      if (app_state.prismUser.loggedIn) return true;
-      final bool signedIn = await AuthNavigationContinuation.of(_router).waitForSignIn(cancelled: cancellation.future);
-      if (!signedIn || _disposed.isCompleted || cancellation.isCompleted || !app_state.prismUser.loggedIn) {
-        authenticationCancelled = true;
-        return false;
-      }
-      return true;
-    }
-
     DeepLinkDispatchResult finish(DeepLinkDispatchResult result, {AnalyticsReasonValue? reason}) {
       if (result != DeepLinkDispatchResult.deferred) {
         _record(
@@ -328,11 +312,10 @@ class DeepLinkDispatcher {
       );
       if (ready != true) return finish(DeepLinkDispatchResult.cancelled);
       final DeepLinkRouteResolution? resolution = await _untilDisposed(
-        resolved ?? navigation.resolveAction(action, authenticate: authenticate),
+        resolved ?? navigation.resolveAction(action),
         cancelled: cancellation,
       );
       if (resolution == null) return finish(DeepLinkDispatchResult.cancelled);
-      if (authenticationCancelled) return finish(DeepLinkDispatchResult.cancelled);
       final PageRouteInfo? route = resolution.route;
       _record(
         DeepLinkResolvedEvent(

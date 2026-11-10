@@ -31,14 +31,12 @@ class DeepLinkNavigation {
     this.httpClient,
     this.onReferral = acceptReferralLink,
     this.onShareIn = resolveShareIn,
-    this.authenticate,
   });
 
   final DeepLinkParser parser;
   final http.Client? httpClient;
   final Future<void> Function(String inviterId) onReferral;
   final Future<DeepLinkRouteResolution> Function(ShareInIntent action, DeepLinkNavigation navigation) onShareIn;
-  final Future<bool> Function()? authenticate;
 
   static TargetTypeValue targetType(DeepLinkActionEntity action) => switch (action) {
     ShareLinkIntent() => TargetTypeValue.share,
@@ -69,29 +67,25 @@ class DeepLinkNavigation {
     return scheme == 'prism';
   }
 
-  Future<DeepLinkRouteResolution> resolveAction(
-    DeepLinkActionEntity action, {
-    Future<bool> Function()? authenticate,
-  }) async {
-    final Future<bool> Function()? auth = authenticate ?? this.authenticate;
+  Future<DeepLinkRouteResolution> resolveAction(DeepLinkActionEntity action) async {
     if (action is ShortCodeIntent) {
       final result = await ShortLinkResolver(client: httpClient, parser: parser).resolve(action.code);
       return switch (result) {
-        ShortLinkResolved(:final action) => resolveAction(action, authenticate: auth),
+        ShortLinkResolved(:final action) => resolveAction(action),
         ShortLinkFailed(:final reason, :final isNetwork) => DeepLinkRouteResolution.failure(
           reason,
           isNetwork: isNetwork,
         ),
       };
     }
-    if (action is ShareInIntent) return onShareIn(action, _withAuthentication(auth));
-    final PageRouteInfo? route = await mapActionToRoute(action, authenticate: auth);
+    if (action is ShareInIntent) return onShareIn(action, this);
+    final PageRouteInfo? route = await mapActionToRoute(action);
     return route == null
         ? const DeepLinkRouteResolution.failure(AnalyticsReasonValue.missingData)
         : DeepLinkRouteResolution.route(route);
   }
 
-  Future<PageRouteInfo?> mapActionToRoute(DeepLinkActionEntity action, {Future<bool> Function()? authenticate}) async {
+  Future<PageRouteInfo?> mapActionToRoute(DeepLinkActionEntity action) async {
     switch (action) {
       case ShareLinkIntent():
         return WallpaperDetailRoute(
@@ -118,23 +112,12 @@ class DeepLinkNavigation {
         };
       case ShortCodeIntent():
       case ShareInIntent():
-        return (await resolveAction(action, authenticate: authenticate)).route;
+        return (await resolveAction(action)).route;
       case PageLinkIntent():
-        return routeForPageLink(action, authenticate: authenticate ?? this.authenticate);
+        return routeForPageLink(action);
       case UnknownIntent():
         return null;
     }
-  }
-
-  DeepLinkNavigation _withAuthentication(Future<bool> Function()? authenticate) {
-    if (authenticate == this.authenticate) return this;
-    return DeepLinkNavigation(
-      parser: parser,
-      httpClient: httpClient,
-      onReferral: onReferral,
-      onShareIn: onShareIn,
-      authenticate: authenticate,
-    );
   }
 }
 

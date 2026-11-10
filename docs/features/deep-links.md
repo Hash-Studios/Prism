@@ -102,7 +102,7 @@ A standalone `/rewards` deep link still passes through the global access guard. 
 | `/challenges/:challengeId` | `weeklyChallenge` | Weekly challenge | Public | `weeklyChallenges` is public. Entry asks for sign-in. |
 | `/drops`, `/drops/:weekKey`, `/drops/:weekKey/preview/:wallId` | `drops`, `dropDetail`, `dropPreview` | Weekly Drop | Public | `drops` is public. Buying asks for sign-in. |
 | `/user/:identifier` | `profile` | Creator profile | Public, needs rules change | `profiles` needs sign-in. The page shows its own sign-in prompt to a guest. |
-| `/followers`, `/following` | `followers`, `following` | Follower lists | Account, needs rules change | `profiles/*/followers` and `profiles/*/following` need sign-in. A guest would see an error. |
+| `/followers`, `/following` | `followers`, `following` | Follower lists | Account, needs rules change | `profiles/*/followers` and `profiles/*/following` need sign-in. A guest link opens the profile, which asks for sign-in. |
 | `/creators` | `creators` | Creator directory | Account, needs rules change | `creatorDirectory` needs sign-in. |
 | `/folders` | `foldersDiscover` | Discover folders | Account, needs rules change | `folderTrending` and `publicFolders` need sign-in. |
 | `/folder/:folderId` | `folder` | One folder | Owner, needs rules change for a public folder | A private folder is for its owner and members. A public folder reads `publicFolders`, which needs sign-in. |

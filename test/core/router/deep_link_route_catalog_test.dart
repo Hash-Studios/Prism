@@ -231,10 +231,7 @@ void main() {
     expect((inviteRoute! as FolderInviteRoute).args!.code, code);
     expect(routeAccess[inviteRoute.routeName], RouteAccess.account);
 
-    for (final String uri in <String>[
-      '/folder/ignored-folder?invite=short',
-      '/folder/ignored-folder?invite=',
-    ]) {
+    for (final String uri in <String>['/folder/ignored-folder?invite=short', '/folder/ignored-folder?invite=']) {
       final DeepLinkRouteMatch? match = DeepLinkRouteCatalog.match(Uri.parse(uri));
       expect(match?.target, DeepLinkPageTarget.folder, reason: uri);
       final PageRouteInfo? route = await routeForPageLink(parser.parse(Uri.parse(uri)) as PageLinkIntent);
@@ -265,8 +262,7 @@ void main() {
         wallpaperLookup: ({required String wallId, required WallpaperSource source}) async =>
             _prismWithSeparateThumbnail(),
         localFileResolver:
-            ({required String imageUrl, required String wallId, required WallpaperSource source}) async =>
-                localImage,
+            ({required String imageUrl, required String wallId, required WallpaperSource source}) async => localImage,
       );
       expect(route, isNotNull, reason: example.uri);
       for (final String name in _routeNames(route!)) {
@@ -640,6 +636,24 @@ void main() {
     expect(DeepLinkRouteCatalog.match(Uri.parse('/library?tab=folders'))?.target, DeepLinkPageTarget.library);
     expect(DeepLinkRouteCatalog.match(Uri.parse('/library?tab=bogus')), isNull);
   });
+
+  for (final String uri in <String>['/user/alice/followers', '/following?user=alice']) {
+    test('a guest $uri link opens the profile without a profile lookup', () async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      var lookups = 0;
+      final PageRouteInfo? route = await routeForPageLink(
+        parser.parse(Uri.parse(uri)) as PageLinkIntent,
+        profileLookup: (String _) async {
+          lookups++;
+          return null;
+        },
+      );
+
+      expect(route, isA<ProfileRoute>());
+      expect((route!.args! as ProfileRouteArgs).profileIdentifier, 'alice');
+      expect(lookups, 0);
+    });
+  }
 }
 
 FeedItemEntity _wallpaper(String url) => PrismFeedItem(

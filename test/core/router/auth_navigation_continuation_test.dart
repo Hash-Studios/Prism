@@ -63,8 +63,7 @@ class _DestinationNavigation extends DeepLinkNavigation {
   final PageRouteInfo destination;
 
   @override
-  Future<PageRouteInfo?> mapActionToRoute(DeepLinkActionEntity action, {Future<bool> Function()? authenticate}) async =>
-      destination;
+  Future<PageRouteInfo?> mapActionToRoute(DeepLinkActionEntity action) async => destination;
 }
 
 void main() {
@@ -258,42 +257,6 @@ void main() {
     expect(await outcome, isTrue);
   });
 
-  testWidgets('a sign-in-only wait completes after auth and bootstrap without a destination', (tester) async {
-    await pumpRouter(tester, bootstrapCompleted: false);
-    final Future<bool> outcome = continuation.waitForSignIn();
-    await tester.pumpAndSettle();
-    expect(router.current.name, OnboardingV2ShellRoute.name);
-
-    app_state.prismUser.loggedIn = true;
-    unawaited(router.replaceAll([const SplashWidgetRoute()]));
-    await tester.pumpAndSettle();
-    expect(continuation.pendingNavigation, isNotNull);
-    continuation.markBootstrapCompleted();
-    unawaited(router.replaceAll([const DashboardRoute()]));
-    await tester.pumpAndSettle();
-
-    expect(await outcome, isTrue);
-    expect(continuation.pendingNavigation, isNull);
-    expect(router.current.name, DashboardRoute.name);
-  });
-
-  testWidgets('cancellation and disposal resolve a sign-in-only wait as false', (tester) async {
-    await pumpRouter(tester);
-    final Future<bool> outcome = continuation.waitForSignIn();
-    await tester.pumpAndSettle();
-    expect(router.current.name, OnboardingV2ShellRoute.name);
-
-    continuation.cancel();
-    expect(await outcome, isFalse);
-    expect(continuation.pendingNavigation, isNull);
-
-    final Future<bool> disposed = continuation.waitForSignIn();
-    await tester.pumpAndSettle();
-    continuation.dispose();
-    expect(await disposed, isFalse);
-    expect(continuation.pendingNavigation, isNull);
-  });
-
   testWidgets('a cancelled provider leaves the guest on onboarding without resuming', (tester) async {
     await pumpRouter(tester);
     await requestDestination(tester);
@@ -438,33 +401,6 @@ void main() {
     expect(continuation.pendingNavigation, isNull);
     expect(router.stackData.where((route) => route.name == 'DelayedRoute'), isEmpty);
     expect(router.stackData.where((route) => route.name == OnboardingV2ShellRoute.name), isEmpty);
-  });
-
-  testWidgets('a sign-in-only wait survives cleanup of a cancelled in-flight guard', (tester) async {
-    await pumpRouter(tester);
-    unawaited(router.push(const PageRouteInfo<void>('DelayedRoute')));
-    await tester.pumpAndSettle();
-    expect(router.current.name, OnboardingV2ShellRoute.name);
-
-    await finishSignIn(tester);
-    expect(router.pausedGuard.entered, isTrue);
-    continuation.cancel();
-    app_state.prismUser = createGuestPrismUser();
-    final Future<bool> signedIn = continuation.waitForSignIn();
-    await tester.pumpAndSettle();
-    expect(router.current.name, OnboardingV2ShellRoute.name);
-
-    router.pausedGuard.release.complete();
-    await tester.pumpAndSettle();
-    app_state.prismUser.loggedIn = true;
-    unawaited(router.replaceAll([const SplashWidgetRoute()]));
-    await tester.pumpAndSettle();
-    unawaited(router.replaceAll([const DashboardRoute()]));
-    await tester.pumpAndSettle();
-
-    expect(await signedIn, isTrue);
-    expect(continuation.pendingNavigation, isNull);
-    expect(router.current.name, DashboardRoute.name);
   });
 
   testWidgets('a guarded nested route retains its typed parent after the original scope is destroyed', (tester) async {

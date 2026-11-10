@@ -32,7 +32,6 @@ import 'package:auto_route/auto_route.dart';
 Future<PageRouteInfo?> routeForPageLink(
   PageLinkIntent intent, {
   Future<PublicProfileEntity?> Function(String identifier)? profileLookup,
-  Future<bool> Function()? authenticate,
   Future<FeedItemEntity?> Function({required String wallId, required WallpaperSource source})? wallpaperLookup,
   Future<File> Function({required String imageUrl, required String wallId, required WallpaperSource source})?
   localFileResolver,
@@ -108,18 +107,8 @@ Future<PageRouteInfo?> routeForPageLink(
       collectionName: path['collectionName'] ?? query['collectionName'] ?? query['name']!,
     ),
     DeepLinkPageTarget.profile => ProfileRoute(profileIdentifier: identifier),
-    DeepLinkPageTarget.followers => _relationRoute(
-      identifier,
-      followers: true,
-      profileLookup: profileLookup,
-      authenticate: authenticate,
-    ),
-    DeepLinkPageTarget.following => _relationRoute(
-      identifier,
-      followers: false,
-      profileLookup: profileLookup,
-      authenticate: authenticate,
-    ),
+    DeepLinkPageTarget.followers => _relationRoute(identifier, followers: true, profileLookup: profileLookup),
+    DeepLinkPageTarget.following => _relationRoute(identifier, followers: false, profileLookup: profileLookup),
     DeepLinkPageTarget.adminReview => AdminReviewRoute(),
     DeepLinkPageTarget.swipeReview => const SwipeReviewRoute(),
     DeepLinkPageTarget.adminTelemetry => const FirestoreTelemetryRoute(),
@@ -305,12 +294,11 @@ Future<PageRouteInfo?> _relationRoute(
   String identifier, {
   required bool followers,
   Future<PublicProfileEntity?> Function(String identifier)? profileLookup,
-  Future<bool> Function()? authenticate,
 }) async {
   if (identifier.trim().isEmpty) return null;
+  // A guest cannot read follower lists or look up the profile. The profile route asks them to sign in.
+  if (!app_state.prismUser.loggedIn) return ProfileRoute(profileIdentifier: identifier);
   try {
-    final bool authenticated = authenticate == null ? app_state.prismUser.loggedIn : await authenticate();
-    if (!authenticated || !app_state.prismUser.loggedIn) return null;
     final PublicProfileEntity? profile = await (profileLookup ?? _lookupProfile)(identifier);
     if (profile == null) return null;
     final PageRouteInfo route = followers ? FollowersRoute(userId: profile.id) : FollowingListRoute(userId: profile.id);

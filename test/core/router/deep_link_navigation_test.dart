@@ -185,10 +185,7 @@ void main() {
       ('/streak', <(String, RouteAccess)>[(RewardsRoute.name, RouteAccess.owner)]),
       (
         '/dashboard/streak',
-        <(String, RouteAccess)>[
-          (DashboardRoute.name, RouteAccess.public),
-          (RewardsTabRoute.name, RouteAccess.owner),
-        ],
+        <(String, RouteAccess)>[(DashboardRoute.name, RouteAccess.public), (RewardsTabRoute.name, RouteAccess.owner)],
       ),
       ('/coin-transactions', <(String, RouteAccess)>[(RewardsRoute.name, RouteAccess.owner)]),
     ];
