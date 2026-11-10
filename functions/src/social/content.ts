@@ -20,12 +20,11 @@ export interface SocialContent {
   replyText: string;
 }
 
-const SITE = "https://prismwalls.com";
-const utm = (campaign: string) => `utm_source=x&utm_medium=social&utm_campaign=${campaign}`;
-export const wallLink = (wallId: string, campaign: string) =>
-  `${SITE}/wallpaper/${encodeURIComponent(wallId.toUpperCase())}?${utm(campaign)}`;
-export const playLink = (campaign: string) =>
-  `https://play.google.com/store/apps/details?id=com.hash.prism&referrer=${encodeURIComponent(utm(campaign))}`;
+/**
+ * No link reply. X bills a post with a URL at about 13 times a plain post, so links live in the bio and a pinned
+ * post. An empty `replyText` makes the publisher skip the reply.
+ */
+const NO_REPLY = "";
 
 /** Rotates by day, so one line comes back only after `lines.length` days. Lists hold 14 lines for a 14-day gap. */
 export function rotate(lines: readonly string[], day: string, salt = 0): string {
@@ -99,7 +98,7 @@ export async function panoramaContent(day: string, exclude: Set<string>, storage
       media: jpegs.map((jpeg, i) => ({jpeg, sensitive: false,
         alt: `Panel ${i + 1} of ${jpegs.length}. ${scene}.${series ? ` ${series} by Prism Studio.` : " By Prism Studio."}`})),
       text: rotate(PANORAMA_LINES, day),
-      replyText: `Phone + desktop versions in Prism: ${wallLink(shareId, "panorama")}`,
+      replyText: NO_REPLY,
     };
   }
   return null;
@@ -159,7 +158,7 @@ export async function stillContent(day: string, exclude: Set<string>, options: {
     source: {kind: "prism", ids: [picked.id]},
     media: [{jpeg, sensitive: false, alt: `${scene}. Phone wallpaper from Prism.`}],
     text: picked.wotd ? "Wall of the Day. Which one is going on your phone this week?" : `${scene}.`,
-    replyText: `Get it in Prism: ${wallLink(picked.id, picked.wotd ? "wotd" : "still")}`,
+    replyText: NO_REPLY,
   };
 }
 
@@ -240,7 +239,7 @@ export async function gridContent(day: string, exclude: Set<string>, config: {sk
     media: picked.map((p, i) => ({jpeg: p.jpeg, sensitive: p.sensitive,
       alt: `Phone wallpaper ${i + 1} of 3${p.wall.tags.length ? `: ${p.wall.tags.slice(0, 4).join(", ")}` : ""}.`})),
     text: rotate(GRID_LINES, day),
-    replyText: `More walls in Prism: ${playLink("grid")}`,
+    replyText: NO_REPLY,
   };
 }
 

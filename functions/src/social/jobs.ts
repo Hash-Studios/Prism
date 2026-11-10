@@ -184,7 +184,7 @@ async function preview(deps: SocialDeps, ref: admin.firestore.DocumentReference,
     }
     await deps.telegram.sendPhotos([
       `${deps.config.dryRun ? "[DRY RUN] " : ""}${ref.id} · ${post.pipeline} · ${SLOTS[post.slot as Slot].time} IST`,
-      post.text, `Reply: ${post.replyText}`,
+      post.text, ...(str(post.replyText) ? [`Reply: ${post.replyText}`] : []),
       `Sensitive flags: ${media.filter((m: admin.firestore.DocumentData) => m.sensitive).length}`,
       `Source: ${post.source.kind} ${post.source.ids.join(", ")}`,
     ].join("\n\n"), images);

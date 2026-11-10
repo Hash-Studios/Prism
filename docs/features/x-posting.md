@@ -11,14 +11,14 @@ Backend only. Three scheduled functions post wallpapers to the @PrismWallpapers 
 | `eve` | 17:00 | `still` | One Studio wall, After Dark first |
 | `night` | 20:00 | `still` | One Studio wall. Sunday: today's Wall of the Day and a question |
 
-Each post gets a random 0 to 12 minute offset. The link is in a reply to the post, with `utm_source=x`.
+Each post gets a random 0 to 12 minute offset. Posts carry no link and no link reply: X bills a post with a URL at about $0.20 against about $0.015 for a plain post. Links live in the account bio and a pinned post.
 
 ## Jobs
 
 | Function | When | Does |
 |---|---|---|
 | `socialPrepare` | 07:00 and 10:00 IST | Builds today's missing posts into `socialPosts/{day}_{slot}`, stores the images in R2 (`social/<postId>/<sha256>.jpg`, private bucket), sends previews to Telegram |
-| `socialPublish` | Every 15 minutes | Reads approval presses, posts what is due, posts the link reply, reconciles unknown results |
+| `socialPublish` | Every 15 minutes | Reads approval presses, posts what is due, reconciles unknown results |
 | `socialMeasure` | 06:30 IST | Reads X metrics for posts and replies at 24 hours and 7 days into `metrics` |
 
 ## Post states
@@ -33,7 +33,7 @@ Automatic retries never intentionally resend a possibly accepted create. X provi
 - One new main post per run, so a late run never sends a burst. Replies and reconciliation still run. Unfinished queue entries are scanned regardless of day.
 - Uncertain buttons bind to the attempt and distinguish main posts from replies. Old approval buttons cannot resolve uncertainty. Failed uncertain alerts retry on later passes.
 
-The link reply has the same rules on `replyStatus`.
+A post with a non-empty `replyText` also gets a reply, with the same rules on `replyStatus`. The pipelines set it empty, so no reply is sent.
 
 ## Approval
 
@@ -76,8 +76,7 @@ Metrics missing on one side retry independently without replacing an existing sa
 
 - Post a test panorama from a test account. Check that X shows the 3 panels in order after a tap, on iOS and Android.
 - Check the `sensitive_media_warning` payload of `POST /2/media/metadata` on a test image. `x.ts` sends `{adult_content: true}`.
-- Check that the API lets the account reply to its own post.
-- Check the pay-per-use price: about $0.015 a post and $0.20 a post with a URL (the reply).
+- Check the pay-per-use price: about $0.015 a post (no URLs, so about $2 a month at 4 posts a day).
 - Calibrate `FLAT_PANEL_STDEV` in `content.ts` on real After Dark companions.
 
 ## Not built yet

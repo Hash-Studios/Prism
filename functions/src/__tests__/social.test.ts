@@ -99,7 +99,7 @@ test("gridContent picks three, limits sketchy, drops youth tags and excluded ids
   const ids = content.source.ids;
   assert.ok(!ids.includes("s1") && !ids.includes("s3"), ids.join());
   assert.ok(ids.filter((id) => id.startsWith("s")).length <= 1);
-  assert.ok(content.replyText.includes("play.google.com"));
+  assert.equal(content.replyText, "", "no paid link reply");
 
   const few = await gridDeps([{id: "w1", purity: "sfw"}, {id: "w2", purity: "sfw"}, {id: "s1", purity: "sketchy"}],
     {s1: ["loli"]});
@@ -700,4 +700,12 @@ test("Sunday night waits for the run after Wall of the Day is picked", async (t)
   await prepareDay(deps(null, sunday("10")), builders);
   assert.deepEqual(slots, ["am", "noon", "eve", "night"]);
   assert.equal(store.get("socialPosts/2026-11-15_night")?.slot, "night");
+});
+
+test("a post with no reply text never sends a reply", async (t) => {
+  const store = installSocialDb(t, {[PATH]: postDoc({status: "posted", tweetId: "T", replyText: ""})});
+  const {x, creates} = fakeX();
+  await publishDue(deps(x, NOW));
+  assert.equal(store.get(PATH)?.replyStatus, undefined);
+  assert.equal(creates.length, 0);
 });
