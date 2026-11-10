@@ -384,18 +384,6 @@ def line_of(path, pattern, nth=0):
     return text.count('\n', 0, matches[nth].start()) + 1 if len(matches) > nth else None
 
 
-def function_modules():
-    """{export name: module path} from functions/src/index.ts."""
-    text = (FUNCTIONS / 'src/index.ts').read_text()
-    out = {}
-    for names, module in re.findall(r"export\s*\{([^}]*)\}\s*from\s*['\"]([^'\"]+)['\"]", text):
-        for name in names.split(','):
-            name = name.strip()
-            if name:
-                out[name.split(' as ')[-1].strip()] = resolve_ts(FUNCTIONS / 'src', module)
-    return out
-
-
 def resolve_ts(base, module):
     path = (base / module).resolve()
     for candidate in (path if path.suffix == '.ts' else Path(str(path) + '.ts'),
@@ -673,13 +661,12 @@ def collect(project):
             raise DriftError('function history is not available')
         require_clean(('functions/src', *FUNCTIONS_SHARED_FILES))
         endpoints = functions_manifest()
-        modules = function_modules()
-        entrypoint_paths = import_closure(FUNCTIONS / 'src/index.ts')
-        closures = {name: import_closure(modules.get(name) or FUNCTIONS / 'src/index.ts') |
-                          entrypoint_paths | set(FUNCTIONS_SHARED_FILES) for name in endpoints}
-        code_times = {name: history.landed(paths) for name, paths in closures.items()}
-        found = compare_functions(endpoints, live_functions(project), code_times,
-                                  lambda name, since: history.prs_since(closures[name], since))
+        # index.ts loads every module when any function starts, so a top-level change in any module can change any
+        # function. Every function gets the whole entrypoint graph: a false "different", never a false "in sync".
+        paths = import_closure(FUNCTIONS / 'src/index.ts') | set(FUNCTIONS_SHARED_FILES)
+        landed = history.landed(paths)
+        found = compare_functions(endpoints, live_functions(project), {name: landed for name in endpoints},
+                                  lambda name, since: history.prs_since(paths, since))
         for item in found:
             if item.status == MISSING_LIVE:
                 line = line_of('functions/src/index.ts', r'\b' + re.escape(item.name.split('/')[1]) + r'\b')

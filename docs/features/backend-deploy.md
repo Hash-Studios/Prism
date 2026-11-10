@@ -73,18 +73,18 @@ Each item gets one status:
 How a function is `different`:
 
 - The live function is not `ACTIVE`.
-- A file in the function's import graph landed on master after the live deploy time. Shared package files and the TypeScript configuration also affect every function. This can identify old code even if the function name did not change. The time is when the merge landed on master, not when the commit was written.
+- A file in the import graph of `functions/src/index.ts` landed on master after the live deploy time. Shared package files and the TypeScript configuration also affect every function. This can identify old code even if the function name did not change. The time is when the merge landed on master, not when the commit was written.
 - An option that the source sets is not the live value. If the source does not set max instances, the check does not compare it.
 
 The import graph includes relative imports, re-exports, `require()`, and literal `import()` calls. It accepts single and double quotes. An unresolved relative import or nonliteral dynamic import makes the function check `unknown`.
 
-The entrypoint loads all exported modules. A change in its graph can mark unrelated functions as `different`.
+The entrypoint loads all exported modules when any function starts. A top-level change in one module can change other functions. So every function gets the full entrypoint graph, and a change to one function module marks every function `different`. This gives a false `different`, never a false `in sync`. The functions deploy sends all functions in one step, so the plan does not change.
 
 Limits:
 
 - A deploy from a branch before its merge shows `different` until the next deploy. This is safe.
 - A deploy from an old checkout after a merge can show `in sync`. The check reads deploy times, not the deployed code. The same limit applies to the worker. An `in sync` status does not prove that production has this checkout's code.
-- In a shallow checkout, function and worker history is `unknown`. The check does not fetch history.
+- In a shallow checkout, the oldest commit in the history shows every file as changed at its own time. An older function or worker change can then look recent and show a false `different`. It cannot show a false `in sync`. Use a checkout with full history for exact times. The check does not fetch history.
 - Uncommitted source changes make the function or worker check `unknown`. The time comparison needs source files that agree with `HEAD`.
 - Remote Config extraction uses source text, not a Dart or TypeScript parser. It recognizes Remote Config receiver names and `rc`, but not every custom alias. A recognized read with an unresolved key adds an `unknown` item. Known keys still appear in the result. Other unrecognized source forms can be absent from the result.
 - The check cannot see whether someone ran a migration with `--apply`. Each migration shows `unknown` and the note from its PR or this page. The notes are in `tool/deploy_drift_migrations.json`. When you run an `--apply`, update its note.

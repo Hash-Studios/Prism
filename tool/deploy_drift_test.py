@@ -555,7 +555,7 @@ final b = _read('not_remote_config');
         history.prs_since_under.return_value = []
         fixtures = {
             'History': MagicMock(return_value=history), 'live_rules': ('allow read;', datetime.fromtimestamp(DEPLOYED, timezone.utc)),
-            'gcloud_json': [], 'functions_manifest': {}, 'function_modules': {}, 'live_functions': [],
+            'gcloud_json': [], 'functions_manifest': {}, 'live_functions': [],
             'live_worker': ('worker', UPDATE_TIME), 'remote_config_reads': {}, 'live_template_keys': set(),
             'apply_scripts': ['functions/src/migrate.ts'],
         }
@@ -620,10 +620,9 @@ final b = _read('not_remote_config');
 
     def test_function_entrypoint_change_is_in_code_history(self):
         mocks = self.prepare_collection()
-        module = self.write('functions/src/fn.ts', '')
+        self.write('functions/src/fn.ts', '')
         self.write('functions/src/index.ts', 'export {fnA} from "./fn";')
         mocks['functions_manifest'].return_value = {'fnA': endpoint()}
-        mocks['function_modules'].return_value = {'fnA': module}
         mocks['live_functions'].return_value = [live_fn('fnA')]
         history = mocks['History'].return_value
         history.landed.side_effect = lambda paths: DEPLOYED + HOUR if 'functions/src/index.ts' in paths else DEPLOYED - HOUR
@@ -633,11 +632,10 @@ final b = _read('not_remote_config');
 
     def test_entrypoint_side_effect_import_changes_are_in_function_history(self):
         mocks = self.prepare_collection()
-        module = self.write('functions/src/fn.ts', '')
+        self.write('functions/src/fn.ts', '')
         self.write('functions/src/index.ts', "import './globalOptions'; export {fnA} from './fn';")
         self.write('functions/src/globalOptions.ts', 'setGlobalOptions({memory: "512MiB"});')
         mocks['functions_manifest'].return_value = {'fnA': endpoint()}
-        mocks['function_modules'].return_value = {'fnA': module}
         mocks['live_functions'].return_value = [live_fn('fnA')]
         history = mocks['History'].return_value
         history.landed.side_effect = lambda paths: DEPLOYED + HOUR if 'functions/src/globalOptions.ts' in paths else DEPLOYED - HOUR
@@ -648,10 +646,9 @@ final b = _read('not_remote_config');
     def test_live_secrets_are_absent_from_json_and_table(self):
         mocks = self.prepare_collection()
         self.write('.firebaserc', '{"projects":{"default":"p"}}')
-        module = self.write('functions/src/fn.ts', '')
+        self.write('functions/src/fn.ts', '')
         self.write('functions/src/index.ts', 'export {fnA} from "./fn";')
         mocks['functions_manifest'].return_value = {'fnA': endpoint()}
-        mocks['function_modules'].return_value = {'fnA': module}
         fn = live_fn('fnA')
         fn['serviceConfig']['environmentVariables'] = {'API_KEY': 'SECRET_ENV_VALUE'}
         fn['serviceConfig']['secretEnvironmentVariables'] = [{'secret': 'SECRET_REFERENCE'}]
@@ -666,10 +663,9 @@ final b = _read('not_remote_config');
 
     def test_live_function_invalid_option_does_not_leak_its_value(self):
         mocks = self.prepare_collection()
-        module = self.write('functions/src/fn.ts', '')
+        self.write('functions/src/fn.ts', '')
         self.write('functions/src/index.ts', 'export {fnA} from "./fn";')
         mocks['functions_manifest'].return_value = {'fnA': endpoint()}
-        mocks['function_modules'].return_value = {'fnA': module}
         fn = live_fn('fnA')
         fn['serviceConfig']['availableCpu'] = 'SECRET_INVALID_VALUE'
         mocks['live_functions'].return_value = [fn]

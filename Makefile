@@ -338,7 +338,7 @@ functions-deploy: functions-env
 	@firebase deploy --only functions,firestore:indexes $(FIREBASE_ARGS)
 
 deploy-drift: ## Read only: compare master with production and print the deploy plan (JSON=1 for JSON)
-	@cd functions && npm run build
+	@cd functions && npm run build $(if $(JSON),>&2,)
 	@python3 tool/deploy_drift.py $(if $(JSON),--json,)
 
 gradle-reset:

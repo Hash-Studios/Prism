@@ -115,7 +115,7 @@
     "note": "PR #843: prod dry run (read only) done. --apply waits for most users on the build (PR #846 step 5). Not applied per PR text."
   },
   "functions/src/scripts/reserveDrop.ts": {
-    "npm": "",
+    "npm": "drops:reserve",
     "pr": "",
     "note": "No note in a PR or the docs. Ops script, not a backfill."
   },
@@ -125,7 +125,7 @@
     "note": "No run note found. PR #759 shows the --apply command only."
   },
   "functions/src/scripts/setupStudioAccount.ts": {
-    "npm": "",
+    "npm": "studio:account",
     "pr": "#472",
     "note": "No note in a PR or the docs. One-time Studio setup script."
   }
