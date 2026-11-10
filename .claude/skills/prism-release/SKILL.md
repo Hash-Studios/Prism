@@ -437,6 +437,19 @@ xcodebuild -exportArchive -archivePath build/ios/archive/Runner.xcarchive -expor
   -exportOptionsPlist ExportOptions.plist "${AUTH[@]}"   # method app-store-connect, teamID X2955Z4CKQ, signingStyle automatic
 DOPPLER_PROJECT=prism SENTRY_DOPPLER_CONFIG=prd DART_CMD="fvm dart" ./tool/sentry_upload.sh
 ```
+**Shorebird store builds on this Mac (no Apple ID in Xcode):** archive with `--no-codesign`, then export with
+`tool/ios_export_ipa.sh`. Never run `xcodebuild -exportArchive` on an unsigned archive yourself: the export takes
+entitlements from the archived signatures, so the IPA loses push, Sign in with Apple, universal links and the App
+Group. iOS builds 360 to 369 shipped like that, and Share to Prism failed on every phone.
+```sh
+make release-ios BUILD_NUMBER=<N> DOPPLER_CONFIG=prd IOS_BUILD_ARGS="--no-codesign"
+tool/ios_export_ipa.sh build/ios/archive/Runner.xcarchive build/ios/ipa   # writes its own App Store ExportOptions.plist
+```
+The script ad-hoc signs each bundle with `ios/<Target>/<Target>.entitlements`, exports with the `prism` API key, and
+fails when a bundle in the IPA lacks one of its source entitlements. A "profile doesn't support the group" error means
+that App ID has App Groups on but no group selected: select `group.com.hash.prism` for it in the Developer website
+(Identifiers). The App Store Connect API cannot do that step.
+
 The ipa is then `build/ios/ipa/prism.ipa` (lower case). Run this from a script file, and never echo
 the defines. TestFlight uses `prd`, prepares real native and Dart Firebase configuration before
 signing, and no longer disables Firebase. It remains blocked until the owner supplies the
