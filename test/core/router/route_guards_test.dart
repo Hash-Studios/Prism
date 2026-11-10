@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/auth_navigation_continuation.dart';
+import 'package:Prism/core/router/deep_link_route_catalog.dart';
 import 'package:Prism/core/router/route_guards.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:auto_route/auto_route.dart';
@@ -39,7 +41,117 @@ class _HistoryGuardRouter extends AppRouter {
         );
 }
 
+/// One row of the Access table in docs/features/deep-links.md.
+typedef _AccessRow = ({String route, Set<String> targets, String guard, String access});
+
+List<_AccessRow> _accessTable() {
+  final String doc = File('docs/features/deep-links.md').readAsStringSync();
+  final String section = doc.split('\n## Access table\n')[1].split('\n## ').first;
+  return <_AccessRow>[
+    for (final String line in section.split('\n'))
+      if (line.startsWith('| `/'))
+        () {
+          final List<String> cells = line.split('|').map((cell) => cell.trim()).toList();
+          return (
+            route: cells[1].replaceAll('`', ''),
+            targets: RegExp('`([^`]+)`').allMatches(cells[2]).map((m) => m[1]!).toSet(),
+            guard: cells[4],
+            access: cells[5],
+          );
+        }(),
+  ];
+}
+
+/// The real guard of each route path: `admin`, `sign-in` or `open`.
+Map<String, Set<String>> _routerGuards(
+  List<AutoRoute> routes, [
+  String prefix = '',
+  List<AutoRouteGuard> inherited = const [],
+]) {
+  final Map<String, Set<String>> result = <String, Set<String>>{};
+  for (final AutoRoute route in routes) {
+    if (route is RedirectRoute) continue;
+    final String path = route.path.startsWith('/') || route.path.isEmpty
+        ? '$prefix${route.path}'
+        : '$prefix/${route.path}';
+    final List<AutoRouteGuard> guards = <AutoRouteGuard>[...inherited, ...route.guards];
+    final String kind = guards.any((g) => g is AdminGuard)
+        ? 'admin'
+        : guards.any((g) => g is SignedInGuard && !g.allowGuests)
+        ? 'sign-in'
+        : 'open';
+    result.putIfAbsent(path, () => <String>{}).add(kind);
+    _routerGuards(route.children ?? const [], path, guards).forEach((p, kinds) {
+      result.putIfAbsent(p, () => <String>{}).addAll(kinds);
+    });
+  }
+  return result;
+}
+
 void main() {
+  group('Access table', () {
+    const Map<String, String> guardKinds = <String, String>{
+      'none': 'open',
+      'guests on iOS': 'open',
+      'prompt': 'open',
+      'sign-in': 'sign-in',
+      'admin': 'admin',
+    };
+    const Map<String, Set<String>> guardsOfAccess = <String, Set<String>>{
+      'public': {'none', 'guests on iOS'},
+      'account': {'sign-in', 'prompt'},
+      'owner': {'sign-in'},
+      'admin': {'admin'},
+    };
+    final List<_AccessRow> rows = _accessTable();
+
+    test('every route has one Access rule that agrees with its guard', () {
+      final Map<String, Set<String>> router = _routerGuards(AppRouter().routes);
+      expect(rows.map((row) => row.route).toList()..sort(), router.keys.toList()..sort());
+      for (final _AccessRow row in rows) {
+        expect(guardsOfAccess[row.access], contains(row.guard), reason: row.route);
+        expect(router[row.route], {guardKinds[row.guard]}, reason: row.route);
+      }
+    });
+
+    test('every deep link target has one Access rule', () {
+      final List<String> targets = rows.expand((row) => row.targets).toList()..sort();
+      expect(targets, DeepLinkPageTarget.values.map((target) => target.name).toList()..sort());
+    });
+
+    for (final _AccessRow row in rows) {
+      final String path = row.route.replaceAll(RegExp(':[A-Za-z]+'), 'x');
+      for (final TargetPlatform platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+        final bool opens = platform == TargetPlatform.android
+            ? const {'/', '/onboarding/v2', '/about', '/not-found'}.contains(row.route)
+            : guardKinds[row.guard] == 'open';
+        testWidgets('a signed-out $platform user ${opens ? 'opens' : 'gets sign-in before'} ${row.route}', (
+          tester,
+        ) async {
+          app_state.prismUser = createGuestPrismUser();
+          final appRouter = _HistoryGuardRouter(includeChildren: true);
+          final continuation = AuthNavigationContinuation.of(appRouter);
+          addTearDown(continuation.dispose);
+          await tester.pumpWidget(MaterialApp.router(routerConfig: appRouter.config()));
+          await tester.pumpAndSettle();
+          unawaited(appRouter.replaceAll([AboutRoute()]));
+          await tester.pumpAndSettle();
+
+          unawaited(appRouter.pushPath(path));
+          await tester.pumpAndSettle();
+
+          if (opens) {
+            expect(appRouter.currentUrl, startsWith(path));
+            expect(continuation.pendingNavigation, isNull);
+          } else {
+            expect(appRouter.current.name, OnboardingV2ShellRoute.name);
+            expect(continuation.pendingNavigation, isNotNull);
+          }
+        }, variant: TargetPlatformVariant({platform}));
+      }
+    }
+  });
+
   late _MockNavigationResolver resolver;
   late _MockStackRouter router;
 
