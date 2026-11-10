@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
 import crypto, {createHash} from "node:crypto";
+import {readFileSync} from "node:fs";
+import {resolve} from "node:path";
 import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {db} from "../common";
-import {assertFits, DARK_STILL_TAILS, GRID_LINES, gridContent, gridVisionDecision, PANORAMA_LINES, panoramaPanels, STILL_TAILS, stillCaption, stillContent, wallhavenCandidates, YOUTH_TAG, type WallhavenWall} from "../social/content";
+import {assertFits, DARK_STILL_TAILS, GRID_DETAIL_BUDGET, GRID_LINES, gridContent, gridVisionDecision, PANORAMA_LINES, panoramaPanels, STILL_TAILS, stillCaption, stillContent, wallhavenCandidates, wallhavenDetails, YOUTH_TAG, type WallhavenWall} from "../social/content";
 import {applyPress, contentHash, defaultBuilders, handleTelegramUpdate, JITTER_MS, loadSocialConfig, measurePosts, normalizePostText, prepareDay, publishDue, scheduledAt, socialPrepare, socialTelegramWebhook, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
 import {parsePress, socialBotToken, socialOwnerChatId, telegramClient, type Telegram, webhookSecret} from "../social/telegram";
 import {R2Storage} from "../r2Storage";
@@ -54,7 +56,10 @@ test("panoramaPanels cuts three panels and counts flat ones", async () => {
 test("gridVisionDecision applies the grid safety rules", () => {
   const all = (v: string) => ({adult: v, racy: v, violence: v, medical: v});
   const U = "VERY_UNLIKELY";
-  assert.deepEqual(gridVisionDecision({...all(U), adult: "POSSIBLE"}), {ok: false, reason: "adult"});
+  // Sketchy walls: only adult VERY_LIKELY rejects; adult POSSIBLE or LIKELY posts with the sensitive flag.
+  assert.deepEqual(gridVisionDecision({...all(U), adult: "VERY_LIKELY"}), {ok: false, reason: "adult"});
+  assert.deepEqual(gridVisionDecision({...all(U), adult: "POSSIBLE"}), {ok: true, sensitive: true});
+  assert.deepEqual(gridVisionDecision({...all(U), adult: "LIKELY"}), {ok: true, sensitive: true});
   for (const key of ["adult", "racy", "violence", "medical"]) {
     assert.equal(gridVisionDecision({...all(U), [key]: "UNKNOWN"}).ok, false, `${key} UNKNOWN`);
     const missing: Record<string, unknown> = all(U);
@@ -1086,29 +1091,32 @@ test("dry-run history resets at IST midnight, not UTC midnight", async (t) => {
   assert.deepEqual(store.get("socialState/dryRunSeen"), {day: postDay(after), ids: ["A"]});
 });
 
-test("Wallhaven reads four search pages, deduplicates, and keeps the detail budget at 15", async (t) => {
+test("Wallhaven reads four search pages, deduplicates, and keeps the detail budget", async (t) => {
   const requests: URL[] = [];
   t.mock.method(globalThis, "fetch", async (input: string | URL | Request) => {
     const url = new URL(String(input));
     assert.equal(url.origin, "https://wallhaven.cc");
     requests.push(url);
+    // Page 1 of each range repeats the same ids, so deduplication is visible; page 2 adds new ones.
+    const page2 = url.searchParams.get("page") === "2" ? `${url.searchParams.get("topRange")}x` : "";
     return {ok: true, json: async () => ({data: Array.from({length: 24}, (_, i) =>
-      ({id: `w${i}`, purity: "sfw"}))})} as Response;
+      ({id: `w${page2}${i}`, purity: "sfw"}))})} as Response;
   });
   const candidates = await wallhavenCandidates();
-  assert.equal(candidates.length, 24);
+  assert.equal(candidates.length, 72);
   assert.deepEqual(requests.map((url) => [url.searchParams.get("topRange"), url.searchParams.get("page")]),
     [["3d", "1"], ["1w", "1"], ["3d", "2"], ["1w", "2"]]);
-  const d = await gridDeps(candidates, Object.fromEntries(candidates.slice(0, 15).map(({id}) => [id, ["loli"]])));
+  const budget = GRID_DETAIL_BUDGET;
+  const d = await gridDeps(candidates, Object.fromEntries(candidates.slice(0, budget).map(({id}) => [id, ["loli"]])));
   const details = t.mock.fn(d.details);
   // Safe walls exist later, but rejection-heavy pools deliberately stop at the request budget.
   assert.equal(await gridContent("2026-11-12", new Set(), {sketchyPerPost: 2, blockedTags: []},
     {...d, details}), null);
-  assert.equal(details.mock.callCount(), 15);
+  assert.equal(details.mock.callCount(), budget);
   details.mock.resetCalls();
-  const content = await gridContent("2026-11-12", new Set(candidates.slice(0, 15).map(({id}) => id)),
+  const content = await gridContent("2026-11-12", new Set(candidates.slice(0, budget).map(({id}) => id)),
     {sketchyPerPost: 2, blockedTags: []}, {...d, details});
-  assert.deepEqual(content?.source.ids, ["w15", "w16", "w17"]);
+  assert.deepEqual(content?.source.ids, candidates.slice(budget, budget + 3).map(({id}) => id));
   assert.equal(details.mock.callCount(), 3, "excluded ids do not consume the detail budget");
 });
 
@@ -1228,4 +1236,145 @@ test("a failed page-2 search keeps the page-1 walls; a failed page-1 search stil
   assert.deepEqual((await wallhavenCandidates()).map(({id}) => id), ["3dp1", "1wp1"]);
   failPage = "1";
   await assert.rejects(wallhavenCandidates());
+});
+
+test("a pool where the first 15 candidates fail still fills the grid", async () => {
+  const candidates = Array.from({length: 20}, (_, i) => ({id: `c${i}`, purity: "sketchy"}));
+  const d = await gridDeps(candidates, Object.fromEntries(candidates.slice(0, 16).map(({id}) => [id, ["loli"]])));
+  const content = await gridContent("2026-11-12", new Set(), {sketchyPerPost: 3, blockedTags: []}, d);
+  assert.deepEqual(content?.source.ids, ["c16", "c17", "c18"]);
+});
+
+test("Grid checks documents the current adult thresholds", () => {
+  const docs = readFileSync(resolve(__dirname, "../../../docs/features/x-posting.md"), "utf8")
+    .split("## Grid checks\n")[1].split("\n## ")[0];
+  assert.ok(docs.includes("`adult` VERY_LIKELY rejects"));
+  assert.ok(docs.includes("`adult` POSSIBLE or LIKELY sets X's sensitive flag"));
+  assert.ok(!docs.includes("`adult` POSSIBLE or higher rejects"));
+});
+
+test("Wallhaven never requests NSFW and caps a rejection-heavy run at 34 API calls", async (t) => {
+  const requests: URL[] = [];
+  t.mock.method(globalThis, "fetch", async (input: string | URL | Request) => {
+    const url = new URL(String(input));
+    assert.equal(url.origin, "https://wallhaven.cc");
+    requests.push(url);
+    if (url.pathname.endsWith("/search")) {
+      assert.equal(url.searchParams.get("purity"), "110");
+      return Response.json({data: [{id: "nsfw", purity: "nsfw"},
+        ...Array.from({length: 40}, (_, i) => ({id: `w${i}`, purity: "sfw"}))]});
+    }
+    return Response.json({data: {purity: "sfw", tags: [{name: "loli"}]}});
+  });
+  const candidates = await wallhavenCandidates();
+  assert.ok(!candidates.some(({id}) => id === "nsfw"));
+  const d = await gridDeps(candidates);
+  assert.equal(await gridContent("2026-11-12", new Set(), {sketchyPerPost: 2, blockedTags: []},
+    {...d, details: wallhavenDetails}), null);
+  assert.equal(requests.filter((url) => url.pathname.endsWith("/search")).length, 4);
+  assert.equal(requests.filter((url) => url.pathname.includes("/w/")).length, 30);
+  assert.equal(requests.length, 34);
+  assert.ok(requests.length < 45);
+});
+
+test("grid rejects NSFW or changed detail purity before downloading", async (t) => {
+  const d = await gridDeps([{id: "bad", purity: "sfw"}, {id: "s1", purity: "sketchy"},
+    {id: "s2", purity: "sketchy"}, {id: "s3", purity: "sketchy"},
+    {id: "w1", purity: "sfw"}, {id: "w2", purity: "sfw"}]);
+  for (const purity of ["nsfw", "sketchy", "unknown"]) {
+    const download = t.mock.fn(d.download);
+    const content = await gridContent("2026-11-12", new Set(), {sketchyPerPost: 1, blockedTags: []}, {...d,
+      download, details: async (id) => ({...await d.details(id), ...(id === "bad" ? {purity} : {})})});
+    assert.deepEqual(content?.source.ids, ["s1", "w1", "w2"]);
+    assert.equal(download.mock.callCount(), 3);
+  }
+});
+
+test("adult POSSIBLE and LIKELY flags reach approval, preview and X, and metadata errors block posting", async (t) => {
+  const d = await gridDeps([{id: "s1", purity: "sketchy"}, {id: "s2", purity: "sketchy"},
+    {id: "w1", purity: "sfw"}]);
+  for (const failure of [0, 400, 429, 500, "network"] as const) {
+    await t.test(String(failure), async (t) => {
+      const store = installSocialDb(t);
+      const captions: string[] = [];
+      const cfg = config({slots: {am: true, noon: false, eve: false, night: false}});
+      const stored = new Map<string, Buffer>();
+      const metadata: Array<{metadata: {sensitive_media_warning?: {adult_content: boolean}}}> = [];
+      let uploads = 0;
+      let creates = 0;
+      const x = xClient({apiKey: "a", apiSecret: "s", token: "t", tokenSecret: "s"}, async (input, init) => {
+        const path = new URL(String(input)).pathname;
+        if (path === "/2/media/upload") return Response.json({data: {id: `M${++uploads}`}});
+        if (path === "/2/media/metadata") {
+          const body = JSON.parse(String(init?.body));
+          metadata.push(body);
+          // Fail on the second sensitive image, after the first flag already succeeded.
+          if (metadata.length === 2 && failure) {
+            if (failure === "network") throw new Error("offline");
+            return new Response("refused", {status: failure});
+          }
+          return Response.json({});
+        }
+        assert.equal(path, "/2/tweets");
+        creates++;
+        assert.deepEqual(JSON.parse(String(init?.body)).media.media_ids, ["M1", "M2", "M3"]);
+        return Response.json({data: {id: "T1"}});
+      });
+      const tg: Telegram = {sendPhotos: async (caption) => {
+        captions.push(caption);
+      },
+      sendText: async () => undefined, sendButtons: async () => undefined, answer: async () => undefined,
+      markDone: async () => undefined, setWebhook: async () => undefined};
+      const run: SocialDeps = {...deps(x, NOW, cfg), telegram: tg, storage: {
+        put: async (_bucket, key, bytes) => {
+          stored.set(key, bytes);
+          return true;
+        },
+        get: async (_bucket, key) => {
+          const bytes = stored.get(key);
+          assert.ok(bytes);
+          return Buffer.from(bytes);
+        },
+      }};
+      let checked = 0;
+      const made = await prepareDay(run, {grid: (day, exclude) => gridContent(day, exclude, cfg, {...d,
+        annotate: async () => ({safeSearchAnnotation: {adult: ["POSSIBLE", "LIKELY", "VERY_UNLIKELY"][checked++],
+          racy: "VERY_UNLIKELY", violence: "VERY_UNLIKELY", medical: "VERY_UNLIKELY"}}) as never}),
+      panorama: async () => null, still: async () => null});
+      assert.equal(made.length, 1);
+      const path = `socialPosts/${made[0]}`;
+      const post = store.get(path);
+      assert.ok(post);
+      const media = post.media as Array<{sha256: string; alt: string; sensitive: boolean}>;
+      assert.deepEqual(media.map((m) => m.sensitive), [true, true, false]);
+      assert.ok(captions[0].includes("Sensitive flags: 2"));
+      assert.equal(post.contentHash, contentHash(media.map((m) => m.sha256), String(post.text), "",
+        media.map(({alt, sensitive}) => ({alt, sensitive}))));
+      assert.notEqual(post.contentHash, contentHash(media.map((m) => m.sha256), String(post.text), "",
+        media.map(({alt}) => ({alt, sensitive: false}))));
+      await applyPress({...press("approve", String(post.contentHash).slice(0, 12)), postId: made[0]});
+      store.set(path, {...store.get(path), scheduledAt: ts(NOW.getTime())});
+      await publishDue(run);
+      assert.deepEqual(metadata.slice(0, 2).map((m) => m.metadata.sensitive_media_warning),
+        [{adult_content: true}, {adult_content: true}]);
+      assert.equal(creates, failure ? 0 : 1);
+      assert.equal(store.get(path)?.status, failure === 400 ? "failed" : failure ? "approved" : "posted");
+      if (!failure) assert.equal(metadata[2].metadata.sensitive_media_warning, undefined);
+    });
+  }
+});
+
+test("the grid stops at its deadline, even with a check in flight", async () => {
+  const candidates = Array.from({length: 10}, (_, i) => ({id: `s${i}`, purity: "sfw"}));
+  const d = await gridDeps(candidates);
+  let downloads = 0;
+  const slow = {...d, deadlineMs: 50, download: async () => {
+    // The first download passes; the second hangs far past the deadline.
+    if (++downloads === 1) return d.download();
+    return new Promise<Buffer>(() => undefined);
+  }};
+  const started = Date.now();
+  assert.equal(await gridContent("2026-11-12", new Set(), {sketchyPerPost: 2, blockedTags: []}, slow), null);
+  assert.ok(Date.now() - started < 2000, "returned at the deadline, not after the hanging download");
+  assert.equal(downloads, 2);
 });

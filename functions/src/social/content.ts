@@ -206,7 +206,11 @@ export const YOUTH_TAG = /\b(lolis?|lolicon|shota|shotacon|child(?:ren)?|kids?|(
 
 export interface WallhavenWall {id: string; purity: string; path: string; tags: string[]}
 
-/** Grid rules on Vision SafeSearch. Never nudity; a very racy image gets X's sensitive flag. */
+/**
+ * Grid rules on Vision SafeSearch. Wallhaven's sketchy level already excludes nudity, yet Vision rates almost every
+ * sketchy wall adult POSSIBLE or higher. So only adult VERY_LIKELY, the closest to nudity, rejects. Anything adult
+ * POSSIBLE or LIKELY, or racy VERY_LIKELY, carries X's sensitive flag, as X's adult content rule asks.
+ */
 export function gridVisionDecision(safe: Record<string, unknown> | null | undefined):
   {ok: false; reason: string} | {ok: true; sensitive: boolean} {
   if (!safe) return {ok: false, reason: "no_safe_search"};
@@ -214,12 +218,19 @@ export function gridVisionDecision(safe: Record<string, unknown> | null | undefi
   if ([rank("adult"), rank("racy"), rank("violence"), rank("medical")].some((r) => r === 0)) {
     return {ok: false, reason: "unknown_safe_search"};
   }
-  if (rank("adult") >= 3) return {ok: false, reason: "adult"}; // POSSIBLE or higher
+  if (rank("adult") >= 5) return {ok: false, reason: "adult"}; // VERY_LIKELY
   if (rank("violence") >= 4 || rank("medical") >= 4) return {ok: false, reason: "violence_or_medical"}; // LIKELY+
-  return {ok: true, sensitive: rank("racy") >= 5}; // VERY_LIKELY
+  return {ok: true, sensitive: rank("adult") >= 3 || rank("racy") >= 5}; // adult POSSIBLE+, racy VERY_LIKELY
 }
 
 const WALLHAVEN = "https://wallhaven.cc/api/v1";
+/**
+ * Candidates checked per grid. At 15, a pool of mostly rejected sketchy walls left no grid at all. 30 details plus 4
+ * searches stay under Wallhaven's 45 requests a minute for one run.
+ */
+export const GRID_DETAIL_BUDGET = 30;
+/** Time to pick grid walls, so socialPrepare (540 s) keeps time to record the grid and build the other slots. */
+export const GRID_DEADLINE_MS = 180_000;
 
 async function wallhavenJson(path: string): Promise<any> {
   const res = await fetch(`${WALLHAVEN}${path}`, {signal: AbortSignal.timeout(20_000),
@@ -258,25 +269,38 @@ export async function wallhavenCandidates(): Promise<Array<{id: string; purity: 
 
 export async function gridContent(day: string, exclude: Set<string>, config: {sketchyPerPost: number; blockedTags: string[]},
   deps: {annotate: VisionAnnotate; candidates: typeof wallhavenCandidates; details: (id: string) => Promise<WallhavenWall>;
-    download: (url: string) => Promise<Buffer>} = {annotate: annotateWithVision, candidates: wallhavenCandidates,
-    details: wallhavenDetails, download: (url) => downloadJpeg(url, 2400)}): Promise<SocialContent | null> {
+    download: (url: string) => Promise<Buffer>; deadlineMs?: number} = {annotate: annotateWithVision,
+    candidates: wallhavenCandidates, details: wallhavenDetails, download: (url) => downloadJpeg(url, 2400)}):
+  Promise<SocialContent | null> {
   const picked: Array<{wall: WallhavenWall; jpeg: Buffer; sensitive: boolean}> = [];
   let sketchy = 0;
   let checked = 0;
   const blocked = config.blockedTags.map((t) => t.toLowerCase());
-  for (const candidate of await deps.candidates()) {
-    if (picked.length === 3 || checked >= 15) break;
-    if (exclude.has(candidate.id) || (candidate.purity === "sketchy" && sketchy >= config.sketchyPerPost)) continue;
-    checked++;
+  const deadline = Date.now() + (deps.deadlineMs ?? GRID_DEADLINE_MS);
+  // One candidate: null when it does not pass.
+  const check = async (candidate: {id: string; purity: string}) => {
     const wall = await deps.details(candidate.id);
-    if (wall.purity !== candidate.purity || !["sfw", "sketchy"].includes(wall.purity)) continue;
-    if (wall.tags.some((tag) => YOUTH_TAG.test(tag) || blocked.includes(tag.toLowerCase()))) continue;
-    if (!/^https:\/\/w\.wallhaven\.cc\//.test(wall.path)) continue;
+    if (wall.purity !== candidate.purity || !["sfw", "sketchy"].includes(wall.purity)) return null;
+    if (wall.tags.some((tag) => YOUTH_TAG.test(tag) || blocked.includes(tag.toLowerCase()))) return null;
+    if (!/^https:\/\/w\.wallhaven\.cc\//.test(wall.path)) return null;
     const jpeg = await fitFiveMb(await deps.download(wall.path));
     const decision = gridVisionDecision((await deps.annotate(jpeg)).safeSearchAnnotation as Record<string, unknown>);
-    if (!decision.ok) continue;
-    if (wall.purity === "sketchy") sketchy++;
-    picked.push({wall, jpeg, sensitive: decision.sensitive});
+    return decision.ok ? {wall, jpeg, sensitive: decision.sensitive} : null;
+  };
+  for (const candidate of await deps.candidates()) {
+    if (picked.length === 3 || checked >= GRID_DETAIL_BUDGET || Date.now() >= deadline) break;
+    if (exclude.has(candidate.id) || (candidate.purity === "sketchy" && sketchy >= config.sketchyPerPost)) continue;
+    checked++;
+    // The deadline also bounds a check in flight, so a slow download cannot use up the run.
+    let timer: NodeJS.Timeout | undefined;
+    const timedOut = new Promise<"timeout">((resolve) => {
+      timer = setTimeout(() => resolve("timeout"), Math.max(0, deadline - Date.now()));
+    });
+    const result = await Promise.race([check(candidate), timedOut]).finally(() => clearTimeout(timer));
+    if (result === "timeout") break;
+    if (!result) continue;
+    if (result.wall.purity === "sketchy") sketchy++;
+    picked.push(result);
   }
   if (picked.length < 3) return null;
   return {
