@@ -1216,3 +1216,16 @@ test("approval hashes and reconciliation preserve multiline captions, punctuatio
   assert.equal(creates[0].text, text);
   assert.notEqual(contentHash([sha(BYTES)], text.replace("\n", " "), ""), contentHash([sha(BYTES)], text, ""));
 });
+
+test("a failed page-2 search keeps the page-1 walls; a failed page-1 search still fails", async (t) => {
+  let failPage = "2";
+  t.mock.method(globalThis, "fetch", async (input: string | URL | Request) => {
+    const query = new URL(String(input)).searchParams;
+    if (query.get("page") === failPage) return {ok: false, status: 429, json: async () => ({})} as Response;
+    return {ok: true, json: async () => ({data: [{id: `${query.get("topRange")}p${query.get("page")}`, purity: "sfw"}]})} as
+      Response;
+  });
+  assert.deepEqual((await wallhavenCandidates()).map(({id}) => id), ["3dp1", "1wp1"]);
+  failPage = "1";
+  await assert.rejects(wallhavenCandidates());
+});

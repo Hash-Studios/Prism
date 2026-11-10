@@ -237,7 +237,14 @@ export async function wallhavenCandidates(): Promise<Array<{id: string; purity: 
   for (const [topRange, page] of [["3d", "1"], ["1w", "1"], ["3d", "2"], ["1w", "2"]]) {
     const query = new URLSearchParams({categories: "111", purity: "110", sorting: "toplist", topRange,
       ratios: "portrait", atleast: "1080x1920", page});
-    const data = (await wallhavenJson(`/search?${query}`))?.data;
+    let data: unknown;
+    try {
+      data = (await wallhavenJson(`/search?${query}`))?.data;
+    } catch (err) {
+      // Page 2 only widens the pool. Its failure (a 429, a timeout) keeps the page-1 walls already collected.
+      if (page === "1") throw err;
+      continue;
+    }
     for (const item of Array.isArray(data) ? data : []) {
       const id = str(item?.id);
       if (/^[a-z0-9]{1,16}$/.test(id) && !seen.has(id) && ["sfw", "sketchy"].includes(str(item?.purity))) {
