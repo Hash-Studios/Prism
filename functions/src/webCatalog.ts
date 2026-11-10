@@ -37,7 +37,7 @@ const HIDDEN_TEXT = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}]/gu;
 const PALETTE_HEX = new Map(PALETTE.map(({id, hex}) => [id, `#${hex}`]));
 const RELEVANT_FIELDS = ["id", "review", "originalProtected", "is_streak_exclusive", "dropReserved", "dropWeek",
   "collections", "wallpaper_thumb", "title", "desc", "tags", "category", "colors", "resolution", "by", "creatorUid",
-  "createdAt", "desktopVariant"];
+  "createdAt", "desktopVariant", "visionLabels"];
 
 type Doc = admin.firestore.DocumentData;
 
@@ -121,7 +121,9 @@ async function blurPreview(thumb: string): Promise<string> {
 
 export function cleanText(value: unknown, max: number): string {
   const text = str(value).replace(HIDDEN_TEXT, " ").replace(/\s+/g, " ").trim();
-  return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
+  if (text.length <= max) return text;
+  const clipped = text.slice(0, max - 1).trimEnd();
+  return `${/[\uD800-\uDBFF]$/.test(clipped) ? clipped.slice(0, -1) : clipped}…`;
 }
 
 export function categorySlug(category: string): string {
@@ -167,6 +169,52 @@ function isProfilePhotoUrl(value: string): boolean {
   }
 }
 
+// Vision labels that say nothing about what a wallpaper shows.
+const VAGUE_LABELS = new Set(["graphics", "graphic design", "font", "illustration", "art", "pattern", "rectangle",
+  "ecoregion", "bumper", "automotive lighting", "atmospheric phenomenon", "tints and shades", "electric blue",
+  "darkness", "animation", "fictional character", "visual arts", "digital art", "photograph", "modern art",
+  "natural material", "paint"]);
+const COLOUR_LABELS = new Set([...PALETTE.map(({id}) => id), "gray", "violet", "magenta", "monochrome",
+  "black and white", "aqua", "turquoise", "beige", "maroon", "gold"]);
+const isColour = (label: string) => COLOUR_LABELS.has(label.toLowerCase());
+
+/** Cloud Vision labels, cleaned and deduplicated, with the vague ones removed. Subjects come before colours. */
+function visionTerms(value: unknown): string[] {
+  const seen = new Set<string>();
+  const terms = (Array.isArray(value) ? value : []).filter((label): label is string => typeof label === "string")
+    .map((label) => cleanText(label, 32)).filter((label) => {
+      const key = label.toLowerCase();
+      if (!label || VAGUE_LABELS.has(key) || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  return [...terms.filter((label) => !isColour(label)), ...terms.filter(isColour)];
+}
+
+/** Up to [max] labels, lower case, skipping one that repeats another ("landscape" after "natural landscape"). */
+function distinct(labels: string[], max: number): string[] {
+  const picked: string[] = [];
+  for (const key of labels.map((label) => label.toLowerCase())) {
+    if (picked.length === max) break;
+    if (!picked.some((p) => p.includes(key) || key.includes(p))) picked.push(key);
+  }
+  return picked;
+}
+
+/**
+ * A title from Vision labels: "Blue triangle wallpaper", "Rock and rubble wallpaper", or, with only colours,
+ * "Red and orange abstract wallpaper". Empty without labels, so the page falls back to its category.
+ */
+function labelTitle(labels: string[], category: string): string {
+  const subjects = distinct(labels.filter((label) => !isColour(label)), 2);
+  const colours = distinct(labels.filter(isColour), 2);
+  const kind = category && category !== "General" ? ` ${category.toLowerCase()}` : "";
+  const text = subjects.length && colours.length ? `${colours[0]} ${subjects[0]}` :
+    subjects.length ? subjects.join(" and ") :
+      colours.length ? `${colours.join(" and ")}${kind}` : "";
+  return text ? `${text[0].toUpperCase()}${text.slice(1)} wallpaper` : "";
+}
+
 function isBlurDataUrl(value: string | undefined): value is string {
   return value !== undefined && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(value);
 }
@@ -185,14 +233,16 @@ export async function projectWall(
   const thumb = str(wall.wallpaper_thumb);
   const live = isWotdEligible(wall, premium) && isPreviewUrl(thumb);
   const category = cleanText(wall.category, 40) || "General";
+  const tags = (Array.isArray(wall.tags) ? wall.tags : []).map((tag) => cleanText(tag, 32)).filter(Boolean).slice(0, 12);
+  const labels = visionTerms(wall.visionLabels);
   const projected: WebWall = {
     state: live ? "live" : "gated",
     updatedAt,
-    title: cleanText(wall.title, 90),
+    title: cleanText(wall.title, 90) || labelTitle(labels, category),
     description: cleanText(wall.desc, 300),
     category,
     categorySlug: categorySlug(category),
-    tags: (Array.isArray(wall.tags) ? wall.tags : []).map((tag) => cleanText(tag, 32)).filter(Boolean).slice(0, 12),
+    tags: tags.length ? tags : labels.slice(0, 8),
     colors: (Array.isArray(wall.colors) ? wall.colors : []).map(str)
       .filter((name) => PALETTE_HEX.has(name)).map((name) => ({name, hex: PALETTE_HEX.get(name) as string})),
     ...dimensions(wall.resolution),
