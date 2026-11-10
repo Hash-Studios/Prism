@@ -5,7 +5,7 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {db} from "../common";
-import {gridContent, gridVisionDecision, panoramaPanels, wallhavenCandidates, YOUTH_TAG, type WallhavenWall} from "../social/content";
+import {DARK_STILL_TAILS, GRID_LINES, gridContent, gridVisionDecision, PANORAMA_LINES, panoramaPanels, STILL_TAILS, stillCaption, wallhavenCandidates, YOUTH_TAG, type WallhavenWall} from "../social/content";
 import {applyPress, contentHash, defaultBuilders, handleTelegramUpdate, JITTER_MS, loadSocialConfig, measurePosts, normalizePostText, prepareDay, publishDue, scheduledAt, socialPrepare, socialTelegramWebhook, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
 import {parsePress, socialBotToken, socialOwnerChatId, telegramClient, type Telegram, webhookSecret} from "../social/telegram";
 import {R2Storage} from "../r2Storage";
@@ -1129,4 +1129,26 @@ test("new toplist pages cannot starve the original weekly fallback of its detail
   const content = await gridContent("2026-11-12", new Set(), {sketchyPerPost: 2, blockedTags: []}, {...d, details});
   assert.deepEqual(content?.source.ids, ["safe0", "safe1", "safe2"]);
   assert.equal(details.mock.callCount(), 15);
+});
+
+test("caption lists hold 14 lines, no grid or panorama line repeats, and every caption fits on X", () => {
+  for (const lines of [GRID_LINES, PANORAMA_LINES, STILL_TAILS, DARK_STILL_TAILS]) assert.equal(lines.length, 14);
+  for (const lines of [GRID_LINES, PANORAMA_LINES]) assert.equal(new Set(lines).size, 14);
+  for (const line of [...GRID_LINES, ...PANORAMA_LINES]) assert.ok(xWeightedLength(line) <= 280, line);
+  assert.ok(!GRID_LINES.some((line) => /https?:|#/.test(line)), "grid captions carry no link or hashtag");
+});
+
+test("still captions are the lowercase title over a tail, and only dark walls get AMOLED tags", () => {
+  const days = Array.from({length: 14}, (_, i) => `2026-11-${String(10 + i).padStart(2, "0")}`);
+  const light = days.map((day) => stillCaption("Rose Arch · Sunrise", day, 0, false));
+  const dark = days.map((day) => stillCaption("Deep Lure · Jade", day, 0, true));
+  assert.ok(light.every((text) => text.startsWith("rose arch · sunrise")));
+  assert.ok(!light.some((text) => /amoled|oled/i.test(text)), "a light wall never claims AMOLED");
+  assert.ok(dark.some((text) => text.includes("#amoled")));
+  assert.ok(light.includes("rose arch · sunrise"), "some posts are the title alone");
+  // Two stills on one day (eve salt 0, night salt 1) never share a tail line unless both are blank.
+  for (const day of days) {
+    const [a, b] = [stillCaption("X", day, 0, true), stillCaption("X", day, 1, true)];
+    assert.ok(a !== b || a === "x");
+  }
 });
