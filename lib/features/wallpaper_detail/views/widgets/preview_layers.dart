@@ -78,7 +78,10 @@ Widget _topThird(BoxConstraints constraints, double inset, Widget child) {
       child: SizedBox(
         height: constraints.maxHeight.isFinite ? math.max(0.0, constraints.maxHeight - inset) / 3 : null,
         width: constraints.maxWidth,
-        child: Center(child: child),
+        // The clock and the date must stay inside the top third, also in a small preview.
+        child: Center(
+          child: FittedBox(fit: BoxFit.scaleDown, child: child),
+        ),
       ),
     ),
   );
