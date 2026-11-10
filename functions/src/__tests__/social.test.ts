@@ -5,7 +5,7 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {db} from "../common";
-import {DARK_STILL_TAILS, GRID_LINES, gridContent, gridVisionDecision, PANORAMA_LINES, panoramaPanels, STILL_TAILS, stillCaption, wallhavenCandidates, YOUTH_TAG, type WallhavenWall} from "../social/content";
+import {assertFits, DARK_STILL_TAILS, GRID_LINES, gridContent, gridVisionDecision, PANORAMA_LINES, panoramaPanels, STILL_TAILS, stillCaption, stillContent, wallhavenCandidates, YOUTH_TAG, type WallhavenWall} from "../social/content";
 import {applyPress, contentHash, defaultBuilders, handleTelegramUpdate, JITTER_MS, loadSocialConfig, measurePosts, normalizePostText, prepareDay, publishDue, scheduledAt, socialPrepare, socialTelegramWebhook, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
 import {parsePress, socialBotToken, socialOwnerChatId, telegramClient, type Telegram, webhookSecret} from "../social/telegram";
 import {R2Storage} from "../r2Storage";
@@ -1151,4 +1151,68 @@ test("still captions are the lowercase title over a tail, and only dark walls ge
     const [a, b] = [stillCaption("X", day, 0, true), stillCaption("X", day, 1, true)];
     assert.ok(a !== b || a === "x");
   }
+});
+
+test("stillContent ignores malformed titles and supports non-Studio WOTD walls", async (t) => {
+  const day = "2026-11-15";
+  const store = installSocialDb(t);
+  const jpeg = await sharp({create: {width: 4, height: 6, channels: 3, background: "black"}}).jpeg().toBuffer();
+  t.mock.method(globalThis, "fetch", async () => new Response(new Uint8Array(jpeg)));
+  for (const origin of ["studio", "user"]) {
+    for (const title of [undefined, null, 42, {name: "Bad title"}, "", "  ", "Deep Lure · Jade"]) {
+      store.set("walls/W1", {review: true, origin, title, aiPrompt: "Quiet water, at night", wallpaper_url: "https://example.test/wall.jpg"});
+      store.set("wall_of_the_day/current", {wallId: "W1", date: ts(Date.parse(`${day}T00:00:00Z`))});
+      const content = await stillContent(day, new Set(), {wotd: true, salt: 0});
+      assert.ok(content);
+      const expected = typeof title === "string" && title.trim() ? title.toLowerCase() :
+        origin === "studio" ? "quiet water" : "wall of the day";
+      assert.equal(content.text, `wall of the day ✨\n${expected}\nlock screen or home screen?`);
+      assertFits(content);
+    }
+  }
+});
+
+test("still and WOTD captions bound long titles by weighted length without splitting code points", async (t) => {
+  const day = "2026-11-15";
+  const store = installSocialDb(t);
+  const jpeg = await sharp({create: {width: 4, height: 6, channels: 3, background: "black"}}).jpeg().toBuffer();
+  t.mock.method(globalThis, "fetch", async () => new Response(new Uint8Array(jpeg)));
+  for (const title of ["A".repeat(300), "山".repeat(150), "🌌".repeat(150)]) {
+    store.set("walls/W1", {review: true, title, wallpaper_url: "https://example.test/wall.jpg"});
+    store.set("wall_of_the_day/current", {wallId: "W1", date: ts(Date.parse(`${day}T00:00:00Z`))});
+    const content = await stillContent(day, new Set(), {wotd: true, salt: 0});
+    assert.ok(content);
+    assertFits(content);
+    assert.ok(content.text.endsWith("\nlock screen or home screen?"));
+    assert.ok(!/\p{Cs}/u.test(content.text), "no broken surrogate pair");
+    for (let salt = 0; salt < 14; salt++) {
+      for (const dark of [false, true]) {
+        const text = stillCaption(title, day, salt, dark);
+        assertFits({...content, text});
+        assert.ok(!/\p{Cs}/u.test(text));
+      }
+    }
+  }
+});
+
+test("approval hashes and reconciliation preserve multiline captions, punctuation, emoji and hashtags", async (t) => {
+  const text = "deep lure · jade ✨ & <light>\n#amoled #wallpaper";
+  const post = postDoc({text, replyText: "", approval: {required: true}});
+  const store = installSocialDb(t, {[PATH]: {...post, status: "pending_approval"}});
+  await applyPress({...press("approve", String(post.contentHash).slice(0, 12)), postId: PATH.split("/")[1]});
+  assert.equal((store.get(PATH)?.approval as Doc).approvedHash, post.contentHash);
+  const {x, creates} = fakeX({
+    create: async () => {
+      throw new XError("x", 0, true);
+    },
+    own: () => [{id: "T9", text: "deep lure · jade ✨ &amp; &lt;light&gt;\n#amoled #wallpaper\nhttps://t.co/xyz",
+      createdAt: NOW.toISOString(), mediaCount: 1, mediaIds: ["M1"], replyTo: null}],
+  });
+  await publishDue(deps(x, NOW));
+  await publishDue(deps(x, later(11)));
+  assert.equal(store.get(PATH)?.status, "posted");
+  assert.equal(store.get(PATH)?.tweetId, "T9");
+  assert.equal(creates.length, 1);
+  assert.equal(creates[0].text, text);
+  assert.notEqual(contentHash([sha(BYTES)], text.replace("\n", " "), ""), contentHash([sha(BYTES)], text, ""));
 });

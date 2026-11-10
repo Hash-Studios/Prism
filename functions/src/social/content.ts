@@ -67,7 +67,16 @@ export const DARK_STILL_TAILS = [
 /** "Deep Lure · Jade" over a tail line, all lowercase like the reference posts. */
 export function stillCaption(title: string, day: string, salt: number, dark: boolean): string {
   const tail = rotate(dark ? DARK_STILL_TAILS : STILL_TAILS, day, salt);
-  return [title.toLowerCase(), tail].filter(Boolean).join("\n");
+  return captionWithTitle(title, "", tail ? `\n${tail}` : "");
+}
+
+/** Wall of the Day can be a creator wall with an unbounded legacy title. Keep the fixed caption lines intact. */
+function captionWithTitle(title: string, prefix: string, suffix: string): string {
+  const lower = title.toLowerCase();
+  if (xWeightedLength(`${prefix}${lower}${suffix}`) <= 280) return `${prefix}${lower}${suffix}`;
+  const chars = Array.from(lower).slice(0, 280);
+  while (chars.length > 0 && xWeightedLength(`${prefix}${chars.join("")}…${suffix}`) > 280) chars.pop();
+  return `${prefix}${chars.join("")}…${suffix}`;
 }
 
 // ---------- P1 panorama ----------
@@ -177,13 +186,14 @@ export async function stillContent(day: string, exclude: Set<string>, options: {
   }
   if (!picked) return null;
   const jpeg = await fitFiveMb(await downloadJpeg(await studioImageUrl(picked.id, picked.wall)));
-  const scene = picked.wall.origin === "studio" ? sceneOf(picked.wall) : str(picked.wall.title) || "Wall of the Day";
-  const title = str(picked.wall.title) || scene;
+  const wallTitle = typeof picked.wall.title === "string" ? picked.wall.title.trim() : "";
+  const scene = picked.wall.origin === "studio" ? sceneOf(picked.wall) : wallTitle || "Wall of the Day";
+  const title = wallTitle || scene;
   return {
     pipeline: "still",
     source: {kind: "prism", ids: [picked.id]},
     media: [{jpeg, sensitive: false, alt: `${scene}. Phone wallpaper from Prism.`}],
-    text: picked.wotd ? `wall of the day ✨\n${title.toLowerCase()}\nlock screen or home screen?` :
+    text: picked.wotd ? captionWithTitle(title, "wall of the day ✨\n", "\nlock screen or home screen?") :
       stillCaption(title, day, options.salt, picked.wall.seriesId === "after-dark"),
     replyText: NO_REPLY,
   };
