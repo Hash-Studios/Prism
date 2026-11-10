@@ -84,6 +84,8 @@ export const computeTrending = onSchedule(
     timeZone: "UTC",
     region: REGION,
     retryCount: 1,
+    timeoutSeconds: 180,
+    cpu: "gcf_gen1",
   },
   async () => {
     const days = trendingDays(Date.now());

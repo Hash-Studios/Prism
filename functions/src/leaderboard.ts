@@ -87,7 +87,7 @@ export async function runSnapshotLeaderboard(nowMs: number): Promise<void> {
 
 /** Every 3 hours: the top 50 users by XP this week, in `leaderboards/{weekKey}` and `leaderboards/current`. */
 export const snapshotLeaderboard = onSchedule(
-  {schedule: "0 */3 * * *", timeZone: "UTC", region: REGION, retryCount: 1},
+  {schedule: "0 */3 * * *", timeZone: "UTC", region: REGION, retryCount: 1, timeoutSeconds: 180, cpu: "gcf_gen1"},
   async () => {
     await runSnapshotLeaderboard(Date.now());
   },
