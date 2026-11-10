@@ -14,6 +14,7 @@ import {
 } from "./studio/gates";
 import {isStudioWall} from "./studio/isStudioWall";
 import {fetchImageBuffer} from "./wallColors";
+import {liveModerationFrameUrls} from "./wallLive";
 
 /** Flags are signals for the reviewer. Nothing is rejected on them. */
 export type ModerationFlag = "duplicate" | "web_match" | "text" | "logo" | "unsafe";
@@ -100,6 +101,23 @@ export function buildModeration(
     words: text ? details.words.slice(0, MAX_WORDS) : [],
     logos,
     unsafe,
+  };
+}
+
+const union = <T>(a: T[], b: T[], max: number, key: (x: T) => string = String) =>
+  [...a, ...b].filter((x, i, all) => all.findIndex((y) => key(y) === key(x)) === i).slice(0, max);
+
+/** One reviewer signal set for a live wall: the poster's duplicate hit plus every flag a frame raised. */
+export function mergeModeration(a: Moderation, b: Moderation): Moderation {
+  const order: ModerationFlag[] = ["duplicate", "web_match", "text", "logo", "unsafe"];
+  return {
+    v: 1,
+    flags: order.filter((flag) => a.flags.includes(flag) || b.flags.includes(flag)),
+    duplicate: a.duplicate ?? b.duplicate,
+    web: union(a.web, b.web, MAX_WEB, (x) => x.url),
+    words: union(a.words, b.words, MAX_WORDS),
+    logos: union(a.logos, b.logos, MAX_LOGOS),
+    unsafe: union(a.unsafe, b.unsafe, Number.MAX_SAFE_INTEGER),
   };
 }
 
@@ -208,6 +226,9 @@ export async function moderateWall(
   let moderation: Moderation;
   try {
     moderation = buildModeration(duplicate, await deps.annotate(await visionJpeg(image.bytes)));
+    for (const url of liveModerationFrameUrls(data)) {
+      moderation = mergeModeration(moderation, buildModeration(null, await deps.annotate(await visionJpeg(await deps.fetchImage(url)))));
+    }
   } catch (error) {
     logger.error("onWallModerate: Vision check failed", {
       wallId,

@@ -86,6 +86,7 @@ dependencies:
   url_launcher: ^6.3.2
   sensors_plus: ^7.1.1
   qr: ^4.0.1
+  video_player: ^2.14.1
 
 dev_dependencies:
   analyzer: ^10.0.1

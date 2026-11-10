@@ -197,6 +197,27 @@ service cloud.firestore {
                   && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['releaseAt'])));
     }
 
+    // A creator live wall: kind and the client keys of live are written once, on create. onWallSubmitted proves the
+    // files and writes the video facts and live.verified. Old clients read the poster in wallpaper_url.
+    function validLiveCreate() {
+      let d = request.resource.data;
+      let live = d.get('live', null);
+      return d.get('kind', 'still') in ['still', 'live']
+          && (live != null) == (d.get('kind', 'still') == 'live')
+          && (live == null || (live is map
+              && live.keys().hasOnly(['video', 'videoPath', 'videoSha', 'frames'])
+              && live.keys().hasAll(['video', 'videoPath', 'videoSha', 'frames'])
+              && live.video is string && live.videoPath is string && live.videoSha is string
+              && live.frames is list && live.frames.size() == 3));
+    }
+
+    // A live wall goes public only after the server proved its video.
+    function liveReviewOk() {
+      return request.resource.data.review != true
+          || request.resource.data.get('kind', 'still') != 'live'
+          || request.resource.data.get('live', {}).get('verified', false) == true;
+    }
+
     // Optional link to the wall this one remixes. The server removes a link it cannot verify.
     function validRemixOf() {
       return !('remixOf' in request.resource.data)
@@ -282,11 +303,12 @@ service cloud.firestore {
       // Admins re-create a rejected wall when they undo the rejection.
       allow create: if !request.resource.data.keys().hasAny(['editorsChoiceAt', 'editorsChoiceBy', 'byStudio',
             'publishedAt', 'releaseNotice'])
-          && validChallengeId() && notReleasedEarly() && (isConfiguredAdmin()
+          && validChallengeId() && notReleasedEarly() && liveReviewOk() && (isConfiguredAdmin()
           || (isSignedIn()
               && isEmailOwner(request.resource.data.email)
               && request.resource.data.review != true
               && wallServerKeysAbsent()
+              && validLiveCreate()
               && validRemixOf()
               && validVariantOf()
               && validResubmitOf()
@@ -294,9 +316,10 @@ service cloud.firestore {
       // delete: request.resource is null — do not use request.resource.data here.
       allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny([
             'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantOf', 'variantGroupId', 'variantIndex',
-            'variantLink', 'publishedAt', 'releaseNotice'
+            'variantLink', 'publishedAt', 'releaseNotice', 'kind', 'live'
           ])
           && notReleasedEarly()
+          && liveReviewOk()
           && ((isConfiguredAdmin()
                 && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['releaseAt']))
           || (isEmailOwner(resource.data.email)

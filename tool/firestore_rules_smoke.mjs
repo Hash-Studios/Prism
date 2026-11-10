@@ -75,6 +75,9 @@ const publicWall = {
   originalProtected: { booleanValue: true }, wallpaper_url: { stringValue: '' }, ...redactedProvenance,
 };
 const str = (v) => ({ stringValue: v });
+const liveFrame = (n) => ({ mapValue: { fields: { url: str(`https://img.example/previews/f${n}.img`), path: str(`frame_${n}_a.jpg`), sha: str('a'.repeat(40)) } } });
+const liveMap = (extra = {}) => ({ mapValue: { fields: { video: str('https://img.example/previews/v.img'), videoPath: str('live_a.mp4'), videoSha: str('b'.repeat(40)), frames: { arrayValue: { values: [liveFrame(1), liveFrame(2), liveFrame(3)] } }, ...extra } } });
+const liveWall = (extra = {}) => ({ email: str('b@x.com'), review: { booleanValue: false }, kind: str('live'), live: liveMap(), ...extra });
 const ts = () => ({ timestampValue: new Date().toISOString() });
 const MIN = 60_000, HOUR = 60 * MIN, DAY = 24 * HOUR;
 const at = (ms) => ({ timestampValue: new Date(Date.now() + ms).toISOString() });
@@ -154,6 +157,8 @@ const seed = () => Promise.all([
   req('PATCH', 'walls/rel-held', { email: str('b@x.com'), review: { booleanValue: false }, releaseApprovedAt: at(-2 * HOUR), publishedAt: at(-HOUR), releaseAt: at(-90 * MIN) }, 'owner'),
   req('PATCH', 'walls/rel-hold', { email: str('b@x.com'), review: { booleanValue: false }, releaseAt: at(2 * HOUR) }, 'owner'),
   req('PATCH', 'walls/rel-stamp', { email: str('b@x.com'), review: { booleanValue: false } }, 'owner'),
+  req('PATCH', 'walls/live-pending', { email: str('b@x.com'), review: { booleanValue: false }, kind: str('live'), live: liveMap() }, 'owner'),
+  req('PATCH', 'walls/live-verified', { email: str('b@x.com'), review: { booleanValue: false }, kind: str('live'), live: liveMap({ verified: { booleanValue: true } }) }, 'owner'),
   req('PATCH', 'walls/rel-past', { email: str('b@x.com'), review: { booleanValue: false }, releaseAt: at(-HOUR) }, 'owner'),
   req('PATCH', 'walls/rel-none', { email: str('b@x.com'), review: { booleanValue: false } }, 'owner'),
   req('PATCH', 'setups/s9', { email: { stringValue: 'b@x.com' }, review: { booleanValue: true } }, 'owner'),
@@ -1348,6 +1353,22 @@ const cases = [
   ['admin approves wall with releaseAt +2h', () => req('PATCH', 'walls/rel-hold', { review: { booleanValue: true } }, ADM, ['review']), 403],
   ['admin stamps releaseApprovedAt and leaves review false', () => serverStamp(ADM, 'walls/rel-stamp', 'releaseApprovedAt'), 200],
   ['admin approves wall whose releaseAt passed an hour ago', () => req('PATCH', 'walls/rel-past', { review: { booleanValue: true } }, ADM, ['review']), 200],
+  ['owner creates a live wall with the client live keys', () => req('PATCH', 'walls/live-new', liveWall(), Bu), 200],
+  ['owner creates an old-style wall without kind', () => req('PATCH', 'walls/live-none', { email: str('b@x.com'), review: { booleanValue: false } }, Bu), 200],
+  ['owner cannot create a live wall that claims it is verified', () => req('PATCH', 'walls/live-fake', liveWall({ live: liveMap({ verified: { booleanValue: true } }) }), Bu), 403],
+  ['owner cannot create a live wall with a client duration', () => req('PATCH', 'walls/live-dur', liveWall({ live: liveMap({ durationMs: { integerValue: '1000' } }) }), Bu), 403],
+  ['owner cannot create kind live without a live map', () => req('PATCH', 'walls/live-nomap', { email: str('b@x.com'), review: { booleanValue: false }, kind: str('live') }, Bu), 403],
+  ['owner cannot create a live map on a still wall', () => req('PATCH', 'walls/live-still', liveWall({ kind: str('still') }), Bu), 403],
+  ['owner cannot create an unknown kind', () => req('PATCH', 'walls/live-gif', liveWall({ kind: str('gif') }), Bu), 403],
+  ['owner cannot create a live wall with two frames', () => req('PATCH', 'walls/live-2f', liveWall({ live: liveMap({ frames: { arrayValue: { values: [liveFrame(1), liveFrame(2)] } } }) }), Bu), 403],
+  ['owner cannot change kind of a pending wall', () => req('PATCH', 'walls/live-pending', { kind: str('still') }, Bu, ['kind']), 403],
+  ['owner cannot change the video of a pending wall', () => req('PATCH', 'walls/live-pending', { live: liveMap({ video: str('https://evil.example/v.mp4') }) }, Bu, ['live']), 403],
+  ['owner cannot mark own live wall verified', () => req('PATCH', 'walls/live-pending', { live: liveMap({ verified: { booleanValue: true } }) }, Bu, ['live']), 403],
+  ['owner cannot turn a still pending wall into a live wall', () => req('PATCH', 'walls/rel-none', { kind: str('live'), live: liveMap() }, Bu, ['kind', 'live']), 403],
+  ['admin cannot change the video fields', () => req('PATCH', 'walls/live-pending', { live: liveMap({ verified: { booleanValue: true } }) }, ADM, ['live']), 403],
+  ['admin cannot approve an unverified live wall', () => req('PATCH', 'walls/live-pending', { review: { booleanValue: true } }, ADM, ['review']), 403],
+  ['admin approves a server-verified live wall', () => req('PATCH', 'walls/live-verified', { review: { booleanValue: true } }, ADM, ['review']), 200],
+  ['owner edits the title of a pending live wall', () => req('PATCH', 'walls/live-pending', { title: str('Rain') }, Bu, ['title']), 200],
   ['admin approves wall with no releaseAt', () => req('PATCH', 'walls/rel-none', { review: { booleanValue: true } }, ADM, ['review']), 200],
   ['stranger cannot get scheduled wall', () => req('GET', 'walls/rel-sched', null, C), 403],
   ['stranger reviewed-wall list omits scheduled wall', () => listHidesWall(C, 'walls/rel-sched'), 200],

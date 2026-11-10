@@ -7,6 +7,7 @@ import {db, readDailyCount, CALLABLE_REGIONS, utcDateString} from "./common";
 import {deleteRetainedUpload, FIREBASE_STORAGE_REPO, ownedAssetStorageEnabled, ownedThumbnailUrl, retainUpload, stored,
   type StoredUpload} from "./ownedAssetDelivery";
 import {r2Secrets} from "./r2Storage";
+import {inspectLiveVideo, isLiveVideoPath, LIVE_VIDEO_LIMITS} from "./liveVideo";
 
 const UPLOADS = "githubUploads";
 const UPLOAD_STATS = "githubUploadStats";
@@ -565,8 +566,9 @@ export async function verifyGithubUpload(repo: string, path: string, sha: string
   }
 }
 
+// ponytail: 512MiB and 120 s hold a 20 MB live video (base64 body, decoded bytes, R2 read-back) in one request.
 export const githubPutFile = onCall(
-  {...CALLABLE_OPTIONS, secrets: [githubToken, ...r2Secrets], timeoutSeconds: 60},
+  {...CALLABLE_OPTIONS, secrets: [githubToken, ...r2Secrets], timeoutSeconds: 120, memory: "512MiB"},
   async (request: CallableRequest<GithubContentData>) => {
     const callerUid = request.auth?.uid;
     if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to upload files.");
@@ -578,9 +580,19 @@ export const githubPutFile = onCall(
       throw new HttpsError("invalid-argument", "purpose must be wallpaper or profile.");
     }
     const contentBase64 = requiredString(request.data?.contentBase64, "contentBase64");
-    if (base64DecodedBytes(contentBase64) > MAX_UPLOAD_BYTES) throw new HttpsError("invalid-argument", "File is too large.");
+    const liveVideo = isLiveVideoPath(path);
+    const maxBytes = liveVideo ? LIVE_VIDEO_LIMITS.maxBytes : MAX_UPLOAD_BYTES;
+    if (base64DecodedBytes(contentBase64) > maxBytes) throw new HttpsError("invalid-argument", "File is too large.");
     if (!isValidBase64(contentBase64)) throw new HttpsError("invalid-argument", "contentBase64 must be valid base64.");
-    if (!isAllowedImageContent(contentBase64)) throw new HttpsError("invalid-argument", "Only image files are allowed.");
+    if (liveVideo) {
+      if (purpose !== "wallpaper" || repo !== process.env.GH_REPO_WALLS?.trim() || !ownedAssetStorageEnabled()) {
+        throw new HttpsError("invalid-argument", "Live videos need wallpaper storage.");
+      }
+      const check = inspectLiveVideo(Buffer.from(contentBase64, "base64"));
+      if (!check.ok) throw new HttpsError("invalid-argument", "The live video is not allowed.", {liveVideo: check.error});
+    } else if (!isAllowedImageContent(contentBase64)) {
+      throw new HttpsError("invalid-argument", "Only image files are allowed.");
+    }
 
     const nowMs = Date.now();
     await reserveUploadSlot(callerUid, false, nowMs);
@@ -616,7 +628,7 @@ export const githubPutFile = onCall(
         ...(typeof intent.uploadId === "string" ? {uploadId: intent.uploadId} : {}),
       }) : undefined;
       const completedResponse = ownedUpload ? {content: {path, sha: blobSha,
-        download_url: path.split("/").pop()?.startsWith("thumb_") && retainedAsset ? ownedThumbnailUrl(retainedAsset) : ""}} : response;
+        download_url: retainedAsset?.previewObjectId ? ownedThumbnailUrl(retainedAsset) : ""}} : response;
       await completeUploadIntent(callerUid, repo, path, intent, claim.attemptId, completedResponse, retainedAsset);
       return completedResponse;
     };

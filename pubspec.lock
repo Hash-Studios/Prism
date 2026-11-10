@@ -408,6 +408,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.7"
+  csslib:
+    dependency: transitive
+    description:
+      name: csslib
+      sha256: "09bad715f418841f976c77db72d5398dc1253c21fb9c0c7f0b0b985860b2d58e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.2"
   cupertino_ui:
     dependency: transitive
     description:
@@ -987,6 +995,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.3.0"
+  html:
+    dependency: transitive
+    description:
+      name: html
+      sha256: "43b67b8f43321ab066817dfac5619596c98bb1b61624e77203bb4351785f9699"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.15.7"
   http:
     dependency: "direct main"
     description:
@@ -2160,6 +2176,46 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.3"
+  video_player:
+    dependency: "direct main"
+    description:
+      name: video_player
+      sha256: "07ae1e03f2d4c8e2e9a75ee678f90acbc4506d4458a9c628512d119a1eee5754"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.14.1"
+  video_player_android:
+    dependency: transitive
+    description:
+      name: video_player_android
+      sha256: d27054dea34d748a44f06d433a57005d2aac69944485b0abbaed3303dbcfa3f1
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.12.2"
+  video_player_avfoundation:
+    dependency: transitive
+    description:
+      name: video_player_avfoundation
+      sha256: "7d620d8c69d00c158a5c57bf3d2a051833b547631203ff724664fbf301024bc1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.12.3"
+  video_player_platform_interface:
+    dependency: transitive
+    description:
+      name: video_player_platform_interface
+      sha256: "92c0fbabe20c788e71fd10d26cea998d0d253282e65d145aed0818731cf593ce"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.9.0"
+  video_player_web:
+    dependency: transitive
+    description:
+      name: video_player_web
+      sha256: "9f3c00be2ef9b76a95d94ac5119fb843dca6f2c69e6c9968f6f2b6c9e7afbdeb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.0"
   vm_service:
     dependency: transitive
     description:
@@ -2290,4 +2346,4 @@ packages:
     version: "3.1.4"
 sdks:
   dart: ">=3.13.0 <4.0.0"
-  flutter: ">=3.44.0"
+  flutter: ">=3.47.0"

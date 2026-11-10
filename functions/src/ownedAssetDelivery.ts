@@ -8,6 +8,7 @@ import {db, REGION} from "./common";
 import {R2Storage, r2Env, r2ObjectId, r2Secrets} from "./r2Storage";
 import {STUDIO_ACCOUNT} from "./studio/account";
 import {STUDIO_ASSET_BASE, verifiedStudioSource} from "./studio/assetSource";
+import {isLiveFramePath, isLiveVideoPath} from "./liveVideo";
 
 const hash = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 const validId = (value: unknown): value is string => typeof value === "string" &&
@@ -184,8 +185,11 @@ export async function deleteRetainedUpload(input: UploadIdentity & {expected?: S
 }
 function previewId(input: UploadIdentity) {
   if (input.sourceKind === "ai") return input.repo === AI_STORAGE_REPO && isAiPreview(input.path, input.uploadId);
-  return (input.sourceKind === "studio" ? input.repo === STUDIO_STORAGE_REPO : input.repo === process.env.GH_REPO_WALLS) &&
-    input.path.split("/").pop()?.startsWith("thumb_");
+  const name = input.path.split("/").pop() ?? "";
+  if (input.sourceKind === "studio") return input.repo === STUDIO_STORAGE_REPO && name.startsWith("thumb_");
+  // A live wall's video and moderation frames are served from the public preview bucket like a thumbnail.
+  return input.repo === process.env.GH_REPO_WALLS &&
+    (name.startsWith("thumb_") || (input.sourceKind === "owned" && (isLiveVideoPath(name) || isLiveFramePath(name))));
 }
 export function stored(value: unknown): value is StoredUpload {
   if (!value || typeof value !== "object") return false;
@@ -218,6 +222,7 @@ export function stored(value: unknown): value is StoredUpload {
         ...(asset.uploadId ? {uploadId: asset.uploadId} : {})}) === true));
 }
 function contentType(bytes: Buffer): string {
+  if (bytes.subarray(4, 8).toString("latin1") === "ftyp") return "video/mp4";
   return bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ? "image/png" :
     bytes.subarray(8, 12).toString() === "WEBP" ? "image/webp" : /^GIF8[79]a$/.test(bytes.subarray(0, 6).toString()) ?
       "image/gif" : "image/jpeg";
@@ -547,6 +552,7 @@ export const onOwnedWallWritten = onDocumentWritten({document: "walls/{wallId}",
       }
     }
   } else if (before?.exists && validId(before.data()?.id)) {
+    await (await import("./wallLive.js")).tombstoneLiveAssets(before.data());
     const id: string = before.data()?.id;
     await cleanupDeletedOwnedWall({wallId: id, canonicalPath: before.ref.path,
       incarnation: before.createTime?.toMillis(), incarnationNanos: before.createTime?.nanoseconds});

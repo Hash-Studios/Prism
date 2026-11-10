@@ -13,6 +13,8 @@ import {keepRemixOf, removeRemixOfIfUnchanged} from "./wallRemix";
 import {sanitizeResubmitOf} from "./wallResubmissions";
 import {sanitizeSubmissionText} from "./wallSubmissionSafety";
 import {checkSubmittedVariantOf} from "./wallVariants";
+import {isLiveWall, verifyLiveWall} from "./wallLive";
+import {r2Secrets} from "./r2Storage";
 
 const GITHUB_RAW_HOST = "raw.githubusercontent.com";
 const studioSecret = defineSecret("STUDIO_SECRET");
@@ -39,7 +41,8 @@ export const onWallSubmitted = onDocumentCreated(
   {
     document: "walls/{wallId}",
     region: REGION,
-    secrets: [studioSecret],
+    secrets: [studioSecret, ...r2Secrets],
+    timeoutSeconds: 120,
   },
   async (event) => {
     const data = event.data?.data();
@@ -79,6 +82,15 @@ export const onWallSubmitted = onDocumentCreated(
       return;
     }
     const artistEmail = str(data.email);
+    if (isLiveWall(data) && event.data) {
+      try {
+        const owner = artistEmail ? await findUserByEmail(artistEmail) : null;
+        await verifyLiveWall(event.data, owner?.id ?? null);
+      } catch (err) {
+        logger.warn("onWallSubmitted: live wall check failed.", {wallId, err});
+        await event.data.ref.update({"live.verified": false, "live.error": "check_failed"}).catch(() => undefined);
+      }
+    }
     const wallTitle = str(data.title) || "Untitled";
     const wallThumb = str(data.wallpaper_thumb);
 
