@@ -218,7 +218,7 @@ class AppRouter extends RootStackRouter {
     AutoRoute(path: '/downloads', page: DownloadRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/library', page: LibraryRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/folder/:folderId', page: FolderRoute.page, guards: [_signedInGuard]),
-    AutoRoute(path: '/folder/invite/:code', page: FolderInviteRoute.page),
+    AutoRoute(path: '/folder/invite/:code', page: FolderInviteRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/upload-wall', page: UploadWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/edit-wall', page: EditWallRoute.page, guards: [_signedInGuard]),
     AutoRoute(path: '/creator-stats', page: CreatorStatsRoute.page, guards: [_signedInGuard]),

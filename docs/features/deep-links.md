@@ -123,7 +123,7 @@ Some app pages show public or shared data, but their Firestore reads currently r
 | `/downloads` | `downloads` | The user's downloads. | sign-in | owner | Data of one user. |
 | `/library` | `library`, `wallpaperHistory` | The user's Library. | sign-in | owner | Data of one user. |
 | `/folder/:folderId` | `folder` | One Folder. | sign-in | account | Needs rules change: `publicFolders/{id}` and its `items` require sign-in in `firestore.rules`. A private Folder is limited to its owner and editors. |
-| `/folder/invite/:code` | `folderInvite` | The join page of a Folder invite. | none | public | The invite callable allows guest preview. Owner attribution reads `profiles/{uid}`, which requires sign-in, so the inviter name may not load for a guest. **Join folder** asks for sign-in. |
+| `/folder/invite/:code` | `folderInvite` | The join page of a Folder invite. | sign-in | account | An invite is for one person to join. The inviter name reads `profiles/{uid}`, which needs sign-in. The page opens after sign-in. |
 | `/upload-wall` | - | The upload form. | sign-in | owner | The user's own upload. |
 | `/edit-wall` | - | The edit form of a submitted wall. | sign-in | owner | The user's own wall. |
 | `/creator-stats` | `creatorStats` | The user's creator stats. | sign-in | owner | Data of one user. |
