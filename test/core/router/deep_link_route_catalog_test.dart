@@ -1,10 +1,13 @@
 import 'dart:io';
 
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_catalog_resolver.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/deep_link_route_catalog.dart';
+import 'package:Prism/core/router/route_access.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -21,8 +24,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   const DeepLinkParser parser = DeepLinkParser();
-  setUp(() => DailyMomentConfig.enabledOverride = false);
-  tearDown(() => DailyMomentConfig.enabledOverride = null);
+  setUp(() {
+    DailyMomentConfig.enabledOverride = false;
+    app_state.prismUser = app_constants.createGuestPrismUser()..loggedIn = true;
+  });
+  tearDown(() {
+    DailyMomentConfig.enabledOverride = null;
+    app_state.prismUser = app_constants.createGuestPrismUser();
+  });
 
   test('daily moment links respect the feature flag', () async {
     for (final enabled in <bool>[false, true]) {
@@ -181,6 +190,91 @@ void main() {
     }
   });
 
+  test('folder deep links are guarded or safely rejected after URI normalization', () async {
+    final List<(String, String?)> cases = <(String, String?)>[
+      ('/folder/', null),
+      // Uri normalizes a dot segment before the catalog sees it, so this safely resumes at startup.
+      ('/folder/%2E%2E', DashboardRoute.name),
+      ('/folder/a%2Fb', null),
+      ('/folder/${'a' * 129}', FolderRoute.name),
+      ('/folder/caf%C3%A9', FolderRoute.name),
+      ('/folder/invite', FolderRoute.name),
+    ];
+
+    for (final (String uri, String? expectedRouteName) in cases) {
+      final DeepLinkActionEntity action = parser.parse(Uri.parse(uri));
+      final PageRouteInfo? route = action is PageLinkIntent ? await routeForPageLink(action) : null;
+      expect(route?.routeName, expectedRouteName, reason: uri);
+      if (route != null) {
+        for (final String name in _routeNames(route)) {
+          expect(routeAccess, contains(name), reason: '$uri resolves to unguarded route $name');
+        }
+        expect(
+          routeAccess[route.routeName],
+          expectedRouteName == FolderRoute.name ? RouteAccess.owner : RouteAccess.public,
+          reason: uri,
+        );
+      }
+    }
+  });
+
+  test('folder invite queries resolve to a guarded invite or owner-only folder route', () async {
+    const String code = 'ABCDEFGHJK';
+    final DeepLinkRouteMatch? invite = DeepLinkRouteCatalog.match(Uri.parse('/folder/ignored-folder?invite=$code'));
+    expect(invite?.target, DeepLinkPageTarget.folderInvite);
+    // The folder id is harmless extra match metadata; the resolver opens only the invite-code route.
+    expect(invite?.pathParams, <String, String>{'folderId': 'ignored-folder', 'code': code});
+    final PageRouteInfo? inviteRoute = await routeForPageLink(
+      parser.parse(Uri.parse('/folder/ignored-folder?invite=$code')) as PageLinkIntent,
+    );
+    expect(inviteRoute, isA<FolderInviteRoute>());
+    expect((inviteRoute! as FolderInviteRoute).args!.code, code);
+    expect(routeAccess[inviteRoute.routeName], RouteAccess.account);
+
+    for (final String uri in <String>[
+      '/folder/ignored-folder?invite=short',
+      '/folder/ignored-folder?invite=',
+    ]) {
+      final DeepLinkRouteMatch? match = DeepLinkRouteCatalog.match(Uri.parse(uri));
+      expect(match?.target, DeepLinkPageTarget.folder, reason: uri);
+      final PageRouteInfo? route = await routeForPageLink(parser.parse(Uri.parse(uri)) as PageLinkIntent);
+      expect(route, isA<FolderRoute>(), reason: uri);
+      expect(routeAccess[route!.routeName], RouteAccess.owner, reason: uri);
+    }
+  });
+
+  test('catalog resolver routes and nested children all have global access rules', () async {
+    final Directory tempDirectory = await Directory.systemTemp.createTemp('deep-link-access-');
+    final File localImage = File('${tempDirectory.path}/wallpaper.jpg')..writeAsBytesSync(<int>[1]);
+    addTearDown(() => tempDirectory.delete(recursive: true));
+
+    for (final DeepLinkRouteExample example in DeepLinkRouteCatalog.examples) {
+      final PageLinkIntent intent = parser.parse(Uri.parse(example.uri)) as PageLinkIntent;
+      final PageRouteInfo? route = await routeForPageLink(
+        intent,
+        profileLookup: (_) async => const PublicProfileEntity(
+          id: 'alice-id',
+          name: 'Alice',
+          email: 'alice@example.com',
+          username: 'alice',
+          profilePhoto: '',
+          bio: '',
+          links: <String, String>{},
+          coverPhoto: '',
+        ),
+        wallpaperLookup: ({required String wallId, required WallpaperSource source}) async =>
+            _prismWithSeparateThumbnail(),
+        localFileResolver:
+            ({required String imageUrl, required String wallId, required WallpaperSource source}) async =>
+                localImage,
+      );
+      expect(route, isNotNull, reason: example.uri);
+      for (final String name in _routeNames(route!)) {
+        expect(routeAccess, contains(name), reason: '${example.uri} resolves to unguarded route $name');
+      }
+    }
+  });
+
   test('catalog examples and picker destinations cover every app page', () async {
     final Set<String> reachablePages = <String>{};
     const PublicProfileEntity profile = PublicProfileEntity(
@@ -271,6 +365,13 @@ void main() {
       profileLookup: (String _) async => profile,
     ))!;
     expect((relation.args! as FollowersRouteArgs).userId, profile.id);
+    expect(routeAccess[relation.routeName], RouteAccess.account);
+    final PageRouteInfo following = (await routeForPageLink(
+      parser.parse(Uri.parse('/user/alice/following')) as PageLinkIntent,
+      profileLookup: (String _) async => profile,
+    ))!;
+    expect((following.args! as FollowingListRouteArgs).userId, profile.id);
+    expect(routeAccess[following.routeName], RouteAccess.account);
   });
 
   test('read-only wallpaper lookup maps provider repositories to source entities', () async {

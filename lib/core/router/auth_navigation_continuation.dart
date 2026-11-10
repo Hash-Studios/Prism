@@ -25,7 +25,8 @@ class AuthNavigationContinuation {
   NavigationFailure? _lastNavigationFailure;
   final Set<Object> _cancelledRouteIds = <Object>{};
 
-  /// True means the destination became visible; false means it was cancelled or refused by a guard.
+  /// True means authentication completed and the destination became visible, if one was deferred.
+  /// False means the operation was cancelled or refused by a guard.
   Future<bool>? get pendingNavigation => (_pending ?? _resuming)?.completion.future;
 
   bool get isResuming => _resuming != null;
@@ -33,6 +34,23 @@ class AuthNavigationContinuation {
   NavigationFailure? get lastNavigationFailure => _lastNavigationFailure;
 
   bool isCancelled(RouteMatch route) => _cancelledRouteIds.contains(route.id);
+
+  /// Waits for the current guest to complete sign-in without retaining a destination route.
+  Future<bool> waitForSignIn({Future<void>? cancelled}) {
+    if (_disposed) return Future<bool>.value(false);
+    final bool alreadySigningIn = _hasOnboarding;
+    cancel();
+    _lastNavigationFailure = null;
+    final pending = _PendingNavigation(const <PageRouteInfo>[]);
+    _pending = pending;
+    _authWasVisible = alreadySigningIn || app_state.prismUser.loggedIn;
+    if (!_authWasVisible) unawaited(_openSignIn(pending));
+    if (cancelled != null) {
+      unawaited(cancelled.then<void>((_) => _cancelIfCurrent(pending), onError: (Object _) {}));
+    }
+    _flush();
+    return pending.completion.future;
+  }
 
   void defer(NavigationResolver resolver, {required StackRouter router}) {
     if (_disposed || isResuming) return;
@@ -144,6 +162,11 @@ class AuthNavigationContinuation {
     }
     if (!_bootstrapCompleted) return;
     _pending = null;
+    if (pending.routes.isEmpty) {
+      _authWasVisible = false;
+      pending.complete(true);
+      return;
+    }
     _resuming = pending;
     unawaited(_resume(pending));
   }
@@ -170,7 +193,10 @@ class AuthNavigationContinuation {
 
   void _discardCancelledNavigation(_PendingNavigation pending) {
     _discardCancelledRoutes();
-    if (identical(_resuming, pending)) _resuming = null;
+    if (identical(_resuming, pending)) {
+      _resuming = null;
+      scheduleMicrotask(_flush);
+    }
   }
 
   void _discardCancelledRoutes() {

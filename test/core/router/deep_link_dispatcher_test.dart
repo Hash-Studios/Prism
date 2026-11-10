@@ -1,14 +1,20 @@
 import 'dart:async';
 
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/router/auth_navigation_continuation.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
+import 'package:Prism/core/router/deep_link_catalog_resolver.dart';
 import 'package:Prism/core/router/deep_link_dispatcher.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/deep_link_startup_gate.dart';
+import 'package:Prism/core/router/route_guards.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/daily_flow/daily_moment_presentation_gate.dart';
+import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/share_in/domain/shared_item.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -52,6 +58,8 @@ class _LinkTestRouter extends RootStackRouter {
     AutoRoute(path: '/about', page: _page(AboutRoute.name)),
     AutoRoute(path: '/rewards', page: _page(RewardsRoute.name)),
     AutoRoute(path: '/wallpaper-detail', page: _page(WallpaperDetailRoute.name)),
+    AutoRoute(path: '/followers', page: _page(FollowersRoute.name)),
+    AutoRoute(path: '/following', page: _page(FollowingListRoute.name)),
     AutoRoute(path: '/share-in', page: _page(ShareInRoute.name)),
     AutoRoute(path: '/notifications', page: _page(NotificationRoute.name)),
     AutoRoute(path: '/shop', page: _page(ShopRoute.name), guards: <AutoRouteGuard>[_DenyGuard()]),
@@ -61,13 +69,32 @@ class _LinkTestRouter extends RootStackRouter {
   static PageInfo _page(String name) => PageInfo(name, builder: (_) => Text(name));
 }
 
+class _RelationTestRouter extends _LinkTestRouter {
+  @override
+  List<AutoRouteGuard> get guards => const <AutoRouteGuard>[PlatformAccountGuard()];
+}
+
 class _ResolvingNavigation extends DeepLinkNavigation {
   const _ResolvingNavigation(this.resolve);
 
   final Future<DeepLinkRouteResolution> Function(DeepLinkActionEntity action) resolve;
 
   @override
-  Future<DeepLinkRouteResolution> resolveAction(DeepLinkActionEntity action) => resolve(action);
+  Future<DeepLinkRouteResolution> resolveAction(DeepLinkActionEntity action, {Future<bool> Function()? authenticate}) =>
+      resolve(action);
+}
+
+class _RelationNavigation extends DeepLinkNavigation {
+  const _RelationNavigation(this.profileLookup);
+
+  final Future<PublicProfileEntity?> Function(String identifier) profileLookup;
+
+  @override
+  Future<PageRouteInfo?> mapActionToRoute(DeepLinkActionEntity action, {Future<bool> Function()? authenticate}) =>
+      switch (action) {
+        PageLinkIntent() => routeForPageLink(action, authenticate: authenticate, profileLookup: profileLookup),
+        _ => super.mapActionToRoute(action, authenticate: authenticate),
+      };
 }
 
 void main() {
@@ -97,6 +124,15 @@ void main() {
     dispatcher = create();
   }
 
+  Future<void> mountRelation(WidgetTester tester) async {
+    app_state.prismUser.loggedIn = true;
+    router = _RelationTestRouter();
+    await mount(tester);
+    unawaited(router.replaceAll(<PageRouteInfo>[AboutRoute()]));
+    await tester.pumpAndSettle();
+    app_state.prismUser = createGuestPrismUser();
+  }
+
   List<DeepLinkNavigationResultEvent> results() => events.whereType<DeepLinkNavigationResultEvent>().toList();
 
   testWidgets('daily moment waits through link resolution and releases after leaving its target', (tester) async {
@@ -124,6 +160,169 @@ void main() {
     await tester.pumpAndSettle();
     expect(await opened, DeepLinkDispatchResult.blocked);
     expect(DailyMomentPresentationGate.instance.deepLinkActive, isFalse);
+  });
+
+  for (final TargetPlatform platform in <TargetPlatform>[TargetPlatform.iOS, TargetPlatform.android]) {
+    for (final (String path, String routeName) in <(String, String)>[
+      ('/user/alice/followers', FollowersRoute.name),
+      ('/user/alice/following', FollowingListRoute.name),
+    ]) {
+      testWidgets('guest $path link on $platform authenticates before lookup and passes the route guard', (
+        tester,
+      ) async {
+        await mountRelation(tester);
+        final continuation = AuthNavigationContinuation.of(router);
+        continuation.markBootstrapCompleted();
+        final List<String> calls = <String>[];
+        dispatcher.dispose();
+        dispatcher = create(
+          navigation: _RelationNavigation((identifier) async {
+            calls.add('lookup:$identifier');
+            return const PublicProfileEntity(
+              id: 'user-42',
+              name: 'Alice',
+              email: '',
+              username: 'alice',
+              profilePhoto: '',
+              bio: '',
+              links: <String, String>{},
+              coverPhoto: '',
+            );
+          }),
+        );
+        addTearDown(continuation.dispose);
+
+        final Future<DeepLinkDispatchResult> opened = dispatcher.openUri(
+          Uri.parse(path),
+          source: DeepLinkSourceValue.appLinks,
+        );
+        await tester.pumpAndSettle();
+        expect(router.current.name, OnboardingV2ShellRoute.name);
+        expect(calls, isEmpty, reason: 'username resolution must wait for authentication');
+
+        app_state.prismUser.loggedIn = true;
+        unawaited(router.replaceAll(const <PageRouteInfo>[SplashWidgetRoute()]));
+        await tester.pumpAndSettle();
+        unawaited(router.replaceAll(const <PageRouteInfo>[DashboardRoute()]));
+        await tester.pumpAndSettle();
+
+        expect(await opened, DeepLinkDispatchResult.navigated);
+        expect(calls, <String>['lookup:alice']);
+        expect(router.current.name, routeName);
+        expect(
+          router.current.args,
+          routeName == FollowersRoute.name
+              ? const FollowersRouteArgs(userId: 'user-42')
+              : const FollowingListRouteArgs(userId: 'user-42'),
+        );
+      }, variant: TargetPlatformVariant({platform}));
+    }
+  }
+
+  testWidgets('back from relation sign-in cancels without lookup or NotFound navigation', (tester) async {
+    await mountRelation(tester);
+    final continuation = AuthNavigationContinuation.of(router);
+    continuation.markBootstrapCompleted();
+    int lookups = 0;
+    dispatcher.dispose();
+    dispatcher = create(
+      navigation: _RelationNavigation((_) async {
+        lookups++;
+        return null;
+      }),
+    );
+    addTearDown(continuation.dispose);
+
+    final Future<DeepLinkDispatchResult> opened = dispatcher.openUri(
+      Uri.parse('/user/alice/following'),
+      source: DeepLinkSourceValue.appLinks,
+    );
+    await tester.pumpAndSettle();
+    expect(router.current.name, OnboardingV2ShellRoute.name);
+
+    await router.maybePop();
+    await tester.pumpAndSettle();
+
+    expect(await opened, DeepLinkDispatchResult.cancelled);
+    expect(lookups, 0);
+    expect(router.stackData.map((route) => route.name), isNot(contains(NotFoundRoute.name)));
+  });
+
+  testWidgets('dispatcher cancellation before sign-in opens no stale onboarding', (tester) async {
+    await mountRelation(tester);
+    final continuation = AuthNavigationContinuation.of(router);
+    continuation.markBootstrapCompleted();
+    int lookups = 0;
+    dispatcher.dispose();
+    dispatcher = create(
+      navigation: _RelationNavigation((_) async {
+        lookups++;
+        return null;
+      }),
+    );
+    addTearDown(continuation.dispose);
+
+    final Future<DeepLinkDispatchResult> opened = dispatcher.openUri(
+      Uri.parse('/user/alice/followers'),
+      source: DeepLinkSourceValue.appLinks,
+    );
+    await tester.idle();
+    dispatcher.cancel();
+    await tester.pumpAndSettle();
+
+    expect(await opened, DeepLinkDispatchResult.cancelled);
+    expect(router.current.name, AboutRoute.name);
+    expect(lookups, 0);
+  });
+
+  testWidgets('cancellation during a late profile lookup cannot navigate its result', (tester) async {
+    await mountRelation(tester);
+    final continuation = AuthNavigationContinuation.of(router);
+    continuation.markBootstrapCompleted();
+    final Completer<PublicProfileEntity?> profile = Completer<PublicProfileEntity?>();
+    final Completer<void> lookupStarted = Completer<void>();
+    dispatcher.dispose();
+    dispatcher = create(
+      navigation: _RelationNavigation((_) {
+        if (!lookupStarted.isCompleted) lookupStarted.complete();
+        return profile.future;
+      }),
+    );
+    addTearDown(continuation.dispose);
+
+    final Future<DeepLinkDispatchResult> opened = dispatcher.openUri(
+      Uri.parse('/user/alice/followers'),
+      source: DeepLinkSourceValue.appLinks,
+    );
+    await tester.pumpAndSettle();
+    expect(router.current.name, OnboardingV2ShellRoute.name);
+
+    app_state.prismUser.loggedIn = true;
+    unawaited(router.replaceAll(const <PageRouteInfo>[SplashWidgetRoute()]));
+    await tester.pumpAndSettle();
+    unawaited(router.replaceAll(const <PageRouteInfo>[DashboardRoute()]));
+    await tester.pumpAndSettle();
+    await lookupStarted.future;
+    dispatcher.cancel();
+    expect(await opened, DeepLinkDispatchResult.cancelled);
+
+    profile.complete(
+      const PublicProfileEntity(
+        id: 'user-42',
+        name: 'Alice',
+        email: '',
+        username: 'alice',
+        profilePhoto: '',
+        bio: '',
+        links: <String, String>{},
+        coverPhoto: '',
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(router.current.name, DashboardRoute.name);
+    expect(router.stackData.map((route) => route.name), isNot(contains(FollowersRoute.name)));
+    expect(router.stackData.map((route) => route.name), isNot(contains(NotFoundRoute.name)));
   });
 
   testWidgets('duplicate image delivery resolves only once, including after its sheet closes', (tester) async {

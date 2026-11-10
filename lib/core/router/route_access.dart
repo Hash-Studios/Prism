@@ -1,6 +1,6 @@
 import 'package:Prism/core/router/app_router.dart';
 
-/// Who can open a route. `PlatformAccountGuard` reads [routeAccess] for every navigation.
+/// Who can open a route. `PlatformAccountGuard` reads [routeAccess] for guarded stack navigation.
 enum RouteAccess {
   /// Anyone, also a signed-out Android user: startup, sign-in and legal pages.
   open,

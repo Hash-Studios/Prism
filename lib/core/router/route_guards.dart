@@ -21,7 +21,8 @@ class SignedInGuard extends AutoRouteGuard {
   }
 }
 
-/// Applies [routeAccess] to every route. Android has no guests, so its public routes need an account too.
+/// Applies [routeAccess] to guarded stack navigation. Tab navigation may bypass guards; guest handling there is page-level.
+/// Android has no guests, so its public routes need an account too.
 class PlatformAccountGuard extends AutoRouteGuard {
   const PlatformAccountGuard();
 

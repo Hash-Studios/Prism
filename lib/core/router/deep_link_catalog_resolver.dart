@@ -6,6 +6,7 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_route_catalog.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -31,6 +32,7 @@ import 'package:auto_route/auto_route.dart';
 Future<PageRouteInfo?> routeForPageLink(
   PageLinkIntent intent, {
   Future<PublicProfileEntity?> Function(String identifier)? profileLookup,
+  Future<bool> Function()? authenticate,
   Future<FeedItemEntity?> Function({required String wallId, required WallpaperSource source})? wallpaperLookup,
   Future<File> Function({required String imageUrl, required String wallId, required WallpaperSource source})?
   localFileResolver,
@@ -106,8 +108,18 @@ Future<PageRouteInfo?> routeForPageLink(
       collectionName: path['collectionName'] ?? query['collectionName'] ?? query['name']!,
     ),
     DeepLinkPageTarget.profile => ProfileRoute(profileIdentifier: identifier),
-    DeepLinkPageTarget.followers => _relationRoute(identifier, followers: true, profileLookup: profileLookup),
-    DeepLinkPageTarget.following => _relationRoute(identifier, followers: false, profileLookup: profileLookup),
+    DeepLinkPageTarget.followers => _relationRoute(
+      identifier,
+      followers: true,
+      profileLookup: profileLookup,
+      authenticate: authenticate,
+    ),
+    DeepLinkPageTarget.following => _relationRoute(
+      identifier,
+      followers: false,
+      profileLookup: profileLookup,
+      authenticate: authenticate,
+    ),
     DeepLinkPageTarget.adminReview => AdminReviewRoute(),
     DeepLinkPageTarget.swipeReview => const SwipeReviewRoute(),
     DeepLinkPageTarget.adminTelemetry => const FirestoreTelemetryRoute(),
@@ -293,9 +305,12 @@ Future<PageRouteInfo?> _relationRoute(
   String identifier, {
   required bool followers,
   Future<PublicProfileEntity?> Function(String identifier)? profileLookup,
+  Future<bool> Function()? authenticate,
 }) async {
   if (identifier.trim().isEmpty) return null;
   try {
+    final bool authenticated = authenticate == null ? app_state.prismUser.loggedIn : await authenticate();
+    if (!authenticated || !app_state.prismUser.loggedIn) return null;
     final PublicProfileEntity? profile = await (profileLookup ?? _lookupProfile)(identifier);
     if (profile == null) return null;
     final PageRouteInfo route = followers ? FollowersRoute(userId: profile.id) : FollowingListRoute(userId: profile.id);

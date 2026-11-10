@@ -62,7 +62,9 @@ The catalog rejects unknown query keys, repeated query keys, missing required re
 
 ## Access
 
-`lib/core/router/route_access.dart` gives each app route one access rule. `PlatformAccountGuard` reads this table for each navigation. A route without a row needs an account. `test/core/router/route_access_test.dart` fails when a route has no row, or when a row names no route.
+`lib/core/router/route_access.dart` gives each app route one access rule. `PlatformAccountGuard` reads this table when AutoRoute invokes the guard; it does not run for every tab selection. The dashboard shell is guarded when entered, so a signed-out Android user is stopped there. An iOS guest can select Rewards, where `RewardsPage` shows its own sign-in prompt.
+
+A standalone `/rewards` deep link still passes through the global access guard. A route without a row needs an account. `test/core/router/route_access_test.dart` fails when a route has no row, or when a row names no route.
 
 | Rule | Who can open the route |
 |---|---|
