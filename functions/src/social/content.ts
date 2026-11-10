@@ -196,7 +196,8 @@ export async function wallhavenCandidates(): Promise<Array<{id: string; purity: 
   const seen = new Set<string>();
   const out: Array<{id: string; purity: string}> = [];
   // Two pages per range: page 1 alone is about 24 walls, mostly sketchy, so the same top walls would win every day.
-  for (const [topRange, page] of [["3d", "1"], ["3d", "2"], ["1w", "1"], ["1w", "2"]]) {
+  // Keep both original page-1 pools first so page 2 cannot exhaust the detail budget before the weekly fallback.
+  for (const [topRange, page] of [["3d", "1"], ["1w", "1"], ["3d", "2"], ["1w", "2"]]) {
     const query = new URLSearchParams({categories: "111", purity: "110", sorting: "toplist", topRange,
       ratios: "portrait", atleast: "1080x1920", page});
     const data = (await wallhavenJson(`/search?${query}`))?.data;

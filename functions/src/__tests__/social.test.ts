@@ -5,7 +5,7 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {db} from "../common";
-import {gridContent, gridVisionDecision, panoramaPanels, YOUTH_TAG, type WallhavenWall} from "../social/content";
+import {gridContent, gridVisionDecision, panoramaPanels, wallhavenCandidates, YOUTH_TAG, type WallhavenWall} from "../social/content";
 import {applyPress, contentHash, defaultBuilders, handleTelegramUpdate, JITTER_MS, loadSocialConfig, measurePosts, normalizePostText, prepareDay, publishDue, scheduledAt, socialPrepare, socialTelegramWebhook, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
 import {parsePress, socialBotToken, socialOwnerChatId, telegramClient, type Telegram, webhookSecret} from "../social/telegram";
 import {R2Storage} from "../r2Storage";
@@ -1010,4 +1010,123 @@ test("repeated dry runs never show a wall from any earlier run that day", async 
   }
   assert.equal(new Set(shown).size, shown.length, `a wall came back: ${shown.join(",")}`);
   assert.equal(shown.length, 12);
+});
+
+test("a failed dry-run history save cannot erase the previous preview's ids", async (t) => {
+  const day = postDay(NOW);
+  const store = installSocialDb(t, {
+    [PATH]: postDoc({source: {kind: "prism", ids: ["A"]}}),
+    "socialState/dryRunSeen": {day, ids: ["B"]},
+  });
+  const collection = db.collection.bind(db);
+  let fail = true;
+  t.mock.method(db, "collection", (name: string) => {
+    const result = collection(name);
+    if (name !== "socialState") return result;
+    const doc = result.doc.bind(result);
+    result.doc = ((id: string) => {
+      const ref = doc(id);
+      const set = ref.set.bind(ref);
+      if (id === "dryRunSeen") {
+        ref.set = (async (...args: Parameters<typeof set>) => {
+          if (fail) {
+            fail = false;
+            throw new Error("history unavailable");
+          }
+          return set(...args);
+        }) as typeof ref.set;
+      }
+      return ref;
+    }) as typeof result.doc;
+    return result;
+  });
+  const build = async (_day: string, exclude: Set<string>) => {
+    const id = ["A", "B", "C"].find((wall) => !exclude.has(wall));
+    return id ? {pipeline: "still" as const, source: {kind: "prism" as const, ids: [id]},
+      media: [{jpeg: BYTES, alt: "wall", sensitive: false}], text: "wall", replyText: ""} : null;
+  };
+  const builders = {grid: build, panorama: build, still: build};
+  const dry = deps(null, NOW, config({dryRun: true,
+    slots: {am: true, noon: false, eve: false, night: false}}));
+  await assert.rejects(prepareDay(dry, builders), /history unavailable/);
+  await prepareDay(dry, builders);
+  assert.deepEqual((store.get(PATH)?.source as {ids: string[]}).ids, ["C"]);
+});
+
+test("live preparation ignores dry-run history and does not change it", async (t) => {
+  const history = {day: postDay(NOW), ids: ["A"]};
+  const store = installSocialDb(t, {"socialState/dryRunSeen": history});
+  const build = async (_day: string, exclude: Set<string>) => {
+    assert.ok(!exclude.has("A"));
+    return {pipeline: "still" as const, source: {kind: "prism" as const, ids: ["A"]},
+      media: [{jpeg: BYTES, alt: "wall", sensitive: false}], text: "wall", replyText: ""};
+  };
+  await prepareDay(deps(null, NOW, config({slots: {am: true, noon: false, eve: false, night: false}})),
+    {grid: build, panorama: build, still: build});
+  assert.deepEqual((store.get(PATH)?.source as {ids: string[]}).ids, ["A"]);
+  assert.deepEqual(store.get("socialState/dryRunSeen"), history);
+});
+
+test("dry-run history resets at IST midnight, not UTC midnight", async (t) => {
+  const before = new Date("2026-11-12T18:29:59Z");
+  const after = new Date("2026-11-12T18:30:00Z");
+  const store = installSocialDb(t, {"socialState/dryRunSeen": {day: postDay(before), ids: ["A"]}});
+  const build = async (_day: string, exclude: Set<string>) => {
+    const id = exclude.has("A") ? "B" : "A";
+    return {pipeline: "still" as const, source: {kind: "prism" as const, ids: [id]},
+      media: [{jpeg: BYTES, alt: "wall", sensitive: false}], text: "wall", replyText: ""};
+  };
+  const builders = {grid: build, panorama: build, still: build};
+  const cfg = config({dryRun: true, slots: {am: true, noon: false, eve: false, night: false}});
+  await prepareDay(deps(null, before, cfg), builders);
+  assert.deepEqual((store.get(`socialPosts/${postDay(before)}_am`)?.source as {ids: string[]}).ids, ["B"]);
+  await prepareDay(deps(null, after, cfg), builders);
+  assert.deepEqual((store.get(`socialPosts/${postDay(after)}_am`)?.source as {ids: string[]}).ids, ["A"]);
+  await prepareDay(deps(null, after, cfg), builders);
+  assert.deepEqual(store.get("socialState/dryRunSeen"), {day: postDay(after), ids: ["A"]});
+});
+
+test("Wallhaven reads four search pages, deduplicates, and keeps the detail budget at 15", async (t) => {
+  const requests: URL[] = [];
+  t.mock.method(globalThis, "fetch", async (input: string | URL | Request) => {
+    const url = new URL(String(input));
+    assert.equal(url.origin, "https://wallhaven.cc");
+    requests.push(url);
+    return {ok: true, json: async () => ({data: Array.from({length: 24}, (_, i) =>
+      ({id: `w${i}`, purity: "sfw"}))})} as Response;
+  });
+  const candidates = await wallhavenCandidates();
+  assert.equal(candidates.length, 24);
+  assert.deepEqual(requests.map((url) => [url.searchParams.get("topRange"), url.searchParams.get("page")]),
+    [["3d", "1"], ["1w", "1"], ["3d", "2"], ["1w", "2"]]);
+  const d = await gridDeps(candidates, Object.fromEntries(candidates.slice(0, 15).map(({id}) => [id, ["loli"]])));
+  const details = t.mock.fn(d.details);
+  // Safe walls exist later, but rejection-heavy pools deliberately stop at the request budget.
+  assert.equal(await gridContent("2026-11-12", new Set(), {sketchyPerPost: 2, blockedTags: []},
+    {...d, details}), null);
+  assert.equal(details.mock.callCount(), 15);
+  details.mock.resetCalls();
+  const content = await gridContent("2026-11-12", new Set(candidates.slice(0, 15).map(({id}) => id)),
+    {sketchyPerPost: 2, blockedTags: []}, {...d, details});
+  assert.deepEqual(content?.source.ids, ["w15", "w16", "w17"]);
+  assert.equal(details.mock.callCount(), 3, "excluded ids do not consume the detail budget");
+});
+
+test("new toplist pages cannot starve the original weekly fallback of its detail budget", async (t) => {
+  t.mock.method(globalThis, "fetch", async (input: string | URL | Request) => {
+    const query = new URL(String(input)).searchParams;
+    const weekly = query.get("topRange") === "1w";
+    const second = query.get("page") === "2";
+    const count = second ? 24 : weekly ? 3 : 12;
+    const prefix = second ? "reject2" : weekly ? "safe" : "reject1";
+    return {ok: true, json: async () => ({data: Array.from({length: count}, (_, i) =>
+      ({id: `${prefix}${i}`, purity: "sfw"}))})} as Response;
+  });
+  const candidates = await wallhavenCandidates();
+  const d = await gridDeps(candidates, Object.fromEntries(candidates.filter(({id}) => id.startsWith("reject"))
+    .map(({id}) => [id, ["loli"]])));
+  const details = t.mock.fn(d.details);
+  const content = await gridContent("2026-11-12", new Set(), {sketchyPerPost: 2, blockedTags: []}, {...d, details});
+  assert.deepEqual(content?.source.ids, ["safe0", "safe1", "safe2"]);
+  assert.equal(details.mock.callCount(), 15);
 });
