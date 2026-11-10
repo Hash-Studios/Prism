@@ -114,18 +114,6 @@ void main() {
     }, variant: TargetPlatformVariant({platform}));
   }
 
-  test('allows a guest to enter the dashboard on iOS', () {
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    final dashboard = AppRouter().routes.singleWhere((route) => route.path == '/dashboard');
-    final guard = dashboard.guards.single as SignedInGuard;
-
-    guard.onNavigation(resolver, router);
-
-    verify(() => resolver.next()).called(1);
-    verifyNever(() => resolver.next(false));
-    verifyNever(() => router.pushPath<Object?>(any()));
-  });
-
   for (final path in [
     '/ai',
     '/download-wallpaper',
@@ -265,6 +253,29 @@ void main() {
       }, variant: TargetPlatformVariant({platform}));
     }
   }
+
+  testWidgets('Android sign-out discards an actual route continuation before bootstrap resumes it', (tester) async {
+    final appRouter = _HistoryGuardRouter(includeChildren: true);
+    final continuation = AuthNavigationContinuation.of(appRouter);
+    addTearDown(continuation.dispose);
+    await tester.pumpWidget(MaterialApp.router(routerConfig: appRouter.config()));
+    await tester.pumpAndSettle();
+
+    unawaited(appRouter.pushPath('/downloads'));
+    await tester.pumpAndSettle();
+    expect(appRouter.current.name, OnboardingV2ShellRoute.name);
+    final outcome = continuation.pendingNavigation!;
+
+    app_state.prismUser.loggedIn = true;
+    continuation.cancel();
+    app_state.prismUser = createGuestPrismUser();
+    continuation.markBootstrapCompleted();
+    await tester.pumpAndSettle();
+
+    expect(await outcome, isFalse);
+    expect(continuation.pendingNavigation, isNull);
+    expect(appRouter.stackData.where((route) => route.name == DownloadRoute.name), isEmpty);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('Android guest can reach startup, onboarding, about and not-found without an auth loop', (tester) async {
     final appRouter = _HistoryGuardRouter();

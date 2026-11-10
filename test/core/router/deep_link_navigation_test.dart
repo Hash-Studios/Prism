@@ -5,6 +5,8 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_navigation.dart';
+import 'package:Prism/core/router/deep_link_route_catalog.dart';
+import 'package:Prism/core/router/route_access.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/services.dart';
@@ -176,6 +178,34 @@ void main() {
     expect(await navigation.routeForUri(Uri.parse('https://prismwalls.com/draw')), isA<DrawRoute>());
   });
 
+  test('legacy redirect links resolve to the guarded canonical route families', () async {
+    const DeepLinkNavigation navigation = DeepLinkNavigation();
+    final List<(String, List<(String, RouteAccess)>)> cases = <(String, List<(String, RouteAccess)>)>[
+      ('/paywall', <(String, RouteAccess)>[(PremiumRoute.name, RouteAccess.public)]),
+      ('/streak', <(String, RouteAccess)>[(RewardsRoute.name, RouteAccess.owner)]),
+      (
+        '/dashboard/streak',
+        <(String, RouteAccess)>[(DashboardRoute.name, RouteAccess.public), (RewardsTabRoute.name, RouteAccess.owner)],
+      ),
+      ('/coin-transactions', <(String, RouteAccess)>[(RewardsRoute.name, RouteAccess.owner)]),
+    ];
+
+    for (final (String path, List<(String, RouteAccess)> expectedRoutes) in cases) {
+      expect(DeepLinkRouteCatalog.match(Uri.parse(path)), isNotNull, reason: path);
+      final PageRouteInfo? route = await navigation.routeForUri(Uri.parse(path));
+      expect(route, isNotNull, reason: path);
+      final List<String> names = _routeNames(route!);
+      expect(names, expectedRoutes.map(((String, RouteAccess) entry) => entry.$1).toList(), reason: path);
+      for (final (String name, RouteAccess access) in expectedRoutes) {
+        expect(routeAccess, contains(name), reason: '$path resolves to unguarded route $name');
+        expect(routeAccess[name], access, reason: '$path resolves to $name');
+      }
+    }
+
+    expect(DeepLinkRouteCatalog.match(Uri.parse('/coin-transactions/legacy')), isNull);
+    expect(await navigation.routeForUri(Uri.parse('/coin-transactions/legacy')), isNull);
+  });
+
   test('a referral link keeps the inviter and opens Rewards instead of Not found', () async {
     final List<String> inviters = <String>[];
     final DeepLinkNavigation navigation = DeepLinkNavigation(onReferral: (String id) async => inviters.add(id));
@@ -205,3 +235,8 @@ void main() {
 extension on DeepLinkNavigation {
   Future<PageRouteInfo?> routeForUri(Uri uri) async => (await resolveAction(parser.parse(uri))).route;
 }
+
+List<String> _routeNames(PageRouteInfo route) => <String>[
+  route.routeName,
+  ...?route.initialChildren?.expand(_routeNames),
+];

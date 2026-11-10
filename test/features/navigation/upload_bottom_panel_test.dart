@@ -63,7 +63,7 @@ class _PanelRouter extends AppRouter {
     AutoRoute(
       path: '/',
       page: PageInfo(
-        'PanelHost',
+        DashboardRoute.name,
         builder: (_) => Scaffold(
           body: Builder(
             builder: (context) => TextButton(

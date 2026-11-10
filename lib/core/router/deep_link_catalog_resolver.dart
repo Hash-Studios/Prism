@@ -6,6 +6,7 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_route_catalog.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -295,6 +296,8 @@ Future<PageRouteInfo?> _relationRoute(
   Future<PublicProfileEntity?> Function(String identifier)? profileLookup,
 }) async {
   if (identifier.trim().isEmpty) return null;
+  // A guest cannot read follower lists or look up the profile. The profile route asks them to sign in.
+  if (!app_state.prismUser.loggedIn) return ProfileRoute(profileIdentifier: identifier);
   try {
     final PublicProfileEntity? profile = await (profileLookup ?? _lookupProfile)(identifier);
     if (profile == null) return null;
