@@ -6,7 +6,8 @@
 # that). This script ad-hoc signs every bundle with its ios/<Target>/<Target>.entitlements first, exports with the
 # App Store Connect API key, and then refuses an IPA where a bundle is missing or lacks a source entitlement.
 #
-# Usage: tool/ios_export_ipa.sh <archive> <export-dir> <ExportOptions.plist>
+# Usage: tool/ios_export_ipa.sh <archive> <export-dir> [ExportOptions.plist]
+#        Without a plist it uses app-store-connect, team X2955Z4CKQ, automatic signing.
 # Env:   ASC_KEY_ID (default B3QRNA5QHB), ASC_KEY_PATH (default ~/.asc/keys/AuthKey_<id>.p8), ASC_ISSUER_ID
 #        (default: asc --profile prism auth issuer-id).
 # Self-check of the entitlement comparison: tool/ios_export_ipa.sh --self-test
@@ -37,7 +38,8 @@ if bad:
     print(f"error: {sys.argv[3]} entitlements are wrong: " + "; ".join(bad) + ". Check its App ID and profile.",
           file=sys.stderr)
     sys.exit(1)
-print(f"{sys.argv[3]}: entitlements OK ({", ".join(sorted(want))})")
+names = ", ".join(sorted(want))
+print(f"{sys.argv[3]}: entitlements OK ({names})")
 '
 
 if [ "${1:-}" = "--self-test" ]; then
@@ -60,13 +62,39 @@ fi
 
 ARCHIVE="${1:?archive path}"
 OUT="${2:?export dir}"
-OPTIONS="${3:?ExportOptions.plist}"
+OPTIONS="${3:-}"
 KEY_ID="${ASC_KEY_ID:-B3QRNA5QHB}"
 KEY_PATH="${ASC_KEY_PATH:-$HOME/.asc/keys/AuthKey_${KEY_ID}.p8}"
 ISSUER="${ASC_ISSUER_ID:-$(asc --profile prism auth issuer-id | tr -d '[:space:]')}"
 APP="$ARCHIVE/Products/Applications/Runner.app"
 [ -d "$APP" ] || { echo "error: no Runner.app in $ARCHIVE" >&2; exit 1; }
 [ -n "$ISSUER" ] || { echo "error: no App Store Connect issuer id" >&2; exit 1; }
+realpath_of() { python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$1"; }
+OUT_REAL="$(realpath_of "$OUT")"
+for keep in "$ARCHIVE" ${OPTIONS:+"$OPTIONS"}; do
+  case "$(realpath_of "$keep")/" in
+    "$OUT_REAL"/*) echo "error: $keep is inside the export dir $OUT, which this script deletes" >&2; exit 1 ;;
+  esac
+done
+
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+if [ -z "$OPTIONS" ]; then
+  OPTIONS="$TMP/ExportOptions.plist"
+  cat > "$OPTIONS" <<'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key><string>app-store-connect</string>
+  <key>teamID</key><string>X2955Z4CKQ</string>
+  <key>signingStyle</key><string>automatic</string>
+  <key>uploadSymbols</key><true/>
+  <key>destination</key><string>export</string>
+</dict>
+</plist>
+PLIST
+fi
 
 entitlements_for() { # bundle path -> source entitlements file, or empty
   local name; name="$(basename "$1")"; name="${name%.*}"
@@ -79,8 +107,7 @@ sign() { # bundle [entitlements]
 }
 
 # Inner code first (find -depth lists children before parents): the outer signature records the nested ones.
-NESTED="$(mktemp)"
-trap 'rm -f "$NESTED"' EXIT
+NESTED="$TMP/nested"
 find "$APP" -depth \( -name '*.framework' -o -name '*.dylib' \) -print0 > "$NESTED"
 while IFS= read -r -d '' code; do sign "$code"; done < "$NESTED"
 appexes=("$APP"/PlugIns/*.appex)
@@ -94,18 +121,17 @@ xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportPath "$OUT" -exportOpti
 
 ipas=("$OUT"/*.ipa)
 [ "${#ipas[@]}" -eq 1 ] || { echo "error: expected one .ipa in $OUT, found ${#ipas[@]}" >&2; exit 1; }
-CHECK="$(mktemp -d)"
-trap 'rm -f "$NESTED"; rm -rf "$CHECK"' EXIT
+CHECK="$TMP/check"
 unzip -q "${ipas[0]}" -d "$CHECK"
 status=0
 # Walk the archive's bundles, so an extension the export dropped fails too.
 for bundle in "$APP" "${appexes[@]}"; do
-  source_file="$(entitlements_for "$bundle")"
-  [ -n "$source_file" ] || continue
   exported="$CHECK/Payload/Runner.app${bundle#"$APP"}"
   if [ ! -d "$exported" ]; then
     echo "error: $(basename "$bundle") is missing from the IPA" >&2; status=1; continue
   fi
+  source_file="$(entitlements_for "$bundle")"
+  [ -n "$source_file" ] || continue
   codesign -d --entitlements :- "$exported" 2>/dev/null > "$CHECK/signed.plist" || true
   python3 -c "$compare_py" "$source_file" "$CHECK/signed.plist" "$(basename "$bundle")" || status=1
 done

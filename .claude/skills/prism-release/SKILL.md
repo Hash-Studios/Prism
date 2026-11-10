@@ -443,7 +443,7 @@ entitlements from the archived signatures, so the IPA loses push, Sign in with A
 Group. iOS builds 360 to 369 shipped like that, and Share to Prism failed on every phone.
 ```sh
 make release-ios BUILD_NUMBER=<N> DOPPLER_CONFIG=prd IOS_BUILD_ARGS="--no-codesign"
-tool/ios_export_ipa.sh build/ios/archive/Runner.xcarchive build/ios/ipa <ExportOptions.plist>   # same plist as above
+tool/ios_export_ipa.sh build/ios/archive/Runner.xcarchive build/ios/ipa   # writes its own App Store ExportOptions.plist
 ```
 The script ad-hoc signs each bundle with `ios/<Target>/<Target>.entitlements`, exports with the `prism` API key, and
 fails when a bundle in the IPA lacks one of its source entitlements. A "profile doesn't support the group" error means
