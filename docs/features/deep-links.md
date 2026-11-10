@@ -124,7 +124,7 @@ A guest can read `profiles/{uid}`, `usernames/{name}`, `publicFolders/{id}` and 
 | `/fav-walls` | `favourites` | The user's favourites. | sign-in | owner | Data of one user. |
 | `/downloads` | `downloads` | The user's downloads. | sign-in | owner | Data of one user. |
 | `/library` | `library`, `wallpaperHistory` | The user's Library. | sign-in | owner | Data of one user. |
-| `/folder/:folderId` | `folder` | One Folder. | none | public | A guest sees the public Folder. Follow asks for sign-in. A private Folder shows only to its owner and editors; a guest gets "This folder is not available". |
+| `/folder/:folderId` | `folder` | One Folder. | none | public | A guest sees the public Folder. Follow asks for sign-in. A private Folder shows only to its owner and editors; a guest gets "This folder is private or no longer exists". |
 | `/folder/invite/:code` | `folderInvite` | The join page of a Folder invite. | sign-in | account | Joining a Folder is an account action. The page opens after sign-in. |
 | `/upload-wall` | - | The upload form. | sign-in | owner | The user's own upload. |
 | `/edit-wall` | - | The edit form of a submitted wall. | sign-in | owner | The user's own wall. |
