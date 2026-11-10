@@ -600,7 +600,7 @@ export const socialPrepare = onSchedule({schedule: "0 7,10 * * *", timeZone: "As
 });
 
 /** Telegram calls this on every approval button press. Only requests with the bot's secret header count. */
-export const socialTelegramWebhook = onRequest({region: REGION, invoker: "public", maxInstances: 2, timeoutSeconds: 30,
+export const socialTelegramWebhook = onRequest({region: REGION, invoker: "public", maxInstances: 1, cpu: "gcf_gen1", timeoutSeconds: 30,
   memory: "256MiB", secrets: socialTelegramSecrets}, async (req, res) => {
   const token = socialBotToken.value();
   const supplied = Buffer.from(req.get("X-Telegram-Bot-Api-Secret-Token") ?? "");
