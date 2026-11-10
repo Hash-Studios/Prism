@@ -90,7 +90,8 @@ The fix works for Home, Lock and Both, because Set uses one file for the chosen 
 - The clock chip shows under the clock zone. The icons chip shows on top of the controls card, near the dock.
 - The chip for a zone shows only while the preview shows that zone: Lock shows the clock chip, Home shows the icons chip.
 - A tap opens a sheet with a before and an after thumbnail, **Apply** and **Keep as is**. **Apply** is active when the after image is ready.
-- The chip uses theme colours and `PressScale`. It has a 44 point target, a `Semantics` label and hint, and wraps to two lines with large text.
+- Each thumbnail and its caption are one item for VoiceOver and TalkBack, for example "Wallpaper without the fix, Before". Focus goes to Before, then After, then **Apply**. At 2x text the sheet body scrolls, and **Apply** and **Keep as is** stay in view.
+- The chip uses theme colours and `PressScale`. It has a `prismTapTarget` minimum height (44 points on iOS, 48 dp on Android), a `Semantics` label and hint, and wraps to two lines with large text.
 - The chip fades in over 240 ms with a scale from 0.95. With reduce motion on, it shows at once (`context.motion`).
 
 Copy (all 7 locales):

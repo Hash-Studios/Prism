@@ -38,7 +38,7 @@ A new wall gets a 10 character id: capital letters with one digit. Four characte
 
 ### Details (optional)
 
-- The ready step shows **Details (optional)**. The title limit is 60 characters. The description limit is 500 characters.
+- The ready step shows **Details (optional)**. The title is a heading for screen readers, like the **Release** title. The title limit is 60 characters. The description limit is 500 characters.
 - The category list is **General** plus the 18 categories that the upload classifier writes. **General** is the default. A wall that stays in **General** is filed by the server classifier later. A wall with a chosen category is not changed.
 - A tag is lower case. The app removes `#` and extra spaces. A tag has 24 characters at most. A wall has 8 tags at most. The user adds tags with a comma, the keyboard Done key, or the add button.
 - Every field can stay empty. A blank title is not saved.
@@ -170,7 +170,7 @@ A creator can set the time when an approved wall goes live. Use this to release 
 
 - The upload form and the pending **Edit details** form show a **Release** row (`ReleaseTimeRow`, `lib/features/wallpaper_upload/views/widgets/release_time_row.dart`).
 - **When approved** is the default. The wall goes live when a moderator approves it.
-- **At a set time** shows a date button and a time button. The creator picks the time in the time zone of the device. The row shows that time zone, for example "Times use your time zone (IST, UTC+05:30).".
+- **At a set time** shows a date button and a time button. Each button reads its value, for example "Release date: Tue, Nov 10". The creator picks the time in the time zone of the device. The row shows that time zone, for example "Times use your time zone (IST, UTC+05:30).".
 - The time must be 15 minutes to 30 days after the save. The picker starts 20 minutes ahead, so a slow upload stays in the window. The app shows an error next to the row if the time is outside the window.
 - In a batch, the next image starts with the release time of the last submitted image.
 - The 15-minute check uses the device clock. Network delay or device/server clock skew can still cause the server to refuse a boundary value. The 20-minute default is a cushion, not clock synchronization.

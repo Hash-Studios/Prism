@@ -87,7 +87,7 @@ tooltips are 12 to 13. Disabled text and icons use `onSurface` at 0.5, never low
   what it acts on.
 - `PrismRadius`: `xs 8`, `sm 12`, `md 16`, `lg 20` (cards), `xl 28` (dialogs), `pill`. A nested surface takes the
   next step down. Bottom sheets use `PrismBottomSheet.topRadius` (32) and the screen's own corner radius at the bottom. Wallpaper tiles in a grid use `PrismRadius.sm`.
-- Tap targets are 44 points or more.
+- Tap targets are 44 points or more on iOS and 48 dp or more on Android. Use `prismTapTarget(context)` (`lib/theme/app_tokens.dart`) for this size. Do not write 44 or 48. A row with a fixed height that holds chips takes its height from `prismTapTarget`. If the row is shorter, the chip pill gets smaller.
 
 ## Components
 
@@ -101,8 +101,8 @@ tooltips are 12 to 13. Disabled text and icons use `onSurface` at 0.5, never low
 | `PrismSectionHeader(title:, actionLabel:, onAction:, small:)` | Heading above a group. |
 | `PrismButton(label:, onPressed:, variant:, size:, icon:, loading:, expand:)` | Every button. `primary` once per screen, then `tonal`, `ghost`, `danger`. |
 | `PrismIconButton(icon:, tooltip:, onPressed:, filled:, onImage:, glass:)` | Every icon-only button. The tooltip is required. |
-| `PrismChip(label:, selected:, onTap:)` | Filters and choices. |
-| `PrismTextField(label:, hint:, error:)` | Text input. The label sits above the field, inset `PrismSpace.md` so it lines up with the text inside. Hints use `onSurfaceVariant`. |
+| `PrismChip(label:, selected:, onTap:)` | Filters and choices. The pill is 44 points high (34 for `compact`). The tap area is `prismTapTarget`, so on Android a transparent band above and below the pill makes it 48 dp. |
+| `PrismTextField(label:, hint:, error:)` | Text input. The label sits above the field, inset `PrismSpace.md` from the start edge (the right edge in RTL) so it lines up with the text inside. Hints use `onSurfaceVariant`. |
 | `showPrismSheet(context, builder:, detents:)` + `PrismSheetBody(title:, message:, mood:, child:, actions:, trailingAction:, childScrolls:)` | Every bottom sheet. See "Bottom sheets" below. |
 | `showPrismConfirm(context, title:, message:, confirmLabel:, destructive:)` | Every confirm. It replaces `AlertDialog`. The confirm label names the action. |
 | `PrismSkeleton`, `PrismSkeleton.rows()`, `PrismSkeleton.cards()`, `PrismBone` | Loading lists and cards. `LoadingCards` for wallpaper grids. |
