@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
@@ -12,7 +13,10 @@ import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/cosmetics/profile_frame.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/badges/views/widgets/profile_badge_row.dart';
+import 'package:Prism/features/creator_tips/views/widgets/tip_sheet.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
+import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
+import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/widgets/profile_folders_row.dart';
 import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
@@ -25,6 +29,8 @@ import 'package:Prism/features/public_profile/views/pages/profile_screen.dart';
 import 'package:Prism/features/public_profile/views/widgets/pro_profile_badge.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_cover.dart';
 import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
+import 'package:Prism/features/session/domain/entities/session_entity.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -75,7 +81,7 @@ class _FakeProfileRepository implements PublicProfileRepository {
   @override
   Stream<PublicProfileEntity?> watchProfile(String identifier) {
     watchedIdentifiers.add(identifier);
-    return profiles.stream;
+    return profiles.stream.map((profile) => profile);
   }
 
   @override
@@ -123,6 +129,45 @@ class _FakeProfileRepository implements PublicProfileRepository {
   }) => throw UnimplementedError();
 }
 
+class _RecordingPublicFoldersRepository extends Fake implements PublicFoldersRepository {
+  final List<String> requestedOwners = <String>[];
+  List<PublicFolderEntity> folders = const <PublicFolderEntity>[];
+
+  @override
+  Future<Result<List<PublicFolderEntity>>> fetchOwnerFolders(String ownerId) async {
+    requestedOwners.add(ownerId);
+    return Result.success(folders);
+  }
+}
+
+class _FakeSessionRepository extends Fake implements SessionRepository {
+  _FakeSessionRepository(this.currentUser);
+
+  @override
+  PrismUsersV2 currentUser;
+  final StreamController<PrismUsersV2> changes = StreamController<PrismUsersV2>.broadcast();
+
+  @override
+  Stream<PrismUsersV2> watchCurrentUser() async* {
+    yield currentUser;
+    yield* changes.stream;
+  }
+
+  @override
+  Future<Result<SessionEntity>> replaceCurrentUser(PrismUsersV2 user) async {
+    currentUser = user;
+    changes.add(user);
+    return Result.success(
+      SessionEntity(
+        userId: user.id,
+        loggedIn: user.loggedIn,
+        premium: user.premium,
+        subscriptionTier: user.subscriptionTier,
+      ),
+    );
+  }
+}
+
 class _ProfileSemanticsRouter extends AppRouter {
   @override
   List<AutoRoute> get routes => <AutoRoute>[
@@ -161,6 +206,7 @@ void main() {
   late _MockPublicProfileBloc bloc;
   late _FakeProfileRepository repository;
   late FakeUserBlockRepository blocks;
+  late _FakeSessionRepository sessions;
 
   setUp(() {
     bloc = _MockPublicProfileBloc();
@@ -174,6 +220,8 @@ void main() {
     registerCreatorDirectoryFakes(profileBloc: false);
     app_state.prismUser = profileUser(id: 'me', username: 'creator_01', bio: 'Hello', premium: true)
       ..name = 'Me Myself';
+    sessions = _FakeSessionRepository(app_state.prismUser);
+    getIt.registerSingleton<SessionRepository>(sessions);
     whenListen(
       bloc,
       const Stream<PublicProfileState>.empty(),
@@ -185,6 +233,7 @@ void main() {
     AnalyticsRuntime.reset();
     app_state.prismUser = profileUser(loggedIn: false);
     await repository.profiles.close();
+    await sessions.changes.close();
     await getIt.reset();
   });
 
@@ -206,6 +255,17 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
   }
 
+  void useFreshBlocs({Stream<PublicProfileState>? states}) {
+    getIt.unregister<PublicProfileBloc>();
+    int blocCount = 0;
+    getIt.registerFactory<PublicProfileBloc>(() {
+      if (blocCount++ == 0) return bloc;
+      bloc = _MockPublicProfileBloc();
+      whenListen(bloc, states ?? const Stream<PublicProfileState>.empty(), initialState: PublicProfileState.initial());
+      return bloc;
+    });
+  }
+
   testWidgets('a guest is asked to sign in', (tester) async {
     app_state.prismUser = profileUser(loggedIn: false);
 
@@ -213,6 +273,22 @@ void main() {
 
     expect(find.text('Sign in to use your profile'), findsOneWidget);
     expect(find.byTooltip('Back'), findsOneWidget);
+  });
+
+  testWidgets('the own-profile prompt reacts to sign-in and sign-out', (tester) async {
+    await sessions.replaceCurrentUser(profileUser(loggedIn: false));
+    await pumpScreen(tester);
+    expect(find.text('Sign in to use your profile'), findsOneWidget);
+
+    await sessions.replaceCurrentUser(profileUser(id: 'signed-in', username: 'signed_in'));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('@signed_in'), findsOneWidget);
+    expect(find.text('Sign in to use your profile'), findsNothing);
+
+    await sessions.replaceCurrentUser(profileUser(loggedIn: false));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Sign in to use your profile'), findsOneWidget);
+    expect(find.text('@signed_in'), findsNothing);
   });
 
   testWidgets('a guest sees another user\'s profile, not the sign-in prompt', (tester) async {
@@ -254,6 +330,188 @@ void main() {
         const PublicProfileEvent.followChangeRequested(
           follow: true,
           currentUserId: 'u1',
+          currentUserEmail: 'user@example.com',
+          targetUserId: 'u2',
+          targetUserEmail: '',
+          targetName: 'Ana Rivera',
+        ),
+      ),
+    );
+  });
+
+  testWidgets('a viewer change refreshes the profile subtree on sign-in and sign-out', (tester) async {
+    final StreamController<PublicProfileState> states = StreamController<PublicProfileState>.broadcast();
+    addTearDown(states.close);
+    useFreshBlocs(states: states.stream);
+    final _RecordingPublicFoldersRepository folders = _RecordingPublicFoldersRepository();
+    const PublicFolderEntity folder = PublicFolderEntity(
+      id: 'public-folder',
+      ownerId: 'u2',
+      name: 'Guest-visible folder',
+      itemCount: 0,
+      covers: <String>[],
+      followerCount: 0,
+    );
+    folders.folders = const <PublicFolderEntity>[folder];
+    getIt.registerSingleton<PublicFoldersRepository>(folders);
+    app_state.prismUser = profileUser(loggedIn: false);
+    await sessions.replaceCurrentUser(app_state.prismUser);
+
+    await pumpScreen(tester, identifier: 'u2');
+    repository.profiles.add(_ana);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(repository.watchedIdentifiers, <String>['u2']);
+    expect(folders.requestedOwners, <String>['u2']);
+    await tester.pump();
+    expect(find.text('Guest-visible folder'), findsOneWidget);
+
+    folders.folders = const <PublicFolderEntity>[];
+    await sessions.replaceCurrentUser(profileUser(id: 'signed-in'));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+    expect(repository.watchedIdentifiers, <String>['u2', 'u2']);
+    expect(folders.requestedOwners, <String>['u2', 'u2']);
+    expect(find.text('Ana Rivera'), findsOneWidget);
+    expect(find.text('Guest-visible folder'), findsNothing);
+
+    states.add(PublicProfileState.initial().copyWith(followOverrides: <String, bool>{'u2': true}));
+    repository.profiles.add(
+      const PublicProfileEntity(
+        id: 'u2',
+        name: 'Ana Rivera',
+        email: '',
+        username: 'ana_rivera',
+        profilePhoto: '',
+        bio: '',
+        links: <String, String>{},
+        coverPhoto: '',
+        isFollowedByCurrentUser: true,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.widgetWithText(PrismButton, 'Following'), findsOneWidget);
+
+    folders.folders = const <PublicFolderEntity>[folder];
+    await sessions.replaceCurrentUser(profileUser(loggedIn: false));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+    expect(repository.watchedIdentifiers, <String>['u2', 'u2', 'u2']);
+    expect(folders.requestedOwners, <String>['u2', 'u2', 'u2']);
+    expect(find.text('Ana Rivera'), findsOneWidget);
+    expect(find.text('Guest-visible folder'), findsOneWidget);
+    expect(find.widgetWithText(PrismButton, 'Follow'), findsOneWidget);
+
+    folders.folders = const <PublicFolderEntity>[];
+    await sessions.replaceCurrentUser(profileUser(id: 'signed-in'));
+    await sessions.replaceCurrentUser(profileUser(loggedIn: false));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+    expect(folders.requestedOwners, hasLength(4));
+    expect(find.text('Guest-visible folder'), findsNothing);
+  });
+
+  testWidgets('a guest Follow that signs in submits with the new viewer', (tester) async {
+    useFreshBlocs();
+    final Future<bool> Function(BuildContext) signIn = signedInActionSignIn;
+    addTearDown(() => signedInActionSignIn = signIn);
+    final Completer<bool> signInResult = Completer<bool>();
+    app_state.prismUser = profileUser(loggedIn: false);
+    await sessions.replaceCurrentUser(app_state.prismUser);
+    signedInActionSignIn = (_) {
+      unawaited(sessions.replaceCurrentUser(profileUser(id: 'signed-in')));
+      blocks.emitUnknown();
+      return signInResult.future;
+    };
+
+    await pumpScreen(tester, identifier: 'u2');
+    repository.profiles.add(_ana);
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await tester.tap(find.widgetWithText(PrismButton, 'Follow'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Ana Rivera'), findsNothing);
+    signInResult.complete(true);
+    await tester.pump(const Duration(milliseconds: 400));
+
+    verify(
+      () => bloc.add(
+        const PublicProfileEvent.followChangeRequested(
+          follow: true,
+          currentUserId: 'signed-in',
+          currentUserEmail: 'user@example.com',
+          targetUserId: 'u2',
+          targetUserEmail: '',
+          targetName: 'Ana Rivera',
+        ),
+      ),
+    ).called(1);
+    blocks.completeInitial(<String>{});
+    repository.profiles.add(_ana);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Ana Rivera'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a tip selected from a menu opened before logout asks for sign-in', (tester) async {
+    final Future<bool> Function(BuildContext) signIn = signedInActionSignIn;
+    addTearDown(() => signedInActionSignIn = signIn);
+    int prompts = 0;
+    signedInActionSignIn = (_) async {
+      prompts++;
+      return false;
+    };
+    whenListen(
+      bloc,
+      const Stream<PublicProfileState>.empty(),
+      initialState: PublicProfileState.initial().copyWith(
+        profileId: 'u2',
+        status: LoadStatus.success,
+        walls: const <PublicProfileWallEntity>[PublicProfileWallEntity(id: 'w1', wallpaperUrl: '')],
+      ),
+    );
+    await pumpScreen(tester, identifier: 'u2');
+    repository.profiles.add(_ana);
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byTooltip('More options'));
+    await tester.pump(const Duration(milliseconds: 400));
+    final String tipLabel = AppLocalizationsEn().tipMenuItem;
+    expect(find.text(tipLabel), findsOneWidget);
+
+    await sessions.replaceCurrentUser(profileUser(loggedIn: false));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.text(tipLabel));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(prompts, 1);
+    expect(find.byType(TipSheet), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a pending guest Follow does not move to an unrelated signed-in account', (tester) async {
+    useFreshBlocs();
+    final Future<bool> Function(BuildContext) signIn = signedInActionSignIn;
+    addTearDown(() => signedInActionSignIn = signIn);
+    final Completer<bool> signInResult = Completer<bool>();
+    await sessions.replaceCurrentUser(profileUser(loggedIn: false));
+    signedInActionSignIn = (_) async {
+      await sessions.replaceCurrentUser(profileUser(id: 'intended'));
+      return signInResult.future;
+    };
+    await pumpScreen(tester, identifier: 'u2');
+    repository.profiles.add(_ana);
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.widgetWithText(PrismButton, 'Follow'));
+    await tester.pump();
+    await sessions.replaceCurrentUser(profileUser(id: 'unrelated'));
+    await tester.pump();
+    signInResult.complete(true);
+    await tester.pump();
+
+    verifyNever(
+      () => bloc.add(
+        const PublicProfileEvent.followChangeRequested(
+          follow: true,
+          currentUserId: 'unrelated',
           currentUserEmail: 'user@example.com',
           targetUserId: 'u2',
           targetUserEmail: '',
