@@ -223,7 +223,7 @@ class _PrismSheetHeader extends StatelessWidget {
                       children: <Widget>[
                         SizedBox(
                           width: slotWidth,
-                          child: Align(alignment: Alignment.centerLeft, child: close),
+                          child: Align(alignment: AlignmentDirectional.centerStart, child: close),
                         ),
                         const SizedBox(width: PrismSpace.xs),
                         Expanded(
@@ -244,7 +244,7 @@ class _PrismSheetHeader extends StatelessWidget {
                         const SizedBox(width: PrismSpace.xs),
                         SizedBox(
                           width: slotWidth,
-                          child: Align(alignment: Alignment.centerRight, widthFactor: 1, child: action),
+                          child: Align(alignment: AlignmentDirectional.centerEnd, widthFactor: 1, child: action),
                         ),
                       ],
                     );
@@ -263,7 +263,7 @@ class _TrailingAction extends StatelessWidget {
 
   final PrismSheetAction action;
 
-  static const EdgeInsets _padding = EdgeInsets.only(left: PrismSpace.xs, right: PrismSpace.xxs);
+  static const EdgeInsetsDirectional _padding = EdgeInsetsDirectional.only(start: PrismSpace.xs, end: PrismSpace.xxs);
 
   /// The width this action takes in the header for [label].
   static double width(BuildContext context, String label) {
@@ -296,7 +296,7 @@ class _TrailingAction extends StatelessWidget {
         child: ConstrainedBox(
           constraints: BoxConstraints(minWidth: prismTapTarget(context), minHeight: prismTapTarget(context)),
           child: Align(
-            alignment: Alignment.centerRight,
+            alignment: AlignmentDirectional.centerEnd,
             widthFactor: 1,
             child: Padding(
               padding: _padding,

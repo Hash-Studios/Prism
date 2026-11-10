@@ -338,6 +338,36 @@ void main() {
     final Finder pill = find.descendant(of: find.byType(PrismChip), matching: find.byType(AnimatedContainer));
     expect(tester.getSize(pill).height, 34.0);
   });
+
+  testWidgets('the sheet close button sits at the start edge in LTR and in RTL', (tester) async {
+    final Map<TextDirection, double> inset = <TextDirection, double>{};
+    for (final TextDirection direction in TextDirection.values) {
+      await tester.pumpWidget(
+        a11yApp(
+          Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showPrismSheet<void>(
+                context,
+                builder: (_) => PrismSheetBody(
+                  title: 'Filters',
+                  trailingAction: PrismSheetAction(label: 'Reset all filters', onTap: () {}),
+                ),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+          variant: A11yVariant(Brightness.light, 1, direction),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      final Rect sheet = tester.getRect(find.byType(PrismSheetBody));
+      final Rect close = tester.getRect(find.byTooltip('Close'));
+      inset[direction] = direction == TextDirection.ltr ? close.left - sheet.left : sheet.right - close.right;
+      await tester.pumpWidget(const SizedBox.shrink());
+    }
+    expect(inset[TextDirection.rtl], inset[TextDirection.ltr]);
+  });
 }
 
 List<String> _semanticsTraversalLabels(WidgetTester tester) {

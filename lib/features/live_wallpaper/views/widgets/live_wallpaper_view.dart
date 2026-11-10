@@ -311,15 +311,15 @@ class _LiveWallpaperViewState extends State<LiveWallpaperView> with WidgetsBindi
     return Column(
       children: [
         const SizedBox(height: 12),
-        SizedBox(
-          height: 48,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+        // The row takes the chip height, so a chip keeps its whole label at large text.
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
             children: [
               for (final _LiveMode mode in modes)
                 Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsetsDirectional.only(end: 8),
                   child: PrismChip(
                     label: _liveModeLabel(context.l10n, mode),
                     selected: mode == _mode,
