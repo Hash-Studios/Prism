@@ -75,6 +75,7 @@ export {onStudioWallDesktop} from "./studio/desktop";
 export {onDesktopSubmissionWallDeleted, reviewDesktopSubmission, submitDesktopVersion} from "./desktopSubmissions";
 export {planStudioBatch, runStudioBatch} from "./studio/planRun";
 export {onStudioWallApproved} from "./studio/telegram";
+export {socialMeasure, socialPrepare, socialPublish} from "./social/jobs";
 export {wallpaperPreview} from "./wallpaperPreview";
 export {
   createWallRequestCallable as createWallRequest,
