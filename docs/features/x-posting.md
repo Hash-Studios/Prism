@@ -11,14 +11,14 @@ Backend only. Three scheduled functions post wallpapers to the @PrismWallpapers 
 | `eve` | 17:00 | `still` | One Studio wall, After Dark first |
 | `night` | 20:00 | `still` | One Studio wall. Sunday: today's Wall of the Day and a question |
 
-Each post gets a random 0 to 12 minute offset. Posts carry no link and no link reply: X bills a post with a URL at about $0.20 against about $0.015 for a plain post. Links live in the account bio and a pinned post.
+Each post lands at its slot time plus or minus up to 15 minutes, uniformly at random, so posting times change every day. Posts carry no link and no link reply: X bills a post with a URL at about $0.20 against about $0.015 for a plain post. Links live in the account bio and a pinned post.
 
 ## Jobs
 
 | Function | When | Does |
 |---|---|---|
 | `socialPrepare` | 07:00 and 10:00 IST | Builds today's missing posts into `socialPosts/{day}_{slot}`, stores the images in R2 (`social/<postId>/<sha256>.jpg`, private bucket), sends previews to Telegram |
-| `socialPublish` | Every 15 minutes | Posts what is due, reconciles unknown results |
+| `socialPublish` | Every 5 minutes (so the jitter is not rounded to quarter hours) | Posts what is due, reconciles unknown results |
 | `socialTelegramWebhook` | On each button press | Applies the press at once, shows a toast, and replaces the buttons with the outcome |
 | `socialMeasure` | 06:30 IST | Reads X metrics for posts and replies at 24 hours and 7 days into `metrics` |
 
@@ -68,7 +68,7 @@ The webhook accepts only POST requests and compares the secret in constant time.
     "sketchyPerPost": 2, "autoApprove": {"panorama": false, "still": true}, "blockedTags": [], "blockedIds": []}
    ```
 
-4. Dry run for 3 days. Every post previews in Telegram and ends as `dry_run`. Nothing goes to X.
+4. Dry run. Every post previews in Telegram and ends as `dry_run`. Nothing goes to X. In a dry run, each force-run of `socialPrepare` replaces today's unposted posts with new walls and sends new previews, so many sets can be checked in a few minutes. A live run never replaces an existing post.
 5. Set `dryRun` to `false`.
 
 Kill switch: `enabled: false`.

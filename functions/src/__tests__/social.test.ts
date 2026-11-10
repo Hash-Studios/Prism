@@ -6,7 +6,7 @@ import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {db} from "../common";
 import {gridContent, gridVisionDecision, panoramaPanels, YOUTH_TAG, type WallhavenWall} from "../social/content";
-import {applyPress, contentHash, defaultBuilders, handleTelegramUpdate, loadSocialConfig, measurePosts, normalizePostText, prepareDay, publishDue, socialPrepare, socialTelegramWebhook, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
+import {applyPress, contentHash, defaultBuilders, handleTelegramUpdate, JITTER_MS, loadSocialConfig, measurePosts, normalizePostText, prepareDay, publishDue, scheduledAt, socialPrepare, socialTelegramWebhook, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
 import {parsePress, socialBotToken, socialOwnerChatId, telegramClient, type Telegram, webhookSecret} from "../social/telegram";
 import {R2Storage} from "../r2Storage";
 import {oauthHeader, xClient, xWeightedLength, XError, type XClient, type XOwnPost} from "../social/x";
@@ -887,4 +887,36 @@ test("prepare registers the v2 regional alias on every run and survives registra
   assert.deepEqual(socialTelegramWebhook.__endpoint.region, ["asia-south1"]);
   assert.deepEqual(socialTelegramWebhook.__endpoint.httpsTrigger?.invoker, ["public"]);
   assert.equal(store.has("socialState/telegram"), false);
+});
+
+test("slot times spread evenly within 15 minutes either side", () => {
+  const base = Date.parse("2026-11-12T09:30:00+05:30");
+  assert.equal(scheduledAt("2026-11-12", "am", () => 0).getTime(), base - JITTER_MS);
+  assert.equal(scheduledAt("2026-11-12", "am", () => 0.5).getTime(), base);
+  assert.equal(scheduledAt("2026-11-12", "am", () => 0.999999).getTime() <= base + JITTER_MS, true);
+  assert.equal(JITTER_MS, 15 * 60_000);
+});
+
+test("a dry-run trigger rebuilds unposted posts with new walls; a live run never does", async (t) => {
+  const day = postDay(NOW);
+  const store = installSocialDb(t, {
+    [`socialPosts/${day}_am`]: postDoc({slot: "am", status: "dry_run", source: {kind: "prism", ids: ["OLD"]}}),
+    [`socialPosts/${day}_noon`]: postDoc({slot: "noon", status: "posted", tweetId: "T", source: {kind: "prism", ids: ["LIVE"]}}),
+  });
+  const excluded: string[][] = [];
+  const build = async (_day: string, exclude: Set<string>, slot: string) => {
+    excluded.push([...exclude]);
+    return {pipeline: "still" as const, source: {kind: "prism" as const, ids: [`NEW-${slot}`]},
+      media: [{jpeg: BYTES, alt: "alt", sensitive: false}], text: "wall", replyText: ""};
+  };
+  const builders = {grid: build, panorama: build, still: build};
+  await prepareDay(deps(null, NOW, config({dryRun: true})), builders);
+  const am = store.get(`socialPosts/${day}_am`);
+  assert.deepEqual((am?.source as {ids: string[]}).ids, ["NEW-am"]);
+  assert.ok(excluded[0].includes("OLD"), "the replaced wall is not picked again");
+  assert.equal(store.get(`socialPosts/${day}_noon`)?.status, "posted", "a posted doc is never rebuilt");
+
+  const before = JSON.stringify(store.get(`socialPosts/${day}_am`));
+  await prepareDay(deps(null, NOW, config({dryRun: false})), builders);
+  assert.equal(JSON.stringify(store.get(`socialPosts/${day}_am`)), before, "a live run keeps existing posts");
 });

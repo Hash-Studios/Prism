@@ -28,7 +28,8 @@ export const SLOTS: Record<Slot, {time: string; pipeline: Pipeline}> = {
   eve: {time: "17:00", pipeline: "still"},
   night: {time: "20:00", pipeline: "still"},
 };
-const OFFSET_MAX_MS = 12 * 60_000;
+/** Each post lands up to this far before or after its slot time, uniformly, so no two days share a minute. */
+export const JITTER_MS = 15 * 60_000;
 export const EXPIRE_AFTER_MS = 2 * 3_600_000;
 export const STALE_POSTING_MS = 10 * 60_000;
 export const UNCERTAIN_AFTER_MS = 30 * 60_000;
@@ -63,9 +64,9 @@ export async function loadSocialConfig(): Promise<SocialConfig> {
   };
 }
 
-/** The slot time in IST plus a random offset, so posts do not land on the same minute every day. */
+/** The slot time in IST plus or minus up to 15 minutes, uniformly at random. */
 export function scheduledAt(day: string, slot: Slot, random = Math.random): Date {
-  return new Date(Date.parse(`${day}T${SLOTS[slot].time}:00+05:30`) + Math.floor(random() * OFFSET_MAX_MS));
+  return new Date(Date.parse(`${day}T${SLOTS[slot].time}:00+05:30`) + Math.round((random() * 2 - 1) * JITTER_MS));
 }
 
 export const contentHash = (mediaShas: string[], text: string, replyText: string,
@@ -115,19 +116,29 @@ export const defaultBuilders: Builders = {
 };
 
 /** Builds today's posts. A slot that already has a doc is left alone, so a second run does nothing. */
+/** States a dry-run trigger may replace. Never anything that reached, or may have reached, X. */
+const DRY_RUN_REBUILDS = new Set(["pending_approval", "approved", "dry_run", "skipped", "failed"]);
+
 export async function prepareDay(deps: SocialDeps, builders: Builders = defaultBuilders): Promise<string[]> {
   const {config, now} = deps;
   if (!config.enabled) return [];
   const day = postDay(now);
   const exclude = await recentlyPosted(now, config.blockedIds);
   const existing = await db.collection(SOCIAL_POSTS).where("day", "==", day).get();
+  const kept = new Set<string>();
   for (const doc of existing.docs) {
     for (const id of doc.data().source?.ids ?? []) exclude.add(String(id));
+    // In a dry run, every trigger rebuilds today's unposted posts with new walls, so the owner can try many sets.
+    if (config.dryRun && DRY_RUN_REBUILDS.has(str(doc.data().status))) {
+      await doc.ref.delete();
+    } else {
+      kept.add(doc.id);
+    }
   }
   const made: string[] = [];
   for (const slot of Object.keys(SLOTS) as Slot[]) {
     const postId = `${day}_${slot}`;
-    if (!config.slots[slot] || existing.docs.some((doc) => doc.id === postId)) continue;
+    if (!config.slots[slot] || kept.has(postId)) continue;
     // Wall of the Day is picked at 09:00 IST, so the Sunday night post waits for the 10:00 run.
     if (slot === "night" && isSunday(day) && Number(istHour(now)) < 10) continue;
     const pipeline = SLOTS[slot].pipeline;
@@ -603,7 +614,7 @@ export const socialTelegramWebhook = onRequest({region: REGION, invoker: "public
   res.sendStatus(200);
 });
 
-export const socialPublish = onSchedule({schedule: "every 15 minutes", region: REGION, memory: "512MiB",
+export const socialPublish = onSchedule({schedule: "every 5 minutes", region: REGION, memory: "512MiB",
   timeoutSeconds: 300, secrets: [...xSecrets, ...socialTelegramSecrets, ...r2Secrets]}, async () => {
   await withLease("publish", 6 * 60_000, async () => publishDue(await liveDeps(true, true)));
 });
