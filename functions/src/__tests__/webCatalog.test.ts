@@ -124,6 +124,10 @@ test("syncWebWall titles and tags an untitled wall from its Vision labels", asyn
     [{visionLabels: ["Pink", "Purple"], category: "General"}, "Pink and purple wallpaper", ["Pink", "Purple"]],
     [{visionLabels: ["Graphics"], category: "General"}, "", []],
     [{visionLabels: ["Rock"], title: "Sunset", tags: ["sky"]}, "Sunset", ["sky"]],
+    [{visionLabels: ["Rock"], title: "Sunset", tags: []}, "Sunset", ["Rock"]],
+    [{visionLabels: ["Rock"], title: "", tags: ["sky"]}, "Rock wallpaper", ["sky"]],
+    [{visionLabels: [42, {}, ["nested"]]}, "", []],
+    [{visionLabels: "Rock"}, "", []],
   ];
   for (const [overrides, title, tags] of cases) {
     installFakeDb(t, {"walls/d1": liveWall({title: "", tags: [], ...overrides}), "profiles/u1": samProfile});
@@ -132,6 +136,22 @@ test("syncWebWall titles and tags an untitled wall from its Vision labels", asyn
     assert.equal(doc?.title, title, JSON.stringify(overrides));
     assert.deepEqual(doc?.tags, tags, JSON.stringify(overrides));
   }
+});
+
+test("Vision labels ignore malformed values and clean, bound, and deduplicate public text", async (t) => {
+  stubDeps(t);
+  const longLabel = "A very long mountain range label that exceeds the limit";
+  installFakeDb(t, {"walls/d1": liveWall({title: "", tags: [], visionLabels: [
+    42, {}, ["nested"], null, "  Rock\u0000 formation  ", "rock formation", longLabel,
+  ]})});
+
+  await syncWebWall("W1");
+
+  const doc = (await db.collection("webWalls").doc("W1").get()).data();
+  assert.equal(doc?.title, "Rock formation and a very long mountain range labe… wallpaper");
+  assert.deepEqual(doc?.tags, ["Rock formation", "A very long mountain range labe…"]);
+  assert.ok((doc?.title as string).length <= 90);
+  assert.ok((doc?.tags as string[]).every((tag) => tag.length <= 32));
 });
 
 test("a Vision label change re-projects the wall", () => {
@@ -187,6 +207,29 @@ test("syncWebWall preserves the creator identity on a gated wall", async (t) => 
   const doc = (await db.collection("webWalls").doc("W1").get()).data() as Doc;
   assert.equal(doc.state, "gated");
   assert.deepEqual(doc.creator, {username: "sam", name: "Sam K"});
+});
+
+test("syncWebWall may publish derived descriptive copy for gated walls but never their thumbnail", async (t) => {
+  stubDeps(t);
+  installFakeDb(t, {"walls/d1": liveWall({title: "", tags: [], visionLabels: ["Blue", "Triangle"],
+    collections: ["abstract"]})});
+
+  await syncWebWall("W1");
+
+  const doc = (await db.collection("webWalls").doc("W1").get()).data();
+  assert.equal(doc?.state, "gated");
+  assert.equal(doc?.title, "Blue triangle wallpaper");
+  assert.deepEqual(doc?.tags, ["Triangle", "Blue"]);
+  assert.equal("thumb" in (doc ?? {}), false);
+});
+
+test("syncWebWall hides walls without publishing Vision-derived copy", async (t) => {
+  stubDeps(t);
+  installFakeDb(t, {"walls/d1": liveWall({review: false, title: "", tags: [], visionLabels: ["Blue", "Triangle"]})});
+
+  await syncWebWall("W1");
+
+  assert.deepEqual((await db.collection("webWalls").doc("W1").get()).data(), {state: "hidden", updatedAt: NOW});
 });
 
 test("syncWebWall does not reuse a non-image value as a cached blurred preview", async (t) => {
@@ -369,6 +412,7 @@ test("isCatalogChange ignores counter-only changes and reacts to shown fields", 
 test("cleanText strips hidden characters and clips with an ellipsis; categorySlug normalises", () => {
   assert.equal(cleanText("a‮b\u0000c", 90), "a b c");
   assert.equal(cleanText("abcdefghij", 5), "abcd…");
+  assert.equal(cleanText(`${"x".repeat(30)}😀rest`, 32), `${"x".repeat(30)}…`);
   assert.equal(categorySlug("3D Render"), "3d-render");
   assert.equal(categorySlug(""), "general");
 });
@@ -878,6 +922,30 @@ test("rebuildWebCatalog writes the catalogue once, then writes nothing on a seco
   assert.equal(second.written, 0);
   assert.equal(writes.writes, writesAfterFirst);
   assert.equal(writes.outsideWrites, 0);
+});
+
+test("rebuild migrates old projections to Vision labels and clears derived copy when labels disappear", async (t) => {
+  stubDeps(t);
+  const writes = {reads: 0, writes: 0, outsideWrites: 0};
+  const store = installFakeDb(t, {
+    "walls/d1": liveWall({title: "", tags: [], visionLabels: ["Blue", "Triangle"]}),
+    "webWalls/W1": {state: "live", updatedAt: "old", title: "", tags: [], thumb: THUMB},
+  }, writes);
+
+  const first = await rebuildWebCatalog();
+  assert.equal(first.walls, 1);
+  assert.equal(store.get("webWalls/W1")?.title, "Blue triangle wallpaper");
+  assert.deepEqual(store.get("webWalls/W1")?.tags, ["Triangle", "Blue"]);
+  assert.equal((store.get("webPages/latest~1")?.items as WebCard[])[0].title, "Blue triangle wallpaper");
+  const writesAfterMigration = writes.writes;
+  assert.equal((await rebuildWebCatalog()).written, 0);
+  assert.equal(writes.writes, writesAfterMigration);
+
+  store.set("walls/d1", liveWall({title: "", tags: [], visionLabels: []}));
+  await rebuildWebCatalog();
+  assert.equal(store.get("webWalls/W1")?.title, "");
+  assert.deepEqual(store.get("webWalls/W1")?.tags, []);
+  assert.equal((store.get("webPages/latest~1")?.items as WebCard[])[0].title, "");
 });
 
 test("rebuildWebCatalog projects new walls in parallel and blurs each gated wall once", async (t) => {

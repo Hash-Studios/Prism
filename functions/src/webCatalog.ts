@@ -121,7 +121,9 @@ async function blurPreview(thumb: string): Promise<string> {
 
 export function cleanText(value: unknown, max: number): string {
   const text = str(value).replace(HIDDEN_TEXT, " ").replace(/\s+/g, " ").trim();
-  return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
+  if (text.length <= max) return text;
+  const clipped = text.slice(0, max - 1).trimEnd();
+  return `${/[\uD800-\uDBFF]$/.test(clipped) ? clipped.slice(0, -1) : clipped}…`;
 }
 
 export function categorySlug(category: string): string {
@@ -179,12 +181,13 @@ const isColour = (label: string) => COLOUR_LABELS.has(label.toLowerCase());
 /** Cloud Vision labels, cleaned and deduplicated, with the vague ones removed. Subjects come before colours. */
 function visionTerms(value: unknown): string[] {
   const seen = new Set<string>();
-  const terms = (Array.isArray(value) ? value : []).map((label) => cleanText(label, 32)).filter((label) => {
-    const key = label.toLowerCase();
-    if (!label || VAGUE_LABELS.has(key) || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  const terms = (Array.isArray(value) ? value : []).filter((label): label is string => typeof label === "string")
+    .map((label) => cleanText(label, 32)).filter((label) => {
+      const key = label.toLowerCase();
+      if (!label || VAGUE_LABELS.has(key) || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   return [...terms.filter((label) => !isColour(label)), ...terms.filter(isColour)];
 }
 

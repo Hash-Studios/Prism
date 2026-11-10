@@ -1354,7 +1354,10 @@ function jsonForScript(value: unknown): string {
 }
 
 function clip(value: string, max: number): string {
-  return value.length <= max ? value : `${value.slice(0, max - 1).trimEnd()}…`;
+  if (value.length <= max) return value;
+  let prefix = value.slice(0, max - 1);
+  if (/^[\uD800-\uDBFF]$/.test(prefix.at(-1) ?? '')) prefix = prefix.slice(0, -1);
+  return `${prefix.trimEnd()}…`;
 }
 
 function shortHash(value: string): string {

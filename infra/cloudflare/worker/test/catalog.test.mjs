@@ -297,6 +297,21 @@ test('wall page renders the public metadata, structured data and related grid', 
   assert.ok(h.state.reads[1].endsWith('/webPages/category~nature~1'));
 });
 
+test('wall description clipping does not split a Unicode surrogate pair', async (t) => {
+  const h = setup(t);
+  h.state.docs['webWalls/W1'].title = 'x'.repeat(90);
+  h.state.docs['webWalls/W1'].creator = null;
+  h.state.docs['webWalls/W1'].creatorName = 'y'.repeat(40);
+  h.state.docs['webWalls/W1'].tags = [`${'x'.repeat(7)}😀`];
+
+  const body = await (await h.get('/wallpaper/W1')).text();
+  const description = body.match(/<meta name="description" content="([^"]*)">/)?.[1];
+
+  assert.ok(description);
+  assert.equal(description, `${'x'.repeat(90)} by ${'y'.repeat(40)} in 1080 × 2340: ${'x'.repeat(7)}…`);
+  assert.doesNotMatch(description, /[\uD800-\uDBFF](?![\uDC00-\uDFFF])/);
+});
+
 test('wall and folder creator links keep the stored username case', async (t) => {
   const h = setup(t);
   h.state.docs['webWalls/W1'].creator.username = 'SAM';
@@ -954,15 +969,37 @@ test('sitemaps list the page sitemap and each wall sitemap with its lastmod', as
 test('wall text is escaped in HTML and JSON-LD and sitemap entries cannot break XML', async (t) => {
   const h = setup(t);
   h.state.docs['webWalls/W1'].title = '</script><script>HTML-XSS</script> & "title"';
+  h.state.docs['webWalls/W1'].tags = ['</script><script>TAG-XSS</script>'];
   const wallBody = await (await h.get('/wallpaper/W1')).text();
   assert.ok(wallBody.includes('&lt;/script&gt;&lt;script&gt;HTML-XSS&lt;/script&gt;'));
   assert.ok(wallBody.includes('\\u003c/script>\\u003cscript>HTML-XSS\\u003c/script>'));
   assert.doesNotMatch(wallBody, /<script>HTML-XSS/);
+  assert.doesNotMatch(wallBody, /<script>TAG-XSS/);
+  assert.equal(ldJson(wallBody).find((entry) => entry['@type'] === 'ImageObject').keywords, '</script><script>TAG-XSS</script>');
 
   h.state.docs['webPages/sitemap~walls-1'].entries = '/wallpaper/W1</loc><script>XML-XSS</script>\t2026-10-30';
   const sitemapBody = await (await h.get('/sitemaps/walls-1.xml')).text();
   assert.ok(sitemapBody.includes('&lt;/loc&gt;&lt;script&gt;XML-XSS&lt;/script&gt;'));
   assert.doesNotMatch(sitemapBody, /<script>XML-XSS/);
+});
+
+test('agent wallpaper detail returns hostile public text as JSON and omits gated assets', async (t) => {
+  const h = setup(t);
+  const title = '</script><script>AGENT-XSS</script> & "title"';
+  h.state.docs['webWalls/W1'].title = title;
+
+  const liveResponse = await h.get('/api/v1/wallpapers/W1');
+  const live = await liveResponse.json();
+  assert.equal(liveResponse.status, 200);
+  assert.match(liveResponse.headers.get('content-type'), /^application\/json/);
+  assert.equal(live.data.title, title);
+
+  const gatedResponse = await h.get('/api/v1/wallpapers/G1');
+  const gated = await gatedResponse.json();
+  assert.equal(gatedResponse.status, 200);
+  assert.equal(gated.data.title, 'Locked Nebula');
+  assert.equal(Object.hasOwn(gated.data, 'thumb'), false);
+  assert.equal(Object.hasOwn(gated.data, 'desktop'), false);
 });
 
 test('public pages expose no private fields, and unknown stored fields are never printed', async (t) => {
