@@ -123,6 +123,10 @@ void main() {
     await http.runWithClient(() async {
       final Future<File> first = downloadLiveVideo('https://cdn.example.com/shared.mp4');
       final Future<File> second = downloadLiveVideo('https://cdn.example.com/shared.mp4');
+      // A slow runner can need more than one turn before the first request starts.
+      for (int turn = 0; turn < 50 && requests == 0; turn++) {
+        await pumpEventQueue();
+      }
       await pumpEventQueue();
       final int requestsBeforeCompletion = requests;
       expect((await directory.list().toList()).whereType<File>().where((file) => file.path.endsWith('.mp4')), isEmpty);
