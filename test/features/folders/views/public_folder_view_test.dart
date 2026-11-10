@@ -31,6 +31,7 @@ import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -61,6 +62,8 @@ class _FakePublicFoldersRepository implements PublicFoldersRepository {
   PublicFolderEntity? folder;
   List<String> wallIds = const <String>[];
   bool following = false;
+  PublicFolderFailure? followingFailure;
+  Completer<Result<bool>>? nextFollowingRead;
   Future<Result<PublicFolderEntity?>>? nextFolderRead;
   int folderReads = 0;
   PublicFolderFailure? followFailure;
@@ -92,7 +95,11 @@ class _FakePublicFoldersRepository implements PublicFoldersRepository {
   @override
   Future<Result<bool>> isFollowing(String folderId, String userId) async {
     followQueries.add((folderId, userId));
-    return Result.success(following);
+    final Completer<Result<bool>>? pending = nextFollowingRead;
+    nextFollowingRead = null;
+    if (pending != null) return pending.future;
+    final PublicFolderFailure? failure = followingFailure;
+    return failure == null ? Result.success(following) : Result.error(failure);
   }
 
   @override
@@ -268,6 +275,236 @@ void main() {
       expect(find.text(signsIn ? 'Following' : 'Follow'), findsOneWidget);
     });
   }
+
+  testWidgets('a guest follow waits for the signed-in session read before toggling', (tester) async {
+    final repo = _FakePublicFoldersRepository()..folder = _folder();
+    final Completer<Result<bool>> followingRead = Completer<Result<bool>>();
+    repo.nextFollowingRead = followingRead;
+    final _MockSessionRepository session = _MockSessionRepository();
+    final StreamController<PrismUsersV2> sessions = StreamController<PrismUsersV2>.broadcast(sync: true);
+    addTearDown(sessions.close);
+    PrismUsersV2 currentUser = app_constants.createGuestPrismUser();
+    when(() => session.currentUser).thenAnswer((_) => currentUser);
+    when(() => session.watchCurrentUser()).thenAnswer((_) async* {
+      yield currentUser;
+      yield* sessions.stream;
+    });
+    getIt.registerSingleton<SessionRepository>(session);
+    addTearDown(() => getIt.unregister<SessionRepository>());
+    final previous = signedInActionSignIn;
+    signedInActionSignIn = (_) async {
+      currentUser = app_constants.createGuestPrismUser()
+        ..id = 'viewer'
+        ..loggedIn = true;
+      sessions.add(currentUser);
+      return true;
+    };
+    addTearDown(() => signedInActionSignIn = previous);
+    final PublicFolderCubit cubit = PublicFolderCubit(repo, _FakeMoodRepository());
+    addTearDown(cubit.close);
+    await tester.pumpWidget(_host(PublicFolderView(folderId: 'f1', cubit: cubit)));
+    await _settle(tester);
+
+    await tester.tap(find.text('Follow'));
+    await tester.pump();
+    await tester.pump();
+    expect(repo.followQueries, <(String, String)>[('f1', 'viewer')]);
+    expect(repo.followCalls, isEmpty);
+
+    followingRead.complete(Result.success(true));
+    await _settle(tester);
+    expect(repo.followCalls, <(String, bool)>[('f1', false)]);
+    expect(find.text('Follow'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('a follow does not apply after the session changes during its account read', (tester) async {
+    final repo = _FakePublicFoldersRepository()..folder = _folder();
+    final Completer<Result<bool>> firstViewerRead = Completer<Result<bool>>();
+    repo.nextFollowingRead = firstViewerRead;
+    final _MockSessionRepository session = _MockSessionRepository();
+    final StreamController<PrismUsersV2> sessions = StreamController<PrismUsersV2>.broadcast(sync: true);
+    addTearDown(sessions.close);
+    PrismUsersV2 currentUser = app_constants.createGuestPrismUser();
+    when(() => session.currentUser).thenAnswer((_) => currentUser);
+    when(() => session.watchCurrentUser()).thenAnswer((_) async* {
+      yield currentUser;
+      yield* sessions.stream;
+    });
+    getIt.registerSingleton<SessionRepository>(session);
+    addTearDown(() => getIt.unregister<SessionRepository>());
+    final previous = signedInActionSignIn;
+    signedInActionSignIn = (_) async {
+      currentUser = app_constants.createGuestPrismUser()
+        ..id = 'viewer-a'
+        ..loggedIn = true;
+      sessions.add(currentUser);
+      return true;
+    };
+    addTearDown(() => signedInActionSignIn = previous);
+    final PublicFolderCubit cubit = PublicFolderCubit(repo, _FakeMoodRepository());
+    addTearDown(cubit.close);
+    await tester.pumpWidget(_host(PublicFolderView(folderId: 'f1', cubit: cubit)));
+    await _settle(tester);
+
+    await tester.tap(find.text('Follow'));
+    await tester.pump();
+    currentUser = app_constants.createGuestPrismUser()
+      ..id = 'viewer-b'
+      ..loggedIn = true;
+    sessions.add(currentUser);
+    await _settle(tester);
+    firstViewerRead.complete(Result.success(false));
+    await _settle(tester);
+
+    expect(repo.followQueries, <(String, String)>[('f1', 'viewer-a'), ('f1', 'viewer-b')]);
+    expect(repo.followCalls, isEmpty);
+    expect(find.text('Follow'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('a failed signed-in follow baseline reports an error and retries on the next tap', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final repo = _FakePublicFoldersRepository()
+      ..folder = _folder()
+      ..followingFailure = const PublicFolderFailure('follow read failed');
+    final previous = signedInActionSignIn;
+    signedInActionSignIn = (_) async {
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'viewer'
+        ..loggedIn = true;
+      return true;
+    };
+    addTearDown(() => signedInActionSignIn = previous);
+    final List<String> messages = <String>[];
+    const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, (call) async {
+      if (call.method == 'showToast') messages.add((call.arguments as Map)['msg'] as String);
+      return true;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(toastChannel, null));
+    final PublicFolderCubit cubit = PublicFolderCubit(repo, _FakeMoodRepository());
+    addTearDown(cubit.close);
+    await tester.pumpWidget(_host(PublicFolderView(folderId: 'f1', cubit: cubit)));
+    await _settle(tester);
+
+    await tester.tap(find.text('Follow'));
+    await _settle(tester);
+
+    expect(repo.followCalls, isEmpty);
+    final BuildContext context = tester.element(find.byType(PublicFolderView));
+    expect(messages, <String>[context.l10n.foldersFollowFailed]);
+
+    repo
+      ..followingFailure = null
+      ..following = true;
+    await tester.tap(find.text('Follow'));
+    await _settle(tester);
+
+    expect(repo.followQueries, <(String, String)>[('f1', 'viewer'), ('f1', 'viewer')]);
+    expect(repo.followCalls, <(String, bool)>[('f1', false)]);
+    expect(find.text('Follow'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 2));
+  });
+
+  testWidgets('a pending guest follow cannot resume after logout and login to the same account', (tester) async {
+    final repo = _FakePublicFoldersRepository()..folder = _folder();
+    final Completer<Result<bool>> oldBaseline = Completer<Result<bool>>();
+    repo.nextFollowingRead = oldBaseline;
+    final _MockSessionRepository session = _MockSessionRepository();
+    final StreamController<PrismUsersV2> sessions = StreamController<PrismUsersV2>.broadcast(sync: true);
+    addTearDown(sessions.close);
+    PrismUsersV2 currentUser = app_constants.createGuestPrismUser();
+    when(() => session.currentUser).thenAnswer((_) => currentUser);
+    when(() => session.watchCurrentUser()).thenAnswer((_) async* {
+      yield currentUser;
+      yield* sessions.stream;
+    });
+    getIt.registerSingleton<SessionRepository>(session);
+    addTearDown(() => getIt.unregister<SessionRepository>());
+    final previous = signedInActionSignIn;
+    signedInActionSignIn = (_) async {
+      currentUser = app_constants.createGuestPrismUser()
+        ..id = 'viewer'
+        ..loggedIn = true;
+      sessions.add(currentUser);
+      return true;
+    };
+    addTearDown(() => signedInActionSignIn = previous);
+    final PublicFolderCubit cubit = PublicFolderCubit(repo, _FakeMoodRepository());
+    addTearDown(cubit.close);
+    await tester.pumpWidget(_host(PublicFolderView(folderId: 'f1', cubit: cubit)));
+    await _settle(tester);
+    await tester.tap(find.text('Follow'));
+    await _settle(tester);
+    expect(repo.followQueries, <(String, String)>[('f1', 'viewer')]);
+
+    currentUser = app_constants.createGuestPrismUser();
+    sessions.add(currentUser);
+    await _settle(tester);
+    currentUser = app_constants.createGuestPrismUser()
+      ..id = 'viewer'
+      ..loggedIn = true;
+    repo.following = true;
+    sessions.add(currentUser);
+    await _settle(tester);
+    oldBaseline.complete(Result.success(false));
+    await _settle(tester);
+
+    expect(repo.followCalls, isEmpty);
+    expect(find.text('Following'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('a queued logout and same-account login cannot resume an old follow baseline', (tester) async {
+    final repo = _FakePublicFoldersRepository()..folder = _folder();
+    final _MockSessionRepository session = _MockSessionRepository();
+    final StreamController<PrismUsersV2> sessions = StreamController<PrismUsersV2>.broadcast();
+    addTearDown(sessions.close);
+    PrismUsersV2 currentUser = app_constants.createGuestPrismUser();
+    when(() => session.currentUser).thenAnswer((_) => currentUser);
+    when(() => session.watchCurrentUser()).thenAnswer((_) async* {
+      yield currentUser;
+      yield* sessions.stream;
+    });
+    getIt.registerSingleton<SessionRepository>(session);
+    addTearDown(() => getIt.unregister<SessionRepository>());
+    final previous = signedInActionSignIn;
+    signedInActionSignIn = (_) async {
+      currentUser = app_constants.createGuestPrismUser()
+        ..id = 'viewer'
+        ..loggedIn = true;
+      sessions.add(currentUser);
+      return true;
+    };
+    addTearDown(() => signedInActionSignIn = previous);
+    final PublicFolderCubit cubit = PublicFolderCubit(repo, _FakeMoodRepository());
+    addTearDown(cubit.close);
+    await tester.pumpWidget(_host(PublicFolderView(folderId: 'f1', cubit: cubit)));
+    await _settle(tester);
+    final Completer<Result<bool>> oldBaseline = Completer<Result<bool>>();
+    repo.nextFollowingRead = oldBaseline;
+    await tester.tap(find.text('Follow'));
+    await _settle(tester);
+    expect(repo.followQueries, <(String, String)>[('f1', 'viewer')]);
+
+    currentUser = app_constants.createGuestPrismUser();
+    sessions.add(currentUser);
+    currentUser = app_constants.createGuestPrismUser()
+      ..id = 'viewer'
+      ..loggedIn = true;
+    repo.following = true;
+    sessions.add(currentUser);
+    await _settle(tester);
+    oldBaseline.complete(Result.success(false));
+    await _settle(tester);
+
+    expect(repo.followCalls, isEmpty);
+    expect(repo.followQueries, <(String, String)>[('f1', 'viewer'), ('f1', 'viewer')]);
+    expect(find.text('Following'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 
   testWidgets('a viewer follows a public folder and the button and count change', (tester) async {
     final repo = _FakePublicFoldersRepository()..folder = _folder();

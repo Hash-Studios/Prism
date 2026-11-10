@@ -62,7 +62,7 @@ class _PublicFolderViewState extends State<PublicFolderView> with WidgetsBinding
       _sessionSubscription = getIt<SessionRepository>().watchCurrentUser().listen((user) {
         if (user.id == _viewerId) return;
         _viewerId = user.id;
-        unawaited(_load());
+        unawaited(_load(viewerId: user.id));
       });
     }
     unawaited(_load());
@@ -91,8 +91,8 @@ class _PublicFolderViewState extends State<PublicFolderView> with WidgetsBinding
     super.dispose();
   }
 
-  Future<void> _load() async {
-    await _cubit.load(widget.folderId, viewerId: app_state.prismUser.id);
+  Future<void> _load({String? viewerId}) async {
+    await _cubit.loadForViewer(widget.folderId, viewerId: viewerId ?? app_state.prismUser.id);
     final PublicFolderEntity? folder = _cubit.state.folder;
     if (!mounted || _tracked || _cubit.state.status != PublicFolderStatus.ready || folder == null) return;
     _tracked = true;
@@ -108,7 +108,20 @@ class _PublicFolderViewState extends State<PublicFolderView> with WidgetsBinding
   Future<void> _toggleFollow() async {
     PrismHaptics.tap();
     if (!await requireSignedInAction(context) || !mounted) return;
+    // The sign-in prompt can succeed before the session stream has reached this page.
+    // Refresh the viewer-specific follow state before applying the tap.
+    final String viewerId = app_state.prismUser.id;
+    final Future<void> baseline = _cubit.loadForViewer(widget.folderId, viewerId: viewerId);
+    final int requestRevision = _cubit.requestRevision;
+    await baseline;
+    if (!mounted || _cubit.requestRevision != requestRevision) return;
+    if (app_state.prismUser.id != viewerId) return;
     final AppLocalizations l10n = context.l10n;
+    if (!_cubit.isReadyForViewer(viewerId)) {
+      toasts.error(l10n.foldersFollowFailed);
+      return;
+    }
+    _viewerId = viewerId;
     final bool following = !_cubit.state.following;
     final PublicFolderFailure? failure = await _cubit.toggleFollow();
     if (!mounted) return;

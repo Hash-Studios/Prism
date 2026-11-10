@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -13,6 +15,7 @@ import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakePublicFolders extends Fake implements PublicFoldersRepository {
+  final List<(String, FolderSignal)> signals = <(String, FolderSignal)>[];
   @override
   Future<Result<Set<String>>> fetchFollowedIds(String userId) async => Result.success(<String>{});
 
@@ -20,7 +23,7 @@ class _FakePublicFolders extends Fake implements PublicFoldersRepository {
   Future<Result<FolderDiscoverLists>> fetchDiscover() async => Result.success(FolderDiscoverLists.empty);
 
   @override
-  Future<void> recordSignal(String folderId, FolderSignal signal) async {}
+  Future<void> recordSignal(String folderId, FolderSignal signal) async => signals.add((folderId, signal));
 
   Result<PublicFolderEntity?> folder = Result.success(_folder(0));
   Result<List<String>> wallIds = Result.success(<String>[]);
@@ -110,9 +113,89 @@ void main() {
   setUp(() {
     repo = _FakePublicFolders();
     walls = _FakeMoodRepository();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'u1'
+      ..loggedIn = true;
   });
 
-  tearDown(() => walls.visibility.close());
+  tearDown(() {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    return walls.visibility.close();
+  });
+
+  test('guest folder state cannot issue follow or save signal callables', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final PublicFolderCubit cubit = cubitFor();
+    addTearDown(cubit.close);
+
+    await cubit.load('f1', viewerId: '');
+    await cubit.toggleFollow();
+    cubit.recordSave();
+
+    expect(repo.followCalls, isEmpty);
+    expect(repo.signals, isEmpty);
+  });
+
+  test('a signed-out stale folder request cannot send open or save signals', () async {
+    final Completer<Result<PublicFolderEntity?>> oldRead = Completer<Result<PublicFolderEntity?>>();
+    repo.nextFolderRead = oldRead.future;
+    final PublicFolderCubit cubit = cubitFor();
+    addTearDown(cubit.close);
+    final Future<void> oldLoad = cubit.load('f1', viewerId: 'u1');
+
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    cubit.recordSave();
+    await cubit.load('f1', viewerId: '');
+    cubit.recordSave();
+    oldRead.complete(Result.success(_folder(3)));
+    await oldLoad;
+
+    expect(cubit.state.status, PublicFolderStatus.ready);
+    expect(repo.signals, isEmpty);
+  });
+
+  test('a signed-in public folder records its open signal', () async {
+    final PublicFolderCubit cubit = cubitFor();
+    addTearDown(cubit.close);
+
+    await cubit.load('f1', viewerId: 'u1');
+
+    expect(repo.signals, <(String, FolderSignal)>[('f1', FolderSignal.open)]);
+  });
+
+  test('an open completing after sign-out cannot send a signal before the page reloads', () async {
+    final Completer<Result<PublicFolderEntity?>> read = Completer<Result<PublicFolderEntity?>>();
+    repo.nextFolderRead = read.future;
+    final PublicFolderCubit cubit = cubitFor();
+    addTearDown(cubit.close);
+    final Future<void> pending = cubit.load('f1', viewerId: 'u1');
+
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    read.complete(Result.success(_folder(3)));
+    await pending;
+    cubit.recordSave();
+    await cubit.toggleFollow();
+
+    expect(repo.signals, isEmpty);
+    expect(repo.followCalls, isEmpty);
+  });
+
+  test('a failed follow-state read cannot guess and issue a follow write', () async {
+    final PublicFolderCubit cubit = cubitFor();
+    repo.following = Result.error(const PublicFolderFailure('follow read failed'));
+    addTearDown(cubit.close);
+    await cubit.load('f1', viewerId: 'u1');
+
+    expect((await cubit.toggleFollow())?.message, 'Could not load follow state.');
+
+    expect(cubit.state.followStateReady, isFalse);
+    expect(repo.followCalls, isEmpty);
+
+    repo.following = Result.success(true);
+    await cubit.loadForViewer('f1', viewerId: 'u1');
+    expect(cubit.state.followStateReady, isTrue);
+    expect(cubit.state.following, isTrue);
+  });
 
   test('load shows the walls in folder order and the viewer follow state', () async {
     final PublicFolderCubit cubit = cubitFor(following: true);
