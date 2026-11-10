@@ -436,7 +436,9 @@ test("a live wall with partial moderation frames is not marked checked", async (
   const wall = {wallpaper_url: url("a"), kind: "live", live: {frames: [{url: "https://evil.example/a.jpg"}]}};
   const store = installFakeDb(t, {"walls/w1": wall});
   let calls = 0;
-  await moderateWall("w1", wall, {fetchImage: async () => { calls++; return gradient("down"); }, annotate: async () => CLEAR});
+  await moderateWall("w1", wall, {fetchImage: async () => {
+    calls++; return gradient("down");
+  }, annotate: async () => CLEAR});
   assert.equal(calls, 0);
   assert.equal(store.get("walls/w1")?.moderation, undefined);
 });

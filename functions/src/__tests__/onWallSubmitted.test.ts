@@ -337,7 +337,9 @@ test("a profile email cannot authorize live files when Auth has not verified its
 test("a transient Auth failure retries without terminally rejecting the live wall", async (t) => {
   const live = {video: "pending"};
   const {store} = setup(t, {name: "Maker", premium: false}, wall({kind: "live", live}));
-  t.mock.method(admin.auth(), "getUserByEmail", async () => { throw new Error("temporary Auth failure"); });
+  t.mock.method(admin.auth(), "getUserByEmail", async () => {
+    throw new Error("temporary Auth failure");
+  });
   await assert.rejects(() => fire(store), /temporary Auth failure/);
   assert.deepEqual(store.get("walls/w1")?.live, live);
   t.mock.method(admin.auth(), "getUserByEmail", async () => ({uid: "maker", email: "maker@example.com", emailVerified: true}));

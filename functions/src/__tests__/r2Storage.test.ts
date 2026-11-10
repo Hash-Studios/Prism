@@ -13,7 +13,9 @@ function configure() {
 
 test("R2 GET accepts exactly 20 MiB and rejects oversized declared or streamed bodies", async (t) => {
   const previous = {...process.env};
-  t.after(() => { process.env = previous; });
+  t.after(() => {
+    process.env = previous;
+  });
   configure();
   const limit = 20 * 1024 * 1024;
   const valid = new R2Storage(async () => new Response(Buffer.alloc(limit), {headers: {"content-length": String(limit)}}));
@@ -24,7 +26,9 @@ test("R2 GET accepts exactly 20 MiB and rejects oversized declared or streamed b
   const streamed = new R2Storage(async () => new Response(new ReadableStream({start(controller) {
     controller.enqueue(new Uint8Array(limit));
     controller.enqueue(new Uint8Array(1));
-  }, cancel() { cancelled = true; }}), {headers: {"content-length": String(limit)}}));
+  }, cancel() {
+    cancelled = true;
+  }}), {headers: {"content-length": String(limit)}}));
   await assert.rejects(streamed.get("private", "large"), /too large/);
   assert.equal(cancelled, true);
 });

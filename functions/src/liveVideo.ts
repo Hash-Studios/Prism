@@ -79,7 +79,9 @@ function spsDimensions(nal: Buffer): [number, number] {
     while (bits(1) === 0) if (++zeros > 24) throw new Error("malformed");
     return 2 ** zeros - 1 + bits(zeros);
   };
-  const se = () => { const v = ue(); return v & 1 ? (v + 1) / 2 : -v / 2; };
+  const se = () => {
+    const v = ue(); return v & 1 ? (v + 1) / 2 : -v / 2;
+  };
   const profile = bits(8);
   bits(16); ue();
   let chroma = 1;
@@ -170,7 +172,7 @@ function sampleDuration(buf: Buffer, stbl: Box, mdia: Box, mdats: Box[], lengthS
   let samples = 0;
   let ticks = 0;
   for (let at = timing.start + 8; at < timing.end; at += 8) {
-    const n = buf.readUInt32BE(at), delta = buf.readUInt32BE(at + 4);
+    const n = buf.readUInt32BE(at); const delta = buf.readUInt32BE(at + 4);
     if (!n || !delta) throw new Error("malformed");
     samples += n; ticks += n * delta;
   }
@@ -184,12 +186,12 @@ function sampleDuration(buf: Buffer, stbl: Box, mdia: Box, mdats: Box[], lengthS
   const map = table("stsc", 12);
   const runs: {first: number; n: number}[] = [];
   for (let at = map.start + 8; at < map.end; at += 12) {
-    const first = buf.readUInt32BE(at), n = buf.readUInt32BE(at + 4);
+    const first = buf.readUInt32BE(at); const n = buf.readUInt32BE(at + 4);
     if (!n || first < 1 || first > chunkCount || (runs.length ? first <= runs[runs.length - 1].first : first !== 1) ||
       buf.readUInt32BE(at + 8) !== 1) throw new Error("malformed");
     runs.push({first, n});
   }
-  let index = 0, run = 0, previousEnd = 0, nalCount = 0;
+  let index = 0; let run = 0; let previousEnd = 0; let nalCount = 0;
   for (let i = 0; i < chunkCount; i++) {
     if (run + 1 < runs.length && runs[run + 1].first === i + 1) run++;
     let offset = uint(buf, chunks.start + 8 + i * (chunks.type === "co64" ? 8 : 4), chunks.type === "co64");
@@ -252,8 +254,10 @@ export function inspectLiveVideo(buf: Buffer): {ok: true; info: LiveVideoInfo} |
     });
     const video = tracks.filter((track) => track.handler === "vide");
     if (video.length !== 1) return {ok: false, error: "no_video_track"};
-    for (const track of tracks) durationMs = Math.max(durationMs,
-      Math.ceil(mediaDuration(buf, need(buf, child(buf, track.mdia, "mdhd"), 20))));
+    for (const track of tracks) {
+      durationMs = Math.max(durationMs,
+        Math.ceil(mediaDuration(buf, need(buf, child(buf, track.mdia, "mdhd"), 20))));
+    }
     const {trak, mdia} = video[0];
 
     const minf = need(buf, child(buf, mdia, "minf"), 8);

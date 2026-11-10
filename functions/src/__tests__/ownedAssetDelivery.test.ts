@@ -5,33 +5,34 @@ import * as admin from "firebase-admin";
 import {db} from "../common";
 import {ownedAssetStorageEnabled, ownedThumbnailUrl, retainUpload, deleteRetainedUpload, stored,
   signOriginalDelivery, bindOwnedWall, cleanupDeletedOwnedWall, sweepR2Tombstones, type StoredUpload} from "../ownedAssetDelivery";
-import {r2ObjectId} from "../r2Storage";
+import {r2ObjectId, R2Storage} from "../r2Storage";
 import {installFakeDb} from "./fakeDb";
-import {R2Storage} from "../r2Storage";
 import * as ownerAuth from "../authoredContentUid";
 
 test("ISO BMFF image previews retain image MIME types instead of video/mp4", async (t) => {
   const previous = {...process.env};
-  t.after(() => { process.env = previous; });
+  t.after(() => {
+    process.env = previous;
+  });
   configured();
   installFakeDb(t);
-  for (const [brand, mime] of [['avif', 'image/avif'], ['heic', 'image/heic'], ['mif1', 'image/heif']]) {
+  for (const [brand, mime] of [["avif", "image/avif"], ["heic", "image/heic"], ["mif1", "image/heif"]]) {
     const bytes = Buffer.alloc(24);
     bytes.writeUInt32BE(24);
-    bytes.write('ftyp', 4);
+    bytes.write("ftyp", 4);
     bytes.write(brand, 8);
-    const sha = createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex');
-    const digest = createHash('sha256').update(bytes).digest('hex');
-    const identity = {repo: 'walls', path: `thumb_wall.${brand}`, sha, uid: 'owner', sourceKind: 'owned' as const};
+    const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+    const digest = createHash("sha256").update(bytes).digest("hex");
+    const identity = {repo: "walls", path: `thumb_wall.${brand}`, sha, uid: "owner", sourceKind: "owned" as const};
     const objectId = r2ObjectId(identity, digest);
-    const put = t.mock.method(R2Storage.prototype, 'put', async (...args: Parameters<R2Storage['put']>) => {
+    const put = t.mock.method(R2Storage.prototype, "put", async (...args: Parameters<R2Storage["put"]>) => {
       const type = args[4];
       assert.equal(type, mime);
       return true;
     });
-    const head = t.mock.method(R2Storage.prototype, 'head', async () => ({size: bytes.length, sha256: digest, objectId,
-      uid: 'owner', repo: 'walls', path: identity.path, gitSha: sha, uploadId: 'imported', contentType: mime}));
-    const get = t.mock.method(R2Storage.prototype, 'get', async () => bytes);
+    const head = t.mock.method(R2Storage.prototype, "head", async () => ({size: bytes.length, sha256: digest, objectId,
+      uid: "owner", repo: "walls", path: identity.path, gitSha: sha, uploadId: "imported", contentType: mime}));
+    const get = t.mock.method(R2Storage.prototype, "get", async () => bytes);
     await retainUpload({...identity, bytes});
     put.mock.restore(); head.mock.restore(); get.mock.restore();
   }
@@ -134,7 +135,9 @@ test("retention verifies Git blob SHA, create-only object metadata, bytes, and p
 
 test("live upload cannot start after creator deletion closes the upload barrier", async (t) => {
   const previous = {...process.env};
-  t.after(() => { process.env = previous; });
+  t.after(() => {
+    process.env = previous;
+  });
   configured();
   const store = installFakeDb(t, {"usersv2/owner": {deleted: true}, "creatorDeletionState/owner": {closed: true}});
   const puts = t.mock.method(R2Storage.prototype, "put", async () => true);
@@ -154,7 +157,9 @@ test("live upload cannot start after creator deletion closes the upload barrier"
 
 test("live upload raced by creator deletion is tombstoned and cleaned after readback", async (t) => {
   const previous = {...process.env};
-  t.after(() => { process.env = previous; });
+  t.after(() => {
+    process.env = previous;
+  });
   configured();
   const store = installFakeDb(t, {"usersv2/owner": {deleted: false}, "creatorDeletionState/owner": {closed: false}});
   const bytes = Buffer.from("live video bytes");
@@ -363,7 +368,9 @@ test("wall binding accepts matching GitHub receipts and redacts source URLs", as
 
 test("live rejection preserves exact protected poster incarnation for undo, not a stale archive", async (t) => {
   const previous = {...process.env};
-  t.after(() => { process.env = previous; });
+  t.after(() => {
+    process.env = previous;
+  });
   configured();
   const asset = (path: string, preview = false): StoredUpload => {
     const identity = {uid: "owner", repo: "walls", path, sha: "a".repeat(40), sourceKind: "owned" as const};
@@ -372,7 +379,7 @@ test("live rejection preserves exact protected poster incarnation for undo, not 
     return {...identity, sha256, objectId, object: `private-originals/${objectId}`, bucket: "private-assets",
       ...(preview ? {previewObjectId: objectId} : {})};
   };
-  const original = asset("photo.jpg"), thumb = asset("thumb_photo.jpg", true);
+  const original = asset("photo.jpg"); const thumb = asset("thumb_photo.jpg", true);
   const created = new admin.firestore.Timestamp(1, 20);
   const archive = {kind: "live", id: "wall", creatorUid: "owner", sourceWallCreateTime: created,
     originalProtected: true, originalObjectId: original.objectId, wallpaper_url: "", wallpaper_path: "", wallpaper_sha: "",

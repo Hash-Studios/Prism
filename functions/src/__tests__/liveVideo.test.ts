@@ -6,35 +6,35 @@ import {inspectLiveVideo, isLiveFramePath, isLiveVideoPath} from "../liveVideo";
 import {box, mp4} from "./mp4Fixture";
 
 test("real encoded fixtures are accepted and metadata cannot disguise their media", () => {
-  const real = (name: string) => readFileSync(resolve(__dirname, '../../../test/fixtures/live', name));
-  assert.equal(inspectLiveVideo(real('p.mp4')).ok, true);
-  assert.equal(inspectLiveVideo(real('rot.mp4')).ok, true);
-  assert.deepEqual(inspectLiveVideo(real('h.mp4')), {ok: false, error: 'codec'});
-  const long = real('long.mp4');
-  long.writeUInt32BE(1000, long.indexOf(Buffer.from('mvhd')) + 20);
-  assert.deepEqual(inspectLiveVideo(long), {ok: false, error: 'too_long'});
-  const outside = real('p.mp4');
-  outside.writeUInt32BE(outside.length + 1, outside.indexOf(Buffer.from('stco')) + 12);
+  const real = (name: string) => readFileSync(resolve(__dirname, "../../../test/fixtures/live", name));
+  assert.equal(inspectLiveVideo(real("p.mp4")).ok, true);
+  assert.equal(inspectLiveVideo(real("rot.mp4")).ok, true);
+  assert.deepEqual(inspectLiveVideo(real("h.mp4")), {ok: false, error: "codec"});
+  const long = real("long.mp4");
+  long.writeUInt32BE(1000, long.indexOf(Buffer.from("mvhd")) + 20);
+  assert.deepEqual(inspectLiveVideo(long), {ok: false, error: "too_long"});
+  const outside = real("p.mp4");
+  outside.writeUInt32BE(outside.length + 1, outside.indexOf(Buffer.from("stco")) + 12);
   assert.equal(inspectLiveVideo(outside).ok, false);
-  const absentConfig = real('p.mp4');
-  absentConfig.write('free', absentConfig.indexOf(Buffer.from('avcC')));
+  const absentConfig = real("p.mp4");
+  absentConfig.write("free", absentConfig.indexOf(Buffer.from("avcC")));
   assert.equal(inspectLiveVideo(absentConfig).ok, false);
 });
 
 test("sample metadata, SPS dimensions, local references and unit rotations are enforced", () => {
-  const real = () => readFileSync(resolve(__dirname, '../../../test/fixtures/live/p.mp4'));
+  const real = () => readFileSync(resolve(__dirname, "../../../test/fixtures/live/p.mp4"));
   const mutate = (type: string, offset: number, value: number) => {
     const bytes = real();
-    bytes.writeUInt32BE(value, bytes.indexOf(Buffer.from(type), type === 'avc1' ? 32 : 0) + offset);
+    bytes.writeUInt32BE(value, bytes.indexOf(Buffer.from(type), type === "avc1" ? 32 : 0) + offset);
     return bytes;
   };
-  assert.equal(inspectLiveVideo(mutate('stsd', 8, 0)).ok, false);
-  assert.equal(inspectLiveVideo(mutate('stsz', 12, 999999)).ok, false);
-  assert.equal(inspectLiveVideo(mutate('url ', 4, 0)).ok, false);
-  assert.equal(inspectLiveVideo(mutate('tkhd', 44, 0)).ok, false);
-  assert.equal(inspectLiveVideo(mutate('avc1', 28, (1080 << 16) | 1920)).ok, false);
-  assert.equal(inspectLiveVideo(mutate('mdat', 4, 0xffffffff)).ok, false);
-  assert.equal(inspectLiveVideo(Buffer.concat([real(), box('moof')])).ok, false);
+  assert.equal(inspectLiveVideo(mutate("stsd", 8, 0)).ok, false);
+  assert.equal(inspectLiveVideo(mutate("stsz", 12, 999999)).ok, false);
+  assert.equal(inspectLiveVideo(mutate("url ", 4, 0)).ok, false);
+  assert.equal(inspectLiveVideo(mutate("tkhd", 44, 0)).ok, false);
+  assert.equal(inspectLiveVideo(mutate("avc1", 28, (1080 << 16) | 1920)).ok, false);
+  assert.equal(inspectLiveVideo(mutate("mdat", 4, 0xffffffff)).ok, false);
+  assert.equal(inspectLiveVideo(Buffer.concat([real(), box("moof")])).ok, false);
 });
 
 test("empty media, absent track timing, and an empty codec entry are not a playable MP4", () => {

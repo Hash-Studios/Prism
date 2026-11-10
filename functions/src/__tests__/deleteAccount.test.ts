@@ -36,7 +36,9 @@ test("account deletion reconciles orphan live uploads before deleting upload own
 
 test("transient live upload cleanup failures preserve account credentials and upload receipts for retry", async (t) => {
   const log = fake(t);
-  t.mock.method(wallLive, "tombstoneUnreferencedLiveUploads", async () => { throw new Error("live storage busy"); });
+  t.mock.method(wallLive, "tombstoneUnreferencedLiveUploads", async () => {
+    throw new Error("live storage busy");
+  });
   await assert.rejects(() => call(), /live storage busy/);
   assert.equal(log.includes("query:githubUploads.uid==u1"), false);
   assert.equal(log.includes("anonymize"), false);

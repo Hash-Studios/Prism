@@ -74,7 +74,8 @@ internal class PrismMediaPluginTest {
 
     private fun binding(messenger: BinaryMessenger) = FlutterPlugin.FlutterPluginBinding::class.java.constructors.single()
         .newInstance(null, null, messenger, null, null, null, null) as FlutterPlugin.FlutterPluginBinding
-    private val channelNames = listOf("saveMedia", "enqueueDownload", "listDownloads", "clearDownloads", "deleteDownload", "prepareAlbumSave")
+    private val channelNames = listOf("saveMedia", "enqueueDownload", "listDownloads", "clearDownloads", "deleteDownload", "prepareAlbumSave",
+        "extractVideoFrames", "saveVideo")
         .map { "dev.flutter.pigeon.Prism.PrismMediaHostApi.$it" }
 
     private fun plugin(api: HostApi, attaches: () -> Unit = {}) = PrismMediaPlugin(

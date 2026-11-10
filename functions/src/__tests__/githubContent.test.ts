@@ -26,7 +26,9 @@ test("public live frames require image decoding before quotas or storage writes"
   testGithubEnvironment(t);
   const docs = uploadStore(t, {});
   t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
-  const retain = t.mock.method(ownedAssets, "retainUpload", async () => { throw new Error("validated image reached storage"); });
+  const retain = t.mock.method(ownedAssets, "retainUpload", async () => {
+    throw new Error("validated image reached storage");
+  });
   const upload = (bytes: Buffer) => run(githubPutFile, {auth: {uid: "u"}, data: {
     repo: "walls", path: "frame_1_a.jpg", message: "upload", purpose: "wallpaper", contentBase64: bytes.toString("base64"),
   }});
