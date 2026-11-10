@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_route_catalog.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -21,6 +23,8 @@ class DeepLinkParser {
   static const String _shareInRoot = 'share-in';
   static final RegExp _shareInId = RegExp(r'^[0-9a-f-]{36}$');
   static final RegExp _shareInSource = RegExp(r'^[A-Za-z0-9._-]{1,128}$');
+  static final RegExp _shortCode = RegExp(r'^[A-Za-z0-9]{7,10}$');
+  static final RegExp _controlCharacter = RegExp(r'[\u0000-\u001F\u007F]');
   static const int _shareInMaxText = 2048;
 
   Uri transform(Uri uri) {
@@ -76,7 +80,7 @@ class DeepLinkParser {
 
     final String root = segments.first.toLowerCase();
     if (_shareRoots.contains(root)) {
-      if (segments.length > 2) return UnknownIntent(rawUri: uri.toString());
+      if (segments.length > 2 || _hasDuplicateQueryParameters(uri)) return UnknownIntent(rawUri: uri.toString());
       final String wallId = _firstNonEmpty(<String?>[segments.safeAt(1), uri.queryParameters['id']]);
       final WallpaperSource source = WallpaperSourceX.fromWire(
         _firstNonEmpty(<String?>[
@@ -98,7 +102,7 @@ class DeepLinkParser {
         uri.queryParameters['wallpaper_thumb'],
         wallpaperUrl,
       ]);
-      if (wallId.isEmpty) {
+      if (!_isSafeLegacyIdentifier(wallId)) {
         return UnknownIntent(rawUri: uri.toString());
       }
       return ShareLinkIntent(
@@ -111,7 +115,7 @@ class DeepLinkParser {
     }
 
     if (_userRoots.contains(root)) {
-      if (segments.length > 2 || (root == 'user' && segments.length == 2)) {
+      if (segments.length > 2 || (root == 'user' && segments.length == 2) || _hasDuplicateQueryParameters(uri)) {
         return UnknownIntent(rawUri: uri.toString());
       }
       final String profileIdentifier = _firstNonEmpty(<String?>[
@@ -121,7 +125,7 @@ class DeepLinkParser {
         uri.queryParameters['user'],
         uri.queryParameters['email'],
       ]);
-      if (profileIdentifier.isEmpty) {
+      if (!_isSafeLegacyIdentifier(profileIdentifier)) {
         return UnknownIntent(rawUri: uri.toString());
       }
       return UserLinkIntent(profileIdentifier: profileIdentifier, rawUri: uri.toString());
@@ -132,7 +136,7 @@ class DeepLinkParser {
     }
 
     if (_referRoots.contains(root)) {
-      if (segments.length > 2) return UnknownIntent(rawUri: uri.toString());
+      if (segments.length > 2 || _hasDuplicateQueryParameters(uri)) return UnknownIntent(rawUri: uri.toString());
       final String inviterId = _firstNonEmpty(<String?>[
         segments.safeAt(1),
         uri.queryParameters['inviterId'],
@@ -141,16 +145,16 @@ class DeepLinkParser {
         uri.queryParameters['userid'],
         uri.queryParameters['id'],
       ]);
-      if (inviterId.isEmpty) {
+      if (!_isSafeLegacyIdentifier(inviterId)) {
         return UnknownIntent(rawUri: uri.toString());
       }
       return ReferLinkIntent(inviterId: inviterId, rawUri: uri.toString());
     }
 
     if (_shortCodeRoots.contains(root)) {
-      if (segments.length > 2) return UnknownIntent(rawUri: uri.toString());
+      if (segments.length > 2 || _hasDuplicateQueryParameters(uri)) return UnknownIntent(rawUri: uri.toString());
       final String code = _firstNonEmpty(<String?>[segments.safeAt(1), uri.queryParameters['code']]);
-      if (code.isEmpty) {
+      if (!_shortCode.hasMatch(code)) {
         return UnknownIntent(rawUri: uri.toString());
       }
       return ShortCodeIntent(code: code, rawUri: uri.toString());
@@ -221,6 +225,23 @@ class DeepLinkParser {
 
   bool _isDomainHost(String host) {
     return host.contains('.');
+  }
+
+  bool _isSafeLegacyIdentifier(String value) =>
+      value.trim().isNotEmpty &&
+      utf8.encode(value).length <= 1500 &&
+      value != '.' &&
+      value != '..' &&
+      !value.contains('/') &&
+      !value.contains('\\') &&
+      !_controlCharacter.hasMatch(value);
+
+  bool _hasDuplicateQueryParameters(Uri uri) {
+    try {
+      return uri.queryParametersAll.values.any((List<String> values) => values.length > 1);
+    } on FormatException {
+      return true;
+    }
   }
 
   String _firstNonEmpty(List<String?> values) {

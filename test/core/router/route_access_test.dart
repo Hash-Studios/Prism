@@ -110,8 +110,8 @@ void main() {
 
     'FollowersRoute': RouteAccess.account,
     'FollowingListRoute': RouteAccess.account,
-    'CreatorsRoute': RouteAccess.account,
-    'FoldersDiscoverRoute': RouteAccess.account,
+    'CreatorsRoute': RouteAccess.public,
+    'FoldersDiscoverRoute': RouteAccess.public,
     'FolderInviteRoute': RouteAccess.account,
     'AiTabRoute': RouteAccess.account,
     'DownloadWallpaperRoute': RouteAccess.account,
@@ -131,7 +131,7 @@ void main() {
     'LeaderboardRoute': RouteAccess.account,
     'DrawRoute': RouteAccess.account,
 
-    'FolderRoute': RouteAccess.owner,
+    'FolderRoute': RouteAccess.public,
     'RewardsTabRoute': RouteAccess.owner,
     'RewardsRoute': RouteAccess.owner,
     'CoinHistoryRoute': RouteAccess.owner,
@@ -238,10 +238,13 @@ void main() {
     }
   });
 
-  test('the folder and creator routes stay signed-in until the rules let guests read them', () {
-    expect(routeAccess[FolderRoute.name], RouteAccess.owner);
-    expect(routeAccess[FoldersDiscoverRoute.name], RouteAccess.account);
-    expect(routeAccess[CreatorsRoute.name], RouteAccess.account);
+  test('guests can open public Folders, Discover and Creators; invites and relation lists need an account', () {
+    expect(routeAccess[FolderRoute.name], RouteAccess.public);
+    expect(routeAccess[FoldersDiscoverRoute.name], RouteAccess.public);
+    expect(routeAccess[CreatorsRoute.name], RouteAccess.public);
+    expect(routeAccess[ProfileRoute.name], RouteAccess.public);
+    expect(routeAccess[FollowersRoute.name], RouteAccess.account);
+    expect(routeAccess[FollowingListRoute.name], RouteAccess.account);
     expect(routeAccess[FolderInviteRoute.name], RouteAccess.account);
   });
 

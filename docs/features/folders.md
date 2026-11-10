@@ -1,6 +1,6 @@
 # Folders: private, public and shared
 
-A **folder** is a named group of saved wallpapers. A **smart folder** fills itself from rules. See Smart folders. Each folder is private when the user makes it. The owner can make a folder **public**. Other signed-in users can then see the folder, follow it, and share its link. Followers get one "New in <folder>" push a day when the owner adds wallpapers. The user can save all the wallpapers of a folder at once with **Save all**.
+A **folder** is a named group of saved wallpapers. A **smart folder** fills itself from rules. See Smart folders. Each folder is private when the user makes it. The owner can make a folder **public**. Other signed-in users can then see the folder, follow it, and share its link. On iOS, guests can see public folders too, but must sign in to follow one. Followers get one "New in <folder>" push a day when the owner adds wallpapers. The user can save all the wallpapers of a folder at once with **Save all**.
 
 The owner can invite up to 10 people to add and remove wallpapers in a folder. These people are editors. See Shared folders. The owner and the editors can split a folder into named sections. See Sections.
 
@@ -27,7 +27,7 @@ The Library page ([library.md](library.md)) covers the Folders tab, the folder g
 | Android | Full. |
 | iOS | Full. |
 
-A guest cannot open a folder. The `/folder/:folderId` route needs an account. See the Access table in [deep-links.md](deep-links.md#access).
+On iOS, a guest can open a public folder link. The page shows the public folder. **Follow** asks the guest to sign in. A guest cannot open a private folder. Android has no guests. See the Access table in [deep-links.md](deep-links.md#access).
 
 ## Free and Pro
 
@@ -112,8 +112,8 @@ On a public folder, Save all uses the walls on the page. These walls come from t
 |---|---|---|---|
 | `folders/{id}` | Owner, through the client rules. The server sets `public` and `moderationHidden`. | Owner and editors | The private folder. The shared folder rules add editor access. See Shared folders. |
 | `folders/{id}/items/{key}` | Owner and editors | Owner and editors | Copies of favourite docs, with the raw `url`. |
-| `publicFolders/{id}` | Server only | Signed-in users, when no block exists in either direction | `ownerId`, `name`, `itemCount`, `covers`, `followerCount`, `shareImage`, `generation`, `sourceCreatedAt`, `createdAt`, `updatedAt`, `lastAddedAt`. |
-| `publicFolders/{id}/items/{key}` | Server only | Signed-in users, when the header exists and no block exists | `id`, `provider`, `thumb`, `wallpaperDocumentId`, `addedAt`, `projectedAt`. |
+| `publicFolders/{id}` | Server only | Guests, and signed-in users when no block exists in either direction | `ownerId`, `name`, `itemCount`, `covers`, `followerCount`, `shareImage`, `generation`, `sourceCreatedAt`, `createdAt`, `updatedAt`, `lastAddedAt`. |
+| `publicFolders/{id}/items/{key}` | Server only | Guests and signed-in users, when the header exists. A block hides it from a signed-in user. | `id`, `provider`, `thumb`, `wallpaperDocumentId`, `addedAt`, `projectedAt`. |
 | `publicFolders/{id}/followers/{uid}` | Server only | Nobody | `uid`, `createdAt`. |
 | `usersv2/{uid}/followedFolders/{id}` | Server only | The user | `folderId`, `ownerId`, `createdAt`. |
 | `folderVisibilityRateDaily`, `folderFollowRateDaily` | Server only | Nobody | Daily counts for the rate limits. |
@@ -679,7 +679,7 @@ Users can find good public folders in Search. They do not need a creator profile
 
 | Surface | What the user sees |
 |---|---|
-| Search, before a search | A **Folders to follow** row after **Creators to follow**. It shows up to 10 trending folders, or new folders when nothing trends. **See all** opens the discover page. The row does not show for guests or when both lists are empty. |
+| Search, before a search | A **Folders to follow** row after **Creators to follow**. It shows up to 10 trending folders, or new folders when nothing trends. **See all** opens the discover page. The row does not show when both lists are empty. |
 | Discover page (`/folders`) | The title **Discover folders** and three tabs: **Trending**, **New** and **Like your saves**. |
 | Folder card | A 2x2 cover of the newest walls, the name, "By <owner>", the wall count, **Follow** and a menu with **Report folder**. A tap opens the folder page. |
 | Admin review | A **Folder report** card for each open folder report, with **Keep folder** and **Hide from discovery**. |
@@ -755,7 +755,7 @@ The app ranks this tab on the device. It uses no new server data and sends nothi
 
 | Path | Writer | Readers | Contents |
 |---|---|---|---|
-| `folderTrending/current` | Server only | Signed-in users | `trending`, `new`, `updatedAt`. |
+| `folderTrending/current` | Server only | Anyone, guests too | `trending`, `new`, `updatedAt`. |
 | `folderStatsDaily/{yyyymmdd}_{folderId}` | Server only | Nobody | `folderId`, `day`, `follows`, `saves`, `opens`, `expireAt`. |
 | `folderSignalRate/{uid}_{folderId}_{signal}` | Server only | Nobody | `lastAt`, `expireAt`. |
 | `folders/{id}` fields `discoveryHidden`, `discoveryEligibleAt` | Server only | Owner and editors | The discovery state. The rules key lists do not include them, so no client writes them. |

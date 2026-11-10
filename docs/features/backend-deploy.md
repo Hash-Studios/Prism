@@ -27,6 +27,77 @@ The backend serves Android and iOS. Two items are iOS only:
 
 No change. No step in the first release of this guide touches coins, premium, or subscription rules, and that release does not change `firestore.rules`. Later sections that change rules, such as Wall requests, include their own rules step. Follow the order in each section.
 
+## Check drift
+
+Use this check before a release to see what master has that production does not.
+
+```sh
+make deploy-drift          # table and deploy plan
+make deploy-drift JSON=1   # the same data as JSON
+```
+
+The command does not change production. The Make target builds `functions/lib` on your machine. The check creates a temporary manifest file. All live calls read data. The check does not deploy, run `--apply`, or publish Remote Config.
+
+The check prints names, states, times, and options. It does not print secret values or environment values.
+
+Before you run it:
+
+1. Use a trusted checkout. The manifest command loads the local functions code. It does not isolate that code from your machine or network.
+2. Commit all function and worker source changes before the check.
+3. Log in to gcloud with an account that can read `prism-wallpapers`.
+4. Install the functions packages: `cd functions && npm ci`.
+5. Install the web packages: `cd web && npm ci`. The check uses the installed Wrangler. It does not install packages.
+6. Log in to Wrangler before the check. The check gets the Cloudflare account from `CLOUDFLARE_ACCOUNT_ID`. If that is not set, it uses `BROWSER_RENDERING_ACCOUNT_ID` in the worker `wrangler.toml`.
+
+What it compares:
+
+| Kind | Master | Live |
+|---|---|---|
+| Rules | `firestore.rules` | The released ruleset (Firebase Rules API). Whitespace between tokens is not drift. String and comment text must agree. |
+| Index | `indexes` in `firestore.indexes.json` | `gcloud firestore indexes composite list`. Field order and array configuration must agree. An automatic trailing `__name__` field is ignored. |
+| TTL | `fieldOverrides` with `ttl: true` | `gcloud firestore fields ttls list`. The policy must be `ACTIVE`. |
+| Function | The deploy manifest from `functions/lib`, per region | `gcloud functions list --v2` |
+| Function options | Memory, CPU, and max instances, with the firebase-tools defaults | The same fields on the live function |
+| Worker | The last master change under `infra/cloudflare/worker/` (not `test/`) | The last Wrangler deployment |
+| Remote Config key | The keys that `lib/` and `functions/src` read | The published template |
+| Migration | Every script in `functions/src` that accepts `--apply` | Cannot be read. See below. |
+
+Each item gets one status:
+
+- `in sync`: the compared fields agree. For functions and the worker, the deploy time is not before the last source change.
+- `missing live`: master has it, production does not.
+- `different`: both have it, but they do not agree.
+- `live only`: production has it, master does not.
+- `unknown`: the check cannot read it. Ask the owner.
+
+How a function is `different`:
+
+- The live function is not `ACTIVE`.
+- A file in the import graph of `functions/src/index.ts` landed on master after the live deploy time. Shared package files and the TypeScript configuration also affect every function. This can identify old code even if the function name did not change. The time is when the merge landed on master, not when the commit was written.
+- An option that the source sets is not the live value. If the source does not set max instances, the check does not compare it.
+
+The import graph includes relative imports, re-exports, `require()`, and literal `import()` calls. It accepts single and double quotes. An unresolved relative import or nonliteral dynamic import makes the function check `unknown`.
+
+The entrypoint loads all exported modules when any function starts. A top-level change in one module can change other functions. So every function gets the full entrypoint graph, and a change to one function module marks every function `different`. This gives a false `different`, never a false `in sync`. The functions deploy sends all functions in one step, so the plan does not change.
+
+Limits:
+
+- A deploy from a branch before its merge shows `different` until the next deploy. This is safe.
+- A deploy from an old checkout after a merge can show `in sync`. The check reads deploy times, not the deployed code. The same limit applies to the worker. An `in sync` status does not prove that production has this checkout's code.
+- In a shallow checkout, the oldest commit in the history shows every file as changed at its own time. An older function or worker change can then look recent and show a false `different`. It cannot show a false `in sync`. Use a checkout with full history for exact times. The check does not fetch history.
+- Uncommitted source changes make the function or worker check `unknown`. The time comparison needs source files that agree with `HEAD`.
+- Remote Config extraction uses source text, not a Dart or TypeScript parser. It recognizes Remote Config receiver names and `rc`, but not every custom alias. A recognized read with an unresolved key adds an `unknown` item. Known keys still appear in the result. Other unrecognized source forms can be absent from the result.
+- The check cannot see whether someone ran a migration with `--apply`. Each migration shows `unknown` and the note from its PR or this page. The notes are in `tool/deploy_drift_migrations.json`. When you run an `--apply`, update its note.
+
+The plan uses the order in the `prism-release` skill: rules, indexes and TTLs, functions, migrations, worker, Remote Config keys. Each step shows the reason, the command, and the PR that added each item. The check does not run the commands. Each deploy still needs the owner's yes.
+
+Two results need special care:
+
+- A `live only` index. `firestore.indexes.json` must list every live index. A deploy with `--force` deletes the index. Add it to the file before you deploy indexes.
+- A `live only` function. A non-interactive functions deploy stops on it. Delete it by hand, or deploy with `--only functions:<name>`.
+
+If a source cannot be read, its kind shows `unknown`. The check continues with the other sources and exits with 1. An error message gives the program name, the exit code, or the HTTP status. It does not contain command output, HTTP response bodies, or the text of an unexpected exception. Drift alone does not make the command fail. An unresolved Remote Config key alone does not make the command fail.
+
 ## How it works
 
 ### Before you start

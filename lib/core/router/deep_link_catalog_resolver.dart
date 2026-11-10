@@ -296,7 +296,7 @@ Future<PageRouteInfo?> _relationRoute(
   Future<PublicProfileEntity?> Function(String identifier)? profileLookup,
 }) async {
   if (identifier.trim().isEmpty) return null;
-  // A guest cannot read follower lists or look up the profile. The profile route asks them to sign in.
+  // The follower lists need sign-in. A guest gets the public profile page, which can open them after sign-in.
   if (!app_state.prismUser.loggedIn) return ProfileRoute(profileIdentifier: identifier);
   try {
     final PublicProfileEntity? profile = await (profileLookup ?? _lookupProfile)(identifier);

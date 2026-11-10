@@ -6,8 +6,10 @@ import 'package:Prism/features/creator_directory/domain/creator_directory_entiti
 import 'package:Prism/features/creator_directory/domain/creator_directory_repository.dart';
 import 'package:Prism/features/creator_directory/views/creator_follow_changes.dart';
 import 'package:Prism/features/creator_directory/views/widgets/followed_by_line.dart';
+import 'package:Prism/features/creator_directory/views/widgets/similar_creators_sheet.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -17,9 +19,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/profile_user_fixture.dart';
-import 'creator_directory_test_support.dart' show EmptyCreatorBlocks, registerCreatorDirectoryFakes;
+import 'creator_directory_test_support.dart'
+    show EmptyCreatorBlocks, FakeCreatorSessionRepository, publicProfileBlocWith, registerCreatorDirectoryFakes;
 
-class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
+class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {
+  _MockPublicProfileBloc() {
+    when(() => isClosed).thenReturn(false);
+  }
+}
 
 class _FakeDirectory extends Fake implements CreatorDirectoryRepository {
   FollowedBy followed = FollowedBy.none;
@@ -28,6 +35,10 @@ class _FakeDirectory extends Fake implements CreatorDirectoryRepository {
   List<DirectoryCreator> similar = const <DirectoryCreator>[];
   int similarCalls = 0;
   bool failSimilarAfterFirst = false;
+  Set<String> followedUids = <String>{};
+
+  @override
+  Future<Set<String>> followedAmong(List<String> uids) async => uids.where(followedUids.contains).toSet();
 
   @override
   Future<FollowedBy> followedBy(String creatorUid) async {
@@ -109,6 +120,22 @@ void main() {
     changes.record('creator', false);
     expect(changes.following('creator'), isFalse);
     app_state.prismUser = profileUser(id: 'another');
+    expect(changes.following('creator'), isNull);
+    changes.dispose();
+  });
+
+  test('session resets do not revive follows when the same account signs back in', () {
+    final changes = CreatorFollowChanges();
+    final String viewer = app_state.prismUser.id;
+    changes.record('creator', true);
+    changes.resetForViewer(viewer);
+    expect(changes.following('creator'), isTrue);
+
+    app_state.prismUser = profileUser(id: viewer, loggedIn: false);
+    expect(changes.following('creator'), isNull);
+    changes.resetForViewer('');
+    app_state.prismUser = profileUser(id: viewer);
+    changes.resetForViewer(viewer);
     expect(changes.following('creator'), isNull);
     changes.dispose();
   });
@@ -297,6 +324,51 @@ void main() {
       expect(find.descendant(of: find.byType(PrismSheetBody), matching: find.text('More like Kai')), findsOneWidget);
       expect(find.text('Lia'), findsOneWidget);
       await settleToasts(tester);
+    });
+
+    testWidgets('an open similar sheet resets follow state on logout and loads the next account follows', (
+      tester,
+    ) async {
+      final FakeCreatorSessionRepository session = FakeCreatorSessionRepository(app_state.prismUser);
+      getIt.registerSingleton<SessionRepository>(session);
+      addTearDown(session.close);
+      final oldBloc = publicProfileBlocWith(
+        state: PublicProfileState.initial().copyWith(followOverrides: <String, bool>{'a': true}),
+      );
+      final List<PublicProfileBloc> blocs = <PublicProfileBloc>[
+        oldBloc,
+        publicProfileBlocWith(),
+        publicProfileBlocWith(),
+      ];
+      getIt.registerFactory<PublicProfileBloc>(() => blocs.removeAt(0));
+      await pumpApp(tester);
+      final Future<void> sheet = showSimilarCreatorsSheet(
+        context,
+        name: 'Kai',
+        creators: <DirectoryCreator>[_creator('a', 'Lia')],
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Following'), findsOneWidget);
+
+      app_state.prismUser = profileUser(loggedIn: false);
+      session.setUser(app_state.prismUser);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Following'), findsNothing);
+      expect(find.text('Follow'), findsOneWidget);
+      verify(() => oldBloc.close()).called(1);
+
+      repo.followedUids = <String>{'a'};
+      app_state.prismUser = profileUser(id: 'next-viewer');
+      session.setUser(app_state.prismUser);
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('Following'), findsOneWidget);
+      expect(find.text('Lia'), findsOneWidget);
+      navigatorKey.currentState!.pop();
+      await tester.pumpAndSettle();
+      await sheet;
     });
 
     testWidgets('a second follow in the same session shows no offer and does not call similarTo again', (tester) async {

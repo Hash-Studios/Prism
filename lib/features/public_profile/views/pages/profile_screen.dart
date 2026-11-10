@@ -3,8 +3,10 @@ import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/analytics/trackers/content_load_tracker.dart';
+import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/profile_links.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -40,6 +42,7 @@ import 'package:Prism/features/public_profile/views/widgets/profile_cover.dart';
 import 'package:Prism/features/public_profile/views/widgets/profile_parts.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_profile_loader.dart';
 import 'package:Prism/features/rewards/views/widgets/rank_progress_card.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_blocks/user_block_actions.dart';
 import 'package:Prism/features/user_blocks/views/blocked_user_profile_shell.dart';
@@ -67,10 +70,41 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ContentLoadTracker _contentLoadTracker = ContentLoadTracker();
-  late final String _profileIdentifier = widget.profileIdentifier ?? app_state.prismUser.id;
+  PublicProfileBloc? _profileBloc;
+  StreamSubscription<PrismUsersV2>? _sessionSubscription;
+  late String _viewerKey;
+  int _viewerRevision = 0;
+  late String _profileIdentifier = widget.profileIdentifier ?? app_state.prismUser.id;
   late Stream<PublicProfileEntity?> _profileStream = _watchProfile();
 
+  String _viewerKeyFor(PrismUsersV2 user) => '${user.loggedIn}:${user.id}';
+
+  void _onSessionChanged(PrismUsersV2 user) {
+    final String viewerKey = _viewerKeyFor(user);
+    if (_viewerKey == viewerKey) return;
+    final PublicProfileBloc? previousBloc = _profileBloc;
+    setState(() {
+      _viewerKey = viewerKey;
+      _viewerRevision++;
+      _profileBloc = null;
+      if (widget.profileIdentifier == null) _profileIdentifier = user.id;
+      _profileStream = _watchProfile();
+    });
+    unawaited(previousBloc?.close());
+  }
+
   Stream<PublicProfileEntity?> _watchProfile() => getIt<PublicProfileRepository>().watchProfile(_profileIdentifier);
+
+  Future<void> _runSignedInAction(_SignedInProfileAction action) async {
+    if (!mounted) return;
+    _onSessionChanged(app_state.prismUser);
+    final int revision = _viewerRevision;
+    final bool wasSignedIn = app_state.prismUser.loggedIn;
+    if (!await requireSignedInAction(context) || !mounted) return;
+    _onSessionChanged(app_state.prismUser);
+    if (_viewerRevision != revision + (wasSignedIn ? 0 : 1)) return;
+    await action(context, _profileBloc ??= getIt<PublicProfileBloc>());
+  }
 
   bool get _isOwnProfile {
     final String identifier = _profileIdentifier.trim();
@@ -98,14 +132,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _viewerKey = _viewerKeyFor(app_state.prismUser);
     _contentLoadTracker.start();
+    if (getIt.isRegistered<SessionRepository>()) {
+      _sessionSubscription = getIt<SessionRepository>().watchCurrentUser().listen(_onSessionChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    _sessionSubscription?.cancel();
+    unawaited(_profileBloc?.close());
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // usersV2 reads require auth per firestore.rules; guests (iOS browse-without-account)
-    // must sign in first, for both their own profile and other users' profiles.
-    if (!app_state.prismUser.loggedIn) {
+    // A guest (iOS browse-without-account) has no profile of their own, so it asks them to sign in. Other users'
+    // public profiles are readable without an account; their actions ask for sign-in.
+    if (!app_state.prismUser.loggedIn && _isOwnProfile) {
       return PrismPage(
         title: context.l10n.accountProfile,
         actions: <Widget>[
@@ -137,12 +182,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
       );
     }
-    return BlocProvider<PublicProfileBloc>(
-      create: (_) => getIt<PublicProfileBloc>(),
+    // Reset viewer-specific bloc state while keeping the public header visible through a stream refresh.
+    return BlocProvider<PublicProfileBloc>.value(
+      value: _profileBloc ??= getIt<PublicProfileBloc>(),
       child: _isOwnProfile
           ? StreamBuilder<PublicProfileEntity?>(
               stream: _profileStream,
               builder: (BuildContext context, AsyncSnapshot<PublicProfileEntity?> snapshot) => _ProfileChild(
+                viewerKey: '$_viewerKey:$_viewerRevision',
+                runSignedInAction: _runSignedInAction,
+                profileIsCurrent: snapshot.connectionState != ConnectionState.waiting,
                 ownProfile: true,
                 onProfileEdited: () => setState(() {}),
                 profile: _ownProfile(graphProfile: snapshot.data),
@@ -177,7 +226,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   );
                 }
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (snapshot.connectionState == ConnectionState.waiting && snapshot.data == null) {
                   return const ProfileSkeleton();
                 }
                 final PublicProfileEntity? profile = snapshot.data;
@@ -206,6 +255,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 }
                 final UserBlockRepository blocks = getIt<UserBlockRepository>();
+                final bool profileIsCurrent = snapshot.connectionState != ConnectionState.waiting;
                 return StreamBuilder<BlockedCreators>(
                   initialData: blocks.blockedCreators,
                   stream: blocks.watchBlockedCreators(),
@@ -220,7 +270,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       );
                       return BlockedUserProfileShell(targetUserId: profile.id, displayName: display);
                     }
-                    return _ProfileChild(ownProfile: false, profile: profile);
+                    return _ProfileChild(
+                      viewerKey: '$_viewerKey:$_viewerRevision',
+                      runSignedInAction: _runSignedInAction,
+                      profileIsCurrent: profileIsCurrent,
+                      ownProfile: false,
+                      profile: profile,
+                    );
                   },
                 );
               },
@@ -231,10 +287,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
 enum _ProfileMenuAction { tip, report, block }
 
+typedef _SignedInProfileAction = FutureOr<void> Function(BuildContext context, PublicProfileBloc bloc);
+
 class _ProfileChild extends StatefulWidget {
-  const _ProfileChild({required this.profile, required this.ownProfile, this.onProfileEdited});
+  const _ProfileChild({
+    required this.profile,
+    required this.viewerKey,
+    required this.runSignedInAction,
+    required this.profileIsCurrent,
+    required this.ownProfile,
+    this.onProfileEdited,
+  });
 
   final PublicProfileEntity profile;
+  final String viewerKey;
+  final Future<void> Function(_SignedInProfileAction action) runSignedInAction;
+  final bool profileIsCurrent;
   final bool ownProfile;
 
   /// Rebuilds the parent, which reads the edited fields from app_state.
@@ -263,7 +331,7 @@ class _ProfileChildState extends State<_ProfileChild> {
     );
   }
 
-  void _trackAction(AnalyticsActionValue action, {String sourceContext = 'profile_screen'}) {
+  void _trackAction(AnalyticsActionValue action, {String sourceContext = 'profile_screen', String? profileId}) {
     unawaited(
       analytics.track(
         SurfaceActionTappedEvent(
@@ -271,7 +339,7 @@ class _ProfileChildState extends State<_ProfileChild> {
           action: action,
           sourceContext: sourceContext,
           itemType: ItemTypeValue.user,
-          itemId: _profile.id,
+          itemId: profileId ?? _profile.id,
         ),
       ),
     );
@@ -350,29 +418,33 @@ class _ProfileChildState extends State<_ProfileChild> {
     widget.onProfileEdited?.call();
   }
 
-  void _toggleFollow({required bool following}) {
-    _trackAction(
-      following ? AnalyticsActionValue.unfollowTapped : AnalyticsActionValue.followTapped,
-      sourceContext: 'profile_screen_follow_action',
-    );
-    context.read<PublicProfileBloc>().add(
-      PublicProfileEvent.followChangeRequested(
-        follow: !following,
-        currentUserId: app_state.prismUser.id,
-        currentUserEmail: app_state.prismUser.email,
-        targetUserId: _profile.id,
-        targetUserEmail: '',
-        targetName: creatorLabel(
-          name: _profile.name,
-          username: _profile.username,
-          fallback: context.l10n.accountCreatorFallback,
+  Future<void> _toggleFollow({required bool following}) {
+    final PublicProfileEntity profile = _profile;
+    return widget.runSignedInAction((context, bloc) {
+      _trackAction(
+        following ? AnalyticsActionValue.unfollowTapped : AnalyticsActionValue.followTapped,
+        sourceContext: 'profile_screen_follow_action',
+        profileId: profile.id,
+      );
+      bloc.add(
+        PublicProfileEvent.followChangeRequested(
+          follow: !following,
+          currentUserId: app_state.prismUser.id,
+          currentUserEmail: app_state.prismUser.email,
+          targetUserId: profile.id,
+          targetUserEmail: '',
+          targetName: creatorLabel(
+            name: profile.name,
+            username: profile.username,
+            fallback: context.l10n.accountCreatorFallback,
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   bool _isFollowing(PublicProfileState state) {
-    return state.followOverrides[_profile.id] ?? _profile.isFollowedByCurrentUser;
+    return state.followOverrides[_profile.id] ?? (widget.profileIsCurrent && _profile.isFollowedByCurrentUser);
   }
 
   void _openFollowingList() {
@@ -385,54 +457,60 @@ class _ProfileChildState extends State<_ProfileChild> {
     context.router.push(FollowersRoute(userId: _profile.id));
   }
 
-  void _openGiftSheet() {
+  Future<void> _openGiftSheet() async {
     PrismHaptics.tap();
-    showPrismSheet<void>(
-      context,
-      builder: (BuildContext sheetContext) => GiftPassSheet(
-        recipientUid: _profile.id,
-        recipientName: creatorLabel(
-          name: _profile.name,
-          username: _profile.username,
-          fallback: context.l10n.accountCreatorFallback,
+    final PublicProfileEntity profile = _profile;
+    await widget.runSignedInAction(
+      (context, _) => showPrismSheet<void>(
+        context,
+        builder: (BuildContext sheetContext) => GiftPassSheet(
+          recipientUid: profile.id,
+          recipientName: creatorLabel(
+            name: profile.name,
+            username: profile.username,
+            fallback: context.l10n.accountCreatorFallback,
+          ),
         ),
       ),
     );
   }
 
   Future<void> _onMenuSelected(_ProfileMenuAction action) async {
-    final String uid = _profile.id.trim();
+    final PublicProfileEntity profile = _profile;
+    final String uid = profile.id.trim();
     switch (action) {
       case _ProfileMenuAction.tip:
-        if (uid.isEmpty) {
-          return;
-        }
-        await showTipSheet(
-          context,
-          creatorUid: uid,
-          creatorName: creatorLabel(
-            name: _profile.name,
-            username: _profile.username,
-            fallback: context.l10n.accountCreatorFallback,
+        if (uid.isEmpty) return;
+        await widget.runSignedInAction(
+          (context, _) => showTipSheet(
+            context,
+            creatorUid: uid,
+            creatorName: creatorLabel(
+              name: profile.name,
+              username: profile.username,
+              fallback: context.l10n.accountCreatorFallback,
+            ),
+            source: 'profile',
           ),
-          source: 'profile',
         );
       case _ProfileMenuAction.report:
         if (uid.isEmpty) {
           return;
         }
-        await showContentReportSheet(context, contentType: 'user', targetFirestoreDocId: uid);
+        await widget.runSignedInAction(
+          (context, _) => showContentReportSheet(context, contentType: 'user', targetFirestoreDocId: uid),
+        );
       case _ProfileMenuAction.block:
-        if (uid.isEmpty) {
-          return;
-        }
-        await confirmAndBlockUser(
-          context: context,
-          targetUserId: uid,
-          displayName: creatorLabel(
-            name: _profile.name,
-            username: _profile.username,
-            fallback: context.l10n.accountCreatorFallback,
+        if (uid.isEmpty) return;
+        await widget.runSignedInAction(
+          (context, _) => confirmAndBlockUser(
+            context: context,
+            targetUserId: uid,
+            displayName: creatorLabel(
+              name: profile.name,
+              username: profile.username,
+              fallback: context.l10n.accountCreatorFallback,
+            ),
           ),
         );
     }
@@ -707,7 +785,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                   _HeaderButton(
                     tooltip: context.l10n.accountGiftPassTooltip,
                     icon: Icons.card_giftcard_rounded,
-                    onPressed: _openGiftSheet,
+                    onPressed: () => unawaited(_openGiftSheet()),
                   ),
                   const SizedBox(width: PrismSpace.xxs),
                   // The same glass look as PrismIconButton(glass: true) while the cover shows: the shadow sits under
@@ -946,7 +1024,12 @@ class _ProfileChildState extends State<_ProfileChild> {
                     ),
                     if (!ownProfile) ...<Widget>[
                       // Shrink-wrapped so the line is centred like the rest of the header.
-                      IntrinsicWidth(child: FollowedByLine(creatorUid: _profile.id)),
+                      IntrinsicWidth(
+                        child: FollowedByLine(
+                          key: ValueKey<String>('${widget.viewerKey}:${_profile.id}'),
+                          creatorUid: _profile.id,
+                        ),
+                      ),
                       const SizedBox(height: PrismSpace.md),
                       BlocConsumer<PublicProfileBloc, PublicProfileState>(
                         listenWhen: (prev, curr) =>
@@ -970,7 +1053,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                                   variant: following ? PrismButtonVariant.tonal : PrismButtonVariant.primary,
                                   size: PrismButtonSize.compact,
                                   expand: true,
-                                  onPressed: () => _toggleFollow(following: following),
+                                  onPressed: () => unawaited(_toggleFollow(following: following)),
                                 ),
                               ),
                               ?linkButtons,
@@ -985,9 +1068,17 @@ class _ProfileChildState extends State<_ProfileChild> {
             ),
             // Content first: folders and wallpapers (uploads, or favourites when there are none), then the cards.
             SliverToBoxAdapter(
-              child: ProfileFoldersRow(ownerId: _profile.id, ownProfile: ownProfile),
+              child: ProfileFoldersRow(
+                key: ValueKey<String>('${widget.viewerKey}:${_profile.id}'),
+                ownerId: _profile.id,
+                ownProfile: ownProfile,
+              ),
             ),
-            UserProfileLoader(userId: _profile.id, ownProfile: ownProfile),
+            UserProfileLoader(
+              key: ValueKey<String>('${widget.viewerKey}:${_profile.id}'),
+              userId: _profile.id,
+              ownProfile: ownProfile,
+            ),
             if (ownProfile)
               SliverToBoxAdapter(
                 child: Padding(

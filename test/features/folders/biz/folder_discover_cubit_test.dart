@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
@@ -14,6 +16,8 @@ import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/domain/section_suggester.dart';
 import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
+import 'package:Prism/features/session/domain/entities/session_entity.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_user_block_repository.dart';
@@ -22,8 +26,10 @@ class _FakePublicFolders extends Fake implements PublicFoldersRepository {
   Result<FolderDiscoverLists> discover = Result.success(FolderDiscoverLists.empty);
   Result<Set<String>> followed = Result.success(<String>{});
   Result<void> followResult = Result.success<void>(null);
+  Future<Result<Set<String>>> Function(String userId)? followedHandler;
   Future<Result<void>> Function(String folderId, bool following)? followHandler;
   final List<({String id, bool following})> followCalls = <({String id, bool following})>[];
+  final List<String> followedQueries = <String>[];
   int discoverCalls = 0;
 
   @override
@@ -33,7 +39,10 @@ class _FakePublicFolders extends Fake implements PublicFoldersRepository {
   }
 
   @override
-  Future<Result<Set<String>>> fetchFollowedIds(String userId) async => followed;
+  Future<Result<Set<String>>> fetchFollowedIds(String userId) async {
+    followedQueries.add(userId);
+    return await followedHandler?.call(userId) ?? followed;
+  }
 
   @override
   Future<void> recordSignal(String folderId, FolderSignal signal) async {}
@@ -64,6 +73,36 @@ class _FakeFavourites extends Fake implements FavouriteWallsRepository {
 }
 
 class _FakeFirestore extends Fake implements FirestoreClient {}
+
+class _FakeSession extends Fake implements SessionRepository {
+  _FakeSession(this._user, {bool sync = true}) : changes = StreamController<PrismUsersV2>.broadcast(sync: sync);
+
+  PrismUsersV2 _user;
+  final StreamController<PrismUsersV2> changes;
+
+  @override
+  PrismUsersV2 get currentUser => _user;
+
+  void emit(PrismUsersV2 user) {
+    _user = user;
+    changes.add(user);
+  }
+
+  @override
+  Stream<PrismUsersV2> watchCurrentUser() async* {
+    yield _user;
+    yield* changes.stream;
+  }
+
+  @override
+  Future<Result<SessionEntity>> replaceCurrentUser(PrismUsersV2 user) async {
+    _user = user;
+    changes.add(user);
+    return Result.success(
+      SessionEntity(userId: user.id, loggedIn: user.loggedIn, premium: user.premium, subscriptionTier: 'free'),
+    );
+  }
+}
 
 DiscoverFolder _folder(String id, {String owner = 'owner', List<String> moods = const <String>[]}) =>
     DiscoverFolder(id: id, ownerId: owner, name: 'Folder $id', itemCount: 10, moods: moods);
@@ -119,31 +158,255 @@ void main() {
     expect(cubit.state.followed, <String>{'t1'});
   });
 
-  test('load for a guest emits ready with empty lists and does not call the repo', () async {
+  test('a guest sees the public lists and follows nothing', () async {
     app_state.prismUser = app_constants.createGuestPrismUser();
-    folders.discover = Result.success(FolderDiscoverLists(trending: <DiscoverFolder>[_folder('t1', owner: 'a')]));
+    folders
+      ..discover = Result.success(FolderDiscoverLists(trending: <DiscoverFolder>[_folder('t1', owner: 'a')]))
+      ..followed = Result.success(<String>{'t1'});
     final FolderDiscoverCubit cubit = cubitWith();
     addTearDown(cubit.close);
 
     await cubit.load();
 
     expect(cubit.state.status, FolderDiscoverStatus.ready);
-    expect(cubit.state.lists.isEmpty, isTrue);
-    expect(folders.discoverCalls, 0);
+    expect(_ids(cubit.state.lists.trending), <String>['t1']);
+    expect(folders.discoverCalls, 1);
+    // A guest has no follows, so the cubit does not read them.
+    expect(cubit.state.followed, isEmpty);
   });
 
-  test('a guest cannot see cached folders after the block stream updates', () async {
-    folders.discover = Result.success(FolderDiscoverLists(trending: <DiscoverFolder>[_folder('t1', owner: 'a')]));
+  test('a guest cannot call the follow callable through the cubit', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final FolderDiscoverCubit cubit = cubitWith();
+    addTearDown(cubit.close);
+    await cubit.load();
+
+    await cubit.toggleFollow(_folder('t1'));
+
+    expect(folders.followCalls, isEmpty);
+    expect(cubit.state.followed, isEmpty);
+    expect(cubit.state.busy, isEmpty);
+  });
+
+  test('a failed followed-id read cannot guess and issue a follow write', () async {
+    folders.followed = Result.error(const PublicFolderFailure('follow read failed'));
+    final FolderDiscoverCubit cubit = cubitWith();
+    addTearDown(cubit.close);
+    await cubit.load();
+
+    final PublicFolderFailure? failure = await cubit.toggleFollow(_folder('t1'));
+
+    expect(cubit.state.followStateReady, isFalse);
+    expect(failure?.message, 'Could not load follow state.');
+    expect(folders.followCalls, isEmpty);
+    expect(cubit.state.followed, isEmpty);
+  });
+
+  test('a failed followed-id read is retried before the next follow action', () async {
+    folders.followed = Result.error(const PublicFolderFailure('follow read failed'));
+    final FolderDiscoverCubit cubit = cubitWith();
+    addTearDown(cubit.close);
+    await cubit.load();
+    folders.followed = Result.success(<String>{'t1'});
+
+    await cubit.toggleFollow(_folder('t1'));
+
+    expect(cubit.state.followStateReady, isTrue);
+    expect(folders.followCalls, <({String id, bool following})>[(id: 't1', following: false)]);
+    expect(cubit.state.followed, isEmpty);
+  });
+
+  test('a guest after sign-out keeps the public lists but not the follows of the last account', () async {
+    folders
+      ..discover = Result.success(FolderDiscoverLists(trending: <DiscoverFolder>[_folder('t1', owner: 'a')]))
+      ..followed = Result.success(<String>{'t1'});
     final FolderDiscoverCubit cubit = cubitWith();
     addTearDown(cubit.close);
 
     await cubit.load();
+    expect(cubit.state.followed, <String>{'t1'});
     app_state.prismUser = app_constants.createGuestPrismUser();
     await cubit.load();
     blocks.completeInitial(<String>{});
     await Future<void>.delayed(Duration.zero);
 
-    expect(cubit.state.lists.isEmpty, isTrue);
+    expect(_ids(cubit.state.lists.trending), <String>['t1']);
+    expect(cubit.state.followed, isEmpty);
+  });
+
+  test('a signed-in logout refreshes public lists and clears followed and busy state', () async {
+    final _FakeSession session = _FakeSession(app_state.prismUser);
+    addTearDown(session.changes.close);
+    getIt.registerSingleton<SessionRepository>(session);
+    addTearDown(() => getIt.unregister<SessionRepository>());
+    folders.discover = Result.success(FolderDiscoverLists(trending: <DiscoverFolder>[_folder('t1', owner: 'a')]));
+    final Completer<Result<void>> pending = Completer<Result<void>>();
+    folders.followHandler = (_, _) => pending.future;
+    final FolderDiscoverCubit cubit = FolderDiscoverCubit(
+      folders,
+      favourites,
+      blocks,
+      _FakeFirestore(),
+      saveTraits: (_) async => const <WallTraits>[],
+    );
+    addTearDown(cubit.close);
+    await pumpEventQueue();
+    await cubit.load();
+    final Future<PublicFolderFailure?> follow = cubit.toggleFollow(_folder('t1'));
+    expect(cubit.state.busy, <String>{'t1'});
+
+    session.emit(app_constants.createGuestPrismUser());
+    await pumpEventQueue();
+    expect(folders.discoverCalls, 2);
+    pending.complete(Result.error(const PublicFolderFailure('old viewer')));
+    await follow;
+
+    expect(cubit.state.status, FolderDiscoverStatus.ready);
+    expect(_ids(cubit.state.lists.trending), <String>['t1']);
+    expect(cubit.state.followed, isEmpty);
+    expect(cubit.state.busy, isEmpty);
+  });
+
+  test('a guest who signs in to follow first loads the follows of the new account', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    folders
+      ..discover = Result.success(FolderDiscoverLists(trending: <DiscoverFolder>[_folder('t1', owner: 'a')]))
+      ..followed = Result.success(<String>{'t1'});
+    final FolderDiscoverCubit cubit = cubitWith();
+    addTearDown(cubit.close);
+    await cubit.load();
+
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'me'
+      ..loggedIn = true;
+    folders.followed = Result.success(<String>{'t1'});
+    await cubit.toggleFollow(_folder('t1'));
+
+    // The new account already follows t1, so the tap unfollows it instead of a second follow.
+    expect(folders.followCalls, <({String id, bool following})>[(id: 't1', following: false)]);
+    expect(cubit.state.followed, isEmpty);
+  });
+
+  test('a follow waits for the new account followed-id read already in flight', () async {
+    final _FakeSession session = _FakeSession(app_state.prismUser);
+    getIt.registerSingleton<SessionRepository>(session);
+    addTearDown(() async {
+      await session.changes.close();
+      await getIt.unregister<SessionRepository>();
+    });
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await session.replaceCurrentUser(app_state.prismUser);
+    final FolderDiscoverCubit cubit = cubitWith();
+    addTearDown(cubit.close);
+    await cubit.load();
+
+    final Completer<Result<Set<String>>> followedRead = Completer<Result<Set<String>>>();
+    await pumpEventQueue();
+    folders.followedHandler = (_) => followedRead.future;
+    final PrismUsersV2 signedIn = app_constants.createGuestPrismUser()
+      ..id = 'new-viewer'
+      ..loggedIn = true;
+    await session.replaceCurrentUser(signedIn);
+    await pumpEventQueue();
+    final Future<PublicFolderFailure?> toggle = cubit.toggleFollow(_folder('t1'));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(folders.followCalls, isEmpty);
+    expect(folders.followedQueries, <String>['new-viewer']);
+    followedRead.complete(Result.success(<String>{'t1'}));
+    await toggle;
+
+    expect(folders.followCalls, <({String id, bool following})>[(id: 't1', following: false)]);
+    expect(cubit.state.followed, isEmpty);
+  });
+
+  test('logout while Like your saves is pending leaves the guest empty state, not a skeleton', () async {
+    final _FakeSession session = _FakeSession(app_state.prismUser);
+    getIt.registerSingleton<SessionRepository>(session);
+    addTearDown(() async {
+      await session.changes.close();
+      await getIt.unregister<SessionRepository>();
+    });
+    final FolderDiscoverCubit cubit = cubitWith();
+    addTearDown(cubit.close);
+    await cubit.load();
+    final Completer<Result<List<FavouriteWallEntity>>> savesRead = Completer<Result<List<FavouriteWallEntity>>>();
+    favourites.fetchHandler = (_) => savesRead.future;
+    final Future<void> pending = cubit.loadLikeYourSaves();
+    await Future<void>.delayed(Duration.zero);
+
+    session.emit(app_constants.createGuestPrismUser());
+    await pumpEventQueue();
+
+    expect(cubit.state.likeYourSaves, isEmpty);
+    expect(cubit.state.status, FolderDiscoverStatus.ready);
+    savesRead.complete(Result.success(<FavouriteWallEntity>[]));
+    await pending;
+    expect(cubit.state.likeYourSaves, isEmpty);
+  });
+
+  test('an old follow tap cannot resume after its baseline outlives logout and same-account login', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final FolderDiscoverCubit cubit = cubitWith();
+    addTearDown(cubit.close);
+    await cubit.load();
+    final Completer<Result<Set<String>>> oldBaseline = Completer<Result<Set<String>>>();
+    folders.followedHandler = (_) => oldBaseline.future;
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'me'
+      ..loggedIn = true;
+    final Future<PublicFolderFailure?> oldTap = cubit.toggleFollow(_folder('t1'));
+
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await cubit.load();
+    folders
+      ..followedHandler = null
+      ..followed = Result.success(<String>{'t1'});
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'me'
+      ..loggedIn = true;
+    await cubit.load();
+    oldBaseline.complete(Result.success(<String>{}));
+    await oldTap;
+
+    expect(folders.followCalls, isEmpty);
+    expect(cubit.state.followed, <String>{'t1'});
+    expect(cubit.state.busy, isEmpty);
+  });
+
+  test('a queued logout and same-account login cannot resume an old follow baseline', () async {
+    final _FakeSession session = _FakeSession(app_state.prismUser, sync: false);
+    getIt.registerSingleton<SessionRepository>(session);
+    addTearDown(() async {
+      await session.changes.close();
+      await getIt.unregister<SessionRepository>();
+    });
+    final Completer<Result<Set<String>>> oldBaseline = Completer<Result<Set<String>>>();
+    folders.followedHandler = (_) => oldBaseline.future;
+    final FolderDiscoverCubit cubit = cubitWith();
+    addTearDown(cubit.close);
+    await pumpEventQueue();
+    final Future<void> oldLoad = cubit.load();
+    final Future<PublicFolderFailure?> oldTap = cubit.toggleFollow(_folder('t1'));
+
+    folders
+      ..followedHandler = null
+      ..followed = Result.success(<String>{'t1'});
+    session.emit(app_constants.createGuestPrismUser());
+    session.emit(
+      app_constants.createGuestPrismUser()
+        ..id = 'me'
+        ..loggedIn = true,
+    );
+    await pumpEventQueue();
+    oldBaseline.complete(Result.success(<String>{}));
+    await oldLoad;
+    await oldTap;
+
+    expect(folders.followCalls, isEmpty);
+    expect(folders.followedQueries, <String>['me', 'me']);
+    expect(cubit.state.followed, <String>{'t1'});
+    expect(cubit.state.busy, isEmpty);
   });
 
   test('a fetchDiscover failure emits failed', () async {
@@ -198,6 +461,29 @@ void main() {
     folders.followHandler = null;
     await cubit.load();
     oldRequest.complete(Result.error(const PublicFolderFailure('old viewer')));
+    await oldFollow;
+
+    expect(cubit.state.followed, contains('t1'));
+    expect(cubit.state.busy, isEmpty);
+  });
+
+  test('an old follow refusal cannot roll back after logout and login to the same account', () async {
+    final Completer<Result<void>> oldRequest = Completer<Result<void>>();
+    folders.followHandler = (_, _) => oldRequest.future;
+    final FolderDiscoverCubit cubit = cubitWith();
+    addTearDown(cubit.close);
+    await cubit.load();
+    final Future<PublicFolderFailure?> oldFollow = cubit.toggleFollow(_folder('t1'));
+
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    await cubit.load();
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'me'
+      ..loggedIn = true;
+    folders.followed = Result.success(<String>{'t1'});
+    folders.followHandler = null;
+    await cubit.load();
+    oldRequest.complete(Result.error(const PublicFolderFailure('old session')));
     await oldFollow;
 
     expect(cubit.state.followed, contains('t1'));

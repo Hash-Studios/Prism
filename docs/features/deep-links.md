@@ -6,7 +6,7 @@ The [route catalog](../../lib/core/router/deep_link_route_catalog.dart) owns pat
 
 ## Page catalog
 
-Paths below work with either HTTPS host or the `prism:` scheme. "Sign-in" means the destination resumes after successful sign-in. "Admin" requires an admin account.
+Paths below work with either HTTPS host or the `prism:` scheme. "Sign-in" means the destination resumes after successful sign-in. "Admin" requires an admin account. The [Access table](#access) gives the rule of each route.
 
 | Page family | Path or example | Input and access |
 |---|---|---|
@@ -28,14 +28,14 @@ Paths below work with either HTTPS host or the `prism:` scheme. "Sign-in" means 
 | Collection and category feeds | `/collection-view?collectionName=featured`, `/collection/featured`, `/category/Nature` | Requires a collection or category name. `name` aliases `collectionName`. |
 | Gallery | `/gallery?ids=wall1,wall2&source=push`, `/gallery?ids=wall1,wall2,wall3&source=link` | Requires 2 to 12 wall IDs in `ids`, separated by commas. IDs use letters, digits, `_` and `-`. Other query keys are refused. Opens `GalleryScreen`. |
 | Public profile | `/user/alice` | Requires a profile identifier. |
-| Followers and following | `/user/alice/followers`, `/user/alice/following` | Loads the named profile's current relation list. Query forms are `/followers?user=alice` and `/following?user=alice`. `identifier` aliases `user`. |
+| Followers and following | `/user/alice/followers`, `/user/alice/following` | Sign-in. Loads the named profile's current relation list. Query forms are `/followers?user=alice` and `/following?user=alice`. `identifier` aliases `user`. |
 | Edit profile | `/edit-profile` | Sign-in. |
 | Invite and referral page | `/share-prism` | Sign-in. This page differs from accepting a `/refer/...` link. |
 | Blocked accounts | `/blocked-accounts` | Sign-in. |
 | Settings, theme, and About | `/settings`, `/theme`, `/about` | Opens the selected page. |
 | Notifications | `/notifications` | Opens the notification inbox. |
 | Favourites and downloads | `/fav-walls`, `/downloads` | Opens the selected page. |
-| Library tabs | `/library?tab=favourites`, `/library?tab=folders`, `/library?tab=downloads`, `/library?tab=history`, `/wallpaper-history` | Opens the Library on the selected tab. Defaults to Favourites when `tab` is absent. Other `tab` values are rejected. `/wallpaper-history` opens the History tab. On iOS, which has no History tab, the history targets open Favourites. |
+| Library tabs | `/library?tab=favourites`, `/library?tab=folders`, `/library?tab=downloads`, `/library?tab=history`, `/wallpaper-history` | Opens the Library on the selected tab. Defaults to Favourites when `tab` is absent. Other `tab` values are rejected. `/wallpaper-history` opens the History tab on both platforms. |
 | Upload and edit wallpaper | `/upload-wall`, `/edit-wall` | Opens the image picker page, then requires sign-in for the upload or edit page. |
 | Submission review | `/review` | Sign-in. Shows the user's pending and rejected submissions. |
 | Rewards and coin history | `/rewards`, `/coin-history` | Opens the selected page. |
@@ -60,6 +60,8 @@ The picker workflows are `uploadWall`, `editWall`, `wallpaperFilter`, `downloadW
 
 The catalog rejects unknown query keys, repeated query keys, missing required resources, and unsupported selector values. The optional `utm_source`, `utm_medium`, and `utm_campaign` keys are accepted and removed before navigation.
 
+Catalog validation limits folder IDs to ASCII letters, digits, `_` and `-` (1 to 128 characters), and wallpaper IDs to ASCII letters, digits, `.`, `_` and `-` (1 to 200 characters). General identifiers may contain Unicode but are limited to 1,500 UTF-8 bytes, cannot contain path separators or control characters, and cannot equal `.` or `..`. Short-link codes contain 7 to 10 ASCII letters or digits. Folder invite query values must be exactly 10 ASCII letters or digits; malformed, repeated, or path-conflicting invite queries are refused.
+
 ## Access
 
 `lib/core/router/route_access.dart` gives each app route one access rule. `PlatformAccountGuard` reads this table when AutoRoute invokes the guard; it does not run for every tab selection. The dashboard shell is guarded when entered, so a signed-out Android user is stopped there. An iOS guest can select Rewards, where `RewardsPage` shows its own sign-in prompt.
@@ -74,7 +76,7 @@ A standalone `/rewards` deep link still passes through the global access guard. 
 | Owner | The signed-in user's own data. The guard needs an account. The Firestore rules and the page check the owner. |
 | Admin | Admins. The route also keeps its `AdminGuard`. |
 
-"Needs rules change" means that the content is public on the web, but `firestore.rules` lets only signed-in users read it in the app. Such a route keeps the sign-in rule. Change it to Public only after the rules let a signed-out user read that content.
+A Public route needs `firestore.rules` to let a signed-out user read what the page shows. A guest can read `profiles/{uid}`, `usernames/{name}`, `publicFolders/{id}` and its `items`, `folderTrending` and `creatorDirectory`. These hold only public projections. A signed-in reader still does not see a public Folder of a creator they block, or who blocks them. Follower lists, private `folders` and every write need sign-in.
 
 | Route | Deep link targets | Shows | Rule | Why |
 |---|---|---|---|---|
@@ -83,9 +85,9 @@ A standalone `/rewards` deep link still passes through the global access guard. 
 | `/about` | `about` | About Prism | Open | Legal and app information. |
 | `/not-found` | `notFound` | Unavailable page | Open | Unknown links land here. |
 | `/dashboard` | `dashboard` | App shell | Public | Guests browse on iOS. |
-| `/dashboard/home` | `home` | Home feed | Public | Walls are public. The creators and folders rows hide for guests. |
+| `/dashboard/home` | `home` | Home feed | Public | Walls are public. The creators and folders rows show for guests too. |
 | `/dashboard/search` | `searchTab` | Search | Public | Walls are public. |
-| `/dashboard/search/users` | `userSearch` | Creator search | Public, needs rules change | `profiles` needs sign-in. The page shows its own sign-in prompt to a guest. |
+| `/dashboard/search/users` | `userSearch` | Creator search | Public | The page shows its own sign-in prompt to a guest. Creator search is not open to guests. |
 | `/dashboard/collection` | `collectionTab` | Curated collections | Public | `collections` is public. |
 | `/dashboard/rewards` | `rewardsTab` | Coins and streak | Owner | The user's own coins. |
 | `/wallpaper-detail` | `wallpaperDetail` | One wall | Public | Reviewed walls are public. Save, favourite and Set ask for sign-in. |
@@ -101,11 +103,11 @@ A standalone `/rewards` deep link still passes through the global access guard. 
 | `/requests` | `wallRequests` | Wall requests | Public | `listWallRequests` serves guests. Vote and Ask ask for sign-in. |
 | `/challenges/:challengeId` | `weeklyChallenge` | Weekly challenge | Public | `weeklyChallenges` is public. Entry asks for sign-in. |
 | `/drops`, `/drops/:weekKey`, `/drops/:weekKey/preview/:wallId` | `drops`, `dropDetail`, `dropPreview` | Weekly Drop | Public | `drops` is public. Buying asks for sign-in. |
-| `/user/:identifier` | `profile` | Creator profile | Public, needs rules change | `profiles` needs sign-in. The page shows its own sign-in prompt to a guest. |
-| `/followers`, `/following` | `followers`, `following` | Follower lists | Account, needs rules change | `profiles/*/followers` and `profiles/*/following` need sign-in. A guest link opens the profile, which asks for sign-in. |
-| `/creators` | `creators` | Creator directory | Account, needs rules change | `creatorDirectory` needs sign-in. |
-| `/folders` | `foldersDiscover` | Discover folders | Account, needs rules change | `folderTrending` and `publicFolders` need sign-in. |
-| `/folder/:folderId` | `folder` | One folder | Owner, needs rules change for a public folder | A private folder is for its owner and members. A public folder reads `publicFolders`, which needs sign-in. |
+| `/user/:identifier` | `profile` | Creator profile | Public | `profiles` and `usernames` are public reads. Follow, Gift, Block and Report ask for sign-in. Tip is hidden from guests. A guest's own profile shows the sign-in prompt. |
+| `/followers`, `/following` | `followers`, `following` | Follower lists | Account | `profiles/*/followers` and `profiles/*/following` need sign-in. A guest relation link opens the public profile. |
+| `/creators` | `creators` | Creator directory | Public | `creatorDirectory` is a public read. Follow asks for sign-in. |
+| `/folders` | `foldersDiscover` | Discover folders | Public | `folderTrending` and `publicFolders` are public reads. Follow asks for sign-in. A guest has no saves, so "Like your saves" shows its empty message. The app hides creators the viewer blocked. A creator who blocked the viewer can still show; their Folder then opens as "This folder is private or no longer exists". |
+| `/folder/:folderId` | `folder` | One folder | Public | A guest sees the public folder. Follow asks for sign-in. A private folder shows only to its owner and members; a guest gets "This folder is private or no longer exists". |
 | `/folder/invite/:code` | `folderInvite` | Folder invite | Account | An invite joins a private folder. |
 | `/ai` | `ai` | AI wallpapers | Account | Generation spends coins. |
 | `/download-wallpaper`, `/wallpaper-filter`, `/choose-wallpaper`, `/photo-preview` | `downloadWallpaperInput`, `wallpaperFilterInput`, `chooseImage`, `photoPreview` | Wallpaper tools | Account | These save or edit images. |
@@ -152,19 +154,18 @@ A network failure during short-code resolution can defer the request until conne
 
 Native code turns a share into a `prism://share-in` link. Android uses `ShareTargetActivity`. iOS uses the Share Extension. The dispatcher handles this link like any other link. It waits for startup, then records `deep_link_received` with `target_type` `shared_item`. For the share flow, see [share-to-prism.md](share-to-prism.md).
 
-## Preserved aliases
+## Preserved aliases and intents
 
-| Alias | Destination or behavior |
+| Link | Destination or behavior |
 |---|---|
-| `/streak`, `/coin-transactions` | Standalone Rewards page. |
-| `/dashboard/streak` | Dashboard Rewards tab. |
-| `/paywall` | Premium page. |
-| `/share/wall1?source=prism&thumb=ENCODED_HTTPS_IMAGE_URL` | Legacy wallpaper share. Requires an ID and an image or thumbnail value. The detail page resolves the wallpaper by ID. |
-| `/profile/alice`, `/fprofile/alice`, `/follower-profile/alice` | Public profile. Existing profile query aliases remain in `DeepLinkParser`. |
-| `/setup`, `/share-setup` | Reports that home screen setups are unavailable and opens Home. |
-| `/refer/INVITER_ID`, `/referral/INVITER_ID` | Saves the referral and opens Rewards. A signed-out user can sign in later to claim an eligible reward. |
-| `/l/SHORT_CODE`, `/l?code=SHORT_CODE` | Resolves the short code, then validates its canonical URL through the same parser. |
-| `prism://share-in?id=ID`, `prism://share-in?text=TEXT` | A share from another app. Only the `prism:` scheme. See [share-to-prism.md](share-to-prism.md). |
+| `/share/wall1?source=prism&thumb=ENCODED_HTTPS_IMAGE_URL` | Legacy wallpaper-share intent. The wall ID is required; image and thumbnail URLs are optional. `id` can supply the ID in the query. `source`, `provider`, and `wallpaper_provider` can supply the source. `url`, `wallpaperUrl`, and `wallpaper_url` can supply the image URL. `thumb`, `thumbUrl`, `thumbnail`, `thumbnailUrl`, and `wallpaper_thumb` can supply a thumbnail. The detail page resolves the wall by ID. |
+| `/profile/alice`, `/fprofile/alice`, `/follower-profile/alice`, `/user?username=alice` | User-profile intent. Roots are `profile`, `fprofile`, `follower-profile`, and `user`. The identifier can also come from `identifier`, `username`, `user`, or `email`. The `/user/alice` page route is handled by the page catalog. |
+| `/setup`, `/share-setup` | Setup intent. Shows the unavailable-setup message and opens the Home tab. |
+| `/refer/INVITER_ID`, `/referral/INVITER_ID` | Referral intent. Saves the referral and opens the Dashboard Rewards tab. |
+| `/l/SHORT_CODE`, `/l?code=SHORT_CODE` | Short-code intent. Resolves the code, then validates its canonical URL through the same parser. Network failures can defer one retry. |
+| `prism://share-in?id=ID`, `prism://share-in?text=TEXT` | Share-in intent from another app. Only the `prism:` scheme is accepted. Supply either a 36-character lowercase hex-and-hyphen `id` or non-empty `text` up to 2,048 characters. See [share-to-prism.md](share-to-prism.md). |
+
+The `share`, profile, setup, referral, short-code, and share-in entries are legacy intents parsed by `DeepLinkParser`. They are not additional `AppRouter` pages. `/paywall`, `/coin-transactions`, `/streak`, and `/dashboard/streak` are actual `RedirectRoute`s. Their access rules match their destinations. The router's `*` redirect sends unmatched paths to `/not-found`.
 
 Short links with `type: "page"` accept only catalogued app paths and preserve validated query parameters. Canonical paths with invalid queries cannot fall through to permissive legacy aliases.
 

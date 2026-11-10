@@ -21,7 +21,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// The page behind a folder invite link. A guest can read the preview; joining asks them to sign in.
+/// The page behind a folder invite link. The router requires sign-in before showing the preview.
 @RoutePage()
 class FolderInviteScreen extends StatefulWidget {
   const FolderInviteScreen({super.key, @PathParam('code') required this.code});

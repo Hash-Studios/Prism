@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
@@ -21,12 +22,15 @@ import 'package:Prism/features/folders/biz/folder_discover_cubit.dart';
 import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
+import 'package:Prism/features/session/domain/entities/session_entity.dart';
+import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart' show when;
 
 import '../../support/fake_app_analytics.dart';
 import '../../support/favourite_test_scope.dart';
@@ -46,6 +50,9 @@ class FakeCreatorDirectoryRepository implements CreatorDirectoryRepository {
 
   /// Uids the viewer follows.
   Set<String> followed = <String>{};
+
+  Object? followedError;
+  Completer<Set<String>>? followedGate;
 
   final List<({String? category, int? afterRank})> fetchCalls = <({String? category, int? afterRank})>[];
   final List<List<String>> followedAmongCalls = <List<String>>[];
@@ -67,6 +74,10 @@ class FakeCreatorDirectoryRepository implements CreatorDirectoryRepository {
   @override
   Future<Set<String>> followedAmong(List<String> uids) async {
     followedAmongCalls.add(List<String>.of(uids));
+    final Object? error = followedError;
+    if (error != null) throw error;
+    final Completer<Set<String>>? gate = followedGate;
+    if (gate != null) return gate.future;
     return uids.where(followed.contains).toSet();
   }
 
@@ -101,10 +112,46 @@ class EmptyCreatorBlocks extends Fake implements UserBlockRepository {
   Future<BlockedCreators> loadBlockedCreators() async => blockedCreators;
 }
 
+class FakeCreatorSessionRepository extends Fake implements SessionRepository {
+  FakeCreatorSessionRepository(this.currentUser);
+
+  @override
+  PrismUsersV2 currentUser;
+
+  final StreamController<PrismUsersV2> _changes = StreamController<PrismUsersV2>.broadcast();
+
+  @override
+  Future<Result<SessionEntity>> replaceCurrentUser(PrismUsersV2 user) async {
+    currentUser = user;
+    return Result.success(
+      SessionEntity(
+        userId: user.id,
+        loggedIn: user.loggedIn,
+        premium: user.premium,
+        subscriptionTier: user.subscriptionTier,
+      ),
+    );
+  }
+
+  @override
+  Stream<PrismUsersV2> watchCurrentUser() async* {
+    yield currentUser;
+    yield* _changes.stream;
+  }
+
+  void setUser(PrismUsersV2 user, {bool notify = true}) {
+    currentUser = user;
+    if (notify) _changes.add(user);
+  }
+
+  Future<void> close() => _changes.close();
+}
+
 class MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
 
 MockPublicProfileBloc publicProfileBlocWith({PublicProfileState? state}) {
   final MockPublicProfileBloc bloc = MockPublicProfileBloc();
+  when(() => bloc.isClosed).thenReturn(false);
   whenListen(bloc, const Stream<PublicProfileState>.empty(), initialState: state ?? PublicProfileState.initial());
   return bloc;
 }
@@ -164,9 +211,10 @@ Future<void> pumpCreators(
   Widget home, {
   required FakeCreatorDirectoryRepository repository,
   required PublicProfileBloc profileBloc,
+  PublicProfileBloc Function()? profileBlocFactory,
 }) async {
   getIt.registerSingleton<UserBlockRepository>(EmptyCreatorBlocks());
-  getIt.registerFactory<PublicProfileBloc>(() => profileBloc);
+  getIt.registerFactory<PublicProfileBloc>(profileBlocFactory ?? () => profileBloc);
   registerCreatorDirectoryFakes(repository: repository, profileBloc: false);
   await tester.pumpWidget(
     MaterialApp(

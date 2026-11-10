@@ -5,13 +5,19 @@ class CreatorFollowChanges extends ChangeNotifier {
   String _viewer = '';
   final Map<String, bool> _following = <String, bool>{};
 
-  bool? following(String uid) => _viewer == app_state.prismUser.id ? _following[uid] : null;
+  bool? following(String uid) =>
+      app_state.prismUser.loggedIn && _viewer == app_state.prismUser.id ? _following[uid] : null;
+
+  /// Session scopes rebuild their buttons after this reset, so no build-time notification is needed.
+  void resetForViewer(String viewer) {
+    if (_viewer == viewer) return;
+    _viewer = viewer;
+    _following.clear();
+  }
 
   void record(String uid, bool following) {
-    if (_viewer != app_state.prismUser.id) {
-      _viewer = app_state.prismUser.id;
-      _following.clear();
-    }
+    if (!app_state.prismUser.loggedIn) return;
+    resetForViewer(app_state.prismUser.id);
     _following[uid] = following;
     notifyListeners();
   }

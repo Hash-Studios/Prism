@@ -2,6 +2,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/creator_directory/biz/creator_directory_cubit.dart';
 import 'package:Prism/features/creator_directory/domain/creator_directory_entities.dart';
+import 'package:Prism/features/creator_directory/views/creator_directory_session_scope.dart';
 import 'package:Prism/features/creator_directory/views/widgets/creator_directory_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
@@ -30,26 +31,30 @@ class _SimilarCreatorsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: <BlocProvider<dynamic>>[
-        BlocProvider<PublicProfileBloc>(create: (_) => getIt<PublicProfileBloc>()),
-        BlocProvider<CreatorDirectoryCubit>(create: (_) => getIt<CreatorDirectoryCubit>()..show(creators)),
-      ],
-      child: BlocListener<PublicProfileBloc, PublicProfileState>(
-        listenWhen: (prev, curr) => curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
-        listener: (context, state) => showFollowOutcomeToast(context, state.followOutcome!),
-        child: PrismSheetBody(
-          title: context.l10n.creatorsMoreLike(name),
-          message: context.l10n.creatorsSimilarSubtitle,
-          child: BlocBuilder<CreatorDirectoryCubit, CreatorDirectoryState>(
-            builder: (context, state) => Column(
-              children: <Widget>[
-                for (final DirectoryCreator c in state.creators)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
-                    child: CreatorFollowRow(creator: c.entry, followed: false, source: 'similar', avatarSize: 44),
-                  ),
-              ],
+    return CreatorDirectorySessionScope(
+      child: BlocProvider<CreatorDirectoryCubit>(
+        create: (_) => getIt<CreatorDirectoryCubit>()..show(creators),
+        child: BlocListener<PublicProfileBloc, PublicProfileState>(
+          listenWhen: (prev, curr) => curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
+          listener: (context, state) => showFollowOutcomeToast(context, state.followOutcome!),
+          child: PrismSheetBody(
+            title: context.l10n.creatorsMoreLike(name),
+            message: context.l10n.creatorsSimilarSubtitle,
+            child: BlocBuilder<CreatorDirectoryCubit, CreatorDirectoryState>(
+              builder: (context, state) => Column(
+                children: <Widget>[
+                  for (final DirectoryCreator c in state.creators)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
+                      child: CreatorFollowRow(
+                        creator: c.entry,
+                        followed: state.followed.contains(c.uid),
+                        source: 'similar',
+                        avatarSize: 44,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),

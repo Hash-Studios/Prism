@@ -12,6 +12,7 @@ import 'package:Prism/features/auto_rotate/biz/bloc/auto_rotate_bloc.j.dart';
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
+import 'package:Prism/features/folders/biz/public_folder_cubit.dart';
 import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
 import 'package:Prism/features/folders/domain/entities/folder_member.dart';
@@ -25,6 +26,8 @@ import 'package:Prism/features/folders/views/widgets/folder_members_row.dart';
 import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/hints/views/feature_hint.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
+import 'package:Prism/features/moods/domain/entities/wall_mood.dart';
+import 'package:Prism/features/moods/domain/repositories/mood_repository.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -188,6 +191,18 @@ PrismFavouriteWall _wall(String id) => PrismFavouriteWall(
 Finder _menuItem(String label) =>
     find.ancestor(of: find.text(label), matching: find.byWidgetPredicate((widget) => widget is PopupMenuItem));
 
+class _NoMoodWalls implements MoodRepository {
+  @override
+  Future<List<MoodList>> fetchMoods() async => const <MoodList>[];
+
+  @override
+  Future<List<PrismWallpaper>> fetchMoodWalls(List<String> ids, {bool keepOrder = false}) async =>
+      const <PrismWallpaper>[];
+
+  @override
+  Stream<void> watchVisibilityChanges() => const Stream<void>.empty();
+}
+
 class _NoPublicFolders implements PublicFoldersRepository {
   @override
   Future<Result<Set<String>>> fetchFollowedIds(String userId) async => Result.success(<String>{});
@@ -238,7 +253,9 @@ void main() {
   }
 
   testWidgets('a folder page shows a load error with retry when the folder list fails', (tester) async {
-    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'u1'
+      ..loggedIn = true;
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     addTearDown(() => getIt.unregister<ConnectivityService>());
     final repo = _FakeFoldersRepository()..failLoad = true;
@@ -268,12 +285,55 @@ void main() {
     expect(repo.calls.where((call) => call == 'fetchFolders:u1'), hasLength(2));
   });
 
+  testWidgets('a signed-out viewer with a retained uid cannot see cached private folders', (tester) async {
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'u1'
+      ..loggedIn = false;
+    getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
+    addTearDown(() => getIt.unregister<ConnectivityService>());
+    getIt.registerFactory<PublicFolderCubit>(() => PublicFolderCubit(_NoPublicFolders(), _NoMoodWalls()));
+    addTearDown(() => getIt.unregister<PublicFolderCubit>());
+    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Private work')]);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
+    addTearDown(bloc.close);
+    await bloc.run((id) => FoldersEvent.started(userId: 'u1', operationId: id));
+    final router = _MockStackRouter();
+    when(() => router.stack).thenReturn(const <AutoRoutePage<dynamic>>[]);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: kLightTheme,
+        home: StackRouterScope(
+          controller: router,
+          stateHash: 0,
+          child: BlocProvider<FoldersBloc>.value(
+            value: bloc,
+            child: BlocProvider<AutoRotateBloc>.value(
+              value: _rotationBloc(),
+              child: const FolderScreen(folderId: 'work'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await settle(tester);
+    expect(find.text('Private work'), findsNothing);
+    expect(find.text('This folder is private or no longer exists'), findsOneWidget);
+    expect(repo.calls.where((call) => call.startsWith('fetchItems:')), isEmpty);
+  });
+
   testWidgets('a mounted folder page reloads its items after switching accounts and hides them on sign-out', (
     tester,
   ) async {
-    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'u1'
+      ..loggedIn = true;
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     addTearDown(() => getIt.unregister<ConnectivityService>());
+    // A guest gets the public projection, and this folder has none.
+    getIt.registerFactory<PublicFolderCubit>(() => PublicFolderCubit(_NoPublicFolders(), _NoMoodWalls()));
+    addTearDown(() => getIt.unregister<PublicFolderCubit>());
     // Both accounts have a folder with this id, so the page loads it as the owner each time.
     final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work')]);
     final bloc = FoldersBloc(repo, _NoPublicFolders());
@@ -301,7 +361,9 @@ void main() {
     await settle(tester);
     expect(repo.calls.where((call) => call == 'fetchItems:work'), hasLength(1));
 
-    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'u2'
+      ..loggedIn = true;
     bloc.add(const FoldersEvent.started(userId: 'u2'));
     await settle(tester);
     expect(repo.calls.where((call) => call == 'fetchItems:work'), hasLength(2));
@@ -309,11 +371,14 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser();
     bloc.add(const FoldersEvent.cleared());
     await settle(tester);
-    expect(find.text('Sign in to use folders'), findsOneWidget);
+    expect(find.text('This folder is private or no longer exists'), findsOneWidget);
+    expect(find.text('Work'), findsNothing);
   });
 
   testWidgets('a folder page reused for another folder loads and shows that folder', (tester) async {
-    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'u1'
+      ..loggedIn = true;
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     addTearDown(() => getIt.unregister<ConnectivityService>());
     final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('work', 'Work'), _folder('trips', 'Trips')]);
@@ -349,7 +414,9 @@ void main() {
   });
 
   testWidgets('a remove confirmed after the page moved to another folder removes nothing', (tester) async {
-    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'u1'
+      ..loggedIn = true;
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     addTearDown(() => getIt.unregister<ConnectivityService>());
     const FavouriteWallEntity wall = PrismFavouriteWall(
@@ -406,7 +473,9 @@ void main() {
     List<FavouriteWallEntity> walls = const <FavouriteWallEntity>[],
     String addedByUid = 'owner',
   }) async {
-    app_state.prismUser = app_constants.createGuestPrismUser()..id = userId;
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = userId
+      ..loggedIn = true;
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     final _MockSharedFoldersRepository shared = _MockSharedFoldersRepository();
     when(() => shared.addedBy(any(), any())).thenAnswer((_) async => Result.success<String?>(addedByUid));
@@ -599,7 +668,9 @@ void main() {
     List<FolderEntity>? folders,
     List<FavouriteWallEntity> walls = const <FavouriteWallEntity>[],
   }) async {
-    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u1';
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'u1'
+      ..loggedIn = true;
     getIt.registerSingleton<ConnectivityService>(_OnlineConnectivity());
     addTearDown(() => getIt.unregister<ConnectivityService>());
     final repo = _FakeFoldersRepository(folders: folders ?? <FolderEntity>[_folder('work', 'Work')]);

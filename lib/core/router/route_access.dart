@@ -22,8 +22,7 @@ enum RouteAccess {
 /// The access rule of every page route in [AppRouter], by route name. A route that is not here needs an account, and
 /// `test/core/router/route_access_test.dart` fails until it gets a row.
 ///
-/// "Needs rules change" rows show public content, but firestore.rules lets only signed-in users read it. Make them
-/// [RouteAccess.public] only after the rules let a signed-out user read that content.
+/// A [RouteAccess.public] row needs firestore.rules to let a signed-out user read what the page shows.
 const Map<String, RouteAccess> routeAccess = <String, RouteAccess>{
   SplashWidgetRoute.name: RouteAccess.open,
   OnboardingV2ShellRoute.name: RouteAccess.open,
@@ -52,17 +51,18 @@ const Map<String, RouteAccess> routeAccess = <String, RouteAccess>{
   DropsRoute.name: RouteAccess.public,
   DropDetailRoute.name: RouteAccess.public,
   DropPreviewRoute.name: RouteAccess.public,
-  // Needs rules change: profiles needs sign-in, so both pages show their own sign-in prompt to a guest.
+  // Creator search shows its own sign-in prompt to a guest. Profiles and usernames are public reads.
   UserSearchRoute.name: RouteAccess.public,
   ProfileRoute.name: RouteAccess.public,
+  // creatorDirectory, folderTrending and publicFolders are public reads.
+  CreatorsRoute.name: RouteAccess.public,
+  FoldersDiscoverRoute.name: RouteAccess.public,
+  // A guest sees a public folder only. A private folder stays owner or member only (rules and page check it).
+  FolderRoute.name: RouteAccess.public,
 
-  // Needs rules change: profiles/*/followers and profiles/*/following need sign-in.
+  // profiles/*/followers and profiles/*/following need sign-in.
   FollowersRoute.name: RouteAccess.account,
   FollowingListRoute.name: RouteAccess.account,
-  // Needs rules change: creatorDirectory needs sign-in.
-  CreatorsRoute.name: RouteAccess.account,
-  // Needs rules change: folderTrending and publicFolders need sign-in.
-  FoldersDiscoverRoute.name: RouteAccess.account,
   FolderInviteRoute.name: RouteAccess.account,
   AiTabRoute.name: RouteAccess.account,
   DownloadWallpaperRoute.name: RouteAccess.account,
@@ -82,8 +82,6 @@ const Map<String, RouteAccess> routeAccess = <String, RouteAccess>{
   LeaderboardRoute.name: RouteAccess.account,
   DrawRoute.name: RouteAccess.account,
 
-  // Needs rules change for a public folder: publicFolders needs sign-in. A private folder stays owner or member only.
-  FolderRoute.name: RouteAccess.owner,
   RewardsTabRoute.name: RouteAccess.owner,
   RewardsRoute.name: RouteAccess.owner,
   CoinHistoryRoute.name: RouteAccess.owner,

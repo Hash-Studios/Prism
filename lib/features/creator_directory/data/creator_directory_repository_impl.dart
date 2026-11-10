@@ -42,7 +42,6 @@ class CreatorDirectoryRepositoryImpl implements CreatorDirectoryRepository {
     int limit = CreatorDirectoryRepository.pageSize,
   }) async {
     final String viewer = _viewer;
-    if (viewer.isEmpty) return const CreatorPage(creators: <DirectoryCreator>[], nextRank: null);
     final List<CreatorDirectoryEntry> entries = await _firestore.query<CreatorDirectoryEntry>(
       FirestoreQuerySpec(
         collection: _collection,
@@ -60,7 +59,8 @@ class CreatorDirectoryRepositoryImpl implements CreatorDirectoryRepository {
       (data, docId) => CreatorDirectoryEntry.fromMap(data, docId),
     );
     final List<DirectoryCreator> creators = await _withWalls(await _visible(entries));
-    if (!_sameViewer(viewer)) return const CreatorPage(creators: <DirectoryCreator>[], nextRank: null);
+    // A guest reads the directory too. A sign-in or sign-out during the read drops the page.
+    if (_viewer != viewer) return const CreatorPage(creators: <DirectoryCreator>[], nextRank: null);
     return CreatorPage(creators: creators, nextRank: entries.length < limit ? null : entries.last.rank);
   }
 
