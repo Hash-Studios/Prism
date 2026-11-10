@@ -8,7 +8,7 @@
  *   3. emulators                      separate shell; runs until Ctrl-C
  *   4. seed                           users, walls, private folders made public by setFolderPublic
  *   5. rank                           folderStatsDaily docs, rebuildFolderDiscovery, assertions
- *   6. build-ios | build-apk --user viewer|admin|creator
+ *   6. build-ios | build-apk --user viewer|admin|creator|guest
  *   7. serve                          separate shell; fixture HTTPS on 19375
  *   8. hide                           setFolderDiscoveryHidden as admin, then assertions
  *   9. evidence                       prints a JSON summary
@@ -26,7 +26,7 @@ const repo = path.resolve(__dirname, '..');
 const guardDir = path.join(__dirname, 'weekly_challenge_qa');
 const args = process.argv.slice(2);
 const command = args.shift();
-const BUILD_USERS = ['viewer', 'creator', 'admin'];
+const BUILD_USERS = ['viewer', 'creator', 'admin', 'guest'];
 let runtime = '/tmp/prism-folder-discover-qa';
 let user = null;
 while (args.length) {
@@ -35,10 +35,10 @@ while (args.length) {
   if (option === '--root' && value) runtime = path.resolve(value);
   else if (option === '--user' && BUILD_USERS.includes(value)) user = value;
   else if (option === '--project' && value === PROJECT) continue;
-  else throw Error('Use COMMAND [--root /tmp/prism-folder-discover-qa] [--user viewer|creator|admin] [--project demo-prism]; refusing other projects/options');
+  else throw Error('Use COMMAND [--root /tmp/prism-folder-discover-qa] [--user viewer|creator|admin|guest] [--project demo-prism]; refusing other projects/options');
 }
 if (!/^\/tmp\/prism-folder-discover-qa[^/]*$/.test(runtime)) throw Error('Runtime must be /tmp/prism-folder-discover-qa*');
-if (/^build-/.test(command) && !user) throw Error(`${command} needs --user viewer, creator or admin`);
+if (/^build-/.test(command) && !user) throw Error(`${command} needs --user viewer, creator, admin or guest`);
 if (user && !/^build-/.test(command)) throw Error('--user applies only to build-apk and build-ios');
 
 const PASSWORD = 'local-demo-only-password';
