@@ -1,10 +1,12 @@
 import 'dart:io';
 
+import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_catalog_resolver.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/deep_link_route_catalog.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -21,7 +23,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   const DeepLinkParser parser = DeepLinkParser();
-  setUp(() => DailyMomentConfig.enabledOverride = false);
+  setUp(() {
+    DailyMomentConfig.enabledOverride = false;
+    // Relation links read a profile, which needs sign-in. The guest case sets its own user.
+    app_state.prismUser = createGuestPrismUser()..loggedIn = true;
+  });
+  tearDown(() => app_state.prismUser = createGuestPrismUser());
   tearDown(() => DailyMomentConfig.enabledOverride = null);
 
   test('daily moment links respect the feature flag', () async {
@@ -271,6 +278,17 @@ void main() {
       profileLookup: (String _) async => profile,
     ))!;
     expect((relation.args! as FollowersRouteArgs).userId, profile.id);
+  });
+
+  test('a guest relation link opens the profile, which asks for sign-in, without a profile read', () async {
+    app_state.prismUser = createGuestPrismUser();
+    for (final String path in ['/user/alice/followers', '/user/alice/following']) {
+      final PageRouteInfo? route = await routeForPageLink(
+        parser.parse(Uri.parse(path)) as PageLinkIntent,
+        profileLookup: (String _) async => throw StateError('a guest cannot read profiles'),
+      );
+      expect((route!.args! as ProfileRouteArgs).profileIdentifier, 'alice', reason: path);
+    }
   });
 
   test('read-only wallpaper lookup maps provider repositories to source entities', () async {
