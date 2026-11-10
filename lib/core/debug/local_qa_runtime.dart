@@ -6,7 +6,6 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/app_analytics.dart';
 import 'package:Prism/core/debug/local_qa_adapters.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/widgets/live_wall_video.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/local_qa_firestore.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
@@ -14,6 +13,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/persistence/migrations/persistence_migration_runner.dart';
 import 'package:Prism/core/persistence/persistence_runtime.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/live_wall_video.dart';
 import 'package:Prism/env/env.dart';
 import 'package:Prism/features/ads/domain/repositories/ads_repository.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';

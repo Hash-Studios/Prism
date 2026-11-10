@@ -205,6 +205,21 @@ async function preflight() {
   console.log('The scheduled release harness uses the same ports. Run only one harness at a time.');
 }
 
+// Runtime copy only: production refuses a preview base with a port. The QA preview base is https://localhost:19375.
+const PREVIEW_PORT_PATCHES = [
+  ['functions/lib/r2Storage.real.js', 'preview.password || preview.port || preview.search', 'preview.password || preview.search'],
+  ['functions/lib/ownedAssetDelivery.js', 'parsed.password || parsed.port || parsed.search', 'parsed.password || parsed.search'],
+  ['functions/lib/ownedAssetDelivery.js', 'url.hostname !== endpoint.hostname || url.port ||', 'url.hostname !== endpoint.hostname || url.port !== endpoint.port ||'],
+];
+function allowPreviewPort() {
+  for (const [file, from, to] of PREVIEW_PORT_PATCHES) {
+    const target = runtimeFile(file);
+    const source = fs.readFileSync(target, 'utf8');
+    assert.equal(source.split(from).length, 2, `Expected one preview port check in ${file}`);
+    fs.writeFileSync(target, source.replace(from, to));
+  }
+}
+
 async function prepare() {
   await preflight();
   fs.mkdirSync(runtime, {recursive: false, mode: 0o700});
@@ -223,6 +238,7 @@ async function prepare() {
   write('functions/lib/r2Storage.js', `'use strict';\n// QA runtime only: disk stand-in for the R2 client. The real module is r2Storage.real.js.\n` +
     `const real = require('./r2Storage.real.js');\nconst {makeDiskR2Storage} = require('./live_walls_fake_r2.cjs');\n` +
     `module.exports = {...real, R2Storage: makeDiskR2Storage(${JSON.stringify(fs.realpathSync(runtime))})};\n`);
+  allowPreviewPort();
   fs.copyFileSync(path.join(harnessDir, 'guard.cjs'), runtimeFile('backend.cjs'));
   fs.copyFileSync(path.join(repo, 'firestore.rules'), runtimeFile('firestore.rules'));
   fs.copyFileSync(path.join(repo, 'firestore.indexes.json'), runtimeFile('firestore.indexes.json'));

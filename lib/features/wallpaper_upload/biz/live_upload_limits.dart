@@ -106,8 +106,9 @@ LiveVideoCheck inspectLiveVideo(Uint8List bytes) {
     for (int at = ftyp.start + 8; at + 4 <= ftyp.end; at += 4) {
       brands.add(text(at, at + 4));
     }
-    if (brands.first == 'qt  ' || !brands.any(_mp4Brands.contains))
+    if (brands.first == 'qt  ' || !brands.any(_mp4Brands.contains)) {
       return const LiveVideoRefused(LiveVideoError.notMp4);
+    }
     final _Box? moov = top.where((b) => b.type == 'moov').firstOrNull;
     if (moov == null || !top.any((b) => b.type == 'mdat')) return const LiveVideoRefused(LiveVideoError.malformed);
 
