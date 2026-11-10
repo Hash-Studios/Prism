@@ -286,6 +286,40 @@ void main() {
       await tester.pumpAndSettle();
     });
 
+    testWidgets('is disabled while the download is pending, so a screen reader does not offer a dead action', (
+      tester,
+    ) async {
+      final Completer<File> pending = Completer<File>();
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      await pumpWidget(
+        tester,
+        LiveSetButton(
+          live: live,
+          wallId: 'wall-1',
+          download: (_) => pending.future,
+          apply: (_) async => const LiveApplyOutcome(LiveApplyStatus.applied),
+        ),
+      );
+
+      await tester.tap(find.text(l10n.liveWallSetLive));
+      await tester.pump();
+
+      expect(
+        tester.getSemantics(find.widgetWithText(FilledButton, l10n.liveWallPreparing)),
+        matchesSemantics(
+          label: l10n.liveWallPreparing,
+          isButton: true,
+          hasEnabledState: true,
+          isFocusable: true,
+          hasFocusAction: true,
+        ),
+      );
+
+      pending.complete(video);
+      await tester.pumpAndSettle();
+      semantics.dispose();
+    });
+
     testWidgets('a download that throws shows the set failed message', (tester) async {
       await pumpWidget(
         tester,

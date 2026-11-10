@@ -342,7 +342,7 @@ The device reads the MP4 box headers. The server also reads the SPS sizes and th
 
 ### Set a live wall
 
-- On Android, the **Set live wallpaper** button downloads the MP4. Then it opens the system preview through `LiveWallpaperRepository.applyVideo`. The user taps **Set wallpaper** there. Code: `LiveSetButton` in `lib/features/wallpaper_detail/views/widgets/live_wall_actions.dart`.
+- On Android, the **Set live wallpaper** button downloads the MP4. Then it opens the system preview through `LiveWallpaperRepository.applyVideo`. The user taps **Set wallpaper** there. While the video downloads, the button shows "Getting the video" and is disabled, like **Save video**, so a tap or a screen reader does not report an action that does nothing. Code: `LiveSetButton` in `lib/features/wallpaper_detail/views/widgets/live_wall_actions.dart`.
 - On iOS, the wall detail shows a note under the actions. The note says that iPhone cannot use a video as a wallpaper. The action bar has two options.
   - **Set poster as wallpaper** saves the poster to Photos, like the Save button of a still wall.
   - **Save video** saves the MP4 to Photos. Code: `LiveSaveVideoButton` and `LiveIosNote` in `lib/features/wallpaper_detail/views/widgets/live_wall_actions.dart`.

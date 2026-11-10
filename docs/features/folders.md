@@ -515,7 +515,7 @@ A rule has a kind and a value.
 | Surface | What the user sees |
 |---|---|
 | Library > Folders | A **New smart folder** tile after **New folder**. A sparkle icon on each smart folder card. |
-| New smart folder sheet | The name, the rule chips, and a live preview of the first 12 matches with the count. Each rule chip is a `PrismChip` with a 48 dp tap area on Android and 44 points on iOS. |
+| New smart folder sheet | The name, the rule chips, and a live preview of the first 12 matches with the count. Each rule chip is a `PrismChip` with a 48 dp tap area on Android and 44 points on iOS. The name field has its label above it and no placeholder, so a screen reader reads "Folder name" once. |
 | Folder page, smart folder | The rules under the title, for example "Colour: Blue, Teal · Creators I follow". The owner sees **Edit rules**. |
 | Empty smart folder | "Nothing matches yet" with **Edit rules**. |
 | Save to folder sheet | Smart folders do not show. Nobody saves a wall into a smart folder by hand. |
