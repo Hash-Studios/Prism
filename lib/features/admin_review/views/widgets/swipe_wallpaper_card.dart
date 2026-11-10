@@ -158,10 +158,11 @@ class SwipeWallpaperCard extends StatelessWidget {
                 ),
               ),
             ),
+            // Top end: the swipe screen puts its depth pill at the top start.
             if (live != null)
               PositionedDirectional(
                 top: 12,
-                start: 12,
+                end: 12,
                 child: live == LiveReviewState.ready ? const LiveTag() : LiveReviewPill(state: live),
               ),
             Positioned(

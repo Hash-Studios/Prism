@@ -343,9 +343,9 @@ The device reads the MP4 box headers. The server also reads the SPS sizes and th
 ### Set a live wall
 
 - On Android, the **Set live wallpaper** button downloads the MP4. Then it opens the system preview through `LiveWallpaperRepository.applyVideo`. The user taps **Set wallpaper** there. Code: `LiveSetButton` in `lib/features/wallpaper_detail/views/widgets/live_wall_actions.dart`.
-- On iOS, the sheet shows a note. The note says that iPhone cannot use a video as a wallpaper. The sheet has two options.
-  - **Set poster as wallpaper** saves the poster.
-  - **Save video** saves the MP4 to Photos. Code: `LiveSaveVideoButton` in `lib/features/wallpaper_detail/views/widgets/live_wall_actions.dart`.
+- On iOS, the wall detail shows a note under the actions. The note says that iPhone cannot use a video as a wallpaper. The action bar has two options.
+  - **Set poster as wallpaper** saves the poster to Photos, like the Save button of a still wall.
+  - **Save video** saves the MP4 to Photos. Code: `LiveSaveVideoButton` and `LiveIosNote` in `lib/features/wallpaper_detail/views/widgets/live_wall_actions.dart`.
 - The Live Photo export is hidden for live walls. So are the **Make it live** button and chip. Live Photo animates one still image. It cannot use the creator's video.
 
 ### Memory
@@ -376,7 +376,8 @@ The device reads the MP4 box headers. The server also reads the SPS sizes and th
 Nothing is deployed for creator live walls. Each step needs owner approval.
 
 1. Deploy the Firestore rules.
-2. Deploy these functions.
+2. Run `make functions-env`. New functions get the R2 variables only from `functions/.env`.
+3. Deploy these functions.
    - `githubPutFile` and `githubDeleteFile`. The memory of `githubPutFile` rises from 256 MiB to 512 MiB. Deploy it after the asia-south1 CPU quota PR.
    - `onWallSubmitted` and `onWallModerate`.
    - `onOwnedWallWritten` and `onR2TombstoneCleanup`.
@@ -386,7 +387,7 @@ Nothing is deployed for creator live walls. Each step needs owner approval.
    - `rejectWallForReview`, `undoWallRejection`, `submitWallResubmission` and `getWallResubmissionContext`.
    - The smart Folder functions: `createSmartFolder`, `updateSmartFolderRules`, `previewSmartFolder`, `onWallSmartFolders` and `onSmartFollowWritten`.
    - `onRejectedLiveWallDeleted`. This function is new and runs in asia-south1. Deploy it only after the asia-south1 CPU quota PR.
-3. Release the app.
+4. Release the app.
 
 ### How to test
 

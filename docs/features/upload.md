@@ -4,7 +4,7 @@ A creator sends wallpapers from the gallery to Prism. A moderator reviews each w
 
 ## Where to find it
 
-- The create button in the bottom bar opens the Create sheet (`UploadBottomPanel`, `lib/features/navigation/views/widgets/upload_bottom_panel.dart`). **Wallpapers** starts an upload.
+- The create button in the bottom bar opens the Create sheet (`UploadBottomPanel`, `lib/features/navigation/views/widgets/upload_bottom_panel.dart`). **Photo** starts an image upload. **Live** starts a live wall upload (see [Live walls](#live-walls)).
 - The steps are: pick images, **Edit wallpaper** (crop, `EditWallScreen`), **Upload wallpaper** (`UploadWallScreen`), then **Review status** (`ReviewScreen`).
 - The AI wallpaper tab has its own submit step. See `docs/features/ai-wallpaper.md`.
 
@@ -68,8 +68,8 @@ A free user who reaches the weekly limit in a batch sees the normal "Upload limi
 
 A creator can send a short looping video instead of a photo. The video goes through the same review as a photo. For the video rules and where the wall appears, see [live-wallpapers.md](live-wallpapers.md#creator-live-walls).
 
-1. In the Create sheet, tap **Wallpapers**. The kind sheet opens.
-2. Choose **Live**. The kind sheet also offers **Photo** (`showUploadKindSheet`, `lib/features/wallpaper_upload/views/widgets/upload_kind_sheet.dart`).
+1. Open the Create sheet. It shows **Photo**, **Live** and **AI wallpaper**.
+2. Tap **Live**. **Photo** starts the normal image upload (`_onWallpaperTap`, `lib/features/navigation/views/widgets/upload_bottom_panel.dart`).
 3. Pick one video from the gallery. The gallery limits the clip to 15 seconds (`_pickLiveVideo`, `lib/features/navigation/views/widgets/upload_bottom_panel.dart`).
 4. Wait while the app shows **Checking your video**.
 5. If the app refuses the video, read the message. Then choose **Choose another video**.

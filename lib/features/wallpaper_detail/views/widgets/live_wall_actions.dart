@@ -231,13 +231,13 @@ class _LiveSaveVideoButtonState extends State<LiveSaveVideoButton> {
 
   @override
   Widget build(BuildContext context) {
+    // A bare spinner would collapse the pill in the crowded action bar, so the busy state keeps a label.
     return PrismButton(
-      label: context.l10n.liveWallSaveVideo,
+      label: _busy ? context.l10n.liveWallPreparing : context.l10n.liveWallSaveVideo,
       icon: Icons.video_file_outlined,
       variant: PrismButtonVariant.tonal,
       size: PrismButtonSize.compact,
-      loading: _busy,
-      onPressed: _run,
+      onPressed: _busy ? null : _run,
     );
   }
 }
