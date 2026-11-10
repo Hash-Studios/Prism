@@ -5,12 +5,12 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('sharedItemFromText', () {
     test('reads a short link from the text around it', () {
-      final SharedItem? item = sharedItemFromText('Look at this https://prismwalls.com/l/AbC123');
+      final SharedItem? item = sharedItemFromText('Look at this https://prismwalls.com/l/AbC1234');
 
       expect(item, isA<SharedPrismLink>());
       final SharedPrismLink link = item! as SharedPrismLink;
       expect(link.action, isA<ShortCodeIntent>());
-      expect((link.action as ShortCodeIntent).code, 'AbC123');
+      expect((link.action as ShortCodeIntent).code, 'AbC1234');
       expect(link.kind, SharedItemKind.prismLink);
     });
 

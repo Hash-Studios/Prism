@@ -8,7 +8,7 @@ void main() {
       for (final String link in <String>[
         'https://prismwalls.com/share?id=a&thumb=https%3A%2F%2Fthumb',
         'https://prismwalls.com/user/x',
-        'https://prismwalls.com/l/abc',
+        'https://prismwalls.com/l/abc1234',
         'https://prismwalls.com/refer/u1',
         'https://www.prismwalls.com/user/x',
         'https://prismwalls.com/',
