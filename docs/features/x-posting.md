@@ -44,7 +44,7 @@ A post with a non-empty `replyText` also gets a reply, with the same rules on `r
 | `panorama` | Until `autoApprove.panorama` is `true` |
 | `still` | Not needed unless `autoApprove.still` is `false` |
 
-An approval binds to `contentHash` (image hashes, text, link reply, alt text, and sensitive flags). The publisher recomputes it and requires a matching owner approval for every grid. Only presses from the owner in the owner's chat count. Telegram calls `socialTelegramWebhook` with a secret header derived from the bot token; any other request gets 403. `socialPrepare` registers the webhook on every run. Failed approval previews retry during publish passes until delivered or expired. No decision by 2 hours after the slot: skipped.
+An approval binds to `contentHash` (image hashes, text, link reply, alt text, and sensitive flags). The publisher recomputes it and requires a matching owner approval for every grid. Only presses from the owner in the owner's chat count. Telegram calls `socialTelegramWebhook` with a secret header derived from the bot token; any other request gets 403. `socialPrepare` registers the webhook on every run. Failed approval previews retry during publish passes until delivered or expired. No decision by 2 hours after the jittered `scheduledAt`: skipped.
 
 The webhook accepts only POST requests and compares the secret in constant time. An empty bot token fails closed. Authenticated updates return 200 even if processing fails, so Telegram does not repeat a failed press. The owner can press an unresolved button again. Telegram feedback calls each time out after 5 seconds, within the function's 30-second limit. Registration failures do not stop preparation.
 
@@ -68,7 +68,7 @@ The webhook accepts only POST requests and compares the secret in constant time.
     "sketchyPerPost": 2, "autoApprove": {"panorama": false, "still": true}, "blockedTags": [], "blockedIds": []}
    ```
 
-4. Dry run. Every post previews in Telegram and ends as `dry_run`. Nothing goes to X. In a dry run, each force-run of `socialPrepare` replaces today's unposted posts with new walls and sends new previews, so many sets can be checked in a few minutes. A live run never replaces an existing post.
+4. Dry run. Every post previews in Telegram and ends as `dry_run`. Nothing goes to X. Each `socialPrepare` run rebuilds today's never-attempted posts with new walls and sends new previews. Deletion rechecks the state in a transaction, so a concurrent publisher claim protects the post. Attempted posts stay intact, including uncertain posts after an owner drop or retry. A live run never replaces an existing post.
 5. Set `dryRun` to `false`.
 
 Kill switch: `enabled: false`.

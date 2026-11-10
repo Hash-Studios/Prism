@@ -28,7 +28,7 @@ export const SLOTS: Record<Slot, {time: string; pipeline: Pipeline}> = {
   eve: {time: "17:00", pipeline: "still"},
   night: {time: "20:00", pipeline: "still"},
 };
-/** Each post lands up to this far before or after its slot time, uniformly, so no two days share a minute. */
+/** Each post is scheduled up to this far before or after its slot time, uniformly. */
 export const JITTER_MS = 15 * 60_000;
 export const EXPIRE_AFTER_MS = 2 * 3_600_000;
 export const STALE_POSTING_MS = 10 * 60_000;
@@ -115,10 +115,10 @@ export const defaultBuilders: Builders = {
     wotd: slot === "night" && isSunday(day), salt: slot === "eve" ? 0 : 1}),
 };
 
-/** Builds today's posts. A slot that already has a doc is left alone, so a second run does nothing. */
 /** States a dry-run trigger may replace. Never anything that reached, or may have reached, X. */
 const DRY_RUN_REBUILDS = new Set(["pending_approval", "approved", "dry_run", "skipped", "failed"]);
 
+/** Builds missing posts, or rebuilds never-attempted posts in dry run. */
 export async function prepareDay(deps: SocialDeps, builders: Builders = defaultBuilders): Promise<string[]> {
   const {config, now} = deps;
   if (!config.enabled) return [];
@@ -129,11 +129,15 @@ export async function prepareDay(deps: SocialDeps, builders: Builders = defaultB
   for (const doc of existing.docs) {
     for (const id of doc.data().source?.ids ?? []) exclude.add(String(id));
     // In a dry run, every trigger rebuilds today's unposted posts with new walls, so the owner can try many sets.
-    if (config.dryRun && DRY_RUN_REBUILDS.has(str(doc.data().status))) {
-      await doc.ref.delete();
-    } else {
-      kept.add(doc.id);
-    }
+    const removed = config.dryRun && await db.runTransaction(async (tx) => {
+      const post = (await tx.get(doc.ref)).data();
+      // Recheck under the publisher's claim lock. Owner drop/retry changes the status but retains attemptAt.
+      if (!post || !DRY_RUN_REBUILDS.has(str(post.status)) ||
+          post.attemptAt || post.attemptId || post.dispatchedAt || post.tweetId || post.postedAt) return false;
+      tx.delete(doc.ref);
+      return true;
+    });
+    if (!removed) kept.add(doc.id);
   }
   const made: string[] = [];
   for (const slot of Object.keys(SLOTS) as Slot[]) {

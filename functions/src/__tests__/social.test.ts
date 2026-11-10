@@ -920,3 +920,72 @@ test("a dry-run trigger rebuilds unposted posts with new walls; a live run never
   await prepareDay(deps(null, NOW, config({dryRun: false})), builders);
   assert.equal(JSON.stringify(store.get(`socialPosts/${day}_am`)), before, "a live run keeps existing posts");
 });
+
+test("dry-run rebuild preserves a post claimed after the prepare query", async (t) => {
+  for (const unknown of [false, true]) {
+    await t.test(unknown ? "unknown create" : "accepted create", async (t) => {
+      const store = installSocialDb(t, {[PATH]: postDoc()});
+      const {x, creates} = fakeX(unknown ? {create: async () => {
+        throw new XError("unknown", 0, true);
+      }} : {});
+      const collection = db.collection.bind(db);
+      t.mock.method(db, "collection", (name: string) => {
+        const result = collection(name);
+        if (name !== "socialPosts") return result;
+        const where = result.where.bind(result);
+        result.where = ((field, op, value) => {
+          const query = where(field, op, value);
+          if (field === "day") {
+            const get = query.get.bind(query);
+            query.get = async () => {
+              const snapshot = await get();
+              await publishDue(deps(x, NOW));
+              return snapshot;
+            };
+          }
+          return query;
+        }) as typeof result.where;
+        return result;
+      });
+      let builds = 0;
+      const build = async () => {
+        builds++;
+        return null;
+      };
+      await prepareDay(deps(null, NOW, config({dryRun: true,
+        slots: {am: true, noon: false, eve: false, night: false}})), {grid: build, panorama: build, still: build});
+      assert.equal(creates.length, 1);
+      assert.equal(store.get(PATH)?.status, unknown ? "posting" : "posted");
+      assert.ok(store.get(PATH)?.dispatchedAt);
+      assert.equal(builds, 0, "the claimed slot must not be rebuilt");
+    });
+  }
+});
+
+test("dry-run rebuild preserves uncertain history after owner drop or retry", async (t) => {
+  for (const action of ["drop", "retry"] as const) {
+    await t.test(action, async (t) => {
+      const store = installSocialDb(t, {[PATH]: postDoc()});
+      const {x} = fakeX({create: async () => {
+        throw new XError("unknown", 0, true);
+      }});
+      await publishDue(deps(x, NOW));
+      await publishDue(deps(x, later(31)));
+      assert.equal(store.get(PATH)?.status, "uncertain");
+      const post = store.get(PATH) as Doc;
+      await applyPress({...press(action, uncertaintyHash(String(post.contentHash), String(post.attemptId)).slice(0, 12)),
+        postId: PATH.split("/")[1]});
+      assert.equal(store.get(PATH)?.status, action === "drop" ? "skipped" : "approved");
+      const before = store.get(PATH);
+      let builds = 0;
+      const build = async () => {
+        builds++;
+        return null;
+      };
+      await prepareDay(deps(null, NOW, config({dryRun: true,
+        slots: {am: true, noon: false, eve: false, night: false}})), {grid: build, panorama: build, still: build});
+      assert.deepEqual(store.get(PATH), before);
+      assert.equal(builds, 0);
+    });
+  }
+});
