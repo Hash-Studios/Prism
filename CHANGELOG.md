@@ -1,5 +1,12 @@
 ## Changelog
 
+### v3.27.0
+- Creators can upload short looping live walls. Play them in the feed and set them on Android
+- Tips before you set a wall show when the clock or icons are hard to read, with a one-tap fix
+- On iPhone, browse public folders, Discover and creator profiles before you sign in
+- Sharing the same link into Prism again opens a fresh share sheet
+- Security and stability fixes
+
 ### v3.26.0
 - Discover public folders in Search, with trending folders to follow
 - Creators can pick when an approved wall goes live
