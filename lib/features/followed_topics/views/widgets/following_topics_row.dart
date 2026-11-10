@@ -94,7 +94,7 @@ class _Row extends StatelessWidget {
             MediaQuery.withClampedTextScaling(
               maxScaleFactor: 2,
               child: SizedBox(
-                height: 44,
+                height: prismTapTarget(context),
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: PrismFeedLayout.gridSpacing + PrismSpace.xxs),

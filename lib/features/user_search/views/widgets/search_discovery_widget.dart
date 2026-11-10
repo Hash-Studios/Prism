@@ -146,7 +146,7 @@ class _QueryChips extends StatelessWidget {
           ),
         if (chips.isNotEmpty)
           SizedBox(
-            height: 44,
+            height: prismTapTarget(context),
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: PrismSpace.pageInsets,
