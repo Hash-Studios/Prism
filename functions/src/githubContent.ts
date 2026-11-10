@@ -7,6 +7,7 @@ import {db, readDailyCount, CALLABLE_REGIONS, utcDateString} from "./common";
 import {deleteRetainedUpload, FIREBASE_STORAGE_REPO, ownedAssetStorageEnabled, ownedThumbnailUrl, retainUpload, stored,
   type StoredUpload} from "./ownedAssetDelivery";
 import {r2Secrets} from "./r2Storage";
+import {inspectLiveVideo, isLiveFramePath, isLiveVideoPath, LIVE_VIDEO_LIMITS} from "./liveVideo";
 
 const UPLOADS = "githubUploads";
 const UPLOAD_STATS = "githubUploadStats";
@@ -330,6 +331,10 @@ async function claimDeleteIntent(
     const uploadSnap = await tx.get(uploadRef);
     const intentSnap = await tx.get(intentRef);
     const currentRecord = uploadSnap.exists ? uploadSnap.data() as GithubUploadRecord : undefined;
+    if (stored(currentRecord?.retainedAsset) &&
+      await (await import("./wallLive.js")).liveAssetReferenced(tx, currentRecord.retainedAsset)) {
+      throw new HttpsError("failed-precondition", "A live wall still references this upload.");
+    }
     if (manifestProof && (!currentRecord || !sameStoredUpload(currentRecord.retainedAsset, manifestProof.asset))) {
       throw new HttpsError("failed-precondition", "Retained upload changed before deletion.");
     }
@@ -565,8 +570,9 @@ export async function verifyGithubUpload(repo: string, path: string, sha: string
   }
 }
 
+// ponytail: 512MiB and 120 s hold a 20 MB live video (base64 body, decoded bytes, R2 read-back) in one request.
 export const githubPutFile = onCall(
-  {...CALLABLE_OPTIONS, secrets: [githubToken, ...r2Secrets], timeoutSeconds: 60},
+  {...CALLABLE_OPTIONS, secrets: [githubToken, ...r2Secrets], timeoutSeconds: 120, memory: "512MiB", concurrency: 1},
   async (request: CallableRequest<GithubContentData>) => {
     const callerUid = request.auth?.uid;
     if (!callerUid) throw new HttpsError("unauthenticated", "Sign in to upload files.");
@@ -578,9 +584,29 @@ export const githubPutFile = onCall(
       throw new HttpsError("invalid-argument", "purpose must be wallpaper or profile.");
     }
     const contentBase64 = requiredString(request.data?.contentBase64, "contentBase64");
-    if (base64DecodedBytes(contentBase64) > MAX_UPLOAD_BYTES) throw new HttpsError("invalid-argument", "File is too large.");
+    const liveVideo = isLiveVideoPath(path);
+    const maxBytes = liveVideo ? LIVE_VIDEO_LIMITS.maxBytes : MAX_UPLOAD_BYTES;
+    if (base64DecodedBytes(contentBase64) > maxBytes) throw new HttpsError("invalid-argument", "File is too large.");
     if (!isValidBase64(contentBase64)) throw new HttpsError("invalid-argument", "contentBase64 must be valid base64.");
-    if (!isAllowedImageContent(contentBase64)) throw new HttpsError("invalid-argument", "Only image files are allowed.");
+    if (liveVideo) {
+      if (purpose !== "wallpaper" || repo !== process.env.GH_REPO_WALLS?.trim() || !ownedAssetStorageEnabled()) {
+        throw new HttpsError("invalid-argument", "Live videos need wallpaper storage.");
+      }
+      const check = inspectLiveVideo(Buffer.from(contentBase64, "base64"));
+      if (!check.ok) throw new HttpsError("invalid-argument", "The live video is not allowed.", {liveVideo: check.error});
+    } else if (!isAllowedImageContent(contentBase64)) {
+      throw new HttpsError("invalid-argument", "Only image files are allowed.");
+    }
+    if (purpose === "wallpaper" && repo === process.env.GH_REPO_WALLS?.trim() && ownedAssetStorageEnabled() &&
+      isLiveFramePath(path)) {
+      try {
+        const sharp = (await import("sharp")).default;
+        await sharp(Buffer.from(contentBase64, "base64"), {failOn: "warning", limitInputPixels: 1440 * 3200})
+          .raw().toBuffer();
+      } catch {
+        throw new HttpsError("invalid-argument", "Live frames must be decodable images within the video frame limit.");
+      }
+    }
 
     const nowMs = Date.now();
     await reserveUploadSlot(callerUid, false, nowMs);
@@ -616,7 +642,7 @@ export const githubPutFile = onCall(
         ...(typeof intent.uploadId === "string" ? {uploadId: intent.uploadId} : {}),
       }) : undefined;
       const completedResponse = ownedUpload ? {content: {path, sha: blobSha,
-        download_url: path.split("/").pop()?.startsWith("thumb_") && retainedAsset ? ownedThumbnailUrl(retainedAsset) : ""}} : response;
+        download_url: retainedAsset?.previewObjectId ? ownedThumbnailUrl(retainedAsset) : ""}} : response;
       await completeUploadIntent(callerUid, repo, path, intent, claim.attemptId, completedResponse, retainedAsset);
       return completedResponse;
     };
@@ -810,7 +836,13 @@ export const githubDeleteFile = onCall(
     if (record?.sourceKind === "owned" || record?.retainedAsset !== undefined) {
       try {
         await deleteRetainedUpload({repo, path, sha, ...(record?.sourceKind === "owned" ? {sourceKind: "owned" as const} : {}),
-          expected: record!.retainedAsset as StoredUpload});
+          expected: record!.retainedAsset as StoredUpload,
+          ...(record?.sourceKind === "owned" && (isLiveVideoPath(path) || isLiveFramePath(path)) ? {authorize: async (
+            tx: FirebaseFirestore.Transaction) => {
+            if (await (await import("./wallLive.js")).liveAssetReferenced(tx, record!.retainedAsset as StoredUpload)) {
+              throw new HttpsError("failed-precondition", "A live wall still references this upload.");
+            }
+          }} : {})});
       } catch (error) {
         // Keep ownership and the deleting state so a retry can finish cleanup after GitHub's 404.
         await db.runTransaction(async (tx) => {

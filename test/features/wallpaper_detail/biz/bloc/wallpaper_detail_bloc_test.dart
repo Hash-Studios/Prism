@@ -10,6 +10,7 @@ import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
+import 'package:Prism/core/wallpaper/wall_live.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
@@ -116,6 +117,7 @@ void main() {
       remixOf: 'original-doc',
       remixCount: 3,
       isStreakExclusive: true,
+      live: WallLive(videoUrl: 'https://example.test/loop.mp4', verified: true),
     );
     const saved = WallMetadataSnapshot(
       metadata: PendingWallMetadata(
@@ -147,10 +149,13 @@ void main() {
       expect(wall.remixOf, 'original-doc');
       expect(wall.remixCount, 3);
       expect(wall.isStreakExclusive, isTrue);
+      expect(wall.live?.videoUrl, 'https://example.test/loop.mp4');
+      expect(wall.kind, WallKind.live);
       expect(state.panelCollapsed, isFalse);
       read.complete(Result.error(const NetworkFailure('offline')));
       await pumpEventQueue();
       expect(((bloc.state as WallpaperDetailLoaded).entity as PrismFeedItem).wallpaper.title, 'After');
+      expect(((bloc.state as WallpaperDetailLoaded).entity as PrismFeedItem).wallpaper.live?.verified, isTrue);
     });
 
     test('history return refetches by Firestore document ID without another view or palette load', () async {

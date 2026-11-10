@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
+import 'package:Prism/core/wallpaper/wall_live.dart';
 import 'package:Prism/features/admin_review/biz/depth_override.dart';
 import 'package:Prism/features/admin_review/biz/drop_reserve.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
@@ -30,6 +33,7 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
 
   static const int _maxUndoStack = 5;
   String? _lastWallId;
+  StreamSubscription<List<FirestoreDocument>>? _liveWallsSubscription;
 
   ReviewBatchBloc(this._repository, this._moderation) : super(const ReviewBatchState()) {
     on<ReviewBatchLoadRequested>((event, emit) => _exclusive(event, emit, _onLoadRequested));
@@ -44,6 +48,7 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
     on<ReviewBatchSwipeSkipped>((event, emit) => _exclusive(event, emit, _onSwipeSkipped));
     on<ReviewBatchUndoRequested>((event, emit) => _exclusive(event, emit, _onUndoRequested));
     on<ReviewBatchNextBatchRequested>((event, emit) => _exclusive(event, emit, _onNextBatchRequested));
+    on<ReviewBatchLiveWallsUpdated>(_onLiveWallsUpdated);
   }
 
   Future<void> _exclusive<E extends ReviewBatchEvent>(
@@ -81,6 +86,7 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
             totalPending: totalPending,
           ),
         );
+        _watchLiveWallsIfNeeded(categorizedWalls);
       } else {
         _lastWallId = null;
         emit(state.copyWith(status: ReviewBatchStatus.loaded, walls: walls, currentIndex: 0, totalPending: 0));
@@ -90,10 +96,35 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
     }
   }
 
+  void _watchLiveWallsIfNeeded(List<FirestoreDocument> walls) {
+    if (_liveWallsSubscription != null || !walls.any(_needsLiveVerification)) return;
+    _liveWallsSubscription = _moderation.watchPendingWalls().listen(
+      (List<FirestoreDocument> updatedWalls) => add(ReviewBatchLiveWallsUpdated(updatedWalls)),
+      onError: (Object _) {},
+    );
+  }
+
+  bool _needsLiveVerification(FirestoreDocument wall) {
+    final Map<String, dynamic> data = wall.data();
+    final Object? live = data['live'];
+    return data['kind'] == 'live' && (live is! Map || live['verified'] == null);
+  }
+
+  void _onLiveWallsUpdated(ReviewBatchLiveWallsUpdated event, Emitter<ReviewBatchState> emit) {
+    final Map<String, FirestoreDocument> updates = <String, FirestoreDocument>{
+      for (final FirestoreDocument wall in event.walls) wall.id: wall,
+    };
+    final List<FirestoreDocument> walls = <FirestoreDocument>[
+      for (final FirestoreDocument wall in state.walls) updates[wall.id] ?? wall,
+    ];
+    emit(state.copyWith(walls: walls));
+  }
+
   Future<void> _onSwipeApproved(ReviewBatchSwipeApproved event, Emitter<ReviewBatchState> emit) async {
     if (state.currentIndex >= state.walls.length) return;
 
     final currentWall = state.walls[state.currentIndex];
+    if (!_canApprove(currentWall)) return;
     final undoStack = List<UndoableAction>.from(state.undoStack);
 
     if (undoStack.length >= _maxUndoStack) {
@@ -114,6 +145,13 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
     } catch (e) {
       emit(state.copyWith(status: ReviewBatchStatus.error, errorMessage: 'Failed to approve: $e'));
     }
+  }
+
+  bool _canApprove(FirestoreDocument wall) {
+    final Map<String, dynamic> data = wall.data();
+    if (WallKind.parse(data['kind']) != WallKind.live) return true;
+    final Object? live = data['live'];
+    return live is Map && live['verified'] == true && WallLive.parse(kind: data['kind'], value: live) != null;
   }
 
   Future<void> _onSwipeRejected(ReviewBatchSwipeRejected event, Emitter<ReviewBatchState> emit) async {
@@ -253,8 +291,15 @@ class ReviewBatchBloc extends Bloc<ReviewBatchEvent, ReviewBatchState> {
           totalPending: totalPending,
         ),
       );
+      _watchLiveWallsIfNeeded(walls);
     } catch (e) {
       emit(state.copyWith(status: ReviewBatchStatus.error, errorMessage: e.toString()));
     }
+  }
+
+  @override
+  Future<void> close() async {
+    await _liveWallsSubscription?.cancel();
+    await super.close();
   }
 }

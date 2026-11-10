@@ -18,6 +18,7 @@ import {removeDesktopSubmissionsForAccount} from "./desktopSubmissions";
 import {PHOTO_JOB_CLOSURES, PHOTO_JOB_DAILY, removePhotoJobsForAccount} from "./photoWallpaper";
 import {r2Secrets} from "./r2Storage";
 import {falKey} from "./wallDepth";
+import {tombstoneUnreferencedLiveUploads} from "./wallLive";
 
 const USERS = "usersv2";
 const COIN_TRANSACTIONS = "coinTransactions";
@@ -152,6 +153,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
     await batch.commit();
   }
   const folders = await db.collection(FOLDERS).where("ownerId", "==", callerUid).get();
+  await tombstoneUnreferencedLiveUploads(callerUid);
 
   // 2-4. Owned records elsewhere in Firestore.
   const writer = db.bulkWriter();

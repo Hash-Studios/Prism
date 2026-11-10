@@ -1,5 +1,7 @@
+import AVFoundation
 import Foundation
 import Photos
+import UIKit
 import UniformTypeIdentifiers
 
 @MainActor
@@ -134,6 +136,81 @@ final class PrismMediaHostApiImpl: @preconcurrency PrismMediaHostApi {
         )))
       }
     }
+  }
+
+  func extractVideoFrames(
+    path: String, timesMs: [Int64], maxEdge: Int64, quality: Int64,
+    completion: @escaping (Result<[String], Error>) -> Void
+  ) {
+    Task {
+      let result = await withCheckedContinuation { (continuation: CheckedContinuation<Result<[String], Error>, Never>) in
+        DispatchQueue.global(qos: .userInitiated).async {
+          do {
+            let paths = try Self.writeVideoFrames(path: path, timesMs: timesMs, maxEdge: maxEdge, quality: quality)
+            continuation.resume(returning: .success(paths))
+          } catch {
+            continuation.resume(returning: .failure(PigeonError(
+              code: "frame-failed", message: error.localizedDescription, details: nil
+            )))
+          }
+        }
+      }
+      completion(result)
+    }
+  }
+
+  func saveVideo(path: String, completion: @escaping (Result<OperationResult, Error>) -> Void) {
+    Task {
+      var status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
+      if status == .notDetermined {
+        status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+      }
+      guard status == .authorized || status == .limited else {
+        completion(.success(OperationResult(success: false, errorCode: "permission-denied", message: nil)))
+        return
+      }
+      let url = URL(fileURLWithPath: path)
+      do {
+        try await PHPhotoLibrary.shared().performChanges { @Sendable in
+          PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
+        }
+        completion(.success(OperationResult(success: true)))
+      } catch {
+        completion(.success(OperationResult(
+          success: false, errorCode: "save-failed", message: error.localizedDescription
+        )))
+      }
+    }
+  }
+
+  nonisolated private static func writeVideoFrames(
+    path: String, timesMs: [Int64], maxEdge: Int64, quality: Int64
+  ) throws -> [String] {
+    let asset = AVURLAsset(url: URL(fileURLWithPath: path))
+    let durationSeconds = asset.duration.seconds
+    guard durationSeconds.isFinite, durationSeconds > 0 else {
+      throw PigeonError(code: "frame-failed", message: "Video has no duration", details: nil)
+    }
+    let durationMs = Int64(durationSeconds * 1000)
+    let generator = AVAssetImageGenerator(asset: asset)
+    generator.appliesPreferredTrackTransform = true
+    generator.maximumSize = CGSize(width: CGFloat(maxEdge), height: CGFloat(maxEdge))
+    generator.requestedTimeToleranceBefore = CMTime(value: 1, timescale: 10)
+    generator.requestedTimeToleranceAfter = CMTime(value: 1, timescale: 10)
+    let token = UUID().uuidString
+    var paths: [String] = []
+    for (index, ms) in timesMs.enumerated() {
+      let clampedMs = min(max(ms, 0), max(durationMs - 1, 0))
+      let cgImage = try generator.copyCGImage(at: CMTime(value: clampedMs, timescale: 1000), actualTime: nil)
+      guard let data = UIImage(cgImage: cgImage).jpegData(compressionQuality: CGFloat(quality) / 100) else {
+        throw PigeonError(code: "frame-failed", message: "JPEG encoding failed", details: nil)
+      }
+      let url = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("prism_live_frame_\(token)_\(index).jpg")
+      try data.write(to: url, options: .atomic)
+      paths.append(url.path)
+    }
+    return paths
   }
 
   private func queueDownloadOperation(_ operation: @escaping @MainActor () async -> Void) {

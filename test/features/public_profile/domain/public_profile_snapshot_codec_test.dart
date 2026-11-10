@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:Prism/core/firestore/dtos/wall_doc_dto.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
+import 'package:Prism/core/wallpaper/wall_live.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/public_profile/domain/public_profile_snapshot_codec.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,6 +21,25 @@ List<(String, String?)> _decoded(Object? documentIdsJson) => PublicProfileSnapsh
 ).map((wall) => (wall.doc.id, wall.documentId)).toList();
 
 void main() {
+  test('profile snapshot and feed mapping retain live metadata and poster URLs', () {
+    final dto = WallDocDto.fromJson(<String, dynamic>{
+      'id': 'live-1',
+      'kind': 'live',
+      'wallpaper_url': 'https://example.test/poster.jpg',
+      'wallpaper_thumb': 'https://example.test/thumb.jpg',
+      'live': <String, Object?>{'video': 'https://example.test/loop.mp4', 'durationMs': 1200, 'verified': true},
+    });
+    final restored = PublicProfileSnapshotCodec.decodeWalls(
+      PublicProfileSnapshotCodec.encodeWalls([(doc: dto, documentId: 'live-doc')], hasMore: false),
+    ).single;
+    final item = PublicProfileSnapshotCodec.wallFromDto(restored.doc, 'live-1').toFeedItem() as PrismFeedItem;
+    expect(item.wallpaper.kind, WallKind.live);
+    expect(item.wallpaper.live?.videoUrl, 'https://example.test/loop.mp4');
+    expect(item.wallpaper.live?.verified, isTrue);
+    expect(item.fullUrl, 'https://example.test/poster.jpg');
+    expect(item.thumbnailUrl, 'https://example.test/thumb.jpg');
+  });
+
   test('valid document id metadata restores next to each wall', () {
     expect(_decoded('["doc-a","doc-b"]'), <(String, String?)>[('WALLA', 'doc-a'), ('doc-b', 'doc-b')]);
   });

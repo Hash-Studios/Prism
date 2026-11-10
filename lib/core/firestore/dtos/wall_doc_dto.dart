@@ -29,6 +29,8 @@ abstract class WallDocDto with _$WallDocDto {
     Map<String, Object?> aiMetadata,
     @JsonKey(name: 'depth') @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> depth,
     @JsonKey(name: 'spatial') @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> spatial,
+    @FirestoreStringConverter() @Default('') String kind,
+    @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> live,
   }) = _WallDocDto;
 
   factory WallDocDto.fromJson(Map<String, dynamic> json) => _$WallDocDtoFromJson(json);
@@ -53,6 +55,8 @@ abstract class FavouriteWallDocDto with _$FavouriteWallDocDto {
     @JsonKey(includeIfNull: false) @FirestoreDateTimeConverter() DateTime? pinnedAt,
     @JsonKey(name: 'depth') @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> depth,
     @JsonKey(name: 'spatial') @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> spatial,
+    @FirestoreStringConverter() @Default('') String kind,
+    @FirestoreJsonMapConverter() @Default(<String, Object?>{}) Map<String, Object?> live,
   }) = _FavouriteWallDocDto;
 
   factory FavouriteWallDocDto.fromJson(Map<String, dynamic> json) => _$FavouriteWallDocDtoFromJson(json);

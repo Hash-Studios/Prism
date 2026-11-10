@@ -15736,4 +15736,100 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get settingsReadabilityTipsBody =>
       'Muestra un consejo cuando la hora o los iconos puedan ser difíciles de leer en un fondo de pantalla.';
+
+  @override
+  String get uploadKindPhoto => 'Foto';
+
+  @override
+  String get uploadKindPhotoBody => 'Una imagen fija';
+
+  @override
+  String get uploadKindLive => 'Animado';
+
+  @override
+  String get uploadKindLiveBody => 'Un video en bucle, de hasta 15 segundos';
+
+  @override
+  String get liveUploadChecking => 'Revisando tu video';
+
+  @override
+  String liveUploadFacts(String seconds, int width, int height) {
+    return '$seconds s · $width × $height';
+  }
+
+  @override
+  String get liveUploadErrorFormat => 'Usa un video MP4. Prism no puede leer este archivo.';
+
+  @override
+  String get liveUploadErrorCodec => 'Este video no está en H.264. Expórtalo como MP4 H.264 e inténtalo de nuevo.';
+
+  @override
+  String get liveUploadErrorTooLong => 'Este clip dura más de 15 segundos. Recórtalo e inténtalo de nuevo.';
+
+  @override
+  String get liveUploadErrorTooLarge => 'Este clip pesa más de 20 MB. Usa un clip más corto o más ligero.';
+
+  @override
+  String get liveUploadErrorLandscape => 'Usa un clip vertical, más alto que ancho.';
+
+  @override
+  String get liveUploadErrorFrameSize => 'Este clip supera los 1440 × 3200 píxeles. Usa un clip más pequeño.';
+
+  @override
+  String get liveUploadErrorUnreadable => 'Prism no pudo leer este video. Prueba con otro clip.';
+
+  @override
+  String get liveUploadPickAnother => 'Elige otro video';
+
+  @override
+  String get coreLiveBadge => 'Animado';
+
+  @override
+  String get coreLiveBadgeSemantic => 'Fondo de pantalla animado';
+
+  @override
+  String get liveWallPlay => 'Reproducir video';
+
+  @override
+  String get liveWallPause => 'Pausar video';
+
+  @override
+  String get liveWallSetLive => 'Establecer fondo de pantalla animado';
+
+  @override
+  String get liveWallPreparing => 'Preparando el video';
+
+  @override
+  String get liveWallSetFailed => 'No se pudo establecer el fondo de pantalla animado. Inténtalo de nuevo.';
+
+  @override
+  String get liveWallIosTitle => 'Usar este fondo de pantalla animado';
+
+  @override
+  String get liveWallIosBody =>
+      'El iPhone no puede usar un video como fondo de pantalla. Guarda el video o usa el póster como fondo fijo.';
+
+  @override
+  String get liveWallSaveVideo => 'Guardar video en Fotos';
+
+  @override
+  String get liveWallSaveVideoDone => 'Video guardado en Fotos.';
+
+  @override
+  String get liveWallSaveVideoFailed =>
+      'No se pudo guardar el video. Permite el acceso a Fotos en Ajustes y vuelve a intentarlo.';
+
+  @override
+  String get liveWallSetPoster => 'Establecer el póster como fondo de pantalla';
+
+  @override
+  String get adminLiveChecking => 'Revisando el video';
+
+  @override
+  String get adminLiveFailed => 'El video no pasó la revisión del servidor';
+
+  @override
+  String adminLiveFacts(String seconds) {
+    return 'En vivo · $seconds s';
+  }
 }

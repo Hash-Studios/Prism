@@ -15912,6 +15912,102 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get settingsReadabilityTipsBody =>
       'Mostra uma dica quando o relógio ou os ícones puderem ser difíceis de ler em um papel de parede.';
+
+  @override
+  String get uploadKindPhoto => 'Foto';
+
+  @override
+  String get uploadKindPhotoBody => 'Uma imagem fixa';
+
+  @override
+  String get uploadKindLive => 'Animado';
+
+  @override
+  String get uploadKindLiveBody => 'Um vídeo em loop, de até 15 segundos';
+
+  @override
+  String get liveUploadChecking => 'Verificando seu vídeo';
+
+  @override
+  String liveUploadFacts(String seconds, int width, int height) {
+    return '$seconds s · $width × $height';
+  }
+
+  @override
+  String get liveUploadErrorFormat => 'Use um vídeo MP4. O Prism não consegue ler este arquivo.';
+
+  @override
+  String get liveUploadErrorCodec => 'Este vídeo não está em H.264. Exporte como MP4 H.264 e tente novamente.';
+
+  @override
+  String get liveUploadErrorTooLong => 'Este clipe tem mais de 15 segundos. Corte-o e tente novamente.';
+
+  @override
+  String get liveUploadErrorTooLarge => 'Este clipe tem mais de 20 MB. Use um clipe menor ou mais curto.';
+
+  @override
+  String get liveUploadErrorLandscape => 'Use um clipe em retrato, mais alto do que largo.';
+
+  @override
+  String get liveUploadErrorFrameSize => 'Este clipe tem mais de 1440 × 3200 pixels. Use um clipe menor.';
+
+  @override
+  String get liveUploadErrorUnreadable => 'O Prism não conseguiu ler este vídeo. Tente outro clipe.';
+
+  @override
+  String get liveUploadPickAnother => 'Escolher outro vídeo';
+
+  @override
+  String get coreLiveBadge => 'Animado';
+
+  @override
+  String get coreLiveBadgeSemantic => 'Papel de parede animado';
+
+  @override
+  String get liveWallPlay => 'Reproduzir vídeo';
+
+  @override
+  String get liveWallPause => 'Pausar vídeo';
+
+  @override
+  String get liveWallSetLive => 'Definir papel de parede animado';
+
+  @override
+  String get liveWallPreparing => 'Carregando o vídeo';
+
+  @override
+  String get liveWallSetFailed => 'Não foi possível definir o papel de parede animado. Tente novamente.';
+
+  @override
+  String get liveWallIosTitle => 'Usar este papel de parede animado';
+
+  @override
+  String get liveWallIosBody =>
+      'O iPhone não pode usar um vídeo como papel de parede. Salve o vídeo ou defina o pôster como papel de parede fixo.';
+
+  @override
+  String get liveWallSaveVideo => 'Salvar vídeo em Fotos';
+
+  @override
+  String get liveWallSaveVideoDone => 'Vídeo salvo em Fotos.';
+
+  @override
+  String get liveWallSaveVideoFailed =>
+      'Não foi possível salvar o vídeo. Permita o acesso a Fotos nos Ajustes e tente novamente.';
+
+  @override
+  String get liveWallSetPoster => 'Definir o pôster como papel de parede';
+
+  @override
+  String get adminLiveChecking => 'Verificando o vídeo';
+
+  @override
+  String get adminLiveFailed => 'O vídeo não passou na verificação do servidor';
+
+  @override
+  String adminLiveFacts(String seconds) {
+    return 'Animado · $seconds s';
+  }
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -31820,4 +31916,100 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get settingsReadabilityTipsBody =>
       'Mostra uma dica quando o relógio ou os ícones puderem ser difíceis de ler em um papel de parede.';
+
+  @override
+  String get uploadKindPhoto => 'Foto';
+
+  @override
+  String get uploadKindPhotoBody => 'Uma imagem fixa';
+
+  @override
+  String get uploadKindLive => 'Animado';
+
+  @override
+  String get uploadKindLiveBody => 'Um vídeo em loop, de até 15 segundos';
+
+  @override
+  String get liveUploadChecking => 'Verificando seu vídeo';
+
+  @override
+  String liveUploadFacts(String seconds, int width, int height) {
+    return '$seconds s · $width × $height';
+  }
+
+  @override
+  String get liveUploadErrorFormat => 'Use um vídeo MP4. O Prism não consegue ler este arquivo.';
+
+  @override
+  String get liveUploadErrorCodec => 'Este vídeo não está em H.264. Exporte como MP4 H.264 e tente novamente.';
+
+  @override
+  String get liveUploadErrorTooLong => 'Este clipe tem mais de 15 segundos. Corte-o e tente novamente.';
+
+  @override
+  String get liveUploadErrorTooLarge => 'Este clipe tem mais de 20 MB. Use um clipe menor ou mais curto.';
+
+  @override
+  String get liveUploadErrorLandscape => 'Use um clipe em retrato, mais alto do que largo.';
+
+  @override
+  String get liveUploadErrorFrameSize => 'Este clipe tem mais de 1440 × 3200 pixels. Use um clipe menor.';
+
+  @override
+  String get liveUploadErrorUnreadable => 'O Prism não conseguiu ler este vídeo. Tente outro clipe.';
+
+  @override
+  String get liveUploadPickAnother => 'Escolher outro vídeo';
+
+  @override
+  String get coreLiveBadge => 'Animado';
+
+  @override
+  String get coreLiveBadgeSemantic => 'Papel de parede animado';
+
+  @override
+  String get liveWallPlay => 'Reproduzir vídeo';
+
+  @override
+  String get liveWallPause => 'Pausar vídeo';
+
+  @override
+  String get liveWallSetLive => 'Definir papel de parede animado';
+
+  @override
+  String get liveWallPreparing => 'Carregando o vídeo';
+
+  @override
+  String get liveWallSetFailed => 'Não foi possível definir o papel de parede animado. Tente novamente.';
+
+  @override
+  String get liveWallIosTitle => 'Usar este papel de parede animado';
+
+  @override
+  String get liveWallIosBody =>
+      'O iPhone não pode usar um vídeo como papel de parede. Salve o vídeo ou defina o pôster como papel de parede fixo.';
+
+  @override
+  String get liveWallSaveVideo => 'Salvar vídeo em Fotos';
+
+  @override
+  String get liveWallSaveVideoDone => 'Vídeo salvo em Fotos.';
+
+  @override
+  String get liveWallSaveVideoFailed =>
+      'Não foi possível salvar o vídeo. Permita o acesso a Fotos nos Ajustes e tente novamente.';
+
+  @override
+  String get liveWallSetPoster => 'Definir o pôster como papel de parede';
+
+  @override
+  String get adminLiveChecking => 'Verificando o vídeo';
+
+  @override
+  String get adminLiveFailed => 'O vídeo não passou na verificação do servidor';
+
+  @override
+  String adminLiveFacts(String seconds) {
+    return 'Animado · $seconds s';
+  }
 }

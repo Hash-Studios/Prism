@@ -26,7 +26,10 @@ FirestoreDocument _wall(
   String? origin,
   Map<String, dynamic>? depth,
   Map<String, dynamic>? moderation,
+  Map<String, dynamic>? live,
 }) => FirestoreDocument(id, <String, dynamic>{
+  if (live != null) 'kind': 'live',
+  if (live != null) 'live': live,
   'origin': ?origin,
   'depth': ?depth,
   'moderation': ?moderation,
@@ -195,6 +198,42 @@ void main() {
         ),
       ),
     ).called(1);
+  });
+
+  testWidgets('checking or failed live walls cannot be approved by swipe or semantics', (tester) async {
+    for (final live in <Map<String, dynamic>>[
+      <String, dynamic>{},
+      <String, dynamic>{'verified': false},
+      <String, dynamic>{'verified': true},
+    ]) {
+      await pump(
+        tester,
+        ReviewBatchState(
+          status: ReviewBatchStatus.loaded,
+          walls: <FirestoreDocument>[_wall('live', 'Live wall', live: live)],
+        ),
+      );
+
+      await tester.drag(find.text('Live wall'), const Offset(300, 0), warnIfMissed: false);
+      await tester.pump(const Duration(milliseconds: 500));
+      verifyNever(() => bloc.add(any(that: isA<ReviewBatchSwipeApproved>())));
+
+      final Finder wallSemantics = find.byWidgetPredicate(
+        (Widget widget) => widget is Semantics && widget.properties.label == 'Wallpaper to review',
+      );
+      final SemanticsProperties properties = tester.widget<Semantics>(wallSemantics).properties;
+      const CustomSemanticsAction approve = CustomSemanticsAction(label: 'Approve');
+      final Map<CustomSemanticsAction, VoidCallback> actions = properties.customSemanticsActions!;
+      expect(actions.containsKey(approve), isTrue);
+      actions[approve]!();
+      await tester.pump();
+      verifyNever(() => bloc.add(any(that: isA<ReviewBatchSwipeApproved>())));
+
+      await tester.tap(find.text('Skip'));
+      await tester.pump();
+      verify(() => bloc.add(any(that: isA<ReviewBatchSwipeSkipped>()))).called(1);
+      clearInteractions(bloc);
+    }
   });
 
   testWidgets('cancelling the reason sheet snaps the card back without rejecting', (tester) async {

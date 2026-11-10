@@ -24714,6 +24714,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show a tip when the clock or icons may be hard to read on a wallpaper.'**
   String get settingsReadabilityTipsBody;
+
+  /// Option: upload a still image wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get uploadKindPhoto;
+
+  /// Subtitle of the Photo option.
+  ///
+  /// In en, this message translates to:
+  /// **'A still image'**
+  String get uploadKindPhotoBody;
+
+  /// Option: upload a short looping video wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get uploadKindLive;
+
+  /// Subtitle of the Live option.
+  ///
+  /// In en, this message translates to:
+  /// **'A looping video, up to 15 seconds'**
+  String get uploadKindLiveBody;
+
+  /// Shown while the app reads the picked video and makes the poster frame.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your video'**
+  String get liveUploadChecking;
+
+  /// Facts of the picked video: length in seconds, then the size in pixels.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} s · {width} × {height}'**
+  String liveUploadFacts(String seconds, int width, int height);
+
+  /// Error: the picked file is not an MP4 video.
+  ///
+  /// In en, this message translates to:
+  /// **'Use an MP4 video. Prism can\'t read this file.'**
+  String get liveUploadErrorFormat;
+
+  /// Error: the video uses another codec, such as HEVC.
+  ///
+  /// In en, this message translates to:
+  /// **'This video isn\'t in H.264. Export it as H.264 MP4, then try again.'**
+  String get liveUploadErrorCodec;
+
+  /// Error: the video is too long.
+  ///
+  /// In en, this message translates to:
+  /// **'This clip is longer than 15 seconds. Trim it, then try again.'**
+  String get liveUploadErrorTooLong;
+
+  /// Error: the video file is too big.
+  ///
+  /// In en, this message translates to:
+  /// **'This clip is larger than 20 MB. Use a shorter or smaller clip.'**
+  String get liveUploadErrorTooLarge;
+
+  /// Error: the video is landscape or square.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a portrait clip that is taller than it is wide.'**
+  String get liveUploadErrorLandscape;
+
+  /// Error: the video frame is too big.
+  ///
+  /// In en, this message translates to:
+  /// **'This clip is larger than 1440 × 3200 pixels. Use a smaller clip.'**
+  String get liveUploadErrorFrameSize;
+
+  /// Error: the video is damaged or could not be read.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism couldn\'t read this video. Try another clip.'**
+  String get liveUploadErrorUnreadable;
+
+  /// Button: pick a different video after an error.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another video'**
+  String get liveUploadPickAnother;
+
+  /// Badge on a wallpaper tile that is a looping video.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get coreLiveBadge;
+
+  /// Screen reader label of the Live badge.
+  ///
+  /// In en, this message translates to:
+  /// **'Live wallpaper'**
+  String get coreLiveBadgeSemantic;
+
+  /// Button and screen reader label: start the silent video of a live wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Play video'**
+  String get liveWallPlay;
+
+  /// Button and screen reader label: pause the silent video of a live wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause video'**
+  String get liveWallPause;
+
+  /// Android button: set the video as a live wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Set live wallpaper'**
+  String get liveWallSetLive;
+
+  /// Shown while the app downloads the video before it opens the system preview.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting the video'**
+  String get liveWallPreparing;
+
+  /// Error after a failed live wallpaper set.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t set the live wallpaper. Try again.'**
+  String get liveWallSetFailed;
+
+  /// Title of the iPhone sheet with the options for a live wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this live wallpaper'**
+  String get liveWallIosTitle;
+
+  /// Body of the iPhone sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'iPhone can\'t use a video as a wallpaper. Save the video, or set the poster as a still wallpaper.'**
+  String get liveWallIosBody;
+
+  /// Button: save the video to Photos.
+  ///
+  /// In en, this message translates to:
+  /// **'Save video'**
+  String get liveWallSaveVideo;
+
+  /// Message after the video is saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Video saved to Photos.'**
+  String get liveWallSaveVideoDone;
+
+  /// Error after a failed video save.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the video. Allow Photos access in Settings, then try again.'**
+  String get liveWallSaveVideoFailed;
+
+  /// Button: set the still poster frame as the wallpaper.
+  ///
+  /// In en, this message translates to:
+  /// **'Set poster as wallpaper'**
+  String get liveWallSetPoster;
+
+  /// Review queue: the server has not checked the video yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the video'**
+  String get adminLiveChecking;
+
+  /// Review queue: the server refused the video. The admin can only reject it.
+  ///
+  /// In en, this message translates to:
+  /// **'The video failed the server check'**
+  String get adminLiveFailed;
+
+  /// Review queue: length of the live video in seconds.
+  ///
+  /// In en, this message translates to:
+  /// **'Live · {seconds} s'**
+  String adminLiveFacts(String seconds);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

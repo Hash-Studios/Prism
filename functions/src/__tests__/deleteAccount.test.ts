@@ -7,6 +7,7 @@ import {claimUsername} from "../claimUsername";
 import * as publicFolders from "../publicFolders";
 import * as desktopSubmissions from "../desktopSubmissions";
 import * as photoWallpaper from "../photoWallpaper";
+import * as wallLive from "../wallLive";
 import {installFakeDb} from "./fakeDb";
 
 type Options = {
@@ -22,6 +23,27 @@ type Options = {
   emailVerified?: boolean;
   lookupError?: string;
 };
+
+test("account deletion reconciles orphan live uploads before deleting upload ownership receipts", async (t) => {
+  const log = fake(t);
+  t.mock.method(wallLive, "tombstoneUnreferencedLiveUploads", async (uid: string) => {
+    log.push(`liveCleanup:${uid}`);
+    return 2;
+  });
+  await call();
+  assert.ok(log.indexOf("liveCleanup:u1") < log.indexOf("query:githubUploads.uid==u1"));
+});
+
+test("transient live upload cleanup failures preserve account credentials and upload receipts for retry", async (t) => {
+  const log = fake(t);
+  t.mock.method(wallLive, "tombstoneUnreferencedLiveUploads", async () => {
+    throw new Error("live storage busy");
+  });
+  await assert.rejects(() => call(), /live storage busy/);
+  assert.equal(log.includes("query:githubUploads.uid==u1"), false);
+  assert.equal(log.includes("anonymize"), false);
+  assert.equal(log.includes("auth"), false);
+});
 
 function fake(t: TestContext, options: Options = {}) {
   const log: string[] = [];

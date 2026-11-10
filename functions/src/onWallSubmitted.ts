@@ -13,6 +13,9 @@ import {keepRemixOf, removeRemixOfIfUnchanged} from "./wallRemix";
 import {sanitizeResubmitOf} from "./wallResubmissions";
 import {sanitizeSubmissionText} from "./wallSubmissionSafety";
 import {checkSubmittedVariantOf} from "./wallVariants";
+import {isLiveWall, verifyLiveWall} from "./wallLive";
+import {r2Secrets} from "./r2Storage";
+import {verifiedUidForEmail} from "./authoredContentUid";
 
 const GITHUB_RAW_HOST = "raw.githubusercontent.com";
 const studioSecret = defineSecret("STUDIO_SECRET");
@@ -39,7 +42,11 @@ export const onWallSubmitted = onDocumentCreated(
   {
     document: "walls/{wallId}",
     region: REGION,
-    secrets: [studioSecret],
+    secrets: [studioSecret, ...r2Secrets],
+    timeoutSeconds: 120,
+    memory: "512MiB",
+    concurrency: 1,
+    retry: true,
   },
   async (event) => {
     const data = event.data?.data();
@@ -79,6 +86,15 @@ export const onWallSubmitted = onDocumentCreated(
       return;
     }
     const artistEmail = str(data.email);
+    if (isLiveWall(data) && event.data) {
+      try {
+        const ownerUid = artistEmail ? await verifiedUidForEmail(artistEmail) : null;
+        await verifyLiveWall(event.data, ownerUid);
+      } catch (err) {
+        logger.warn("onWallSubmitted: live wall check failed.", {wallId, err});
+        throw err;
+      }
+    }
     const wallTitle = str(data.title) || "Untitled";
     const wallThumb = str(data.wallpaper_thumb);
 
@@ -149,6 +165,8 @@ export const onWallSubmitted = onDocumentCreated(
           modifier: adminEmail,
           channelId: "posts",
           scoreKind: "moderation",
+          // This trigger retries, so each wall keeps one inbox entry per admin.
+          docId: `wall_submitted_${wallId}`,
         },
         adminEmail,
       );

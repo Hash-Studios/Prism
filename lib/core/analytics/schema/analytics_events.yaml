@@ -2928,6 +2928,28 @@ events:
         type: enum
         enum: LiveWallpaperStyleValue
   - id: live_photo_guide_opened
+  - id: live_wall_upload_started
+  - id: live_wall_submitted
+    fields:
+      - name: duration_ms
+        key: duration_ms
+        type: int
+  - id: live_wall_preview_played
+    fields:
+      - name: surface
+        key: surface
+        type: string
+  - id: live_wall_set
+    fields:
+      - name: platform
+        key: platform
+        type: string
+      - name: action
+        key: action
+        type: string
+      - name: result
+        key: result
+        type: string
   - id: auto_rotate_run_result
     fields:
       - name: result

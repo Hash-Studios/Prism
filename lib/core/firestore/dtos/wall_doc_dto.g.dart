@@ -36,6 +36,8 @@ _WallDocDto _$WallDocDtoFromJson(Map<String, dynamic> json) => _WallDocDto(
   spatial: json['spatial'] == null
       ? const <String, Object?>{}
       : const FirestoreJsonMapConverter().fromJson(json['spatial']),
+  kind: json['kind'] == null ? '' : const FirestoreStringConverter().fromJson(json['kind']),
+  live: json['live'] == null ? const <String, Object?>{} : const FirestoreJsonMapConverter().fromJson(json['live']),
 );
 
 Map<String, dynamic> _$WallDocDtoToJson(_WallDocDto instance) => <String, dynamic>{
@@ -58,6 +60,8 @@ Map<String, dynamic> _$WallDocDtoToJson(_WallDocDto instance) => <String, dynami
   'aiMetadata': const FirestoreJsonMapConverter().toJson(instance.aiMetadata),
   'depth': const FirestoreJsonMapConverter().toJson(instance.depth),
   'spatial': const FirestoreJsonMapConverter().toJson(instance.spatial),
+  'kind': const FirestoreStringConverter().toJson(instance.kind),
+  'live': const FirestoreJsonMapConverter().toJson(instance.live),
 };
 
 _FavouriteWallDocDto _$FavouriteWallDocDtoFromJson(Map<String, dynamic> json) => _FavouriteWallDocDto(
@@ -81,6 +85,8 @@ _FavouriteWallDocDto _$FavouriteWallDocDtoFromJson(Map<String, dynamic> json) =>
   spatial: json['spatial'] == null
       ? const <String, Object?>{}
       : const FirestoreJsonMapConverter().fromJson(json['spatial']),
+  kind: json['kind'] == null ? '' : const FirestoreStringConverter().fromJson(json['kind']),
+  live: json['live'] == null ? const <String, Object?>{} : const FirestoreJsonMapConverter().fromJson(json['live']),
 );
 
 Map<String, dynamic> _$FavouriteWallDocDtoToJson(_FavouriteWallDocDto instance) => <String, dynamic>{
@@ -100,4 +106,6 @@ Map<String, dynamic> _$FavouriteWallDocDtoToJson(_FavouriteWallDocDto instance) 
   'pinnedAt': ?const FirestoreDateTimeConverter().toJson(instance.pinnedAt),
   'depth': const FirestoreJsonMapConverter().toJson(instance.depth),
   'spatial': const FirestoreJsonMapConverter().toJson(instance.spatial),
+  'kind': const FirestoreStringConverter().toJson(instance.kind),
+  'live': const FirestoreJsonMapConverter().toJson(instance.live),
 };

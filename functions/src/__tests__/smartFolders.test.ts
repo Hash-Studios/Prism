@@ -228,6 +228,20 @@ test("createSmartFolder fills the new folder with the matching walls only and re
     {code: "invalid-argument"}, "an unknown rule kind must be refused");
 });
 
+test("smart folder items retain a live wall's video and poster", async (t) => {
+  const live = {video: "https://img.prismwalls.com/previews/video.img", durationMs: 1200, verified: true};
+  const store = setup(t, {
+    ...seedWall("W1", gatedWall({kind: "live", live})),
+    "usersv2/u1": {email: "u1@x.com"},
+  });
+  const created = await callCreate("u1", {name: "Blue", rules: [{kind: "colour", value: "blue"}]});
+  const item = store.get(`folders/${created.folderId}/items/prism_w1`);
+  assert.equal(item?.kind, "live");
+  assert.deepEqual(item?.live, live);
+  assert.equal(item?.thumb, THUMB);
+  assert.equal(item?.url, "https://secret/w1.jpg");
+});
+
 test("createSmartFolder returns the committed folder when its first fill fails, so a retry makes no duplicate", async (t) => {
   const store = setup(t, {
     ...seedWall("W1", gatedWall({id: "w1", colors: ["blue"]})),

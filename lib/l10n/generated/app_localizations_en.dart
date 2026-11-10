@@ -15527,4 +15527,99 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsReadabilityTipsBody => 'Show a tip when the clock or icons may be hard to read on a wallpaper.';
+
+  @override
+  String get uploadKindPhoto => 'Photo';
+
+  @override
+  String get uploadKindPhotoBody => 'A still image';
+
+  @override
+  String get uploadKindLive => 'Live';
+
+  @override
+  String get uploadKindLiveBody => 'A looping video, up to 15 seconds';
+
+  @override
+  String get liveUploadChecking => 'Checking your video';
+
+  @override
+  String liveUploadFacts(String seconds, int width, int height) {
+    return '$seconds s · $width × $height';
+  }
+
+  @override
+  String get liveUploadErrorFormat => 'Use an MP4 video. Prism can\'t read this file.';
+
+  @override
+  String get liveUploadErrorCodec => 'This video isn\'t in H.264. Export it as H.264 MP4, then try again.';
+
+  @override
+  String get liveUploadErrorTooLong => 'This clip is longer than 15 seconds. Trim it, then try again.';
+
+  @override
+  String get liveUploadErrorTooLarge => 'This clip is larger than 20 MB. Use a shorter or smaller clip.';
+
+  @override
+  String get liveUploadErrorLandscape => 'Use a portrait clip that is taller than it is wide.';
+
+  @override
+  String get liveUploadErrorFrameSize => 'This clip is larger than 1440 × 3200 pixels. Use a smaller clip.';
+
+  @override
+  String get liveUploadErrorUnreadable => 'Prism couldn\'t read this video. Try another clip.';
+
+  @override
+  String get liveUploadPickAnother => 'Choose another video';
+
+  @override
+  String get coreLiveBadge => 'Live';
+
+  @override
+  String get coreLiveBadgeSemantic => 'Live wallpaper';
+
+  @override
+  String get liveWallPlay => 'Play video';
+
+  @override
+  String get liveWallPause => 'Pause video';
+
+  @override
+  String get liveWallSetLive => 'Set live wallpaper';
+
+  @override
+  String get liveWallPreparing => 'Getting the video';
+
+  @override
+  String get liveWallSetFailed => 'Couldn\'t set the live wallpaper. Try again.';
+
+  @override
+  String get liveWallIosTitle => 'Use this live wallpaper';
+
+  @override
+  String get liveWallIosBody =>
+      'iPhone can\'t use a video as a wallpaper. Save the video, or set the poster as a still wallpaper.';
+
+  @override
+  String get liveWallSaveVideo => 'Save video';
+
+  @override
+  String get liveWallSaveVideoDone => 'Video saved to Photos.';
+
+  @override
+  String get liveWallSaveVideoFailed => 'Couldn\'t save the video. Allow Photos access in Settings, then try again.';
+
+  @override
+  String get liveWallSetPoster => 'Set poster as wallpaper';
+
+  @override
+  String get adminLiveChecking => 'Checking the video';
+
+  @override
+  String get adminLiveFailed => 'The video failed the server check';
+
+  @override
+  String adminLiveFacts(String seconds) {
+    return 'Live · $seconds s';
+  }
 }

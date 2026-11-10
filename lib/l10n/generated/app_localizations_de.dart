@@ -15782,4 +15782,102 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get settingsReadabilityTipsBody =>
       'Zeigt einen Tipp, wenn die Uhr oder die Symbole auf einem Hintergrundbild schlecht lesbar sein könnten.';
+
+  @override
+  String get uploadKindPhoto => 'Foto';
+
+  @override
+  String get uploadKindPhotoBody => 'Ein Standbild';
+
+  @override
+  String get uploadKindLive => 'Live';
+
+  @override
+  String get uploadKindLiveBody => 'Ein Video in Schleife, bis zu 15 Sekunden';
+
+  @override
+  String get liveUploadChecking => 'Dein Video wird geprüft';
+
+  @override
+  String liveUploadFacts(String seconds, int width, int height) {
+    return '$seconds s · $width × $height';
+  }
+
+  @override
+  String get liveUploadErrorFormat => 'Verwende ein MP4-Video. Prism kann diese Datei nicht lesen.';
+
+  @override
+  String get liveUploadErrorCodec =>
+      'Dieses Video ist nicht in H.264. Exportiere es als H.264-MP4 und versuche es dann erneut.';
+
+  @override
+  String get liveUploadErrorTooLong => 'Dieser Clip ist länger als 15 Sekunden. Kürze ihn und versuche es erneut.';
+
+  @override
+  String get liveUploadErrorTooLarge =>
+      'Dieser Clip ist größer als 20 MB. Verwende einen kürzeren oder kleineren Clip.';
+
+  @override
+  String get liveUploadErrorLandscape => 'Verwende einen Clip im Hochformat, der höher als breit ist.';
+
+  @override
+  String get liveUploadErrorFrameSize => 'Dieser Clip ist größer als 1440 × 3200 Pixel. Verwende einen kleineren Clip.';
+
+  @override
+  String get liveUploadErrorUnreadable => 'Prism konnte dieses Video nicht lesen. Versuche einen anderen Clip.';
+
+  @override
+  String get liveUploadPickAnother => 'Anderes Video wählen';
+
+  @override
+  String get coreLiveBadge => 'Live';
+
+  @override
+  String get coreLiveBadgeSemantic => 'Live-Hintergrundbild';
+
+  @override
+  String get liveWallPlay => 'Video abspielen';
+
+  @override
+  String get liveWallPause => 'Video pausieren';
+
+  @override
+  String get liveWallSetLive => 'Live-Hintergrundbild festlegen';
+
+  @override
+  String get liveWallPreparing => 'Video wird geladen';
+
+  @override
+  String get liveWallSetFailed => 'Das Live-Hintergrundbild konnte nicht festgelegt werden. Versuch es erneut.';
+
+  @override
+  String get liveWallIosTitle => 'Dieses Live-Hintergrundbild verwenden';
+
+  @override
+  String get liveWallIosBody =>
+      'Das iPhone kann kein Video als Hintergrundbild nutzen. Speichere das Video oder setze das Standbild als Hintergrundbild.';
+
+  @override
+  String get liveWallSaveVideo => 'Video in Fotos sichern';
+
+  @override
+  String get liveWallSaveVideoDone => 'Video in Fotos gesichert.';
+
+  @override
+  String get liveWallSaveVideoFailed =>
+      'Das Video konnte nicht gesichert werden. Erlaube den Zugriff auf Fotos in den Einstellungen und versuche es erneut.';
+
+  @override
+  String get liveWallSetPoster => 'Standbild als Hintergrundbild festlegen';
+
+  @override
+  String get adminLiveChecking => 'Video wird geprüft';
+
+  @override
+  String get adminLiveFailed => 'Das Video hat die Serverprüfung nicht bestanden';
+
+  @override
+  String adminLiveFacts(String seconds) {
+    return 'Live · $seconds s';
+  }
 }

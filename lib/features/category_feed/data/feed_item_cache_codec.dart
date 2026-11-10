@@ -2,6 +2,7 @@ import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/wallpaper/wall_ai_source.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_desktop.dart';
+import 'package:Prism/core/wallpaper/wall_live.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -28,6 +29,7 @@ Map<String, Object?> encodeFeedItem(FeedItemEntity item) => item.when(
       if (wall.firestoreDocumentId != null) 'firestoreDocumentId': wall.firestoreDocumentId,
       if (wall.depthTier != null) 'depthTier': wall.depthTier!.name,
       if (wall.spatial != null) 'spatial': wall.spatial!.toJson(),
+      if (wall.live != null) 'live': wall.live!.toJson(),
       if (wall.desktop != null) 'desktop': wall.desktop!.toJson(),
       if (wall.aiSource != null) 'aiSource': wall.aiSource!.toJson(),
       if (wall.remixOf != null) 'remixOf': wall.remixOf,
@@ -124,7 +126,7 @@ FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
             'variantIndex',
           ]) ||
           !validBools(wallpaper, const <String>['review', 'isStreakExclusive', 'isAiGenerated', 'byStudio']) ||
-          !validMaps(wallpaper, const <String>['aiMetadata', 'spatial', 'desktop', 'aiSource'])) {
+          !validMaps(wallpaper, const <String>['aiMetadata', 'spatial', 'live', 'desktop', 'aiSource'])) {
         return null;
       }
     case 'wallhaven':
@@ -162,6 +164,7 @@ FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
           firestoreDocumentId: (firestoreId != null && firestoreId.isNotEmpty) ? firestoreId : null,
           depthTier: WallDepthTier.parse(wallpaper['depthTier']),
           spatial: WallSpatial.parse(wallpaper['spatial']),
+          live: wallpaper['live'] == null ? null : WallLive.parse(kind: 'live', value: wallpaper['live']),
           desktop: WallDesktopVariant.parse(wallpaper['desktop']),
           aiSource: WallAiSource.fromJson(wallpaper['aiSource']),
           remixOf: wallpaper['remixOf'] is String ? wallpaper['remixOf'] as String : null,

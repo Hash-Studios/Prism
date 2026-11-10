@@ -4106,6 +4106,62 @@ class LivePhotoGuideOpenedEvent extends AnalyticsEvent {
   }
 }
 
+class LiveWallUploadStartedEvent extends AnalyticsEvent {
+  const LiveWallUploadStartedEvent();
+
+  @override
+  String get eventName => 'live_wall_upload_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return const <String, Object?>{};
+  }
+}
+
+class LiveWallSubmittedEvent extends AnalyticsEvent {
+  const LiveWallSubmittedEvent({required this.durationMs});
+
+  final int durationMs;
+
+  @override
+  String get eventName => 'live_wall_submitted';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'duration_ms': durationMs};
+  }
+}
+
+class LiveWallPreviewPlayedEvent extends AnalyticsEvent {
+  const LiveWallPreviewPlayedEvent({required this.surface});
+
+  final String surface;
+
+  @override
+  String get eventName => 'live_wall_preview_played';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'surface': surface};
+  }
+}
+
+class LiveWallSetEvent extends AnalyticsEvent {
+  const LiveWallSetEvent({required this.platform, required this.action, required this.result});
+
+  final String platform;
+  final String action;
+  final String result;
+
+  @override
+  String get eventName => 'live_wall_set';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'platform': platform, 'action': action, 'result': result};
+  }
+}
+
 class AutoRotateRunResultEvent extends AnalyticsEvent {
   const AutoRotateRunResultEvent({required this.result});
 

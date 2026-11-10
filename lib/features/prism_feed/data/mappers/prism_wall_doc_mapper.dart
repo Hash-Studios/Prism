@@ -1,6 +1,7 @@
 import 'package:Prism/core/wallpaper/wall_ai_source.dart';
 import 'package:Prism/core/wallpaper/wall_depth.dart';
 import 'package:Prism/core/wallpaper/wall_desktop.dart';
+import 'package:Prism/core/wallpaper/wall_live.dart';
 import 'package:Prism/core/wallpaper/wall_spatial.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -56,6 +57,7 @@ extension PrismWallDocMapper on PrismWallDocDto {
       boostedUntil: boostedUntil,
       depthTier: WallDepthTier.parse(depth['tier']),
       spatial: WallSpatial.parse(spatial),
+      live: WallLive.parse(kind: kind, value: live),
       desktop: WallDesktopVariant.parse(desktopVariant),
       aiSource: WallAiSource.parse(
         isAiGenerated: isAiGenerated,

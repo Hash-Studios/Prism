@@ -42,6 +42,32 @@ void main() {
     expect(find.widgetWithText(PrismButton, 'Approve'), findsOneWidget);
   });
 
+  testWidgets('live walls cannot be approved before verification, but can still be rejected', (tester) async {
+    for (final live in <Map<String, dynamic>>[
+      <String, dynamic>{},
+      <String, dynamic>{'verified': false},
+      <String, dynamic>{'verified': true},
+    ]) {
+      await tester.pumpWidget(
+        _app(
+          ModerationCard(
+            previewUrl: '',
+            fullUrl: '',
+            facts: const <(String, String)>[],
+            liveData: <String, dynamic>{'kind': 'live', 'live': live},
+            onApprove: () async {},
+            onApproveAndPick: () async {},
+            onReject: () async {},
+          ),
+        ),
+      );
+
+      expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Approve')).onPressed, isNull);
+      expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Approve and pick')).onPressed, isNull);
+      expect(tester.widget<ModerationDangerButton>(find.byType(ModerationDangerButton)).onPressed, isNotNull);
+    }
+  });
+
   testWidgets('Approve and pick runs its callback once, even on a double tap', (WidgetTester tester) async {
     final Completer<void> gate = Completer<void>();
     int calls = 0;

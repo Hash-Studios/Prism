@@ -1,9 +1,13 @@
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/wallpaper/wall_live.dart';
+import 'package:Prism/core/widgets/live_tag.dart';
+import 'package:Prism/core/widgets/live_wall_video.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/admin_review/biz/wall_moderation.dart';
 import 'package:Prism/features/admin_review/views/widgets/full_screen_image_view.dart';
 import 'package:Prism/features/admin_review/views/widgets/moderation_bits.dart';
 import 'package:Prism/features/admin_review/views/widgets/moderation_signals.dart';
+import 'package:Prism/features/admin_review/views/widgets/swipe_wallpaper_card.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -23,10 +27,14 @@ class ModerationCard extends StatefulWidget {
     this.reserved = false,
     this.moderation,
     this.details,
+    this.liveData,
   });
 
   final String previewUrl;
   final String fullUrl;
+
+  /// The wall document's raw data. Reads `kind` and `live` for a live wall. Null for a still wall.
+  final Map<String, dynamic>? liveData;
 
   /// Label and value pairs shown beside the thumbnail.
   final List<(String, String)> facts;
@@ -55,6 +63,12 @@ class _ModerationCardState extends State<ModerationCard> {
   Future<void> Function()? _approvalAction;
   bool _isReserving = false;
 
+  bool get _liveApprovalBlocked {
+    final Map<String, dynamic>? data = widget.liveData;
+    if (data == null || WallKind.parse(data['kind']) != WallKind.live) return false;
+    return WallLive.parse(kind: data['kind'], value: data['live'])?.verified != true;
+  }
+
   Future<void> _toggleReserve() async {
     if (_isReserving) return;
     final AppLocalizations l10n = context.l10n;
@@ -74,7 +88,7 @@ class _ModerationCardState extends State<ModerationCard> {
   Future<void> _approveAndPick() => _runApproval(widget.onApproveAndPick!);
 
   Future<void> _runApproval(Future<void> Function() action) async {
-    if (_isApproving || _isApproved) return;
+    if (_isApproving || _isApproved || _liveApprovalBlocked) return;
     _approvalAction = action;
     setState(() {
       _isApproving = true;
@@ -102,6 +116,19 @@ class _ModerationCardState extends State<ModerationCard> {
         ? null
         : () => FullScreenImageView.show(context, widget.fullUrl);
     final bool locked = _isApproving || _isApproved;
+    final Map<String, dynamic>? liveData = widget.liveData;
+    final LiveReviewState? live = liveData == null ? null : liveReviewStateOf(liveData);
+    final WallLive? wallLive = live == LiveReviewState.ready
+        ? WallLive.parse(kind: liveData!['kind'], value: liveData['live'])
+        : null;
+    final int? durationMs = wallLive?.durationMs;
+    final Widget thumb = ModerationThumb(
+      url: widget.previewUrl,
+      width: 96,
+      height: 170,
+      semanticLabel: context.l10n.adminViewFullWallpaper,
+      onTap: openFull,
+    );
     return PrismCard(
       padding: const EdgeInsets.all(PrismSpace.sm),
       child: Column(
@@ -111,13 +138,28 @@ class _ModerationCardState extends State<ModerationCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               if (widget.previewUrl.isNotEmpty) ...<Widget>[
-                ModerationThumb(
-                  url: widget.previewUrl,
-                  width: 96,
-                  height: 170,
-                  semanticLabel: context.l10n.adminViewFullWallpaper,
-                  onTap: openFull,
-                ),
+                if (wallLive == null)
+                  thumb
+                else
+                  // The poster stays under the video. The video ignores taps, so the thumb still opens the full view.
+                  Stack(
+                    children: <Widget>[
+                      thumb,
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(PrismRadius.sm),
+                            child: LiveWallVideo(
+                              live: wallLive,
+                              poster: const SizedBox.shrink(),
+                              surface: LiveSurface.review,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const PositionedDirectional(top: 6, start: 6, child: LiveTag()),
+                    ],
+                  ),
                 const SizedBox(width: PrismSpace.sm),
               ],
               Expanded(
@@ -126,6 +168,21 @@ class _ModerationCardState extends State<ModerationCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
+                      if (live == LiveReviewState.checking || live == LiveReviewState.failed)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: PrismSpace.xs),
+                          child: LiveReviewPill(state: live!),
+                        ),
+                      if (durationMs != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            context.l10n.adminLiveFacts((durationMs / 1000).toStringAsFixed(1)),
+                            style: PrismTextStyles.caption(
+                              context,
+                            ).copyWith(color: cs.onSurface, fontWeight: FontWeight.w600),
+                          ),
+                        ),
                       for (final (String label, String value) in widget.facts)
                         ModerationFact(label: label, value: value),
                       ModerationSignals(moderation: widget.moderation, onImage: false),
@@ -191,13 +248,13 @@ class _ModerationCardState extends State<ModerationCard> {
                         variant: PrismButtonVariant.tonal,
                         icon: Icons.auto_awesome_rounded,
                         loading: _isApproving,
-                        onPressed: locked ? null : _approveAndPick,
+                        onPressed: locked || _liveApprovalBlocked ? null : _approveAndPick,
                       ),
                     PrismButton(
                       label: _isApproved ? context.l10n.adminApproved : context.l10n.adminApprove,
                       size: PrismButtonSize.compact,
                       loading: _isApproving,
-                      onPressed: locked ? null : _approve,
+                      onPressed: locked || _liveApprovalBlocked ? null : _approve,
                     ),
                   ],
                 ),

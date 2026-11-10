@@ -5,6 +5,9 @@ import {db} from "../common";
 import * as ownedAssets from "../ownedAssetDelivery";
 import {r2ObjectId} from "../r2Storage";
 import {AI_LEGACY_UID, AI_STORAGE_REPO, aiUploadId} from "../aiWallSource";
+import {mp4} from "./mp4Fixture";
+import sharp from "sharp";
+import {installFakeDb} from "./fakeDb";
 
 import {
   canDeleteUpload,
@@ -18,6 +21,53 @@ import {
 } from "../githubContent";
 
 const env = {GH_REPO_WALLS: "walls", GH_REPO_SETUPS: "setups"};
+
+test("public live frames require image decoding before quotas or storage writes", async (t) => {
+  testGithubEnvironment(t);
+  const docs = uploadStore(t, {});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  const retain = t.mock.method(ownedAssets, "retainUpload", async () => {
+    throw new Error("validated image reached storage");
+  });
+  const upload = (bytes: Buffer) => run(githubPutFile, {auth: {uid: "u"}, data: {
+    repo: "walls", path: "frame_1_a.jpg", message: "upload", purpose: "wallpaper", contentBase64: bytes.toString("base64"),
+  }});
+  await assert.rejects(upload(Buffer.from([255, 216, 255])), {code: "invalid-argument"});
+  assert.equal(docs.size, 0);
+  assert.equal(retain.mock.callCount(), 0);
+  const image = await sharp({create: {width: 16, height: 32, channels: 3, background: "red"}}).jpeg().toBuffer();
+  await assert.rejects(upload(image), /validated image reached storage/);
+  assert.equal(retain.mock.callCount(), 1);
+});
+
+test("live upload runtime bounds large requests to one invocation per instance", () => {
+  assert.equal(githubPutFile.__endpoint.concurrency, 1);
+  assert.equal(githubPutFile.__endpoint.availableMemoryMb, 512);
+});
+
+for (const path of ["live_a.mp4", "frame_1_a.jpg"]) {
+  test(`direct deletion preserves referenced live upload ${path} until its wall is deleted`, async (t) => {
+    testGithubEnvironment(t);
+    const sha = "a".repeat(40);
+    const asset = retainedFixture(path, sha, "owned");
+    const retainedAsset = {...asset, previewObjectId: asset.objectId};
+    const url = ownedAssets.ownedThumbnailUrl(retainedAsset);
+    const id = createHash("sha256").update(`walls\0${path}\0${sha}`).digest("hex");
+    const wall = {kind: "live", creatorUid: "u", review: true, live: path.endsWith(".mp4") ?
+      {videoPath: path, videoSha: sha, video: url} : {frames: [{path, sha, url}]}};
+    const docs = installFakeDb(t, {"walls/wall": wall,
+      [`githubUploads/owned_file_${id}`]: {uid: "u", repo: "walls", path, sha, sourceKind: "owned", generation: "g",
+        retainedAsset}});
+    const remove = () => run(githubDeleteFile, {auth: {uid: "u"}, data: {repo: "walls", path, sha,
+      sourceKind: "owned", message: "delete"}});
+    const deletion = t.mock.method(ownedAssets, "deleteRetainedUpload", async () => undefined);
+    await assert.rejects(remove, {code: "failed-precondition"});
+    assert.equal(deletion.mock.callCount(), 0);
+    docs.delete("walls/wall");
+    assert.deepEqual(await remove(), {ok: true});
+    assert.equal(deletion.mock.callCount(), 1);
+  });
+}
 function retainedFixture(path: string, sha: string, sourceKind?: "owned", uid = "u", uploadId?: string) {
   process.env.R2_PRIVATE_BUCKET = "owned";
   process.env.R2_PREVIEW_BASE_URL = "https://images.example.com";
@@ -415,6 +465,27 @@ test("invalid upload purpose is rejected before writes", async (t) => {
   }}), {code: "invalid-argument"});
   assert.equal(github.mock.callCount(), 0);
   assert.deepEqual([...docs.keys()], []);
+});
+
+test("live video uploads are refused before any GitHub or R2 call unless they are a valid MP4", async (t) => {
+  testGithubEnvironment(t);
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  const github = t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("No GitHub request allowed");
+  });
+  const upload = (path: string, bytes: Buffer, purpose: string | undefined = "wallpaper") => run(githubPutFile, {
+    auth: {uid: "u"}, data: {repo: "walls", path, message: "upload", contentBase64: bytes.toString("base64"),
+      ...(purpose ? {purpose} : {})},
+  });
+  const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(60)]);
+  await assert.rejects(upload("live_a.mp4", jpeg), {code: "invalid-argument", details: {liveVideo: "not_mp4"}});
+  await assert.rejects(upload("live_a.mp4", mp4({duration: 16000})), {code: "invalid-argument",
+    details: {liveVideo: "too_long"}});
+  await assert.rejects(upload("live_a.mp4", Buffer.concat([mp4(), Buffer.alloc(20 * 1024 * 1024)])),
+    {code: "invalid-argument", message: "File is too large."});
+  await assert.rejects(upload("clip.mp4", mp4(), undefined), {code: "invalid-argument",
+    message: "Only image files are allowed."});
+  assert.equal(github.mock.callCount(), 0);
 });
 
 test("profile upload deletion does not require an R2 receipt", async (t) => {

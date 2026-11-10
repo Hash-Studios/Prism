@@ -1,4 +1,5 @@
 import 'package:Prism/core/constants/app_functions.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 enum UploadSourceKind {
   owned,
@@ -50,8 +51,12 @@ class GitHubContentApi {
     required String message,
     String? sha,
     String? purpose,
+    Duration? timeout,
   }) async {
-    final result = await appFunctions.httpsCallable('githubPutFile').call(<String, dynamic>{
+    final HttpsCallable callable = timeout == null
+        ? appFunctions.httpsCallable('githubPutFile')
+        : appFunctions.httpsCallable('githubPutFile', options: HttpsCallableOptions(timeout: timeout));
+    final result = await callable.call(<String, dynamic>{
       'repo': repo,
       'path': path,
       'contentBase64': contentBase64,

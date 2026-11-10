@@ -15,6 +15,7 @@ import 'package:Prism/core/wallpaper/wallpaper_display_source.dart';
 import 'package:Prism/core/widgets/depth_tag.dart';
 import 'package:Prism/core/widgets/home/feed_scroll.dart';
 import 'package:Prism/core/widgets/home/wallpapers/see_more_button.dart';
+import 'package:Prism/core/widgets/live_tag.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
@@ -371,6 +372,7 @@ class _SearchGridState extends State<SearchGrid> {
                         heroTag: prismHeroTag(this, index, wallpaper.id),
                         semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),
                         overlay: stackTags(<Widget?>[
+                          liveTagFor(kindOf(wallpaper)),
                           depthTagFor(depthTierOf(wallpaper)),
                           spatialTagFor(spatialOf(wallpaper)?.tier),
                         ]),
@@ -446,6 +448,7 @@ class _FromPrismRow extends StatelessWidget {
                     heroTag: prismHeroTag(results, index, wallpaper.id),
                     semanticLabel: wallpaperSemanticLabel(_authorName(wallpaper), context.l10n),
                     overlay: stackTags(<Widget?>[
+                      liveTagFor(kindOf(wallpaper)),
                       depthTagFor(depthTierOf(wallpaper)),
                       spatialTagFor(spatialOf(wallpaper)?.tier),
                     ]),

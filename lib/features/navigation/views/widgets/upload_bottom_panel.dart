@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/analytics/analytics_service.dart';
@@ -8,9 +9,12 @@ import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/wallpaper/wall_live.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/session/session.dart';
+import 'package:Prism/features/wallpaper_upload/biz/live_upload_limits.dart';
 import 'package:Prism/features/wallpaper_upload/biz/upload_batch.dart';
+import 'package:Prism/features/wallpaper_upload/data/live_video_preparer.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
@@ -92,7 +96,81 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
     router.push(EditWallRoute(image: wallpapers.first, batch: wallpapers.length > 1 ? UploadBatch(wallpapers) : null));
   }
 
-  Future<void> _onWallpaperTap() async {
+  Future<void> _pickLiveVideo() async {
+    analytics.track(const LiveWallUploadStartedEvent());
+    final XFile? picked = await _picker.pickVideo(
+      source: ImageSource.gallery,
+      maxDuration: const Duration(seconds: 15),
+    );
+    if (!mounted || picked == null) return;
+    final NavigatorState navigator = Navigator.of(context);
+    final router = context.router;
+    unawaited(
+      showPrismSheet<void>(
+        context,
+        detents: const <PrismSheetDetent>[PrismSheetDetent.fit],
+        barrierDismissible: false,
+        swipeDismissible: false,
+        builder: (_) => PrismSheetBody(
+          title: context.l10n.liveUploadChecking,
+          showHandle: false,
+          showCloseButton: false,
+          child: const Padding(
+            padding: EdgeInsets.symmetric(vertical: PrismSpace.lg),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        ),
+      ),
+    );
+    final LivePrepResult result = await _checkLiveVideo(File(picked.path));
+    navigator.pop();
+    if (!mounted) return;
+    switch (result) {
+      case LivePrepReady(:final poster, :final input):
+        Navigator.pop(context);
+        router.push(UploadWallRoute(image: poster, live: input));
+      case LivePrepRefused(:final error):
+        if (await _showLiveRefusal(error)) await _pickLiveVideo();
+    }
+  }
+
+  Future<LivePrepResult> _checkLiveVideo(File video) async {
+    try {
+      return await prepareLiveVideo(video);
+    } catch (error, stackTrace) {
+      logger.w('Live video check failed', error: error, stackTrace: stackTrace);
+      return const LivePrepRefused(LiveVideoError.malformed);
+    }
+  }
+
+  /// Returns true when the user picks another video.
+  Future<bool> _showLiveRefusal(LiveVideoError error) async {
+    final AppLocalizations l10n = context.l10n;
+    final bool? pickAnother = await showPrismSheet<bool>(
+      context,
+      detents: const <PrismSheetDetent>[PrismSheetDetent.fit],
+      builder: (sheetContext) => PrismSheetBody(
+        title: l10n.uploadKindLive,
+        message: liveVideoErrorMessage(l10n, error),
+        actions: <Widget>[
+          PrismButton(
+            label: l10n.liveUploadPickAnother,
+            expand: true,
+            onPressed: () => Navigator.of(sheetContext).pop(true),
+          ),
+          PrismButton(
+            label: l10n.actionCancel,
+            expand: true,
+            variant: PrismButtonVariant.ghost,
+            onPressed: () => Navigator.of(sheetContext).pop(false),
+          ),
+        ],
+      ),
+    );
+    return pickAnother ?? false;
+  }
+
+  Future<void> _onWallpaperTap(WallKind kind) async {
     if (_picking) return;
     if (!await requireSignedInAction(context) || !mounted) return;
     analytics.track(
@@ -115,7 +193,11 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
     PrismHaptics.tap();
     _picking = true;
     try {
-      await _pickWallpaperImage();
+      if (kind == WallKind.live) {
+        await _pickLiveVideo();
+      } else {
+        await _pickWallpaperImage();
+      }
     } on PlatformException catch (error) {
       // already_active means another screen has the gallery open, and the user is choosing there.
       if (error.code != 'already_active') rethrow;
@@ -152,9 +234,15 @@ class _UploadBottomPanelState extends State<UploadBottomPanel> {
             children: <Widget>[
               PrismRow(
                 icon: Icons.photo_library_rounded,
-                title: context.l10n.wallpaperUploadTitle,
-                subtitle: context.l10n.wallpaperUploadFromGallery,
-                onTap: _onWallpaperTap,
+                title: context.l10n.uploadKindPhoto,
+                subtitle: context.l10n.uploadKindPhotoBody,
+                onTap: () => _onWallpaperTap(WallKind.still),
+              ),
+              PrismRow(
+                icon: Icons.motion_photos_on_rounded,
+                title: context.l10n.uploadKindLive,
+                subtitle: context.l10n.uploadKindLiveBody,
+                onTap: () => _onWallpaperTap(WallKind.live),
               ),
               if (_visibleDraft case final draft?)
                 PrismRow(

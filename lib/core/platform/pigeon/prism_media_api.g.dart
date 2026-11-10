@@ -464,4 +464,45 @@ class PrismMediaHostApi {
     );
     return pigeonVar_replyValue! as OperationResult;
   }
+
+  /// Writes one JPEG per entry of [timesMs] from the local video at [path], with the video's display rotation
+  /// applied. The long edge is at most [maxEdge] px. Returns the JPEG file paths in the same order. Throws when the
+  /// video can't be read.
+  Future<List<String>> extractVideoFrames(String path, List<int> timesMs, int maxEdge, int quality) async {
+    final pigeonVar_channelName =
+        'dev.flutter.pigeon.Prism.PrismMediaHostApi.extractVideoFrames$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[path, timesMs, maxEdge, quality]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return (pigeonVar_replyValue! as List<Object?>).cast<String>();
+  }
+
+  /// Saves the local video at [path] to the user's photo library (iOS Photos, Android Movies/Prism).
+  Future<OperationResult> saveVideo(String path) async {
+    final pigeonVar_channelName = 'dev.flutter.pigeon.Prism.PrismMediaHostApi.saveVideo$pigeonVar_messageChannelSuffix';
+    final pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final Future<Object?> pigeonVar_sendFuture = pigeonVar_channel.send(<Object?>[path]);
+    final pigeonVar_replyList = await pigeonVar_sendFuture as List<Object?>?;
+
+    final Object? pigeonVar_replyValue = _extractReplyValueOrThrow(
+      pigeonVar_replyList,
+      pigeonVar_channelName,
+      isNullValid: false,
+    );
+    return pigeonVar_replyValue! as OperationResult;
+  }
 }
