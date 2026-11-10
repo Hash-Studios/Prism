@@ -1,0 +1,6 @@
+   button        48x48   Back 
+   button       184x228  New folder 
+   button       184x228  New smart folder 
+   button       184x228  3 wallpapers, QA Rotate 
+   button       184x228  3 wallpapers, Lock screen 
+!! button        48x44   Got it SMALL<48

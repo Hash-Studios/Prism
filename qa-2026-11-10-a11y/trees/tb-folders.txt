@@ -1,0 +1,17 @@
+Page: com.hash.prism
+App: com.hash.prism
+Snapshot: 11 nodes
+@e2 [button] "Back"
+@e3 [group] "Library"
+@e4 [group] "Favourites
+Tab 1 of 4"
+@e5 [group] "Folders
+Tab 2 of 4" [selected]
+@e6 [group] "Downloads
+Tab 3 of 4"
+@e7 [group] "History
+Tab 4 of 4"
+@e8 [button] "New folder"
+@e9 [button] "New smart folder"
+@e10 [button] "3 wallpapers, QA Rotate"
+@e11 [button] "3 wallpapers, Lock screen"

@@ -1,0 +1,88 @@
+Warning: ios snapshots are slow in this run: p95 3051ms over 59 captures. Possible causes: device load, app or dev server stuck, helper fallback, or stale daemon.
+Page: com.hash.prism
+App: com.hash.prism
+Snapshot: 71 nodes
+@e1 [application] "Prism"
+@e2 [other] "Find wallpapers that match a photo from your gallery."
+@e3 [button] "Got it"
+@e4 [scroll-area] [scrollable]
+@e5 [text] "Search"
+@e6 [other] "Search wallpapers"
+@e7 [button] "Search by photo"
+@e8 [button] "Filters"
+@e9 [scroll-area] [scrollable]
+@e10 [button] "Nature"
+@e11 [button] "Architecture"
+@e12 [button] "Cars"
+@e13 [button] "Anime"
+@e14 [button] "Space"
+@e15 [button] "Ocean"
+@e16 [button] "Flowers"
+@e17 [button] "Neon"
+@e18 [text] "Trending now"
+@e19 [scroll-area] [scrollable]
+@e20 [button] "Wallpaper
+Favourite"
+@e21 [switch] "Favourite" [unchecked]
+@e22 [button] "Wallpaper
+Favourite"
+@e23 [switch] "Favourite" [unchecked]
+@e24 [button] "Wallpaper
+Favourite"
+@e25 [switch] "Favourite" [unchecked]
+@e26 [button] "Wallpaper
+Favourite"
+@e27 [switch] "Favourite" [unchecked]
+@e28 [button] "Wallpaper
+Favourite"
+@e29 [switch] "Favourite" [unchecked]
+@e30 [button] "Wallpaper
+Favourite"
+@e31 [switch] "Favourite" [unchecked]
+@e32 [button] "Wallpaper
+Favourite"
+@e33 [switch] "Favourite" [unchecked]
+@e34 [button] "Wallpaper
+Favourite"
+@e35 [switch] "Favourite" [unchecked]
+@e36 [button] "Wallpaper
+Favourite"
+@e37 [switch] "Favourite" [unchecked]
+@e38 [button] "Wallpaper
+Favourite"
+@e39 [switch] "Favourite" [unchecked]
+@e40 [button] "Wallpaper
+Favourite"
+@e41 [switch] "Favourite" [unchecked]
+@e42 [text] "Browse by category"
+@e43 [scroll-area] [scrollable]
+@e44 [button] "Category, AI Art"
+@e45 [button] "Category, Aesthetic"
+@e46 [button] "Category, Pastel"
+@e47 [button] "Category, Cyberpunk"
+@e48 [button] "Category, Gaming"
+@e49 [text] "Browse by colour"
+@e50 [scroll-area] [scrollable]
+@e51 [button] "Red"
+@e52 [button] "Orange"
+@e53 [button] "Yellow"
+@e54 [button] "Green"
+@e55 [button] "Teal"
+@e56 [button] "Blue"
+@e57 [button] "Purple"
+@e58 [button] "Pink"
+@e59 [button] "Brown"
+@e60 [button] "Black"
+@e61 [button] "Grey"
+@e62 [button] "White"
+@e63 [text] "Find creators
+Search Prism users by name"
+@e64 [text] "Wall requests
+Ask for a wall, or upvote one"
+@e65 [button] "Depth Effect, subject in front of the clock"
+@e66 [button] "Spatial, walls with clear 3D depth"
+@e67 [button] "Home"
+@e68 [button] "Search" [selected]
+@e69 [button] "Rewards"
+@e70 [button] "Collections"
+@e71 [button] "Upload"

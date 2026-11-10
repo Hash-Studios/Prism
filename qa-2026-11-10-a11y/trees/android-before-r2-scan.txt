@@ -1,0 +1,3 @@
+!! button        44x48   Close SMALL<48
+   button       347x52   Apply 
+   button       347x52   Keep as is 

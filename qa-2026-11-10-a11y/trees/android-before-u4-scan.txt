@@ -1,0 +1,30 @@
+   button        48x48   Back 
+!! text-field   379x13   Description SMALL<48
+   button        75x48   General 
+   button        62x48   AI Art 
+   button        64x48   Pastel 
+   button        93x48   Cyberpunk 
+   button        74x48   Gaming 
+   button        91x48   3D Render 
+   button        80x48   Gradient 
+   button        75x48   Minimal 
+   button        56x48   Dark 
+   button        69x48   Nature 
+   button        92x48   Landscape 
+   button        64x48   Space 
+   button        66x48   Anime 
+   button        60x48   Neon 
+   button        78x48   Abstract 
+   button       101x48   Architecture 
+   button        67x48   Ocean 
+   button        69x48   Galaxy 
+   button        74x48   Vintage 
+   button        75x48   Flowers 
+   button        55x48   Cars 
+   text-field   379x74   Tags 
+   button        48x48   Add tag 
+   button       187x48   When approved 
+   button       187x48   At a set time 
+   button       127x48   Release date: Tue, Nov 10 
+   button       107x48   Release time: 5:00 PM 
+   button       379x52   Upload 

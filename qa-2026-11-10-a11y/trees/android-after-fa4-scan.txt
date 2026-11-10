@@ -1,0 +1,12 @@
+   button       411x923  Hide controls 
+   button       203x48   Icons may be hard to read, Shows a before and after preview 
+   button        69x48   Default 
+   button        74x48   Themed 
+   button       119x48   Home screen 
+   button       119x48   Lock screen 
+   button       119x48   Both 
+   button        48x48   Close 
+   button       303x52   Set on home screen 
+   checkbox     363x48   Remember this choice 
+   button       104x48   Adjust 
+   button        95x48   More 

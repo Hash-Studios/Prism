@@ -1,0 +1,12 @@
+Page: com.hash.prism
+App: com.hash.prism
+Snapshot: 8 nodes
+@e2 [button] "Close"
+@e3 [group] "Dim behind the icons?"
+@e4 [group] "Icons may be hard to read on this wallpaper. The original wallpaper stays as it is."
+@e5 [image] "Wallpaper without the fix
+Before"
+@e6 [image] "Wallpaper with the fix
+After"
+@e7 [button] "Apply"
+@e8 [button] "Keep as is"

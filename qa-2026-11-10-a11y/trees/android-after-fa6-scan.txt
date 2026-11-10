@@ -1,0 +1,4 @@
+   button        48x48   Back 
+   button        86x48   Trending 
+   button        58x48   New 
+   button       129x48   Like your saves 

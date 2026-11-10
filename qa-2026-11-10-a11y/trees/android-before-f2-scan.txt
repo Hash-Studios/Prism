@@ -1,0 +1,29 @@
+!! button        44x48   Close SMALL<48
+   text-field   363x77   Folder name | Folder name 
+!! button        95x44   Duo reveal SMALL<48
+!! button        76x44   Dreamy SMALL<48
+!! button       119x44   Dark and quiet SMALL<48
+!! button       124x44   Bright and bold SMALL<48
+!! button        77x44   Minimal SMALL<48
+!! button        72x44   Red SMALL<48
+!! button        94x44   Orange SMALL<48
+!! button        88x44   Yellow SMALL<48
+!! button        86x44   Green SMALL<48
+!! button        73x44   Teal SMALL<48
+!! button        76x44   Blue SMALL<48
+!! button        88x44   Purple SMALL<48
+!! button        75x44   Pink SMALL<48
+!! button        88x44   Brown SMALL<48
+!! button        82x44   Black SMALL<48
+!! button        77x44   Grey SMALL<48
+!! button        84x44   White SMALL<48
+!! button        68x44   Anime SMALL<48
+!! button        77x44   Flowers SMALL<48
+!! button        70x44   Nature SMALL<48
+!! button       105x44   Architecture SMALL<48
+!! button        56x30   Cars SMALL<48
+!! button        76x30   Gaming SMALL<48
+!! button        66x30   Space SMALL<48
+!! button        68x30   Ocean SMALL<48
+!! button        61x30   Neon SMALL<48
+   button       347x52   Create smart folder 

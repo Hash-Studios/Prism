@@ -1,0 +1,18 @@
+Page: com.hash.prism
+App: com.hash.prism
+Snapshot: 16 nodes
+@e2 [button] "Hide controls"
+@e3 [group] "Tue, Nov 10"
+@e4 [group] "Icon style"
+@e5 [button] "Default" [selected]
+@e6 [button] "Themed"
+@e7 [group] "Where to set it"
+@e8 [button] "Home screen" [selected]
+@e9 [button] "Lock screen"
+@e10 [button] "Both"
+@e11 [button] "Close"
+@e12 [button] "Set on home screen"
+@e13 [checkbox] "Remember this choice" [unchecked]
+@e14 [button] "Adjust"
+@e15 [group] "More"
+@e16 [button] "More"

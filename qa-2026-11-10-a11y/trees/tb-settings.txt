@@ -1,0 +1,35 @@
+Page: com.hash.prism
+App: com.hash.prism
+Snapshot: 19 visible nodes
+@e2 [button] "Back"
+@e3 [group] "Settings"
+@e4 [scroll-area] [scrollable]
+  [content above scroll-area hidden]
+  [content below scroll-area hidden]
+@e5 [group] "Account"
+@e6 [switch] "Show me in Creators to follow
+Others can find your profile and top wallpapers" [checked]
+@e7 [group] "Share your profile
+Send a link to your Prism profile"
+@e8 [group] "Appearance"
+@e9 [group] "Themes
+Light, dark and accent colour"
+@e10 [group] "Layout
+Tabs and wallpaper grid"
+@e11 [group] "Shop
+Themes, icons, frames"
+@e12 [switch] "Haptic feedback
+Vibrate on taps and actions" [checked]
+@e13 [switch] "Show tips
+Short hints about features you have not used yet." [checked]
+@e14 [switch] "Readability tips
+Show a tip when the clock or icons may be hard to read on a wallpaper." [checked]
+@e15 [group] "Reset tips
+Show every tip again."
+@e16 [group] "Personalise"
+@e17 [group] "Day and night
+One wall for the day, one for the night"
+@e18 [group] "Auto-rotate wallpapers
+Change your wallpaper on a timer"
+@e19 [group] "Live wallpapers
+Moving gradients, motion and video"

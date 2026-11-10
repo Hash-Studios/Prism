@@ -1,0 +1,36 @@
+Warning: ios snapshots are slow in this run: p95 2925ms over 77 captures. Possible causes: device load, app or dev server stuck, helper fallback, or stale daemon.
+Page: com.hash.prism
+App: com.hash.prism
+Snapshot: 20 nodes
+@e1 [application] "Prism"
+@e2 [button] "Back"
+@e3 [text] "Settings"
+@e4 [scroll-area] [scrollable]
+@e5 [other] "Sign in to Prism
+Sign in to keep your favourites, coins and profile"
+@e6 [button] "Sign in"
+@e7 [other] "Appearance"
+@e8 [button] "Themes
+Light, dark and accent colour"
+@e9 [button] "Layout
+Tabs and wallpaper grid"
+@e10 [button] "Shop
+Themes, icons, frames"
+@e11 [switch] "Haptic feedback
+Vibrate on taps and actions" [checked]
+@e12 [switch] "Show tips
+Short hints about features you have not used yet." [checked]
+@e13 [switch] "Readability tips
+Show a tip when the clock or icons may be hard to read on a wallpaper." [checked]
+@e14 [button] "Reset tips
+Show every tip again."
+@e15 [other] "Personalise"
+@e16 [button] "Widgets
+Add Prism to your Home Screen and Lock Screen"
+@e17 [button] "Change automatically
+Use a Shortcuts automation"
+@e18 [button] "Day and night
+One wall for the day, one for the night"
+@e19 [other] "Content
+Hiding AI wallpapers never hides your own uploads or favourites."
+@e20 [switch] "Show anime wallpapers" [unchecked]

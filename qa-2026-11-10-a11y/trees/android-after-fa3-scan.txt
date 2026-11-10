@@ -1,0 +1,20 @@
+   button        48x48   Close 
+   text-field   363x80   Folder name | Folder name 
+   button        99x48   Duo reveal 
+   button        79x48   Dreamy 
+   button       125x48   Dark and quiet 
+   button       130x48   Bright and bold 
+   button        80x48   Minimal 
+   button        73x48   Red 
+   button        97x48   Orange 
+   button        90x48   Yellow 
+   button        88x48   Green 
+   button        75x48   Teal 
+   button        78x48   Blue 
+   button        91x48   Purple 
+   button        77x48   Pink 
+   button        90x48   Brown 
+   button        84x48   Black 
+   button        79x48   Grey 
+   button        86x48   White 
+   button       347x52   Create smart folder 

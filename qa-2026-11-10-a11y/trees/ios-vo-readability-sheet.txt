@@ -1,0 +1,12 @@
+Snapshot: 9 nodes
+@e1 [application] "Prism"
+@e2 [button] "Close"
+@e3 [text] "Dim behind the icons?"
+@e4 [scroll-area] [scrollable]
+@e5 [text] "Icons may be hard to read on this wallpaper. The original wallpaper stays as it is."
+@e6 [image] "Wallpaper without the fix
+Before"
+@e7 [image] "Wallpaper with the fix
+After"
+@e8 [button] "Apply"
+@e9 [button] "Keep as is"
