@@ -229,6 +229,8 @@ const WALLHAVEN = "https://wallhaven.cc/api/v1";
  * searches stay under Wallhaven's 45 requests a minute for one run.
  */
 export const GRID_DETAIL_BUDGET = 30;
+/** Time to pick grid walls, so socialPrepare (540 s) keeps time to record the grid and build the other slots. */
+export const GRID_DEADLINE_MS = 180_000;
 
 async function wallhavenJson(path: string): Promise<any> {
   const res = await fetch(`${WALLHAVEN}${path}`, {signal: AbortSignal.timeout(20_000),
@@ -267,25 +269,38 @@ export async function wallhavenCandidates(): Promise<Array<{id: string; purity: 
 
 export async function gridContent(day: string, exclude: Set<string>, config: {sketchyPerPost: number; blockedTags: string[]},
   deps: {annotate: VisionAnnotate; candidates: typeof wallhavenCandidates; details: (id: string) => Promise<WallhavenWall>;
-    download: (url: string) => Promise<Buffer>} = {annotate: annotateWithVision, candidates: wallhavenCandidates,
-    details: wallhavenDetails, download: (url) => downloadJpeg(url, 2400)}): Promise<SocialContent | null> {
+    download: (url: string) => Promise<Buffer>; deadlineMs?: number} = {annotate: annotateWithVision,
+    candidates: wallhavenCandidates, details: wallhavenDetails, download: (url) => downloadJpeg(url, 2400)}):
+  Promise<SocialContent | null> {
   const picked: Array<{wall: WallhavenWall; jpeg: Buffer; sensitive: boolean}> = [];
   let sketchy = 0;
   let checked = 0;
   const blocked = config.blockedTags.map((t) => t.toLowerCase());
-  for (const candidate of await deps.candidates()) {
-    if (picked.length === 3 || checked >= GRID_DETAIL_BUDGET) break;
-    if (exclude.has(candidate.id) || (candidate.purity === "sketchy" && sketchy >= config.sketchyPerPost)) continue;
-    checked++;
+  const deadline = Date.now() + (deps.deadlineMs ?? GRID_DEADLINE_MS);
+  // One candidate: null when it does not pass.
+  const check = async (candidate: {id: string; purity: string}) => {
     const wall = await deps.details(candidate.id);
-    if (wall.purity !== candidate.purity || !["sfw", "sketchy"].includes(wall.purity)) continue;
-    if (wall.tags.some((tag) => YOUTH_TAG.test(tag) || blocked.includes(tag.toLowerCase()))) continue;
-    if (!/^https:\/\/w\.wallhaven\.cc\//.test(wall.path)) continue;
+    if (wall.purity !== candidate.purity || !["sfw", "sketchy"].includes(wall.purity)) return null;
+    if (wall.tags.some((tag) => YOUTH_TAG.test(tag) || blocked.includes(tag.toLowerCase()))) return null;
+    if (!/^https:\/\/w\.wallhaven\.cc\//.test(wall.path)) return null;
     const jpeg = await fitFiveMb(await deps.download(wall.path));
     const decision = gridVisionDecision((await deps.annotate(jpeg)).safeSearchAnnotation as Record<string, unknown>);
-    if (!decision.ok) continue;
-    if (wall.purity === "sketchy") sketchy++;
-    picked.push({wall, jpeg, sensitive: decision.sensitive});
+    return decision.ok ? {wall, jpeg, sensitive: decision.sensitive} : null;
+  };
+  for (const candidate of await deps.candidates()) {
+    if (picked.length === 3 || checked >= GRID_DETAIL_BUDGET || Date.now() >= deadline) break;
+    if (exclude.has(candidate.id) || (candidate.purity === "sketchy" && sketchy >= config.sketchyPerPost)) continue;
+    checked++;
+    // The deadline also bounds a check in flight, so a slow download cannot use up the run.
+    let timer: NodeJS.Timeout | undefined;
+    const timedOut = new Promise<"timeout">((resolve) => {
+      timer = setTimeout(() => resolve("timeout"), Math.max(0, deadline - Date.now()));
+    });
+    const result = await Promise.race([check(candidate), timedOut]).finally(() => clearTimeout(timer));
+    if (result === "timeout") break;
+    if (!result) continue;
+    if (result.wall.purity === "sketchy") sketchy++;
+    picked.push(result);
   }
   if (picked.length < 3) return null;
   return {

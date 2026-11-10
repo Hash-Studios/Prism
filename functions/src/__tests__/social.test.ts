@@ -1363,3 +1363,18 @@ test("adult POSSIBLE and LIKELY flags reach approval, preview and X, and metadat
     });
   }
 });
+
+test("the grid stops at its deadline, even with a check in flight", async () => {
+  const candidates = Array.from({length: 10}, (_, i) => ({id: `s${i}`, purity: "sfw"}));
+  const d = await gridDeps(candidates);
+  let downloads = 0;
+  const slow = {...d, deadlineMs: 50, download: async () => {
+    // The first download passes; the second hangs far past the deadline.
+    if (++downloads === 1) return d.download();
+    return new Promise<Buffer>(() => undefined);
+  }};
+  const started = Date.now();
+  assert.equal(await gridContent("2026-11-12", new Set(), {sketchyPerPost: 2, blockedTags: []}, slow), null);
+  assert.ok(Date.now() - started < 2000, "returned at the deadline, not after the hanging download");
+  assert.equal(downloads, 2);
+});
