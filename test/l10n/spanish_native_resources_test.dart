@@ -71,6 +71,7 @@ void main() {
       'NSMotionUsageDescription',
       'NSPhotoLibraryAddUsageDescription',
       'NSPhotoLibraryUsageDescription',
+      'NSUserTrackingUsageDescription',
     };
 
     expect(english.keys.toSet(), expectedPermissionKeys);
