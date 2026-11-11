@@ -743,12 +743,12 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
         chargeMode: AiChargeMode.freeTrial,
         coinsSpent: 0,
       );
+      if (isClosed) return;
       final generatedPath = await _acquireGeneratedImage(record.imageUrl);
       if (!isClosed) {
         add(OnboardingV2Event.aiGenerationCompleted(imageUrl: generatedPath, thumbnailUrl: record.watermarkedImageUrl));
       }
     } catch (error, stackTrace) {
-      // The repository already retried a provider outage, and the failure card lets the user try again.
       if (error is AiGenerationApiException && error.isProviderFailure) {
         logger.w('AI onboarding generation failed: provider outage.', tag: 'OnboardingV2Bloc', error: error);
       } else {
@@ -814,7 +814,10 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
 
   /// Picks a style and prompt based on the user's selected interest categories.
   /// Falls back to a random style from the curated pool if no keyword matches.
-  Future<OnboardingAiData> _promptForInterests(List<String> selectedInterests) {
+  Future<OnboardingAiData> _promptForInterests(List<String> selectedInterests) async {
+    bool locked() =>
+        const <AiGenerateStatus>{AiGenerateStatus.loading, AiGenerateStatus.success}.contains(state.aiData.status);
+    if (locked()) return state.aiData;
     AiStylePreset? matchedStyle;
 
     outer:
@@ -829,7 +832,8 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
     }
 
     const styles = OnboardingV2Config.aiOnboardingStyles;
-    return _promptForStyle(matchedStyle ?? styles[_random.nextInt(styles.length)]);
+    final aiData = await _promptForStyle(matchedStyle ?? styles[_random.nextInt(styles.length)]);
+    return locked() ? state.aiData : aiData;
   }
 
   Future<OnboardingAiData> _promptForStyle(AiStylePreset style) async {

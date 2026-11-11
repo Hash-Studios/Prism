@@ -25,7 +25,6 @@ class AiGenerationApiException implements Exception {
   final String code;
   final int statusCode;
 
-  /// The worker tried every provider and none returned an image. Timeouts and charge states are excluded.
   bool get isProviderFailure => statusCode == 502 && code == 'provider_error';
 
   @override
@@ -136,7 +135,6 @@ class AiGenerationRepositoryImpl {
       '/generations',
       payload,
       retryOnTimeout: payload.containsKey('chargeTxId'),
-      // A failed trial is given back by the worker, so a retry is a fresh attempt. A failed charge is not.
       retryProviderFailure: payload.containsKey('freeTrial'),
     );
     final record = _recordFromApiResponse(
@@ -484,7 +482,7 @@ class AiGenerationRepositoryImpl {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw AiGenerationApiException(
         message: (payload['message'] ?? 'Unable to process AI request').toString(),
-        code: (payload['error'] ?? 'provider_error').toString(),
+        code: (payload['error'] ?? 'invalid_response').toString(),
         statusCode: response.statusCode,
       );
     }
@@ -515,7 +513,7 @@ class AiGenerationRepositoryImpl {
         watermarkedImageUrl is! String) {
       throw AiGenerationApiException(
         message: 'AI generation response was incomplete. Please retry.',
-        code: 'provider_error',
+        code: 'invalid_response',
         statusCode: 502,
       );
     }
