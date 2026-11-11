@@ -2,3 +2,4 @@
 "NSPhotoLibraryAddUsageDescription" = "Prism benötigt die Berechtigung, um Hintergrundbilder in deiner Fotomediathek zu sichern.";
 "NSCameraUsageDescription" = "Prism benötigt Kamerazugriff, damit du ein Foto für dein Profilbild aufnehmen kannst.";
 "NSMotionUsageDescription" = "Prism nutzt Bewegung, um Problem melden zu öffnen, wenn du dein Handy schüttelst.";
+"NSUserTrackingUsageDescription" = "Wenn du das erlaubst, zeigt dir Prism Werbung, die zu deinen Interessen passt. Die Menge der Werbung bleibt gleich.";

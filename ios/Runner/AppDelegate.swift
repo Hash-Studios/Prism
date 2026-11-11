@@ -1,3 +1,4 @@
+import AppTrackingTransparency
 import Flutter
 import UIKit
 import UserNotifications
@@ -63,6 +64,15 @@ import WidgetKit
         result(FlutterError(code: "UNKNOWN_METHOD", message: call.method, details: nil))
       }
     }
+    FlutterMethodChannel(name: "prism/tracking", binaryMessenger: messenger).setMethodCallHandler { call, result in
+      guard call.method == "request" else {
+        result(FlutterError(code: "UNKNOWN_METHOD", message: call.method, details: nil))
+        return
+      }
+      Task { @MainActor in
+        result(Self.trackingName(await Self.requestTracking()))
+      }
+    }
     NotificationCenter.default.addObserver(
       forName: UIApplication.didBecomeActiveNotification,
       object: nil,
@@ -72,6 +82,37 @@ import WidgetKit
         AppDelegate.clearBadge()
         WidgetCenter.shared.reloadTimelines(ofKind: PrismWidgetKind.wallOfTheDay)
       }
+    }
+  }
+
+  /// Waits for an active app and retries ATT requests suppressed by another permission prompt.
+  @MainActor
+  private static func requestTracking() async -> ATTrackingManager.AuthorizationStatus {
+    guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else {
+      return ATTrackingManager.trackingAuthorizationStatus
+    }
+    for _ in 0..<40 {
+      do {
+        try await Task.sleep(nanoseconds: 250_000_000)
+      } catch {
+        return ATTrackingManager.trackingAuthorizationStatus
+      }
+      let status = ATTrackingManager.trackingAuthorizationStatus
+      guard status == .notDetermined else { return status }
+      guard UIApplication.shared.applicationState == .active else { continue }
+      // Read the persisted status on the next turn; early callbacks can precede the user's decision.
+      ATTrackingManager.requestTrackingAuthorization { _ in }
+    }
+    return ATTrackingManager.trackingAuthorizationStatus
+  }
+
+  private static func trackingName(_ status: ATTrackingManager.AuthorizationStatus) -> String {
+    switch status {
+    case .authorized: return "authorized"
+    case .denied: return "denied"
+    case .restricted: return "restricted"
+    case .notDetermined: return "notDetermined"
+    @unknown default: return "unknown"
     }
   }
 

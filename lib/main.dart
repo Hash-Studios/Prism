@@ -295,6 +295,7 @@ Future<void> main() async {
       // lazily once Firebase background init completes.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (CreatorStatsEmulator.enabled || Env.localQa) return;
+        unawaited(AdConsent.instance.requestTracking());
         unawaited(PurchasesService.instance.configureEarly());
         unawaited(
           FirebaseInit.readyFuture.then(

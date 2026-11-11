@@ -2,3 +2,4 @@
 "NSPhotoLibraryAddUsageDescription" = "O Prism precisa de permissão para salvar papéis de parede na sua biblioteca de fotos.";
 "NSCameraUsageDescription" = "O Prism precisa acessar a câmera para que você tire uma foto para seu perfil.";
 "NSMotionUsageDescription" = "O Prism usa o movimento para abrir Relatar um problema quando você agita o celular.";
+"NSUserTrackingUsageDescription" = "Se você permitir, o Prism mostra anúncios de acordo com seus interesses. A quantidade de anúncios não muda.";
