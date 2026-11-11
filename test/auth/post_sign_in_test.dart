@@ -118,6 +118,9 @@ class _Auth extends Fake implements FirebaseAuth {
   _Auth([_User? user]) : user = user ?? _User();
 
   _User? user;
+  UserCredential? webCredential;
+  Completer<UserCredential>? webGate;
+  final webStarted = Completer<void>();
   final List<String> calls = <String>[];
 
   @override
@@ -127,10 +130,19 @@ class _Auth extends Fake implements FirebaseAuth {
   @override
   Future<UserCredential> signInWithProvider(AuthProvider provider) async {
     calls.add('auth.signInWithProvider:${provider.providerId}');
-    return _Credential(
-      user!,
-      _webProfile(<String, dynamic>{'name': 'Web Name', 'picture': 'https://lh3.googleusercontent.com/a/web=s96-c'}),
-    );
+    if (!webStarted.isCompleted) webStarted.complete();
+    final credential = webGate != null
+        ? await webGate!.future
+        : webCredential ??
+              _Credential(
+                user!,
+                _webProfile(<String, dynamic>{
+                  'name': 'Web Name',
+                  'picture': 'https://lh3.googleusercontent.com/a/web=s96-c',
+                }),
+              );
+    user = credential.user as _User?;
+    return credential;
   }
 
   @override
@@ -381,6 +393,61 @@ void main() {
     expect(app_state.prismUser.loggedIn, isTrue);
     expect(app_state.prismUser.name, 'Web Name');
     expect(app_state.prismUser.profilePhoto, 'https://lh3.googleusercontent.com/a/web=s400-c');
+  });
+
+  group('Google web sign-in ownership', () {
+    setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.android);
+    tearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    GoogleAuth webAuth(_Auth firebase) =>
+        GoogleAuth(auth: firebase, googleSignIn: _NoCredentialGoogleSignIn(), messaging: _Messaging());
+
+    test('a web profile with a malformed name falls back to the Firebase name', () async {
+      firestore.docs.clear();
+      firestore.writeGate.complete();
+      final firebase = _Auth()
+        ..user = null
+        ..webCredential = _Credential(_User(displayName: 'Firebase Name'), _webProfile(<String, dynamic>{'name': 42}));
+
+      expect(await webAuth(firebase).signInWithGoogle(), SignInOutcome.signedIn);
+
+      expect(app_state.prismUser.loggedIn, isTrue);
+      expect(app_state.prismUser.name, 'Firebase Name');
+    });
+
+    test('a late web result cannot publish or sign out a replacement session', () async {
+      final firebase = _Auth()..webGate = Completer<UserCredential>();
+      final pending = webAuth(firebase).signInWithGoogle();
+      final rejected = expectLater(pending, throwsStateError);
+      await firebase.webStarted.future;
+      final replacement = profileUser(id: 'other');
+      app_state.prismUser = replacement;
+      // Firebase publishes the browser's result before returning its credential.
+      firebase.webGate!.complete(_Credential(_User()));
+      await rejected;
+
+      expect(app_state.prismUser, same(replacement));
+      expect(firebase.calls, isNot(contains('auth.signOut')));
+      expect(firestore.readTags, isEmpty);
+    });
+
+    for (final bool empty in <bool>[false, true]) {
+      test(
+        'a missing web profile uses ${empty ? 'the email and placeholder' : 'the Firebase name and photo'}',
+        () async {
+          firestore.docs.clear();
+          firestore.writeGate.complete();
+          final firebase = _Auth()
+            ..webCredential = _Credential(
+              _User(displayName: empty ? null : 'Firebase Name', photoURL: empty ? null : 'https://example.com/photo'),
+            );
+
+          expect(await webAuth(firebase).signInWithGoogle(), SignInOutcome.signedIn);
+          expect(app_state.prismUser.name, empty ? 'user' : 'Firebase Name');
+          expect(app_state.prismUser.profilePhoto, empty ? defaultProfilePhotoUrl : 'https://example.com/photo');
+        },
+      );
+    }
   });
 
   test('sign-in completes while FCM topic calls never answer', () async {

@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/auth/post_sign_in.dart';
+import 'package:Prism/core/account/reauth_cancelled.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
@@ -18,13 +21,38 @@ class _Auth extends Fake implements FirebaseAuth {
   final List<AuthProvider> webProviders = <AuthProvider>[];
 
   @override
-  User? get currentUser => null;
+  User? currentUser;
 
   @override
   Future<UserCredential> signInWithProvider(AuthProvider provider) {
     webProviders.add(provider);
     return Future<UserCredential>.error(webError);
   }
+}
+
+class _ReauthUser extends Fake implements User {
+  final List<AuthProvider> providers = <AuthProvider>[];
+  FirebaseAuthException? error;
+  Completer<UserCredential>? gate;
+  final started = Completer<void>();
+
+  @override
+  String get uid => 'u1';
+  @override
+  String get email => 'user@example.com';
+  @override
+  Future<UserCredential> reauthenticateWithProvider(AuthProvider provider) async {
+    providers.add(provider);
+    started.complete();
+    if (error != null) throw error!;
+    return gate?.future ?? _ReauthCredential(this);
+  }
+}
+
+class _ReauthCredential extends Fake implements UserCredential {
+  _ReauthCredential(this.user);
+  @override
+  final User user;
 }
 
 class _CountingGoogleSignIn extends Fake implements GoogleSignIn {
@@ -45,13 +73,18 @@ class _ThrowingGoogleSignIn extends Fake implements GoogleSignIn {
 
   final GoogleSignInExceptionCode code;
   final String? description;
+  Completer<GoogleSignInAccount>? gate;
+  final started = Completer<void>();
 
   @override
   Future<void> initialize({String? clientId, String? serverClientId, String? nonce, String? hostedDomain}) async {}
 
   @override
-  Future<GoogleSignInAccount> authenticate({List<String> scopeHint = const <String>[]}) =>
-      Future<GoogleSignInAccount>.error(GoogleSignInException(code: code, description: description));
+  Future<GoogleSignInAccount> authenticate({List<String> scopeHint = const <String>[]}) {
+    if (!started.isCompleted) started.complete();
+    return gate?.future ??
+        Future<GoogleSignInAccount>.error(GoogleSignInException(code: code, description: description));
+  }
 }
 
 // The exact error google_sign_in_android 7.2 throws for Credential Manager's NoCredentialException (PRISM-J4).
@@ -81,6 +114,7 @@ void main() {
     );
 
     expect(await auth.signInWithGoogle(), SignInOutcome.cancelled);
+    expect(_errorLogs(), isEmpty);
   });
 
   test('sign-in fails when Firebase never starts, before the Google sheet', () async {
@@ -137,6 +171,29 @@ void main() {
       expect(_errorLogs(), isEmpty);
     });
 
+    test('a canceled browser sign-in can be retried on the same instance', () async {
+      final firebase = _Auth();
+      final auth = GoogleAuth(auth: firebase, googleSignIn: _noCredential());
+
+      expect(await auth.signInWithGoogle(), SignInOutcome.cancelled);
+      expect(await auth.signInWithGoogle(), SignInOutcome.cancelled);
+      expect(firebase.webProviders, hasLength(2));
+      expect(_errorLogs(), isEmpty);
+    });
+
+    test('a stale no-credential result does not open a browser', () async {
+      final firebase = _Auth();
+      final google = _noCredential()..gate = Completer<GoogleSignInAccount>();
+      final pending = GoogleAuth(auth: firebase, googleSignIn: google).signInWithGoogle();
+      final rejected = expectLater(pending, throwsStateError);
+      await google.started.future;
+      SignInSession();
+      google.gate!.completeError(GoogleSignInException(code: google.code, description: google.description));
+
+      await rejected;
+      expect(firebase.webProviders, isEmpty);
+    });
+
     test('a web sign-in failure reaches the screen and is reported', () async {
       final _Auth firebase = _Auth(webError: FirebaseAuthException(code: 'internal-error'));
       final GoogleAuth auth = GoogleAuth(auth: firebase, googleSignIn: _noCredential());
@@ -167,6 +224,70 @@ void main() {
 
     await expectLater(auth.signInWithGoogle(), throwsA(isA<GoogleSignInException>()));
     expect(firebase.webProviders, isEmpty);
+  });
+
+  group('web-only Google account reauthentication', () {
+    setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.android);
+
+    for (final code in <GoogleSignInExceptionCode>[
+      GoogleSignInExceptionCode.unknownError,
+      GoogleSignInExceptionCode.providerConfigurationError,
+    ]) {
+      test('${code.name} reauthenticates the current user without signing in a different one', () async {
+        final user = _ReauthUser();
+        final firebase = _Auth()..currentUser = user;
+        await GoogleAuth(
+          auth: firebase,
+          googleSignIn: _ThrowingGoogleSignIn(code, 'No credential available: none'),
+        ).reauthenticateCurrentUser();
+
+        final provider = user.providers.single as GoogleAuthProvider;
+        expect(provider.parameters['prompt'], 'select_account');
+        expect(firebase.webProviders, isEmpty);
+        expect(firebase.currentUser, same(user));
+      });
+    }
+
+    test('web cancellation keeps the account-deletion cancellation contract', () async {
+      final user = _ReauthUser()..error = FirebaseAuthException(code: 'web-context-canceled');
+
+      await expectLater(
+        GoogleAuth(auth: _Auth()..currentUser = user, googleSignIn: _noCredential()).reauthenticateCurrentUser(),
+        throwsA(predicate<Object>(isReauthCancelled)),
+      );
+      expect(_errorLogs(), isEmpty);
+    });
+
+    test('a different web account keeps the wrong-account message', () async {
+      final user = _ReauthUser()..error = FirebaseAuthException(code: 'user-mismatch');
+
+      await expectLater(
+        GoogleAuth(auth: _Auth()..currentUser = user, googleSignIn: _noCredential()).reauthenticateCurrentUser(),
+        throwsA(isA<WrongAccountException>().having((e) => e.expectedEmail, 'expectedEmail', user.email)),
+      );
+    });
+
+    test('a session change during web reauthentication stops the sensitive operation', () async {
+      final user = _ReauthUser()..gate = Completer<UserCredential>();
+      final firebase = _Auth()..currentUser = user;
+      final pending = GoogleAuth(auth: firebase, googleSignIn: _noCredential()).reauthenticateCurrentUser();
+      final rejected = expectLater(pending, throwsStateError);
+      await user.started.future;
+      SignInSession();
+      user.gate!.complete(_ReauthCredential(user));
+
+      await rejected;
+    });
+
+    test('iOS reauthentication does not use the browser fallback', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      final user = _ReauthUser();
+      await expectLater(
+        GoogleAuth(auth: _Auth()..currentUser = user, googleSignIn: _noCredential()).reauthenticateCurrentUser(),
+        throwsA(isA<GoogleSignInException>()),
+      );
+      expect(user.providers, isEmpty);
+    });
   });
 
   group('googleSignInErrorMessage', () {

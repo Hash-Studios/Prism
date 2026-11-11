@@ -227,11 +227,13 @@ class GoogleAuth {
       final UserCredential credential = await _auth.signInWithProvider(
         GoogleAuthProvider()..setCustomParameters(<String, String>{'prompt': 'select_account'}),
       );
-      final Map<String, dynamic>? profile = credential.additionalUserInfo?.profile;
+      // Read as Objects: a cast that throws here would skip the caller's rollback of this Firebase sign-in.
+      final Object? name = credential.additionalUserInfo?.profile?['name'];
+      final Object? picture = credential.additionalUserInfo?.profile?['picture'];
       return (
         credential: credential,
-        name: profile?['name'] as String?,
-        photoUrl: profile?['picture'] as String? ?? credential.user?.photoURL,
+        name: name is String ? name : null,
+        photoUrl: picture is String ? picture : credential.user?.photoURL,
       );
     }
     session.requireCurrent();
@@ -597,7 +599,31 @@ class GoogleAuth {
     session.bindAuthenticatedUid(() => _auth.currentUser?.uid);
     await _ensureGoogleSignInInitialized();
     session.requireCurrent();
-    final GoogleSignInAccount googleSignInAccount = await googleSignIn.authenticate();
+    final GoogleSignInAccount googleSignInAccount;
+    try {
+      googleSignInAccount = await googleSignIn.authenticate();
+    } on GoogleSignInException catch (error) {
+      if (!_needsWebSignIn(error)) rethrow;
+      session.requireCurrent();
+      final User? user = _auth.currentUser;
+      if (user == null) throw StateError('No current user to reauthenticate.');
+      try {
+        await user.reauthenticateWithProvider(
+          GoogleAuthProvider()..setCustomParameters(<String, String>{'prompt': 'select_account'}),
+        );
+      } on FirebaseAuthException catch (error) {
+        if (error.code == 'web-context-canceled') {
+          // Account deletion recognizes the Google SDK's cancellation type.
+          throw const GoogleSignInException(code: GoogleSignInExceptionCode.canceled);
+        }
+        if (error.code == 'user-mismatch') {
+          throw WrongAccountException(selectedEmail: error.email ?? '', expectedEmail: user.email ?? '');
+        }
+        rethrow;
+      }
+      session.requireCurrent();
+      return;
+    }
     session.requireCurrent();
     final String? currentEmail = _auth.currentUser?.email;
     if (currentEmail != null && googleSignInAccount.email != currentEmail) {
