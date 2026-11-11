@@ -17,6 +17,7 @@ import 'package:Prism/features/session/domain/repositories/session_repository.da
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -102,11 +103,16 @@ class _User extends Fake implements User {
 }
 
 class _Credential extends Fake implements UserCredential {
-  _Credential(this.user);
+  _Credential(this.user, [this.additionalUserInfo]);
 
   @override
   final User user;
+  @override
+  final AdditionalUserInfo? additionalUserInfo;
 }
+
+// ignore: invalid_use_of_protected_member
+AdditionalUserInfo _webProfile(Map<String, dynamic> profile) => AdditionalUserInfo(isNewUser: true, profile: profile);
 
 class _Auth extends Fake implements FirebaseAuth {
   _Auth([_User? user]) : user = user ?? _User();
@@ -118,6 +124,15 @@ class _Auth extends Fake implements FirebaseAuth {
   User? get currentUser => user;
   @override
   Future<UserCredential> signInWithCredential(AuthCredential credential) async => _Credential(user!);
+  @override
+  Future<UserCredential> signInWithProvider(AuthProvider provider) async {
+    calls.add('auth.signInWithProvider:${provider.providerId}');
+    return _Credential(
+      user!,
+      _webProfile(<String, dynamic>{'name': 'Web Name', 'picture': 'https://lh3.googleusercontent.com/a/web=s96-c'}),
+    );
+  }
+
   @override
   Future<void> signOut() async {
     calls.add('auth.signOut');
@@ -154,6 +169,17 @@ class _GoogleSignIn extends Fake implements GoogleSignIn {
 
   @override
   Future<void> signOut() async {}
+}
+
+class _NoCredentialGoogleSignIn extends _GoogleSignIn {
+  @override
+  Future<GoogleSignInAccount> authenticate({List<String> scopeHint = const <String>[]}) =>
+      Future<GoogleSignInAccount>.error(
+        const GoogleSignInException(
+          code: GoogleSignInExceptionCode.unknownError,
+          description: 'No credential available: No credentials available on this device.',
+        ),
+      );
 }
 
 class _Messaging extends Fake implements FirebaseMessaging {
@@ -334,6 +360,27 @@ void main() {
     expect(app_state.prismUser.id, 'u1');
     expect(app_state.prismUser.loggedIn, isFalse);
     expect(firebase.currentUser?.uid, 'u1');
+  });
+
+  test('Android with no Credential Manager account signs in through Google web sign-in', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    firestore.docs.clear();
+    firestore.writeGate.complete();
+    final firebase = _Auth(_User(displayName: null));
+
+    final outcome = await GoogleAuth(
+      auth: firebase,
+      googleSignIn: _NoCredentialGoogleSignIn(),
+      messaging: _Messaging(),
+    ).signInWithGoogle();
+
+    expect(outcome, SignInOutcome.signedIn);
+    expect(firebase.calls, contains('auth.signInWithProvider:google.com'));
+    expect(app_state.prismUser.id, 'u1');
+    expect(app_state.prismUser.loggedIn, isTrue);
+    expect(app_state.prismUser.name, 'Web Name');
+    expect(app_state.prismUser.profilePhoto, 'https://lh3.googleusercontent.com/a/web=s400-c');
   });
 
   test('sign-in completes while FCM topic calls never answer', () async {
