@@ -6,7 +6,7 @@ const String defaultProfilePhotoUrl =
     'https://firebasestorage.googleapis.com/v0/b/prism-wallpapers.appspot.com/o/Replacement%20Thumbnails%2Fpost%20bg.png?alt=media&token=d708b5e3-a7ee-421b-beae-3b10946678c4';
 
 const String currentAppVersion = '3.27.0';
-const String currentAppVersionCode = '369';
+const String currentAppVersionCode = '372';
 const String defaultObsoleteAppVersion = '2.6.0';
 
 // Empty means the UI should use its localized default banner copy.
