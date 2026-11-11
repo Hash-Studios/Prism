@@ -23,6 +23,7 @@ class AdConsent {
     ConsentStep? showPrivacyOptions,
     TrackingRequest? requestTracking,
     this.updateTimeout = const Duration(seconds: 10),
+    this.trackingTimeout = const Duration(seconds: 12),
   }) : _requestInfoUpdate = requestInfoUpdate ?? _platformRequestInfoUpdate,
        _showFormIfRequired = showFormIfRequired ?? _platformShowFormIfRequired,
        _canRequestAds = canRequestAds ?? ConsentInformation.instance.canRequestAds,
@@ -39,29 +40,47 @@ class AdConsent {
   final ConsentStep _showPrivacyOptions;
   final TrackingRequest _requestTracking;
   final Duration updateTimeout;
+  final Duration trackingTimeout;
 
   Future<bool>? _pending;
-  Future<void>? _tracking;
+  Future<bool>? _tracking;
   int generation = 0;
   bool privacyOptionsOpen = false;
   final Set<void Function()> invalidationListeners = <void Function()>{};
 
-  /// Asks for App Tracking Transparency once per launch (iOS only). Every ad request waits for the answer first.
-  Future<void> requestTracking() => _tracking ??= _askTracking();
+  /// Asks for App Tracking Transparency (iOS only). Every ad request waits for a terminal answer first.
+  Future<bool> requestTracking() {
+    final Future<bool> pending = _tracking ??= _askTracking().timeout(
+      trackingTimeout,
+      onTimeout: () {
+        logger.w('Tracking permission request timed out.', tag: 'AdConsent');
+        return false;
+      },
+    );
+    unawaited(
+      pending.then((bool allowed) {
+        if (!allowed && identical(_tracking, pending)) _tracking = null;
+      }),
+    );
+    return pending;
+  }
 
-  Future<void> _askTracking() async {
+  Future<bool> _askTracking() async {
     try {
       await _requestTracking();
+      return true;
     } catch (error, stackTrace) {
       logger.w('Could not ask for tracking permission.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
+      return false;
     }
   }
 
   Future<bool> canShow() async {
     try {
-      await requestTracking();
+      final int before = generation;
       if (privacyOptionsOpen) return false;
-      final before = generation;
+      if (!await requestTracking()) return false;
+      if (privacyOptionsOpen || before != generation) return false;
       final allowed = await _canRequestAds();
       return allowed && !privacyOptionsOpen && before == generation;
     } catch (_) {
@@ -71,7 +90,8 @@ class AdConsent {
 
   /// Runs the consent flow once per session. A refused result is not kept, so the next call tries again.
   Future<bool> ensure() {
-    final Future<bool> pending = _pending ??= _run();
+    if (privacyOptionsOpen) return Future<bool>.value(false);
+    final Future<bool> pending = _pending ??= _run(generation);
     unawaited(
       pending.then((bool canRequest) {
         if (!canRequest && identical(_pending, pending)) _pending = null;
@@ -112,10 +132,23 @@ class AdConsent {
     }
   }
 
-  Future<bool> _run() {
+  Future<bool> _run(int generationAtStart) {
     return PerformanceProbe.measure('startup', 'ad_consent', () async {
+      if (!await requestTracking()) {
+        unawaited(analytics.track(const AdConsentResultEvent(status: 'refused')));
+        return false;
+      }
+      if (privacyOptionsOpen || generationAtStart != generation) {
+        unawaited(analytics.track(const AdConsentResultEvent(status: 'refused')));
+        return false;
+      }
+
       try {
         await _requestInfoUpdate().timeout(updateTimeout);
+        if (privacyOptionsOpen || generationAtStart != generation) {
+          unawaited(analytics.track(const AdConsentResultEvent(status: 'refused')));
+          return false;
+        }
         await _showFormIfRequired();
       } catch (error, stackTrace) {
         logger.w(
@@ -125,7 +158,6 @@ class AdConsent {
           stackTrace: stackTrace,
         );
       }
-      await requestTracking();
       bool canRequest;
       try {
         canRequest = await _canRequestAds();
@@ -133,6 +165,7 @@ class AdConsent {
         logger.w('Could not read ad consent.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
         canRequest = false;
       }
+      canRequest = canRequest && !privacyOptionsOpen && generationAtStart == generation;
       unawaited(analytics.track(AdConsentResultEvent(status: canRequest ? 'can_request' : 'refused')));
       return canRequest;
     });
@@ -142,7 +175,9 @@ class AdConsent {
 
   static Future<void> _platformRequestTracking() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return;
-    await _trackingChannel.invokeMethod<String>('request');
+    final String? status = await _trackingChannel.invokeMethod<String>('request');
+    if (status == 'authorized' || status == 'denied' || status == 'restricted') return;
+    throw StateError('Tracking permission did not reach a terminal status: $status');
   }
 
   static Future<bool> _platformPrivacyOptionsRequired() async =>

@@ -85,17 +85,25 @@ import WidgetKit
     }
   }
 
-  /// Shows the App Tracking Transparency prompt once. iOS ignores the request while the app is not active.
+  /// Waits for an active app and retries ATT requests suppressed by another permission prompt.
+  @MainActor
   private static func requestTracking() async -> ATTrackingManager.AuthorizationStatus {
     guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else {
       return ATTrackingManager.trackingAuthorizationStatus
     }
-    if UIApplication.shared.applicationState != .active {
-      for await _ in NotificationCenter.default.notifications(named: UIApplication.didBecomeActiveNotification) {
-        break
+    for _ in 0..<40 {
+      do {
+        try await Task.sleep(nanoseconds: 250_000_000)
+      } catch {
+        return ATTrackingManager.trackingAuthorizationStatus
       }
+      let status = ATTrackingManager.trackingAuthorizationStatus
+      guard status == .notDetermined else { return status }
+      guard UIApplication.shared.applicationState == .active else { continue }
+      // Read the persisted status on the next turn; early callbacks can precede the user's decision.
+      ATTrackingManager.requestTrackingAuthorization { _ in }
     }
-    return await ATTrackingManager.requestTrackingAuthorization()
+    return ATTrackingManager.trackingAuthorizationStatus
   }
 
   private static func trackingName(_ status: ATTrackingManager.AuthorizationStatus) -> String {

@@ -116,6 +116,60 @@ void main() {
     });
   });
 
+  testWidgets('rewarded request waits for tracking before initializing or loading', (tester) async {
+    final tracking = Completer<void>();
+    AdConsent.instance = AdConsent(
+      requestInfoUpdate: () async {},
+      showFormIfRequired: () async {},
+      requestTracking: () => tracking.future,
+      canRequestAds: () async => true,
+    );
+
+    final pending = repository.createRewardedAd();
+    await tester.pump();
+    expect(nativeMethods, isEmpty);
+    expect(loadIds, isEmpty);
+
+    tracking.complete();
+    await tester.pump();
+    expect(nativeMethods, contains('MobileAds#initialize'));
+    expect(loadIds, hasLength(1));
+    final id = loadIds.single;
+    await adEvent(id, 'onAdLoaded');
+    expect((await pending).data?.adLoaded, isTrue);
+    expect(loadIds, [id]);
+  });
+
+  testWidgets('failed tracking blocks ads and a later tracking retry can load', (tester) async {
+    int trackingAttempts = 0;
+    AdConsent.instance = AdConsent(
+      requestInfoUpdate: () async {},
+      showFormIfRequired: () async {},
+      requestTracking: () async {
+        trackingAttempts++;
+        if (trackingAttempts == 1) throw StateError('tracking unavailable');
+      },
+      canRequestAds: () async => true,
+    );
+
+    Result<AdsEntity>? denied;
+    repository.createRewardedAd().then((result) => denied = result);
+    await tester.pump();
+    expect(denied?.data?.failureReason, AdFailureReason.consent);
+    expect(nativeMethods, isEmpty);
+    expect(loadIds, isEmpty);
+
+    final pending = repository.createRewardedAd();
+    await tester.pump();
+    expect(trackingAttempts, 2);
+    expect(nativeMethods, contains('MobileAds#initialize'));
+    expect(loadIds, hasLength(1));
+    final id = loadIds.single;
+    await adEvent(id, 'onAdLoaded');
+    expect((await pending).data?.adLoaded, isTrue);
+    expect(loadIds, [id]);
+  });
+
   testWidgets('showing without a loaded ad returns a validation failure', (tester) async {
     final result = await repository.showRewardedAd();
     expect(result.isFailure, true);

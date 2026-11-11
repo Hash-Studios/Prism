@@ -11,22 +11,31 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class _EligibleService extends AdExperimentService {
   Future<void> readiness = Future<void>.value();
-  @override
-  Future<void> initializeAds() => readiness;
-
-  bool allowed = true;
-  Completer<bool>? eligibility;
-  _EligibleService() {
+  _EligibleService({this.checkConsent = false}) {
     applyConfig(
       '{"version":"v1","native":true,"banner":true,"interstitial":true,'
+      '"android_native_id":"ca-app-pub-1234567890123456/1234567892",'
       '"android_banner_id":"ca-app-pub-1234567890123456/1234567890",'
       '"android_interstitial_id":"ca-app-pub-1234567890123456/1234567891"}',
     );
   }
 
+  final bool checkConsent;
+  int initializeCalls = 0;
+
+  @override
+  Future<void> initializeAds() {
+    initializeCalls++;
+    return readiness;
+  }
+
+  bool allowed = true;
+  Completer<bool>? eligibility;
+
   @override
   Future<bool> permits(AdExperimentFormat format, {required bool active, bool action = false}) async =>
-      eligibility?.future ?? allowed;
+      (await (eligibility?.future ?? Future<bool>.value(allowed))) &&
+      (!checkConsent || await AdConsent.instance.canShow());
 
   @override
   Future<int?> bucket({String? accountId}) async => 42;
@@ -46,6 +55,84 @@ class _FakeInterstitial extends Fake implements InterstitialAd {
 }
 
 void main() {
+  for (final format in [AdExperimentFormat.banner, AdExperimentFormat.native]) {
+    testWidgets('$format waits for tracking before SDK initialization or load', (tester) async {
+      final original = AdConsent.instance;
+      addTearDown(() => AdConsent.instance = original);
+      final tracking = Completer<void>();
+      AdConsent.instance = AdConsent(
+        requestInfoUpdate: () async {},
+        showFormIfRequired: () async {},
+        requestTracking: () => tracking.future,
+        canRequestAds: () async => true,
+      );
+      final service = _EligibleService(checkConsent: true);
+      final requested = <AdWithView>[];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ExperimentalInlineAd(
+              format: format,
+              active: true,
+              android: true,
+              service: service,
+              loadAd: (ad) async => requested.add(ad),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(service.initializeCalls, 0);
+      expect(requested, isEmpty);
+
+      tracking.complete();
+      await tester.pump();
+      expect(service.initializeCalls, 1);
+      expect(requested, hasLength(1));
+      expect(requested.single, format == AdExperimentFormat.banner ? isA<BannerAd>() : isA<NativeAd>());
+      expect(requested.single.adUnitId, service.config.unitId(format, android: true));
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
+
+  testWidgets('interstitial waits for tracking before SDK initialization or load', (tester) async {
+    final original = AdConsent.instance;
+    addTearDown(() => AdConsent.instance = original);
+    final tracking = Completer<void>();
+    AdConsent.instance = AdConsent(
+      requestInfoUpdate: () async {},
+      showFormIfRequired: () async {},
+      requestTracking: () => tracking.future,
+      canRequestAds: () async => true,
+    );
+    final service = _EligibleService(checkConsent: true);
+    final requests = <String>[];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => ExperimentalInterstitialReturn(
+            grid: context,
+            service: service,
+            android: true,
+            loadAd: (id, _) async => requests.add(id),
+            child: const Scaffold(body: Text('Detail')),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(service.initializeCalls, 0);
+    expect(requests, isEmpty);
+
+    tracking.complete();
+    await tester.pump();
+    expect(service.initializeCalls, 1);
+    expect(requests, [service.config.unitId(AdExperimentFormat.interstitial, android: true)]);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   for (final allowed in [true, false]) {
     testWidgets('inline rechecks privacy result $allowed after the form closes', (tester) async {
       final original = AdConsent.instance;
