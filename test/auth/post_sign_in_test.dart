@@ -111,8 +111,14 @@ class _Credential extends Fake implements UserCredential {
   final AdditionalUserInfo? additionalUserInfo;
 }
 
-// ignore: invalid_use_of_protected_member
-AdditionalUserInfo _webProfile(Map<String, dynamic> profile) => AdditionalUserInfo(isNewUser: true, profile: profile);
+class _WebProfile extends Fake implements AdditionalUserInfo {
+  _WebProfile(this.profile);
+
+  @override
+  final Map<String, dynamic> profile;
+}
+
+AdditionalUserInfo _webProfile(Map<String, dynamic> profile) => _WebProfile(profile);
 
 class _Auth extends Fake implements FirebaseAuth {
   _Auth([_User? user]) : user = user ?? _User();
