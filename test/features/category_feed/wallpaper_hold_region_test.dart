@@ -873,6 +873,29 @@ void main() {
     expect(actions, isEmpty);
   });
 
+  for (final String release in <String>['lift', 'drag', 'cancel']) {
+    testWidgets('a $release after the tile is disposed mid-ring does not touch the disposed ring', (tester) async {
+      final actions = <WallpaperQuickAction>[];
+      await pumpRegion(tester, actions);
+      final gesture = await tester.startGesture(tester.getCenter(find.byKey(const ValueKey('source'))));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      await tester.pumpWidget(const SizedBox());
+      switch (release) {
+        case 'lift':
+          await gesture.up();
+        case 'drag':
+          await gesture.moveBy(const Offset(0, 40));
+          await gesture.up();
+        case 'cancel':
+          await gesture.cancel();
+      }
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(actions, isEmpty);
+    });
+  }
+
   testWidgets('reduced motion has no tilt and optional action is absent', (tester) async {
     await pumpRegion(tester, <WallpaperQuickAction>[], reduceMotion: true, showLess: false);
     final gesture = await hold(tester);
