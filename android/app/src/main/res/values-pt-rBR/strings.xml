@@ -19,6 +19,20 @@
     <string name="wotd_widget_set_description">Definir o papel de parede de hoje</string>
     <string name="wotd_widget_set_done">Papel de parede definido</string>
     <string name="wotd_widget_set_failed">Não foi possível definir o papel de parede</string>
+    <string name="streak_widget_label">Sequência</string>
+    <string name="streak_widget_description">Sua sequência no Prism num relance.</string>
+    <string name="streak_widget_keep">Mantenha sua sequência</string>
+    <string name="streak_widget_kept">Mantida hoje</string>
+    <string name="streak_widget_start">Comece uma sequência hoje</string>
+    <string name="streak_widget_signed_out">Entre para acompanhar sua sequência</string>
+    <plurals name="streak_widget_kept_description">
+        <item quantity="one">Sequência de %d dia, mantida hoje</item>
+        <item quantity="other">Sequência de %d dias, mantida hoje</item>
+    </plurals>
+    <plurals name="streak_widget_open_description">
+        <item quantity="one">Sequência de %d dia, ainda pendente hoje</item>
+        <item quantity="other">Sequência de %d dias, ainda pendente hoje</item>
+    </plurals>
     <string name="media_saved_in_pictures">Salvo em Pictures/%1$s!</string>
     <string name="notif_push_wall_approved_for_artist_title">Seu papel de parede está no ar! 🎉</string>
     <string name="notif_push_wall_approved_for_artist_body">\"%1$s\" foi aprovado e agora está visível para todos.</string>

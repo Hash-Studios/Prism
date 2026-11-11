@@ -49,6 +49,61 @@ void main() {
     }
   });
 
+  test('the Streak widget is registered, not exported, and has no periodic update', () {
+    final RegExpMatch? receiver = RegExp(
+      r'<receiver\s[^>]*android:name="\.StreakWidgetProvider"[^>]*>',
+    ).firstMatch(manifest);
+    expect(receiver, isNotNull);
+    expect(receiver!.group(0), contains('android:exported="false"'));
+    final String info = File('android/app/src/main/res/xml/streak_widget_info.xml').readAsStringSync();
+    expect(info, contains('android:updatePeriodMillis="0"'));
+    expect(info, contains('android:previewLayout="@layout/streak_widget_preview"'));
+    expect(info, contains('android:previewImage="@drawable/streak_widget_preview_art"'));
+    expect(info, contains('android:description="@string/streak_widget_description"'));
+  });
+
+  test('every widget string is in every Android locale', () {
+    const List<String> names = <String>[
+      'streak_widget_label',
+      'streak_widget_description',
+      'streak_widget_keep',
+      'streak_widget_kept',
+      'streak_widget_start',
+      'streak_widget_signed_out',
+      'streak_widget_kept_description',
+      'streak_widget_open_description',
+    ];
+    for (final String folder in <String>[
+      'values',
+      'values-de',
+      'values-es',
+      'values-hi',
+      'values-in',
+      'values-pt',
+      'values-pt-rBR',
+    ]) {
+      final String strings = File('android/app/src/main/res/$folder/strings.xml').readAsStringSync();
+      for (final String name in names) {
+        expect(strings, contains('name="$name"'), reason: '$folder is missing $name');
+      }
+    }
+  });
+
+  test('the widgets use Material You colours on Android 12 and light and dark colours before it', () {
+    for (final String folder in <String>['values', 'values-night', 'values-v31', 'values-night-v31']) {
+      expect(
+        File('android/app/src/main/res/$folder/colors.xml').readAsStringSync(),
+        contains('name="prism_widget_surface"'),
+        reason: folder,
+      );
+    }
+    expect(
+      File('android/app/src/main/res/values-v31/colors.xml').readAsStringSync(),
+      contains('@android:color/system_'),
+    );
+    expect(File('android/app/src/main/res/drawable/wotd_widget_bg.xml').readAsStringSync(), isNot(contains('#121212')));
+  });
+
   test('the Quick Settings tile setup hint comes from a translatable Android resource', () {
     final String strings = File('android/app/src/main/res/values/strings.xml').readAsStringSync();
     expect(strings, contains('name="tile_setup_subtitle"'));

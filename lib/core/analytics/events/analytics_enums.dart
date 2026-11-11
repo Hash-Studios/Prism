@@ -426,8 +426,10 @@ enum WidgetKindValue {
   wotdMedium,
   wotdLarge,
   wotdLock,
+  wotdAndroid,
   streakCircular,
-  streakInline;
+  streakInline,
+  streakAndroid;
 
   String get wireValue => _snakeCase(name);
 }

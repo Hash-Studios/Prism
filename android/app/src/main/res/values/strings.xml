@@ -19,6 +19,20 @@
     <string name="wotd_widget_set_description">Set today\'s wallpaper</string>
     <string name="wotd_widget_set_done">Wallpaper set</string>
     <string name="wotd_widget_set_failed">Could not set wallpaper</string>
+    <string name="streak_widget_label">Streak</string>
+    <string name="streak_widget_description">Your Prism streak at a glance.</string>
+    <string name="streak_widget_keep">Keep your streak</string>
+    <string name="streak_widget_kept">Kept today</string>
+    <string name="streak_widget_start">Start a streak today</string>
+    <string name="streak_widget_signed_out">Sign in to track your streak</string>
+    <plurals name="streak_widget_kept_description">
+        <item quantity="one">%d-day streak, kept today</item>
+        <item quantity="other">%d-day streak, kept today</item>
+    </plurals>
+    <plurals name="streak_widget_open_description">
+        <item quantity="one">%d-day streak, not kept yet today</item>
+        <item quantity="other">%d-day streak, not kept yet today</item>
+    </plurals>
     <string name="media_saved_in_pictures">Saved in Pictures/%1$s!</string>
     <string name="notif_push_wall_approved_for_artist_title">Your wallpaper is live! 🎉</string>
     <string name="notif_push_wall_approved_for_artist_body">\"%1$s\" has been approved and is now visible to everyone.</string>

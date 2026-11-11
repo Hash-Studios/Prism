@@ -2,14 +2,13 @@ import 'dart:async';
 
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
-import 'package:Prism/core/platform/ios_widget_channel.dart';
 import 'package:Prism/core/platform/pigeon/prism_widget_api.g.dart';
+import 'package:Prism/core/platform/widget_channel.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:flutter/foundation.dart';
 
-/// Mirrors the signed-in user's streak to the iOS Lock Screen widgets, so they stay right after midnight without the
-/// app. Never throws.
+/// Mirrors the signed-in user's streak to the iOS Lock Screen widgets and the Android Streak widget, so they stay right after midnight without the app. Never throws.
 class StreakWidgetSync {
   const StreakWidgetSync._();
 
@@ -60,8 +59,8 @@ class StreakWidgetSync {
     final StreakStatus status = streak().value;
     final bool hasFreshStatus = !identical(status, _lastStatus);
     _lastStatus = status;
-    if (IosWidgetChannel.streakGeneration != _observedGeneration) {
-      _observedGeneration = IosWidgetChannel.streakGeneration;
+    if (WidgetChannel.streakGeneration != _observedGeneration) {
+      _observedGeneration = WidgetChannel.streakGeneration;
       // A clear from account deletion must also block later updates from that account.
       _blockedOwner = owner;
       _clearPending = true;
@@ -90,12 +89,12 @@ class StreakWidgetSync {
     final bool hasStatus = signedIn && !identical(status, StreakStatus.empty);
     final StreakWidgetSnapshot? snapshot = hasStatus ? snapshotFor(status, signedIn: true) : null;
     final String key = hasStatus
-        ? '${owner ?? ''}|${IosWidgetChannel.streakGeneration}|${snapshot!.count}|${snapshot.lastKeptDay}|'
+        ? '${owner ?? ''}|${WidgetChannel.streakGeneration}|${snapshot!.count}|${snapshot.lastKeptDay}|'
               '${snapshot.utcOffsetMinutes}|${snapshot.freezes}'
-        : '${owner ?? ''}|${IosWidgetChannel.streakGeneration}|clear';
+        : '${owner ?? ''}|${WidgetChannel.streakGeneration}|clear';
     if (key == _lastScheduledKey) return;
     _lastScheduledKey = key;
-    final bool succeeded = await IosWidgetChannel.setStreak(snapshot);
+    final bool succeeded = await WidgetChannel.setStreak(snapshot);
     if (!succeeded && key == _lastScheduledKey) {
       _lastScheduledKey = null;
     }
@@ -108,9 +107,9 @@ class StreakWidgetSync {
   }
 
   static Future<void> _clearForOwner(String? owner) async {
-    final Future<bool> clear = IosWidgetChannel.requestClearStreak();
-    _observedGeneration = IosWidgetChannel.streakGeneration;
-    final String key = '${owner ?? ''}|${IosWidgetChannel.streakGeneration}|clear';
+    final Future<bool> clear = WidgetChannel.requestClearStreak();
+    _observedGeneration = WidgetChannel.streakGeneration;
+    final String key = '${owner ?? ''}|${WidgetChannel.streakGeneration}|clear';
     _lastScheduledKey = key;
     final bool succeeded = await clear;
     _clearPending = !succeeded;
@@ -140,7 +139,7 @@ class StreakWidgetSync {
     _awaitingOwnerStatus = null;
     _lastStatus = null;
     _clearPending = false;
-    _observedGeneration = IosWidgetChannel.streakGeneration;
+    _observedGeneration = WidgetChannel.streakGeneration;
     _hasActiveOwner = false;
   }
 }

@@ -3,15 +3,15 @@ import 'dart:io';
 import 'package:Prism/core/platform/pigeon/prism_widget_api.g.dart';
 import 'package:flutter/foundation.dart';
 
-/// iOS Home Screen and Lock Screen widgets. Every call is a no-op on other platforms and never throws.
-class IosWidgetChannel {
-  const IosWidgetChannel._();
+/// Home screen and Lock Screen widgets on iOS and Android. Every call is a no-op on other platforms and never throws.
+class WidgetChannel {
+  const WidgetChannel._();
 
   @visibleForTesting
   static PrismWidgetHostApi api = PrismWidgetHostApi();
 
   @visibleForTesting
-  static bool Function() isSupportedPlatform = () => !kIsWeb && Platform.isIOS;
+  static bool Function() isSupportedPlatform = () => !kIsWeb && (Platform.isIOS || Platform.isAndroid);
 
   static Future<void> _streakQueue = Future<void>.value();
   static int _streakGeneration = 0;

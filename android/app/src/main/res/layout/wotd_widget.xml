@@ -27,7 +27,7 @@
             android:layout_marginTop="8dp"
             android:gravity="center"
             android:text="@string/wotd_widget_hint"
-            android:textColor="#B3FFFFFF"
+            android:textColor="@color/prism_widget_on_surface_variant"
             android:textSize="12sp" />
     </LinearLayout>
 
@@ -79,7 +79,7 @@
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:text="@string/wotd_widget_set"
-        android:textColor="@android:color/white"
+        android:textColor="@color/prism_widget_on_accent_container"
         android:textSize="12sp"
         android:textStyle="bold"
         android:visibility="gone" />

@@ -28,15 +28,24 @@ const Set<String> _remoteViewsClasses = <String>{
 
 void main() {
   final List<File> layouts =
-      Directory(
-          'android/app/src/main/res/layout',
-        ).listSync().whereType<File>().where((File f) => RegExp(r'wotd_widget[^/]*\.xml$').hasMatch(f.path)).toList()
+      Directory('android/app/src/main/res/layout')
+          .listSync()
+          .whereType<File>()
+          .where((File f) => RegExp(r'(wotd|streak)_widget[^/]*\.xml$').hasMatch(f.path))
+          .toList()
         ..sort((File a, File b) => a.path.compareTo(b.path));
 
-  test('the Wall of the Day layouts exist', () {
+  test('the widget layouts exist', () {
     expect(
       layouts.map((File f) => f.uri.pathSegments.last),
-      containsAll(<String>['wotd_widget.xml', 'wotd_widget_preview.xml']),
+      containsAll(<String>[
+        'wotd_widget.xml',
+        'wotd_widget_preview.xml',
+        'streak_widget_compact.xml',
+        'streak_widget_large.xml',
+        'streak_widget_preview.xml',
+        'streak_widget_signed_out.xml',
+      ]),
     );
   });
 

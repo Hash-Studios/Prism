@@ -7,9 +7,9 @@ import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
-import 'package:Prism/core/platform/ios_widget_channel.dart';
 import 'package:Prism/core/platform/quick_tile_config_service.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
+import 'package:Prism/core/platform/widget_channel.dart';
 import 'package:Prism/core/purchases/upload_quota.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/data/notifications/notification_tombstones.dart';
@@ -52,9 +52,9 @@ class LocalAccountDataCleaner {
 
   /// Leaves the widget alone when another account signed in before the deleted account's cleanup ran.
   @visibleForTesting
-  static Future<void> clearIosWidgetStreakForUser(String userId) async {
+  static Future<void> clearWidgetStreakForUser(String userId) async {
     if (app_state.prismUser.loggedIn && app_state.prismUser.id != userId) return;
-    await IosWidgetChannel.clearStreak();
+    await WidgetChannel.clearStreak();
   }
 
   static List<LocalClearStep> _defaultSteps() => <LocalClearStep>[
@@ -70,7 +70,7 @@ class LocalAccountDataCleaner {
     (name: 'iOS favourites mirror', run: ShortcutsFavouritesStore.clearForUser),
     (name: 'iOS folders mirror', run: ShortcutsFoldersStore.clearForUser),
     (name: 'iOS day and night snapshot', run: clearDayNightSnapshotForUser),
-    (name: 'iOS widget streak', run: clearIosWidgetStreakForUser),
+    (name: 'iOS widget streak', run: clearWidgetStreakForUser),
     (name: 'native favourites paths', run: NativeAssetPathsStore.clearForUser),
     (name: 'Android favourites mirror', run: _clearAndroidFavouritesForUser),
     (name: 'guest favourites', run: (_) => getIt<GuestFavouritesStore>().clear()),

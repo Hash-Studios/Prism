@@ -19,6 +19,20 @@
     <string name="wotd_widget_set_description">आज का वॉलपेपर लगाएँ</string>
     <string name="wotd_widget_set_done">वॉलपेपर लगा दिया गया</string>
     <string name="wotd_widget_set_failed">वॉलपेपर नहीं लगाया जा सका</string>
+    <string name="streak_widget_label">स्ट्रीक</string>
+    <string name="streak_widget_description">आपकी Prism स्ट्रीक एक नज़र में।</string>
+    <string name="streak_widget_keep">अपनी स्ट्रीक बनाए रखें</string>
+    <string name="streak_widget_kept">आज बनी रही</string>
+    <string name="streak_widget_start">आज स्ट्रीक शुरू करें</string>
+    <string name="streak_widget_signed_out">अपनी स्ट्रीक देखने के लिए साइन इन करें</string>
+    <plurals name="streak_widget_kept_description">
+        <item quantity="one">%d दिन की स्ट्रीक, आज बनी रही</item>
+        <item quantity="other">%d दिन की स्ट्रीक, आज बनी रही</item>
+    </plurals>
+    <plurals name="streak_widget_open_description">
+        <item quantity="one">%d दिन की स्ट्रीक, आज अभी बाकी</item>
+        <item quantity="other">%d दिन की स्ट्रीक, आज अभी बाकी</item>
+    </plurals>
     <string name="media_saved_in_pictures">Pictures/%1$s में सेव किया गया!</string>
     <string name="notif_push_wall_approved_for_artist_title">आपका वॉलपेपर लाइव है! 🎉</string>
     <string name="notif_push_wall_approved_for_artist_body">\"%1$s\" मंज़ूर हो गया है और अब सभी को दिखाई दे रहा है।</string>

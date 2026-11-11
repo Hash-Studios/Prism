@@ -838,6 +838,20 @@ void main() {
     ]);
   });
 
+  testWidgets('an Android streak widget link opens Rewards and records its widget kind', (tester) async {
+    await mount(tester);
+    final result = dispatcher.openUri(
+      const DeepLinkParser().transform(Uri.parse('prism://streak?widget=streak_android')),
+      source: DeepLinkSourceValue.appLinks,
+    );
+    await tester.pumpAndSettle();
+    expect(await result, DeepLinkDispatchResult.navigated);
+    expect(router.topRoute.name, RewardsRoute.name);
+    expect(events.whereType<WidgetTappedEvent>().map((event) => event.kind), <WidgetKindValue>[
+      WidgetKindValue.streakAndroid,
+    ]);
+  });
+
   testWidgets('an empty Wall of the Day widget fallback opens Rewards and records its Wall of the Day kind', (
     tester,
   ) async {
@@ -877,6 +891,32 @@ void main() {
     expect(args.thumbnailUrl, thumbnail);
     expect(events.whereType<WidgetTappedEvent>().map((event) => event.kind), <WidgetKindValue>[
       WidgetKindValue.wotdMedium,
+    ]);
+  });
+
+  testWidgets('a transformed Android Wall of the Day widget share opens its wall and thumbnail', (tester) async {
+    await mount(tester);
+    const String thumbnail = 'https://example.com/thumb.jpg?width=320&height=240';
+    final Uri link = Uri(
+      scheme: 'prism',
+      host: 'share',
+      queryParameters: <String, String>{
+        'id': 'wall-document-field-id',
+        'source': 'prism',
+        'thumb': thumbnail,
+        'widget': 'wotd_android',
+      },
+    );
+    final Uri transformedLink = const DeepLinkParser().transform(link);
+    final result = dispatcher.openUri(transformedLink, source: DeepLinkSourceValue.appLinks);
+    await tester.pumpAndSettle();
+    expect(await result, DeepLinkDispatchResult.navigated);
+    expect(router.topRoute.name, WallpaperDetailRoute.name);
+    final WallpaperDetailRouteArgs args = router.topRoute.argsAs<WallpaperDetailRouteArgs>();
+    expect(args.wallId, 'wall-document-field-id');
+    expect(args.thumbnailUrl, thumbnail);
+    expect(events.whereType<WidgetTappedEvent>().map((event) => event.kind), <WidgetKindValue>[
+      WidgetKindValue.wotdAndroid,
     ]);
   });
 

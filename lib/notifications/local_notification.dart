@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:Prism/core/platform/ios_widget_channel.dart';
+import 'package:Prism/core/platform/widget_channel.dart';
 import 'package:Prism/features/in_app_notifications/domain/notification_copy.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -51,7 +51,7 @@ class LocalNotification {
     if (_listeningForPush) return;
     _listeningForPush = true;
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-      if (message.data['route']?.toString() == 'wall_of_the_day') unawaited(IosWidgetChannel.reloadWallOfTheDay());
+      if (message.data['route']?.toString() == 'wall_of_the_day') unawaited(WidgetChannel.reloadWallOfTheDay());
       final AppLocalizations messages = await localizations();
       await showPushNotification(message, localizations: messages);
       onForegroundPush?.call();

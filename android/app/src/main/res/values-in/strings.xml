@@ -19,6 +19,20 @@
     <string name="wotd_widget_set_description">Terapkan wallpaper hari ini</string>
     <string name="wotd_widget_set_done">Wallpaper diterapkan</string>
     <string name="wotd_widget_set_failed">Tidak dapat menerapkan wallpaper</string>
+    <string name="streak_widget_label">Runtunan</string>
+    <string name="streak_widget_description">Runtunan Prism kamu sekilas.</string>
+    <string name="streak_widget_keep">Jaga runtunan kamu</string>
+    <string name="streak_widget_kept">Terjaga hari ini</string>
+    <string name="streak_widget_start">Mulai runtunan hari ini</string>
+    <string name="streak_widget_signed_out">Masuk untuk melihat runtunan kamu</string>
+    <plurals name="streak_widget_kept_description">
+        <item quantity="one">Runtunan %d hari, terjaga hari ini</item>
+        <item quantity="other">Runtunan %d hari, terjaga hari ini</item>
+    </plurals>
+    <plurals name="streak_widget_open_description">
+        <item quantity="one">Runtunan %d hari, belum terjaga hari ini</item>
+        <item quantity="other">Runtunan %d hari, belum terjaga hari ini</item>
+    </plurals>
     <string name="media_saved_in_pictures">Disimpan di Pictures/%1$s!</string>
     <string name="notif_push_wall_approved_for_artist_title">Wallpaper Anda sudah tayang! 🎉</string>
     <string name="notif_push_wall_approved_for_artist_body">\"%1$s\" telah disetujui dan kini dapat dilihat semua orang.</string>

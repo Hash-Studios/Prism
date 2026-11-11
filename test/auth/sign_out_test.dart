@@ -13,9 +13,9 @@ import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
-import 'package:Prism/core/platform/ios_widget_channel.dart';
 import 'package:Prism/core/platform/pigeon/prism_widget_api.g.dart';
 import 'package:Prism/core/platform/streak_widget_sync.dart';
+import 'package:Prism/core/platform/widget_channel.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
@@ -422,11 +422,11 @@ void main() {
 
   test('clears the iOS streak widget snapshot so the next user does not inherit it', () async {
     final _FakeWidgetApi widgets = _FakeWidgetApi();
-    IosWidgetChannel.api = widgets;
-    IosWidgetChannel.isSupportedPlatform = () => true;
+    WidgetChannel.api = widgets;
+    WidgetChannel.isSupportedPlatform = () => true;
     addTearDown(() {
-      IosWidgetChannel.api = PrismWidgetHostApi();
-      IosWidgetChannel.isSupportedPlatform = () => false;
+      WidgetChannel.api = PrismWidgetHostApi();
+      WidgetChannel.isSupportedPlatform = () => false;
       StreakWidgetSync.resetForTest();
     });
     app_state.prismUser = profileUser();
@@ -442,13 +442,13 @@ void main() {
     final started = Completer<void>();
     final gate = Completer<void>();
     final widgets = _FakeWidgetApi();
-    IosWidgetChannel.api = widgets;
-    IosWidgetChannel.isSupportedPlatform = () => true;
+    WidgetChannel.api = widgets;
+    WidgetChannel.isSupportedPlatform = () => true;
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
     addTearDown(() {
       debugDefaultTargetPlatformOverride = null;
-      IosWidgetChannel.api = PrismWidgetHostApi();
-      IosWidgetChannel.isSupportedPlatform = () => false;
+      WidgetChannel.api = PrismWidgetHostApi();
+      WidgetChannel.isSupportedPlatform = () => false;
       StreakWidgetSync.resetForTest();
     });
     app_state.prismUser = profileUser();
@@ -466,7 +466,7 @@ void main() {
     app_state.prismUser = profileUser(id: 'replacement');
     firebase.user = _FakeUser(uid: 'replacement');
     final snapshot = StreakWidgetSnapshot(count: 7, lastKeptDay: '2026-10-27', utcOffsetMinutes: 0, freezes: 0);
-    await IosWidgetChannel.setStreak(snapshot);
+    await WidgetChannel.setStreak(snapshot);
     gate.complete();
     expect(await pending, isFalse);
     expect(widgets.snapshots, <StreakWidgetSnapshot?>[snapshot]);

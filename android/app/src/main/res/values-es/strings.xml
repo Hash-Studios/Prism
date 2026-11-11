@@ -19,6 +19,20 @@
     <string name="wotd_widget_set_description">Establecer el fondo de pantalla de hoy</string>
     <string name="wotd_widget_set_done">Fondo de pantalla establecido</string>
     <string name="wotd_widget_set_failed">No se pudo establecer el fondo de pantalla</string>
+    <string name="streak_widget_label">Racha</string>
+    <string name="streak_widget_description">Tu racha de Prism de un vistazo.</string>
+    <string name="streak_widget_keep">Mantén tu racha</string>
+    <string name="streak_widget_kept">Mantenida hoy</string>
+    <string name="streak_widget_start">Empieza una racha hoy</string>
+    <string name="streak_widget_signed_out">Inicia sesión para ver tu racha</string>
+    <plurals name="streak_widget_kept_description">
+        <item quantity="one">Racha de %d día, mantenida hoy</item>
+        <item quantity="other">Racha de %d días, mantenida hoy</item>
+    </plurals>
+    <plurals name="streak_widget_open_description">
+        <item quantity="one">Racha de %d día, aún pendiente hoy</item>
+        <item quantity="other">Racha de %d días, aún pendiente hoy</item>
+    </plurals>
     <string name="media_saved_in_pictures">Guardado en Pictures/%1$s</string>
     <string name="notif_push_wall_approved_for_artist_title">¡Tu fondo de pantalla ya está publicado! 🎉</string>
     <string name="notif_push_wall_approved_for_artist_body">«%1$s» se aprobó y ya está visible para todos.</string>
