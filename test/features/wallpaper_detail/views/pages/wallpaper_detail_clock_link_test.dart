@@ -17,6 +17,7 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.d
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
+import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_state.dart';
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/clock_overlay.dart';
@@ -43,9 +44,11 @@ class _FixedCopyRepository implements WallpaperPositionRepository {
 
   final Directory directory;
   int renders = 0;
+  final List<String> inputs = <String>[];
 
   @override
   Future<PlacementSource> load(String url) async {
+    inputs.add(url);
     final recorder = ui.PictureRecorder();
     ui.Canvas(recorder);
     final picture = recorder.endRecording();
@@ -131,12 +134,14 @@ void main() {
       await getIt.reset();
     });
 
-    Future<void> pumpDetail(WidgetTester tester, FeedItemEntity entity) async {
+    Future<void> pumpDetail(WidgetTester tester, FeedItemEntity entity, {File? localFile, Color? tint}) async {
       final _MockWallpaperDetailBloc bloc = _MockWallpaperDetailBloc();
       final WallpaperDetailLoaded state = WallpaperDetailLoaded(
         recommendations: const RecommendationState.exhausted(),
         entity: entity,
         paletteLoading: false,
+        accent: tint,
+        colorChanged: tint != null,
       );
       whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: state.copyWith(panelCollapsed: false));
       await tester.pumpWidget(
@@ -145,15 +150,15 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: BlocProvider<WallpaperDetailBloc>.value(
             value: bloc,
-            child: WallpaperDetailScreen(entity: entity),
+            child: WallpaperDetailScreen(entity: entity, localFile: localFile),
           ),
         ),
       );
       await tester.pump();
     }
 
-    Future<ClockOverlay> openPreview(WidgetTester tester, FeedItemEntity entity) async {
-      await pumpDetail(tester, entity);
+    Future<ClockOverlay> openPreview(WidgetTester tester, FeedItemEntity entity, {File? localFile, Color? tint}) async {
+      await pumpDetail(tester, entity, localFile: localFile, tint: tint);
       await tester.tap(find.byTooltip(AppLocalizationsEn().wallpaperPreviewOnScreen));
       await tester.pumpAndSettle();
       return tester.widget<ClockOverlay>(find.byType(ClockOverlay));
@@ -198,6 +203,54 @@ void main() {
 
         expect(await File(first).parent.exists(), isFalse);
         expect(await File(second).exists(), isTrue);
+        expect(await source.exists(), isTrue);
+      });
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('discarding a fixed tint keeps the tint renderer copy and original', (tester) async {
+      final repository = _FixedCopyRepository(offlineAssets.directory);
+      getIt.registerSingleton<WallpaperPositionRepository>(repository);
+      final File source = offlineAssets.createImageSync('original.png');
+      const Color tint = Color(0xFF663399);
+      final overlay = await openPreview(tester, _wallhaven(), localFile: source, tint: tint);
+      final save =
+          overlay.saveAction!('Save', const <ReadabilityFix>[
+                ReadabilityFix(ReadabilityZone.clock, ReadabilityFixKind.dim),
+              ])
+              as DownloadButton;
+      await tester.runAsync(() async {
+        final String rendered = await save.variant!.prepareAuthorized!(source.path);
+        final String tinted = repository.inputs.single;
+        expect(tinted, contains('/prism_tint/'));
+        expect(await File(tinted).exists(), isTrue);
+
+        await save.variant!.discard!(rendered);
+
+        expect(await File(rendered).parent.exists(), isFalse);
+        expect(await File(tinted).exists(), isTrue);
+        expect(await source.exists(), isTrue);
+        await clearTintedWallpapers();
+      });
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('discarding a fixed saved variation keeps the Downloads file', (tester) async {
+      final repository = _FixedCopyRepository(offlineAssets.directory);
+      getIt.registerSingleton<WallpaperPositionRepository>(repository);
+      final File source = offlineAssets.createImageSync('wall_tint-663399.png');
+      final overlay = await openPreview(tester, _wallhaven(), localFile: source);
+      final save =
+          overlay.saveAction!('Save', const <ReadabilityFix>[
+                ReadabilityFix(ReadabilityZone.clock, ReadabilityFixKind.dim),
+              ])
+              as DownloadButton;
+      await tester.runAsync(() async {
+        final String rendered = await save.variant!.prepare();
+        expect(repository.inputs, <String>[source.path]);
+        expect(save.variant!.key, startsWith('tint-663399-'));
+
+        await save.variant!.discard!(rendered);
+
+        expect(await File(rendered).parent.exists(), isFalse);
         expect(await source.exists(), isTrue);
       });
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));

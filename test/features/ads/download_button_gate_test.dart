@@ -1495,6 +1495,96 @@ void main() {
       expect(discarded, <String>[preparedPath(0)]);
     });
 
+    testWidgets('a platform exception deletes its copy once', (tester) async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+        enqueueChannel,
+        (message) async {
+          enqueued.add((message! as List<Object?>).single);
+          return <Object?>['DOWNLOAD_FAILED', 'native failure', null];
+        },
+      );
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+      await pumpUntil(tester, () => discarded.isNotEmpty);
+      await settle(tester);
+
+      expect(results().single.reason, 'platform_error');
+      expect(discarded, <String>[preparedPath(0)]);
+      expect(File(preparedPath(0)).existsSync(), isFalse);
+    });
+
+    testWidgets('an account switch during preparation discards without enqueueing', (tester) async {
+      final DownloadVariant copy = rendered();
+      await pump(
+        tester,
+        variant: DownloadVariant(
+          key: copy.key,
+          prepare: () async {
+            final String path = await copy.prepare();
+            signOut();
+            return path;
+          },
+          discard: copy.discard,
+        ),
+      );
+      await tapSave(tester);
+      await pumpUntil(tester, () => discarded.isNotEmpty);
+      await settle(tester);
+
+      expect(results().single.reason, 'account_changed');
+      expect(enqueued, isEmpty);
+      expect(discarded, <String>[preparedPath(0)]);
+      expect(File(preparedPath(0)).existsSync(), isFalse);
+    });
+
+    testWidgets('backgrounding a Save keeps its copy until native completion', (tester) async {
+      final Completer<bool> save = holdSaves();
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+      expect(enqueued, hasLength(1));
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await settle(tester);
+      expect(File(preparedPath(0)).existsSync(), isTrue);
+      expect(discarded, isEmpty);
+
+      save.complete(true);
+      await pumpUntil(tester, () => discarded.isNotEmpty);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await settle(tester);
+
+      expect(discarded, <String>[preparedPath(0)]);
+      expect(File(preparedPath(0)).existsSync(), isFalse);
+    });
+
+    testWidgets('a refused spend never prepares again and discards once after cancellation', (tester) async {
+      backend.onCall = (name, parameters) async {
+        if (name == 'spendCoins') spendCalls.add(parameters);
+        return <String, Object>{
+          'success': false,
+          'changed': false,
+          'currentBalance': 2,
+          'previousBalance': 100,
+          'delta': 0,
+          'insufficientBalance': true,
+        };
+      };
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+      expect(find.text('Not enough coins'), findsOneWidget);
+      expect(renders, 1);
+      expect(discarded, isEmpty);
+
+      await tester.tapAt(const Offset(10, 10));
+      await pumpUntil(tester, () => discarded.isNotEmpty);
+      await settle(tester);
+
+      expect(spendCalls, hasLength(1));
+      expect(renders, 1);
+      expect(enqueued, isEmpty);
+      expect(discarded, <String>[preparedPath(0)]);
+    });
+
     testWidgets('a cancelled Save keeps its copy while the sheet is open and deletes it after', (tester) async {
       app_state.prismUser.coins = 2;
       CoinsService.instance.balanceNotifier.value = 2;
