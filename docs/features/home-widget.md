@@ -139,7 +139,7 @@ The Streak widget shows the streak of the signed-in user.
 - The widget shows a wall that the Firestore rules let anyone read. A wall that is not reviewed does not show.
 - If the `walls` read rule is changed to signed-in only, this widget and the iOS widget ([ios-widgets.md](ios-widgets.md)) both stop showing new walls.
 - The Streak widget shows the last snapshot the app wrote on this phone. A claim on another device shows after Prism opens on this phone.
-- Emulator proof (Streak widget and colours): TODO.
+- Device proof (Streak widget and colours): not done yet. On 2026-11-11 no Simlock Android device was available. The unit tests and the resource tests cover the rule, the strings and the colour files. The look on a real launcher, in light, dark and Material You, is not checked.
 
 ## How to test
 
