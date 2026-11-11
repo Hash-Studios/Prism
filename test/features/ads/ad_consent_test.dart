@@ -106,6 +106,45 @@ void main() {
     });
   });
 
+  test('ads wait for the tracking answer, and tracking is asked only once', () async {
+    final steps = <String>[];
+    final answer = Completer<void>();
+    final consent = AdConsent(
+      requestInfoUpdate: () async => steps.add('update'),
+      showFormIfRequired: () async => steps.add('form'),
+      canRequestAds: () async {
+        steps.add('can');
+        return true;
+      },
+      requestTracking: () {
+        steps.add('tracking');
+        return answer.future;
+      },
+    );
+
+    final ensured = consent.ensure();
+    final shown = consent.canShow();
+    await pumpEventQueue();
+    expect(steps, isNot(contains('can')));
+
+    answer.complete();
+    expect(await ensured, isTrue);
+    expect(await shown, isTrue);
+    expect(steps.where((step) => step == 'tracking'), hasLength(1));
+  });
+
+  test('a failed tracking request does not block ads', () async {
+    final consent = AdConsent(
+      requestInfoUpdate: () async {},
+      showFormIfRequired: () async {},
+      canRequestAds: () async => true,
+      requestTracking: () async => throw StateError('no channel'),
+    );
+
+    expect(await consent.ensure(), isTrue);
+    expect(await consent.canShow(), isTrue);
+  });
+
   group('analytics', () {
     late FakeAppAnalytics fakeAnalytics;
 

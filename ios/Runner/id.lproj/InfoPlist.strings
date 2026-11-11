@@ -2,3 +2,4 @@
 "NSPhotoLibraryAddUsageDescription" = "Prism memerlukan izin untuk menyimpan wallpaper ke perpustakaan foto Anda.";
 "NSCameraUsageDescription" = "Prism memerlukan akses kamera agar Anda dapat mengambil foto untuk gambar profil Anda.";
 "NSMotionUsageDescription" = "Prism menggunakan gerakan untuk membuka Laporkan masalah saat Anda menggoyangkan ponsel.";
+"NSUserTrackingUsageDescription" = "Jika Anda izinkan, Prism menampilkan iklan yang sesuai dengan minat Anda. Jumlah iklan tetap sama.";

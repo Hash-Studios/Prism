@@ -295,6 +295,8 @@ Future<void> main() async {
       // lazily once Firebase background init completes.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (CreatorStatsEmulator.enabled || Env.localQa) return;
+        // Apple review needs the ATT prompt where they can find it, so iOS asks once on launch.
+        unawaited(AdConsent.instance.requestTracking());
         unawaited(PurchasesService.instance.configureEarly());
         unawaited(
           FirebaseInit.readyFuture.then(

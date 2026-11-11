@@ -4,11 +4,14 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 typedef ConsentStep = Future<void> Function();
 typedef CanRequestAds = Future<bool> Function();
 typedef PrivacyOptionsRequired = Future<bool> Function();
+typedef TrackingRequest = Future<void> Function();
 
 /// Google UMP consent. Ads load only after [ensure] returns true. It never throws.
 class AdConsent {
@@ -18,12 +21,14 @@ class AdConsent {
     CanRequestAds? canRequestAds,
     PrivacyOptionsRequired? privacyOptionsRequired,
     ConsentStep? showPrivacyOptions,
+    TrackingRequest? requestTracking,
     this.updateTimeout = const Duration(seconds: 10),
   }) : _requestInfoUpdate = requestInfoUpdate ?? _platformRequestInfoUpdate,
        _showFormIfRequired = showFormIfRequired ?? _platformShowFormIfRequired,
        _canRequestAds = canRequestAds ?? ConsentInformation.instance.canRequestAds,
        _privacyOptionsRequired = privacyOptionsRequired ?? _platformPrivacyOptionsRequired,
-       _showPrivacyOptions = showPrivacyOptions ?? _platformShowPrivacyOptions;
+       _showPrivacyOptions = showPrivacyOptions ?? _platformShowPrivacyOptions,
+       _requestTracking = requestTracking ?? _platformRequestTracking;
 
   static AdConsent instance = AdConsent();
 
@@ -32,15 +37,29 @@ class AdConsent {
   final CanRequestAds _canRequestAds;
   final PrivacyOptionsRequired _privacyOptionsRequired;
   final ConsentStep _showPrivacyOptions;
+  final TrackingRequest _requestTracking;
   final Duration updateTimeout;
 
   Future<bool>? _pending;
+  Future<void>? _tracking;
   int generation = 0;
   bool privacyOptionsOpen = false;
   final Set<void Function()> invalidationListeners = <void Function()>{};
 
+  /// Asks for App Tracking Transparency once per launch (iOS only). Every ad request waits for the answer first.
+  Future<void> requestTracking() => _tracking ??= _askTracking();
+
+  Future<void> _askTracking() async {
+    try {
+      await _requestTracking();
+    } catch (error, stackTrace) {
+      logger.w('Could not ask for tracking permission.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
+    }
+  }
+
   Future<bool> canShow() async {
     try {
+      await requestTracking();
       if (privacyOptionsOpen) return false;
       final before = generation;
       final allowed = await _canRequestAds();
@@ -106,6 +125,7 @@ class AdConsent {
           stackTrace: stackTrace,
         );
       }
+      await requestTracking();
       bool canRequest;
       try {
         canRequest = await _canRequestAds();
@@ -116,6 +136,13 @@ class AdConsent {
       unawaited(analytics.track(AdConsentResultEvent(status: canRequest ? 'can_request' : 'refused')));
       return canRequest;
     });
+  }
+
+  static const MethodChannel _trackingChannel = MethodChannel('prism/tracking');
+
+  static Future<void> _platformRequestTracking() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return;
+    await _trackingChannel.invokeMethod<String>('request');
   }
 
   static Future<bool> _platformPrivacyOptionsRequired() async =>

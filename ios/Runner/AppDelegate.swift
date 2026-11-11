@@ -1,3 +1,4 @@
+import AppTrackingTransparency
 import Flutter
 import UIKit
 import UserNotifications
@@ -63,6 +64,15 @@ import WidgetKit
         result(FlutterError(code: "UNKNOWN_METHOD", message: call.method, details: nil))
       }
     }
+    FlutterMethodChannel(name: "prism/tracking", binaryMessenger: messenger).setMethodCallHandler { call, result in
+      guard call.method == "request" else {
+        result(FlutterError(code: "UNKNOWN_METHOD", message: call.method, details: nil))
+        return
+      }
+      Task { @MainActor in
+        result(Self.trackingName(await Self.requestTracking()))
+      }
+    }
     NotificationCenter.default.addObserver(
       forName: UIApplication.didBecomeActiveNotification,
       object: nil,
@@ -72,6 +82,29 @@ import WidgetKit
         AppDelegate.clearBadge()
         WidgetCenter.shared.reloadTimelines(ofKind: PrismWidgetKind.wallOfTheDay)
       }
+    }
+  }
+
+  /// Shows the App Tracking Transparency prompt once. iOS ignores the request while the app is not active.
+  private static func requestTracking() async -> ATTrackingManager.AuthorizationStatus {
+    guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else {
+      return ATTrackingManager.trackingAuthorizationStatus
+    }
+    if UIApplication.shared.applicationState != .active {
+      for await _ in NotificationCenter.default.notifications(named: UIApplication.didBecomeActiveNotification) {
+        break
+      }
+    }
+    return await ATTrackingManager.requestTrackingAuthorization()
+  }
+
+  private static func trackingName(_ status: ATTrackingManager.AuthorizationStatus) -> String {
+    switch status {
+    case .authorized: return "authorized"
+    case .denied: return "denied"
+    case .restricted: return "restricted"
+    case .notDetermined: return "notDetermined"
+    @unknown default: return "unknown"
     }
   }
 

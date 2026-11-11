@@ -134,6 +134,8 @@
 	<string>Prism needs permission to save wallpapers to your photo library.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Prism needs camera access to let you take a photo for your profile picture.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>If you allow this, Prism shows you ads that match your interests. You see the same number of ads either way.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>Prism uses motion to open Report a problem when you shake your phone.</string>
 	<key>LSApplicationQueriesSchemes</key>

@@ -2,3 +2,4 @@
 "NSPhotoLibraryAddUsageDescription" = "Prism needs permission to save wallpapers to your photo library.";
 "NSCameraUsageDescription" = "Prism needs camera access to let you take a photo for your profile picture.";
 "NSMotionUsageDescription" = "Prism uses motion to open Report a problem when you shake your phone.";
+"NSUserTrackingUsageDescription" = "If you allow this, Prism shows you ads that match your interests. You see the same number of ads either way.";
