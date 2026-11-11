@@ -39,7 +39,7 @@ void main() {
   });
 
   for (final entry in <GoogleSignInExceptionCode, String>{
-    GoogleSignInExceptionCode.providerConfigurationError: 'Google Play services on this device cannot sign in.',
+    GoogleSignInExceptionCode.clientConfigurationError: 'Something went wrong, please try again!',
     GoogleSignInExceptionCode.unknownError: 'Google sign-in failed. Check your connection and try again.',
   }.entries) {
     testWidgets('popup maps ${entry.key.name} and dismisses the loading sheet', (tester) async {

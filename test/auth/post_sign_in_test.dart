@@ -17,6 +17,7 @@ import 'package:Prism/features/session/domain/repositories/session_repository.da
 import 'package:Prism/notifications/fcm_token_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -102,22 +103,54 @@ class _User extends Fake implements User {
 }
 
 class _Credential extends Fake implements UserCredential {
-  _Credential(this.user);
+  _Credential(this.user, [this.additionalUserInfo]);
 
   @override
   final User user;
+  @override
+  final AdditionalUserInfo? additionalUserInfo;
 }
+
+class _WebProfile extends Fake implements AdditionalUserInfo {
+  _WebProfile(this.profile);
+
+  @override
+  final Map<String, dynamic> profile;
+}
+
+AdditionalUserInfo _webProfile(Map<String, dynamic> profile) => _WebProfile(profile);
 
 class _Auth extends Fake implements FirebaseAuth {
   _Auth([_User? user]) : user = user ?? _User();
 
   _User? user;
+  UserCredential? webCredential;
+  Completer<UserCredential>? webGate;
+  final webStarted = Completer<void>();
   final List<String> calls = <String>[];
 
   @override
   User? get currentUser => user;
   @override
   Future<UserCredential> signInWithCredential(AuthCredential credential) async => _Credential(user!);
+  @override
+  Future<UserCredential> signInWithProvider(AuthProvider provider) async {
+    calls.add('auth.signInWithProvider:${provider.providerId}');
+    if (!webStarted.isCompleted) webStarted.complete();
+    final credential = webGate != null
+        ? await webGate!.future
+        : webCredential ??
+              _Credential(
+                user!,
+                _webProfile(<String, dynamic>{
+                  'name': 'Web Name',
+                  'picture': 'https://lh3.googleusercontent.com/a/web=s96-c',
+                }),
+              );
+    user = credential.user as _User?;
+    return credential;
+  }
+
   @override
   Future<void> signOut() async {
     calls.add('auth.signOut');
@@ -154,6 +187,17 @@ class _GoogleSignIn extends Fake implements GoogleSignIn {
 
   @override
   Future<void> signOut() async {}
+}
+
+class _NoCredentialGoogleSignIn extends _GoogleSignIn {
+  @override
+  Future<GoogleSignInAccount> authenticate({List<String> scopeHint = const <String>[]}) =>
+      Future<GoogleSignInAccount>.error(
+        const GoogleSignInException(
+          code: GoogleSignInExceptionCode.unknownError,
+          description: 'No credential available: No credentials available on this device.',
+        ),
+      );
 }
 
 class _Messaging extends Fake implements FirebaseMessaging {
@@ -334,6 +378,82 @@ void main() {
     expect(app_state.prismUser.id, 'u1');
     expect(app_state.prismUser.loggedIn, isFalse);
     expect(firebase.currentUser?.uid, 'u1');
+  });
+
+  test('Android with no Credential Manager account signs in through Google web sign-in', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    firestore.docs.clear();
+    firestore.writeGate.complete();
+    final firebase = _Auth(_User(displayName: null));
+
+    final outcome = await GoogleAuth(
+      auth: firebase,
+      googleSignIn: _NoCredentialGoogleSignIn(),
+      messaging: _Messaging(),
+    ).signInWithGoogle();
+
+    expect(outcome, SignInOutcome.signedIn);
+    expect(firebase.calls, contains('auth.signInWithProvider:google.com'));
+    expect(app_state.prismUser.id, 'u1');
+    expect(app_state.prismUser.loggedIn, isTrue);
+    expect(app_state.prismUser.name, 'Web Name');
+    expect(app_state.prismUser.profilePhoto, 'https://lh3.googleusercontent.com/a/web=s400-c');
+  });
+
+  group('Google web sign-in ownership', () {
+    setUp(() => debugDefaultTargetPlatformOverride = TargetPlatform.android);
+    tearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    GoogleAuth webAuth(_Auth firebase) =>
+        GoogleAuth(auth: firebase, googleSignIn: _NoCredentialGoogleSignIn(), messaging: _Messaging());
+
+    test('a web profile with a malformed name falls back to the Firebase name', () async {
+      firestore.docs.clear();
+      firestore.writeGate.complete();
+      final firebase = _Auth()
+        ..user = null
+        ..webCredential = _Credential(_User(displayName: 'Firebase Name'), _webProfile(<String, dynamic>{'name': 42}));
+
+      expect(await webAuth(firebase).signInWithGoogle(), SignInOutcome.signedIn);
+
+      expect(app_state.prismUser.loggedIn, isTrue);
+      expect(app_state.prismUser.name, 'Firebase Name');
+    });
+
+    test('a late web result cannot publish or sign out a replacement session', () async {
+      final firebase = _Auth()..webGate = Completer<UserCredential>();
+      final pending = webAuth(firebase).signInWithGoogle();
+      final rejected = expectLater(pending, throwsStateError);
+      await firebase.webStarted.future;
+      final replacement = profileUser(id: 'other');
+      app_state.prismUser = replacement;
+      // Firebase publishes the browser's result before returning its credential.
+      firebase.webGate!.complete(_Credential(_User()));
+      await rejected;
+
+      expect(app_state.prismUser, same(replacement));
+      expect(firebase.calls, isNot(contains('auth.signOut')));
+      expect(firestore.readTags, isEmpty);
+    });
+
+    for (final bool empty in <bool>[false, true]) {
+      test(
+        'a missing web profile uses ${empty ? 'the email and placeholder' : 'the Firebase name and photo'}',
+        () async {
+          firestore.docs.clear();
+          firestore.writeGate.complete();
+          final firebase = _Auth()
+            ..webCredential = _Credential(
+              _User(displayName: empty ? null : 'Firebase Name', photoURL: empty ? null : 'https://example.com/photo'),
+            );
+
+          expect(await webAuth(firebase).signInWithGoogle(), SignInOutcome.signedIn);
+          expect(app_state.prismUser.name, empty ? 'user' : 'Firebase Name');
+          expect(app_state.prismUser.profilePhoto, empty ? defaultProfilePhotoUrl : 'https://example.com/photo');
+        },
+      );
+    }
   });
 
   test('sign-in completes while FCM topic calls never answer', () async {
