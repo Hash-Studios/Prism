@@ -60,18 +60,16 @@ String googleSignInErrorMessage(Object error, AppLocalizations l10n, {TargetPlat
         ? l10n.coreGooglePlayServicesSignInError
         : genericSignInErrorMessage(l10n);
   }
-  final String message = error.toString();
-  final bool isPlayServicesError =
-      (platform ?? defaultTargetPlatform) == TargetPlatform.android &&
-      (message.contains('providerConfigurationError') || message.contains('no provider dependencies'));
-  if (isPlayServicesError) {
-    return l10n.coreGooglePlayServicesSignInError;
-  }
   if (error is GoogleSignInException && error.code == GoogleSignInExceptionCode.unknownError) {
+    return l10n.coreGoogleSignInNetworkError;
+  }
+  if (error is FirebaseAuthException && error.code == 'network-request-failed') {
     return l10n.coreGoogleSignInNetworkError;
   }
   return genericSignInErrorMessage(l10n);
 }
+
+typedef _GoogleSignInResult = ({UserCredential credential, String? name, String? photoUrl});
 
 class GoogleAuth {
   GoogleAuth({
@@ -134,28 +132,18 @@ class GoogleAuth {
     try {
       await _ensureGoogleSignInInitialized();
       session.requireCurrent();
-      final GoogleSignInAccount googleSignInAccount = await googleSignIn.authenticate();
-      session.requireCurrent();
-      final GoogleSignInAuthentication googleSignInAuthentication = googleSignInAccount.authentication;
-      final String? idToken = googleSignInAuthentication.idToken;
-      if (idToken == null || idToken.trim().isEmpty) {
-        throw StateError('Google sign-in returned no ID token.');
-      }
-
-      final AuthCredential credential = GoogleAuthProvider.credential(idToken: idToken);
-
-      final UserCredential authResult = await _auth.signInWithCredential(credential);
+      final _GoogleSignInResult google = await _signInToFirebase(session);
       firebaseSignedIn = true;
-      final User? user = authResult.user;
+      final User? user = google.credential.user;
       if (user == null) {
         throw StateError('Firebase user missing after Google sign-in.');
       }
       session.acceptCredential(user);
       // Firebase keeps the Google name of account creation; only [_rememberGoogleProfile] changes it.
       final String? lastGoogleName = user.displayName;
-      final String resolvedDisplayName = _resolvedDisplayName(googleSignInAccount, user);
+      final String resolvedDisplayName = _resolvedDisplayName(google.name, user);
       final String resolvedEmail = _resolvedEmail(user);
-      final String? googlePhotoUrl = sizedGooglePhoto(googleSignInAccount.photoUrl);
+      final String? googlePhotoUrl = sizedGooglePhoto(google.photoUrl);
       final String resolvedPhotoUrl = photoOrPlaceholder(googlePhotoUrl);
       if (resolvedEmail.isEmpty) {
         throw StateError('Google sign-in returned user without email.');
@@ -223,6 +211,45 @@ class GoogleAuth {
     }
   }
 
+  /// The Google account sheet, or Google's web sign-in when Credential Manager on Android cannot show one.
+  Future<_GoogleSignInResult> _signInToFirebase(SignInSession session) async {
+    final GoogleSignInAccount account;
+    try {
+      account = await googleSignIn.authenticate();
+    } on GoogleSignInException catch (error) {
+      if (!_needsWebSignIn(error)) rethrow;
+      logger.i(
+        'Google account sheet unavailable, using web sign-in',
+        tag: 'GoogleAuth',
+        fields: <String, Object?>{'code': error.code.name, 'description': error.description},
+      );
+      session.requireCurrent();
+      final UserCredential credential = await _auth.signInWithProvider(
+        GoogleAuthProvider()..setCustomParameters(<String, String>{'prompt': 'select_account'}),
+      );
+      final Map<String, dynamic>? profile = credential.additionalUserInfo?.profile;
+      return (
+        credential: credential,
+        name: profile?['name'] as String?,
+        photoUrl: profile?['picture'] as String? ?? credential.user?.photoURL,
+      );
+    }
+    session.requireCurrent();
+    final String? idToken = account.authentication.idToken;
+    if (idToken == null || idToken.trim().isEmpty) {
+      throw StateError('Google sign-in returned no ID token.');
+    }
+    final UserCredential credential = await _auth.signInWithCredential(GoogleAuthProvider.credential(idToken: idToken));
+    return (credential: credential, name: account.displayName, photoUrl: account.photoUrl);
+  }
+
+  /// Credential Manager had no Google account to offer (PRISM-J4), or no provider to ask (PRISM-J2).
+  static bool _needsWebSignIn(GoogleSignInException error) =>
+      defaultTargetPlatform == TargetPlatform.android &&
+      (error.code == GoogleSignInExceptionCode.providerConfigurationError ||
+          (error.code == GoogleSignInExceptionCode.unknownError &&
+              (error.description ?? '').startsWith('No credential available')));
+
   Future<void> _rollbackSignIn(SignInSession session) async {
     try {
       await signOutGoogle(session: session);
@@ -247,6 +274,9 @@ class GoogleAuth {
   bool _isSignInCancelled(Object error) {
     if (error is GoogleSignInException) {
       return error.code == GoogleSignInExceptionCode.canceled;
+    }
+    if (error is FirebaseAuthException) {
+      return error.code == 'web-context-canceled';
     }
     final String message = error.toString().toLowerCase();
     return message.contains('user canceled') ||
@@ -633,8 +663,8 @@ class GoogleAuth {
     session.requireCurrent();
   }
 
-  String _resolvedDisplayName(GoogleSignInAccount account, User user) {
-    final String fromGoogle = (account.displayName ?? '').trim();
+  String _resolvedDisplayName(String? googleName, User user) {
+    final String fromGoogle = (googleName ?? '').trim();
     if (fromGoogle.isNotEmpty) {
       return fromGoogle;
     }
