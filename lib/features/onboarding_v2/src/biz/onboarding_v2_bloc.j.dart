@@ -748,7 +748,12 @@ class OnboardingV2Bloc extends Bloc<OnboardingV2Event, OnboardingV2State> {
         add(OnboardingV2Event.aiGenerationCompleted(imageUrl: generatedPath, thumbnailUrl: record.watermarkedImageUrl));
       }
     } catch (error, stackTrace) {
-      logger.e('AI onboarding generation failed.', tag: 'OnboardingV2Bloc', error: error, stackTrace: stackTrace);
+      // The repository already retried a provider outage, and the failure card lets the user try again.
+      if (error is AiGenerationApiException && error.isProviderFailure) {
+        logger.w('AI onboarding generation failed: provider outage.', tag: 'OnboardingV2Bloc', error: error);
+      } else {
+        logger.e('AI onboarding generation failed.', tag: 'OnboardingV2Bloc', error: error, stackTrace: stackTrace);
+      }
       if (!isClosed) {
         add(const OnboardingV2Event.aiGenerationCompleted(imageUrl: null, thumbnailUrl: null));
       }

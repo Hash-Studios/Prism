@@ -25,6 +25,9 @@ class AiGenerationApiException implements Exception {
   final String code;
   final int statusCode;
 
+  /// The worker tried every provider and none returned an image. Timeouts and charge states are excluded.
+  bool get isProviderFailure => statusCode == 502 && code == 'provider_error';
+
   @override
   String toString() => 'AiGenerationApiException(code: $code, statusCode: $statusCode, message: $message)';
 }
@@ -129,7 +132,13 @@ class AiGenerationRepositoryImpl {
       // The worker owns the one free trial per account; a repeat replays the first image.
       if (chargeMode == AiChargeMode.freeTrial && (chargeTxId == null || chargeTxId.isEmpty)) 'freeTrial': true,
     };
-    final data = await _post('/generations', payload, retryOnTimeout: payload.containsKey('chargeTxId'));
+    final data = await _post(
+      '/generations',
+      payload,
+      retryOnTimeout: payload.containsKey('chargeTxId'),
+      // A failed trial is given back by the worker, so a retry is a fresh attempt. A failed charge is not.
+      retryProviderFailure: payload.containsKey('freeTrial'),
+    );
     final record = _recordFromApiResponse(
       data: data,
       userId: user.uid,
@@ -415,7 +424,12 @@ class AiGenerationRepositoryImpl {
     );
   }
 
-  Future<Map<String, dynamic>> _post(String path, Map<String, dynamic> body, {bool retryOnTimeout = false}) async {
+  Future<Map<String, dynamic>> _post(
+    String path,
+    Map<String, dynamic> body, {
+    bool retryOnTimeout = false,
+    bool retryProviderFailure = false,
+  }) async {
     final token = await _currentUser?.getIdToken();
     if (token == null || token.trim().isEmpty) {
       throw AiGenerationApiException(message: 'Please sign in to continue.', code: 'unauthorized', statusCode: 401);
@@ -437,6 +451,17 @@ class AiGenerationRepositoryImpl {
           .timeout(_requestTimeout),
     );
 
+    for (int attempt = 0; ; attempt++) {
+      try {
+        return await _postOnce(send, retryOnTimeout: retryOnTimeout);
+      } on AiGenerationApiException catch (error) {
+        if (!retryProviderFailure || !error.isProviderFailure || attempt >= _providerRetryDelays.length) rethrow;
+        await Future<void>.delayed(_providerRetryDelays[attempt]);
+      }
+    }
+  }
+
+  Future<Map<String, dynamic>> _postOnce(Future<http.Response> Function() send, {required bool retryOnTimeout}) async {
     http.Response response;
     try {
       response = await send();
