@@ -5,6 +5,7 @@ import 'package:Prism/auth/transaction_model.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
@@ -32,6 +33,7 @@ import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wal
 import 'package:Prism/features/taste_quiz/domain/repositories/taste_quiz_repository.dart';
 import 'package:Prism/l10n/generated/app_localizations.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/logger/app_logger.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
@@ -1341,6 +1343,61 @@ void main() {
         expect(bloc.state.wallpaperData.wallpaper, isNull);
       },
     );
+  });
+
+  group('AI generation outage', () {
+    late List<Object> outcomes;
+
+    setUp(() {
+      InMemoryLogSink.instance.clear();
+      when(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: any(named: 'chargeMode'),
+          coinsSpent: any(named: 'coinsSpent'),
+        ),
+      ).thenAnswer((_) async {
+        final Object outcome = outcomes.removeAt(0);
+        if (outcome is AiGenerationRecord) return outcome;
+        throw outcome;
+      });
+    });
+
+    List<AppLogLevel> generationFailureLogs() => InMemoryLogSink.instance.records
+        .where((AppLogRecord record) => record.message.startsWith('AI onboarding generation failed'))
+        .map((AppLogRecord record) => record.level)
+        .toList();
+
+    test('a fal outage leaves a retryable failure, is not reported as a crash, and the retry succeeds', () async {
+      outcomes = <Object>[
+        AiGenerationApiException(message: 'fal generation failed', code: 'provider_error', statusCode: 502),
+        _aiRecord(),
+      ];
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.failure);
+      expect(generationFailureLogs(), <AppLogLevel>[AppLogLevel.warn]);
+
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.success);
+      expect(bloc.state.wallpaperData.wallpaper?.fullUrl, '/tmp/generated-wallpaper.jpg');
+    });
+
+    test('an unexpected generation error is still reported as an error', () async {
+      outcomes = <Object>[StateError('bad response')];
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.failure);
+
+      expect(generationFailureLogs(), <AppLogLevel>[AppLogLevel.error]);
+    });
   });
 
   group('aiStyleSelected', () {

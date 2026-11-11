@@ -40,7 +40,8 @@ class AiGenerationRepositoryImpl {
     : _client = http.Client(),
       _authOverride = null,
       _localStore = DurableJsonStore('ai_wallpaper'),
-      _requestTimeout = _defaultTimeout;
+      _requestTimeout = _defaultTimeout,
+      _providerRetryDelays = _defaultProviderRetryDelays;
 
   @visibleForTesting
   AiGenerationRepositoryImpl.forTest({
@@ -48,17 +49,21 @@ class AiGenerationRepositoryImpl {
     required FirebaseAuth auth,
     DurableJsonStore? localStore,
     Duration requestTimeout = _defaultTimeout,
+    List<Duration> providerRetryDelays = _defaultProviderRetryDelays,
   }) : _client = client,
        _authOverride = auth,
        _localStore = localStore ?? DurableJsonStore('ai_wallpaper'),
-       _requestTimeout = requestTimeout;
+       _requestTimeout = requestTimeout,
+       _providerRetryDelays = providerRetryDelays;
 
   static const Duration _defaultTimeout = Duration(seconds: 60);
+  static const List<Duration> _defaultProviderRetryDelays = <Duration>[Duration(seconds: 1), Duration(seconds: 3)];
 
   final http.Client _client;
   final FirebaseAuth? _authOverride;
   final DurableJsonStore _localStore;
   final Duration _requestTimeout;
+  final List<Duration> _providerRetryDelays;
   final Map<String, int> _ownerGenerations = <String, int>{};
   final Map<String, Future<void>> _ownerWriteTails = <String, Future<void>>{};
 
