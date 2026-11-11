@@ -160,6 +160,8 @@ class _WallpaperHoldRegionState extends State<WallpaperHoldRegion>
 
   /// A lift, a drag or a scroll before the timeout: the ring unwinds and fades.
   void _releaseRing() {
+    // A pointer keeps its hit path after the tile is disposed, so its lift can still arrive here.
+    if (!mounted) return;
     _ringDown = null;
     if (_ring.value > 0 || _ring.isAnimating) {
       _ring.animateBack(0, duration: const Duration(milliseconds: 120), curve: Curves.easeOut);
