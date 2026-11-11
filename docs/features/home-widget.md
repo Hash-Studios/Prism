@@ -75,7 +75,7 @@ The tokens have the same names in every file:
 
 The launcher applies light or dark from the system setting.
 
-The Wall of the Day image stays full bleed. The "Prism" label over the image stays white on a dark scrim. So its contrast stays the same on any image. The label uses white, not a token.
+The Wall of the Day image stays full bleed. The "Prism" label has white text on a small, rounded black backing (90% opacity). So you can read it on a white image too. The label uses white, not a token.
 
 The "Set" button uses the accent container colour with its on-colour. So its contrast does not depend on the image.
 
@@ -110,10 +110,12 @@ The Streak widget shows the streak of the signed-in user.
   - Kept today means the gap is 0.
   - Days use the UTC offset of the snapshot. They do not use the time zone of the phone.
   - The shared cases are in `test/fixtures/streak_rule_cases.csv`. Both `test/core/coins/streak_rule_fixture_test.dart` (Dart) and `android/app/src/test/kotlin/com/hash/prism/StreakWidgetLogicTest.kt` (Kotlin) run them.
-- Updates: The widget updates when the app writes a new snapshot. It also updates at the next midnight in the snapshot's UTC offset, 1 second after midnight.
+- Updates: The widget updates when the app writes a new snapshot. It also updates at its midnight alarm, after a restart of the phone, after an app update, and after a change to the clock or the time zone. Each update sets the next alarm again.
+  - The midnight alarm is set only when a widget shows a streak that is more than 0. When you sign out, or when the streak lapses, the widget cancels the alarm. It also cancels the alarm when you remove the last Streak widget.
   - `updatePeriodMillis` is 0. The widget has no periodic update.
-  - The midnight alarm uses `AlarmManager.setWindow` with `RTC`, not a wakeup alarm. Its window is 1 minute. So it never wakes a sleeping phone. The widget redraws when the phone next wakes.
-  - No alarm is set when signed out or when the count is 0. A lapsed streak shows 0.
+  - The midnight alarm uses `AlarmManager.setWindow` with `RTC`, not a wakeup alarm. It never wakes a sleeping phone. The widget redraws when the phone next wakes.
+  - The window is 1 minute. Android 12 and later can make it 10 minutes. So the ring can empty up to 10 minutes after midnight.
+  - A lapsed streak shows 0. The widget follows the Dart rule for all inputs, also for a last kept day after today and for odd freeze values.
   - The update reads only SharedPreferences. It does no network work.
 - PendingIntents: The tap and the midnight alarm use explicit components, with `FLAG_IMMUTABLE` and `FLAG_UPDATE_CURRENT`. The receiver is `exported="false"`.
 

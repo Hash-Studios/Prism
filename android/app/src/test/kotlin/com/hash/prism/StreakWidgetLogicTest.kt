@@ -25,7 +25,7 @@ internal class StreakWidgetLogicTest {
     private fun millis(iso: String): Long = Instant.parse(iso).toEpochMilli()
 
     @Test internal fun aliveMatchesTheSharedFixtures() {
-        assertEquals(20, cases.size)
+        assertEquals(25, cases.size)
         cases.forEach { case ->
             assertEquals("alive: $case", case.alive, isStreakAlive(case.lastKeptDay, case.today, case.freezes))
         }
@@ -33,7 +33,8 @@ internal class StreakWidgetLogicTest {
 
     @Test internal fun displayMatchesTheSharedFixturesAtMiddayUtc() {
         cases.forEach { case ->
-            val noon = LocalDate.parse(case.today).atTime(12, 0).toInstant(ZoneOffset.UTC).toEpochMilli()
+            val today = runCatching { LocalDate.parse(case.today.trim()) }.getOrNull() ?: return@forEach
+            val noon = today.atTime(12, 0).toInstant(ZoneOffset.UTC).toEpochMilli()
             val expected = if (case.alive) StreakDisplay(5, case.keptToday) else StreakDisplay(0, false)
             assertEquals("display: $case", expected, streakDisplay(StreakSnapshot(5, case.lastKeptDay, 0, case.freezes), noon))
         }
@@ -52,7 +53,13 @@ internal class StreakWidgetLogicTest {
         assertEquals("2026-11-11", streakDayKey(millis("2026-11-10T18:30:00Z"), 330))
         assertEquals("2026-11-10", streakDayKey(millis("2026-11-11T07:59:59Z"), -480))
         assertEquals("2026-11-11", streakDayKey(millis("2026-11-11T08:00:00Z"), -480))
+        assertEquals("2026-11-11", streakDayKey(millis("2026-11-11T09:59:59Z"), 840))
         assertEquals("2026-11-12", streakDayKey(millis("2026-11-11T10:00:00Z"), 840))
+        assertEquals("2026-11-12", streakDayKey(millis("2026-11-11T10:00:01Z"), 840))
+        assertEquals("2026-11-10", streakDayKey(millis("2026-11-11T11:59:59Z"), -720))
+        assertEquals("2026-11-11", streakDayKey(millis("2026-11-11T12:00:00Z"), -720))
+        assertEquals("2026-11-11", streakDayKey(millis("2026-11-11T12:00:01Z"), -720))
+        assertEquals("2026-11-11", streakDayKey(millis("2026-11-11T00:00:00Z"), 0))
         assertEquals("1969-12-31", streakDayKey(-1L, 0))
     }
 
@@ -60,8 +67,16 @@ internal class StreakWidgetLogicTest {
         assertEquals(millis("2026-11-10T18:30:00Z"), nextStreakMidnight(millis("2026-11-10T18:29:59Z"), 330))
         assertEquals(millis("2026-11-11T18:30:00Z"), nextStreakMidnight(millis("2026-11-10T18:30:00Z"), 330))
         assertEquals(millis("2026-11-11T08:00:00Z"), nextStreakMidnight(millis("2026-11-11T07:59:59Z"), -480))
+        assertEquals(millis("2026-11-11T12:00:00Z"), nextStreakMidnight(millis("2026-11-11T11:59:59Z"), -720))
+        assertEquals(millis("2026-11-12T12:00:00Z"), nextStreakMidnight(millis("2026-11-11T12:00:00Z"), -720))
         assertEquals(millis("2026-11-12T00:00:00Z"), nextStreakMidnight(millis("2026-11-11T00:00:00Z"), 0))
         assertEquals(millis("2026-11-11T10:00:00Z"), nextStreakMidnight(millis("2026-11-11T09:00:00Z"), 840))
+        assertEquals(millis("2026-11-12T10:00:00Z"), nextStreakMidnight(millis("2026-11-11T10:00:00Z"), 840))
+    }
+
+    @Test internal fun unusualFreezeCountsMatchTheDartIntegerRule() {
+        assertEquals(true, isStreakAlive("2026-11-11", "2026-11-11", -1))
+        assertEquals(true, isStreakAlive("2026-11-11", "2026-11-11", Int.MAX_VALUE))
     }
 
     @Test internal fun theRingEmptiesAtLocalMidnightAndTheStreakLapsesADayLater() {

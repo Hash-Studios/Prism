@@ -15,7 +15,14 @@ import android.widget.RemoteViews
 /** Home screen streak widget. It reads only the snapshot the app writes, and redraws at the streak's local midnight. */
 internal class StreakWidgetProvider : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == ACTION_MIDNIGHT) refresh(context) else super.onReceive(context, intent)
+        when (intent.action) {
+            ACTION_MIDNIGHT,
+            Intent.ACTION_BOOT_COMPLETED,
+            Intent.ACTION_MY_PACKAGE_REPLACED,
+            Intent.ACTION_TIME_CHANGED,
+            Intent.ACTION_TIMEZONE_CHANGED -> refresh(context)
+            else -> super.onReceive(context, intent)
+        }
     }
 
     override fun onUpdate(context: Context, manager: AppWidgetManager, appWidgetIds: IntArray) {
@@ -121,7 +128,10 @@ internal class StreakWidgetProvider : AppWidgetProvider() {
 
         fun refresh(context: Context) {
             val ids = AppWidgetManager.getInstance(context).getAppWidgetIds(ComponentName(context, StreakWidgetProvider::class.java))
-            if (ids.isEmpty()) return
+            if (ids.isEmpty()) {
+                alarmManager(context).cancel(midnightIntent(context))
+                return
+            }
             context.sendBroadcast(
                 Intent(context, StreakWidgetProvider::class.java)
                     .setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE)

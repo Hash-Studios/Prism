@@ -13,7 +13,7 @@ void main() {
       .toList();
 
   test('the fixture has every case', () {
-    expect(cases, hasLength(20));
+    expect(cases, hasLength(25));
   });
 
   for (final List<String> row in cases) {

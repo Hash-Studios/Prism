@@ -31,7 +31,7 @@ internal fun streakDayGap(from: String, to: String): Int? {
 /** Mirrors isStreakAlive in lib/core/coins/coin_policy.dart. */
 internal fun isStreakAlive(lastKey: String, todayKey: String, freezes: Int): Boolean {
     val gap = streakDayGap(lastKey, todayKey) ?: return false
-    return gap <= 1 + freezes
+    return gap.toLong() <= 1L + freezes
 }
 
 /** Null means signed out. A lapsed streak shows 0. */
