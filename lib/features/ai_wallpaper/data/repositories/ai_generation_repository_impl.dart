@@ -135,6 +135,7 @@ class AiGenerationRepositoryImpl {
       '/generations',
       payload,
       retryOnTimeout: payload.containsKey('chargeTxId'),
+      // The worker deletes a failed trial claim, so a retry claims it again. A failed charge stays spent (402).
       retryProviderFailure: payload.containsKey('freeTrial'),
     );
     final record = _recordFromApiResponse(
