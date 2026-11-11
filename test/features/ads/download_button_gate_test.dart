@@ -1446,6 +1446,147 @@ void main() {
     });
   });
 
+  group('a prepared copy', () {
+    late List<String> discarded;
+    late int renders;
+
+    setUp(() {
+      discarded = <String>[];
+      renders = 0;
+    });
+
+    DownloadVariant rendered() => DownloadVariant(
+      key: 'tint-ff8800',
+      prepare: () async {
+        final Directory folder = Directory('${tempDir.path}/position_${renders++}')..createSync();
+        return File(tinted).copySync('${folder.path}/placement.png').path;
+      },
+      discard: (String path) async {
+        discarded.add(path);
+        await File(path).parent.delete(recursive: true);
+      },
+    );
+
+    String preparedPath(int render) => '${tempDir.path}/position_$render/placement.png';
+
+    testWidgets('a successful Save deletes its copy once, after the save read it', (tester) async {
+      bool readable = false;
+      onEnqueue = () => readable = File((enqueued.last! as DownloadRequest).link).existsSync();
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+      await pumpUntil(tester, () => !File(preparedPath(0)).existsSync());
+      await settle(tester);
+
+      expect(results().single.result, 'success');
+      expect((enqueued.single! as DownloadRequest).link, preparedPath(0));
+      expect(readable, isTrue);
+      expect(Directory('${tempDir.path}/position_0').existsSync(), isFalse);
+      expect(discarded, <String>[preparedPath(0)]);
+    });
+
+    testWidgets('a failed Save deletes its copy once', (tester) async {
+      enqueueSucceeds = false;
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+      await pumpUntil(tester, () => !File(preparedPath(0)).existsSync());
+      await settle(tester);
+
+      expect(results().single.reason, 'enqueue_failed');
+      expect(discarded, <String>[preparedPath(0)]);
+    });
+
+    testWidgets('a cancelled Save keeps its copy while the sheet is open and deletes it after', (tester) async {
+      app_state.prismUser.coins = 2;
+      CoinsService.instance.balanceNotifier.value = 2;
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+
+      expect(find.text('Not enough coins'), findsOneWidget);
+      expect(File(preparedPath(0)).existsSync(), isTrue);
+      expect(discarded, isEmpty);
+
+      await tester.tapAt(const Offset(10, 10));
+      await pumpUntil(tester, () => !File(preparedPath(0)).existsSync());
+      await settle(tester);
+
+      expect(results().single.result, 'cancelled');
+      expect(enqueued, isEmpty);
+      expect(discarded, <String>[preparedPath(0)]);
+    });
+
+    testWidgets('a Save keeps its copy while the save runs, also after its page closes', (tester) async {
+      final Completer<bool> save = holdSaves();
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+
+      expect(enqueued, hasLength(1));
+      expect(File(preparedPath(0)).existsSync(), isTrue);
+      expect(discarded, isEmpty);
+
+      await tester.pumpWidget(const SizedBox());
+      await settle(tester);
+      expect(File(preparedPath(0)).existsSync(), isTrue);
+
+      save.complete(true);
+      await pumpUntil(tester, () => !File(preparedPath(0)).existsSync());
+      await settle(tester);
+
+      expect(discarded, <String>[preparedPath(0)]);
+    });
+
+    testWidgets('two Saves that overlap each delete only their own copy', (tester) async {
+      final Completer<bool> first = Completer<bool>();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+        enqueueChannel,
+        (message) async {
+          enqueued.add((message! as List<Object?>).single);
+          return <Object?>[OperationResult(success: enqueued.length > 1 || await first.future)];
+        },
+      );
+      final DownloadVariant variant = rendered();
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Column(
+              children: <Widget>[
+                for (final String id in <String>['wall-1', 'wall-2'])
+                  DownloadButton(
+                    link: _link,
+                    label: 'Save',
+                    contentId: id,
+                    wallpaperSource: WallpaperSource.wallhaven,
+                    sourceContext: 'detail',
+                    variant: variant,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byType(PrimaryActionPill).first);
+      await settle(tester);
+      await tester.tap(find.byType(PrimaryActionPill).last);
+      await pumpUntil(tester, () => !File(preparedPath(1)).existsSync());
+      await settle(tester);
+
+      expect(enqueued.map((Object? request) => (request! as DownloadRequest).link), <String>[
+        preparedPath(0),
+        preparedPath(1),
+      ]);
+      expect(File(preparedPath(0)).existsSync(), isTrue);
+      expect(discarded, <String>[preparedPath(1)]);
+
+      first.complete(true);
+      await pumpUntil(tester, () => !File(preparedPath(0)).existsSync());
+      await settle(tester);
+
+      expect(discarded, <String>[preparedPath(1), preparedPath(0)]);
+    });
+  });
+
   group('recovery of a paid variation', () {
     final DownloadVariant tintA = DownloadVariant(key: 'tint-ff8800', prepare: () async => tinted);
     final DownloadVariant tintB = DownloadVariant(key: 'tint-0088ff', prepare: () async => tinted);

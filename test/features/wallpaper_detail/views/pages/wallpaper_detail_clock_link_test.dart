@@ -181,6 +181,27 @@ void main() {
       });
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
+    testWidgets('a fixed Save discards only the folder it rendered, never its source', (tester) async {
+      getIt.registerSingleton<WallpaperPositionRepository>(_FixedCopyRepository(offlineAssets.directory));
+      final overlay = await openPreview(tester, _wallhaven());
+      final save =
+          overlay.saveAction!('Save', const <ReadabilityFix>[
+                ReadabilityFix(ReadabilityZone.clock, ReadabilityFixKind.dim),
+              ])
+              as DownloadButton;
+      await tester.runAsync(() async {
+        final File source = File('${offlineAssets.directory.path}/source/wall.png')..createSync(recursive: true);
+        final String first = await save.variant!.prepareAuthorized!(source.path);
+        final String second = await save.variant!.prepareAuthorized!(source.path);
+
+        await save.variant!.discard!(first);
+
+        expect(await File(first).parent.exists(), isFalse);
+        expect(await File(second).exists(), isTrue);
+        expect(await source.exists(), isTrue);
+      });
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
     testWidgets('the iOS phone preview of a Prism wall shows its display derivative, not the thumbnail', (
       tester,
     ) async {
