@@ -953,7 +953,7 @@ void main() {
       expect((await service.search('', filters: depthOnly)).results.map((wall) => wall.id), <String>['auto1']);
     });
 
-    test('a depth browse asks Prism search for 48 walls and a text query keeps 12', () async {
+    test('a depth browse asks Prism search for 48 walls and a text query for 24', () async {
       final firestore = FakeFirestoreClient(
         onQuery: (spec) => <FakeDocRow>[
           for (int i = 0; i < spec.limit!; i++) (id: 'd$i', data: _prismDoc('w$i', depthTier: 'auto')),
@@ -968,7 +968,7 @@ void main() {
 
       final text = await service.search('moss', filters: depthOnly);
 
-      expect(text.results, hasLength(12));
+      expect(text.results, hasLength(24));
     });
 
     test('an empty page is a page, not an error, when nothing has a depth tier', () async {
@@ -1089,7 +1089,7 @@ void main() {
       expect(firestore.querySpecs.single.sourceTag, 'PrismWallSearch.spatial');
     });
 
-    test('a spatial browse asks Prism search for 48 walls and a text query keeps 12', () async {
+    test('a spatial browse asks Prism search for 48 walls and a text query for 24', () async {
       final firestore = FakeFirestoreClient(
         onQuery: (spec) => <FakeDocRow>[
           for (int i = 0; i < spec.limit!; i++) (id: 's$i', data: _prismDoc('w$i', spatialTier: 'great')),
@@ -1104,7 +1104,7 @@ void main() {
 
       final text = await service.search('moss', filters: spatialOnly);
 
-      expect(text.results, hasLength(12));
+      expect(text.results, hasLength(24));
     });
 
     test('saved walls fill in when Prism has no match, and only great and ok Prism walls stay', () async {
@@ -1186,4 +1186,100 @@ void main() {
       expect(firestore.querySpecs, isEmpty);
     });
   });
+
+  group('kinds and source', () {
+    const SearchFilters live = SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live});
+
+    test('a kind filter searches Prism only, so Wallhaven and Pexels are never called', () async {
+      final wallhaven = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('wh')]));
+      final pexels = _FakePexelsRepository(Result.success(<PexelsWallpaper>[_pexels('px')]));
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => <FakeDocRow>[
+          (
+            id: 'l1',
+            data: <String, dynamic>{
+              ..._prismDoc('live1'),
+              'kind': 'live',
+              'live': <String, dynamic>{'video': 'https://prism/live1.mp4', 'verified': true},
+            },
+          ),
+          (id: 's1', data: _prismDoc('still1')),
+        ],
+      );
+      final service = _service(
+        wallhaven: wallhaven.result,
+        wallhavenRepository: wallhaven,
+        pexelsRepository: pexels,
+        firestore: firestore,
+      );
+
+      final page = await service.search('sky', filters: live);
+
+      expect(page.provider, SearchProviderValue.prism);
+      expect(page.results.map((wall) => wall.id), <String>['live1']);
+      expect(page.results.every((item) => item is PrismFeedItem), isTrue);
+      expect(page.prismResults, isEmpty);
+      expect((wallhaven.calls, pexels.calls), (0, 0));
+    });
+
+    test('the Prism source searches Prism only, so Wallhaven and Pexels are never called', () async {
+      final wallhaven = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('wh')]));
+      final pexels = _FakePexelsRepository(Result.success(<PexelsWallpaper>[_pexels('px')]));
+      final firestore = FakeFirestoreClient(onQuery: (spec) => <FakeDocRow>[(id: 'sky1', data: _prismDoc('sky1'))]);
+      final service = _service(
+        wallhaven: wallhaven.result,
+        wallhavenRepository: wallhaven,
+        pexelsRepository: pexels,
+        firestore: firestore,
+      );
+
+      final page = await service.search('sky', filters: const SearchFilters(source: SearchSource.prism));
+
+      expect(page.provider, SearchProviderValue.prism);
+      expect(page.results.map((wall) => wall.id), <String>['sky1']);
+      expect(page.results.every((item) => item is PrismFeedItem), isTrue);
+      expect(page.prismResults, isEmpty);
+      expect((wallhaven.calls, pexels.calls), (0, 0));
+    });
+
+    test(
+      'the Prism search asks for 12 walls normally, 48 for a kind browse and 24 for a text query with a kind',
+      () async {
+        final recorder = _LimitRecordingPrismSearch();
+        final service = WallpaperSearchService(
+          _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[])),
+          _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
+          SettingsLocalDataSource(InMemoryLocalStore()),
+          recorder,
+        );
+
+        await service.search('sky');
+        await service.search('', filters: live);
+        await service.search('sky', filters: live);
+
+        expect(recorder.limits, <int>[12, 48, 24]);
+      },
+    );
+  });
+}
+
+/// Records the limit each Prism search asks for, and returns no walls.
+class _LimitRecordingPrismSearch extends PrismWallSearch {
+  _LimitRecordingPrismSearch()
+    : super(FakeFirestoreClient(), FakeUserBlockRepository.pending()..completeInitial(<String>{}));
+
+  final List<int> limits = <int>[];
+
+  @override
+  Future<List<PrismWallpaper>> search(
+    String query, {
+    int limit = 12,
+    String? colorId,
+    bool depthOnly = false,
+    bool spatialOnly = false,
+    Set<PrismWallKind> kinds = const <PrismWallKind>{},
+  }) async {
+    limits.add(limit);
+    return const <PrismWallpaper>[];
+  }
 }

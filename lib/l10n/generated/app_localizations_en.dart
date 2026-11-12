@@ -742,9 +742,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountFields => 'Fields';
 
   @override
-  String get accountFilters => 'Filters';
-
-  @override
   String get accountFindCreators => 'Find creators';
 
   @override
@@ -1251,9 +1248,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountReportUser => 'Report user';
-
-  @override
-  String get accountReset => 'Reset';
 
   @override
   String get accountResetFilters => 'Reset filters';
@@ -15622,4 +15616,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String adminLiveFacts(String seconds) {
     return 'Live · $seconds s';
   }
+
+  @override
+  String get searchFilterPrismSection => 'Prism walls';
+
+  @override
+  String get searchFilterPrismOnly => 'Prism walls only';
+
+  @override
+  String get searchFilterPrismOnlySubtitle => 'Hide Wallhaven and Pexels results';
+
+  @override
+  String get searchKindLive => 'Live';
+
+  @override
+  String get searchKindDesktop => 'Desktop version';
+
+  @override
+  String get searchKindLightDark => 'Light and dark';
+
+  @override
+  String get searchFilterClearAll => 'Clear all';
+
+  @override
+  String searchFiltersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Filters, $count on',
+      one: 'Filters, 1 on',
+      zero: 'Filters',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get searchKindsPrismOnlyNote =>
+      'Only Prism walls have these kinds, so Wallhaven and Pexels results are hidden.';
+
+  @override
+  String searchRemoveFilter(String filter) {
+    return 'Remove $filter';
+  }
+
+  @override
+  String get discoverLiveWallsTitle => 'Live walls';
+
+  @override
+  String get discoverLiveWallsSubtitle => 'Looping videos from Prism creators';
 }

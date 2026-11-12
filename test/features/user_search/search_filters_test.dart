@@ -1,6 +1,29 @@
 import 'package:Prism/core/color/prism_palette.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
+import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+PrismWallpaper _kindWall(String id, {bool live = false, bool desktop = false, bool pair = false}) =>
+    PrismWallDocDto.fromJson(<String, dynamic>{
+      'id': id,
+      'wallpaper_url': 'https://prism/$id.jpg',
+      'wallpaper_provider': 'prism',
+      'review': true,
+      if (live) 'kind': 'live',
+      if (live) 'live': <String, dynamic>{'video': 'https://prism/$id.mp4', 'verified': true},
+      if (desktop)
+        'desktopVariant': <String, dynamic>{
+          'v': 'abcdef0123456789',
+          'width': 2560,
+          'height': 1600,
+          'wideHeight': 1600,
+          'thumb': 'https://prism/d-$id.jpg',
+        },
+      if (pair) 'variantGroupId': 'g1',
+      if (pair) 'variantIndex': 0,
+    }).toDomain(docId: id);
 
 void main() {
   test('defaults are portrait only, no minimum and relevance sort', () {
@@ -86,5 +109,76 @@ void main() {
 
   test('the spatial filter lists walls without a text query', () {
     expect(const SearchFilters(spatialOnly: true).listsWithoutQuery, isTrue);
+  });
+
+  test('defaults have no source, no kinds, are not Prism only and name no active filter', () {
+    const filters = SearchFilters();
+
+    expect(filters.source, SearchSource.all);
+    expect(filters.kinds, isEmpty);
+    expect(filters.prismOnly, isFalse);
+    expect(filters.activeNames, isEmpty);
+  });
+
+  test('a kind, the depth filter, the spatial filter or the Prism source makes the search Prism only', () {
+    expect(const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live}).prismOnly, isTrue);
+    expect(const SearchFilters(depthOnly: true).prismOnly, isTrue);
+    expect(const SearchFilters(spatialOnly: true).prismOnly, isTrue);
+    expect(const SearchFilters(source: SearchSource.prism).prismOnly, isTrue);
+  });
+
+  test('a kind lists walls without a query, the Prism source alone does not', () {
+    expect(const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.desktop}).listsWithoutQuery, isTrue);
+    expect(const SearchFilters(source: SearchSource.prism).listsWithoutQuery, isFalse);
+  });
+
+  test('activeNames lists the filters that differ from the defaults, by name, in a fixed order', () {
+    final SearchFilters filters = SearchFilters(
+      portraitOnly: false,
+      minResolution: '1080x1920',
+      sort: SearchSort.latest,
+      color: paletteColorById('blue'),
+      source: SearchSource.prism,
+      kinds: <PrismWallKind>{PrismWallKind.lightDark, PrismWallKind.live},
+    );
+
+    expect(filters.activeNames, <String>[
+      'any_orientation',
+      'min_resolution',
+      'sort',
+      'color',
+      'prism_only',
+      'kind_live',
+      'kind_light-dark',
+    ]);
+  });
+
+  test('equality ignores the order of kinds, and so does the hash code', () {
+    final SearchFilters live = SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live, PrismWallKind.desktop});
+    final SearchFilters desktop = SearchFilters(kinds: <PrismWallKind>{PrismWallKind.desktop, PrismWallKind.live});
+
+    expect(live, desktop);
+    expect(live.hashCode, desktop.hashCode);
+  });
+
+  test('acceptsKinds needs a wall to match every kind in the set', () {
+    final PrismWallpaper liveWall = _kindWall('live', live: true);
+    final PrismWallpaper livePair = _kindWall('live-pair', live: true, pair: true);
+    final PrismWallpaper desktopWall = _kindWall('desktop', desktop: true);
+    final PrismWallpaper still = _kindWall('still');
+
+    expect(const SearchFilters().acceptsKinds(still), isTrue, reason: 'no kinds accepts any wall');
+    expect(const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live}).acceptsKinds(liveWall), isTrue);
+    expect(const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live}).acceptsKinds(still), isFalse);
+    expect(const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.desktop}).acceptsKinds(desktopWall), isTrue);
+    expect(const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.desktop}).acceptsKinds(liveWall), isFalse);
+    expect(
+      const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live, PrismWallKind.lightDark}).acceptsKinds(livePair),
+      isTrue,
+    );
+    expect(
+      const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live, PrismWallKind.lightDark}).acceptsKinds(liveWall),
+      isFalse,
+    );
   });
 }

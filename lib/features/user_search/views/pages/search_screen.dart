@@ -116,6 +116,10 @@ class _SearchScreenState extends State<SearchScreen> {
     _photoPending = false;
     if (_filters.color != null) CoinsService.instance.reportQuestEvent(QuestEvent.colourSearch);
     final String searchId = AnalyticsCorrelation.newId();
+    final List<String> kinds = <String>[
+      for (final PrismWallKind kind in PrismWallKind.values)
+        if (_filters.kinds.contains(kind)) kind.wire,
+    ];
     final Future<WallpaperSearchPage> search = getIt<WallpaperSearchService>().search(trimmed, filters: _filters)
       ..ignore();
     setState(() {
@@ -152,6 +156,9 @@ class _SearchScreenState extends State<SearchScreen> {
             return;
           }
           final int count = page.results.length + page.prismResults.length;
+          if (kinds.isNotEmpty) {
+            unawaited(analytics.track(SearchKindResultsEvent(kinds: kinds, resultCount: count, searchId: searchId)));
+          }
           unawaited(
             analytics.track(
               SearchResultsLoadedEvent(
@@ -212,7 +219,12 @@ class _SearchScreenState extends State<SearchScreen> {
       _search = null;
       _photo = null;
       if (_submittedQuery.isEmpty) {
-        _filters = _filters.copyWith(clearColor: true, depthOnly: false, spatialOnly: false);
+        _filters = _filters.copyWith(
+          clearColor: true,
+          depthOnly: false,
+          spatialOnly: false,
+          kinds: const <PrismWallKind>{},
+        );
       }
     });
     _discoveryBloc.add(const SearchDiscoveryEvent.fetchRequested());
@@ -222,6 +234,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final SearchFilters? picked = await showSearchFilterSheet(context, _filters);
     if (picked == null || picked == _filters || !mounted) return;
     setState(() => _filters = picked);
+    analytics.track(SearchFilterAppliedEvent(filters: picked.activeNames));
     if (_photoPending && _photo == null) return;
     if (_photo case final PhotoQuery photo) {
       _showPhotoResults(photo, _searchId ?? AnalyticsCorrelation.newId());
@@ -271,7 +284,13 @@ class _SearchScreenState extends State<SearchScreen> {
       _search = search;
       _photo = null;
       _photoPending = true;
-      _filters = _filters.copyWith(clearColor: true, depthOnly: false, spatialOnly: false);
+      _filters = _filters.copyWith(
+        clearColor: true,
+        depthOnly: false,
+        spatialOnly: false,
+        source: SearchSource.all,
+        kinds: const <PrismWallKind>{},
+      );
     });
   }
 
@@ -353,8 +372,15 @@ class _SearchScreenState extends State<SearchScreen> {
     _triggerSearch('', sourceContext: 'search_spatial');
   }
 
-  void _clearColor() {
-    setState(() => _filters = _filters.copyWith(clearColor: true));
+  void _searchLiveWalls() {
+    searchController.clear();
+    setState(() => _filters = _filters.copyWith(kinds: const <PrismWallKind>{PrismWallKind.live}));
+    _triggerSearch('', sourceContext: 'search_live');
+  }
+
+  /// Applies [next] to the search on screen. A browse with nothing left to list goes back to discovery.
+  void _applyFilters(SearchFilters next) {
+    setState(() => _filters = next);
     if (_submittedQuery.isEmpty && !_filters.listsWithoutQuery) {
       _backToDiscover();
     } else {
@@ -362,45 +388,38 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  void _clearDepth() {
-    setState(() => _filters = _filters.copyWith(depthOnly: false));
-    if (_submittedQuery.isEmpty && !_filters.listsWithoutQuery) {
-      _backToDiscover();
-    } else {
-      _triggerSearch(_submittedQuery);
-    }
-  }
+  void _clearColor() => _applyFilters(_filters.copyWith(clearColor: true));
 
-  void _clearSpatial() {
-    setState(() => _filters = _filters.copyWith(spatialOnly: false));
-    if (_submittedQuery.isEmpty && !_filters.listsWithoutQuery) {
-      _backToDiscover();
-    } else {
-      _triggerSearch(_submittedQuery);
-    }
-  }
+  void _clearDepth() => _applyFilters(_filters.copyWith(depthOnly: false));
+
+  void _clearSpatial() => _applyFilters(_filters.copyWith(spatialOnly: false));
 
   Future<void> _clearRecents() async {
     await _recents.clear();
     if (mounted) setState(() => _recentSearches = const <String>[]);
   }
 
-  void _resetFilters() {
-    setState(() => _filters = const SearchFilters());
-    if (_submittedQuery.isEmpty) {
-      _backToDiscover();
-    } else {
-      _triggerSearch(_submittedQuery);
-    }
-  }
+  void _resetFilters() => _applyFilters(const SearchFilters());
 
-  /// Runs a search that another screen asked for, for example a tag chip on the wallpaper detail screen.
-  void _consumePendingTag() {
-    final String? tag = pendingTagSearch.value;
-    if (tag == null || !mounted) return;
-    pendingTagSearch.value = null;
-    searchController.text = tag;
-    _triggerSearch(tag, sourceContext: 'wallpaper_tag', fromSuggestion: true);
+  /// Runs a search that another screen or a link asked for, for example a tag chip on the wallpaper detail screen.
+  /// A link brings its own filters. A link with no query and no filter to list sets the filters and stays here.
+  void _consumePendingSearch() {
+    final SearchRequest? request = pendingSearch.value;
+    if (request == null || !mounted) return;
+    pendingSearch.value = null;
+    searchController.text = request.query;
+    final SearchFilters? filters = request.filters;
+    if (filters == null) {
+      _triggerSearch(request.query, sourceContext: 'wallpaper_tag', fromSuggestion: true);
+      return;
+    }
+    if (request.query.isEmpty && !filters.listsWithoutQuery) {
+      if (isSubmitted) _backToDiscover();
+      setState(() => _filters = filters);
+      return;
+    }
+    setState(() => _filters = filters);
+    _triggerSearch(request.query, sourceContext: 'search_link');
   }
 
   void _onFocusChanged() => setState(() {});
@@ -418,16 +437,16 @@ class _SearchScreenState extends State<SearchScreen> {
     _focus.addListener(_onFocusChanged);
     _showAi = AiContentFilter.showsAi(_settingsLocal);
     personalizedFeedSettingsRevision.addListener(_onFeedSettingsChanged);
-    pendingTagSearch.addListener(_consumePendingTag);
-    if (pendingTagSearch.value != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _consumePendingTag());
+    pendingSearch.addListener(_consumePendingSearch);
+    if (pendingSearch.value != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _consumePendingSearch());
     }
   }
 
   @override
   void dispose() {
     personalizedFeedSettingsRevision.removeListener(_onFeedSettingsChanged);
-    pendingTagSearch.removeListener(_consumePendingTag);
+    pendingSearch.removeListener(_consumePendingSearch);
     searchController.dispose();
     _focus
       ..removeListener(_onFocusChanged)
@@ -510,14 +529,16 @@ class _SearchScreenState extends State<SearchScreen> {
                                 onPressed: () => unawaited(_searchByPhoto()),
                               ),
                             ),
-                            Badge(
-                              isLabelVisible: _filters != const SearchFilters(),
-                              smallSize: 8,
+                            Badge.count(
+                              count: _filters.activeNames.length,
+                              isLabelVisible: _filters.activeNames.isNotEmpty,
                               alignment: AlignmentDirectional.topEnd,
-                              offset: const Offset(-8, 8),
+                              offset: const Offset(-10, 4),
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              textColor: Theme.of(context).colorScheme.onPrimary,
                               child: PrismIconButton(
                                 icon: Icons.tune_rounded,
-                                tooltip: context.l10n.accountFilters,
+                                tooltip: context.l10n.searchFiltersCount(_filters.activeNames.length),
                                 onPressed: _openFilters,
                               ),
                             ),
@@ -606,7 +627,13 @@ class _SearchScreenState extends State<SearchScreen> {
           prismResults: page.prismResults,
           filters: photo == null
               ? _filters
-              : _filters.copyWith(color: photo.topColor, depthOnly: false, spatialOnly: false),
+              : _filters.copyWith(
+                  color: photo.topColor,
+                  depthOnly: false,
+                  spatialOnly: false,
+                  source: SearchSource.all,
+                  kinds: const <PrismWallKind>{},
+                ),
           isLocal: page.isLocal,
           fromPhoto: photo != null,
           footer: photo == null && _submittedQuery.isNotEmpty && page.results.length + page.prismResults.length <= 5
@@ -647,42 +674,13 @@ class _SearchScreenState extends State<SearchScreen> {
                                 child: PhotoSearchChip(photo: _photo!, onClear: _backToDiscover),
                               ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
-                        child: Row(
-                          children: <Widget>[
-                            if (_filters.color != null)
-                              Tooltip(
-                                message: context.l10n.accountClearColour,
-                                child: PrismChip(
-                                  label: prismPaletteColorDisplayName(_filters.color!, context.l10n),
-                                  selected: true,
-                                  leading: _ColourDot(_filters.color!.color),
-                                  onTap: _clearColor,
-                                ),
-                              ),
-                            if (_filters.color != null && _filters.depthOnly) const SizedBox(width: PrismSpace.xs),
-                            if (_filters.depthOnly)
-                              Tooltip(
-                                message: context.l10n.accountClearDepthEffect,
-                                child: PrismChip(
-                                  label: context.l10n.accountDepthEffect,
-                                  selected: true,
-                                  onTap: _clearDepth,
-                                ),
-                              ),
-                            if (_filters.color != null && _filters.spatialOnly) const SizedBox(width: PrismSpace.xs),
-                            if (_filters.spatialOnly)
-                              Tooltip(
-                                message: context.l10n.accountClearSpatialScene,
-                                child: PrismChip(
-                                  label: context.l10n.accountSpatialScene,
-                                  selected: true,
-                                  onTap: _clearSpatial,
-                                ),
-                              ),
-                          ],
-                        ),
+                      _ActiveFilters(
+                        filters: _filters,
+                        onClearColor: _clearColor,
+                        onClearDepth: _clearDepth,
+                        onClearSpatial: _clearSpatial,
+                        onChanged: _applyFilters,
+                        onClearAll: _resetFilters,
                       ),
                       Expanded(child: _results(context)),
                     ],
@@ -697,6 +695,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     onColorPressed: _searchByColor,
                     onDepthPressed: showDepthEffectUi ? _searchByDepth : null,
                     onSpatialPressed: _searchBySpatial,
+                    onLiveWallsPressed: _searchLiveWalls,
                     onRecentPressed: (query) {
                       searchController.text = query;
                       _triggerSearch(query, sourceContext: 'search_recent', fromSuggestion: true);
@@ -711,6 +710,92 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The filters that are on, as chips. A tap on a chip removes that filter. Clear all turns every filter off. With a
+/// kind filter on, one line says why only Prism walls show.
+class _ActiveFilters extends StatelessWidget {
+  const _ActiveFilters({
+    required this.filters,
+    required this.onClearColor,
+    required this.onClearDepth,
+    required this.onClearSpatial,
+    required this.onChanged,
+    required this.onClearAll,
+  });
+
+  final SearchFilters filters;
+  final VoidCallback onClearColor;
+  final VoidCallback onClearDepth;
+  final VoidCallback onClearSpatial;
+  final ValueChanged<SearchFilters> onChanged;
+  final VoidCallback onClearAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
+    Widget removable(String label, VoidCallback onTap) => Tooltip(
+      message: l10n.searchRemoveFilter(label),
+      child: PrismChip(label: label, selected: true, onTap: onTap),
+    );
+    final List<Widget> chips = <Widget>[
+      if (filters.color case final PrismPaletteColor color)
+        Tooltip(
+          message: l10n.accountClearColour,
+          child: PrismChip(
+            label: prismPaletteColorDisplayName(color, l10n),
+            selected: true,
+            leading: _ColourDot(color.color),
+            onTap: onClearColor,
+          ),
+        ),
+      if (filters.depthOnly)
+        Tooltip(
+          message: l10n.accountClearDepthEffect,
+          child: PrismChip(label: l10n.accountDepthEffect, selected: true, onTap: onClearDepth),
+        ),
+      if (filters.spatialOnly)
+        Tooltip(
+          message: l10n.accountClearSpatialScene,
+          child: PrismChip(label: l10n.accountSpatialScene, selected: true, onTap: onClearSpatial),
+        ),
+      for (final PrismWallKind kind in PrismWallKind.values)
+        if (filters.kinds.contains(kind))
+          removable(
+            prismWallKindLabel(l10n, kind),
+            () => onChanged(filters.copyWith(kinds: <PrismWallKind>{...filters.kinds}..remove(kind))),
+          ),
+      if (filters.source == SearchSource.prism)
+        removable(l10n.searchFilterPrismOnly, () => onChanged(filters.copyWith(source: SearchSource.all))),
+    ];
+    if (filters.activeNames.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Wrap(
+            spacing: PrismSpace.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[
+              ...chips,
+              PrismButton(
+                label: l10n.searchFilterClearAll,
+                variant: PrismButtonVariant.ghost,
+                size: PrismButtonSize.compact,
+                onPressed: onClearAll,
+              ),
+            ],
+          ),
+          if (filters.kinds.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: PrismSpace.xxs),
+              child: Text(l10n.searchKindsPrismOnlyNote, style: PrismTextStyles.caption(context)),
+            ),
+        ],
       ),
     );
   }

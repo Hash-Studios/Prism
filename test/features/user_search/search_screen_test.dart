@@ -486,8 +486,8 @@ void main() {
         isLocal: false,
       ),
     );
-    pendingTagSearch.value = 'mountains';
-    addTearDown(() => pendingTagSearch.value = null);
+    pendingSearch.value = (query: 'mountains', filters: null);
+    addTearDown(() => pendingSearch.value = null);
 
     await tester.pumpWidget(
       const MaterialApp(
@@ -501,7 +501,7 @@ void main() {
     await tester.pump();
 
     verify(() => service.search('mountains', filters: any(named: 'filters'))).called(1);
-    expect(pendingTagSearch.value, isNull);
+    expect(pendingSearch.value, isNull);
     expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, 'mountains');
   });
 
@@ -523,12 +523,12 @@ void main() {
       ),
     );
 
-    pendingTagSearch.value = 'ocean';
+    pendingSearch.value = (query: 'ocean', filters: null);
     await tester.pump();
     await tester.pump();
 
     verify(() => service.search('ocean', filters: any(named: 'filters'))).called(1);
-    expect(pendingTagSearch.value, isNull);
+    expect(pendingSearch.value, isNull);
   });
 
   testWidgets('submission and results share an opaque ID across provider fallback', (tester) async {
@@ -891,6 +891,164 @@ void main() {
 
       expect(find.text('Find creators'), findsOneWidget);
       expect(find.text('Depth Effect'), findsNothing);
+    });
+  });
+
+  group('Prism wall kind filters', () {
+    const String kindNote = 'Only Prism walls have these kinds, so Wallhaven and Pexels results are hidden.';
+    const SearchFilters liveOnly = SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live});
+
+    tearDown(() => pendingSearch.value = null);
+
+    Future<void> pumpWithScale(
+      WidgetTester tester, {
+      TextScaler textScaler = TextScaler.noScaling,
+      TextDirection direction = TextDirection.ltr,
+    }) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      when(
+        () => service.search(any(), filters: any(named: 'filters')),
+      ).thenAnswer((_) async => _page(<FeedItemEntity>[_wallpaper('wh-1')]));
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          builder: (context, child) => Directionality(
+            textDirection: direction,
+            child: MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+              child: favouriteTestBuilder(context, child),
+            ),
+          ),
+          home: const SearchScreen(),
+        ),
+      );
+      await tester.pump();
+    }
+
+    Future<void> sendRequest(WidgetTester tester, ({String query, SearchFilters? filters}) request) async {
+      pendingSearch.value = request;
+      await tester.pump();
+      await tester.pump();
+    }
+
+    Finder kindChip(String label) => find.widgetWithText(PrismChip, label);
+
+    testWidgets('a kind link runs the search and shows the Live chip, Clear all and the Prism-only note', (
+      tester,
+    ) async {
+      await pumpWithScale(tester);
+
+      await sendRequest(tester, (query: '', filters: liveOnly));
+
+      verify(() => service.search('', filters: liveOnly)).called(1);
+      expect(kindChip('Live'), findsOneWidget);
+      expect(find.text('Clear all'), findsOneWidget);
+      expect(find.text(kindNote), findsOneWidget);
+    });
+
+    testWidgets('the filter button says Filters, 1 on and shows a badge of 1 while one kind is on', (tester) async {
+      await pumpWithScale(tester);
+      expect(find.byTooltip('Filters'), findsOneWidget);
+      expect(tester.widget<Badge>(find.byType(Badge)).isLabelVisible, isFalse);
+      expect(find.text('1'), findsNothing);
+
+      await sendRequest(tester, (query: '', filters: liveOnly));
+
+      expect(find.byTooltip('Filters, 1 on'), findsOneWidget);
+      expect(find.descendant(of: find.byType(Badge), matching: find.text('1')), findsOneWidget);
+    });
+
+    testWidgets('Clear all resets the kind filter and returns to discovery', (tester) async {
+      await pumpWithScale(tester);
+      await sendRequest(tester, (query: '', filters: liveOnly));
+
+      await tester.tap(find.text('Clear all'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(kindChip('Live'), findsNothing);
+      expect(find.text(kindNote), findsNothing);
+      expect(find.text('Clear all'), findsNothing);
+      expect(find.text('Find creators'), findsOneWidget);
+    });
+
+    testWidgets('tapping the Live chip removes that filter and returns to discovery', (tester) async {
+      await pumpWithScale(tester);
+      await sendRequest(tester, (query: '', filters: liveOnly));
+
+      await tester.tap(kindChip('Live'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(kindChip('Live'), findsNothing);
+      expect(find.text(kindNote), findsNothing);
+      expect(find.text('Find creators'), findsOneWidget);
+    });
+
+    testWidgets('a Prism-only link shows the Prism walls only chip but not the kind note', (tester) async {
+      await pumpWithScale(tester);
+
+      await sendRequest(tester, (query: 'sky', filters: const SearchFilters(source: SearchSource.prism)));
+
+      expect(kindChip('Prism walls only'), findsOneWidget);
+      expect(find.text(kindNote), findsNothing);
+    });
+
+    testWidgets('at 2x text the three kind chips and Clear all render without an overflow', (tester) async {
+      await pumpWithScale(tester, textScaler: const TextScaler.linear(2));
+
+      await sendRequest(tester, (
+        query: '',
+        filters: const SearchFilters(
+          kinds: <PrismWallKind>{PrismWallKind.live, PrismWallKind.desktop, PrismWallKind.lightDark},
+        ),
+      ));
+
+      expect(tester.takeException(), isNull);
+      expect(kindChip('Live'), findsOneWidget);
+      expect(kindChip('Desktop version'), findsOneWidget);
+      expect(kindChip('Light and dark'), findsOneWidget);
+      expect(find.text('Clear all'), findsOneWidget);
+    });
+
+    testWidgets('in RTL the same kind state renders without an exception', (tester) async {
+      await pumpWithScale(tester, direction: TextDirection.rtl);
+
+      await sendRequest(tester, (
+        query: '',
+        filters: const SearchFilters(
+          kinds: <PrismWallKind>{PrismWallKind.live, PrismWallKind.desktop, PrismWallKind.lightDark},
+        ),
+      ));
+
+      expect(tester.takeException(), isNull);
+      expect(kindChip('Live'), findsOneWidget);
+      expect(find.text('Clear all'), findsOneWidget);
+      expect(find.text(kindNote), findsOneWidget);
+      final double width = tester.view.physicalSize.width / tester.view.devicePixelRatio;
+      expect(
+        tester.getTopRight(kindChip('Live')).dx,
+        greaterThan(width / 2),
+        reason: 'the first chip starts on the right',
+      );
+      expect(
+        tester.getTopLeft(kindChip('Desktop version')).dx,
+        lessThan(tester.getTopLeft(kindChip('Live')).dx),
+        reason: 'the next chip sits to its left',
+      );
+    });
+
+    testWidgets('a link with a Prism filter and no query stays on discovery and counts the filter', (tester) async {
+      await pumpWithScale(tester);
+
+      await sendRequest(tester, (query: '', filters: const SearchFilters(source: SearchSource.prism)));
+
+      verifyNever(() => service.search(any(), filters: any(named: 'filters')));
+      expect(find.text('Find creators'), findsOneWidget);
+      expect(find.byTooltip('Filters, 1 on'), findsOneWidget);
     });
   });
 }

@@ -628,9 +628,6 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i279.PublicFoldersRepository>(
     () => _i994.PublicFoldersRepositoryImpl(gh<_i349.FirestoreClient>()),
   );
-  gh.factory<_i39.SearchDiscoveryBloc>(
-    () => _i39.SearchDiscoveryBloc(gh<_i604.WallhavenWallpaperRepository>()),
-  );
   gh.lazySingleton<_i364.RecordWallpaperActionUseCase>(
     () => _i364.RecordWallpaperActionUseCase(gh<_i602.ViewStatsRepository>()),
   );
@@ -780,6 +777,12 @@ _i174.GetIt initGetIt(
   );
   gh.factory<_i849.DropsBloc>(
     () => _i849.DropsBloc(gh<_i96.DropsRepository>()),
+  );
+  gh.factory<_i39.SearchDiscoveryBloc>(
+    () => _i39.SearchDiscoveryBloc(
+      gh<_i604.WallhavenWallpaperRepository>(),
+      gh<_i289.PrismWallSearch>(),
+    ),
   );
   gh.lazySingleton<_i563.CategoryFeedRepository>(
     () => _i307.CategoryFeedRepositoryImpl(

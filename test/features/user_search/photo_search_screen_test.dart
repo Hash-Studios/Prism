@@ -309,7 +309,7 @@ void main() {
 
     await tester.tap(find.byTooltip(en.searchByPhoto));
     await tester.pump();
-    await tester.tap(find.byTooltip(en.accountFilters));
+    await tester.tap(find.byTooltip(en.searchFiltersCount(0)));
     await settleSheet(tester);
     await tester.tap(find.text('1440p'));
     await tester.tap(find.text('Apply'));
@@ -336,7 +336,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.byTooltip(en.searchByPhoto));
     await settle(tester);
-    await tester.tap(find.byTooltip(en.accountFilters));
+    await tester.tap(find.byTooltip(en.searchFiltersCount(0)));
     await settleSheet(tester);
     await tester.tap(find.text('1440p'));
     await tester.tap(find.text('Apply'));
@@ -360,7 +360,7 @@ void main() {
     await pumpScreen(tester);
     await tester.tap(find.byTooltip(en.searchByPhoto));
     await settle(tester);
-    await tester.tap(find.byTooltip(en.accountFilters));
+    await tester.tap(find.byTooltip(en.searchFiltersCount(0)));
     await settleSheet(tester);
     await tester.tap(find.text('1440p'));
     await tester.tap(find.text('Apply'));

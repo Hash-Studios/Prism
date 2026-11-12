@@ -891,10 +891,6 @@
   "@accountFields": {
     "description": "Log record fields section heading."
   },
-  "accountFilters": "फ़िल्टर",
-  "@accountFilters": {
-    "description": "Wallpaper search filters button tooltip."
-  },
   "accountFindCreators": "क्रिएटर खोजें",
   "@accountFindCreators": {
     "description": "Creator search row and page title."
@@ -1594,10 +1590,6 @@
   "accountReportUser": "यूज़र की रिपोर्ट करें",
   "@accountReportUser": {
     "description": "Profile menu report action label."
-  },
-  "accountReset": "रीसेट करें",
-  "@accountReset": {
-    "description": "Reset search filters action label."
   },
   "accountResetFilters": "फ़िल्टर रीसेट करें",
   "@accountResetFilters": {
@@ -15826,5 +15818,29 @@
   "adminLiveFailed": "वीडियो सर्वर जाँच में फ़ेल हो गया",
   "@adminLiveFailed": {"description": "Review queue: the server refused the video. The admin can only reject it."},
   "adminLiveFacts": "लाइव · {seconds} s",
-  "@adminLiveFacts": {"description": "Review queue: length of the live video in seconds.", "placeholders": {"seconds": {"type": "String"}}}
+  "@adminLiveFacts": {"description": "Review queue: length of the live video in seconds.", "placeholders": {"seconds": {"type": "String"}}},
+  "searchFilterPrismSection": "Prism वॉलपेपर",
+  "@searchFilterPrismSection": {"description": "Search filter sheet: heading over the filters that only Prism walls have."},
+  "searchFilterPrismOnly": "केवल Prism वॉलपेपर",
+  "@searchFilterPrismOnly": {"description": "Search filter: switch, and active filter chip, that hides Wallhaven and Pexels results."},
+  "searchFilterPrismOnlySubtitle": "Wallhaven और Pexels के परिणाम छिपाएँ",
+  "@searchFilterPrismOnlySubtitle": {"description": "Search filter sheet: subtitle of the Prism walls only switch."},
+  "searchKindLive": "लाइव",
+  "@searchKindLive": {"description": "Search filter chip: live walls, which are short looping videos."},
+  "searchKindDesktop": "डेस्कटॉप वर्शन",
+  "@searchKindDesktop": {"description": "Search filter chip: walls that also have a wide desktop version."},
+  "searchKindLightDark": "लाइट और डार्क",
+  "@searchKindLightDark": {"description": "Search filter chip: walls that come in colour variants, so one can be used by day and one by night."},
+  "searchFilterClearAll": "सभी साफ़ करें",
+  "@searchFilterClearAll": {"description": "Search: action that turns off every search filter."},
+  "searchFiltersCount": "{count, plural, =0{फ़िल्टर} =1{फ़िल्टर, 1 चालू} other{फ़िल्टर, {count} चालू}}",
+  "@searchFiltersCount": {"description": "Search: tooltip and screen reader label of the filter button with the number of filters that are on.", "placeholders": {"count": {"type": "int"}}},
+  "searchKindsPrismOnlyNote": "ये प्रकार केवल Prism वॉलपेपर में होते हैं, इसलिए Wallhaven और Pexels के परिणाम छिपे हैं।",
+  "@searchKindsPrismOnlyNote": {"description": "Search results: one line under the active filters when a Prism wall kind filter (Live, Desktop version, Light and dark) is on."},
+  "searchRemoveFilter": "{filter} हटाएँ",
+  "@searchRemoveFilter": {"description": "Search results: tooltip of an active filter chip. A tap removes that filter.", "placeholders": {"filter": {"type": "String"}}},
+  "discoverLiveWallsTitle": "लाइव वॉलपेपर",
+  "@discoverLiveWallsTitle": {"description": "Search discover: row that opens the live walls."},
+  "discoverLiveWallsSubtitle": "Prism क्रिएटर्स के लूप वीडियो",
+  "@discoverLiveWallsSubtitle": {"description": "Search discover: subtitle of the Live walls row."}
 }

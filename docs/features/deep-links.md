@@ -12,7 +12,7 @@ Paths below work with either HTTPS host or the `prism:` scheme. "Sign-in" means 
 |---|---|---|
 | Dashboard and home | `/dashboard`, `/dashboard/home` | Guest browsing is allowed. The app's `/` route also resumes at the dashboard after startup. |
 | Home feed tab | `/dashboard/home?feed=latest` | `feed` accepts `forYou`, `following`, `trending`, `latest` or `popular`. Another value is rejected. The link saves the tab first, so it wins over the remembered tab. See [layout.md](layout.md). |
-| Search and user search | `/dashboard/search`, `/dashboard/search/users` | Opens the selected search page. |
+| Search and user search | `/dashboard/search`, `/dashboard/search/users`, `/dashboard/search?q=sky&kind=live` | Opens the selected search page. The keys `q`, `kind`, `source`, `color`, `sort`, `res`, `portrait`, `depth` and `spatial` run a search with its filters. A bad value is refused. See [search.md](search.md#prism-wall-filters). |
 | Dashboard Rewards and Collection tabs | `/dashboard/rewards`, `/dashboard/collection` | Opens the selected dashboard tab. |
 | Onboarding | `/onboarding/v2` | Opens the onboarding flow. Individual steps are internal states. |
 | AI wallpapers | `/ai` | Opens the AI page. Generation retains its normal account and purchase checks. |

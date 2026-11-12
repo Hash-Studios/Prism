@@ -22,7 +22,9 @@ import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_
 import 'package:Prism/features/prism_feed/domain/repositories/prism_wallpaper_repository.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
+import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
+import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wrapped/views/pages/wrapped_page.dart';
 import 'package:auto_route/auto_route.dart';
@@ -53,11 +55,7 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.onboarding => OnboardingV2ShellRoute(),
     DeepLinkPageTarget.dashboard => const DashboardRoute(),
     DeepLinkPageTarget.home => _homeRoute(HomeFeedChip.values.asNameMap()[query['feed']]),
-    DeepLinkPageTarget.searchTab => const DashboardRoute(
-      children: <PageRouteInfo>[
-        SearchTabRoute(children: <PageRouteInfo>[SearchRoute()]),
-      ],
-    ),
+    DeepLinkPageTarget.searchTab => _searchRoute(query),
     DeepLinkPageTarget.chooseImage => _inputRoute(_workflow(query['workflow']!)),
     DeepLinkPageTarget.userSearch => const DashboardRoute(
       children: <PageRouteInfo>[
@@ -395,6 +393,22 @@ bool _isTrustedImageUrl(String imageUrl, WallpaperSource source) {
     _ => const <String>{},
   };
   return (uri.port == 443 || uri.hasPort == false) && allowedHosts.contains(uri.host.toLowerCase());
+}
+
+/// Opens Search. A link with search keys queues its query and filters, so the Search screen runs that search. A link
+/// without them, or with a colour that is not in the palette, opens Search as it is.
+PageRouteInfo _searchRoute(Map<String, String> query) {
+  final SearchLinkFields? fields = query.keys.any(searchLinkKeys.contains) ? parseSearchLink(query) : null;
+  final SearchFilters? filters = fields == null ? null : SearchFilters.fromLink(fields);
+  if (fields != null && filters != null) {
+    pendingSearch.value = null;
+    pendingSearch.value = (query: fields.query, filters: filters);
+  }
+  return const DashboardRoute(
+    children: <PageRouteInfo>[
+      SearchTabRoute(children: <PageRouteInfo>[SearchRoute()]),
+    ],
+  );
 }
 
 /// Home, on the feed tab the link names. Writing the tab to the store makes the link win over the remembered tab,

@@ -767,10 +767,6 @@
   "@accountFields": {
     "description": "Log record fields section heading."
   },
-  "accountFilters": "Filter",
-  "@accountFilters": {
-    "description": "Wallpaper search filters button tooltip."
-  },
   "accountFindCreators": "Kreative finden",
   "@accountFindCreators": {
     "description": "Creator search row and page title."
@@ -1470,10 +1466,6 @@
   "accountReportUser": "Person melden",
   "@accountReportUser": {
     "description": "Profile menu report action label."
-  },
-  "accountReset": "Zurücksetzen",
-  "@accountReset": {
-    "description": "Reset search filters action label."
   },
   "accountResetFilters": "Filter zurücksetzen",
   "@accountResetFilters": {
@@ -15075,5 +15067,29 @@
   "adminLiveFailed": "Das Video hat die Serverprüfung nicht bestanden",
   "@adminLiveFailed": {"description": "Review queue: the server refused the video. The admin can only reject it."},
   "adminLiveFacts": "Live · {seconds} s",
-  "@adminLiveFacts": {"description": "Review queue: length of the live video in seconds.", "placeholders": {"seconds": {"type": "String"}}}
+  "@adminLiveFacts": {"description": "Review queue: length of the live video in seconds.", "placeholders": {"seconds": {"type": "String"}}},
+  "searchFilterPrismSection": "Prism-Hintergrundbilder",
+  "@searchFilterPrismSection": {"description": "Search filter sheet: heading over the filters that only Prism walls have."},
+  "searchFilterPrismOnly": "Nur Prism-Hintergrundbilder",
+  "@searchFilterPrismOnly": {"description": "Search filter: switch, and active filter chip, that hides Wallhaven and Pexels results."},
+  "searchFilterPrismOnlySubtitle": "Wallhaven- und Pexels-Ergebnisse ausblenden",
+  "@searchFilterPrismOnlySubtitle": {"description": "Search filter sheet: subtitle of the Prism walls only switch."},
+  "searchKindLive": "Live",
+  "@searchKindLive": {"description": "Search filter chip: live walls, which are short looping videos."},
+  "searchKindDesktop": "Desktop-Version",
+  "@searchKindDesktop": {"description": "Search filter chip: walls that also have a wide desktop version."},
+  "searchKindLightDark": "Hell und dunkel",
+  "@searchKindLightDark": {"description": "Search filter chip: walls that come in colour variants, so one can be used by day and one by night."},
+  "searchFilterClearAll": "Alle löschen",
+  "@searchFilterClearAll": {"description": "Search: action that turns off every search filter."},
+  "searchFiltersCount": "{count, plural, =0{Filter} =1{Filter, 1 aktiv} other{Filter, {count} aktiv}}",
+  "@searchFiltersCount": {"description": "Search: tooltip and screen reader label of the filter button with the number of filters that are on.", "placeholders": {"count": {"type": "int"}}},
+  "searchKindsPrismOnlyNote": "Nur Prism-Hintergrundbilder haben diese Arten, daher werden Wallhaven- und Pexels-Ergebnisse ausgeblendet.",
+  "@searchKindsPrismOnlyNote": {"description": "Search results: one line under the active filters when a Prism wall kind filter (Live, Desktop version, Light and dark) is on."},
+  "searchRemoveFilter": "{filter} entfernen",
+  "@searchRemoveFilter": {"description": "Search results: tooltip of an active filter chip. A tap removes that filter.", "placeholders": {"filter": {"type": "String"}}},
+  "discoverLiveWallsTitle": "Live-Hintergrundbilder",
+  "@discoverLiveWallsTitle": {"description": "Search discover: row that opens the live walls."},
+  "discoverLiveWallsSubtitle": "Loop-Videos von Prism-Kreativen",
+  "@discoverLiveWallsSubtitle": {"description": "Search discover: subtitle of the Live walls row."}
 }

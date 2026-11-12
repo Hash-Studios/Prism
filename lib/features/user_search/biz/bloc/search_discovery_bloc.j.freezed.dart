@@ -244,7 +244,8 @@ String toString() {
 /// @nodoc
 mixin _$SearchDiscoveryState {
 
- LoadStatus get status; List<WallhavenWallpaper> get trendingWalls; Failure? get failure;
+ LoadStatus get status; List<WallhavenWallpaper> get trendingWalls; Failure? get failure;/// At least one reviewed live wall exists, so discovery shows the Live walls row.
+ bool get hasLiveWalls;
 /// Create a copy of SearchDiscoveryState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -255,16 +256,16 @@ $SearchDiscoveryStateCopyWith<SearchDiscoveryState> get copyWith => _$SearchDisc
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchDiscoveryState&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other.trendingWalls, trendingWalls)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchDiscoveryState&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other.trendingWalls, trendingWalls)&&(identical(other.failure, failure) || other.failure == failure)&&(identical(other.hasLiveWalls, hasLiveWalls) || other.hasLiveWalls == hasLiveWalls));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,const DeepCollectionEquality().hash(trendingWalls),failure);
+int get hashCode => Object.hash(runtimeType,status,const DeepCollectionEquality().hash(trendingWalls),failure,hasLiveWalls);
 
 @override
 String toString() {
-  return 'SearchDiscoveryState(status: $status, trendingWalls: $trendingWalls, failure: $failure)';
+  return 'SearchDiscoveryState(status: $status, trendingWalls: $trendingWalls, failure: $failure, hasLiveWalls: $hasLiveWalls)';
 }
 
 
@@ -275,7 +276,7 @@ abstract mixin class $SearchDiscoveryStateCopyWith<$Res>  {
   factory $SearchDiscoveryStateCopyWith(SearchDiscoveryState value, $Res Function(SearchDiscoveryState) _then) = _$SearchDiscoveryStateCopyWithImpl;
 @useResult
 $Res call({
- LoadStatus status, List<WallhavenWallpaper> trendingWalls, Failure? failure
+ LoadStatus status, List<WallhavenWallpaper> trendingWalls, Failure? failure, bool hasLiveWalls
 });
 
 
@@ -292,12 +293,13 @@ class _$SearchDiscoveryStateCopyWithImpl<$Res>
 
 /// Create a copy of SearchDiscoveryState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? trendingWalls = null,Object? failure = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? trendingWalls = null,Object? failure = freezed,Object? hasLiveWalls = null,}) {
   return _then(_self.copyWith(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,trendingWalls: null == trendingWalls ? _self.trendingWalls : trendingWalls // ignore: cast_nullable_to_non_nullable
 as List<WallhavenWallpaper>,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as Failure?,
+as Failure?,hasLiveWalls: null == hasLiveWalls ? _self.hasLiveWalls : hasLiveWalls // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -382,10 +384,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  List<WallhavenWallpaper> trendingWalls,  Failure? failure)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LoadStatus status,  List<WallhavenWallpaper> trendingWalls,  Failure? failure,  bool hasLiveWalls)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SearchDiscoveryState() when $default != null:
-return $default(_that.status,_that.trendingWalls,_that.failure);case _:
+return $default(_that.status,_that.trendingWalls,_that.failure,_that.hasLiveWalls);case _:
   return orElse();
 
 }
@@ -403,10 +405,10 @@ return $default(_that.status,_that.trendingWalls,_that.failure);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  List<WallhavenWallpaper> trendingWalls,  Failure? failure)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LoadStatus status,  List<WallhavenWallpaper> trendingWalls,  Failure? failure,  bool hasLiveWalls)  $default,) {final _that = this;
 switch (_that) {
 case _SearchDiscoveryState():
-return $default(_that.status,_that.trendingWalls,_that.failure);case _:
+return $default(_that.status,_that.trendingWalls,_that.failure,_that.hasLiveWalls);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -423,10 +425,10 @@ return $default(_that.status,_that.trendingWalls,_that.failure);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  List<WallhavenWallpaper> trendingWalls,  Failure? failure)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LoadStatus status,  List<WallhavenWallpaper> trendingWalls,  Failure? failure,  bool hasLiveWalls)?  $default,) {final _that = this;
 switch (_that) {
 case _SearchDiscoveryState() when $default != null:
-return $default(_that.status,_that.trendingWalls,_that.failure);case _:
+return $default(_that.status,_that.trendingWalls,_that.failure,_that.hasLiveWalls);case _:
   return null;
 
 }
@@ -438,7 +440,7 @@ return $default(_that.status,_that.trendingWalls,_that.failure);case _:
 
 
 class _SearchDiscoveryState implements SearchDiscoveryState {
-  const _SearchDiscoveryState({required this.status, required final  List<WallhavenWallpaper> trendingWalls, this.failure}): _trendingWalls = trendingWalls;
+  const _SearchDiscoveryState({required this.status, required final  List<WallhavenWallpaper> trendingWalls, this.failure, this.hasLiveWalls = false}): _trendingWalls = trendingWalls;
   
 
 @override final  LoadStatus status;
@@ -450,6 +452,8 @@ class _SearchDiscoveryState implements SearchDiscoveryState {
 }
 
 @override final  Failure? failure;
+/// At least one reviewed live wall exists, so discovery shows the Live walls row.
+@override@JsonKey() final  bool hasLiveWalls;
 
 /// Create a copy of SearchDiscoveryState
 /// with the given fields replaced by the non-null parameter values.
@@ -461,16 +465,16 @@ _$SearchDiscoveryStateCopyWith<_SearchDiscoveryState> get copyWith => __$SearchD
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SearchDiscoveryState&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other._trendingWalls, _trendingWalls)&&(identical(other.failure, failure) || other.failure == failure));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SearchDiscoveryState&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other._trendingWalls, _trendingWalls)&&(identical(other.failure, failure) || other.failure == failure)&&(identical(other.hasLiveWalls, hasLiveWalls) || other.hasLiveWalls == hasLiveWalls));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,status,const DeepCollectionEquality().hash(_trendingWalls),failure);
+int get hashCode => Object.hash(runtimeType,status,const DeepCollectionEquality().hash(_trendingWalls),failure,hasLiveWalls);
 
 @override
 String toString() {
-  return 'SearchDiscoveryState(status: $status, trendingWalls: $trendingWalls, failure: $failure)';
+  return 'SearchDiscoveryState(status: $status, trendingWalls: $trendingWalls, failure: $failure, hasLiveWalls: $hasLiveWalls)';
 }
 
 
@@ -481,7 +485,7 @@ abstract mixin class _$SearchDiscoveryStateCopyWith<$Res> implements $SearchDisc
   factory _$SearchDiscoveryStateCopyWith(_SearchDiscoveryState value, $Res Function(_SearchDiscoveryState) _then) = __$SearchDiscoveryStateCopyWithImpl;
 @override @useResult
 $Res call({
- LoadStatus status, List<WallhavenWallpaper> trendingWalls, Failure? failure
+ LoadStatus status, List<WallhavenWallpaper> trendingWalls, Failure? failure, bool hasLiveWalls
 });
 
 
@@ -498,12 +502,13 @@ class __$SearchDiscoveryStateCopyWithImpl<$Res>
 
 /// Create a copy of SearchDiscoveryState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? trendingWalls = null,Object? failure = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? status = null,Object? trendingWalls = null,Object? failure = freezed,Object? hasLiveWalls = null,}) {
   return _then(_SearchDiscoveryState(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as LoadStatus,trendingWalls: null == trendingWalls ? _self._trendingWalls : trendingWalls // ignore: cast_nullable_to_non_nullable
 as List<WallhavenWallpaper>,failure: freezed == failure ? _self.failure : failure // ignore: cast_nullable_to_non_nullable
-as Failure?,
+as Failure?,hasLiveWalls: null == hasLiveWalls ? _self.hasLiveWalls : hasLiveWalls // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
