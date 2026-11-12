@@ -212,8 +212,8 @@ test('quota coordinator enforces user caps and provider budgets, then releases r
 const ANDROID_UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/126.0 Mobile Safari/537.36';
 const IOS_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1';
 const DESKTOP_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36';
-const SHARE_PATH = '/share?id=wall-1&source=prism&provider=Prism'
-  + '&thumb=https%3A%2F%2Fraw.githubusercontent.com%2FHash-Studios%2Fx.jpg';
+const PUBLIC_OG_THUMB = `https://img.prismwalls.com/previews/${'a'.repeat(64)}.img`;
+const SHARE_PATH = `/share?id=wall-1&source=prism&provider=Prism&thumb=${encodeURIComponent(PUBLIC_OG_THUMB)}`;
 
 async function getShare(userAgent, path = SHARE_PATH, env = workerEnv({
   PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
@@ -877,7 +877,12 @@ test('a watermark failure still returns success, keeps the original and defers t
   }
 
   const { imageUrl, watermarkedImageUrl } = payload.imageUrls;
-  const original = await worker.fetch(new Request(imageUrl), env, { waitUntil() {} });
+  const token = await makeToken({ sub: 'alice' });
+  const unauth = await worker.fetch(new Request(imageUrl), env, { waitUntil() {} });
+  assert.equal(unauth.status, 401);
+  const original = await worker.fetch(new Request(imageUrl, {
+    headers: { authorization: `Bearer ${token}` },
+  }), env, { waitUntil() {} });
   assert.equal(original.status, 200);
   const pending = await worker.fetch(new Request(watermarkedImageUrl), env, { waitUntil() {} });
   assert.equal(pending.status, 503);
@@ -1811,7 +1816,11 @@ test('a lost success acknowledgement stays unpublished until owner replay confir
     assert.equal(replay.status, 200);
     assert.deepEqual(await replay.json(), stagedResponse);
     assert.ok(await env.AI_STATE_KV.get(`ai:gen:${stagedResponse.generationId}`));
-    assert.equal((await worker.fetch(new Request(stagedResponse.imageUrls.imageUrl), env, { waitUntil() {} })).status, 200);
+    const owner = await makeToken({ sub: 'alice' });
+    assert.equal((await worker.fetch(new Request(stagedResponse.imageUrls.imageUrl), env, { waitUntil() {} })).status, 401);
+    assert.equal((await worker.fetch(new Request(stagedResponse.imageUrls.imageUrl, {
+      headers: { authorization: `Bearer ${owner}` },
+    }), env, { waitUntil() {} })).status, 200);
     assert.equal(stats.fal, 1);
   } finally { restore(); }
 });
@@ -2078,7 +2087,7 @@ test('a valid charge succeeds once and a replay returns the stored image without
     restore();
   }
   assert.equal(stats.fal, 1);
-  assert.equal(stats.firestore, 3);
+  assert.equal(stats.firestore, 4, 'two generation receipts plus owner and foreign evidence reads');
   assert.equal(
     seen.url,
     `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/coinTransactions/${TX_ID}`,
@@ -2783,6 +2792,7 @@ function ogWorkerEnv(overrides = {}) {
   let ogBumps = 0;
   const env = aiEnv(overrides.AI_STATE_KV ?? new MemoryKv(), coordinator, {
     ...RENDER_ENV,
+    R2_PREVIEW_BASE_URL: 'https://img.prismwalls.com',
     ...overrides,
     AI_QUOTA_DO: {
       idFromName: () => 'quota-object',
@@ -3122,7 +3132,7 @@ test('OG cards stay public when CF-Connecting-IP is missing and skip paid render
   try {
     const response = await getOg(env, '/og/OldWall3.jpg', { ip: null });
     assert.equal(response.status, 302);
-    assert.equal(response.headers.get('location'), 'https://raw.githubusercontent.com/Hash-Studios/x.jpg');
+    assert.equal(response.headers.get('location'), PUBLIC_OG_THUMB);
     assert.equal(calls.renders.length, 0);
   } finally {
     restore();
@@ -3191,7 +3201,7 @@ test('an IP is limited to twenty paid OG renders in ten minutes and then falls b
         assert.equal(response.status, 200, code);
       } else {
         assert.equal(response.status, 302, code);
-        assert.equal(response.headers.get('location'), 'https://raw.githubusercontent.com/Hash-Studios/x.jpg');
+        assert.equal(response.headers.get('location'), PUBLIC_OG_THUMB);
       }
     }
     assert.equal(calls.renders.length, 20);
@@ -3204,9 +3214,10 @@ test('an IP is limited to twenty paid OG renders in ten minutes and then falls b
 test('OG rendering fails closed when the Durable Object limiter is down', async () => {
   const env = workerEnv({
     ...RENDER_ENV,
+    R2_PREVIEW_BASE_URL: 'https://img.prismwalls.com',
     LINKS_KV: new MemoryKv([
       storedLink('OgDoFail', 'share', SHARE_PATH, {
-        title: 'Sunset', wall_id: 'wall-1', image_source_url: 'https://raw.githubusercontent.com/Hash-Studios/x.jpg',
+        title: 'Sunset', wall_id: 'wall-1', image_source_url: PUBLIC_OG_THUMB,
       }),
     ]),
   });
@@ -3214,7 +3225,7 @@ test('OG rendering fails closed when the Durable Object limiter is down', async 
   try {
     const response = await getOg(env, '/og/OgDoFail.jpg');
     assert.equal(response.status, 302);
-    assert.equal(response.headers.get('location'), 'https://raw.githubusercontent.com/Hash-Studios/x.jpg');
+    assert.equal(response.headers.get('location'), PUBLIC_OG_THUMB);
     assert.equal(calls.renders.length, 0);
   } finally {
     restore();
@@ -3233,6 +3244,7 @@ test('OG rendering retries after a failed screenshot', async () => {
   try {
     const first = await getOg(env, '/og/OgRetry1.jpg');
     assert.equal(first.status, 302);
+    assert.equal(first.headers.get('location'), PUBLIC_OG_THUMB);
     assert.equal(failing.calls.renders.length, 1);
   } finally {
     failing.restore();
@@ -3601,10 +3613,13 @@ test('original AI assets require the owner; public studio thumbs stay anonymous'
   const publicKey = `ai/public/${generationId}.png`;
   const thumbKey = 'ai/studio/thumb_job-1.jpg';
   const styleKey = 'ai/studio/style-samples-1.png';
-  const kv = new MemoryKv([[`ai:gen:${generationId}`, JSON.stringify({
+  const kv = new MemoryKv([['ai:firebase:jwks:v1', jwksCache], [`ai:gen:${generationId}`, JSON.stringify({
     generationId, userId: 'alice', createdAt: '2026-02-19T08:40:39.977Z',
   })]]);
-  const env = aiEnv(kv, new AiQuotaCoordinator({ storage: new MemoryStorage() }), { AI_IMAGES: new MemoryR2() });
+  const env = aiEnv(kv, new AiQuotaCoordinator({ storage: new MemoryStorage() }), {
+    AI_IMAGES: new MemoryR2(),
+    STUDIO_SECRET,
+  });
   const bytes = new Uint8Array(2048).fill(9);
   await env.AI_IMAGES.put(originalKey, bytes, { httpMetadata: { contentType: 'image/png' } });
   await env.AI_IMAGES.put(publicKey, bytes, { httpMetadata: { contentType: 'image/png' } });
@@ -3621,11 +3636,26 @@ test('original AI assets require the owner; public studio thumbs stay anonymous'
   const missingAuth = await get(originalKey);
   assert.equal(missingAuth.status, 401);
   assert.equal((await missingAuth.json()).error, 'unauthorized');
+  const studioOnPublic = await worker.fetch(new Request(`https://prismwalls.com/api/ai/assets/${originalKey}`, {
+    headers: { 'x-studio-secret': STUDIO_SECRET },
+  }), env, { waitUntil() {} });
+  assert.equal(studioOnPublic.status, 401);
   assert.equal((await get(originalKey, bob)).status, 404);
   const owned = await get(originalKey, alice);
   assert.equal(owned.status, 200);
   assert.equal(owned.headers.get('cache-control'), 'private, no-store');
   assert.deepEqual(new Uint8Array(await owned.arrayBuffer()), bytes);
+
+  const studioOriginal = `/api/ai/studio/assets/${originalKey}`;
+  assert.equal((await studioFetch(env, 'GET', studioOriginal, { secret: null })).status, 401);
+  assert.equal((await studioFetch(env, 'GET', studioOriginal, { secret: 'wrong' })).status, 401);
+  const trusted = await studioFetch(env, 'GET', studioOriginal);
+  assert.equal(trusted.status, 200);
+  assert.equal(trusted.headers.get('cache-control'), 'no-store');
+  assert.deepEqual(new Uint8Array(await trusted.arrayBuffer()), bytes);
+  assert.equal((await studioFetch(env, 'HEAD', studioOriginal)).status, 200);
+  assert.equal((await studioFetch(env, 'GET', '/api/ai/studio/assets/ai/original/not-a-generation.png')).status, 404);
+  assert.equal((await studioFetch(env, 'GET', '/api/ai/studio/assets/ai/public/gen.png')).status, 404);
 
   const published = await get(publicKey);
   assert.equal(published.status, 200);

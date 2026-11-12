@@ -57,33 +57,39 @@ export async function screenshotCard(htmlTemplate: string, env: ScreenshotEnv): 
   }
 
   const endpoint = `https://api.cloudflare.com/client/v4/accounts/${env.BROWSER_RENDERING_ACCOUNT_ID}/browser-rendering/screenshot`;
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.BROWSER_RENDERING_API_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      html: htmlTemplate,
-      viewport: {
-        width: 1200,
-        height: 630,
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.BROWSER_RENDERING_API_TOKEN}`,
+        'Content-Type': 'application/json',
       },
-      // Fonts and images load from the network; wait for them before the screenshot.
-      gotoOptions: {
-        waitUntil: 'networkidle0',
-      },
-      screenshotOptions: {
-        type: 'jpeg',
-        quality: 85,
-      },
-    }),
-  });
+      signal: AbortSignal.timeout(30_000),
+      body: JSON.stringify({
+        html: htmlTemplate,
+        viewport: {
+          width: 1200,
+          height: 630,
+        },
+        // Fonts and images load from the network; wait for them before the screenshot.
+        gotoOptions: {
+          waitUntil: 'networkidle0',
+        },
+        screenshotOptions: {
+          type: 'jpeg',
+          quality: 85,
+        },
+      }),
+    });
 
-  if (!response.ok) {
-    console.warn('Browser rendering screenshot failed', response.status, await response.text());
+    if (!response.ok) {
+      console.warn('Browser rendering screenshot failed', response.status, await response.text());
+      return null;
+    }
+
+    return new Uint8Array(await response.arrayBuffer());
+  } catch (error) {
+    console.warn('Browser rendering screenshot failed', error);
     return null;
   }
-
-  return new Uint8Array(await response.arrayBuffer());
 }

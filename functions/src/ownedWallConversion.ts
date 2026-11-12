@@ -93,12 +93,16 @@ export function parseGithubAsset(raw: unknown, path: unknown, options: Migration
  * decoded image must have that size.
  */
 type DownloadPin = {size: number; gitSha?: string; generation?: string; md5?: string};
-async function downloadImage(url: string, pin?: DownloadPin, resolution?: string): Promise<Buffer> {
+type DownloadAuth = {studioSecret: string};
+const AI_ORIGINAL_KEY = /^ai\/original\/(gen_[a-z0-9]+_[a-f0-9]{16})\.png$/;
+
+async function downloadImage(url: string, pin?: DownloadPin, resolution?: string, auth?: DownloadAuth): Promise<Buffer> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 15000);
   try {
-    const response = await fetch(url, {redirect: "manual", signal: controller.signal,
-      headers: {"accept-encoding": "identity"}});
+    const headers: Record<string, string> = {"accept-encoding": "identity"};
+    if (auth?.studioSecret) headers["x-studio-secret"] = auth.studioSecret;
+    const response = await fetch(url, {redirect: "manual", signal: controller.signal, headers});
     if (!response.ok || !response.body) {
       const error = `Raw download failed: ${response.status}`;
       // Request timeouts, rate limits and server failures can recover on retry.
@@ -158,15 +162,36 @@ export const downloadGithubAsset = (asset: GithubAsset): Promise<Buffer> =>
 export const downloadStudioAsset = (asset: GithubAsset): Promise<Buffer> =>
   downloadImage(asset.url, undefined, asset.expectedResolution);
 
+/**
+ * User AI originals are private. Functions reads them through the studio-secret route after `proveAiWall`.
+ * The secret is attached only to this constructed Worker URL, never to the recorded public URL or a redirect.
+ */
+async function downloadAiOriginal(asset: GithubAsset): Promise<Buffer> {
+  if (!AI_ORIGINAL_KEY.test(asset.path) || asset.url !== `${STUDIO_ASSET_BASE}/${asset.path}` ||
+    asset.recordedUrl !== asset.url) {
+    throw new PermanentConversionError("Untrusted AI original URL");
+  }
+  const secret = process.env.STUDIO_SECRET ?? "";
+  if (!secret) throw new PermanentConversionError("STUDIO_SECRET is required to read AI originals");
+  const base = (process.env.STUDIO_WORKER_BASE_URL ?? "").trim().replace(/\/+$/, "") || new URL(STUDIO_ASSET_BASE).origin;
+  return downloadImage(`${base}/api/ai/studio/assets/${asset.path}`, undefined, asset.expectedResolution,
+    {studioSecret: secret});
+}
+
 /** A Firebase Storage original is pinned to the object generation, MD5 and size that the dry run reviewed. */
 export function downloadFirebaseAsset(asset: GithubAsset): Promise<Buffer> {
   if (!asset.storagePin || !asset.size) throw new PermanentConversionError("Firebase Storage asset is not pinned");
   return downloadImage(asset.url, {size: asset.size, ...asset.storagePin});
 }
 
-const fetchAsset = (asset: GithubAsset): Promise<Buffer> => asset.repo === delivery.FIREBASE_STORAGE_REPO ?
-  downloadFirebaseAsset(asset) : [delivery.STUDIO_STORAGE_REPO, AI_STORAGE_REPO].includes(asset.repo) ?
-    downloadStudioAsset(asset) : downloadGithubAsset(asset);
+const fetchAsset = (asset: GithubAsset): Promise<Buffer> => {
+  if (asset.repo === delivery.FIREBASE_STORAGE_REPO) return downloadFirebaseAsset(asset);
+  if (asset.repo === delivery.STUDIO_STORAGE_REPO) return downloadStudioAsset(asset);
+  if (asset.repo === AI_STORAGE_REPO) {
+    return AI_ORIGINAL_KEY.test(asset.path) ? downloadAiOriginal(asset) : downloadStudioAsset(asset);
+  }
+  return downloadGithubAsset(asset);
+};
 
 export type FirebaseObjectMeta = {generation: string; md5Hash: string; size: number};
 

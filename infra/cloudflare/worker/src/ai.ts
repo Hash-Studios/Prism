@@ -2758,17 +2758,23 @@ async function handleStudioAssetDelete(key: string, env: AiEnvBindings): Promise
 }
 
 async function handleStudioAssetRead(key: string, method: string, env: AiEnvBindings): Promise<Response> {
-  if (!/^ai\/studio\/raw\/[A-Za-z0-9_-]+\.(jpg|webp|png)$/.test(key)) {
+  const originalMatch = ORIGINAL_ASSET_KEY_REGEX.exec(key);
+  if (!/^ai\/studio\/raw\/[A-Za-z0-9_-]+\.(jpg|webp|png)$/.test(key) && originalMatch == null) {
     return new Response('Not found', { status: 404, headers: { 'cache-control': 'no-store' } });
   }
-  const object = await env.AI_IMAGES?.get(key);
-  if (object == null) return new Response('Not found', { status: 404, headers: { 'cache-control': 'no-store' } });
+  const bytes = originalMatch != null ? await readAssetBytes(key, env) : null;
+  const object = originalMatch != null ? null : await env.AI_IMAGES?.get(key);
+  if (originalMatch != null ? bytes == null : object == null) {
+    return new Response('Not found', { status: 404, headers: { 'cache-control': 'no-store' } });
+  }
   const headers = {
-    'content-type': object.httpMetadata?.contentType ?? 'application/octet-stream',
+    'content-type': originalMatch != null
+      ? 'image/png'
+      : (object?.httpMetadata?.contentType ?? 'application/octet-stream'),
     'cache-control': 'no-store',
     'x-content-type-options': 'nosniff',
   };
-  return new Response(method === 'HEAD' ? null : object.body, { status: 200, headers });
+  return new Response(method === 'HEAD' ? null : (bytes ?? object?.body ?? null), { status: 200, headers });
 }
 
 async function readBoundedBytes(

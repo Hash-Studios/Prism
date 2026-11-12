@@ -1095,15 +1095,20 @@ async function renderOgImage(
         }
         if (!allowed) return ephemeralRedirect(thumb);
       }
-      const bytes = await screenshotCard(renderOgCardHtml({
-        kind: 'wallpaper',
-        label: 'Wallpaper',
-        title: heading,
-        image: thumb,
-        stats,
-        chip: creatorName ? { photo: '', prefix: 'by', name: creatorName, detail: wall.category || '' } : null,
-      }), env);
-      if (bytes == null) return redirect(thumb, 302);
+      let bytes: Uint8Array | null = null;
+      try {
+        bytes = await screenshotCard(renderOgCardHtml({
+          kind: 'wallpaper',
+          label: 'Wallpaper',
+          title: heading,
+          image: thumb,
+          stats,
+          chip: creatorName ? { photo: '', prefix: 'by', name: creatorName, detail: wall.category || '' } : null,
+        }), env);
+      } catch (error) {
+        console.warn('[catalog] og_screenshot_failed', `${error}`);
+      }
+      if (bytes == null) return ephemeralRedirect(thumb);
       await env.OG_IMAGES?.put(objectKey, bytes, { httpMetadata: { contentType: 'image/jpeg' } });
       return jpeg(bytes);
     })().finally(() => {

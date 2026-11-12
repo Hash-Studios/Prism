@@ -1296,20 +1296,25 @@ function enableCatalogOg(h, { quota = quotaBinding() } = {}) {
   return quota;
 }
 
-function mockCatalogScreenshot() {
+function mockCatalogScreenshot({ status = 200, reject = false, delay = 20 } = {}) {
   let screenshots = 0;
+  let signals = 0;
   const inner = globalThis.fetch;
   globalThis.fetch = async (input, init) => {
     const url = String(input instanceof Request ? input.url : input);
     if (url.includes('/browser-rendering/screenshot')) {
       screenshots += 1;
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      if (init?.signal) signals += 1;
+      if (reject) throw new Error('screenshot failed');
+      if (status !== 200) return new Response('down', { status });
+      await new Promise((resolve) => setTimeout(resolve, delay));
       return new Response(new Uint8Array([0xff, 0xd8, 0xff, 0xd9]));
     }
     return inner(input, init);
   };
   return {
     count: () => screenshots,
+    signals: () => signals,
     restore: () => { globalThis.fetch = inner; },
   };
 }
@@ -1415,18 +1420,61 @@ test('catalog OG stale revalidation does not overwrite a cached jpeg with a rate
   assert.equal(first.status, 200);
   await first.arrayBuffer();
   await h.flush();
+  h.env.OG_IMAGES.objects.clear();
+  let limiterCalls = 0;
   h.env.AI_QUOTA_DO = {
     idFromName: () => 'quota-object',
-    get: () => ({ fetch: async () => Response.json({ ok: true, allowed: false }) }),
+    get: () => ({ fetch: async () => {
+      limiterCalls += 1;
+      return Response.json({ ok: true, allowed: false });
+    } }),
   };
   clock.advance(601);
   const stale = await h.get('/og/wall/W1.jpg');
   assert.equal(stale.status, 200);
   await stale.arrayBuffer();
   await h.flush();
+  assert.equal(limiterCalls, 1);
   const stillJpeg = await h.get('/og/wall/W1.jpg');
   assert.equal(stillJpeg.status, 200);
   assert.equal(stillJpeg.headers.get('content-type'), 'image/jpeg');
   await stillJpeg.arrayBuffer();
   assert.equal(shot.count(), 1);
+});
+
+test('catalog OG falls back ephemerally when the screenshot request is rejected', async (t) => {
+  const h = setup(t);
+  enableCatalogOg(h);
+  const failing = mockCatalogScreenshot({ reject: true });
+  t.after(failing.restore);
+  const first = await h.get('/og/wall/W1.jpg');
+  assert.equal(first.status, 302);
+  assert.equal(first.headers.get('location'), THUMB);
+  assert.equal(first.headers.get('cache-control'), 'no-store');
+  assert.equal(failing.count(), 1);
+  assert.equal(failing.signals(), 1);
+  await h.flush();
+  assert.equal(h.cache.entries.size, 0);
+  failing.restore();
+  const ok = mockCatalogScreenshot();
+  t.after(ok.restore);
+  const second = await h.get('/og/wall/W1.jpg');
+  assert.equal(second.status, 200);
+  assert.equal(second.headers.get('content-type'), 'image/jpeg');
+  assert.equal(ok.count(), 1);
+  await second.arrayBuffer();
+});
+
+test('catalog OG falls back ephemerally when the screenshot returns null', async (t) => {
+  const h = setup(t);
+  enableCatalogOg(h);
+  const shot = mockCatalogScreenshot({ status: 500 });
+  t.after(shot.restore);
+  const response = await h.get('/og/wall/W1.jpg');
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get('location'), THUMB);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.equal(shot.count(), 1);
+  await h.flush();
+  assert.equal(h.cache.entries.size, 0);
 });
