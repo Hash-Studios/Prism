@@ -92,22 +92,30 @@ class WallpaperSearchService {
     PhotoQuery photo, {
     SearchFilters filters = const SearchFilters(),
   }) async {
-    final SearchFilters photoFilters = filters.copyWith(
-      color: photo.topColor,
-      depthOnly: false,
-      spatialOnly: false,
-      source: SearchSource.all,
-      kinds: const <PrismWallKind>{},
-    );
+    final SearchFilters photoFilters = filters.copyWith(color: photo.topColor, depthOnly: false, spatialOnly: false);
     final Future<List<FeedItemEntity>> prism = _prismSearch
         .photoCandidates(photo)
         .then(
           (candidates) => rankPhotoMatches(photo, <PhotoCandidate>[
             for (final PhotoCandidate candidate in candidates)
-              if (photoFilters.acceptsResolution(candidate.wall.core.resolution)) candidate,
+              if (photoFilters.acceptsResolution(candidate.wall.core.resolution) &&
+                  photoFilters.acceptsKinds(candidate.wall))
+                candidate,
           ]),
         )
         .then((walls) => <FeedItemEntity>[for (final wall in walls) PrismFeedItem(id: wall.id, wallpaper: wall)]);
+    // A kind or Prism walls only keeps Wallhaven and Pexels out, so the ranked Prism walls are the whole page.
+    if (photoFilters.prismOnly) {
+      return (
+        page: await _withoutHidden((
+          provider: SearchProviderValue.prism,
+          results: await prism,
+          prismResults: const <FeedItemEntity>[],
+          isLocal: false,
+        )),
+        query: '',
+      );
+    }
     String query = photo.topLabel;
     WallpaperSearchPage? page;
     try {

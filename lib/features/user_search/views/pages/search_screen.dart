@@ -381,6 +381,11 @@ class _SearchScreenState extends State<SearchScreen> {
   /// Applies [next] to the search on screen. A browse with nothing left to list goes back to discovery.
   void _applyFilters(SearchFilters next) {
     setState(() => _filters = next);
+    if (_photoPending && _photo == null) return;
+    if (_photo case final PhotoQuery photo) {
+      _showPhotoResults(photo, _searchId ?? AnalyticsCorrelation.newId());
+      return;
+    }
     if (_submittedQuery.isEmpty && !_filters.listsWithoutQuery) {
       _backToDiscover();
     } else {
@@ -634,13 +639,7 @@ class _SearchScreenState extends State<SearchScreen> {
           prismResults: page.prismResults,
           filters: photo == null
               ? _filters
-              : _filters.copyWith(
-                  color: photo.topColor,
-                  depthOnly: false,
-                  spatialOnly: false,
-                  source: SearchSource.all,
-                  kinds: const <PrismWallKind>{},
-                ),
+              : _filters.copyWith(color: photo.topColor, depthOnly: false, spatialOnly: false),
           isLocal: page.isLocal,
           fromPhoto: photo != null,
           footer: photo == null && _submittedQuery.isNotEmpty && page.results.length + page.prismResults.length <= 5

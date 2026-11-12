@@ -163,7 +163,7 @@ Each kind is off by default. A wall must have every selected kind. Two selected 
 
 - A live wall is a short looping video. The server sets `review` to true only after it verifies the video.
 - A desktop version is a wide version of the wall. The wall stores it in `desktopVariant`.
-- A light and dark wall is part of a colour variant set. The set has a `variantGroupId`. The browse lists only `variantIndex == 0`, so each set shows one time. A text search does not use that index, so it can show more than one wall of a set.
+- A light and dark wall is part of a colour variant set. The set has a `variantGroupId`. The browse lists only `variantIndex == 0`, so each set shows one time. With a colour, the colour query lists every member, because the members of a set have different colours. A text search does not use that index, so it can show more than one wall of a set.
 
 #### Why there is no watch version filter
 
@@ -183,7 +183,7 @@ The query uses the server for one filter. The device checks every filter on the 
 
 | Case | Where it runs | Detail |
 |---|---|---|
-| Empty query, one or more filters | Server, one query | Depth Effect first, then Spatial Scene, then the first kind selected in the order Live, Desktop version, Light and dark, then colour. |
+| Empty query, one or more filters | Server, one query | Depth Effect first, then Spatial Scene, then the first kind selected in the order Live, Desktop version, Light and dark, then colour. Light and dark with a colour uses the colour query. |
 | Colour, Depth Effect, Spatial Scene and kinds | Device | Each wall must pass every filter. A filter that the query used is checked again. |
 | Portrait only and Min resolution | Device | Checked for every Prism query. A wall with an unknown resolution passes. |
 | Reads | Server | A browse with one filter reads the limit. A browse with two or more filters reads 4 times the limit. A text query reads 4 times the limit when it has a filter or more than one word. |
@@ -214,7 +214,7 @@ A wall in review, or a wall that waits for its `releaseAt` time, has `review` fa
 
 #### Discover row
 
-The **Live walls** row in the discover view shows when the discovery load finds at least one live wall. A tap opens search with the Live filter on. The other filters keep their values. The check reads only the newest live wall. If that wall belongs to a blocked creator, the row stays hidden even when an older visible live wall exists.
+The **Live walls** row in the discover view shows when the discovery load finds at least one live wall. A tap opens search with the Live filter on. Other kinds turn off, so the list shows live walls. The other filters keep their values. The check reads only the newest live wall. If that wall belongs to a blocked creator, the row stays hidden even when an older visible live wall exists.
 
 #### Links
 
@@ -236,6 +236,7 @@ A search link holds the query and its filters. For example, `/dashboard/search?q
 - A bad value makes the catalog refuse the link. An unknown kind is one bad value.
 - A colour that is not in the palette opens Search unchanged, preserving any current query and filters.
 - A link with none of these keys opens Search as before.
+- A link with only `source`, `sort`, `res` or `portrait` sets the filters but does not load results. Results load after the user types a query or turns on a kind, a colour, Depth Effect or Spatial Scene.
 - When `depth` and `spatial` are both true, Depth Effect wins. Spatial Scene is dropped.
 - The path is `/dashboard/search`. `/search` is not an app path. The Android manifest and the iOS associated domains list only `/dashboard/search`.
 
@@ -366,7 +367,7 @@ The "From Prism" row uses walls that the backend already labels. It needs no new
 - With labels, the score is half palette closeness and half label overlap. With no labels, the score is the palette closeness.
 - Equal scores keep the query order: colour matches first, then label matches, each newest first.
 
-The resolution and portrait filters apply to the Prism row. The colour filter is replaced by the top photo colour. Depth Effect and Spatial Scene filters do not apply to a photo search.
+The resolution and portrait filters apply to the Prism row. The colour filter is replaced by the top photo colour. Depth Effect and Spatial Scene filters do not apply to a photo search. A kind or **Prism walls only** applies: the photo search skips Wallhaven and Pexels and shows only the ranked Prism walls that pass the filters. **Clear all** on photo results keeps the photo and shows its results again without filters.
 
 #### Wallhaven and Pexels
 

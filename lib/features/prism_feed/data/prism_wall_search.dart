@@ -184,6 +184,7 @@ class PrismWallSearch {
   }
 
   /// One server query for an empty-query list. Depth, then spatial, then a kind, then the colour owns the query.
+  /// Light and dark with a colour leaves the query to the colour.
   Future<List<PrismWallpaper>> _browse(
     int limit, {
     required String? colorId,
@@ -193,8 +194,13 @@ class PrismWallSearch {
   }) {
     if (depthOnly) return _run('depth', limit, _depthFilter, _toWall);
     if (spatialOnly) return _run('spatial', limit, _spatialFilter, _toWall, orderBy: _spatialStrongestThenNewest);
-    if (kinds.isNotEmpty) {
-      final PrismWallKind kind = PrismWallKind.values.firstWhere(kinds.contains);
+    // The members of a colour variant set have different colours, so with a colour the colour query lists every
+    // member and the set is checked on the device.
+    final Iterable<PrismWallKind> serverKinds = PrismWallKind.values.where(
+      (kind) => kinds.contains(kind) && !(kind == PrismWallKind.lightDark && colorId != null),
+    );
+    if (serverKinds.isNotEmpty) {
+      final PrismWallKind kind = serverKinds.first;
       final query = _kindQuery(kind);
       return _run('kind.${kind.name}', limit, query.filter, _toWall, orderBy: query.orderBy);
     }

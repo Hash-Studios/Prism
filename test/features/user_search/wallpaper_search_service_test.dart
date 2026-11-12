@@ -748,6 +748,47 @@ void main() {
       expect(repository.lastPaginationKey, 'search::color:orange');
     });
 
+    test('a photo search with a kind keeps Wallhaven and Pexels out and shows only Prism walls of that kind', () async {
+      final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('wh')]));
+      final pexels = _FakePexelsRepository(Result.success(<PexelsWallpaper>[]));
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => <FakeDocRow>[
+          (
+            id: 'live',
+            data: <String, dynamic>{
+              ..._prismDoc('live', colors: <String>['orange']),
+              'kind': 'live',
+              'live': <String, dynamic>{'video': 'https://prism/live.mp4', 'verified': true},
+            },
+          ),
+          (id: 'still', data: _prismDoc('still', colors: <String>['orange'])),
+        ],
+      );
+      final service = _service(
+        wallhaven: repository.result,
+        wallhavenRepository: repository,
+        pexelsRepository: pexels,
+        firestore: firestore,
+      );
+      final PhotoQuery photo = PhotoQuery(
+        preview: Uint8List(0),
+        palette: <PaletteShare>[(color: paletteColorById('orange')!, share: 1)],
+        labels: const <String>['Sunset'],
+        labelsStatus: PhotoLabelsStatus.found,
+      );
+
+      final result = await service.searchByPhoto(
+        photo,
+        filters: const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live}),
+      );
+
+      expect(repository.calls, 0);
+      expect(pexels.calls, 0);
+      expect(result.page.provider, SearchProviderValue.prism);
+      expect(result.page.results.map((item) => item.id), <String>['live']);
+      expect(result.page.prismResults, isEmpty);
+    });
+
     test('Wallhaven gets the palette hex, and the page cursor is keyed by colour', () async {
       final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[]));
       final service = _service(wallhaven: repository.result, wallhavenRepository: repository);

@@ -307,6 +307,24 @@ void main() {
     expect(tester.getSize(find.byType(SearchGrid)).height, greaterThan(0));
   });
 
+  testWidgets('Clear all on photo results keeps the photo and reruns it without filters', (tester) async {
+    await pumpScreen(tester);
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await settle(tester);
+    await tester.tap(find.byTooltip(en.searchFiltersCount(0)));
+    await settleSheet(tester);
+    await tester.tap(find.text('1440p'));
+    await tester.tap(find.text('Apply'));
+    await settleSheet(tester);
+
+    await tester.tap(find.text(en.searchFilterClearAll));
+    await settle(tester);
+
+    expect(find.byType(PhotoSearchChip), findsOneWidget);
+    expect(find.text('Find creators'), findsNothing);
+    verify(() => service.searchByPhoto(any(), filters: const SearchFilters())).called(greaterThanOrEqualTo(2));
+  });
+
   testWidgets('pick cancelled does nothing', (tester) async {
     when(() => photos.pick()).thenAnswer((_) async => null);
     await pumpScreen(tester);

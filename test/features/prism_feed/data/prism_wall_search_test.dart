@@ -322,6 +322,25 @@ void main() {
       if (pair) 'variantIndex': 0,
     };
 
+    test('Light and dark with a colour lists through the colour query, so a later set member can match', () async {
+      firestore.onQuery = (_) => <FakeDocRow>[
+        (
+          id: 'set-black',
+          data: <String, dynamic>{
+            ...kindDoc('set-black', colors: <String>['black']),
+            'variantGroupId': 'g1',
+            'variantIndex': 1,
+          },
+        ),
+        (id: 'plain-black', data: kindDoc('plain-black', colors: <String>['black'])),
+      ];
+
+      final walls = await search.search('', colorId: 'black', kinds: <PrismWallKind>{PrismWallKind.lightDark});
+
+      expect(firestore.querySpecs.single.sourceTag, 'PrismWallSearch.color');
+      expect(walls.map((wall) => wall.id), <String>['set-black']);
+    });
+
     Map<String, dynamic> gateDoc(String id, String uid) => <String, dynamic>{
       ...kindDoc(id, live: true, desktop: true, pair: true, uid: uid, colors: <String>['blue']),
       'depth': <String, dynamic>{'tier': 'auto'},
