@@ -4497,7 +4497,11 @@ class MemoryR2 {
 
   async get(key) {
     const object = this.objects.get(key);
-    return object == null ? null : { body: object.bytes, httpMetadata: object.httpMetadata };
+    return object == null ? null : {
+      body: object.bytes,
+      httpMetadata: object.httpMetadata,
+      arrayBuffer: async () => object.bytes.slice().buffer,
+    };
   }
 
   async delete(key) {

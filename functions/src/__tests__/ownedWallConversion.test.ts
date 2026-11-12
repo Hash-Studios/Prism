@@ -719,6 +719,7 @@ test("an AI original redirect is not followed with the studio secret", async (t)
     const url = String(input);
     if (url.includes("/api/ai/studio/assets/ai/original/")) {
       assert.equal(new Headers(init?.headers).get("x-studio-secret"), "studio-secret");
+      assert.equal(init?.redirect, "manual");
       return new Response(null, {status: 302, headers: {location: attacker}});
     }
     if (url.startsWith(attacker)) {
