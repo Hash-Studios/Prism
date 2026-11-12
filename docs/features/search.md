@@ -163,7 +163,7 @@ Each kind is off by default. A wall must have every selected kind. Two selected 
 
 - A live wall is a short looping video. The server sets `review` to true only after it verifies the video.
 - A desktop version is a wide version of the wall. The wall stores it in `desktopVariant`.
-- A light and dark wall is part of a colour variant set. The set has a `variantGroupId`. When Light and dark owns the browse query, it lists only `variantIndex == 0`, so each set shows one time. In every other case more than one wall of a set can show. With a colour, the colour query runs instead, because the members of a set have different colours. When Depth Effect, Spatial Scene, Live or Desktop version owns the query, the device checks only `variantGroupId`. A text search also checks only `variantGroupId`.
+- A light and dark wall is part of a colour variant set. The set has a `variantGroupId`. When Light and dark owns the browse query, it lists only `variantIndex == 0`, so each set shows one time. In every other case more than one wall of a set can show. With a colour, Light and dark never owns the query, because the members of a set have different colours. The colour query runs, unless Depth Effect, Spatial Scene, Live or Desktop version owns the query first. When Depth Effect, Spatial Scene, Live or Desktop version owns the query, the device checks only `variantGroupId`. A text search also checks only `variantGroupId`.
 
 #### Why there is no watch version filter
 
