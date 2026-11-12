@@ -2065,11 +2065,12 @@ test('a valid charge succeeds once and a replay returns the stored image without
   const stats = {};
   const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
   const token = await makeToken({ sub: 'alice' });
-  let seen;
+  const bobToken = await makeToken({ sub: 'bob' });
+  const seen = [];
   const restore = mockFal({
     stats,
     firestore: (url, init) => {
-      seen = { url, authorization: new Headers(init.headers).get('authorization') };
+      seen.push({ url, authorization: new Headers(init.headers).get('authorization') });
       return chargeDoc();
     },
   });
@@ -2081,18 +2082,20 @@ test('a valid charge succeeds once and a replay returns the stored image without
     assert.equal(replay.status, 200);
     assert.deepEqual(await replay.json(), firstBody);
     assert.equal((await getChargeEvidence(env, TX_ID, token)).body.status, 'succeeded');
-    assert.equal((await getChargeEvidence(env, TX_ID, await makeToken({ sub: 'bob' }))).status, 404);
+    assert.equal((await getChargeEvidence(env, TX_ID, bobToken)).status, 404);
     assert.equal((await getChargeEvidence(env, TX_ID, null)).status, 401);
   } finally {
     restore();
   }
   assert.equal(stats.fal, 1);
   assert.equal(stats.firestore, 4, 'two generation receipts plus owner and foreign evidence reads');
-  assert.equal(
-    seen.url,
-    `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/coinTransactions/${TX_ID}`,
-  );
-  assert.equal(seen.authorization, `Bearer ${token}`);
+  for (const request of seen) {
+    assert.equal(request.url,
+      `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/coinTransactions/${TX_ID}`);
+  }
+  assert.deepEqual(seen.map((request) => request.authorization), [
+    `Bearer ${token}`, `Bearer ${token}`, `Bearer ${token}`, `Bearer ${bobToken}`,
+  ]);
 });
 
 test('a charge that does not match the caller, tier, ledger state or age is refused and the claim is released', async () => {
