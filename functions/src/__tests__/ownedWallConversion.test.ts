@@ -63,8 +63,8 @@ function installNetwork(t: TestContext, sources: Record<string, Buffer>, sourceH
     }
     const secret = new Headers(init?.headers).get("x-studio-secret");
     fetched.push(url.href);
-    const studioOriginalKey = url.pathname.startsWith("/api/ai/studio/assets/ai/original/")
-      ? url.pathname.slice("/api/ai/studio/assets/".length) : null;
+    const studioOriginalKey = url.pathname.startsWith("/api/ai/studio/assets/ai/original/") ?
+      url.pathname.slice("/api/ai/studio/assets/".length) : null;
     if (studioOriginalKey) {
       if (!secret || secret !== (process.env.STUDIO_SECRET ?? "")) {
         return new Response(JSON.stringify({error: "unauthorized"}), {status: 401});
