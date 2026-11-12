@@ -7,8 +7,9 @@ export const socialBotToken = defineSecret("SOCIAL_TELEGRAM_BOT_TOKEN");
 export const socialOwnerChatId = defineSecret("SOCIAL_TELEGRAM_OWNER_CHAT_ID");
 export const socialTelegramSecrets = [socialBotToken, socialOwnerChatId];
 
-export type ApprovalAction = "approve" | "skip" | "retry" | "drop";
-const ACTION_CODES: Record<string, ApprovalAction> = {a: "approve", s: "skip", r: "retry", d: "drop"};
+export type ApprovalAction = "approve" | "flag" | "skip" | "retry" | "drop";
+// "flag" approves and adds X's sensitive flag.
+const ACTION_CODES: Record<string, ApprovalAction> = {a: "approve", f: "flag", s: "skip", r: "retry", d: "drop"};
 
 export interface ApprovalPress {
   updateId: number; callbackId: string; messageId: number; action: ApprovalAction; postId: string; hash: string;
@@ -36,7 +37,7 @@ export function parsePress(update: any, ownerChatId: string): ApprovalPress | nu
   const query = update?.callback_query;
   if (!query || typeof update.update_id !== "number") return null;
   if (String(query.from?.id) !== ownerChatId || String(query.message?.chat?.id) !== ownerChatId) return null;
-  const match = /^([asrd]):([A-Za-z0-9_-]{1,64}):([a-f0-9]{12})$/.exec(String(query.data ?? ""));
+  const match = /^([afsrd]):([A-Za-z0-9_-]{1,64}):([a-f0-9]{12})$/.exec(String(query.data ?? ""));
   if (!match) return null;
   return {updateId: update.update_id, callbackId: String(query.id), messageId: Number(query.message?.message_id) || 0,
     action: ACTION_CODES[match[1]], postId: match[2], hash: match[3]};

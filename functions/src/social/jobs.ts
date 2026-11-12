@@ -179,7 +179,8 @@ export async function prepareDay(deps: SocialDeps, builders: Builders = defaultB
       const digest = sha256(item.jpeg);
       const r2Key = `social/${postId}/${digest}.jpg`;
       await deps.storage.put("private", r2Key, item.jpeg, {sha256: digest}, "image/jpeg");
-      media.push({r2Key, sha256: digest, bytes: item.jpeg.length, alt: item.alt, sensitive: item.sensitive});
+      media.push({r2Key, sha256: digest, bytes: item.jpeg.length, alt: item.alt, sensitive: item.sensitive,
+        suggestFlag: item.suggestFlag === true});
     }
     const hash = contentHash(media.map((m) => m.sha256), content.text, content.replyText,
       media.map((m) => ({alt: m.alt, sensitive: m.sensitive})));
@@ -214,12 +215,16 @@ async function preview(deps: SocialDeps, ref: admin.firestore.DocumentReference,
     await deps.telegram.sendPhotos([
       `${deps.config.dryRun ? "[DRY RUN] " : ""}${ref.id} · ${post.pipeline} · ${SLOTS[post.slot as Slot].time} IST`,
       post.text, ...(str(post.replyText) ? [`Reply: ${post.replyText}`] : []),
-      `Sensitive flags: ${media.filter((m: admin.firestore.DocumentData) => m.sensitive).length}`,
+      `Sensitive flags: ${media.filter((m: admin.firestore.DocumentData) => m.sensitive === true).length}`,
+      ...(post.pipeline === "grid" ?
+        [`Vision suggests a flag on: ${media.filter((m: admin.firestore.DocumentData) => m.suggestFlag).length} of ${media.length}`] : []),
       `Source: ${post.source.kind} ${post.source.ids.join(", ")}`,
     ].join("\n\n"), images);
     if (post.pipeline === "grid" || post.approval?.required) {
       await deps.telegram.sendButtons(`${ref.id}: post this?`, [
         {label: "Approve", action: "approve", postId: ref.id, hash: str(post.contentHash)},
+        ...(post.pipeline === "grid" ? [{label: "Approve + flag", action: "flag" as const, postId: ref.id,
+          hash: str(post.contentHash)}] : []),
         {label: "Skip", action: "skip", postId: ref.id, hash: str(post.contentHash)},
       ]);
     }
@@ -238,8 +243,20 @@ export async function applyPress(press: ApprovalPress): Promise<string> {
     const post = (await tx.get(ref)).data();
     if (!post || !/^[a-f0-9]{12}$/.test(press.hash)) return "This post changed or is gone.";
     const now = admin.firestore.FieldValue.serverTimestamp();
-    if (press.action === "approve" || press.action === "skip") {
+    if (press.action === "approve" || press.action === "flag" || press.action === "skip") {
       if (!str(post.contentHash).startsWith(press.hash)) return "This post changed or is gone.";
+      if (press.action === "flag" && post.status === "pending_approval" && post.pipeline === "grid") {
+        // Only the flags may change from what the owner previewed.
+        if (storedContentHash(post) !== post.contentHash) return "This post changed or is gone.";
+        // Flags the images Vision suggested, or all of them when it suggested none. The hash then covers the flags.
+        const media = (post.media ?? []) as admin.firestore.DocumentData[];
+        const pick = media.some((m) => m.suggestFlag === true);
+        const flagged = {...post, media: media.map((m) => ({...m, sensitive: !pick || m.suggestFlag === true}))};
+        const hash = storedContentHash(flagged);
+        tx.update(ref, {status: "approved", media: flagged.media, contentHash: hash, approval: {...post.approval,
+          decision: "approve", flagged: true, approvedHash: hash, decidedAt: now}});
+        return "Approved with flag.";
+      }
       if (press.action === "approve" && post.status === "pending_approval") {
         tx.update(ref, {status: "approved", approval: {...post.approval, decision: "approve",
           approvedHash: post.contentHash, decidedAt: now}});
@@ -268,7 +285,7 @@ export async function applyPress(press: ApprovalPress): Promise<string> {
   });
 }
 
-const DECIDED = new Set(["Approved.", "Skipped.", "Will post again.", "Dropped.", "Will reply again.", "Reply dropped."]);
+const DECIDED = new Set(["Approved.", "Approved with flag.", "Skipped.", "Will post again.", "Dropped.", "Will reply again.", "Reply dropped."]);
 
 /**
  * One Telegram webhook update. Applies an owner press at once, shows the result as a toast, and replaces the buttons
