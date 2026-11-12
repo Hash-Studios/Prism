@@ -11,7 +11,7 @@ import {xWeightedLength} from "./x";
 
 export type Pipeline = "grid" | "panorama" | "still";
 
-export interface SocialMedia {jpeg: Buffer; alt: string; sensitive: boolean}
+export interface SocialMedia {jpeg: Buffer; alt: string; sensitive: boolean; /** Vision thinks it needs the flag. */ suggestFlag?: boolean}
 export interface SocialContent {
   pipeline: Pipeline;
   source: {kind: "prism" | "wallhaven"; ids: string[]; tags?: string[]};
@@ -208,8 +208,9 @@ export interface WallhavenWall {id: string; purity: string; path: string; tags: 
 
 /**
  * Grid rules on Vision SafeSearch. Wallhaven's sketchy level already excludes nudity, yet Vision rates almost every
- * sketchy wall adult POSSIBLE or higher. So only adult VERY_LIKELY, the closest to nudity, rejects. Anything adult
- * POSSIBLE or LIKELY, or racy VERY_LIKELY, carries X's sensitive flag, as X's adult content rule asks.
+ * sketchy wall adult POSSIBLE or higher. So only adult VERY_LIKELY, the closest to nudity, rejects. `sensitive` (adult
+ * POSSIBLE or LIKELY, or racy VERY_LIKELY) is only a hint: the owner decides the flag in Telegram, because a flag
+ * makes X hide the post.
  */
 export function gridVisionDecision(safe: Record<string, unknown> | null | undefined):
   {ok: false; reason: string} | {ok: true; sensitive: boolean} {
@@ -306,7 +307,7 @@ export async function gridContent(day: string, exclude: Set<string>, config: {sk
   return {
     pipeline: "grid",
     source: {kind: "wallhaven", ids: picked.map((p) => p.wall.id), tags: picked.flatMap((p) => p.wall.tags)},
-    media: picked.map((p, i) => ({jpeg: p.jpeg, sensitive: p.sensitive,
+    media: picked.map((p, i) => ({jpeg: p.jpeg, sensitive: false, suggestFlag: p.sensitive,
       alt: `Phone wallpaper ${i + 1} of 3${p.wall.tags.length ? `: ${p.wall.tags.slice(0, 4).join(", ")}` : ""}.`})),
     text: rotate(GRID_LINES, day),
     replyText: NO_REPLY,

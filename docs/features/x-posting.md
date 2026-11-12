@@ -55,7 +55,7 @@ The webhook accepts only POST requests and compares the secret in constant time.
 - At most `sketchyPerPost` sketchy walls (default 2).
 - Youth-coded tags reject, including teenage, schoolboy, student, minor, and young-child variants. `blockedTags` and `blockedIds` reject. Grid source tags are retained so current blocklists can be checked again before posting.
 - Vision SafeSearch: `adult` VERY_LIKELY rejects. `violence` or `medical` LIKELY or higher rejects. Any UNKNOWN or missing rating rejects.
-- `adult` POSSIBLE or LIKELY sets X's sensitive flag on that image. `racy` VERY_LIKELY also sets the flag. Approval hashes include these flags, and previews show the count under "Sensitive flags". If X's metadata call fails for any sensitive image, the entire post stops before publication.
+- No image is flagged by default, because X hides a flagged post ("Content warning: Nudity") and its reach drops to almost zero. `adult` POSSIBLE or LIKELY, or `racy` VERY_LIKELY, is only a suggestion: the preview shows "Vision suggests a flag on: N of 3". **Approve** posts with no flag. **Approve + flag** flags the suggested images, or all images when Vision suggested none. The flag changes `contentHash`, and the approval binds to the new hash. If X's metadata call fails for any flagged image, the entire post stops before publication.
 - Cooldowns: Wallhaven walls 180 days, Prism walls 60 days (`socialSeen`).
 - Takedown: delete the post on X and add the Wallhaven id to `blockedIds`.
 
