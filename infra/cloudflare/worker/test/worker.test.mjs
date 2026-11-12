@@ -542,7 +542,7 @@ test('direct app landings preserve encoded query values and reject unsupported w
     '/choose-wallpaper?workflow=photoPreview&workflow=clockPreview',
     '/clock-preview?wallpaperId=wall1&provider=unsupported',
     '/wallpaper/wall1/position?provider=downloaded',
-    '/dashboard/search?q=sunset',
+    '/dashboard/search?query=sunset',
     '/gallery?ids=W1',
     '/gallery?ids=W1,bad%2Fid',
     '/gallery?ids=W1,W2&title=Picks',

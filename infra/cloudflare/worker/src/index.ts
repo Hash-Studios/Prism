@@ -122,6 +122,8 @@ const PAGE_QUERY_KEYS = new Map<string, Set<string>>([
   ['/live-wallpaper', new Set(['wallpaperId', 'source', 'provider'])],
   ['/library', new Set(['tab'])],
   ['/dashboard/home', new Set(['feed'])],
+  // Search link keys. lib/features/user_search/data/search_link.dart checks the values in the app.
+  ['/dashboard/search', new Set(['q', 'kind', 'source', 'color', 'sort', 'res', 'portrait', 'depth', 'spatial'])],
   ['/choose-wallpaper', new Set(['workflow'])],
   ['/debug-panel', new Set(['tab'])],
   ['/admin-review/image', new Set(['wallpaperId', 'source', 'provider'])],
