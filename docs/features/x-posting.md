@@ -17,7 +17,7 @@ Each post lands at its slot time plus or minus up to 15 minutes, uniformly at ra
 
 | Function | When | Does |
 |---|---|---|
-| `socialPrepare` | 07:00 and 10:00 IST | Builds today's missing posts into `socialPosts/{day}_{slot}`, stores the images in R2 (`social/<postId>/<sha256>.jpg`, private bucket), sends previews to Telegram |
+| `socialPrepare` | 22:00 IST for tomorrow; 07:00 and 10:00 IST catch up today | Builds the day's missing posts into `socialPosts/{day}_{slot}`, stores the images in R2 (`social/<postId>/<sha256>.jpg`, private bucket), sends previews to Telegram |
 | `socialPublish` | Every 5 minutes (so the jitter is not rounded to quarter hours) | Posts what is due, reconciles unknown results |
 | `socialTelegramWebhook` | On each button press | Applies the press at once, shows a toast, and replaces the buttons with the outcome |
 | `socialMeasure` | 06:30 IST | Reads X metrics for posts and replies at 24 hours and 7 days into `metrics` |
@@ -56,7 +56,7 @@ The webhook accepts only POST requests and compares the secret in constant time.
 - Youth-coded tags reject, including teenage, schoolboy, student, minor, and young-child variants. `blockedTags` and `blockedIds` reject. Grid source tags are retained so current blocklists can be checked again before posting.
 - Vision SafeSearch: `adult` VERY_LIKELY rejects. `violence` or `medical` LIKELY or higher rejects. Any UNKNOWN or missing rating rejects.
 - No image is flagged by default, because X hides a flagged post ("Content warning: Nudity") and its reach drops to almost zero. `adult` POSSIBLE or LIKELY, or `racy` VERY_LIKELY, is only a suggestion: the preview shows "Vision suggests a flag on: N of 3". **Approve** preserves the current flags, which are shown as "Sensitive flags: N" in the preview. Newly prepared grids have none; older queued posts keep their existing flags. **Approve + flag** flags the suggested images, or all images when Vision suggested none. Before changing flags, the handler checks that the stored content still matches the preview hash. The flag changes `contentHash`, and the approval binds to the new hash. If X's metadata call fails for any flagged image, the entire post stops before publication.
-- Cooldowns: Wallhaven walls 180 days, Prism walls 60 days (`socialSeen`).
+- Cooldowns: Wallhaven walls 180 days, Prism walls 60 days (`socialSeen`). Walls in unfinished queue entries are also excluded, so tomorrow does not repeat today's still-unposted walls.
 - Takedown: delete the post on X and add the Wallhaven id to `blockedIds`.
 
 ## Setup
@@ -70,7 +70,7 @@ The webhook accepts only POST requests and compares the secret in constant time.
     "sketchyPerPost": 2, "autoApprove": {"panorama": false, "still": true}, "blockedTags": [], "blockedIds": []}
    ```
 
-4. Dry run. Every post previews in Telegram and ends as `dry_run`. Nothing goes to X. Each `socialPrepare` run rebuilds today's never-attempted posts with new walls and sends new previews. Deletion rechecks the state in a transaction, so a concurrent publisher claim protects the post. Attempted posts stay intact, including uncertain posts after an owner drop or retry. A live run never replaces an existing post.
+4. Dry run. Every post previews in Telegram and ends as `dry_run`. Nothing goes to X. Each `socialPrepare` run rebuilds the prepared day's never-attempted posts (tomorrow from 21:00 IST, today before then) with new walls and sends new previews. Deletion rechecks the state in a transaction, so a concurrent publisher claim protects the post. Attempted posts stay intact, including uncertain posts after an owner drop or retry. A live run keeps existing content, but retries empty or failed builds (`no_content` or `build_failed`). Owner skips, X failures, and attempted posts are not rebuilt.
 5. Set `dryRun` to `false`.
 
 Kill switch: `enabled: false`.
@@ -90,6 +90,7 @@ Lock screen setup (P3), creator spotlight (P4), video (P6), weekly report. See t
 
 ## Review follow-ups
 
-- Sunday night is built by the 10:00 IST run, after Wall of the Day is picked at 09:00 IST.
+- Each night at 22:00 IST, approval previews for the next day arrive in Telegram (all posts in dry run), so the owner can approve them the night before. A run from 21:00 IST prepares tomorrow. The 07:00 and 10:00 runs build anything still missing for today.
+- Sunday night is built by Sunday's 10:00 IST run, after Wall of the Day is picked at 09:00 IST. Saturday's 22:00 run leaves it out.
 - An owner **Post again** gives the post a fresh posting window, so the old slot's 2-hour expiry does not skip it.
 - The sensitive metadata payload remains a launch blocker until phase 0 validates that X applies the warning. Offline tests prove fail-closed handling of metadata errors, not that X honors the payload.
