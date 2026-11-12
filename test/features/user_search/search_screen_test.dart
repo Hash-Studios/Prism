@@ -949,6 +949,49 @@ void main() {
       expect(find.text(kindNote), findsOneWidget);
     });
 
+    testWidgets('an empty kind-only search names the active kind', (tester) async {
+      await pumpWithScale(tester);
+      when(
+        () => service.search('', filters: liveOnly),
+      ).thenAnswer((_) async => _page(const <FeedItemEntity>[], provider: SearchProviderValue.prism));
+
+      await sendRequest(tester, (query: '', filters: liveOnly));
+
+      expect(find.text(AppLocalizationsEn().accountNoWallpapersForFilters('Live')), findsOneWidget);
+      expect(find.text(AppLocalizationsEn().accountNoWallpapersForFilters('')), findsNothing);
+    });
+
+    testWidgets('a newer link replaces an in-flight search and its filters', (tester) async {
+      await pumpWithScale(tester);
+      final Completer<WallpaperSearchPage> oldSearch = Completer<WallpaperSearchPage>();
+      when(() => service.search('old', filters: liveOnly)).thenAnswer((_) => oldSearch.future);
+      await sendRequest(tester, (query: 'old', filters: liveOnly));
+
+      await sendRequest(tester, (query: 'new', filters: const SearchFilters()));
+      oldSearch.complete(_page(<FeedItemEntity>[_wallpaper('obsolete')]));
+      await tester.pump();
+      await tester.pump();
+
+      final SearchGrid grid = tester.widget<SearchGrid>(find.byType(SearchGrid));
+      expect(grid.query, 'new');
+      expect(grid.filters, const SearchFilters());
+      expect(grid.initialResults.single.id, 'wh-1');
+      expect(kindChip('Live'), findsNothing);
+    });
+
+    testWidgets('back from a kind browse removes kinds before the next tag search', (tester) async {
+      await pumpWithScale(tester);
+      await sendRequest(tester, (query: '', filters: liveOnly));
+      await tester.binding.handlePopRoute();
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byTooltip('Filters'), findsOneWidget);
+      await tester.tap(find.widgetWithText(PrismChip, 'Nature'));
+      await tester.pump();
+      verify(() => service.search('Nature')).called(1);
+    });
+
     testWidgets('the filter button says Filters, 1 on and shows a badge of 1 while one kind is on', (tester) async {
       await pumpWithScale(tester);
       expect(find.byTooltip('Filters'), findsOneWidget);

@@ -1238,6 +1238,50 @@ void main() {
       expect((wallhaven.calls, pexels.calls), (0, 0));
     });
 
+    test('Prism-only service results recheck blocks even when the Prism search block list is stale', () async {
+      final firestore = FakeFirestoreClient(
+        onQuery: (_) => <FakeDocRow>[
+          (
+            id: 'blocked',
+            data: <String, dynamic>{
+              ..._prismDoc('blocked', creatorUid: 'blocked-creator'),
+              'kind': 'live',
+              'live': <String, dynamic>{'video': 'https://prism/live.mp4', 'verified': true},
+            },
+          ),
+        ],
+      );
+      final service = WallpaperSearchService(
+        _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[])),
+        _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
+        SettingsLocalDataSource(InMemoryLocalStore()),
+        PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{})),
+        null,
+        () => KnownBlockedCreators(<String>{'blocked-creator'}),
+      );
+
+      for (final SearchFilters filters in <SearchFilters>[live, const SearchFilters(source: SearchSource.prism)]) {
+        final page = await service.search('sky', filters: filters);
+        expect(page.results, isEmpty);
+        expect(page.prismResults, isEmpty);
+      }
+    });
+
+    test('service limits include fourfold overfetch only when device checks run', () async {
+      final firestore = FakeFirestoreClient();
+      final service = _service(wallhaven: Result.success(<WallhavenWallpaper>[]), firestore: firestore);
+
+      await service.search('sky');
+      await service.search('', filters: live);
+      await service.search('sky', filters: live);
+      await service.search(
+        '',
+        filters: const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live, PrismWallKind.desktop}),
+      );
+
+      expect(firestore.querySpecs.map((spec) => spec.limit), <int>[12, 48, 96, 192]);
+    });
+
     test(
       'the Prism search asks for 12 walls normally, 48 for a kind browse and 24 for a text query with a kind',
       () async {

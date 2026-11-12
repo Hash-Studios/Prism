@@ -79,7 +79,7 @@ A Prism only search skips Wallhaven and Pexels. See [Prism wall filters](#prism-
 
 - The detail screen shows up to 10 tag chips for a Prism or a Wallhaven wallpaper (`wallpaperTags`).
 - A Pexels wallpaper has no tags in the app, so the screen shows no chips for it.
-- A tap calls `openTagSearch`. It sets `pendingTagSearch` and opens the Search tab. `SearchScreen` reads the value, fills the field, and runs the search.
+- A tap calls `openTagSearch`. It sets `pendingSearch` and opens the Search tab. `SearchScreen` reads the value, fills the field, and runs the search.
 
 ### Filters
 
@@ -173,7 +173,7 @@ Each kind is off by default. A wall must have every selected kind. Two selected 
 
 A kind filter, Depth Effect, Spatial Scene or **Prism walls only** makes the search Prism only. Wallhaven and Pexels are not called.
 
-A Prism only search has no next page. The grid cannot load an empty page.
+A Prism only search has no next page. The grid does not request further pages.
 
 When a kind is on, one line under the active filters says `Only Prism walls have these kinds, so Wallhaven and Pexels results are hidden.` The **Prism walls only** switch stays on while a kind is on. The user cannot turn it off.
 
@@ -196,6 +196,8 @@ Limits:
 | Prism only text query | 24 |
 | Prism row of a normal search | 12 |
 
+The reads above are a bounded window, not a complete scan. Device checks can reject every wall in that window, so the first page can be empty even when an older matching wall exists. There is no automatic retry with a larger window.
+
 #### The gate
 
 Every query keeps `review == true`. For a walls query, `FirestoreTrackedClient` also adds six equality checks. `originalProtected` must be true, and `wallpaper_url`, `wallpaper_path`, `wallpaper_sha`, `thumb_path` and `thumb_sha` must be empty.
@@ -208,11 +210,11 @@ A wall in review, or a wall that waits for its `releaseAt` time, has `review` fa
 - The **Prism walls only** switch sits under the kind chips. It is on and disabled while a kind is on.
 - The Depth Effect switch shows on iOS only.
 - **Clear all** in the sheet turns every filter off. It applies at once.
-- The results row has one chip for each filter that is on. A tap on a chip removes that filter. **Clear all** in the row turns every filter off.
+- The results row has chips for colour, Depth Effect, Spatial Scene, kinds and the explicit Prism-only source. A tap on a chip removes that filter. Orientation, resolution and sort remain in the sheet. The filter button count includes every setting that differs from its default. **Clear all** in the row turns every filter off.
 
 #### Discover row
 
-The **Live walls** row in the discover view shows when the discovery load finds at least one live wall. A tap opens search with the Live filter on. The other filters keep their values.
+The **Live walls** row in the discover view shows when the discovery load finds at least one live wall. A tap opens search with the Live filter on. The other filters keep their values. The check reads only the newest live wall. If that wall belongs to a blocked creator, the row stays hidden even when an older visible live wall exists.
 
 #### Links
 
@@ -232,7 +234,7 @@ A search link holds the query and its filters. For example, `/dashboard/search?q
 
 - Default values are left out. A plain search is `/dashboard/search?q=sky`.
 - A bad value makes the catalog refuse the link. An unknown kind is one bad value.
-- A colour that is not in the palette opens Search with no query and no filters.
+- A colour that is not in the palette opens Search unchanged, preserving any current query and filters.
 - A link with none of these keys opens Search as before.
 - When `depth` and `spatial` are both true, Depth Effect wins. Spatial Scene is dropped.
 - The path is `/dashboard/search`. `/search` is not an app path. The Android manifest and the iOS associated domains list only `/dashboard/search`.

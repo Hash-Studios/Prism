@@ -107,6 +107,17 @@ void main() {
       expect(pendingSearch.value, isNull);
     });
 
+    test('the users path keeps the user-search route and queues no wallpaper search', () async {
+      final route = await routeForPageLink(
+        const PageLinkIntent(path: '/dashboard/search/users', rawUri: '/dashboard/search/users'),
+      );
+
+      expect(route, isA<DashboardRoute>());
+      expect(route!.initialChildren!.single, isA<SearchTabRoute>());
+      expect(route.initialChildren!.single.initialChildren!.single, isA<UserSearchRoute>());
+      expect(pendingSearch.value, isNull);
+    });
+
     test('a link with search keys queues its query and filters', () async {
       await routeForPageLink(
         const PageLinkIntent(path: '/dashboard/search?q=sky&kind=live', rawUri: '/dashboard/search?q=sky&kind=live'),
@@ -130,6 +141,21 @@ void main() {
 
       expect(route, isA<DashboardRoute>());
       expect(pendingSearch.value, isNull);
+    });
+
+    test('an unknown palette colour does not apply the other search fields', () async {
+      const previous = (query: 'forest', filters: SearchFilters(source: SearchSource.prism));
+      pendingSearch.value = previous;
+
+      final route = await routeForPageLink(
+        const PageLinkIntent(
+          path: '/dashboard/search?q=sky&kind=live&color=zzzz',
+          rawUri: '/dashboard/search?q=sky&kind=live&color=zzzz',
+        ),
+      );
+
+      expect(route, isA<DashboardRoute>());
+      expect(pendingSearch.value, previous);
     });
 
     test('utm keys are still allowed next to search keys', () {

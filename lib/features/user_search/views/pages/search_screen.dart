@@ -590,6 +590,9 @@ class _SearchScreenState extends State<SearchScreen> {
             if (_filters.color != null) _filters.color!.name.toLowerCase(),
             if (_filters.depthOnly) context.l10n.accountDepthEffect,
             if (_filters.spatialOnly) context.l10n.accountSpatialScene,
+            for (final PrismWallKind kind in PrismWallKind.values)
+              if (_filters.kinds.contains(kind)) prismWallKindLabel(context.l10n, kind),
+            if (_filters.source == SearchSource.prism) context.l10n.searchFilterPrismOnly,
           ];
           final String emptyTitle = _submittedQuery.isNotEmpty
               ? filtered
