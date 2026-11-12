@@ -183,7 +183,7 @@ for (const change of ["source", "recreate", "delete"] as const) {
     });
     await onWallCategorize.run(created(initial));
     assert.deepEqual(store.get("walls/w1"), change === "delete" ? undefined :
-      {wallpaper_url: change === "source" ? `${WALL_URL}?new` : WALL_URL});
+      change === "source" ? {wallpaper_url: `${WALL_URL}?new`} : {...initial});
   });
 }
 

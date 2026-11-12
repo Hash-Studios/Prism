@@ -582,24 +582,24 @@ async function approvalEvent(store: Map<string, Doc>): Promise<Parameters<typeof
   } as unknown as Parameters<typeof onWallApproved.run>[0];
 }
 
+async function submitStudioWall(store: Map<string, Doc>) {
+  const snapshot = await db.doc("walls/WALL1AAAAA").get();
+  return {snapshot, event: {
+    params: {wallId: "WALL1AAAAA"},
+    data: {...snapshot, data: () => store.get("walls/WALL1AAAAA")},
+  } as unknown as Parameters<typeof onWallSubmitted.run>[0]};
+}
+
 test("onWallSubmitted leaves a Studio wall alone: no owner sync, no admin push", async (t) => {
   const {store, send} = walls2(t, studioWall());
-  await onWallSubmitted.run({
-    params: {wallId: "WALL1AAAAA"},
-    data: {data: () => store.get("walls/WALL1AAAAA"), ref: {update: async (u: Doc) =>
-      void store.set("walls/WALL1AAAAA", {...store.get("walls/WALL1AAAAA"), ...u})}},
-  } as unknown as Parameters<typeof onWallSubmitted.run>[0]);
+  await onWallSubmitted.run((await submitStudioWall(store)).event);
   assert.equal(store.get("walls/WALL1AAAAA")?.by, "Prism Studio");
   assert.equal(send.mock.callCount(), 0);
 });
 
 test("a user wall that only claims origin studio still gets the owner sync", async (t) => {
   const {store, send} = walls2(t, studioWall({studioCandidateId: "d20261012-9"}));
-  await onWallSubmitted.run({
-    params: {wallId: "WALL1AAAAA"},
-    data: {data: () => store.get("walls/WALL1AAAAA"), ref: {update: async (u: Doc) =>
-      void store.set("walls/WALL1AAAAA", {...store.get("walls/WALL1AAAAA"), ...u})}},
-  } as unknown as Parameters<typeof onWallSubmitted.run>[0]);
+  await onWallSubmitted.run((await submitStudioWall(store)).event);
   assert.equal(store.get("walls/WALL1AAAAA")?.by, "Someone Else");
   assert.equal(send.mock.callCount(), 1, "the spoofed Studio wall gets one generic private-session alert");
 });
@@ -608,12 +608,13 @@ test("onWallSubmitted stops before owner sync or notification when the candidate
   const {store, send} = walls2(t, studioWall());
   failStudioCandidateRead(t);
   const updates: Doc[] = [];
-  await assert.rejects(onWallSubmitted.run({
-    params: {wallId: "WALL1AAAAA"},
-    data: {data: () => store.get("walls/WALL1AAAAA"), ref: {update: async (u: Doc) => {
-      updates.push(u);
-    }}},
-  } as unknown as Parameters<typeof onWallSubmitted.run>[0]), /candidate read failed/);
+  const {snapshot, event} = await submitStudioWall(store);
+  const originalUpdate = snapshot.ref.update.bind(snapshot.ref);
+  t.mock.method(snapshot.ref, "update", async (u: Doc) => {
+    updates.push(u);
+    return originalUpdate(u);
+  });
+  await assert.rejects(onWallSubmitted.run(event), /candidate read failed/);
   assert.deepEqual(updates, []);
   assert.equal(send.mock.callCount(), 0);
 });

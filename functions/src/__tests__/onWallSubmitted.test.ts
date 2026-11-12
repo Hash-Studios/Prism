@@ -62,17 +62,44 @@ test("the username fills in when the profile has no name, and nothing is written
   await fire(first.store);
   assert.equal(first.store.get("walls/w1")?.by, "RealMaker");
 
-  const updates: Doc[] = [];
-  const matching = installFakeDb(t, {
-    "usersv2/maker": {email: "maker@example.com", name: "Real Maker", profilePhoto: "https://p/real.png"},
+  withGithubRepo(t);
+  const sha = "a".repeat(40);
+  const thumbSha = "b".repeat(40);
+  const originalUrl = `${RAW}/a.jpg`;
+  const thumbUrl = `${RAW}/thumb_a.jpg`;
+  const sameWall = wall({
+    by: "Real Maker", userPhoto: "https://p/real.png",
+    wallpaper_url: originalUrl, wallpaper_path: "a.jpg", wallpaper_sha: sha, wallpaper_source_kind: "github",
+    wallpaper_thumb: thumbUrl, thumb_path: "thumb_a.jpg", thumb_sha: thumbSha, thumb_source_kind: "github",
   });
-  const sameWall = wall({by: "Real Maker", userPhoto: "https://p/real.png"});
-  matching.set("walls/w1", sameWall);
+  const matching = setup(t, {name: "Real Maker", profilePhoto: "https://p/real.png"}, sameWall);
+  for (const [key, value] of Object.entries({
+    ...stillProof("a.jpg", sha, originalUrl),
+    ...stillProof("thumb_a.jpg", thumbSha, thumbUrl),
+  })) matching.store.set(key, value);
+  const updates: Doc[] = [];
+  const snapshot = await db.doc("walls/w1").get();
+  const originalUpdate = snapshot.ref.update.bind(snapshot.ref);
+  t.mock.method(snapshot.ref, "update", async (update: Doc) => {
+    updates.push(update);
+    return originalUpdate(update);
+  });
   await onWallSubmitted.run({
     params: {wallId: "w1"},
-    data: {data: () => sameWall, ref: {update: async (update: Doc) => updates.push(update)}},
+    data: {...snapshot, data: () => matching.store.get("walls/w1")},
   } as unknown as Parameters<typeof onWallSubmitted.run>[0]);
   assert.deepEqual(updates, []);
+  const current = matching.store.get("walls/w1")!;
+  assert.equal(current.by, "Real Maker");
+  assert.equal(current.userPhoto, "https://p/real.png");
+  assert.equal(current.wallpaper_url, originalUrl);
+  assert.equal(current.wallpaper_path, "a.jpg");
+  assert.equal(current.wallpaper_sha, sha);
+  assert.equal(current.wallpaper_source_kind, "github");
+  assert.equal(current.wallpaper_thumb, thumbUrl);
+  assert.equal(current.thumb_path, "thumb_a.jpg");
+  assert.equal(current.thumb_sha, thumbSha);
+  assert.equal(current.thumb_source_kind, "github");
 });
 
 test("a wall of an unknown owner keeps its fields", async (t) => {
