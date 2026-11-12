@@ -25,7 +25,10 @@ export const onWallCategorize = onDocumentCreated(
     }
 
     const wallId = event.params.wallId;
-    const current = event.data.ref ? (await event.data.ref.get()).data() ?? data : data;
+    const live = event.data.ref ? await event.data.ref.get() : undefined;
+    if (!live?.exists) return;
+    const current = live.data();
+    if (!current) return;
     const trustedOriginal = trustedWallImageUrl(current, "original");
     const trustedThumb = trustedWallImageUrl(current, "thumb");
     const wallpaperUrl = trustedOriginal ?? trustedThumb ?? "";

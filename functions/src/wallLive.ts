@@ -280,7 +280,7 @@ async function ownsReference(tx: admin.firestore.Transaction, wall: admin.firest
   return !!email && !email.includes("/") && await verifiedUidForEmail(email, tx) === uid;
 }
 
-async function rawPosterReferenced(tx: admin.firestore.Transaction, asset: StoredUpload,
+export async function rawPosterReferenced(tx: admin.firestore.Transaction, asset: StoredUpload,
   options: {ignoreUnpublished?: boolean} = {}): Promise<boolean> {
   const role = asset.previewObjectId ? "thumb" : "wallpaper";
   const collections = options.ignoreUnpublished ? ["walls"] : ["walls", "rejectedWalls"];

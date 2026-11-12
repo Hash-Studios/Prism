@@ -21,6 +21,7 @@ import {HttpsError} from "firebase-functions/v2/https";
 
 const GITHUB_RAW_HOST = "raw.githubusercontent.com";
 const studioSecret = defineSecret("STUDIO_SECRET");
+const githubToken = defineSecret("GH_TOKEN");
 
 /** True when `url` is a https link on the GitHub raw host, where every upload of the app is served. */
 export function isGithubRawUrl(url: unknown): boolean {
@@ -44,7 +45,7 @@ export const onWallSubmitted = onDocumentCreated(
   {
     document: "walls/{wallId}",
     region: REGION,
-    secrets: [studioSecret, ...r2Secrets],
+    secrets: [studioSecret, githubToken, ...r2Secrets],
     timeoutSeconds: 120,
     memory: "512MiB",
     concurrency: 1,
@@ -98,7 +99,6 @@ export const onWallSubmitted = onDocumentCreated(
       }
     }
     const wallTitle = str(data.title) || "Untitled";
-    const wallThumb = str(data.wallpaper_thumb);
 
     const aiSource = parseAiSource(data);
     if (aiSource) {
@@ -119,6 +119,8 @@ export const onWallSubmitted = onDocumentCreated(
         throw err;
       }
     }
+
+    const wallThumb = str((await event.data?.ref.get())?.data()?.wallpaper_thumb);
 
     let artistName = str(data.by) || "A user";
     let isPremium = true;

@@ -35,9 +35,12 @@ beforeEach((t) => {
   });
 });
 
-const created = (data: Doc) => ({
+const created = (data: Doc, options: {ref?: boolean} = {}) => ({
   params: {wallId: "w1"},
-  data: {data: () => data, createTime: admin.firestore.Timestamp.fromMillis(1)},
+  data: {
+    ...(options.ref === false ? {} : {ref: db.doc("walls/w1")}),
+    data: () => data, createTime: admin.firestore.Timestamp.fromMillis(1),
+  },
 }) as unknown as Parameters<typeof onWallCategorize.run>[0];
 
 function setup(
@@ -311,4 +314,34 @@ test("categorize does not pass a foreign GitHub raw URL to Vision, depth or spat
   assert.equal(fetchMock.mock.callCount(), 0);
   assert.equal(depthMock.mock.callCount(), 0);
   assert.equal(spatialMock.mock.callCount(), 0);
+});
+
+test("categorize returns when the live wall is gone before analysis starts", async (t) => {
+  const {store, depthMock, spatialMock, fetchMock} = setup(t, ghWall(), async () => DETECTED);
+  const labels = t.mock.method(wallCategory, "detectLabelsInImage", async () => ["Mountain"]);
+  const snapshot = await db.doc("walls/w1").get();
+  store.delete("walls/w1");
+  await onWallCategorize.run({
+    params: {wallId: "w1"},
+    data: snapshot,
+  } as unknown as Parameters<typeof onWallCategorize.run>[0]);
+  assert.equal(fetchMock.mock.callCount(), 0);
+  assert.equal(depthMock.mock.callCount(), 0);
+  assert.equal(spatialMock.mock.callCount(), 0);
+  assert.equal(labels.mock.callCount(), 0);
+  assert.equal(store.has("walls/w1"), false);
+});
+
+test("categorize does not fall back to the create event when the live snapshot has no ref", async (t) => {
+  const {store, depthMock, spatialMock, fetchMock} = setup(t, ghWall(), async () => DETECTED);
+  const labels = t.mock.method(wallCategory, "detectLabelsInImage", async () => ["Mountain"]);
+  await onWallCategorize.run(created(ghWall(), {ref: false}));
+  assert.equal(fetchMock.mock.callCount(), 0);
+  assert.equal(depthMock.mock.callCount(), 0);
+  assert.equal(spatialMock.mock.callCount(), 0);
+  assert.equal(labels.mock.callCount(), 0);
+  assert.equal(store.get("walls/w1")?.category, undefined);
+  assert.equal(store.get("walls/w1")?.depth, undefined);
+  assert.equal(store.get("walls/w1")?.spatial, undefined);
+  assert.equal(store.get("walls/w1")?.visionLabels, undefined);
 });

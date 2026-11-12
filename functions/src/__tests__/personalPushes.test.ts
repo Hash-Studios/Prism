@@ -192,6 +192,7 @@ test("signed-out admins keep wall-submission inbox entries without admin pushes"
   } as unknown as Parameters<typeof onWallSubmitted.run>[0]);
   assert.equal(inbox.length, 1);
   assert.deepEqual(topics, []);
+  assert.equal((inbox[0] as {data?: {imageUrl?: string}}).data?.imageUrl, "");
   assert.equal(wall.wallpaper_url, "");
   assert.equal(wall.wallpaper_path, "");
   assert.equal(wall.wallpaper_sha, "");
