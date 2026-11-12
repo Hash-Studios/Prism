@@ -394,14 +394,25 @@ void main() {
       expect(result!.kinds, unorderedEquals(<PrismWallKind>[PrismWallKind.live, PrismWallKind.lightDark]));
     });
 
-    testWidgets('with a kind selected the Prism walls only switch is on and disabled', (tester) async {
-      await openSheet(tester, const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.desktop}), (_) {});
+    testWidgets('with a kind selected the switch is on, and turning it off clears the kinds', (tester) async {
+      SearchFilters? result;
+      await openSheet(
+        tester,
+        const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.desktop}),
+        (value) => result = value,
+      );
 
       expect(tester.widget<PrismSwitchRow>(prismOnlyRow).value, isTrue);
-      expect(tester.widget<PrismSwitchRow>(prismOnlyRow).onChanged, isNull);
-      final Switch control = tester.widget<Switch>(find.descendant(of: prismOnlyRow, matching: find.byType(Switch)));
-      expect(control.value, isTrue);
-      expect(control.onChanged, isNull);
+      await tester.ensureVisible(prismOnlyRow);
+      await tester.tap(find.descendant(of: prismOnlyRow, matching: find.byType(Switch)));
+      await tester.pump();
+      expect(tester.widget<PrismSwitchRow>(prismOnlyRow).value, isFalse);
+      expect(tester.widget<PrismChip>(kindChip('Desktop version')).selected, isFalse);
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      expect(result!.kinds, isEmpty);
+      expect(result!.source, SearchSource.all);
     });
 
     testWidgets('turning on Prism walls only with no kinds and Apply returns the Prism source', (tester) async {

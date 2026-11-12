@@ -175,7 +175,7 @@ A kind filter, Depth Effect, Spatial Scene or **Prism walls only** makes the sea
 
 A Prism only search has no next page. The grid does not request further pages.
 
-When a kind is on, one line under the active filters says `Only Prism walls have these kinds, so Wallhaven and Pexels results are hidden.` The **Prism walls only** switch stays on while a kind is on. The user cannot turn it off.
+When a kind is on, one line under the active filters says `Only Prism walls have these kinds, so Wallhaven and Pexels results are hidden.` The **Prism walls only** switch is on while a kind is on. When the user turns it off, the kinds turn off too.
 
 #### Server and device checks
 
@@ -207,7 +207,7 @@ A wall in review, or a wall that waits for its `releaseAt` time, has `review` fa
 #### Filter sheet and results row
 
 - A tap on a kind chip turns that kind on or off.
-- The **Prism walls only** switch sits under the kind chips. It is on and disabled while a kind is on.
+- The **Prism walls only** switch sits under the kind chips. It is on while a kind is on. Turning it off turns every kind off.
 - The Depth Effect switch shows on iOS only.
 - **Clear all** in the sheet turns every filter off. It applies at once.
 - The results row has chips for colour, Depth Effect, Spatial Scene, kinds and the explicit Prism-only source. A tap on a chip removes that filter. Orientation, resolution and sort remain in the sheet. The filter button count includes every setting that differs from its default. **Clear all** in the row turns every filter off.

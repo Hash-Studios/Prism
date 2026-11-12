@@ -229,15 +229,16 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                 ),
             ],
           ),
-          // A kind filter already shows Prism walls only, so the switch shows on and cannot be turned off.
+          // A kind filter shows Prism walls only, so the switch is on. Turning it off turns the kinds off too.
           PrismSwitchRow(
             padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
             title: context.l10n.searchFilterPrismOnly,
             subtitle: context.l10n.searchFilterPrismOnlySubtitle,
             value: _source == SearchSource.prism || _kinds.isNotEmpty,
-            onChanged: _kinds.isNotEmpty
-                ? null
-                : (value) => setState(() => _source = value ? SearchSource.prism : SearchSource.all),
+            onChanged: (value) => setState(() {
+              _source = value ? SearchSource.prism : SearchSource.all;
+              if (!value) _kinds = const <PrismWallKind>{};
+            }),
           ),
         ],
       ),

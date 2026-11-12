@@ -268,7 +268,8 @@ class _TrailingAction extends StatelessWidget {
   /// The width this action takes in the header for [label].
   static double width(BuildContext context, String label) {
     final TextPainter painter = TextPainter(
-      text: TextSpan(text: label, style: PrismTextStyles.button),
+      // Measure with the inherited font, as the label renders, so a two-word label does not wrap.
+      text: TextSpan(text: label, style: DefaultTextStyle.of(context).style.merge(PrismTextStyles.button)),
       maxLines: 1,
       textDirection: Directionality.of(context),
       textScaler: MediaQuery.textScalerOf(context),

@@ -7,6 +7,7 @@ import 'package:Prism/core/widgets/prism_sheet/device_corner_radius.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smooth_sheets/smooth_sheets.dart';
 
@@ -312,6 +313,31 @@ void main() {
     await tester.pumpAndSettle();
     expect(taps, 1);
     expect(find.text('Filters'), findsOneWidget);
+  });
+
+  testWidgets('a two-word trailing action stays on one line with the inherited text style', (tester) async {
+    await tester.pumpWidget(
+      _app(
+        (context) => showPrismSheet<void>(
+          context,
+          builder: (_) => DefaultTextStyle.merge(
+            style: const TextStyle(letterSpacing: 4),
+            child: PrismSheetBody(
+              title: 'Filters',
+              trailingAction: PrismSheetAction(label: 'Clear all', onTap: () {}),
+            ),
+          ),
+        ),
+      ),
+    );
+    await _open(tester);
+    final RenderParagraph label = tester.renderObject<RenderParagraph>(find.text('Clear all'));
+    expect(label.didExceedMaxLines, isFalse);
+    expect(
+      label.getBoxesForSelection(const TextSelection(baseOffset: 0, extentOffset: 9)).map((box) => box.top).toSet(),
+      hasLength(1),
+      reason: 'every glyph sits on one line',
+    );
   });
 
   testWidgets('showPrismConfirm resolves true only from the confirm button', (tester) async {
