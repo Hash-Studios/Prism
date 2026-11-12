@@ -14,10 +14,10 @@ void main() {
   group('round trip', () {
     final List<(String, SearchFilters)> cases = <(String, SearchFilters)>[
       ('default filters', const SearchFilters()),
-      ('live kind', SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live})),
+      ('live kind', const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live})),
       (
         'desktop and light-dark kinds, Prism only',
-        SearchFilters(
+        const SearchFilters(
           kinds: <PrismWallKind>{PrismWallKind.desktop, PrismWallKind.lightDark},
           source: SearchSource.prism,
         ),
@@ -61,7 +61,7 @@ void main() {
     test('kinds are comma separated in kind order, and the comma is encoded', () {
       expect(
         searchLinkPath(
-          SearchFilters(kinds: <PrismWallKind>{PrismWallKind.lightDark, PrismWallKind.live}).toLink('sky'),
+          const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.lightDark, PrismWallKind.live}).toLink('sky'),
         ),
         '/dashboard/search?q=sky&kind=live%2Clight-dark',
       );
@@ -94,7 +94,10 @@ void main() {
         const PageLinkIntent(path: '/dashboard/search?q=sky&kind=live', rawUri: '/dashboard/search?q=sky&kind=live'),
       );
 
-      expect(pendingSearch.value, (query: 'sky', filters: SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live})));
+      expect(pendingSearch.value, (
+        query: 'sky',
+        filters: const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live}),
+      ));
     });
 
     test('an unknown palette colour matches the catalog but queues no search', () async {

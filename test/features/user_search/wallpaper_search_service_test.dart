@@ -320,9 +320,7 @@ void main() {
 
     test('unblocking a creator restores Prism results excluded before caching', () async {
       final blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{'creator-id'});
-      final firestore = FakeFirestoreClient(
-        onQuery: (spec) => <FakeDocRow>[(id: 'p1', data: _prismDoc('p1', creatorUid: 'creator-id'))],
-      );
+      final firestore = FakeFirestoreClient(onQuery: (spec) => <FakeDocRow>[(id: 'p1', data: _prismDoc('p1'))]);
       GetIt.instance.registerSingleton<UserBlockRepository>(blocks);
       final service = WallpaperSearchService(
         _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')])),
@@ -368,9 +366,7 @@ void main() {
     test('a cached page waits for the active block list before returning creators', () async {
       final initialBlocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
       GetIt.instance.registerSingleton<UserBlockRepository>(initialBlocks);
-      final firestore = FakeFirestoreClient(
-        onQuery: (spec) => <FakeDocRow>[(id: 'p1', data: _prismDoc('p1', creatorUid: 'creator-id'))],
-      );
+      final firestore = FakeFirestoreClient(onQuery: (spec) => <FakeDocRow>[(id: 'p1', data: _prismDoc('p1'))]);
       final service = WallpaperSearchService(
         _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')])),
         _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),

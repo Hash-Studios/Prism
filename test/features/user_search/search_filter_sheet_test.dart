@@ -442,13 +442,7 @@ void main() {
       );
       expect(
         tester.getSemantics(find.bySemanticsLabel('Desktop version')),
-        matchesSemantics(
-          label: 'Desktop version',
-          isButton: true,
-          hasSelectedState: true,
-          isSelected: false,
-          hasTapAction: true,
-        ),
+        matchesSemantics(label: 'Desktop version', isButton: true, hasSelectedState: true, hasTapAction: true),
       );
       handle.dispose();
     });

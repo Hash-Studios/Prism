@@ -154,8 +154,8 @@ void main() {
   });
 
   test('equality ignores the order of kinds, and so does the hash code', () {
-    final SearchFilters live = SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live, PrismWallKind.desktop});
-    final SearchFilters desktop = SearchFilters(kinds: <PrismWallKind>{PrismWallKind.desktop, PrismWallKind.live});
+    const SearchFilters live = SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live, PrismWallKind.desktop});
+    const SearchFilters desktop = SearchFilters(kinds: <PrismWallKind>{PrismWallKind.desktop, PrismWallKind.live});
 
     expect(live, desktop);
     expect(live.hashCode, desktop.hashCode);
