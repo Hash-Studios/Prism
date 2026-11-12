@@ -2941,19 +2941,27 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     DownloadVariant? variantWith(List<ReadabilityFix> fixes) {
       if (fixes.isEmpty || desktop != null) return variant;
       final Size screenPixels = _screenPixels(context);
-      Future<String> fix(String path) async =>
-          (await PlacedWallpaper.render(path, WallpaperPlacement(fixes: fixes), screenPixels)).path;
+      final WallpaperPlacement placement = WallpaperPlacement(fixes: fixes);
+      Future<String> fix(String path) async => (await PlacedWallpaper.render(path, placement, screenPixels)).path;
+      // Deletes only the folder of the copy [fix] rendered, never the source or a tinted copy.
+      Future<void> discard(String rendered) => PlacedWallpaper(path: rendered, placement: placement).discard();
 
       final DownloadVariant? base = variant;
       final String key = <String?>[base?.key, readabilityFixesKey(fixes)].nonNulls.join('-');
       if (base == null) {
-        return DownloadVariant(key: key, prepare: () => fix(source), prepareAuthorized: localFile == null ? fix : null);
+        return DownloadVariant(
+          key: key,
+          prepare: () => fix(source),
+          prepareAuthorized: localFile == null ? fix : null,
+          discard: discard,
+        );
       }
       final Future<String> Function(String)? baseAuthorized = base.prepareAuthorized;
       return DownloadVariant(
         key: key,
         prepare: () async => fix(await base.prepare()),
         prepareAuthorized: baseAuthorized == null ? null : (authorized) async => fix(await baseAuthorized(authorized)),
+        discard: discard,
       );
     }
 

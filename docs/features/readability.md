@@ -80,7 +80,7 @@ One analysis of a 108 x 234 frame takes less than 1 ms on a laptop. The test bou
 A fix never changes the source wall. It always writes a new file.
 
 - Android: **Apply** calls `SetScreenRequest.onApplyFixes`. The flow gets consent for the original first (as Adjust does), then `PlacedWallpaper.render` draws the original with the placement and the fixes. Set then uses that file, as after the Position studio. A new placement from the studio clears the fixes, and the tip can show again for the new image.
-- iOS: **Apply** draws the fix on the preview. **Save** passes the fixes to `saveAction`. The detail screen adds them to the `DownloadVariant` (after the colour variation, when there is one). The saved copy has the screen size. Fixed copies stay in the temp folder because a previous Save may still be reading them.
+- iOS: **Apply** draws the fix on the preview. **Save** passes the fixes to `saveAction`. The detail screen adds them to the `DownloadVariant` (after the colour variation, when there is one). The saved copy has the screen size. Each Save renders its own copy in its own temp folder (`prism_edit/position_<random>/`). The Save that made the copy owns it. When the native save returns, `DownloadButton` calls `DownloadVariant.discard`, and the copy's folder is deleted. This occurs before the iOS set guide opens. When the Save ends in a different way (failure or cancel), the discard occurs at the end of the tap. A new Save never deletes the copy of an earlier Save, because the earlier Save can still read it. The discard deletes only the rendered folder. It does not delete the source wall or the tinted copy.
 - Day and night: **Apply** adds the fix to the slot wall (`DayNightWall.fixes`, saved in the pair). When the mode publishes, the repository renders a copy to `<app support>/prism/offline/assets/day_night_fixed/<slot>-<random>/wall.png`. Each publish uses new folders. After the schedule starts (Android) or the snapshot is saved (iOS), the repository deletes the folders of older publishes. Unpublish deletes the rest. Android schedules that file. iOS adds it to the Shortcuts snapshot as the asset `daynight-fixed-<slot>`.
 
 The fix works for Home, Lock and Both, because Set uses one file for the chosen target. It works for both walls of a day and night pair.
@@ -150,4 +150,5 @@ A set whose wall only a fix shaped tracks `set_wall` with `fit` = `readability_f
 ## Test
 
 - `fvm flutter test --no-pub test/features/readability test/features/day_night`
+- `fvm flutter test --no-pub test/features/ads/download_button_gate_test.dart --plain-name 'a prepared copy'` (the iOS Save copy is deleted after success, failure and cancel, and two Saves that overlap keep their own copies)
 - On a device: open a wall with a bright or busy top, tap **Set**, pick **Lock screen**. The clock chip shows. Tap it, tap **Apply**, then **Set**. The lock screen clock reads over the dim.

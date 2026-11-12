@@ -1446,6 +1446,363 @@ void main() {
     });
   });
 
+  group('a prepared copy', () {
+    late List<String> discarded;
+    late int renders;
+
+    setUp(() {
+      discarded = <String>[];
+      renders = 0;
+    });
+
+    DownloadVariant rendered() => DownloadVariant(
+      key: 'tint-ff8800',
+      prepare: () async {
+        final Directory folder = Directory('${tempDir.path}/position_${renders++}')..createSync();
+        return File(tinted).copySync('${folder.path}/placement.png').path;
+      },
+      discard: (String path) async {
+        discarded.add(path);
+        await File(path).parent.delete(recursive: true);
+      },
+    );
+
+    String preparedPath(int render) => '${tempDir.path}/position_$render/placement.png';
+
+    DownloadVariant authorizedRendered(List<String> sources) {
+      final DownloadVariant copy = rendered();
+      return DownloadVariant(
+        key: copy.key,
+        prepare: () => throw StateError('Protected originals must be authorized before rendering.'),
+        prepareAuthorized: (String source) {
+          sources.add(source);
+          return copy.prepare();
+        },
+        discard: copy.discard,
+      );
+    }
+
+    testWidgets('a successful Save deletes its copy once, after the save read it', (tester) async {
+      bool readable = false;
+      onEnqueue = () => readable = File((enqueued.last! as DownloadRequest).link).existsSync();
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+      await pumpUntil(tester, () => !File(preparedPath(0)).existsSync());
+      await settle(tester);
+
+      expect(results().single.result, 'success');
+      expect((enqueued.single! as DownloadRequest).link, preparedPath(0));
+      expect(readable, isTrue);
+      expect(Directory('${tempDir.path}/position_0').existsSync(), isFalse);
+      expect(discarded, <String>[preparedPath(0)]);
+    });
+
+    testWidgets('a failed Save deletes its copy once', (tester) async {
+      enqueueSucceeds = false;
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+      await pumpUntil(tester, () => !File(preparedPath(0)).existsSync());
+      await settle(tester);
+
+      expect(results().single.reason, 'enqueue_failed');
+      expect(discarded, <String>[preparedPath(0)]);
+    });
+
+    testWidgets('a platform exception deletes its copy once', (tester) async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+        enqueueChannel,
+        (message) async {
+          enqueued.add((message! as List<Object?>).single);
+          return <Object?>['DOWNLOAD_FAILED', 'native failure', null];
+        },
+      );
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+      await pumpUntil(tester, () => discarded.isNotEmpty);
+      await settle(tester);
+
+      expect(results().single.reason, 'platform_error');
+      expect(discarded, <String>[preparedPath(0)]);
+      expect(File(preparedPath(0)).existsSync(), isFalse);
+    });
+
+    testWidgets('an account switch during preparation discards without enqueueing', (tester) async {
+      final DownloadVariant copy = rendered();
+      await pump(
+        tester,
+        variant: DownloadVariant(
+          key: copy.key,
+          prepare: () async {
+            final String path = await copy.prepare();
+            signOut();
+            return path;
+          },
+          discard: copy.discard,
+        ),
+      );
+      await tapSave(tester);
+      await pumpUntil(tester, () => discarded.isNotEmpty);
+      await settle(tester);
+
+      expect(results().single.reason, 'account_changed');
+      expect(enqueued, isEmpty);
+      expect(discarded, <String>[preparedPath(0)]);
+      expect(File(preparedPath(0)).existsSync(), isFalse);
+    });
+
+    testWidgets('backgrounding a Save keeps its copy until native completion', (tester) async {
+      final Completer<bool> save = holdSaves();
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+      expect(enqueued, hasLength(1));
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await settle(tester);
+      expect(File(preparedPath(0)).existsSync(), isTrue);
+      expect(discarded, isEmpty);
+
+      save.complete(true);
+      await pumpUntil(tester, () => !File(preparedPath(0)).existsSync());
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await settle(tester);
+
+      expect(discarded, <String>[preparedPath(0)]);
+      expect(File(preparedPath(0)).existsSync(), isFalse);
+    });
+
+    testWidgets('an account switch during native Save keeps its copy readable until the reply', (tester) async {
+      final Completer<bool> save = holdSaves();
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+      expect(enqueued, hasLength(1));
+
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'account-b'
+        ..loggedIn = true;
+      await settle(tester);
+
+      final DownloadRequest request = enqueued.single! as DownloadRequest;
+      expect(request.link, preparedPath(0));
+      expect(File(request.link).readAsBytesSync(), File(tinted).readAsBytesSync());
+      expect(discarded, isEmpty);
+
+      save.complete(true);
+      await pumpUntil(tester, () => !File(preparedPath(0)).existsSync());
+      await settle(tester);
+
+      expect(discarded, <String>[preparedPath(0)]);
+      expect(enqueued, hasLength(1));
+    });
+
+    testWidgets('a protected Save reads its authorized copy before the reply and discards before the iOS guide', (
+      tester,
+    ) async {
+      backend.originalAssets['wall-1'] = (premium: true, coins: 20);
+      backend.originalPro = true;
+      final List<String> authorizedSources = <String>[];
+      final Completer<bool> save = holdSaves();
+      List<int>? nativeBytes;
+      onEnqueue = () => nativeBytes = File((enqueued.last! as DownloadRequest).link).readAsBytesSync();
+      IosWallpaperGuideSession.shown = false;
+      await pump(tester, source: WallpaperSource.prism, variant: authorizedRendered(authorizedSources));
+      await tapSave(tester);
+
+      expect(authorizedSources, <String>['https://signed.test/wall-1']);
+      expect(renders, 1);
+      expect((enqueued.single! as DownloadRequest).link, preparedPath(0));
+      expect(nativeBytes, File(tinted).readAsBytesSync());
+      expect(discarded, isEmpty);
+      expect(find.text('Open Photos'), findsNothing);
+
+      save.complete(true);
+      await pumpUntil(tester, () => find.text('Open Photos').evaluate().isNotEmpty);
+      await settle(tester);
+      expect(File(preparedPath(0)).existsSync(), isFalse);
+      expect(discarded, <String>[preparedPath(0)]);
+
+      await tester.tapAt(const Offset(10, 10));
+      await settle(tester);
+      expect(results().single.result, 'success');
+      expect(discarded, <String>[preparedPath(0)]);
+      expect(spendCalls, isEmpty);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a failed protected Save retries its receipt with a fresh copy, never the discarded path', (
+      tester,
+    ) async {
+      backend.originalAssets['wall-1'] = (premium: true, coins: 20);
+      final List<String> authorizedSources = <String>[];
+      final List<bool> readable = <bool>[];
+      onEnqueue = () => readable.add(File((enqueued.last! as DownloadRequest).link).readAsBytesSync().isNotEmpty);
+      enqueueSucceeds = false;
+      await pump(tester, source: WallpaperSource.prism, variant: authorizedRendered(authorizedSources));
+      await tapSave(tester);
+      await tester.tap(find.text('Download').last);
+      await pumpUntil(tester, () => renders == 1 && !File(preparedPath(0)).existsSync());
+      await settle(tester);
+      expect(results().single.reason, 'enqueue_failed');
+      expect(discarded, <String>[preparedPath(0)]);
+      expect(backend.originalDebits, 1);
+
+      enqueueSucceeds = true;
+      await tapSave(tester);
+      await pumpUntil(tester, () => !File(preparedPath(1)).existsSync());
+      await settle(tester);
+
+      expect(renders, 2);
+      expect(authorizedSources, <String>['https://signed.test/wall-1', 'https://signed.test/wall-1']);
+      expect(enqueued.map((Object? request) => (request! as DownloadRequest).link), <String>[
+        preparedPath(0),
+        preparedPath(1),
+      ]);
+      expect(readable, <bool>[true, true]);
+      expect(discarded, <String>[preparedPath(0), preparedPath(1)]);
+      expect(results().last.result, 'success');
+      final acquisitions = backend.originalCalls.where((call) => call['mode'] != 'quote').toList();
+      expect(acquisitions, hasLength(2));
+      expect(acquisitions.first['requestId'], acquisitions.last['requestId']);
+      expect(backend.originalDebits, 1);
+      expect(backend.originalBalance, 80);
+      expect(spendCalls, isEmpty);
+    });
+
+    testWidgets('a refused spend never prepares again and discards once after cancellation', (tester) async {
+      backend.onCall = (name, parameters) async {
+        if (name == 'spendCoins') spendCalls.add(parameters);
+        return <String, Object>{
+          'success': false,
+          'changed': false,
+          'currentBalance': 2,
+          'previousBalance': 100,
+          'delta': 0,
+          'insufficientBalance': true,
+        };
+      };
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+      expect(find.text('Not enough coins'), findsOneWidget);
+      expect(renders, 1);
+      expect(discarded, isEmpty);
+
+      await tester.tapAt(const Offset(10, 10));
+      await pumpUntil(tester, () => discarded.isNotEmpty);
+      await settle(tester);
+
+      expect(spendCalls, hasLength(1));
+      expect(renders, 1);
+      expect(enqueued, isEmpty);
+      expect(discarded, <String>[preparedPath(0)]);
+    });
+
+    testWidgets('a cancelled Save keeps its copy while the sheet is open and deletes it after', (tester) async {
+      app_state.prismUser.coins = 2;
+      CoinsService.instance.balanceNotifier.value = 2;
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+
+      expect(find.text('Not enough coins'), findsOneWidget);
+      expect(File(preparedPath(0)).existsSync(), isTrue);
+      expect(discarded, isEmpty);
+
+      await tester.tapAt(const Offset(10, 10));
+      await pumpUntil(tester, () => !File(preparedPath(0)).existsSync());
+      await settle(tester);
+
+      expect(results().single.result, 'cancelled');
+      expect(enqueued, isEmpty);
+      expect(discarded, <String>[preparedPath(0)]);
+    });
+
+    testWidgets('a Save keeps its copy while the save runs, also after its page closes', (tester) async {
+      final Completer<bool> save = holdSaves();
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+
+      expect(enqueued, hasLength(1));
+      expect(File(preparedPath(0)).existsSync(), isTrue);
+      expect(discarded, isEmpty);
+
+      await tester.pumpWidget(const SizedBox());
+      await settle(tester);
+      expect(File(preparedPath(0)).existsSync(), isTrue);
+
+      save.complete(true);
+      await pumpUntil(tester, () => !File(preparedPath(0)).existsSync());
+      await settle(tester);
+
+      expect(discarded, <String>[preparedPath(0)]);
+    });
+
+    testWidgets('a saved copy is deleted before the iOS guide opens, and only once', (tester) async {
+      IosWallpaperGuideSession.shown = false;
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+
+      expect(find.text('Open Photos'), findsOneWidget);
+      expect(Directory('${tempDir.path}/position_0').existsSync(), isFalse);
+      expect(discarded, <String>[preparedPath(0)]);
+
+      await tester.tapAt(const Offset(10, 10));
+      await settle(tester);
+
+      expect(find.text('Open Photos'), findsNothing);
+      expect(results().single.result, 'success');
+      expect(discarded, <String>[preparedPath(0)]);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('two Saves that overlap each delete only their own copy', (tester) async {
+      final Completer<bool> first = Completer<bool>();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(
+        enqueueChannel,
+        (message) async {
+          enqueued.add((message! as List<Object?>).single);
+          return <Object?>[OperationResult(success: enqueued.length > 1 || await first.future)];
+        },
+      );
+      final DownloadVariant variant = rendered();
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Column(
+              children: <Widget>[
+                for (final String id in <String>['wall-1', 'wall-2'])
+                  DownloadButton(
+                    link: _link,
+                    label: 'Save',
+                    contentId: id,
+                    wallpaperSource: WallpaperSource.wallhaven,
+                    sourceContext: 'detail',
+                    variant: variant,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byType(PrimaryActionPill).first);
+      await settle(tester);
+      await tester.tap(find.byType(PrimaryActionPill).last);
+      await pumpUntil(tester, () => !File(preparedPath(1)).existsSync());
+      await settle(tester);
+
+      expect(enqueued.map((Object? request) => (request! as DownloadRequest).link), <String>[
+        preparedPath(0),
+        preparedPath(1),
+      ]);
+      expect(File(preparedPath(0)).existsSync(), isTrue);
+      expect(discarded, <String>[preparedPath(1)]);
+
+      first.complete(true);
+      await pumpUntil(tester, () => !File(preparedPath(0)).existsSync());
+      await settle(tester);
+
+      expect(discarded, <String>[preparedPath(1), preparedPath(0)]);
+    });
+  });
+
   group('recovery of a paid variation', () {
     final DownloadVariant tintA = DownloadVariant(key: 'tint-ff8800', prepare: () async => tinted);
     final DownloadVariant tintB = DownloadVariant(key: 'tint-0088ff', prepare: () async => tinted);
