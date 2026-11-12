@@ -1,0 +1,81 @@
+# CONTAINER=$(xcrun simctl get_app_container 0AC4263F-07D3-4937-A512-90A1E016A6D4 com.hash.prism data)
+# The iOS temp dir (path_provider getTemporaryDirectory) is $CONTAINER/Library/Caches.
+
+$ ls -la $CONTAINER/tmp/   # fix applied, before Save (09:38:59)
+total 0
+drwxr-xr-x  8 codenameakshay  staff  256 Nov 12 09:34 .
+drwxr-xr-x@ 7 codenameakshay  staff  224 Nov 11 10:42 ..
+drwx------  3 codenameakshay  staff   96 Nov 12 09:34 MediaCache
+drwxr-xr-x  2 codenameakshay  staff   64 Nov 12 09:31 com.apple.WebKit.GPU
+drwx------  4 codenameakshay  staff  128 Nov 12 09:33 com.apple.WebKit.Networking
+drwxr-xr-x  3 codenameakshay  staff   96 Nov 12 09:31 com.hash.prism
+drwxr-xr-x  4 codenameakshay  staff  128 Nov 12 09:34 prism-bundled-wallpapers
+drwx------  3 codenameakshay  staff   96 Nov 12 09:33 t3-b1a265be-cfb0f0fbe96df8316JFjZw
+
+$ ls -laR $CONTAINER/tmp/prism_edit
+ls: $CONTAINER/tmp/prism_edit: No such file or directory
+
+$ ls -laR $CONTAINER/Library/Caches/prism_edit   # Save running, Photos alert open (09:39:31)
+total 0
+drwxr-xr-x   3 codenameakshay  staff   96 Nov 12 09:39 .
+drwxr-xr-x  22 codenameakshay  staff  704 Nov 12 09:39 ..
+drwx------   3 codenameakshay  staff   96 Nov 12 09:39 position_nUzuuv
+
+$CONTAINER/Library/Caches/prism_edit/position_nUzuuv:
+total 7272
+drwx------  3 codenameakshay  staff       96 Nov 12 09:39 .
+drwxr-xr-x  3 codenameakshay  staff       96 Nov 12 09:39 ..
+-rw-r--r--  1 codenameakshay  staff  3723137 Nov 12 09:39 placement.png
+
+$ ls -laR $CONTAINER/Library/Caches/prism_edit   # saved to Photos, guide sheet still open (09:39:58)
+total 0
+drwxr-xr-x   3 codenameakshay  staff   96 Nov 12 09:39 .
+drwxr-xr-x  22 codenameakshay  staff  704 Nov 12 09:39 ..
+drwx------   3 codenameakshay  staff   96 Nov 12 09:39 position_nUzuuv
+
+$CONTAINER/Library/Caches/prism_edit/position_nUzuuv:
+total 7272
+drwx------  3 codenameakshay  staff       96 Nov 12 09:39 .
+drwxr-xr-x  3 codenameakshay  staff       96 Nov 12 09:39 ..
+-rw-r--r--  1 codenameakshay  staff  3723137 Nov 12 09:39 placement.png
+
+$ ls -laR $CONTAINER/Library/Caches/prism_edit   # guide closed, notification prompt still open in the same tap (09:40:47)
+total 0
+drwxr-xr-x   3 codenameakshay  staff   96 Nov 12 09:39 .
+drwxr-xr-x  22 codenameakshay  staff  704 Nov 12 09:39 ..
+drwx------   3 codenameakshay  staff   96 Nov 12 09:39 position_nUzuuv
+
+$CONTAINER/Library/Caches/prism_edit/position_nUzuuv:
+total 7272
+drwx------  3 codenameakshay  staff       96 Nov 12 09:39 .
+drwxr-xr-x  3 codenameakshay  staff       96 Nov 12 09:39 ..
+-rw-r--r--  1 codenameakshay  staff  3723137 Nov 12 09:39 placement.png
+
+$ ls -laR $CONTAINER/Library/Caches/prism_edit   # after the Save ended (last sheet closed) (09:41:00)
+total 0
+drwxr-xr-x   2 codenameakshay  staff   64 Nov 12 09:40 .
+drwxr-xr-x  22 codenameakshay  staff  704 Nov 12 09:39 ..
+
+$ ls -la $CONTAINER/Documents/PrismDownloads   # the saved Downloads copy stays
+total 7272
+drwxr-xr-x@ 3 codenameakshay  staff       96 Nov 12 09:39 .
+drwxr-xr-x  5 codenameakshay  staff      160 Nov 12 09:39 ..
+-rw-r--r--  1 codenameakshay  staff  3723137 Nov 12 09:39 wallhaven-jerwop_read-icons-dim.png
+
+# Second fixed Save, on another Wallhaven wall.
+$ ls -laR $CONTAINER/Library/Caches/prism_edit   # fix applied, before Save (09:42:33)
+total 0
+drwxr-xr-x   2 codenameakshay  staff   64 Nov 12 09:40 .
+drwxr-xr-x  22 codenameakshay  staff  704 Nov 12 09:39 ..
+
+$ ls -laR $CONTAINER/Library/Caches/prism_edit   # second Save ended ("Saved" on the button, no sheets this time); the folder mtime changed, the copy is gone (09:42:46)
+total 0
+drwxr-xr-x   2 codenameakshay  staff   64 Nov 12 09:42 .
+drwxr-xr-x  22 codenameakshay  staff  704 Nov 12 09:39 ..
+
+$ ls -la $CONTAINER/Documents/PrismDownloads   # both saved copies stay
+total 15272
+drwxr-xr-x@ 4 codenameakshay  staff      128 Nov 12 09:42 .
+drwxr-xr-x  5 codenameakshay  staff      160 Nov 12 09:39 ..
+-rw-r--r--  1 codenameakshay  staff  4094971 Nov 12 09:42 wallhaven-gwv5le_read-icons-dim.png
+-rw-r--r--  1 codenameakshay  staff  3723137 Nov 12 09:39 wallhaven-jerwop_read-icons-dim.png
