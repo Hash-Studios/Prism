@@ -17,7 +17,7 @@ const RUN = "d20261012";
 const CAND = "d20261012-0";
 const CAND_PATH = `studioRuns/${RUN}/candidates/${CAND}`;
 const RAW_KEY = `ai/studio/raw/${CAND}.png`;
-const IMAGE_URL = `https://prismwalls.com/api/ai/assets/${RAW_KEY}`;
+const IMAGE_URL = `https://prismwalls.com/api/ai/studio/assets/${RAW_KEY}`;
 const IDENTITY = {by: "Prism Studio", email: "studio@prismwalls.com", userPhoto: "https://p/studio.png"};
 const CLEAN: VisionResult = {safeSearchAnnotation: {adult: 1, racy: 1, violence: 1, medical: 1}};
 
@@ -69,7 +69,9 @@ function setup(t: TestContext, opts: {
         bytes: wallpaper.length, model: "fal-ai/model-v2", provider: "fal", seed: 42, costUsd: 0.04,
       });
     }
-    if (method === "GET" && url === IMAGE_URL) return new Response(new Uint8Array(await (opts.image?.() ?? wallpaper)));
+    if (method === "GET" && url === `${BASE}/api/ai/studio/assets/${RAW_KEY}`) {
+      return new Response(new Uint8Array(await (opts.image?.() ?? wallpaper)));
+    }
     const asset = url.replace(`${BASE}/api/ai/studio/assets/`, "");
     if (method === "PUT") {
       opts.beforePut?.(store, asset);

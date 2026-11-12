@@ -910,7 +910,7 @@ export async function handleAiApiRequest(
 
   const chargeMatch = /^\/api\/ai\/charges\/([^/]+)$/.exec(url.pathname);
   if (request.method === 'GET' && chargeMatch != null) {
-    return handleChargeEvidence(chargeMatch[1], env);
+    return handleChargeEvidence(request, chargeMatch[1], env);
   }
 
   const cancelMatch = /^\/api\/ai\/charges\/([^/]+)\/cancel$/.exec(url.pathname);
@@ -919,7 +919,7 @@ export async function handleAiApiRequest(
   }
 
   if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname.startsWith('/api/ai/assets/')) {
-    return handleAssetRead(url.pathname, request.method, env);
+    return handleAssetRead(request, url.pathname, request.method, env);
   }
 
   if (request.method === 'POST' && url.pathname === '/api/ai/generations') {
@@ -938,13 +938,32 @@ export async function handleAiApiRequest(
   return aiError('invalid_request', 404, 'Unsupported AI endpoint');
 }
 
-async function handleAssetRead(pathname: string, method: string, env: AiEnvBindings): Promise<Response> {
+async function handleAssetRead(
+  request: Request, pathname: string, method: string, env: AiEnvBindings,
+): Promise<Response> {
   const objectKey = pathname.replace('/api/ai/assets/', '').trim();
   if (!isNonEmptyString(objectKey)) {
     return aiError('invalid_request', 400, 'Invalid asset key');
   }
-  if (/^ai\/studio\/raw\/desk_[A-Za-z0-9_-]+\.(jpg|webp|png)$/.test(objectKey)) {
+  if (objectKey.startsWith('ai/studio/raw/')) {
     return new Response('Not found', { status: 404, headers: { 'cache-control': 'no-store' } });
+  }
+
+  const originalMatch = ORIGINAL_ASSET_KEY_REGEX.exec(objectKey);
+  let cacheControl: string | undefined;
+  if (originalMatch != null) {
+    // Owner proof is the live Worker KV generation record (`ai:gen:{id}`), TTL 90 days. Firestore
+    // `aiGenerationReceipts` is Functions-only, and R2 objects have no userId metadata. After expiry
+    // the original stays 404 for every caller, including the creator. There is no public-read fallback.
+    const auth = await parseAuth(request, env);
+    if (auth == null) return aiError('unauthorized', 401, 'Missing or invalid bearer token');
+    const record = await readGenerationRecord(originalMatch[1], env);
+    if (record == null || record.userId !== auth.userId) {
+      return aiError('generation_not_found', 404, 'Asset not found');
+    }
+    cacheControl = 'private, no-store';
+  } else if (!PUBLIC_ASSET_KEY_REGEX.test(objectKey) && !STUDIO_PUBLIC_ASSET_KEY_REGEX.test(objectKey)) {
+    return aiError('generation_not_found', 404, 'Asset not found');
   }
 
   if (env.AI_IMAGES != null) {
@@ -955,22 +974,14 @@ async function handleAssetRead(pathname: string, method: string, env: AiEnvBindi
     if (object == null) {
       return assetNotFound(objectKey, env);
     }
+    const headers = {
+      'content-type': object.httpMetadata?.contentType ?? 'image/png',
+      'cache-control': cacheControl ?? object.httpMetadata?.cacheControl ?? 'public, max-age=31536000, immutable',
+    };
     if (method === 'HEAD') {
-      return new Response(null, {
-        status: 200,
-        headers: {
-          'content-type': object.httpMetadata?.contentType ?? 'image/png',
-          'cache-control': object.httpMetadata?.cacheControl ?? 'public, max-age=31536000, immutable',
-        },
-      });
+      return new Response(null, { status: 200, headers });
     }
-    return new Response(object.body, {
-      status: 200,
-      headers: {
-        'content-type': object.httpMetadata?.contentType ?? 'image/png',
-        'cache-control': object.httpMetadata?.cacheControl ?? 'public, max-age=31536000, immutable',
-      },
-    });
+    return new Response(object.body, { status: 200, headers });
   }
 
   let encoded = await env.AI_STATE_KV.get(`ai:asset:${objectKey}`);
@@ -981,22 +992,14 @@ async function handleAssetRead(pathname: string, method: string, env: AiEnvBindi
     return assetNotFound(objectKey, env);
   }
   const bytes = fromBase64(encoded);
+  const headers = {
+    'content-type': 'image/png',
+    'cache-control': cacheControl ?? 'public, max-age=2592000',
+  };
   if (method === 'HEAD') {
-    return new Response(null, {
-      status: 200,
-      headers: {
-        'content-type': 'image/png',
-        'cache-control': 'public, max-age=2592000',
-      },
-    });
+    return new Response(null, { status: 200, headers });
   }
-  return new Response(bytes, {
-    status: 200,
-    headers: {
-      'content-type': 'image/png',
-      'cache-control': 'public, max-age=2592000',
-    },
-  });
+  return new Response(bytes, { status: 200, headers });
 }
 
 async function assetNotFound(objectKey: string, env: AiEnvBindings): Promise<Response> {
@@ -1009,14 +1012,24 @@ async function assetNotFound(objectKey: string, env: AiEnvBindings): Promise<Res
   return aiError('generation_not_found', 404, 'Asset not found');
 }
 
-async function handleChargeEvidence(rawTxId: string, env: AiEnvBindings): Promise<Response> {
+async function handleChargeEvidence(request: Request, rawTxId: string, env: AiEnvBindings): Promise<Response> {
+  const auth = await parseAuth(request, env);
+  if (auth == null) return aiError('unauthorized', 401, 'Missing or invalid bearer token');
   const txId = chargeTxIdOrNull(rawTxId);
   if (txId == null) {
     return aiError('invalid_request', 404, 'Unknown charge id');
   }
+  const receipt = await verifyCharge(txId, undefined, auth, env);
+  if (typeof receipt === 'string') {
+    return receipt === 'invalid'
+      ? aiError('generation_not_found', 404, 'Charge not found')
+      : aiError('provider_error', 502, 'Charge verification unavailable');
+  }
   try {
     const response = await sendQuotaRequest<AiQuotaChargeStatusResponse>(env, { op: 'charge_status', txId });
-    return aiJson({ status: response.status });
+    const body = aiJson({ status: response.status });
+    body.headers.set('cache-control', 'private, no-store');
+    return body;
   } catch (error) {
     console.error('[ai] charge_status_failed', { error: `${error ?? ''}` });
     return aiError('provider_error', 502, 'Quota coordinator unavailable');
@@ -2670,9 +2683,7 @@ async function runStudioGeneration(
     });
     return { response: aiJson({
       id: request.id,
-      imageUrl: request.id.startsWith('desk_')
-        ? `https://prismwalls.com${STUDIO_ASSETS_PATH_PREFIX}${key}`
-        : `https://prismwalls.com/api/ai/assets/${key}`,
+      imageUrl: `https://prismwalls.com${STUDIO_ASSETS_PATH_PREFIX}${key}`,
       key,
       width: actualSize.width,
       height: actualSize.height,
@@ -2799,6 +2810,8 @@ const WATERMARK_MIN_BYTES = 1024;
 const WATERMARK_RENDER_ATTEMPTS = 2;
 const WATERMARK_PENDING_TTL_SECONDS = 60 * 60 * 24 * 30;
 const PUBLIC_ASSET_KEY_REGEX = /^ai\/public\/([A-Za-z0-9_-]+)\.png$/;
+const STUDIO_PUBLIC_ASSET_KEY_REGEX = /^ai\/studio\/[A-Za-z0-9_-]+\.(jpg|webp|png)$/;
+const ORIGINAL_ASSET_KEY_REGEX = /^ai\/original\/([A-Za-z0-9_-]+)\.png$/;
 const ASSET_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 
 interface WatermarkPendingRecord {

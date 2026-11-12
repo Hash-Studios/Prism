@@ -24,6 +24,7 @@ async function fixture(t: TestContext) {
     await userRef.set({email: `${user}@example.com`});
   }
   t.mock.method(challengeIo, "owner", async (user: string) => ({uid: user, email: `${user}@example.com`}));
+  t.mock.method(challengeIo, "voter", async () => ({createdMs: now - 2 * 86_400_000, member: true}));
   const wall = async (suffix: string) => {
     const r = db.doc(`walls/${key}_${suffix}`);
     refs.push(r);

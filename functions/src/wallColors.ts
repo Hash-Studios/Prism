@@ -219,7 +219,42 @@ export async function fetchImageBuffer(
   return Buffer.concat(chunks);
 }
 
-export type WallImageUrls = {wallpaper_url?: unknown; wallpaper_thumb?: unknown; originalProtected?: unknown};
+export type WallImageUrls = {wallpaper_url?: unknown; wallpaper_thumb?: unknown; originalProtected?: unknown;
+  wallpaper_path?: unknown; thumb_path?: unknown};
+
+/**
+ * A URL this process may fetch for Vision, depth or colour: an allowlisted host, and for GitHub raw the configured
+ * owner/repo plus the wall's matching path. Missing GitHub config fails closed. Callers must still re-read the
+ * current wall; this does not prove a completed upload.
+ */
+export function trustedWallImageUrl(wall: WallImageUrls, role: "original" | "thumb"): string | undefined {
+  const raw = role === "original" ? wall.wallpaper_url : wall.wallpaper_thumb;
+  const value = typeof raw === "string" ? raw.trim() : "";
+  if (!value) return undefined;
+  let url: URL;
+  try {
+    url = checkedImageUrl(value);
+  } catch {
+    return undefined;
+  }
+  if (url.hostname === "raw.githubusercontent.com") {
+    const repo = process.env.GH_REPO_WALLS?.trim();
+    const owner = process.env.GH_USERNAME?.trim();
+    const pathRaw = role === "original" ? wall.wallpaper_path : wall.thumb_path;
+    const path = typeof pathRaw === "string" ? pathRaw.trim() : "";
+    if (!repo || !owner || !path) return undefined;
+    let parts: string[];
+    try {
+      parts = url.pathname.split("/").slice(1).map(decodeURIComponent);
+    } catch {
+      return undefined;
+    }
+    if (parts.length !== 4 || parts[0].toLowerCase() !== owner.toLowerCase() || parts[1] !== repo || parts[3] !== path) {
+      return undefined;
+    }
+  }
+  return url.href;
+}
 
 /**
  * Read the thumbnail first; use the full image only for an unprotected legacy wall.

@@ -218,7 +218,7 @@ export default {
     }
 
     const catalogResponse = await handleCatalogRequest(request, url, env, ctx, () => renderDirectLanding(url, request, env),
-      (ip) => limitDownloads(ip, env));
+      (ip) => limitDownloads(ip, env), (ip) => limitOgRenders(ip, env));
     if (catalogResponse != null) {
       return catalogResponse;
     }
@@ -232,7 +232,7 @@ export default {
     }
 
     if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname.startsWith('/og/')) {
-      return getOgImage(url.pathname, request.method, env);
+      return getOgImage(url.pathname, request.method, request, env);
     }
 
     if (request.method === 'GET' && url.pathname === '/l') {
@@ -263,6 +263,9 @@ export { AiQuotaCoordinator };
 
 async function createLink(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const ip = getClientIp(request);
+  if (ip == null) {
+    return json({ error: 'unavailable' }, 503, { 'retry-after': '60' });
+  }
   const withinRateLimit = await enforceCreateRateLimits(ip, env);
   if (!withinRateLimit) {
     return json({ error: 'rate_limited' }, 429);
@@ -321,7 +324,7 @@ async function createLink(request: Request, env: Env, ctx: ExecutionContext): Pr
   if (!(body.type === 'page' && isFolderPage(parsedCanonical.canonical))) {
     ctx.waitUntil((async () => {
       try {
-        const ogPersisted = await generateAndPersistOgImage(code, record, env);
+        const ogPersisted = await maybeGenerateOgImage(code, record, request, env);
         if (ogPersisted == null) {
           return;
         }
@@ -456,7 +459,7 @@ function desktopWallPath(record: LinkRecord): string | null {
   return `/wallpaper/${encodeURIComponent(id)}?view=desktop`;
 }
 
-async function getOgImage(pathname: string, method: string, env: Env): Promise<Response> {
+async function getOgImage(pathname: string, method: string, request: Request, env: Env): Promise<Response> {
   const codePart = pathname.replace('/og/', '').trim();
   const extension = ['.jpg', '.png'].find((ext) => codePart.endsWith(ext));
   if (extension == null) {
@@ -480,7 +483,7 @@ async function getOgImage(pathname: string, method: string, env: Env): Promise<R
     }
   }
 
-  const generatedStorage = await generateAndPersistOgImage(code, record, env);
+  const generatedStorage = await maybeGenerateOgImage(code, record, request, env);
   if (generatedStorage != null) {
     const updated: LinkRecord = {
       ...record,
@@ -546,6 +549,10 @@ function renderDirectLanding(url: URL, request: Request, env: Env): Response {
 async function limitDownloads(ip: string, env: Env): Promise<boolean> {
   if (!(await bumpRateLimit(env, `rl:dl:10m:${ip}`, 30, 600))) return false;
   return bumpRateLimit(env, `rl:dl:1d:${ip}`, 300, 86400);
+}
+
+async function limitOgRenders(ip: string, env: Env): Promise<boolean> {
+  return bumpOgRateLimit(env, `rl:og:catalog:10m:${ip}`);
 }
 
 async function enforceCreateRateLimits(ip: string, env: Env): Promise<boolean> {
@@ -1287,6 +1294,40 @@ function generateCode(length: number): string {
   return out;
 }
 
+const ogRenders = new Map<string, Promise<OgStorageType | null>>();
+
+async function bumpOgRateLimit(env: Env, key: string): Promise<boolean> {
+  try {
+    return await bumpRateLimit(env, key, 20, 600);
+  } catch (error) {
+    console.warn('OG Durable Object rate limit failed closed', error);
+    return false;
+  }
+}
+
+async function maybeGenerateOgImage(
+  code: string, record: LinkRecord, request: Request, env: Env,
+): Promise<OgStorageType | null> {
+  const existing = ogRenders.get(code);
+  if (existing != null) {
+    return existing;
+  }
+  const work = (async (): Promise<OgStorageType | null> => {
+    const ip = getClientIp(request);
+    if (ip == null) {
+      return null;
+    }
+    if (!(await bumpOgRateLimit(env, `rl:og:10m:${ip}`))) {
+      return null;
+    }
+    return generateAndPersistOgImage(code, record, env);
+  })().finally(() => {
+    ogRenders.delete(code);
+  });
+  ogRenders.set(code, work);
+  return work;
+}
+
 async function generateAndPersistOgImage(code: string, record: LinkRecord, env: Env): Promise<OgStorageType | null> {
   const imageBytes = await renderOgImageWithBrowserRendering(record, env);
   if (imageBytes == null) {
@@ -1688,12 +1729,9 @@ function ogContentType(version: number): string {
   return version >= OG_CARD_VERSION ? 'image/jpeg' : 'image/png';
 }
 
-function getClientIp(request: Request): string {
-  return (
-    request.headers.get('CF-Connecting-IP') ??
-    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ??
-    'unknown'
-  );
+function getClientIp(request: Request): string | null {
+  const ip = request.headers.get('CF-Connecting-IP')?.trim() || request.headers.get('cf-connecting-ip')?.trim();
+  return ip || null;
 }
 
 function isValidType(type: unknown): type is LinkType {
@@ -1721,12 +1759,13 @@ function fromBase64(value: string): Uint8Array {
   return bytes;
 }
 
-function json(payload: unknown, status = 200): Response {
+function json(payload: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(payload), {
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
       'cache-control': 'no-store',
+      ...extraHeaders,
     },
   });
 }

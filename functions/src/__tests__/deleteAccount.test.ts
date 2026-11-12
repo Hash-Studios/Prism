@@ -26,12 +26,15 @@ type Options = {
 
 test("account deletion reconciles orphan live uploads before deleting upload ownership receipts", async (t) => {
   const log = fake(t);
-  t.mock.method(wallLive, "tombstoneUnreferencedLiveUploads", async (uid: string) => {
+  t.mock.method(wallLive, "tombstoneUnreferencedLiveUploads", async (uid: string, _now?: number,
+    options?: {accountClosing?: boolean}) => {
+    assert.equal(options?.accountClosing, true);
     log.push(`liveCleanup:${uid}`);
     return 2;
   });
   await call();
-  assert.ok(log.indexOf("liveCleanup:u1") < log.indexOf("query:githubUploads.uid==u1"));
+  assert.ok(log.indexOf("liveCleanup:u1") < log.indexOf("query:githubUploadIntents.uid==u1"));
+  assert.ok(log.indexOf("query:githubUploadIntents.uid==u1") < log.indexOf("query:githubUploads.uid==u1"));
 });
 
 test("transient live upload cleanup failures preserve account credentials and upload receipts for retry", async (t) => {

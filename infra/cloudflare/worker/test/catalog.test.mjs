@@ -1,6 +1,7 @@
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { AiQuotaCoordinator } from '../src/ai.ts';
 import worker from '../src/index.ts';
 
 const DESKTOP_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36';
@@ -25,6 +26,62 @@ class MemoryKv {
   async del(key) {
     this.#values.delete(key);
   }
+}
+
+class MemoryStorage {
+  #values = new Map();
+  #transactionTail = Promise.resolve();
+
+  async transaction(callback) {
+    const previous = this.#transactionTail;
+    let release;
+    this.#transactionTail = new Promise((resolve) => { release = resolve; });
+    await previous;
+    const before = new Map(this.#values);
+    try {
+      return await callback(this);
+    } catch (error) {
+      this.#values = before;
+      throw error;
+    } finally {
+      release();
+    }
+  }
+
+  async get(key) {
+    return this.#values.get(key);
+  }
+
+  async put(key, value) {
+    this.#values.set(key, value);
+  }
+
+  async delete(key) {
+    return this.#values.delete(key);
+  }
+}
+
+class MemoryR2 {
+  objects = new Map();
+
+  async put(key, value, options = {}) {
+    this.objects.set(key, { bytes: new Uint8Array(value), httpMetadata: options.httpMetadata });
+  }
+
+  async get(key) {
+    const object = this.objects.get(key);
+    return object == null ? null : { body: object.bytes, httpMetadata: object.httpMetadata };
+  }
+}
+
+function quotaBinding(coordinator = new AiQuotaCoordinator({ storage: new MemoryStorage() })) {
+  return {
+    coordinator,
+    binding: {
+      idFromName: () => 'quota-object',
+      get: () => ({ fetch: (url, init) => coordinator.fetch(new Request(url, init)) }),
+    },
+  };
 }
 
 class FakeCache {
@@ -210,6 +267,10 @@ function setup(t, { firestoreStatus = null } = {}) {
   const env = {
     LINKS_KV: new MemoryKv(),
     AI_STATE_KV: new MemoryKv(),
+    AI_QUOTA_DO: {
+      idFromName: () => 'quota-object',
+      get: () => ({ fetch: async () => { throw new Error('unexpected quota call'); } }),
+    },
     FIREBASE_PROJECT_ID: 'prism-test',
     PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
     APP_STORE_URL: 'https://apps.apple.com/app/id6670200846',
@@ -221,8 +282,10 @@ function setup(t, { firestoreStatus = null } = {}) {
     state,
     cache,
     env,
-    get(path, ua = DESKTOP_UA) {
-      return worker.fetch(new Request(`https://prismwalls.com${path}`, { headers: { 'user-agent': ua } }), env, ctx);
+    get(path, ua = DESKTOP_UA, extraHeaders = {}) {
+      const headers = { 'user-agent': ua, 'CF-Connecting-IP': '203.0.113.9', ...extraHeaders };
+      if (!headers['CF-Connecting-IP']) delete headers['CF-Connecting-IP'];
+      return worker.fetch(new Request(`https://prismwalls.com${path}`, { headers }), env, ctx);
     },
     async flush() {
       while (state.pending.length > 0) await Promise.all(state.pending.splice(0));
@@ -1223,4 +1286,147 @@ test('desktop mode reads the same two documents once, and its own cache entry se
   assert.equal(h.state.reads.length, 4);
   assert.ok(phoneView.includes('role="tablist"'));
   assert.ok(!phoneView.includes('data-mode="desktop"'));
+});
+
+function enableCatalogOg(h, { quota = quotaBinding() } = {}) {
+  h.env.BROWSER_RENDERING_ACCOUNT_ID = 'acct';
+  h.env.BROWSER_RENDERING_API_TOKEN = 'token';
+  h.env.AI_QUOTA_DO = quota.binding;
+  h.env.OG_IMAGES = h.env.OG_IMAGES ?? new MemoryR2();
+  return quota;
+}
+
+function mockCatalogScreenshot() {
+  let screenshots = 0;
+  const inner = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    const url = String(input instanceof Request ? input.url : input);
+    if (url.includes('/browser-rendering/screenshot')) {
+      screenshots += 1;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      return new Response(new Uint8Array([0xff, 0xd8, 0xff, 0xd9]));
+    }
+    return inner(input, init);
+  };
+  return {
+    count: () => screenshots,
+    restore: () => { globalThis.fetch = inner; },
+  };
+}
+
+test('catalog OG cold misses single-flight Browser Rendering and stay anonymously readable', async (t) => {
+  const h = setup(t);
+  enableCatalogOg(h);
+  const shot = mockCatalogScreenshot();
+  t.after(shot.restore);
+  const [first, second] = await Promise.all([h.get('/og/wall/W1.jpg'), h.get('/og/wall/W1.jpg')]);
+  assert.equal(first.status, 200);
+  assert.equal(second.status, 200);
+  assert.equal(first.headers.get('content-type'), 'image/jpeg');
+  assert.equal(second.headers.get('content-type'), 'image/jpeg');
+  assert.equal(shot.count(), 1);
+  await first.arrayBuffer();
+  await second.arrayBuffer();
+});
+
+test('catalog OG falls back without CF-Connecting-IP and does not store the redirect', async (t) => {
+  const h = setup(t);
+  enableCatalogOg(h);
+  const shot = mockCatalogScreenshot();
+  t.after(shot.restore);
+  const response = await h.get('/og/wall/W1.jpg', DESKTOP_UA, { 'CF-Connecting-IP': '' });
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get('location'), THUMB);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.equal(shot.count(), 0);
+  await h.flush();
+  assert.equal(h.cache.entries.size, 0);
+});
+
+test('catalog OG falls back when the per-IP quota is exhausted and does not poison the card cache', async (t) => {
+  const h = setup(t);
+  enableCatalogOg(h);
+  const shot = mockCatalogScreenshot();
+  t.after(shot.restore);
+  for (let i = 2; i <= 22; i += 1) {
+    h.state.docs[`webWalls/W${i}`] = { ...h.state.docs['webWalls/W1'], title: `Wall ${i}` };
+  }
+  for (let i = 1; i <= 20; i += 1) {
+    const response = await h.get(`/og/wall/W${i}.jpg`);
+    assert.equal(response.status, 200, `W${i}`);
+    await response.arrayBuffer();
+  }
+  const limited = await h.get('/og/wall/W21.jpg');
+  assert.equal(limited.status, 302);
+  assert.equal(limited.headers.get('location'), THUMB);
+  assert.equal(limited.headers.get('cache-control'), 'no-store');
+  assert.equal(shot.count(), 20);
+  await h.flush();
+  const cached = await h.get('/og/wall/W1.jpg');
+  assert.equal(cached.status, 200);
+  assert.equal(cached.headers.get('content-type'), 'image/jpeg');
+  await cached.arrayBuffer();
+});
+
+test('catalog OG falls back when the Durable Object limiter fails', async (t) => {
+  const h = setup(t);
+  enableCatalogOg(h);
+  h.env.AI_QUOTA_DO = {
+    idFromName: () => 'quota-object',
+    get: () => ({ fetch: async () => { throw new Error('DO down'); } }),
+  };
+  const shot = mockCatalogScreenshot();
+  t.after(shot.restore);
+  const response = await h.get('/og/wall/W1.jpg');
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get('location'), THUMB);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.equal(shot.count(), 0);
+});
+
+test('catalog OG R2 hits skip the paid limiter and keep the stored jpeg', async (t) => {
+  const h = setup(t);
+  enableCatalogOg(h);
+  const shot = mockCatalogScreenshot();
+  t.after(shot.restore);
+  const first = await h.get('/og/wall/W1.jpg');
+  assert.equal(first.status, 200);
+  await first.arrayBuffer();
+  assert.equal(shot.count(), 1);
+  h.cache.entries.clear();
+  h.env.AI_QUOTA_DO = {
+    idFromName: () => 'quota-object',
+    get: () => ({ fetch: async () => { throw new Error('limiter should not run'); } }),
+  };
+  const second = await h.get('/og/wall/W1.jpg');
+  assert.equal(second.status, 200);
+  assert.equal(second.headers.get('content-type'), 'image/jpeg');
+  assert.equal(shot.count(), 1);
+  await second.arrayBuffer();
+});
+
+test('catalog OG stale revalidation does not overwrite a cached jpeg with a rate-limited redirect', async (t) => {
+  const clock = stubClock(t);
+  const h = setup(t);
+  enableCatalogOg(h);
+  const shot = mockCatalogScreenshot();
+  t.after(shot.restore);
+  const first = await h.get('/og/wall/W1.jpg');
+  assert.equal(first.status, 200);
+  await first.arrayBuffer();
+  await h.flush();
+  h.env.AI_QUOTA_DO = {
+    idFromName: () => 'quota-object',
+    get: () => ({ fetch: async () => Response.json({ ok: true, allowed: false }) }),
+  };
+  clock.advance(601);
+  const stale = await h.get('/og/wall/W1.jpg');
+  assert.equal(stale.status, 200);
+  await stale.arrayBuffer();
+  await h.flush();
+  const stillJpeg = await h.get('/og/wall/W1.jpg');
+  assert.equal(stillJpeg.status, 200);
+  assert.equal(stillJpeg.headers.get('content-type'), 'image/jpeg');
+  await stillJpeg.arrayBuffer();
+  assert.equal(shot.count(), 1);
 });

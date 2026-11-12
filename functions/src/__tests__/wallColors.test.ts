@@ -9,12 +9,14 @@ import * as wallCategory from "../wallCategory";
 import * as wallDepth from "../wallDepth";
 import {installFakeDb, type Doc} from "./fakeDb";
 import {backfillWallColors, parseBackfillArgs} from "../scripts/backfillWallColors";
+import * as wallColors from "../wallColors";
 import {
   ColorFetch,
   ALLOWED_IMAGE_HOSTS,
   dominantPaletteColors,
   fetchImageBuffer,
   PALETTE,
+  trustedWallImageUrl,
   wallColorsFor,
 } from "../wallColors";
 
@@ -356,7 +358,23 @@ test("wallColorsFor falls back only for unprotected walls when the thumbnail can
   assert.deepEqual(urls, [thumb]);
 });
 
+const GH_URL = "https://raw.githubusercontent.com/o/r/main/a.png";
+const ghWall = (extra: Doc = {}): Doc => ({wallpaper_url: GH_URL, wallpaper_path: "a.png", ...extra});
+
+function withGithub(t: test.TestContext) {
+  const previous = {GH_REPO_WALLS: process.env.GH_REPO_WALLS, GH_USERNAME: process.env.GH_USERNAME};
+  process.env.GH_REPO_WALLS = "r";
+  process.env.GH_USERNAME = "o";
+  t.after(() => {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+}
+
 function fakeWall(t: test.TestContext, wall: Doc) {
+  withGithub(t);
   const store = installFakeDb(t, {"walls/w1": wall});
   t.mock.method(admin.remoteConfig(), "getTemplate", async () => ({
     parameters: {premiumCollections: {defaultValue: {value: "[\"premium\"]"}}},
@@ -374,11 +392,11 @@ const created = async () => ({
 }) as unknown as Parameters<typeof onWallCategorize.run>[0];
 
 test("a new wall gets its colours in the same update as its category", async (t) => {
-  const wall = {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png"};
+  const wall = ghWall();
   const store = fakeWall(t, wall);
   const png = await bandsPng([["0066cc", 36], ["ffffff", 12]]);
   fakeFetch(t, async () => replyOf(png));
-  t.mock.method(wallCategory, "detectLabels", async () => ["Mountain"]);
+  t.mock.method(wallCategory, "detectLabelsInImage", async () => ["Mountain"]);
   await onWallCategorize.run(await created());
   const saved = store.get("walls/w1");
   assert.equal(saved?.category, "Nature");
@@ -390,22 +408,22 @@ test("a new wall gets its colours in the same update as its category", async (t)
 });
 
 test("a colour failure does not stop categorization", async (t) => {
-  const store = fakeWall(t, {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png"});
+  const store = fakeWall(t, ghWall());
   fakeFetch(t, async () => {
     throw new Error("offline");
   });
-  t.mock.method(wallCategory, "detectLabels", async () => ["Mountain"]);
+  t.mock.method(wallCategory, "detectLabelsInImage", async () => ["Mountain"]);
   await onWallCategorize.run(await created());
   const saved = store.get("walls/w1");
   assert.ok(saved);
-  assert.equal(saved.category, "Nature");
+  assert.equal(saved.category, "General");
   assert.equal("colors" in saved, false);
 });
 
 test("a label failure still saves the colours with the default category", async (t) => {
-  const store = fakeWall(t, {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png"});
+  const store = fakeWall(t, ghWall());
   fakeFetch(t, async () => replyOf(await bandsPng([["cc0000", SIZE]])));
-  t.mock.method(wallCategory, "detectLabels", async () => {
+  t.mock.method(wallCategory, "detectLabelsInImage", async () => {
     throw new Error("vision down");
   });
   await onWallCategorize.run(await created());
@@ -414,10 +432,10 @@ test("a label failure still saves the colours with the default category", async 
 });
 
 test("a wall that already has a category still gets colours, once", async (t) => {
-  const wall = {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png", category: "Space"};
+  const wall = ghWall({category: "Space"});
   const store = fakeWall(t, wall);
   fakeFetch(t, async () => replyOf(await bandsPng([["cc0000", SIZE]])));
-  t.mock.method(wallCategory, "detectLabels", async () => ["Space"]);
+  t.mock.method(wallCategory, "detectLabelsInImage", async () => ["Space"]);
   const event = await created();
   await onWallCategorize.run(event);
   assert.deepEqual(store.get("walls/w1"), {...wall, colors: ["red"], visionLabels: ["Space"]});
@@ -427,24 +445,25 @@ test("a wall that already has a category still gets colours, once", async (t) =>
 });
 
 test("a wall with an empty or invalid colours list gets its colours again", async (t) => {
-  t.mock.method(wallCategory, "detectLabels", async () => ["Space"]);
+  t.mock.method(wallCategory, "detectLabelsInImage", async () => ["Space"]);
   const store = fakeWall(t, {});
   for (const colors of [[], ["nope"], ["blue", "nope"], "blue", [1]]) {
-    const wall = {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png", category: "Space", colors};
+    const wall = ghWall({category: "Space", colors});
     store.set("walls/w1", wall);
     const fetchMock = t.mock.method(globalThis, "fetch", async () => replyOf(await bandsPng([["cc0000", SIZE]])));
     await onWallCategorize.run(await created());
-    assert.equal(fetchMock.mock.callCount(), 1, JSON.stringify(colors));
+    assert.equal(fetchMock.mock.callCount(), 2, JSON.stringify(colors));
     assert.deepEqual(store.get("walls/w1"), {...wall, colors: ["red"], visionLabels: ["Space"]}, JSON.stringify(colors));
     fetchMock.mock.restore();
   }
 });
 
-test("a wall with a category and colours makes no request", async (t) => {
-  const wall = {wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.png", category: "Space", colors: ["blue"]};
+test("a wall with a category and colours still labels from trusted bytes", async (t) => {
+  const wall = ghWall({category: "Space", colors: ["blue"]});
   const store = fakeWall(t, wall);
   const fetchMock = t.mock.method(globalThis, "fetch", async () => replyOf(await bandsPng([["cc0000", SIZE]])));
-  t.mock.method(wallCategory, "detectLabels", async () => ["Space"]);
+  t.mock.method(wallColors, "fetchImageBuffer", async () => Buffer.from("jpeg"));
+  t.mock.method(wallCategory, "detectLabelsInImage", async () => ["Space"]);
   await onWallCategorize.run(await created());
   assert.equal(fetchMock.mock.callCount(), 0);
   assert.deepEqual(store.get("walls/w1"), {...wall, visionLabels: ["Space"]});
@@ -463,6 +482,37 @@ test("the categorize callable writes colours with the category", async (t) => {
   assert.deepEqual(store.get("walls/w1")?.colors, ["black", "white"]);
   assert.equal(store.get("walls/w1")?.category, result.category);
   assert.equal(store.get("walls/w1")?.aiCategorized, true);
+});
+
+test("trustedWallImageUrl keeps a matching GitHub raw URL and drops unproven ones", (t) => {
+  withGithub(t);
+  const wall = {wallpaper_url: GH_URL, wallpaper_path: "a.png", wallpaper_thumb: GH_URL.replace("a.png", "thumb.png"),
+    thumb_path: "thumb.png"};
+  assert.equal(trustedWallImageUrl(wall, "original"), GH_URL);
+  assert.equal(trustedWallImageUrl({...wall, wallpaper_path: ""}, "original"), undefined);
+  assert.equal(trustedWallImageUrl({...wall, wallpaper_url: "https://raw.githubusercontent.com/evil/r/main/a.png"},
+    "original"), undefined);
+  process.env.GH_REPO_WALLS = "";
+  assert.equal(trustedWallImageUrl(wall, "original"), undefined);
+});
+
+test("trustedWallImageUrl fails closed without a GitHub username", (t) => {
+  withGithub(t);
+  delete process.env.GH_USERNAME;
+  assert.equal(trustedWallImageUrl(ghWall(), "original"), undefined);
+});
+
+test("trustedWallImageUrl keeps prismwalls.com and owned preview URLs", (t) => {
+  const previous = process.env.R2_PREVIEW_BASE_URL;
+  process.env.R2_PREVIEW_BASE_URL = "https://images.example.com";
+  t.after(() => {
+    if (previous === undefined) delete process.env.R2_PREVIEW_BASE_URL;
+    else process.env.R2_PREVIEW_BASE_URL = previous;
+  });
+  const publicUrl = "https://prismwalls.com/api/ai/assets/ai/public/gen_abc.png";
+  const preview = `https://images.example.com/previews/${"a".repeat(64)}.img`;
+  assert.equal(trustedWallImageUrl({wallpaper_url: publicUrl}, "original"), publicUrl);
+  assert.equal(trustedWallImageUrl({wallpaper_thumb: preview}, "thumb"), preview);
 });
 
 type FakeWall = {id: string; data: Record<string, unknown>};

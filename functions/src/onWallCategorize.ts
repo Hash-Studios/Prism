@@ -1,8 +1,8 @@
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
-import {DEFAULT_CATEGORY, detectLabels, mapLabelsToCategory} from "./wallCategory";
+import {DEFAULT_CATEGORY, detectLabelsInImage, mapLabelsToCategory} from "./wallCategory";
 import {REGION} from "./common";
-import {hasPaletteColors, wallColorsFor} from "./wallColors";
+import {fetchImageBuffer, hasPaletteColors, trustedWallImageUrl, wallColorsFor} from "./wallColors";
 import {falKey, wallDepthFor} from "./wallDepth";
 import {wallSpatialFor} from "./wallSpatial";
 import {r2Secrets} from "./r2Storage";
@@ -25,17 +25,25 @@ export const onWallCategorize = onDocumentCreated(
     }
 
     const wallId = event.params.wallId;
-    const wallpaperUrl = (data.wallpaper_url || data.wallpaper_thumb || "").toString().trim();
+    const current = event.data.ref ? (await event.data.ref.get()).data() ?? data : data;
+    const trustedOriginal = trustedWallImageUrl(current, "original");
+    const trustedThumb = trustedWallImageUrl(current, "thumb");
+    const wallpaperUrl = trustedOriginal ?? trustedThumb ?? "";
 
     if (!wallpaperUrl) {
       logger.warn("onWallCategorize: no wallpaper URL found", {wallId});
       return;
     }
 
+    const trustedWall = {
+      ...current,
+      wallpaper_url: trustedOriginal ?? "",
+      wallpaper_thumb: trustedThumb ?? "",
+    };
     const [colors, depth, spatial, labels] = await Promise.all([
-      hasPaletteColors(data.colors) ? undefined : wallColorsFor(wallId, data),
-      data.depth == null ? wallDepthFor(wallId, {url: wallpaperUrl}) : undefined,
-      data.spatial == null ? wallSpatialFor(wallId, {url: String(data.wallpaper_thumb || wallpaperUrl).trim()}) : undefined,
+      hasPaletteColors(current.colors) ? undefined : wallColorsFor(wallId, trustedWall),
+      current.depth == null ? wallDepthFor(wallId, {url: wallpaperUrl}) : undefined,
+      current.spatial == null ? wallSpatialFor(wallId, {url: trustedThumb || wallpaperUrl}) : undefined,
       detectLabelsIfAble(wallId, wallpaperUrl),
     ]);
     await writeWallCategorization({wallId, initial: event.data,
@@ -45,7 +53,7 @@ export const onWallCategorize = onDocumentCreated(
 
 async function detectLabelsIfAble(wallId: string, wallpaperUrl: string): Promise<string[] | undefined> {
   try {
-    return await detectLabels(wallpaperUrl);
+    return await detectLabelsInImage(await fetchImageBuffer(wallpaperUrl));
   } catch (error) {
     logger.error("onWallCategorize: failed to detect labels", {
       wallId,

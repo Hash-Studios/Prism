@@ -125,6 +125,20 @@ class ReleaseWorkflowsTest(fixture.ReleaseFixture, unittest.TestCase):
                 else:
                     self.assertEqual(push, build + 1)
 
+    def test_privileged_release_jobs_bind_production_and_master(self):
+        for name, job_name, persist_credentials in (
+            ('testflight.yml', 'build-and-upload', None),
+            ('sentry_release_android.yml', 'build_android_with_sentry', None),
+            ('shorebird_patch.yml', 'patch', False),
+        ):
+            with self.subTest(workflow=name):
+                job = workflow(name)['jobs'][job_name]
+                self.assertEqual(job['if'], "github.ref == 'refs/heads/master'")
+                self.assertEqual(job['environment'], 'production')
+                checkout = next(step for step in job['steps'] if step.get('uses', '').startswith('actions/checkout'))
+                self.assertEqual(checkout['with']['ref'], '${{ github.sha }}')
+                self.assertEqual(checkout['with'].get('persist-credentials'), persist_credentials)
+
     def test_shorebird_patch_workflow_refuses_stable_and_fetches_history(self):
         patch = workflow('shorebird_patch.yml')
         triggers = patch.get('on', patch.get('true'))
@@ -132,6 +146,7 @@ class ReleaseWorkflowsTest(fixture.ReleaseFixture, unittest.TestCase):
         steps = patch['jobs']['patch']['steps']
         checkout = next(step for step in steps if step.get('uses', '').startswith('actions/checkout'))
         self.assertEqual(checkout['with']['fetch-depth'], 0)
+        self.assertIs(checkout['with']['fetch-tags'], True)
         run = next(step['run'] for step in steps if 'shorebird patch' in step.get('run', ''))
         self.assertIn('--track="$TRACK"', run)
 

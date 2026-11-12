@@ -349,7 +349,7 @@ Chest open rate and doubled share.
 - **Drops.** Walls from drops older than 30 days after `endsAt` are released to the public feed by the planner (`review: true`). The admin review queue hides walls with `dropWeek`.
 - **Live wallpaper.** `liveWallpaperStyle` is a 7-day unlock of one paid style: input `styleId`, writes `passes.liveStyles.{styleId} = until`. Live wallpaper and auto-rotate tiles are hidden on iOS.
 - **Config.** `economyConfig` is readable by everyone (guests see prices). `parseEconomy` bounds: spend and shop prices integers 0..10000, awards 0..1000, chest min ≤ max, spin weights with a positive sum. The client refreshes the config on resume when older than an hour.
-- **Keep `premiumPreviewUnlocks` in the owner allow list** until clients below 3.4.1 are gone.
+- **`premiumPreviewUnlocks` is server-owned.** Owners cannot write it; clients only read the map.
 - **Themes.** Themes selected before the upgrade are grandfathered on that device: the client stores the selected light and dark ids under a local "legacy themes" key on first run of v2 and treats them as owned. Guests are locked only when switching.
 - **Cosmetics.** Catalog ids are never deleted, only `retired`. A `proOnly` frame renders only while the profile is premium.
 - **UI.** The Drop card lives on Rewards only, no Home card. Earn coins sits above Use your coins. "Watch a video" appears only when the balance is short. Spin and chest sheets use a coin animation, not Glint; Celebrate is for rank-up and streak milestones only. Spin and chest sheets show their odds.
@@ -364,7 +364,7 @@ Differences from the text above that the code settled:
 - Every free spend outcome (grace, pass, premium bypass) with a `requestId` writes a zero-delta receipt so a replay cannot burn a second grace download. The app hides zero-delta rows from the activity list.
 - Quest events the server counts carry a dedupe id (`uid_wallId_day`, or the trigger event id for favourites), so a set and a download of one wall on one day count once.
 - The client sends `pricingVersion: 2` and `qualityTier` for AI. The AI worker accepts the receipt's `basePrice` or its Pro half and requires the receipt tier to match.
-- `economyConfig` is readable by guests. `premiumPreviewUnlocks` stays in the owner allow list until clients below 3.4.1 are gone.
+- `economyConfig` is readable by guests. `premiumPreviewUnlocks` is server-owned; owners cannot write it.
 - Android alternate icons: `MainActivity` keeps the launcher filter; each icon alias carries the launcher and deep-link filters; the widget opens the app through the package launch intent.
 - The economy simulation test (`functions/src/__tests__/economySim.test.ts`) reports about 50 coins a day for an engaged free user with the defaults. The owner's "first ad pays 20" sets that floor; lower `rewardedAdFirstOfDay` or the quest chest to tighten.
 - Deferred: coin packs; AdMob server-side verification; a device pass for app icon switching, the Shop, Drops, the Leaderboard and the Draw.
