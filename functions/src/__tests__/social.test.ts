@@ -9,7 +9,7 @@ import sharp from "sharp";
 import {db} from "../common";
 import {assertFits, DARK_STILL_TAILS, GRID_DETAIL_BUDGET, GRID_LINES, gridContent, gridVisionDecision, PANORAMA_LINES, panoramaPanels, STILL_TAILS, stillCaption, stillContent, wallhavenCandidates, wallhavenDetails, YOUTH_TAG, type WallhavenWall} from "../social/content";
 import {applyPress, contentHash, defaultBuilders, handleTelegramUpdate, JITTER_MS, loadSocialConfig, measurePosts, normalizePostText, prepareDay, publishDue, scheduledAt, socialPrepare, socialTelegramWebhook, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
-import {parsePress, socialBotToken, socialOwnerChatId, telegramClient, type Telegram, webhookSecret} from "../social/telegram";
+import {callbackData, parsePress, socialBotToken, socialOwnerChatId, telegramClient, type Telegram, webhookSecret} from "../social/telegram";
 import {R2Storage} from "../r2Storage";
 import {oauthHeader, xClient, xWeightedLength, XError, type XClient, type XOwnPost} from "../social/x";
 import {postDay} from "../studio/telegram";
@@ -178,19 +178,21 @@ test("applyPress honors the hash and moves the status", async (t) => {
 
 test("plain Approve posts no flag; Approve + flag works only on a pending grid", async (t) => {
   const media = [{sha256: "a", alt: "1", sensitive: false, suggestFlag: true}, {sha256: "b", alt: "2", sensitive: false}];
-  const grid = {pipeline: "grid", status: "pending_approval", contentHash: HASH, media, text: "t", replyText: ""};
+  const hash = contentHash(media.map((m) => m.sha256), "t", "", media.map(({alt, sensitive}) => ({alt, sensitive})));
+  const grid = {pipeline: "grid", status: "pending_approval", contentHash: hash, media, text: "t", replyText: ""};
+  const gridPress = (action: "approve" | "flag") => press(action, hash.slice(0, 12));
   const store = installSocialDb(t, {
     "socialPosts/p1": grid, "socialPosts/p2": {...grid, media: media.map((m) => ({...m, suggestFlag: false}))},
     "socialPosts/p3": {...grid, pipeline: "panorama"}, "socialPosts/p4": {...grid, status: "approved"},
   });
-  assert.equal(await applyPress(press("approve")), "Approved.");
+  assert.equal(await applyPress(gridPress("approve")), "Approved.");
   assert.deepEqual((store.get("socialPosts/p1")?.media as Doc[]).map((m) => m.sensitive), [false, false]);
-  assert.equal(store.get("socialPosts/p1")?.contentHash, HASH);
+  assert.equal(store.get("socialPosts/p1")?.contentHash, hash);
   // No suggestion: the owner's flag covers every image.
-  assert.equal(await applyPress({...press("flag"), postId: "p2"}), "Approved with flag.");
+  assert.equal(await applyPress({...gridPress("flag"), postId: "p2"}), "Approved with flag.");
   assert.deepEqual((store.get("socialPosts/p2")?.media as Doc[]).map((m) => m.sensitive), [true, true]);
   for (const id of ["p3", "p4"]) {
-    assert.match(await applyPress({...press("flag"), postId: id}), /^Nothing to do/);
+    assert.match(await applyPress({...gridPress("flag"), postId: id}), /^Nothing to do/);
   }
   assert.equal(parsePress({update_id: 1, callback_query: {id: "c", from: {id: 42}, message: {chat: {id: 42}, message_id: 3},
     data: "f:p1:0123456789ab"}}, "42")?.action, "flag");
@@ -1406,4 +1408,95 @@ test("the grid stops at its deadline, even with a check in flight", async () => 
   assert.equal(await gridContent("2026-11-12", new Set(), {sketchyPerPost: 2, blockedTags: []}, slow), null);
   assert.ok(Date.now() - started < 2000, "returned at the deadline, not after the hanging download");
   assert.equal(downloads, 2);
+});
+
+test("flag approval rejects stored content changed since the preview", async (t) => {
+  const original = postDoc({pipeline: "grid", status: "pending_approval", replyText: ""});
+  const store = installSocialDb(t, {[PATH]: {...original, text: "not the previewed text"}});
+  const before = store.get(PATH);
+  assert.equal(await applyPress({...press("flag", String(original.contentHash).slice(0, 12)),
+    postId: PATH.split("/")[1]}), "This post changed or is gone.");
+  assert.deepEqual(store.get(PATH), before);
+});
+
+test("legacy grid preview retries show existing flags and plain approval preserves them", async (t) => {
+  const original = postDoc({pipeline: "grid", status: "pending_approval", replyText: "",
+    media: [{r2Key: "social/a.jpg", sha256: sha(BYTES), bytes: BYTES.length, alt: "alt", sensitive: true}],
+    approval: {required: true}});
+  const store = installSocialDb(t, {[PATH]: original});
+  const captions: string[] = [];
+  const buttons: Parameters<Telegram["sendButtons"]>[1][] = [];
+  const tg: Telegram = {sendPhotos: async (caption) => {
+    captions.push(caption);
+  }, sendButtons: async (_text, choices) => {
+    buttons.push(choices);
+    if (buttons.length === 1) throw new Error("offline");
+  }, sendText: async () => undefined, answer: async () => undefined,
+  markDone: async () => undefined, setWebhook: async () => undefined};
+  const run = {...deps(null, NOW), telegram: tg};
+  await publishDue(run);
+  assert.equal(store.get(PATH)?.previewSentAt, undefined);
+  await publishDue(run);
+  assert.ok(store.get(PATH)?.previewSentAt);
+  assert.ok(captions.every((caption) => caption.includes("Sensitive flags: 1")));
+  assert.ok(captions.every((caption) => caption.includes("Vision suggests a flag on: 0 of 1")));
+  assert.deepEqual(buttons[1].map((b) => [b.label, b.action]),
+    [["Approve", "approve"], ["Approve + flag", "flag"], ["Skip", "skip"]]);
+  for (const b of buttons[1]) {
+    const data = callbackData(b.action, b.postId, b.hash);
+    assert.ok(Buffer.byteLength(data) <= 64);
+    assert.equal(parsePress(pressUpdate(data), "42")?.action, b.action);
+  }
+  await applyPress({...press("approve", String(original.contentHash).slice(0, 12)), postId: PATH.split("/")[1]});
+  assert.equal(store.get(PATH)?.contentHash, original.contentHash);
+  const {x, creates} = fakeX();
+  const metadata: boolean[] = [];
+  x.setMediaMetadata = async (_id, _alt, sensitive) => {
+    metadata.push(sensitive);
+  };
+  await publishDue(deps(x, NOW));
+  assert.deepEqual(metadata, [true]);
+  assert.equal(creates.length, 1);
+});
+
+test("flag and plain approval races keep the first decision and its matching hash", async (t) => {
+  for (const first of ["flag", "approve"] as const) {
+    await t.test(first, async (t) => {
+      const post = postDoc({pipeline: "grid", status: "pending_approval", replyText: ""});
+      const store = installSocialDb(t, {[PATH]: post});
+      const makePress = (action: "approve" | "flag" | "skip") =>
+        ({...press(action, String(post.contentHash).slice(0, 12)), postId: PATH.split("/")[1]});
+      const results = await Promise.all([applyPress(makePress(first)),
+        applyPress(makePress(first === "flag" ? "approve" : "flag"))]);
+      assert.equal(results[0], first === "flag" ? "Approved with flag." : "Approved.");
+      assert.match(results[1], first === "flag" ? /changed or is gone/ : /Nothing to do/);
+      const decided = store.get(PATH) as Doc;
+      assert.equal((decided.approval as Doc).approvedHash, decided.contentHash);
+      assert.equal((decided.media as Doc[])[0].sensitive, first === "flag");
+      if (first === "flag") {
+        for (const action of ["approve", "flag", "skip"] as const) {
+          assert.equal(await applyPress(makePress(action)), "This post changed or is gone.");
+        }
+        assert.deepEqual(store.get(PATH), decided);
+      }
+      const {x, creates} = fakeX();
+      await publishDue(deps(x, NOW, config({dryRun: true})));
+      assert.equal(store.get(PATH)?.status, "dry_run");
+      assert.equal(creates.length, 0);
+    });
+  }
+});
+
+test("flag is a no-op for every non-pending state and for non-grids", async (t) => {
+  const store = installSocialDb(t);
+  for (const pipeline of ["grid", "panorama", "still"]) {
+    for (const status of ["pending_approval", "approved", "posting", "posted", "uncertain", "skipped", "failed", "dry_run"]) {
+      if (pipeline === "grid" && status === "pending_approval") continue;
+      const post = postDoc({pipeline, status});
+      store.set(PATH, post);
+      assert.match(await applyPress({...press("flag", String(post.contentHash).slice(0, 12)),
+        postId: PATH.split("/")[1]}), /^Nothing to do/);
+      assert.deepEqual(store.get(PATH), post);
+    }
+  }
 });

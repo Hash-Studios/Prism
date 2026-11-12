@@ -215,6 +215,7 @@ async function preview(deps: SocialDeps, ref: admin.firestore.DocumentReference,
     await deps.telegram.sendPhotos([
       `${deps.config.dryRun ? "[DRY RUN] " : ""}${ref.id} · ${post.pipeline} · ${SLOTS[post.slot as Slot].time} IST`,
       post.text, ...(str(post.replyText) ? [`Reply: ${post.replyText}`] : []),
+      `Sensitive flags: ${media.filter((m: admin.firestore.DocumentData) => m.sensitive === true).length}`,
       ...(post.pipeline === "grid" ?
         [`Vision suggests a flag on: ${media.filter((m: admin.firestore.DocumentData) => m.suggestFlag).length} of ${media.length}`] : []),
       `Source: ${post.source.kind} ${post.source.ids.join(", ")}`,
@@ -245,6 +246,8 @@ export async function applyPress(press: ApprovalPress): Promise<string> {
     if (press.action === "approve" || press.action === "flag" || press.action === "skip") {
       if (!str(post.contentHash).startsWith(press.hash)) return "This post changed or is gone.";
       if (press.action === "flag" && post.status === "pending_approval" && post.pipeline === "grid") {
+        // Only the flags may change from what the owner previewed.
+        if (storedContentHash(post) !== post.contentHash) return "This post changed or is gone.";
         // Flags the images Vision suggested, or all of them when it suggested none. The hash then covers the flags.
         const media = (post.media ?? []) as admin.firestore.DocumentData[];
         const pick = media.some((m) => m.suggestFlag === true);
