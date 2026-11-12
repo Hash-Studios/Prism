@@ -493,9 +493,9 @@ void main() {
         await search.search('sky', kinds: <PrismWallKind>{kind});
         await search.search('duo', kinds: <PrismWallKind>{kind});
       }
-      final Map<String, dynamic> config =
-          jsonDecode(File('firestore.indexes.json').readAsStringSync()) as Map<String, dynamic>;
-      final List<dynamic> indexes = config['indexes'] as List<dynamic>;
+      final Map<String, Object?> config =
+          jsonDecode(File('firestore.indexes.json').readAsStringSync()) as Map<String, Object?>;
+      final List<Object?> indexes = config['indexes']! as List<Object?>;
       final List<(String, String)> protectedPrefix = <(String, String)>[
         for (final String field in <String>[
           'originalProtected',
@@ -521,10 +521,10 @@ void main() {
             (order.field, order.descending ? 'DESCENDING' : 'ASCENDING'),
           ('__name__', spec.orderBy.last.descending ? 'DESCENDING' : 'ASCENDING'),
         ];
-        final bool hasIndex = indexes.whereType<Map<String, dynamic>>().any((index) {
+        final bool hasIndex = indexes.whereType<Map<String, Object?>>().any((index) {
           if (index['collectionGroup'] != spec.collection || index['queryScope'] != 'COLLECTION') return false;
-          final List<(String, String)> fields = (index['fields'] as List<dynamic>)
-              .cast<Map<String, dynamic>>()
+          final List<(String, String)> fields = (index['fields']! as List<Object?>)
+              .cast<Map<String, Object?>>()
               .map((field) => (field['fieldPath'] as String, (field['order'] ?? field['arrayConfig']) as String))
               .toList();
           if (fields.last.$1 != '__name__') fields.add(('__name__', fields.last.$2));
