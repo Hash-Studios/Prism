@@ -1624,6 +1624,23 @@ void main() {
       expect(discarded, <String>[preparedPath(0)]);
     });
 
+    testWidgets('a saved copy is deleted before the iOS guide opens, and only once', (tester) async {
+      IosWallpaperGuideSession.shown = false;
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+
+      expect(find.text('Open Photos'), findsOneWidget);
+      expect(Directory('${tempDir.path}/position_0').existsSync(), isFalse);
+      expect(discarded, <String>[preparedPath(0)]);
+
+      await tester.tapAt(const Offset(10, 10));
+      await settle(tester);
+
+      expect(find.text('Open Photos'), findsNothing);
+      expect(results().single.result, 'success');
+      expect(discarded, <String>[preparedPath(0)]);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
     testWidgets('two Saves that overlap each delete only their own copy', (tester) async {
       final Completer<bool> first = Completer<bool>();
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(

@@ -155,6 +155,7 @@ class _DownloadTap {
     required this.fileIdentity,
     required this.l10n,
     required this.prepared,
+    required this.discard,
   });
 
   final String link;
@@ -183,9 +184,13 @@ class _DownloadTap {
   /// Taken before the tap's first await, so a save that ends after the page closes can still tell the user.
   final AppLocalizations l10n;
 
-  /// The files the variant prepared for this tap. The tap discards them when it ends, never earlier, because the save
-  /// reads them. A file belongs to the tap that made it, so a new tap never discards an earlier tap's file.
+  /// The files the variant prepared for this tap. The tap discards them after its save returned, or when it ends, never
+  /// while the save can read them. A file belongs to the tap that made it, so a new tap never discards an earlier tap's
+  /// file.
   final List<String> prepared;
+
+  /// The variant's discard, taken when the tap starts.
+  final Future<void> Function(String prepared)? discard;
 }
 
 class _DownloadButtonState extends State<DownloadButton> {
@@ -474,6 +479,7 @@ class _DownloadButtonState extends State<DownloadButton> {
             : _originalIdentity(link, widget.contentId),
         l10n: l10n,
         prepared: prepared,
+        discard: variant?.discard,
       );
       _activeTap = tap;
       _attemptStarted = false;
@@ -613,13 +619,7 @@ class _DownloadButtonState extends State<DownloadButton> {
       if (mounted) toasts.error(l10n.economyAiDownloadFailed);
     } finally {
       await _discardSetFiles();
-      for (final String path in prepared) {
-        try {
-          await variant?.discard?.call(path);
-        } catch (error, stackTrace) {
-          logger.w('Could not delete a prepared download file', error: error, stackTrace: stackTrace);
-        }
-      }
+      await _discardPrepared(prepared, variant?.discard);
       busySet?.onBusyChanged?.call(false);
       if (_attemptStarted && !_resultTracked) {
         _track(
@@ -640,6 +640,18 @@ class _DownloadButtonState extends State<DownloadButton> {
     );
     if (path != null) tap.prepared.add(path);
     return path;
+  }
+
+  /// Deletes each file in [prepared] one time: a file leaves the list before its delete starts.
+  Future<void> _discardPrepared(List<String> prepared, Future<void> Function(String prepared)? discard) async {
+    while (prepared.isNotEmpty) {
+      final String path = prepared.removeLast();
+      try {
+        await discard?.call(path);
+      } catch (error, stackTrace) {
+        logger.w('Could not delete a prepared download file', error: error, stackTrace: stackTrace);
+      }
+    }
   }
 
   String get _sourceLabel {
@@ -1139,6 +1151,10 @@ class _DownloadButtonState extends State<DownloadButton> {
       unawaited(RatePromptService.instance.recordFailure());
       return false;
     }
+
+    // The native saves returned, so nothing reads the prepared copy now. Delete it before the sheets below, which can
+    // stay open for a long time.
+    await _discardPrepared(tap.prepared, tap.discard);
 
     final String? paidTxId = _paidTxId;
     if (paidTxId != null) await CoinsService.instance.markPendingDownloadSaved(paidTxId);
