@@ -1,5 +1,13 @@
 ## Changelog
 
+### v3.28.0
+- Add a Streak widget to your Android home screen. Prism widgets now follow your Material You colours
+- Bigger tap targets and a clearer reading order for screen readers and large text
+- Google sign-in works on phones with no saved Google account
+- On iPhone, Prism asks before ads use tracking
+- Save no longer leaves an extra copy on your phone after a readability fix
+- Security and stability fixes
+
 ### v3.27.0
 - Creators can upload short looping live walls. Play them in the feed and set them on Android
 - Tips before you set a wall show when the clock or icons are hard to read, with a one-tap fix
