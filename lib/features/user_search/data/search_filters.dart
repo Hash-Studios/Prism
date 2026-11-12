@@ -57,19 +57,6 @@ class SearchFilters {
     );
   }
 
-  /// The search link fields for [query] with these filters.
-  SearchLinkFields toLink(String query) => (
-    query: query.trim(),
-    kinds: kinds,
-    source: source,
-    colorId: color?.id,
-    sort: sort,
-    minResolution: minResolution,
-    portraitOnly: portraitOnly,
-    depthOnly: depthOnly,
-    spatialOnly: spatialOnly,
-  );
-
   /// True when [wall] has every kind in [kinds].
   bool acceptsKinds(PrismWallpaper wall) => kinds.every((kind) => kind.matches(wall));
 

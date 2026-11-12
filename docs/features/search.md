@@ -29,7 +29,7 @@ Search is free. The search files contain no premium or coin gate.
 | `lib/features/user_search/views/widgets/search_filter_sheet.dart` | Filter sheet and the mapping from choices to `SearchFilters`. |
 | `lib/features/user_search/data/recent_searches_store.dart` | Recent searches in local settings. |
 | `lib/features/user_search/data/search_filters.dart` | `SearchFilters`, `SearchSort`, `SearchSource` and `PrismWallKind`. |
-| `lib/features/user_search/data/search_link.dart` | The search link keys, parsing and the link path. Plain Dart. |
+| `lib/features/user_search/data/search_link.dart` | The search link keys and their parser. Plain Dart, so the deep link catalog can use it. |
 | `lib/core/color/prism_palette.dart` | The 12 palette colours and `nearestPaletteColor`. |
 | `lib/features/user_search/views/widgets/palette_swatch.dart` | The round colour swatch. |
 | `lib/features/user_search/data/wallpaper_search_service.dart` | Runs the search. Falls back to Pexels. Throws on total failure. |

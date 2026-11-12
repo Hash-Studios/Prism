@@ -7,6 +7,26 @@ import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// The link a shared search would carry, for example `/dashboard/search?q=sky&kind=live`. Default values are left out.
+String searchLinkPath(String query, SearchFilters filters) {
+  final Map<String, String> params = <String, String>{
+    if (query.trim().isNotEmpty) 'q': query.trim(),
+    if (filters.kinds.isNotEmpty)
+      'kind': <String>[
+        for (final PrismWallKind kind in PrismWallKind.values)
+          if (filters.kinds.contains(kind)) kind.wire,
+      ].join(','),
+    if (filters.source != SearchSource.all) 'source': filters.source.name,
+    if (filters.color != null) 'color': filters.color!.id,
+    if (filters.sort != SearchSort.relevance) 'sort': filters.sort.name,
+    if (filters.minResolution != null) 'res': filters.minResolution!,
+    if (!filters.portraitOnly) 'portrait': 'false',
+    if (filters.depthOnly) 'depth': 'true',
+    if (filters.spatialOnly) 'spatial': 'true',
+  };
+  return Uri(path: '/dashboard/search', queryParameters: params.isEmpty ? null : params).toString();
+}
+
 void main() {
   setUp(() => pendingSearch.value = null);
   tearDown(() => pendingSearch.value = null);
@@ -39,7 +59,7 @@ void main() {
     for (final String query in <String>['sky', '']) {
       for (final (String name, SearchFilters filters) in cases) {
         test('$name keeps its filters and query "$query" through a link', () {
-          final String path = searchLinkPath(filters.toLink(query));
+          final String path = searchLinkPath(query, filters);
 
           final DeepLinkRouteMatch? match = DeepLinkRouteCatalog.match(Uri.parse(path));
           expect(match?.target, DeepLinkPageTarget.searchTab);
@@ -55,20 +75,18 @@ void main() {
 
   group('literal links', () {
     test('a query with default filters is q only', () {
-      expect(searchLinkPath(const SearchFilters().toLink('sky')), '/dashboard/search?q=sky');
+      expect(searchLinkPath('sky', const SearchFilters()), '/dashboard/search?q=sky');
     });
 
     test('kinds are comma separated in kind order, and the comma is encoded', () {
       expect(
-        searchLinkPath(
-          const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.lightDark, PrismWallKind.live}).toLink('sky'),
-        ),
+        searchLinkPath('sky', const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.lightDark, PrismWallKind.live})),
         '/dashboard/search?q=sky&kind=live%2Clight-dark',
       );
     });
 
     test('an empty query with default filters is the bare path', () {
-      expect(searchLinkPath(const SearchFilters().toLink('')), '/dashboard/search');
+      expect(searchLinkPath('', const SearchFilters()), '/dashboard/search');
     });
   });
 

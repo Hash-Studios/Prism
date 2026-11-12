@@ -57,29 +57,6 @@ final RegExp _colorId = RegExp(r'^[a-z]{1,24}$');
 final RegExp _resolution = RegExp(r'^[1-9]\d{2,4}x[1-9]\d{2,4}$');
 final RegExp _control = RegExp(r'[\u0000-\u001F\u007F]');
 
-/// The query parameters for [fields]. Default values are left out, so a plain search is `q=sky`.
-Map<String, String> searchLinkParams(SearchLinkFields fields) => <String, String>{
-  if (fields.query.trim().isNotEmpty) 'q': fields.query.trim(),
-  if (fields.kinds.isNotEmpty)
-    'kind': <String>[
-      for (final PrismWallKind kind in PrismWallKind.values)
-        if (fields.kinds.contains(kind)) kind.wire,
-    ].join(','),
-  if (fields.source != SearchSource.all) 'source': fields.source.name,
-  if (fields.colorId != null) 'color': fields.colorId!,
-  if (fields.sort != SearchSort.relevance) 'sort': fields.sort.name,
-  if (fields.minResolution != null) 'res': fields.minResolution!,
-  if (!fields.portraitOnly) 'portrait': 'false',
-  if (fields.depthOnly) 'depth': 'true',
-  if (fields.spatialOnly) 'spatial': 'true',
-};
-
-/// The link path for [fields], for example `/dashboard/search?q=sky&kind=live`.
-String searchLinkPath(SearchLinkFields fields) {
-  final Map<String, String> params = searchLinkParams(fields);
-  return Uri(path: '/dashboard/search', queryParameters: params.isEmpty ? null : params).toString();
-}
-
 /// The fields of a search link, or null when a value is not valid. Keys outside [searchLinkKeys] are not read.
 SearchLinkFields? parseSearchLink(Map<String, String> params) {
   final String query = (params['q'] ?? '').trim();
