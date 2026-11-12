@@ -1469,6 +1469,19 @@ void main() {
 
     String preparedPath(int render) => '${tempDir.path}/position_$render/placement.png';
 
+    DownloadVariant authorizedRendered(List<String> sources) {
+      final DownloadVariant copy = rendered();
+      return DownloadVariant(
+        key: copy.key,
+        prepare: () => throw StateError('Protected originals must be authorized before rendering.'),
+        prepareAuthorized: (String source) {
+          sources.add(source);
+          return copy.prepare();
+        },
+        discard: copy.discard,
+      );
+    }
+
     testWidgets('a successful Save deletes its copy once, after the save read it', (tester) async {
       bool readable = false;
       onEnqueue = () => readable = File((enqueued.last! as DownloadRequest).link).existsSync();
@@ -1549,12 +1562,108 @@ void main() {
       expect(discarded, isEmpty);
 
       save.complete(true);
-      await pumpUntil(tester, () => discarded.isNotEmpty);
+      await pumpUntil(tester, () => !File(preparedPath(0)).existsSync());
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await settle(tester);
 
       expect(discarded, <String>[preparedPath(0)]);
       expect(File(preparedPath(0)).existsSync(), isFalse);
+    });
+
+    testWidgets('an account switch during native Save keeps its copy readable until the reply', (tester) async {
+      final Completer<bool> save = holdSaves();
+      await pump(tester, variant: rendered());
+      await tapSave(tester);
+      expect(enqueued, hasLength(1));
+
+      app_state.prismUser = app_constants.createGuestPrismUser()
+        ..id = 'account-b'
+        ..loggedIn = true;
+      await settle(tester);
+
+      final DownloadRequest request = enqueued.single! as DownloadRequest;
+      expect(request.link, preparedPath(0));
+      expect(File(request.link).readAsBytesSync(), File(tinted).readAsBytesSync());
+      expect(discarded, isEmpty);
+
+      save.complete(true);
+      await pumpUntil(tester, () => !File(preparedPath(0)).existsSync());
+      await settle(tester);
+
+      expect(discarded, <String>[preparedPath(0)]);
+      expect(enqueued, hasLength(1));
+    });
+
+    testWidgets('a protected Save reads its authorized copy before the reply and discards before the iOS guide', (
+      tester,
+    ) async {
+      backend.originalAssets['wall-1'] = (premium: true, coins: 20);
+      backend.originalPro = true;
+      final List<String> authorizedSources = <String>[];
+      final Completer<bool> save = holdSaves();
+      List<int>? nativeBytes;
+      onEnqueue = () => nativeBytes = File((enqueued.last! as DownloadRequest).link).readAsBytesSync();
+      IosWallpaperGuideSession.shown = false;
+      await pump(tester, source: WallpaperSource.prism, variant: authorizedRendered(authorizedSources));
+      await tapSave(tester);
+
+      expect(authorizedSources, <String>['https://signed.test/wall-1']);
+      expect(renders, 1);
+      expect((enqueued.single! as DownloadRequest).link, preparedPath(0));
+      expect(nativeBytes, File(tinted).readAsBytesSync());
+      expect(discarded, isEmpty);
+      expect(find.text('Open Photos'), findsNothing);
+
+      save.complete(true);
+      await pumpUntil(tester, () => find.text('Open Photos').evaluate().isNotEmpty);
+      await settle(tester);
+      expect(File(preparedPath(0)).existsSync(), isFalse);
+      expect(discarded, <String>[preparedPath(0)]);
+
+      await tester.tapAt(const Offset(10, 10));
+      await settle(tester);
+      expect(results().single.result, 'success');
+      expect(discarded, <String>[preparedPath(0)]);
+      expect(spendCalls, isEmpty);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+    testWidgets('a failed protected Save retries its receipt with a fresh copy, never the discarded path', (
+      tester,
+    ) async {
+      backend.originalAssets['wall-1'] = (premium: true, coins: 20);
+      final List<String> authorizedSources = <String>[];
+      final List<bool> readable = <bool>[];
+      onEnqueue = () => readable.add(File((enqueued.last! as DownloadRequest).link).readAsBytesSync().isNotEmpty);
+      enqueueSucceeds = false;
+      await pump(tester, source: WallpaperSource.prism, variant: authorizedRendered(authorizedSources));
+      await tapSave(tester);
+      await tester.tap(find.text('Download').last);
+      await pumpUntil(tester, () => renders == 1 && !File(preparedPath(0)).existsSync());
+      await settle(tester);
+      expect(results().single.reason, 'enqueue_failed');
+      expect(discarded, <String>[preparedPath(0)]);
+      expect(backend.originalDebits, 1);
+
+      enqueueSucceeds = true;
+      await tapSave(tester);
+      await pumpUntil(tester, () => !File(preparedPath(1)).existsSync());
+      await settle(tester);
+
+      expect(renders, 2);
+      expect(authorizedSources, <String>['https://signed.test/wall-1', 'https://signed.test/wall-1']);
+      expect(enqueued.map((Object? request) => (request! as DownloadRequest).link), <String>[
+        preparedPath(0),
+        preparedPath(1),
+      ]);
+      expect(readable, <bool>[true, true]);
+      expect(discarded, <String>[preparedPath(0), preparedPath(1)]);
+      expect(results().last.result, 'success');
+      final acquisitions = backend.originalCalls.where((call) => call['mode'] != 'quote').toList();
+      expect(acquisitions, hasLength(2));
+      expect(acquisitions.first['requestId'], acquisitions.last['requestId']);
+      expect(backend.originalDebits, 1);
+      expect(backend.originalBalance, 80);
+      expect(spendCalls, isEmpty);
     });
 
     testWidgets('a refused spend never prepares again and discards once after cancellation', (tester) async {
