@@ -1,0 +1,14 @@
+# Re-proof at c4b4852bc (copy deleted when the native save returns).
+$ ls -laR $CONTAINER/Library/Caches/prism_edit   # fix applied, before Save (11:41:15)
+total 0
+drwxr-xr-x   2 codenameakshay  staff   64 Nov 12 09:42 .
+drwxr-xr-x  22 codenameakshay  staff  704 Nov 12 09:39 ..
+
+$ ls -laR $CONTAINER/Library/Caches/prism_edit   # saved, iOS guide sheet still open (11:41:23)
+total 0
+drwxr-xr-x   2 codenameakshay  staff   64 Nov 12 11:41 .
+drwxr-xr-x  22 codenameakshay  staff  704 Nov 12 09:39 ..
+
+# Poller (every 50 ms) of files under prism_edit:
+--- 11:41:17 files: prism_edit/position_PAU8wd/placement.png
+--- 11:41:17 files: none
