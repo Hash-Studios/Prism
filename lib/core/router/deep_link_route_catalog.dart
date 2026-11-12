@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
+import 'package:Prism/features/user_search/data/search_link.dart';
 
 /// The path-only contract for every app route that can be opened from a URL.
 ///
@@ -115,6 +116,11 @@ final class DeepLinkRouteCatalog {
     DeepLinkRouteExample('/dashboard', DeepLinkPageTarget.dashboard),
     DeepLinkRouteExample('/dashboard/home', DeepLinkPageTarget.home),
     DeepLinkRouteExample('/dashboard/search', DeepLinkPageTarget.searchTab),
+    DeepLinkRouteExample('/dashboard/search?q=sky&kind=live', DeepLinkPageTarget.searchTab),
+    DeepLinkRouteExample(
+      '/dashboard/search?kind=desktop,light-dark&source=prism&color=blue&sort=latest&res=1080x1920',
+      DeepLinkPageTarget.searchTab,
+    ),
     DeepLinkRouteExample('/dashboard/search/users', DeepLinkPageTarget.userSearch),
     DeepLinkRouteExample('/dashboard/rewards', DeepLinkPageTarget.rewardsTab),
     DeepLinkRouteExample('/dashboard/streak', DeepLinkPageTarget.rewardsTab),
@@ -249,6 +255,7 @@ final class DeepLinkRouteCatalog {
     DeepLinkPageTarget.debugPanel: <String>{'tab'},
     DeepLinkPageTarget.redeemCode: <String>{'code'},
     DeepLinkPageTarget.home: <String>{'feed'},
+    DeepLinkPageTarget.searchTab: searchLinkKeys,
     DeepLinkPageTarget.folder: <String>{'invite'},
     DeepLinkPageTarget.folderInvite: <String>{'invite'},
   };
@@ -407,6 +414,9 @@ final class DeepLinkRouteCatalog {
     if (target == DeepLinkPageTarget.home &&
         query['feed'] != null &&
         !HomeFeedChip.values.asNameMap().containsKey(query['feed'])) {
+      return null;
+    }
+    if (target == DeepLinkPageTarget.searchTab && parseSearchLink(query) == null) {
       return null;
     }
     if (target == DeepLinkPageTarget.debugPanel &&

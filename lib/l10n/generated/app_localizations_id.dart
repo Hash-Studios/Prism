@@ -734,9 +734,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get accountFields => 'Kolom';
 
   @override
-  String get accountFilters => 'Filter';
-
-  @override
   String get accountFindCreators => 'Cari kreator';
 
   @override
@@ -1244,9 +1241,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get accountReportUser => 'Laporkan pengguna';
-
-  @override
-  String get accountReset => 'Atur ulang';
 
   @override
   String get accountResetFilters => 'Atur ulang filter';
@@ -15687,4 +15681,52 @@ class AppLocalizationsId extends AppLocalizations {
   String adminLiveFacts(String seconds) {
     return 'Live · $seconds s';
   }
+
+  @override
+  String get searchFilterPrismSection => 'Wallpaper Prism';
+
+  @override
+  String get searchFilterPrismOnly => 'Hanya wallpaper Prism';
+
+  @override
+  String get searchFilterPrismOnlySubtitle => 'Sembunyikan hasil Wallhaven dan Pexels';
+
+  @override
+  String get searchKindLive => 'Live';
+
+  @override
+  String get searchKindDesktop => 'Versi desktop';
+
+  @override
+  String get searchKindLightDark => 'Terang dan gelap';
+
+  @override
+  String get searchFilterClearAll => 'Hapus semua';
+
+  @override
+  String searchFiltersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Filter, $count aktif',
+      one: 'Filter, 1 aktif',
+      zero: 'Filter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get searchKindsPrismOnlyNote =>
+      'Hanya wallpaper Prism yang punya jenis ini, jadi hasil Wallhaven dan Pexels disembunyikan.';
+
+  @override
+  String searchRemoveFilter(String filter) {
+    return 'Hapus $filter';
+  }
+
+  @override
+  String get discoverLiveWallsTitle => 'Wallpaper bergerak';
+
+  @override
+  String get discoverLiveWallsSubtitle => 'Video berulang dari kreator Prism';
 }

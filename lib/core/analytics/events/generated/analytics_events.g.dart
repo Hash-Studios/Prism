@@ -1363,6 +1363,36 @@ class SearchResultsLoadedEvent extends AnalyticsEvent {
   }
 }
 
+class SearchFilterAppliedEvent extends AnalyticsEvent {
+  const SearchFilterAppliedEvent({required this.filters});
+
+  final List<String> filters;
+
+  @override
+  String get eventName => 'search_filter_applied';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'filters': filters};
+  }
+}
+
+class SearchKindResultsEvent extends AnalyticsEvent {
+  const SearchKindResultsEvent({required this.kinds, required this.resultCount, this.searchId});
+
+  final List<String> kinds;
+  final int resultCount;
+  final String? searchId;
+
+  @override
+  String get eventName => 'search_kind_results';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'kinds': kinds, 'result_count': resultCount, if (searchId != null) 'search_id': searchId!};
+  }
+}
+
 class SearchResultOpenedEvent extends AnalyticsEvent {
   const SearchResultOpenedEvent({
     required this.provider,

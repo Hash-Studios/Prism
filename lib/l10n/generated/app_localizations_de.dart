@@ -753,9 +753,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get accountFields => 'Felder';
 
   @override
-  String get accountFilters => 'Filter';
-
-  @override
   String get accountFindCreators => 'Kreative finden';
 
   @override
@@ -1267,9 +1264,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get accountReportUser => 'Person melden';
-
-  @override
-  String get accountReset => 'Zurücksetzen';
 
   @override
   String get accountResetFilters => 'Filter zurücksetzen';
@@ -15880,4 +15874,52 @@ class AppLocalizationsDe extends AppLocalizations {
   String adminLiveFacts(String seconds) {
     return 'Live · $seconds s';
   }
+
+  @override
+  String get searchFilterPrismSection => 'Prism-Hintergrundbilder';
+
+  @override
+  String get searchFilterPrismOnly => 'Nur Prism-Hintergrundbilder';
+
+  @override
+  String get searchFilterPrismOnlySubtitle => 'Wallhaven- und Pexels-Ergebnisse ausblenden';
+
+  @override
+  String get searchKindLive => 'Live';
+
+  @override
+  String get searchKindDesktop => 'Desktop-Version';
+
+  @override
+  String get searchKindLightDark => 'Hell und dunkel';
+
+  @override
+  String get searchFilterClearAll => 'Alle löschen';
+
+  @override
+  String searchFiltersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Filter, $count aktiv',
+      one: 'Filter, 1 aktiv',
+      zero: 'Filter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get searchKindsPrismOnlyNote =>
+      'Nur Prism-Hintergrundbilder haben diese Arten, daher werden Wallhaven- und Pexels-Ergebnisse ausgeblendet.';
+
+  @override
+  String searchRemoveFilter(String filter) {
+    return '$filter entfernen';
+  }
+
+  @override
+  String get discoverLiveWallsTitle => 'Live-Hintergrundbilder';
+
+  @override
+  String get discoverLiveWallsSubtitle => 'Loop-Videos von Prism-Kreativen';
 }

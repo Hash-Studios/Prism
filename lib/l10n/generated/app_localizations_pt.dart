@@ -753,9 +753,6 @@ class AppLocalizationsPt extends AppLocalizations {
   String get accountFields => 'Campos';
 
   @override
-  String get accountFilters => 'Filtros';
-
-  @override
   String get accountFindCreators => 'Encontrar criadores';
 
   @override
@@ -1264,9 +1261,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get accountReportUser => 'Denunciar usuário';
-
-  @override
-  String get accountReset => 'Redefinir';
 
   @override
   String get accountResetFilters => 'Redefinir filtros';
@@ -16008,6 +16002,54 @@ class AppLocalizationsPt extends AppLocalizations {
   String adminLiveFacts(String seconds) {
     return 'Animado · $seconds s';
   }
+
+  @override
+  String get searchFilterPrismSection => 'Papéis de parede Prism';
+
+  @override
+  String get searchFilterPrismOnly => 'Só papéis de parede Prism';
+
+  @override
+  String get searchFilterPrismOnlySubtitle => 'Ocultar resultados do Wallhaven e Pexels';
+
+  @override
+  String get searchKindLive => 'Animado';
+
+  @override
+  String get searchKindDesktop => 'Versão para desktop';
+
+  @override
+  String get searchKindLightDark => 'Claro e escuro';
+
+  @override
+  String get searchFilterClearAll => 'Limpar tudo';
+
+  @override
+  String searchFiltersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Filtros, $count ativos',
+      one: 'Filtros, 1 ativo',
+      zero: 'Filtros',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get searchKindsPrismOnlyNote =>
+      'Só os papéis de parede Prism têm estes tipos, então os resultados do Wallhaven e Pexels estão ocultos.';
+
+  @override
+  String searchRemoveFilter(String filter) {
+    return 'Remover $filter';
+  }
+
+  @override
+  String get discoverLiveWallsTitle => 'Papéis de parede animados';
+
+  @override
+  String get discoverLiveWallsSubtitle => 'Vídeos em loop de criadores Prism';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -16757,9 +16799,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get accountFields => 'Campos';
 
   @override
-  String get accountFilters => 'Filtros';
-
-  @override
   String get accountFindCreators => 'Encontrar criadores';
 
   @override
@@ -17268,9 +17307,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get accountReportUser => 'Denunciar usuário';
-
-  @override
-  String get accountReset => 'Redefinir';
 
   @override
   String get accountResetFilters => 'Redefinir filtros';
@@ -32012,4 +32048,52 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String adminLiveFacts(String seconds) {
     return 'Animado · $seconds s';
   }
+
+  @override
+  String get searchFilterPrismSection => 'Papéis de parede Prism';
+
+  @override
+  String get searchFilterPrismOnly => 'Só papéis de parede Prism';
+
+  @override
+  String get searchFilterPrismOnlySubtitle => 'Ocultar resultados do Wallhaven e Pexels';
+
+  @override
+  String get searchKindLive => 'Animado';
+
+  @override
+  String get searchKindDesktop => 'Versão para desktop';
+
+  @override
+  String get searchKindLightDark => 'Claro e escuro';
+
+  @override
+  String get searchFilterClearAll => 'Limpar tudo';
+
+  @override
+  String searchFiltersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Filtros, $count ativos',
+      one: 'Filtros, 1 ativo',
+      zero: 'Filtros',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get searchKindsPrismOnlyNote =>
+      'Só os papéis de parede Prism têm estes tipos, então os resultados do Wallhaven e Pexels estão ocultos.';
+
+  @override
+  String searchRemoveFilter(String filter) {
+    return 'Remover $filter';
+  }
+
+  @override
+  String get discoverLiveWallsTitle => 'Papéis de parede animados';
+
+  @override
+  String get discoverLiveWallsSubtitle => 'Vídeos em loop de criadores Prism';
 }

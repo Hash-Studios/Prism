@@ -4,13 +4,16 @@ import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/creator_directory/views/widgets/creators_section.dart';
 import 'package:Prism/features/folders/views/widgets/discover_folders.dart';
+import 'package:Prism/features/user_search/biz/bloc/search_discovery_bloc.j.dart';
 import 'package:Prism/features/user_search/views/widgets/search_discovery_sections.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// What the search tab shows before a search. Imagery leads: one chip row of recent searches and tags, trending walls,
-/// categories, colours, creators and folders. The text rows (creators, requests, depth, spatial) close the page as one group.
+/// categories, colours, creators and folders. The text rows (creators, requests, live walls, depth, spatial) close the
+/// page as one group.
 class SearchDiscoveryWidget extends StatelessWidget {
   const SearchDiscoveryWidget({
     super.key,
@@ -25,6 +28,7 @@ class SearchDiscoveryWidget extends StatelessWidget {
     this.onColorPressed,
     this.onDepthPressed,
     this.onSpatialPressed,
+    this.onLiveWallsPressed,
   });
 
   final List<String> tags;
@@ -48,6 +52,9 @@ class SearchDiscoveryWidget extends StatelessWidget {
 
   /// Opens the walls that work as an iOS 26 Spatial Scene. Without it the row is hidden.
   final VoidCallback? onSpatialPressed;
+
+  /// Opens search with the Live filter on. The row shows only when the [SearchDiscoveryBloc] found live walls.
+  final VoidCallback? onLiveWallsPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +90,7 @@ class SearchDiscoveryWidget extends StatelessWidget {
                     children: <Widget>[
                       const _FindCreatorsRow(),
                       const _WallRequestsRow(),
+                      if (onLiveWallsPressed != null) _LiveWallsRow(onPressed: onLiveWallsPressed!),
                       if (onDepthPressed != null) _DepthEffectRow(onPressed: onDepthPressed!),
                       if (onSpatialPressed != null) _SpatialSceneRow(onPressed: onSpatialPressed!),
                     ],
@@ -194,6 +202,29 @@ class _WallRequestsRow extends StatelessWidget {
       onTap: () {
         PrismHaptics.tap();
         context.router.push(WallRequestsRoute());
+      },
+    );
+  }
+}
+
+/// Shows nothing until the discovery bloc finds at least one live wall.
+class _LiveWallsRow extends StatelessWidget {
+  const _LiveWallsRow({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool hasLiveWalls = context.select((SearchDiscoveryBloc bloc) => bloc.state.hasLiveWalls);
+    if (!hasLiveWalls) return const SizedBox.shrink();
+    return PrismRow(
+      icon: Icons.motion_photos_on_rounded,
+      title: context.l10n.discoverLiveWallsTitle,
+      subtitle: context.l10n.discoverLiveWallsSubtitle,
+      padding: _compactRowPadding,
+      onTap: () {
+        PrismHaptics.tap();
+        onPressed();
       },
     );
   }

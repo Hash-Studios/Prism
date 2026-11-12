@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
@@ -6,6 +8,7 @@ import 'package:Prism/features/user_search/views/widgets/search_filter_sheet.dar
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -221,7 +224,7 @@ void main() {
       SearchFilters? result;
       await openSheet(tester, SearchFilters(color: paletteColorById('pink')), (value) => result = value);
 
-      await tester.tap(find.text('Reset'));
+      await tester.tap(find.text('Clear all'));
       await tester.pumpAndSettle();
 
       expect(result, const SearchFilters());
@@ -290,7 +293,7 @@ void main() {
       await openSheet(tester, const SearchFilters(depthOnly: true), (picked) => result = picked);
 
       expect(tester.widget<PrismSwitchRow>(depthSwitch).value, isTrue);
-      await tester.tap(find.text('Reset'));
+      await tester.tap(find.text('Clear all'));
       await tester.pumpAndSettle();
 
       expect(result, const SearchFilters());
@@ -329,5 +332,190 @@ void main() {
 
       expect(result, const SearchFilters(depthOnly: true));
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+  });
+
+  group('Prism walls section', () {
+    Future<void> openSheet(
+      WidgetTester tester,
+      SearchFilters initial,
+      void Function(SearchFilters?) onResult, {
+      TextScaler textScaler = TextScaler.noScaling,
+      TextDirection direction = TextDirection.ltr,
+    }) async {
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          builder: (context, child) => Directionality(
+            textDirection: direction,
+            child: MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+              child: child!,
+            ),
+          ),
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () async => onResult(await showSearchFilterSheet(context, initial)),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+    }
+
+    Finder kindChip(String label) => find.widgetWithText(PrismChip, label);
+
+    final Finder prismOnlyRow = find.widgetWithText(PrismSwitchRow, 'Prism walls only');
+
+    testWidgets('shows the three kind chips under Prism walls', (tester) async {
+      await openSheet(tester, const SearchFilters(), (_) {});
+
+      expect(find.text('Prism walls'), findsOneWidget);
+      expect(kindChip('Live'), findsOneWidget);
+      expect(kindChip('Desktop version'), findsOneWidget);
+      expect(kindChip('Light and dark'), findsOneWidget);
+    });
+
+    testWidgets('Live and Light and dark then Apply returns those two kinds', (tester) async {
+      SearchFilters? result;
+      await openSheet(tester, const SearchFilters(), (value) => result = value);
+
+      await tester.ensureVisible(kindChip('Live'));
+      await tester.tap(kindChip('Live'));
+      await tester.pump();
+      await tester.ensureVisible(kindChip('Light and dark'));
+      await tester.tap(kindChip('Light and dark'));
+      await tester.pump();
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      expect(result!.kinds, unorderedEquals(<PrismWallKind>[PrismWallKind.live, PrismWallKind.lightDark]));
+    });
+
+    testWidgets('kind-only filters imply Prism-only results without an explicit source count', (tester) async {
+      const SearchFilters filters = SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live});
+      await openSheet(tester, filters, (_) {});
+
+      expect(tester.widget<PrismSwitchRow>(prismOnlyRow).value, isTrue);
+      expect(filters.prismOnly, isTrue);
+      expect(filters.activeNames, <String>['kind_live']);
+    });
+
+    for (final SearchSource source in SearchSource.values) {
+      testWidgets('turning off the enabled Prism switch clears kinds from $source and keeps other filters', (
+        tester,
+      ) async {
+        final handle = tester.ensureSemantics();
+        try {
+          SearchFilters? result;
+          final SearchFilters initial = SearchFilters(
+            color: paletteColorById('purple'),
+            source: source,
+            kinds: PrismWallKind.values.toSet(),
+          );
+          expect(initial.activeNames.length, source == SearchSource.prism ? 5 : 4);
+          await openSheet(tester, initial, (value) => result = value);
+
+          void expectSwitchSemantics(bool isToggled) {
+            final node = tester.getSemantics(prismOnlyRow);
+            final data = node.getSemanticsData();
+            expect(data.flagsCollection.isEnabled, Tristate.isTrue);
+            expect(data.flagsCollection.isToggled, isToggled ? Tristate.isTrue : Tristate.isFalse);
+            expect(data.hasAction(SemanticsAction.tap), isTrue);
+          }
+
+          expectSwitchSemantics(true);
+          await tester.ensureVisible(prismOnlyRow);
+          await tester.tap(find.descendant(of: prismOnlyRow, matching: find.byType(Switch)));
+          await tester.pump();
+          expect(tester.widget<PrismSwitchRow>(prismOnlyRow).value, isFalse);
+          expectSwitchSemantics(false);
+          expect(tester.widget<PrismChip>(kindChip('Live')).selected, isFalse);
+          expect(tester.widget<PrismChip>(kindChip('Desktop version')).selected, isFalse);
+          expect(tester.widget<PrismChip>(kindChip('Light and dark')).selected, isFalse);
+          await tester.tap(find.text('Apply'));
+          await tester.pumpAndSettle();
+
+          expect(result!.kinds, isEmpty);
+          expect(result!.source, SearchSource.all);
+          expect(result!.color, paletteColorById('purple'));
+          expect(result!.activeNames, <String>['color']);
+          expect(result!.activeNames.length, 1);
+        } finally {
+          handle.dispose();
+        }
+      });
+    }
+
+    testWidgets('turning on Prism walls only with no kinds and Apply returns the Prism source', (tester) async {
+      SearchFilters? result;
+      await openSheet(tester, const SearchFilters(), (value) => result = value);
+
+      await tester.ensureVisible(prismOnlyRow);
+      await tester.tap(prismOnlyRow);
+      await tester.pump();
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+
+      expect(result!.source, SearchSource.prism);
+      expect(result!.kinds, isEmpty);
+    });
+
+    testWidgets('Clear all returns the default filters', (tester) async {
+      SearchFilters? result;
+      await openSheet(
+        tester,
+        const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live}, source: SearchSource.prism),
+        (value) => result = value,
+      );
+
+      await tester.tap(find.text('Clear all'));
+      await tester.pumpAndSettle();
+
+      expect(result, const SearchFilters());
+    });
+
+    testWidgets('kind chips are buttons that report their selected state', (tester) async {
+      final handle = tester.ensureSemantics();
+      await openSheet(tester, const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live}), (_) {});
+
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Live')),
+        matchesSemantics(label: 'Live', isButton: true, hasSelectedState: true, isSelected: true, hasTapAction: true),
+      );
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Desktop version')),
+        matchesSemantics(label: 'Desktop version', isButton: true, hasSelectedState: true, hasTapAction: true),
+      );
+      handle.dispose();
+    });
+
+    testWidgets('at 2x text the sheet opens without an overflow and shows all three kind chips', (tester) async {
+      await openSheet(tester, const SearchFilters(), (_) {}, textScaler: const TextScaler.linear(2));
+
+      expect(tester.takeException(), isNull);
+      expect(kindChip('Live'), findsOneWidget);
+      expect(kindChip('Desktop version'), findsOneWidget);
+      expect(kindChip('Light and dark'), findsOneWidget);
+    });
+
+    testWidgets('in RTL the chips and switch render, and the heading sits on the right', (tester) async {
+      await openSheet(tester, const SearchFilters(), (_) {}, direction: TextDirection.rtl);
+
+      expect(tester.takeException(), isNull);
+      expect(kindChip('Live'), findsOneWidget);
+      expect(prismOnlyRow, findsOneWidget);
+      final double halfScreen = tester.view.physicalSize.width / tester.view.devicePixelRatio / 2;
+      expect(
+        tester.getTopRight(find.text('Prism walls')).dx,
+        greaterThan(tester.getTopLeft(find.text('Prism walls')).dx),
+      );
+      expect(tester.getTopRight(find.text('Prism walls')).dx, greaterThan(halfScreen));
+    });
   });
 }

@@ -320,9 +320,7 @@ void main() {
 
     test('unblocking a creator restores Prism results excluded before caching', () async {
       final blocks = FakeUserBlockRepository.pending()..completeInitial(<String>{'creator-id'});
-      final firestore = FakeFirestoreClient(
-        onQuery: (spec) => <FakeDocRow>[(id: 'p1', data: _prismDoc('p1', creatorUid: 'creator-id'))],
-      );
+      final firestore = FakeFirestoreClient(onQuery: (spec) => <FakeDocRow>[(id: 'p1', data: _prismDoc('p1'))]);
       GetIt.instance.registerSingleton<UserBlockRepository>(blocks);
       final service = WallpaperSearchService(
         _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')])),
@@ -368,9 +366,7 @@ void main() {
     test('a cached page waits for the active block list before returning creators', () async {
       final initialBlocks = FakeUserBlockRepository.pending()..completeInitial(<String>{});
       GetIt.instance.registerSingleton<UserBlockRepository>(initialBlocks);
-      final firestore = FakeFirestoreClient(
-        onQuery: (spec) => <FakeDocRow>[(id: 'p1', data: _prismDoc('p1', creatorUid: 'creator-id'))],
-      );
+      final firestore = FakeFirestoreClient(onQuery: (spec) => <FakeDocRow>[(id: 'p1', data: _prismDoc('p1'))]);
       final service = WallpaperSearchService(
         _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('a')])),
         _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
@@ -752,6 +748,138 @@ void main() {
       expect(repository.lastPaginationKey, 'search::color:orange');
     });
 
+    test('a photo search with a kind keeps Wallhaven and Pexels out and shows only Prism walls of that kind', () async {
+      final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('wh')]));
+      final pexels = _FakePexelsRepository(Result.success(<PexelsWallpaper>[]));
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => <FakeDocRow>[
+          (
+            id: 'live',
+            data: <String, dynamic>{
+              ..._prismDoc('live', colors: <String>['orange']),
+              'kind': 'live',
+              'live': <String, dynamic>{'video': 'https://prism/live.mp4', 'verified': true},
+            },
+          ),
+          (id: 'still', data: _prismDoc('still', colors: <String>['orange'])),
+        ],
+      );
+      final service = _service(
+        wallhaven: repository.result,
+        wallhavenRepository: repository,
+        pexelsRepository: pexels,
+        firestore: firestore,
+      );
+      final PhotoQuery photo = PhotoQuery(
+        preview: Uint8List(0),
+        palette: <PaletteShare>[(color: paletteColorById('orange')!, share: 1)],
+        labels: const <String>['Sunset'],
+        labelsStatus: PhotoLabelsStatus.found,
+      );
+
+      final result = await service.searchByPhoto(
+        photo,
+        filters: const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live}),
+      );
+
+      expect(repository.calls, 0);
+      expect(pexels.calls, 0);
+      expect(result.page.provider, SearchProviderValue.prism);
+      expect(result.page.results.map((item) => item.id), <String>['live']);
+      expect(result.page.prismResults, isEmpty);
+    });
+
+    test('an empty Prism-only photo search stays empty without external fallback', () async {
+      final wallhaven = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('wh')]));
+      final pexels = _FakePexelsRepository(Result.success(<PexelsWallpaper>[_pexels('px')]));
+      final firestore = FakeFirestoreClient();
+      final service = _service(
+        wallhaven: wallhaven.result,
+        wallhavenRepository: wallhaven,
+        pexelsRepository: pexels,
+        firestore: firestore,
+      );
+      final photo = PhotoQuery(
+        preview: Uint8List(0),
+        palette: <PaletteShare>[(color: paletteColorById('orange')!, share: 1)],
+        labels: const <String>['Sunset'],
+        labelsStatus: PhotoLabelsStatus.found,
+      );
+
+      final result = await service.searchByPhoto(photo, filters: const SearchFilters(source: SearchSource.prism));
+
+      expect(result.page.provider, SearchProviderValue.prism);
+      expect(result.page.results, isEmpty);
+      expect(result.page.prismResults, isEmpty);
+      expect(result.query, '');
+      expect((wallhaven.calls, pexels.calls), (0, 0));
+      expect(firestore.querySpecs, hasLength(2));
+      for (final spec in firestore.querySpecs) {
+        expect(
+          spec.filters.map((filter) => (filter.field, filter.op, filter.value)),
+          contains(('review', FirestoreFilterOp.isEqualTo, true)),
+        );
+      }
+    });
+
+    test('Prism-only photo results intersect kinds and resolution and recheck blocked creators', () async {
+      final firestore = FakeFirestoreClient(
+        onQuery: (_) => <FakeDocRow>[
+          for (final id in <String>['match', 'small', 'landscape', 'no-desktop', 'blocked'])
+            (
+              id: id,
+              data: <String, Object?>{
+                ..._prismDoc(
+                  id,
+                  colors: <String>['orange'],
+                  creatorUid: id == 'blocked' ? 'blocked-creator' : 'creator-id',
+                  resolution: switch (id) {
+                    'small' => '720x1280',
+                    'landscape' => '2400x1080',
+                    _ => '1080x2400',
+                  },
+                ),
+                'kind': 'live',
+                'live': <String, Object?>{'video': 'https://prism/$id.mp4', 'verified': true},
+                if (id != 'no-desktop')
+                  'desktopVariant': <String, Object?>{
+                    'v': '0123456789abcdef',
+                    'thumb': 'https://prism/$id-desktop.jpg',
+                    'width': 3840,
+                    'height': 2160,
+                  },
+              },
+            ),
+        ],
+      );
+      final service = WallpaperSearchService(
+        _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[])),
+        _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
+        SettingsLocalDataSource(InMemoryLocalStore()),
+        PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{})),
+        null,
+        () => KnownBlockedCreators(<String>{'blocked-creator'}),
+      );
+      final photo = PhotoQuery(
+        preview: Uint8List(0),
+        palette: <PaletteShare>[(color: paletteColorById('orange')!, share: 1)],
+        labels: const <String>['Sunset'],
+        labelsStatus: PhotoLabelsStatus.found,
+      );
+
+      final result = await service.searchByPhoto(
+        photo,
+        filters: const SearchFilters(
+          minResolution: '1080x1920',
+          kinds: <PrismWallKind>{PrismWallKind.live, PrismWallKind.desktop},
+        ),
+      );
+
+      expect(result.page.provider, SearchProviderValue.prism);
+      expect(result.page.results.map((item) => item.id), <String>['match']);
+      expect(result.page.prismResults, isEmpty);
+    });
+
     test('Wallhaven gets the palette hex, and the page cursor is keyed by colour', () async {
       final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[]));
       final service = _service(wallhaven: repository.result, wallhavenRepository: repository);
@@ -953,7 +1081,7 @@ void main() {
       expect((await service.search('', filters: depthOnly)).results.map((wall) => wall.id), <String>['auto1']);
     });
 
-    test('a depth browse asks Prism search for 48 walls and a text query keeps 12', () async {
+    test('a depth browse asks Prism search for 48 walls and a text query for 24', () async {
       final firestore = FakeFirestoreClient(
         onQuery: (spec) => <FakeDocRow>[
           for (int i = 0; i < spec.limit!; i++) (id: 'd$i', data: _prismDoc('w$i', depthTier: 'auto')),
@@ -968,7 +1096,7 @@ void main() {
 
       final text = await service.search('moss', filters: depthOnly);
 
-      expect(text.results, hasLength(12));
+      expect(text.results, hasLength(24));
     });
 
     test('an empty page is a page, not an error, when nothing has a depth tier', () async {
@@ -1089,7 +1217,7 @@ void main() {
       expect(firestore.querySpecs.single.sourceTag, 'PrismWallSearch.spatial');
     });
 
-    test('a spatial browse asks Prism search for 48 walls and a text query keeps 12', () async {
+    test('a spatial browse asks Prism search for 48 walls and a text query for 24', () async {
       final firestore = FakeFirestoreClient(
         onQuery: (spec) => <FakeDocRow>[
           for (int i = 0; i < spec.limit!; i++) (id: 's$i', data: _prismDoc('w$i', spatialTier: 'great')),
@@ -1104,7 +1232,7 @@ void main() {
 
       final text = await service.search('moss', filters: spatialOnly);
 
-      expect(text.results, hasLength(12));
+      expect(text.results, hasLength(24));
     });
 
     test('saved walls fill in when Prism has no match, and only great and ok Prism walls stay', () async {
@@ -1186,4 +1314,144 @@ void main() {
       expect(firestore.querySpecs, isEmpty);
     });
   });
+
+  group('kinds and source', () {
+    const SearchFilters live = SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live});
+
+    test('a kind filter searches Prism only, so Wallhaven and Pexels are never called', () async {
+      final wallhaven = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('wh')]));
+      final pexels = _FakePexelsRepository(Result.success(<PexelsWallpaper>[_pexels('px')]));
+      final firestore = FakeFirestoreClient(
+        onQuery: (spec) => <FakeDocRow>[
+          (
+            id: 'l1',
+            data: <String, dynamic>{
+              ..._prismDoc('live1'),
+              'kind': 'live',
+              'live': <String, dynamic>{'video': 'https://prism/live1.mp4', 'verified': true},
+            },
+          ),
+          (id: 's1', data: _prismDoc('still1')),
+        ],
+      );
+      final service = _service(
+        wallhaven: wallhaven.result,
+        wallhavenRepository: wallhaven,
+        pexelsRepository: pexels,
+        firestore: firestore,
+      );
+
+      final page = await service.search('sky', filters: live);
+
+      expect(page.provider, SearchProviderValue.prism);
+      expect(page.results.map((wall) => wall.id), <String>['live1']);
+      expect(page.results.every((item) => item is PrismFeedItem), isTrue);
+      expect(page.prismResults, isEmpty);
+      expect((wallhaven.calls, pexels.calls), (0, 0));
+    });
+
+    test('the Prism source searches Prism only, so Wallhaven and Pexels are never called', () async {
+      final wallhaven = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('wh')]));
+      final pexels = _FakePexelsRepository(Result.success(<PexelsWallpaper>[_pexels('px')]));
+      final firestore = FakeFirestoreClient(onQuery: (spec) => <FakeDocRow>[(id: 'sky1', data: _prismDoc('sky1'))]);
+      final service = _service(
+        wallhaven: wallhaven.result,
+        wallhavenRepository: wallhaven,
+        pexelsRepository: pexels,
+        firestore: firestore,
+      );
+
+      final page = await service.search('sky', filters: const SearchFilters(source: SearchSource.prism));
+
+      expect(page.provider, SearchProviderValue.prism);
+      expect(page.results.map((wall) => wall.id), <String>['sky1']);
+      expect(page.results.every((item) => item is PrismFeedItem), isTrue);
+      expect(page.prismResults, isEmpty);
+      expect((wallhaven.calls, pexels.calls), (0, 0));
+    });
+
+    test('Prism-only service results recheck blocks even when the Prism search block list is stale', () async {
+      final firestore = FakeFirestoreClient(
+        onQuery: (_) => <FakeDocRow>[
+          (
+            id: 'blocked',
+            data: <String, dynamic>{
+              ..._prismDoc('blocked', creatorUid: 'blocked-creator'),
+              'kind': 'live',
+              'live': <String, dynamic>{'video': 'https://prism/live.mp4', 'verified': true},
+            },
+          ),
+        ],
+      );
+      final service = WallpaperSearchService(
+        _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[])),
+        _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
+        SettingsLocalDataSource(InMemoryLocalStore()),
+        PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{})),
+        null,
+        () => KnownBlockedCreators(<String>{'blocked-creator'}),
+      );
+
+      for (final SearchFilters filters in <SearchFilters>[live, const SearchFilters(source: SearchSource.prism)]) {
+        final page = await service.search('sky', filters: filters);
+        expect(page.results, isEmpty);
+        expect(page.prismResults, isEmpty);
+      }
+    });
+
+    test('service limits include fourfold overfetch only when device checks run', () async {
+      final firestore = FakeFirestoreClient();
+      final service = _service(wallhaven: Result.success(<WallhavenWallpaper>[]), firestore: firestore);
+
+      await service.search('sky');
+      await service.search('', filters: live);
+      await service.search('sky', filters: live);
+      await service.search(
+        '',
+        filters: const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live, PrismWallKind.desktop}),
+      );
+
+      expect(firestore.querySpecs.map((spec) => spec.limit), <int>[12, 48, 96, 192]);
+    });
+
+    test(
+      'the Prism search asks for 12 walls normally, 48 for a kind browse and 24 for a text query with a kind',
+      () async {
+        final recorder = _LimitRecordingPrismSearch();
+        final service = WallpaperSearchService(
+          _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[])),
+          _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
+          SettingsLocalDataSource(InMemoryLocalStore()),
+          recorder,
+        );
+
+        await service.search('sky');
+        await service.search('', filters: live);
+        await service.search('sky', filters: live);
+
+        expect(recorder.limits, <int>[12, 48, 24]);
+      },
+    );
+  });
+}
+
+/// Records the limit each Prism search asks for, and returns no walls.
+class _LimitRecordingPrismSearch extends PrismWallSearch {
+  _LimitRecordingPrismSearch()
+    : super(FakeFirestoreClient(), FakeUserBlockRepository.pending()..completeInitial(<String>{}));
+
+  final List<int> limits = <int>[];
+
+  @override
+  Future<List<PrismWallpaper>> search(
+    String query, {
+    int limit = 12,
+    String? colorId,
+    bool depthOnly = false,
+    bool spatialOnly = false,
+    Set<PrismWallKind> kinds = const <PrismWallKind>{},
+  }) async {
+    limits.add(limit);
+    return const <PrismWallpaper>[];
+  }
 }

@@ -99,8 +99,8 @@ class PerfAutodrive {
     });
 
     await _step('chip search', () async {
-      pendingTagSearch.value = null;
-      pendingTagSearch.value = curatedSearchTags[launch % curatedSearchTags.length];
+      pendingSearch.value = null;
+      pendingSearch.value = (query: curatedSearchTags[launch % curatedSearchTags.length], filters: null);
       await _wait(const Duration(seconds: 4));
     });
 

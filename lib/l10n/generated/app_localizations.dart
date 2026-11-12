@@ -1281,12 +1281,6 @@ abstract class AppLocalizations {
   /// **'Fields'**
   String get accountFields;
 
-  /// Wallpaper search filters button tooltip.
-  ///
-  /// In en, this message translates to:
-  /// **'Filters'**
-  String get accountFilters;
-
   /// Creator search row and page title.
   ///
   /// In en, this message translates to:
@@ -2162,12 +2156,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Report user'**
   String get accountReportUser;
-
-  /// Reset search filters action label.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset'**
-  String get accountReset;
 
   /// Action label that clears all wallpaper search filters.
   ///
@@ -24894,6 +24882,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Live · {seconds} s'**
   String adminLiveFacts(String seconds);
+
+  /// Search filter sheet: heading over the filters that only Prism walls have.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism walls'**
+  String get searchFilterPrismSection;
+
+  /// Search filter: switch, and active filter chip, that hides Wallhaven and Pexels results.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism walls only'**
+  String get searchFilterPrismOnly;
+
+  /// Search filter sheet: subtitle of the Prism walls only switch.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide Wallhaven and Pexels results'**
+  String get searchFilterPrismOnlySubtitle;
+
+  /// Search filter chip: live walls, which are short looping videos.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get searchKindLive;
+
+  /// Search filter chip: walls that also have a wide desktop version.
+  ///
+  /// In en, this message translates to:
+  /// **'Desktop version'**
+  String get searchKindDesktop;
+
+  /// Search filter chip: walls that come in colour variants, so one can be used by day and one by night.
+  ///
+  /// In en, this message translates to:
+  /// **'Light and dark'**
+  String get searchKindLightDark;
+
+  /// Search: action that turns off every search filter.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get searchFilterClearAll;
+
+  /// Search: tooltip and screen reader label of the filter button with the number of filters that are on.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Filters} =1{Filters, 1 on} other{Filters, {count} on}}'**
+  String searchFiltersCount(int count);
+
+  /// Search results: one line under the active filters when a Prism wall kind filter (Live, Desktop version, Light and dark) is on.
+  ///
+  /// In en, this message translates to:
+  /// **'Only Prism walls have these kinds, so Wallhaven and Pexels results are hidden.'**
+  String get searchKindsPrismOnlyNote;
+
+  /// Search results: tooltip of an active filter chip. A tap removes that filter.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {filter}'**
+  String searchRemoveFilter(String filter);
+
+  /// Search discover: row that opens the live walls.
+  ///
+  /// In en, this message translates to:
+  /// **'Live walls'**
+  String get discoverLiveWallsTitle;
+
+  /// Search discover: subtitle of the Live walls row.
+  ///
+  /// In en, this message translates to:
+  /// **'Looping videos from Prism creators'**
+  String get discoverLiveWallsSubtitle;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

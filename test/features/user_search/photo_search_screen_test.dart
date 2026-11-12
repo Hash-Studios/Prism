@@ -89,6 +89,7 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(const SearchFilters());
+    registerFallbackValue(SearchProviderValue.prism);
     registerFallbackValue(Uint8List(0));
     registerFallbackValue(_photo());
   });
@@ -279,6 +280,7 @@ void main() {
     await settle(tester);
 
     expect(find.text(en.searchPhotoNoMatches), findsOneWidget);
+    expect(analytics.events.whereType<SearchResultsLoadedEvent>().last.result, EventResultValue.empty);
     expect(find.text(en.searchPhotoChooseAnother), findsOneWidget);
   });
 
@@ -288,6 +290,41 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.byType(PhotoSearchChip), findsOneWidget);
     expect(find.text(en.searchPhotoMatchesFor('sunset, sky')), findsOneWidget);
+  });
+
+  testWidgets('photo and active filters leave visible results at 3x text', (tester) async {
+    await pickSignedInPhotoWithLabels(tester, textScale: 3);
+    await tester.tap(find.byTooltip(en.searchFiltersCount(0)));
+    await settleSheet(tester);
+    await tester.ensureVisible(find.text('Live'));
+    await tester.tap(find.text('Live'));
+    await tester.ensureVisible(find.text('Desktop version'));
+    await tester.tap(find.text('Desktop version'));
+    await tester.ensureVisible(find.text('Light and dark'));
+    await tester.tap(find.text('Light and dark'));
+    await tester.tap(find.text('Apply'));
+    await settleSheet(tester);
+    expect(tester.takeException(), isNull);
+    expect(find.byType(PhotoSearchChip), findsOneWidget);
+    expect(tester.getSize(find.byType(SearchGrid)).height, greaterThan(0));
+  });
+
+  testWidgets('Clear all on photo results keeps the photo and reruns it without filters', (tester) async {
+    await pumpScreen(tester);
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await settle(tester);
+    await tester.tap(find.byTooltip(en.searchFiltersCount(0)));
+    await settleSheet(tester);
+    await tester.tap(find.text('1440p'));
+    await tester.tap(find.text('Apply'));
+    await settleSheet(tester);
+
+    await tester.tap(find.text(en.searchFilterClearAll));
+    await settle(tester);
+
+    expect(find.byType(PhotoSearchChip), findsOneWidget);
+    expect(find.text('Find creators'), findsNothing);
+    verify(() => service.searchByPhoto(any(), filters: const SearchFilters())).called(greaterThanOrEqualTo(2));
   });
 
   testWidgets('pick cancelled does nothing', (tester) async {
@@ -309,7 +346,7 @@ void main() {
 
     await tester.tap(find.byTooltip(en.searchByPhoto));
     await tester.pump();
-    await tester.tap(find.byTooltip(en.accountFilters));
+    await tester.tap(find.byTooltip(en.searchFiltersCount(0)));
     await settleSheet(tester);
     await tester.tap(find.text('1440p'));
     await tester.tap(find.text('Apply'));
@@ -336,7 +373,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.byTooltip(en.searchByPhoto));
     await settle(tester);
-    await tester.tap(find.byTooltip(en.accountFilters));
+    await tester.tap(find.byTooltip(en.searchFiltersCount(0)));
     await settleSheet(tester);
     await tester.tap(find.text('1440p'));
     await tester.tap(find.text('Apply'));
@@ -360,7 +397,7 @@ void main() {
     await pumpScreen(tester);
     await tester.tap(find.byTooltip(en.searchByPhoto));
     await settle(tester);
-    await tester.tap(find.byTooltip(en.accountFilters));
+    await tester.tap(find.byTooltip(en.searchFiltersCount(0)));
     await settleSheet(tester);
     await tester.tap(find.text('1440p'));
     await tester.tap(find.text('Apply'));
@@ -370,6 +407,13 @@ void main() {
     await settle(tester);
 
     expect(tester.widget<SearchGrid>(find.byType(SearchGrid)).query, 'filtered-query');
+    final List<SearchResultsLoadedEvent> loaded = analytics.events.whereType<SearchResultsLoadedEvent>().toList();
+    expect(loaded.map((event) => event.result), <EventResultValue>[
+      EventResultValue.success,
+      EventResultValue.cancelled,
+    ]);
+    expect(loaded.last.reason, 'superseded');
+    expect(loaded.last.resultCount, 0);
   });
 
   testWidgets('a later text search supersedes photo decoding', (tester) async {
@@ -466,6 +510,7 @@ void main() {
     await tester.tap(find.byTooltip(en.searchByPhoto));
     await settle(tester);
 
+    expect(analytics.events.whereType<SearchResultsLoadedEvent>().single.result, EventResultValue.failure);
     expect(find.text(en.accountTryAgain), findsOneWidget);
     await tester.tap(find.text(en.accountTryAgain));
     await settle(tester);
@@ -488,6 +533,77 @@ void main() {
     final SearchGrid grid = tester.widget<SearchGrid>(find.byType(SearchGrid));
     expect(grid.query, '');
     expect(grid.filters, expectedFilters);
+  });
+
+  testWidgets('photo retry keeps the pick search id', (tester) async {
+    var calls = 0;
+    when(() => service.searchByPhoto(any(), filters: any(named: 'filters'))).thenAnswer((_) async {
+      if (++calls == 1) throw const WallpaperSearchException('temporary failure');
+      return (page: _page(<FeedItemEntity>[_pexels('retry')]), query: 'sunset');
+    });
+    await pumpScreen(tester);
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await settle(tester);
+    final String searchId = analytics.events.whereType<PhotoSearchStartedEvent>().single.searchId;
+    await tester.tap(find.text(en.accountTryAgain));
+    await settle(tester);
+    expect(tester.widget<SearchGrid>(find.byType(SearchGrid)).searchId, searchId);
+  });
+
+  testWidgets('photo kind results report their count and pick search id', (tester) async {
+    when(() => service.searchByPhoto(any(), filters: any(named: 'filters'))).thenAnswer(
+      (_) async => (
+        page: _page(<FeedItemEntity>[
+          for (int i = 0; i < 24; i++) _prism('live$i'),
+        ], provider: SearchProviderValue.prism),
+        query: 'sunset',
+      ),
+    );
+    await pumpScreen(tester);
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await settle(tester);
+    await tester.tap(find.byTooltip(en.searchFiltersCount(0)));
+    await settleSheet(tester);
+    await tester.ensureVisible(find.text('Live'));
+    await tester.tap(find.text('Live'));
+    await tester.tap(find.text('Apply'));
+    await settleSheet(tester);
+    final SearchKindResultsEvent event = analytics.events.whereType<SearchKindResultsEvent>().single;
+    expect(event.kinds, <String>['live']);
+    expect(event.resultCount, 24);
+    expect(event.searchId, analytics.events.whereType<PhotoSearchStartedEvent>().single.searchId);
+    final SearchGrid grid = tester.widget<SearchGrid>(find.byType(SearchGrid));
+    expect(grid.provider, SearchProviderValue.prism);
+    expect(grid.filters.kinds, <PrismWallKind>{PrismWallKind.live});
+    await tester.drag(find.byType(SearchGrid), const Offset(0, -4000));
+    await settle(tester);
+    verifyNever(
+      () => service.fetchPage(
+        any(),
+        any(),
+        refresh: any(named: 'refresh'),
+        filters: any(named: 'filters'),
+      ),
+    );
+  });
+
+  testWidgets('a Prism-only photo with no matches keeps the photo empty state and Clear all', (tester) async {
+    await pumpScreen(tester);
+    await tester.tap(find.byTooltip(en.searchByPhoto));
+    await settle(tester);
+    when(() => service.searchByPhoto(any(), filters: any(named: 'filters'))).thenAnswer(
+      (_) async => (page: _page(const <FeedItemEntity>[], provider: SearchProviderValue.prism), query: 'sunset'),
+    );
+    await tester.tap(find.byTooltip(en.searchFiltersCount(0)));
+    await settleSheet(tester);
+    await tester.ensureVisible(find.text('Live'));
+    await tester.tap(find.text('Live'));
+    await tester.tap(find.text('Apply'));
+    await settleSheet(tester);
+    expect(find.text(en.searchPhotoNoMatches), findsOneWidget);
+    expect(find.text(en.searchPhotoChooseAnother), findsOneWidget);
+    expect(find.text(en.searchFilterClearAll), findsOneWidget);
+    expect(find.byType(PhotoSearchChip), findsOneWidget);
   });
 
   testWidgets('a picker failure shows the existing photo error message', (tester) async {

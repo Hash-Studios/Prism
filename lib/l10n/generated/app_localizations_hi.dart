@@ -736,9 +736,6 @@ class AppLocalizationsHi extends AppLocalizations {
   String get accountFields => 'फ़ील्ड';
 
   @override
-  String get accountFilters => 'फ़िल्टर';
-
-  @override
   String get accountFindCreators => 'क्रिएटर खोजें';
 
   @override
@@ -1245,9 +1242,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get accountReportUser => 'यूज़र की रिपोर्ट करें';
-
-  @override
-  String get accountReset => 'रीसेट करें';
 
   @override
   String get accountResetFilters => 'फ़िल्टर रीसेट करें';
@@ -15780,4 +15774,52 @@ class AppLocalizationsHi extends AppLocalizations {
   String adminLiveFacts(String seconds) {
     return 'लाइव · $seconds s';
   }
+
+  @override
+  String get searchFilterPrismSection => 'Prism वॉलपेपर';
+
+  @override
+  String get searchFilterPrismOnly => 'केवल Prism वॉलपेपर';
+
+  @override
+  String get searchFilterPrismOnlySubtitle => 'Wallhaven और Pexels के परिणाम छिपाएँ';
+
+  @override
+  String get searchKindLive => 'लाइव';
+
+  @override
+  String get searchKindDesktop => 'डेस्कटॉप वर्शन';
+
+  @override
+  String get searchKindLightDark => 'लाइट और डार्क';
+
+  @override
+  String get searchFilterClearAll => 'सभी साफ़ करें';
+
+  @override
+  String searchFiltersCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'फ़िल्टर, $count चालू',
+      one: 'फ़िल्टर, 1 चालू',
+      zero: 'फ़िल्टर',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get searchKindsPrismOnlyNote =>
+      'ये प्रकार केवल Prism वॉलपेपर में होते हैं, इसलिए Wallhaven और Pexels के परिणाम छिपे हैं।';
+
+  @override
+  String searchRemoveFilter(String filter) {
+    return '$filter हटाएँ';
+  }
+
+  @override
+  String get discoverLiveWallsTitle => 'लाइव वॉलपेपर';
+
+  @override
+  String get discoverLiveWallsSubtitle => 'Prism क्रिएटर्स के लूप वीडियो';
 }

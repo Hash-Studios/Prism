@@ -67,15 +67,19 @@ class WallpaperSearchService {
   static const Duration _cachedSearchDecisionBudget = Duration(seconds: 3);
   static const int _prismLimit = 12;
 
-  /// The Depth Effect and Spatial lists have no next page, so a browse asks for a full screen at once.
+  /// The Depth Effect, Spatial and kind lists have no next page, so a browse asks for a full screen at once.
   static const int _depthBrowseLimit = 48;
+
+  /// A Prism-only text search has no next page either. Its matches are checked on the device, so it reads 4 times
+  /// this many walls.
+  static const int _prismOnlyQueryLimit = 24;
 
   /// First page of [query]. An empty [query] is allowed with a colour filter. Pexels needs a query, so a colour-only
   /// search skips it. When Wallhaven fails the search moves to Pexels so the user still gets results.
   /// When both providers fail but Prism has matches, the page has provider [SearchProviderValue.prism], no
   /// [WallpaperSearchPage.results] and no external pagination. Throws [WallpaperSearchException] when Prism is empty too.
-  /// With [SearchFilters.depthOnly] or [SearchFilters.spatialOnly] only Prism walls can match, so the page holds them
-  /// as [WallpaperSearchPage.results] and never throws.
+  /// With [SearchFilters.prismOnly] only Prism walls can match, so the page holds them as
+  /// [WallpaperSearchPage.results], has no next page and never throws.
   Future<WallpaperSearchPage> search(String query, {SearchFilters filters = const SearchFilters()}) {
     return PerformanceProbe.measure('search', 'wallpaper.search', () => _search(query, filters: filters));
   }
@@ -94,10 +98,24 @@ class WallpaperSearchService {
         .then(
           (candidates) => rankPhotoMatches(photo, <PhotoCandidate>[
             for (final PhotoCandidate candidate in candidates)
-              if (photoFilters.acceptsResolution(candidate.wall.core.resolution)) candidate,
+              if (photoFilters.acceptsResolution(candidate.wall.core.resolution) &&
+                  photoFilters.acceptsKinds(candidate.wall))
+                candidate,
           ]),
         )
         .then((walls) => <FeedItemEntity>[for (final wall in walls) PrismFeedItem(id: wall.id, wallpaper: wall)]);
+    // A kind or Prism walls only keeps Wallhaven and Pexels out, so the ranked Prism walls are the whole page.
+    if (photoFilters.prismOnly) {
+      return (
+        page: await _withoutHidden((
+          provider: SearchProviderValue.prism,
+          results: await prism,
+          prismResults: const <FeedItemEntity>[],
+          isLocal: false,
+        )),
+        query: '',
+      );
+    }
     String query = photo.topLabel;
     WallpaperSearchPage? page;
     try {
@@ -122,7 +140,7 @@ class WallpaperSearchService {
 
   Future<WallpaperSearchPage> _search(String query, {SearchFilters filters = const SearchFilters()}) async {
     final BlockedCreators blocked = await _blockedUids();
-    if (filters.depthOnly || filters.spatialOnly) return _withoutHidden(await _prismOnlySearch(query, filters));
+    if (filters.prismOnly) return _withoutHidden(await _prismOnlySearch(query, filters));
     final String cacheKey = _cacheKey(query, filters, blocked);
     final _CachedSearch? hit = _pageCache.remove(cacheKey);
     if (hit != null && DateTime.now().isBefore(hit.expiresAt)) {
@@ -290,6 +308,8 @@ class WallpaperSearchService {
 
   bool _matchesLocalFilters(FeedItemEntity item, SearchFilters filters) {
     if (!filters.acceptsResolution(item.wallpaperCore.resolution)) return false;
+    if (filters.prismOnly && item is! PrismFeedItem) return false;
+    if (item case PrismFeedItem(:final wallpaper) when !filters.acceptsKinds(wallpaper)) return false;
     if (filters.depthOnly) {
       final bool supportsDepth = item.when(
         prism: (_, wall) => wall.depthTier?.supportsDepth ?? false,
@@ -366,10 +386,15 @@ class WallpaperSearchService {
   Future<List<FeedItemEntity>> _prismResults(String query, SearchFilters filters) async {
     final List<PrismWallpaper> walls = await _prismSearch.search(
       query,
-      limit: (filters.depthOnly || filters.spatialOnly) && query.trim().isEmpty ? _depthBrowseLimit : _prismLimit,
+      limit: !filters.prismOnly
+          ? _prismLimit
+          : query.trim().isEmpty
+          ? _depthBrowseLimit
+          : _prismOnlyQueryLimit,
       colorId: filters.color?.id,
       depthOnly: filters.depthOnly,
       spatialOnly: filters.spatialOnly,
+      kinds: filters.kinds,
     );
     return walls
         .where((wall) => filters.acceptsResolution(wall.core.resolution))

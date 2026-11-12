@@ -28,7 +28,8 @@ Search is free. The search files contain no premium or coin gate.
 | `lib/features/user_search/views/widgets/search_grid.dart` | Result grid, "From Prism" row, pagination, pull to refresh. |
 | `lib/features/user_search/views/widgets/search_filter_sheet.dart` | Filter sheet and the mapping from choices to `SearchFilters`. |
 | `lib/features/user_search/data/recent_searches_store.dart` | Recent searches in local settings. |
-| `lib/features/user_search/data/search_filters.dart` | `SearchFilters` and `SearchSort`. |
+| `lib/features/user_search/data/search_filters.dart` | `SearchFilters`, `SearchSort`, `SearchSource` and `PrismWallKind`. |
+| `lib/features/user_search/data/search_link.dart` | The search link keys and their parser. Plain Dart, so the deep link catalog can use it. |
 | `lib/core/color/prism_palette.dart` | The 12 palette colours and `nearestPaletteColor`. |
 | `lib/features/user_search/views/widgets/palette_swatch.dart` | The round colour swatch. |
 | `lib/features/user_search/data/wallpaper_search_service.dart` | Runs the search. Falls back to Pexels. Throws on total failure. |
@@ -52,12 +53,14 @@ query + SearchFilters
        fails -> WallpaperSearchException    -> error state with Try again
 ```
 
+A Prism only search skips Wallhaven and Pexels. See [Prism wall filters](#prism-wall-filters).
+
 ### Search bar
 
 - The keyboard action is Search. A search runs when the user submits a non-empty query.
 - A clear (X) button shows when the field has text. Its tooltip is "Clear search". A tap clears the field and returns to the discover view.
 - System back from results returns to the discover view before the user leaves the tab.
-- The Filters icon shows a small badge when the filters differ from the defaults.
+- The Filters icon shows a badge with the number of filters that are on. Each kind and the Prism walls only switch count as one filter.
 
 ### Tag suggestions
 
@@ -76,7 +79,7 @@ query + SearchFilters
 
 - The detail screen shows up to 10 tag chips for a Prism or a Wallhaven wallpaper (`wallpaperTags`).
 - A Pexels wallpaper has no tags in the app, so the screen shows no chips for it.
-- A tap calls `openTagSearch`. It sets `pendingTagSearch` and opens the Search tab. `SearchScreen` reads the value, fills the field, and runs the search.
+- A tap calls `openTagSearch`. It sets `pendingSearch` and opens the Search tab. `SearchScreen` reads the value, fills the field, and runs the search.
 
 ### Filters
 
@@ -87,7 +90,9 @@ query + SearchFilters
 | Sort | Relevance, Latest, Top | Relevance |
 | Colour | One of 12 palette colours, or none | None |
 
-The sheet has **Reset** and **Apply**. Reset returns all filters to the defaults. If a search is on screen, a changed filter runs it again.
+The sheet has **Clear all** and **Apply**. **Clear all** turns every filter off at once. It does not wait for **Apply**. If a search is on screen, a changed filter runs it again.
+
+The sheet also has a **Prism walls** section and, on iOS, a Depth Effect switch. The Spatial Scene filter has no switch in the sheet. See [Prism wall filters](#prism-wall-filters).
 
 The sheet turns "Min resolution" into `<width>x<height>`. With Portrait only on, the long side is the short side times 16/9, rounded. 1080p becomes `1080x1920`, 1440p becomes `1440x2560`, and 4K becomes `2160x3840`. With Portrait only off, the value is a square such as `1080x1080`.
 
@@ -132,6 +137,123 @@ A text query with a colour cannot use one Firestore query. Firestore does not al
 The backend writes `walls.colors` (1 to 3 palette ids, most dominant first). An old wall has the field only after the backfill script runs. See `docs/features/backend-deploy.md`.
 
 The page cursor key for a colour search is `search:<query>:color:<id>`. The Wallhaven cache scope also holds the colour.
+
+### Prism wall filters
+
+The **Prism walls** section of the filter sheet has three kind chips and the **Prism walls only** switch. Depth Effect and Spatial Scene also show only Prism walls.
+
+#### Data shape
+
+`SearchFilters` holds these fields:
+
+| Field | Values | Default |
+|---|---|---|
+| `source` | `SearchSource.all` (All) or `SearchSource.prism` (Prism only) | All |
+| `kinds` | Any set of `PrismWallKind.live`, `desktop` and `lightDark` | Empty |
+
+Each kind is off by default. A wall must have every selected kind. Two selected kinds show fewer walls than one.
+
+#### What each kind means in Firestore
+
+| Kind | Chip | Firestore condition | Order |
+|---|---|---|---|
+| Live | Live | `kind == 'live'` | Newest first |
+| Desktop version | Desktop version | `desktopVariant.width > 0` | Widest first, then newest |
+| Light and dark | Light and dark | `variantIndex == 0` | Newest first |
+
+- A live wall is a short looping video. The server sets `review` to true only after it verifies the video.
+- A desktop version is a wide version of the wall. The wall stores it in `desktopVariant`.
+- A light and dark wall is part of a colour variant set. The set has a `variantGroupId`. When Light and dark owns the browse query, it lists only `variantIndex == 0`, so each set shows one time. In every other case more than one wall of a set can show. In an empty-query browse with a colour, Light and dark never owns the query, because the members of a set have different colours. The colour query runs, unless Depth Effect, Spatial Scene, Live or Desktop version owns the query first. A text search uses the text query and checks the colour on the device. When Depth Effect, Spatial Scene, Live or Desktop version owns the query, the device checks only `variantGroupId`. A text search also checks only `variantGroupId`.
+
+#### Why there is no watch version filter
+
+`showsWatchSet` in `lib/features/watch_set/views/watch_set_row.dart` returns true for every Prism wall that is not a Duo pair. A watch version filter would hide only Duo pairs. So the sheet has no such filter.
+
+#### Prism only searches
+
+A kind filter, Depth Effect, Spatial Scene or **Prism walls only** makes the search Prism only. Wallhaven and Pexels are not called.
+
+A Prism only search has no next page. The grid does not request further pages.
+
+When a kind is on, one line under the active filters says `Only Prism walls have these kinds, so Wallhaven and Pexels results are hidden.` The **Prism walls only** switch is on while a kind is on. When the user turns it off, the kinds turn off too.
+
+#### Server and device checks
+
+The query uses the server for one filter. The device checks every filter on the walls that the query returns.
+
+| Case | Where it runs | Detail |
+|---|---|---|
+| Empty query, one or more filters | Server, one query | Depth Effect first, then Spatial Scene, then the first kind selected in the order Live, Desktop version, Light and dark, then colour. Light and dark with a colour skips the Light and dark server filter. Another selected kind can own the query; otherwise the colour query runs. |
+| Colour, Depth Effect, Spatial Scene and kinds | Device | Each wall must pass every filter. A filter that the query used is checked again. |
+| Portrait only and Min resolution | Device | Checked for every Prism query. A wall with an unknown resolution passes. |
+| Reads | Server | A browse with one filter reads the limit. A browse with two or more filters reads 4 times the limit. A text query reads 4 times the limit when it has a filter or more than one word. |
+
+Limits:
+
+| Search | Limit |
+|---|---|
+| Empty query on a Prism only search | 48 |
+| Prism only text query | 24 |
+| Prism row of a normal search | 12 |
+
+The reads above are a bounded window, not a complete scan. Device checks can reject every wall in that window, so the first page can be empty even when an older matching wall exists. There is no automatic retry with a larger window.
+
+#### The gate
+
+Every query keeps `review == true`. For a walls query, `FirestoreTrackedClient` also adds six equality checks. `originalProtected` must be true, and `wallpaper_url`, `wallpaper_path`, `wallpaper_sha`, `thumb_path` and `thumb_sha` must be empty.
+
+A wall in review, or a wall that waits for its `releaseAt` time, has `review` false. It never shows. Blocked creators are removed from every result.
+
+#### Filter sheet and results row
+
+- A tap on a kind chip turns that kind on or off.
+- The **Prism walls only** switch sits under the kind chips. It is on while a kind is on. Turning it off turns every kind off.
+- The Depth Effect switch shows on iOS only.
+- **Clear all** in the sheet turns every filter off. It applies at once.
+- The results row has chips for colour, Depth Effect, Spatial Scene, kinds and the explicit Prism-only source. A tap on a chip removes that filter. Orientation, resolution and sort remain in the sheet. The filter button count includes every setting that differs from its default. **Clear all** in the row turns every filter off.
+
+#### Discover row
+
+The **Live walls** row in the discover view shows when the discovery load finds at least one live wall. A tap opens search with the Live filter on. Other kinds turn off, so the list shows live walls. The other filters keep their values. The check reads only the newest live wall. If that wall belongs to a blocked creator, the row stays hidden even when an older visible live wall exists.
+
+#### Links
+
+A search link holds the query and its filters. For example, `/dashboard/search?q=sky&kind=live` searches for sky and shows only live walls.
+
+| Key | Values | Default |
+|---|---|---|
+| `q` | Text, up to 200 characters, with no control characters | None |
+| `kind` | Comma list of `live`, `desktop` and `light-dark` | None |
+| `source` | `all` or `prism` | `all` |
+| `color` | Palette id, for example `blue` | None |
+| `sort` | `relevance`, `latest` or `toplist` | `relevance` |
+| `res` | `<width>x<height>`, for example `1080x1920` | Any |
+| `portrait` | `true` or `false` | `true` |
+| `depth` | `true` | Off |
+| `spatial` | `true` | Off |
+
+- Default values are left out. A plain search is `/dashboard/search?q=sky`.
+- A bad value makes the catalog refuse the link. An unknown kind is one bad value.
+- A colour that is not in the palette opens Search unchanged, preserving any current query and filters.
+- A link with none of these keys opens Search as before.
+- A link with only `source`, `sort`, `res` or `portrait` sets the filters but does not load results. Results load after the user types a query or turns on a kind, a colour, Depth Effect or Spatial Scene.
+- When `depth` and `spatial` are both true, Depth Effect wins. Spatial Scene is dropped.
+- The path is `/dashboard/search`. `/search` is not an app path. The Android manifest and the iOS associated domains list only `/dashboard/search`.
+
+#### Analytics for filters
+
+| Event | Fields | When |
+|---|---|---|
+| `search_filter_applied` | `filters`, the names of the filters that are on | The sheet applies a changed filter set. |
+| `search_kind_results` | `kinds`, `result_count`, `search_id` | A search with a kind filter loads. |
+
+The `filters` names are `any_orientation`, `min_resolution`, `sort`, `color`, `depth`, `spatial`, `prism_only`, `kind_live`, `kind_desktop` and `kind_light-dark`. The `kinds` field uses the link values: `live`, `desktop` and `light-dark`.
+
+#### Deploy order
+
+Deploy the three Firestore indexes before the client release. They are in `firestore.indexes.json`. Each index has the six protected-wall fields, then `review`, then the kind field, then `createdAt`.
+
+Until the indexes are built, a kind browse fails. The list is empty, and the search logs that the index is not deployed yet. The **Live walls** row stays hidden. Only the kind browse uses these indexes.
 
 ### Search by photo
 
@@ -247,6 +369,8 @@ The "From Prism" row uses walls that the backend already labels. It needs no new
 
 The resolution and portrait filters apply to the Prism row. The colour filter is replaced by the top photo colour. Depth Effect and Spatial Scene filters do not apply to a photo search.
 
+Starting a new photo search clears the selected kinds and resets the source to All. This is the existing picker behaviour. Kinds and **Prism walls only** selected while the photo loads or after it appears do apply. The service skips Wallhaven and Pexels and shows only the ranked Prism walls that pass the filters, with no next page. If none pass, the photo chip and active filters remain above the empty grid. **Clear all** keeps the photo and loads its results again without filters.
+
 #### Wallhaven and Pexels
 
 The service runs the normal search with the top label as the query and the top colour as the colour filter. If that has no results, it runs the colour only (Wallhaven only, because Pexels needs a query). The grid loads the next pages with the query that gave results. A guest has no label, so the search is colour only.
@@ -263,6 +387,10 @@ not replace a newer search or its pagination query.
 | `photo_search_labels_returned` (`label_count`, `search_id`) | The callable returned labels. |
 | `photo_search_labels_capped` (`search_id`) | The callable refused because of the daily cap. |
 | `photo_search_result_opened` (`provider`, `item_id`, `index`, `search_id`) | The user opened a result of a photo search. `search_result_opened` is sent too. |
+| `search_results_loaded` | A photo results request completes, including page 1, filter changes and retries. It records success, empty, failure or cancelled. A superseded request reports cancelled with reason `superseded` and zero results. |
+| `search_kind_results` | A current kind-filtered photo results request succeeds. It includes the selected kinds and result count, including zero. A failed or superseded request does not send this event. |
+
+Filter changes and retries retain the picked photo's `search_id`, so result opens still correlate with its start and label events. A new photo gets a new id.
 
 #### Privacy
 

@@ -182,7 +182,7 @@ void main() {
 
   test('catalog rejects query parameters that have no app route meaning', () {
     for (final String uri in <String>[
-      '/dashboard/search?q=sunset',
+      '/dashboard/search?query=sunset',
       '/download-wallpaper?wallpaperId=wall1&provider=downloaded',
       '/admin-review/image?wallpaperId=wall1&source=unsupported',
     ]) {

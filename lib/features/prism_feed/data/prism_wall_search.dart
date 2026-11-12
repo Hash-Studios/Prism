@@ -10,6 +10,7 @@ import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dar
 import 'package:Prism/features/prism_feed/data/wall_search_terms.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/user_search/data/photo_match_ranking.dart';
+import 'package:Prism/features/user_search/data/search_filters.dart';
 import 'package:Prism/features/user_search/domain/entities/photo_query.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:collection/collection.dart';
@@ -47,6 +48,27 @@ class PrismWallSearch {
     FirestoreOrderBy(field: 'createdAt', descending: true),
   ];
 
+  /// The server query for a kind browse. A live wall is `kind == live`. A desktop wall has `desktopVariant.width`, so
+  /// the widest desktop versions come first, then the newest. A light and dark browse lists the first wall of each
+  /// colour variant set (`variantIndex == 0`), so each set shows one time.
+  static ({FirestoreFilter filter, List<FirestoreOrderBy> orderBy}) _kindQuery(PrismWallKind kind) => switch (kind) {
+    PrismWallKind.live => (
+      filter: const FirestoreFilter(field: 'kind', op: FirestoreFilterOp.isEqualTo, value: 'live'),
+      orderBy: _newestFirst,
+    ),
+    PrismWallKind.desktop => (
+      filter: const FirestoreFilter(field: 'desktopVariant.width', op: FirestoreFilterOp.isGreaterThan, value: 0),
+      orderBy: const <FirestoreOrderBy>[
+        FirestoreOrderBy(field: 'desktopVariant.width', descending: true),
+        FirestoreOrderBy(field: 'createdAt', descending: true),
+      ],
+    ),
+    PrismWallKind.lightDark => (
+      filter: const FirestoreFilter(field: 'variantIndex', op: FirestoreFilterOp.isEqualTo, value: 0),
+      orderBy: _newestFirst,
+    ),
+  };
+
   /// `great` sorts before `ok`, and each tier lists its newest walls first.
   static const List<FirestoreOrderBy> _spatialStrongestThenNewest = <FirestoreOrderBy>[
     FirestoreOrderBy(field: 'spatial.tier'),
@@ -62,57 +84,48 @@ class PrismWallSearch {
   ///
   /// [spatialOnly] keeps walls whose Spatial Scene tier is `great` or `ok`. An empty [query] lists those walls, the
   /// strongest first. Otherwise the tier is checked on the matches, like the depth tier.
+  ///
+  /// [kinds] keeps walls that have every kind. An empty [query] with kinds lists them through one kind's server
+  /// query (see [_kindQuery]), unless depth or spatial owns the query. The other filters are checked on the matches.
+  ///
+  /// Every query keeps `review == true`, so a wall in review or waiting for its release time never matches.
   Future<List<PrismWallpaper>> search(
     String query, {
     int limit = 12,
     String? colorId,
     bool depthOnly = false,
     bool spatialOnly = false,
+    Set<PrismWallKind> kinds = const <PrismWallKind>{},
   }) async {
     final String trimmed = query.trim();
     final bool duo = const <String>{'duo', 'duo-reveal', 'duo reveal'}.contains(trimmed.toLowerCase());
-    final bool browseOnly = trimmed.isEmpty && (colorId != null || depthOnly || spatialOnly);
+    final int filterCount = (colorId == null ? 0 : 1) + (depthOnly ? 1 : 0) + (spatialOnly ? 1 : 0) + kinds.length;
+    final bool browseOnly = trimmed.isEmpty && filterCount > 0;
     if (trimmed.length < _minQueryLength && !browseOnly) {
       return const <PrismWallpaper>[];
     }
-    // The query itself is exact for a lone colour or a lone depth or spatial tier. The rest is checked on the matches.
-    final bool checksMatches = browseOnly
-        ? (depthOnly || spatialOnly) && colorId != null
-        : colorId != null || depthOnly || spatialOnly;
+    // A browse query is exact for its one filter. The other filters, and every filter of a text query, are checked
+    // on the matches.
+    final bool checksMatches = browseOnly ? filterCount > 1 : filterCount > 0;
     final List<String> terms = searchTermsOf(trimmed).take(_maxTerms).toList(growable: false);
     // Ranking can only lift an older wall that matches more words when the query fetched it.
     final bool ranks = !browseOnly && terms.length > 1;
     final int fetchLimit = checksMatches || ranks ? limit * _localFilterOverfetch : limit;
     try {
-      final List<PrismWallpaper> matches = switch ((browseOnly, depthOnly, spatialOnly)) {
-        (true, true, _) => await _run('depth', fetchLimit, _depthFilter, _toWall),
-        (true, false, true) => await _run(
-          'spatial',
-          fetchLimit,
-          _spatialFilter,
-          _toWall,
-          orderBy: _spatialStrongestThenNewest,
-        ),
-        (true, false, false) => await _run(
-          'color',
-          fetchLimit,
-          FirestoreFilter(field: 'colors', op: FirestoreFilterOp.arrayContains, value: colorId),
-          _toWall,
-        ),
-        _ =>
-          duo
-              ? await _run(
-                  'duo',
-                  fetchLimit,
-                  const FirestoreFilter(
-                    field: 'tags',
-                    op: FirestoreFilterOp.arrayContainsAny,
-                    value: <String>['duo', 'duo-reveal'],
-                  ),
-                  _toWall,
-                )
-              : await _rankedTextMatches(terms, fetchLimit),
-      };
+      final List<PrismWallpaper> matches = browseOnly
+          ? await _browse(fetchLimit, colorId: colorId, depthOnly: depthOnly, spatialOnly: spatialOnly, kinds: kinds)
+          : duo
+          ? await _run(
+              'duo',
+              fetchLimit,
+              const FirestoreFilter(
+                field: 'tags',
+                op: FirestoreFilterOp.arrayContainsAny,
+                value: <String>['duo', 'duo-reveal'],
+              ),
+              _toWall,
+            )
+          : await _rankedTextMatches(terms, fetchLimit);
       final BlockedCreators blocked = await _userBlockRepository.loadBlockedCreators();
       final Map<String, PrismWallpaper> unique = <String, PrismWallpaper>{};
       for (final PrismWallpaper wall in matches) {
@@ -122,6 +135,7 @@ class PrismWallSearch {
         if (hasColor &&
             hasDepth &&
             hasSpatial &&
+            kinds.every((kind) => kind.matches(wall)) &&
             !BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked)) {
           unique.putIfAbsent(wall.id, () => wall);
         }
@@ -167,6 +181,35 @@ class PrismWallSearch {
       logger.w('[PrismWallSearch] photo search failed', error: error, stackTrace: stackTrace);
       return const <PhotoCandidate>[];
     }
+  }
+
+  /// One server query for an empty-query list. Depth, then spatial, then a kind, then the colour owns the query.
+  /// Light and dark with a colour leaves the query to the colour.
+  Future<List<PrismWallpaper>> _browse(
+    int limit, {
+    required String? colorId,
+    required bool depthOnly,
+    required bool spatialOnly,
+    required Set<PrismWallKind> kinds,
+  }) {
+    if (depthOnly) return _run('depth', limit, _depthFilter, _toWall);
+    if (spatialOnly) return _run('spatial', limit, _spatialFilter, _toWall, orderBy: _spatialStrongestThenNewest);
+    // The members of a colour variant set have different colours, so with a colour the colour query lists every
+    // member and the set is checked on the device.
+    final Iterable<PrismWallKind> serverKinds = PrismWallKind.values.where(
+      (kind) => kinds.contains(kind) && !(kind == PrismWallKind.lightDark && colorId != null),
+    );
+    if (serverKinds.isNotEmpty) {
+      final PrismWallKind kind = serverKinds.first;
+      final query = _kindQuery(kind);
+      return _run('kind.${kind.name}', limit, query.filter, _toWall, orderBy: query.orderBy);
+    }
+    return _run(
+      'color',
+      limit,
+      FirestoreFilter(field: 'colors', op: FirestoreFilterOp.arrayContains, value: colorId),
+      _toWall,
+    );
   }
 
   Future<List<PrismWallpaper>> _rankedTextMatches(List<String> terms, int limit) async {

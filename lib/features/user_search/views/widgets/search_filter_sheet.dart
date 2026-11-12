@@ -34,8 +34,9 @@ int? shortSideOf(SearchFilters filters) {
   return width < height ? width : height;
 }
 
-/// [SearchFilters] after the user picks [portraitOnly], [shortSide], [sort], [color] and [depthOnly] in the sheet.
-/// [spatialOnly] comes from the Spatial row, which the sheet keeps unless Depth Effect is turned on.
+/// [SearchFilters] after the user picks [portraitOnly], [shortSide], [sort], [color], [depthOnly], [source] and
+/// [kinds] in the sheet. [spatialOnly] comes from the Spatial row, which the sheet keeps unless Depth Effect is turned
+/// on.
 SearchFilters buildSearchFilters({
   required bool portraitOnly,
   required int? shortSide,
@@ -43,6 +44,8 @@ SearchFilters buildSearchFilters({
   PrismPaletteColor? color,
   bool depthOnly = false,
   bool spatialOnly = false,
+  SearchSource source = SearchSource.all,
+  Set<PrismWallKind> kinds = const <PrismWallKind>{},
 }) {
   return SearchFilters(
     portraitOnly: portraitOnly,
@@ -51,8 +54,17 @@ SearchFilters buildSearchFilters({
     color: color,
     depthOnly: depthOnly,
     spatialOnly: spatialOnly && !depthOnly,
+    source: source,
+    kinds: kinds,
   );
 }
+
+/// The chip label of a Prism wall kind.
+String prismWallKindLabel(AppLocalizations l10n, PrismWallKind kind) => switch (kind) {
+  PrismWallKind.live => l10n.searchKindLive,
+  PrismWallKind.desktop => l10n.searchKindDesktop,
+  PrismWallKind.lightDark => l10n.searchKindLightDark,
+};
 
 String _sortLabel(AppLocalizations l10n, SearchSort sort) => switch (sort) {
   SearchSort.relevance => l10n.accountRelevance,
@@ -92,6 +104,8 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
   late SearchSort _sort = widget.initial.sort;
   late PrismPaletteColor? _color = widget.initial.color;
   late bool _depthOnly = widget.initial.depthOnly;
+  late SearchSource _source = widget.initial.source;
+  late Set<PrismWallKind> _kinds = widget.initial.kinds;
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +118,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
     return PrismSheetBody(
       title: context.l10n.accountSearchFilters,
       trailingAction: PrismSheetAction(
-        label: context.l10n.accountReset,
+        label: context.l10n.searchFilterClearAll,
         onTap: () => Navigator.of(context).pop(const SearchFilters()),
       ),
       actions: <Widget>[
@@ -119,6 +133,8 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
               color: _color,
               depthOnly: _depthOnly,
               spatialOnly: widget.initial.spatialOnly,
+              source: _source,
+              kinds: _kinds,
             ),
           ),
         ),
@@ -194,6 +210,35 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
               ),
               onTap: () => setState(() => _color = accentMatch),
             ),
+          ),
+          const SizedBox(height: PrismSpace.md),
+          Text(context.l10n.searchFilterPrismSection, style: heading),
+          const SizedBox(height: PrismSpace.xs),
+          Wrap(
+            spacing: PrismSpace.xs,
+            children: <Widget>[
+              for (final PrismWallKind kind in PrismWallKind.values)
+                chip(
+                  label: prismWallKindLabel(context.l10n, kind),
+                  selected: _kinds.contains(kind),
+                  onSelected: () => setState(
+                    () => _kinds = _kinds.contains(kind)
+                        ? (<PrismWallKind>{..._kinds}..remove(kind))
+                        : <PrismWallKind>{..._kinds, kind},
+                  ),
+                ),
+            ],
+          ),
+          // A kind filter shows Prism walls only, so the switch is on. Turning it off turns the kinds off too.
+          PrismSwitchRow(
+            padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
+            title: context.l10n.searchFilterPrismOnly,
+            subtitle: context.l10n.searchFilterPrismOnlySubtitle,
+            value: _source == SearchSource.prism || _kinds.isNotEmpty,
+            onChanged: (value) => setState(() {
+              _source = value ? SearchSource.prism : SearchSource.all;
+              if (!value) _kinds = const <PrismWallKind>{};
+            }),
           ),
         ],
       ),

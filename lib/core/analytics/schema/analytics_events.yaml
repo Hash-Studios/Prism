@@ -1484,6 +1484,23 @@ events:
         key: search_id
         type: string
         required: false
+  - id: search_filter_applied
+    fields:
+      - name: filters
+        key: filters
+        type: string_list
+  - id: search_kind_results
+    fields:
+      - name: kinds
+        key: kinds
+        type: string_list
+      - name: result_count
+        key: result_count
+        type: int
+      - name: search_id
+        key: search_id
+        type: string
+        required: false
   - id: search_result_opened
     fields:
       - name: provider

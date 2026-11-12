@@ -302,4 +302,53 @@ void main() {
       );
     });
   });
+
+  group('Live walls row', () {
+    Future<void> pumpLive(WidgetTester tester, {required bool hasLiveWalls, VoidCallback? onLiveWallsPressed}) async {
+      final state = SearchDiscoveryState(
+        status: LoadStatus.success,
+        trendingWalls: const [],
+        hasLiveWalls: hasLiveWalls,
+      );
+      final bloc = _MockSearchDiscoveryBloc();
+      when(() => bloc.state).thenReturn(state);
+      whenListen(bloc, const Stream<SearchDiscoveryState>.empty(), initialState: state);
+      await tester.pumpWidget(
+        BlocProvider<SearchDiscoveryBloc>.value(
+          value: bloc,
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: SearchDiscoveryWidget(
+                tags: const <String>[],
+                selectedTag: '',
+                onTagPressed: (_) {},
+                onLiveWallsPressed: onLiveWallsPressed,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('shows Live walls when the bloc has live walls, and a tap calls the handler once', (tester) async {
+      int taps = 0;
+      await pumpLive(tester, hasLiveWalls: true, onLiveWallsPressed: () => taps++);
+
+      expect(find.text('Live walls'), findsOneWidget);
+      await tester.ensureVisible(find.text('Live walls'));
+      await tester.tap(find.text('Live walls'));
+      await tester.pump();
+
+      expect(taps, 1);
+    });
+
+    testWidgets('shows no Live walls text when the bloc has no live walls', (tester) async {
+      await pumpLive(tester, hasLiveWalls: false, onLiveWallsPressed: () {});
+
+      expect(find.text('Live walls'), findsNothing);
+    });
+  });
 }

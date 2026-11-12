@@ -1,5 +1,14 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/prism_feed/data/prism_wall_search.dart';
+import 'package:Prism/features/user_search/data/search_filters.dart';
+import 'package:Prism/features/user_search/domain/entities/photo_query.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../support/fake_firestore_client.dart';
@@ -159,6 +168,36 @@ void main() {
     });
   });
 
+  test('photo candidate queries keep the review gate and remove blocked creators for guests and labels', () async {
+    search = PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{'blocked'}));
+    firestore.onQuery = (_) => <FakeDocRow>[
+      (id: 'blocked', data: <String, Object?>{...doc('blocked'), 'creatorUid': 'blocked'}),
+      (id: 'visible', data: <String, Object?>{...doc('visible'), 'creatorUid': 'visible'}),
+    ];
+    for (final bool hasLabels in <bool>[false, true]) {
+      firestore.querySpecs.clear();
+      final photo = PhotoQuery(
+        preview: Uint8List(0),
+        palette: <PaletteShare>[(color: prismPalette.first, share: 1)],
+        labelsStatus: hasLabels ? PhotoLabelsStatus.found : PhotoLabelsStatus.guest,
+        labels: hasLabels ? <String>['forest'] : const <String>[],
+      );
+
+      final candidates = await search.photoCandidates(photo);
+
+      expect(candidates.map((candidate) => candidate.wall.id), <String>['visible']);
+      expect(firestore.querySpecs.map((spec) => spec.sourceTag), <String>[
+        'PrismWallSearch.photoColor',
+        if (hasLabels) 'PrismWallSearch.photoTerms',
+      ]);
+      for (final spec in firestore.querySpecs) {
+        expect(spec.filters.first.field, 'review');
+        expect(spec.filters.first.op, FirestoreFilterOp.isEqualTo);
+        expect(spec.filters.first.value, true);
+      }
+    }
+  });
+
   group('colour', () {
     test('a colour with an empty query lists that colour newest first, without text filters', () async {
       await search.search('', colorId: 'blue');
@@ -288,6 +327,330 @@ void main() {
       expect(walls.map((wall) => wall.id), <String>['a', 'd']);
       expect(firestore.querySpecs.expand((spec) => spec.filters).map((f) => f.field), isNot(contains('spatial.tier')));
       expect(firestore.querySpecs.every((spec) => spec.limit == 48), isTrue);
+    });
+  });
+
+  group('kinds', () {
+    Map<String, dynamic> kindDoc(
+      String id, {
+      bool live = false,
+      bool desktop = false,
+      bool pair = false,
+      String? uid,
+      List<String> colors = const <String>[],
+    }) => <String, dynamic>{
+      ...doc(id, colors: colors),
+      if (uid != null) 'creatorUid': uid,
+      if (live) 'kind': 'live',
+      if (live) 'live': <String, dynamic>{'video': 'https://prism/$id.mp4', 'verified': true},
+      if (desktop)
+        'desktopVariant': <String, dynamic>{
+          'v': 'abcdef0123456789',
+          'width': 2560,
+          'height': 1600,
+          'wideHeight': 1600,
+          'thumb': 'https://prism/d-$id.jpg',
+        },
+      if (pair) 'variantGroupId': 'g1',
+      if (pair) 'variantIndex': 0,
+    };
+
+    test('Light and dark with a colour lists through the colour query, so a later set member can match', () async {
+      firestore.onQuery = (_) => <FakeDocRow>[
+        (
+          id: 'set-black',
+          data: <String, dynamic>{
+            ...kindDoc('set-black', colors: <String>['black']),
+            'variantGroupId': 'g1',
+            'variantIndex': 1,
+          },
+        ),
+        (id: 'plain-black', data: kindDoc('plain-black', colors: <String>['black'])),
+      ];
+
+      final walls = await search.search('', colorId: 'black', kinds: <PrismWallKind>{PrismWallKind.lightDark});
+
+      expect(firestore.querySpecs.single.sourceTag, 'PrismWallSearch.color');
+      expect(walls.map((wall) => wall.id), <String>['set-black']);
+    });
+
+    test('Light and dark with colour and another kind keeps later members and all local gates', () async {
+      search = PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{'blocked'}));
+      for (final PrismWallKind kind in <PrismWallKind>[PrismWallKind.live, PrismWallKind.desktop]) {
+        firestore.querySpecs.clear();
+        firestore.onQuery = (_) => <FakeDocRow>[
+          (
+            id: 'later-blue',
+            data: <String, Object?>{
+              ...kindDoc('later-blue', live: true, desktop: true, pair: true, colors: <String>['blue']),
+              'variantIndex': 1,
+            },
+          ),
+          (id: 'not-a-set', data: kindDoc('not-a-set', live: true, desktop: true, colors: <String>['blue'])),
+          (id: 'wrong-kind', data: kindDoc('wrong-kind', pair: true, colors: <String>['blue'])),
+          (id: 'wrong-color', data: kindDoc('wrong-color', live: true, desktop: true, pair: true)),
+          (
+            id: 'blocked',
+            data: kindDoc('blocked', live: true, desktop: true, pair: true, uid: 'blocked', colors: <String>['blue']),
+          ),
+        ];
+
+        final walls = await search.search('', colorId: 'blue', kinds: <PrismWallKind>{PrismWallKind.lightDark, kind});
+
+        expect(walls.map((wall) => wall.id), <String>['later-blue']);
+        final spec = firestore.querySpecs.single;
+        expect(spec.sourceTag, 'PrismWallSearch.kind.${kind.name}');
+        expect(spec.filters.map((filter) => filter.field), isNot(contains('variantIndex')));
+        expect(spec.filters.first.value, true);
+        expect(spec.filters.first.field, 'review');
+        expect(spec.limit, 48);
+      }
+    });
+
+    Map<String, dynamic> gateDoc(String id, String uid) => <String, dynamic>{
+      ...kindDoc(id, live: true, desktop: true, pair: true, uid: uid, colors: <String>['blue']),
+      'depth': <String, dynamic>{'tier': 'auto'},
+      'spatial': <String, dynamic>{'tier': 'great'},
+      'searchTerms': <String>['sky'],
+    };
+
+    test('a live browse lists live walls newest first, 12 at a time', () async {
+      await search.search('', kinds: <PrismWallKind>{PrismWallKind.live});
+
+      final spec = firestore.querySpecs.single;
+      expect(spec.sourceTag, 'PrismWallSearch.kind.live');
+      expect(spec.filters.map((f) => (f.field, f.op, f.value)), <(String, FirestoreFilterOp, Object?)>[
+        ('review', FirestoreFilterOp.isEqualTo, true),
+        ('kind', FirestoreFilterOp.isEqualTo, 'live'),
+      ]);
+      expect(spec.orderBy.map((order) => (order.field, order.descending)), <(String, bool)>[('createdAt', true)]);
+      expect(spec.limit, 12);
+    });
+
+    test('a desktop browse lists the widest desktop walls first, then the newest', () async {
+      await search.search('', kinds: <PrismWallKind>{PrismWallKind.desktop});
+
+      final spec = firestore.querySpecs.single;
+      expect(spec.sourceTag, 'PrismWallSearch.kind.desktop');
+      expect(spec.filters.last.field, 'desktopVariant.width');
+      expect(spec.filters.last.op, FirestoreFilterOp.isGreaterThan);
+      expect(spec.filters.last.value, 0);
+      expect(spec.orderBy.map((order) => (order.field, order.descending)), <(String, bool)>[
+        ('desktopVariant.width', true),
+        ('createdAt', true),
+      ]);
+    });
+
+    test('a light and dark browse lists the first wall of each colour set, newest first', () async {
+      await search.search('', kinds: <PrismWallKind>{PrismWallKind.lightDark});
+
+      final spec = firestore.querySpecs.single;
+      expect(spec.sourceTag, 'PrismWallSearch.kind.lightDark');
+      expect(spec.filters.last.field, 'variantIndex');
+      expect(spec.filters.last.op, FirestoreFilterOp.isEqualTo);
+      expect(spec.filters.last.value, 0);
+      expect(spec.orderBy.map((order) => (order.field, order.descending)), <(String, bool)>[('createdAt', true)]);
+    });
+
+    test('live and desktop browse runs the live query and keeps only walls that are both', () async {
+      firestore.onQuery = (_) => <FakeDocRow>[
+        (id: 'live-only', data: kindDoc('live-only', live: true)),
+        (id: 'desktop-only', data: kindDoc('desktop-only', desktop: true)),
+        (id: 'both', data: kindDoc('both', live: true, desktop: true)),
+      ];
+
+      final walls = await search.search('', kinds: <PrismWallKind>{PrismWallKind.live, PrismWallKind.desktop});
+
+      expect(walls.map((wall) => wall.id), <String>['both']);
+      expect(firestore.querySpecs.single.sourceTag, 'PrismWallSearch.kind.live');
+      expect(firestore.querySpecs.single.limit, 48);
+    });
+
+    test('a live browse with a colour checks the colour on the matches', () async {
+      firestore.onQuery = (_) => <FakeDocRow>[
+        (id: 'blue', data: kindDoc('blue', live: true, colors: <String>['blue'])),
+        (id: 'red', data: kindDoc('red', live: true, colors: <String>['red'])),
+      ];
+
+      final walls = await search.search('', colorId: 'blue', kinds: <PrismWallKind>{PrismWallKind.live});
+
+      expect(walls.map((wall) => wall.id), <String>['blue']);
+      expect(firestore.querySpecs.single.sourceTag, 'PrismWallSearch.kind.live');
+    });
+
+    test('a depth browse with a kind keeps the depth query and checks the kind on the matches', () async {
+      firestore.onQuery = (_) => <FakeDocRow>[
+        (
+          id: 'live-auto',
+          data: <String, dynamic>{
+            ...kindDoc('live-auto', live: true),
+            'depth': <String, dynamic>{'tier': 'auto'},
+          },
+        ),
+        (
+          id: 'still-auto',
+          data: <String, dynamic>{
+            ...kindDoc('still-auto'),
+            'depth': <String, dynamic>{'tier': 'auto'},
+          },
+        ),
+      ];
+
+      final walls = await search.search('', depthOnly: true, kinds: <PrismWallKind>{PrismWallKind.live});
+
+      expect(walls.map((wall) => wall.id), <String>['live-auto']);
+      expect(firestore.querySpecs.single.sourceTag, 'PrismWallSearch.depth');
+    });
+
+    test('a text query with a kind uses the terms query and drops a wall that is not live', () async {
+      firestore.onQuery = (_) => <FakeDocRow>[
+        (
+          id: 'live-sky',
+          data: <String, dynamic>{
+            ...kindDoc('live-sky', live: true),
+            'searchTerms': <String>['sky'],
+          },
+        ),
+        (
+          id: 'still-sky',
+          data: <String, dynamic>{
+            ...kindDoc('still-sky'),
+            'searchTerms': <String>['sky'],
+          },
+        ),
+      ];
+
+      final walls = await search.search('sky', kinds: <PrismWallKind>{PrismWallKind.live});
+
+      expect(walls.map((wall) => wall.id), <String>['live-sky']);
+      final spec = firestore.querySpecs.single;
+      expect(spec.sourceTag, 'PrismWallSearch.terms');
+      expect(spec.filters.map((f) => f.field), <String>['review', 'searchTerms']);
+      expect(spec.limit, 48);
+    });
+
+    test('a kind browse retries after a failed query rather than retaining its empty failure', () async {
+      for (final PrismWallKind kind in PrismWallKind.values) {
+        firestore.querySpecs.clear();
+        firestore.queryError = StateError('failed-precondition');
+        expect(await search.search('', kinds: <PrismWallKind>{kind}), isEmpty);
+        firestore.queryError = null;
+        firestore.onQuery = (_) => <FakeDocRow>[
+          (id: 'wall', data: kindDoc('wall', live: true, desktop: true, pair: true)),
+        ];
+
+        expect((await search.search('', kinds: <PrismWallKind>{kind})).map((wall) => wall.id), <String>['wall']);
+        expect(firestore.querySpecs, hasLength(2));
+      }
+    });
+
+    test('the discovery one-wall check stays empty when its first live wall is blocked', () async {
+      search = PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{'blocked'}));
+      final List<FakeDocRow> rows = <FakeDocRow>[
+        (id: 'newest', data: kindDoc('newest', live: true, uid: 'blocked')),
+        (id: 'older', data: kindDoc('older', live: true, uid: 'visible')),
+      ];
+      firestore.onQuery = (spec) => rows.take(spec.limit!).toList();
+
+      expect(await search.search('', limit: 1, kinds: <PrismWallKind>{PrismWallKind.live}), isEmpty);
+      expect(firestore.querySpecs.single.limit, 1);
+      expect(firestore.querySpecs.single.sourceTag, 'PrismWallSearch.kind.live');
+    });
+
+    test('device checks can exhaust the fetched window before an older matching wall', () async {
+      final List<FakeDocRow> rows = <FakeDocRow>[
+        for (var i = 0; i < 48; i++) (id: 'still-$i', data: kindDoc('still-$i')),
+        (id: 'older-live', data: kindDoc('older-live', live: true)),
+      ];
+      firestore.onQuery = (spec) => rows.take(spec.limit!).toList();
+
+      final walls = await search.search('sky', kinds: <PrismWallKind>{PrismWallKind.live});
+
+      expect(walls, isEmpty);
+      expect(firestore.querySpecs.single.limit, 48);
+      expect(firestore.querySpecs.single.startAfterDocId, isNull);
+      expect(firestore.querySpecs, hasLength(1));
+    });
+
+    test('every kind browse and filtered text query has its protected-wall composite index', () async {
+      for (final PrismWallKind kind in PrismWallKind.values) {
+        await search.search('', kinds: <PrismWallKind>{kind});
+        await search.search('sky', kinds: <PrismWallKind>{kind});
+        await search.search('duo', kinds: <PrismWallKind>{kind});
+      }
+      final Map<String, Object?> config =
+          jsonDecode(File('firestore.indexes.json').readAsStringSync()) as Map<String, Object?>;
+      final List<Object?> indexes = config['indexes']! as List<Object?>;
+      final List<(String, String)> protectedPrefix = <(String, String)>[
+        for (final String field in <String>[
+          'originalProtected',
+          'wallpaper_url',
+          'wallpaper_path',
+          'wallpaper_sha',
+          'thumb_path',
+          'thumb_sha',
+        ])
+          (field, 'ASCENDING'),
+      ];
+      for (final FirestoreQuerySpec spec in firestore.querySpecs) {
+        final Set<String> orderedFields = spec.orderBy.map((order) => order.field).toSet();
+        final List<(String, String)> expected = <(String, String)>[
+          ...protectedPrefix,
+          for (final FirestoreFilter filter in spec.filters)
+            if (filter.op == FirestoreFilterOp.arrayContainsAny || filter.op == FirestoreFilterOp.arrayContains)
+              (filter.field, 'CONTAINS'),
+          for (final FirestoreFilter filter in spec.filters)
+            if (filter.op == FirestoreFilterOp.isEqualTo && !orderedFields.contains(filter.field))
+              (filter.field, 'ASCENDING'),
+          for (final FirestoreOrderBy order in spec.orderBy)
+            (order.field, order.descending ? 'DESCENDING' : 'ASCENDING'),
+          ('__name__', spec.orderBy.last.descending ? 'DESCENDING' : 'ASCENDING'),
+        ];
+        final bool hasIndex = indexes.whereType<Map<String, Object?>>().any((index) {
+          if (index['collectionGroup'] != spec.collection || index['queryScope'] != 'COLLECTION') return false;
+          final List<(String, String)> fields = (index['fields']! as List<Object?>)
+              .cast<Map<String, Object?>>()
+              .map((field) => (field['fieldPath'] as String, (field['order'] ?? field['arrayConfig']) as String))
+              .toList();
+          if (fields.last.$1 != '__name__') fields.add(('__name__', fields.last.$2));
+          return const ListEquality<(String, String)>().equals(fields, expected);
+        });
+        expect(hasIndex, isTrue, reason: '${spec.sourceTag} requires $expected');
+      }
+    });
+
+    test('every filter combination keeps the review gate and hides blocked creators', () async {
+      search = PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{'blocked'}));
+      firestore.onQuery = (_) => <FakeDocRow>[
+        (id: 'blocked', data: gateDoc('blocked', 'blocked')),
+        (id: 'ok', data: gateDoc('ok', 'ok')),
+      ];
+      final List<Future<List<PrismWallpaper>> Function()> combinations = <Future<List<PrismWallpaper>> Function()>[
+        () => search.search('', kinds: <PrismWallKind>{PrismWallKind.live}),
+        () => search.search('', kinds: <PrismWallKind>{PrismWallKind.desktop}),
+        () => search.search('', kinds: <PrismWallKind>{PrismWallKind.lightDark}),
+        () => search.search('', kinds: PrismWallKind.values.toSet()),
+        () => search.search('sky', kinds: <PrismWallKind>{PrismWallKind.live}),
+        () => search.search('', colorId: 'blue', kinds: <PrismWallKind>{PrismWallKind.desktop}),
+        () => search.search('', depthOnly: true, kinds: <PrismWallKind>{PrismWallKind.lightDark}),
+        () => search.search('', spatialOnly: true),
+        () => search.search('', colorId: 'blue'),
+      ];
+
+      for (var index = 0; index < combinations.length; index++) {
+        firestore.querySpecs.clear();
+        final List<PrismWallpaper> walls = await combinations[index]();
+
+        expect(walls.map((wall) => wall.id), <String>['ok'], reason: 'combination $index');
+        expect(firestore.querySpecs, isNotEmpty, reason: 'combination $index');
+        for (final FirestoreQuerySpec spec in firestore.querySpecs) {
+          expect(
+            spec.filters.any((f) => f.field == 'review' && f.op == FirestoreFilterOp.isEqualTo && f.value == true),
+            isTrue,
+            reason: 'combination $index, ${spec.sourceTag}',
+          );
+        }
+      }
     });
   });
 }
