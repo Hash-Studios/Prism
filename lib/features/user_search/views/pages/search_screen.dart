@@ -339,16 +339,60 @@ class _SearchScreenState extends State<SearchScreen> {
     if (mounted && _searchId == searchId && resultGeneration == _photoResultGeneration) {
       setState(() => _photo = photo);
     }
-    final result = await getIt<WallpaperSearchService>().searchByPhoto(photo, filters: _filters);
-    if (mounted && _searchId == searchId && resultGeneration == _photoResultGeneration) {
-      setState(() => _photoPageQuery = result.query);
+    final SearchFilters filters = _filters;
+    void trackResults(SearchProviderValue provider, int count, String query, {bool failed = false}) {
+      final bool superseded = !mounted || _searchId != searchId || resultGeneration != _photoResultGeneration;
+      if (!superseded && !failed && filters.kinds.isNotEmpty) {
+        unawaited(
+          analytics.track(
+            SearchKindResultsEvent(
+              kinds: <String>[
+                for (final PrismWallKind kind in PrismWallKind.values)
+                  if (filters.kinds.contains(kind)) kind.wire,
+              ],
+              resultCount: count,
+              searchId: searchId,
+            ),
+          ),
+        );
+      }
+      unawaited(
+        analytics.track(
+          SearchResultsLoadedEvent(
+            provider: provider,
+            queryLength: query.trim().length,
+            resultCount: superseded ? 0 : count,
+            page: 1,
+            result: superseded
+                ? EventResultValue.cancelled
+                : failed
+                ? EventResultValue.failure
+                : count == 0
+                ? EventResultValue.empty
+                : EventResultValue.success,
+            searchId: searchId,
+            reason: superseded ? 'superseded' : null,
+          ),
+        ),
+      );
     }
-    return result.page;
+
+    try {
+      final result = await getIt<WallpaperSearchService>().searchByPhoto(photo, filters: filters);
+      if (mounted && _searchId == searchId && resultGeneration == _photoResultGeneration) {
+        setState(() => _photoPageQuery = result.query);
+      }
+      trackResults(result.page.provider, result.page.results.length + result.page.prismResults.length, result.query);
+      return result.page;
+    } catch (_) {
+      trackResults(filters.prismOnly ? SearchProviderValue.prism : SearchProviderValue.auto, 0, '', failed: true);
+      rethrow;
+    }
   }
 
   void _retrySearch() {
     if (_photo case final PhotoQuery photo) {
-      _showPhotoResults(photo, AnalyticsCorrelation.newId());
+      _showPhotoResults(photo, _searchId ?? AnalyticsCorrelation.newId());
     } else {
       _triggerSearch(_submittedQuery);
     }

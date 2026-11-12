@@ -789,6 +789,97 @@ void main() {
       expect(result.page.prismResults, isEmpty);
     });
 
+    test('an empty Prism-only photo search stays empty without external fallback', () async {
+      final wallhaven = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[_wallhaven('wh')]));
+      final pexels = _FakePexelsRepository(Result.success(<PexelsWallpaper>[_pexels('px')]));
+      final firestore = FakeFirestoreClient();
+      final service = _service(
+        wallhaven: wallhaven.result,
+        wallhavenRepository: wallhaven,
+        pexelsRepository: pexels,
+        firestore: firestore,
+      );
+      final photo = PhotoQuery(
+        preview: Uint8List(0),
+        palette: <PaletteShare>[(color: paletteColorById('orange')!, share: 1)],
+        labels: const <String>['Sunset'],
+        labelsStatus: PhotoLabelsStatus.found,
+      );
+
+      final result = await service.searchByPhoto(photo, filters: const SearchFilters(source: SearchSource.prism));
+
+      expect(result.page.provider, SearchProviderValue.prism);
+      expect(result.page.results, isEmpty);
+      expect(result.page.prismResults, isEmpty);
+      expect(result.query, '');
+      expect((wallhaven.calls, pexels.calls), (0, 0));
+      expect(firestore.querySpecs, hasLength(2));
+      for (final spec in firestore.querySpecs) {
+        expect(
+          spec.filters.map((filter) => (filter.field, filter.op, filter.value)),
+          contains(('review', FirestoreFilterOp.isEqualTo, true)),
+        );
+      }
+    });
+
+    test('Prism-only photo results intersect kinds and resolution and recheck blocked creators', () async {
+      final firestore = FakeFirestoreClient(
+        onQuery: (_) => <FakeDocRow>[
+          for (final id in <String>['match', 'small', 'landscape', 'no-desktop', 'blocked'])
+            (
+              id: id,
+              data: <String, Object?>{
+                ..._prismDoc(
+                  id,
+                  colors: <String>['orange'],
+                  creatorUid: id == 'blocked' ? 'blocked-creator' : 'creator-id',
+                  resolution: switch (id) {
+                    'small' => '720x1280',
+                    'landscape' => '2400x1080',
+                    _ => '1080x2400',
+                  },
+                ),
+                'kind': 'live',
+                'live': <String, Object?>{'video': 'https://prism/$id.mp4', 'verified': true},
+                if (id != 'no-desktop')
+                  'desktopVariant': <String, Object?>{
+                    'v': '0123456789abcdef',
+                    'thumb': 'https://prism/$id-desktop.jpg',
+                    'width': 3840,
+                    'height': 2160,
+                  },
+              },
+            ),
+        ],
+      );
+      final service = WallpaperSearchService(
+        _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[])),
+        _FakePexelsRepository(Result.success(<PexelsWallpaper>[])),
+        SettingsLocalDataSource(InMemoryLocalStore()),
+        PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{})),
+        null,
+        () => KnownBlockedCreators(<String>{'blocked-creator'}),
+      );
+      final photo = PhotoQuery(
+        preview: Uint8List(0),
+        palette: <PaletteShare>[(color: paletteColorById('orange')!, share: 1)],
+        labels: const <String>['Sunset'],
+        labelsStatus: PhotoLabelsStatus.found,
+      );
+
+      final result = await service.searchByPhoto(
+        photo,
+        filters: const SearchFilters(
+          minResolution: '1080x1920',
+          kinds: <PrismWallKind>{PrismWallKind.live, PrismWallKind.desktop},
+        ),
+      );
+
+      expect(result.page.provider, SearchProviderValue.prism);
+      expect(result.page.results.map((item) => item.id), <String>['match']);
+      expect(result.page.prismResults, isEmpty);
+    });
+
     test('Wallhaven gets the palette hex, and the page cursor is keyed by colour', () async {
       final repository = _FakeWallhavenRepository(Result.success(<WallhavenWallpaper>[]));
       final service = _service(wallhaven: repository.result, wallhavenRepository: repository);

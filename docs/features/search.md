@@ -163,7 +163,7 @@ Each kind is off by default. A wall must have every selected kind. Two selected 
 
 - A live wall is a short looping video. The server sets `review` to true only after it verifies the video.
 - A desktop version is a wide version of the wall. The wall stores it in `desktopVariant`.
-- A light and dark wall is part of a colour variant set. The set has a `variantGroupId`. The browse lists only `variantIndex == 0`, so each set shows one time. With a colour, the colour query lists every member, because the members of a set have different colours. A text search does not use that index, so it can show more than one wall of a set.
+- A light and dark wall is part of a colour variant set. The set has a `variantGroupId`. The browse lists only `variantIndex == 0`, so each set shows one time. With a colour, the query does not constrain `variantIndex`, because the members of a set have different colours. Another selected kind, Depth Effect or Spatial Scene can still own the query; otherwise the colour query runs. A text search does not use that index, so it can show more than one wall of a set.
 
 #### Why there is no watch version filter
 
@@ -183,7 +183,7 @@ The query uses the server for one filter. The device checks every filter on the 
 
 | Case | Where it runs | Detail |
 |---|---|---|
-| Empty query, one or more filters | Server, one query | Depth Effect first, then Spatial Scene, then the first kind selected in the order Live, Desktop version, Light and dark, then colour. Light and dark with a colour uses the colour query. |
+| Empty query, one or more filters | Server, one query | Depth Effect first, then Spatial Scene, then the first kind selected in the order Live, Desktop version, Light and dark, then colour. Light and dark with a colour skips the Light and dark server filter. Another selected kind can own the query; otherwise the colour query runs. |
 | Colour, Depth Effect, Spatial Scene and kinds | Device | Each wall must pass every filter. A filter that the query used is checked again. |
 | Portrait only and Min resolution | Device | Checked for every Prism query. A wall with an unknown resolution passes. |
 | Reads | Server | A browse with one filter reads the limit. A browse with two or more filters reads 4 times the limit. A text query reads 4 times the limit when it has a filter or more than one word. |
@@ -367,7 +367,9 @@ The "From Prism" row uses walls that the backend already labels. It needs no new
 - With labels, the score is half palette closeness and half label overlap. With no labels, the score is the palette closeness.
 - Equal scores keep the query order: colour matches first, then label matches, each newest first.
 
-The resolution and portrait filters apply to the Prism row. The colour filter is replaced by the top photo colour. Depth Effect and Spatial Scene filters do not apply to a photo search. A kind or **Prism walls only** applies: the photo search skips Wallhaven and Pexels and shows only the ranked Prism walls that pass the filters. **Clear all** on photo results keeps the photo and shows its results again without filters.
+The resolution and portrait filters apply to the Prism row. The colour filter is replaced by the top photo colour. Depth Effect and Spatial Scene filters do not apply to a photo search.
+
+Starting a new photo search clears the selected kinds and resets the source to All. This is the existing picker behaviour. Kinds and **Prism walls only** selected while the photo loads or after it appears do apply. The service skips Wallhaven and Pexels and shows only the ranked Prism walls that pass the filters, with no next page. If none pass, the photo chip and active filters remain above the empty grid. **Clear all** keeps the photo and loads its results again without filters.
 
 #### Wallhaven and Pexels
 
@@ -385,6 +387,10 @@ not replace a newer search or its pagination query.
 | `photo_search_labels_returned` (`label_count`, `search_id`) | The callable returned labels. |
 | `photo_search_labels_capped` (`search_id`) | The callable refused because of the daily cap. |
 | `photo_search_result_opened` (`provider`, `item_id`, `index`, `search_id`) | The user opened a result of a photo search. `search_result_opened` is sent too. |
+| `search_results_loaded` | A photo results request completes, including page 1, filter changes and retries. It records success, empty, failure or cancelled. A superseded request reports cancelled with reason `superseded` and zero results. |
+| `search_kind_results` | A current kind-filtered photo results request succeeds. It includes the selected kinds and result count, including zero. A failed or superseded request does not send this event. |
+
+Filter changes and retries retain the picked photo's `search_id`, so result opens still correlate with its start and label events. A new photo gets a new id.
 
 #### Privacy
 

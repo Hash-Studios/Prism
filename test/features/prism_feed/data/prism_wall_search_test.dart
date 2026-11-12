@@ -1,10 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/features/prism_feed/data/prism_wall_search.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
+import 'package:Prism/features/user_search/domain/entities/photo_query.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -163,6 +166,36 @@ void main() {
 
       expect(walls.map((wall) => wall.id), <String>['no-creator']);
     });
+  });
+
+  test('photo candidate queries keep the review gate and remove blocked creators for guests and labels', () async {
+    search = PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{'blocked'}));
+    firestore.onQuery = (_) => <FakeDocRow>[
+      (id: 'blocked', data: <String, Object?>{...doc('blocked'), 'creatorUid': 'blocked'}),
+      (id: 'visible', data: <String, Object?>{...doc('visible'), 'creatorUid': 'visible'}),
+    ];
+    for (final bool hasLabels in <bool>[false, true]) {
+      firestore.querySpecs.clear();
+      final photo = PhotoQuery(
+        preview: Uint8List(0),
+        palette: <PaletteShare>[(color: prismPalette.first, share: 1)],
+        labelsStatus: hasLabels ? PhotoLabelsStatus.found : PhotoLabelsStatus.guest,
+        labels: hasLabels ? <String>['forest'] : const <String>[],
+      );
+
+      final candidates = await search.photoCandidates(photo);
+
+      expect(candidates.map((candidate) => candidate.wall.id), <String>['visible']);
+      expect(firestore.querySpecs.map((spec) => spec.sourceTag), <String>[
+        'PrismWallSearch.photoColor',
+        if (hasLabels) 'PrismWallSearch.photoTerms',
+      ]);
+      for (final spec in firestore.querySpecs) {
+        expect(spec.filters.first.field, 'review');
+        expect(spec.filters.first.op, FirestoreFilterOp.isEqualTo);
+        expect(spec.filters.first.value, true);
+      }
+    }
   });
 
   group('colour', () {
@@ -339,6 +372,39 @@ void main() {
 
       expect(firestore.querySpecs.single.sourceTag, 'PrismWallSearch.color');
       expect(walls.map((wall) => wall.id), <String>['set-black']);
+    });
+
+    test('Light and dark with colour and another kind keeps later members and all local gates', () async {
+      search = PrismWallSearch(firestore, FakeUserBlockRepository.pending()..completeInitial(<String>{'blocked'}));
+      for (final PrismWallKind kind in <PrismWallKind>[PrismWallKind.live, PrismWallKind.desktop]) {
+        firestore.querySpecs.clear();
+        firestore.onQuery = (_) => <FakeDocRow>[
+          (
+            id: 'later-blue',
+            data: <String, Object?>{
+              ...kindDoc('later-blue', live: true, desktop: true, pair: true, colors: <String>['blue']),
+              'variantIndex': 1,
+            },
+          ),
+          (id: 'not-a-set', data: kindDoc('not-a-set', live: true, desktop: true, colors: <String>['blue'])),
+          (id: 'wrong-kind', data: kindDoc('wrong-kind', pair: true, colors: <String>['blue'])),
+          (id: 'wrong-color', data: kindDoc('wrong-color', live: true, desktop: true, pair: true)),
+          (
+            id: 'blocked',
+            data: kindDoc('blocked', live: true, desktop: true, pair: true, uid: 'blocked', colors: <String>['blue']),
+          ),
+        ];
+
+        final walls = await search.search('', colorId: 'blue', kinds: <PrismWallKind>{PrismWallKind.lightDark, kind});
+
+        expect(walls.map((wall) => wall.id), <String>['later-blue']);
+        final spec = firestore.querySpecs.single;
+        expect(spec.sourceTag, 'PrismWallSearch.kind.${kind.name}');
+        expect(spec.filters.map((filter) => filter.field), isNot(contains('variantIndex')));
+        expect(spec.filters.first.value, true);
+        expect(spec.filters.first.field, 'review');
+        expect(spec.limit, 48);
+      }
     });
 
     Map<String, dynamic> gateDoc(String id, String uid) => <String, dynamic>{
