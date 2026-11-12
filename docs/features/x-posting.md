@@ -17,7 +17,7 @@ Each post lands at its slot time plus or minus up to 15 minutes, uniformly at ra
 
 | Function | When | Does |
 |---|---|---|
-| `socialPrepare` | 07:00 and 10:00 IST | Builds today's missing posts into `socialPosts/{day}_{slot}`, stores the images in R2 (`social/<postId>/<sha256>.jpg`, private bucket), sends previews to Telegram |
+| `socialPrepare` | 22:00 IST for tomorrow; 07:00 and 10:00 IST catch up today | Builds the day's missing posts into `socialPosts/{day}_{slot}`, stores the images in R2 (`social/<postId>/<sha256>.jpg`, private bucket), sends previews to Telegram |
 | `socialPublish` | Every 5 minutes (so the jitter is not rounded to quarter hours) | Posts what is due, reconciles unknown results |
 | `socialTelegramWebhook` | On each button press | Applies the press at once, shows a toast, and replaces the buttons with the outcome |
 | `socialMeasure` | 06:30 IST | Reads X metrics for posts and replies at 24 hours and 7 days into `metrics` |
@@ -90,6 +90,7 @@ Lock screen setup (P3), creator spotlight (P4), video (P6), weekly report. See t
 
 ## Review follow-ups
 
-- Sunday night is built by the 10:00 IST run, after Wall of the Day is picked at 09:00 IST.
+- Each night at 22:00 IST, previews for the next day arrive in Telegram, so the owner can approve them the night before. A run from 21:00 IST prepares tomorrow. The 07:00 and 10:00 runs build anything still missing for today.
+- Sunday night is built by Sunday's 10:00 IST run, after Wall of the Day is picked at 09:00 IST. Saturday's 22:00 run leaves it out.
 - An owner **Post again** gives the post a fresh posting window, so the old slot's 2-hour expiry does not skip it.
 - The sensitive metadata payload remains a launch blocker until phase 0 validates that X applies the warning. Offline tests prove fail-closed handling of metadata errors, not that X honors the payload.

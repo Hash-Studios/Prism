@@ -108,6 +108,10 @@ const isSunday = (day: string) => new Date(`${day}T12:00:00+05:30`).getUTCDay() 
 const istHour = (now: Date) => new Intl.DateTimeFormat("en-GB", {timeZone: "Asia/Kolkata", hour: "2-digit", hourCycle: "h23"})
   .format(now);
 
+/** From 21:00 IST a run prepares tomorrow, so the owner reviews the next day's posts the night before. */
+export const prepareFor = (now: Date) =>
+  postDay(Number(istHour(now)) >= 21 ? new Date(now.getTime() + 24 * 3_600_000) : now);
+
 export const defaultBuilders: Builders = {
   grid: (day, exclude, _slot, config) => gridContent(day, exclude, config),
   panorama: (day, exclude) => panoramaContent(day, exclude),
@@ -122,7 +126,7 @@ const DRY_RUN_REBUILDS = new Set(["pending_approval", "approved", "dry_run", "sk
 export async function prepareDay(deps: SocialDeps, builders: Builders = defaultBuilders): Promise<string[]> {
   const {config, now} = deps;
   if (!config.enabled) return [];
-  const day = postDay(now);
+  const day = prepareFor(now);
   const exclude = await recentlyPosted(now, config.blockedIds);
   const existing = await db.collection(SOCIAL_POSTS).where("day", "==", day).get();
   // Every wall previewed in today's earlier dry runs, so a rebuild never shows an older set again.
@@ -155,8 +159,8 @@ export async function prepareDay(deps: SocialDeps, builders: Builders = defaultB
   for (const slot of Object.keys(SLOTS) as Slot[]) {
     const postId = `${day}_${slot}`;
     if (!config.slots[slot] || kept.has(postId)) continue;
-    // Wall of the Day is picked at 09:00 IST, so the Sunday night post waits for the 10:00 run.
-    if (slot === "night" && isSunday(day) && Number(istHour(now)) < 10) continue;
+    // Wall of the Day is picked at 09:00 IST, so the Sunday night post waits for Sunday's 10:00 run.
+    if (slot === "night" && isSunday(day) && (postDay(now) !== day || Number(istHour(now)) < 10)) continue;
     const pipeline = SLOTS[slot].pipeline;
     const ref = db.collection(SOCIAL_POSTS).doc(postId);
     const base = {day, slot, pipeline, scheduledAt: admin.firestore.Timestamp.fromDate(scheduledAt(day, slot)),
@@ -618,7 +622,7 @@ async function withLease(name: string, ttlMs: number, run: () => Promise<void>):
 const WEBHOOK_FUNCTION = "socialTelegramWebhook";
 const projectId = () => process.env.GCLOUD_PROJECT || JSON.parse(process.env.FIREBASE_CONFIG ?? "{}").projectId;
 
-export const socialPrepare = onSchedule({schedule: "0 7,10 * * *", timeZone: "Asia/Kolkata", region: REGION,
+export const socialPrepare = onSchedule({schedule: "0 7,10,22 * * *", timeZone: "Asia/Kolkata", region: REGION,
   memory: "1GiB", timeoutSeconds: 540, retryCount: 1, secrets: [...socialTelegramSecrets, ...r2Secrets]}, async () => {
   const deps = await liveDeps(false, true);
   // Points the approval bot at the webhook. Idempotent, so every run repairs a lost or changed registration.

@@ -8,7 +8,7 @@ import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {db} from "../common";
 import {assertFits, DARK_STILL_TAILS, GRID_DETAIL_BUDGET, GRID_LINES, gridContent, gridVisionDecision, PANORAMA_LINES, panoramaPanels, STILL_TAILS, stillCaption, stillContent, wallhavenCandidates, wallhavenDetails, YOUTH_TAG, type WallhavenWall} from "../social/content";
-import {applyPress, contentHash, defaultBuilders, handleTelegramUpdate, JITTER_MS, loadSocialConfig, measurePosts, normalizePostText, prepareDay, publishDue, scheduledAt, socialPrepare, socialTelegramWebhook, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
+import {applyPress, contentHash, defaultBuilders, handleTelegramUpdate, JITTER_MS, loadSocialConfig, measurePosts, normalizePostText, prepareDay, prepareFor, publishDue, scheduledAt, socialPrepare, socialTelegramWebhook, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
 import {callbackData, parsePress, socialBotToken, socialOwnerChatId, telegramClient, type Telegram, webhookSecret} from "../social/telegram";
 import {R2Storage} from "../r2Storage";
 import {oauthHeader, xClient, xWeightedLength, XError, type XClient, type XOwnPost} from "../social/x";
@@ -710,11 +710,22 @@ test("Sunday night waits for the run after Wall of the Day is picked", async (t)
   };
   const builders = {grid: build, panorama: build, still: build};
   const sunday = (hour: string) => new Date(`2026-11-15T${hour}:00:00+05:30`);
+  // Saturday's 22:00 run prepares Sunday, but not the Wall of the Day post.
+  await prepareDay(deps(null, new Date("2026-11-14T22:00:00+05:30")), builders);
+  assert.deepEqual(slots, ["am", "noon", "eve"]);
+  assert.equal(store.get("socialPosts/2026-11-15_am")?.day, "2026-11-15");
   await prepareDay(deps(null, sunday("07")), builders);
   assert.deepEqual(slots, ["am", "noon", "eve"]);
   await prepareDay(deps(null, sunday("10")), builders);
   assert.deepEqual(slots, ["am", "noon", "eve", "night"]);
   assert.equal(store.get("socialPosts/2026-11-15_night")?.slot, "night");
+});
+
+test("runs from 21:00 IST prepare tomorrow; earlier runs prepare today", () => {
+  assert.equal(prepareFor(new Date("2026-11-12T07:00:00+05:30")), "2026-11-12");
+  assert.equal(prepareFor(new Date("2026-11-12T20:59:00+05:30")), "2026-11-12");
+  assert.equal(prepareFor(new Date("2026-11-12T22:00:00+05:30")), "2026-11-13");
+  assert.equal(prepareFor(new Date("2026-11-30T23:59:00+05:30")), "2026-12-01");
 });
 
 test("a post with no reply text never sends a reply", async (t) => {
@@ -1094,10 +1105,11 @@ test("live preparation ignores dry-run history and does not change it", async (t
   assert.deepEqual(store.get("socialState/dryRunSeen"), history);
 });
 
-test("dry-run history resets at IST midnight, not UTC midnight", async (t) => {
-  const before = new Date("2026-11-12T18:29:59Z");
-  const after = new Date("2026-11-12T18:30:00Z");
-  const store = installSocialDb(t, {"socialState/dryRunSeen": {day: postDay(before), ids: ["A"]}});
+test("dry-run history resets when the prepared day changes at 21:00 IST", async (t) => {
+  const before = new Date("2026-11-12T15:29:59Z");
+  const after = new Date("2026-11-12T15:30:00Z");
+  assert.notEqual(prepareFor(before), prepareFor(after));
+  const store = installSocialDb(t, {"socialState/dryRunSeen": {day: prepareFor(before), ids: ["A"]}});
   const build = async (_day: string, exclude: Set<string>) => {
     const id = exclude.has("A") ? "B" : "A";
     return {pipeline: "still" as const, source: {kind: "prism" as const, ids: [id]},
@@ -1106,11 +1118,11 @@ test("dry-run history resets at IST midnight, not UTC midnight", async (t) => {
   const builders = {grid: build, panorama: build, still: build};
   const cfg = config({dryRun: true, slots: {am: true, noon: false, eve: false, night: false}});
   await prepareDay(deps(null, before, cfg), builders);
-  assert.deepEqual((store.get(`socialPosts/${postDay(before)}_am`)?.source as {ids: string[]}).ids, ["B"]);
+  assert.deepEqual((store.get(`socialPosts/${prepareFor(before)}_am`)?.source as {ids: string[]}).ids, ["B"]);
   await prepareDay(deps(null, after, cfg), builders);
-  assert.deepEqual((store.get(`socialPosts/${postDay(after)}_am`)?.source as {ids: string[]}).ids, ["A"]);
+  assert.deepEqual((store.get(`socialPosts/${prepareFor(after)}_am`)?.source as {ids: string[]}).ids, ["A"]);
   await prepareDay(deps(null, after, cfg), builders);
-  assert.deepEqual(store.get("socialState/dryRunSeen"), {day: postDay(after), ids: ["A"]});
+  assert.deepEqual(store.get("socialState/dryRunSeen"), {day: prepareFor(after), ids: ["A"]});
 });
 
 test("Wallhaven reads four search pages, deduplicates, and keeps the detail budget", async (t) => {
