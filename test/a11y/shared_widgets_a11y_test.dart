@@ -261,34 +261,67 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('the sheet header fits a translated trailing action at 2x text on a narrow phone', (tester) async {
+  testWidgets('sheet trailing actions stay legible and keep the title centered at 2x text in both directions', (
+    tester,
+  ) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(320, 640);
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(
-      a11yApp(
-        Builder(
-          builder: (context) => TextButton(
-            onPressed: () => showPrismSheet<void>(
-              context,
-              builder: (_) => PrismSheetBody(
-                title: 'Filters',
-                trailingAction: PrismSheetAction(label: 'Zurücksetzen', onTap: () {}),
+    for (final TextDirection direction in TextDirection.values) {
+      for (final (String, String) sheetCase in <(String, String)>[
+        ('Filters', 'Clear all'),
+        ('Tune your feed', 'Reset'),
+        ('Sort and filter', 'Zurücksetzen'),
+      ]) {
+        final (String title, String label) = sheetCase;
+        await tester.pumpWidget(
+          a11yApp(
+            Builder(
+              builder: (context) => TextButton(
+                onPressed: () => showPrismSheet<void>(
+                  context,
+                  builder: (_) => PrismSheetBody(
+                    title: title,
+                    trailingAction: PrismSheetAction(label: label, onTap: () {}),
+                  ),
+                ),
+                child: const Text('open'),
               ),
             ),
-            child: const Text('open'),
+            variant: A11yVariant(Brightness.light, 2, direction),
           ),
-        ),
-        variant: const A11yVariant(Brightness.light, 2, TextDirection.ltr),
-      ),
-    );
-    await tester.tap(find.text('open'));
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-    final Rect target = tester.getSemantics(find.bySemanticsLabel('Zurücksetzen')).rect;
-    expect(target.width, greaterThanOrEqualTo(48));
-    expect(target.height, greaterThanOrEqualTo(48));
-    expect(tester.getRect(find.text('Filters')).center.dx, closeTo(160, 0.5));
+        );
+        await tester.tap(find.text('open'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull, reason: '$direction / $label');
+        final Finder actionFinder = find.text(label);
+        final Rect target = tester.getSemantics(find.bySemanticsLabel(label)).rect;
+        expect(target.width, greaterThanOrEqualTo(48), reason: '$direction / $label');
+        expect(target.height, greaterThanOrEqualTo(48), reason: '$direction / $label');
+        expect(tester.getRect(find.text(title)).center.dx, closeTo(160, 0.5), reason: '$direction / $title / $label');
+        final RenderParagraph action = tester.renderObject<RenderParagraph>(actionFinder);
+        expect(action.didExceedMaxLines, isFalse, reason: '$direction / $label');
+        final List<TextBox> glyphs = <TextBox>[
+          for (int index = 0; index < label.length; index++)
+            if (label[index] != ' ')
+              ...action.getBoxesForSelection(TextSelection(baseOffset: index, extentOffset: index + 1)),
+        ];
+        expect(glyphs, isNotEmpty, reason: '$direction / $label');
+        final Rect sheet = tester.getRect(find.byType(PrismSheetBody));
+        final Rect actionRect = tester.getRect(actionFinder);
+        for (final TextBox glyph in glyphs) {
+          final Offset topLeft = action.localToGlobal(Offset(glyph.left, glyph.top));
+          final Offset bottomRight = action.localToGlobal(Offset(glyph.right, glyph.bottom));
+          expect(topLeft.dx, greaterThanOrEqualTo(sheet.left), reason: '$direction / $title / $label');
+          expect(bottomRight.dx, lessThanOrEqualTo(sheet.right), reason: '$direction / $title / $label');
+          expect(topLeft.dx, greaterThanOrEqualTo(actionRect.left), reason: '$direction / $title / $label');
+          expect(bottomRight.dx, lessThanOrEqualTo(actionRect.right), reason: '$direction / $title / $label');
+          expect(topLeft.dy, greaterThanOrEqualTo(actionRect.top), reason: '$direction / $title / $label');
+          expect(bottomRight.dy, lessThanOrEqualTo(actionRect.bottom), reason: '$direction / $title / $label');
+        }
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+    }
   });
 
   testWidgets('PrismTextField puts its label at the start edge in RTL', (tester) async {

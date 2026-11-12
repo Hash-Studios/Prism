@@ -11,7 +11,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smooth_sheets/smooth_sheets.dart';
 
-Widget _app(void Function(BuildContext context) open) => MaterialApp(
+Widget _app(void Function(BuildContext context) open, {ThemeData? theme}) => MaterialApp(
+  theme: theme,
   localizationsDelegates: AppLocalizations.localizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
   home: Scaffold(
@@ -320,19 +321,33 @@ void main() {
       _app(
         (context) => showPrismSheet<void>(
           context,
-          builder: (_) => DefaultTextStyle.merge(
-            style: const TextStyle(letterSpacing: 4),
-            child: PrismSheetBody(
-              title: 'Filters',
-              trailingAction: PrismSheetAction(label: 'Clear all', onTap: () {}),
-            ),
+          builder: (_) => PrismSheetBody(
+            title: 'Filters',
+            trailingAction: PrismSheetAction(label: 'Clear all', onTap: () {}),
           ),
         ),
+        theme: ThemeData(textTheme: const TextTheme(bodyMedium: TextStyle(letterSpacing: -1))),
       ),
     );
     await _open(tester);
     final RenderParagraph label = tester.renderObject<RenderParagraph>(find.text('Clear all'));
     expect(label.didExceedMaxLines, isFalse);
+    final Finder actionSlot = find
+        .ancestor(
+          of: find.text('Clear all'),
+          matching: find.byWidgetPredicate((Widget widget) => widget is SizedBox && widget.width != null),
+        )
+        .first;
+    final TextPainter renderedLabel = TextPainter(
+      text: TextSpan(text: 'Clear all', style: label.text.style),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    expect(
+      tester.getSize(actionSlot).width,
+      closeTo(renderedLabel.width.ceilToDouble() + PrismSpace.xs + PrismSpace.xxs, 0.5),
+      reason: 'the reserved action slot should use the same style as the rendered label',
+    );
+    renderedLabel.dispose();
     expect(
       label.getBoxesForSelection(const TextSelection(baseOffset: 0, extentOffset: 9)).map((box) => box.top).toSet(),
       hasLength(1),

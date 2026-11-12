@@ -185,11 +185,6 @@ class _PrismSheetHeader extends StatelessWidget {
           )
         : null;
     final Widget? action = trailingAction == null ? null : _TrailingAction(action: trailingAction!);
-    // Both sides take the width of the wider one, so the title stays centred on the row.
-    final double slot = math.max(
-      prismTapTarget(context),
-      trailingAction == null ? 0 : _TrailingAction.width(context, trailingAction!.label),
-    );
     return Material(
       type: MaterialType.transparency,
       child: Column(
@@ -215,6 +210,12 @@ class _PrismSheetHeader extends StatelessWidget {
                 constraints: const BoxConstraints(minHeight: PrismBottomSheet.headerRowHeight),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
+                    // Both sides use the wider control slot, so the title stays centred. Measure below Material,
+                    // where the rendered label inherits its effective DefaultTextStyle.
+                    final double slot = math.max(
+                      prismTapTarget(context),
+                      trailingAction == null ? 0 : _TrailingAction.width(context, trailingAction!.label),
+                    );
                     final double slotWidth = math.min(
                       slot,
                       math.max(prismTapTarget(context), (constraints.maxWidth - 2 * PrismSpace.xs) / 3),

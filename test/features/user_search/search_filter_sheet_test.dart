@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:Prism/core/color/prism_palette.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/user_search/data/search_filters.dart';
@@ -6,6 +8,7 @@ import 'package:Prism/features/user_search/views/widgets/search_filter_sheet.dar
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -394,26 +397,60 @@ void main() {
       expect(result!.kinds, unorderedEquals(<PrismWallKind>[PrismWallKind.live, PrismWallKind.lightDark]));
     });
 
-    testWidgets('with a kind selected the switch is on, and turning it off clears the kinds', (tester) async {
-      SearchFilters? result;
-      await openSheet(
-        tester,
-        const SearchFilters(kinds: <PrismWallKind>{PrismWallKind.desktop}),
-        (value) => result = value,
-      );
+    testWidgets('kind-only filters imply Prism-only results without an explicit source count', (tester) async {
+      const SearchFilters filters = SearchFilters(kinds: <PrismWallKind>{PrismWallKind.live});
+      await openSheet(tester, filters, (_) {});
 
       expect(tester.widget<PrismSwitchRow>(prismOnlyRow).value, isTrue);
-      await tester.ensureVisible(prismOnlyRow);
-      await tester.tap(find.descendant(of: prismOnlyRow, matching: find.byType(Switch)));
-      await tester.pump();
-      expect(tester.widget<PrismSwitchRow>(prismOnlyRow).value, isFalse);
-      expect(tester.widget<PrismChip>(kindChip('Desktop version')).selected, isFalse);
-      await tester.tap(find.text('Apply'));
-      await tester.pumpAndSettle();
-
-      expect(result!.kinds, isEmpty);
-      expect(result!.source, SearchSource.all);
+      expect(filters.prismOnly, isTrue);
+      expect(filters.activeNames, <String>['kind_live']);
     });
+
+    for (final SearchSource source in SearchSource.values) {
+      testWidgets('turning off the enabled Prism switch clears kinds from $source and keeps other filters', (
+        tester,
+      ) async {
+        final handle = tester.ensureSemantics();
+        try {
+          SearchFilters? result;
+          final SearchFilters initial = SearchFilters(
+            color: paletteColorById('purple'),
+            source: source,
+            kinds: PrismWallKind.values.toSet(),
+          );
+          expect(initial.activeNames.length, source == SearchSource.prism ? 5 : 4);
+          await openSheet(tester, initial, (value) => result = value);
+
+          void expectSwitchSemantics(bool isToggled) {
+            final node = tester.getSemantics(prismOnlyRow);
+            final data = node.getSemanticsData();
+            expect(data.flagsCollection.isEnabled, Tristate.isTrue);
+            expect(data.flagsCollection.isToggled, isToggled ? Tristate.isTrue : Tristate.isFalse);
+            expect(data.hasAction(SemanticsAction.tap), isTrue);
+          }
+
+          expectSwitchSemantics(true);
+          await tester.ensureVisible(prismOnlyRow);
+          await tester.tap(find.descendant(of: prismOnlyRow, matching: find.byType(Switch)));
+          await tester.pump();
+          expect(tester.widget<PrismSwitchRow>(prismOnlyRow).value, isFalse);
+          expectSwitchSemantics(false);
+          expect(tester.widget<PrismChip>(kindChip('Live')).selected, isFalse);
+          expect(tester.widget<PrismChip>(kindChip('Desktop version')).selected, isFalse);
+          expect(tester.widget<PrismChip>(kindChip('Light and dark')).selected, isFalse);
+          await tester.tap(find.text('Apply'));
+          await tester.pumpAndSettle();
+
+          expect(result!.kinds, isEmpty);
+          expect(result!.source, SearchSource.all);
+          expect(result!.color, paletteColorById('purple'));
+          expect(result!.activeNames, <String>['color']);
+          expect(result!.activeNames.length, 1);
+        } finally {
+          handle.dispose();
+        }
+      });
+    }
 
     testWidgets('turning on Prism walls only with no kinds and Apply returns the Prism source', (tester) async {
       SearchFilters? result;
