@@ -290,6 +290,23 @@ void main() {
     expect(find.text(en.searchPhotoMatchesFor('sunset, sky')), findsOneWidget);
   });
 
+  testWidgets('photo and active filters leave visible results at 3x text', (tester) async {
+    await pickSignedInPhotoWithLabels(tester, textScale: 3);
+    await tester.tap(find.byTooltip(en.searchFiltersCount(0)));
+    await settleSheet(tester);
+    await tester.ensureVisible(find.text('Live'));
+    await tester.tap(find.text('Live'));
+    await tester.ensureVisible(find.text('Desktop version'));
+    await tester.tap(find.text('Desktop version'));
+    await tester.ensureVisible(find.text('Light and dark'));
+    await tester.tap(find.text('Light and dark'));
+    await tester.tap(find.text('Apply'));
+    await settleSheet(tester);
+    expect(tester.takeException(), isNull);
+    expect(find.byType(PhotoSearchChip), findsOneWidget);
+    expect(tester.getSize(find.byType(SearchGrid)).height, greaterThan(0));
+  });
+
   testWidgets('pick cancelled does nothing', (tester) async {
     when(() => photos.pick()).thenAnswer((_) async => null);
     await pumpScreen(tester);

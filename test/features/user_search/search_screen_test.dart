@@ -29,9 +29,11 @@ import 'package:Prism/features/user_search/views/widgets/search_grid.dart';
 import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -75,7 +77,10 @@ void main() {
   late FakeAppAnalytics analytics;
   late _MockSearchDiscoveryBloc discoveryBloc;
 
-  setUpAll(() => registerFallbackValue(const SearchFilters()));
+  setUpAll(() {
+    registerFallbackValue(const SearchFilters());
+    registerFallbackValue(SearchProviderValue.wallhaven);
+  });
 
   void stubDiscovery(SearchDiscoveryState state) {
     discoveryBloc = _MockSearchDiscoveryBloc();
@@ -1065,6 +1070,156 @@ void main() {
       final double width = tester.view.physicalSize.width / tester.view.devicePixelRatio;
       expect(tester.getRect(count).right, lessThanOrEqualTo(width));
       expect(tester.getSize(count).height, lessThan(14 * 2), reason: 'the count scales at most 1.5 times');
+    });
+
+    testWidgets('normal text filters shrink to their content and results fill the rest', (tester) async {
+      await pumpWithScale(tester);
+      await sendRequest(tester, (query: '', filters: liveOnly));
+
+      final Finder filters = find.ancestor(of: find.text(kindNote), matching: find.byType(SingleChildScrollView));
+      final Rect filterRect = tester.getRect(filters);
+      final Rect noteRect = tester.getRect(find.text(kindNote));
+      final Rect results = tester.getRect(find.byType(SearchGrid));
+      expect(filterRect.height, lessThan(844 / 3));
+      expect(filterRect.bottom, closeTo(noteRect.bottom + PrismSpace.xs, 0.01));
+      expect(results.top, closeTo(filterRect.bottom, 0.01));
+      expect(results.bottom, 844);
+    });
+
+    testWidgets('large text filter scrolling is separate from results and pull to refresh', (tester) async {
+      await pumpWithScale(tester, textScaler: const TextScaler.linear(3));
+      when(
+        () => service.search(any(), filters: any(named: 'filters')),
+      ).thenAnswer((_) async => _page(List<FeedItemEntity>.generate(20, (i) => _wallpaper('wall-$i'))));
+      await sendRequest(tester, (
+        query: '',
+        filters: const SearchFilters(
+          kinds: <PrismWallKind>{PrismWallKind.live, PrismWallKind.desktop, PrismWallKind.lightDark},
+        ),
+      ));
+      final Finder filters = find.ancestor(of: find.text(kindNote), matching: find.byType(SingleChildScrollView));
+      final Finder filterScroll = find.descendant(of: filters, matching: find.byType(Scrollable));
+      final Finder resultScroll = find.descendant(of: find.byType(SearchGrid), matching: find.byType(Scrollable)).first;
+      final ScrollPosition filterPosition = tester.state<ScrollableState>(filterScroll).position;
+      final ScrollPosition resultPosition = tester.state<ScrollableState>(resultScroll).position;
+      expect(filterPosition.maxScrollExtent, greaterThan(0));
+      await tester.drag(filters, const Offset(0, -160));
+      await tester.pumpAndSettle();
+      expect(filterPosition.pixels, greaterThan(0));
+      expect(resultPosition.pixels, 0);
+      when(
+        () => service.fetchPage(any(), any(), refresh: true, filters: any(named: 'filters')),
+      ).thenAnswer((_) async => <FeedItemEntity>[_wallpaper('refreshed')]);
+      final double filterOffset = filterPosition.pixels;
+      await tester.drag(resultScroll, const Offset(0, -160));
+      await tester.pumpAndSettle();
+      expect(resultPosition.pixels, greaterThan(0));
+      expect(filterPosition.pixels, filterOffset);
+      resultPosition.jumpTo(0);
+      clearInteractions(service);
+      await tester.drag(filters, const Offset(0, 400));
+      await tester.pumpAndSettle();
+      verifyNever(() => service.fetchPage(any(), any(), refresh: true, filters: any(named: 'filters')));
+      await tester.drag(resultScroll, const Offset(0, 400));
+      await tester.pumpAndSettle();
+      verify(() => service.fetchPage(any(), any(), refresh: true, filters: any(named: 'filters'))).called(1);
+    });
+
+    testWidgets('large text active filters fit above results with the keyboard open', (tester) async {
+      await pumpWithScale(tester, textScaler: const TextScaler.linear(3));
+      await sendRequest(tester, (
+        query: '',
+        filters: const SearchFilters(
+          kinds: <PrismWallKind>{PrismWallKind.live, PrismWallKind.desktop, PrismWallKind.lightDark},
+        ),
+      ));
+      tester.view.viewInsets = const FakeViewPadding(bottom: 1200);
+      await tester.showKeyboard(find.byType(TextField));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(tester.getSize(find.byType(SearchGrid)).height, greaterThan(0));
+    });
+
+    testWidgets('keyboard scrolling results does not collide with the filter scroller', (tester) async {
+      await pumpWithScale(tester, textScaler: const TextScaler.linear(3));
+      await sendRequest(tester, (query: '', filters: liveOnly));
+      final BuildContext context = tester.element(find.byType(SearchGrid));
+      Actions.invoke(context, const ScrollIntent(direction: AxisDirection.down));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(PrimaryScrollController.of(context).positions.length, 1);
+    });
+
+    for (final TextDirection direction in TextDirection.values) {
+      testWidgets('3x badge keeps its tap target and accessible count in $direction', (tester) async {
+        final SemanticsHandle semantics = tester.ensureSemantics();
+        await pumpWithScale(tester, textScaler: const TextScaler.linear(3), direction: direction);
+        await sendRequest(tester, (query: '', filters: liveOnly));
+        final Finder button = find.byTooltip('Filters, 1 on');
+        final Rect target = tester.getRect(find.ancestor(of: button, matching: find.byType(IconButton)));
+        final double minimum = prismTapTarget(tester.element(button));
+        expect(target.width, greaterThanOrEqualTo(minimum));
+        expect(target.height, greaterThanOrEqualTo(minimum));
+        expect(tester.getSemantics(button).getSemanticsData().tooltip, 'Filters, 1 on');
+        final Rect count = tester.getRect(find.descendant(of: find.byType(Badge), matching: find.text('1')));
+        expect(count.left, greaterThanOrEqualTo(0));
+        expect(count.right, lessThanOrEqualTo(390));
+        await tester.tapAt(target.center + Offset(0, minimum / 2 - 2));
+        await tester.pumpAndSettle();
+        expect(find.text('Apply'), findsOneWidget);
+        semantics.dispose();
+      });
+    }
+
+    testWidgets('keyboard focus reveals offscreen Clear all and Enter clears filters', (tester) async {
+      await pumpWithScale(tester, textScaler: const TextScaler.linear(3));
+      await sendRequest(tester, (
+        query: '',
+        filters: const SearchFilters(
+          kinds: <PrismWallKind>{PrismWallKind.live, PrismWallKind.desktop, PrismWallKind.lightDark},
+        ),
+      ));
+      final Finder filters = find.ancestor(of: find.text(kindNote), matching: find.byType(SingleChildScrollView));
+      final ScrollPosition position = tester
+          .state<ScrollableState>(find.descendant(of: filters, matching: find.byType(Scrollable)))
+          .position;
+      final Finder clear = find.widgetWithText(FilledButton, 'Clear all');
+      expect(tester.getRect(clear).top, greaterThanOrEqualTo(tester.getRect(filters).bottom));
+      final Finder headerFocus = find.descendant(
+        of: find.ancestor(of: find.byTooltip('Filters, 3 on'), matching: find.byType(IconButton)),
+        matching: find.byWidgetPredicate((Widget widget) => widget is Focus),
+      );
+      final Widget headerFocusChild = tester.widget<Focus>(headerFocus.first).child;
+      Focus.of(tester.element(find.byWidget(headerFocusChild))).requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pumpAndSettle();
+      expect(position.pixels, greaterThan(0));
+      expect(tester.getRect(clear).top, greaterThanOrEqualTo(tester.getRect(filters).top));
+      expect(tester.getRect(clear).bottom, lessThanOrEqualTo(tester.getRect(filters).bottom));
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+      expect(find.text(kindNote), findsNothing);
+      expect(find.text('Clear all'), findsNothing);
+      expect(find.text('Find creators'), findsOneWidget);
+    });
+
+    testWidgets('filter keyboard focus opens its sheet', (tester) async {
+      await pumpWithScale(tester);
+      await sendRequest(tester, (query: '', filters: liveOnly));
+      final Finder button = find.byTooltip('Filters, 1 on');
+      final Finder focus = find.descendant(
+        of: find.ancestor(of: button, matching: find.byType(IconButton)),
+        matching: find.byWidgetPredicate((Widget widget) => widget is Focus),
+      );
+      final Widget focusChild = tester.widget<Focus>(focus.first).child;
+      Focus.of(tester.element(find.byWidget(focusChild))).requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(find.text('Apply'), findsOneWidget);
     });
 
     testWidgets('in RTL the same kind state renders without an exception', (tester) async {

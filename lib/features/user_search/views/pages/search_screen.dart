@@ -669,27 +669,52 @@ class _SearchScreenState extends State<SearchScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       _header(context),
-                      AnimatedSwitcher(
-                        duration: context.motion(PrismDurations.fast),
-                        switchInCurve: PrismCurves.enter,
-                        switchOutCurve: PrismCurves.exitReverse,
-                        child: _photo == null
-                            ? const SizedBox.shrink()
-                            : Padding(
-                                key: ValueKey<PhotoQuery>(_photo!),
-                                padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.sm),
-                                child: PhotoSearchChip(photo: _photo!, onClear: _backToDiscover),
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, constraints) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              ConstrainedBox(
+                                constraints: BoxConstraints(maxHeight: constraints.maxHeight / 3),
+                                child: SingleChildScrollView(
+                                  primary: false,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      AnimatedSwitcher(
+                                        duration: context.motion(PrismDurations.fast),
+                                        switchInCurve: PrismCurves.enter,
+                                        switchOutCurve: PrismCurves.exitReverse,
+                                        child: _photo == null
+                                            ? const SizedBox.shrink()
+                                            : Padding(
+                                                key: ValueKey<PhotoQuery>(_photo!),
+                                                padding: const EdgeInsets.fromLTRB(
+                                                  PrismSpace.page,
+                                                  0,
+                                                  PrismSpace.page,
+                                                  PrismSpace.sm,
+                                                ),
+                                                child: PhotoSearchChip(photo: _photo!, onClear: _backToDiscover),
+                                              ),
+                                      ),
+                                      _ActiveFilters(
+                                        filters: _filters,
+                                        onClearColor: _clearColor,
+                                        onClearDepth: _clearDepth,
+                                        onClearSpatial: _clearSpatial,
+                                        onChanged: _applyFilters,
+                                        onClearAll: _resetFilters,
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
+                              Expanded(child: _results(context)),
+                            ],
+                          ),
+                        ),
                       ),
-                      _ActiveFilters(
-                        filters: _filters,
-                        onClearColor: _clearColor,
-                        onClearDepth: _clearDepth,
-                        onClearSpatial: _clearSpatial,
-                        onChanged: _applyFilters,
-                        onClearAll: _resetFilters,
-                      ),
-                      Expanded(child: _results(context)),
                     ],
                   )
                 : SearchDiscoveryWidget(
@@ -779,35 +804,30 @@ class _ActiveFilters extends StatelessWidget {
         removable(l10n.searchFilterPrismOnly, () => onChanged(filters.copyWith(source: SearchSource.all))),
     ];
     if (filters.activeNames.isEmpty) return const SizedBox.shrink();
-    // At large text the chips and the note can be taller than the screen. They scroll in at most a third of it, so
-    // the results keep the rest.
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height / 3),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Wrap(
-              spacing: PrismSpace.xs,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: <Widget>[
-                ...chips,
-                PrismButton(
-                  label: l10n.searchFilterClearAll,
-                  variant: PrismButtonVariant.ghost,
-                  size: PrismButtonSize.compact,
-                  onPressed: onClearAll,
-                ),
-              ],
-            ),
-            if (filters.kinds.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: PrismSpace.xxs),
-                child: Text(l10n.searchKindsPrismOnlyNote, style: PrismTextStyles.caption(context)),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Wrap(
+            spacing: PrismSpace.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[
+              ...chips,
+              PrismButton(
+                label: l10n.searchFilterClearAll,
+                variant: PrismButtonVariant.ghost,
+                size: PrismButtonSize.compact,
+                onPressed: onClearAll,
               ),
-          ],
-        ),
+            ],
+          ),
+          if (filters.kinds.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: PrismSpace.xxs),
+              child: Text(l10n.searchKindsPrismOnlyNote, style: PrismTextStyles.caption(context)),
+            ),
+        ],
       ),
     );
   }
