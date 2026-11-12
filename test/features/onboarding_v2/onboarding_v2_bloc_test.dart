@@ -5,6 +5,7 @@ import 'package:Prism/auth/transaction_model.dart';
 import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
+import 'package:Prism/core/debug/in_memory_log_sink.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
@@ -32,6 +33,7 @@ import 'package:Prism/features/onboarding_v2/src/views/viewmodels/onboarding_wal
 import 'package:Prism/features/taste_quiz/domain/repositories/taste_quiz_repository.dart';
 import 'package:Prism/l10n/generated/app_localizations.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
+import 'package:Prism/logger/app_logger.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
@@ -187,6 +189,7 @@ void main() {
   OnboardingV2Bloc buildBloc({
     bool includeRemoteConfig = true,
     Future<AppLocalizationsEn> Function()? loadLocalizations,
+    Future<String> Function(String)? acquireGeneratedImage,
   }) => OnboardingV2Bloc(
     fetchStarterPackUseCase,
     saveInterestsUseCase,
@@ -199,7 +202,7 @@ void main() {
     tasteQuizRepository,
     remoteConfig: includeRemoteConfig ? remoteConfig : null,
     aiRepository: aiRepository,
-    acquireGeneratedImage: (_) async => '/tmp/generated-wallpaper.jpg',
+    acquireGeneratedImage: acquireGeneratedImage ?? (_) async => '/tmp/generated-wallpaper.jpg',
     loadLocalizations: loadLocalizations ?? () async => AppLocalizationsEn(),
   );
 
@@ -1343,6 +1346,75 @@ void main() {
     );
   });
 
+  group('AI generation outage', () {
+    late List<Object> outcomes;
+
+    setUp(() {
+      InMemoryLogSink.instance.clear();
+      when(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: any(named: 'chargeMode'),
+          coinsSpent: any(named: 'coinsSpent'),
+        ),
+      ).thenAnswer((_) async {
+        final Object outcome = outcomes.removeAt(0);
+        if (outcome is AiGenerationRecord) return outcome;
+        throw outcome;
+      });
+    });
+
+    List<AppLogLevel> generationFailureLogs() => InMemoryLogSink.instance.records
+        .where((AppLogRecord record) => record.message.startsWith('AI onboarding generation failed'))
+        .map((AppLogRecord record) => record.level)
+        .toList();
+
+    test('a fal outage leaves a retryable failure, is not reported as a crash, and the retry succeeds', () async {
+      outcomes = <Object>[
+        AiGenerationApiException(message: 'fal generation failed', code: 'provider_error', statusCode: 502),
+        _aiRecord(),
+      ];
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.failure);
+      expect(generationFailureLogs(), <AppLogLevel>[AppLogLevel.warn]);
+
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.success);
+      expect(bloc.state.wallpaperData.wallpaper?.fullUrl, '/tmp/generated-wallpaper.jpg');
+    });
+
+    test('an incomplete provider response is reported as an error and leaves a retryable failure', () async {
+      outcomes = <Object>[
+        AiGenerationApiException(message: 'incomplete response', code: 'invalid_response', statusCode: 502),
+      ];
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.failure);
+
+      expect(generationFailureLogs(), <AppLogLevel>[AppLogLevel.error]);
+      expect(bloc.state.aiData.status, AiGenerateStatus.failure);
+    });
+
+    test('an unexpected generation error is still reported as an error', () async {
+      outcomes = <Object>[StateError('bad response')];
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.failure);
+
+      expect(generationFailureLogs(), <AppLogLevel>[AppLogLevel.error]);
+    });
+  });
+
   group('aiStyleSelected', () {
     setUp(() {
       app_state.prismUser = _user(id: 'resume-user', loggedIn: true);
@@ -1358,9 +1430,13 @@ void main() {
       ).thenAnswer((_) async => _aiRecord());
     });
 
-    Future<void> reachAiGenerate(OnboardingV2Bloc bloc) async {
+    Future<void> reachAiGenerate(OnboardingV2Bloc bloc, {String? interest}) async {
       bloc.add(const OnboardingV2Event.started());
       await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.interests);
+      if (interest != null) {
+        bloc.add(OnboardingV2Event.interestToggled(interest));
+        await bloc.stream.firstWhere((state) => state.interestsData.selected.contains(interest));
+      }
       bloc.add(const OnboardingV2Event.interestsSkipped());
       await bloc.stream.firstWhere((s) => s.step == OnboardingV2Step.starterPack);
       bloc.add(const OnboardingV2Event.starterPackSkipped());
@@ -1556,6 +1632,172 @@ void main() {
       ).called(1);
       pending.complete(_aiRecord());
       await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.success);
+    });
+
+    test('back and re-entry preserve a pending trial and prevent a second generation', () async {
+      final pending = Completer<AiGenerationRecord>();
+      when(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: any(named: 'chargeMode'),
+          coinsSpent: any(named: 'coinsSpent'),
+        ),
+      ).thenAnswer((_) => pending.future);
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc, interest: 'Nature');
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.anime));
+      await bloc.stream.firstWhere((state) => state.aiData.stylePreset == AiStylePreset.anime);
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.loading);
+      final requestedAiData = bloc.state.aiData;
+
+      bloc.add(const OnboardingV2Event.stepBack());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.starterPack);
+      bloc.add(const OnboardingV2Event.starterPackSkipped());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.aiGenerate);
+      final reenteredAiData = bloc.state.aiData;
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await Future<void>.delayed(Duration.zero);
+      pending.complete(_aiRecord());
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.success);
+
+      expect(reenteredAiData, requestedAiData);
+      expect(bloc.state.aiData.stylePreset, AiStylePreset.anime);
+      expect(bloc.state.wallpaperData.wallpaper?.aiStyle, AiStylePreset.anime);
+      verify(
+        () => aiRepository.generate(
+          prompt: requestedAiData.prompt,
+          stylePreset: AiStylePreset.anime,
+          qualityTier: AiQualityTier.fast,
+          targetSize: '1080x1920',
+          chargeMode: AiChargeMode.freeTrial,
+          coinsSpent: 0,
+        ),
+      ).called(1);
+      verifyNoMoreInteractions(aiRepository);
+    });
+
+    test('back and re-entry preserve the successful trial and its locked style', () async {
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc, interest: 'Nature');
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.anime));
+      await bloc.stream.firstWhere((state) => state.aiData.stylePreset == AiStylePreset.anime);
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.success);
+      final generatedAiData = bloc.state.aiData;
+
+      bloc.add(const OnboardingV2Event.stepBack());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.starterPack);
+      bloc.add(const OnboardingV2Event.starterPackSkipped());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.aiGenerate);
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.synthwave));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.state.aiData, generatedAiData);
+      expect(bloc.state.aiData.status, AiGenerateStatus.success);
+      expect(bloc.state.aiData.stylePreset, AiStylePreset.anime);
+      expect(bloc.state.wallpaperData.wallpaper?.aiStyle, AiStylePreset.anime);
+    });
+
+    test('re-entry localization cannot replace a trial completed while the lookup was pending', () async {
+      final pendingLocalizations = Completer<AppLocalizationsEn>();
+      final localizationLoadStarted = Completer<void>();
+      var holdLocalizations = false;
+      final bloc = buildBloc(
+        loadLocalizations: () {
+          if (!holdLocalizations) return Future.value(AppLocalizationsEn());
+          localizationLoadStarted.complete();
+          return pendingLocalizations.future;
+        },
+      );
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc, interest: 'Nature');
+      bloc.add(const OnboardingV2Event.aiStyleSelected(style: AiStylePreset.anime));
+      await bloc.stream.firstWhere((state) => state.aiData.stylePreset == AiStylePreset.anime);
+      holdLocalizations = true;
+
+      bloc.add(const OnboardingV2Event.stepBack());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.starterPack);
+      bloc.add(const OnboardingV2Event.starterPackSkipped());
+      await localizationLoadStarted.future;
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.success);
+      final generatedAiData = bloc.state.aiData;
+      pendingLocalizations.complete(AppLocalizationsEn());
+      await bloc.stream.firstWhere((state) => state.step == OnboardingV2Step.aiGenerate);
+
+      expect(bloc.state.aiData, generatedAiData);
+      expect(bloc.state.aiData.status, AiGenerateStatus.success);
+      expect(bloc.state.aiData.stylePreset, AiStylePreset.anime);
+      expect(bloc.state.wallpaperData.wallpaper?.aiStyle, AiStylePreset.anime);
+    });
+
+    test('closing during generation prevents the later image download and completion', () async {
+      final pending = Completer<AiGenerationRecord>();
+      final downloadedUrls = <String>[];
+      when(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: any(named: 'chargeMode'),
+          coinsSpent: any(named: 'coinsSpent'),
+        ),
+      ).thenAnswer((_) => pending.future);
+      final bloc = buildBloc(
+        acquireGeneratedImage: (url) async {
+          downloadedUrls.add(url);
+          return '/tmp/generated-wallpaper.jpg';
+        },
+      );
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc);
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.loading);
+
+      await bloc.close();
+      pending.complete(_aiRecord());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.isClosed, isTrue);
+      expect(bloc.state.aiData.status, AiGenerateStatus.loading);
+      expect(bloc.state.wallpaperData.wallpaper, isNull);
+      expect(downloadedUrls, isEmpty);
+    });
+
+    test('closing during generation safely ignores a later provider failure', () async {
+      final pending = Completer<AiGenerationRecord>();
+      when(
+        () => aiRepository.generate(
+          prompt: any(named: 'prompt'),
+          stylePreset: any(named: 'stylePreset'),
+          qualityTier: any(named: 'qualityTier'),
+          targetSize: any(named: 'targetSize'),
+          chargeMode: any(named: 'chargeMode'),
+          coinsSpent: any(named: 'coinsSpent'),
+        ),
+      ).thenAnswer((_) => pending.future);
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      await reachAiGenerate(bloc);
+      bloc.add(const OnboardingV2Event.aiGenerationRequested(targetSize: '1080x1920'));
+      await bloc.stream.firstWhere((state) => state.aiData.status == AiGenerateStatus.loading);
+
+      await bloc.close();
+      pending.completeError(
+        AiGenerationApiException(message: 'fal generation failed', code: 'provider_error', statusCode: 502),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(bloc.isClosed, isTrue);
+      expect(bloc.state.aiData.status, AiGenerateStatus.loading);
+      expect(bloc.state.wallpaperData.wallpaper, isNull);
     });
 
     test('after success, a style pick changes nothing', () async {

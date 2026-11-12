@@ -25,6 +25,8 @@ class AiGenerationApiException implements Exception {
   final String code;
   final int statusCode;
 
+  bool get isProviderFailure => statusCode == 502 && code == 'provider_error';
+
   @override
   String toString() => 'AiGenerationApiException(code: $code, statusCode: $statusCode, message: $message)';
 }
@@ -40,7 +42,8 @@ class AiGenerationRepositoryImpl {
     : _client = http.Client(),
       _authOverride = null,
       _localStore = DurableJsonStore('ai_wallpaper'),
-      _requestTimeout = _defaultTimeout;
+      _requestTimeout = _defaultTimeout,
+      _providerRetryDelays = _defaultProviderRetryDelays;
 
   @visibleForTesting
   AiGenerationRepositoryImpl.forTest({
@@ -48,17 +51,21 @@ class AiGenerationRepositoryImpl {
     required FirebaseAuth auth,
     DurableJsonStore? localStore,
     Duration requestTimeout = _defaultTimeout,
+    List<Duration> providerRetryDelays = _defaultProviderRetryDelays,
   }) : _client = client,
        _authOverride = auth,
        _localStore = localStore ?? DurableJsonStore('ai_wallpaper'),
-       _requestTimeout = requestTimeout;
+       _requestTimeout = requestTimeout,
+       _providerRetryDelays = providerRetryDelays;
 
   static const Duration _defaultTimeout = Duration(seconds: 60);
+  static const List<Duration> _defaultProviderRetryDelays = <Duration>[Duration(seconds: 1), Duration(seconds: 3)];
 
   final http.Client _client;
   final FirebaseAuth? _authOverride;
   final DurableJsonStore _localStore;
   final Duration _requestTimeout;
+  final List<Duration> _providerRetryDelays;
   final Map<String, int> _ownerGenerations = <String, int>{};
   final Map<String, Future<void>> _ownerWriteTails = <String, Future<void>>{};
 
@@ -124,7 +131,13 @@ class AiGenerationRepositoryImpl {
       // The worker owns the one free trial per account; a repeat replays the first image.
       if (chargeMode == AiChargeMode.freeTrial && (chargeTxId == null || chargeTxId.isEmpty)) 'freeTrial': true,
     };
-    final data = await _post('/generations', payload, retryOnTimeout: payload.containsKey('chargeTxId'));
+    final data = await _post(
+      '/generations',
+      payload,
+      retryOnTimeout: payload.containsKey('chargeTxId'),
+      // The worker deletes a failed trial claim, so a retry claims it again. A failed charge stays spent (402).
+      retryProviderFailure: payload.containsKey('freeTrial'),
+    );
     final record = _recordFromApiResponse(
       data: data,
       userId: user.uid,
@@ -410,7 +423,12 @@ class AiGenerationRepositoryImpl {
     );
   }
 
-  Future<Map<String, dynamic>> _post(String path, Map<String, dynamic> body, {bool retryOnTimeout = false}) async {
+  Future<Map<String, dynamic>> _post(
+    String path,
+    Map<String, dynamic> body, {
+    bool retryOnTimeout = false,
+    bool retryProviderFailure = false,
+  }) async {
     final token = await _currentUser?.getIdToken();
     if (token == null || token.trim().isEmpty) {
       throw AiGenerationApiException(message: 'Please sign in to continue.', code: 'unauthorized', statusCode: 401);
@@ -432,6 +450,17 @@ class AiGenerationRepositoryImpl {
           .timeout(_requestTimeout),
     );
 
+    for (int attempt = 0; ; attempt++) {
+      try {
+        return await _postOnce(send, retryOnTimeout: retryOnTimeout);
+      } on AiGenerationApiException catch (error) {
+        if (!retryProviderFailure || !error.isProviderFailure || attempt >= _providerRetryDelays.length) rethrow;
+        await Future<void>.delayed(_providerRetryDelays[attempt]);
+      }
+    }
+  }
+
+  Future<Map<String, dynamic>> _postOnce(Future<http.Response> Function() send, {required bool retryOnTimeout}) async {
     http.Response response;
     try {
       response = await send();
@@ -454,7 +483,7 @@ class AiGenerationRepositoryImpl {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw AiGenerationApiException(
         message: (payload['message'] ?? 'Unable to process AI request').toString(),
-        code: (payload['error'] ?? 'provider_error').toString(),
+        code: (payload['error'] ?? 'invalid_response').toString(),
         statusCode: response.statusCode,
       );
     }
@@ -485,7 +514,7 @@ class AiGenerationRepositoryImpl {
         watermarkedImageUrl is! String) {
       throw AiGenerationApiException(
         message: 'AI generation response was incomplete. Please retry.',
-        code: 'provider_error',
+        code: 'invalid_response',
         statusCode: 502,
       );
     }

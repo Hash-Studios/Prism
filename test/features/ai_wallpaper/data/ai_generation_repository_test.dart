@@ -115,6 +115,19 @@ AiGenerationRepositoryImpl _repository(http.Client client) => AiGenerationReposi
   client: client,
   auth: _FakeAuth(),
   requestTimeout: const Duration(milliseconds: 20),
+  providerRetryDelays: const <Duration>[Duration.zero, Duration.zero],
+);
+
+http.Response _apiError(int status, String code) =>
+    http.Response(jsonEncode(<String, String>{'error': code, 'message': 'fal generation failed'}), status);
+
+Future<AiGenerationRecord> _generateFreeTrial(AiGenerationRepositoryImpl repository) => repository.generate(
+  prompt: 'misty peaks',
+  stylePreset: AiStylePreset.nature,
+  qualityTier: AiQualityTier.fast,
+  targetSize: '1080x1920',
+  chargeMode: AiChargeMode.freeTrial,
+  coinsSpent: 0,
 );
 
 Future<void> _generate(AiGenerationRepositoryImpl repository, {String? chargeTxId}) => repository.generate(
@@ -280,8 +293,9 @@ void main() {
               : _generate(repository),
           throwsA(
             isA<AiGenerationApiException>()
-                .having((e) => e.code, 'code', 'provider_error')
-                .having((e) => e.statusCode, 'status', 502),
+                .having((e) => e.code, 'code', 'invalid_response')
+                .having((e) => e.statusCode, 'status', 502)
+                .having((e) => e.isProviderFailure, 'isProviderFailure', isFalse),
           ),
         );
       });
@@ -488,6 +502,198 @@ void main() {
       throwsA(isA<AiGenerationApiException>().having((e) => e.code, 'code', 'charge_in_progress')),
     );
     expect(calls, 1);
+  });
+
+  test('a free trial retries a fal 502 with the same request and returns the image', () async {
+    final List<Map<String, dynamic>> bodies = <Map<String, dynamic>>[];
+    final repository = _repository(
+      MockClient((request) async {
+        bodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+        return bodies.length < 3 ? _apiError(502, 'provider_error') : http.Response(_okBody, 200);
+      }),
+    );
+
+    final AiGenerationRecord record = await _generateFreeTrial(repository);
+
+    expect(record.imageUrl, 'https://cdn/full.png');
+    expect(bodies, hasLength(3));
+    expect(bodies[2], bodies[0]);
+    expect(bodies[2]['freeTrial'], isTrue);
+  });
+
+  test('a free trial gives up after two retries and surfaces the fal 502', () async {
+    int calls = 0;
+    final repository = _repository(
+      MockClient((request) async {
+        calls++;
+        return _apiError(502, 'provider_error');
+      }),
+    );
+
+    await expectLater(
+      _generateFreeTrial(repository),
+      throwsA(
+        isA<AiGenerationApiException>()
+            .having((e) => e.code, 'code', 'provider_error')
+            .having((e) => e.statusCode, 'statusCode', 502),
+      ),
+    );
+    expect(calls, 3);
+  });
+
+  test('a charged 502 is not retried, so the spent charge is never replayed', () async {
+    int calls = 0;
+    final repository = _repository(
+      MockClient((request) async {
+        calls++;
+        return calls == 1 ? _apiError(502, 'provider_error') : _apiError(402, 'charge_invalid');
+      }),
+    );
+
+    await expectLater(
+      _generate(repository, chargeTxId: 'spend_user-1_abc'),
+      throwsA(isA<AiGenerationApiException>().having((e) => e.statusCode, 'statusCode', 502)),
+    );
+    expect(calls, 1);
+  });
+
+  test('a free trial with a charge id sends only the charge id and does not retry provider failures', () async {
+    final List<Map<String, dynamic>> bodies = <Map<String, dynamic>>[];
+    final repository = _repository(
+      MockClient((request) async {
+        bodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+        return _apiError(502, 'provider_error');
+      }),
+    );
+
+    await expectLater(
+      repository.generate(
+        prompt: 'misty peaks',
+        stylePreset: AiStylePreset.nature,
+        qualityTier: AiQualityTier.fast,
+        targetSize: '1080x1920',
+        chargeMode: AiChargeMode.freeTrial,
+        coinsSpent: 0,
+        chargeTxId: 'charged-trial',
+      ),
+      throwsA(isA<AiGenerationApiException>()),
+    );
+    expect(bodies, hasLength(1));
+    expect(bodies.single['chargeTxId'], 'charged-trial');
+    expect(bodies.single.containsKey('freeTrial'), isFalse);
+  });
+
+  test('a charge timeout followed by provider failure stops after two identical charged requests', () async {
+    final List<Map<String, dynamic>> bodies = <Map<String, dynamic>>[];
+    final repository = _repository(
+      MockClient((request) {
+        bodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+        if (bodies.length == 1) return Completer<http.Response>().future;
+        return Future<http.Response>.value(_apiError(502, 'provider_error'));
+      }),
+    );
+
+    await expectLater(_generate(repository, chargeTxId: 'charged-timeout'), throwsA(isA<AiGenerationApiException>()));
+    expect(bodies, hasLength(2));
+    expect(bodies[0], bodies[1]);
+    expect(bodies.every((body) => body['chargeTxId'] == 'charged-timeout'), isTrue);
+  });
+
+  test('variation and metadata provider 502 responses are not retried', () async {
+    for (final path in <String>['variation', 'metadata']) {
+      int calls = 0;
+      final repository = _repository(
+        MockClient((_) async {
+          calls++;
+          return _apiError(502, 'provider_error');
+        }),
+      );
+      await expectLater(
+        path == 'variation'
+            ? repository.generateVariation(generationId: 'gen-0', chargeMode: AiChargeMode.coinSpend, coinsSpent: 10)
+            : repository.prefillSubmissionMetadata(generationId: 'gen-0', defaultTags: const <String>[]),
+        throwsA(isA<AiGenerationApiException>()),
+      );
+      expect(calls, 1, reason: path);
+    }
+  });
+
+  test('a trial 502 followed by 409 stops after two attempts and surfaces the 409', () async {
+    int calls = 0;
+    final repository = _repository(
+      MockClient((_) async {
+        calls++;
+        return calls == 1 ? _apiError(502, 'provider_error') : _apiError(409, 'charge_in_progress');
+      }),
+    );
+
+    await expectLater(
+      _generateFreeTrial(repository),
+      throwsA(isA<AiGenerationApiException>().having((e) => e.statusCode, 'statusCode', 409)),
+    );
+    expect(calls, 2);
+  });
+
+  test('unstructured HTTP 502 is not a provider failure and is not retried', () async {
+    int calls = 0;
+    final repository = _repository(
+      MockClient((_) async {
+        calls++;
+        return http.Response('<html>upstream error</html>', 502);
+      }),
+    );
+
+    await expectLater(
+      _generateFreeTrial(repository),
+      throwsA(
+        isA<AiGenerationApiException>()
+            .having((e) => e.code, 'code', 'invalid_response')
+            .having((e) => e.statusCode, 'statusCode', 502)
+            .having((e) => e.isProviderFailure, 'isProviderFailure', isFalse),
+      ),
+    );
+    expect(calls, 1);
+  });
+
+  test('HTTP 502 without an error code is not a provider failure and is not retried', () async {
+    int calls = 0;
+    final repository = _repository(
+      MockClient((_) async {
+        calls++;
+        return http.Response(jsonEncode(<String, String>{'message': 'gateway error'}), 502);
+      }),
+    );
+
+    await expectLater(
+      _generateFreeTrial(repository),
+      throwsA(
+        isA<AiGenerationApiException>()
+            .having((e) => e.code, 'code', 'invalid_response')
+            .having((e) => e.statusCode, 'statusCode', 502)
+            .having((e) => e.isProviderFailure, 'isProviderFailure', isFalse),
+      ),
+    );
+    expect(calls, 1);
+  });
+
+  test('a free trial retries only a provider error, not a provider timeout or a trial in progress', () async {
+    final Map<String, int> calls = <String, int>{};
+    for (final http.Response response in <http.Response>[
+      _apiError(502, 'provider_timeout'),
+      _apiError(409, 'charge_in_progress'),
+      _apiError(502, 'provider_error'),
+    ]) {
+      final String code = (jsonDecode(response.body) as Map<String, dynamic>)['error'] as String;
+      final repository = _repository(
+        MockClient((request) async {
+          calls[code] = (calls[code] ?? 0) + 1;
+          return response;
+        }),
+      );
+      await expectLater(_generateFreeTrial(repository), throwsA(isA<AiGenerationApiException>()));
+    }
+
+    expect(calls, <String, int>{'provider_timeout': 1, 'charge_in_progress': 1, 'provider_error': 3});
   });
 
   test('generateVariation sends the charge transaction id', () async {
